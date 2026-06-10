@@ -4,20 +4,20 @@
 
 ## Sketch
 
-Isomer Labs is a small private lab space for early-stage experiments, prototypes, and research notes.
+Isomer Labs is a private lab for developing an automatic research platform powered by multi-agent technology.
 
 ## Name
 
-The name comes from isomerism in chemistry. Isomers share the same chemical formula but arrange their atoms differently, producing different properties from the same underlying parts.
+`Isomer Labs` reflects the platform's core idea: research work can be reorganized into different agent structures depending on the problem.
 
-That is the intended metaphor for agentic workflow and multi-agent systems: the same base capabilities can be rearranged into different team structures for different research problems. A team can change shape, route work through different specialist agents, and synthesize new results without losing its underlying identity.
+The same base capabilities can form different research teams, workflows, and feedback loops. One task may need discovery, synthesis, and review agents; another may need planning, data analysis, and report-writing agents. The platform should make those structures easy to create, run, observe, and improve.
 
-`Isomer Labs` carries that idea: a sophisticated, adaptive lab for multi-agent structures that can reconfigure around the work.
+The name points to that adaptive structure: a research system that changes shape around the question while staying coherent as one platform.
 
 The repository starts intentionally light:
 
-- collect rough ideas before they become projects
-- sketch technical directions and naming
+- collect platform ideas before they become product features
+- sketch multi-agent research workflows and interfaces
 - keep experiments private until they are ready to split out
 
 ## Status
