@@ -1,0 +1,6 @@
+name = "mentor-standards"
+kind = "reference"
+backs = ["knowledge cards"]
+entrypoint = "adapter:cards"
+deps = []
+description = "Repo-owner standards/taste cards read by the deepresearch-mentor skill."

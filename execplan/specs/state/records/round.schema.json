@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/round",
+  "title": "round records",
+  "description": "Open, update (stage/fan-out counts), or close a round. record_id = '<quest_id>:<round_index>'.",
+  "oneOf": [
+    {
+      "title": "round.open",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "round_index", "stage"],
+      "properties": {
+        "record_type": { "const": "round.open" },
+        "record_id": { "type": "string" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "round_index": { "type": "integer", "minimum": 0 },
+        "stage": { "type": "string" },
+        "branch_id": { "type": "string" },
+        "expected_handoffs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    {
+      "title": "round.update",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at"],
+      "anyOf": [
+        { "required": ["stage"] }, { "required": ["expected_handoffs"] },
+        { "required": ["received_handoffs"] }, { "required": ["summary_ref"] }
+      ],
+      "properties": {
+        "record_type": { "const": "round.update" },
+        "record_id": { "type": "string" },
+        "at": { "type": "string" },
+        "stage": { "type": "string" },
+        "expected_handoffs": { "type": "integer", "minimum": 0 },
+        "received_handoffs": { "type": "integer", "minimum": 0 },
+        "summary_ref": { "type": "string" }
+      }
+    },
+    {
+      "title": "round.close",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at"],
+      "properties": {
+        "record_type": { "const": "round.close" },
+        "record_id": { "type": "string" },
+        "at": { "type": "string" },
+        "summary_ref": { "type": "string" }
+      }
+    }
+  ]
+}

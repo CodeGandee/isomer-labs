@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/artifact",
+  "title": "artifact record",
+  "description": "Index a durable rendered output (report/figure/draft/bundle/log). Written by git-checkpoint and the artifact compiler. record_id = artifact_id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "kind", "ref"],
+  "properties": {
+    "record_type": { "const": "artifact.record" },
+    "record_id": { "type": "string" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string" },
+    "round_index": { "type": "integer", "minimum": 0 },
+    "kind": { "type": "string", "examples": ["report", "figure", "draft", "bundle", "log", "other"] },
+    "ref": { "type": "string", "description": "path under runs/<quest-id>/..." }
+  }
+}

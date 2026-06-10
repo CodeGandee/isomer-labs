@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/frontier",
+  "title": "frontier_entry record",
+  "description": "Upsert an optimization-frontier entry (optimize stage). record_id = entry_id. ≤1 'incumbent' per quest (invariant single_incumbent_per_quest).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "candidate_kind", "candidate_ref", "status"],
+  "properties": {
+    "record_type": { "const": "frontier.record" },
+    "record_id": { "type": "string" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string" },
+    "candidate_kind": { "enum": ["branch", "experiment", "result"] },
+    "candidate_ref": { "type": "string" },
+    "round_index": { "type": "integer", "minimum": 0 },
+    "score": { "type": "number", "description": "primary objective value (BO objective sense applies)" },
+    "rank": { "type": "integer", "minimum": 1 },
+    "status": { "enum": ["candidate", "incumbent", "promoted", "parked", "dropped", "fused"] }
+  }
+}

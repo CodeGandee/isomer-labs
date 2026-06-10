@@ -1,0 +1,8 @@
+name = "paper-plot"
+kind = "compiler"
+backs = ["render plot"]
+entrypoint = "adapter:render"
+input_formats = ["csv", "json"]
+output_format = "svg"
+deps = []                    # stdlib only (csv, json) — no matplotlib required
+description = "Publication-style line/scatter plot from CSV/JSON data, emitted as a self-contained SVG."

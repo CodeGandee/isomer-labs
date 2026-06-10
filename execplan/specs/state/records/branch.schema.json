@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/branch",
+  "title": "branch record",
+  "description": "Register/update a research branch + its (workspace-mgr-created) worktree ref. record_id = branch_id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "git_branch", "status"],
+  "properties": {
+    "record_type": { "const": "branch.record" },
+    "record_id": { "type": "string" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string" },
+    "parent_branch_id": { "type": ["string", "null"] },
+    "git_branch": { "type": "string" },
+    "worktree_ref": { "type": ["string", "null"] },
+    "status": { "enum": ["active", "parked", "abandoned", "merged"] }
+  }
+}

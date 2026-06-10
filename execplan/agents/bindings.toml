@@ -1,0 +1,108 @@
+# Generated agent bindings — DeepResearch tree-loop.
+# Maps participant instances -> concrete Houmao agents, generated skills, prompts, and workspace policy.
+# Authority: specs/collab/topology/topology.toml (routes), specs/comms/templates.toml (on-event skills),
+# specs/state/seed.toml (role roster + tool). Workspace authority: specs/workspace/workspace.toml (pending).
+
+[meta]
+loop_slug = "deepresearch"
+topology = "tree-loop"
+root = "orchestrator"
+harness = "execplan/harness/bin/deepresearch"   # loop-dir-relative pointer; launches invoke the ABSOLUTE path via the $HARNESS env set on each profile (prepare-workspace)
+workspace_authority = "specs/workspace/workspace.toml"
+# Houmao mail/messaging/gateway support is auto-preinstalled by managed-agent creation. The
+# `relies_on_houmao_skills` field below is informational reliance, NOT a generated requirement.
+state_access = "Agents touch state ONLY via harness commands (state query / record apply); never read runs/state.sqlite directly."
+record_id_convention = "Composite-PK record_ids are PK components joined with ':'. The harness parser is strict (exact component count + order); malformed ids are rejected by `record apply`."
+
+# ───────────────── Root ─────────────────
+[[bindings]]
+participant = "orchestrator"
+instances = ["orchestrator"]
+tool = "claude"
+credential = "default"
+easy_profile = "deepresearch-orchestrator"
+prompt_source = "agents/profiles/orchestrator/definition.md"
+memo_seed = "agents/profiles/orchestrator/memo-seed.md"
+notifier_prompt = "agents/notifier-prompts/orchestrator.md"
+# on-event handlers for everything that replies upstream + the on-tick stage machine + operator control.
+installed_skills = [
+  "deepresearch-orchestrator-tick",
+  "deepresearch-on-receipt",
+  "deepresearch-on-task-result",
+  "deepresearch-on-self-wakeup",
+  "deepresearch-operator-control",
+  "deepresearch-mentor",
+  "deepresearch-shared-guide",
+]
+relies_on_houmao_skills = ["houmao-agent-email-comms", "houmao-agent-gateway"]
+workspace = { policy_ref = "workspace.orchestrator", work_root = "runs/<quest-id>/workspaces/orchestrator", reads = ["shared/objective", "runs/<quest-id>/round-*", "runs/<quest-id>/report", "runs/<quest-id>/refs"], writes = ["runs/<quest-id>/round-*", "runs/<quest-id>/report"] }
+
+# ───────────────── Specialists (reply upstream to orchestrator) ─────────────────
+[[bindings]]
+participant = "scout-ideator"
+instances = ["scout-ideator"]
+tool = "claude"
+credential = "default"
+easy_profile = "deepresearch-scout-ideator"
+prompt_source = "agents/profiles/scout-ideator/definition.md"
+memo_seed = "agents/profiles/scout-ideator/memo-seed.md"
+notifier_prompt = "agents/notifier-prompts/scout-ideator.md"
+installed_skills = ["deepresearch-on-task-request", "deepresearch-shared-guide"]
+relies_on_houmao_skills = ["houmao-agent-email-comms"]
+workspace = { policy_ref = "workspace.scout-ideator", work_root = "runs/<quest-id>/workspaces/scout-ideator", reads = ["shared/objective", "runs/<quest-id>/refs", "quest.workspace_ref"], writes = ["runs/<quest-id>/round-*/scout-ideator", "runs/<quest-id>/intake"] }
+
+[[bindings]]
+participant = "experimenter"
+instances = ["experimenter-1", "experimenter-2", "experimenter-3", "experimenter-4"]
+fanout_default = 1
+fanout_max = 4
+tool = "claude"
+credential = "default"
+easy_profile = "deepresearch-experimenter"   # one profile, up to fanout_max launched instances
+prompt_source = "agents/profiles/experimenter/definition.md"
+memo_seed = "agents/profiles/experimenter/memo-seed.md"
+notifier_prompt = "agents/notifier-prompts/experimenter.md"
+installed_skills = ["deepresearch-on-task-request", "deepresearch-shared-guide"]
+relies_on_houmao_skills = ["houmao-agent-email-comms"]
+# Each instance gets its own ISOLATED git worktree (created by prepare-workspace / workspace-mgr).
+# No two instances share a mutable work root (parallel experiment branches).
+workspace = { policy_ref = "workspace.experimenter", work_root = "runs/<quest-id>/workspaces/<instance-id>", isolation = "worktree", reads = ["shared/objective", "shared/baseline"], writes = ["runs/<quest-id>/round-*/<instance-id>"] }
+
+[[bindings]]
+participant = "analyst"
+instances = ["analyst"]
+tool = "claude"
+credential = "default"
+easy_profile = "deepresearch-analyst"
+prompt_source = "agents/profiles/analyst/definition.md"
+memo_seed = "agents/profiles/analyst/memo-seed.md"
+notifier_prompt = "agents/notifier-prompts/analyst.md"
+installed_skills = ["deepresearch-on-task-request", "deepresearch-shared-guide"]
+relies_on_houmao_skills = ["houmao-agent-email-comms"]
+workspace = { policy_ref = "workspace.analyst", work_root = "runs/<quest-id>/workspaces/analyst", reads = ["runs/<quest-id>/round-*", "shared/objective"], writes = ["runs/<quest-id>/round-*/analyst"] }
+
+[[bindings]]
+participant = "writer"
+instances = ["writer"]
+tool = "claude"
+credential = "default"
+easy_profile = "deepresearch-writer"
+prompt_source = "agents/profiles/writer/definition.md"
+memo_seed = "agents/profiles/writer/memo-seed.md"
+notifier_prompt = "agents/notifier-prompts/writer.md"
+installed_skills = ["deepresearch-on-task-request", "deepresearch-shared-guide"]
+relies_on_houmao_skills = ["houmao-agent-email-comms"]
+workspace = { policy_ref = "workspace.writer", work_root = "runs/<quest-id>/workspaces/writer", reads = ["runs/<quest-id>/round-*", "runs/<quest-id>/refs", "shared/objective"], writes = ["runs/<quest-id>/report"] }
+
+[[bindings]]
+participant = "reviewer"
+instances = ["reviewer"]
+tool = "claude"
+credential = "default"
+easy_profile = "deepresearch-reviewer"
+prompt_source = "agents/profiles/reviewer/definition.md"
+memo_seed = "agents/profiles/reviewer/memo-seed.md"
+notifier_prompt = "agents/notifier-prompts/reviewer.md"
+installed_skills = ["deepresearch-on-task-request", "deepresearch-shared-guide"]
+relies_on_houmao_skills = ["houmao-agent-email-comms"]
+workspace = { policy_ref = "workspace.reviewer", work_root = "runs/<quest-id>/workspaces/reviewer", reads = ["runs/<quest-id>/report", "runs/<quest-id>/round-*"], writes = ["runs/<quest-id>/report/review"] }

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="460" viewBox="0 0 720 460" font-family="Helvetica,Arial,sans-serif">
+<rect width="720" height="460" fill="white"/>
+<text x="320.0" y="28" font-size="17" font-weight="bold" text-anchor="middle">Accuracy vs epoch</text>
+<line x1="70" y1="400" x2="570" y2="400" stroke="#333" stroke-width="1.2"/>
+<line x1="70" y1="400" x2="70" y2="50" stroke="#333" stroke-width="1.2"/>
+<line x1="70" y1="400.0" x2="570" y2="400.0" stroke="#eee" stroke-width="1"/>
+<line x1="65" y1="400.0" x2="70" y2="400.0" stroke="#333"/>
+<text x="61" y="404.0" font-size="11" text-anchor="end" fill="#333">0.5</text>
+<line x1="70" y1="312.5" x2="570" y2="312.5" stroke="#eee" stroke-width="1"/>
+<line x1="65" y1="312.5" x2="70" y2="312.5" stroke="#333"/>
+<text x="61" y="316.5" font-size="11" text-anchor="end" fill="#333">0.588</text>
+<line x1="70" y1="225.0" x2="570" y2="225.0" stroke="#eee" stroke-width="1"/>
+<line x1="65" y1="225.0" x2="70" y2="225.0" stroke="#333"/>
+<text x="61" y="229.0" font-size="11" text-anchor="end" fill="#333">0.675</text>
+<line x1="70" y1="137.5" x2="570" y2="137.5" stroke="#eee" stroke-width="1"/>
+<line x1="65" y1="137.5" x2="70" y2="137.5" stroke="#333"/>
+<text x="61" y="141.5" font-size="11" text-anchor="end" fill="#333">0.762</text>
+<line x1="70" y1="50.0" x2="570" y2="50.0" stroke="#eee" stroke-width="1"/>
+<line x1="65" y1="50.0" x2="70" y2="50.0" stroke="#333"/>
+<text x="61" y="54.0" font-size="11" text-anchor="end" fill="#333">0.85</text>
+<line x1="70.0" y1="400" x2="70.0" y2="405" stroke="#333"/>
+<text x="70.0" y="420.0" font-size="11" text-anchor="middle" fill="#333">1</text>
+<line x1="195.0" y1="400" x2="195.0" y2="405" stroke="#333"/>
+<text x="195.0" y="420.0" font-size="11" text-anchor="middle" fill="#333">2.25</text>
+<line x1="320.0" y1="400" x2="320.0" y2="405" stroke="#333"/>
+<text x="320.0" y="420.0" font-size="11" text-anchor="middle" fill="#333">3.5</text>
+<line x1="445.0" y1="400" x2="445.0" y2="405" stroke="#333"/>
+<text x="445.0" y="420.0" font-size="11" text-anchor="middle" fill="#333">4.75</text>
+<line x1="570.0" y1="400" x2="570.0" y2="405" stroke="#333"/>
+<text x="570.0" y="420.0" font-size="11" text-anchor="middle" fill="#333">6</text>
+<text x="320.0" y="446" font-size="13" text-anchor="middle">epoch</text>
+<polyline points="70.0,400.0 170.0,320.0 270.0,280.0 370.0,250.0 470.0,240.0 570.0,230.0" fill="none" stroke="#1f77b4" stroke-width="2"/>
+<circle cx="70.0" cy="400.0" r="3" fill="#1f77b4"/>
+<circle cx="170.0" cy="320.0" r="3" fill="#1f77b4"/>
+<circle cx="270.0" cy="280.0" r="3" fill="#1f77b4"/>
+<circle cx="370.0" cy="250.0" r="3" fill="#1f77b4"/>
+<circle cx="470.0" cy="240.0" r="3" fill="#1f77b4"/>
+<circle cx="570.0" cy="230.0" r="3" fill="#1f77b4"/>
+<rect x="588" y="56" width="14" height="4" fill="#1f77b4"/>
+<text x="608" y="62" font-size="12" fill="#333">baseline</text>
+<polyline points="70.0,350.0 170.0,240.0 270.0,190.0 370.0,130.0 470.0,80.0 570.0,50.0" fill="none" stroke="#d62728" stroke-width="2"/>
+<circle cx="70.0" cy="350.0" r="3" fill="#d62728"/>
+<circle cx="170.0" cy="240.0" r="3" fill="#d62728"/>
+<circle cx="270.0" cy="190.0" r="3" fill="#d62728"/>
+<circle cx="370.0" cy="130.0" r="3" fill="#d62728"/>
+<circle cx="470.0" cy="80.0" r="3" fill="#d62728"/>
+<circle cx="570.0" cy="50.0" r="3" fill="#d62728"/>
+<rect x="588" y="76" width="14" height="4" fill="#d62728"/>
+<text x="608" y="82" font-size="12" fill="#333">ours</text>
+</svg>

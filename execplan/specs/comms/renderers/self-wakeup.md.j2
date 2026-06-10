@@ -1,0 +1,22 @@
+```houmao-email-metadata
+schema_id = "{{ meta.schema_id }}"
+schema_version = "{{ meta.schema_version }}"
+kind = "{{ meta.kind }}"
+loop_slug = "{{ meta.loop_slug }}"
+loop_id = "{{ meta.loop_id }}"
+handoff_id = "{{ meta.handoff_id }}"
+continuation_lane = "{{ meta.continuation_lane | default('main') }}"
+payload_id = "{{ meta.payload_id }}"
+{% if meta.round_index is defined %}round_index = "{{ meta.round_index }}"
+{% endif %}from_role = "{{ meta.from_role }}"
+to_role = "{{ meta.to_role }}"
+```
+
+# [self-wakeup] {{ next_stage | default('continue') }} — lane `{{ meta.continuation_lane | default('main') }}`
+
+**Wake-up reason:** {{ reason }}
+**Next action:** {{ next_action }}
+{% if done_condition %}**Done condition:** {{ done_condition }}
+{% endif %}{% if resume_after %}**Resume after:** {{ resume_after }}
+{% endif %}
+_Continuation for quest `{{ meta.loop_id }}`, handoff `{{ meta.handoff_id }}`. A later re-arm on this lane supersedes this wakeup._

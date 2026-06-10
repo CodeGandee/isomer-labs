@@ -1,0 +1,8 @@
+name = "nature-data"
+kind = "template"
+backs = ["manuscript datastmt"]
+entrypoint = "adapter:generate"
+input_formats = ["json"]
+output_format = "md"
+deps = []
+description = "Data Availability statement + dataset citations + FAIR checklist from a data inventory. Drafts only from provided fields; never invents DOIs/accessions."

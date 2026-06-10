@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/comms/task-result",
+  "title": "task-result payload",
+  "description": "Worker -> requester final outcome. status=done|failed. Reports refs of rows the worker recorded via `record apply`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "status"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_id", "schema_version", "kind", "loop_slug", "loop_id", "handoff_id", "continuation_lane", "payload_id", "from_role", "to_role", "reply_to_payload_id"],
+      "properties": {
+        "schema_id": { "const": "deepresearch.email.task-result" },
+        "schema_version": { "type": "string" },
+        "kind": { "const": "result" },
+        "loop_slug": { "const": "deepresearch" },
+        "loop_id": { "type": "string" },
+        "handoff_id": { "type": "string", "description": "MUST equal the task-request handoff_id" },
+        "continuation_lane": { "type": "string", "default": "main" },
+        "payload_id": { "type": "string" },
+        "plan_revision": { "type": ["integer", "string"] },
+        "round_index": { "type": ["integer", "string"] },
+        "from_role": { "type": "string" },
+        "to_role": { "const": "orchestrator" },
+        "reply_to_payload_id": { "type": "string" }
+      }
+    },
+    "status": { "type": "string", "enum": ["done", "failed"] },
+    "stage": { "type": "string" },
+    "summary_ref": { "type": "string", "description": "artifact ref: human-readable result summary" },
+    "produced": {
+      "type": "array",
+      "description": "durable rows the worker recorded (it wrote them via record apply; these are refs)",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "ref"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["result", "measurement", "analysis", "idea", "finding", "reference", "artifact", "decision", "claim"] },
+          "ref": { "type": "string" }
+        }
+      }
+    },
+    "error": { "type": "string", "description": "required when status=failed; the worker leaves experiment.status='failed', not 'done'" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "failed" } } },
+      "then": { "required": ["error"] }
+    }
+  ]
+}

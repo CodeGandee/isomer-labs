@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/handoff",
+  "title": "handoff records",
+  "description": "Open/advance the logical handoff ledger. record_id = '<quest_id>:<handoff_id>'. Resends REUSE handoff_id; receiver dedups an already-'processed' id.",
+  "oneOf": [
+    {
+      "title": "handoff.open",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "handoff_id", "schema_id"],
+      "properties": {
+        "record_type": { "const": "handoff.open" },
+        "record_id": { "type": "string" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "handoff_id": { "type": "string" },
+        "round_index": { "type": "integer", "minimum": 0 },
+        "schema_id": { "type": "string", "pattern": "^deepresearch\\.email\\.[a-z-]+$" },
+        "from_role": { "type": "string" },
+        "to_role": { "type": "string" },
+        "max_attempts": { "type": "integer", "minimum": 1 },
+        "receipt_due_at": { "type": "string" },
+        "result_due_at": { "type": "string" }
+      }
+    },
+    {
+      "title": "handoff.advance",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "status"],
+      "properties": {
+        "record_type": { "const": "handoff.advance" },
+        "record_id": { "type": "string" },
+        "at": { "type": "string" },
+        "status": { "enum": ["sent", "acked", "result_received", "processed", "failed"] },
+        "bump_attempt": { "type": "boolean", "description": "true on a resend; increments attempt_count" }
+      }
+    }
+  ]
+}

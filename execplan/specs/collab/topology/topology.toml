@@ -1,0 +1,148 @@
+# Generated topology contract for the DeepResearch loop.
+# Mode tree-loop: all normal results reply to the immediate upstream (the Orchestrator root).
+# Authority: specs/collab/collab-overview.md. Comms families: specs/comms/templates.toml.
+# Round iteration is the root re-dispatching via durable self-wakeup — a CONTINUATION, not a
+# participant cycle — so no cycle-normalization is required.
+
+mode = "tree-loop"
+root = "orchestrator"
+description = "Star/tree rooted at the Orchestrator. Five specialist roles each reply upstream to the Orchestrator via the shared task-request -> receipt -> task-result families. Continuation is the root's own durable self-wakeup, not a peer cycle."
+
+# Stable correlation metadata carried by every route's mail (see comms _metadata schema).
+[correlation]
+loop_id           = "quest_id"     # stable id == quest_id; idempotency scope for handoff_id
+handoff_id        = "per-dispatch" # stable; resends REUSE it -> receiver dedup via handoff ledger
+continuation_lane = "main"         # default lane; multi-lane self-wakeup supported with no topology change
+
+# ── Specialist routes: Orchestrator dispatches one stage; the role acks then replies upstream. ──
+# All routes share the generic families; the target role + the payload `stage` field differentiate them.
+
+[[route]]
+id = "orchestrator-to-scout-ideator"
+from = "orchestrator"
+to = "scout-ideator"
+request_family = "deepresearch.email.task-request"
+ack_family = "deepresearch.email.receipt"
+reply_family = "deepresearch.email.task-result"
+reply_to = "orchestrator"
+stages = ["intake-audit", "scope", "baseline", "idea"]
+description = "Dispatch intake-audit (audit pre-existing assets) / scoping / baseline framing / hypothesis + route selection."
+
+[[route]]
+id = "orchestrator-to-experimenter"
+from = "orchestrator"
+to = "experimenter"
+fanout = 4                          # up to K isolated-worktree instances; 1 by default
+request_family = "deepresearch.email.task-request"
+ack_family = "deepresearch.email.receipt"
+reply_family = "deepresearch.email.task-result"
+reply_to = "orchestrator"
+stages = ["experiment"]
+description = "Dispatch one bounded experiment per worker on an isolated worktree; collect results."
+
+[[route]]
+id = "orchestrator-to-analyst"
+from = "orchestrator"
+to = "analyst"
+request_family = "deepresearch.email.task-request"
+ack_family = "deepresearch.email.receipt"
+reply_family = "deepresearch.email.task-result"
+reply_to = "orchestrator"
+stages = ["analysis"]
+description = "Dispatch analysis/ablation; collect confirms|blocks|inconclusive verdict."
+
+[[route]]
+id = "orchestrator-to-writer"
+from = "orchestrator"
+to = "writer"
+request_family = "deepresearch.email.task-request"
+ack_family = "deepresearch.email.receipt"
+reply_family = "deepresearch.email.task-result"
+reply_to = "orchestrator"
+stages = ["outline", "write", "rebuttal"]
+description = "Dispatch paper outline / report-manuscript synthesis from supported claims / external-reviewer rebuttal."
+
+[[route]]
+id = "orchestrator-to-reviewer"
+from = "orchestrator"
+to = "reviewer"
+request_family = "deepresearch.email.task-request"
+ack_family = "deepresearch.email.receipt"
+reply_family = "deepresearch.email.task-result"
+reply_to = "orchestrator"
+stages = ["review"]
+description = "Dispatch skeptical audit of the draft + claim/evidence map."
+
+# ── Continuation edge: root -> self. NOT a normal-result route (exempt from the tree-loop local-close
+# rule); it is the root re-dispatching each round. Durable self-mail, never a live reminder. ──
+[continuation]
+kind = "self-wakeup"
+from = "orchestrator"
+to = "orchestrator"
+family = "deepresearch.email.self-wakeup"
+lane_field = "continuation_lane"
+lane_default = "main"
+mechanism = "durable self-mail + mail-notifier wake"
+single_lane_initial = true          # invariant single_continuation_lane_per_quest; drop to go multi-lane
+cycle_normalization = "not-required"
+description = "Orchestrator arms a durable self-wakeup (state: self_wakeup) to resume the next round; survives gateway/provider restart. Late delivery of a superseded/consumed handoff_id is ignored (dedup)."
+
+# ── Orchestrator-internal stages: handled by the orchestrator-tick, NOT dispatched as routes. ──
+# decision, finalize, and optimize are owned by the root and produce no participant handoff. `optimize`
+# (algorithm-first frontier mgmt) ranks/promotes/fuses candidates and then dispatches ordinary
+# `experiment` task-requests to the Experimenter via the experiment route above.
+[internal_stages]
+stages = ["decision", "finalize", "optimize"]
+owner = "orchestrator"
+note = "Cursor states handled inside deepresearch-orchestrator-tick; they record decision/finalize/frontier rows and may open experiment routes. No new mail family."
+
+# ── Tool edges: harness command invocations, not mail routes (recorded for completeness). ──
+[[tool_edge]]
+caller = "orchestrator"
+tool = "state"
+description = "Read/validate/query the control plane; apply records (only write path)."
+
+[[tool_edge]]
+caller = "orchestrator"
+tool = "experiment-runner"
+description = "Execute an experiment's run contract (domain-pluggable adapter)."
+
+[[tool_edge]]
+caller = "orchestrator"
+tool = "validator"
+description = "Apply the baseline/result validity gate + claim-evidence consistency check."
+
+[[tool_edge]]
+caller = "orchestrator"
+tool = "bo-refiner"
+description = "Propose next search-space point(s) from observed primary measurements."
+
+[[tool_edge]]
+caller = "orchestrator"
+tool = "literature"
+description = "Search/fetch arxiv/web; record reference rows + cached artifacts."
+
+[[tool_edge]]
+caller = "orchestrator"
+tool = "findings-store"
+description = "Persist/recall durable findings + reflexion (quest-scoped by default)."
+
+[[tool_edge]]
+caller = "orchestrator"
+tool = "git-checkpoint"
+description = "Commit durable artifacts + record branch/worktree refs."
+
+[[tool_edge]]
+caller = "orchestrator"
+tool = "artifact-compiler"
+description = "Render reports/figures (domain-pluggable adapter)."
+
+[[tool_edge]]
+caller = "orchestrator"
+tool = "manuscript-validator"
+description = "outline validate (pre-write gate) + manuscript validate (language hygiene) — also called by Writer/Reviewer."
+
+[[tool_edge]]
+caller = "orchestrator"
+tool = "publication-extensions"
+description = "Domain/publication helpers (Writer-invoked): render plot|polish|slides, manuscript polish|datastmt, knowledge query. Resolve built-in optional knowledge_pack adapters (paper-plot, figure-polish, nature-*, science-scipkg); generic stub when none enabled."

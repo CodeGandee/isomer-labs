@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/operator-event",
+  "title": "operator intent event",
+  "description": "Record an operator control-plane event. record_id = event_id. Actual lifecycle/mode changes are applied by the control commands; this is the audit row.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "kind"],
+  "properties": {
+    "record_type": { "const": "operator_event.record" },
+    "record_id": { "type": "string" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string" },
+    "kind": { "enum": ["pause", "resume", "stop", "override", "recover", "set-mode", "takeover", "handback", "confirm"] },
+    "detail": { "type": "string" }
+  }
+}

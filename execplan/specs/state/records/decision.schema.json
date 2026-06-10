@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/decision",
+  "title": "decision records",
+  "description": "Record a route decision, or confirm a gated one. A 'stop' with requires_user_confirm=1 acts only once confirmed (invariant gated_stop_confirmed).",
+  "oneOf": [
+    {
+      "title": "decision.record",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "route"],
+      "properties": {
+        "record_type": { "const": "decision.record" },
+        "record_id": { "type": "string" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "round_index": { "type": "integer", "minimum": 0 },
+        "from_stage": { "type": "string" },
+        "to_stage": { "type": "string" },
+        "route": { "enum": ["continue", "branch", "reset", "stop", "finalize", "intake-audit", "scope", "baseline", "idea", "experiment", "analysis", "outline", "write", "review", "rebuttal", "optimize"] },
+        "rationale_ref": { "type": "string" },
+        "requires_user_confirm": { "type": "boolean", "default": false }
+      }
+    },
+    {
+      "title": "decision.confirm",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at"],
+      "properties": {
+        "record_type": { "const": "decision.confirm" },
+        "record_id": { "type": "string", "description": "= decision_id being confirmed; sets confirmed=1" },
+        "at": { "type": "string" },
+        "rationale_ref": { "type": "string" }
+      }
+    }
+  ]
+}

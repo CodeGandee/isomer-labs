@@ -1,0 +1,4 @@
+# Credential stores — never commit secrets
+**/auth/
+*.env
+vars.env
