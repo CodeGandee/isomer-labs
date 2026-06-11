@@ -1,0 +1,7 @@
+# DeepScientist source-install artifacts
+app/*
+!app/.gitkeep
+
+# DeepScientist runtime workspaces and quest state
+workspace/*
+!workspace/.gitkeep
