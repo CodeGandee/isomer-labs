@@ -1,0 +1,24 @@
+[project]
+dependencies = ["scipy>=1.17.1,<2", "mdutils>=1.8.1,<2", "ruff>=0.15.16,<0.16", "mkdocs-material>=9.7.6,<10", "mypy>=2.1.0,<3", "attrs>=26.1.0,<27", "omegaconf>=2.3.0,<3", "imageio>=2.37.3,<3"]
+name = "isomer-labs"
+requires-python = ">= 3.11"
+version = "0.1.0"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-aarch64"]
+
+[tool.pixi.pypi-dependencies]
+isomer_labs = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+lint = "ruff check ."
+typecheck = "mypy src"
+test = "python -m unittest discover -s tests/unit"
+
+[tool.pixi.dependencies]
+python = "3.11.*"
