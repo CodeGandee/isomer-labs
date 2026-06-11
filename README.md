@@ -20,6 +20,14 @@ The repository starts intentionally light:
 - sketch multi-agent research workflows and interfaces
 - keep experiments private until they are ready to split out
 
+## External References
+
+Local-only external checkouts live under `extern/orphan/` and are not committed.
+The current reference package is:
+
+- `DeepScientist`: cloned from `https://github.com/ResearAI/DeepScientist` into
+  `extern/orphan/DeepScientist` with `--depth=1`.
+
 ## Status
 
 Initial sketch. Structure and scope are expected to change.
