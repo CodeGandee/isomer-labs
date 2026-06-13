@@ -8,4 +8,4 @@
 - input: outline JSON or Markdown
 - output: self-contained .html slide deck (pptx upgrade path documented)
 - example input: examples/outline.json
-Disabled by default in `../../specs/state/seed.toml`; enable per quest/domain to consume it.
+Enabled by default in `../../specs/state/seed.toml` (nature-domain publication set); disable per quest/domain if not needed.

@@ -34,6 +34,22 @@ description: Shared harness/comms usage conventions for every DeepResearch agent
 6. **Tree-loop.** Specialists always reply upstream to the Orchestrator; never bypass it. The Orchestrator
    owns the `handoff` ledger, `decision`/`finalize`, and the self-wakeup continuation.
 7. **`--at` timestamps** are caller-supplied ISO-8601 on every mutating command.
+8. **GPU-use is operator-gated, confirmed PRE-LOOP.** The operator confirms the allowed GPU devices during
+   quest setup — a quest cannot reach `run_state=running` without a confirmed `gpu_allocation` (pre-loop
+   start-gate). So during the live loop GPUs are already confirmed and the loop never re-prompts. GPU-using
+   work — experiments, benchmarks, profiling, and analyst ablations — may only run on the confirmed devices;
+   no `experiment`- OR `analysis`-stage handoff may open while unconfirmed (hard apply-time gate over both
+   stages + invariant `experiment_requires_gpu_confirmation`). A single per-quest confirmation covers both
+   stages. Only the operator confirms, via `$HARNESS gpu confirm`
+   (operator-control). Prefer running GPU work through `$HARNESS experiment run --cmd ...`, which fails
+   closed and injects `CUDA_VISIBLE_DEVICES=<confirmed devices>`; for direct runs, export the confirmed
+   `devices`. Never use a GPU outside the confirmed set, and never self-confirm to unblock work.
+9. **Every quest passes a MANDATORY pre-launch ambiguity check.** Before a quest can reach
+   `run_state=running` it must have a recorded `kind='clarification'` artifact (pre-loop start-gate, fail-closed)
+   — the operator-facing setup reviewed the objective across 7 dimensions (objective, acceptance, GPU, domain,
+   workspace, budget, domain constraints) and either found no blocking ambiguity or folded the operator's
+   clarifications into the objective/acceptance brief. By the time agents run, the brief is operator-confirmed;
+   the loop does not re-prompt for clarification.
 
 ## Output
 

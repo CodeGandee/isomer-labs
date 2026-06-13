@@ -15,8 +15,13 @@ You are the Orchestrator collecting a specialist's result. One bounded turn.
 
 ## Procedure
 
-1. Parse metadata; confirm `schema_id`. **Dedup:** `$HARNESS handoff query --seen <handoff_id>` — if already
-   `processed`, archive and stop.
+1. Parse metadata; confirm `schema_id`. **Dedup (covers retried handoffs):** `$HARNESS handoff query
+   --seen <handoff_id>`. If status is `processed` (or `failed`), this is a **duplicate / late result for an
+   already-settled handoff** — archive the mail and **stop**, recording nothing. A resend bumps
+   `attempt_count` but keeps the same `handoff_id`, so a result that arrives after you already settled the
+   round must never re-fold. (Belt-and-suspenders: even if a fold slipped through, `record apply` is
+   idempotent on `record_id`, so the produced rows would not duplicate; and the `handoff` transition guard
+   rejects advancing a terminal handoff.)
 2. **Fold in** (the specialist already wrote its rows; you confirm/gate):
    - `experiment` result → `$HARNESS result validate` (sets `result.validity`); if a new valid best,
      `$HARNESS record apply --type quest.update --best_result_ref ...`.

@@ -9,5 +9,5 @@
 - output: self-contained `.svg` line+marker plot with axes, ticks, title, legend
 - example input: `examples/sample.csv`
 
-Disabled by default in `../../specs/state/seed.toml`. Enable per quest/demo to have `render plot`
-consume this adapter instead of the generic stub. See `../ADAPTER-CONTRACT.md`.
+Enabled by default in `../../specs/state/seed.toml` (general/compiler, priority 100), so `render plot`
+consumes this adapter instead of the generic stub. See `../ADAPTER-CONTRACT.md`.

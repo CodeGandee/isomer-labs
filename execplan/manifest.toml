@@ -1,6 +1,6 @@
 # Generated package metadata for this execplan revision.
 generated_source = true
-generated_with = "hand-authored contract package (pre-harness-implementation)"
+generated_with = "hand-authored contract package + implemented harness (bin/src/schemas), packs, and docs"
 scaffold_profile = "execplan-shell"
 loop_slug = "deepresearch"
 generated_date = "2026-06-10"
@@ -8,10 +8,8 @@ plan_revision = 1
 topology_mode = "tree-loop"
 root_participant = "orchestrator"
 purpose_directories = ["specs", "skills", "agents", "harness", "docs"]
-# Default layers intentionally not yet materialized at this revision:
+# Harness (bin/src/schemas) and docs are now IMPLEMENTED and materialized. Remaining intentionally-omitted layers:
 omitted_default_layers = [
-  "harness/bin", "harness/src", "harness/schemas",   # harness implementation pending (commands.toml is the authoritative surface)
-  "docs/*",                                            # full support docs pending execplan-finalize (README placeholder present)
   "adrs",                                              # no ADRs recorded yet (decisions captured inline via this thread)
   "packs/*/README.md",                                 # pack dirs self-document via pack.toml+pack.md; examples/ indexed by packs/README.md (skill-dir-style exception)
 ]
@@ -67,7 +65,7 @@ purpose = "communication renderers"
 
 [[artifacts]]
 id = "state-schema"
-description = "sqlite control-plane schema (24 tables, stage_catalog seed, enums, indexes)."
+description = "sqlite control-plane schema (28 tables incl. gpu_allocation, stage_catalog seed, enums, indexes)."
 path = "specs/state/schema.sql"
 artifact_kind = "file"
 purpose = "state schema"
@@ -81,7 +79,7 @@ purpose = "state authority"
 
 [[artifacts]]
 id = "state-invariants"
-description = "32 named validation checks run by `harness state validate`."
+description = "33 named validation checks run by `harness state validate`."
 path = "specs/state/invariants.toml"
 artifact_kind = "file"
 purpose = "state invariants"
@@ -95,7 +93,7 @@ purpose = "state seed"
 
 [[artifacts]]
 id = "records"
-description = "JSON Schemas for `record apply` payloads (the only state write path); 22 families / 33 record types."
+description = "JSON Schemas for `record apply` payloads (the only state write path); 23 families / 34 record types."
 path = "specs/state/records/"
 artifact_kind = "dir"
 purpose = "record-apply schemas"
@@ -117,7 +115,7 @@ purpose = "generated skill packages"
 
 [[artifacts]]
 id = "packs"
-description = "Built-in optional knowledge_pack adapters (ported DeepScientist domain/publication helpers); disabled by default, enabled per quest/domain."
+description = "9 built-in knowledge_pack adapters (ported DeepScientist domain/publication helpers). Publication set ENABLED by default — paper-latex (render report→LaTeX/PDF), paper-plot (render plot→figures), figure-polish, + nature-figure/paper2ppt/data/polishing (nature-domain); science-scipkg/mentor-standards reference packs stay disabled. Resolution is command-aware (pack.toml `backs`), so each render/manuscript command binds its own adapter."
 path = "packs/"
 artifact_kind = "dir"
 purpose = "built-in optional knowledge packs"
@@ -125,7 +123,7 @@ purpose = "built-in optional knowledge packs"
 # ───────────────── Agents ─────────────────
 [[artifacts]]
 id = "agents"
-description = "6 agent bindings (orchestrator + scout-ideator, experimenter x≤4, analyst, writer, reviewer) + role prompts + notifier prompts."
+description = "6 agent bindings (orchestrator + scout-ideator, experimenter x≤8, analyst, writer, reviewer) + role prompts + notifier prompts."
 path = "agents/bindings.toml"
 artifact_kind = "file"
 purpose = "generated concrete agent bindings"
@@ -133,7 +131,7 @@ purpose = "generated concrete agent bindings"
 # ───────────────── Harness ─────────────────
 [[artifacts]]
 id = "harness"
-description = "Loop-local command registry (core + domain-pluggable extension). Implementation (bin/src) pending; commands.toml is the authoritative surface."
+description = "Loop-local command registry (core + domain-pluggable extension). Implemented in bin/ + src/ (runnable harness); commands.toml is the registry surface."
 path = "harness/commands.toml"
 artifact_kind = "file"
 purpose = "generated loop-local helper surface"
@@ -141,7 +139,7 @@ purpose = "generated loop-local helper surface"
 # ───────────────── Docs ─────────────────
 [[artifacts]]
 id = "docs"
-description = "Generated human support views (orientation README present; full set pending execplan-finalize)."
+description = "Human support views: README, start-runbook, credentials, publication-quality (materialized)."
 path = "docs/"
 artifact_kind = "dir"
 purpose = "generated human support views"
@@ -149,12 +147,12 @@ purpose = "generated human support views"
 # Participants summary for quick reference.
 [participants]
 agents = ["orchestrator", "scout-ideator", "experimenter", "analyst", "writer", "reviewer"]
-experimenter_fanout_max = 4
+experimenter_fanout_max = 8
 experimenter_fanout_default = 1
 internal_stages = ["decision", "finalize", "optimize"]
 tools = ["state", "experiment-runner", "validator", "manuscript-validator", "bo-refiner", "literature", "findings-store", "git-checkpoint", "artifact-compiler"]
 total_live_instances_default = 6
 
-# Future extension hooks (documented, not implemented): rebuttal stage; see specs/collab/collab-overview.md.
-[future_hooks]
-rebuttal = "post-submission external-reviewer response; reserved stage + record family + route value"
+# No reserved/unimplemented stages remain. The rebuttal stage was promoted to a live builtin stage
+# (ordinal 85, owned by the Writer; see specs/state/schema.sql stage_catalog + the `rebuttal` branch of
+# skills/deepresearch-on-task-request). All 13 catalog stages are implemented.

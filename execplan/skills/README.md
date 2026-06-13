@@ -20,4 +20,5 @@ entered from Houmao notifier prompts after the separate notifier detects open ma
 
 Publication/domain extension behavior is delivered via stages (`outline`, `rebuttal`), harness extension
 commands (`render plot|polish|slides`, `manuscript polish|datastmt`, `knowledge query`), and built-in
-optional `knowledge_pack`s (see `../packs/`, disabled by default).
+`knowledge_pack`s (see `../packs/`; the publication set is enabled by default, the `science-scipkg` +
+`mentor-standards` reference packs are disabled).

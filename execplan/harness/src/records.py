@@ -14,8 +14,9 @@ from paths import RECORDS_DIR
 
 # Tables carrying updated_at (set on every write); participant carries no timestamps.
 UPDATED_TABLES = {"quest", "round", "branch", "idea", "experiment", "claim",
-                  "finding_memory", "self_wakeup", "handoff", "intake_asset", "frontier_entry"}
-NO_CREATED = {"participant"}
+                  "finding_memory", "self_wakeup", "handoff", "intake_asset", "frontier_entry",
+                  "gpu_allocation"}
+NO_CREATED = {"participant", "gpu_allocation"}
 
 # record_type -> write spec. id_from: 'record_id' (pk[0]=record_id) | 'fields' (pk cols in payload) |
 # 'split' (record_id split on ':' into pk). mode: upsert | insert | update | special.
@@ -53,6 +54,7 @@ RECORD_MAP = {
     "intake_asset.record":     dict(table="intake_asset", pk=["asset_id"], id_from="record_id", mode="upsert"),
     "frontier.record":         dict(table="frontier_entry", pk=["entry_id"], id_from="record_id", mode="upsert"),
     "finalize.record":         dict(table="finalize_outcome", pk=["outcome_id"], id_from="record_id", mode="insert"),
+    "gpu.confirm":             dict(table="gpu_allocation", pk=["quest_id"], id_from="record_id", mode="upsert", force={"status": "confirmed", "confirmed_at": "AT"}),
 }
 
 # Apply-time lifecycle transition guards. Maps current_status -> allowed next states (same-status and
@@ -200,6 +202,14 @@ def apply(conn: sqlite3.Connection, payload: dict) -> dict:
     if guard_col and guard_col in cols:
         _guard_transition(conn, table, pk, pkvals, cols[guard_col])
 
+    # Pre-loop launch gates: a quest may not START (not_started -> running) unless (a) the operator has
+    # confirmed its GPU device set, and (b) the mandatory pre-launch ambiguity check has been recorded.
+    # Both are launch preconditions, not mid-loop prompts. Only the initial launch is gated; resume
+    # transitions (paused/recovering/parked -> running) are NOT re-gated.
+    if table == "quest" and cols.get("run_state") == "running":
+        _clarification_gate(conn, pkvals["quest_id"])
+        _gpu_launch_gate(conn, pkvals["quest_id"])
+
     if spec["mode"] == "insert":
         _insert_or_ignore(conn, table, cols)
     elif spec["mode"] == "upsert":
@@ -238,9 +248,85 @@ def _update(conn, table, pk, pkvals, cols):
         raise RecordError(f"update matched no row in {table} for {pkvals}")
 
 
+# Stages whose handoffs may execute code on a GPU (experiment runs/benchmarks/profiling; analyst
+# ablations / mechanism-isolation re-runs). Any handoff in one of these rounds is GPU-gated.
+GPU_GATED_STAGES = ("experiment", "analysis")
+
+
+def _gpu_gate(conn, quest_id, round_index, handoff_id):
+    """Hard gate: a handoff whose round is a GPU-gated stage (experiment or analysis) may not open unless
+    the quest has an operator-CONFIRMED gpu_allocation. Stage is read from the `round` (handoff has no
+    stage column). Fail-closed (confirmed-but-missing devices => blocked). Handoffs in other / unknown
+    stages pass. The Experimenter additionally restricts CUDA_VISIBLE_DEVICES to the confirmed set at run
+    time (`experiment run` injects it and itself fails closed)."""
+    if round_index is None:
+        return  # round-less handoff: cannot be a code-executing dispatch
+    rr = conn.execute("SELECT stage FROM round WHERE quest_id=? AND round_index=?", (quest_id, round_index)).fetchone()
+    if not rr or rr[0] not in GPU_GATED_STAGES:
+        return
+    stage = rr[0]
+    try:
+        row = conn.execute("SELECT status, devices FROM gpu_allocation WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        row = None
+    if not row or row[0] != "confirmed" or not row[1]:
+        raise RecordError(
+            f"{stage} dispatch blocked for quest {quest_id!r} (handoff {handoff_id!r}): GPU use is not "
+            f"operator-confirmed. An operator must run `gpu confirm --quest-id {quest_id} --devices <list>` "
+            f"(or record gpu.confirm) before any GPU-using stage ({'/'.join(GPU_GATED_STAGES)}) may run.")
+
+
+def _gpu_launch_gate(conn, quest_id):
+    """Pre-loop gate: a quest may not START (not_started -> running) without an operator-confirmed
+    gpu_allocation. GPU confirmation is a launch precondition established during quest setup, NOT a
+    mid-loop prompt. Resume transitions (paused/recovering/parked -> running) are exempt — confirmation
+    was already required at first launch, so the live loop never re-asks. Fail-closed."""
+    cur = conn.execute("SELECT run_state FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    if cur is not None and cur[0] != "not_started":
+        return  # resume, not initial launch
+    try:
+        row = conn.execute("SELECT status, devices FROM gpu_allocation WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        row = None
+    if not row or row[0] != "confirmed" or not row[1]:
+        raise RecordError(
+            f"quest {quest_id!r} cannot start (run_state -> running): GPU use is not operator-confirmed. "
+            f"Run `gpu confirm --quest-id {quest_id} --devices <list>` during quest setup, BEFORE launching "
+            f"the loop. GPU confirmation is a pre-loop requirement, not a mid-loop prompt.")
+
+
+def _clarification_gate(conn, quest_id):
+    """Pre-loop gate: a quest may not START (not_started -> running) until the mandatory pre-launch
+    ambiguity check has been recorded — a kind='clarification' artifact for the quest (pointing at
+    runs/<q>/objective/clarification.md), capturing either 'no blocking ambiguity' or the operator's
+    resolved clarifications folded into the objective/acceptance brief. Fail-closed. Resume transitions
+    (paused/recovering/parked -> running) are exempt — the check was already done at first launch."""
+    cur = conn.execute("SELECT run_state FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    if cur is not None and cur[0] != "not_started":
+        return  # resume, not initial launch
+    try:
+        n = conn.execute("SELECT COUNT(*) FROM artifact WHERE quest_id=? AND kind='clarification'",
+                         (quest_id,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        n = 0
+    if not n:
+        raise RecordError(
+            f"quest {quest_id!r} cannot start (run_state -> running): the mandatory pre-launch ambiguity "
+            f"check has not been recorded. Run the clarification step during quest setup and record a "
+            f"kind='clarification' artifact (runs/{quest_id}/objective/clarification.md) BEFORE launching. "
+            f"The objective must be reviewed for unclear/underspecified parts (objective, acceptance, GPU, "
+            f"domain, workspace, budget, domain constraints) and confirmed by the operator first.")
+
+
 def _special(conn, kind, pkvals, payload, at):
     q, h = pkvals["quest_id"], pkvals["handoff_id"]
     if kind == "handoff_open":
+        # GPU-use confirmation gate (experiment-stage rounds only; stage derived from the round).
+        ri = payload.get("round_index")
+        if ri is None:
+            r = conn.execute("SELECT round_index FROM handoff WHERE quest_id=? AND handoff_id=?", (q, h)).fetchone()
+            ri = r[0] if r else None
+        _gpu_gate(conn, q, ri, h)
         existing = conn.execute("SELECT attempt_count FROM handoff WHERE quest_id=? AND handoff_id=?", (q, h)).fetchone()
         if existing is None:
             cols = {k: _norm(v) for k, v in payload.items()

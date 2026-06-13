@@ -433,6 +433,20 @@ CREATE TABLE IF NOT EXISTS quirk (
     created_at  TEXT NOT NULL
 );
 
+-- GPU-use confirmation (operator-gated compute). One confirmed device set per quest (scope: per-quest,
+-- once). HARD GATE: an `experiment`-stage handoff may not open unless the quest's row here is
+-- status='confirmed' with a non-empty device set (enforced apply-time in records.py + invariant
+-- experiment_requires_gpu_confirmation). The Experimenter restricts CUDA_VISIBLE_DEVICES to `devices`.
+CREATE TABLE IF NOT EXISTS gpu_allocation (
+    quest_id      TEXT PRIMARY KEY REFERENCES quest(quest_id),
+    status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','confirmed')),
+    devices       TEXT,                 -- confirmed CUDA device set, comma list e.g. '0' or '0,1'
+    confirmed_by  TEXT,
+    confirmed_at  TEXT,
+    note          TEXT,
+    updated_at    TEXT
+);
+
 -- ──────────────────────────────────────────────────────────────────────────
 -- Indexes
 -- ──────────────────────────────────────────────────────────────────────────

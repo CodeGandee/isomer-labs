@@ -8,4 +8,4 @@
 - input: data-inventory JSON
 - output: .md Data Availability statement + citations + FAIR checklist
 - example input: examples/inventory.json (never invents DOIs/accessions)
-Disabled by default in `../../specs/state/seed.toml`; enable per quest/domain to consume it.
+Enabled by default in `../../specs/state/seed.toml` (nature-domain publication set); disable per quest/domain if not needed.

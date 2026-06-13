@@ -8,4 +8,4 @@
 - input: an existing .svg figure
 - output: polished .svg (white bg, frame, normalized font, optional title/caption)
 - example: use paper-plot/examples/sample.svg as --input
-Disabled by default in `../../specs/state/seed.toml`; enable per quest/domain to consume it.
+Enabled by default in `../../specs/state/seed.toml` (publication set); disable per quest/domain if not needed.

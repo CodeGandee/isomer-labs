@@ -341,6 +341,32 @@ summary = "List open (armed|delivered) self-wakeups for recovery."
 description = "The authority for 'what does the loop intend to do next'. Used by recover/resume to rebuild intent without a fragile live turn."
 
 [[command]]
+name = "gpu status"
+group = "gpu"
+tier = "core"
+domain_pluggable = false
+bin = "bin/gpu"
+mutates_state = false
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = []
+summary = "Show the operator-confirmed GPU device set for a quest (confirmed?, devices)."
+description = "Read the per-quest gpu_allocation. Used by the orchestrator-tick GPU gate before dispatching experiment/analysis handoffs and by the Experimenter/Analyst to learn which CUDA_VISIBLE_DEVICES they may use."
+
+[[command]]
+name = "gpu confirm"
+group = "gpu"
+tier = "core"
+domain_pluggable = false
+bin = "bin/gpu"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["gpu.confirm"]
+summary = "OPERATOR-ONLY: confirm the GPU device set a quest's GPU-using stages may use (e.g. --devices '0' or '0,1'; integer indices only)."
+description = "Records gpu.confirm (status=confirmed) for the quest, satisfying the hard apply-time gate over experiment+analysis handoffs (invariant experiment_requires_gpu_confirmation) and enabling `experiment run`. devices must be a comma list of non-negative integers (schema-validated; 'all'/'-1'/empty rejected). Per-quest scope: confirm once; re-run only to change the device set. Agents must never self-confirm."
+
+[[command]]
 name = "handoff open"
 group = "handoff"
 tier = "core"
@@ -376,8 +402,8 @@ mutates_state = false
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = []
-summary = "List due/overdue or unobserved handoffs for resend decisions and dedup checks."
-description = "Supports the relay/edge-loop supervisor: --due returns handoffs past due with status not in (processed,failed); --seen HANDOFF_ID answers the receiver dedup check."
+summary = "List due/overdue/stalled or unobserved handoffs for resend decisions and dedup checks."
+description = "Supports the relay/edge-loop supervisor: --due returns handoffs not in (processed,failed); --seen HANDOFF_ID answers the receiver dedup check; --stalled --now <iso> returns in-flight (sent|acked) handoffs past their receipt/result due time with attempts remaining (action=resend) or at max_attempts (action=fail+decision) — the liveness/heartbeat reconciliation input."
 
 [[command]]
 name = "findings add"
@@ -548,6 +574,32 @@ applies = []
 summary = "List/inspect recorded references and their evidence links."
 description = "Read-only view over reference + claim_evidence for the Writer/Reviewer (e.g. building a references list)."
 
+[[command]]
+name = "lit bib"
+group = "lit"
+tier = "core"
+domain_pluggable = false
+bin = "bin/lit"
+mutates_state = false
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = []
+summary = "Emit a BibTeX .bib from the quest's recorded reference rows (for paper-latex --bib citations)."
+description = "Writer step: turns recorded `reference` rows into a .bib the manuscript cites against; `render report` (paper-latex) resolves \\cite via --bibliography. Pairs with `lit search`/`lit fetch` to build a real Related Work + bibliography."
+
+[[command]]
+name = "manuscript bundle"
+group = "manuscript"
+tier = "core"
+domain_pluggable = false
+bin = "bin/manuscript"
+mutates_state = false
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = []
+summary = "Emit a DeepScientist-style submission bundle from durable state (evidence ledger + claim-evidence map + submission checklist)."
+description = "Finalize/write step: from claims, claim_evidence, analyses, references, and artifacts, writes evidence_ledger.md, claim_evidence_map.json, and an auto-derived submission_checklist.md (figures present? compiled PDF present? every supported claim has evidence?). Read-only over the DB; writes files only — the publication-grade audit bundle that brings parity with the DeepScientist paper package."
+
 # Git: commit/tag/branch-record inside an EXISTING worktree. Worktree creation -> workspace-mgr.
 
 [[command]]
@@ -604,8 +656,8 @@ mutates_state = true
 idempotent = true
 reads = ["runs/state.sqlite", "../specs/workspace/workspace.toml"]
 applies = ["runs/state.sqlite", "runs/<quest-id>/round-<n>/"]
-summary = "Execute an experiment's locked run contract and capture results/measurements honestly."
-description = "Default generic adapter runs a declared command in the experiment's isolated worktree, captures stdout/exit/log, and records result + measurement rows. Domains override via a knowledge_pack(kind='runner') adapter (e.g. a training/eval harness). Never invents metrics. Idempotent by experiment_id: re-run resumes or no-ops a completed experiment."
+summary = "Execute an experiment's run contract under the operator-confirmed GPU set (fail-closed); capture results/measurements honestly."
+description = "FAIL-CLOSED GPU enforcement: refuses to run unless the quest has a confirmed gpu_allocation, and injects CUDA_VISIBLE_DEVICES=<confirmed devices> into the child process so executed code (kernels, benchmarks, ncu, generated code) is physically restricted to the confirmed set. With --cmd '<command>' [--cwd <dir>] [--timeout <s>] it runs that command under the injected env and returns rc/stdout/stderr; with no --cmd it reports the confirmed device set (stub until a knowledge_pack(kind='runner') adapter overrides it). Never invents metrics."
 
 [[command]]
 name = "result validate"

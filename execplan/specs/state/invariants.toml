@@ -69,8 +69,8 @@ expect = 0
 [[invariant]]
 name = "mail_handoff_ref_valid"
 area = "comms"
-description = "Every mail_log row that names a handoff_id must reference an existing handoff for the same quest (no orphan handoff references)."
-check = "SELECT COUNT(*) FROM mail_log m WHERE m.handoff_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM handoff h WHERE h.quest_id = m.quest_id AND h.handoff_id = m.handoff_id);"
+description = "Every mail_log row that names a handoff_id must reference an existing handoff for the same quest (no orphan handoff references). Self-wakeup mail is exempt: its metadata handoff_id is a continuation/lane id, not a handoff FK."
+check = "SELECT COUNT(*) FROM mail_log m WHERE m.handoff_id IS NOT NULL AND m.schema_id NOT LIKE '%self-wakeup%' AND NOT EXISTS (SELECT 1 FROM handoff h WHERE h.quest_id = m.quest_id AND h.handoff_id = m.handoff_id);"
 expect = 0
 
 # ───────────────── Claim ↔ evidence consistency ─────────────────
@@ -242,4 +242,11 @@ name = "gated_stop_confirmed"
 area = "structure"
 description = "A quest must not be stopped on a gated stop decision that the operator never confirmed."
 check = "SELECT COUNT(*) FROM decision d JOIN quest q ON q.quest_id = d.quest_id WHERE d.route='stop' AND d.requires_user_confirm=1 AND d.confirmed=0 AND q.run_state='stopped';"
+expect = 0
+
+[[invariant]]
+name = "experiment_requires_gpu_confirmation"
+area = "structure"
+description = "GPU-use gate: any handoff in a GPU-using-stage round (experiment OR analysis — experiments/benchmarks/profiling and analyst ablations may execute GPU code) requires the quest to have an operator-confirmed gpu_allocation (status='confirmed' with a non-empty device set). GPU-using work must not run on unconfirmed GPUs. (Stage comes from the round; handoff has no stage column.)"
+check = "SELECT COUNT(*) FROM handoff h JOIN round r ON r.quest_id=h.quest_id AND r.round_index=h.round_index WHERE r.stage IN ('experiment','analysis') AND NOT EXISTS (SELECT 1 FROM gpu_allocation g WHERE g.quest_id=h.quest_id AND g.status='confirmed' AND g.devices IS NOT NULL AND g.devices<>'');"
 expect = 0

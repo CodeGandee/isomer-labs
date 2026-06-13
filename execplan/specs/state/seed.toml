@@ -84,9 +84,11 @@ summary     = "Skeptical audit of the draft; claim↔evidence coverage."
 # is_builtin  = 0
 # owning_role = "experimenter"
 
-# ───────────────── Knowledge packs / domain adapters (none enabled by default) ─────────────────
-# Domain-neutral platform ships with NO enabled adapters: experiment run / result validate /
-# render * use their generic defaults. Register a pack here to override a pluggable command. Example:
+# ───── Knowledge packs / domain adapters (publication set enabled by default; reference packs disabled) ─────
+# The CORE pluggable commands ship domain-neutral: `experiment run` and `result validate` use their
+# generic defaults (no runner/validator pack enabled). The render/manuscript commands ARE backed by the
+# built-in publication packs below (enabled by default). Register a pack here to override a pluggable
+# command for a domain. Example:
 #
 # [[knowledge_pack]]
 # pack_id  = "ml-train-runner"
@@ -97,10 +99,21 @@ summary     = "Skeptical audit of the draft; claim↔evidence coverage."
 # enabled  = 1
 # priority = 100             # among enabled (domain,kind), lowest priority is primary; must be unique
 
-# ── Built-in optional extension packs (ported DeepScientist domain/publication helpers). ──
-# Registered but DISABLED by default so the core platform stays domain-neutral; enable per quest/domain
-# (`knowledge_pack.register ... enabled=1`) to activate the matching harness command / stage helper.
-# Adapter resolution: among ENABLED packs of one (domain,kind) the lowest unique priority is primary.
+# ── Built-in extension packs (ported DeepScientist domain/publication helpers). ──
+# The PUBLICATION path is ON by default: paper-latex, paper-plot, figure-polish, and the nature-*
+# (figure/slides/data/polishing) packs ship enabled=1 so output quality matches the DeepScientist
+# counterparts. Only science-scipkg + mentor-standards stay disabled=0 (enable per quest/domain via
+# `knowledge_pack.register ... enabled=1`). Adapter resolution: among ENABLED packs of one (domain,kind)
+# the lowest unique priority is primary (adapter_priority_unique invariant).
+
+[[knowledge_pack]]
+pack_id = "paper-latex"
+domain  = "general"
+name    = "paper-latex"
+kind    = "compiler"        # backs `render report` (Markdown manuscript -> LaTeX article -> compiled PDF)
+ref     = "execplan/packs/paper-latex"
+enabled = 1                 # publication path ON: render report now emits a compiled LaTeX/PDF paper
+priority = 90               # lowest among general/compiler; command-aware `backs` avoids clash
 
 [[knowledge_pack]]
 pack_id = "paper-plot"
@@ -108,7 +121,7 @@ domain  = "general"
 name    = "paper-plot"
 kind    = "compiler"        # backs `render plot` (publication-quality plot from data, template-driven)
 ref     = "execplan/packs/paper-plot"
-enabled = 0
+enabled = 1
 priority = 100
 
 [[knowledge_pack]]
@@ -117,16 +130,16 @@ domain  = "general"
 name    = "figure-polish"
 kind    = "compiler"        # backs `render polish` (render-inspect-revise QA on an existing figure)
 ref     = "execplan/packs/figure-polish"
-enabled = 0
+enabled = 1
 priority = 110
 
 [[knowledge_pack]]
 pack_id = "nature-figure"
 domain  = "nature"
 name    = "nature-figure"
-kind    = "compiler"        # backs `render figure`/`render polish` for Nature/high-impact venues (Python or R)
+kind    = "compiler"        # backs `render figure` for Nature/high-impact venues (render plot stays owned by paper-plot)
 ref     = "execplan/packs/nature-figure"
-enabled = 0
+enabled = 1
 priority = 100
 
 [[knowledge_pack]]
@@ -135,7 +148,7 @@ domain  = "nature"
 name    = "nature-paper2ppt"
 kind    = "compiler"        # backs `render slides` (paper -> PPTX deck)
 ref     = "execplan/packs/nature-paper2ppt"
-enabled = 0
+enabled = 1
 priority = 110
 
 [[knowledge_pack]]
@@ -144,7 +157,7 @@ domain  = "nature"
 name    = "nature-data"
 kind    = "template"        # backs `manuscript datastmt` (Data Availability statement + FAIR metadata)
 ref     = "execplan/packs/nature-data"
-enabled = 0
+enabled = 1
 priority = 100
 
 [[knowledge_pack]]
@@ -153,7 +166,7 @@ domain  = "nature"
 name    = "nature-polishing"
 kind    = "template"        # backs `manuscript polish` (Nature-leaning English polishing)
 ref     = "execplan/packs/nature-polishing"
-enabled = 0
+enabled = 1
 priority = 110
 
 [[knowledge_pack]]

@@ -8,4 +8,4 @@
 - input: CSV/JSON data
 - output: Nature-style .svg (Wong palette, despined axes, panel label, Arial)
 - example input: examples/sample.csv
-Disabled by default in `../../specs/state/seed.toml`; enable per quest/domain to consume it.
+Enabled by default in `../../specs/state/seed.toml` (nature-domain publication set); disable per quest/domain if not needed.

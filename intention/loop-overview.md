@@ -26,6 +26,8 @@
   the durable **self-mail wakeup** mechanism backed by a self-wakeup ledger in SQLite.
 - **Keep humans in the loop**: an operator can inspect, redirect, pause/resume, take over, and hand
   control back at any round; high-risk routes (e.g. low-quality stop) require explicit confirmation.
+  Use of physical resources is gated too: experiments may run only on **operator-confirmed GPUs**
+  (`gpu confirm`; enforced apply-time by the `experiment_requires_gpu_confirmation` invariant).
 
 ## Participants
 
@@ -46,7 +48,10 @@ LLM agents:
   structure / keep failed routes" principle.
 - **Analyst** *(LLM)*: analysis campaigns — slice/ablate results, decompose errors, judge whether a
   result confirms / blocks / is inconclusive against a parent claim. Replaces `analysis-campaign`.
-- **Writer** *(LLM)*: synthesize durable evidence into a report/manuscript artifact. Replaces `write`.
+- **Writer** *(LLM)*: synthesize durable evidence into a **publication-grade manuscript** — figures
+  rendered from recorded measurements, a bibliography + related work, an ablation that isolates the
+  operative mechanism, a compiled LaTeX/PDF paper, a **Chinese edition** (`paper-zh.pdf`), and a
+  submission bundle (evidence ledger + claim↔evidence map + checklist). Replaces `write`.
 - **Reviewer** *(LLM)*: skeptical audit of a draft before finalize; rebuttal handling. Replaces
   `review` / `rebuttal`.
 
@@ -107,16 +112,25 @@ Harness tools (deterministic; no LLM; the trust boundary):
   `convergence_patience` rounds); **budget** exhausted (round ceiling or cost/time); or an explicit
   **stop-loss** (novelty/evidence/reader-value collapse). A stop-loss that ends the quest on
   low-quality grounds requires **operator confirmation** (recorded as a gated `decision`).
-- **Final output**: the best supported result/artifact plus the full evidence trail (ideas,
-  experiments, measurements, analyses, decisions, findings) — auditable end to end.
+- **Final output**: a publication-grade, **bilingual** deliverable (compiled `paper.pdf` + `paper-zh.pdf`
+  with figures, bibliography, and submission bundle) for the best supported result, plus the full
+  evidence trail (ideas, experiments, measurements, analyses, decisions, findings) — auditable end to end.
 
 ## Workspace Expectations
 
-- One quest = one **operator-owned git workspace** (mounted via `houmao-utils-workspace-mgr`,
-  git flavor). Research branches → real git branches; parallel experiments → isolated **worktrees**,
-  one mutable work root per Experimenter instance (no shared mutable roots).
-- Shared read-only resources: the objective spec, baseline reference, and any enabled knowledge packs.
-- Durable per-round run artifacts under `runs/<quest-id>/round-<n>/...`; SQLite holds refs + scalars.
+- **One quest = one self-contained folder** `runs/<quest-id>/`. Everything the quest produces lives
+  inside it: the objective (`objective/`), baseline (`baseline/`), the **code repo** (`repo/`, =
+  `quest.workspace_ref`), per-agent worktrees (`workspaces/`), per-round artifacts (`round-<n>/`),
+  report/figures/refs/findings, and rendered mail. The repo is a git workspace (mounted via
+  `houmao-utils-workspace-mgr`, git flavor): research branches → real git branches; parallel experiments
+  → isolated **worktrees**, one mutable work root per Experimenter instance (no shared mutable roots).
+- **Per-quest, not shared**: the objective spec and baseline are canonical under `runs/<quest-id>/`
+  (read-only to agents). `shared/` is OPTIONAL staging/templates only — never the canonical source.
+- The only **cross-quest shared state** is the control plane: the single SQLite DB `runs/state.sqlite`
+  (one active quest at a time) and the `.houmao/mailbox` messaging infra. Knowledge packs live under
+  `execplan/packs/`.
+- **Legacy**: q1 (the first quest) predates this convention and keeps its repo at top-level
+  `outputs/fa4-perf-model` — preserved as-is for provenance; `outputs/` is q1-only and not used by new quests.
 - Findings memory persists across rounds and (optionally) across quests for reuse.
 
 ## Constraints
@@ -128,15 +142,23 @@ Harness tools (deterministic; no LLM; the trust boundary):
 - The Orchestrator is the single authority for stage transitions and termination.
 - All durable bookkeeping goes through the State harness; agents never hand-edit SQLite or memory pages.
 
-## Open Questions (to resolve in clarify-intent / ADRs)
+## Open Questions
 
-- **Domain pluggability surface:** exact contract for overriding Experiment runner / Validator /
-  Artifact compiler per domain (knowledge-pack manifest schema). RESOLVE before `execplan-harness`.
-- **Single-agent vs role-specialized agents:** run one general worker re-prompted per stage, or
-  distinct specialists (Scout/Experimenter/Analyst/Writer/Reviewer)? Affects agent bindings + cost.
+**Resolved during implementation:**
+
+- **Domain pluggability surface** → RESOLVED: knowledge packs declare a `pack.toml` with `backs`
+  (the harness command they serve) + `kind` (compiler/template/reference/…); among enabled packs of one
+  (domain, kind) the lowest unique priority is primary (`adapter_priority_unique` invariant).
+- **Single-agent vs role-specialized agents** → RESOLVED: **role-specialized** — six participants
+  (Orchestrator + Scout/Ideator, Experimenter ×≤4, Analyst, Writer, Reviewer), one per binding.
+- **Concurrency** → RESOLVED: **one active quest at a time**, enforced by the `single_active_quest`
+  invariant (quests share one control-plane DB, distinguished by `quest_id`).
+
+**Still open:**
+
 - **Cross-quest findings visibility:** isolated per quest (DeepScientist default `independent`) vs a
   shared global findings store. Affects `finding_memory.scope` defaults.
-- **Concurrency:** one active quest at a time (DeepScientist `max_concurrent_quests: 1`) vs multiple.
+
 - **DeepScientist features without a direct Houmao counterpart — operator decisions (resolved):**
   - Operator interface → **Houmao-native**: observe via `houmao-agent-inspect`/loop `status`; control
     via operator-via-mail recorded in `operator_intent_event`. No web UI/TUI built.
@@ -158,5 +180,11 @@ Harness tools (deterministic; no LLM; the trust boundary):
   - DeepScientist domain/publication helpers (paper-outline, paper-plot, figure-polish, nature-figure,
     nature-data, nature-polishing, nature-paper2ppt, science, mentor) → **integrated**: `outline` stage,
     harness extension commands (`render plot|polish|slides`, `manuscript polish|datastmt`, `knowledge query`),
-    the `deepresearch-mentor` skill, and built-in optional `knowledge_pack`s (disabled by default to keep
-    the core domain-neutral; see `execplan/packs/`).
+    the `deepresearch-mentor` skill, and built-in `knowledge_pack`s under `execplan/packs/`.
+  - **Publication path turned ON.** A new **`paper-latex`** compiler pack (backs `render report`) renders
+    the Markdown manuscript → LaTeX article → compiled PDF (XeLaTeX/TinyTeX; auto-detects CJK via `ctexart`
+    for the Chinese edition). The publication packs (paper-latex, paper-plot, figure-polish, and the
+    nature-* figure/slides/data/polishing packs) are **enabled by default** so output quality matches the
+    DeepScientist counterparts; only `science-scipkg` + `mentor-standards` stay disabled. Plus harness
+    commands `lit bib` (references → `.bib`) and `manuscript bundle` (evidence ledger + claim↔evidence map
+    + submission checklist, which tracks the EN + ZH PDFs and orphan claims).
