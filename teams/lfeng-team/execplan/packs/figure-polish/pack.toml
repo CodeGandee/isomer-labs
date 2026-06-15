@@ -1,0 +1,8 @@
+name = "figure-polish"
+kind = "compiler"
+backs = ["render polish"]
+entrypoint = "adapter:render"
+input_formats = ["svg"]
+output_format = "svg"
+deps = []
+description = "Render-inspect-revise QA pass on an existing SVG figure: white bg, frame, normalized font, optional title/caption."

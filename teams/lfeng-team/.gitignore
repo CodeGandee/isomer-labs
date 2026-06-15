@@ -1,0 +1,8 @@
+# Credential stores — never commit secrets
+**/auth/
+*.env
+vars.env
+
+# Python bytecode caches (generated; should not be tracked)
+__pycache__/
+*.pyc

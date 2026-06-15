@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/quest",
+  "title": "quest records",
+  "description": "Create a quest or update its lifecycle/cursor/gate. record_id = quest_id.",
+  "oneOf": [
+    {
+      "title": "quest.create",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "title", "objective_ref", "workspace_ref"],
+      "properties": {
+        "record_type": { "const": "quest.create" },
+        "record_id": { "type": "string" },
+        "at": { "type": "string" },
+        "title": { "type": "string" },
+        "domain": { "type": "string", "default": "general" },
+        "objective_ref": { "type": "string" },
+        "acceptance_ref": { "type": "string" },
+        "workspace_ref": { "type": "string" },
+        "plan_revision": { "type": "integer" },
+        "max_rounds": { "type": "integer", "minimum": 1 },
+        "convergence_patience": { "type": "integer", "minimum": 0 },
+        "cost_budget": { "type": "number" },
+        "execution_mode": { "enum": ["auto", "manual"] }
+      }
+    },
+    {
+      "title": "quest.update",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at"],
+      "anyOf": [
+        { "required": ["run_state"] }, { "required": ["baseline_gate"] },
+        { "required": ["round_index"] }, { "required": ["current_stage"] },
+        { "required": ["active_branch_id"] }, { "required": ["active_idea_id"] },
+        { "required": ["best_result_ref"] }, { "required": ["stop_reason"] },
+        { "required": ["execution_mode"] }
+      ],
+      "properties": {
+        "record_type": { "const": "quest.update" },
+        "record_id": { "type": "string" },
+        "at": { "type": "string" },
+        "run_state": { "enum": ["not_started", "running", "paused", "recovering", "waiting_user", "parked", "stopped", "completed"] },
+        "baseline_gate": { "enum": ["pending", "passed", "waived", "blocked"] },
+        "execution_mode": { "enum": ["auto", "manual"] },
+        "round_index": { "type": "integer", "minimum": 0 },
+        "current_stage": { "type": "string" },
+        "active_branch_id": { "type": ["string", "null"] },
+        "active_idea_id": { "type": ["string", "null"] },
+        "best_result_ref": { "type": ["string", "null"] },
+        "stop_reason": { "type": "string" }
+      }
+    }
+  ]
+}

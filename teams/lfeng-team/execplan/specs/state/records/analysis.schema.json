@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/analysis",
+  "title": "analysis record",
+  "description": "Record an analysis/ablation verdict against a parent claim. record_id = analysis_id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "verdict"],
+  "properties": {
+    "record_type": { "const": "analysis.record" },
+    "record_id": { "type": "string" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string" },
+    "result_id": { "type": ["string", "null"] },
+    "round_index": { "type": "integer", "minimum": 0 },
+    "parent_claim": { "type": "string" },
+    "finding": { "type": "string" },
+    "verdict": { "enum": ["confirms", "blocks", "inconclusive"] },
+    "artifact_ref": { "type": "string" }
+  }
+}

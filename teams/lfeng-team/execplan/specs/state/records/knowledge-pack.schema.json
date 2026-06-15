@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/knowledge-pack",
+  "title": "knowledge_pack register (domain-pluggable extension)",
+  "description": "Register/enable a domain knowledge pack or adapter. record_id = pack_id. Enabled adapters (runner|validator|compiler|metric_vocab) need a non-empty ref; priority must be unique per (domain,kind) for deterministic resolution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "domain", "name", "kind", "ref"],
+  "properties": {
+    "record_type": { "const": "knowledge_pack.register" },
+    "record_id": { "type": "string" },
+    "at": { "type": "string" },
+    "domain": { "type": "string" },
+    "name": { "type": "string" },
+    "kind": { "enum": ["skill", "reference", "template", "validator", "metric_vocab", "runner", "compiler"] },
+    "ref": { "type": "string" },
+    "enabled": { "type": "boolean", "default": true },
+    "priority": { "type": "integer", "default": 100 }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": { "enum": ["runner", "validator", "compiler", "metric_vocab"] },
+          "enabled": { "const": true }
+        },
+        "required": ["kind"]
+      },
+      "then": { "properties": { "ref": { "type": "string", "minLength": 1 } } }
+    }
+  ]
+}

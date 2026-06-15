@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/comms/self-wakeup",
+  "title": "self-wakeup payload",
+  "description": "Orchestrator -> self durable continuation. Mirrors the self_wakeup row (next_stage, reason, next_action) on a continuation_lane.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "reason", "next_action"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_id", "schema_version", "kind", "loop_slug", "loop_id", "handoff_id", "continuation_lane", "payload_id", "from_role", "to_role"],
+      "properties": {
+        "schema_id": { "const": "deepresearch.email.self-wakeup" },
+        "schema_version": { "type": "string" },
+        "kind": { "const": "self-wakeup" },
+        "loop_slug": { "const": "deepresearch" },
+        "loop_id": { "type": "string" },
+        "handoff_id": { "type": "string", "description": "stable; a re-arm supersedes the prior wakeup of this lane" },
+        "continuation_lane": { "type": "string", "default": "main", "description": "single-threaded per lane; multiple lanes supported with no template change" },
+        "payload_id": { "type": "string" },
+        "plan_revision": { "type": ["integer", "string"] },
+        "round_index": { "type": ["integer", "string"] },
+        "from_role": { "const": "orchestrator" },
+        "to_role": { "const": "orchestrator" }
+      }
+    },
+    "next_stage": { "type": "string", "description": "stage_catalog stage to resume at" },
+    "reason": { "type": "string", "description": "why a later round is needed / wake-up trigger" },
+    "next_action": { "type": "string", "description": "exact first action on resume" },
+    "done_condition": { "type": "string", "description": "what counts as this continuation complete" },
+    "resume_after": { "type": "string", "description": "optional ISO-8601 timing hint" }
+  }
+}

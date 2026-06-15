@@ -1,0 +1,11 @@
+# Pack: nature-data
+
+- kind: template
+- backs: manuscript datastmt
+- status: **REAL adapter** (stdlib only; follows ../ADAPTER-CONTRACT.md)
+- source skill: DeepScientist `deepscientist-nature-data`
+- entrypoint: `adapter:generate`
+- input: data-inventory JSON
+- output: .md Data Availability statement + citations + FAIR checklist
+- example input: examples/inventory.json (never invents DOIs/accessions)
+Enabled by default in `../../specs/state/seed.toml` (nature-domain publication set); disable per quest/domain if not needed.

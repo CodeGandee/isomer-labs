@@ -1,0 +1,7 @@
+[
+  {"topic": "durable-truth", "standard": "Never invent evidence; every durable fact is written via `record apply`, never hand-edited.", "why": "auditability + recovery depend on the state being the single source of truth"},
+  {"topic": "verification-rigor", "standard": "Gate results before they back a claim: baseline_gate passed/waived, result validity=valid, no unresolved contradiction.", "why": "supported claims must trace to validated evidence"},
+  {"topic": "scope-altitude", "standard": "Take the smallest valid step; one bounded turn per wake; do not widen the frontier without a decision.", "why": "bounded steps keep the loop recoverable and reviewable"},
+  {"topic": "contract-hygiene", "standard": "Touch state only through `$HARNESS`; reply upstream to the Orchestrator; keep loop-internal wording out of manuscripts.", "why": "preserves the tree-loop contract and clean publication output"},
+  {"topic": "preserve-failed-routes", "standard": "Park/abandon branches, never delete their commits; record why.", "why": "negative results and dead ends are reusable assets"}
+]

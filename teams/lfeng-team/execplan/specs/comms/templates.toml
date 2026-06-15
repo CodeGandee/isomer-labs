@@ -1,0 +1,91 @@
+# Templated-mail registry — DeepResearch.
+# Maps each loop-local mail family (schema_id) to its JSON Schema, Markdown renderer, payload format,
+# and reply expectation. Outgoing flow: TOML payload -> `email validate` (JSON Schema) -> `email render`
+# (.md.j2) -> houmao-agent-email-comms delivery. The harness NEVER delivers mail itself.
+#
+# Stable correlation metadata (rendered as the in-body `houmao-email-metadata` block on EVERY mail;
+# schema = schemas/_metadata.schema.json, embedded as `meta` in each family schema):
+#   loop_slug          = "deepresearch"          # platform loop identity
+#   loop_id            = "<quest_id>"            # stable correlation id; loop_id == quest_id (the
+#                                                 #   idempotency scope for handoff_id). See state schema.
+#   handoff_id         = "<stable id>"           # resends REUSE it -> receiver dedup via handoff ledger
+#   continuation_lane  = "main"                  # self-wakeup lane; default 'main', reserved so multiple
+#                                                 #   self-wakeup threads need NO schema/template change
+#   schema_id, schema_version, kind, payload_id, plan_revision, round_index, from_role, to_role
+#
+# Dispatch: a receiver inspects the metadata block, selects the on-event skill matching `schema_id`,
+# processes ONE bounded event, then archives only after success. Never dispatch on subject text alone.
+
+[meta]
+loop_slug      = "deepresearch"
+schema_version = "1"
+metadata_block = "houmao-email-metadata"
+metadata_schema = "schemas/_metadata.schema.json"
+
+# ───────────────── task-request : Orchestrator -> worker role ─────────────────
+[[template]]
+name             = "task-request"
+schema_id        = "deepresearch.email.task-request"
+schema_version   = "1"
+kind             = "request"
+schema           = "schemas/task-request.schema.json"
+renderer         = "renderers/task-request.md.j2"
+payload_format   = "toml"
+sender_role      = "orchestrator"
+recipient_roles  = ["scout-ideator", "experimenter", "analyst", "writer", "reviewer"]
+reply_expected   = "receipt-then-result"
+reply_schema_ids = ["deepresearch.email.receipt", "deepresearch.email.task-result"]
+on_event_skill   = "deepresearch-on-task-request"
+state_effect     = "sender: `handoff open` (pending->sent) + `email apply` (mail_log out). receiver dedups by (loop_id, handoff_id)."
+description       = "Orchestrator dispatches one bounded stage to a worker role. Carries the stage, the entity refs the worker needs (idea/experiment/branch/run-contract), and an instructions artifact ref. The same handoff_id is reused on resend."
+
+# ───────────────── receipt : worker -> requester (interim ack) ─────────────────
+[[template]]
+name             = "receipt"
+schema_id        = "deepresearch.email.receipt"
+schema_version   = "1"
+kind             = "receipt"
+schema           = "schemas/receipt.schema.json"
+renderer         = "renderers/receipt.md.j2"
+payload_format   = "toml"
+sender_role      = "*"
+recipient_roles  = ["orchestrator"]
+reply_expected   = "none"
+reply_schema_ids = []
+on_event_skill   = "deepresearch-on-receipt"
+state_effect     = "requester: `handoff advance` (sent->acked). Stops the receipt-due resend timer."
+description       = "Fast acknowledgement that a worker accepted a task-request and began work. Echoes the original handoff_id so the requester can mark the handoff acked and defer to result_due_at. Idempotent: a duplicate receipt is a no-op."
+
+# ───────────────── task-result : worker -> requester (final) ─────────────────
+[[template]]
+name             = "task-result"
+schema_id        = "deepresearch.email.task-result"
+schema_version   = "1"
+kind             = "result"
+schema           = "schemas/task-result.schema.json"
+renderer         = "renderers/task-result.md.j2"
+payload_format   = "toml"
+sender_role      = "*"
+recipient_roles  = ["orchestrator"]
+reply_expected   = "none"
+reply_schema_ids = []
+on_event_skill   = "deepresearch-on-task-result"
+state_effect     = "requester: `handoff advance` (->result_received->processed) + `record apply` for produced rows (result/measurement/analysis/idea/finding/reference) + `email apply`."
+description       = "Final outcome of a dispatched task. status=done|failed. On done, names the durable rows/artifacts the worker recorded (it writes via `record apply`; this mail reports the refs). On failed, carries an error summary and the worker leaves status='failed' (never 'done')."
+
+# ───────────────── self-wakeup : Orchestrator -> self (continuation spine) ─────────────────
+[[template]]
+name             = "self-wakeup"
+schema_id        = "deepresearch.email.self-wakeup"
+schema_version   = "1"
+kind             = "self-wakeup"
+schema           = "schemas/self-wakeup.schema.json"
+renderer         = "renderers/self-wakeup.md.j2"
+payload_format   = "toml"
+sender_role      = "orchestrator"
+recipient_roles  = ["orchestrator"]
+reply_expected   = "none"
+reply_schema_ids = []
+on_event_skill   = "deepresearch-on-self-wakeup"
+state_effect     = "send: `wakeup arm` (self_wakeup status='armed') then `wakeup attach` (message_ref). on receipt: `wakeup resolve` (delivered->consumed)."
+description       = "Durable continuation: the Orchestrator mails itself the next-step intent so the loop survives interruption. Carries continuation_lane (default 'main'); multiple lanes are supported with no template change. Late delivery of a superseded/consumed handoff_id is ignored (dedup)."

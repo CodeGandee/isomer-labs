@@ -1,0 +1,158 @@
+# Generated package metadata for this execplan revision.
+generated_source = true
+generated_with = "hand-authored contract package + implemented harness (bin/src/schemas), packs, and docs"
+scaffold_profile = "execplan-shell"
+loop_slug = "deepresearch"
+generated_date = "2026-06-10"
+plan_revision = 1
+topology_mode = "tree-loop"
+root_participant = "orchestrator"
+purpose_directories = ["specs", "skills", "agents", "harness", "docs"]
+# Harness (bin/src/schemas) and docs are now IMPLEMENTED and materialized. Remaining intentionally-omitted layers:
+omitted_default_layers = [
+  "adrs",                                              # no ADRs recorded yet (decisions captured inline via this thread)
+  "packs/*/README.md",                                 # pack dirs self-document via pack.toml+pack.md; examples/ indexed by packs/README.md (skill-dir-style exception)
+]
+source_intention = ["../intention/loop-overview.md"]
+source_decisions = []
+
+# Stages (stage_catalog): scout-ideator owns intake-audit/scope/baseline/idea; orchestrator owns
+# optimize/decision/finalize (internal); experimenter/analyst own one stage; writer owns outline/write/rebuttal.
+stages = ["intake-audit", "scope", "baseline", "idea", "optimize", "experiment", "analysis", "decision", "outline", "write", "review", "rebuttal", "finalize"]
+
+# ───────────────── Specs ─────────────────
+[[artifacts]]
+id = "specs"
+description = "Generated machine-readable loop contracts."
+path = "specs/"
+artifact_kind = "dir"
+purpose = "generated loop contracts"
+
+[[artifacts]]
+id = "process"
+description = "Canonical process authority (roles, stages, handoffs, continuation, terminal/recovery, pseudocode, mermaid sequence)."
+path = "specs/collab/collab-overview.md"
+artifact_kind = "file"
+purpose = "process authority"
+
+[[artifacts]]
+id = "topology"
+description = "tree-loop route contract rooted at the Orchestrator; 5 specialist routes + orchestrator-internal stages + tool edges."
+path = "specs/collab/topology/topology.toml"
+artifact_kind = "file"
+purpose = "topology contract"
+
+[[artifacts]]
+id = "comms"
+description = "4 templated mail families (task-request, receipt, task-result, self-wakeup): template registry."
+path = "specs/comms/templates.toml"
+artifact_kind = "file"
+purpose = "communication contract"
+
+[[artifacts]]
+id = "comms-schemas"
+description = "Mail payload JSON Schemas + shared houmao-email-metadata block (loop_id + handoff_id + continuation_lane)."
+path = "specs/comms/schemas/"
+artifact_kind = "dir"
+purpose = "communication payload schemas"
+
+[[artifacts]]
+id = "comms-renderers"
+description = "Markdown (.md.j2) renderers for the 4 mail families."
+path = "specs/comms/renderers/"
+artifact_kind = "dir"
+purpose = "communication renderers"
+
+[[artifacts]]
+id = "state-schema"
+description = "sqlite control-plane schema (28 tables incl. gpu_allocation, stage_catalog seed, enums, indexes)."
+path = "specs/state/schema.sql"
+artifact_kind = "file"
+purpose = "state schema"
+
+[[artifacts]]
+id = "state-overview"
+description = "State authority: entities, transitions, lifecycle flows (self-wakeup, handoff, BO, intake, optimize, finalize), invariants, scheduling queries."
+path = "specs/state/state-overview.md"
+artifact_kind = "file"
+purpose = "state authority"
+
+[[artifacts]]
+id = "state-invariants"
+description = "33 named validation checks run by `harness state validate`."
+path = "specs/state/invariants.toml"
+artifact_kind = "file"
+purpose = "state invariants"
+
+[[artifacts]]
+id = "state-seed"
+description = "Domain-neutral platform seed: quest defaults + 6-role roster templates; no concrete quest."
+path = "specs/state/seed.toml"
+artifact_kind = "file"
+purpose = "state seed"
+
+[[artifacts]]
+id = "records"
+description = "JSON Schemas for `record apply` payloads (the only state write path); 23 families / 34 record types."
+path = "specs/state/records/"
+artifact_kind = "dir"
+purpose = "record-apply schemas"
+
+[[artifacts]]
+id = "workspace"
+description = "Workspace policy: per-role roots, git-worktree branch policy, run-artifact layout, preservation/cleanup, knowledge-pack extension."
+path = "specs/workspace/workspace.toml"
+artifact_kind = "file"
+purpose = "workspace contract"
+
+# ───────────────── Skills ─────────────────
+[[artifacts]]
+id = "skills"
+description = "8 generated skills: shared-guide, on-task-request (role-aware), on-receipt, on-task-result, on-self-wakeup, orchestrator-tick, operator-control, mentor."
+path = "skills/"
+artifact_kind = "dir"
+purpose = "generated skill packages"
+
+[[artifacts]]
+id = "packs"
+description = "9 built-in knowledge_pack adapters (ported DeepScientist domain/publication helpers). Publication set ENABLED by default — paper-latex (render report→LaTeX/PDF), paper-plot (render plot→figures), figure-polish, + nature-figure/paper2ppt/data/polishing (nature-domain); science-scipkg/mentor-standards reference packs stay disabled. Resolution is command-aware (pack.toml `backs`), so each render/manuscript command binds its own adapter."
+path = "packs/"
+artifact_kind = "dir"
+purpose = "built-in optional knowledge packs"
+
+# ───────────────── Agents ─────────────────
+[[artifacts]]
+id = "agents"
+description = "6 agent bindings (orchestrator + scout-ideator, experimenter x≤8, analyst, writer, reviewer) + role prompts + notifier prompts."
+path = "agents/bindings.toml"
+artifact_kind = "file"
+purpose = "generated concrete agent bindings"
+
+# ───────────────── Harness ─────────────────
+[[artifacts]]
+id = "harness"
+description = "Loop-local command registry (core + domain-pluggable extension). Implemented in bin/ + src/ (runnable harness); commands.toml is the registry surface."
+path = "harness/commands.toml"
+artifact_kind = "file"
+purpose = "generated loop-local helper surface"
+
+# ───────────────── Docs ─────────────────
+[[artifacts]]
+id = "docs"
+description = "Human support views: README, start-runbook, credentials, publication-quality (materialized)."
+path = "docs/"
+artifact_kind = "dir"
+purpose = "generated human support views"
+
+# Participants summary for quick reference.
+[participants]
+agents = ["orchestrator", "scout-ideator", "experimenter", "analyst", "writer", "reviewer"]
+experimenter_fanout_max = 8
+experimenter_fanout_default = 1
+internal_stages = ["decision", "finalize", "optimize"]
+tools = ["state", "experiment-runner", "validator", "manuscript-validator", "bo-refiner", "literature", "findings-store", "git-checkpoint", "artifact-compiler"]
+total_live_instances_default = 6
+
+# No reserved/unimplemented stages remain. The rebuttal stage was promoted to a live builtin stage
+# (ordinal 85, owned by the Writer; see specs/state/schema.sql stage_catalog + the `rebuttal` branch of
+# skills/deepresearch-on-task-request). All 13 catalog stages are implemented.

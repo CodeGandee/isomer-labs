@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/quirk",
+  "title": "quirk append",
+  "description": "Append a framework/system pitfall (replaces DeepScientist's append-only quirks files). record_id = quirk_id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "layer", "surface", "symptom"],
+  "properties": {
+    "record_type": { "const": "quirk.append" },
+    "record_id": { "type": "string" },
+    "at": { "type": "string" },
+    "layer": { "enum": ["framework", "system"] },
+    "surface": { "type": "string" },
+    "symptom": { "type": "string" },
+    "workaround": { "type": "string" },
+    "status": { "enum": ["open", "mitigated", "resolved"], "default": "open" }
+  }
+}

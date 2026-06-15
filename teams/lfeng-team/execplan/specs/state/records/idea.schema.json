@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/idea",
+  "title": "idea upsert",
+  "description": "Create/update a hypothesis. record_id = idea_id. ≤1 'selected' per branch (invariant single_selected_idea_per_branch).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "statement", "status"],
+  "properties": {
+    "record_type": { "const": "idea.upsert" },
+    "record_id": { "type": "string" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string" },
+    "branch_id": { "type": ["string", "null"] },
+    "parent_idea_id": { "type": ["string", "null"] },
+    "round_index": { "type": "integer", "minimum": 0 },
+    "statement": { "type": "string" },
+    "route": { "type": "string" },
+    "artifact_ref": { "type": "string" },
+    "status": { "enum": ["proposed", "selected", "rejected", "exhausted"] }
+  }
+}

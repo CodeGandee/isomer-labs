@@ -1,0 +1,5 @@
+{"datasets":[
+   {"name":"DemoBench train/test","repository":"Zenodo","doi":"10.5281/zenodo.0000000","access":"open","license":"CC-BY-4.0","format":"CSV"},
+   {"name":"Raw sensor logs","repository":"institutional store","access":"on-request","notes":"contains restricted fields"}
+ ],
+ "code":{"repository":"GitHub","url":"https://github.com/example/demo","license":"MIT"}}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/comms/task-request",
+  "title": "task-request payload",
+  "description": "Orchestrator -> worker dispatch of one bounded stage. Validated before render+send.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "stage", "instructions_ref"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_id", "schema_version", "kind", "loop_slug", "loop_id", "handoff_id", "continuation_lane", "payload_id", "from_role", "to_role"],
+      "properties": {
+        "schema_id": { "const": "deepresearch.email.task-request" },
+        "schema_version": { "type": "string" },
+        "kind": { "const": "request" },
+        "loop_slug": { "const": "deepresearch" },
+        "loop_id": { "type": "string" },
+        "handoff_id": { "type": "string" },
+        "continuation_lane": { "type": "string", "default": "main" },
+        "payload_id": { "type": "string" },
+        "plan_revision": { "type": ["integer", "string"] },
+        "round_index": { "type": ["integer", "string"] },
+        "from_role": { "const": "orchestrator" },
+        "to_role": { "type": "string", "enum": ["scout-ideator", "experimenter", "analyst", "writer", "reviewer"] }
+      }
+    },
+    "stage": { "type": "string", "description": "stage_catalog stage this task advances" },
+    "instructions_ref": { "type": "string", "description": "artifact ref with the bounded task brief" },
+    "branch_id": { "type": "string" },
+    "idea_id": { "type": "string" },
+    "experiment_id": { "type": "string" },
+    "run_contract_ref": { "type": "string", "description": "locked run spec for experiment stage" },
+    "inputs": {
+      "type": "array",
+      "description": "additional artifact/row refs the worker needs",
+      "items": { "type": "string" }
+    },
+    "receipt_due_at": { "type": "string", "description": "ISO-8601; resend receipt-due timer" },
+    "result_due_at": { "type": "string", "description": "ISO-8601; resend result-due timer" }
+  }
+}

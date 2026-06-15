@@ -1,0 +1,31 @@
+```houmao-email-metadata
+schema_id = "{{ meta.schema_id }}"
+schema_version = "{{ meta.schema_version }}"
+kind = "{{ meta.kind }}"
+loop_slug = "{{ meta.loop_slug }}"
+loop_id = "{{ meta.loop_id }}"
+handoff_id = "{{ meta.handoff_id }}"
+continuation_lane = "{{ meta.continuation_lane | default('main') }}"
+payload_id = "{{ meta.payload_id }}"
+{% if meta.plan_revision is defined %}plan_revision = "{{ meta.plan_revision }}"
+{% endif %}{% if meta.round_index is defined %}round_index = "{{ meta.round_index }}"
+{% endif %}from_role = "{{ meta.from_role }}"
+to_role = "{{ meta.to_role }}"
+```
+
+# Task: {{ stage }}
+
+Handoff `{{ meta.handoff_id }}` (quest `{{ meta.loop_id }}`{% if meta.round_index is defined %}, round {{ meta.round_index }}{% endif %}).
+
+**Brief:** {{ instructions_ref }}
+
+{% if branch_id %}- branch: `{{ branch_id }}`
+{% endif %}{% if idea_id %}- idea: `{{ idea_id }}`
+{% endif %}{% if experiment_id %}- experiment: `{{ experiment_id }}`
+{% endif %}{% if run_contract_ref %}- run contract: `{{ run_contract_ref }}`
+{% endif %}{% if inputs %}- inputs:
+{% for i in inputs %}  - `{{ i }}`
+{% endfor %}{% endif %}
+
+**Reply:** send a `receipt` now (reuse this handoff_id), then a `task-result` when done.
+{% if receipt_due_at %}Receipt due by {{ receipt_due_at }}.{% endif %}{% if result_due_at %} Result due by {{ result_due_at }}.{% endif %}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/gpu",
+  "title": "gpu allocation records",
+  "description": "Operator confirmation of the GPU device set a quest's GPU-using stages may use. Per-quest scope (confirm once; re-confirm to change the device set). gpu.confirm sets status='confirmed'; the GPU-use handoff gate over experiment+analysis rounds (records.py _gpu_gate + invariant experiment_requires_gpu_confirmation) refuses to dispatch that work until this exists, and `experiment run` fails closed + injects CUDA_VISIBLE_DEVICES from it.",
+  "oneOf": [
+    {
+      "title": "gpu.confirm",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "devices"],
+      "properties": {
+        "record_type": { "const": "gpu.confirm" },
+        "record_id": { "type": "string", "description": "= quest_id" },
+        "at": { "type": "string" },
+        "devices": { "type": "string", "pattern": "^[0-9]+(,[0-9]+)*$", "description": "CUDA device set the quest's GPU-using stages may use; comma list of non-negative integer indices, e.g. '0' or '0,1' (no spaces, no 'all'/'-1'). Becomes CUDA_VISIBLE_DEVICES for the Experimenter and for `experiment run`." },
+        "confirmed_by": { "type": "string", "description": "operator identity confirming the allocation" },
+        "note": { "type": "string" }
+      }
+    }
+  ]
+}

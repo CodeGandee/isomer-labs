@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/search-space",
+  "title": "search-space + experiment-param records",
+  "description": "Define a tunable dimension, or record the point an experiment evaluated. Feeds the BO refiner.",
+  "oneOf": [
+    {
+      "title": "search_space.define",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "space_id", "dim_name", "dim_kind"],
+      "properties": {
+        "record_type": { "const": "search_space.define" },
+        "record_id": { "type": "string", "description": "= '<quest_id>:<space_id>:<dim_name>'" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "space_id": { "type": "string" },
+        "dim_name": { "type": "string" },
+        "dim_kind": { "enum": ["real", "int", "categorical", "bool"] },
+        "low": { "type": "number" },
+        "high": { "type": "number" },
+        "choices": { "type": "string", "description": "JSON array string for categorical" },
+        "log_scale": { "type": "boolean" }
+      },
+      "allOf": [
+        { "if": { "properties": { "dim_kind": { "enum": ["real", "int"] } } },
+          "then": { "required": ["low", "high"] } },
+        { "if": { "properties": { "dim_kind": { "const": "categorical" } } },
+          "then": { "required": ["choices"], "properties": { "choices": { "minLength": 1 } } } }
+      ]
+    },
+    {
+      "title": "experiment_param.record",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "experiment_id", "dim_name", "proposed_by"],
+      "anyOf": [ { "required": ["value_num"] }, { "required": ["value_text"] } ],
+      "properties": {
+        "record_type": { "const": "experiment_param.record" },
+        "record_id": { "type": "string", "description": "= '<experiment_id>:<dim_name>'" },
+        "at": { "type": "string" },
+        "experiment_id": { "type": "string" },
+        "space_id": { "type": ["string", "null"] },
+        "dim_name": { "type": "string" },
+        "value_num": { "type": "number" },
+        "value_text": { "type": "string" },
+        "proposed_by": { "enum": ["agent", "bo", "operator", "seed"] }
+      }
+    }
+  ]
+}

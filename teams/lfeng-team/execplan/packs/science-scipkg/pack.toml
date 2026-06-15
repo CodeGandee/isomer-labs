@@ -1,0 +1,6 @@
+name = "science-scipkg"
+kind = "reference"
+backs = ["knowledge cards"]
+entrypoint = "adapter:cards"
+deps = []
+description = "FermiLink-style scientific package-card catalog (numpy/scipy/pandas/...) for software routing."

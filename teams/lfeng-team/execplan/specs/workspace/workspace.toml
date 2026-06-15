@@ -1,0 +1,168 @@
+# Generated workspace contract — DeepResearch (domain-neutral).
+# Inputs for `prepare-workspace` (adapted to houmao-utils-workspace-mgr). DESCRIBES the layout; creates
+# nothing. Authority for the `workspace.<role>` policy_refs in agents/bindings.toml. Worktree/branch
+# creation, symlinks, and .gitignore are owned by workspace-mgr — not restated here.
+
+[meta]
+loop_slug = "deepresearch"
+task_name = "deepresearch"
+# SELF-CONTAINED PER-QUEST FOLDER: everything a quest produces lives under runs/<quest-id>/ —
+#   objective/ baseline/ repo/ workspaces/ round-*/ report/ figures/ refs/ findings/ intake/ exports/ mail/.
+# Canonical per-quest convention: quest.workspace_ref = "runs/<quest-id>/repo" (the quest's code repo lives
+# INSIDE the quest folder; the operator seeds it from a source project or git-inits it at setup). The only
+# SHARED (cross-quest) state is the control plane — runs/state.sqlite (one DB, single_active_quest) and
+# .houmao/mailbox (messaging infra); those are platform infrastructure, not per-quest products.
+repo_root_policy = "quest.workspace_ref"        # resolves to runs/<quest-id>/repo (per-quest, inside the quest folder)
+workspace_root = "runs/<quest-id>/workspaces/"  # per-agent worktrees of runs/<quest-id>/repo (loop-dir relative)
+artifact_root = "runs/<quest-id>/"              # the self-contained quest folder (objective..mail)
+# LEGACY (grandfathered): q1 — the first quest — predates this convention and keeps its code repo at the
+# top-level outputs/fa4-perf-model (quest.workspace_ref unchanged). It is PRESERVED as-is for provenance and
+# must not be relocated. outputs/ is a q1-only legacy location: do NOT use outputs/ for any new quest — q2+
+# put their repo at runs/<quest-id>/repo and all materials under runs/<quest-id>/.
+
+[flavor]
+# Primary: git worktrees off the quest repo, so parallel experiment branches never clobber.
+primary = "git-worktree"
+# Fallback when a quest has no source repo (pure NL objective): plain isolated directories. The
+# branch/worktree policy below then degrades to plain per-instance dirs (recorded in evidence).
+fallback = "plain-dir"
+launch_cwd_policy = "each agent launches with cwd = its own work_root; harness invoked by absolute path"
+
+# ───────────────── Branch + worktree policy (research routes) ─────────────────
+[branches]
+# Research branches mirror the `branch` state table. Real git branches; failed routes are PRESERVED.
+base_branch = "quest/<quest-id>/base"            # quest starting point
+branch_naming = "quest/<quest-id>/<branch_id>"   # one git branch per research route
+fork_naming = "quest/<quest-id>/<branch_id>/exp-<n>"  # optional per-experiment fork off a route
+# branch.status (active|parked|abandoned|merged) governs lifecycle; see [preservation].
+
+[worktrees]
+# Each Experimenter INSTANCE gets its own isolated git worktree on the route's branch (or a fork),
+# so K parallel experiments compile/run without sharing a mutable tree.
+instance_worktree = "runs/<quest-id>/workspaces/<instance-id>"
+one_worktree_per_instance = true                 # no two instances share a mutable worktree
+checkout = "the active branch for the route the instance is assigned (workspace-mgr `git worktree add`)"
+non_experimenter_worktree = "shared main worktree on base_branch; they write artifacts, not source code"
+
+# ───────────────── Run-artifact layout (under runs/<quest-id>/) ─────────────────
+[artifacts]
+durable = [
+  "runs/<quest-id>/round-<n>/",          # per-round briefs, run logs, result/measurement blobs, <instance-id>/ subdirs
+  "runs/<quest-id>/intake/",             # intake-audit asset inventory + audit notes
+  "runs/<quest-id>/report/",             # manuscripts/reports (+ report/review/ for the Reviewer)
+  "runs/<quest-id>/figures/",            # rendered figures
+  "runs/<quest-id>/refs/",               # literature cache (reference rows point here)
+  "runs/<quest-id>/findings/",           # durable findings/reflexion artifacts
+  "runs/<quest-id>/exports/",            # operator-facing state snapshots (state export)
+]
+committed_via = "harness git checkpoint"  # durable artifacts are committed into the quest repo
+mail_render = "runs/<quest-id>/mail/"      # rendered outgoing mail bodies (pre-delivery)
+
+[state]
+# ONE platform-level DB across all quests (single_active_quest, cross-quest findings, ref reuse).
+db = "runs/state.sqlite"                   # loop-dir relative, NOT under <quest-id>/
+access = "via harness state/record commands only; agents never read or edit the DB file directly"
+
+# ───────────────── Canonical per-quest brief/baseline (read-only) ─────────────────
+[shared]
+objective = "runs/<quest-id>/objective/"   # CANONICAL per-quest brief/acceptance (read-only). shared/objective/ is OPTIONAL staging/template only.
+baseline  = "runs/<quest-id>/baseline/"    # CANONICAL per-quest comparator + metric contract (read-only). shared/baseline/ is OPTIONAL staging only.
+note = "Objective + baseline are CANONICAL per-quest under runs/<quest-id>/ (objective/, baseline/). shared/ (shared/objective, shared/baseline) is OPTIONAL staging/template only — never the canonical per-quest source."
+
+# ───────────────── Per-agent policies (match agents/bindings.toml workspace.<role>) ─────────────────
+[[agent]]
+id = "orchestrator"
+policy_ref = "workspace.orchestrator"
+work_root = "runs/<quest-id>/workspaces/orchestrator"
+isolation = "shared-main"
+launch_cwd = "runs/<quest-id>/workspaces/orchestrator"
+reads = ["runs/<quest-id>/objective", "runs/<quest-id>/round-*", "runs/<quest-id>/report", "runs/<quest-id>/refs"]
+writes = ["runs/<quest-id>/round-*", "runs/<quest-id>/report"]
+
+[[agent]]
+id = "scout-ideator"
+policy_ref = "workspace.scout-ideator"
+work_root = "runs/<quest-id>/workspaces/scout-ideator"
+isolation = "shared-main"
+launch_cwd = "runs/<quest-id>/workspaces/scout-ideator"
+# quest.workspace_ref = the operator-owned repo; read-only here for intake-audit asset inventory.
+reads = ["runs/<quest-id>/objective", "runs/<quest-id>/refs", "quest.workspace_ref"]
+writes = ["runs/<quest-id>/round-*/scout-ideator", "runs/<quest-id>/intake"]
+
+[[agent]]
+id = "experimenter"
+policy_ref = "workspace.experimenter"
+work_root = "runs/<quest-id>/workspaces/<instance-id>"
+isolation = "worktree"                     # isolated git worktree per instance (fanout_max=8)
+launch_cwd = "runs/<quest-id>/workspaces/<instance-id>"
+reads = ["runs/<quest-id>/objective", "runs/<quest-id>/baseline"]
+writes = ["runs/<quest-id>/round-*/<instance-id>"]
+
+[[agent]]
+id = "analyst"
+policy_ref = "workspace.analyst"
+work_root = "runs/<quest-id>/workspaces/analyst"
+isolation = "shared-main"
+launch_cwd = "runs/<quest-id>/workspaces/analyst"
+reads = ["runs/<quest-id>/round-*", "runs/<quest-id>/objective"]
+writes = ["runs/<quest-id>/round-*/analyst"]
+
+[[agent]]
+id = "writer"
+policy_ref = "workspace.writer"
+work_root = "runs/<quest-id>/workspaces/writer"
+isolation = "shared-main"
+launch_cwd = "runs/<quest-id>/workspaces/writer"
+reads = ["runs/<quest-id>/round-*", "runs/<quest-id>/refs", "runs/<quest-id>/objective"]
+writes = ["runs/<quest-id>/report"]
+
+[[agent]]
+id = "reviewer"
+policy_ref = "workspace.reviewer"
+work_root = "runs/<quest-id>/workspaces/reviewer"
+isolation = "shared-main"
+launch_cwd = "runs/<quest-id>/workspaces/reviewer"
+reads = ["runs/<quest-id>/report", "runs/<quest-id>/round-*"]
+writes = ["runs/<quest-id>/report/review"]
+
+# ───────────────── Domain extension (knowledge packs add paths later) ─────────────────
+[knowledge_pack_paths]
+# A knowledge_pack (kind runner|validator|compiler|reference|template|metric_vocab) MAY declare additional
+# shared read-only paths and per-agent reads, resolved from the knowledge_pack registry at prepare-workspace.
+# Convention for added shared paths:
+pack_root = "execplan/packs/<name>/"             # built-in knowledge packs (NOT under shared/); enabled per seed.toml / knowledge_pack.register
+agent_extra_reads = "a pack may append read paths to the agent(s) its adapter serves (e.g. experimenter for a runner)"
+default = "Publication path ON by default: the 7 publication/nature packs (paper-latex, paper-plot, figure-polish, nature-figure/paper2ppt/data/polishing) are enabled and append their adapter reads; the science-scipkg + mentor-standards reference packs ship disabled. The CORE control plane stays domain-neutral — packs only add the render/manuscript adapters, no domain logic is hard-coded in the loop."
+
+# ───────────────── Preservation + cleanup (keep failed routes) ─────────────────
+[preservation]
+never_delete = [
+  "git branch refs (every research route's commits persist, incl. parked/abandoned)",
+  "committed run artifacts under runs/<quest-id>/",
+  "the state DB runs/state.sqlite, findings, and the refs cache",
+  "failed experiments: experiment.status='failed' rows + their logs",
+]
+# Cleanup reclaims disk WITHOUT losing routes: only the transient working tree of a worktree may be
+# pruned, and only after branch.status is recorded parked|abandoned|merged. The branch ref + commits
+# stay, so a parked route can be re-materialized later via `git worktree add`.
+prune_eligible = [
+  "worktree working directories of parked|abandoned|merged branches (branch ref kept)",
+  "scratch/tmp dirs (see [ignored])",
+]
+prune_guard = "active branches and in-flight worktrees are never pruned; record branch.status before any prune"
+
+[ignored]
+# Transient paths excluded from git tracking / safe to delete (workspace-mgr owns .gitignore).
+paths = ["runs/<quest-id>/**/tmp/", "runs/<quest-id>/**/scratch/", "runs/<quest-id>/.locks/", "**/__pycache__/"]
+
+[readiness]
+# Postconditions prepare-workspace / validate-loop check.
+postconditions = [
+  "each agent work_root exists and is writable",
+  "experimenter instances are registered git worktrees on their route branch (or plain isolated dirs in fallback flavor)",
+  "no two agents share the same mutable worktree (one_worktree_per_instance)",
+  "runs/<quest-id>/objective populated (objective.md + acceptance.md); runs/<quest-id>/baseline populated once baseline framed",
+  "runs/state.sqlite initialized via `harness state init`",
+  "ignored transient paths covered by ignore rules",
+  "launch cwd per agent = its work_root",
+]

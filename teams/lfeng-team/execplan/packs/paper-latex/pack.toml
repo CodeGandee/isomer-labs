@@ -1,0 +1,8 @@
+name = "paper-latex"
+kind = "compiler"
+backs = ["render report"]
+entrypoint = "adapter:render"
+input_formats = ["md", "markdown"]
+output_format = "pdf"
+deps = []                    # stdlib only; shells out to pandoc + a LaTeX engine if present, else emits .tex
+description = "Compile a Markdown manuscript draft into a LaTeX article + PDF (pandoc + XeLaTeX/TinyTeX auto-detected; optional .bib for citations; CJK-aware). Falls back to emitting a standalone .tex when no LaTeX toolchain is available, so an artifact is always produced. This is the publication-grade override of the default Markdown `render report`."

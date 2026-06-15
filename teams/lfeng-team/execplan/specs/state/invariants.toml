@@ -1,0 +1,252 @@
+# Named state invariants for the DeepResearch loop, checked by `harness state validate`.
+# Each check is SQL returning a single integer = number of VIOLATING rows; the invariant holds when
+# the result equals `expect` (always 0 here). Authority: state-overview.md.
+#
+# Grouping (by `area`): defaults | lifecycle | comms | claim_evidence | bo | literature | knowledge | structure
+
+# ───────────────── Approved platform defaults ─────────────────
+
+[[invariant]]
+name = "single_active_quest"
+area = "defaults"
+description = "Default posture: at most one quest may be in run_state='running'. Relaxing concurrency means editing this check."
+check = "SELECT MAX(0, (SELECT COUNT(*) FROM quest WHERE run_state='running') - 1);"
+expect = 0
+
+[[invariant]]
+name = "quest_finding_has_quest"
+area = "defaults"
+description = "Findings are quest-scoped by default: a finding_memory row with scope='quest' must carry a quest_id (only scope='global' may omit it)."
+check = "SELECT COUNT(*) FROM finding_memory WHERE scope='quest' AND quest_id IS NULL;"
+expect = 0
+
+[[invariant]]
+name = "baseline_gate_before_write"
+area = "defaults"
+description = "No round may enter outline/write/review/rebuttal/finalize while the quest's baseline_gate is still pending or blocked (it must be passed or waived)."
+check = "SELECT COUNT(*) FROM round r JOIN quest q ON q.quest_id = r.quest_id WHERE r.stage IN ('outline','write','review','rebuttal','finalize') AND q.baseline_gate IN ('pending','blocked');"
+expect = 0
+
+# ───────────────── Self-wakeup lifecycle ─────────────────
+
+[[invariant]]
+name = "wakeup_handoff_unique"
+area = "lifecycle"
+description = "At most one non-terminal (armed|delivered) self_wakeup per (quest_id, handoff_id); a re-arm must supersede the prior row (dedup of the continuation spine)."
+check = "SELECT COALESCE(SUM(n-1),0) FROM (SELECT COUNT(*) n FROM self_wakeup WHERE status IN ('armed','delivered') GROUP BY quest_id, handoff_id HAVING COUNT(*) > 1);"
+expect = 0
+
+[[invariant]]
+name = "single_open_wakeup_per_lane"
+area = "lifecycle"
+description = "Durable rule (multi-thread ready): at most one open (armed|delivered) self_wakeup per (quest_id, continuation_lane). Each continuation lane is single-threaded; multiple lanes per quest are allowed by the model."
+check = "SELECT COALESCE(SUM(n-1),0) FROM (SELECT COUNT(*) n FROM self_wakeup WHERE status IN ('armed','delivered') GROUP BY quest_id, continuation_lane HAVING COUNT(*) > 1);"
+expect = 0
+
+[[invariant]]
+name = "single_continuation_lane_per_quest"
+area = "lifecycle"
+description = "INITIAL POLICY (not a schema limit): a quest has at most one continuation lane with open wakeups. Relaxing to multiple self-wakeup threads later means deleting only this check — single_open_wakeup_per_lane already supports it."
+check = "SELECT COUNT(*) FROM (SELECT quest_id FROM self_wakeup WHERE status IN ('armed','delivered') GROUP BY quest_id HAVING COUNT(DISTINCT continuation_lane) > 1);"
+expect = 0
+
+[[invariant]]
+name = "delivered_wakeup_has_ref"
+area = "lifecycle"
+description = "A self_wakeup that was delivered or consumed must have had its self-mail message_ref attached (so recovery can correlate open mail to intent)."
+check = "SELECT COUNT(*) FROM self_wakeup WHERE status IN ('delivered','consumed') AND (message_ref IS NULL OR message_ref = '');"
+expect = 0
+
+# ───────────────── Handoff / dedup integrity ─────────────────
+
+[[invariant]]
+name = "handoff_attempts_bounded"
+area = "comms"
+description = "A handoff exceeding max_attempts must be marked failed, not left retrying (resend backstop)."
+check = "SELECT COUNT(*) FROM handoff WHERE attempt_count > max_attempts AND status <> 'failed';"
+expect = 0
+
+[[invariant]]
+name = "mail_handoff_ref_valid"
+area = "comms"
+description = "Every mail_log row that names a handoff_id must reference an existing handoff for the same quest (no orphan handoff references). Self-wakeup mail is exempt: its metadata handoff_id is a continuation/lane id, not a handoff FK."
+check = "SELECT COUNT(*) FROM mail_log m WHERE m.handoff_id IS NOT NULL AND m.schema_id NOT LIKE '%self-wakeup%' AND NOT EXISTS (SELECT 1 FROM handoff h WHERE h.quest_id = m.quest_id AND h.handoff_id = m.handoff_id);"
+expect = 0
+
+# ───────────────── Claim ↔ evidence consistency ─────────────────
+
+[[invariant]]
+name = "supported_claim_has_support"
+area = "claim_evidence"
+description = "A claim marked 'supported' must have at least one 'supports' evidence link."
+check = "SELECT COUNT(*) FROM claim c WHERE c.status='supported' AND NOT EXISTS (SELECT 1 FROM claim_evidence e WHERE e.claim_id = c.claim_id AND e.relation='supports');"
+expect = 0
+
+[[invariant]]
+name = "supported_claim_no_open_contradiction"
+area = "claim_evidence"
+description = "A 'supported' claim must have no UNRESOLVED 'contradicts' evidence (resolved=0). A contradiction that has been acknowledged and rebutted (resolved=1) no longer blocks support."
+check = "SELECT COUNT(*) FROM claim c WHERE c.status='supported' AND EXISTS (SELECT 1 FROM claim_evidence e WHERE e.claim_id = c.claim_id AND e.relation='contradicts' AND e.resolved = 0);"
+expect = 0
+
+[[invariant]]
+name = "valid_backs_supported"
+area = "claim_evidence"
+description = "Every 'supports' evidence link from a result must point at a result whose validity='valid'."
+check = "SELECT COUNT(*) FROM claim_evidence e JOIN result r ON r.result_id = e.source_ref WHERE e.source_kind='result' AND e.relation='supports' AND r.validity <> 'valid';"
+expect = 0
+
+[[invariant]]
+name = "evidence_source_exists"
+area = "claim_evidence"
+description = "Typed evidence links must reference an existing row of that kind (result|analysis|measurement|reference). source_kind='external' is exempt (free uri)."
+check = "SELECT (SELECT COUNT(*) FROM claim_evidence e WHERE e.source_kind='result'      AND NOT EXISTS (SELECT 1 FROM result      x WHERE x.result_id      = e.source_ref)) + (SELECT COUNT(*) FROM claim_evidence e WHERE e.source_kind='analysis'    AND NOT EXISTS (SELECT 1 FROM analysis    x WHERE x.analysis_id    = e.source_ref)) + (SELECT COUNT(*) FROM claim_evidence e WHERE e.source_kind='measurement' AND NOT EXISTS (SELECT 1 FROM measurement x WHERE x.measurement_id = e.source_ref)) + (SELECT COUNT(*) FROM claim_evidence e WHERE e.source_kind='reference'   AND NOT EXISTS (SELECT 1 FROM reference   x WHERE x.reference_id   = e.source_ref));"
+expect = 0
+
+[[invariant]]
+name = "best_result_is_valid"
+area = "claim_evidence"
+description = "quest.best_result_ref, when set, must point at a result with validity='valid'."
+check = "SELECT COUNT(*) FROM quest q WHERE q.best_result_ref IS NOT NULL AND NOT EXISTS (SELECT 1 FROM result r WHERE r.result_id = q.best_result_ref AND r.validity='valid');"
+expect = 0
+
+# ───────────────── BO search-space consistency ─────────────────
+
+[[invariant]]
+name = "single_primary_measurement"
+area = "bo"
+description = "At most one measurement per result may be is_primary=1 (the single BO objective)."
+check = "SELECT COALESCE(SUM(n-1),0) FROM (SELECT COUNT(*) n FROM measurement WHERE is_primary=1 GROUP BY result_id HAVING COUNT(*) > 1);"
+expect = 0
+
+[[invariant]]
+name = "search_space_well_formed"
+area = "bo"
+description = "real/int dims need low<=high; categorical dims need a non-empty choices list."
+check = "SELECT COUNT(*) FROM search_space WHERE (dim_kind IN ('real','int') AND (low IS NULL OR high IS NULL OR low > high)) OR (dim_kind='categorical' AND (choices IS NULL OR choices = ''));"
+expect = 0
+
+[[invariant]]
+name = "bo_param_in_space"
+area = "bo"
+description = "An experiment_param naming a space_id must match a defined search_space dimension for that experiment's quest."
+check = "SELECT COUNT(*) FROM experiment_param p JOIN experiment e ON e.experiment_id = p.experiment_id WHERE p.space_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM search_space s WHERE s.quest_id = e.quest_id AND s.space_id = p.space_id AND s.dim_name = p.dim_name);"
+expect = 0
+
+[[invariant]]
+name = "bo_done_has_objective"
+area = "bo"
+description = "A completed experiment that evaluated a search-space point must have a primary measurement, so the BO refiner can learn from it."
+check = "SELECT COUNT(*) FROM experiment e WHERE e.status='done' AND EXISTS (SELECT 1 FROM experiment_param p WHERE p.experiment_id = e.experiment_id AND p.space_id IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM result r JOIN measurement m ON m.result_id = r.result_id WHERE r.experiment_id = e.experiment_id AND m.is_primary=1);"
+expect = 0
+
+# ───────────────── Literature / reference linkage ─────────────────
+
+[[invariant]]
+name = "fetched_reference_cached"
+area = "literature"
+description = "A reference fetched from arxiv/web must have a cached artifact_ref (manual/doi entries are exempt)."
+check = "SELECT COUNT(*) FROM reference WHERE source IN ('arxiv','web') AND (artifact_ref IS NULL OR artifact_ref = '');"
+expect = 0
+
+[[invariant]]
+name = "reference_evidence_resolves"
+area = "literature"
+description = "Every reference-kind evidence link must resolve to an existing reference row (reinforces evidence_source_exists for the literature path)."
+check = "SELECT COUNT(*) FROM claim_evidence e WHERE e.source_kind='reference' AND NOT EXISTS (SELECT 1 FROM reference r WHERE r.reference_id = e.source_ref);"
+expect = 0
+
+# ───────────────── knowledge_pack adapter validity ─────────────────
+
+[[invariant]]
+name = "enabled_adapter_has_ref"
+area = "knowledge"
+description = "An enabled adapter pack (runner|validator|compiler|metric_vocab) must declare a non-empty ref so the pluggable command can resolve it."
+check = "SELECT COUNT(*) FROM knowledge_pack WHERE enabled=1 AND kind IN ('runner','validator','compiler','metric_vocab') AND (ref IS NULL OR ref = '');"
+expect = 0
+
+[[invariant]]
+name = "adapter_priority_unique"
+area = "knowledge"
+description = "Deterministic adapter resolution: among enabled adapters of the same (domain, kind), priority must be unique (lowest priority = primary, others = fallbacks), so resolution never ties. With 0 or 1 enabled adapter per (domain,kind) this is trivially satisfied (default platform)."
+check = "SELECT COALESCE(SUM(n-1),0) FROM (SELECT COUNT(*) n FROM knowledge_pack WHERE enabled=1 AND kind IN ('runner','validator','compiler','metric_vocab') GROUP BY domain, kind, priority HAVING COUNT(*) > 1);"
+expect = 0
+
+# ───────────────── Structural / scheduling ─────────────────
+
+[[invariant]]
+name = "single_open_round"
+area = "structure"
+description = "At most one open round per quest."
+check = "SELECT COALESCE(SUM(n-1),0) FROM (SELECT COUNT(*) n FROM round WHERE status='open' GROUP BY quest_id HAVING COUNT(*) > 1);"
+expect = 0
+
+[[invariant]]
+name = "round_index_bounded"
+area = "structure"
+description = "A quest's round_index must never exceed its max_rounds budget."
+check = "SELECT COUNT(*) FROM quest WHERE round_index > max_rounds;"
+expect = 0
+
+[[invariant]]
+name = "single_selected_idea_per_branch"
+area = "structure"
+description = "At most one idea may be 'selected' per branch (one active route per branch)."
+check = "SELECT COALESCE(SUM(n-1),0) FROM (SELECT COUNT(*) n FROM idea WHERE status='selected' AND branch_id IS NOT NULL GROUP BY branch_id HAVING COUNT(*) > 1);"
+expect = 0
+
+[[invariant]]
+name = "active_branch_valid"
+area = "structure"
+description = "quest.active_branch_id, when set, must reference a branch of that quest."
+check = "SELECT COUNT(*) FROM quest q WHERE q.active_branch_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM branch b WHERE b.branch_id = q.active_branch_id AND b.quest_id = q.quest_id);"
+expect = 0
+
+[[invariant]]
+name = "active_idea_valid"
+area = "structure"
+description = "quest.active_idea_id, when set, must reference an idea of that quest."
+check = "SELECT COUNT(*) FROM quest q WHERE q.active_idea_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM idea i WHERE i.idea_id = q.active_idea_id AND i.quest_id = q.quest_id);"
+expect = 0
+
+[[invariant]]
+name = "intake_adopt_trusted"
+area = "structure"
+description = "An intake_asset may only be ADOPTED (adopt_as set) if it was trust-ranked 'trusted'."
+check = "SELECT COUNT(*) FROM intake_asset WHERE adopt_as IS NOT NULL AND adopt_as <> '' AND trust <> 'trusted';"
+expect = 0
+
+[[invariant]]
+name = "single_incumbent_per_quest"
+area = "structure"
+description = "At most one frontier_entry may be the 'incumbent' per quest (the current best of the optimization frontier)."
+check = "SELECT COALESCE(SUM(n-1),0) FROM (SELECT COUNT(*) n FROM frontier_entry WHERE status='incumbent' GROUP BY quest_id HAVING COUNT(*) > 1);"
+expect = 0
+
+[[invariant]]
+name = "park_has_reopen"
+area = "structure"
+description = "A finalize outcome 'park' (park_and_continue_later) must record reopen_conditions."
+check = "SELECT COUNT(*) FROM finalize_outcome WHERE outcome='park' AND (reopen_conditions IS NULL OR reopen_conditions = '');"
+expect = 0
+
+[[invariant]]
+name = "publish_has_incumbent"
+area = "structure"
+description = "A finalize outcome 'publish_and_continue' must name the next_incumbent_ref to continue from."
+check = "SELECT COUNT(*) FROM finalize_outcome WHERE outcome='publish_and_continue' AND (next_incumbent_ref IS NULL OR next_incumbent_ref = '');"
+expect = 0
+
+[[invariant]]
+name = "gated_stop_confirmed"
+area = "structure"
+description = "A quest must not be stopped on a gated stop decision that the operator never confirmed."
+check = "SELECT COUNT(*) FROM decision d JOIN quest q ON q.quest_id = d.quest_id WHERE d.route='stop' AND d.requires_user_confirm=1 AND d.confirmed=0 AND q.run_state='stopped';"
+expect = 0
+
+[[invariant]]
+name = "experiment_requires_gpu_confirmation"
+area = "structure"
+description = "GPU-use gate: any handoff in a GPU-using-stage round (experiment OR analysis — experiments/benchmarks/profiling and analyst ablations may execute GPU code) requires the quest to have an operator-confirmed gpu_allocation (status='confirmed' with a non-empty device set). GPU-using work must not run on unconfirmed GPUs. (Stage comes from the round; handoff has no stage column.)"
+check = "SELECT COUNT(*) FROM handoff h JOIN round r ON r.quest_id=h.quest_id AND r.round_index=h.round_index WHERE r.stage IN ('experiment','analysis') AND NOT EXISTS (SELECT 1 FROM gpu_allocation g WHERE g.quest_id=h.quest_id AND g.status='confirmed' AND g.devices IS NOT NULL AND g.devices<>'');"
+expect = 0

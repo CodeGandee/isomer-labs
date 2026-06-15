@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/experiment",
+  "title": "experiment upsert",
+  "description": "Create/update an experiment. record_id = experiment_id. Failed runs use status='failed' (never 'done') so bo_done_has_objective stays satisfiable.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "run_contract_ref", "status"],
+  "properties": {
+    "record_type": { "const": "experiment.upsert" },
+    "record_id": { "type": "string" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string" },
+    "idea_id": { "type": ["string", "null"] },
+    "branch_id": { "type": ["string", "null"] },
+    "round_index": { "type": "integer", "minimum": 0 },
+    "run_contract_ref": { "type": "string" },
+    "is_baseline": { "type": "boolean" },
+    "status": { "enum": ["designed", "running", "done", "failed", "aborted"] },
+    "log_ref": { "type": "string" }
+  }
+}

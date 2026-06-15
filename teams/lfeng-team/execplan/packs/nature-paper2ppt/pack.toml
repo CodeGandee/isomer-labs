@@ -1,0 +1,8 @@
+name = "nature-paper2ppt"
+kind = "compiler"
+backs = ["render slides"]
+entrypoint = "adapter:render"
+input_formats = ["json", "md"]
+output_format = "html"
+deps = []
+description = "Build a self-contained HTML slide deck from a paper outline (JSON/Markdown). pptx upgrade path: swap a python-pptx adapter at this ref."
