@@ -6,6 +6,20 @@
 
 Isomer Labs is a private lab for developing an automatic research platform powered by multi-agent technology.
 
+## Project Goal
+
+Isomer Labs aims to develop an interactive, semi-automatic research conduction platform. The platform uses multi-agent research teams as a research engine, while a human user sets goals and steers the work at critical steps.
+
+The project is inspired by DeepScientist, available locally under `extern/orphan/DeepScientist`, but it differs in several design goals:
+
+- support multi-agent teamwork from the start, including predefined research teams and user-defined agent teams
+- keep agent-team composition open to customization as a core platform capability
+- expose a modular, white-box system rather than a fully system-controlled workflow
+- decouple the research engine from the GUI
+- drive the research engine through an operator agent controlled by the user
+- generate task-specific GUI views for visualizing research artifacts
+- organize projects so they can integrate into user-owned workspaces
+
 ## Name
 
 `Isomer Labs` reflects the platform's core idea: research work can be reorganized into different agent structures depending on the problem.

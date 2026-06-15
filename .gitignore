@@ -14,3 +14,4 @@ tmp/
 .claude/
 .codex/
 .git/
+.agents/skills
