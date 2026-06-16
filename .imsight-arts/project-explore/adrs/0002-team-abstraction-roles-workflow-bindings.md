@@ -16,4 +16,5 @@ accepted
 
 - Team definitions are concrete enough to run, inspect, and reproduce.
 - Users can customize team shape without writing a full execution graph.
+- Team definitions should provide enough identity and ownership information for a Research Engine Adapter to construct Agent Instances and per-agent Agent Workspaces during execution.
 - Lower-level execution policy, budgets, and generated GUI details can stay in separate manifest or workspace documents.

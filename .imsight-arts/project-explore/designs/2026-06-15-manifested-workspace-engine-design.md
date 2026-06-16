@@ -13,10 +13,10 @@ Relevant project-goal evidence:
 - Isomer Labs should be an interactive, semi-automatic research-conduction platform where a human user defines goals, supplies context, chooses constraints, and steers critical decisions.
 - Multi-agent research teams are the core research engine.
 - Users must be able to choose predefined teams or define custom teams.
-- The operator agent coordinates team activity, asks for user decisions, translates intent into team instructions, and presents work products.
-- The platform should expose goals, teams, task plans, artifacts, decisions, prompts, tool calls, and research state.
+- The Operator Agent coordinates team activity, asks for user decisions, translates intent into team instructions, and presents work products.
+- The platform should expose goals, teams, task plans, Artifacts, decisions, prompts, tool calls, and research state.
 - The research engine and GUI should be decoupled.
-- Generated GUI views should visualize task-specific artifacts, state, and decision points.
+- Generated GUI views should visualize task-specific Artifacts, state, and decision points.
 - Project state can live inside a user-owned project instead of a system-owned workspace.
 
 Accepted ADRs:
@@ -30,146 +30,186 @@ Accepted ADRs:
 
 ## Overview
 
-Isomer Labs uses a manifested workspace engine as its primary architecture. A project-level `.isomer-labs/manifest.toml` file is the discovery authority for project configuration and project-local research workspaces. Workspaces may live in arbitrary directories inside the user-owned project, but each workspace must be declared in the manifest before the engine treats it as managed state.
+Isomer Labs uses a manifested workspace engine as its primary architecture. The Project Manifest at `.isomer-labs/manifest.toml` is the discovery authority for project configuration and project-local Isomer Workspaces. A Research Thread is the user-facing line of inquiry; by default, each Research Thread is backed by one Isomer Workspace. Isomer Workspaces may live in arbitrary directories inside the user-owned Project, but each workspace must be declared in the Project Manifest before the engine treats it as managed state.
 
-Each workspace owns its execution state and research outputs. Compact control-plane state lives in SQLite. Rich artifacts remain ordinary files, such as Markdown notes, JSON outputs, logs, code, figures, reports, and view manifests. The operator agent is the coordination boundary between the user, specialist agents, durable state, and GUI-facing views.
+Each Isomer Workspace owns its Workspace Runtime and research outputs. Compact control-plane state lives in SQLite. Rich Artifacts remain ordinary files, such as Markdown notes, JSON outputs, logs, code, figures, reports, and View Manifests. During team execution, each concrete Agent Instance receives an Agent Workspace for agent-owned runtime state and Agent Artifacts. These workspaces create advisory ownership boundaries, not filesystem-grade access control. The Operator Agent is the coordination boundary between the user, Specialist Agents, durable state, and GUI-facing views.
 
-The GUI is not the engine. The engine remains useful through command-line and agent workflows. When a GUI is present, it reads engine-produced view manifests and renders task-specific views for artifacts, decision gates, runs, claims, result tables, and next actions.
+Isomer can use Houmao as an example Research Engine Adapter, especially for concepts such as specialists, project profiles, native roles, recipes, launch dossiers, and managed agents. These concepts should inform adapter design without becoming core Isomer terms. The core architecture should describe provider-neutral Agent Definitions, Agent Instances, Bindings, Runs, and Agent Workspaces.
+
+The GUI is not the engine. The engine remains useful through command-line and agent workflows. When a GUI is present, it reads engine-produced View Manifests and renders task-specific views for Artifacts, Gates, Runs, Research Claims, result tables, and next actions.
 
 ## Actors & Entry Points
 
 ### Human User
 
-The human user defines the research goal, provides context, sets constraints, approves or edits teams and workflows, resolves gated decisions, and steers active work. The user can pause, branch, resume, archive, override team composition, or alter workflow structure.
+The human user defines the research goal, provides context, sets constraints, approves or edits teams and workflows, resolves gated decisions, and steers active Research Threads. The user can pause, create Research Branches, resume, archive, override team composition, or alter workflow structure.
 
 ### Operator Agent
 
-The operator agent is the user-controlled coordinator. It turns user intent into executable team instructions, proposes team and workflow definitions, dispatches work to specialists, records decisions, and asks the user for input when a decision is irreversible or claim-shaping.
+The Operator Agent is the user-controlled coordinator. It turns user intent into executable team instructions, proposes Team Definitions and workflows, dispatches work to Specialist Agents, records decisions, and asks the user for input when a decision is irreversible or claim-shaping.
 
-The operator agent does not silently finalize research direction, waive baselines, choose high-impact routes, strengthen claims, archive work, or end a project without a recorded human gate.
+The Operator Agent does not silently finalize research direction, waive baselines, choose high-impact Research Branches, strengthen Research Claims, archive work, or end a Project without a recorded Gate.
 
 ### Specialist Agents
 
-Specialist agents perform role-owned work. Early roles can include scout, planner, literature reviewer, experimenter, analyst, writer, reviewer, and decision-support specialist. A team definition binds these roles to workflow stages, runners, tools, skills, and handoff rules.
+Specialist Agents perform role-owned work. Early Roles can include scout, planner, literature reviewer, experimenter, analyst, writer, reviewer, and decision-support specialist. A Team Definition binds these Roles to Workflow Stages, runners, tools, skills, and handoff rules. Each active Agent Instance should write to its own Agent Workspace by convention; peer agents may inspect declared readable files, but the engine does not enforce OS-level file permissions.
 
 ### CLI or Agent Entry Point
 
-The engine can be used without a GUI. CLI or agent workflows can create workspaces, validate manifests, inspect state, run the operator loop, and read or write artifacts.
+The engine can be used without a GUI. CLI or agent workflows can create Isomer Workspaces, validate Project Manifests, inspect state, run the operator loop, and read or write Artifacts.
 
 ### GUI Renderer
 
-The GUI renderer reads view manifests from a workspace and renders task-specific interfaces. It sends user actions, approvals, redirects, and comments back to the engine through defined action channels. It does not own research state, team execution, or artifact provenance.
+The GUI Renderer reads View Manifests from an Isomer Workspace and renders task-specific interfaces. It sends user actions, approvals, redirects, and comments back to the engine through defined action channels. It does not own research state, team execution, or Artifact provenance.
 
 ## Components & Responsibilities
 
-### Project Config
+### Project Config Directory
 
-Project config lives under `.isomer-labs/`. The required root artifact is `manifest.toml`.
+Project-level configuration lives under the `.isomer-labs/` Project Config Directory. The required root artifact is the Project Manifest, `manifest.toml`.
 
-The manifest is responsible for:
+The Project Manifest is responsible for:
 
-- listing known workspaces
-- naming the active workspace when applicable
-- declaring relative workspace paths
+- listing known Isomer Workspaces
+- naming the active Research Thread or active Isomer Workspace when applicable
+- declaring relative Isomer Workspace paths
 - storing project-level defaults
-- pointing to reusable team definitions when they are shared across workspaces
-- defining compatibility versions for manifest and workspace schemas
+- pointing to reusable Team Definitions when they are shared across Isomer Workspaces
+- defining compatibility versions for Project Manifest and Workspace Runtime schemas
 
-The manifest must be validated before runs start. Missing workspace paths, duplicate workspace ids, paths outside the project root, stale schema versions, and invalid active-workspace references are configuration errors.
+The Project Manifest must be validated before Runs start. Missing workspace paths, duplicate workspace ids, paths outside the Project root, stale schema versions, and invalid active-workspace references are configuration errors.
 
 ### Workspace Runtime
 
-Each workspace stores runtime state and artifacts. A workspace should have a stable root path and a small internal layout, for example:
+Each Isomer Workspace stores Workspace Runtime state and Artifacts. A workspace should have a stable root path and a small internal layout, for example:
 
 ```text
 <workspace>/
   state.sqlite
   artifacts/
+  agents/
   teams/
   views/
   runs/
   logs/
 ```
 
-The exact layout can evolve, but the split must stay clear: SQLite stores compact control-plane facts and references; files store rich content.
+The exact layout can evolve, but the split must stay clear: SQLite stores compact control-plane facts and references; files store rich content. `runs/` stores bounded execution episodes inside the Research Thread backed by the workspace.
+
+### Agent Definition and Engine Adapter
+
+An Agent Definition is the provider-neutral pre-launch description used to construct an Agent Instance. It can include prompt material, skills, tool lane, setup, model posture, credential references, mailbox defaults, environment defaults, and launch posture through Bindings or profile references.
+
+A Research Engine Adapter maps Agent Definitions and Team Definitions onto a concrete execution backend. A Houmao adapter may translate Isomer concepts into Houmao specialists, project profiles, native roles, recipes, launch dossiers, and managed-agent launch commands. Other adapters should be able to provide the same Isomer contracts without implementing Houmao's internal document model.
+
+### Agent Workspace
+
+An Agent Workspace is a per-agent work area inside an Isomer Workspace. For each team execution, the engine should construct an Agent Workspace for each participating Agent Instance that needs local runtime state, scratch files, logs, or Agent Artifacts. The owning Role remains responsibility metadata, not the workspace owner.
+
+An Agent Workspace should have an advisory Workspace Boundary. The boundary can be expressed by a `README.md`, a small manifest, or both. It declares the owning agent, intended writable paths, and paths that peer agents may read. This boundary is a collaboration contract, not a security boundary. An agent with system tools may still modify peer files, so Isomer should validate and record behavior instead of assuming hard isolation.
+
+One possible layout is:
+
+```text
+<workspace>/
+  agents/
+    <agent-instance-id>/
+      README.md
+      boundary.toml
+      runtime/
+      artifacts/
+      scratch/
+      logs/
+```
+
+Agents should treat peer Agent Workspaces as read-only unless a workflow explicitly assigns a repair or migration task. If a peer read becomes part of durable reasoning, the engine should record the dependency through a handoff, promoted Artifact, Evidence Item, or Provenance Record.
 
 ### Team Definition
 
-A team definition includes roles, workflow, and bindings.
+A Team Definition includes Roles, workflow, and Bindings.
 
-Roles name the participating agents and their responsibilities. Workflow defines stages, stage ownership, handoff expectations, and gate points. Bindings connect roles to concrete runners, tools, skills, model profiles, or execution adapters.
+Roles name the participating agents and their responsibilities. Workflow defines Workflow Stages, stage ownership, handoff expectations, and Gate points. Bindings connect Roles to concrete runners, tools, skills, model profiles, or execution adapters.
 
-The team definition is concrete enough to run and inspect, but it should not require users to write a full execution graph. Lower-level runtime details can live in workspace state, default profiles, or operator-generated execution plans.
+The Team Definition is concrete enough to run and inspect, but it should not require users to write a full execution graph. Lower-level runtime details can live in Workspace Runtime state, default profiles, or Operator-generated execution plans.
 
 ### Operator Control Loop
 
 The operator control loop manages the user-facing research loop:
 
-1. Read the project manifest and active workspace.
+1. Read the Project Manifest and active Research Thread or Isomer Workspace.
 2. Load the research goal, context, and constraints.
-3. Propose or load a team definition and workflow.
+3. Propose or load a Team Definition and workflow.
 4. Ask the user to approve or edit the team and workflow.
-5. Dispatch bounded work to specialist agents.
-6. Record outputs, prompts, tool calls, evidence, decisions, and state transitions.
-7. Generate or update view manifests.
+5. Dispatch bounded work to Specialist Agents.
+6. Record outputs, prompts, tool calls, Evidence Items, Decision Records, and state transitions.
+7. Generate or update View Manifests.
 8. Return to the user for irreversible or claim-shaping decisions.
-9. Continue, branch, pause, archive, or finalize according to recorded decisions.
+9. Continue, create Research Branches, pause, archive, or finalize according to recorded decisions.
 
-The operator should prefer bounded turns and durable state over long live sessions. Recovery should use persisted state, handoffs, gates, and run records instead of relying on in-memory conversation state.
+The Operator Agent should prefer bounded turns and durable state over long live sessions. Recovery should use persisted state, handoffs, Gates, and Run records instead of relying on in-memory conversation state.
 
 ### Artifact and Provenance Service
 
-The artifact and provenance service records what happened and why. It is responsible for:
+The Artifact and provenance service records what happened and why. It is responsible for:
 
-- artifact ids and paths
+- Artifact ids and paths
 - prompt records
 - tool-call records
 - handoff records
-- decision records
-- evidence links
-- claim and result references
-- run status
+- Decision Records
+- Evidence Items and claim-evidence links
+- Research Claim and result references
+- Run status
 - timestamps and actor ids
 
-This service should expose validation commands so the engine can detect broken refs, missing files, invalid transitions, unresolved gates, and unsupported claims.
+This service should expose validation commands so the engine can detect broken refs, missing files, invalid transitions, unresolved Gates, and unsupported Research Claims.
 
 ### View Manifest Generator
 
-The view manifest generator creates semantic GUI specifications from workspace state. A view manifest describes what the GUI should display and what actions are available, not how the GUI should implement pixels or components.
+The View Manifest generator creates semantic GUI specifications from Workspace Runtime state. A View Manifest describes what the GUI should display and what actions are available, not how the GUI should implement pixels or components.
 
-A view manifest should cover:
+A View Manifest should cover:
 
 - view id and title
-- view type, such as artifact list, claim graph, experiment matrix, decision queue, run timeline, result table, figure review, or next-action panel
-- data sources and artifact refs
+- view type, such as Artifact list, Research Claim graph, experiment matrix, decision queue, Run timeline, result table, figure review, or next-action panel
+- data sources and Artifact refs
 - data bindings
 - available user actions
-- pending gates and required decisions
+- pending Gates and required decisions
 - refresh or invalidation hints
 
 ### GUI Renderer
 
-The GUI renderer owns layout, interaction widgets, visual hierarchy, and rendering. It reads view manifests, fetches referenced data, displays pending gates with evidence and consequences, and sends user actions back to the engine.
+The GUI Renderer owns layout, interaction widgets, visual hierarchy, and rendering. It reads View Manifests, fetches referenced data, displays pending Gates with evidence and consequences, and sends user actions back to the engine.
 
-The GUI must tolerate view-manifest version mismatches, missing artifacts, unavailable actions, and stale state. It should surface these as visible workspace issues rather than hiding them.
+The GUI must tolerate View Manifest version mismatches, missing Artifacts, unavailable actions, and stale state. It should surface these as visible workspace issues rather than hiding them.
 
 ## Data Model
 
 The first SQLite schema should stay compact and implementation-focused. It should include these entity families:
 
 - `workspace`: workspace id, schema version, root path, status, created time, updated time
+- `research_thread`: thread id, workspace id, research goal ref, goal kind, lifecycle state, active research branch id, created time, updated time
+- `research_branch`: branch id, research thread id, parent branch id, status, hypothesis ref, created time, updated time
 - `team`: team id, source path, status, active flag
 - `role`: role id, team id, role kind, display name, binding ref
+- `agent_definition`: agent definition id, source path, adapter kind, profile refs, credential refs, prompt refs, status
 - `workflow_stage`: stage id, team id, ordinal, owner role, gate policy
-- `run`: run id, workspace id, team id, status, current stage, started time, finished time
+- `run`: run id, research thread id, research branch id, team id, status, current stage, started time, finished time
 - `handoff`: handoff id, run id, from role, to role, stage id, status, attempt count, due time
-- `artifact`: artifact id, workspace id, kind, path, content type, producing run or stage
-- `decision`: decision id, run id, stage id, kind, selected option, rationale artifact ref, user gate flag
+- `agent_instance`: agent instance id, agent definition id, team id, run id, role id, adapter kind, provider instance ref, status
+- `agent_workspace`: agent workspace id, workspace id, team id, run id, role id, agent instance id, root path, status, boundary ref
+- `agent_runtime`: agent runtime id, agent workspace id, run id, status, prompt refs, tool trace refs, log path
+- `workspace_boundary`: boundary id, agent workspace id, declaration path, readable path rules, owner write path rules, advisory flag
+- `artifact`: artifact id, workspace id, owner agent workspace id when applicable, kind, path, content type, producing run or stage, promotion state
+- `decision_record`: decision id, run id, stage id, kind, selected option, rationale artifact ref, user gate flag
 - `gate`: gate id, run id, decision id, status, required actor, consequence summary
-- `prompt_record`: prompt id, run id, role id, path, model or runner ref
-- `tool_call_record`: tool call id, run id, role id, tool name, input ref, output ref, status
-- `claim`: claim id, run id, status, text ref
-- `evidence_link`: link id, claim id, source kind, source ref, relation, resolved flag
+- `prompt_record`: prompt id, run id, role id, agent instance id, path, model or runner ref
+- `tool_call_record`: tool call id, run id, role id, agent instance id, tool name, input ref, output ref, status
+- `research_claim`: claim id, run id, status, text ref
+- `evidence_item`: evidence id, workspace id, source kind, source ref, summary ref
+- `claim_evidence_link`: link id, claim id, evidence id, relation, resolved flag
+- `finding`: finding id, research thread id, status, summary ref, primary evidence id
 - `view_manifest`: view id, workspace id, path, schema version, status
 
 Rich content should stay outside SQLite unless it is a short label, status, id, path, timestamp, or scalar value needed for validation and scheduling.
@@ -180,84 +220,102 @@ Rich content should stay outside SQLite unless it is a short label, status, id, 
 User goal and context
         |
         v
-.isomer-labs/manifest.toml resolves workspace
+.isomer-labs/manifest.toml resolves Research Thread and Isomer Workspace
         |
         v
-Operator loads workspace state and proposes team/workflow
+Operator loads Workspace Runtime state and proposes team/workflow
         |
         v
 User approves, edits, or replaces team/workflow
         |
         v
-Operator dispatches bounded work to specialist agents
+Research Engine Adapter creates or resolves Agent Instances
         |
         v
-Specialists produce artifacts, prompts, tool calls, and results
+Operator dispatches bounded work to Specialist Agents
         |
         v
-Workspace records compact state in SQLite and rich files on disk
+Engine constructs or resolves Agent Workspaces and advisory boundaries
         |
         v
-Engine emits or updates view manifests
+Specialist Agents produce Artifacts, prompts, tool calls, and results
         |
         v
-GUI renders task-specific views and pending gates
+Workspace Runtime records compact state in SQLite and rich files on disk
         |
         v
-User steers, branches, pauses, archives, or continues
+Engine emits or updates View Manifests
+        |
+        v
+GUI renders task-specific views and pending Gates
+        |
+        v
+User steers, creates Research Branches, pauses, archives, or continues
 ```
 
 ## Error Handling & Edge Cases
 
-Manifest validation must catch invalid workspace references before the engine opens a workspace. Workspace paths should be relative to the project root unless the project explicitly allows another rule. Paths outside the project root should be rejected by default.
+Project Manifest validation must catch invalid workspace references before the engine opens an Isomer Workspace. Workspace paths should be relative to the project root unless the project explicitly allows another rule. Paths outside the project root should be rejected by default.
 
 State migrations must be explicit. If a workspace schema is too old or too new, the engine should stop with a clear message rather than partially opening it.
 
-Invalid team definitions should fail before execution. Examples include missing operator role, unbound stage owner, unknown runner binding, duplicate role ids, and gate policies that reference missing stages.
+Invalid Team Definitions should fail before execution. Examples include missing Operator Agent Role, unbound stage owner, unknown runner Binding, duplicate Role ids, and Gate policies that reference missing Workflow Stages.
 
-Unresolved gates should block only the actions they govern. For example, a pending baseline waiver gate should block downstream experiment synthesis but should not prevent the user from inspecting artifacts or editing team configuration.
+Adapter mapping errors should fail before launch. A Team Definition may be valid while a selected Research Engine Adapter cannot construct the required Agent Instances because an Agent Definition, credential reference, profile, launch posture, or tool lane is missing. The error should name the neutral Isomer concept first and provider-specific details second.
+
+Unresolved Gates should block only the actions they govern. For example, a pending baseline waiver Gate should block downstream experiment synthesis but should not prevent the user from inspecting Artifacts or editing team configuration.
 
 Failed handoffs should become durable state. The operator can retry, reroute, ask the user, or mark the stage blocked. It should not spin in a hidden retry loop.
 
-Contradictory evidence should block claim strengthening until resolved. A claim can remain open, be weakened, be withdrawn, or be marked supported only after the contradiction has a recorded resolution.
+Agent Workspace boundaries are advisory. If validation detects that an agent wrote into a peer workspace without an explicit repair or migration task, the engine should record a workspace issue or Provenance Record. It should not claim that filesystem controls made the write impossible.
 
-Missing artifact files should be visible validation failures. The database should keep the ref, but views and reports should mark the artifact missing until repaired or superseded.
+Contradictory Evidence Items should block Research Claim strengthening until resolved. A Research Claim can remain open, be weakened, be withdrawn, or be marked supported only after the contradiction has a recorded resolution.
+
+Missing Artifact files should be visible validation failures. The database should keep the ref, but views and reports should mark the Artifact missing until repaired or superseded.
 
 ## Testing Strategy
 
 Early tests should focus on contracts that will be expensive to change later:
 
 - manifest parsing and path normalization
-- workspace discovery from `.isomer-labs/manifest.toml`
+- Isomer Workspace discovery from `.isomer-labs/manifest.toml`
+- Research Thread lifecycle state and workspace binding
 - rejection of workspace paths outside the project root
-- team definition validation for roles, workflow stages, and bindings
+- Team Definition validation for Roles, Workflow Stages, and Bindings
+- Research Engine Adapter mapping from Agent Definitions to Agent Instances
+- Agent Workspace layout creation and boundary declaration parsing
+- advisory peer-read behavior, peer-write issue detection, and Agent Artifact promotion
 - SQLite migration creation and version checks
-- artifact ref validation
-- decision-gate lifecycle transitions
+- Artifact ref validation
+- Gate lifecycle transitions
 - handoff status transitions and retry limits
-- claim/evidence consistency rules
-- view-manifest schema validation
-- end-to-end creation of a minimal workspace, team, run, artifact, gate, and view manifest
+- Research Claim and Evidence Item consistency rules
+- View Manifest schema validation
+- end-to-end creation of a minimal Isomer Workspace, Research Thread, team, Run, Artifact, Gate, and View Manifest
 
 These tests can start with `unittest` under `tests/unit/`, with filesystem and SQLite checks promoted to `tests/integration/` when needed.
 
 ## Key Constraints
 
 - Project state discovery starts from `.isomer-labs/manifest.toml`.
-- Workspaces are project-local directories referenced by the manifest.
-- Team definitions include roles, workflow, and bindings.
-- Human gates apply to irreversible or claim-shaping decisions, not every stage boundary.
-- The engine emits view manifests; the GUI renders them.
-- SQLite stores compact control-plane state; files store rich artifacts.
-- The operator agent coordinates team work and mediates between user intent, specialist execution, durable state, and GUI-facing views.
+- Research Threads are the user-facing research lifecycle concept.
+- Isomer Workspaces are project-local directories referenced by the Project Manifest.
+- Team Definitions include Roles, workflow, and Bindings.
+- Agent Definitions and Agent Instances are core Isomer concepts; Houmao specialists, profiles, roles, recipes, launch dossiers, and managed agents are adapter details.
+- Team execution should construct Agent Workspaces so agents can own local runtime state and Agent Artifacts without relying on one shared scratch area.
+- Agent Workspace boundaries and Peer Read Access are advisory contracts, not filesystem-grade access control.
+- Gates apply to irreversible or claim-shaping decisions, not every stage boundary.
+- The engine emits View Manifests; the GUI renders them.
+- SQLite stores compact control-plane state; files store rich Artifacts.
+- The Operator Agent coordinates team work and mediates between user intent, Specialist Agent execution, durable state, and GUI-facing views.
 - The first implementation should avoid a fully declarative graph engine until the manifested workspace loop proves useful.
 
 ## Open Questions
 
 - Exact TOML schema for `.isomer-labs/manifest.toml`.
-- Exact workspace directory layout.
-- Initial team-definition file format.
-- Initial view-manifest schema and supported view types.
+- Exact Isomer Workspace directory layout.
+- Initial Team Definition file format.
+- Initial View Manifest schema and supported view types.
 - Migration command shape and schema-version policy.
-- Whether reusable team definitions should live under `.isomer-labs/teams/`, inside workspaces, or both.
+- Whether reusable Team Definitions should live under `.isomer-labs/teams/`, inside Isomer Workspaces, or both.
 - How much DeepScientist skill and artifact structure should be adapted into initial workspace templates.

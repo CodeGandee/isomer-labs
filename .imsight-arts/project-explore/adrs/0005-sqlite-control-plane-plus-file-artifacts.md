@@ -1,6 +1,6 @@
 # SQLite Control Plane Plus File Artifacts
 
-Isomer Labs will use a SQLite control plane plus file artifacts for durable execution state and provenance. The `.isomer-labs/manifest.toml` file discovers project-local workspaces, while each workspace can store compact state, transitions, refs, gates, and provenance in SQLite and keep rich artifacts as Markdown, JSON, logs, figures, reports, and source files.
+Isomer Labs will use a SQLite control plane plus file artifacts for durable execution state and provenance. The Project Manifest at `.isomer-labs/manifest.toml` discovers project-local Isomer Workspaces that back Research Threads, while each workspace can store compact state, transitions, refs, Gates, and provenance in SQLite and keep rich Artifacts as Markdown, JSON, logs, figures, reports, and source files.
 
 ## Status
 
@@ -16,4 +16,5 @@ accepted
 
 - Recovery, scheduling, gate queries, and consistency validation can use SQL instead of ad hoc file scans.
 - Human-readable research outputs remain inspectable as ordinary project files.
+- Per-agent Agent Workspaces can hold Agent Runtime files and Agent Artifacts for concrete Agent Instances while SQLite records ownership, advisory Workspace Boundaries, and provenance links.
 - The implementation needs schema migrations, validation commands, and a clear split between database refs and artifact paths.
