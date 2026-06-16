@@ -17,7 +17,7 @@
         "round_index": { "type": "integer", "minimum": 0 },
         "from_stage": { "type": "string" },
         "to_stage": { "type": "string" },
-        "route": { "enum": ["continue", "branch", "reset", "stop", "finalize", "intake-audit", "scope", "baseline", "idea", "experiment", "analysis", "outline", "write", "review", "rebuttal", "optimize"] },
+        "route": { "enum": ["continue", "branch", "reset", "stop", "finalize", "intake-audit", "scope", "baseline", "idea", "experiment", "analysis", "outline", "write", "review", "rebuttal", "optimize", "amend-acceptance"] },
         "rationale_ref": { "type": "string" },
         "requires_user_confirm": { "type": "boolean", "default": false }
       }

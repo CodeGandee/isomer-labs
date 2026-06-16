@@ -62,8 +62,9 @@ Harness tools (deterministic; no LLM; the trust boundary):
   *Domain-pluggable* — the default is a generic command-runner; domains override it.
 - **Validator**: baseline gate, metric-completeness/comparability checks, manuscript coverage,
   claim↔evidence consistency. *Partly domain-pluggable.* Replaces DeepScientist `artifact.validate_*`.
-- **Findings store**: persist/retrieve durable findings memory + reflexion notes (cross-round and
-  cross-quest). Replaces DeepScientist `memory/{ideas,decisions,knowledge}` + reflexion store.
+- **Findings store**: persist/retrieve durable findings memory + reflexion notes, **cross-round but
+  per-quest only** (quest-isolated — a quest never reads another quest's findings). Replaces DeepScientist
+  `memory/{ideas,decisions,knowledge}` + reflexion store.
 - **Git checkpoint**: commit durable artifacts into the quest worktree; manage branches/worktrees.
   Replaces DeepScientist `git.auto_checkpoint`.
 - **Artifact compiler**: render reports/figures (e.g. LaTeX/markdown/plots). *Domain-pluggable.*
@@ -75,7 +76,8 @@ Harness tools (deterministic; no LLM; the trust boundary):
   from findings memory when no search space is defined.
 - **Literature / web search**: a generic harness command for arxiv + web retrieval; fetched sources
   land in the `reference` table (cached under `runs/<quest>/refs/`) and become `claim_evidence` of
-  `source_kind = 'reference'`. Available to all quests. Replaces DeepScientist `artifact.arxiv` / deepxiv.
+  `source_kind = 'reference'`. References are **quest-owned** — each quest fetches and caches its own
+  sources; no cross-quest reference reuse. Replaces DeepScientist `artifact.arxiv` / deepxiv.
 
 ## Operating Model
 
@@ -89,6 +91,22 @@ Harness tools (deterministic; no LLM; the trust boundary):
   stop / finalize). `intake-audit` is an optional entry path for quests starting from existing assets;
   `optimize` is the orchestrator-internal algorithm-first frontier loop; `finalize` resolves to
   complete / stop / park / publish-and-continue.
+
+  > **Pre-launch research-contract expansion (active).** *Before* `quest.create`, the operator's minimal
+  > Objective/Acceptance is expanded into a deeper, domain-neutral scientific done-bar (falsifiable claim,
+  > mechanism, baseline/ablation, alternative ruled out, scope, scholarly positioning, traceability), which
+  > the operator **approves / edits / trims** (skill `deepresearch-research-contract`; rubric in
+  > `execplan/docs/research-contract.md`). The approved contract is recorded as a `research-contract`
+  > artifact and the move to `running` is **hard-gated** on it.
+  >
+  > **Claude effort selection (active, Claude-conditional).** When any participant uses `tool='claude'`, the
+  > operator must also choose a Claude effort/reasoning level before launch (Standard/High/Max-if-supported/
+  > role-specific/custom). It is applied as a launch-time override (`agents launch --reasoning-level`), NOT
+  > persisted onto the shared profiles (quest-independence: the template stays pristine); it is recorded as a
+  > `kind='effort-selection'` artifact, and **hard-gated** at `not_started → running`. See
+  > `execplan/docs/claude-effort.md`. The full move-to-running gate set is now: **clarification +
+  > research-contract + GPU + effort-selection** (`records.py` `_clarification_gate` / `_contract_gate` /
+  > `_effort_gate` / `_gpu_launch_gate`).
 - **Continuation = durable self-mail wakeup.** At the end of every round the Orchestrator writes state
   and sends a `[self-wakeup]` self-mail recording the next stage + intent; the mail-notifier wakes the
   loop. Live gateway reminders are NOT used for the spine (they die on gateway restart). Every wakeup
@@ -108,6 +126,13 @@ Harness tools (deterministic; no LLM; the trust boundary):
   DeepScientist's correctness-as-hard-gate rule.
 - **Acceptance is objective-defined.** The quest's objective declares its own success/acceptance
   criteria; the platform does not assume a single universal metric.
+
+  > **Deep done-bar + scholarship (active gates).** Acceptance is a *deep* done-bar, not a single shallow
+  > threshold the loop can clear without understanding — set at launch via the research-contract expansion
+  > (`execplan/docs/research-contract.md`) and hard-gated at `not_started → running`. Correspondingly, a
+  > `complete` finalize is **hard-gated** on genuine scholarly positioning (real Related Work + claim-linked
+  > citations, not internal provenance) — the scholarship bar in `execplan/docs/publication-quality.md`,
+  > checked by `lit audit` and `records.py::_finalize_scholarship_gate`.
 - **Stop when** any of: acceptance criteria met; **convergence** (no new admissible findings for
   `convergence_patience` rounds); **budget** exhausted (round ceiling or cost/time); or an explicit
   **stop-loss** (novelty/evidence/reader-value collapse). A stop-loss that ends the quest on
@@ -126,12 +151,16 @@ Harness tools (deterministic; no LLM; the trust boundary):
   → isolated **worktrees**, one mutable work root per Experimenter instance (no shared mutable roots).
 - **Per-quest, not shared**: the objective spec and baseline are canonical under `runs/<quest-id>/`
   (read-only to agents). `shared/` is OPTIONAL staging/templates only — never the canonical source.
-- The only **cross-quest shared state** is the control plane: the single SQLite DB `runs/state.sqlite`
-  (one active quest at a time) and the `.houmao/mailbox` messaging infra. Knowledge packs live under
-  `execplan/packs/`.
+- The only **shared state** is the control plane: the single SQLite DB `runs/state.sqlite` (one active
+  quest at a time) and the `.houmao/mailbox` messaging infra. Knowledge packs live under `execplan/packs/`.
+  This is platform INFRASTRUCTURE, not a cross-quest data pool.
+- **TOTAL QUEST ISOLATION**: a new quest never re-uses, refers to, or inspects ANY artifact of another
+  quest — not another quest's `runs/<q>/` files, not `outputs/` (q1 legacy), and not its DB rows. Findings
+  and references are quest-owned (invariants `finding_quest_owned` + `reference_quest_owned`); every quest
+  collects its data fresh. Agents read only their own quest's `runs/<this-quest>/` + their worktree.
 - **Legacy**: q1 (the first quest) predates this convention and keeps its repo at top-level
   `outputs/fa4-perf-model` — preserved as-is for provenance; `outputs/` is q1-only and not used by new quests.
-- Findings memory persists across rounds and (optionally) across quests for reuse.
+- Findings memory persists across rounds within a quest, but never across quests.
 
 ## Constraints
 
@@ -156,10 +185,11 @@ Harness tools (deterministic; no LLM; the trust boundary):
 
 **Still open:**
 
-- **Cross-quest findings visibility:** isolated per quest (DeepScientist default `independent`) vs a
-  shared global findings store. Affects `finding_memory.scope` defaults.
-
 - **DeepScientist features without a direct Houmao counterpart — operator decisions (resolved):**
+  - **Cross-quest findings visibility → RESOLVED: total quest isolation.** Findings (and references) are
+    quest-owned; no shared/global store. Enforced by schema (`quest_id` required, `scope` enum `['quest']`)
+    + invariants `finding_quest_owned`/`reference_quest_owned`. A new quest never reuses/inspects another
+    quest's findings, references, or artifacts.
   - Operator interface → **Houmao-native**: observe via `houmao-agent-inspect`/loop `status`; control
     via operator-via-mail recorded in `operator_intent_event`. No web UI/TUI built.
   - Multi-runner → **Houmao tools only** (`claude`/`codex`/`gemini`), chosen per role via

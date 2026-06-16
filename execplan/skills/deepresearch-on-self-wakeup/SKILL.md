@@ -20,10 +20,10 @@ continuation mechanism — there are no live reminders.
 1. Parse metadata; confirm `schema_id`. Look up the matching row: `$HARNESS wakeup list`.
 2. **Dedup / late delivery:** if the wakeup for this `handoff_id` is already `consumed` or `superseded`,
    archive the mail and stop (a re-arm replaced it).
-3. `$HARNESS wakeup resolve --record-id <wakeup_id> --status delivered --at <ts>`.
+3. `$HARNESS wakeup resolve --wakeup-id <wakeup_id> --status delivered --at <ts>`.
 4. Perform `next_action` — normally run **deepresearch-orchestrator-tick** for one reconciliation/dispatch
    pass on lane `<continuation_lane>` (default `main`).
-5. `$HARNESS wakeup resolve --record-id <wakeup_id> --status consumed --at <ts>`; archive the self-mail.
+5. `$HARNESS wakeup resolve --wakeup-id <wakeup_id> --status consumed --at <ts>`; archive the self-mail.
 
 ## Output
 

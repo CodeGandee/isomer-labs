@@ -64,6 +64,35 @@ def _toolchain(engine_pref=None):
     return pandoc, engine, extra
 
 
+_TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+
+
+def _available_venues():
+    if not _TEMPLATES_DIR.is_dir():
+        return []
+    return sorted(d.name for d in _TEMPLATES_DIR.iterdir() if d.is_dir())
+
+
+def _stage_venue(venue, dest_dir):
+    """Copy the venue LaTeX suite (.sty/.bst/.bib/.tex) next to the output so a venue-faithful compile is
+    possible. pandoc cannot synthesize an arbitrary venue style, so we stage the official files and let the
+    Writer author/compile main.tex against them; the default Markdown->PDF path still runs for a preview."""
+    import shutil as _sh
+    if not venue:
+        return None
+    suite = _TEMPLATES_DIR / venue
+    if not suite.is_dir():
+        return {"venue": venue, "staged": False, "error": f"unknown venue {venue!r}; have {_available_venues()}"}
+    target = Path(dest_dir) / f"venue-{venue}"
+    target.mkdir(parents=True, exist_ok=True)
+    copied = []
+    for f in suite.iterdir():
+        if f.is_file():
+            _sh.copy2(f, target / f.name)
+            copied.append(f.name)
+    return {"venue": venue, "staged": True, "venue_dir": str(target), "files": copied}
+
+
 def _has_cjk(text):
     return any("㐀" <= ch <= "鿿" for ch in text)
 
@@ -93,6 +122,7 @@ def render(*, command, input_path, out_path, params, quest_id):
     bib = params.get("bib")
     toc = params.get("toc", True)
     cjk = _has_cjk(md)
+    venue_info = _stage_venue(params.get("venue"), out_pdf.parent)
 
     pandoc, engine, extra = _toolchain(params.get("engine"))
     env = dict(os.environ)
@@ -126,19 +156,19 @@ def render(*, command, input_path, out_path, params, quest_id):
                     "summary": f"compiled PDF via pandoc+{engine}" + (" (+CJK)" if cjk else "")
                                + (" (+bib)" if bib else ""),
                     "meta": {"engine": engine, "pandoc": True, "tex_path": str(out_tex) if out_tex.exists() else None,
-                             "bytes": out_pdf.stat().st_size, "cjk": cjk, "mainfont": mainfont}}
+                             "bytes": out_pdf.stat().st_size, "cjk": cjk, "mainfont": mainfont, "venue": venue_info}}
         # fall through to .tex fallback on compile failure, surfacing the error tail
         err = (proc.stderr or proc.stdout or "")[-600:]
         _emit_tex_fallback(md, out_tex, title)
         return {"ok": True, "out_path": str(out_tex), "format": "tex",
                 "summary": f"PDF compile failed ({engine}); emitted standalone .tex",
-                "meta": {"engine": engine, "pandoc": True, "compile_error_tail": err, "pdf": False}}
+                "meta": {"engine": engine, "pandoc": True, "compile_error_tail": err, "pdf": False, "venue": venue_info}}
 
     # ---- Path 3: no toolchain -> emit standalone .tex only ----
     _emit_tex_fallback(md, out_tex, title)
     return {"ok": True, "out_path": str(out_tex), "format": "tex",
             "summary": "no pandoc/LaTeX toolchain found; emitted standalone .tex (PDF pending)",
-            "meta": {"engine": engine, "pandoc": bool(pandoc), "pdf": False,
+            "meta": {"engine": engine, "pandoc": bool(pandoc), "pdf": False, "venue": venue_info,
                      "hint": "install pandoc + a LaTeX engine (or TinyTeX) to auto-compile the PDF"}}
 
 

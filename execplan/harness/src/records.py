@@ -6,6 +6,7 @@ is split on ':' for composite PKs. Timestamps come from payload['at'] (never gen
 """
 from __future__ import annotations
 import json
+import os
 import sqlite3
 import glob
 import jsonschema
@@ -52,7 +53,7 @@ RECORD_MAP = {
     "quirk.append":            dict(table="quirk", pk=["quirk_id"], id_from="record_id", mode="insert"),
     "knowledge_pack.register": dict(table="knowledge_pack", pk=["pack_id"], id_from="record_id", mode="upsert"),
     "intake_asset.record":     dict(table="intake_asset", pk=["asset_id"], id_from="record_id", mode="upsert"),
-    "frontier.record":         dict(table="frontier_entry", pk=["entry_id"], id_from="record_id", mode="upsert"),
+    "frontier.record":         dict(table="frontier_entry", pk=["entry_id"], id_from="record_id", mode="upsert", unique=[["quest_id", "candidate_ref"]]),
     "finalize.record":         dict(table="finalize_outcome", pk=["outcome_id"], id_from="record_id", mode="insert"),
     "gpu.confirm":             dict(table="gpu_allocation", pk=["quest_id"], id_from="record_id", mode="upsert", force={"status": "confirmed", "confirmed_at": "AT"}),
 }
@@ -208,14 +209,43 @@ def apply(conn: sqlite3.Connection, payload: dict) -> dict:
     # transitions (paused/recovering/parked -> running) are NOT re-gated.
     if table == "quest" and cols.get("run_state") == "running":
         _clarification_gate(conn, pkvals["quest_id"])
+        _contract_gate(conn, pkvals["quest_id"])
+        _effort_gate(conn, pkvals["quest_id"])
         _gpu_launch_gate(conn, pkvals["quest_id"])
+        _autonomy_gate(conn, pkvals["quest_id"])
+
+    # Contract freeze (Phase 6): objective is immutable post-launch; acceptance changes only via a confirmed
+    # amend-acceptance decision. Pre-launch (not_started) and unchanged refs are free; both gates fail-closed.
+    if table == "quest":
+        if "objective_ref" in cols:
+            _objective_frozen_gate(conn, pkvals["quest_id"], cols["objective_ref"])
+        if "acceptance_ref" in cols:
+            _acceptance_amend_gate(conn, pkvals["quest_id"], cols["acceptance_ref"])
+
+    # Pre-finalize gates: a `complete` finalize must meet the scholarship bar (Upgrade 1) and — in auto mode at
+    # the gating rigor (Phase 5) — the research-completeness checklist.
+    if table == "finalize_outcome" and cols.get("outcome") == "complete":
+        _finalize_scholarship_gate(conn, cols.get("quest_id"))
+        _finalize_completeness_gate(conn, cols.get("quest_id"))
+
+    # Detect an open->closed round transition BEFORE the write so the plan_revision bump (below) fires once.
+    round_closing = False
+    if table == "round" and cols.get("status") == "closed":
+        prev = conn.execute("SELECT status FROM round WHERE quest_id=? AND round_index=?",
+                            (pkvals["quest_id"], pkvals["round_index"])).fetchone()
+        round_closing = prev is not None and prev[0] != "closed"
 
     if spec["mode"] == "insert":
         _insert_or_ignore(conn, table, cols)
     elif spec["mode"] == "upsert":
-        _upsert(conn, table, pk, cols)
+        _upsert(conn, table, pk, cols, spec.get("unique", ()))
     elif spec["mode"] == "update":
         _update(conn, table, pk, pkvals, cols)
+
+    # Phase 3: one plan_revision bump per round close (bounded; the Revisions ledger is one row per change).
+    if round_closing:
+        _bump_plan_revision(conn, pkvals["quest_id"])
+
     conn.commit()
     return {"record_type": rt, "table": table, "pk": pkvals}
 
@@ -228,9 +258,26 @@ def _insert_or_ignore(conn, table, cols):
     )
 
 
-def _upsert(conn, table, pk, cols):
+def _upsert(conn, table, pk, cols, unique=()):
     keys = list(cols)
     setcols = [k for k in keys if k not in pk and k != "created_at"]
+    # Secondary UNIQUE constraints: a row may already exist under a DIFFERENT primary key but the same unique
+    # tuple — e.g. frontier_entry has a surrogate entry_id PK plus UNIQUE(quest_id, candidate_ref). A plain
+    # ON CONFLICT(pk) upsert would not see that collision and would raise IntegrityError. So for any declared
+    # secondary unique tuple, resolve a pre-existing row and UPDATE it in place (preserving its PK) — keeping
+    # the write idempotent on the natural key. The unique tuple scopes the match (it includes quest_id for
+    # frontier_entry), so this introduces no cross-quest behavior. Single-PK tables only (frontier is the
+    # sole user); other upserts pass unique=() and are unaffected.
+    for ucols in unique:
+        if all(c in cols for c in ucols):
+            where = " AND ".join(f"{c}=?" for c in ucols)
+            row = conn.execute(f"SELECT {pk[0]} FROM {table} WHERE {where}",
+                               [cols[c] for c in ucols]).fetchone()
+            if row is not None and row[0] != cols.get(pk[0]):
+                conn.execute(
+                    f"UPDATE {table} SET {', '.join(f'{c}=?' for c in setcols)} WHERE {pk[0]}=?",
+                    [cols[c] for c in setcols] + [row[0]])
+                return
     sql = (f"INSERT INTO {table} ({','.join(keys)}) VALUES ({','.join('?' * len(keys))}) "
            f"ON CONFLICT({','.join(pk)}) DO UPDATE SET "
            + ", ".join(f"{c}=excluded.{c}" for c in setcols))
@@ -251,6 +298,31 @@ def _update(conn, table, pk, pkvals, cols):
 # Stages whose handoffs may execute code on a GPU (experiment runs/benchmarks/profiling; analyst
 # ablations / mechanism-isolation re-runs). Any handoff in one of these rounds is GPU-gated.
 GPU_GATED_STAGES = ("experiment", "analysis")
+
+# Methodology packs each stage MUST cite (Tier-3 methodology-usage audit). A WORKER stage records an
+# artifact(kind='methodology-usage') + reports task-result.methodology_used; an ORCHESTRATOR-INTERNAL stage
+# (decision/optimize/finalize) has no worker task-result, so the Orchestrator itself records the artifact at
+# round close. `plan validate` warns (advisory, regime-gated) when a closed round of any stage below lacks the
+# artifact. NOT authoritative over DB state — this is a process-audit overlay only.
+# ORCHESTRATOR_INTERNAL_STAGES marks the ones the Orchestrator self-audits (vs worker-dispatched stages).
+ORCHESTRATOR_INTERNAL_STAGES = ("decision", "optimize", "finalize")
+REQUIRED_PACKS = {
+    # worker-dispatched stages (enforced via on-task-request 3b + the on-task-result fold check)
+    "intake-audit": ["intake-rubric"],
+    "scope":        ["ideation-rubric"],
+    "baseline":     ["ideation-rubric", "research-method"],
+    "idea":         ["ideation-rubric"],
+    "experiment":   ["research-method"],
+    "analysis":     ["research-method"],
+    "outline":      ["paper-craft"],
+    "write":        ["paper-craft"],
+    "review":       ["review-craft"],
+    "rebuttal":     ["rebuttal-craft"],
+    # orchestrator-internal stages (Orchestrator self-records the methodology-usage artifact at round close)
+    "decision":     ["research-method"],
+    "optimize":     ["research-method"],
+    "finalize":     ["research-method"],
+}
 
 
 def _gpu_gate(conn, quest_id, round_index, handoff_id):
@@ -316,6 +388,325 @@ def _clarification_gate(conn, quest_id):
             f"kind='clarification' artifact (runs/{quest_id}/objective/clarification.md) BEFORE launching. "
             f"The objective must be reviewed for unclear/underspecified parts (objective, acceptance, GPU, "
             f"domain, workspace, budget, domain constraints) and confirmed by the operator first.")
+
+
+def _contract_gate(conn, quest_id):
+    """Pre-loop gate (Upgrade 2): a quest may not START (not_started -> running) until an operator-approved
+    research contract has been recorded — a kind='research-contract' artifact for the quest (the expanded +
+    approved objective/acceptance done-bar; see execplan/docs/research-contract.md). This turns a minimal
+    operator prompt into a deeper scientific done-bar before the loop optimizes anything. Fail-closed. Resume
+    transitions (paused/recovering/parked -> running) are exempt — the contract was approved at first launch."""
+    cur = conn.execute("SELECT run_state FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    if cur is not None and cur[0] != "not_started":
+        return  # resume, not initial launch
+    try:
+        n = conn.execute("SELECT COUNT(*) FROM artifact WHERE quest_id=? AND kind='research-contract'",
+                         (quest_id,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        n = 0
+    if not n:
+        raise RecordError(
+            f"quest {quest_id!r} cannot start (run_state -> running): no operator-approved research contract "
+            f"recorded. Run the pre-launch research-contract expansion (deepresearch-research-contract / "
+            f"execplan/docs/research-contract.md): expand the minimal Objective/Acceptance into a deeper "
+            f"done-bar, get the operator to approve/edit/trim it, fold it into runs/{quest_id}/objective/, and "
+            f"record a kind='research-contract' artifact (runs/{quest_id}/objective/contract.md) BEFORE "
+            f"launching — a sibling of the clarification, (Claude) effort, and GPU gates.")
+
+
+def _effort_gate(conn, quest_id):
+    """Pre-loop gate: a Claude-backed quest may not START (not_started -> running) until the operator's
+    Claude effort/reasoning level has been recorded — a kind='effort-selection' artifact for the quest
+    (runs/<q>/objective/effort.md). CLAUDE-CONDITIONAL: only quests with >=1 participant whose tool='claude'
+    are gated; non-Claude backends are exempt (effort selection is Claude-specific). Fail-closed. Resume
+    transitions (paused/recovering/parked -> running) are exempt — the level was chosen at first launch.
+    The effort level itself is applied out-of-band as a launch-time override (`agents launch
+    --reasoning-level`), NOT via `profile set` (the shared deepresearch-* profiles stay pristine); this gate
+    only enforces that the operator's choice is recorded before the quest goes live. See
+    execplan/docs/claude-effort.md + start-runbook Step 3c."""
+    cur = conn.execute("SELECT run_state FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    if cur is not None and cur[0] != "not_started":
+        return  # resume, not initial launch
+    try:
+        claude = conn.execute(
+            "SELECT COUNT(*) FROM participant WHERE quest_id=? AND tool='claude'", (quest_id,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        claude = 0
+    if not claude:
+        return  # non-Claude backend (or no participants registered yet): effort selection N/A
+    try:
+        n = conn.execute("SELECT COUNT(*) FROM artifact WHERE quest_id=? AND kind='effort-selection'",
+                         (quest_id,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        n = 0
+    if not n:
+        raise RecordError(
+            f"quest {quest_id!r} cannot start (run_state -> running): Claude agents are in use but no Claude "
+            f"effort level has been recorded. Run the pre-launch effort selection (start-runbook Step 3c): "
+            f"ask the operator to choose an effort level, apply it as a launch-time override "
+            f"(`agents launch --reasoning-level`, NOT `profile set`), write runs/{quest_id}/objective/effort.md, and record a "
+            f"kind='effort-selection' artifact BEFORE launching — a sibling of the clarification + "
+            f"research-contract + GPU gates. Mapping: execplan/docs/claude-effort.md.")
+
+
+# ── Run mode + plan revision (Phases 1, 3) ───────────────────────────────────
+def _autonomy_gate(conn, quest_id):
+    """Pre-loop gate (Phase 1): a quest may not START (not_started -> running) until the operator has chosen a
+    run mode (quest.autonomy_mode IN ('auto','assistant')). Orthogonal to execution_mode. Resume transitions
+    are exempt — the mode was chosen at first launch. Fail-closed."""
+    try:
+        cur = conn.execute("SELECT run_state, autonomy_mode FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return  # column not migrated yet (older schema): do not block
+    if cur is not None and cur[0] != "not_started":
+        return  # resume, not initial launch
+    mode = cur[1] if cur else None
+    if mode not in ("auto", "assistant"):
+        raise RecordError(
+            f"quest {quest_id!r} cannot start (run_state -> running): no run mode chosen. The operator must set "
+            f"quest.autonomy_mode to 'auto' (loop self-disposes; completeness checks hard-gate at publication "
+            f"rigor) or 'assistant' (advisory; operator disposes) BEFORE launch — a sibling of the GPU / "
+            f"clarification / research-contract / effort gates. See start-runbook Step 3d.")
+
+
+def _bump_plan_revision(conn, quest_id):
+    """Increment the quest's plan_revision (Phase 3). Called on each round close and on a confirmed acceptance
+    amendment, so the rendered plan.md `## Revisions` ledger gets one entry per meaningful change."""
+    try:
+        conn.execute("UPDATE quest SET plan_revision = plan_revision + 1 WHERE quest_id=?", (quest_id,))
+    except sqlite3.OperationalError:
+        pass
+
+
+# ── Contract freeze: objective immutable; acceptance append-only + operator-gated (Phase 6) ──────────────
+def _objective_frozen_gate(conn, quest_id, new_objective_ref):
+    """objective_ref is IMMUTABLE post-launch in this roadmap (acceptance-only amendments). Reject any change
+    once the quest has left not_started. Pre-launch edits are free."""
+    cur = conn.execute("SELECT run_state, objective_ref FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    if cur is None or cur[0] == "not_started":
+        return
+    if new_objective_ref != cur[1]:
+        raise RecordError(
+            f"quest {quest_id!r}: objective_ref is frozen post-launch (acceptance-only amendments are "
+            f"supported; objective amendments are not in this roadmap). No moving the objective.")
+
+
+def _acceptance_amend_gate(conn, quest_id, new_acceptance_ref):
+    """A post-launch change to quest.acceptance_ref is allowed ONLY when backed by a CONFIRMED
+    decision(route='amend-acceptance') the operator approved (Phase 6). Pre-launch (not_started) edits are free
+    (the contract isn't frozen yet). Append-only: callers write acceptance.md@rev-K and never overwrite rev 1."""
+    cur = conn.execute("SELECT run_state, acceptance_ref FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    if cur is None or cur[0] == "not_started":
+        return  # pre-launch: contract not yet frozen
+    if new_acceptance_ref == cur[1]:
+        return  # no change
+    ok = conn.execute(
+        "SELECT COUNT(*) FROM decision WHERE quest_id=? AND route='amend-acceptance' AND confirmed=1",
+        (quest_id,)).fetchone()[0]
+    if not ok:
+        raise RecordError(
+            f"quest {quest_id!r}: acceptance_ref may not change post-launch without an operator-confirmed "
+            f"decision(route='amend-acceptance'). Record the amendment decision + decision.confirm first, write "
+            f"a new acceptance.md@rev-K (append-only) — never overwrite the original contract.")
+
+
+# ── Research-completeness checklist + finalize gate (Phase 5) ─────────────────────────────────────────
+def _completeness_flag(name, default=True):
+    """Per-item required toggle (env override). DEEPRESEARCH_COMPLETENESS_REQUIRE_<NAME>=0 makes an item
+    advisory; =1 forces it required. Default 'required' for the new mechanism/alternative/ablation items."""
+    raw = os.environ.get(f"DEEPRESEARCH_COMPLETENESS_REQUIRE_{name.upper()}")
+    if raw is None:
+        return default
+    return raw not in ("0", "false", "no")
+
+
+def completeness_audit(conn, quest_id, rigor="standard"):
+    """The seven general scientific-quality checks (Phase 5). Composes existing checks (evidence traceability /
+    no-orphan-claims / lit audit) with new mechanism / named-alternative / ablation-or-infeasibility /
+    discrepancy reads. Returns {ok, required, reasons, items}. `ok` reflects only the REQUIRED items; advisory
+    items surface in `items` but never set ok=False. Mirrors scholarship_audit in shape."""
+    items, reasons, required = {}, [], []
+
+    def q1(sql, *p):
+        return conn.execute(sql, p).fetchone()[0]
+
+    # 1 evidence traceability: every supported claim has supports-evidence (also an invariant).
+    untraceable = q1("SELECT COUNT(*) FROM claim c WHERE c.quest_id=? AND c.status='supported' AND NOT EXISTS "
+                     "(SELECT 1 FROM claim_evidence e WHERE e.claim_id=c.claim_id AND e.relation='supports')", quest_id)
+    items["evidence_traceability"] = untraceable == 0
+    # 2 no orphan claims.
+    orphan = q1("SELECT COUNT(*) FROM claim c WHERE c.quest_id=? AND NOT EXISTS "
+                "(SELECT 1 FROM claim_evidence e WHERE e.claim_id=c.claim_id)", quest_id)
+    items["no_orphan_claims"] = orphan == 0
+    # 3 mechanism explanation: >=1 analysis-backed link on a main claim, or any analysis row.
+    mech = q1("SELECT COUNT(*) FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id "
+              "WHERE c.quest_id=? AND e.source_kind='analysis'", quest_id) \
+        or q1("SELECT COUNT(*) FROM analysis WHERE quest_id=?", quest_id)
+    items["mechanism_explanation"] = mech > 0
+    # 4 named alternatives: a rival explanation is on record.
+    alts = q1("SELECT COUNT(*) FROM claim WHERE quest_id=? AND kind IN ('alternative','competing_hypothesis')", quest_id)
+    items["named_alternatives"] = alts > 0
+    # 5 ablation OR documented infeasibility (a limitation claim).
+    abl = q1("SELECT COUNT(*) FROM analysis WHERE quest_id=?", quest_id)
+    lim = q1("SELECT COUNT(*) FROM claim WHERE quest_id=? AND kind='limitation'", quest_id)
+    items["ablation_or_infeasibility"] = (abl > 0) or (lim > 0)
+    # 6 reference / lit audit (reuses the scholarship bar).
+    try:
+        items["reference_lit_audit"] = scholarship_audit(conn, quest_id)["ok"]
+    except sqlite3.OperationalError:
+        items["reference_lit_audit"] = True
+    # 7 unresolved-discrepancy handling: no open contradiction on a supported claim.
+    open_contra = q1("SELECT COUNT(*) FROM claim c WHERE c.quest_id=? AND c.status='supported' AND EXISTS "
+                     "(SELECT 1 FROM claim_evidence e WHERE e.claim_id=c.claim_id AND e.relation='contradicts' "
+                     "AND e.resolved=0)", quest_id)
+    items["discrepancy_handling"] = open_contra == 0
+
+    # Required subset: 1,2,6,7 are always required (mirror existing hard checks); 3,4,5 (the new science-depth
+    # items) are required by default but individually waivable via env to scale a focused vs flagship study.
+    always = {"evidence_traceability": True, "no_orphan_claims": True,
+              "reference_lit_audit": True, "discrepancy_handling": True}
+    waivable = {"mechanism_explanation": _completeness_flag("MECHANISM"),
+                "named_alternatives": _completeness_flag("ALTERNATIVES"),
+                "ablation_or_infeasibility": _completeness_flag("ABLATION")}
+    for name, req in {**always, **waivable}.items():
+        if req:
+            required.append(name)
+            if not items[name]:
+                reasons.append(f"{name} not satisfied")
+    return {"ok": not reasons, "required": required, "reasons": reasons, "items": items, "rigor": rigor}
+
+
+def _rigor_order(level):
+    return {"scoping": 0, "standard": 1, "publication": 2}.get(level or "standard", 1)
+
+
+def _finalize_completeness_gate(conn, quest_id):
+    """Pre-finalize gate (Phase 5): a 'complete' finalize is HARD-BLOCKED only when BOTH autonomy_mode='auto'
+    and the contract rigor meets the gating threshold (default 'publication'). Otherwise (assistant any rigor,
+    or auto below threshold) the checklist is advisory — the tick recommends and the operator disposes.
+    Idempotent; legacy NULL columns exempt; older schemas never break."""
+    if not quest_id:
+        return
+    try:
+        if conn.execute("SELECT COUNT(*) FROM finalize_outcome WHERE quest_id=? AND outcome='complete'",
+                        (quest_id,)).fetchone()[0]:
+            return  # idempotent re-finalize / recovery replay
+        row = conn.execute("SELECT autonomy_mode, rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return  # schema predates the columns: do not block
+    if not row:
+        return
+    mode, rigor = row[0], (row[1] or "standard")
+    threshold = os.environ.get("DEEPRESEARCH_COMPLETENESS_GATE_RIGOR", "publication")
+    if threshold == "none" or mode != "auto" or _rigor_order(rigor) < _rigor_order(threshold):
+        return  # advisory only: assistant, or auto below the rigor threshold — tick recommends, never hard-block
+    try:
+        audit = completeness_audit(conn, quest_id, rigor)
+    except sqlite3.OperationalError:
+        return
+    if not audit["ok"]:
+        raise RecordError(
+            f"quest {quest_id!r} cannot finalize 'complete' (auto, rigor={rigor}): research-completeness not "
+            "met — " + "; ".join(audit["reasons"]) + ". Continue the science (route back to experiment/analysis) "
+            "or finalize as 'park' with explicit reopen_conditions. Scale rigor: "
+            "DEEPRESEARCH_COMPLETENESS_GATE_RIGOR / DEEPRESEARCH_COMPLETENESS_REQUIRE_* env knobs.")
+
+
+# ── Literature / scholarship bar (Upgrade 1) ─────────────────────────────────
+# Tunable via env (the config knob). Defaults are deliberately modest: the teeth come from claim↔reference
+# linkage, not raw reference count. Set both env vars to 0 to waive the bar (deliberate operator override).
+def _scholarship_thresholds():
+    def _int(name, default):
+        try:
+            return max(0, int(os.environ.get(name, default)))
+        except (TypeError, ValueError):
+            return default
+    return (_int("DEEPRESEARCH_SCHOLARSHIP_MIN_REFS", 3),
+            _int("DEEPRESEARCH_SCHOLARSHIP_MIN_REF_CLAIMS", 1))
+
+
+def scholarship_audit(conn, quest_id):
+    """Shared scholarship check (Upgrade 1). Used by `lit audit` (advisory) and the finalize gate (hard).
+
+    HARD-fail signals (set `ok=False`): too few `reference` rows, or no claim positioned against a reference
+    (claim_evidence source_kind='reference'). The claim↔reference link is the real teeth — it forces genuine
+    scholarly positioning, not a padded bibliography. SOFT signals (warnings, never fail): an all-`manual`
+    bibliography (possible tool-doc-only) and a missing 'Related Work' heading — quality cues the harness
+    cannot adjudicate, left to the Reviewer + `execplan/docs/publication-quality.md`."""
+    min_refs, min_ref_claims = _scholarship_thresholds()
+    # Count this quest's references for the bar. References are quest-owned (no cross-quest/global refs
+    # exist — schema requires quest_id; invariant reference_quest_owned), so this is the full bibliography.
+    refs_total = conn.execute(
+        "SELECT COUNT(*) FROM reference WHERE quest_id=?", (quest_id,)).fetchone()[0]
+    refs_external = conn.execute(
+        "SELECT COUNT(*) FROM reference WHERE quest_id=? AND source IN ('arxiv','doi','web')",
+        (quest_id,)).fetchone()[0]
+    ref_claims = conn.execute(
+        "SELECT COUNT(DISTINCT e.claim_id) FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id "
+        "WHERE c.quest_id=? AND e.source_kind='reference'", (quest_id,)).fetchone()[0]
+    related_work = _has_related_work(quest_id)
+    reasons, warnings = [], []
+    if refs_total < min_refs:
+        reasons.append(f"only {refs_total} reference row(s); need >= {min_refs} "
+                       f"(record prior art via `lit fetch` / reference.record)")
+    if ref_claims < min_ref_claims:
+        reasons.append(f"{ref_claims} claim(s) positioned against a reference; need >= {min_ref_claims} "
+                       f"(link a positioning claim with claim_evidence.link source_kind='reference')")
+    if refs_total and refs_external == 0:
+        warnings.append("all references are source='manual' — confirm these are real external academic "
+                        "citations, not only tool/vendor docs")
+    if related_work is False:
+        warnings.append("no 'Related Work' heading found in runs/<q>/report/paper.md|tex — confirm genuine "
+                        "scholarly positioning, not an internal-provenance note")
+    return {"ok": not reasons, "reasons": reasons, "warnings": warnings,
+            "refs_total": refs_total, "refs_external": refs_external,
+            "reference_backed_claims": ref_claims, "related_work_present": related_work,
+            "thresholds": {"min_refs": min_refs, "min_reference_backed_claims": min_ref_claims}}
+
+
+def _has_related_work(quest_id):
+    """True/False whether a manuscript carries a Related Work heading; None if no manuscript exists yet."""
+    from paths import LOOP_DIR
+    found_any = False
+    for name in ("paper.md", "paper.tex"):
+        p = LOOP_DIR / "runs" / str(quest_id) / "report" / name
+        if p.exists():
+            found_any = True
+            try:
+                txt = p.read_text(encoding="utf-8", errors="ignore").lower()
+            except OSError:
+                continue
+            if "related work" in txt or "related-work" in txt:
+                return True
+    return False if found_any else None
+
+
+def _finalize_scholarship_gate(conn, quest_id):
+    """Pre-finalize gate (Upgrade 1): a `complete` finalize is blocked unless the scholarship bar is met
+    (>= min reference rows AND >= min reference-backed claim). Only `complete` is gated (stop/park/publish
+    are not). Fail-closed; the error routes the loop back to `write`. Waive via the env knobs in
+    `_scholarship_thresholds` (both 0)."""
+    if not quest_id:
+        return
+    try:
+        already = conn.execute(
+            "SELECT COUNT(*) FROM finalize_outcome WHERE quest_id=? AND outcome='complete'",
+            (quest_id,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        already = 0
+    if already:
+        return  # idempotent re-finalize / recovery replay of an already-completed quest: do not re-gate
+    try:
+        audit = scholarship_audit(conn, quest_id)
+    except sqlite3.OperationalError:
+        return  # schema predates the literature tables; do not block
+    if not audit["ok"]:
+        raise RecordError(
+            f"quest {quest_id!r} cannot finalize as 'complete': scholarship bar not met — "
+            + "; ".join(audit["reasons"])
+            + ". Route back to `write` to add a genuine Related Work section with real, claim-linked "
+            "citations (see execplan/docs/publication-quality.md). Override: set "
+            "DEEPRESEARCH_SCHOLARSHIP_MIN_REFS=0 and DEEPRESEARCH_SCHOLARSHIP_MIN_REF_CLAIMS=0.")
 
 
 def _special(conn, kind, pkvals, payload, at):

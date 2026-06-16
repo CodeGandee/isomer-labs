@@ -25,9 +25,9 @@ M(){ houmao-mgr project --project-dir "$P" "$@"; }
 
 ## Pre-flight 🟢 (read-only gate — must pass before anything below)
 ```bash
-python3 "$HARNESS" selfcheck            # ok=true, 34 record types, 33 invariants, deps ok
+python3 "$HARNESS" selfcheck            # ok=true, 34 record types, 39 invariants, deps ok
 M status                                # overlay healthy
-M skills list   | grep -c deepresearch- # 8
+M skills list   | grep -c deepresearch- # 9  (8 in-loop + research-contract setup-time skill)
 M profile list  | grep -c deepresearch- # 6
 M agents list   | grep instances        # instances [] (nothing live yet)
 test ! -f "$P/runs/state.sqlite" && echo "DB absent (expected)"
@@ -35,7 +35,9 @@ test ! -f "$P/runs/state.sqlite" && echo "DB absent (expected)"
 # check it here instead: test -d "$SRC_REPO/.git" && echo "source project is a git repo"
 # GPU posture: GPU confirmation is a PRE-LOOP requirement — confirmed per-quest in Step 3 (gpu confirm)
 #   BEFORE the quest can move to running. The live loop never re-prompts for GPUs (Step 3 gate + Step 6 assert).
-# credential posture: long-lived OAuth token present, and NO proxy override in the launch env
+# credential posture: long-lived OAuth token present, NO proxy override, and NO model pin in the launch env.
+# The shared `default` bundle holds ONLY the OAuth token (quest-independence) — the model is passed per-launch
+# via $AGENT_MODEL at Step 6, never pinned on the bundle/profile. Expect no ANTHROPIC_MODEL in the bundle.
 M credentials claude get --name default | grep -iE 'oauth.token|api.key'   # expect a long-lived OAuth token (or api-key)
 env | grep -iE '^ANTHROPIC_(BASE_URL|AUTH_TOKEN)=' && echo "WARNING: proxy env set — will shadow the OAuth token; unset before launch" || echo "no proxy env (good)"
 ```
@@ -72,7 +74,7 @@ credential change, **relaunch agents fresh** (a bare `relaunch` reuses the old t
 ```bash
 "$HARNESS" state init                   # creates $P/runs/state.sqlite (28 tables, 13 stages)
 ```
-Verify 🟢: `"$HARNESS" state validate`  → `ok:true, checked:33`.
+Verify 🟢: `"$HARNESS" state validate`  → `ok:true, checked:39`.
 **Rollback (pre-quest only):** `rm -f "$P/runs/state.sqlite"`
 
 ---
@@ -80,6 +82,18 @@ Verify 🟢: `"$HARNESS" state validate`  → `ok:true, checked:33`.
 ## Step 3 — Clarify + create the quest 🟡
 
 ### Step 3a — MANDATORY pre-launch ambiguity check 🟢 (do this FIRST, before writing any files)
+
+> **ACTIVE — required companion step: research-contract expansion (skill `deepresearch-research-contract`).**
+> *Before* writing `objective.md`/`acceptance.md`, expand the operator's minimal Objective/Acceptance into a
+> deeper, domain-neutral scientific done-bar (falsifiable claim, mechanism, baseline/ablation, alternative
+> ruled out, scope, scholarly positioning, traceability) using the rubric in
+> `execplan/docs/research-contract.md`, then have the operator **approve / edit / trim** it (respect the
+> over-hardening guardrails — minimal-sufficient, achievable, operator-trimmable). The approved expansion
+> becomes the canonical brief written below, and **must** be recorded as a `kind='research-contract'`
+> artifact (`runs/$QID/objective/contract.md`). The move to `running` is **hard-gated** on it — a sibling of
+> the clarification, GPU, and Claude effort gates (see Step 3c). This step subsumes the ambiguity check
+> below: do both, record both artifacts (`clarification` + `research-contract`).
+
 The operator-facing agent MUST inspect the provided objective/prompt for unclear, underspecified, or
 ambiguous parts **before** creating the quest, and confirm with the operator. This is **required**, not
 optional: the move-to-running below is HARD-GATED on a recorded clarification artifact (the quest cannot
@@ -104,11 +118,12 @@ is written below (audit trail).
 > previous quest's objective is untouched (no shared-slot overwrite).
 ```bash
 AT=$(now)
-# Per-quest objective: write the (CLARIFIED — Step 3a resolved) brief into runs/$QID/objective/ BEFORE
-# quest.create (canonical source the agents read). shared/objective/ is only an optional staging area.
+# Per-quest objective: write the (EXPANDED + CLARIFIED — Step 3a, operator-approved) brief into
+# runs/$QID/objective/ BEFORE quest.create (canonical source the agents read). The deeper done-bar from the
+# research-contract expansion lands HERE. shared/objective/ is only an optional staging area.
 mkdir -p "$P/runs/$QID/objective"
-cp /ABS/PATH/TO/objective.md   "$P/runs/$QID/objective/objective.md"     # operator-provided brief (clarified)
-cp /ABS/PATH/TO/acceptance.md  "$P/runs/$QID/objective/acceptance.md"    # (or hand-author both here)
+cp /ABS/PATH/TO/objective.md   "$P/runs/$QID/objective/objective.md"     # operator-approved EXPANDED brief
+cp /ABS/PATH/TO/acceptance.md  "$P/runs/$QID/objective/acceptance.md"    # (deep done-bar; or hand-author here)
 
 "$HARNESS" --validate-after-write record apply --json '{
   "record_type":"quest.create","record_id":"'"$QID"'","at":"'"$AT"'",
@@ -129,6 +144,22 @@ CLAR
   "record_id":"'"$QID"':clarification","at":"'"$(now)"'","quest_id":"'"$QID"'",
   "kind":"clarification","ref":"runs/'"$QID"'/objective/clarification.md"}'
 
+# Record the research-contract (REQUIRED — the move-to-running gate refuses to start without it). contract.md
+# captures the original→expanded done-bar diff + rationale + the operator's approve/edit/trim decisions
+# (skill deepresearch-research-contract; rubric in execplan/docs/research-contract.md).
+cat > "$P/runs/$QID/objective/contract.md" <<'CONTRACT'
+# Pre-launch research contract — <QID>
+Original Objective/Acceptance (operator):
+- ...
+Expanded done-bar (rubric dimensions included; operator-approved):
+- claim / mechanism / baseline+ablation / alternative-ruled-out / scope / scholarly-positioning / traceability: ...
+Operator decisions (approve/edit/trim per block) + rationale:
+- ...
+CONTRACT
+"$HARNESS" record apply --json '{"record_type":"artifact.record",
+  "record_id":"'"$QID"':research-contract","at":"'"$(now)"'","quest_id":"'"$QID"'",
+  "kind":"research-contract","ref":"runs/'"$QID"'/objective/contract.md"}'
+
 # Register the 6 participant instances (experimenter starts at fanout_default=1)
 for pair in orchestrator:orchestrator scout-ideator:scout-ideator \
             experimenter-1:experimenter analyst:analyst writer:writer reviewer:reviewer; do
@@ -143,9 +174,59 @@ done
 # This is the only point the operator is asked about GPUs; the live loop never re-prompts.
 "$HARNESS" gpu confirm --quest-id "$QID" --devices "0" --by "$USER" --at "$(now)"   # e.g. "0" or "0,1" (integer indices only)
 
-# Move the quest to running. DOUBLE-GATED at not_started->running: refused unless BOTH (a) a confirmed
-# gpu_allocation exists (GPU start-gate) AND (b) a kind='clarification' artifact exists (ambiguity-check
-# gate). single_active_quest also enforces one running quest at a time.
+### Step 3c — MANDATORY Claude effort selection (when any participant uses tool='claude')
+# Claude-conditional pre-launch item, hard-gated like clarification/research-contract/GPU. Detect Claude:
+#   the roster in agents/bindings.toml is all tool="claude" by default (so this applies); the _effort_gate
+#   itself keys off participant.tool='claude' recorded in Step 3 above.
+# If Claude is in use, ASK THE OPERATOR for an effort level (AskUserQuestion) — structured options + custom:
+#   Standard/default | High | Max/extended (ONLY if supported — see below) | Role-specific | Other/custom
+# CONFIRMED mapping (execplan/docs/claude-effort.md; verified against the installed Houmao Claude provider):
+#   unset=Claude default · 1=low · 2=medium · 3=high · 4=max (ONLY if model name has 'opus-4-6', else
+#   saturates to high) · level 0 is INVALID. On this Opus-4.8 box, Max is unavailable → High is the ceiling.
+# QUEST-INDEPENDENCE RULE — do NOT mutate the shared template. Effort is applied as a LAUNCH-TIME override at
+# Step 6 (`agents launch --reasoning-level <N>`), NOT via `profile set`. The shared deepresearch-* profiles stay
+# pristine (reasoning_level UNSET) so this quest's choice never leaks into the next quest's template. Capture the
+# choice as a var the Step 6 launch loop consumes (High = level 3; empty string = Standard/default → omit flag):
+EFFORT_LEVEL=3
+# IMPORTANT — reasoning_level does NOT pin a MODEL. Without a model pin Claude Code's per-process default can
+# diverge (observed: Orchestrator=Opus 4.8 but specialists silently fell back to Sonnet 4.6). Pin the model the
+# SAME quest-independent way: pass it at LAUNCH, NOT on the shared bundle — the `default` bundle keeps ONLY the
+# OAuth token. Capture the model as a var the Step 6 launch loop consumes:
+AGENT_MODEL=claude-opus-4-8                       # Opus 4.8=claude-opus-4-8, Sonnet 4.6=claude-sonnet-4-6
+# (Record EFFORT_LEVEL + AGENT_MODEL in the quest's effort.md.) The operator CONFIRMS the live per-agent models
+# at the Step 6c gate before the loop's first trigger. The effort GATE is satisfied by the effort-selection
+# artifact below — NOT by any profile/bundle mutation.
+# Audit: write the choice + resolved per-role levels, then record the gate token artifact.
+cat > "$P/runs/$QID/objective/effort.md" <<'EFFORT'
+# Claude effort selection — <QID>
+Runner: claude (Opus 4.8).  Choice: <Standard|High|Max|Role-specific|Custom>.
+Resolved reasoning_level per role: orchestrator=<N> scout-ideator=<N> experimenter=<N> analyst=<N> writer=<N> reviewer=<N>
+Notes (saturation / model override, if any): ...
+EFFORT
+"$HARNESS" record apply --json '{"record_type":"artifact.record",
+  "record_id":"'"$QID"':effort-selection","at":"'"$(now)"'","quest_id":"'"$QID"'",
+  "kind":"effort-selection","ref":"runs/'"$QID"'/objective/effort.md"}'
+
+### Step 3d — MANDATORY run-mode selection (auto | assistant) — fifth launch gate
+# Ask the operator (AskUserQuestion) to choose the run mode BEFORE launch — orthogonal to execution_mode
+# (drive cadence). This keys how strict the loop's self-completeness checks are:
+#   auto      → the loop self-disposes; the research-completeness checklist HARD-GATES `complete` when the
+#               contract is publication-grade (DEEPRESEARCH_COMPLETENESS_GATE_RIGOR, default 'publication').
+#   assistant → advisory; the loop recommends continuation but the operator disposes (checks warn only).
+# Also set rigor_level (scoping|standard|publication) for the contract (keys the completeness gate with the mode).
+RUN_MODE=auto          # or: assistant
+RIGOR=publication      # scoping | standard | publication
+houmao-mgr ... # (operator confirms the choice)
+"$HARNESS" record apply --json '{"record_type":"quest.update","record_id":"'"$QID"'","at":"'"$(now)"'",
+  "autonomy_mode":"'"$RUN_MODE"'","rigor_level":"'"$RIGOR"'"}'
+# (equivalently: `$HARNESS control set-mode --quest-id $QID --autonomy $RUN_MODE --at <ts>`)
+
+# Move the quest to running. QUINTUPLE-GATED at not_started->running: refused unless ALL of (a) a confirmed
+# gpu_allocation exists (GPU start-gate), (b) a kind='clarification' artifact exists (ambiguity-check gate),
+# (c) a kind='research-contract' artifact exists (research-contract gate, Upgrade 2), (d) — when any
+# participant has tool='claude' — a kind='effort-selection' artifact exists (Claude effort gate), AND (e) a
+# run mode is chosen (quest.autonomy_mode IN auto/assistant — _autonomy_gate).
+# single_active_quest also enforces one running quest at a time.
 "$HARNESS" --validate-after-write record apply --json '{"record_type":"quest.update",
   "record_id":"'"$QID"'","at":"'"$(now)"'","run_state":"running","current_stage":"scope"}'
 ```
@@ -203,24 +284,35 @@ Verify 🟢: `M mailbox status` ; `M mailbox accounts`.
 > **Launch-readiness gate** — the quest must already be `running` with GPUs confirmed (both established in
 > Step 3; the start-gate refuses `running` without confirmation). Assert before launching:
 > `"$HARNESS" gpu status --quest-id "$QID" | grep -q '"confirmed": true' || { echo "ABORT: GPUs not confirmed — run Step 3 gpu confirm"; }`
+> Also confirm the Claude effort selection (Step 3c): the effort gate already blocked `running` without the
+> artifact. Effort + model are applied as LAUNCH FLAGS (`$EFFORT_LEVEL` / `$AGENT_MODEL` → `$LAUNCH_OVERRIDES`),
+> NOT on the profile/bundle. Verify the shared template stayed pristine and the vars are set:
+> `houmao-mgr project --project-dir "$P" profile get --name deepresearch-orchestrator | grep -i reasoning`
+> (expect NONE) and `echo "$EFFORT_LEVEL $AGENT_MODEL"` (expect both set). See `execplan/docs/claude-effort.md`.
 >
 > **Scrub the proxy env first**, so agents use the `default` long-lived OAuth token and are NOT silently
 > routed through a third-party `ANTHROPIC_BASE_URL`/`ANTHROPIC_AUTH_TOKEN` proxy:
 > `unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY` (and launch from this clean shell).
 ```bash
 unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_API_KEY   # OAuth token must not be shadowed by a proxy
+# Quest-scoped launch overrides (from Step 3c) — applied HERE, never on the shared profile/bundle, so the
+# template stays quest-independent. Model always pinned at launch; effort flag omitted when EFFORT_LEVEL empty.
+LAUNCH_OVERRIDES="--model $AGENT_MODEL"
+[ -n "$EFFORT_LEVEL" ] && LAUNCH_OVERRIDES="$LAUNCH_OVERRIDES --reasoning-level $EFFORT_LEVEL"
 # Orchestrator (root)
 env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY \
   houmao-mgr project --project-dir "$P" agents launch --profile deepresearch-orchestrator --name orchestrator \
+  $LAUNCH_OVERRIDES \
   --workdir "$P/runs/$QID/workspaces/orchestrator" \
   --mail-transport filesystem --mail-root "$MAILROOT" --gateway-background
 
-# Specialists (experimenter uses its isolated worktree as workdir)
+# Specialists (experimenter uses its isolated worktree as workdir; add experimenter-2..N for fanout>1)
 for pair in scout-ideator:scout-ideator experimenter:experimenter-1 \
             analyst:analyst writer:writer reviewer:reviewer; do
   prof=deepresearch-${pair%%:*}; inst=${pair##*:}
   env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY \
     houmao-mgr project --project-dir "$P" agents launch --profile "$prof" --name "$inst" \
+    $LAUNCH_OVERRIDES \
     --workdir "$P/runs/$QID/workspaces/$inst" \
     --mail-transport filesystem --mail-root "$MAILROOT" --gateway-background
 done
@@ -246,6 +338,39 @@ Verify 🟢: `houmao-mgr agents single --agent-name orchestrator gateway mail-no
 
 ---
 
+## Step 6c — MANDATORY operator model-confirmation gate 🟢→🛑 (agents up, BEFORE the first trigger)
+> **Why this exists.** Profiles set only `reasoning.level`, NOT a model name. Without a model pinned on the
+> shared credential bundle, Claude Code's per-process default can diverge — observed: the Orchestrator
+> resolved to Opus 4.8 while specialists silently fell back to **Sonnet 4.6**, violating the operator's
+> Opus-4.8 effort choice. The loop must NOT start the research work until the operator confirms every agent
+> is on the intended model.
+>
+> **Deterministic fix (quest-independent): pass the model at LAUNCH (Step 6), not on the shared bundle.**
+> Each `agents launch` carries `--model claude-opus-4-8` via `$LAUNCH_OVERRIDES`, so every agent resolves the
+> intended model without mutating the shared `default` bundle (which keeps ONLY the OAuth token). Verify on the
+> live agent's TUI header below. Model ids: Opus 4.8 = `claude-opus-4-8`, Sonnet 4.6 = `claude-sonnet-4-6`,
+> Haiku 4.5 = `claude-haiku-4-5-20251001`. (Legacy: pinning `--model` on the bundle also works but leaks the
+> choice across all quests — disallowed by the quest-independence rule.)
+
+Capture each live agent's ACTUAL resolved model from its TUI header and present the table to the operator
+for explicit confirmation. The Step 7 trigger is **hard-gated** on this confirmation.
+```bash
+for inst in orchestrator scout-ideator experimenter-1 experimenter-2 analyst writer reviewer; do
+  S=$(tmux ls 2>/dev/null | grep -oE "HOUMAO-$inst-[0-9]+" | head -1)
+  hdr=$(tmux capture-pane -t "$S" -p -S -60 2>/dev/null | grep -iE 'Opus|Sonnet|Haiku|Fable|· Claude' | head -1 | tr -s ' ')
+  printf "  %-16s %s\n" "$inst" "${hdr:-<no model header yet — agent still booting>}"
+done
+```
+Outcome — present the per-agent model table and ask the operator (`AskUserQuestion`) to **confirm or abort**:
+- **All agents on the intended model** (e.g. every row shows `Opus 4.8`) → operator confirms → proceed to Step 7.
+- **Any mismatch** (e.g. a row shows `Sonnet 4.6`) → **STOP**. Do NOT send the trigger. Relaunch the affected
+  agents fresh (Step 6) **with `$LAUNCH_OVERRIDES`** (`--model $AGENT_MODEL`) so they resolve the intended
+  model — do NOT pin the model on the shared bundle (quest-independence rule; the bundle stays token-only).
+  Re-check here. Record the confirmed model set in the quest's `effort.md` (or a `kind='model-confirmation'`
+  note) for the audit trail.
+
+---
+
 ## Step 7 — Send the first trigger 🔴 (start = nudge the Orchestrator once; loop self-sustains via self-wakeup)
 ```bash
 houmao-mgr agents single --agent-name orchestrator prompt \
@@ -257,7 +382,7 @@ After this the Orchestrator dispatches `scope` to scout-ideator and arms a `[sel
 
 ## Step 8 — First post-launch health checks 🟢 (read-only)
 ```bash
-"$HARNESS" state validate                         # CLEAN (33 checks, 0 violations)
+"$HARNESS" state validate                         # CLEAN (39 checks, 0 violations)
 "$HARNESS" state query cursor                      # quest running; current_stage advancing past scope
 "$HARNESS" wakeup list --quest-id "$QID"           # exactly one armed|delivered wakeup, lane main
 "$HARNESS" handoff query --quest-id "$QID" --due   # dispatched handoff(s) to scout-ideator, status sent/acked
@@ -301,7 +426,7 @@ git -C "$REPO" branch -D "quest/$QID/exp-1"
 ```bash
 M profile   remove --name deepresearch-<role>      # repeat 6
 M specialist remove --name deepresearch-<role>     # repeat 6
-M skills remove --name deepresearch-<skill>        # repeat 8
+M skills remove --name deepresearch-<skill>        # repeat 9
 # or, nuclear: rm -rf "$P/.houmao"
 ```
 

@@ -15,6 +15,7 @@
         "at": { "type": "string" },
         "quest_id": { "type": "string" },
         "statement": { "type": "string" },
+        "kind": { "enum": ["claim", "alternative", "competing_hypothesis", "limitation"] },
         "status": { "enum": ["open", "supported", "refuted", "withdrawn"] }
       }
     },

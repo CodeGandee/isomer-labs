@@ -13,5 +13,5 @@ source of truth.
 - `specs/`: machine-readable loop contracts (collab/topology, comms, state, workspace).
 - `skills/`: generated skill packages installed into agents.
 - `agents/`: concrete agent bindings, role prompts, notifier prompts.
-- `harness/`: loop-local deterministic command surface (`commands.toml`; `bin/`+`src/` pending implementation).
-- `docs/`: generated human support views (full set pending `execplan-finalize`).
+- `harness/`: loop-local deterministic command surface — implemented runnable harness (`bin/` + `src/`), with `commands.toml` as the registry surface.
+- `docs/`: human support views (README, start-runbook, credentials, publication-quality, research-contract, claude-effort).

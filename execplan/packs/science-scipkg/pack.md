@@ -3,7 +3,7 @@
 - kind: reference
 - backs: knowledge cards
 - status: **REAL adapter** (stdlib only; follows ../ADAPTER-CONTRACT.md)
-- source skill: DeepScientist `deepscientist-science`
+- source skill: DeepScientist `science`
 - entrypoint: `adapter:cards`
 - input: (none; catalog.json)
 - output: scientific package cards (numpy/scipy/pandas/...)

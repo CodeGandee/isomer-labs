@@ -13,7 +13,7 @@ bounded turn.
 - loop slug: `deepresearch`; loop dir: this `execplan/`'s parent.
 - manifest: `execplan/manifest.toml`; harness: `$HARNESS`.
 - agent bindings: `execplan/agents/bindings.toml`.
-- supported ops: status, start, pause, resume, stop, recover, set-mode (auto|manual), manual-step, confirm-gpus, clarify-quest.
+- supported ops: status, start, pause, resume, stop, recover, set-mode (execution --mode auto|manual AND/OR run-mode --autonomy auto|assistant), amend-acceptance (operator-confirmed, append-only), manual-step, confirm-gpus, clarify-quest.
 
 ## Inputs
 
@@ -28,8 +28,21 @@ bounded turn.
 3. **pause / resume / stop** → `$HARNESS control pause|resume|stop` (records `run_state` +
    `operator_intent_event`). A low-quality `stop` requires a `decision.record(requires_user_confirm=1)`
    then `decision.confirm` first.
-4. **set-mode auto|manual** → `$HARNESS control set-mode` (records `operator_intent_event(set-mode)`).
-   `manual` suspends notifier-driven wakeups (operator prompts each bounded pass); it is NOT `paused`.
+4. **set-mode** → `$HARNESS control set-mode` (records `operator_intent_event(set-mode)`). TWO independent axes:
+   - `--mode auto|manual` (**execution_mode**, drive cadence): `manual` suspends notifier-driven wakeups
+     (operator prompts each bounded pass); it is NOT `paused`.
+   - `--autonomy auto|assistant` (**autonomy_mode**, authority/strictness — Phase 1): `auto` lets the loop
+     self-dispose (completeness HARD-gates `complete` at publication rigor); `assistant` is advisory (the loop
+     recommends, the operator disposes). Chosen pre-launch (a launch gate); change mid-loop only by operator.
+   Supply at least one of `--mode`/`--autonomy`.
+4b. **amend-acceptance (Phase 6 — acceptance-only, operator-confirmed, append-only)** → the ONLY post-launch
+   way to change the done-bar. The objective is **frozen**; only `acceptance.md` may be amended, and only via:
+   (i) `decision.record(route='amend-acceptance', requires_user_confirm=1)` with a diff+rationale
+   `rationale_ref`; (ii) operator `decision.confirm`; (iii) write a NEW `runs/<q>/objective/acceptance.md@rev-K`
+   (never overwrite rev 1); (iv) `quest.update acceptance_ref=...@rev-K`. The harness `_acceptance_amend_gate`
+   rejects any acceptance_ref change lacking the confirmed decision; `_objective_frozen_gate` rejects objective
+   changes; `acceptance_amend_not_self_clearing` flags a same-round amend→complete. `$HARNESS plan diff
+   --quest-id <q>` shows the revisions.
 5. **recover** → `$HARNESS control resume --recovering`; read `$HARNESS wakeup list` + `$HARNESS handoff
    query --quest-id <q> --stalled --now <ts>` (and `--due`) and resume the last consistent stage via
    deepresearch-orchestrator-tick (re-issue unanswered requests with the **same `handoff_id`** +
@@ -69,13 +82,17 @@ bounded turn.
    `{"record_type":"artifact.record","kind":"clarification","ref":"runs/<q>/objective/clarification.md", ...}`.
    **Only the operator confirms/clarifies** — never fabricate answers to unblock launch. Use mid-loop only as
    a fallback (recover a legacy quest that started before the gate, or amend the brief from new operator input).
+   **Post-launch the brief is NOT freely editable (Phase 6):** the objective is frozen, and acceptance edits
+   MUST go through the operator-confirmed, append-only **amend-acceptance** path (op 4b) — never an in-place
+   edit of `objective.md`/`acceptance.md`. Mid-loop clarify-quest may *propose* a narrowed acceptance; it
+   lands only after `decision.confirm`.
 
 ## Liveness watchdog (heartbeat + parked-agent recovery)
 
 - **Heartbeat:** keep the loop live without inbound mail by setting a *repeating* gateway reminder on the
   Orchestrator that prompts it to run **deepresearch-orchestrator-tick** (the tick's step 2 then reconciles
   stalled handoffs). Via `houmao-agent-gateway`:
-  `houmao-mgr agents single --agent-name orchestrator gateway reminders add --interval-seconds <N> \
+  `houmao-mgr agents single --agent-name orchestrator gateway reminders create --interval-seconds <N> \
   --prompt "Run deepresearch-orchestrator-tick: heartbeat reconcile (handoff query --stalled), then stop."`
   Pick `N` ≥ the shortest `result_due_at` window so a dead worker turn is retried within one or two beats.
 - **Claude Code interstitials:** a parked TUI prompt (e.g. *"How is Claude doing this session? 1:Bad 2:Fine

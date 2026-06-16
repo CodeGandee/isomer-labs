@@ -6,3 +6,9 @@ vars.env
 # Python bytecode caches (generated; should not be tracked)
 __pycache__/
 *.pyc
+
+# Runtime state DB (canonical control plane; runtime artifact, not source) — keep tracked docs like
+# runs/prepared-workspace.md, but never commit the sqlite DB or its WAL/SHM sidecars.
+runs/*.sqlite
+runs/*.sqlite-wal
+runs/*.sqlite-shm

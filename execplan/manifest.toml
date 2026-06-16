@@ -79,7 +79,7 @@ purpose = "state authority"
 
 [[artifacts]]
 id = "state-invariants"
-description = "33 named validation checks run by `harness state validate`."
+description = "39 named validation checks run by `harness state validate`."
 path = "specs/state/invariants.toml"
 artifact_kind = "file"
 purpose = "state invariants"
@@ -108,14 +108,14 @@ purpose = "workspace contract"
 # ───────────────── Skills ─────────────────
 [[artifacts]]
 id = "skills"
-description = "8 generated skills: shared-guide, on-task-request (role-aware), on-receipt, on-task-result, on-self-wakeup, orchestrator-tick, operator-control, mentor."
+description = "9 generated skills: shared-guide, on-task-request (role-aware), on-receipt, on-task-result, on-self-wakeup, orchestrator-tick, operator-control, mentor, research-contract (setup-time, operator-run pre-launch contract expansion — not bound to an in-loop agent)."
 path = "skills/"
 artifact_kind = "dir"
 purpose = "generated skill packages"
 
 [[artifacts]]
 id = "packs"
-description = "9 built-in knowledge_pack adapters (ported DeepScientist domain/publication helpers). Publication set ENABLED by default — paper-latex (render report→LaTeX/PDF), paper-plot (render plot→figures), figure-polish, + nature-figure/paper2ppt/data/polishing (nature-domain); science-scipkg/mentor-standards reference packs stay disabled. Resolution is command-aware (pack.toml `backs`), so each render/manuscript command binds its own adapter."
+description = "15 built-in knowledge_packs. (a) 7 publication compiler/template adapters ENABLED by default — paper-latex (render report→LaTeX/PDF; ships 10 venue template suites + a `params.venue` hook), paper-plot (render plot→figures; chart recipes + scripts), figure-polish (+ self-review checklist + house mplstyle), nature-figure/paper2ppt/data/polishing (nature-domain; each now carries its DeepScientist reference methodology). (b) 6 methodology REFERENCE packs ported from DeepScientist skill bodies, enabled by default, surfaced via `knowledge cards`: paper-craft, ideation-rubric, review-craft, rebuttal-craft, research-method, intake-rubric. Every stage now has a required methodology pack (REQUIRED_PACKS in harness/src/records.py): worker stages self-report `methodology_used` + record artifact(kind='methodology-usage'); orchestrator-internal decision/optimize/finalize are self-audited at round close; `plan validate` warns when a closed required-pack round lacks the artifact. (c) science-scipkg + mentor-standards reference packs stay disabled (mentor-standards is original Houmao authorship — there is no DeepScientist `mentor` skill). Compiler/template resolution is command-aware (pack.toml `backs`); reference packs back no command (exempt from adapter_priority_unique)."
 path = "packs/"
 artifact_kind = "dir"
 purpose = "built-in optional knowledge packs"

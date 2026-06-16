@@ -137,6 +137,212 @@ def state_export(ctx, quest_id):
     emit(envelope("state export", quest_id=quest_id, data={"markdown": md}))
 
 
+# ───────────────── plan (DB-rendered living research map; Phases 2/3/6) ─────────────────
+@cli.group()
+def plan(): ...
+
+
+def _render_plan_md(conn, quest_id):
+    """Build the plan.md projection PURELY from DB rows (DB stays canonical; plan.md is a derived view)."""
+    q = conn.execute("SELECT * FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    if q is None:
+        return None
+    q = dict(q)
+    branches = db.rows(conn, "SELECT branch_id,parent_branch_id,status,git_branch FROM branch WHERE quest_id=? ORDER BY created_at", (quest_id,))
+    ideas = db.rows(conn, "SELECT idea_id,parent_idea_id,status,round_index,statement FROM idea WHERE quest_id=? ORDER BY round_index", (quest_id,))
+    frontier = db.rows(conn, "SELECT entry_id,candidate_ref,rank,score,status FROM frontier_entry WHERE quest_id=? ORDER BY rank", (quest_id,))
+    decisions = db.rows(conn, "SELECT decision_id,route,to_stage,requires_user_confirm,confirmed,round_index FROM decision WHERE quest_id=? ORDER BY created_at", (quest_id,))
+    finals = db.rows(conn, "SELECT outcome,reopen_conditions,next_incumbent_ref,created_at FROM finalize_outcome WHERE quest_id=? ORDER BY created_at", (quest_id,))
+    rounds = db.rows(conn, "SELECT round_index,stage,status,summary_ref,updated_at FROM round WHERE quest_id=? ORDER BY round_index", (quest_id,))
+    artifacts = db.rows(conn, "SELECT kind,ref FROM artifact WHERE quest_id=? AND kind IN ('clarification','research-contract','effort-selection') ORDER BY kind", (quest_id,))
+    L = []
+    L.append(f"# Plan — {quest_id}  (plan_revision {q['plan_revision']} · stage {q.get('current_stage')} · round {q['round_index']})")
+    L.append("\n> Rendered projection of DB state. The DB is canonical; this file is never read back as truth.\n")
+    L.append("## Contract  [FIXED — acceptance amendable only via operator-confirmed decision; objective frozen]")
+    L.append(f"- run mode (autonomy_mode): **{q.get('autonomy_mode') or '(unset)'}**  ·  rigor_level: **{q.get('rigor_level') or 'standard (default)'}**")
+    L.append(f"- objective_ref: `{q['objective_ref']}`")
+    L.append(f"- acceptance_ref: `{q.get('acceptance_ref')}`")
+    for a in artifacts:
+        L.append(f"- {a['kind']}: `{a['ref']}`")
+    L.append("\n## Active node  [LIVING]")
+    L.append(f"- stage=`{q.get('current_stage')}` round={q['round_index']} branch=`{q.get('active_branch_id')}` "
+             f"idea=`{q.get('active_idea_id')}` best_result=`{q.get('best_result_ref')}` baseline_gate={q['baseline_gate']} run_state={q['run_state']}")
+    L.append("\n## Route / frontier tree  [LIVING]")
+    L.append("Branches: " + (", ".join(f"{b['branch_id']}[{b['status']}]" for b in branches) or "(none)"))
+    L.append("Ideas: " + (", ".join(f"{i['idea_id']}[{i['status']}]" for i in ideas) or "(none)"))
+    L.append("Frontier: " + (", ".join(f"{f['candidate_ref']}#{f['rank']}[{f['status']}]" for f in frontier) or "(none)"))
+    L.append("\n## Next decision options  [LIVING]")
+    open_dec = [d for d in decisions if not d["confirmed"] and d["requires_user_confirm"]]
+    if open_dec:
+        for d in open_dec:
+            L.append(f"- `{d['route']}` → {d.get('to_stage')} (awaiting operator confirm; decision {d['decision_id']})")
+    else:
+        L.append("- (none pending operator confirmation)")
+    L.append("\n## Disposition  [LIVING]")
+    if finals:
+        for f in finals:
+            extra = f.get("reopen_conditions") or f.get("next_incumbent_ref") or ""
+            L.append(f"- {f['outcome']} {('· ' + extra) if extra else ''} @ {f['created_at']}")
+    else:
+        L.append("- (not finalized)")
+    L.append("\n## Revisions  [APPEND-ONLY LEDGER]")
+    # One projected entry per closed round (round-close bump) + per confirmed acceptance amendment.
+    amends = db.rows(conn, "SELECT decision_id,round_index,created_at FROM decision WHERE quest_id=? AND route='amend-acceptance' AND confirmed=1 ORDER BY created_at", (quest_id,))
+    closed = [r for r in rounds if r["status"] == "closed"]
+    if not closed and not amends:
+        L.append(f"- rev 1 — launch contract (plan_revision={q['plan_revision']})")
+    for r in closed:
+        L.append(f"- round-close r{r['round_index']} ({r['stage']}) @ {r['updated_at']} — {r.get('summary_ref') or ''}")
+    for a in amends:
+        L.append(f"- acceptance-amendment @ {a['created_at']} — decision {a['decision_id']} (round {a['round_index']})")
+    return "\n".join(L) + "\n"
+
+
+@plan.command("render")
+@click.option("--quest-id", required=True)
+@click.option("--at", required=True)
+@click.option("--out", default=None, help="Output path (default runs/<q>/plan.md).")
+@click.pass_context
+def plan_render(ctx, quest_id, at, out):
+    """Render runs/<q>/plan.md from DB state and index it as artifact(kind='plan'). Pure projection."""
+    conn = _conn(ctx)
+    md = _render_plan_md(conn, quest_id)
+    if md is None:
+        conn.close()
+        emit(envelope("plan render", ok=False, quest_id=quest_id, diagnostics=[f"unknown quest {quest_id}"])); sys.exit(1)
+    path = out or str(LOOP_DIR / "runs" / quest_id / "plan.md")
+    import os as _os
+    _os.makedirs(_os.path.dirname(path), exist_ok=True)
+    open(path, "w", encoding="utf-8").write(md)
+    ref = path.replace(str(LOOP_DIR) + "/", "")
+    try:
+        records.apply(conn, {"record_type": "artifact.record", "record_id": f"{quest_id}:plan",
+                             "at": at, "quest_id": quest_id, "kind": "plan", "ref": ref})
+    except records.RecordError as e:
+        conn.close(); emit(envelope("plan render", ok=False, quest_id=quest_id, diagnostics=[str(e)])); sys.exit(1)
+    pr = conn.execute("SELECT plan_revision FROM quest WHERE quest_id=?", (quest_id,)).fetchone()[0]
+    _finish(ctx, conn, "plan render", {"path": ref, "bytes": len(md)}, quest_id=quest_id)
+
+
+@plan.command("status")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def plan_status(ctx, quest_id):
+    """Print the rendered plan map WITHOUT writing the artifact (inspection)."""
+    conn = _conn(ctx)
+    md = _render_plan_md(conn, quest_id)
+    pr = conn.execute("SELECT plan_revision FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    conn.close()
+    if md is None:
+        emit(envelope("plan status", ok=False, quest_id=quest_id, diagnostics=[f"unknown quest {quest_id}"])); sys.exit(1)
+    emit(envelope("plan status", quest_id=quest_id, plan_revision=pr[0] if pr else None, data={"markdown": md}))
+
+
+def _decision_lint(conn, quest_id):
+    """Warn on consequential decisions that did not name their losers (Phase 4; read-only)."""
+    warns = []
+    consequential = ("branch", "reset", "stop", "finalize", "idea", "optimize")
+    decs = db.rows(conn, "SELECT decision_id,route,round_index FROM decision WHERE quest_id=?", (quest_id,))
+    for d in decs:
+        if d["route"] not in consequential or d["round_index"] is None:
+            continue
+        ri = d["round_index"]
+        cand = conn.execute("SELECT COUNT(*) FROM idea WHERE quest_id=? AND round_index=?", (quest_id, ri)).fetchone()[0] \
+            + conn.execute("SELECT COUNT(*) FROM frontier_entry WHERE quest_id=? AND round_index=?", (quest_id, ri)).fetchone()[0]
+        losers = conn.execute("SELECT COUNT(*) FROM idea WHERE quest_id=? AND round_index=? AND status IN ('rejected','exhausted')", (quest_id, ri)).fetchone()[0] \
+            + conn.execute("SELECT COUNT(*) FROM frontier_entry WHERE quest_id=? AND round_index=? AND status IN ('parked','rejected')", (quest_id, ri)).fetchone()[0]
+        if cand < 2:
+            warns.append(f"decision {d['decision_id']} (route={d['route']}, round {ri}) chose among <2 named candidates")
+        elif losers < 1:
+            warns.append(f"decision {d['decision_id']} (route={d['route']}, round {ri}) has no marked rejected alternative")
+    return warns
+
+
+def _methodology_lint(conn, quest_id):
+    """Advisory (Tier-3 methodology-usage): for a quest under the research-contract regime, warn when a CLOSED
+    round whose stage requires a methodology pack (records.REQUIRED_PACKS) has no artifact(kind='methodology-
+    usage') for that round_index. Existence check only — per-pack correctness is enforced by the Orchestrator/
+    Reviewer reading task-result.methodology_used. Pre-regime quests (no research-contract artifact) are exempt,
+    so history (q1/q2/q3) never warns. Read-only; never an invariant (so `state validate` stays unaffected)."""
+    warns = []
+    try:
+        regime = conn.execute("SELECT COUNT(*) FROM artifact WHERE quest_id=? AND kind='research-contract'",
+                              (quest_id,)).fetchone()[0]
+    except Exception:
+        return warns
+    if not regime:
+        return warns  # pre-feature / non-regime quest: exempt
+    rounds = db.rows(conn, "SELECT round_index,stage FROM round WHERE quest_id=? AND status='closed'", (quest_id,))
+    for r in rounds:
+        req = records.REQUIRED_PACKS.get(r["stage"])
+        if not req or r["round_index"] is None:
+            continue
+        n = conn.execute("SELECT COUNT(*) FROM artifact WHERE quest_id=? AND round_index=? AND kind='methodology-usage'",
+                         (quest_id, r["round_index"])).fetchone()[0]
+        if not n:
+            warns.append(f"round r{r['round_index']} ({r['stage']}) closed without a methodology-usage artifact "
+                         f"(required packs: {req})")
+    return warns
+
+
+@plan.command("validate")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def plan_validate(ctx, quest_id):
+    """Read-only: plan-map invariants (plan_map_fresh, plan_revision_monotonic) + decision lint + methodology
+    lint warnings (advisory; never fail the command on a lint)."""
+    conn = _conn(ctx)
+    allres = inv.run_all(conn)
+    plan_invs = [r for r in allres["violations"] if r["name"] in ("plan_map_fresh", "plan_revision_monotonic")]
+    lint = _decision_lint(conn, quest_id)
+    mlint = _methodology_lint(conn, quest_id)
+    conn.close()
+    ok = not plan_invs
+    emit(envelope("plan validate", ok=ok, quest_id=quest_id,
+                  data={"plan_invariant_violations": plan_invs, "decision_lint": lint, "methodology_lint": mlint},
+                  warnings=lint + mlint, diagnostics=[] if ok else ["plan invariant violation"]))
+    if not ok:
+        sys.exit(1)
+
+
+@plan.command("diff")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def plan_diff(ctx, quest_id):
+    """List recorded acceptance revisions (acceptance.md@rev-*) and confirmed amendment decisions (Phase 6)."""
+    conn = _conn(ctx)
+    amends = db.rows(conn, "SELECT decision_id,round_index,rationale_ref,created_at FROM decision WHERE quest_id=? AND route='amend-acceptance' AND confirmed=1 ORDER BY created_at", (quest_id,))
+    cur = conn.execute("SELECT acceptance_ref FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    conn.close()
+    import glob as _glob
+    revs = sorted(_glob.glob(str(LOOP_DIR / "runs" / quest_id / "objective" / "acceptance.md@rev-*")))
+    emit(envelope("plan diff", quest_id=quest_id,
+                  data={"current_acceptance_ref": cur[0] if cur else None,
+                        "acceptance_revisions": [r.replace(str(LOOP_DIR) + "/", "") for r in revs],
+                        "amendments": amends}))
+
+
+# ───────────────── completeness (research-completeness audit; Phase 5) ─────────────────
+@cli.group()
+def completeness(): ...
+
+
+@completeness.command("audit")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def completeness_audit_cmd(ctx, quest_id):
+    """Run the seven research-completeness checks (Phase 5). Advisory by default; the finalize gate enforces
+    them only in auto mode at the gating rigor (DEEPRESEARCH_COMPLETENESS_GATE_RIGOR, default 'publication')."""
+    conn = _conn(ctx)
+    row = conn.execute("SELECT autonomy_mode, rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    rigor = (row[1] if row else None) or "standard"
+    audit = records.completeness_audit(conn, quest_id, rigor)
+    conn.close()
+    audit["autonomy_mode"] = row[0] if row else None
+    emit(envelope("completeness audit", ok=audit["ok"], quest_id=quest_id, data=audit,
+                  diagnostics=audit["reasons"]))
+
+
 # ───────────────── record ─────────────────
 @cli.group()
 def record(): ...
@@ -218,6 +424,11 @@ def handoff_advance(ctx, quest_id, handoff_id, status, bump_attempt, at):
 def handoff_query(ctx, quest_id, due, seen, stalled, now):
     conn = _conn(ctx)
     if seen:
+        # Dedup lookup: handoff PK is (quest_id, handoff_id). When --quest-id is omitted, scope to the single
+        # running quest (single_active_quest) so the dedup actually matches instead of binding quest_id=NULL.
+        if quest_id is None:
+            r = conn.execute("SELECT quest_id FROM quest WHERE run_state='running' ORDER BY quest_id LIMIT 1").fetchone()
+            quest_id = r[0] if r else None
         row = conn.execute("SELECT status FROM handoff WHERE quest_id=? AND handoff_id=?", (quest_id, seen)).fetchone()
         data = {"handoff_id": seen, "processed": bool(row) and row[0] == "processed", "status": row[0] if row else None}
     elif stalled:
@@ -390,7 +601,7 @@ def findings(): ...
 @click.option("--kind", required=True)
 @click.option("--summary", required=True)
 @click.option("--scope", default="quest")
-@click.option("--quest-id", default=None)
+@click.option("--quest-id", required=True)  # findings are always quest-owned (total isolation)
 @click.option("--artifact-ref", default=None)
 @click.option("--grounded-by", default=None)
 @click.option("--at", required=True)
@@ -408,9 +619,19 @@ def findings_add(ctx, memory_id, kind, summary, scope, quest_id, artifact_ref, g
 @click.option("--quest-id", default=None)
 @click.option("--scope", default=None)
 @click.option("--kind", default=None)
+@click.option("--all-quests", is_flag=True, default=False,
+              help="Operator-only cross-quest view. Agents MUST NOT use this — quests are fully isolated.")
 @click.pass_context
-def findings_query(ctx, quest_id, scope, kind):
+def findings_query(ctx, quest_id, scope, kind, all_quests):
     conn = _conn(ctx)
+    # QUEST ISOLATION: never surface another quest's findings to the loop. When no quest is named and
+    # --all-quests is not set, scope to the single running quest (single_active_quest); an explicit
+    # --quest-id or --all-quests is required for any cross-quest view (operator repair only).
+    if quest_id is None and not all_quests:
+        r = conn.execute("SELECT quest_id FROM quest WHERE run_state='running' ORDER BY quest_id LIMIT 1").fetchone()
+        if not r:
+            conn.close(); emit(envelope("findings query", quest_id=None, data={"rows": []})); return
+        quest_id = r[0]
     cond, params = [], []
     for col, val in (("quest_id", quest_id), ("scope", scope), ("kind", kind)):
         if val:
@@ -572,7 +793,7 @@ def lit_fetch(ctx, reference_id, quest_id, source, uri, title, cite_key, artifac
 @click.pass_context
 def lit_query(ctx, quest_id):
     conn = _conn(ctx)
-    data = db.rows(conn, "SELECT * FROM reference WHERE quest_id=? OR quest_id IS NULL", (quest_id,))
+    data = db.rows(conn, "SELECT * FROM reference WHERE quest_id=?", (quest_id,))
     conn.close()
     emit(envelope("lit query", quest_id=quest_id, data={"rows": data}))
 
@@ -586,7 +807,7 @@ def lit_bib(ctx, quest_id, out_path):
     from paths import LOOP_DIR
     from pathlib import Path
     conn = _conn(ctx)
-    rows = db.rows(conn, "SELECT * FROM reference WHERE quest_id=? OR quest_id IS NULL", (quest_id,))
+    rows = db.rows(conn, "SELECT * FROM reference WHERE quest_id=?", (quest_id,))
     conn.close()
     def key(r, i):
         return (r.get("cite_key") or r.get("reference_id") or f"ref{i}").replace(" ", "_")
@@ -603,6 +824,23 @@ def lit_bib(ctx, quest_id, out_path):
     Path(out_abs).write_text(bib, encoding="utf-8")
     emit(envelope("lit bib", quest_id=quest_id, data={"out_path": out_path, "entries": len(entries),
                                                        "cite_keys": [key(r, i) for i, r in enumerate(rows, 1)]}))
+
+
+@lit.command("audit")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def lit_audit(ctx, quest_id):
+    """Scholarship-bar audit (Upgrade 1): checks the quest meets the literature bar — enough real reference
+    rows AND >= 1 claim positioned against a reference — plus soft warnings (all-`manual` bib, missing
+    Related Work heading). The same check backs the hard finalize gate; run it before review/finalize. See
+    execplan/docs/publication-quality.md."""
+    conn = _conn(ctx)
+    audit = records.scholarship_audit(conn, quest_id)
+    conn.close()
+    emit(envelope("lit audit", ok=audit["ok"], quest_id=quest_id, data=audit,
+                  diagnostics=audit["reasons"], warnings=audit["warnings"]))
+    if not audit["ok"]:
+        sys.exit(1)
 
 
 # ───────────────── git ─────────────────
@@ -726,18 +964,40 @@ def result(): ...
 
 @result.command("validate")
 @click.option("--result-id", required=True)
-@click.option("--validity", default="valid", type=click.Choice(["unchecked", "valid", "invalid", "incomparable"]))
+@click.option("--validity", default=None, type=click.Choice(["unchecked", "valid", "invalid", "incomparable"]),
+              help="Explicit override (operator / domain validator adapter). Omit to compute the default gate.")
 @click.pass_context
 def result_validate(ctx, result_id, validity):
-    # Default validator: set validity (a domain validator adapter computes this from the metric contract).
+    """Default validity gate (domain-neutral). With --validity it honors the override; otherwise it COMPUTES
+    validity from metric completeness + baseline comparability: no measurements -> invalid; no is_primary
+    (objective) measurement -> incomparable; baseline_gate not passed/waived -> incomparable; else valid. A
+    knowledge_pack(kind='validator') adapter can supersede this with a domain correctness gate."""
     conn = _conn(ctx)
-    cur = conn.execute("UPDATE result SET validity=? WHERE result_id=?", (validity, result_id))
+    row = conn.execute("SELECT quest_id FROM result WHERE result_id=?", (result_id,)).fetchone()
+    if row is None:
+        conn.close(); emit(envelope("result validate", ok=False, diagnostics=[f"no result {result_id}"])); sys.exit(1)
+    quest_id = row[0]
+    reasons, computed = [], None
+    if validity:
+        computed = validity  # explicit override path (unchanged behavior for callers passing --validity)
+    else:
+        n_meas = conn.execute("SELECT COUNT(*) FROM measurement WHERE result_id=?", (result_id,)).fetchone()[0]
+        n_prim = conn.execute("SELECT COUNT(*) FROM measurement WHERE result_id=? AND is_primary=1", (result_id,)).fetchone()[0]
+        gate = conn.execute("SELECT baseline_gate FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+        gate = gate[0] if gate else None
+        if n_meas == 0:
+            computed = "invalid"; reasons.append("no measurements recorded for this result")
+        elif n_prim == 0:
+            computed = "incomparable"; reasons.append("no is_primary (objective) measurement — nothing to compare on")
+        elif gate in ("pending", "blocked"):
+            computed = "incomparable"; reasons.append(f"baseline_gate={gate!r} — no trustworthy comparator yet")
+        else:
+            computed = "valid"
+    cur = conn.execute("UPDATE result SET validity=? WHERE result_id=?", (computed, result_id))
     conn.commit()
-    if cur.rowcount == 0:
-        conn.close()
-        emit(envelope("result validate", ok=False, diagnostics=[f"no result {result_id}"]))
-        sys.exit(1)
-    _finish(ctx, conn, "result validate", {"result_id": result_id, "validity": validity, "stub": True})
+    _finish(ctx, conn, "result validate",
+            {"result_id": result_id, "validity": computed, "source": "override" if validity else "computed",
+             "reasons": reasons, "quest_id": quest_id}, quest_id=quest_id)
 
 
 @cli.group()
@@ -910,28 +1170,91 @@ def render_slides(ctx, quest_id, artifact_id, ref, input_path, title, at):
 def outline(): ...
 
 
+def _read_artifact_text(artifact_ref):
+    """Resolve a loop-relative (or absolute) artifact path and return its text, or None if unreadable."""
+    if not artifact_ref:
+        return None
+    from pathlib import Path as _P
+    p = _P(artifact_ref) if str(artifact_ref).startswith("/") else (LOOP_DIR / artifact_ref)
+    try:
+        return p.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return None
+
+
+# Outline-contract markers (paper-craft/references/outline-contract.md). Each check passes if ANY of its
+# tokens appears in the outline artifact (JSON field name or prose heading) — tolerant of md or json shape.
+_OUTLINE_CHECKS = {
+    "paper_idea":          ("central_thesis", "working_title", "paper idea", "story_spine", "thesis"),
+    "scoped_claims":       ("core_claims", "scoped claim", "scope", "claim"),
+    "method_abstraction":  ("method_abstraction", "method abstraction", "mechanism_steps", "intuition"),
+    "evaluation_plan":     ("evaluation_plan", "evaluation plan", "analysis_plan", "baselines", "evaluation/analysis"),
+    "evidence_boundaries": ("evidence_grounding", "must_not_claim", "evidence boundaries", "evidence_view", "evidence-view"),
+}
+
+
 @outline.command("validate")
 @click.option("--quest-id", default=None)
-@click.option("--artifact-ref", default=None)
+@click.option("--artifact-ref", default=None, help="Path to the outline artifact (loop-relative) to validate.")
 def outline_validate(quest_id, artifact_ref):
-    emit(envelope("outline validate", ok=True, quest_id=quest_id,
-                  data={"stub": True, "artifact_ref": artifact_ref,
-                        "checks": ["paper_idea", "scoped_claims", "method_abstraction", "evaluation_plan", "evidence_boundaries"],
-                        "note": "structural checks stubbed; wire to the outline artifact"}))
+    """Structural pre-write gate (DeepScientist validate_academic_outline). With --artifact-ref it parses the
+    outline and checks for a single paper idea, scoped claims, a method abstraction, an evaluation/analysis
+    plan, and explicit evidence boundaries; falsification criteria are a soft warning. Without --artifact-ref
+    it stays advisory (lists the checks)."""
+    text = _read_artifact_text(artifact_ref)
+    if text is None:
+        emit(envelope("outline validate", ok=True, quest_id=quest_id,
+                      data={"checks": list(_OUTLINE_CHECKS), "artifact_ref": artifact_ref,
+                            "note": "advisory: pass --artifact-ref <outline path> to enforce the contract"}))
+        return
+    low = text.lower()
+    results = {name: any(tok in low for tok in toks) for name, toks in _OUTLINE_CHECKS.items()}
+    missing = [n for n, ok in results.items() if not ok]
+    warnings = [] if ("what_would_falsify" in low or "falsif" in low) else ["no falsification criteria found (what_would_falsify_it)"]
+    ok = not missing
+    emit(envelope("outline validate", ok=ok, quest_id=quest_id,
+                  data={"checks": results, "missing": missing, "artifact_ref": artifact_ref},
+                  warnings=warnings, diagnostics=[] if ok else [f"outline missing required elements: {missing}"]))
+    if not ok:
+        sys.exit(1)
 
 
 @cli.group()
 def manuscript(): ...
 
 
+# Loop/operator jargon that must never surface in paper-facing prose (DeepScientist validate_manuscript_language).
+_MANUSCRIPT_FORBIDDEN = ["route", "handoff", "worktree", "lane", "notifier", "self-wakeup",
+                         "the user requested", "paper restart", "this quest", "64 + 64", "64+64", "todo"]
+
+
 @manuscript.command("validate")
 @click.option("--quest-id", default=None)
-@click.option("--artifact-ref", default=None)
+@click.option("--artifact-ref", default=None, help="Path to the manuscript artifact (loop-relative) to scan.")
 def manuscript_validate(quest_id, artifact_ref):
-    emit(envelope("manuscript validate", ok=True, quest_id=quest_id,
-                  data={"stub": True, "artifact_ref": artifact_ref,
-                        "forbidden_terms": ["route", "handoff", "worktree", "lane", "operator", "notifier", "self-wakeup"],
-                        "note": "language-hygiene scan stubbed; wire to the manuscript artifact"}))
+    """Language-hygiene gate (DeepScientist validate_manuscript_language). With --artifact-ref it scans the
+    manuscript for loop-internal/process wording (route/handoff/worktree/notifier/self-wakeup/"the user
+    requested"/"paper restart"/batch-arithmetic/TODO) and FAILS on any hit; without --artifact-ref it stays
+    advisory (lists the forbidden terms). Matching is word/substring, case-insensitive, line-located."""
+    text = _read_artifact_text(artifact_ref)
+    if text is None:
+        emit(envelope("manuscript validate", ok=True, quest_id=quest_id,
+                      data={"forbidden_terms": _MANUSCRIPT_FORBIDDEN, "artifact_ref": artifact_ref,
+                            "note": "advisory: pass --artifact-ref <manuscript path> to enforce the scan"}))
+        return
+    hits = []
+    for i, line in enumerate(text.splitlines(), 1):
+        low = line.lower()
+        for term in _MANUSCRIPT_FORBIDDEN:
+            if term in low:
+                hits.append({"line": i, "term": term, "context": line.strip()[:160]})
+    ok = not hits
+    emit(envelope("manuscript validate", ok=ok, quest_id=quest_id,
+                  data={"hits": hits, "hit_count": len(hits), "artifact_ref": artifact_ref,
+                        "forbidden_terms": _MANUSCRIPT_FORBIDDEN},
+                  diagnostics=[] if ok else [f"{len(hits)} loop/process-jargon hit(s) in paper-facing prose"]))
+    if not ok:
+        sys.exit(1)
 
 
 @manuscript.command("polish")
@@ -969,7 +1292,7 @@ def manuscript_bundle(ctx, quest_id, out_dir):
     ev = db.rows(conn, "SELECT claim_id,source_kind,source_ref,resolved FROM claim_evidence WHERE claim_id IN "
                        "(SELECT claim_id FROM claim WHERE quest_id=?)", (quest_id,))
     analyses = db.rows(conn, "SELECT analysis_id,round_index,verdict,finding FROM analysis WHERE quest_id=? ORDER BY round_index", (quest_id,))
-    refs = db.rows(conn, "SELECT reference_id,cite_key,title,uri FROM reference WHERE quest_id=? OR quest_id IS NULL", (quest_id,))
+    refs = db.rows(conn, "SELECT reference_id,cite_key,title,uri FROM reference WHERE quest_id=?", (quest_id,))
     arts = db.rows(conn, "SELECT artifact_id,kind,ref FROM artifact WHERE quest_id=?", (quest_id,))
     conn.close()
     out_abs = Path(out_dir if out_dir.startswith("/") else str(LOOP_DIR / out_dir))
@@ -1085,7 +1408,7 @@ def control(): ...
 @click.pass_context
 def control_status(ctx, quest_id):
     conn = _conn(ctx)
-    sql = "SELECT quest_id,run_state,execution_mode,round_index,current_stage,baseline_gate FROM quest"
+    sql = "SELECT quest_id,run_state,execution_mode,autonomy_mode,rigor_level,round_index,current_stage,baseline_gate FROM quest"
     quests = db.rows(conn, sql + (" WHERE quest_id=?" if quest_id else ""), (quest_id,) if quest_id else ())
     pending = db.rows(conn, "SELECT quest_id,COUNT(*) AS open_handoffs FROM handoff WHERE status NOT IN ('processed','failed') GROUP BY quest_id")
     conn.close()
@@ -1116,11 +1439,22 @@ def _control_change(ctx, cmd, quest_id, kind, at, quest_updates, detail=None):
 
 @control.command("set-mode")
 @click.option("--quest-id", required=True)
-@click.option("--mode", required=True, type=click.Choice(["auto", "manual"]))
+@click.option("--mode", default=None, type=click.Choice(["auto", "manual"]), help="execution_mode (drive cadence) — unchanged axis.")
+@click.option("--autonomy", default=None, type=click.Choice(["auto", "assistant"]), help="autonomy_mode (authority/strictness) — orthogonal to --mode.")
 @click.option("--at", required=True)
 @click.pass_context
-def control_set_mode(ctx, quest_id, mode, at):
-    _control_change(ctx, "control set-mode", quest_id, "set-mode", at, {"execution_mode": mode})
+def control_set_mode(ctx, quest_id, mode, autonomy, at):
+    """Set the execution-mode (--mode auto|manual) and/or the run mode (--autonomy auto|assistant). The two are
+    independent axes; at least one must be supplied."""
+    if not mode and not autonomy:
+        emit(envelope("control set-mode", ok=False, quest_id=quest_id,
+                      diagnostics=["supply --mode and/or --autonomy"])); sys.exit(1)
+    updates = {}
+    if mode:
+        updates["execution_mode"] = mode
+    if autonomy:
+        updates["autonomy_mode"] = autonomy
+    _control_change(ctx, "control set-mode", quest_id, "set-mode", at, updates)
 
 
 @control.command("pause")

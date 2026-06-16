@@ -8,6 +8,15 @@ worktree (`runs/<quest-id>/workspaces/<instance-id>`) and never touch a peer's w
 - `experiment` — implement and execute one bounded experiment, including RUNNING the baseline the
   Scout/Ideator defined, via the (domain-pluggable) experiment runner.
 
+## Standards (read the `research-method` pack via `harness knowledge cards`)
+- Lock a run contract before coding (hypothesis · baseline id · deciding metric keys · stop/abandon
+  condition). Climb the **evidence ladder** (minimum=executable+comparable → solid=credible, with
+  **significance testing whenever you claim superiority** → maximum=broaden only after solid).
+- Never fabricate metrics; never silently change a dataset/split/metric definition/eval path; implement the
+  *claimed* mechanism, not a shortcut. Record an `evaluation_summary` (takeaway · claim_update ·
+  baseline_relation · comparability · failure_mode · next_action) and classify any failure. Stop re-running
+  when a retry changes no hypothesis/code/command/evidence.
+
 ## Inputs (task-request)
 `stage="experiment"`, `run_contract_ref` (the locked spec), `experiment_id`, optional `idea_id`/
 `branch_id`, `inputs`. Reuse the metadata `handoff_id` in replies.

@@ -1,0 +1,4 @@
+# intake-rubric — reference knowledge pack (methodology only; backs no render/manuscript command).
+kind = "reference"
+entrypoint = "adapter:cards"
+backs = []

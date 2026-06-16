@@ -139,7 +139,8 @@ The DeepScientist domain/publication helpers are integrated but kept off the dom
 ## Defaults (approved)
 
 - **One active quest** at a time (`single_active_quest`), in one platform DB.
-- **Findings quest-scoped** by default (`finding_memory.scope='quest'`); global is opt-in.
+- **Findings quest-owned** (total isolation): `finding_memory.scope='quest'` + `quest_id` always set; no
+  cross-quest/global findings (invariant `finding_quest_owned`). Same for references (`reference_quest_owned`).
 - **One continuation lane** per quest initially (multi-lane path preserved as above).
 
 ## Provisional families

@@ -79,6 +79,12 @@ CREATE TABLE IF NOT EXISTS quest (
                           CHECK (run_state IN ('not_started','running','paused','recovering',
                                                'waiting_user','parked','stopped','completed')),
     execution_mode      TEXT NOT NULL DEFAULT 'auto' CHECK (execution_mode IN ('auto','manual')),
+    -- Authority/strictness axis, ORTHOGONAL to execution_mode (which is drive-cadence). NULLABLE, NO DEFAULT:
+    -- the launch gate (_autonomy_gate) requires an explicit operator choice, so a default would hide "unset".
+    autonomy_mode       TEXT CHECK (autonomy_mode IS NULL OR autonomy_mode IN ('auto','assistant')),
+    -- Contract rigor declared at the research-contract step; keys the completeness finalize gate with
+    -- autonomy_mode. NULL ⇒ treated as 'standard'. History-safe (pre-feature quests keep NULL).
+    rigor_level         TEXT CHECK (rigor_level IS NULL OR rigor_level IN ('scoping','standard','publication')),
     -- cursor
     round_index         INTEGER NOT NULL DEFAULT 0,
     current_stage       TEXT REFERENCES stage_catalog(stage),
@@ -267,6 +273,11 @@ CREATE TABLE IF NOT EXISTS claim (
     claim_id     TEXT PRIMARY KEY,
     quest_id     TEXT NOT NULL REFERENCES quest(quest_id),
     statement    TEXT NOT NULL,
+    -- Claim role for the research-completeness audit. 'alternative'/'competing_hypothesis' name a rival
+    -- explanation to falsify; 'limitation' documents a scoped-out gap. Default 'claim' (a plain main claim);
+    -- existing rows migrate to 'claim' (history-safe).
+    kind         TEXT NOT NULL DEFAULT 'claim'
+                  CHECK (kind IN ('claim','alternative','competing_hypothesis','limitation')),
     status       TEXT NOT NULL DEFAULT 'open'
                   CHECK (status IN ('open','supported','refuted','withdrawn')),
     created_at   TEXT NOT NULL,
@@ -316,11 +327,11 @@ CREATE TABLE IF NOT EXISTS finalize_outcome (
     created_at        TEXT NOT NULL
 );
 
--- Durable, reusable findings + reflexion. scope='global' enables cross-quest reuse.
+-- Durable findings + reflexion, QUEST-OWNED (total isolation: no cross-quest reuse). scope is always 'quest'.
 CREATE TABLE IF NOT EXISTS finding_memory (
     memory_id     TEXT PRIMARY KEY,
-    quest_id      TEXT REFERENCES quest(quest_id),  -- null allowed for global-only entries
-    scope         TEXT NOT NULL DEFAULT 'quest' CHECK (scope IN ('quest','global')),
+    quest_id      TEXT NOT NULL REFERENCES quest(quest_id),  -- REQUIRED: findings are quest-owned (no global)
+    scope         TEXT NOT NULL DEFAULT 'quest' CHECK (scope IN ('quest')),
     kind          TEXT NOT NULL CHECK (kind IN ('idea','decision','knowledge','lesson','reference')),
     summary       TEXT NOT NULL,
     artifact_ref  TEXT,
@@ -329,10 +340,11 @@ CREATE TABLE IF NOT EXISTS finding_memory (
     updated_at    TEXT NOT NULL
 );
 
--- External knowledge fetched by the web/arxiv harness (literature, citations, sources).
+-- External knowledge fetched by the web/arxiv harness (literature, citations, sources). QUEST-OWNED
+-- (total isolation: each quest caches its own sources; no cross-quest/global references).
 CREATE TABLE IF NOT EXISTS reference (
     reference_id TEXT PRIMARY KEY,
-    quest_id     TEXT REFERENCES quest(quest_id),  -- null for globally cached sources
+    quest_id     TEXT NOT NULL REFERENCES quest(quest_id),  -- REQUIRED: references are quest-owned (no global)
     source       TEXT NOT NULL CHECK (source IN ('arxiv','web','doi','manual')),
     cite_key     TEXT,                            -- bibtex key when applicable
     title        TEXT,

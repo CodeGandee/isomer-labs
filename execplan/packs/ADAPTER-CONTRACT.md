@@ -17,10 +17,12 @@ execplan/packs/<name>/
 - Declared in `specs/state/seed.toml` as a `knowledge_pack` row with `ref = "execplan/packs/<name>"`,
   **`enabled = 0` by default** (core stays domain-neutral).
 - Activate by enabling it (so the resolver can pick it):
-  `$HARNESS record apply --type knowledge_pack.register --json '{… "enabled": true …}'` (upsert), or flip
-  `enabled = 1` in `seed.toml` before `state init`. Point `quest.domain` at it for domain-scoped selection.
-- Resolution (`_resolve_pack`): among **enabled** packs of one `(domain, kind)` the lowest unique
-  `priority` wins; `domain` falls back to `general`. If none enabled → the command runs its generic stub.
+  `$HARNESS record apply --json '{"record_type":"knowledge_pack.register", … "enabled": true …}'` (upsert), or
+  flip `enabled = 1` in `seed.toml` before `state init`. Point `quest.domain` at it for domain-scoped selection.
+- Resolution (`_resolve_for_command`, cli.py): **command-aware** — among **enabled** packs of the quest's
+  `(domain → general)` and the requested `kind`, only those whose `pack.toml` `backs` the running command are
+  eligible; the lowest unique `priority` wins. Resolution is strict: a command with no backing pack returns
+  None → the command runs its generic stub (no loose fall-through to an unrelated pack of the same kind).
 
 ## Manifest (`pack.toml`)
 ```toml
@@ -50,8 +52,8 @@ The harness loads `<ref>/adapter.py` and calls the entrypoint named in `pack.tom
 ## Harness ↔ adapter boundary (rules)
 - The **adapter** only reads `input_path` and writes `out_path`; it returns metadata. It must **not**
   touch the state DB, mail, gateway, or agents.
-- The **harness** owns state: after a successful adapter call it records the result via
-  `record apply --type artifact.record` (the existing write path), so invariants/idempotency still apply.
+- The **harness** owns state: after a successful adapter call it records the result via the existing write
+  path (`record apply --json '{"record_type":"artifact.record", …}'`), so invariants/idempotency still apply.
 - On a missing/disabled pack, a missing `adapter.py`, or a missing entrypoint, the command falls back to
   its **generic stub** (records the artifact, `stub=true`) — never an error. Adapter exceptions are
   reported in the command envelope `diagnostics`, and the command exits non-zero (no partial state).

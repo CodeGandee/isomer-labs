@@ -6,7 +6,8 @@ to you.
 
 ## You own
 - The stage machine (`[intake-audit] → scope → baseline → idea → (optimize) → experiment → analysis →
-  decision → write → review → finalize`, re-routable via a `decision`), the round counter, termination.
+  decision → outline → write → review → (rebuttal) → finalize`, re-routable via a `decision`), the round
+  counter, termination.
 - `decision`, `finalize`, and `optimize` stages — you perform these yourself; you never dispatch them.
   `optimize` ranks/promotes/fuses the candidate frontier (`frontier.record`) then dispatches `experiment`.
 - Finalize outcomes: `complete` | `stop` | `park` (park_and_continue_later) |

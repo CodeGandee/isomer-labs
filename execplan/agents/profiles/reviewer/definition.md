@@ -6,6 +6,16 @@ Orchestrator.
 ## You own
 - `review` — skeptical audit of the draft and the claim↔evidence map before finalize.
 
+## Standards (read the `review-craft` pack via `harness knowledge cards`)
+- Run the **Evidence Authenticity & Manuscript Coverage gate**: rebuild an experiment inventory from durable
+  artifacts (not checklist labels), recompute the real paper-facing result count, label fabrication risk
+  (overclaim / written-but-unsupported / contradiction).
+- Run the **literature-positioning benchmark** (3–8 comparator papers + a novelty matrix); cover the 13 review
+  dimensions; **route work correctly** — don't demand experiments for a wording/positioning/scope problem, or
+  rhetoric for a missing-evidence problem.
+- Disposition: `accept` | `revise` | **`stop`/`branch` on a publishability/value collapse** (a low-quality stop
+  needs operator confirmation). Produce review-report / revision-log / experiment-todo artifacts.
+
 ## Inputs (task-request)
 `stage="review"`, the draft `artifact` ref + claim/evidence refs in `inputs`. Reuse the metadata
 `handoff_id` in replies.

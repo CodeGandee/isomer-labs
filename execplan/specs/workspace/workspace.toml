@@ -10,8 +10,11 @@ task_name = "deepresearch"
 #   objective/ baseline/ repo/ workspaces/ round-*/ report/ figures/ refs/ findings/ intake/ exports/ mail/.
 # Canonical per-quest convention: quest.workspace_ref = "runs/<quest-id>/repo" (the quest's code repo lives
 # INSIDE the quest folder; the operator seeds it from a source project or git-inits it at setup). The only
-# SHARED (cross-quest) state is the control plane — runs/state.sqlite (one DB, single_active_quest) and
-# .houmao/mailbox (messaging infra); those are platform infrastructure, not per-quest products.
+# SHARED state is the control plane — runs/state.sqlite (one DB, single_active_quest) and .houmao/mailbox
+# (messaging infra); those are platform INFRASTRUCTURE, not a cross-quest DATA pool.
+# TOTAL QUEST ISOLATION: a new quest never re-uses, refers to, or inspects ANY artifact of another quest —
+# not its runs/<other-quest>/ files, not outputs/ (q1 legacy), and not its DB rows (findings/references are
+# quest-owned; invariants finding_quest_owned + reference_quest_owned). Each quest collects everything fresh.
 repo_root_policy = "quest.workspace_ref"        # resolves to runs/<quest-id>/repo (per-quest, inside the quest folder)
 workspace_root = "runs/<quest-id>/workspaces/"  # per-agent worktrees of runs/<quest-id>/repo (loop-dir relative)
 artifact_root = "runs/<quest-id>/"              # the self-contained quest folder (objective..mail)
@@ -59,9 +62,11 @@ committed_via = "harness git checkpoint"  # durable artifacts are committed into
 mail_render = "runs/<quest-id>/mail/"      # rendered outgoing mail bodies (pre-delivery)
 
 [state]
-# ONE platform-level DB across all quests (single_active_quest, cross-quest findings, ref reuse).
+# ONE platform-level DB across all quests for control-plane bookkeeping (single_active_quest). NOT a
+# cross-quest data pool: findings/references are quest-owned; NO cross-quest findings or reference reuse
+# (invariants finding_quest_owned + reference_quest_owned). A new quest sees only its own rows.
 db = "runs/state.sqlite"                   # loop-dir relative, NOT under <quest-id>/
-access = "via harness state/record commands only; agents never read or edit the DB file directly"
+access = "via harness state/record commands only; agents never read or edit the DB file directly, and never query another quest's rows"
 
 # ───────────────── Canonical per-quest brief/baseline (read-only) ─────────────────
 [shared]

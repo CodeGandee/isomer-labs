@@ -41,9 +41,11 @@ def render(*, command, input_path, out_path, params, quest_id):
         notes.append("normalized font-family")
 
     inserts = []
-    # 3) thin frame
-    inserts.append(f'<rect x="0.5" y="0.5" width="{W-1:.1f}" height="{H-1:.1f}" fill="none" stroke="#cccccc" stroke-width="1"/>')
-    notes.append("added 1px frame")
+    # 3) thin frame — OFF by default: the house style (references/checklist.md, deepscientist-academic.mplstyle)
+    #    removes frames/spines, so adding a border would fight it. Opt in only with params.frame=true.
+    if params.get("frame"):
+        inserts.append(f'<rect x="0.5" y="0.5" width="{W-1:.1f}" height="{H-1:.1f}" fill="none" stroke="#cccccc" stroke-width="1"/>')
+        notes.append("added 1px frame (opt-in)")
     # 4) optional title / caption
     if params.get("title"):
         inserts.append(f'<text x="{W/2:.1f}" y="18" font-size="13" font-weight="bold" text-anchor="middle" fill="#222">{params["title"]}</text>')

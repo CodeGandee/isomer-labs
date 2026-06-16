@@ -21,7 +21,8 @@
         "to_role": { "type": "string" },
         "max_attempts": { "type": "integer", "minimum": 1 },
         "receipt_due_at": { "type": "string" },
-        "result_due_at": { "type": "string" }
+        "result_due_at": { "type": "string" },
+        "bump_attempt": { "type": "boolean", "description": "true on a resend of an existing handoff; the handoff_open writer increments attempt_count (consumed, not stored as a column)" }
       }
     },
     {

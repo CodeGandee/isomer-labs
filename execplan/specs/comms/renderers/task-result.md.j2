@@ -21,7 +21,9 @@ Handoff `{{ meta.handoff_id }}` (quest `{{ meta.loop_id }}`).
 {% endif %}{% if produced %}**Recorded:**
 {% for p in produced %}- {{ p.kind }} `{{ p.ref }}`
 {% endfor %}{% else %}_No durable rows reported._
-{% endif %}{% else %}**Failed.** {{ error }}
+{% endif %}{% if methodology_used %}**Methodology used:**
+{% for m in methodology_used %}- pack `{{ m.pack }}`{% if m.cards %} ({{ m.cards | join(', ') }}){% endif %} → applied_as `{{ m.applied_as }}`
+{% endfor %}{% endif %}{% else %}**Failed.** {{ error }}
 
 _The experiment was left status='failed' (not 'done')._
 {% endif %}

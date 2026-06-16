@@ -23,7 +23,7 @@ convergence_patience = 3            # rounds with no new admissible finding ⇒ 
 baseline_gate        = "pending"    # must reach passed|waived before write/review/finalize
 execution_mode       = "auto"       # notifier-driven wakeups
 run_state            = "not_started"
-findings_default_scope = "quest"    # global only on explicit opt-in
+findings_default_scope = "quest"    # always 'quest' — total quest isolation, no cross-quest/global findings
 
 # ───────────────── Role roster (distinct specialists; bound to each quest's participant rows) ─────────────────
 # `tool` is the Houmao binding (claude|codex|gemini). `multi_instance`/`fan_out_max` mark roles that
@@ -49,7 +49,7 @@ instance_id = "experimenter"
 role        = "experimenter"
 tool        = "claude"
 multi_instance = true
-fan_out_max = 4
+fan_out_max = 8
 summary     = "Design/implement/execute a bounded experiment in an isolated worktree."
 
 [[role]]
@@ -182,7 +182,67 @@ priority = 100
 pack_id = "mentor-standards"
 domain  = "general"
 name    = "mentor-standards"
-kind    = "reference"       # repo-owner standards/taste read by the deepresearch-mentor skill
+kind    = "reference"       # repo-owner standards/taste read by the deepresearch-mentor skill (original Houmao authorship)
 ref     = "execplan/packs/mentor-standards"
 enabled = 0
 priority = 100
+
+# ── Methodology reference packs (ported from DeepScientist skill bodies + reference files). ──
+# kind='reference' so they back no render/manuscript command and are exempt from adapter_priority_unique
+# (that invariant only constrains runner/validator/compiler/metric_vocab). Surfaced via `knowledge cards` /
+# `knowledge query`; agents READ the indexed files for procedure/checklists/templates. Enabled by default:
+# this is loop-wide research/writing craft used on every quest (NOT quest data — no cross-quest reuse issue).
+
+[[knowledge_pack]]
+pack_id = "paper-craft"
+domain  = "general"
+name    = "paper-craft"
+kind    = "reference"       # oral-writing principles, section-rewrite checklist, outline contract (DeepScientist write + paper-outline)
+ref     = "execplan/packs/paper-craft"
+enabled = 1
+priority = 200
+
+[[knowledge_pack]]
+pack_id = "ideation-rubric"
+domain  = "general"
+name    = "ideation-rubric"
+kind    = "reference"       # objective contract, selection gate, divergence/related-work playbooks, eval-contract (DeepScientist idea + scout)
+ref     = "execplan/packs/ideation-rubric"
+enabled = 1
+priority = 201
+
+[[knowledge_pack]]
+pack_id = "review-craft"
+domain  = "general"
+name    = "review-craft"
+kind    = "reference"       # review dimensions, evidence-authenticity gate, lit benchmark, review templates (DeepScientist review)
+ref     = "execplan/packs/review-craft"
+enabled = 1
+priority = 202
+
+[[knowledge_pack]]
+pack_id = "rebuttal-craft"
+domain  = "general"
+name    = "rebuttal-craft"
+kind    = "reference"       # review-matrix→action-plan→evidence-update→response-letter flow + voice rules (DeepScientist rebuttal)
+ref     = "execplan/packs/rebuttal-craft"
+enabled = 1
+priority = 203
+
+[[knowledge_pack]]
+pack_id = "research-method"
+domain  = "general"
+name    = "research-method"
+kind    = "reference"       # evidence ladder, comparability contract, campaign design, decision/optimize/finalize methodology
+ref     = "execplan/packs/research-method"
+enabled = 1
+priority = 204
+
+[[knowledge_pack]]
+pack_id = "intake-rubric"
+domain  = "general"
+name    = "intake-rubric"
+kind    = "reference"       # intake-audit: trust-rank/reconcile pre-existing assets, current-board packet (DeepScientist intake-audit)
+ref     = "execplan/packs/intake-rubric"
+enabled = 1
+priority = 205

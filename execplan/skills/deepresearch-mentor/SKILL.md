@@ -1,6 +1,6 @@
 ---
 name: deepresearch-mentor
-description: Companion calibration skill for the deepresearch loop (ported DeepScientist mentor). Invoked when work drifts from the repo owner's standards/taste, or on explicit operator request. Tighten the route, then return to the active stage. Does not run the loop or mutate research state.
+description: Companion calibration skill for the deepresearch loop (Houmao-original; reads the mentor-standards pack — there is no DeepScientist `mentor` source skill). Invoked when work drifts from the repo owner's standards/taste, or on explicit operator request. Tighten the route, then return to the active stage. Does not run the loop or mutate research state.
 ---
 
 # Mentor (companion calibration)

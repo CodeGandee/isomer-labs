@@ -12,6 +12,17 @@ biggest step toward DeepScientist-grade deliverables.
 - Auto-detects the toolchain: `pandoc` (or `pypandoc`'s bundled binary) + a LaTeX engine
   (`xelatex`/`pdflatex`/`lualatex`, system **or** a TinyTeX install under any home).
 - **Citations:** pass `params.bib` (a `.bib` produced by `$HARNESS lit bib`) → resolved via `--citeproc`.
+  - **References quality:** `lit bib` emits whatever `reference` rows the Writer recorded — the compiler does
+    not judge them. A publication-grade bib needs **real external academic sources** (papers/preprints/
+    standards with a resolvable DOI/arXiv/URL, recorded via `lit fetch --source arxiv|doi|web`), not a
+    bibliography of only tool/vendor docs, and a Related Work section that *positions* the work against that
+    prior art (not an internal provenance note). See the scholarship bar in
+    `execplan/docs/publication-quality.md`. *(The bar is **enforced**: `lit audit`, a Reviewer block, and a
+    finalize-time scholarship gate — see that doc.)*
+    - **Known limitation / upgrade path:** `lit bib` currently renders every entry as `@misc` (the
+      `reference` model carries no author/venue/year). Typed entries (`@article`/`@inproceedings`) are a
+      future enhancement — add those fields to `reference.record` + `schema.sql` and map `source`→entry type
+      here. This is *not* what the scholarship gate checks (it checks real sources + claim linkage).
 - **CJK:** if the draft contains Chinese/Japanese/Korean text, compiles with `documentclass=ctexart`.
 - **Unicode math glyphs** (`≤ β κ ×`): uses a glyph-rich main font (DejaVu Serif / TeX Gyre Termes) when present.
 - **Always records an artifact:** if no LaTeX toolchain is found (or a compile fails), it emits a

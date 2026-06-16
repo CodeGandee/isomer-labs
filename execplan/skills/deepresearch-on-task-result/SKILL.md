@@ -11,7 +11,8 @@ You are the Orchestrator collecting a specialist's result. One bounded turn.
 
 ## Inputs
 
-- The task-result payload: metadata `loop_id` + `handoff_id`, `status`, `stage`, `produced[]`, `error`.
+- The task-result payload: metadata `loop_id` + `handoff_id`, `status`, `stage`, `produced[]`,
+  `methodology_used[]`, `error`.
 
 ## Procedure
 
@@ -29,10 +30,23 @@ You are the Orchestrator collecting a specialist's result. One bounded turn.
    - `analysis`/`write`/`review` → confirm the produced rows exist via `$HARNESS state query`; for review,
      run `$HARNESS evidence validate` before any synthesis advance.
    - `status=failed` → record a `decision.record` (continue/branch/reset/stop) per the failure.
-3. **Advance the handoff:** `$HARNESS handoff advance --record-id <quest_id>:<handoff_id> --status
+2b. **Methodology-usage check (Tier-3 gate).** For a stage with a required pack (see
+   `deepresearch-on-task-request` 3b / `REQUIRED_PACKS`), confirm the result carries `methodology_used[]`
+   covering EACH required pack AND that the worker's `artifact(kind='methodology-usage')` exists for this
+   round (`$HARNESS state query` / artifact rows). Also confirm the **bound output** where cheap: `outline` →
+   `outline validate` passes; `write` → `manuscript validate` passes; `review` → review-report + experiment-todo
+   artifacts present; `idea` → a selection-gate artifact is referenced. If a required citation or the audit
+   artifact is missing:
+   - **`autonomy_mode='auto'`:** do **not** advance to `processed`. Re-dispatch the same `handoff_id`
+     (`$HARNESS handoff open ... bump_attempt`) with a corrective note ("record the methodology-usage artifact +
+     methodology_used for pack X before completing"), re-deliver the task-request, arm the continuation, stop.
+   - **`autonomy_mode='assistant'`:** record the gap as a `decision.record(requires_user_confirm=1)` + surface a
+     clear BLOCKING warning to the operator (deepresearch-operator-control); do not silently accept.
+   (`$HARNESS plan validate` independently warns at round close; this fold-time check is the active gate.)
+3. **Advance the handoff:** `$HARNESS handoff advance --quest-id <quest_id> --handoff-id <handoff_id> --status
    result_received --at <ts>` then `--status processed`. Update fan-out: `$HARNESS record apply --type
    round.update --received_handoffs <n>`.
-4. **If the round's fan-out is complete** (`$HARNESS state query --fanout <round>` → received ≥ expected):
+4. **If the round's fan-out is complete** (the round's `received_handoffs` ≥ expected, cross-checked via `$HARNESS handoff query --quest-id <q>`):
    close the round (`--type round.close`) and route the next stage exactly as in
    `deepresearch-orchestrator-tick` (dispatch + arm continuation). **If not complete:** stop and wait for
    the next worker's result to wake you.

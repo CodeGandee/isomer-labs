@@ -22,7 +22,9 @@
         "max_rounds": { "type": "integer", "minimum": 1 },
         "convergence_patience": { "type": "integer", "minimum": 0 },
         "cost_budget": { "type": "number" },
-        "execution_mode": { "enum": ["auto", "manual"] }
+        "execution_mode": { "enum": ["auto", "manual"] },
+        "autonomy_mode": { "enum": ["auto", "assistant"] },
+        "rigor_level": { "enum": ["scoping", "standard", "publication"] }
       }
     },
     {
@@ -35,7 +37,9 @@
         { "required": ["round_index"] }, { "required": ["current_stage"] },
         { "required": ["active_branch_id"] }, { "required": ["active_idea_id"] },
         { "required": ["best_result_ref"] }, { "required": ["stop_reason"] },
-        { "required": ["execution_mode"] }
+        { "required": ["execution_mode"] }, { "required": ["autonomy_mode"] },
+        { "required": ["rigor_level"] }, { "required": ["objective_ref"] },
+        { "required": ["acceptance_ref"] }
       ],
       "properties": {
         "record_type": { "const": "quest.update" },
@@ -44,6 +48,10 @@
         "run_state": { "enum": ["not_started", "running", "paused", "recovering", "waiting_user", "parked", "stopped", "completed"] },
         "baseline_gate": { "enum": ["pending", "passed", "waived", "blocked"] },
         "execution_mode": { "enum": ["auto", "manual"] },
+        "autonomy_mode": { "enum": ["auto", "assistant"] },
+        "rigor_level": { "enum": ["scoping", "standard", "publication"] },
+        "objective_ref": { "type": "string" },
+        "acceptance_ref": { "type": "string" },
         "round_index": { "type": "integer", "minimum": 0 },
         "current_stage": { "type": "string" },
         "active_branch_id": { "type": ["string", "null"] },

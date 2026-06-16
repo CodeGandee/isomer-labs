@@ -43,6 +43,20 @@
         }
       }
     },
+    "methodology_used": {
+      "type": "array",
+      "description": "Methodology-pack usage for this stage (audit record of which craft was applied; NOT authoritative over DB state). The Orchestrator/Reviewer check it against the stage's REQUIRED_PACKS; each item should be backed by an artifact(kind='methodology-usage') the worker recorded.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pack", "applied_as"],
+        "properties": {
+          "pack": { "type": "string", "description": "knowledge_pack pack_id consulted (e.g. ideation-rubric, paper-craft, research-method)" },
+          "cards": { "type": "array", "items": { "type": "string" }, "description": "specific card refs read (e.g. ideation-rubric/references/selection-gate.md)" },
+          "applied_as": { "type": "string", "description": "ref to the durable row/artifact where the methodology was applied (the bound output)" }
+        }
+      }
+    },
     "error": { "type": "string", "description": "required when status=failed; the worker leaves experiment.status='failed', not 'done'" }
   },
   "allOf": [

@@ -10,14 +10,21 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-# Conservative formal substitutions (lexical, claim-neutral).
+# Conservative formal substitutions (lexical, claim-neutral). Each entry: (regex, replacement, human-label)
+# — the human-label is what the editor notes show (never the raw regex). These NEVER strengthen a claim;
+# verb-strengthening rewrites (e.g. show->demonstrate) are deliberately excluded — that is the opposite of
+# the Nature overclaim guidance, which softens claim verbs.
 _PHRASEBANK = [
-    (r"\ba lot of\b", "many"), (r"\blots of\b", "many"), (r"\bin order to\b", "to"),
-    (r"\bdue to the fact that\b", "because"), (r"\bin spite of the fact that\b", "although"),
-    (r"\butilize\b", "use"), (r"\bbig\b", "large"), (r"\bgot\b", "obtained"),
-    (r"\bshow that\b", "demonstrate that"),
+    (r"\ba lot of\b", "many", "a lot of"), (r"\blots of\b", "many", "lots of"),
+    (r"\bin order to\b", "to", "in order to"),
+    (r"\bdue to the fact that\b", "because", "due to the fact that"),
+    (r"\bin spite of the fact that\b", "although", "in spite of the fact that"),
+    (r"\butilize\b", "use", "utilize"), (r"\bbig\b", "large", "big"),
 ]
 _WEASEL = ["very", "really", "quite", "somewhat", "clearly", "obviously", "significantly improved", "state-of-the-art"]
+# Overclaim verbs/adjectives (Nature style-guardrails): flag as SUGGESTIONS to soften — never auto-rewrite.
+_OVERCLAIM = ["prove", "proves", "proven", "conclusively", "unprecedented", "superior", "the best",
+              "for the first time", "breakthrough"]
 
 
 def _mechanical(text):
@@ -50,10 +57,10 @@ def generate(*, command, input_path, out_path, params, quest_id):
     text = p.read_text()
     polished, notes = _mechanical(text)
     applied = []
-    for pat, repl in _PHRASEBANK:
+    for pat, repl, label in _PHRASEBANK:
         new = re.sub(pat, repl, polished, flags=re.IGNORECASE)
         if new != polished:
-            applied.append(f"{pat} -> {repl}")
+            applied.append(f"'{label}' -> '{repl}'")  # human-readable, not the raw regex
         polished = new
 
     # suggestions (NOT applied)
@@ -62,6 +69,11 @@ def generate(*, command, input_path, out_path, params, quest_id):
         n = len(re.findall(r"\b" + re.escape(w) + r"\b", text, flags=re.IGNORECASE))
         if n:
             suggestions.append(f"consider removing/qualifying '{w}' ({n}x)")
+    for w in _OVERCLAIM:
+        n = len(re.findall(re.escape(w), text, flags=re.IGNORECASE))
+        if n:
+            suggestions.append(f"soften overclaiming term '{w}' ({n}x) — Nature style prefers show/suggest/"
+                               "to our knowledge/among the strongest")
     longs = [s for s in re.split(r"(?<=[.!?])\s+", text) if len(s.split()) > 40]
     if longs:
         suggestions.append(f"{len(longs)} sentence(s) exceed 40 words — consider splitting")

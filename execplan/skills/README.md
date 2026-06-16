@@ -16,7 +16,10 @@ entered from Houmao notifier prompts after the separate notifier detects open ma
 - `deepresearch-on-self-wakeup/` — Orchestrator on-event handler for `deepresearch.email.self-wakeup`.
 - `deepresearch-orchestrator-tick/` — Orchestrator on-tick stage machine (reconcile / dispatch / terminate).
 - `deepresearch-operator-control/` — operator lifecycle/mode/recovery control.
-- `deepresearch-mentor/` — companion calibration (ported DeepScientist mentor); installed in the Orchestrator.
+- `deepresearch-mentor/` — companion calibration (Houmao-original; reads mentor-standards — no DeepScientist `mentor` source); installed in the Orchestrator.
+- `deepresearch-research-contract/` — **pre-launch (setup-time)** expansion of a minimal Objective/Acceptance
+  into a deeper, operator-approved scientific done-bar; records the `research-contract` artifact the launch
+  gate requires. Operator-run during the start-runbook (not mail-triggered; no agent binding).
 
 Publication/domain extension behavior is delivered via stages (`outline`, `rebuttal`), harness extension
 commands (`render plot|polish|slides`, `manuscript polish|datastmt`, `knowledge query`), and built-in

@@ -42,3 +42,4 @@ self-contained validation.
 - `intake.schema.json` — intake_asset.record (intake-audit entry path)
 - `frontier.schema.json` — frontier.record (optimize stage)
 - `finalize.schema.json` — finalize.record (complete | stop | park | publish_and_continue)
+- `gpu.schema.json` — gpu.confirm (operator-confirmed CUDA device set; backs the GPU launch/experiment gate)

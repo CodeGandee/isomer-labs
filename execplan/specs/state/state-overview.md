@@ -4,10 +4,14 @@
 
 - Backend: **sqlite** (`harness state` owns init/validate/query; `harness record` owns apply). Stable
   entities with clear transitions → SQL is the right fit per contract defaults.
-- **One platform-level database** `runs/state.sqlite` holds *all* quests (so single-active-quest,
-  cross-quest global findings, and reference-cache reuse are enforceable in SQL). Per-quest rich
-  artifacts live under `runs/<quest-id>/`. Quests are created at runtime via `record apply`, not at
-  platform init; `seed.toml` seeds only domain-neutral registries + role/default templates.
+- **One platform-level database** `runs/state.sqlite` holds *all* quests (so single-active-quest is
+  enforceable in SQL). **TOTAL QUEST ISOLATION:** every row carries a `quest_id` and every per-quest
+  entity — findings, references, artifacts — is owned by exactly one quest; there is **no** cross-quest
+  data reuse or inspection. A new quest never reads, refers to, or inspects another quest's findings,
+  references, or artifacts (invariants `finding_quest_owned` + `reference_quest_owned`; the shared DB is a
+  control plane, not a cross-quest data pool). Per-quest rich artifacts live under `runs/<quest-id>/`.
+  Quests are created at runtime via `record apply`, not at platform init; `seed.toml` seeds only
+  domain-neutral registries + role/default templates.
 - This file is the **authority** for `schema.sql`. If the two disagree, this file is the intent and
   `schema.sql` must be reconciled to it.
 - State stores compact control-plane facts: ids, refs, statuses, ownership, decisions, scalar gates,
@@ -22,15 +26,16 @@
 
 - **Distinct specialists per role** (Orchestrator / Scout / Experimenter / Analyst / Writer /
   Reviewer); `participant.role` + `participant.tool` record the binding.
-- **Findings isolated per quest** by default: `finding_memory.scope='quest'`. `scope='global'` exists
-  for opt-in cross-quest reuse but is not written by default.
+- **Findings isolated per quest** (enforced, not just default): every `finding_memory` row has
+  `scope='quest'` and a `quest_id`; cross-quest/global findings are disallowed at the schema and by
+  invariant `finding_quest_owned`. A new quest never reuses or inspects another quest's findings.
 - **One active quest to start**: the loop operates a single `quest` in `run_state='running'` at a time.
 
 ## Entity families
 
 Registries (extensibility):
 
-- `stage_catalog` — the set of research stages. Seeded with the 9 built-in stages; a knowledge pack
+- `stage_catalog` — the set of research stages. Seeded with the 13 built-in stages; a knowledge pack
   may `INSERT` domain stages (`is_builtin=0`) without schema edits. `round.stage`, `quest.current_stage`,
   `decision.from_stage/to_stage`, and `self_wakeup.next_stage` are soft references into it.
 - `knowledge_pack` — pluggable domain knowledge: extra skills, references, templates, validators,
@@ -80,8 +85,8 @@ Evidence, decisions, knowledge:
   rationale ref), including the operator-confirmation gate (`requires_user_confirm`/`confirmed`).
 - `finalize_outcome` — one row per finalize event: `complete`/`stop` (terminal), `park`
   (+`reopen_conditions`), or `publish_and_continue` (+`published_ref`, `next_incumbent_ref`).
-- `finding_memory` — durable, reusable findings + reflexion lessons, scoped quest (default) or global,
-  grounded by a measurement/result ref.
+- `finding_memory` — durable findings + reflexion lessons, **quest-owned** (always `scope='quest'` with a
+  `quest_id`; no cross-quest/global findings), grounded by a measurement/result ref.
 - `reference` — external knowledge fetched by the literature harness (arxiv/web/doi), with cache ref.
 - `artifact` — generic index of rendered outputs (reports, figures, drafts, bundles, logs).
 
@@ -178,8 +183,10 @@ refiner instead of (or alongside) the Orchestrator's heuristic selection:
    under `runs/<quest-id>/refs/` and recorded as `reference` rows (with `cite_key` when applicable).
 2. A reference becomes evidence by inserting a `claim_evidence` row with `source_kind='reference'`,
    `source_ref=<reference_id>`, and a `supports|contradicts|contextualizes` relation.
-3. Durable, reusable literature insight is additionally written to `finding_memory`
-   (`kind='reference'`). Cross-quest cache reuse is allowed via `reference.quest_id IS NULL`.
+3. Durable literature insight is additionally written to `finding_memory` (`kind='reference'`), scoped to
+   the owning quest. References are **quest-owned** (`reference.quest_id` REQUIRED); there is **no**
+   cross-quest cache reuse — each quest fetches and caches its own sources (invariant
+   `reference_quest_owned`).
 
 ### Claim–evidence linkage
 
