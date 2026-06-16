@@ -21,7 +21,7 @@ The user has an Exploratory Goal: understand why a model family fails on a targe
 9. The literature reviewer extracts Research Claims, Evidence Items, limitations, and disagreement points.
 10. The analyst clusters Evidence Items into candidate causal factors and Research Branch options.
 11. The reviewer checks whether proposed branches are supported by Evidence Items and flags weak claims.
-12. The engine emits View Manifests for a literature matrix, claim graph, and branch-comparison view.
+12. The engine emits View Manifests for a literature matrix, claim graph, and branch-comparison view, all rendered with Built-in GUI Components.
 13. The Operator Agent presents a Gate asking the user to choose a Research Branch or request more scouting.
 14. The Operator Agent stores the selected branch and rationale as a Decision Record with Evidence Item links.
 
@@ -107,11 +107,9 @@ sequenceDiagram
   Operator->>Adapter: Construct Team Agent<br/>Instances
   Adapter->>Agents: Create Agent Workspaces<br/>and start Run
   Agents->>Provenance: Store notes, claims,<br/>Evidence Items, Artifacts
-  Agents-->>GUI: Publish optional AG-UI<br/>Render Payloads
-  GUI-->>Runtime: Persist AG-UI<br/>Event Envelopes
   Provenance->>Runtime: Record refs, handoffs,<br/>Research Claims, Run status
   Runtime->>Views: Request literature matrix,<br/>claim graph, branch view
-  Views->>GUI: Emit View<br/>Manifests
+  Views->>GUI: Emit View Manifests<br/>for built-in components
   GUI->>Operator: Surface branch options<br/>and pending Gate
   Operator->>User: Ask branch selection<br/>or more scouting
   User->>Operator: Select Research<br/>Branch
@@ -130,4 +128,4 @@ sequenceDiagram
 - Evidence Items linked to Research Claims
 - Decision Record for selected Research Branch
 - View Manifests for literature matrix, claim graph, and branch decision
-- AG-UI Render Payloads and AG-UI Event Envelopes when team agents publish live GUI updates
+- Built-in GUI Component Instances for literature matrix, claim graph, branch comparison, and pending Gate views

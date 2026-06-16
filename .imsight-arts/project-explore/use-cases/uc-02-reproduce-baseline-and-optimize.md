@@ -25,7 +25,7 @@ The user has a Measurable Objective: improve inference latency as much as possib
 13. After acceptance, the Operator Agent creates a second Research Task named `first-optimization-pass`.
 14. A new Isomer Workspace is declared for the optimization Research Task.
 15. The Agent Team Instance runs candidate optimizations, records tool calls and outputs, and updates Research Claims.
-16. The GUI Backend and Renderer show a Run timeline, result table, and Gate for continue, branch, or stop.
+16. The GUI Backend and Renderer show a Run timeline, result table, and Gate for continue, branch, or stop using Built-in GUI Components.
 17. The user selects the next action through the Operator Agent; Isomer records the choice as a Decision Record.
 
 ## Mermaid Use Case Diagram
@@ -114,11 +114,9 @@ sequenceDiagram
   Operator->>Adapter: Construct Team Agent<br/>Instances
   Adapter->>Agents: Start baseline Run<br/>in Agent Workspaces
   Agents->>Provenance: Store setup logs,<br/>metrics, Evidence Items
-  Agents-->>GUI: Publish optional baseline<br/>AG-UI Render Payloads
-  GUI-->>Runtime: Persist AG-UI<br/>Event Envelopes
   Provenance->>Runtime: Update Run status<br/>and Research Claims
   Runtime->>Views: Request result table<br/>and Gate view
-  Views->>GUI: Emit baseline<br/>View Manifests
+  Views->>GUI: Emit baseline View Manifests<br/>for built-in components
   GUI->>Operator: Surface accept, repair,<br/>or waiver Gate
   Operator->>User: Ask accept, repair,<br/>or waive baseline
   User->>Operator: Accept reproduced<br/>baseline
@@ -129,11 +127,9 @@ sequenceDiagram
   Operator->>Adapter: Construct or reuse<br/>Team Agent Instances
   Adapter->>Agents: Start optimization<br/>Run
   Agents->>Provenance: Store candidate changes,<br/>metrics, result Artifacts
-  Agents-->>GUI: Publish optional optimization<br/>AG-UI Render Payloads
-  GUI-->>Runtime: Persist AG-UI<br/>Event Envelopes
   Provenance->>Runtime: Update Evidence Items<br/>and improvement claims
   Runtime->>Views: Request Run timeline<br/>and decision view
-  Views->>GUI: Emit optimization<br/>View Manifests
+  Views->>GUI: Emit optimization View Manifests<br/>for built-in components
   GUI->>Operator: Surface continue,<br/>branch, or stop Gate
   Operator->>User: Ask continue, branch,<br/>or stop decision
   User->>Operator: Select next<br/>action
@@ -152,4 +148,4 @@ sequenceDiagram
 - Gate result for baseline acceptance or waiver
 - Decision Record for continue, branch, or stop
 - View Manifests for Run timeline, result table, and experiment decision view
-- AG-UI Render Payloads and AG-UI Event Envelopes when team agents publish live GUI updates
+- Built-in GUI Component Instances for Run timeline, result table, baseline Gate, and experiment decision views
