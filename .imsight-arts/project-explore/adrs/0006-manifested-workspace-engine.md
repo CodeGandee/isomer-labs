@@ -1,6 +1,6 @@
 # Manifested Workspace Engine
 
-Isomer Labs will use a manifested workspace engine as its primary architecture. A project-level Project Manifest at `.isomer-labs/manifest.toml` discovers arbitrary project-local Isomer Workspaces that back Research Threads, and each workspace owns its SQLite control plane, file Artifacts, Team Definitions, workflow state, Gates, Runs, and generated View Manifests.
+Isomer Labs will use a manifested workspace engine as its primary architecture. A project-level Project Manifest at `.isomer-labs/manifest.toml` discovers arbitrary project-local Isomer Workspaces that back Research Threads, and each workspace owns its Workspace Runtime, file Artifacts, Agent Teams, workflow state, Gates, Run records, and generated View Manifests.
 
 ## Status
 
@@ -15,7 +15,7 @@ accepted
 ## Consequences
 
 - Isomer can learn from DeepScientist without inheriting a pipeline-first quest model.
-- The Operator Agent becomes the coordination boundary between user intent, team activity, durable state, and GUI-facing View Manifests.
+- The Agent Instance assigned to the coordinator Agent Role becomes the coordination boundary between user intent, team activity, durable state, and GUI-facing View Manifests.
 - Team execution can create per-agent Agent Workspaces for concrete Agent Instances inside an Isomer Workspace. Their boundaries are advisory collaboration contracts, not filesystem-grade access control.
-- Houmao can implement a Research Engine Adapter, but Isomer core state should remain provider-neutral.
+- Houmao can implement an Execution Adapter, but Isomer core state should remain provider-neutral.
 - The first implementation should prioritize manifest validation, workspace discovery, team/workflow schemas, state migration, and view-manifest contracts before broad automation.

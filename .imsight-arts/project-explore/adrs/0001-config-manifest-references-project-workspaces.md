@@ -16,4 +16,4 @@ accepted
 
 - The manifest becomes the authority for workspace discovery and must be validated before runs start.
 - Workspace paths need clear relative-path rules, missing-workspace handling, and migration behavior.
-- The GUI and Operator Agent can resolve project state through a stable Project Config Directory without forcing all artifacts into one platform-owned workspace.
+- The GUI and coordinator Agent Instance can resolve project state through a stable Project Config Directory without forcing all artifacts into one platform-owned workspace.
