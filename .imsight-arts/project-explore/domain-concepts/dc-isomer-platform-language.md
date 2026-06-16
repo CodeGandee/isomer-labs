@@ -11,11 +11,11 @@ A user-owned repository, checkout, or directory tree that Isomer Labs manages. A
 _Avoid_: Quest root, system-owned workspace, platform directory
 
 **Project Config Directory**:
-The `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Agent Team Templates, Agent Team Instances, and Agent Profiles. It should not contain default cache, temporary, or schema directories. System-owned schemas are Isomer built-in artifacts queried and validated through `isomer-cli`.
+The `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Agent Team Templates, Agent Team Instances, Agent Profiles, and GUI Component Registry refs. It should not contain default cache, temporary, or schema directories. System-owned schemas are Isomer built-in artifacts queried and validated through `isomer-cli`.
 _Avoid_: Control directory, control-plane directory, workspace root, hidden workspace
 
 **Project Manifest**:
-The `.isomer-labs/manifest.toml` file. It is the discovery authority for Isomer Workspaces, active workspace selection, project defaults, Agent Team Templates, Agent Team Instances, and Agent Profile references.
+The `.isomer-labs/manifest.toml` file. It is the discovery authority for Isomer Workspaces, active workspace selection, project defaults, Agent Team Templates, Agent Team Instances, Agent Profile references, and project-scope GUI component registry references.
 _Avoid_: Workspace index, quest registry, config blob
 
 **Isomer Workspace**:
@@ -53,6 +53,7 @@ Project
     Agent Team Template references
     Agent Team Instance definitions
     Operator Agent configuration
+    GUI Component Registry references
   Isomer Workspace(s), declared by the Project Manifest
     one Research Task
     one task handler: Operator Agent or delegated Agent Team Instance member
@@ -198,12 +199,76 @@ _Avoid_: Approval step, interaction request, manual checkpoint
 ### GUI and Views
 
 **View Manifest**:
-An engine-produced data document that describes a task-specific GUI view, including view type, data sources, data bindings, user actions, and pending Gates. The GUI renders View Manifests but does not own research state.
+An engine-produced data document that describes a durable task-specific GUI view, including view type, data sources, data bindings, user actions, pending Gates, optional registered component refs, and optional GUI Layout Spec refs. The GUI Renderer renders View Manifests, while Workspace Runtime, Artifacts, and Provenance Records own durable research state.
 _Avoid_: View spec, generated frontend code, dashboard config
 
+**GUI Backend**:
+The built-in HTTP server started by `isomer-cli` for a Project. It binds a local or configured address, reports a URL for the user to open in a browser, serves the predefined GUI Renderer, exposes GUI Backend APIs, reads View Manifests and referenced Artifacts, receives authenticated AG-UI Event Batches, validates GUI Component Registry entries, resolves AG-UI Render Payloads to registered GUI Components, and owns GUI Runtime State. It does not own canonical research state.
+_Avoid_: Research engine, GUI as state owner, direct human control surface for team agents, untracked event sink
+
 **GUI Renderer**:
-The GUI layer that reads View Manifests and renders task-specific interactive views. It owns layout and interaction widgets, while the engine owns semantic state and view intent.
+The predefined browser-side GUI served by the GUI Backend URL. It renders task-specific interactive views from View Manifests, GUI Layout Specs, registered GUI Components, GUI Component Instances, and live updates produced from AG-UI Render Payloads. It reflects GUI Runtime State changes from the GUI Backend immediately, while the engine owns semantic research state and view intent.
 _Avoid_: Generated GUI, engine UI, fixed dashboard
+
+**GUI Component**:
+A registered display or interaction unit that the GUI Renderer can use to visualize data, DSL, JSON, or Artifact refs supplied through View Manifests or AG-UI Render Payloads. Use **Built-in GUI Component** for Isomer-shipped components, **Project GUI Component** for project-supplied components, and **Agent-generated GUI Component** when the component was produced by an Agent Instance.
+_Avoid_: Arbitrary frontend code, unregistered plugin, view manifest as a component, raw AG-UI payload as a component
+
+**Built-in GUI Component**:
+A GUI Component shipped with Isomer and registered by the built-in GUI Backend at startup. Built-in GUI Components are versioned with Isomer, have `builtin` origin, do not have a project producer, and do not require per-component user approval.
+_Avoid_: Project plugin, agent-generated component, custom component
+
+**Project GUI Component**:
+A GUI Component supplied by the Project rather than shipped with Isomer. Project GUI Components can be human-authored or agent-generated. They must be registered before use and should carry project path, source, compatibility, approval, and provenance metadata.
+_Avoid_: Built-in component, arbitrary frontend file, unregistered custom component
+
+**Agent-generated GUI Component**:
+A Project GUI Component produced by an Agent Instance. It must carry producer Agent Instance identity and Provenance Record refs when available. If it is executable, it needs validation, sandbox or isolation policy, and approval or approve-all before loading.
+_Avoid_: Built-in component, human-authored component, generated GUI
+
+**GUI Component Instance**:
+A live mounted use of one registered GUI Component inside GUI Runtime State. A GUI Component Instance has an instance id, component id, data or Artifact refs, optional AG-UI Render Payload refs, layout placement, visible state, and lifecycle status.
+_Avoid_: Component definition, artifact, view manifest, browser DOM node as a domain object
+
+**Declarative GUI Component Spec**:
+A data-only Project GUI Component definition that selects rendering behavior from supported GUI primitives. This is the preferred format for Project GUI Components, especially Agent-generated GUI Components, because it can be validated without executing project-provided UI code.
+_Avoid_: Generated frontend code, executable plugin when data-only rendering is enough
+
+**Executable GUI Component**:
+A Project GUI Component implemented as executable UI code with a component manifest. It must be registered, validated, sandboxed or isolated according to policy, and approved before the GUI Backend loads it. If it is agent-generated, approve-all can remove repeated per-component approval until revoked.
+_Avoid_: Direct file load, unchecked component code, implicit approval
+
+**GUI Component Registry**:
+The registry of GUI Components available to the GUI Backend and GUI Renderer. It includes Built-in GUI Components and Project GUI Components. It records component id, component origin (`builtin` or `project`), producer kind (`isomer`, `human`, or `agent`), component kind (`builtin`, `declarative`, or `executable`), source paths, manifest paths, dependency declarations, build outputs, sandbox policy, producer Agent Instance when applicable, approval state, compatibility version, and status. Every GUI Component must be registered before use.
+_Avoid_: Component folder as authority, package manager as authority, ad hoc imports
+
+**AG-UI Render Payload**:
+A data, DSL, or JSON payload sent through the AG-UI protocol to request or update a GUI visualization. It can include data refs, inline small data, schema metadata, visualization intent, component id hints, and optional GUI Layout Spec refs. The GUI Backend resolves an AG-UI Render Payload to one or more registered GUI Components and GUI Component Instances.
+_Avoid_: Frontend source code, component definition, canonical artifact content, direct browser manipulation
+
+**AG-UI Event Batch**:
+A live protocol batch published to the GUI Backend by the Operator Agent or an authenticated Agent Team Instance member. It can carry AG-UI Render Payloads, GUI Runtime State updates, component-instance updates, layout updates, or tool-call rendering events. Direct AG-UI publishing is for low-latency updates, previews, and registered component output; it is not canonical research state.
+_Avoid_: View Manifest, Artifact, Provenance Record, durable state transition
+
+**AG-UI Event Envelope**:
+The durable metadata record for an AG-UI Event Batch. The envelope stores publisher identity, Project, Isomer Workspace, Run, Agent Team Instance, Agent Instance, component id, Artifact refs, timestamps, status, and retention policy. The envelope is persisted by default, while full event payload content is saved only by explicit user instruction.
+_Avoid_: Full event replay by default, prompt log, canonical artifact content
+
+**GUI Component Approve-All Policy**:
+A project-scoped approval posture that the human user enables through the Operator Agent. While active, registered Agent-generated GUI Components that are executable and pass validation may load without per-component approval until the policy is revoked. It does not apply to Built-in GUI Components because they do not require per-component approval, and it does not bypass registration, validation, sandbox policy, compatibility checks, or AG-UI publisher authentication.
+_Avoid_: Session-only approval, workspace-only approval, bypassing validation
+
+**GUI Runtime State**:
+The GUI Backend-owned live state for a browser GUI session or project GUI session. It includes active workspace and view selection, GUI Component Instances, AG-UI Render Payload refs, layout state, filters, selections, expanded panels, pending visual updates, and connection status. It can be changed through GUI Backend APIs and reflected immediately by the GUI Renderer. It is not canonical research state unless converted into an Artifact, View Manifest, Decision Record, or Provenance Record.
+_Avoid_: Workspace Runtime, research state, durable artifact, browser-only state
+
+**GUI Backend API**:
+An authenticated API exposed by the GUI Backend for creating, updating, and inspecting GUI Runtime State. The Operator Agent, engine, and authorized Agent Team Instance members can use it to publish AG-UI Render Payloads, create or update GUI Component Instances, adjust layout, and refresh views. GUI Backend APIs must not bypass Gate resolution or turn team Agent Instances into direct human-operated control surfaces.
+_Avoid_: Research engine API, unrestricted browser API, direct filesystem control
+
+**GUI Layout Spec**:
+A JSON document or JSON-compatible object that declares how registered GUI Component Instances are arranged in the GUI Renderer. It can define component slots, panels, tabs, split views, ordering, sizing, grouping, and responsive behavior. It references registered component ids or component instance ids; it does not contain executable frontend code.
+_Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 ## Identifier Guidance
 
@@ -251,7 +316,21 @@ _Avoid_: Generated GUI, engine UI, fixed dashboard
 
 ### GUI and Views
 
-- Use `view_manifest` and `gui_renderer` for GUI concepts.
+- Use `view_manifest`, `gui_backend`, and `gui_renderer` for the durable view contract, HTTP backend, and client renderer.
+- Use `gui_component` as the umbrella component term.
+- Use `built_in_gui_component` for Isomer-shipped components registered by the GUI Backend at startup.
+- Use `project_gui_component` for Project-supplied components.
+- Use `agent_generated_gui_component` only when the component was produced by an Agent Instance.
+- Use `component_origin` for `builtin` versus `project`.
+- Use `producer_kind` for `isomer`, `human`, or `agent`.
+- Use `component_kind` for `builtin`, `declarative`, or `executable`.
+- Use `gui_component_instance`, `declarative_gui_component_spec`, `executable_gui_component`, and `gui_component_registry` for component handling.
+- Use `ag_ui_render_payload` for data, DSL, or JSON sent through AG-UI to request or update visualizations.
+- Use `ag_ui_event_batch` for live AG-UI traffic and `ag_ui_event_envelope` for the persisted metadata record.
+- Use `gui_runtime_state` for backend-owned live GUI state.
+- Use `gui_backend_api` for authenticated APIs that create, update, or inspect GUI Runtime State.
+- Use `gui_layout_spec` for JSON layout declarations.
+- Use `gui_component_approve_all_policy` for the project-scoped executable component approval posture.
 
 ## Relationships
 
@@ -299,7 +378,7 @@ _Avoid_: Generated GUI, engine UI, fixed dashboard
 - A **Workspace Boundary** belongs to an **Agent Workspace**, but it is not itself a workspace.
 - **Peer Read Access** allows inspection of declared readable files, but it does not grant write ownership or filesystem-grade protection.
 - **Agent Artifacts** can be promoted or referenced as workspace-level **Artifacts**, **Evidence Items**, or handoff inputs.
-- A **Workspace Runtime** records **Runs**, **Artifacts**, **Provenance Records**, **Gates**, and **View Manifests**.
+- A **Workspace Runtime** records **Runs**, **Artifacts**, **Provenance Records**, **Gates**, **View Manifests**, and workspace-scoped **AG-UI Event Envelopes**.
 - The **Operator Agent**, when delegating work, coordinates other **Agent Instances** according to the selected Agent Team Instance's **Coordination Policy**.
 
 ### Artifacts, Evidence, and Decisions
@@ -312,7 +391,26 @@ _Avoid_: Generated GUI, engine UI, fixed dashboard
 
 ### GUI and Views
 
+- The **GUI Backend** starts through `isomer-cli`, reports a URL, and serves the predefined browser-side **GUI Renderer**.
+- The user opens the **GUI Backend** URL in a browser to use the predefined GUI.
 - The **GUI Renderer** renders **View Manifests** emitted from Workspace Runtime state.
+- The **GUI Backend** reads **View Manifests**, **Artifacts**, **GUI Layout Specs**, and **GUI Component Registry** entries, then serves the **GUI Renderer**.
+- The **GUI Component Registry** contains both **Built-in GUI Components** and **Project GUI Components**. All **GUI Components** must be registered before use.
+- **Built-in GUI Components** have `builtin` component origin and `isomer` producer kind.
+- **Project GUI Components** have `project` component origin and `human` or `agent` producer kind.
+- **Agent-generated GUI Components** are **Project GUI Components** with `agent` producer kind and producer Agent Instance provenance.
+- **Declarative GUI Component Spec** and **Executable GUI Component** describe implementation kind for **Project GUI Components**; they do not replace origin or producer fields.
+- A **GUI Component Instance** is the live mounted use of a registered **GUI Component** inside **GUI Runtime State**.
+- Agents use **GUI Components** by sending data, DSL, JSON, or refs as **AG-UI Render Payloads** through the AG-UI protocol. They do not call browser components directly.
+- The **GUI Backend** resolves **AG-UI Render Payloads** to registered **GUI Components** and creates or updates **GUI Component Instances**.
+- The **GUI Backend** may receive **AG-UI Event Batches** directly from authenticated **Agent Team Instance** members.
+- **GUI Backend APIs** can manipulate **GUI Runtime State**; the **GUI Renderer** reflects those changes immediately.
+- **GUI Layout Specs** control arrangement of registered **GUI Component Instances** and can be referenced by **View Manifests** or **AG-UI Render Payloads**.
+- Direct **AG-UI Event Batches** are live GUI traffic. Durable recovery should use **Workspace Runtime**, **Artifacts**, **View Manifests**, **AG-UI Event Envelopes**, and **Provenance Records**.
+- **AG-UI Event Envelopes** are persisted by default; full AG-UI payload content is saved only by explicit user instruction.
+- Direct agent publishing to the **GUI Backend** does not mean direct human operation of team **Agent Instances**. Human user actions still enter through the **Operator Agent**.
+- **Executable GUI Components** must be registered, validated, sandboxed or isolated according to policy, and approved before loading when approval is required.
+- The **GUI Component Approve-All Policy** applies to agent-generated **Executable GUI Components**. It is project-scoped, revocable, and subordinate to registration, validation, sandbox policy, compatibility checks, and publisher authentication.
 
 ## Flagged Ambiguities
 
@@ -353,3 +451,17 @@ _Avoid_: Generated GUI, engine UI, fixed dashboard
 ### GUI and Views
 
 - Use **View Manifest** instead of "view spec" or "dashboard config" for engine-produced GUI description files.
+- Use **GUI Renderer** for the predefined browser-side GUI served by the **GUI Backend**. Do not call agent-generated components a generated GUI.
+- Use **GUI Runtime State** for live backend-owned UI state. Do not confuse it with **Workspace Runtime**.
+- Use **GUI Layout Spec** for JSON layout declarations. Do not put executable frontend layout code in layout specs.
+- Use **AG-UI Render Payload** for data, DSL, JSON, or refs sent through AG-UI for visualization.
+- Use **AG-UI Event Batch** for live GUI event traffic, not for durable research state.
+- Use **AG-UI Event Envelope** for persisted metadata about direct AG-UI traffic. Do not assume full payload replay is available unless the user explicitly enabled payload retention.
+- Use **Built-in GUI Component** only for Isomer-shipped, backend-registered components.
+- Use **Project GUI Component** for project-supplied components, whether human-authored or agent-generated.
+- Use **Agent-generated GUI Component** only when producer Agent Instance identity matters.
+- Avoid "custom GUI Component" as a canonical term because it hides whether the component is human-authored, agent-generated, project-supplied, or built-in.
+- Use **GUI Component Registry** as the authority for **Built-in GUI Components** and **Project GUI Components**. Do not describe the GUI Backend as loading arbitrary project UI files directly.
+- Prefer **Declarative GUI Component Spec** for **Project GUI Components** when data-only rendering is sufficient. Use **Executable GUI Component** only when a declarative spec cannot express the interaction.
+- Agents should provide data, DSL, JSON, Artifact refs, component hints, and layout refs through AG-UI. They should not manipulate browser DOM or component internals directly.
+- Direct **AG-UI Event Batches** from team agents are allowed for GUI updates, but user commands, approvals, Gate decisions, and task-routing changes still go through the **Operator Agent**.

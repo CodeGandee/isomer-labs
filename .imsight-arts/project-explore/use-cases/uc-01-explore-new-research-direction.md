@@ -32,7 +32,7 @@ flowchart LR
   User[Human User]
   CLI[isomer-cli]
   Operator["Operator<br/>Agent Instance"]
-  GUI["GUI<br/>Renderer"]
+  GUI["GUI Backend<br/>and Renderer"]
 
   subgraph TeamInstance["Agent Team Instance"]
     Scout["Scout<br/>Agent Instance"]
@@ -93,7 +93,7 @@ sequenceDiagram
   participant Agents as Team Agent<br/>Instances
   participant Provenance as Artifact and<br/>Provenance Service
   participant Views as View Manifest<br/>Generator
-  participant GUI as GUI<br/>Renderer
+  participant GUI as GUI Backend<br/>and Renderer
 
   User->>Operator: Submit Exploratory Goal<br/>and Project context
   Operator->>CLI: Validate Project<br/>before setup
@@ -107,6 +107,8 @@ sequenceDiagram
   Operator->>Adapter: Construct Team Agent<br/>Instances
   Adapter->>Agents: Create Agent Workspaces<br/>and start Run
   Agents->>Provenance: Store notes, claims,<br/>Evidence Items, Artifacts
+  Agents-->>GUI: Publish optional AG-UI<br/>Render Payloads
+  GUI-->>Runtime: Persist AG-UI<br/>Event Envelopes
   Provenance->>Runtime: Record refs, handoffs,<br/>Research Claims, Run status
   Runtime->>Views: Request literature matrix,<br/>claim graph, branch view
   Views->>GUI: Emit View<br/>Manifests
@@ -128,3 +130,4 @@ sequenceDiagram
 - Evidence Items linked to Research Claims
 - Decision Record for selected Research Branch
 - View Manifests for literature matrix, claim graph, and branch decision
+- AG-UI Render Payloads and AG-UI Event Envelopes when team agents publish live GUI updates

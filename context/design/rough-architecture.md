@@ -15,6 +15,7 @@ The key rule is that `.isomer-labs/` is the config and discovery root, not the r
     team-templates/
     teams/
     profiles/
+    gui-components/
 
   <workspace-dir-a>/
     state.sqlite
@@ -49,6 +50,7 @@ Recommended contents:
   team-templates/        # optional imported or referenced Agent Team Templates
   teams/                 # Agent Team Instances instantiated from templates
   profiles/              # reusable Agent Profiles and capability references
+  gui-components/        # optional project-scope agent-generated component manifests and sources
 ```
 
 `manifest.toml` is the Project Manifest and the authority for Isomer Workspace discovery. The engine must not infer managed Isomer Workspaces by scanning arbitrary directories. A directory becomes an Isomer Workspace only when the Project Manifest declares it.
@@ -59,9 +61,11 @@ Project-level `teams/` stores Agent Team Instances that the Operator Agent insta
 
 `profiles/` stores reusable Agent Profiles and capability references for models, tools, skills, execution environments, communication channels, or credentials. It should store references and non-secret configuration. Secrets should live in the user's credential store or another configured secret backend, not in committed TOML files.
 
+`gui-components/` stores project-scope agent-generated GUI Component Registry entries, component manifests, and optionally source for agent-generated GUI Components. It is not the whole registry: Built-in GUI Components are system-owned and registered by the GUI Backend at startup. Declarative GUI Component Specs are preferred. Executable GUI Components must be registered, validated, sandboxed or isolated according to policy, and approved before the GUI Backend loads them. Direct AG-UI Event Batches may reference only registered component ids when they target Executable GUI Components.
+
 System-owned schemas are Isomer built-in artifacts, not project-local config files. `isomer-cli` should expose commands to query built-in artifact versions, inspect schema documentation, and validate Project Manifests, Agent Team Templates, Agent Team Instances, Workspace Runtime state, and View Manifests against the built-in schemas.
 
-`.isomer-labs/` should not include default cache or temporary directories. Runtime scratch, render cache, and disposable discovery output should live under an Isomer Workspace, an explicit tool cache, or the operating system's temporary directory.
+`.isomer-labs/` should not include default cache or temporary directories. Runtime scratch, render cache, executable component build output, and disposable discovery output should live under an Isomer Workspace, an explicit tool cache, or the operating system's temporary directory.
 
 ## Workspace Directories
 
@@ -92,7 +96,7 @@ The recommended minimal Isomer Workspace layout is:
 
 `agents/` stores Agent Workspaces for concrete Agent Instances. Each Agent Workspace owns that agent's Agent Runtime, scratch files, logs, and Agent Artifacts. Agent Workspace boundaries are advisory: README files or manifests can declare owned paths and peer-readable paths, but Isomer does not try to enforce filesystem-grade access control.
 
-`views/` stores View Manifests emitted by the engine. These files describe task-specific GUI views, data sources, user actions, and pending Gates. The GUI renders these manifests but does not own Workspace Runtime state.
+`views/` stores View Manifests emitted by the engine. These files describe task-specific GUI views, data sources, user actions, and pending Gates. The GUI Backend and Renderer render these manifests but do not own Workspace Runtime state.
 
 `runs/` is part of the Workspace Runtime. It stores per-Run records for bounded execution episodes, such as prompts, runner commands, stdout or event logs, tool-call input and output refs, and Run summaries.
 
@@ -128,6 +132,18 @@ The first team stage is template instantiation. The Operator Agent selects an Ag
 
 An Execution Adapter maps those neutral concepts onto a backend. Houmao is a useful example implementation: Houmao team definitions can map to Agent Team Templates, and Houmao specialists, project profiles, native roles, recipes, launch dossiers, and managed agents can map to Agent Profiles, Capability Bindings, Coordination Policies, and Agent Instances. Isomer should not require Houmao's document names or command structure in its core schema.
 
+## GUI Backend and Component Handling
+
+The GUI Backend is a built-in HTTP server started through `isomer-cli` for a Project. On startup it binds a local or configured address, reports a URL, registers Built-in GUI Components, and serves the predefined browser-side GUI Renderer. The user opens that URL in a browser to inspect and manipulate the Project GUI.
+
+The GUI Backend resolves the Project Manifest, reads Workspace Runtime state, fetches View Manifests and Artifacts, maintains GUI Runtime State, and exposes GUI Backend APIs. These APIs can create or update GUI Component Instances, publish AG-UI Render Payloads, update GUI Layout Specs, refresh views, and inspect live GUI state. The GUI Renderer should reflect these backend state changes immediately through the GUI connection model. User-origin commands, approvals, Gate decisions, and task-routing changes still enter through the Operator Agent.
+
+The GUI Backend can also receive direct AG-UI Event Batches from authenticated Agent Team Instance members. These batches carry AG-UI Render Payloads: data, DSL, JSON, Artifact refs, visualization intent, component hints, and optional layout refs. The backend resolves those payloads to registered GUI Components and GUI Component Instances. This path is for live updates, previews, and registered component output. It is not canonical research state. The backend should persist AG-UI Event Envelopes by default and save full AG-UI payload content only when the user explicitly instructs the system to retain it.
+
+Agent-generated GUI Components use a registry-gated model. Built-in GUI Components are registered by the built-in GUI Backend, Declarative GUI Component Specs are the preferred project customization format, and Executable GUI Components require manifest validation, dependency checks, sandbox or isolation policy, compatibility checks, and user approval before loading. A project-scoped approve-all policy may skip repeated per-component approval until revoked, but it does not bypass registration, validation, sandbox policy, compatibility checks, or AG-UI publisher authentication.
+
+GUI Layout Specs are JSON or JSON-compatible layout declarations. They arrange registered GUI Component Instances into panels, tabs, split views, ordered sections, and responsive regions. They can be referenced by View Manifests or AG-UI Render Payloads. A layout spec should contain component ids, instance ids, slots, sizing, and grouping; it should not contain executable frontend code.
+
 ## Manifest Sketch
 
 The exact schema is a later architecture part. This sketch shows the intended relationship between project config and arbitrary project-local Isomer Workspaces:
@@ -141,6 +157,11 @@ active_workspace = "main"
 operator_agent = "operator"
 agent_team_template = "lfeng-team"
 agent_team_instance = "research-basic"
+
+[gui]
+component_registry = ".isomer-labs/gui-components"
+ag_ui_payload_retention = "envelope_only"
+default_layout_ref = "workspace-or-project-layout-json"
 
 [[workspaces]]
 id = "main"
@@ -186,6 +207,12 @@ scope = "project"
 id = "codex-researcher"
 path = ".isomer-labs/profiles/codex-researcher.toml"
 scope = "project"
+
+[[gui_components]]
+id = "artifact-matrix"
+path = ".isomer-labs/gui-components/artifact-matrix/component.toml"
+kind = "declarative"
+scope = "project"
 ```
 
 The Agent Team Template file should define the reusable team blueprint. The Agent Team Instance file should record the Operator Agent's instantiated project-specific choices and usually bind Agent Roles to Agent Profiles through Capability Bindings. The Project Manifest should discover project-level entries and select defaults, not encode the full team workflow inline.
@@ -210,6 +237,7 @@ The default tracking posture should be transparent but conservative:
 
 - Track `.isomer-labs/manifest.toml`.
 - Track project-level Agent Team Instance and Agent Profile files when they contain no secrets.
+- Track project-scope GUI component manifests, Declarative GUI Component Specs, and GUI Layout Specs when they contain no secrets or bulky generated output.
 - Treat Isomer Workspace tracking as a workspace policy, because some Projects should commit research Artifacts and others should keep them local.
 - Never store secrets in tracked Isomer config files.
 
@@ -239,6 +267,17 @@ An Isomer Workspace should be able to declare whether `state.sqlite`, `artifacts
 - Agent Workspace boundaries are advisory ownership and peer-read contracts, not filesystem-grade access control.
 - `.isomer-labs/` has no default cache, temporary, or schema directories.
 - System-owned schemas and other Isomer built-in artifacts are queried and validated through `isomer-cli`.
+- The GUI Backend is started through `isomer-cli` and does not own canonical research state.
+- The GUI Backend serves a predefined browser-side GUI Renderer from a local or configured URL.
+- Built-in GUI Components and agent-generated GUI Components must be registered before use.
+- View Manifests are durable semantic view descriptions; direct AG-UI Event Batches are live GUI traffic.
+- AG-UI Render Payloads carry data, DSL, JSON, Artifact refs, visualization intent, component hints, and optional layout refs; they are resolved to registered GUI Components by the GUI Backend.
+- AG-UI Event Envelopes are persisted by default; full AG-UI payload content is retained only by explicit user instruction.
+- Authenticated Agent Team Instance members may publish direct AG-UI Event Batches, but human user actions still go through the Operator Agent.
+- GUI Backend APIs can manipulate GUI Runtime State and the GUI Renderer should reflect those changes immediately.
+- GUI Layout Specs are JSON or JSON-compatible declarations that arrange registered GUI Component Instances.
+- Executable GUI Components must pass registry validation, sandbox or isolation policy, compatibility checks, and approval before loading.
+- Project-scoped approve-all can remove repeated per-component approval until revoked, but it does not bypass component or publisher validation.
 
 ## Open Questions for Later Parts
 
@@ -248,5 +287,6 @@ An Isomer Workspace should be able to declare whether `state.sqlite`, `artifacts
 - Exact Agent Profile schema and Execution Adapter interface.
 - Agent Team Template and Agent Team Instance file formats.
 - View Manifest schema and supported view types.
+- GUI Component Registry schema, GUI Runtime State schema, GUI Layout Spec schema, Executable GUI Component sandbox contract, AG-UI Render Payload contract, and AG-UI Event Envelope schema.
 - Workspace tracking policy format.
 - Import flow for an existing directory that should become an Isomer Workspace.

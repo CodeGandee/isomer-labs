@@ -19,7 +19,7 @@ The user imports a draft manuscript, reviewer comments, figure files, experiment
 7. The critique mapper turns reviewer comments into issue Artifacts and links them to manuscript sections.
 8. The evidence auditor maps each issue to Research Claims, Evidence Items, missing support, and contradiction risks.
 9. The experiment planner proposes targeted Research Tasks for missing analyses or robustness checks.
-10. The GUI renders a reviewer-response matrix, claim-risk view, and pending Gate list.
+10. The GUI Backend and Renderer show a reviewer-response matrix, claim-risk view, and pending Gate list.
 11. The Operator Agent presents a Gate asking the user to approve the revision strategy and choose which targeted analyses to run.
 12. The Operator Agent records the approved plan as a Decision Record.
 13. For each approved analysis, Isomer creates a new Research Task with its own Isomer Workspace.
@@ -34,7 +34,7 @@ The user imports a draft manuscript, reviewer comments, figure files, experiment
 flowchart LR
   User[Human User]
   Operator["Operator<br/>Agent Instance"]
-  GUI["GUI<br/>Renderer"]
+  GUI["GUI Backend<br/>and Renderer"]
 
   subgraph TeamInstance["Agent Team Instance"]
     Mapper["Critique Mapper<br/>Agent Instance"]
@@ -103,7 +103,7 @@ sequenceDiagram
   participant Agents as Team Agent<br/>Instances
   participant Provenance as Artifact and<br/>Provenance Service
   participant Views as View Manifest<br/>Generator
-  participant GUI as GUI<br/>Renderer
+  participant GUI as GUI Backend<br/>and Renderer
 
   User->>Operator: Import manuscript, reviews,<br/>constraints, deadline
   Operator->>Team: Instantiate or reuse<br/>Team Instance
@@ -114,6 +114,8 @@ sequenceDiagram
   Operator->>Adapter: Construct Team Agent<br/>Instances
   Adapter->>Agents: Start feedback<br/>mapping Run
   Agents->>Provenance: Store issues, claim links,<br/>Evidence Items, risks
+  Agents-->>GUI: Publish optional AG-UI<br/>Render Payloads
+  GUI-->>Runtime: Persist AG-UI<br/>Event Envelopes
   Provenance->>Runtime: Record handoffs,<br/>support gaps, risks
   Runtime->>Views: Request response matrix<br/>and claim-risk view
   Views->>GUI: Emit feedback<br/>View Manifests
@@ -127,6 +129,8 @@ sequenceDiagram
     Operator->>Runtime: Initialize analysis<br/>Workspace Runtime
     Adapter->>Agents: Start analysis<br/>Run
     Agents->>Provenance: Store result Artifacts<br/>and Evidence Items
+    Agents-->>GUI: Publish optional analysis<br/>AG-UI Render Payloads
+    GUI-->>Runtime: Persist AG-UI<br/>Event Envelopes
     Provenance->>Runtime: Update Research Claims<br/>and Run status
   end
   Operator->>Agents: Request response draft<br/>and manuscript edits
@@ -150,3 +154,4 @@ sequenceDiagram
 - Gates for revision strategy, claim strengthening, new analyses, and final package approval
 - Decision Records for approved revision strategy and final response package
 - View Manifests for response matrix, claim-risk view, Run timeline, and final approval view
+- AG-UI Render Payloads and AG-UI Event Envelopes when team agents publish live GUI updates
