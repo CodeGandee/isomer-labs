@@ -10,7 +10,7 @@ accepted
 
 - Use a fixed GUI with configurable panels.
 - Have the engine emit view manifests that the GUI renders.
-- Let agents generate frontend code for each research task.
+- Let agents generate frontend code for each Research Task.
 
 ## Consequences
 

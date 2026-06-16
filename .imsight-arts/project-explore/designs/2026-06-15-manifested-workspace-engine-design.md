@@ -17,7 +17,7 @@ Relevant project-goal evidence:
 - The platform should expose goals, teams, task plans, Artifacts, decisions, prompts, tool calls, and research state.
 - The research engine and GUI should be decoupled.
 - Generated GUI views should visualize task-specific Artifacts, state, and decision points.
-- Project state can live inside a user-owned project instead of a system-owned workspace.
+- Project state can live inside a user-owned Project instead of a system-owned directory.
 
 Accepted ADRs:
 
@@ -30,9 +30,9 @@ Accepted ADRs:
 
 ## Overview
 
-Isomer Labs uses a manifested workspace engine as its primary architecture. The Project Manifest at `.isomer-labs/manifest.toml` is the discovery authority for project configuration and project-local Isomer Workspaces. A Research Thread is the user-facing line of inquiry; by default, each Research Thread is backed by one Isomer Workspace. Isomer Workspaces may live in arbitrary directories inside the user-owned Project, but each workspace must be declared in the Project Manifest before the engine treats it as managed state.
+Isomer Labs uses a manifested workspace engine as its primary architecture. The Project Manifest at `.isomer-labs/manifest.toml` is the discovery authority for project configuration and project-local Isomer Workspaces. A Research Thread is the user-facing line of inquiry; it can span multiple Research Tasks. Each Isomer Workspace is scoped to one selected Agent Team and one Research Task. Isomer Workspaces may live in arbitrary directories inside the user-owned Project, but each workspace must be declared in the Project Manifest before the engine treats it as managed state.
 
-Each Isomer Workspace owns its Workspace Runtime and research outputs. Compact control-plane state lives in SQLite. Rich Artifacts remain ordinary files, such as Markdown notes, JSON outputs, logs, code, figures, reports, and View Manifests. During team execution, each concrete Agent Instance receives an Agent Workspace for agent-owned runtime state and Agent Artifacts. These workspaces create advisory ownership boundaries, not filesystem-grade access control. The Agent Instance assigned to the coordinator Agent Role is the coordination boundary between the user, other Agent Role owners, durable state, and GUI-facing views.
+Each Isomer Workspace owns its Workspace Runtime and research outputs for its selected Agent Team and Research Task. Compact control-plane state lives in SQLite. Rich Artifacts remain ordinary files, such as Markdown notes, JSON outputs, logs, code, figures, reports, and View Manifests. During team execution, each concrete Agent Instance receives an Agent Workspace for agent-owned runtime state and Agent Artifacts. These workspaces create advisory ownership boundaries, not filesystem-grade access control. The Agent Instance assigned to the coordinator Agent Role is the coordination boundary between the user, other Agent Role owners, durable state, and GUI-facing views.
 
 Isomer's core multi-agent model is backend-neutral. Agent Teams, Agent Roles, Agent Profiles, Capability Bindings, Coordination Policies, Agent Instances, Runs, and Agent Workspaces should make sense for many execution backends. Backend-specific systems, including Houmao, should appear only through Execution Adapter mappings.
 
@@ -73,11 +73,14 @@ The Project Manifest is responsible for:
 - listing known Isomer Workspaces
 - naming the active Research Thread or active Isomer Workspace when applicable
 - declaring relative Isomer Workspace paths
+- declaring each Isomer Workspace's Research Task and selected Agent Team
 - storing project-level defaults
 - pointing to reusable Agent Teams when they are shared across Isomer Workspaces
 - defining compatibility versions for Project Manifest and Workspace Runtime schemas
 
 The Project Manifest must be validated before Runs start. Missing workspace paths, duplicate workspace ids, paths outside the Project root, stale schema versions, and invalid active-workspace references are configuration errors.
+
+System-owned schemas and other Isomer built-in artifacts are not stored under `.isomer-labs/` by default. `isomer-cli` should query those built-ins, show supported versions, and validate project files against them.
 
 ### Workspace Runtime
 
@@ -88,7 +91,6 @@ Each Isomer Workspace stores one Workspace Runtime plus Artifacts. The Workspace
   state.sqlite
   artifacts/
   agents/
-  teams/
   views/
   runs/
   logs/
@@ -188,17 +190,18 @@ The GUI must tolerate View Manifest version mismatches, missing Artifacts, unava
 
 The first SQLite schema should stay compact and implementation-focused. It should include these entity families:
 
-- `workspace`: workspace id, schema version, root path, status, created time, updated time
+- `workspace`: workspace id, schema version, root path, research task id, selected agent team id, status, created time, updated time
 - `workspace_runtime`: workspace id, runtime schema version, state db path, support directory refs, validation status, updated time
-- `research_thread`: thread id, workspace id, research goal ref, goal kind, lifecycle state, active research branch id, created time, updated time
+- `research_thread`: thread id, research goal ref, goal kind, lifecycle state, active research branch id, created time, updated time
 - `research_branch`: branch id, research thread id, parent branch id, status, hypothesis ref, created time, updated time
+- `research_task`: research task id, research thread id, research branch id when applicable, workspace id, selected agent team id, status, summary ref
 - `agent_team`: agent team id, source path, status, active flag
 - `agent_role`: agent role id, agent team id, role kind, display name, responsibility ref
 - `agent_profile`: agent profile id, source path, profile kind, instruction refs, capability refs, status
 - `coordination_policy`: policy id, agent team id, communication mode, handoff rules ref, review rules ref, escalation rules ref
 - `capability_binding`: binding id, agent team id, agent role id or agent profile id, capability kind, capability ref, scope
 - `workflow_stage`: stage id, agent team id, ordinal, owner agent role id, gate policy
-- `run`: run id, research thread id, research branch id, agent team id, status, current stage, started time, finished time
+- `run`: run id, workspace id, research task id, research thread id, research branch id, agent team id, status, current stage, started time, finished time
 - `handoff`: handoff id, run id, from agent role id, to agent role id, stage id, status, attempt count, due time
 - `agent_instance`: agent instance id, agent profile id, agent team id, run id, agent role id, execution adapter id, provider instance ref, status
 - `agent_workspace`: agent workspace id, workspace id, agent team id, run id, agent role id, agent instance id, root path, status, boundary ref
@@ -283,7 +286,7 @@ Early tests should focus on contracts that will be expensive to change later:
 - manifest parsing and path normalization
 - Isomer Workspace discovery from `.isomer-labs/manifest.toml`
 - Workspace Runtime creation, schema versioning, and support directory validation
-- Research Thread lifecycle state and workspace binding
+- Research Thread lifecycle state and Research Task to Isomer Workspace binding
 - rejection of workspace paths outside the project root
 - Agent Team validation for Agent Roles, Workflow Stages, Coordination Policy, and Capability Bindings
 - Execution Adapter mapping from Agent Profiles to Agent Instances
@@ -304,6 +307,8 @@ These tests can start with `unittest` under `tests/unit/`, with filesystem and S
 - Project state discovery starts from `.isomer-labs/manifest.toml`.
 - Research Threads are the user-facing research lifecycle concept.
 - Isomer Workspaces are project-local directories referenced by the Project Manifest.
+- Each Isomer Workspace is scoped to one selected Agent Team and one Research Task.
+- Isomer Workspaces do not contain a workspace-local `teams/` directory.
 - Agent Teams include Agent Roles, workflow, Coordination Policy, and Capability Bindings.
 - Agent Profiles and Agent Instances are core Isomer concepts; Houmao specialists, profiles, roles, recipes, launch dossiers, and managed agents are adapter details.
 - Team execution should construct Agent Workspaces so agents can own local runtime state and Agent Artifacts without relying on one shared scratch area.
@@ -321,5 +326,5 @@ These tests can start with `unittest` under `tests/unit/`, with filesystem and S
 - Initial Agent Team file format.
 - Initial View Manifest schema and supported view types.
 - Migration command shape and schema-version policy.
-- Whether reusable Agent Teams should live under `.isomer-labs/teams/`, inside Isomer Workspaces, or both.
+- Exact representation for selected Agent Team refs and Research Task ids inside Project Manifest and Workspace Runtime.
 - How much DeepScientist skill and artifact structure should be adapted into initial workspace templates.

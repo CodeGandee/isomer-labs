@@ -1,6 +1,6 @@
 # Project Manifest References Isomer Workspaces
 
-Isomer Labs will keep platform configuration under the `.isomer-labs/` Project Config Directory, with a Project Manifest in that directory referencing project-local Isomer Workspaces that may live in arbitrary directories. This keeps the project root user-owned and flexible while giving the platform one durable configuration and discovery location for Research Threads, Runs, Artifacts, and generated GUI state.
+Isomer Labs will keep platform configuration under the `.isomer-labs/` Project Config Directory, with a Project Manifest in that directory referencing project-local Isomer Workspaces that may live in arbitrary directories. Each Isomer Workspace is scoped to one selected Agent Team and one Research Task. This keeps the project root user-owned and flexible while giving the platform one durable configuration and discovery location for Research Threads, Research Tasks, Runs, Artifacts, and generated GUI state.
 
 ## Status
 
@@ -16,4 +16,4 @@ accepted
 
 - The manifest becomes the authority for workspace discovery and must be validated before runs start.
 - Workspace paths need clear relative-path rules, missing-workspace handling, and migration behavior.
-- The GUI and coordinator Agent Instance can resolve project state through a stable Project Config Directory without forcing all artifacts into one platform-owned workspace.
+- The GUI and coordinator Agent Instance can resolve project state through a stable Project Config Directory without forcing all artifacts into one platform-owned directory.
