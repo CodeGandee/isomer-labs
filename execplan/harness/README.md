@@ -10,5 +10,6 @@ only through these commands.
 ## Contents
 
 - `commands.toml`: the command registry (authoritative surface; tier core vs domain-pluggable extension).
-- `bin/`, `src/`: command wrappers + implementation — **pending implementation** (see manifest `omitted_default_layers`).
-- `schemas/command-envelope.schema.json`: harness-owned command envelope — pending implementation.
+- `bin/deepresearch`, `src/`: the runnable harness entrypoint + implementation (click CLI in `src/cli.py`; `db.py`/`records.py`/`invariants.py`/`mail.py`/`paths.py`/`envelope.py`). **Implemented.**
+- `schemas/command-envelope.schema.json`: harness-owned command envelope. **Implemented.**
+- `tests/`: harness unit tests.

@@ -139,7 +139,7 @@ purpose = "generated loop-local helper surface"
 # ───────────────── Docs ─────────────────
 [[artifacts]]
 id = "docs"
-description = "Human support views: README, start-runbook, credentials, publication-quality (materialized)."
+description = "Human support views: README, start-runbook, credentials, publication-quality, research-contract (pre-launch contract rubric), claude-effort (reasoning-level mapping)."
 path = "docs/"
 artifact_kind = "dir"
 purpose = "generated human support views"

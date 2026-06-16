@@ -12,22 +12,32 @@
 > The DB stays canonical; these references are advisory craft, never an authoritative state surface.
 
 ## Index (references/)
+- `analysis-boundary-cases.md`
+- `baseline-boundary-cases.md`
+- `baseline-checklist-template.md`
 - `baseline-plan-template.md`
 - `brief-shaping-playbook.md`
+- `campaign-checklist-template.md`
 - `campaign-design.md`
 - `campaign-plan-template.md`
+- `candidate-board-template.md`
 - `candidate-ranking-template.md`
 - `codebase-audit-checklist.md`
 - `codegen-route-playbook.md`
 - `comparability-contract.md`
+- `debug-response-template.md`
 - `evidence-ladder.md`
 - `execution-playbook.md`
 - `finalization-checklist.md`
+- `frontier-review-template.md`
 - `fusion-playbook.md`
 - `main-experiment-checklist-template.md`
 - `main-experiment-plan-template.md`
 - `method-brief-template.md`
+- `optimization-memory-template.md`
+- `optimize-checklist-template.md`
 - `plateau-response-playbook.md`
+- `prompt-patterns.md`
 - `research-route-criteria.md`
 - `resume-packet-template.md`
 - `route-selection.md`

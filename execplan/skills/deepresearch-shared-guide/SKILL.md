@@ -97,6 +97,7 @@ inside them (`artifact.*`, `bash_exec`, `memory.*`) to the `$HARNESS` surface.
 - `paper-craft` — oral-writing principles, section-rewrite checklist, the paper-view/evidence-view outline contract (outline/write).
 - `review-craft` — review dimensions, evidence-authenticity gate, literature benchmark, review templates (review).
 - `rebuttal-craft` — review-matrix→action-plan→evidence-update→response-letter flow + voice rules (rebuttal).
+- `intake-rubric` — trust-rank/reconcile pre-existing assets, current-board packet (intake-audit).
 
 **Evidence ladder (shared vocabulary; from `research-method/references/evidence-ladder.md`).** Spend effort in
 order, never out of order: `minimum` = the result is executable AND comparable to the baseline; `solid` = the

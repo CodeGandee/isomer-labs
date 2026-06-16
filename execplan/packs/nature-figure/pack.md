@@ -11,4 +11,4 @@
 Enabled by default in `../../specs/state/seed.toml` (nature-domain publication set); disable per quest/domain if not needed.
 
 ## Methodology references (ported from DeepScientist `nature-figure`)
-Read before plotting: `references/figure-contract.md`, `qa-contract.md`, `design-theory.md`, `backend-selection.md`, `chart-types.md`. Fill the figure contract + run the QA checklist around the adapter call.
+Read before plotting: `references/figure-contract.md`, `qa-contract.md`, `design-theory.md`, `backend-selection.md`, `chart-types.md`. Fill the figure contract + run the QA checklist around the adapter call. Also: `r-workflow.md`, `r-template-index.md`, `api.md`, `tutorials.md`, `nature-2026-observations.md` (R backend + API + tutorials + venue observations).
