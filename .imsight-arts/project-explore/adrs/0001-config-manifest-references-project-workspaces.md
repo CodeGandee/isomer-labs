@@ -1,6 +1,6 @@
 # Project Manifest References Isomer Workspaces
 
-Isomer Labs will keep platform configuration under the `.isomer-labs/` Project Config Directory, with a Project Manifest in that directory referencing project-local Isomer Workspaces that may live in arbitrary directories. Each Isomer Workspace is scoped to one Research Task, records a task handler, and may reference a selected Agent Team Instance when delegated. This keeps the project root user-owned and flexible while giving the platform one durable configuration and discovery location for Research Threads, Research Tasks, Runs, Artifacts, and GUI-facing state.
+Isomer Labs will keep platform configuration under the `.isomer-labs/` Project Config Directory, with a Project Manifest in that directory referencing project-local Isomer Workspaces that may live in arbitrary directories. Each Isomer Workspace is scoped to one Research Task, records a task handler, and may reference a selected Topic Agent Team Profile plus a selected Agent Team Instance after launch when delegated. This keeps the project root user-owned and flexible while giving the platform one durable configuration and discovery location for Research Threads, Research Tasks, Runs, Artifacts, and GUI-facing state.
 
 ## Status
 

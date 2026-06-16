@@ -10,7 +10,7 @@ The platform should help a user move from a research question to useful artifact
 
 The core engine is a multi-agent research team. Each team can include agents for roles such as scouting, planning, literature review, experiment design, coding, analysis, writing, critique, and decision support.
 
-The user should be able to choose a predefined team or define a custom team. Team openness is a core design goal, not an advanced-only feature. A research problem may need a narrow team of two agents, while a larger project may need a staged group with specialized reviewers and operators.
+The user should be able to choose a Domain Agent Team Template based on the research methodology of a field, then specialize it into a Topic Agent Team Profile for the user's concrete research topic. Team openness is a core design goal, not an advanced-only feature. A research problem may need a narrow team of two agents, while a larger project may need a staged group with specialized reviewers and operators.
 
 At the center of the engine is an operator agent controlled by the user. The operator agent coordinates team activity, asks the user for decisions, translates user intent into team instructions, and presents work products back to the user.
 
@@ -37,7 +37,7 @@ Isomer Labs is inspired by DeepScientist, which is available locally under `exte
 Isomer Labs should learn from that model, but it should differ in these design directions:
 
 - Agent teamwork is a first-class design target.
-- Users can use predefined teams or define their own agent teams.
+- Users can use predefined Domain Agent Team Templates, specialize Topic Agent Team Profiles, or define their own agent-team structure.
 - Team customization remains open and visible to the user.
 - The system favors modular, white-box control over opaque automation.
 - The research engine and GUI are decoupled.
@@ -52,7 +52,7 @@ Isomer Labs should expose its structure clearly. Users should be able to inspect
 The project should avoid a single closed pipeline. Instead, it should define composable pieces:
 
 - project state and artifact storage
-- agent-team definitions
+- Domain Agent Team Templates and Topic Agent Team Profiles
 - operator-agent control loop
 - research workflow templates
 - task-specific GUI generation
@@ -75,10 +75,10 @@ The GUI remains separate from the research engine. The engine should be useful f
 User goal and context
         |
         v
-Operator agent clarifies task and proposes team/workflow
+Operator agent clarifies topic and proposes Topic Agent Team Profile/workflow
         |
         v
-User approves, edits, or replaces team/workflow
+User approves, edits, or replaces Topic Agent Team Profile/workflow
         |
         v
 Research team executes visible, staged work
@@ -102,4 +102,3 @@ User steers, branches, pauses, or continues
 - How should task-specific GUI generation describe views, data bindings, and user actions?
 - How much DeepScientist workflow structure should Isomer Labs reuse, adapt, or replace?
 - What artifact format best preserves evidence, provenance, and user decisions?
-

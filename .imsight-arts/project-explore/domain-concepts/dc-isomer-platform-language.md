@@ -11,15 +11,15 @@ A user-owned repository, checkout, or directory tree that Isomer Labs manages. A
 _Avoid_: Quest root, system-owned workspace, platform directory
 
 **Project Config Directory**:
-The `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Agent Team Templates, Agent Team Instances, Agent Profiles, and GUI Component Registry refs. It should not contain default cache, temporary, or schema directories. System-owned schemas are Isomer built-in artifacts queried and validated through `isomer-cli`.
+The `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profiles, and GUI Component Registry refs. It should not contain default cache, temporary, or schema directories. System-owned schemas are Isomer built-in artifacts queried and validated through `isomer-cli`.
 _Avoid_: Control directory, control-plane directory, workspace root, hidden workspace
 
 **Project Manifest**:
-The `.isomer-labs/manifest.toml` file. It is the discovery authority for Isomer Workspaces, active workspace selection, project defaults, Agent Team Templates, Agent Team Instances, Agent Profile references, and project-scope GUI component registry references.
+The `.isomer-labs/manifest.toml` file. It is the discovery authority for Isomer Workspaces, active workspace selection, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, and project-scope GUI component registry references.
 _Avoid_: Workspace index, quest registry, config blob
 
 **Isomer Workspace**:
-A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Task. It owns a Workspace Runtime, rich research Artifacts, generated View Manifests, Run records, and logs. It records the task handler: the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance. It references Agent Team Instances but does not contain a workspace-local `teams/` directory.
+A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Task. It owns a Workspace Runtime, rich research Artifacts, generated View Manifests, Run records, and logs. It records the task handler: the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance. It references the selected Topic Agent Team Profile and any Agent Team Instance created from it, but it does not contain a workspace-local `teams/` directory.
 _Avoid_: Quest, quest workspace, run directory, system workspace
 
 **Workspace Runtime**:
@@ -50,14 +50,16 @@ The containment relationship is:
 Project
   .isomer-labs/ Project Config Directory
     manifest.toml Project Manifest
-    Agent Team Template references
-    Agent Team Instance definitions
+    Domain Agent Team Template references
+    Topic Agent Team Profile definitions
+    Agent Team Instance refs
     Operator Agent configuration
     GUI Component Registry references
   Isomer Workspace(s), declared by the Project Manifest
     one Research Task
     one task handler: Operator Agent or delegated Agent Team Instance member
-    optional selected Agent Team Instance reference
+    optional selected Topic Agent Team Profile reference
+    optional selected Agent Team Instance reference after launch
     Workspace Runtime
     Agent Workspace(s), created for Agent Instances during team execution
       Agent Runtime
@@ -96,25 +98,29 @@ _Avoid_: Research task, research thread, workspace, quest
 
 ### Team and Agent Execution
 
-**Agent Team Template**:
-A reusable multi-agent blueprint that can be instantiated into a Project. It names default Agent Roles, Workflow Stages, Coordination Policy, Capability Bindings, and template parameters, but it should not carry project-specific choices. A Houmao team definition such as `teams/lfeng-team` can be imported through an Execution Adapter as an Agent Team Template.
-_Avoid_: Agent Team Instance, live team, Run, provider-specific team as the core term
+**Domain Agent Team Template**:
+A reusable multi-agent template based on the research methodology of a research field. It names default Agent Roles, Workflow Stages, Coordination Policy, Capability Binding slots, and template parameters, but it does not include a user's concrete research topic, project paths, credentials, or launch choices.
+_Avoid_: Topic Agent Team Profile, Agent Team Instance, live team, project-specific team, provider-specific team as the core term
+
+**Topic Agent Team Profile**:
+A topic-level specialization of one Domain Agent Team Template for a user's research topic. It adapts the domain method to the topic context, selects or tunes roles and Workflow Stages, records constraints and expected Artifacts, and can be reviewed or edited before launch; it is not a running team.
+_Avoid_: Domain Agent Team Template, Agent Team Instance, Run, live team, ad hoc role list
 
 **Agent Team Instance**:
-A concrete multi-agent structure instantiated from an Agent Team Template by the Operator Agent. It resolves project-specific parameters such as role count, model posture, credentials, project paths, domain instructions, and Gate policy. Isomer Workspaces reference Agent Team Instances when a Research Task is delegated to the team. Every non-operator task Agent Instance belongs to an Agent Team Instance.
-_Avoid_: Agent Team Template, workspace-local team, ad hoc role list
+A concrete runtime team created from a Topic Agent Team Profile by the Operator Agent or Execution Adapter. It has launched Agent Instances, runtime refs, Agent Workspaces, and Run participation; Isomer Workspaces reference Agent Team Instances when a Research Task is delegated to the running team.
+_Avoid_: Domain Agent Team Template, Topic Agent Team Profile, workspace-local team, ad hoc role list
 
 **Agent Team**:
-An umbrella phrase for a multi-agent structure. Use **Agent Team Template** for the reusable blueprint and **Agent Team Instance** for the instantiated team. Avoid using **Agent Team** alone in schema names, manifest fields, or GUI labels when template or instance is the intended meaning.
-_Avoid_: Provider-specific specialist group, prompt bundle, full execution graph, role list only, concrete team when template or instance is meant
+An umbrella phrase for a multi-agent structure. Use **Domain Agent Team Template** for the research-field method, **Topic Agent Team Profile** for the user's topic-level specialization, and **Agent Team Instance** for the runtime team. Avoid using **Agent Team** alone in schema names, manifest fields, or GUI labels when template, profile, or instance is the intended meaning.
+_Avoid_: Provider-specific specialist group, prompt bundle, full execution graph, role list only, concrete team when template, profile, or instance is meant
 
 **Agent Role**:
-A named responsibility inside an Agent Team Template or Agent Team Instance, such as operator, scout, coder, experimenter, analyst, writer, or reviewer. An Agent Role describes work ownership, expected inputs and outputs, authority, and handoff obligations; it is not a concrete runtime actor.
+A named responsibility inside a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance, such as operator, scout, coder, experimenter, analyst, writer, or reviewer. An Agent Role describes work ownership, expected inputs and outputs, authority, and handoff obligations; it is not a concrete runtime actor.
 _Avoid_: Persona, participant type, worker label
 
 **Agent Profile**:
 A provider-neutral reusable description of how to construct or configure an Agent Instance. An Agent Profile can reference instructions, skills, model posture, tool access, execution environment, credentials, mailbox defaults, memory defaults, and launch posture without assuming one backend's document model.
-_Avoid_: Agent Definition, provider-specific specialist as the generic term, hardcoded agent config, live agent
+_Avoid_: Topic Agent Team Profile, Agent Definition, provider-specific specialist as the generic term, hardcoded agent config, live agent
 
 **Capability Binding**:
 The connection between an Agent Role or Agent Profile and the capabilities available to it, such as tools, skills, model profiles, data access, credentials, execution adapters, communication channels, or workspace permissions.
@@ -125,19 +131,19 @@ A concrete runtime actor created from an Agent Profile and assigned to an Agent 
 _Avoid_: Agent Role as the runtime actor, worker, provider-specific managed agent as the generic term
 
 **Operator Agent**:
-The project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user, instantiates Agent Team Templates into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions. Human users operate through the Operator Agent: user-origin commands, approvals, Gate decisions, and task-routing changes enter Isomer through the Operator Agent. The Operator Agent can handle a Research Task directly or delegate it to a team Agent Instance.
+The project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user, specializes Domain Agent Team Templates into Topic Agent Team Profiles, launches Topic Agent Team Profiles into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions. Human users operate through the Operator Agent: user-origin commands, approvals, Gate decisions, and task-routing changes enter Isomer through the Operator Agent. The Operator Agent can handle a Research Task directly or delegate it to a team Agent Instance.
 _Avoid_: Controller as a separate entity outside Agent Role and Agent Instance, backend-specific operator implementation
 
 **Coordination Policy**:
-The rules that govern how Agent Instances collaborate inside an Agent Team Instance. A Coordination Policy can define operator behavior, peer communication, handoff routing, review loops, conflict handling, retry behavior, escalation, fallback behavior, and Gates.
+The rules that govern how Agent Instances collaborate inside a Topic Agent Team Profile or Agent Team Instance. A Coordination Policy can define operator behavior, peer communication, handoff routing, review loops, conflict handling, retry behavior, escalation, fallback behavior, and Gates.
 _Avoid_: Orchestration code, implicit team convention, backend-specific routing rules
 
 **Execution Adapter**:
-A backend-specific bridge that maps Isomer's generic Agent Team Template, Agent Team Instance, Agent Profile, Agent Instance, Capability Binding, Run, Agent Workspace, and Artifact concepts onto a concrete execution engine. Execution Adapters must not change Isomer's core domain language.
+A backend-specific bridge that maps Isomer's generic Domain Agent Team Template, Topic Agent Team Profile, Agent Team Instance, Agent Profile, Agent Instance, Capability Binding, Run, Agent Workspace, and Artifact concepts onto a concrete execution engine. Execution Adapters must not change Isomer's core domain language.
 _Avoid_: Research Engine Adapter, backend as the core engine, native-agent layer as the Isomer model, provider lock-in
 
 **Workflow Stage**:
-A named step in an Agent Team Template or Agent Team Instance workflow. A Workflow Stage has an owning Agent Role, expected inputs and outputs, handoff behavior, and optional Gate policy.
+A named step in a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance workflow. A Workflow Stage has an owning Agent Role, expected inputs and outputs, handoff behavior, and optional Gate policy.
 _Avoid_: Pipeline step, quest stage, task only
 
 **Task Handler**:
@@ -298,7 +304,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 ### Team and Agent Execution
 
-- Use `agent_team_template`, `agent_team_instance`, `operator_agent`, `agent_role`, `agent_profile`, `agent_instance`, `capability_binding`, `coordination_policy`, `execution_adapter`, and `workflow_stage` for team and execution concepts.
+- Use `domain_agent_team_template`, `topic_agent_team_profile`, `agent_team_instance`, `operator_agent`, `agent_role`, `agent_profile`, `agent_instance`, `capability_binding`, `coordination_policy`, `execution_adapter`, and `workflow_stage` for team and execution concepts.
 - Use terms such as `operator`, `reviewer`, `writer`, `coder`, `experimenter`, or `scout` as Agent Role kinds. Model `operator_agent` as an Agent Role and Agent Instance identity, not as a separate entity table outside the generic agent model.
 
 ### Agent Workspace and Collaboration
@@ -361,16 +367,18 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - An **Agent Workspace** belongs to one **Agent Instance** within a team execution context.
 - An **Agent Workspace** contains one **Agent Runtime** and zero or more **Agent Artifacts**.
 - **Agent Runtime** is subordinate to **Workspace Runtime**.
-- An **Agent Team Template** contains default **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, and template parameters.
-- An **Agent Team Instance** is instantiated from one **Agent Team Template** by the **Operator Agent**.
-- An **Agent Team Instance** contains resolved **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, and project-specific parameters.
+- A **Domain Agent Team Template** contains default **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Binding** slots, and template parameters for one research field or method family.
+- A **Topic Agent Team Profile** specializes one **Domain Agent Team Template** for a user's research topic.
+- A **Topic Agent Team Profile** contains topic-adapted **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, constraints, and expected **Artifacts**, but it is not running.
+- An **Agent Team Instance** is created from one **Topic Agent Team Profile** by the **Operator Agent** or **Execution Adapter**.
+- An **Agent Team Instance** contains runtime **Agent Instances**, launch refs, **Agent Workspaces**, Run participation, and resolved execution state.
 - All non-operator task **Agent Instances** belong to an **Agent Team Instance**.
 - An **Isomer Workspace** may reference one selected **Agent Team Instance** when its **Research Task** is delegated to a team.
-- Reusable **Agent Team Templates** and **Agent Team Instances** live outside the Isomer Workspace.
+- Reusable **Domain Agent Team Templates**, editable **Topic Agent Team Profiles**, and **Agent Team Instance** refs live outside the Isomer Workspace.
 - An **Agent Profile** describes how an **Execution Adapter** can construct or configure an **Agent Instance**.
 - An **Agent Instance** is assigned to one **Agent Role** for a Run or team execution context.
 - An **Agent Role** may be served by different **Agent Instances** across retries, Runs, or adapter implementations.
-- The **Operator Agent** is the main user interaction point, task controller, team-instantiation actor, and final fallback handler.
+- The **Operator Agent** is the main user interaction point, task controller, team-specialization actor, team-launch actor, and final fallback handler.
 - Human users operate through the **Operator Agent** for commands, approvals, Gate decisions, and task-routing changes.
 - A **Coordination Policy** defines how Agent Instances communicate, hand off work, review outputs, escalate decisions, and use Gates.
 - An **Execution Adapter** may map Isomer **Agent Profiles** to backend-specific launch material, but those backend concepts are adapter details.
@@ -379,7 +387,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - **Peer Read Access** allows inspection of declared readable files, but it does not grant write ownership or filesystem-grade protection.
 - **Agent Artifacts** can be promoted or referenced as workspace-level **Artifacts**, **Evidence Items**, or handoff inputs.
 - A **Workspace Runtime** records **Runs**, **Artifacts**, **Provenance Records**, **Gates**, **View Manifests**, and workspace-scoped **AG-UI Event Envelopes**.
-- The **Operator Agent**, when delegating work, coordinates other **Agent Instances** according to the selected Agent Team Instance's **Coordination Policy**.
+- The **Operator Agent**, when delegating work, coordinates other **Agent Instances** according to the selected **Topic Agent Team Profile** and runtime **Agent Team Instance** **Coordination Policy**.
 
 ### Artifacts, Evidence, and Decisions
 
@@ -430,10 +438,10 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 ### Team and Agent Execution
 
 - Use **Agent Workspace** for per-agent work areas inside an Isomer Workspace. Do not call it a secure sandbox.
-- Do not put `teams/` under an **Isomer Workspace**. Agent Team Templates and Agent Team Instances are project-level or built-in references; the workspace records Agent Team Instance identity and task-handler identity through manifest refs, Workspace Runtime, or provenance Artifacts.
-- Use **Agent Team Template**, **Agent Team Instance**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Coordination Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
+- Do not put `teams/` under an **Isomer Workspace**. **Domain Agent Team Templates**, **Topic Agent Team Profiles**, and **Agent Team Instance** refs are project-level or built-in references; the workspace records Topic Agent Team Profile identity, Agent Team Instance identity, and task-handler identity through manifest refs, Workspace Runtime, or provenance Artifacts.
+- Use **Domain Agent Team Template**, **Topic Agent Team Profile**, **Agent Team Instance**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Coordination Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
 - Use **Agent Instance** for the concrete runtime actor that owns an Agent Workspace. Do not use **Agent Role** as the workspace owner except when discussing responsibility or workflow ownership.
-- Use **Operator Agent** for the user-facing controller, project-scope team instantiator, task router, and fallback handler. Do not model direct human operation of team Agent Instances or runtime state. Use **Coordination Policy** for the rules that govern collaboration among delegated team agents.
+- Use **Operator Agent** for the user-facing controller, topic-profile author, team launcher, task router, and fallback handler. Do not model direct human operation of team Agent Instances or runtime state. Use **Coordination Policy** for the rules that govern collaboration among delegated team agents.
 - Treat the **Operator Agent** as outside Agent Team Instance membership. Every other task Agent Instance should be a member of an Agent Team Instance.
 - Operator, reviewer, writer, coder, experimenter, and scout should be Agent Role kinds, not separate entity types.
 - Treat Houmao's specialist, project profile, native role, recipe, launch dossier, and managed-agent concepts as possible mappings inside a Houmao **Execution Adapter**. Do not use them as Isomer core terms.

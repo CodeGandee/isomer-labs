@@ -6,7 +6,7 @@ As a researcher reviewing experiment artifacts, I want to describe a task-specif
 
 ## Scenario
 
-The user is analyzing experiment Artifacts from many Runs: nested metrics, failure tags, example-level outputs, logs, and notes. After looking at the available Artifacts, the user forms a visualization idea: an error-cluster explorer that links metrics, examples, notes, and candidate fixes. The user directs the Operator Agent to generate a task-specific GUI component for that view. Isomer Labs uses the Operator Agent and an Agent Team Instance to create a Project GUI Component, register it, arrange it with a GUI Layout Spec, and feed it experiment data through AG-UI Render Payloads.
+The user is analyzing experiment Artifacts from many Runs: nested metrics, failure tags, example-level outputs, logs, and notes. After looking at the available Artifacts, the user forms a visualization idea: an error-cluster explorer that links metrics, examples, notes, and candidate fixes. The user directs the Operator Agent to generate a task-specific GUI component for that view. Isomer Labs uses the Operator Agent and an Agent Team Instance created from a Topic Agent Team Profile to create a Project GUI Component, register it, arrange it with a GUI Layout Spec, and feed it experiment data through AG-UI Render Payloads.
 
 The component instance lifecycle has two supported paths. In create-on-message mode, an AG-UI Render Payload arrives without a target GUI Component Instance id; the GUI Backend selects the registered component, creates a new GUI Component Instance, and shows the payload data. In targeted-update mode, the GUI Component Instance is created beforehand with an instance id, and later publishers send AG-UI Render Payloads that target that id. Not every GUI Component Instance is updatable. The creation request must declare whether the instance accepts updates, and the GUI Backend must reject targeted updates for instances that were created as non-updatable.
 
@@ -17,7 +17,7 @@ The component instance lifecycle has two supported paths. In create-on-message m
 3. The Operator Agent uses `isomer-cli` to start the built-in GUI Backend, which reports a browser URL for the predefined GUI Renderer.
 4. The user opens the GUI Backend URL in a browser.
 5. The Operator Agent inspects the target Artifacts, data schemas, and existing Built-in GUI Components to decide whether a task-specific component is needed.
-6. The Operator Agent creates a bounded Research Task named `build-error-cluster-view` and delegates it to a GUI-capable Agent Instance from the selected Agent Team Instance.
+6. The Operator Agent creates a bounded Research Task named `build-error-cluster-view` and delegates it to a GUI-capable Agent Instance from the selected Agent Team Instance created from the selected Topic Agent Team Profile.
 7. The Agent Instance proposes a Declarative GUI Component Spec for the error-cluster explorer, including expected input schema, component id, display behavior, and required Artifact refs.
 8. The GUI Backend validates and registers the task-specific Project GUI Component in the GUI Component Registry.
 9. If the component requires executable UI code, the Operator Agent presents a Gate for per-component approval or project-scoped approve-all before the GUI Backend loads it.
@@ -115,6 +115,7 @@ sequenceDiagram
   participant Operator as Operator<br/>Agent Instance
   participant PM as Project<br/>Manifest
   participant Runtime as Workspace<br/>Runtime
+  participant Profile as Topic Agent Team<br/>Profile
   participant Team as Agent Team<br/>Instance
   participant GUIAgent as GUI Builder<br/>Agent Instance
   participant Registry as GUI Component<br/>Registry
@@ -127,7 +128,7 @@ sequenceDiagram
   CLI-->>Operator: Return browser URL<br/>and backend status
   User->>Browser: Open GUI Backend<br/>URL
   Browser->>GUI: Connect to predefined<br/>GUI Renderer
-  Operator->>PM: Resolve active Workspace,<br/>Task, Team Instance
+  Operator->>PM: Resolve active Workspace,<br/>Task, Topic Agent Team<br/>Profile, Agent Team Instance
   Operator->>Runtime: Inspect experiment Artifacts,<br/>metrics, schemas, View Manifests
   Operator->>Team: Delegate task-specific<br/>GUI component task
   Team->>GUIAgent: Build component proposal<br/>from user visualization idea

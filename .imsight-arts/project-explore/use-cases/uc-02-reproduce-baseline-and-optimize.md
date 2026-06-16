@@ -12,11 +12,11 @@ The user has a Measurable Objective: improve inference latency as much as possib
 
 1. The user asks the Operator Agent to record the Measurable Objective, metric, tolerance, available hardware, and runtime constraints.
 2. The Operator Agent uses `isomer-cli` to validate the Project Manifest and reject undeclared workspace paths.
-3. The Operator Agent instantiates or reuses an Agent Team Instance with implementation, experimenter, analyst, and reviewer roles.
-4. The Operator Agent asks the user to approve the Agent Team Instance, task handler, and a Gate requiring human approval before accepting or waiving the baseline.
+3. The Operator Agent specializes or reuses a Topic Agent Team Profile with implementation, experimenter, analyst, and reviewer roles.
+4. The Operator Agent asks the user to approve the Topic Agent Team Profile, task handler, and a Gate requiring human approval before accepting or waiving the baseline.
 5. The Operator Agent creates the Research Task `reproduce-baseline`.
-6. The Project Manifest declares an Isomer Workspace for `reproduce-baseline`, its task handler, and the selected Agent Team Instance.
-7. A Run starts; the Agent Team Instance's implementation, experimenter, analyst, and reviewer Agent Instances receive separate Agent Workspaces.
+6. The Project Manifest declares an Isomer Workspace for `reproduce-baseline`, its task handler, and the selected Topic Agent Team Profile.
+7. A Run starts; the Execution Adapter launches an Agent Team Instance from the Topic Agent Team Profile, and its implementation, experimenter, analyst, and reviewer Agent Instances receive separate Agent Workspaces.
 8. The implementation Agent Instance prepares the environment and records setup commands.
 9. The experimenter Agent Instance runs the baseline and writes metrics, logs, and result tables as Artifacts.
 10. The analyst compares observed metrics with expected metrics and creates Evidence Items.
@@ -24,7 +24,7 @@ The user has a Measurable Objective: improve inference latency as much as possib
 12. The Operator Agent presents a Gate asking the user to accept the reproduced baseline, request repair, or record a waiver.
 13. After acceptance, the Operator Agent creates a second Research Task named `first-optimization-pass`.
 14. A new Isomer Workspace is declared for the optimization Research Task.
-15. The Agent Team Instance runs candidate optimizations, records tool calls and outputs, and updates Research Claims.
+15. The Agent Team Instance created from the Topic Agent Team Profile runs candidate optimizations, records tool calls and outputs, and updates Research Claims.
 16. The GUI Backend and Renderer show a Run timeline, result table, and Gate for continue, branch, or stop using Built-in GUI Components.
 17. The user selects the next action through the Operator Agent; Isomer records the choice as a Decision Record.
 
@@ -47,7 +47,7 @@ flowchart LR
   subgraph Isomer["Isomer Labs"]
     UC1([Record Measurable<br/>Objective])
     UC2([Validate Project<br/>Manifest])
-    UC3([Instantiate Experiment<br/>Team Instance])
+    UC3([Specialize Experiment<br/>Topic Agent Team Profile])
     UC4([Create Baseline<br/>Research Task])
     UC5([Prepare<br/>Environment])
     UC6([Run Baseline<br/>Measurements])
@@ -96,6 +96,7 @@ sequenceDiagram
   participant CLI as isomer-cli
   participant PM as Project<br/>Manifest
   participant Operator as Operator<br/>Agent Instance
+  participant Profile as Topic Agent Team<br/>Profile
   participant Team as Agent Team<br/>Instance
   participant Runtime as Workspace<br/>Runtime
   participant Adapter as Execution<br/>Adapter
@@ -108,10 +109,11 @@ sequenceDiagram
   Operator->>CLI: Validate Project before<br/>baseline work
   CLI->>PM: Check workspace declarations<br/>and schema versions
   CLI-->>Operator: Return validation<br/>result
-  Operator->>Team: Instantiate or reuse<br/>Team Instance
+  Operator->>Profile: Specialize or reuse<br/>Topic Agent Team Profile
   Operator->>PM: Declare baseline Task,<br/>handler, Workspace
   Operator->>Runtime: Initialize baseline<br/>Workspace Runtime
-  Operator->>Adapter: Construct Team Agent<br/>Instances
+  Operator->>Adapter: Launch Agent Team Instance<br/>from Topic Agent Team Profile
+  Adapter->>Team: Create Agent Team<br/>Instance
   Adapter->>Agents: Start baseline Run<br/>in Agent Workspaces
   Agents->>Provenance: Store setup logs,<br/>metrics, Evidence Items
   Provenance->>Runtime: Update Run status<br/>and Research Claims
@@ -124,7 +126,7 @@ sequenceDiagram
   Runtime->>Provenance: Store baseline<br/>Decision Record
   Operator->>PM: Declare optimization Task,<br/>handler, Workspace
   Operator->>Runtime: Initialize optimization<br/>Workspace Runtime
-  Operator->>Adapter: Construct or reuse<br/>Team Agent Instances
+  Operator->>Adapter: Launch or reuse runtime<br/>Team Agent Instances
   Adapter->>Agents: Start optimization<br/>Run
   Agents->>Provenance: Store candidate changes,<br/>metrics, result Artifacts
   Provenance->>Runtime: Update Evidence Items<br/>and improvement claims
@@ -140,8 +142,9 @@ sequenceDiagram
 
 - Research Thread with a Measurable Objective
 - Research Tasks for baseline reproduction and optimization
-- Agent Team Instance instantiated from an Agent Team Template, with implementation, experimenter, analyst, and reviewer members
-- Two Isomer Workspaces, each scoped to one Research Task, one task handler, and the selected Agent Team Instance
+- Topic Agent Team Profile specialized from a Domain Agent Team Template, with implementation, experimenter, analyst, and reviewer roles
+- Agent Team Instance launched from the Topic Agent Team Profile
+- Two Isomer Workspaces, each scoped to one Research Task, one task handler, and the selected Topic Agent Team Profile and Agent Team Instance
 - Environment setup logs, baseline metrics, optimization metrics, result tables, and reviewer notes as Artifacts
 - Evidence Items supporting or contradicting improvement claims
 - Research Claims about baseline reproduction and optimization gains

@@ -2,7 +2,7 @@
 
 ## Part 1: Isomer-Managed Project Directory Layout
 
-This section defines the directory layout for a user-owned Project that Isomer Labs manages. The Project remains the user's repository, checkout, or directory tree. Isomer adds one project-level Project Config Directory, `.isomer-labs/`, and discovers all Isomer Workspaces through `.isomer-labs/manifest.toml`. A Research Thread is the user-facing line of inquiry, and an Isomer Workspace is the project-local storage/runtime for one Research Task handled by the Operator Agent or a delegated Agent Instance from an Agent Team Instance.
+This section defines the directory layout for a user-owned Project that Isomer Labs manages. The Project remains the user's repository, checkout, or directory tree. Isomer adds one project-level Project Config Directory, `.isomer-labs/`, and discovers all Isomer Workspaces through `.isomer-labs/manifest.toml`. A Research Thread is the user-facing line of inquiry, and an Isomer Workspace is the project-local storage/runtime for one Research Task handled by the Operator Agent or a delegated Agent Instance from an Agent Team Instance created from a Topic Agent Team Profile.
 
 The key rule is that `.isomer-labs/` is the config and discovery root, not the required storage root for all research work. Workspaces may live in arbitrary directories inside the project as long as the manifest references them.
 
@@ -12,9 +12,9 @@ The key rule is that `.isomer-labs/` is the config and discovery root, not the r
 <project-root>/
   .isomer-labs/
     manifest.toml
-    team-templates/
-    teams/
-    profiles/
+    domain-team-templates/
+    topic-team-profiles/
+    agent-profiles/
     gui-components/
 
   <workspace-dir-a>/
@@ -47,29 +47,31 @@ Recommended contents:
 ```text
 .isomer-labs/
   manifest.toml          # required project discovery manifest
-  team-templates/        # optional imported or referenced Agent Team Templates
-  teams/                 # Agent Team Instances instantiated from templates
-  profiles/              # reusable Agent Profiles and capability references
+  domain-team-templates/ # optional imported or referenced Domain Agent Team Templates
+  topic-team-profiles/   # Topic Agent Team Profiles specialized for research topics
+  agent-profiles/        # reusable Agent Profiles and capability references
   gui-components/        # optional project-scope agent-generated component manifests and sources
 ```
 
 `manifest.toml` is the Project Manifest and the authority for Isomer Workspace discovery. The engine must not infer managed Isomer Workspaces by scanning arbitrary directories. A directory becomes an Isomer Workspace only when the Project Manifest declares it.
 
-`team-templates/` stores optional imported or referenced Agent Team Templates. A template is a reusable blueprint, such as an adapter-imported Houmao team definition like `teams/lfeng-team`; it is not the project-specific team used directly by a Research Task.
+`domain-team-templates/` stores optional imported or referenced Domain Agent Team Templates. A Domain Agent Team Template is a reusable method template for a research field; it is not specialized to the user's concrete research topic and is not used directly as a running team.
 
-Project-level `teams/` stores Agent Team Instances that the Operator Agent instantiated from templates with project-specific parameters such as role counts, model posture, credentials, project paths, domain instructions, and Gate policy. An Isomer Workspace should not contain a workspace-local `teams/` directory. The resolved Agent Team Instance identity and task handler should be recorded through manifest refs, Workspace Runtime state, or provenance Artifacts.
+`topic-team-profiles/` stores Topic Agent Team Profiles that the Operator Agent specializes from Domain Agent Team Templates. A Topic Agent Team Profile records the user's research topic, topic-specific role and stage choices, constraints, expected Artifacts, Gate policy, and capability bindings. It is reviewable and editable before launch; it is not an Agent Team Instance.
 
-`profiles/` stores reusable Agent Profiles and capability references for models, tools, skills, execution environments, communication channels, or credentials. It should store references and non-secret configuration. Secrets should live in the user's credential store or another configured secret backend, not in committed TOML files.
+Agent Team Instances are runtime teams created from Topic Agent Team Profiles. An Isomer Workspace should not contain a workspace-local `teams/` directory. The selected Topic Agent Team Profile, resolved Agent Team Instance identity, and task handler should be recorded through manifest refs, Workspace Runtime state, or provenance Artifacts.
+
+`agent-profiles/` stores reusable Agent Profiles and capability references for models, tools, skills, execution environments, communication channels, or credentials. It should store references and non-secret configuration. Secrets should live in the user's credential store or another configured secret backend, not in committed TOML files.
 
 `gui-components/` stores project-scope agent-generated GUI Component Registry entries, component manifests, and optionally source for agent-generated GUI Components. It is not the whole registry: Built-in GUI Components are system-owned and registered by the GUI Backend at startup. Declarative GUI Component Specs are preferred. Executable GUI Components must be registered, validated, sandboxed or isolated according to policy, and approved before the GUI Backend loads them. Direct AG-UI Event Batches may reference only registered component ids when they target Executable GUI Components.
 
-System-owned schemas are Isomer built-in artifacts, not project-local config files. `isomer-cli` should expose commands to query built-in artifact versions, inspect schema documentation, and validate Project Manifests, Agent Team Templates, Agent Team Instances, Workspace Runtime state, and View Manifests against the built-in schemas.
+System-owned schemas are Isomer built-in artifacts, not project-local config files. `isomer-cli` should expose commands to query built-in artifact versions, inspect schema documentation, and validate Project Manifests, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Workspace Runtime state, and View Manifests against the built-in schemas.
 
 `.isomer-labs/` should not include default cache or temporary directories. Runtime scratch, render cache, executable component build output, and disposable discovery output should live under an Isomer Workspace, an explicit tool cache, or the operating system's temporary directory.
 
 ## Workspace Directories
 
-An Isomer Workspace is a durable research execution area referenced by `.isomer-labs/manifest.toml`. It is scoped to one Research Task and records a task handler: the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance. It may live anywhere under the Project root, for example:
+An Isomer Workspace is a durable research execution area referenced by `.isomer-labs/manifest.toml`. It is scoped to one Research Task and records a task handler: the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance created from a Topic Agent Team Profile. It may live anywhere under the Project root, for example:
 
 ```text
 research/main/
@@ -124,13 +126,13 @@ The owning agent should write inside its own Agent Workspace. Peer agents may re
 
 When one agent's output becomes an input to another agent's durable reasoning, the engine should record the dependency through a handoff, promoted workspace-level Artifact, Evidence Item, or Provenance Record. Casual peer reads are useful for collaboration, but they should not be the only trace for a claim, decision, or result.
 
-## Agent Profiles and Execution Adapters
+## Team Profiles, Agent Profiles, and Execution Adapters
 
-Isomer should define Agent Team Templates, Agent Team Instances, Agent Roles, Agent Profiles, Capability Bindings, Coordination Policies, Agent Instances, the Operator Agent, and Workflow Stages in provider-neutral terms. An Agent Profile describes how to construct or configure a runtime actor. It can name instructions, skills, tool access, model posture, credentials, communication defaults, environment defaults, memory defaults, and launch posture. An Agent Instance is the concrete actor created from that profile and assigned to an Agent Role for a Run or team execution context.
+Isomer should define Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Roles, Agent Profiles, Capability Bindings, Coordination Policies, Agent Instances, the Operator Agent, and Workflow Stages in provider-neutral terms. An Agent Profile describes how to construct or configure a runtime actor. It can name instructions, skills, tool access, model posture, credentials, communication defaults, environment defaults, memory defaults, and launch posture. An Agent Instance is the concrete actor created from that profile and assigned to an Agent Role for a Run or team execution context.
 
-The first team stage is template instantiation. The Operator Agent selects an Agent Team Template, such as an adapter-imported Houmao team definition, and instantiates it into an Agent Team Instance with project-specific parameters. Examples include how many coder roles to materialize, which project paths the team should treat as canonical, which credentials or tools are available, and which Gates require user approval. Research Tasks are then handled either directly by the Operator Agent or by one delegated Agent Instance from the Agent Team Instance.
+The first team stage is topic-profile specialization. The Operator Agent selects a Domain Agent Team Template, asks for or infers the user's research topic, and specializes the template into a Topic Agent Team Profile. Examples include which roles to keep, which project paths the team should treat as canonical, which topic constraints apply, which expected Artifacts matter, which credentials or tools are available, and which Gates require user approval. Research Tasks are then handled either directly by the Operator Agent or by one delegated Agent Instance from the Agent Team Instance created from that Topic Agent Team Profile.
 
-An Execution Adapter maps those neutral concepts onto a backend. Houmao is a useful example implementation: Houmao team definitions can map to Agent Team Templates, and Houmao specialists, project profiles, native roles, recipes, launch dossiers, and managed agents can map to Agent Profiles, Capability Bindings, Coordination Policies, and Agent Instances. Isomer should not require Houmao's document names or command structure in its core schema.
+An Execution Adapter maps those neutral concepts onto a backend. Houmao is a useful example implementation: Houmao team definitions can map to Domain Agent Team Templates; Houmao specialists, project profiles, native roles, recipes, launch dossiers, and managed agents can map to Topic Agent Team Profiles, Agent Profiles, Capability Bindings, Coordination Policies, Agent Team Instances, and Agent Instances. Isomer should not require Houmao's document names or command structure in its core schema.
 
 ## GUI Backend and Component Handling
 
@@ -155,8 +157,8 @@ active_workspace = "main"
 
 [defaults]
 operator_agent = "operator"
-agent_team_template = "lfeng-team"
-agent_team_instance = "research-basic"
+domain_agent_team_template = "ml-systems-research"
+topic_agent_team_profile = "research-basic"
 
 [gui]
 component_registry = ".isomer-labs/gui-components"
@@ -173,7 +175,8 @@ description = "Primary Isomer Workspace."
 thread_id = "main-thread"
 research_task_id = "main-thread/initial-analysis"
 task_handler = "operator"
-agent_team_instance = "research-basic"
+topic_agent_team_profile = "research-basic"
+agent_team_instance = "research-basic/run-001"
 
 [[workspaces]]
 id = "paper-draft"
@@ -185,27 +188,29 @@ description = "Isomer Workspace for the first paper draft Research Thread."
 thread_id = "paper-draft"
 research_task_id = "paper-draft/write-outline"
 task_handler = "research-basic/writer"
-agent_team_instance = "research-basic"
+topic_agent_team_profile = "research-basic"
+agent_team_instance = "research-basic/run-002"
 
-[[agent_team_templates]]
-id = "lfeng-team"
-path = ".isomer-labs/team-templates/lfeng-team.toml"
+[[domain_agent_team_templates]]
+id = "ml-systems-research"
+path = ".isomer-labs/domain-team-templates/ml-systems-research.toml"
 scope = "project"
 
-[[agent_team_instances]]
+[[topic_agent_team_profiles]]
 id = "research-basic"
-path = ".isomer-labs/teams/research-basic.toml"
-template = "lfeng-team"
+path = ".isomer-labs/topic-team-profiles/research-basic.toml"
+template = "ml-systems-research"
+research_topic_ref = "context/research-topic.md"
 scope = "project"
 
 [[agent_profiles]]
 id = "operator"
-path = ".isomer-labs/profiles/operator.toml"
+path = ".isomer-labs/agent-profiles/operator.toml"
 scope = "project"
 
 [[agent_profiles]]
 id = "codex-researcher"
-path = ".isomer-labs/profiles/codex-researcher.toml"
+path = ".isomer-labs/agent-profiles/codex-researcher.toml"
 scope = "project"
 
 [[gui_components]]
@@ -215,7 +220,7 @@ kind = "declarative"
 scope = "project"
 ```
 
-The Agent Team Template file should define the reusable team blueprint. The Agent Team Instance file should record the Operator Agent's instantiated project-specific choices and usually bind Agent Roles to Agent Profiles through Capability Bindings. The Project Manifest should discover project-level entries and select defaults, not encode the full team workflow inline.
+The Domain Agent Team Template file should define the reusable research-field method. The Topic Agent Team Profile file should record the Operator Agent's topic-level specialization and usually bind Agent Roles to Agent Profiles through Capability Bindings. Agent Team Instance records should be created only when the profile is launched. The Project Manifest should discover project-level entries and select defaults, not encode the full team workflow inline.
 
 ## Path Rules
 
@@ -236,7 +241,7 @@ Agent Workspace paths must stay inside their parent Isomer Workspace. Agent Inst
 The default tracking posture should be transparent but conservative:
 
 - Track `.isomer-labs/manifest.toml`.
-- Track project-level Agent Team Instance and Agent Profile files when they contain no secrets.
+- Track project-level Domain Agent Team Template, Topic Agent Team Profile, and Agent Profile files when they contain no secrets.
 - Track project-scope GUI component manifests, Declarative GUI Component Specs, and GUI Layout Specs when they contain no secrets or bulky generated output.
 - Treat Isomer Workspace tracking as a workspace policy, because some Projects should commit research Artifacts and others should keep them local.
 - Never store secrets in tracked Isomer config files.
@@ -251,14 +256,16 @@ An Isomer Workspace should be able to declare whether `state.sqlite`, `artifacts
 - Isomer Workspaces can live in arbitrary project-local directories.
 - An Isomer Workspace is managed only when the Project Manifest references it.
 - Each Isomer Workspace is scoped to one Research Task and records a task handler.
-- A task handler is the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance.
+- A task handler is the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance created from a Topic Agent Team Profile.
 - Each Isomer Workspace owns its control-plane SQLite database and rich file Artifacts.
 - Workspace Runtime is the persistent substrate for state, refs, validation, and per-Run records; a Run is one bounded Research Task execution attempt recorded through that substrate.
-- Isomer Workspaces do not contain `teams/`; selected Agent Team Instance identity and task-handler identity are recorded through manifest refs, Workspace Runtime state, or provenance Artifacts.
+- Isomer Workspaces do not contain `teams/`; selected Topic Agent Team Profile identity, selected Agent Team Instance identity, and task-handler identity are recorded through manifest refs, Workspace Runtime state, or provenance Artifacts.
 - GUI View Manifests live in the Isomer Workspace and are generated from engine state.
 - Each active Agent Instance should have an Agent Workspace for its Agent Runtime and Agent Artifacts.
 - Agent Roles describe responsibilities; Agent Instances own Agent Workspaces.
-- Agent Team Templates are reusable blueprints; Agent Team Instances are instantiated by the Operator Agent with project-specific parameters.
+- Domain Agent Team Templates are reusable research-field method templates.
+- Topic Agent Team Profiles are topic-level specializations of Domain Agent Team Templates, and they are not running teams.
+- Agent Team Instances are runtime teams created from Topic Agent Team Profiles.
 - The Operator Agent is the main interaction point with the user, the controller, and the final fallback handler.
 - Human users operate through the Operator Agent for commands, approvals, Gate decisions, and task-routing changes.
 - The Operator Agent is outside Agent Team Instance membership; all other task Agent Instances belong to an Agent Team Instance.
@@ -285,7 +292,7 @@ An Isomer Workspace should be able to declare whether `state.sqlite`, `artifacts
 - Exact Workspace Runtime schema and migration policy.
 - Exact Agent Workspace boundary declaration format.
 - Exact Agent Profile schema and Execution Adapter interface.
-- Agent Team Template and Agent Team Instance file formats.
+- Domain Agent Team Template, Topic Agent Team Profile, and Agent Team Instance file formats.
 - View Manifest schema and supported view types.
 - GUI Component Registry schema, GUI Runtime State schema, GUI Layout Spec schema, Executable GUI Component sandbox contract, AG-UI Render Payload contract, and AG-UI Event Envelope schema.
 - Workspace tracking policy format.
