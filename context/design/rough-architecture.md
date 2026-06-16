@@ -100,7 +100,7 @@ The recommended minimal Isomer Workspace layout is:
 
 ## Agent Workspace Layout
 
-Each Agent Instance inside an active team should get an Agent Workspace under the Isomer Workspace. The purpose is to keep each agent's local work, runtime state, and intermediate Artifacts from colliding with other agents' work while keeping collaboration inspectable.
+Each Agent Instance inside an active Agent Team Instance should get an Agent Workspace under the Isomer Workspace. The purpose is to keep each agent's local work, runtime state, and intermediate Artifacts from colliding with other agents' work while keeping collaboration inspectable.
 
 Recommended shape:
 
@@ -232,6 +232,8 @@ An Isomer Workspace should be able to declare whether `state.sqlite`, `artifacts
 - Agent Roles describe responsibilities; Agent Instances own Agent Workspaces.
 - Agent Team Templates are reusable blueprints; Agent Team Instances are instantiated by the Operator Agent with project-specific parameters.
 - The Operator Agent is the main interaction point with the user, the controller, and the final fallback handler.
+- Human users operate through the Operator Agent for commands, approvals, Gate decisions, and task-routing changes.
+- The Operator Agent is outside Agent Team Instance membership; all other task Agent Instances belong to an Agent Team Instance.
 - Coordination Policy defines how Agent Instances communicate, hand off work, review outputs, escalate decisions, and use Gates.
 - Houmao can be an Execution Adapter, but Isomer core docs and schemas should use provider-neutral multi-agent terms.
 - Agent Workspace boundaries are advisory ownership and peer-read contracts, not filesystem-grade access control.

@@ -10,10 +10,10 @@ The user has an Exploratory Goal: understand why a model family fails on a targe
 
 ## Step-by-Step Description
 
-1. The user opens a Project and records an Exploratory Goal in a new Research Thread.
-2. `isomer-cli` validates the Project Manifest and available Isomer built-in artifacts.
+1. The user asks the Operator Agent to open a Project and record an Exploratory Goal in a new Research Thread.
+2. The Operator Agent uses `isomer-cli` to validate the Project Manifest and available Isomer built-in artifacts.
 3. The Operator Agent selects an Agent Team Template and instantiates an Agent Team Instance with scout, literature reviewer, analyst, and reviewer roles.
-4. The user approves or edits the Agent Team Instance, Workflow Stages, task handler, and constraints.
+4. The Operator Agent asks the user to approve or edit the Agent Team Instance, Workflow Stages, task handler, and constraints.
 5. The Operator Agent creates a Research Task named `map-failure-factors-and-directions`.
 6. The Project Manifest declares one Isomer Workspace for that Research Task, the task handler, and the selected Agent Team Instance.
 7. A Run starts; the Execution Adapter constructs the Agent Team Instance's scout, literature reviewer, analyst, and reviewer Agent Instances and their Agent Workspaces.
@@ -22,8 +22,8 @@ The user has an Exploratory Goal: understand why a model family fails on a targe
 10. The analyst clusters Evidence Items into candidate causal factors and Research Branch options.
 11. The reviewer checks whether proposed branches are supported by Evidence Items and flags weak claims.
 12. The engine emits View Manifests for a literature matrix, claim graph, and branch-comparison view.
-13. A Gate asks the user to choose a Research Branch or request more scouting.
-14. The selected branch and rationale are stored as a Decision Record with Evidence Item links.
+13. The Operator Agent presents a Gate asking the user to choose a Research Branch or request more scouting.
+14. The Operator Agent stores the selected branch and rationale as a Decision Record with Evidence Item links.
 
 ## Mermaid Use Case Diagram
 
@@ -54,8 +54,10 @@ flowchart LR
     UC10([Record Decision<br/>Record])
   end
 
-  User --> UC1
+  User --> Operator
   CLI --> UC2
+  Operator --> UC1
+  Operator --> UC2
   Operator --> UC3
   Operator --> UC4
   Scout --> UC5
@@ -63,7 +65,7 @@ flowchart LR
   Analyst --> UC7
   Reviewer --> UC7
   GUI --> UC8
-  User --> UC9
+  Operator --> UC9
   Operator --> UC10
 
   UC1 --> UC3
@@ -93,10 +95,11 @@ sequenceDiagram
   participant Views as View Manifest<br/>Generator
   participant GUI as GUI<br/>Renderer
 
-  User->>CLI: Open Project and submit<br/>Exploratory Goal
+  User->>Operator: Submit Exploratory Goal<br/>and Project context
+  Operator->>CLI: Validate Project<br/>before setup
   CLI->>PM: Validate manifest and<br/>built-in artifact versions
-  CLI-->>User: Report valid<br/>Project configuration
-  User->>Operator: Start Research<br/>Thread setup
+  CLI-->>Operator: Report valid<br/>Project configuration
+  Operator->>User: Confirm Project<br/>and setup intent
   Operator->>PM: Select Team Template<br/>and project params
   Operator->>Team: Instantiate scout,<br/>reviewer, analyst roles
   Operator->>PM: Declare Research Task,<br/>handler, Isomer Workspace
@@ -107,9 +110,10 @@ sequenceDiagram
   Provenance->>Runtime: Record refs, handoffs,<br/>Research Claims, Run status
   Runtime->>Views: Request literature matrix,<br/>claim graph, branch view
   Views->>GUI: Emit View<br/>Manifests
-  GUI->>User: Present branch options<br/>and pending Gate
-  User->>GUI: Select Research<br/>Branch
-  GUI->>Runtime: Submit Gate<br/>decision
+  GUI->>Operator: Surface branch options<br/>and pending Gate
+  Operator->>User: Ask branch selection<br/>or more scouting
+  User->>Operator: Select Research<br/>Branch
+  Operator->>Runtime: Submit Gate<br/>decision
   Runtime->>Provenance: Store Decision Record<br/>with Evidence links
 ```
 

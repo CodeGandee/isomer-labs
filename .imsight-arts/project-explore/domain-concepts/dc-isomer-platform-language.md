@@ -55,7 +55,7 @@ Project
     Operator Agent configuration
   Isomer Workspace(s), declared by the Project Manifest
     one Research Task
-    one task handler: Operator Agent or delegated team Agent Instance
+    one task handler: Operator Agent or delegated Agent Team Instance member
     optional selected Agent Team Instance reference
     Workspace Runtime
     Agent Workspace(s), created for Agent Instances during team execution
@@ -100,7 +100,7 @@ A reusable multi-agent blueprint that can be instantiated into a Project. It nam
 _Avoid_: Agent Team Instance, live team, Run, provider-specific team as the core term
 
 **Agent Team Instance**:
-A concrete multi-agent structure instantiated from an Agent Team Template by the Operator Agent. It resolves project-specific parameters such as role count, model posture, credentials, project paths, domain instructions, and Gate policy. Isomer Workspaces reference Agent Team Instances when a Research Task is delegated to the team.
+A concrete multi-agent structure instantiated from an Agent Team Template by the Operator Agent. It resolves project-specific parameters such as role count, model posture, credentials, project paths, domain instructions, and Gate policy. Isomer Workspaces reference Agent Team Instances when a Research Task is delegated to the team. Every non-operator task Agent Instance belongs to an Agent Team Instance.
 _Avoid_: Agent Team Template, workspace-local team, ad hoc role list
 
 **Agent Team**:
@@ -124,7 +124,7 @@ A concrete runtime actor created from an Agent Profile and assigned to an Agent 
 _Avoid_: Agent Role as the runtime actor, worker, provider-specific managed agent as the generic term
 
 **Operator Agent**:
-The project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user, instantiates Agent Team Templates into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions. The Operator Agent can handle a Research Task directly or delegate it to a team Agent Instance.
+The project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user, instantiates Agent Team Templates into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions. Human users operate through the Operator Agent: user-origin commands, approvals, Gate decisions, and task-routing changes enter Isomer through the Operator Agent. The Operator Agent can handle a Research Task directly or delegate it to a team Agent Instance.
 _Avoid_: Controller as a separate entity outside Agent Role and Agent Instance, backend-specific operator implementation
 
 **Coordination Policy**:
@@ -214,7 +214,7 @@ _Avoid_: Generated GUI, engine UI, fixed dashboard
 - Use `project_manifest` for `.isomer-labs/manifest.toml`.
 - Use `isomer_workspace` for a manifest-declared workspace.
 - Use `research_task` for the bounded work handled in one Isomer Workspace.
-- Use `task_handler` for the Operator Agent or delegated team Agent Instance responsible for a Research Task.
+- Use `task_handler` for the Operator Agent or delegated Agent Team Instance member responsible for a Research Task.
 - Use `workspace_runtime` for the persistent workspace substrate that stores and validates state across many Runs.
 - Use `agent_workspace` only for a per-agent work area inside an Isomer Workspace.
 - Avoid bare `workspace` when the scope could mean Project, Isomer Workspace, or Agent Workspace.
@@ -285,12 +285,14 @@ _Avoid_: Generated GUI, engine UI, fixed dashboard
 - An **Agent Team Template** contains default **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, and template parameters.
 - An **Agent Team Instance** is instantiated from one **Agent Team Template** by the **Operator Agent**.
 - An **Agent Team Instance** contains resolved **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, and project-specific parameters.
+- All non-operator task **Agent Instances** belong to an **Agent Team Instance**.
 - An **Isomer Workspace** may reference one selected **Agent Team Instance** when its **Research Task** is delegated to a team.
 - Reusable **Agent Team Templates** and **Agent Team Instances** live outside the Isomer Workspace.
 - An **Agent Profile** describes how an **Execution Adapter** can construct or configure an **Agent Instance**.
 - An **Agent Instance** is assigned to one **Agent Role** for a Run or team execution context.
 - An **Agent Role** may be served by different **Agent Instances** across retries, Runs, or adapter implementations.
 - The **Operator Agent** is the main user interaction point, task controller, team-instantiation actor, and final fallback handler.
+- Human users operate through the **Operator Agent** for commands, approvals, Gate decisions, and task-routing changes.
 - A **Coordination Policy** defines how Agent Instances communicate, hand off work, review outputs, escalate decisions, and use Gates.
 - An **Execution Adapter** may map Isomer **Agent Profiles** to backend-specific launch material, but those backend concepts are adapter details.
 - A **Workspace Boundary** declares intended write ownership and **Peer Read Access** for an **Agent Workspace**.
@@ -324,7 +326,7 @@ _Avoid_: Generated GUI, engine UI, fixed dashboard
 - Use **Research Goal** as the umbrella term. Use **Measurable Objective** only for the metric-bearing kind of Research Goal.
 - Use **Research Branch** for forked lines of work. Avoid "route" as a first-class noun except when quoting prior docs or describing informal route-selection language.
 - Use **Research Task** for the bounded unit of work handled in one Isomer Workspace.
-- Use **Task Handler** for the **Operator Agent** or delegated team **Agent Instance** that controls the Research Task.
+- Use **Task Handler** for the **Operator Agent** or delegated **Agent Team Instance** member that controls the Research Task.
 - Use **Workspace Runtime** for the persistent state substrate owned by an Isomer Workspace. Use **Run** only for bounded execution attempts for a Research Task.
 
 ### Team and Agent Execution
@@ -333,7 +335,8 @@ _Avoid_: Generated GUI, engine UI, fixed dashboard
 - Do not put `teams/` under an **Isomer Workspace**. Agent Team Templates and Agent Team Instances are project-level or built-in references; the workspace records Agent Team Instance identity and task-handler identity through manifest refs, Workspace Runtime, or provenance Artifacts.
 - Use **Agent Team Template**, **Agent Team Instance**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Coordination Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
 - Use **Agent Instance** for the concrete runtime actor that owns an Agent Workspace. Do not use **Agent Role** as the workspace owner except when discussing responsibility or workflow ownership.
-- Use **Operator Agent** for the user-facing controller, project-scope team instantiator, task router, and fallback handler. Use **Coordination Policy** for the rules that govern collaboration among delegated team agents.
+- Use **Operator Agent** for the user-facing controller, project-scope team instantiator, task router, and fallback handler. Do not model direct human operation of team Agent Instances or runtime state. Use **Coordination Policy** for the rules that govern collaboration among delegated team agents.
+- Treat the **Operator Agent** as outside Agent Team Instance membership. Every other task Agent Instance should be a member of an Agent Team Instance.
 - Operator, reviewer, writer, coder, experimenter, and scout should be Agent Role kinds, not separate entity types.
 - Treat Houmao's specialist, project profile, native role, recipe, launch dossier, and managed-agent concepts as possible mappings inside a Houmao **Execution Adapter**. Do not use them as Isomer core terms.
 
