@@ -96,6 +96,14 @@ _Avoid_: Task Scope, Isomer Workspace, Run, Workflow Stage, general to-do item
 A bounded execution attempt for one Research Task. A Run has its own lifecycle, status, actor participation, prompts, tool calls, handoffs, outputs, and logs; its records are stored through the Workspace Runtime.
 _Avoid_: Research task, research thread, workspace, quest
 
+**Control Mode**:
+A Run-level setting that defines whether the Operator Agent controls the Run automatically or manually. In `automatic` mode, the Operator Agent or scheduler may dispatch according to the approved workflow and Gate policy. In `manual` mode, the Operator Agent drives selected task Agent Instances or Service Agent Instances through direct manual handoffs according to the user's prompt scope.
+_Avoid_: Project mode, Research Thread mode, global manual switch, handoff-only mode
+
+**Manual Mode**:
+A Control Mode for a Run where the Operator Agent sends direct messages to delegated task Agent Instances or Service Agent Instances through durable handoffs, watches configured completion signals, and records completion in Workspace Runtime. Manual Mode does not bypass Gates, and it does not make file creation, channel replies, or direct inspection authoritative without Operator Agent normalization.
+_Avoid_: Direct human operation of Agent Instances, untracked operator chat, bypass mode
+
 ### Team and Agent Execution
 
 **Domain Agent Team Template**:
@@ -114,6 +122,18 @@ _Avoid_: Domain Agent Team Template, Topic Agent Team Profile, workspace-local t
 An umbrella phrase for a multi-agent structure. Use **Domain Agent Team Template** for the research-field method, **Topic Agent Team Profile** for the user's topic-level specialization, and **Agent Team Instance** for the runtime team. Avoid using **Agent Team** alone in schema names, manifest fields, or GUI labels when template, profile, or instance is the intended meaning.
 _Avoid_: Provider-specific specialist group, prompt bundle, full execution graph, role list only, concrete team when template, profile, or instance is meant
 
+**Service Team**:
+A built-in Isomer operational support team that provides common helper work for Projects, Isomer Workspaces, Runs, Agent Workspaces, and Agent Instances. The Service Team can configure development environments for a target Agent Workspace and tech stack, repair dependency, runtime, tool, or system compatibility issues, collect diagnostics, and write support Artifacts. Service Team members act at the command of the Operator Agent through specific Service Requests. The Service Team is not a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance, and it does not own Research Goals, Research Claims, Gates, or research decisions.
+_Avoid_: Research Agent Team, Topic Agent Team Profile, Agent Team Instance, hidden Execution Adapter behavior, untracked sysadmin work
+
+**Service Request**:
+A bounded operational support command from the Operator Agent to the Service Team. A Service Request names the supported Project, Isomer Workspace, Run, Agent Workspace, Agent Instance, or tech-stack scope; specific task; expected support output; authorization scope; Service Dispatch Form; and completion observation rules. A Service Request can support a Research Task or Run, but it is not itself a Research Task or Workflow Stage.
+_Avoid_: Research Task, Workflow Stage, untracked support chat, generic ticket without Isomer provenance
+
+**Service Dispatch Form**:
+The runtime form the Operator Agent uses to route a Service Request to the Service Team. In `tool_native_subagent` form, the Operator Agent uses native multi-agent or subagent tooling available in its own execution surface. In `launched_service_agent` form, the Operator Agent or Execution Adapter launches or resolves Service Agent Instances and dispatches Service Requests to them, similar to launching an agent team. The dispatch form is an implementation choice; it does not change Operator Agent command authority or provenance obligations.
+_Avoid_: Control Mode, Agent Team Instance, Workflow Stage, hidden backend worker
+
 **Agent Role**:
 A named responsibility inside a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance, such as operator, scout, coder, experimenter, analyst, writer, or reviewer. An Agent Role describes work ownership, expected inputs and outputs, authority, and handoff obligations; it is not a concrete runtime actor.
 _Avoid_: Persona, participant type, worker label
@@ -130,6 +150,10 @@ _Avoid_: Binding as an unqualified term, hardcoded runner, tool config, provider
 A concrete runtime actor created from an Agent Profile and assigned to an Agent Role for a Run or team execution context. Agent Instances own Agent Workspaces; Agent Roles describe responsibilities and workflow ownership.
 _Avoid_: Agent Role as the runtime actor, worker, provider-specific managed agent as the generic term
 
+**Service Agent Instance**:
+A runtime service actor from the Service Team that handles Service Requests at the command of the Operator Agent. A Service Agent Instance can be represented by a tool-native subagent invocation or by a launched service agent, depending on the Service Dispatch Form. It may inspect or modify the authorized support surfaces named by a Service Request, such as a target Agent Workspace's environment setup, but it must record support Artifacts and Provenance Records. It is not a task handler for a Research Task and must not make research decisions.
+_Avoid_: Agent Team Instance member, research task Agent Instance, Operator Agent, Execution Adapter internals
+
 **Operator Agent**:
 The project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user, specializes Domain Agent Team Templates into Topic Agent Team Profiles, launches Topic Agent Team Profiles into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions. Human users operate through the Operator Agent: user-origin commands, approvals, Gate decisions, and task-routing changes enter Isomer through the Operator Agent. The Operator Agent can handle a Research Task directly or delegate it to a team Agent Instance.
 _Avoid_: Controller as a separate entity outside Agent Role and Agent Instance, backend-specific operator implementation
@@ -137,6 +161,10 @@ _Avoid_: Controller as a separate entity outside Agent Role and Agent Instance, 
 **Coordination Policy**:
 The rules that govern how Agent Instances collaborate inside a Topic Agent Team Profile or Agent Team Instance. A Coordination Policy can define operator behavior, peer communication, handoff routing, review loops, conflict handling, retry behavior, escalation, fallback behavior, and Gates.
 _Avoid_: Orchestration code, implicit team convention, backend-specific routing rules
+
+**Completion Watcher Contract**:
+A resolved per-handoff declaration of how the Operator Agent will observe candidate completion for a delegated task. It can be derived from Coordination Policy defaults and handoff overrides, and can include Agent Instance inspection, file observation, channel replies, adapter events, validation rules, correlation keys, and staleness rules.
+_Avoid_: Completion source of truth, adapter-only callback, unrecorded watcher convention
 
 **Execution Adapter**:
 A backend-specific bridge that maps Isomer's generic Domain Agent Team Template, Topic Agent Team Profile, Agent Team Instance, Agent Profile, Agent Instance, Capability Binding, Run, Agent Workspace, and Artifact concepts onto a concrete execution engine. Execution Adapters must not change Isomer's core domain language.
@@ -197,6 +225,10 @@ _Avoid_: Gate, approval, log entry
 **Provenance Record**:
 A durable record of how an Artifact, Decision Record, Research Claim, Evidence Item, or state transition was produced. It links actors, prompts, tool calls, inputs, outputs, Evidence Items, timestamps, and state changes.
 _Avoid_: Log line, audit note, metadata only
+
+**Signal Observation**:
+A recorded observation from a Completion Watcher Contract, such as a file appearing, a channel reply arriving, an Agent Instance inspection result, or an adapter event. A Signal Observation can support completion normalization, but it is not authoritative completion until the Operator Agent records the handoff result in Workspace Runtime.
+_Avoid_: Handoff completion, source of truth, raw log as state
 
 **Gate**:
 A recorded decision point that must return to the human user before the governed action proceeds. Gates apply to irreversible or claim-shaping decisions, not every Workflow Stage boundary.
@@ -301,11 +333,16 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use `active_research_branch_id` for the active Research Branch pointer.
 - Use `research_task_id` for the Research Task realized by an Isomer Workspace.
 - Use `run` for one bounded execution episode recorded in Workspace Runtime.
+- Use `control_mode` for the Run-level distinction between `automatic` and `manual`.
+- Use `prompt_scope_kind` for the Manual Mode distinction between `single_stage` and `multi_step`.
 
 ### Team and Agent Execution
 
 - Use `domain_agent_team_template`, `topic_agent_team_profile`, `agent_team_instance`, `operator_agent`, `agent_role`, `agent_profile`, `agent_instance`, `capability_binding`, `coordination_policy`, `execution_adapter`, and `workflow_stage` for team and execution concepts.
+- Use `service_team` for the built-in operational support team, `service_request` for one bounded support assignment, and `service_agent_instance` for the runtime support actor.
+- Use `service_dispatch_form` for the Operator Agent's Service Request routing choice. Use `tool_native_subagent` when the Operator Agent uses native subagent or multi-agent tooling, and `launched_service_agent` when the Operator Agent or Execution Adapter launches or resolves service agents and dispatches requests to them.
 - Use terms such as `operator`, `reviewer`, `writer`, `coder`, `experimenter`, or `scout` as Agent Role kinds. Model `operator_agent` as an Agent Role and Agent Instance identity, not as a separate entity table outside the generic agent model.
+- Use `completion_watcher_contract` or `watcher_contract` for the resolved per-handoff completion observation contract.
 
 ### Agent Workspace and Collaboration
 
@@ -319,6 +356,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 - Use `artifact`, `gate`, and `provenance_record` for durable output, decision-point, and production-history concepts.
 - Use `research_claim`, `evidence_item`, `finding`, and `decision_record` for claim/evidence/decision semantics.
+- Use `signal_observation` for observed completion signals before Operator Agent normalization.
 
 ### GUI and Views
 
@@ -357,6 +395,8 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - An **Isomer Workspace** realizes exactly one **Research Task**.
 - A **Research Task** records one **Task Handler**: the **Operator Agent** or a delegated **Agent Instance** from a selected **Agent Team Instance**.
 - A **Research Task** can be attempted through one or more **Runs**.
+- A **Run** has one **Control Mode**.
+- **Manual Mode** is a **Control Mode** for a Run, not a Project, Research Thread, or Research Task mode.
 - An **Isomer Workspace** owns one **Workspace Runtime**.
 - A **Workspace Runtime** stores, indexes, validates, and recovers **Run** records, but it is not itself a Run.
 
@@ -375,18 +415,33 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - All non-operator task **Agent Instances** belong to an **Agent Team Instance**.
 - An **Isomer Workspace** may reference one selected **Agent Team Instance** when its **Research Task** is delegated to a team.
 - Reusable **Domain Agent Team Templates**, editable **Topic Agent Team Profiles**, and **Agent Team Instance** refs live outside the Isomer Workspace.
+- The built-in **Service Team** is Isomer infrastructure, not a **Domain Agent Team Template**, **Topic Agent Team Profile**, or **Agent Team Instance**.
+- A **Project** can use the built-in **Service Team** without declaring it as a project research team.
+- The **Operator Agent** may open a **Service Request** for a **Project**, **Isomer Workspace**, **Run**, **Agent Workspace**, **Agent Instance**, or tech-stack support scope.
+- Service Team members act only through specific **Service Requests** from the **Operator Agent**.
+- A **Service Request** can support a **Research Task** or **Run**, but it is not a **Research Task** or **Workflow Stage**.
+- The **Operator Agent** chooses a **Service Dispatch Form** for each **Service Request**.
+- In `tool_native_subagent` form, the **Operator Agent** may use its native multi-agent or subagent tool surface to assign the support task.
+- In `launched_service_agent` form, the **Operator Agent** or **Execution Adapter** may launch or resolve **Service Agent Instances** and dispatch **Service Requests** to them.
+- The **Service Team** handles **Service Requests** through **Service Agent Instances** regardless of dispatch form.
+- **Service Agent Instances** are outside **Agent Team Instance** membership and cannot be selected as **Task Handlers** for **Research Tasks**.
+- When a **Service Agent Instance** changes project, workspace, runtime, dependency, or environment state, the **Operator Agent** records the **Service Request**, support **Artifacts**, and **Provenance Records**.
+- Workspace-scoped **Service Requests** use **Workspace Runtime** for handoff and completion records.
 - An **Agent Profile** describes how an **Execution Adapter** can construct or configure an **Agent Instance**.
 - An **Agent Instance** is assigned to one **Agent Role** for a Run or team execution context.
 - An **Agent Role** may be served by different **Agent Instances** across retries, Runs, or adapter implementations.
 - The **Operator Agent** is the main user interaction point, task controller, team-specialization actor, team-launch actor, and final fallback handler.
 - Human users operate through the **Operator Agent** for commands, approvals, Gate decisions, and task-routing changes.
 - A **Coordination Policy** defines how Agent Instances communicate, hand off work, review outputs, escalate decisions, and use Gates.
+- A **Coordination Policy** can define default **Completion Watcher Contracts** for manual handoffs.
+- A manual handoff stores its resolved **Completion Watcher Contract** before the Operator Agent sends the direct message.
 - An **Execution Adapter** may map Isomer **Agent Profiles** to backend-specific launch material, but those backend concepts are adapter details.
 - A **Workspace Boundary** declares intended write ownership and **Peer Read Access** for an **Agent Workspace**.
 - A **Workspace Boundary** belongs to an **Agent Workspace**, but it is not itself a workspace.
 - **Peer Read Access** allows inspection of declared readable files, but it does not grant write ownership or filesystem-grade protection.
 - **Agent Artifacts** can be promoted or referenced as workspace-level **Artifacts**, **Evidence Items**, or handoff inputs.
 - A **Workspace Runtime** records **Runs**, **Artifacts**, **Provenance Records**, **Gates**, **View Manifests**, and workspace-scoped **AG-UI Event Envelopes**.
+- In Manual Mode, **Workspace Runtime** is authoritative for handoff completion. **Signal Observations** from files, channels, inspection, or adapter events are inputs to Operator Agent normalization.
 - The **Operator Agent**, when delegating work, coordinates other **Agent Instances** according to the selected **Topic Agent Team Profile** and runtime **Agent Team Instance** **Coordination Policy**.
 
 ### Artifacts, Evidence, and Decisions
@@ -434,6 +489,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use **Research Task** for the bounded unit of work handled in one Isomer Workspace.
 - Use **Task Handler** for the **Operator Agent** or delegated **Agent Team Instance** member that controls the Research Task.
 - Use **Workspace Runtime** for the persistent state substrate owned by an Isomer Workspace. Use **Run** only for bounded execution attempts for a Research Task.
+- Use **Control Mode** for Run-level manual versus automatic control. Do not describe Manual Mode as a Project-wide or Research Thread-wide switch.
 
 ### Team and Agent Execution
 
@@ -442,7 +498,14 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use **Domain Agent Team Template**, **Topic Agent Team Profile**, **Agent Team Instance**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Coordination Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
 - Use **Agent Instance** for the concrete runtime actor that owns an Agent Workspace. Do not use **Agent Role** as the workspace owner except when discussing responsibility or workflow ownership.
 - Use **Operator Agent** for the user-facing controller, topic-profile author, team launcher, task router, and fallback handler. Do not model direct human operation of team Agent Instances or runtime state. Use **Coordination Policy** for the rules that govern collaboration among delegated team agents.
+- Manual Mode still routes user intent through the **Operator Agent**. Do not describe manual direct messages as untracked human-to-agent chat.
+- Use **Completion Watcher Contract** for the resolved per-handoff watcher rules. Do not treat file creation, channel replies, direct inspection, or adapter events as authoritative completion until the **Operator Agent** records the handoff result in **Workspace Runtime**.
 - Treat the **Operator Agent** as outside Agent Team Instance membership. Every other task Agent Instance should be a member of an Agent Team Instance.
+- Use **Service Team** only for common operational support, such as environment setup, dependency repair, runtime diagnostics, and system compatibility fixes. Do not assign research ownership, Research Claims, or Gate decisions to the Service Team.
+- Treat **Service Team** work as Operator Agent commanded work. Do not describe Service Team members as self-directed agents that interpret user goals or choose research actions.
+- Use **Service Dispatch Form** to describe whether a Service Request used native subagent tooling or launched service agents. Do not model launched Service Agent Instances as a research **Agent Team Instance**.
+- Record user-visible environment repair or setup mutation as a **Service Request** when it creates Artifacts or changes project, workspace, runtime, dependency, or environment state. Do not hide this work only inside **Execution Adapter** internals.
+- A **Service Request** authorization scope documents intended support access. Do not describe it as filesystem-grade isolation or security enforcement.
 - Operator, reviewer, writer, coder, experimenter, and scout should be Agent Role kinds, not separate entity types.
 - Treat Houmao's specialist, project profile, native role, recipe, launch dossier, and managed-agent concepts as possible mappings inside a Houmao **Execution Adapter**. Do not use them as Isomer core terms.
 
@@ -455,6 +518,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 - Use **Research Claim** for statements that need evidence status. Use **Finding** only after evidence has been distilled into a reusable insight.
 - Use **Decision Record** for the durable result of a choice. Use **Gate** for the pending decision point before that choice is resolved.
+- Use **Signal Observation** for raw or normalized completion-signal observations that have not yet become authoritative handoff completion.
 
 ### GUI and Views
 
