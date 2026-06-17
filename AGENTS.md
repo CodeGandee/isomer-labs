@@ -36,6 +36,8 @@ Pull requests should describe the change, explain validation performed, and link
 
 Make scoped edits that preserve the existing Pixi and `src/` layout. Prefer repository commands over ad hoc environment setup, and do not revert unrelated uncommitted changes.
 
+When generating Markdown, do not hard-wrap prose lines; keep each paragraph or list item on one logical line unless Markdown syntax or readability requires a deliberate line break.
+
 <!-- BEGIN agent-style v0.3.5 -->
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 <!-- Adapter: AGENTS.md cross-agent standard -->

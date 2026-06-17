@@ -1,9 +1,6 @@
 # Writing-Facing Slice Fields
 
-Use this reference when an analysis campaign supports a paper-like deliverable
-and each slice must bind to report, paper, review, or rebuttal structures. This
-is the fuller writing-ready form, not the minimum required shape for every
-non-paper or analysis-lite slice.
+Use this reference when an analysis campaign supports a paper-like deliverable and each slice must bind to report, paper, review, or rebuttal structures. This is the fuller writing-ready form, not the minimum required shape for every non-paper or analysis-lite slice.
 
 Provenance: see `provenance.md`.
 
@@ -60,8 +57,6 @@ Why it is weak:
 
 ## Field Mapping Notes
 
-- Use `paper_role`, `paper_placement`, `main_or_appendix`, or `tier` only when
-  the report or paper contract has equivalent fields.
-- If the host uses different field names, keep the semantic information and map
-  the concrete schema through `[[tbd-surface:schema-evidence-item]]`.
+- Use `paper_role`, `paper_placement`, `main_or_appendix`, or `tier` only when the report or paper contract has equivalent fields.
+- If the host uses different field names, keep the semantic information and map the concrete schema through `[[tbd-surface:schema-evidence-item]]`.
 - If the report layout is unsettled, use `[[tbd-surface:path-paper-layout]]`.

@@ -1,33 +1,22 @@
 # Isomer Research Contract
 
-Use this local reference for terminology, evidence boundaries, runtime
-boundaries, and TBD placeholders. This skill must be self-contained, so do not
-load shared files from outside this skill directory.
+Use this local reference for terminology, evidence boundaries, runtime boundaries, and TBD placeholders. This skill must be self-contained, so do not load shared files from outside this skill directory.
 
 ## Truth-Source Order
 
 Prefer durable records over recollection:
 
 1. User instruction and explicit Gate decisions through the Operator Agent.
-2. Decision Records, Artifacts, Evidence Items, Findings, Research Claims, and
-   Provenance Records.
-3. Workspace Runtime state, Run records, handoffs, Signal Observations, and
-   validated View Manifests.
+2. Decision Records, Artifacts, Evidence Items, Findings, Research Claims, and Provenance Records.
+3. Workspace Runtime state, Run records, handoffs, Signal Observations, and validated View Manifests.
 4. Agent Artifacts and Agent Runtime notes that have clear provenance.
 5. Conversation context, only when durable state is absent or being interpreted.
 
 ## Durable Vocabulary
 
-Use Isomer Labs terms: Research Thread, Research Goal, Research Task, Research
-Branch, Run, Isomer Workspace, Workspace Runtime, Agent Workspace, Artifact,
-Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate,
-Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent
-Instance, Agent Team Instance, Coordination Policy, Capability Binding,
-Execution Adapter, Workflow Stage, and Completion Watcher Contract.
+Use Isomer Labs terms: Research Thread, Research Goal, Research Task, Research Branch, Run, Isomer Workspace, Workspace Runtime, Agent Workspace, Artifact, Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Coordination Policy, Capability Binding, Execution Adapter, Workflow Stage, and Completion Watcher Contract.
 
-Do not invent concrete paths, filenames, storage roots, command surfaces,
-provider names, schemas, or generated layouts. Use `[[tbd-surface:<id>]]` when
-a skill outcome must mention an unsettled concrete surface.
+Do not invent concrete paths, filenames, storage roots, command surfaces, provider names, schemas, or generated layouts. Use `[[tbd-surface:<id>]]` when a skill outcome must mention an unsettled concrete surface.
 
 ## Source-Term Mappings
 
@@ -50,10 +39,7 @@ a skill outcome must mention an unsettled concrete surface.
 
 ## Rejected Runtime Concepts
 
-Do not port source runtime scheduling terms as Isomer concepts. The Operator
-Agent is always the human-facing control boundary. Delegated Agent Team
-Instances either advance under approved Coordination Policy or pause for
-Operator Agent instruction.
+Do not port source runtime scheduling terms as Isomer concepts. The Operator Agent is always the human-facing control boundary. Delegated Agent Team Instances either advance under approved Coordination Policy or pause for Operator Agent instruction.
 
 | Source behavior | Isomer skill text should say |
 | --- | --- |
@@ -69,8 +55,7 @@ Operator Agent instruction.
 Every analysis handoff should state:
 
 - Current Research Task or Research Branch scope.
-- Parent object, Research Claim, paper gap, reviewer item, failure mode, or
-  Decision Record being tested.
+- Parent object, Research Claim, paper gap, reviewer item, failure mode, or Decision Record being tested.
 - Inputs and durable sources inspected.
 - Slices launched, deferred, blocked, or superseded.
 - Evidence Items and Research Claims affected.
@@ -81,25 +66,17 @@ Every analysis handoff should state:
 
 ## Evidence Boundaries
 
-Claims must be tied to Evidence Items. Negative, partial, null, failed,
-blocked, infeasible, or contradictory results are evidence and should stay
-visible. Do not turn a plausible route into a supported Research Claim without a
-durable Artifact, measurement, source document, or validation result.
+Claims must be tied to Evidence Items. Negative, partial, null, failed, blocked, infeasible, or contradictory results are evidence and should stay visible. Do not turn a plausible route into a supported Research Claim without a durable Artifact, measurement, source document, or validation result.
 
 ## Runtime Boundary
 
-This skill describes research judgment. It does not define Isomer runtime APIs,
-schedulers, storage layouts, credentials, mailbox routes, gateway routes, or
-concrete agent launch behavior.
+This skill describes research judgment. It does not define Isomer runtime APIs, schedulers, storage layouts, credentials, mailbox routes, gateway routes, or concrete agent launch behavior.
 
-When a source behavior implies execution, literature lookup, storage, state
-mutation, monitoring, or chart generation, describe the intended Isomer record
-or capability and mark the concrete surface as unsettled.
+When a source behavior implies execution, literature lookup, storage, state mutation, monitoring, or chart generation, describe the intended Isomer record or capability and mark the concrete surface as unsettled.
 
 ## TBD Surface Registry
 
-Use placeholders as `[[tbd-surface:<id>]]` in skill outcomes when a concrete
-surface is not settled by an accepted Isomer design.
+Use placeholders as `[[tbd-surface:<id>]]` in skill outcomes when a concrete surface is not settled by an accepted Isomer design.
 
 | ID | Kind | Placeholder | Missing decision |
 | --- | --- | --- | --- |

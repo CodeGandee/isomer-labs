@@ -1,13 +1,10 @@
 # Evidence Flow Examples
 
-Use this reference when the evidence question is clear but the exact Artifact
-sequence is not. These are examples, not the only legal routes.
+Use this reference when the evidence question is clear but the exact Artifact sequence is not. These are examples, not the only legal routes.
 
 Provenance: see `provenance.md`.
 
-Hard rule: once a supplementary slice is launched as analysis campaign work, its
-state must become a durable Artifact, Evidence Item, Finding, Decision Record,
-or Gate update through `[[tbd-surface:api-artifact-record]]`.
+Hard rule: once a supplementary slice is launched as analysis campaign work, its state must become a durable Artifact, Evidence Item, Finding, Decision Record, or Gate update through `[[tbd-surface:api-artifact-record]]`.
 
 ## 1. One Launched Supplementary Slice
 
@@ -15,13 +12,10 @@ Use when one extra experiment is enough but lineage or reviewability matters.
 
 Typical sequence:
 
-1. Resolve parent Artifact, Research Claim, or Run ids through the host Artifact
-   or Provenance Record surface.
+1. Resolve parent Artifact, Research Claim, or Run ids through the host Artifact or Provenance Record surface.
 2. Create or update a durable campaign Artifact with one slice.
-3. Run the slice in the assigned Agent Workspace, Workspace Runtime, or other
-   isolated execution surface.
-4. Record a slice Evidence Item with status, evidence path, claim update,
-   comparability verdict, caveat, and next action.
+3. Run the slice in the assigned Agent Workspace, Workspace Runtime, or other isolated execution surface.
+4. Record a slice Evidence Item with status, evidence path, claim update, comparability verdict, caveat, and next action.
 5. Record the route implication as a Decision Record or next-stage handoff.
 
 Good:
@@ -54,19 +48,15 @@ Bad:
 
 ## 3. Writing-Facing Slice
 
-Use when the slice directly supports a report, paper, review, or rebuttal
-contract.
+Use when the slice directly supports a report, paper, review, or rebuttal contract.
 
 Typical sequence:
 
-1. Recover or inspect the selected outline, evidence ledger, report matrix,
-   section notes, claim ids, table ids, reviewer item, or rebuttal item.
-2. Create or update a campaign Artifact with available writing-facing mapping
-   fields.
+1. Recover or inspect the selected outline, evidence ledger, report matrix, section notes, claim ids, table ids, reviewer item, or rebuttal item.
+2. Create or update a campaign Artifact with available writing-facing mapping fields.
 3. Run the slice.
 4. Record the slice Evidence Item.
-5. Write back to the evidence ledger, section notes, report matrix, reviewer
-   item, or rebuttal package.
+5. Write back to the evidence ledger, section notes, report matrix, reviewer item, or rebuttal package.
 
 Good:
 
@@ -93,13 +83,11 @@ Good:
 
 Bad:
 
-- silently replacing a failed slice with a different slice and only reporting
-  the later success
+- silently replacing a failed slice with a different slice and only reporting the later success
 
 ## 5. Read-Only Bounded Audit
 
-Use when no slice is launched and the answer comes from existing outputs,
-tables, logs, Artifacts, Evidence Items, Findings, or files.
+Use when no slice is launched and the answer comes from existing outputs, tables, logs, Artifacts, Evidence Items, Findings, or files.
 
 Typical sequence:
 
@@ -113,8 +101,6 @@ Good:
 
 Bad:
 
-- skipping durable slice recording for a real launched supplementary run and
-  calling it a read-only audit afterward
+- skipping durable slice recording for a real launched supplementary run and calling it a read-only audit afterward
 
-Use `[[tbd-surface:path-agent-workspace]]` when the assigned execution surface
-layout is unsettled.
+Use `[[tbd-surface:path-agent-workspace]]` when the assigned execution surface layout is unsettled.

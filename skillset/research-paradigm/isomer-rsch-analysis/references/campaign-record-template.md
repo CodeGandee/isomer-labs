@@ -1,13 +1,10 @@
 # Analysis Evidence Record Template
 
-Use this only when a durable campaign record would reduce ambiguity. It is a
-reference template, not a required path or required filename.
+Use this only when a durable campaign record would reduce ambiguity. It is a reference template, not a required path or required filename.
 
 Provenance: see `provenance.md`.
 
-For `analysis-lite`, keep only the objective, first slice, evidence boundary,
-and next route. Expand only when the analysis is multi-slice, writing-facing,
-route-changing, expensive, unstable, or long-running.
+For `analysis-lite`, keep only the objective, first slice, evidence boundary, and next route. Expand only when the analysis is multi-slice, writing-facing, route-changing, expensive, unstable, or long-running.
 
 ## 1. Objective
 
@@ -60,9 +57,7 @@ route-changing, expensive, unstable, or long-running.
 - expected outputs or evidence paths:
 - monitoring plan if long-running:
 
-Use `[[tbd-surface:api-execution-command]]` for unsettled execution command
-surfaces and `[[tbd-surface:path-analysis-output]]` for unsettled output
-layouts.
+Use `[[tbd-surface:api-execution-command]]` for unsettled execution command surfaces and `[[tbd-surface:path-analysis-output]]` for unsettled output layouts.
 
 ## 7. Interpretation Boundary
 
@@ -81,8 +76,7 @@ layouts.
 - reviewer or rebuttal item:
 - write-back target:
 
-Use `[[tbd-surface:path-paper-layout]]` when a concrete report or manuscript
-layout is needed but unsettled.
+Use `[[tbd-surface:path-paper-layout]]` when a concrete report or manuscript layout is needed but unsettled.
 
 ## 9. Current Frontier
 

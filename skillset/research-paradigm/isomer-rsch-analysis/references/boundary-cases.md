@@ -1,7 +1,6 @@
 # Analysis Campaign Boundary Cases
 
-Use this reference when the evidence route is plausible but the success
-boundary, comparability boundary, or stage boundary is still fuzzy.
+Use this reference when the evidence route is plausible but the success boundary, comparability boundary, or stage boundary is still fuzzy.
 
 Provenance: see `provenance.md`.
 
@@ -11,8 +10,7 @@ Do not hide a new main experiment inside analysis when:
 
 - the proposed change defines a new main method
 - the comparison target itself is being replaced
-- the result would become the new primary measured line rather than a follow-up
-  check
+- the result would become the new primary measured line rather than a follow-up check
 
 Route back to experiment or idea instead.
 
@@ -40,8 +38,7 @@ This can be valid when:
 - the rubric or inspection basis is explicit
 - the evidence is used honestly as supporting or boundary evidence
 
-This is not valid when subjective inspection is presented as if it were a
-benchmark metric.
+This is not valid when subjective inspection is presented as if it were a benchmark metric.
 
 ## 4. One Slice Is Enough
 
@@ -62,8 +59,7 @@ Stop widening when:
 - no evidence changed
 - no execution environment changed
 
-At that point, record the blocker, redesign the slice, route through decision,
-or return to experiment.
+At that point, record the blocker, redesign the slice, route through decision, or return to experiment.
 
 ## 6. Writing-Facing but Pre-Outline
 
@@ -72,9 +68,7 @@ This can still be legitimate when:
 - the evidence question determines whether writing is even worth pursuing
 - no paper-ready claim is being finalized yet
 
-This becomes writing-ready only after it is mapped back to outline, evidence
-ledger, report matrix, section, claim, table, reviewer item, or rebuttal
-Artifact.
+This becomes writing-ready only after it is mapped back to outline, evidence ledger, report matrix, section, claim, table, reviewer item, or rebuttal Artifact.
 
 ## 7. Extra Comparator Baseline Inside Analysis
 
