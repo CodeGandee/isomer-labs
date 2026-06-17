@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-decision"
+  short_description: "Record route judgment"
+  default_prompt: "Use $isomer-rsch-decision to make one evidence-backed route judgment and record the next action."

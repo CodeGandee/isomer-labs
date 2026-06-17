@@ -3,38 +3,53 @@ name: isomer-rsch-scout
 description: Frame a research task, narrow unknowns, inspect literature or local evidence, and recommend baseline, idea, or blocker routing.
 ---
 
-Use this skill when the research frame, metric, benchmark neighborhood, or
-baseline direction is not clear enough to choose the next Workflow Stage.
+# Isomer Research Scout
+
+## Overview
+
+Use this skill when the research frame, metric, benchmark neighborhood, or baseline direction is not clear enough to choose the next Workflow Stage.
+
+## Workflow
+
+When this skill is invoked, execute the following steps in order.
+
+1. **Load required context**. Read `references/isomer-research-contract.md` first and read `references/provenance.md` when source provenance or license context matters.
+2. **Select supporting references** from **Reference Routing** when paper triage, literature notes, evaluation contracts, baseline shortlists, or operational guidance matter.
+3. **Confirm entry fit** using **Entry Signals**. If the frame is already stable and the next stage is obvious, route directly to baseline, idea, experiment, decision, or finalize.
+4. **Reconstruct the current frame from durable state**: Research Goal, task, dataset, split, metric, baseline status, blockers, Findings, Artifacts, and Decision Records.
+5. **Identify only unknowns that change the next stage** and classify whether they block baseline work, idea work, both, or only a non-blocking future detail.
+6. **Reuse local evidence before broad search**. Query durable Findings and inspect local Artifacts first, then use literature search capability only for the unresolved benchmark, paper, repo, or evaluation neighborhood.
+7. **Record the evaluation contract, baseline shortlist, and next route** as durable Artifacts or a Decision Record, then stop when baseline, idea, Gate, Decision Record, or blocker is clear.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
+
+## Reference Routing
 
 Read first:
 
-- `../isomer-rsch-shared/SKILL.md`
-- Source analysis: `../../../context/explore/deepscientist-skill-analysis/scout.md`
+- `references/isomer-research-contract.md` for local terminology, truth-source, runtime-boundary, and TBD-surface rules.
+- `references/provenance.md` when source provenance or license context matters.
+
+Read references as needed:
+
+- `references/paper-triage-playbook.md` when building the smallest useful paper, repo, or benchmark neighborhood.
+- `references/literature-scout-template.md` when external search materially changes the frame and must be recorded.
+- `references/evaluation-contract-template.md` when dataset, split, metric, fairness, or useful-improvement thresholds must become durable.
+- `references/baseline-shortlist-template.md` when recommending attach, import, reproduce, or reject routes for comparator candidates.
+- `references/operational-guidance.md` when memory reuse, bounded search, blocked-state handling, or handoff detail matters.
 
 ## Entry Signals
 
-- The research frame, metric, benchmark neighborhood, or baseline direction is
-  too unclear for route selection.
-- Local evidence or literature could change whether the next stage is baseline,
-  idea, Gate, Decision Record, or blocker.
+- The research frame, metric, benchmark neighborhood, or baseline direction is too unclear for route selection.
+- Local evidence or literature could change whether the next stage is baseline, idea, Gate, Decision Record, or blocker.
 - The Operator Agent needs a bounded scout result, not an exhaustive survey.
 
 ## Exit Criteria
 
 - The task frame and evaluation contract are recorded.
-- A comparator shortlist exists, or the handoff justifies why ideation can
-  proceed without more baseline scouting.
+- A comparator shortlist exists, or the handoff justifies why ideation can proceed without more baseline scouting.
 - The next Workflow Stage, Gate, Decision Record, or blocker is explicit.
-
-## Procedure
-
-1. Reconstruct the task frame from durable Artifacts, Research Goal, metric
-   hints, baseline status, and blockers.
-2. List only unknowns that can change the next stage.
-3. Reuse local Artifacts and Findings before external literature lookup.
-4. Search or read papers only in the unresolved benchmark neighborhood.
-5. Build a comparator shortlist or justify why ideation can proceed.
-6. Recommend baseline, idea, Gate, Decision Record, or blocker.
+- If external search changed the route, the retained references and rejected references are recorded.
 
 ## Durable Outputs
 
@@ -42,10 +57,13 @@ Read first:
 - Comparator shortlist or route justification.
 - Literature notes only when they change routing.
 - Next Workflow Stage or blocker.
+- Optional Decision Record when scout resolves a contested route.
 
 ## Guardrails
 
 - Do not turn scouting into an exhaustive survey.
 - Stop searching once the next stage is clear.
 - Do not ask for routine technical clarification before checking local evidence.
-- Use `[[tbd-surface:provider-literature-search]]` for unsettled paper search.
+- Do not write long paper summaries that do not change the next stage.
+- Search for disconfirming evidence, not only supporting evidence.
+- Use `[[tbd-surface:provider-literature-search]]` for unsettled paper search and `[[tbd-surface:api-execution-command]]` for unsettled command or repository inspection surfaces.

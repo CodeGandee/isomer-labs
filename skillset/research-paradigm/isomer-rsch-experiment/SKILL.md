@@ -3,56 +3,80 @@ name: isomer-rsch-experiment
 description: Turn one selected route into one trustworthy measured result and route from the resulting Isomer Labs evidence.
 ---
 
-Use this skill when a selected route or promoted candidate needs a bounded
-implementation pass, main run, metric validation, and durable result.
+# Isomer Research Experiment
+
+## Overview
+
+Use this skill when one selected route or promoted candidate needs a bounded implementation pass, main Run, metric validation, and durable result.
+
+## Workflow
+
+When this skill is invoked, execute the following steps in order.
+
+1. **Load required context**. Read `references/isomer-research-contract.md` first and read `references/provenance.md` when source provenance or license context matters.
+2. **Select supporting references** from **Reference Routing** when planning, checklist control, execution, evidence quality, operational monitoring, or run recording matters.
+3. **Confirm entry fit and recover inputs**. Recover the selected route, accepted comparator or waiver, metric contract, current workspace context, expected outputs, and prior incident patterns.
+4. **Lock the Run contract**. Define the research question, comparator, dataset or split, metric keys, stop rule, abandonment rule, output expectations, comparability boundary, and strongest alternative hypothesis.
+5. **Implement the minimum hypothesis-bound change**. Keep the comparator read-only, avoid unrelated cleanup, preserve theory fidelity, and revise the plan before changing the route.
+6. **Smoke only when it answers execution uncertainty**. Use a bounded smoke or pilot to verify command path, output schema, evaluator wiring, or environment assumptions, then move to the evidence-bearing Run unless blocked.
+7. **Execute, monitor, validate, and record the result**. Preserve commands, configs, logs, outputs, metrics, comparability checks, failure modes, Evidence Items, Research Claim updates, Provenance Records, and the next route Decision Record.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
+
+## Reference Routing
 
 Read first:
 
-- `../isomer-rsch-shared/SKILL.md`
-- Source analysis: `../../../context/explore/deepscientist-skill-analysis/experiment.md`
+- `references/isomer-research-contract.md` for local terminology, truth-source, runtime-boundary, and TBD-surface rules.
+- `references/provenance.md` when source provenance or license context matters.
+
+Read references as needed:
+
+- `references/plan-template.md` before substantial code edits, expensive execution, or branch-sensitive work.
+- `references/checklist-template.md` when the active frontier, next step, blocked state, or closeout needs a visible control surface.
+- `references/evidence-ladder.md` when deciding whether the package is minimum, solid, or maximum evidence, or whether the work is auxiliary or main.
+- `references/execution-playbook.md` for run contracts, preflight checks, smoke and pilot discipline, long-running monitoring, output validation, and next-route decisions.
+- `references/operational-guidance.md` for planning surfaces, resource rules, durable outputs, Evidence Item recording, and connector-facing chart notes.
+- `references/run-record-template.md` when creating or reviewing a durable Run record or evaluation summary.
 
 ## Entry Signals
 
-- A selected route or promoted candidate is ready for one bounded
-  implementation pass or main run.
-- Comparator status, metric contract, expected outputs, and stop rules are
-  known or can be locked before execution.
-- The Research Task needs a measured result that can support or weaken a
-  Research Claim.
+- A selected route or promoted candidate is ready for one bounded implementation pass or main Run.
+- Comparator status, metric contract, expected outputs, and stop rules are known or can be locked before execution.
+- The Research Task needs a measured result that can support, weaken, narrow, or refute a Research Claim.
 
 ## Exit Criteria
 
-- Run contract, inputs, commands, configs, logs, outputs, and metrics are
-  durable.
+- Run contract, inputs, commands, configs, logs, outputs, metrics, and environment notes are durable.
 - Metric completeness and comparator comparability have been checked.
-- The handoff recommends optimize, analysis, write, decision, or blocker.
+- The result is classified as supported, refuted, inconclusive, partial, failed, or blocked.
+- The handoff recommends optimize, analysis, write, decision, another experiment, reset, or blocker.
 
-## Procedure
+## Run Evidence Contract
 
-1. Recover selected route, comparator status, metric contract, current
-   workspace context, and expected outputs.
-2. Lock the run contract: research issue, comparator, stop rule, abandonment
-   rule, output schema, evidence target, and comparability rules.
-3. Plan the smallest hypothesis-bound code, config, or execution change.
-4. Use smoke or pilot checks only to validate wiring.
-5. Run the evidence-bearing attempt and preserve commands, configs, logs,
-   outputs, and last-good state.
-6. Validate metric completeness and comparator comparability.
-7. Record the measured result and recommend optimize, analysis, write,
-   decision, or blocker.
+For each meaningful Run, record enough of the following to make the evidence reusable:
+
+- run id, route id, Research Branch, comparator reference, metric contract, dataset or split, and expected outputs
+- exact execution plan through a Capability Binding and Execution Adapter, with unsettled command surfaces marked as `[[tbd-surface:api-execution-command]]`
+- code or configuration deltas, keep-unchanged contract, seeds, environment notes, and resource constraints
+- smoke or pilot outcomes, main-run logs, output pointers, metric rows, metric completeness, and comparability verdict
+- claim-to-metric mapping, Research Claim update, evaluation summary, failure mode, caveat, and next action
+- Provenance Records for source inputs, generated Artifacts, run logs, and any manual decisions
 
 ## Durable Outputs
 
 - Run contract Artifact.
-- Run logs, configs, outputs, and metric records.
-- Evidence Items and Research Claim update.
-- Next route Decision Record or blocker.
+- Run logs, configs, outputs, metric records, and Evidence Items.
+- Research Claim update and evaluation summary.
+- Decision Record for the next route or blocker.
+- Optional plan, checklist, run-record, and claim-validation Artifacts for non-trivial Runs.
 
 ## Guardrails
 
-- Do not silently change dataset, split, metric, evaluator, or comparator.
-- Do not claim success before durable output exists.
-- Do not rerun without a real change in code, command, environment, evidence,
-  or route.
-- Use `[[tbd-surface:path-run-logs]]` and `[[tbd-surface:api-execution-command]]`
-  for unsettled execution surfaces.
+- Do not silently change dataset, split, metric, evaluator, comparator, or comparison recipe.
+- Do not confuse smoke or pilot success with main evidence.
+- Do not claim success before durable outputs exist.
+- Do not rerun without a real change in code, command, environment, evidence, or route.
+- Do not hide failed, partial, suspicious, non-comparable, or blocked Runs.
+- Do not spend for maximum evidence before the line is at least solid.
+- Use `[[tbd-surface:path-run-logs]]`, `[[tbd-surface:path-experiment-output]]`, and `[[tbd-surface:api-artifact-record]]` for unsettled execution and recording surfaces.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-optimize"
+  short_description: "Manage optimization frontiers"
+  default_prompt: "Use $isomer-rsch-optimize to refresh the frontier, choose one optimize submode, and record the next route."

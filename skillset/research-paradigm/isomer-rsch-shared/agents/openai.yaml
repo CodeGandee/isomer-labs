@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-shared"
+  short_description: "Shared research contract"
+  default_prompt: "Use $isomer-rsch-shared to apply shared evidence, handoff, terminology, provenance, and TBD-surface rules."

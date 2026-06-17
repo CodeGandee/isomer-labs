@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-idea"
+  short_description: "Shape and select research ideas"
+  default_prompt: "Use $isomer-rsch-idea to turn the current evidence board into a selected falsifiable research route."

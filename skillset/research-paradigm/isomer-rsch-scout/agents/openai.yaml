@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-scout"
+  short_description: "Frame research route"
+  default_prompt: "Use $isomer-rsch-scout to clarify the research frame, evaluation contract, and next route."

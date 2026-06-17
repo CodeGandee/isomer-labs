@@ -3,7 +3,27 @@ name: isomer-rsch-analysis
 description: Run focused follow-up evidence work that confirms, weakens, changes, or blocks a parent claim.
 ---
 
+# Isomer Research Analysis
+
+## Overview
+
 Use this skill after a main result when ablation, robustness, error analysis, failure analysis, reviewer-linked evidence, or paper-gap analysis is needed.
+
+## Workflow
+
+When this skill is invoked, execute the following steps in order.
+
+1. **Load required context**. Read `references/isomer-research-contract.md` first and read `references/provenance.md` when source provenance or license context matters.
+2. **Select supporting references** from **Reference Routing** when route design, evidence recording, boundary cases, operations, or writing-facing mapping matter.
+3. **Confirm entry fit and lock the parent object**. Use **Entry Signals** to confirm that analysis, not a new main experiment, is the right stage.
+4. **Audit execution limits**. Check compute, memory, time, storage, dependencies, queue, service constraints, and available evidence.
+5. **Choose the lightest trustworthy route and define slices**. Follow **Slice Evidence Contract** and **Comparability Contract**.
+6. **Run the highest-value slices first and record each slice** with status, evidence path, claim update, comparability verdict, caveat, and next action.
+7. **Aggregate only decision-relevant findings and route the next stage** using **Exit Criteria**, **Durable Outputs**, and **Guardrails**.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
+
+## Reference Routing
 
 Read first:
 
@@ -31,16 +51,6 @@ Read references as needed:
 - Each slice has recorded status, evidence, comparability verdict, caveat, and claim impact.
 - The campaign interpretation is grounded in the recorded slices.
 - The next route is experiment, idea, write, decision, pause, or blocker.
-
-## Procedure
-
-1. Lock the parent object: Research Claim, main result, paper gap, reviewer item, failure mode, or Decision Record.
-2. Audit execution limits: compute, memory, time, storage, dependencies, queue, service constraints, and available evidence.
-3. Choose the lightest route that preserves trust: analysis-lite, durable evidence package, writing-facing campaign, review/rebuttal campaign, or failure-analysis route.
-4. Define slices with class, fixed conditions, metrics or observables, comparison target, resource class, expected evidence, and stop rules.
-5. Run the highest-value slices first.
-6. Record each slice with status, evidence path, claim update, comparability verdict, caveat, and next action.
-7. Aggregate only decision-relevant findings and route to experiment, idea, write, decision, pause, or blocker.
 
 ## Slice Evidence Contract
 
