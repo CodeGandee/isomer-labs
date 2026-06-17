@@ -7,25 +7,25 @@ APIs, concrete storage layouts, scheduler behavior, and team-topology details.
 
 ## Skill Folders
 
-- `isomer-labs-research-shared`
-- `isomer-labs-research-intake`
-- `isomer-labs-research-scout`
-- `isomer-labs-research-baseline`
-- `isomer-labs-research-idea`
-- `isomer-labs-research-optimize`
-- `isomer-labs-research-experiment`
-- `isomer-labs-research-analysis`
-- `isomer-labs-research-decision`
-- `isomer-labs-research-finalize`
-- `isomer-labs-research-write`
-- `isomer-labs-research-review`
-- `isomer-labs-research-rebuttal`
-- `isomer-labs-research-paper-outline`
-- `isomer-labs-research-paper-plot`
-- `isomer-labs-research-figure-polish`
-- `isomer-labs-research-science`
+- `isomer-rsch-shared`
+- `isomer-rsch-intake`
+- `isomer-rsch-scout`
+- `isomer-rsch-baseline`
+- `isomer-rsch-idea`
+- `isomer-rsch-optimize`
+- `isomer-rsch-experiment`
+- `isomer-rsch-analysis`
+- `isomer-rsch-decision`
+- `isomer-rsch-finalize`
+- `isomer-rsch-write`
+- `isomer-rsch-review`
+- `isomer-rsch-rebuttal`
+- `isomer-rsch-paper-outline`
+- `isomer-rsch-paper-plot`
+- `isomer-rsch-figure-polish`
+- `isomer-rsch-science`
 
-Stage and companion skills should read `isomer-labs-research-shared/SKILL.md`
+Stage and companion skills should read `isomer-rsch-shared/SKILL.md`
 first when common evidence, handoff, terminology, or unsettled-surface rules
 matter.
 

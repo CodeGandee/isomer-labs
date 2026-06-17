@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Analysis"
+  short_description: "Follow-up evidence campaigns"
+  default_prompt: "Use $isomer-rsch-analysis to plan a focused follow-up evidence campaign for this research result."

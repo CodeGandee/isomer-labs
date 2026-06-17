@@ -24,12 +24,12 @@ Gates, not through source-specific runtime commands.
 
 | Generic Agent | Installed Research-Paradigm Skills | Stage Purpose |
 | --- | --- | --- |
-| `research-lead` | `isomer-labs-research-shared`, `isomer-labs-research-intake`, `isomer-labs-research-decision`, `isomer-labs-research-finalize` | Own the Research Thread, resolve scope, record Gates and Decision Records, and close the final package. |
-| `research-scout` | `isomer-labs-research-shared`, `isomer-labs-research-scout`, `isomer-labs-research-baseline`, `isomer-labs-research-paper-outline` | Frame the problem, scout literature and datasets, identify or validate baselines, and outline evidence needs. |
-| `research-designer` | `isomer-labs-research-shared`, `isomer-labs-research-idea`, `isomer-labs-research-optimize`, `isomer-labs-research-science` | Generate candidate ideas, reason about limitations, promote a branch, and define measurable experiments. |
-| `research-executor` | `isomer-labs-research-shared`, `isomer-labs-research-experiment`, `isomer-labs-research-analysis`, `isomer-labs-research-science`, `isomer-labs-research-paper-plot`, `isomer-labs-research-figure-polish` | Run the selected implementation or experiment, preserve evidence, analyze robustness, and prepare figures from verified data. |
-| `research-writer` | `isomer-labs-research-shared`, `isomer-labs-research-write`, `isomer-labs-research-paper-outline`, `isomer-labs-research-paper-plot`, `isomer-labs-research-figure-polish`, `isomer-labs-research-rebuttal` | Draft reports or papers from durable evidence, keep claims calibrated, and prepare revision responses when needed. |
-| `research-reviewer` | `isomer-labs-research-shared`, `isomer-labs-research-review`, `isomer-labs-research-rebuttal`, `isomer-labs-research-analysis`, `isomer-labs-research-decision` | Audit claims, find missing evidence, route rebuttal work, and recommend go, stop, branch, or revise decisions. |
+| `research-lead` | `isomer-rsch-shared`, `isomer-rsch-intake`, `isomer-rsch-decision`, `isomer-rsch-finalize` | Own the Research Thread, resolve scope, record Gates and Decision Records, and close the final package. |
+| `research-scout` | `isomer-rsch-shared`, `isomer-rsch-scout`, `isomer-rsch-baseline`, `isomer-rsch-paper-outline` | Frame the problem, scout literature and datasets, identify or validate baselines, and outline evidence needs. |
+| `research-designer` | `isomer-rsch-shared`, `isomer-rsch-idea`, `isomer-rsch-optimize`, `isomer-rsch-science` | Generate candidate ideas, reason about limitations, promote a branch, and define measurable experiments. |
+| `research-executor` | `isomer-rsch-shared`, `isomer-rsch-experiment`, `isomer-rsch-analysis`, `isomer-rsch-science`, `isomer-rsch-paper-plot`, `isomer-rsch-figure-polish` | Run the selected implementation or experiment, preserve evidence, analyze robustness, and prepare figures from verified data. |
+| `research-writer` | `isomer-rsch-shared`, `isomer-rsch-write`, `isomer-rsch-paper-outline`, `isomer-rsch-paper-plot`, `isomer-rsch-figure-polish`, `isomer-rsch-rebuttal` | Draft reports or papers from durable evidence, keep claims calibrated, and prepare revision responses when needed. |
+| `research-reviewer` | `isomer-rsch-shared`, `isomer-rsch-review`, `isomer-rsch-rebuttal`, `isomer-rsch-analysis`, `isomer-rsch-decision` | Audit claims, find missing evidence, route rebuttal work, and recommend go, stop, branch, or revise decisions. |
 
 ## Role Responsibilities
 
