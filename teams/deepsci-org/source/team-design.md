@@ -1,154 +1,140 @@
-# DeepScientist Generic Research Team Design
+# Generic Research Team Design
 
-This document designs an operator-controlled Houmao research team modeled on the DeepScientist stage-skill pipeline. The team breaks end-to-end research into discrete roles that an operator can stage, prompt, inspect, and transition manually.
+This document maps a generic Isomer research team to the portable
+research-paradigm skills in `skillset/research-paradigm/`. The design keeps
+research judgment separate from runtime concerns such as launch topology,
+credentials, mailbox routing, gateway inspection, scheduler state, and concrete
+artifact paths.
 
-For a condensed 5-role version of this team, see `teams/deepsci-lite/source/team-design.md`.
+For a condensed 5-role version of this team, see
+`teams/deepsci-lite/source/team-design.md`.
 
 ## Team Purpose
 
-The team conducts a complete research cycle from problem framing through final reporting. Each role owns one stage. The operator decides when a stage finishes and which role runs next. This keeps human oversight at every major transition while letting each agent focus on a narrow, well-defined responsibility.
+The team conducts a complete research cycle from intake through final reporting.
+The Operator Agent is the human-facing control boundary and stays in manual
+mode. Delegated Agent Team Instances either advance within an approved work loop
+or pause and wait for Operator Agent instruction.
+
+Each role owns a narrow research responsibility. Stage transitions happen
+through durable Artifacts, Evidence Items, Findings, Decision Records, and
+Gates, not through source-specific runtime commands.
 
 ## Role Map
 
-DeepScientist stage skills become Houmao project specialists. Companion skills become on-demand support roles.
-
-| Houmao Specialist | DeepScientist Source | Stage Purpose |
+| Generic Agent | Installed Research-Paradigm Skills | Stage Purpose |
 | --- | --- | --- |
-| `deepsci-scout` | `scout` | Frame the problem, scout literature, clarify datasets, metrics, and candidate baselines. |
-| `deepsci-baseline` | `baseline` | Attach, reproduce, verify, compare, or publish a baseline and its metrics. |
-| `deepsci-idea` | `idea` | Generate hypotheses, analyze limitations, and select a concrete candidate direction. |
-| `deepsci-optimize` | `optimize` | Manage algorithm-first candidate briefs, optimization frontiers, and fusion-aware search. |
-| `deepsci-experiment` | `experiment` | Run the main implementation pass or experiment tied to the selected idea and accepted baseline. |
-| `deepsci-analysis` | `analysis-campaign` | Run follow-up ablations, robustness checks, error analysis, and failure analysis. |
-| `deepsci-write` | `write` | Draft or refine a paper, report, or research summary from existing evidence. |
-| `deepsci-finalize` | `finalize` | Consolidate final claims, limitations, recommendations, summary state, and graph exports. |
-| `deepsci-decision` | `decision` | Make explicit go, stop, branch, reuse-baseline, write, finalize, reset, or user-decision transitions with evidence. |
-
-### Companion Support Roles
-
-| Houmao Specialist | DeepScientist Source | Support Purpose |
-| --- | --- | --- |
-| `deepsci-review` | `review` | Audit a substantial draft, paper, or report skeptically. |
-| `deepsci-paper-outline` | `paper-outline` | Create, revise, validate, or repair a research-paper outline from experiment evidence. |
-| `deepsci-paper-plot` | `paper-plot` | Turn structured numeric data into publication-quality figures using bundled templates. |
+| `research-lead` | `isomer-labs-research-shared`, `isomer-labs-research-intake`, `isomer-labs-research-decision`, `isomer-labs-research-finalize` | Own the Research Thread, resolve scope, record Gates and Decision Records, and close the final package. |
+| `research-scout` | `isomer-labs-research-shared`, `isomer-labs-research-scout`, `isomer-labs-research-baseline`, `isomer-labs-research-paper-outline` | Frame the problem, scout literature and datasets, identify or validate baselines, and outline evidence needs. |
+| `research-designer` | `isomer-labs-research-shared`, `isomer-labs-research-idea`, `isomer-labs-research-optimize`, `isomer-labs-research-science` | Generate candidate ideas, reason about limitations, promote a branch, and define measurable experiments. |
+| `research-executor` | `isomer-labs-research-shared`, `isomer-labs-research-experiment`, `isomer-labs-research-analysis`, `isomer-labs-research-science`, `isomer-labs-research-paper-plot`, `isomer-labs-research-figure-polish` | Run the selected implementation or experiment, preserve evidence, analyze robustness, and prepare figures from verified data. |
+| `research-writer` | `isomer-labs-research-shared`, `isomer-labs-research-write`, `isomer-labs-research-paper-outline`, `isomer-labs-research-paper-plot`, `isomer-labs-research-figure-polish`, `isomer-labs-research-rebuttal` | Draft reports or papers from durable evidence, keep claims calibrated, and prepare revision responses when needed. |
+| `research-reviewer` | `isomer-labs-research-shared`, `isomer-labs-research-review`, `isomer-labs-research-rebuttal`, `isomer-labs-research-analysis`, `isomer-labs-research-decision` | Audit claims, find missing evidence, route rebuttal work, and recommend go, stop, branch, or revise decisions. |
 
 ## Role Responsibilities
 
-### `deepsci-scout`
+### `research-lead`
 
-- Reads the research brief and operator requirements.
-- Searches for related work, public datasets, and standard metrics.
-- Produces a `scout-report.md` with problem framing, known baselines, and open questions.
-- Hands off to `deepsci-baseline` when framing is stable.
+- Starts the Research Thread with a brief, constraints, known artifacts, and
+  success criteria.
+- Maintains the current Workflow Stage, Gate state, Decision Records, and final
+  completion criteria.
+- Sends bounded work to delegated Agent Team Instances and receives their
+  durable handoffs.
+- Finalizes claims, limitations, recommendations, and provenance once the
+  reviewer confirms evidence coverage.
 
-### `deepsci-baseline`
+### `research-scout`
 
-- Reproduces or imports the strongest baseline identified by the scout.
-- Records baseline metrics, environment, and acceptance criteria in `artifacts/baselines/`.
-- Confirms or waives the baseline gate before the team proceeds to ideation.
+- Clarifies the problem, assumptions, datasets, metrics, and external evidence
+  needs.
+- Searches or reads literature through the host paper-reading capability when a
+  provider is available.
+- Records candidate baselines, known failure modes, and open questions.
+- Hands off a baseline recommendation or baseline gate request to
+  `research-lead`.
 
-### `deepsci-idea`
+### `research-designer`
 
-- Reviews the scout report and baseline result.
-- Generates candidate hypotheses and limitation analyses.
-- Selects one idea and writes `artifacts/ideas/selected-idea.md`.
-- Hands off to `deepsci-optimize` for algorithm-first work or directly to `deepsci-experiment` for implementation-first work.
+- Converts the scout and baseline evidence into candidate hypotheses.
+- Compares ideas against limitations, feasibility, risk, and expected evidence.
+- Uses optimization discipline when the task needs a candidate frontier or
+  branch-promotion logic.
+- Produces an experiment-ready selected direction with metrics and stop
+  criteria.
 
-### `deepsci-optimize`
+### `research-executor`
 
-- Explores the candidate space for the selected idea.
-- Maintains an optimization frontier and branch-promotion log in `artifacts/optimization/`.
-- Promotes the best candidate to `deepsci-experiment`.
+- Runs the selected experiment through the host Execution Adapter.
+- Records inputs, commands or notebooks, outputs, metrics, failures, and
+  provenance as durable Artifacts.
+- Performs follow-up analysis such as ablations, robustness checks, error
+  analysis, and failure analysis.
+- Produces verified tables, plots, and figure-ready evidence only from recorded
+  data.
 
-### `deepsci-experiment`
+### `research-writer`
 
-- Implements the selected idea or promoted candidate.
-- Runs the main experiment, records `RUN.md` and `RESULT.json` in `experiments/main/`.
-- Compares results against the accepted baseline.
-- Hands off to `deepsci-analysis` for follow-up campaigns or to `deepsci-decision` for a go/stop call.
+- Drafts reports, papers, summaries, outlines, and responses from durable
+  evidence only.
+- Keeps unsupported claims out of the draft and marks evidence gaps for the
+  lead or reviewer.
+- Coordinates figure polish and plot generation when the report needs visual
+  evidence.
+- Prepares rebuttal or revision material from reviewer findings and new
+  evidence.
 
-### `deepsci-analysis`
+### `research-reviewer`
 
-- Plans and executes ablations, robustness checks, error analysis, and failure analysis.
-- Records slices in `experiments/analysis/`.
-- Summarizes whether the main result holds under scrutiny.
+- Audits drafts, reports, experiment packages, and claims with a skeptical
+  stance.
+- Checks whether the evidence supports each claim, whether limitations are
+  explicit, and whether missing controls are visible.
+- Recommends a Gate outcome or Decision Record update for `research-lead`.
+- Routes needed fixes to the writer, executor, scout, or designer.
 
-### `deepsci-write`
+## Control Model
 
-- Drafts the report or paper from durable evidence only.
-- Uses `deepsci-paper-outline` and `deepsci-paper-plot` as companions when a full paper is required.
-- Writes drafts to `paper/`.
+The Operator Agent remains manual and decides when to start, pause, resume, or
+stop delegated Agent Team Instances. Research skills can recommend the next
+Workflow Stage, Gate, or Decision Record; they do not define scheduler fields or
+continuation-policy state.
 
-### `deepsci-finalize`
+Delegated instances may run a bounded approved loop, such as an experiment run
+or analysis pass. When the approved loop ends, fails, or needs a judgment call,
+the instance pauses and returns a durable handoff to the Operator Agent.
 
-- Consolidates final claims, limitations, and recommendations.
-- Exports summary state and any final graphs.
-- Produces a completion package in `artifacts/reports/`.
+## Handoff Contract
 
-### `deepsci-decision`
+Every role handoff should name:
 
-- Reviews evidence at any gate and makes explicit transitions.
-- Records each decision with reasoning in `artifacts/decisions/`.
-- Never blocks completion without operator approval.
+- The Research Thread or Research Task being updated.
+- The current Workflow Stage and requested next Gate or decision.
+- Durable Artifacts, Evidence Items, Findings, Decision Records, and Provenance
+  Records produced or consumed.
+- Claims that are supported, claims that are unsupported, and concrete
+  unresolved questions.
+- Any unsettled path, provider, command, schema, or storage surface as a
+  `[[tbd-surface:<id>]]` placeholder listed by the shared research-paradigm
+  registry.
 
-## Communication and Control Model
+## Topology-Neutral Boundaries
 
-This is an operator-controlled team, not an autonomous loop. The operator owns transitions.
+Team topology, credential selection, mailbox routing, gateway inspection,
+scheduler behavior, concrete workspace paths, and platform API calls belong in
+runtime profiles or platform documentation. They are intentionally outside the
+research-paradigm skill bodies.
 
-- **Prompting**: The operator sends stage-specific prompts to the active specialist through `houmao-agent-messaging` or the gateway.
-- **Handoffs**: When a stage finishes, the operator copies the relevant artifact path or summary into the next specialist's prompt.
-- **Mailbox**: Each specialist can use its project mailbox for async context, but the operator reads and routes key handoffs.
-- **Memory**: Durable context lives in `memory/` and in the artifact files themselves. Each specialist reads the prior stage's memory and writes its own.
-- **Gateway**: The operator uses the gateway for live inspection, reminders, and notifier rounds.
-- **Decision gate**: `deepsci-decision` runs only when the operator asks for an explicit transition call.
-
-## Workspace Layout
-
-```text
-teams/deepsci-org/
-├── source/
-│   └── team-design.md          # this document
-├── agents/                     # per-role system prompts or skill overrides
-│   ├── scout.md
-│   ├── baseline.md
-│   ├── idea.md
-│   ├── optimize.md
-│   ├── experiment.md
-│   ├── analysis.md
-│   ├── write.md
-│   ├── finalize.md
-│   ├── decision.md
-│   ├── review.md
-│   ├── paper-outline.md
-│   └── paper-plot.md
-├── runtime/                    # launch scripts or operator runbooks
-│   └── README.md
-└── README.md                   # team entry point and quick-start
-```
-
-The project overlay at `<repo-root>/.houmao` stores the actual specialist and profile definitions. The `teams/deepsci-org/` directory keeps design documents, role prompts, and operator runbooks under version control.
-
-## Tool and Credential Strategy
-
-- All specialists in the first version use the same tool lane (for example, Kimi) and one project credential to keep the team homogeneous.
-- The credential name is `research-kimi` by default.
-- If later stages need different models or reasoning levels, create tool-specific variants under separate profile names; do not overload one specialist with conflicting model settings.
+The generic mapping above can be implemented as one role per Agent Team Instance
+or folded into fewer instances when an operator wants a smaller team. That
+runtime choice must not change the extracted skill contracts.
 
 ## Operational Workflow
 
-1. Operator creates the project overlay (done).
-2. Operator adds one project credential (pending).
-3. Create one specialist per role using the names and responsibilities above.
-4. Create one project profile per specialist for repeatable launch.
-5. Launch `deepsci-scout` first with the research brief.
-6. After each stage, the operator inspects output and decides the next role.
-7. Repeat until the decision role recommends completion, then the operator approves finalization.
-
-## Next Steps
-
-1. Review and approve this design.
-2. Add a project credential through `houmao-credential-mgr`.
-3. Create the specialists through `houmao-agent-definition`.
-4. Create project profiles for repeatable launch.
-5. Draft stage-specific system prompts under `teams/deepsci-org/agents/`.
-6. Run the first scout stage.
+1. `research-lead` creates or receives the Research Thread brief.
+2. `research-scout` frames the problem and baseline evidence.
+3. `research-designer` selects the research direction and experiment plan.
+4. `research-executor` runs experiments and follow-up analyses.
+5. `research-writer` drafts from recorded evidence.
+6. `research-reviewer` audits claims and recommends the next Gate.
+7. `research-lead` records the final decision and closes the package.

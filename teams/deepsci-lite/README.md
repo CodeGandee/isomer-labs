@@ -10,11 +10,11 @@ See [`source/team-design.md`](source/team-design.md) for the full role map, resp
 
 | Specialist | Purpose | Phase |
 | --- | --- | --- |
+| `deepsci-lite-lead` | Own the loop | Coordination |
 | `deepsci-lite-scout` | Scout and baseline | Foundation |
 | `deepsci-lite-design` | Design approach | Strategy |
 | `deepsci-lite-experiment` | Run experiments | Execution |
 | `deepsci-lite-writer` | Produce manuscript | Synthesis |
-| `deepsci-lite-lead` | Coordinate and decide | Coordination |
 
 ## Quick Start
 
@@ -22,7 +22,7 @@ See [`source/team-design.md`](source/team-design.md) for the full role map, resp
 2. Create the five specialists through `houmao-agent-definition`.
 3. Create project profiles for repeatable launch.
 4. Draft role-specific system prompts in the `System Prompt` sections of [`source/team-design.md`](source/team-design.md).
-5. Launch `deepsci-lite-scout` with the research brief.
+5. Launch `deepsci-lite-lead` with a Research Thread direction.
 
 ## Full Team
 
