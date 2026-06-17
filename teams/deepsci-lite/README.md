@@ -4,7 +4,7 @@ A condensed Houmao research team based on the DeepScientist stage-skill pipeline
 
 ## Design
 
-See [`source/team-design.md`](source/team-design.md) for the full role map, responsibilities, communication model, workspace layout, and operational workflow.
+See [`source/team-design.md`](source/team-design.md) for the full role map, responsibilities, system prompts, communication model, and operational workflow.
 
 ## Team Roles
 
@@ -21,7 +21,7 @@ See [`source/team-design.md`](source/team-design.md) for the full role map, resp
 1. Add a project credential through `houmao-credential-mgr`.
 2. Create the five specialists through `houmao-agent-definition`.
 3. Create project profiles for repeatable launch.
-4. Draft role-specific system prompts under [`agents/`](agents/).
+4. Draft role-specific system prompts in the `System Prompt` sections of [`source/team-design.md`](source/team-design.md).
 5. Launch `deepsci-lite-scout` with the research brief.
 
 ## Full Team

@@ -28,6 +28,8 @@ The purpose suffix reflects what the agent produces or governs, not a generic hu
 
 ### `deepsci-lite-scout`
 
+This agent scouts the research landscape and establishes the baseline. It surveys literature, clarifies datasets and metrics, and reproduces the chosen baseline so later experiments have a fair comparison point.
+
 - Reads the research brief and operator requirements.
 - Surveys related work, public datasets, and standard metrics.
 - Identifies the strongest baseline candidates.
@@ -35,7 +37,13 @@ The purpose suffix reflects what the agent produces or governs, not a generic hu
 - Outputs `scout-report.md` and `artifacts/baselines/`.
 - Requests operator approval to open the baseline gate.
 
+#### System Prompt
+
+TBD
+
 ### `deepsci-lite-design`
+
+This agent designs the research approach. It generates hypotheses, analyzes limitations, selects the leading idea, and searches the optimization frontier.
 
 - Reads the baseline output and accepted baseline.
 - Generates candidate hypotheses and limitation analyses.
@@ -44,7 +52,13 @@ The purpose suffix reflects what the agent produces or governs, not a generic hu
 - Outputs `artifacts/ideas/selected-idea.md` and `artifacts/optimization/`.
 - Hands off to `deepsci-lite-experiment` with a clear implementation brief.
 
+#### System Prompt
+
+TBD
+
 ### `deepsci-lite-experiment`
+
+This agent runs the experimental work. It implements the selected design, runs the main experiment, and validates the result through follow-up analyses.
 
 - Implements the selected approach or promoted candidate.
 - Runs the main experiment and records `experiments/main/RUN.md` and `RESULT.json`.
@@ -53,7 +67,13 @@ The purpose suffix reflects what the agent produces or governs, not a generic hu
 - Records analysis slices in `experiments/analysis/`.
 - Summarizes whether the main result holds under scrutiny.
 
+#### System Prompt
+
+TBD
+
 ### `deepsci-lite-writer`
+
+This agent produces the final research manuscript. It drafts, reviews, and finalizes reports and papers from durable evidence.
 
 - Drafts the report or paper from durable evidence only.
 - Creates or repairs outlines and turns structured numeric data into figures.
@@ -61,12 +81,22 @@ The purpose suffix reflects what the agent produces or governs, not a generic hu
 - Consolidates final claims, limitations, recommendations, and summary exports.
 - Writes drafts to `paper/` and final reports to `artifacts/reports/`.
 
+#### System Prompt
+
+TBD
+
 ### `deepsci-lite-lead`
+
+This agent coordinates the team and makes explicit transition decisions. It corresponds to a principal investigator who reviews evidence at major gates before the team moves forward.
 
 - Reviews evidence at any gate.
 - Makes explicit transition decisions: go, stop, branch, reuse baseline, write, finalize, reset, or request operator input.
 - Records each decision with reasoning in `artifacts/decisions/`.
 - Does not approve quest completion without explicit operator approval.
+
+#### System Prompt
+
+TBD
 
 ## When This Lite Design Fits
 
@@ -116,5 +146,5 @@ The operator still owns transitions.
 2. Add a project credential through `houmao-credential-mgr`.
 3. Create the five specialists through `houmao-agent-definition`.
 4. Create project profiles for repeatable launch.
-5. Draft role-specific system prompts for each agent.
+5. Draft role-specific system prompts in the `#### System Prompt` sections above.
 6. Run the first scout phase.
