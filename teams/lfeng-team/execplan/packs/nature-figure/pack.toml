@@ -1,8 +1,0 @@
-name = "nature-figure"
-kind = "compiler"
-backs = ["render figure"]   # owns `render figure` only; `render plot` is owned by paper-plot (avoids a cross-domain priority tie)
-entrypoint = "adapter:render"
-input_formats = ["csv", "json"]
-output_format = "svg"
-deps = []
-description = "Nature/high-impact-style figure from data: despined axes, Wong colorblind-safe palette, panel label, Arial."

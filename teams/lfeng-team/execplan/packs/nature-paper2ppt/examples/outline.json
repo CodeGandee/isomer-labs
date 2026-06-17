@@ -1,7 +1,0 @@
-{"title":"Faster Convergence via Adaptive Steps","author":"DeepResearch demo",
- "slides":[
-   {"title":"Motivation","bullets":["Baseline plateaus early","Hypothesis: adaptive step size helps"],"notes":"30s"},
-   {"title":"Method","bullets":["Adaptive schedule","Same compute budget"]},
-   {"title":"Results","bullets":["+15% final accuracy","Stable across seeds"],"notes":"show fig 1"},
-   {"title":"Conclusion","bullets":["Adaptive steps converge faster","Future: theory"]}
- ]}

@@ -1,0 +1,4 @@
+[submodule "teams/lfeng-team"]
+	path = teams/lfeng-team
+	url = https://github.com/CodeGandee/isomer-labs
+	branch = v1.0

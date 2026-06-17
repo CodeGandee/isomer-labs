@@ -1,8 +1,0 @@
-name = "nature-polishing"
-kind = "template"
-backs = ["manuscript polish"]
-entrypoint = "adapter:generate"
-input_formats = ["md", "txt"]
-output_format = "md"
-deps = []
-description = "Deterministic English polishing (mechanical fixes + conservative phrasebank) + editor notes. Style only; never adds claims."
