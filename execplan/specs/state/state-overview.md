@@ -69,7 +69,9 @@ Research structure:
 - `frontier_entry` — the optimization frontier for the `optimize` stage: ranks candidate routes
   (branch/experiment/result) by their primary `score`, tracks the single `incumbent`, and records
   promotion/fusion (`status` candidate|incumbent|promoted|parked|dropped|fused).
-- `result` — one validated outcome of an experiment, with a `validity` verdict and an artifact ref.
+- `result` — one validated outcome of an experiment, with a `validity` verdict and an artifact ref, plus
+  reconstructable-run provenance (`provenance_route` + `provenance` manifest; `provenance_ok` set ONLY by
+  `result validate`). Evidence is not counted toward campaign coverage without validated provenance.
 - `measurement` — schema-light, domain-neutral metric capture (`metric_name` + numeric/text value +
   unit); `is_primary` marks the objective's headline metric (the BO objective).
 - `analysis` — a slice/ablation testing a `parent_claim`, with a `confirms|blocks|inconclusive` verdict.
@@ -80,7 +82,9 @@ Evidence, decisions, knowledge:
 - `claim_evidence` — the claim↔evidence map: links a claim to a `result`/`analysis`/`measurement`/
   `reference`/`external` source with a `supports|contradicts|contextualizes` relation. A `contradicts`
   link carries a `resolved` flag (+ `resolution_ref`/`resolved_at`): only **unresolved** contradictions
-  block a claim from becoming `supported`; an acknowledged-and-rebutted one does not.
+  block a claim from becoming `supported`; an acknowledged-and-rebutted one does not. `evidence_kind`
+  tags the empirical role (main_result/ablation/significance/…) and `evidence_proof` holds the
+  kind-specific proof that campaign coverage requires before counting that kind.
 - `decision` — every state-machine transition / route judgment (from_stage→to_stage + route +
   rationale ref), including the operator-confirmation gate (`requires_user_confirm`/`confirmed`).
 - `finalize_outcome` — one row per finalize event: `complete`/`stop` (terminal), `park`
@@ -89,6 +93,21 @@ Evidence, decisions, knowledge:
   `quest_id`; no cross-quest/global findings), grounded by a measurement/result ref.
 - `reference` — external knowledge fetched by the literature harness (arxiv/web/doi), with cache ref.
 - `artifact` — generic index of rendered outputs (reports, figures, drafts, bundles, logs).
+
+Research-quality gate records (each carries a validator-computed flag the author cannot self-certify; the
+binding gates consume the flag, and a `validated_fingerprint` lets the gates detect a stale validation —
+see `execplan/docs/binding-gates.md`):
+
+- `idea_select` — the idea-selection record; `valid` set by `idea validate` (gates idea→experiment).
+- `baseline_contract` — baseline route (`reproduced|imported|trusted|waived`) + eval contract; `valid`
+  set by `baseline validate` (the baseline gate consumes it, not the author's `verification_verdict`).
+- `analysis_bridge` — the paper-facing analysis bridge; `valid` + `coverage_json` set by `campaign
+  validate` (gates analysis→outline/write).
+- `paper_spine` — the paper spine; `submission_ready` set by `manuscript coverage` (the finalize
+  coverage gate's input).
+- `review_verdict` — the typed reviewer verdict; `valid` + `route_target` set by `review validate`.
+- `quality_gate_waiver` — durable, auditable gate waiver / finalize acknowledgement (`reason` required);
+  a bound quest cannot finalize while a finalize-sensitive gate is env-waived without one.
 
 Continuation + comms ledgers:
 

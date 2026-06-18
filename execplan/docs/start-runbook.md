@@ -44,7 +44,7 @@ M(){ houmao-mgr project --project-dir "$P" "$@"; }
 
 ## Pre-flight 🟢 (read-only gate — must pass before anything below)
 ```bash
-python3 "$HARNESS" selfcheck            # ok=true, 34 record types, 39 invariants, deps ok
+python3 "$HARNESS" selfcheck            # ok=true, 40 record types, 39 invariants, deps ok
 M status                                # overlay healthy
 M skills list   | grep -c deepresearch- # 21 (9 loop/control + 12 pack-wrapper skills; per-role install in agents/skill-bindings.toml)
 M profile list  | grep -c deepresearch- # 6
@@ -91,7 +91,7 @@ credential change, **relaunch agents fresh** (a bare `relaunch` reuses the old t
 
 ## Step 2 — Initialize the platform DB 🟡
 ```bash
-"$HARNESS" state init                   # creates $P/runs/state.sqlite (28 tables, 13 stages)
+"$HARNESS" state init                   # creates $P/runs/state.sqlite (34 tables, 13 stages)
 ```
 Verify 🟢: `"$HARNESS" state validate`  → `ok:true, checked:39`.
 **Rollback (pre-quest only):** `rm -f "$P/runs/state.sqlite"`

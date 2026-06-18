@@ -65,7 +65,7 @@ purpose = "communication renderers"
 
 [[artifacts]]
 id = "state-schema"
-description = "sqlite control-plane schema (28 tables incl. gpu_allocation, stage_catalog seed, enums, indexes)."
+description = "sqlite control-plane schema (34 tables incl. gpu_allocation, stage_catalog seed, the research-quality gate tables, enums, indexes)."
 path = "specs/state/schema.sql"
 artifact_kind = "file"
 purpose = "state schema"
@@ -93,7 +93,7 @@ purpose = "state seed"
 
 [[artifacts]]
 id = "records"
-description = "JSON Schemas for `record apply` payloads (the only state write path); 23 families / 34 record types."
+description = "JSON Schemas for `record apply` payloads (the only state write path); 29 families / 40 record types."
 path = "specs/state/records/"
 artifact_kind = "dir"
 purpose = "record-apply schemas"

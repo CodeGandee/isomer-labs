@@ -423,8 +423,10 @@ CREATE TABLE IF NOT EXISTS idea_select (
 
 -- baseline/metric contract: the typed comparator contract that STRENGTHENS the existing quest.baseline_gate.
 -- The rich content (metric_ids[], validity_threats[]) lives in the contract_ref artifact; the row promotes the
--- gate-relevant scalars. The baseline-contract gate requires: baseline_gate=passed -> an acceptable
--- verification_verdict; baseline_gate=waived -> verification_verdict='waived' AND a waiver_reason.
+-- gate-relevant scalars. Acceptability is VALIDATOR-computed: `baseline validate` sets valid=1; the
+-- baseline-contract gate then requires baseline_gate=passed -> valid=1 on a real route (reproduced/imported/
+-- trusted), baseline_gate=waived -> valid=1 with baseline_route='waived'. The author's verification_verdict
+-- alone never passes the gate.
 CREATE TABLE IF NOT EXISTS baseline_contract (
     contract_id          TEXT PRIMARY KEY,
     quest_id             TEXT NOT NULL REFERENCES quest(quest_id),
