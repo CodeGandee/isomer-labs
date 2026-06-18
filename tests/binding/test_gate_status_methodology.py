@@ -48,11 +48,27 @@ def add_claim(db, qid, cid):
     c.commit(); c.close()
 
 
-def link(db, cid, kinds):
+_PROOF = {"main_result": {"metric": "acc", "direction": "higher"},
+          "baseline_comparison": {"metric": "acc", "direction": "higher"},
+          "ablation": {"changed_factor": "ln", "controls": "fixed", "delta": "+1.2"},
+          "robustness": {"varied_condition": "4k", "original_condition": "1k", "criterion": "<2%"},
+          "significance": {"method": "t-test", "effect": "p=0.01"}}
+
+
+def link(db, cid, kinds, provenance_ok=1, proof=True):
     c = sqlite3.connect(db); c.execute("PRAGMA foreign_keys=OFF")
+    qid = (c.execute("SELECT quest_id FROM claim WHERE claim_id=?", (cid,)).fetchone() or [None])[0]
     for i, ek in enumerate(kinds):
-        c.execute("INSERT INTO claim_evidence(claim_id,source_kind,source_ref,relation,evidence_kind,created_at) "
-                  "VALUES(?,?,?,?,?,?)", (cid, "result", f"{cid}-{ek}-{i}", "supports", ek, AT))
+        ref = f"{cid}-{ek}-{i}"
+        p = dict(_PROOF.get(ek, {}))
+        if ek == "ablation":
+            p["parent_result"] = ref  # resolves to this row's own (claim-mapped) result
+        ep = json.dumps(p) if proof else None
+        c.execute("INSERT INTO claim_evidence(claim_id,source_kind,source_ref,relation,evidence_kind,"
+                  "evidence_proof,created_at) VALUES(?,?,?,?,?,?,?)", (cid, "result", ref, "supports", ek, ep, AT))
+        c.execute("INSERT INTO result(result_id,quest_id,experiment_id,validity,artifact_ref,"
+                  "provenance_route,provenance_ok,created_at) VALUES(?,?,?,?,?,?,?,?)",
+                  (ref, qid, "E1", "valid", "a", "executed", provenance_ok, AT))
     c.commit(); c.close()
 
 
@@ -61,7 +77,8 @@ def good_idea(tmp, qid):
          "raw_slate": [{"candidate_id": x, "title": x, "hypothesis": "h", "mechanism": "m",
                         "expected_evidence": ["e"], "risk": "r"} for x in ("A", "B", "C")],
          "challenge": {"strongest_rejection": "x", "outside_family_alternative": "y", "why_retained_survives": "z"},
-         "novelty_risk": {"novelty_label": "novel", "novelty_argument": "a", "risk_notes": "n"},
+         "novelty_risk": {"novelty_label": "novel", "novelty_argument": "a", "risk_notes": "n",
+                          "known_near_neighbors": ["Doe2024: closest prior (differs: our mechanism)"]},
          "selection_gate": [{"candidate_id": "A", "scores": {"novelty": 2, "falsifiability": 2, "feasibility": 2,
                              "evidence_potential": 1, "fit_to_objective": 1}, "total": 8, "verdict": "retain"},
                             {"candidate_id": "B", "scores": {"novelty": 1, "falsifiability": 1, "feasibility": 1,
@@ -152,7 +169,11 @@ def main():
         add_claim(db, "f6", "C1"); link(db, "C1", ["main_result", "baseline_comparison", "ablation"])
         good_idea(tmp, "f6")
         rec(db, {"record_type": "baseline.contract", "record_id": "f6:bc", "at": AT, "quest_id": "f6",
-                 "baseline_id": "b", "verification_verdict": "verified_match"})
+                 "baseline_id": "b", "baseline_name": "BL", "comparison_policy": "higher-is-better",
+                 "primary_metric_id": "acc", "dataset": "D", "split": "test", "eval_protocol": "eval.py",
+                 "verification_verdict": "trusted_with_caveats", "baseline_route": "imported",
+                 "evidence_ref": "Vaswani 2017, Table 2"})
+        run(db, ["baseline", "validate", "--quest-id", "f6"])  # validator-owned valid=1
         rec(db, {"record_type": "quest.update", "record_id": "f6", "at": AT, "baseline_gate": "passed"})
         rec(db, {"record_type": "analysis.bridge", "record_id": "f6:b1", "at": AT, "quest_id": "f6",
                  "bridge_ref": wj(tmp, "f6_bridge.json", good_bridge_obj())})
@@ -188,6 +209,37 @@ def main():
                   WAIVE_SCHOL)
         check("F7 new: hard finalize gate blocks 'complete' despite gate status (review reject)",
               fin.returncode != 0 and "review" in (fin.stdout + fin.stderr).lower(), fin.stdout[:160])
+
+        # F8: an env-var gate waiver is VISIBLE in gate status (status='waived', non-blocking, listed)
+        print("F8 env-var gate waiver is surfaced, not silent:")
+        db = setup(tmp, "f8")  # no idea.select -> idea_gate would be 'missing'/blocking when failing
+        ref = wj(tmp, "f8_idea.json", {"objective_contract_ref": "o", "baseline_contract_ref": "w",
+                 "raw_slate": [], "challenge": {}, "novelty_risk": {}, "selection_gate": [], "rejected": [], "retained": {}})
+        rec(db, {"record_type": "idea.select", "record_id": "f8:s1", "at": AT, "quest_id": "f8", "select_ref": ref})
+        run(db, ["idea", "validate", "--quest-id", "f8"])  # valid=0 -> idea_gate would fail
+        base = jdata(run(db, ["gate", "status", "--quest-id", "f8"]))
+        gw = jdata(run(db, ["gate", "status", "--quest-id", "f8"], {"DEEPRESEARCH_IDEA_GATE": "0"}))["gates"]["idea_gate"]
+        check("F8 new: idea_gate blocks without waiver",
+              base["gates"]["idea_gate"]["status"] == "fail" and base["gates"]["idea_gate"]["blocking"],
+              str(base["gates"]["idea_gate"]))
+        check("F8 new: env waiver surfaces status='waived', non-blocking, with source",
+              gw["status"] == "waived" and gw["blocking"] is False and gw["waiver_source"] == "env:DEEPRESEARCH_IDEA_GATE",
+              str(gw))
+        d8 = jdata(run(db, ["gate", "status", "--quest-id", "f8"], {"DEEPRESEARCH_IDEA_GATE": "0"}))
+        check("F8 new: active_waivers lists the override",
+              "DEEPRESEARCH_IDEA_GATE" in d8.get("active_waivers", []), str(d8.get("active_waivers")))
+
+        # F9: gate status reflects a provenance-less result (campaign coverage), and shows the waiver override
+        print("F9 gate status reflects the provenance problem + waiver visibility:")
+        db = setup(tmp, "f9"); add_claim(db, "f9", "C1")
+        link(db, "C1", ["main_result", "baseline_comparison", "ablation"], provenance_ok=0)
+        g9 = jdata(run(db, ["gate", "status", "--quest-id", "f9"]))["gates"]["campaign_coverage"]
+        check("F9 new: campaign_coverage fail mentions provenance",
+              g9["status"] == "fail" and "provenance" in (g9["reason"] or ""), str(g9))
+        d9 = jdata(run(db, ["gate", "status", "--quest-id", "f9"], {"DEEPRESEARCH_PROVENANCE_GATE": "0"}))
+        check("F9 new: PROVENANCE waiver listed + coverage passes when overridden",
+              "DEEPRESEARCH_PROVENANCE_GATE" in d9.get("active_waivers", [])
+              and d9["gates"]["campaign_coverage"]["status"] == "pass", str(d9.get("active_waivers")))
 
     print("\n%d passed, %d failed" % (len(PASSED), len(FAILED)))
     sys.exit(1 if FAILED else 0)

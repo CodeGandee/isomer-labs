@@ -12,10 +12,12 @@ import json, os, subprocess, sqlite3, sys, tempfile, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 H = str(ROOT / "execplan" / "harness" / "bin" / "deepresearch")
 AT = "2026-06-18T00:00:00Z"
-# Waive the non-finalize gates so review (and, where noted, coverage) is the active gate.
+# Waive the non-finalize gates so review (and, where noted, coverage) is the active gate. Authenticity passes
+# vacuously here (no best_result_ref), so it needs NO env waiver — waiving it would trip the Phase-3
+# finalize-ack gate (an env-waived finalize-sensitive gate without a durable acknowledgement).
 BASE = {"DEEPRESEARCH_SCHOLARSHIP_MIN_REFS": "0", "DEEPRESEARCH_SCHOLARSHIP_MIN_REF_CLAIMS": "0",
-        "DEEPRESEARCH_AUTHENTICITY_GATE": "0", "DEEPRESEARCH_COMPLETENESS_GATE_RIGOR": "none"}
-REVIEW_ONLY = {**BASE, "DEEPRESEARCH_COVERAGE_GATE": "0"}  # isolate the review gate
+        "DEEPRESEARCH_COMPLETENESS_GATE_RIGOR": "none"}
+REVIEW_ONLY = {**BASE, "DEEPRESEARCH_COVERAGE_GATE": "0"}  # isolate the review gate (J1-J5 block on review first)
 
 PASSED, FAILED = [], []
 

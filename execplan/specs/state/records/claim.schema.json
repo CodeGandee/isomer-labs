@@ -34,7 +34,9 @@
         "relation": { "enum": ["supports", "contradicts", "contextualizes"] },
         "evidence_kind": { "enum": ["baseline_comparison", "main_result", "ablation", "robustness", "negative",
                                      "efficiency", "boundary", "qualitative", "significance", "error_analysis"],
-                            "description": "empirical role of this evidence for claim-level campaign coverage (optional, additive)." }
+                            "description": "empirical role of this evidence for claim-level campaign coverage (optional, additive)." },
+        "evidence_proof": { "type": "object",
+                            "description": "Kind-specific PROOF metadata read by campaign coverage. Required keys by evidence_kind: main_result/baseline_comparison {metric, direction}; ablation {changed_factor, controls, delta, parent_result(resolvable result_id)}; robustness {varied_condition, original_condition, criterion}; negative/boundary {hypothesis, observed, implication}; significance {method, effect}; efficiency {resource, metric, baseline}; error_analysis {error_category, subset, implication}. reference/external sources additionally need {source|citation}. An evidence_kind without valid proof is NOT counted toward coverage." }
       }
     },
     {

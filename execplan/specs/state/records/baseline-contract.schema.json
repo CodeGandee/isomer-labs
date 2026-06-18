@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "deepresearch/records/baseline-contract",
   "title": "baseline_contract record",
-  "description": "Append a typed baseline/metric contract (one per baseline pass) that STRENGTHENS the existing quest.baseline_gate. The rich content (metric_ids[], validity_threats[]) lives in the contract_ref artifact; this row promotes the gate-relevant scalars. The baseline-contract gate requires: baseline_gate=passed -> verification_verdict in {verified_match, close_match, trusted_with_caveats}; baseline_gate=waived -> verification_verdict='waived' AND a non-empty waiver_reason.",
+  "description": "Append a typed baseline/metric contract (one per baseline pass) that STRENGTHENS the existing quest.baseline_gate. The rich content (metric_ids[], validity_threats[]) lives in the contract_ref artifact; this row promotes the gate-relevant scalars. Acceptability is VALIDATOR-computed: `baseline validate` sets the `valid` flag (author cannot self-certify), checking baseline_route + metric/comparison policy + dataset/split/eval protocol (or waiver) + route-specific verification (reproduced -> provenance-backed result; imported/trusted -> citation; waived -> reason). The baseline gate then requires: baseline_gate=passed -> a validated contract (valid=1) on a real route; baseline_gate=waived -> a validated waiver (valid=1, baseline_route='waived').",
   "oneOf": [
     {
       "title": "baseline.contract",
@@ -24,7 +24,15 @@
         "eval_protocol": { "type": "string" },
         "verification_verdict": { "enum": ["verified_match", "close_match", "trusted_with_caveats",
                                             "diverged", "broken", "waived"] },
-        "waiver_reason": { "type": "string", "description": "required when verification_verdict='waived'" },
+        "baseline_route": {
+          "enum": ["reproduced", "imported", "trusted", "waived"],
+          "description": "How the baseline is verified. 'reproduced' = a local run (evidence_ref must point to a baseline result_id with validated provenance). 'imported'/'trusted' = a non-execution route (evidence_ref must cite a source/paper/leaderboard). 'waived' = no baseline (waiver_reason required). Validator-gated: `baseline validate` computes the `valid` flag from this; the author cannot self-certify via verification_verdict alone."
+        },
+        "evidence_ref": {
+          "type": "string",
+          "description": "Route-dependent evidence: a baseline result_id (reproduced) or a citation/source/note (imported/trusted)."
+        },
+        "waiver_reason": { "type": "string", "description": "required when baseline_route/verification_verdict='waived'" },
         "contract_ref": { "type": "string", "description": "artifact with metric_ids[] + validity_threats[]" }
       }
     }

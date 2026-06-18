@@ -12,6 +12,8 @@ SUITES = [
     ("idea selection gate", "test_idea_selection.py"),
     ("baseline contract / campaign coverage / analysis bridge", "test_campaign_bridge.py"),
     ("unified gate status / methodology resolution", "test_gate_status_methodology.py"),
+    ("waiver durability / finalize acknowledgement", "test_waiver_durability.py"),
+    ("validator freshness / stale computed flags", "test_validator_freshness.py"),
 ]
 
 

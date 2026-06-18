@@ -9,6 +9,7 @@ import json
 import os
 import sqlite3
 import glob
+import hashlib
 import jsonschema
 
 from paths import RECORDS_DIR
@@ -31,7 +32,7 @@ RECORD_MAP = {
     "participant.register":    dict(table="participant", pk=["quest_id", "instance_id"], id_from="fields", mode="upsert"),
     "idea.upsert":             dict(table="idea", pk=["idea_id"], id_from="record_id", mode="upsert"),
     "experiment.upsert":       dict(table="experiment", pk=["experiment_id"], id_from="record_id", mode="upsert"),
-    "result.record":           dict(table="result", pk=["result_id"], id_from="record_id", mode="upsert"),
+    "result.record":           dict(table="result", pk=["result_id"], id_from="record_id", mode="upsert", force={"provenance_ok": 0}),
     "measurement.record":      dict(table="measurement", pk=["measurement_id"], id_from="record_id", mode="upsert"),
     "analysis.record":         dict(table="analysis", pk=["analysis_id"], id_from="record_id", mode="upsert"),
     "claim.upsert":            dict(table="claim", pk=["claim_id"], id_from="record_id", mode="upsert"),
@@ -52,8 +53,9 @@ RECORD_MAP = {
     "paper_spine.upsert":      dict(table="paper_spine", pk=["quest_id"], id_from="record_id", mode="upsert", force={"submission_ready": 0}),
     "review.verdict":          dict(table="review_verdict", pk=["verdict_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "idea.select":             dict(table="idea_select", pk=["select_id"], id_from="record_id", mode="insert", force={"valid": 0}),
-    "baseline.contract":       dict(table="baseline_contract", pk=["contract_id"], id_from="record_id", mode="insert"),
+    "baseline.contract":       dict(table="baseline_contract", pk=["contract_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "analysis.bridge":         dict(table="analysis_bridge", pk=["bridge_id"], id_from="record_id", mode="insert", force={"valid": 0}),
+    "quality_gate.waiver":     dict(table="quality_gate_waiver", pk=["waiver_id"], id_from="record_id", mode="insert"),
     "operator_event.record":   dict(table="operator_intent_event", pk=["event_id"], id_from="record_id", mode="insert"),
     "quirk.append":            dict(table="quirk", pk=["quirk_id"], id_from="record_id", mode="insert"),
     "knowledge_pack.register": dict(table="knowledge_pack", pk=["pack_id"], id_from="record_id", mode="upsert"),
@@ -162,7 +164,11 @@ def validate(payload: dict) -> None:
 
 
 def _norm(v):
-    return int(v) if isinstance(v, bool) else v
+    if isinstance(v, bool):
+        return int(v)
+    if isinstance(v, (dict, list)):
+        return json.dumps(v, ensure_ascii=False)  # object/array payload fields land in TEXT columns as JSON
+    return v
 
 
 # ── Skill-caller authority + audit (exposing commands/packs as agent-invokable skills) ──────────────────
@@ -190,7 +196,7 @@ def set_caller(via):
         CALLER = {"kind": "loop", "role": None, "skill": None}
 
 
-_OPERATOR_ONLY_RT = {"gpu.confirm"}
+_OPERATOR_ONLY_RT = {"gpu.confirm", "quality_gate.waiver"}  # a waiver/finalize-ack is an operator exception
 _ORCH_ONLY_RT = {"decision.record", "decision.confirm", "finalize.record",
                  "round.open", "round.update", "round.close", "wakeup.arm", "wakeup.attach", "wakeup.resolve",
                  "handoff.open", "handoff.advance", "frontier.record", "operator_event.record",
@@ -205,7 +211,7 @@ _OWNER_RT = {"experiment.upsert": {"experimenter"}, "result.record": {"experimen
              "claim_evidence.resolve": {"reviewer", "writer"}}
 _TIER_B_RT = {"experiment.upsert", "result.record", "measurement.record", "experiment_param.record", "analysis.record"}
 _CMD_ROLES = {"experiment run": {"experimenter", "analyst"}, "result validate": {"orchestrator"},
-              "gpu confirm": {"operator"}}
+              "baseline validate": {"orchestrator"}, "gpu confirm": {"operator"}}
 
 
 def _deny(what, role):
@@ -346,6 +352,7 @@ def apply(conn: sqlite3.Connection, payload: dict) -> dict:
         _finalize_authenticity_gate(conn, cols.get("quest_id"))
         _finalize_coverage_gate(conn, cols.get("quest_id"))
         _finalize_review_gate(conn, cols.get("quest_id"))
+        _finalize_waiver_ack_gate(conn, cols.get("quest_id"))  # LAST: real gate failures surface first
 
     # Detect an open->closed round transition BEFORE the write so the plan_revision bump (below) fires once.
     round_closing = False
@@ -897,7 +904,8 @@ def _finalize_coverage_gate(conn, quest_id):
     if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
         return
     try:
-        sp = conn.execute("SELECT submission_ready FROM paper_spine WHERE quest_id=?", (quest_id,)).fetchone()
+        sp = conn.execute("SELECT submission_ready, validated_fingerprint FROM paper_spine WHERE quest_id=?",
+                          (quest_id,)).fetchone()
     except sqlite3.OperationalError:
         return  # paper_spine table absent on an un-reinited DB: do not block
     if not (sp and sp[0]):
@@ -908,6 +916,11 @@ def _finalize_coverage_gate(conn, quest_id):
             "(unmapped results, main claims without supporting evidence, empty not_claiming/limitations, "
             "process/draft traces), then re-finalize. A paper-spine artifact existing is NOT sufficient — the "
             "gate reads the validator-computed flag. Override: DEEPRESEARCH_COVERAGE_GATE=0.")
+    if is_stale(conn, quest_id, "manuscript", sp["validated_fingerprint"]):
+        raise RecordError(
+            f"quest {quest_id!r} cannot finalize as 'complete': manuscript coverage is STALE — the paper spine, "
+            "claims, or evidence changed after `manuscript coverage`. Re-run `manuscript coverage`. Override: "
+            "DEEPRESEARCH_COVERAGE_GATE=0.")
 
 
 def _finalize_review_gate(conn, quest_id):
@@ -933,8 +946,8 @@ def _finalize_review_gate(conn, quest_id):
     if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
         return  # advisory for scoping / pre-contract quests
     try:
-        row = conn.execute("SELECT verdict, valid, operator_confirmed FROM review_verdict WHERE quest_id=? "
-                           "ORDER BY created_at DESC, verdict_id DESC LIMIT 1", (quest_id,)).fetchone()
+        row = conn.execute("SELECT verdict, valid, operator_confirmed, validated_fingerprint FROM review_verdict "
+                           "WHERE quest_id=? ORDER BY created_at DESC, verdict_id DESC LIMIT 1", (quest_id,)).fetchone()
     except sqlite3.OperationalError:
         return  # review_verdict table absent on an un-reinited DB: do not block
     base = f"quest {quest_id!r} cannot finalize as 'complete' (rigor={rigor}): "
@@ -957,19 +970,159 @@ def _finalize_review_gate(conn, quest_id):
             raise RecordError(base + "the latest verdict is 'borderline'; it needs operator confirmation "
                               "(`review confirm`) to finalize at standard rigor, or route a revision to "
                               "reach 'accept'." + tail)
+    if is_stale(conn, quest_id, "review", row["validated_fingerprint"]):
+        raise RecordError(base + "the review verdict is STALE — the paper spine / claims / evidence changed after "
+                          "`review validate`. Re-review the current draft (then `review validate`)." + tail)
     # accept, or operator-confirmed borderline at standard -> the review side passes. The coverage gate is
     # enforced separately by _finalize_coverage_gate; BOTH are required for a complete finalize.
+
+
+# Finalize-sensitive gates and the env var that waives each (Phase 3). When one of these is env-waived on a
+# BOUND quest, finalize 'complete' requires a durable quality_gate.waiver acknowledgement for that gate.
+# Shared with cli.py (gate status surfaces the same mapping). 'manuscript_coverage' also covers campaign
+# coverage (no standalone env waiver); the analysis-bridge + provenance waivers cover the campaign path.
+FINALIZE_SENSITIVE_WAIVERS = {
+    "DEEPRESEARCH_BASELINE_CONTRACT_GATE": "baseline_contract",
+    "DEEPRESEARCH_BRIDGE_GATE":            "analysis_bridge",
+    "DEEPRESEARCH_COVERAGE_GATE":          "manuscript_coverage",
+    "DEEPRESEARCH_REVIEW_GATE":            "review_verdict",
+    "DEEPRESEARCH_PROVENANCE_GATE":        "provenance",
+    "DEEPRESEARCH_EVIDENCE_PROOF_GATE":    "evidence_proof",
+    "DEEPRESEARCH_AUTHENTICITY_GATE":      "authenticity",
+}
+
+
+def env_waived_finalize_gates():
+    """The finalize-sensitive gate names currently env-waived (read-only helper, used by the ack gate + cli)."""
+    return [g for env, g in FINALIZE_SENSITIVE_WAIVERS.items()
+            if os.environ.get(env) in ("0", "false", "no")]
+
+
+def acked_finalize_gates(conn, quest_id):
+    """Gate names with a durable finalize acknowledgement (finalize_ack=1 + non-empty reason) for this quest."""
+    try:
+        return {r[0] for r in conn.execute(
+            "SELECT gate FROM quality_gate_waiver WHERE quest_id=? AND finalize_ack=1 "
+            "AND reason IS NOT NULL AND TRIM(reason) <> ''", (quest_id,))}
+    except sqlite3.OperationalError:
+        return set()
+
+
+def _finalize_waiver_ack_gate(conn, quest_id):
+    """Pre-finalize accountability gate: a BOUND quest may not finalize 'complete' while a finalize-sensitive
+    gate is ENV-WAIVED unless a durable quality_gate.waiver acknowledgement (finalize_ack=1 + reason) exists
+    for that gate. Makes operator env bypasses explicit + auditable instead of silent. NOT itself
+    env-bypassable (it is the accountability layer). Exempt for scoping / pre-contract / older DBs, and for
+    idempotent re-finalize. Runs LAST in the finalize block so real gate failures surface their own reasons."""
+    if not quest_id:
+        return
+    waived = env_waived_finalize_gates()
+    if not waived:
+        return
+    try:
+        if conn.execute("SELECT COUNT(*) FROM finalize_outcome WHERE quest_id=? AND outcome='complete'",
+                        (quest_id,)).fetchone()[0]:
+            return  # idempotent re-finalize / recovery replay
+        qrow = conn.execute("SELECT rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return
+    if not qrow:
+        return
+    rigor = qrow[0] or "standard"
+    if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
+        return  # advisory for scoping / pre-contract quests (waiver still visible in gate status)
+    missing = sorted(set(waived) - acked_finalize_gates(conn, quest_id))
+    if missing:
+        raise RecordError(
+            f"quest {quest_id!r} cannot finalize as 'complete': finalize-sensitive gate(s) {missing} are "
+            "ENV-WAIVED without a durable acknowledgement. Record a `quality_gate.waiver` (finalize_ack=true + "
+            "a reason) for each — e.g. `record apply --type quality_gate.waiver` with gate=<name>, source='env', "
+            "finalize_ack=true, reason='…'. Env bypasses must be acknowledged, not silent.")
+
+
+# ── Validator freshness (Phase 5): stale computed-flag detection ────────────────────────────────────────
+# Each validator stamps a DEPENDENCY FINGERPRINT (signature of the records it validated over) onto its row;
+# the consuming gates + gate status recompute it and FAIL CLOSED (bound quests) when it no longer matches —
+# i.e. a dependency changed after validation. Timestamp-independent (works with the fixed test clock) and
+# coarse-but-safe: ANY change to a tracked dependency invalidates the flag (re-run the validator). Waive all
+# freshness checks with DEEPRESEARCH_FRESHNESS_GATE=0 (surfaced in gate status active_waivers).
+def freshness_waived():
+    return os.environ.get("DEEPRESEARCH_FRESHNESS_GATE") in ("0", "false", "no")
+
+
+def _fp(parts):
+    return hashlib.sha1("\x1f".join(parts).encode("utf-8", "replace")).hexdigest()[:16]
+
+
+def _result_prov(conn, ref):
+    try:
+        r = conn.execute("SELECT provenance_ok FROM result WHERE result_id=?", (ref,)).fetchone()
+    except sqlite3.OperationalError:
+        return "na"
+    return str(r[0]) if r else "missing"
+
+
+def dep_fingerprint(conn, quest_id, kind):
+    """Stable signature of the dependencies a validator-computed flag rests on. kind ∈
+    {baseline, campaign, manuscript, review}. Returns '' if the inputs cannot be read (treated as not-checked)."""
+    try:
+        if kind == "baseline":
+            row = conn.execute(
+                "SELECT contract_id, baseline_route, evidence_ref, verification_verdict, waiver_reason, "
+                "primary_metric_id, comparison_policy, dataset, split, eval_protocol, baseline_id, baseline_name, "
+                "contract_ref FROM baseline_contract WHERE quest_id=? ORDER BY created_at DESC, contract_id DESC "
+                "LIMIT 1", (quest_id,)).fetchone()
+            if not row:
+                return ""
+            parts = [f"{k}={row[k]}" for k in row.keys()]
+            parts.append("refprov=" + _result_prov(conn, row["evidence_ref"] or ""))
+            return _fp(parts)
+
+        if kind in ("campaign", "manuscript", "review"):
+            parts = [f"kind={kind if kind == 'campaign' else 'paper'}"]
+            if kind != "campaign":
+                sp = conn.execute("SELECT spine_ref, thesis, n_core_claims FROM paper_spine WHERE quest_id=?",
+                                  (quest_id,)).fetchone()
+                parts.append("spine=" + ("|".join(str(x) for x in sp) if sp else "none"))
+            for r in conn.execute("SELECT claim_id, status FROM claim WHERE quest_id=? AND kind='claim' "
+                                  "ORDER BY claim_id", (quest_id,)):
+                parts.append(f"claim:{r[0]}:{r[1]}")
+            ev = conn.execute(
+                "SELECT claim_id, source_kind, source_ref, COALESCE(evidence_kind,''), COALESCE(evidence_proof,''), "
+                "relation FROM claim_evidence WHERE claim_id IN (SELECT claim_id FROM claim WHERE quest_id=?) "
+                "ORDER BY claim_id, source_kind, source_ref", (quest_id,))
+            for r in ev:
+                prov = ("prov=" + _result_prov(conn, r[2])) if r[1] == "result" else ""
+                parts.append(f"ev:{r[0]}:{r[1]}:{r[2]}:{r[3]}:{_fp([r[4]])}:{r[5]}:{prov}")
+            if kind == "campaign":
+                bg = conn.execute("SELECT baseline_gate FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+                parts.append("bg=" + (str(bg[0]) if bg else "none"))
+            return _fp(parts)
+    except sqlite3.OperationalError:
+        return ""
+    return ""
+
+
+def is_stale(conn, quest_id, kind, stored):
+    """True iff a stored validator fingerprint exists, freshness is enforced, and the dependencies have changed
+    since. A NULL/empty stored fingerprint = legacy / not-fingerprinted -> NOT stale (history-safe; the valid
+    flag still governs)."""
+    if freshness_waived() or not stored:
+        return False
+    return dep_fingerprint(conn, quest_id, kind) != stored
 
 
 _BASELINE_OK_VERDICTS = {"verified_match", "close_match", "trusted_with_caveats"}
 
 
 def _baseline_contract_gate(conn, quest_id, new_gate):
-    """Pre-write gate: STRENGTHENS the existing quest.baseline_gate. Setting baseline_gate='passed' requires
-    the latest `baseline.contract` to carry an acceptable verification_verdict (verified_match / close_match /
-    trusted_with_caveats); setting 'waived' requires verification_verdict='waived' AND a non-empty waiver_reason.
-    'pending'/'blocked' are unconstrained. Binds for research-contract quests at rigor >= 'standard'; advisory
-    for scoping / pre-contract / older DBs. Waive: DEEPRESEARCH_BASELINE_CONTRACT_GATE=0."""
+    """Pre-write gate: STRENGTHENS the existing quest.baseline_gate. Setting baseline_gate='passed' requires the
+    latest `baseline.contract` to be VALIDATOR-confirmed (valid=1, set by `baseline validate`) on a real route
+    (reproduced/imported/trusted); setting 'waived' requires a validated waiver (valid=1 AND
+    baseline_route='waived'). The author-asserted verification_verdict alone no longer passes — a 'verified_match'
+    with no validation evidence is rejected. 'pending'/'blocked' are unconstrained. Binds for research-contract
+    quests at rigor >= 'standard'; advisory for scoping / pre-contract / older DBs. Waive:
+    DEEPRESEARCH_BASELINE_CONTRACT_GATE=0."""
     if not quest_id or os.environ.get("DEEPRESEARCH_BASELINE_CONTRACT_GATE") in ("0", "false", "no"):
         return
     if new_gate not in ("passed", "waived"):
@@ -982,23 +1135,32 @@ def _baseline_contract_gate(conn, quest_id, new_gate):
     if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
         return
     try:
-        row = conn.execute("SELECT verification_verdict, waiver_reason FROM baseline_contract WHERE quest_id=? "
-                           "ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+        row = conn.execute("SELECT verification_verdict, waiver_reason, valid, baseline_route, validated_fingerprint "
+                           "FROM baseline_contract WHERE quest_id=? ORDER BY created_at DESC, contract_id DESC "
+                           "LIMIT 1", (quest_id,)).fetchone()
     except sqlite3.OperationalError:
         return  # baseline_contract table absent on an un-reinited DB: do not block
     base = f"quest {quest_id!r} cannot set baseline_gate={new_gate!r}: "
     tail = " Override: DEEPRESEARCH_BASELINE_CONTRACT_GATE=0."
     if row is None:
         raise RecordError(base + "no typed baseline.contract recorded. Record one (baseline id/name, comparison "
-                          "policy, metric ids, dataset/split, eval protocol, verification verdict) before opening "
-                          "the baseline gate." + tail)
-    verdict, waiver = row[0], row[1]
-    if new_gate == "passed" and verdict not in _BASELINE_OK_VERDICTS:
-        raise RecordError(base + f"latest baseline.contract verdict is {verdict!r}; 'passed' requires one of "
-                          f"{sorted(_BASELINE_OK_VERDICTS)} (or set baseline_gate='waived' with a waiver)." + tail)
-    if new_gate == "waived" and (verdict != "waived" or not (waiver or "").strip()):
-        raise RecordError(base + "'waived' requires a baseline.contract with verification_verdict='waived' AND a "
-                          "non-empty waiver_reason." + tail)
+                          "policy, metric ids, dataset/split, eval protocol, baseline_route, verification verdict) "
+                          "and run `baseline validate` before opening the baseline gate." + tail)
+    valid, route = row[2], (row[3] or "")
+    if not valid:
+        raise RecordError(base + "the latest baseline.contract is not validator-confirmed (valid=0). Run "
+                          "`baseline validate` — the author-asserted verification_verdict alone no longer passes "
+                          "the gate." + tail)
+    if new_gate == "passed" and route == "waived":
+        raise RecordError(base + "the validated baseline.contract is a WAIVER (baseline_route='waived'); set "
+                          "baseline_gate='waived' (not 'passed'), or record + validate a real baseline." + tail)
+    if new_gate == "waived" and route != "waived":
+        raise RecordError(base + "'waived' requires a validated baseline.contract with baseline_route='waived' "
+                          "AND a waiver reason (run `baseline validate`)." + tail)
+    if is_stale(conn, quest_id, "baseline", row["validated_fingerprint"]):
+        raise RecordError(base + "the baseline.contract validation is STALE — a dependency (the contract or its "
+                          "referenced result's provenance) changed after `baseline validate`. Re-run `baseline "
+                          "validate`." + tail)
 
 
 def _analysis_bridge_gate(conn, quest_id, round_index, handoff_id):
@@ -1025,17 +1187,22 @@ def _analysis_bridge_gate(conn, quest_id, round_index, handoff_id):
     if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
         return
     try:
-        n = conn.execute("SELECT COUNT(*) FROM analysis_bridge WHERE quest_id=? AND valid=1",
-                         (quest_id,)).fetchone()[0]
+        br = conn.execute("SELECT valid, validated_fingerprint FROM analysis_bridge WHERE quest_id=? "
+                          "ORDER BY created_at DESC, bridge_id DESC LIMIT 1", (quest_id,)).fetchone()
     except sqlite3.OperationalError:
         return  # analysis_bridge table absent on an un-reinited DB: do not block
-    if not n:
+    if not br or not br[0]:
         raise RecordError(
             f"{rr[0]} dispatch blocked for quest {quest_id!r} (handoff {handoff_id!r}, rigor={rigor}): no "
             "validator-confirmed analysis bridge / sufficient campaign coverage. Record a typed `analysis.bridge` "
             "(claim->evidence map, mechanism interpretation, alternatives, limitations, paper-facing result "
             "paragraphs) and pass `campaign validate --quest-id <q>` (per-claim coverage by evidence_kind under "
             "the rigor floor) before the Writer may consume analysis. Override: DEEPRESEARCH_BRIDGE_GATE=0.")
+    if is_stale(conn, quest_id, "campaign", br["validated_fingerprint"]):
+        raise RecordError(
+            f"{rr[0]} dispatch blocked for quest {quest_id!r}: the analysis bridge / campaign coverage validation "
+            "is STALE — claims/evidence/results/baseline_gate changed after `campaign validate`. Re-run "
+            "`campaign validate`. Override: DEEPRESEARCH_BRIDGE_GATE=0.")
 
 
 def _idea_gate(conn, quest_id, round_index, handoff_id):

@@ -16,13 +16,55 @@ MIGRATIONS = [
     ("quest", "rigor_level",   "ALTER TABLE quest ADD COLUMN rigor_level TEXT"),
     ("claim", "kind",          "ALTER TABLE claim ADD COLUMN kind TEXT NOT NULL DEFAULT 'claim'"),
     ("claim_evidence", "evidence_kind", "ALTER TABLE claim_evidence ADD COLUMN evidence_kind TEXT"),
+    ("claim_evidence", "evidence_proof", "ALTER TABLE claim_evidence ADD COLUMN evidence_proof TEXT"),
+    ("result", "provenance_route", "ALTER TABLE result ADD COLUMN provenance_route TEXT"),
+    ("result", "provenance",       "ALTER TABLE result ADD COLUMN provenance TEXT"),
+    ("result", "provenance_ok",    "ALTER TABLE result ADD COLUMN provenance_ok INTEGER NOT NULL DEFAULT 0"),
+    ("baseline_contract", "baseline_route", "ALTER TABLE baseline_contract ADD COLUMN baseline_route TEXT"),
+    ("baseline_contract", "evidence_ref",   "ALTER TABLE baseline_contract ADD COLUMN evidence_ref TEXT"),
+    ("baseline_contract", "valid",          "ALTER TABLE baseline_contract ADD COLUMN valid INTEGER NOT NULL DEFAULT 0"),
+    ("baseline_contract", "validated_fingerprint", "ALTER TABLE baseline_contract ADD COLUMN validated_fingerprint TEXT"),
+    ("analysis_bridge", "validated_fingerprint",    "ALTER TABLE analysis_bridge ADD COLUMN validated_fingerprint TEXT"),
+    ("paper_spine", "validated_fingerprint",        "ALTER TABLE paper_spine ADD COLUMN validated_fingerprint TEXT"),
+    ("review_verdict", "validated_fingerprint",     "ALTER TABLE review_verdict ADD COLUMN validated_fingerprint TEXT"),
+]
+
+
+# New TABLES added after the initial schema. Existing DBs (not re-init'd) get them here on connect; fresh DBs
+# also get them from schema.sql. Purely additive (CREATE TABLE IF NOT EXISTS) — no row is ever rewritten.
+NEW_TABLES = [
+    ("quality_gate_waiver",
+     "CREATE TABLE IF NOT EXISTS quality_gate_waiver ("
+     "  waiver_id TEXT PRIMARY KEY,"
+     "  quest_id TEXT NOT NULL REFERENCES quest(quest_id),"
+     "  gate TEXT NOT NULL,"
+     "  source TEXT NOT NULL DEFAULT 'operator' CHECK (source IN ('env','operator','record','scoping')),"
+     "  reason TEXT NOT NULL,"
+     "  actor TEXT,"
+     "  finalize_ack INTEGER NOT NULL DEFAULT 0,"
+     "  expiry TEXT,"
+     "  scope TEXT,"
+     "  created_at TEXT NOT NULL"
+     ")"),
 ]
 
 
 def migrate(conn: sqlite3.Connection) -> dict:
-    """Idempotent, history-safe column additions. Skips tables that don't exist yet (fresh pre-schema conn)
-    and columns already present. Never rewrites a row."""
+    """Idempotent, history-safe column + table additions. Skips tables that don't exist yet (fresh pre-schema
+    conn) and columns already present. Never rewrites a row."""
     applied = []
+    for table, ddl in NEW_TABLES:
+        try:
+            exists = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone()
+        except sqlite3.OperationalError:
+            exists = None
+        if exists:
+            continue
+        try:
+            conn.execute(ddl)
+            applied.append(f"table:{table}")
+        except sqlite3.OperationalError:
+            pass
     for table, col, ddl in MIGRATIONS:
         try:
             cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}

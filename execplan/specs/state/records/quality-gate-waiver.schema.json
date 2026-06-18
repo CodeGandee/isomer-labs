@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/quality-gate-waiver",
+  "title": "quality_gate.waiver record",
+  "description": "Durable, auditable record of a quality-gate waiver / finalize acknowledgement. `reason` is REQUIRED (the audit trail). `finalize_ack=true` acknowledges that a finalize-sensitive gate is intentionally waived: on a BOUND quest, finalize 'complete' is blocked while a finalize-sensitive gate is env-waived UNLESS a quality_gate.waiver with finalize_ack=true + reason exists for that gate (_finalize_waiver_ack_gate). Operator-authored (operator/orchestrator authority).",
+  "oneOf": [
+    {
+      "title": "quality_gate.waiver",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "gate", "reason"],
+      "properties": {
+        "record_type": { "const": "quality_gate.waiver" },
+        "record_id": { "type": "string", "description": "waiver_id (unique)" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "gate": { "type": "string", "description": "gate name, e.g. baseline_contract / analysis_bridge / manuscript_coverage / review_verdict / provenance / authenticity" },
+        "source": { "enum": ["env", "operator", "record", "scoping"], "description": "how the waiver arose" },
+        "reason": { "type": "string", "minLength": 1, "description": "REQUIRED human reason (a waiver without a reason is rejected)" },
+        "actor": { "type": "string", "description": "operator / actor id" },
+        "finalize_ack": { "type": "boolean", "description": "true acknowledges a finalize-sensitive waiver for finalize" },
+        "expiry": { "type": "string", "description": "optional ISO-8601 expiry" },
+        "scope": { "type": "string", "description": "optional free-text scope" }
+      }
+    }
+  ]
+}

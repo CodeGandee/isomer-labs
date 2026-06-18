@@ -26,7 +26,11 @@ You are the orchestrator collecting a specialist's result. One bounded turn. See
 2. **Fold in** (the specialist already wrote its rows; you confirm/gate):
    - `experiment` result → `$HARNESS result validate` (sets `result.validity`); if a new valid best,
      `$HARNESS record apply --type quest.update --best_result_ref ...`.
-   - `baseline` → set the gate: `$HARNESS record apply --type quest.update --baseline_gate passed|waived|blocked`.
+   - `baseline` → **first** `$HARNESS baseline validate --quest-id <q>` (computes the validator-owned `valid`
+     flag from the contract's `baseline_route` + eval contract + route-specific verification), **then** set the
+     gate: `$HARNESS record apply --type quest.update --baseline_gate passed|waived|blocked`. `passed`/`waived`
+     now require `valid=1` — an author-asserted `verification_verdict` alone is rejected; if `baseline validate`
+     fails, route back to `baseline` with its reasons rather than opening the gate.
    - `analysis`/`write` → confirm the produced rows exist via `$HARNESS state query`.
    - `review` → the Reviewer must have recorded a typed `review.verdict` (verdict + verdict_ref to the typed
      verdict.json). Run `$HARNESS review validate --quest-id <q>` (schema + actionability; sets `valid` +

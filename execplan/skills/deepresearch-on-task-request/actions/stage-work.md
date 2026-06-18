@@ -23,9 +23,14 @@ names, logs) with manuscript content.
 experimenter thereafter — not the optional `shared/baseline/`) and report it. **Record a typed `baseline.contract`** — `baseline_id`, `baseline_name`, `comparison_policy`, `primary_metric_id`, `dataset`, `split`,
 `eval_protocol`, `verification_verdict` (`verified_match`/`close_match`/`trusted_with_caveats`/`diverged`/`broken`,
 or `waived`+`waiver_reason` if no baseline exists; metric_ids[]/validity_threats[] go in the `contract_ref`
-artifact) via `$HARNESS record apply --type baseline.contract`. The orchestrator then sets `baseline_gate`, but
-**`baseline_gate=passed` now requires an acceptable contract verdict and `=waived` requires a `waived` verdict +
-reason** (the baseline-contract gate strengthens, not replaces, the existing gate). May `$HARNESS lit search/fetch` → `--type reference.record`. **Use the `ideation-rubric` pack**
+artifact) via `$HARNESS record apply --type baseline.contract`. **Declare a `baseline_route`**
+(`reproduced`|`imported`|`trusted`|`waived`) and the matching `evidence_ref`: `reproduced` → a baseline
+`result_id` that has **validated provenance** (`result validate` → `provenance_ok=1`); `imported`/`trusted` → a
+citation/source/note; `waived` → a `waiver_reason`. The orchestrator then runs **`$HARNESS baseline validate`**
+(which computes the validator-owned `valid` flag) before setting `baseline_gate`: **`baseline_gate=passed` now
+requires a VALIDATED contract (`valid=1`) on a real route, and `=waived` a validated waiver** — an
+author-asserted `verification_verdict` alone no longer passes (the baseline-contract gate strengthens, not
+replaces, the existing gate). May `$HARNESS lit search/fetch` → `--type reference.record`. **Use the `ideation-rubric` pack**
 (`$HARNESS knowledge cards`): for `scope`, fill the **eval-contract** (task · dataset · split · official eval
 path · primary metric + direction · fair-comparison rule · useful-improvement threshold) and compare baseline
 routes **attach / import / verify-local / reproduce / reject** (don't force one route) per
@@ -93,10 +98,17 @@ contract (research question · hypothesis · intervention · controls · metric 
 condition · comparability verdict · claim_update). Stop widening after two slices that don't move the claim
 boundary; aim for ~5–10 paper-facing analysis groups for a mature paper.
 
-**Tag evidence kind (MANDATORY for coverage).** When you link evidence to a claim, set the typed
+**Tag evidence kind + PROOF (MANDATORY for coverage).** When you link evidence to a claim, set the typed
 `evidence_kind` on `claim_evidence.link` — one of `baseline_comparison`/`main_result`/`ablation`/`robustness`/
-`negative`/`efficiency`/`boundary`/`qualitative`/`significance`/`error_analysis`. This is what `campaign
-validate` reasons over (do NOT rely on prose). **Analysis→paper bridge (MANDATORY — this is what gates
+`negative`/`efficiency`/`boundary`/`qualitative`/`significance`/`error_analysis` — AND attach structured
+`evidence_proof`: a **label is not proof**. `campaign validate` will NOT count a kind without its required
+proof keys: `main_result`/`baseline_comparison` {metric, direction}; `ablation` {changed_factor, controls,
+delta, **parent_result** (a resolvable result_id)}; `robustness` {varied_condition, original_condition,
+criterion}; `negative`/`boundary` {hypothesis, observed, implication}; `significance` {method, effect (test/
+p-value/interval)}; `efficiency` {resource, metric, baseline}; `error_analysis` {error_category, subset,
+implication}. Result-backed evidence ALSO needs `provenance_ok=1` (run `result validate`); `reference`/
+`external` evidence needs an explicit `source`/`citation` and is never treated as local experimental proof.
+Uncounted evidence is reported with a clear reason (e.g. `ablation evidence not counted: missing changed_factor`). **Analysis→paper bridge (MANDATORY — this is what gates
 analysis → write; the Writer must NOT consume raw logs).** Write the typed bridge to
 `runs/<q>/analysis/bridge-<round>.json` — `supported_claims`/`weakened_or_refuted_claims`,
 `mechanism_interpretation`, `alternative_explanations`, `limitations`, `failure_modes`,

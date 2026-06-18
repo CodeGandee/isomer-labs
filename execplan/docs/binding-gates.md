@@ -60,8 +60,55 @@ plus `finalize_readiness` and `blocking_gates[]`. The Orchestrator dispatches to
 | `DEEPRESEARCH_IDEA_SLATE_MIN` / `DEEPRESEARCH_IDEA_SCORE_MIN` | idea-selection floors (per run) |
 | `DEEPRESEARCH_IDEA_NOVELTY_WAIVER=1` | allow `novelty_label='not_differentiated'` |
 | `DEEPRESEARCH_SCHOLARSHIP_MIN_REFS` / `_MIN_REF_CLAIMS` | scholarship bar |
+| `DEEPRESEARCH_PROVENANCE_GATE=0` | result-provenance enforcement in campaign coverage |
+| `DEEPRESEARCH_EVIDENCE_PROOF_GATE=0` | evidence-kind proof enforcement in campaign coverage |
+| `DEEPRESEARCH_FRESHNESS_GATE=0` | validator-freshness (stale computed-flag) checks |
 | `DEEPRESEARCH_AUTHENTICITY_GATE=0` | finalize authenticity gate |
 | `DEEPRESEARCH_COMPLETENESS_GATE_RIGOR=none` | finalize completeness checklist |
+
+## Durable waivers + finalize acknowledgement
+Env waivers are **visible** (`gate status` reports `status:"waived"`, `waiver_source`, and lists every active
+override in `active_waivers`) but they are not silent passes for finalize. On a **bound** quest, finalize
+`complete` is HARD-BLOCKED (`_finalize_waiver_ack_gate`, runs last) while any **finalize-sensitive** gate is
+env-waived unless a durable **`quality_gate.waiver`** record (`finalize_ack=true` + a non-empty `reason`)
+exists for that gate. The finalize-sensitive env→gate map:
+
+| Env waiver | Acked gate name |
+|---|---|
+| `DEEPRESEARCH_BASELINE_CONTRACT_GATE=0` | `baseline_contract` |
+| `DEEPRESEARCH_BRIDGE_GATE=0` | `analysis_bridge` |
+| `DEEPRESEARCH_COVERAGE_GATE=0` | `manuscript_coverage` |
+| `DEEPRESEARCH_REVIEW_GATE=0` | `review_verdict` |
+| `DEEPRESEARCH_PROVENANCE_GATE=0` | `provenance` |
+| `DEEPRESEARCH_EVIDENCE_PROOF_GATE=0` | `evidence_proof` |
+| `DEEPRESEARCH_AUTHENTICITY_GATE=0` | `authenticity` |
+
+Record an acknowledgement through the single write path:
+`record apply --type quality_gate.waiver` with `gate`, `source` (`env|operator|record|scoping`), `reason`
+(required), and `finalize_ack=true`. `reason` is schema-required, so a waiver with no reason is rejected.
+`gate status` surfaces `durable_waivers`, `finalize_ack_present`, and `finalize_ack_missing`; the ack-gate is
+the only escape (it is NOT itself env-bypassable). Scoping/advisory quests stay permissive but the waiver is
+still shown. Read the audit trail with `gate waiver list --quest-id <q>`.
+
+## Validator freshness (stale computed flags)
+Validator-computed flags (`baseline_contract.valid`, `analysis_bridge.valid`, `paper_spine.submission_ready`,
+`review_verdict.valid`) can go stale if their inputs change after validation. Each validator stamps a
+**dependency fingerprint** (`validated_fingerprint`) — a signature of the records it validated over — onto its
+row. The consuming gates + `gate status` recompute it and treat the flag as STALE when it no longer matches:
+- baseline ← the contract's gate-relevant fields + the referenced result's `provenance_ok`;
+- campaign/bridge ← the quest's claims + supporting claim_evidence (incl. evidence_proof + each result's
+  `provenance_ok`) + `baseline_gate`;
+- manuscript/spine and review ← the paper spine row + claims + supporting evidence.
+
+A **bound** quest FAILS CLOSED on a stale flag at the hard transition/finalize (re-run the relevant validator).
+`gate status` shows the per-gate stale reason and a top-level `stale_gates[]` list (computed even in
+scoping/advisory mode, where the hard gates stay permissive — staleness is visible but non-blocking). The
+fingerprint is **coarse**: any change to a tracked dependency invalidates the flag. A NULL fingerprint (legacy /
+pre-Phase-5) is treated as not-checked (history-safe). `result.provenance_ok` is fresh-by-construction (a
+`result.record` re-upsert force-resets it to 0). Waive all freshness checks with `DEEPRESEARCH_FRESHNESS_GATE=0`
+(surfaced in `active_waivers`). **After changing evidence, results, claims, the paper spine, or the review
+target, re-run the relevant validator** (`result validate` / `baseline validate` / `campaign validate` /
+`manuscript coverage` / `review validate`).
 
 ## Live-DB note
 The gate tables (`idea_select`, `baseline_contract`, `analysis_bridge`, `paper_spine`, `review_verdict`) and
@@ -70,4 +117,5 @@ On an un-reinited older DB a gate fails **safe** (advisory) if its table is abse
 
 ## Regression
 `python3 tests/binding/run_all.py` runs all gate suites (paper-spine/coverage, review verdict, idea selection,
-baseline/campaign/bridge, gate status/methodology resolution).
+baseline/campaign/bridge, gate status/methodology resolution, waiver durability/finalize acknowledgement,
+validator freshness/stale computed flags).

@@ -30,6 +30,16 @@ now(){ date -u +%FT%TZ; }               # caller-supplied ISO-8601 timestamps
 M(){ houmao-mgr project --project-dir "$P" "$@"; }
 ```
 
+> **Runtime vs source-of-truth.** `execplan/` is the SOURCE OF TRUTH (skills, packs, harness, schemas, docs).
+> `.houmao/` is RUNTIME/GENERATED except for `.houmao/agents/` (role/preset/skill templates), `houmao-config.toml`,
+> and credentials under `.houmao/content/auth/`. Specifically `.houmao/runtime/homes/claude-brain-*` (per-launch
+> agent home snapshots) and `.houmao/runtime/manifests/*` are regenerated from `.houmao/agents/` (which the
+> launch installs from `execplan/skills/`) on every launch — **do not edit them by hand and never commit them**
+> (`.houmao/.gitignore` is `*`). They accumulate across launches; to reclaim space, stop all agents and delete
+> stale `.houmao/runtime/homes/claude-brain-*` snapshots plus their matching `.houmao/runtime/manifests/*.yaml`
+> (keep `.houmao/runtime/sessions/`); the next launch rebuilds the homes. If a local launch behaves oddly,
+> suspect a stale runtime home and purge it rather than editing it.
+
 ---
 
 ## Pre-flight 🟢 (read-only gate — must pass before anything below)

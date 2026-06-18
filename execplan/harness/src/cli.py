@@ -758,7 +758,11 @@ def bo_suggest(ctx, quest_id, space_id):
             mid = (d["low"] + d["high"]) / 2
             sug[d["dim_name"]] = int(mid) if d["dim_kind"] == "int" else mid
     emit(envelope("bo suggest", quest_id=quest_id,
-                  data={"stub": True, "strategy": "midpoint-default", "observations": nobs, "suggestion": sug}))
+                  data={"stub": True, "strategy": "midpoint-default", "observations": nobs, "suggestion": sug},
+                  warnings=["PLACEHOLDER refiner: 'midpoint-default' is NOT a real search proposal — it ignores "
+                            f"all {nobs} observed result(s) and does not update on negative findings. Install a "
+                            "bo-refiner adapter (knowledge_pack kind='refiner') for a real policy. Do NOT treat "
+                            "this suggestion as optimization evidence; record it only as an exploratory seed."]))
 
 
 @bo.command("status")
@@ -1042,6 +1046,45 @@ def experiment_run(ctx, experiment_id, quest_id, cmd, cwd, timeout):
         sys.exit(1)
 
 
+def _provenance_waived():
+    """Operator override: turn provenance enforcement off (advisory). Surfaced in gate status active_waivers."""
+    return os.environ.get("DEEPRESEARCH_PROVENANCE_GATE") in ("0", "false", "no")
+
+
+def _provenance_verdict(route, prov):
+    """Validator for a result's reconstructable-run provenance. Returns (ok, reasons). `prov` is the parsed
+    provenance manifest (dict). The author declares `route`; this decides whether it actually holds up.
+      executed -> needs command + (code_revision|worktree) + a metric source + run_status (failed => failure_mode)
+      imported/trusted -> needs a 'source' or 'note' citing the origin (legitimate non-execution route)
+      waived -> needs a non-empty waiver_reason (provenance intentionally deferred, but EXPLICIT)
+    """
+    prov = prov or {}
+    s = lambda k: (prov.get(k) or "").strip() if isinstance(prov.get(k), str) else prov.get(k)
+    if not route:
+        return False, ["no provenance_route declared (set executed|imported|trusted|waived on result.record)"]
+    if route == "waived":
+        return (bool(s("waiver_reason")),
+                [] if s("waiver_reason") else ["provenance_route='waived' requires provenance.waiver_reason"])
+    if route in ("imported", "trusted"):
+        return (bool(s("source") or s("note")),
+                [] if (s("source") or s("note")) else
+                [f"provenance_route={route!r} requires provenance.source or provenance.note citing the origin"])
+    # executed
+    reasons = []
+    if not s("command"):
+        reasons.append("missing provenance.command")
+    if not (s("code_revision") or s("worktree")):
+        reasons.append("missing provenance.code_revision or provenance.worktree")
+    if not (s("metric_source") or s("log_ref") or prov.get("output_artifacts")):
+        reasons.append("missing metric source (provenance.metric_source / log_ref / output_artifacts)")
+    status = s("run_status")
+    if not status:
+        reasons.append("missing provenance.run_status")
+    elif status in ("failed", "error", "aborted") and not s("failure_mode"):
+        reasons.append(f"run_status={status!r} (failure) requires provenance.failure_mode")
+    return (not reasons), reasons
+
+
 @cli.group()
 def result(): ...
 
@@ -1055,7 +1098,9 @@ def result_validate(ctx, result_id, validity):
     """Default validity gate (domain-neutral). With --validity it honors the override; otherwise it COMPUTES
     validity from metric completeness + baseline comparability: no measurements -> invalid; no is_primary
     (objective) measurement -> incomparable; baseline_gate not passed/waived -> incomparable; else valid. A
-    knowledge_pack(kind='validator') adapter can supersede this with a domain correctness gate."""
+    knowledge_pack(kind='validator') adapter can supersede this with a domain correctness gate. ALSO computes
+    the validator-owned provenance_ok flag from the result's declared provenance_route + manifest (campaign
+    coverage will not count this result's evidence unless provenance_ok=1, or an explicit route waives it)."""
     _authz_cmd("result validate")  # skill caller must be orchestrator (loop/operator bypass)
     conn = _conn(ctx)
     row = conn.execute("SELECT quest_id FROM result WHERE result_id=?", (result_id,)).fetchone()
@@ -1078,11 +1123,115 @@ def result_validate(ctx, result_id, validity):
             computed = "incomparable"; reasons.append(f"baseline_gate={gate!r} — no trustworthy comparator yet")
         else:
             computed = "valid"
-    cur = conn.execute("UPDATE result SET validity=? WHERE result_id=?", (computed, result_id))
+    conn.execute("UPDATE result SET validity=? WHERE result_id=?", (computed, result_id))
+    # Provenance (Phase 1): compute the validator-OWNED provenance_ok from the declared route + manifest, so
+    # the author cannot self-certify it. Campaign coverage will not count this result's evidence unless ok=1.
+    prow = conn.execute("SELECT provenance_route, provenance FROM result WHERE result_id=?", (result_id,)).fetchone()
+    try:
+        prov = json.loads(prow["provenance"]) if prow and prow["provenance"] else {}
+    except Exception:
+        prov = {}
+    prov_route = prow["provenance_route"] if prow else None
+    prov_ok, prov_reasons = _provenance_verdict(prov_route, prov)
+    conn.execute("UPDATE result SET provenance_ok=? WHERE result_id=?", (1 if prov_ok else 0, result_id))
     conn.commit()
     _finish(ctx, conn, "result validate",
             {"result_id": result_id, "validity": computed, "source": "override" if validity else "computed",
-             "reasons": reasons, "quest_id": quest_id}, quest_id=quest_id)
+             "reasons": reasons, "provenance_ok": prov_ok, "provenance_route": prov_route,
+             "provenance_reasons": prov_reasons, "quest_id": quest_id}, quest_id=quest_id)
+
+
+def _baseline_result_provenance(conn, evidence_ref):
+    """A 'reproduced' baseline must cite a baseline result_id that carries validated provenance (Phase-1 flag)."""
+    if not (evidence_ref or "").strip():
+        return False, "reproduced baseline requires evidence_ref pointing to a baseline result_id"
+    try:
+        r = conn.execute("SELECT provenance_ok FROM result WHERE result_id=?", (evidence_ref,)).fetchone()
+    except sqlite3.OperationalError:
+        return False, "reproduced baseline result not resolvable (no result table)"
+    if r is None:
+        return False, f"reproduced baseline evidence_ref {evidence_ref!r} does not resolve to a result"
+    if not r["provenance_ok"]:
+        return False, f"reproduced baseline result {evidence_ref!r} lacks validated provenance (run `result validate`)"
+    return True, ""
+
+
+def _baseline_validity(conn, quest_id):
+    """Compute whether the latest baseline.contract is acceptable. Returns (ok, reasons, route). Used by
+    `baseline validate` (persists the `valid` flag) and by `gate status` (read-only, for live reasons)."""
+    row = conn.execute(
+        "SELECT contract_id, baseline_route, evidence_ref, verification_verdict, waiver_reason, baseline_id, "
+        "baseline_name, comparison_policy, primary_metric_id, dataset, split, eval_protocol, contract_ref "
+        "FROM baseline_contract WHERE quest_id=? ORDER BY created_at DESC, contract_id DESC LIMIT 1",
+        (quest_id,)).fetchone()
+    if row is None:
+        return False, ["no baseline.contract recorded"], None
+    route = (row["baseline_route"] or "").strip()
+    verdict = row["verification_verdict"]
+    s = lambda k: (row[k] or "").strip()
+    reasons = []
+    if route not in ("reproduced", "imported", "trusted", "waived"):
+        reasons.append("no baseline_route declared (reproduced|imported|trusted|waived)")
+    if route != "waived":  # eval-contract substance (skipped only for an explicit waiver)
+        if not s("primary_metric_id"):
+            reasons.append("missing primary_metric_id")
+        if not s("comparison_policy"):
+            reasons.append("missing comparison_policy (metric direction/threshold)")
+        for f in ("dataset", "split", "eval_protocol"):
+            if not s(f):
+                reasons.append(f"missing {f} (specify it, or use a baseline waiver)")
+        if not (s("baseline_id") or s("baseline_name") or s("contract_ref")):
+            reasons.append("no expected-baseline reference / acceptance criteria (baseline_id|baseline_name|contract_ref)")
+    if route == "waived":
+        if verdict != "waived":
+            reasons.append("baseline_route='waived' requires verification_verdict='waived'")
+        if not s("waiver_reason"):
+            reasons.append("waived baseline requires a non-empty waiver_reason")
+    elif route in ("reproduced", "imported", "trusted"):
+        if verdict not in _OK_BASELINE_V:
+            reasons.append(f"verification_verdict={verdict!r} not acceptable for a {route} baseline "
+                           f"(need one of {sorted(_OK_BASELINE_V)}, or waive)")
+        if route == "reproduced":
+            okp, why = _baseline_result_provenance(conn, row["evidence_ref"])
+            if not okp:
+                reasons.append(why)
+        elif not s("evidence_ref"):
+            reasons.append(f"{route} baseline requires evidence_ref citing the source (paper/repo/leaderboard)")
+    return (not reasons), reasons, route
+
+
+@cli.group()
+def baseline(): ...
+
+
+@baseline.command("validate")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def baseline_validate(ctx, quest_id):
+    """Validator-owned baseline-contract gate. Computes whether the latest baseline.contract is acceptable
+    (route declared; primary metric + comparison policy; dataset/split/eval protocol or waiver; expected-baseline
+    reference; route-specific verification — reproduced -> provenance-backed result; imported/trusted ->
+    source/citation; waived -> waiver reason) and writes the validator-owned `valid` flag. The baseline gate
+    consumes `valid`; the author cannot pass on verification_verdict alone. Exits non-zero (+reasons) on a gap."""
+    _authz_cmd("baseline validate")  # orchestrator (loop/operator bypass)
+    conn = _conn(ctx)
+    row = conn.execute("SELECT contract_id FROM baseline_contract WHERE quest_id=? "
+                       "ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+    if row is None:
+        conn.close()
+        emit(envelope("baseline validate", ok=False, quest_id=quest_id,
+                      diagnostics=["no baseline.contract recorded (record one first)"]))
+        sys.exit(1)
+    ok, reasons, route = _baseline_validity(conn, quest_id)
+    fp = records.dep_fingerprint(conn, quest_id, "baseline") if ok else None  # Phase 5: staleness signature
+    conn.execute("UPDATE baseline_contract SET valid=?, validated_fingerprint=? WHERE contract_id=?",
+                 (1 if ok else 0, fp, row["contract_id"]))
+    conn.commit(); conn.close()
+    emit(envelope("baseline validate", ok=ok, quest_id=quest_id,
+                  data={"valid": ok, "baseline_route": route, "contract_id": row["contract_id"], "reasons": reasons},
+                  diagnostics=[] if ok else ["baseline gate FAILED: " + "; ".join(reasons)]))
+    if not ok:
+        sys.exit(1)
 
 
 @cli.group()
@@ -1592,6 +1741,11 @@ def idea_validate(ctx, quest_id, select_ref):
                                                     or os.environ.get("DEEPRESEARCH_IDEA_NOVELTY_WAIVER")):
             reasons.append("novelty_label='not_differentiated' (decorative tweak): add real differentiation "
                            "or an explicit novelty_waiver")
+        neighbors = (content.get("novelty_risk", {}) or {}).get("known_near_neighbors") or []
+        if novelty == "novel" and not neighbors and not (content.get("novelty_waiver")
+                                                         or os.environ.get("DEEPRESEARCH_IDEA_NOVELTY_WAIVER")):
+            reasons.append("novelty_label='novel' but known_near_neighbors is empty: name the closest prior "
+                           "work the retained idea is differentiated against (or set an explicit novelty_waiver)")
     valid = not reasons
     conn.execute("UPDATE idea_select SET valid=?, gate_score=?, retained_candidate=?, novelty_label=? "
                  "WHERE select_id=?", (1 if valid else 0, score, retained_id, novelty, row["select_id"]))
@@ -1633,15 +1787,100 @@ _BRIDGE_CONTENT_SCHEMA = {
 
 def _latest_bridge_row(conn, quest_id):
     return conn.execute(
-        "SELECT bridge_id, bridge_ref, valid FROM analysis_bridge WHERE quest_id=? "
+        "SELECT bridge_id, bridge_ref, valid, validated_fingerprint FROM analysis_bridge WHERE quest_id=? "
         "ORDER BY created_at DESC, bridge_id DESC LIMIT 1", (quest_id,)).fetchone()
+
+
+def _evidence_provenance_ok(conn, source_kind, source_ref, waived):
+    """Phase-1 provenance check for one claim_evidence row. reference/external = the trusted-external route;
+    analysis/measurement are not result-direct (out of Phase-1 scope) — all pass. A 'result' source counts
+    only if its result row exists and carries provenance_ok=1 (set by `result validate`), unless provenance
+    enforcement is waived (DEEPRESEARCH_PROVENANCE_GATE=0)."""
+    if waived:
+        return True, ""
+    if source_kind in ("reference", "external", "analysis", "measurement"):
+        return True, ""
+    try:
+        row = conn.execute("SELECT provenance_ok FROM result WHERE result_id=?", (source_ref,)).fetchone()
+    except sqlite3.OperationalError:
+        return True, ""  # provenance column absent on an un-migrated DB: grandfather (fail-safe, like other gates)
+    if row is None:
+        return False, f"result {source_ref!r} not found"
+    if row["provenance_ok"]:
+        return True, ""
+    return (False, f"result {source_ref!r} provenance not validated — run `result validate` "
+                   "(or declare provenance_route imported/trusted/waived on the result)")
+
+
+# Kind-specific PROOF requirements (Phase 4): (required descriptive fields, required result-reference fields).
+# An evidence_kind not listed here (e.g. qualitative) needs no structural proof. Reference fields must resolve
+# to a result row. Aligned to the evidence_kind enum that campaign coverage reasons over.
+_PROOF_SPEC = {
+    "main_result":         (["metric", "direction"], []),
+    "baseline_comparison": (["metric", "direction"], []),
+    "ablation":            (["changed_factor", "controls", "delta"], ["parent_result"]),
+    "robustness":          (["varied_condition", "original_condition", "criterion"], []),
+    "negative":            (["hypothesis", "observed", "implication"], []),
+    "boundary":            (["hypothesis", "observed", "implication"], []),
+    "significance":        (["method", "effect"], []),
+    "efficiency":          (["resource", "metric", "baseline"], []),
+    "error_analysis":      (["error_category", "subset", "implication"], []),
+}
+
+
+def _evidence_proof_waived():
+    """Operator override: turn evidence-kind PROOF enforcement off (advisory). Surfaced in gate status."""
+    return os.environ.get("DEEPRESEARCH_EVIDENCE_PROOF_GATE") in ("0", "false", "no")
+
+
+def _evidence_proof_ok(conn, row, waived):
+    """Phase-4 kind-specific proof check for one supporting claim_evidence row. Returns (ok, reason). A
+    reference/external source must cite an explicit source/citation; a result/analysis source must carry the
+    kind's required proof fields, and any result-reference field (e.g. ablation.parent_result) must resolve."""
+    if waived:
+        return True, ""
+    ek = row["evidence_kind"]
+    sk = row["source_kind"]
+    spec = _PROOF_SPEC.get(ek)
+    raw = row["evidence_proof"] if "evidence_proof" in row.keys() else None
+    try:
+        proof = json.loads(raw) if raw else {}
+    except Exception:
+        return False, f"{ek} evidence not counted: malformed proof"
+    if not isinstance(proof, dict):
+        return False, f"{ek} evidence not counted: malformed proof"
+    # reference/external evidence must be an explicit, cited source — never silently a local experimental proof.
+    if sk in ("reference", "external") and not str(proof.get("source") or proof.get("citation") or "").strip():
+        return False, f"{ek} evidence not counted: {sk} source needs an explicit source/citation in proof"
+    if spec is None:
+        return True, ""  # kinds with no structural requirement (e.g. qualitative)
+    desc_fields, ref_fields = spec
+    for f in desc_fields:
+        if not str(proof.get(f, "")).strip():
+            return False, f"{ek} evidence not counted: missing {f}"
+    for f in ref_fields:
+        val = str(proof.get(f, "")).strip()
+        if not val:
+            return False, f"{ek} evidence not counted: missing {f}"
+        try:
+            r = conn.execute("SELECT 1 FROM result WHERE result_id=?", (val,)).fetchone()
+        except sqlite3.OperationalError:
+            r = None
+        if r is None:
+            return False, f"{ek} evidence not counted: {f} unresolved ({val!r})"
+    return True, ""
 
 
 def _claim_coverage(conn, quest_id, floors):
     """Per-main-claim empirical coverage by evidence_kind under the rigor floor. Returns (ok, reasons, detail).
     Main claims = claim rows of kind='claim' in status open/supported. baseline satisfied if the claim has a
-    baseline_comparison evidence OR the quest's baseline_gate is 'waived'."""
+    baseline_comparison evidence OR the quest's baseline_gate is 'waived'. An evidence_kind is counted ONLY
+    when its result has validated provenance (Phase 1) AND it carries valid kind-specific proof (Phase 4);
+    an evidence_kind present only on provenance-less / proof-less rows is reported as not-counted (visible
+    reason) rather than silently dropped."""
     reasons, detail = [], {}
+    prov_waived = _provenance_waived()
+    proof_waived = _evidence_proof_waived()
     bg = conn.execute("SELECT baseline_gate FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
     baseline_waived = bool(bg) and bg[0] == "waived"
     claims = conn.execute("SELECT claim_id FROM claim WHERE quest_id=? AND kind='claim' "
@@ -1653,11 +1892,23 @@ def _claim_coverage(conn, quest_id, floors):
     need_baseline = bool(floors.get("campaign_baseline"))
     need_sig = bool(floors.get("campaign_significance_superiority"))
     for (cid,) in claims:
-        kinds = {r[0] for r in conn.execute(
-            "SELECT evidence_kind FROM claim_evidence WHERE claim_id=? AND relation='supports' "
-            "AND evidence_kind IS NOT NULL", (cid,))}
+        erows = conn.execute(
+            "SELECT source_kind, source_ref, evidence_kind, evidence_proof FROM claim_evidence WHERE claim_id=? "
+            "AND relation='supports' AND evidence_kind IS NOT NULL", (cid,)).fetchall()
+        kinds, unproven = set(), {}
+        for er in erows:
+            ok, why = _evidence_provenance_ok(conn, er["source_kind"], er["source_ref"], prov_waived)
+            if ok:
+                ok, why = _evidence_proof_ok(conn, er, proof_waived)  # Phase 4: kind-specific proof
+            if ok:
+                kinds.add(er["evidence_kind"])
+            else:
+                unproven.setdefault(er["evidence_kind"], why)
         detail[cid] = sorted(kinds)
         gaps = []
+        # An evidence_kind provided ONLY by provenance-less results is not counted — say so (visible reason).
+        for ek, why in sorted({e: w for e, w in unproven.items() if e not in kinds}.items()):
+            gaps.append(f"'{ek}' evidence not counted ({why})")
         for k in req:
             if k not in kinds:
                 gaps.append(f"needs {k}")
@@ -1711,8 +1962,9 @@ def campaign_validate(ctx, quest_id, bridge_ref):
     valid = not reasons
     coverage = {"valid": valid, "rigor": rigor, "coverage_ok": cov_ok, "per_claim": cov_detail,
                 "reasons": reasons, "floors": {k: floors[k] for k in floors if k.startswith("campaign")}}
-    conn.execute("UPDATE analysis_bridge SET valid=?, coverage_json=? WHERE bridge_id=?",
-                 (1 if valid else 0, json.dumps(coverage), row["bridge_id"]))
+    fp = records.dep_fingerprint(conn, quest_id, "campaign") if valid else None  # Phase 5: staleness signature
+    conn.execute("UPDATE analysis_bridge SET valid=?, coverage_json=?, validated_fingerprint=? WHERE bridge_id=?",
+                 (1 if valid else 0, json.dumps(coverage), fp, row["bridge_id"]))
     conn.commit(); conn.close()
     emit(envelope("campaign validate", ok=valid, quest_id=quest_id, data=coverage,
                   diagnostics=[] if valid else ["analysis->write gate FAILED: " + "; ".join(reasons)]))
@@ -1749,7 +2001,7 @@ _VERDICT_CONTENT_SCHEMA = {
 
 def _latest_verdict_row(conn, quest_id):
     return conn.execute(
-        "SELECT verdict_id, verdict, verdict_ref, valid, operator_confirmed, route_target "
+        "SELECT verdict_id, verdict, verdict_ref, valid, operator_confirmed, route_target, validated_fingerprint "
         "FROM review_verdict WHERE quest_id=? ORDER BY created_at DESC, verdict_id DESC LIMIT 1",
         (quest_id,)).fetchone()
 
@@ -1823,8 +2075,9 @@ def review_validate(ctx, quest_id, verdict_ref):
         reasons += _verdict_actionability(content)
     target = _verdict_route_target(content) if content else None
     valid = not reasons
-    conn.execute("UPDATE review_verdict SET valid=?, route_target=? WHERE verdict_id=?",
-                 (1 if valid else 0, target, row["verdict_id"]))
+    fp = records.dep_fingerprint(conn, quest_id, "review") if valid else None  # Phase 5: staleness signature
+    conn.execute("UPDATE review_verdict SET valid=?, route_target=?, validated_fingerprint=? WHERE verdict_id=?",
+                 (1 if valid else 0, target, fp, row["verdict_id"]))
     conn.commit(); conn.close()
     emit(envelope("review validate", ok=valid, quest_id=quest_id,
                   data={"verdict": row["verdict"], "valid": valid, "route_target": target, "reasons": reasons},
@@ -1878,6 +2131,31 @@ def review_confirm(ctx, quest_id):
 def gate(): ...
 
 
+@gate.group("waiver")
+def gate_waiver(): ...
+
+
+@gate_waiver.command("list")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def gate_waiver_list(ctx, quest_id):
+    """List the durable quality_gate.waiver records for a quest (read-only audit view). Record a waiver via
+    `record apply --type quality_gate.waiver` (gate, source, reason [required], finalize_ack)."""
+    conn = _conn(ctx)
+    try:
+        rows = [dict(waiver_id=r["waiver_id"], gate=r["gate"], source=r["source"], reason=r["reason"],
+                     finalize_ack=bool(r["finalize_ack"]), actor=r["actor"], expiry=r["expiry"],
+                     scope=r["scope"], created_at=r["created_at"])
+                for r in conn.execute("SELECT * FROM quality_gate_waiver WHERE quest_id=? "
+                                      "ORDER BY created_at, waiver_id", (quest_id,))]
+    except sqlite3.OperationalError:
+        rows = []
+    conn.close()
+    emit(envelope("gate waiver list", ok=True, quest_id=quest_id,
+                  data={"waivers": rows, "count": len(rows),
+                        "finalize_ack_gates": sorted({r["gate"] for r in rows if r["finalize_ack"]})}))
+
+
 _OK_BASELINE_V = {"verified_match", "close_match", "trusted_with_caveats"}
 
 
@@ -1893,8 +2171,10 @@ def _is_bound(conn, quest_id, rigor):
 def gate_status(ctx, quest_id):
     """Unified, MACHINE-READABLE status of every binding gate + finalize readiness, for deterministic
     Orchestrator routing. READ-ONLY: it summarizes and guides routing; the hard guards remain
-    authoritative (this does NOT replace them). Each gate: status(pass|fail|advisory|not_applicable|missing),
-    rigor_level, blocking, reason, latest_record_ref, route_target, required_next_action."""
+    authoritative (this does NOT replace them). Each gate: status(pass|fail|advisory|not_applicable|missing|
+    waived), rigor_level, blocking, reason, latest_record_ref, route_target, required_next_action, waived,
+    waiver_source. Env-var gate waivers are surfaced as status='waived' (non-blocking) + listed in
+    data.active_waivers so an operator override is auditable, never silent."""
     conn = _conn(ctx)
     q = conn.execute("SELECT rigor_level, baseline_gate, best_result_ref FROM quest WHERE quest_id=?",
                      (quest_id,)).fetchone()
@@ -1906,10 +2186,31 @@ def gate_status(ctx, quest_id):
     floors = _gate_floors(rigor)
     gates = {}
 
+    # Env-var waivers (operator overrides) are otherwise INVISIBLE here — they silently bypass the write-path
+    # hard guards while gate status keeps reporting fail/missing, so the routing view disagrees with what the
+    # guards will actually do. Surface them: a waived gate reports status='waived' (non-blocking, carrying a
+    # waiver_source) and every active waiver is listed at the top level (`active_waivers`).
+    _GATE_WAIVERS = {"idea_gate": "DEEPRESEARCH_IDEA_GATE",
+                     "baseline_contract": "DEEPRESEARCH_BASELINE_CONTRACT_GATE",
+                     "analysis_bridge": "DEEPRESEARCH_BRIDGE_GATE",
+                     "manuscript_coverage": "DEEPRESEARCH_COVERAGE_GATE",
+                     "review_verdict": "DEEPRESEARCH_REVIEW_GATE"}
+    def _waived(var):
+        return os.environ.get(var) in ("0", "false", "no")
+    active_waivers = sorted({v for v in _GATE_WAIVERS.values() if _waived(v)}
+                            | {v for v in ("DEEPRESEARCH_AUTHENTICITY_GATE", "DEEPRESEARCH_PROVENANCE_GATE",
+                                           "DEEPRESEARCH_EVIDENCE_PROOF_GATE", "DEEPRESEARCH_FRESHNESS_GATE")
+                               if _waived(v)})
+
     def put(name, status, reason="", route=None, ref=None, action=None):
-        gates[name] = {"status": status, "rigor_level": rigor, "blocking": bool(bound and status == "fail"),
-                       "reason": reason, "latest_record_ref": ref, "route_target": route,
-                       "required_next_action": action}
+        wv = _GATE_WAIVERS.get(name)
+        waived = bool(wv and bound and _waived(wv) and status in ("fail", "missing"))
+        gates[name] = {"status": "waived" if waived else status, "rigor_level": rigor,
+                       "blocking": bool(bound and status == "fail" and not waived),
+                       "reason": (f"env waiver {wv}=0 active; gate NOT enforced at the write path" if waived else reason),
+                       "latest_record_ref": ref, "route_target": None if waived else route,
+                       "required_next_action": None if waived else action,
+                       "waived": waived, "waiver_source": (f"env:{wv}" if waived else None)}
 
     r = _latest_idea_select_row(conn, quest_id)
     if adv: put("idea_gate", "advisory")
@@ -1917,18 +2218,23 @@ def gate_status(ctx, quest_id):
     elif r["valid"]: put("idea_gate", "pass", ref=r["select_id"])
     else: put("idea_gate", "fail", "idea selection not validated", "idea", r["select_id"], "fix + idea validate")
 
-    bc = conn.execute("SELECT contract_id, verification_verdict, waiver_reason FROM baseline_contract "
+    bc = conn.execute("SELECT contract_id, valid, validated_fingerprint FROM baseline_contract "
                       "WHERE quest_id=? ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
     if adv: put("baseline_contract", "advisory")
     elif q["baseline_gate"] in ("pending", "blocked") and bc is None:
         put("baseline_contract", "not_applicable", "baseline not yet established")
     elif bc is None:
         put("baseline_contract", "fail", "baseline_gate set without a baseline.contract", "baseline", None, "record baseline.contract")
+    elif bc["valid"] and records.is_stale(conn, quest_id, "baseline", bc["validated_fingerprint"]):
+        put("baseline_contract", "fail", "baseline contract validation is stale: a dependency (contract or "
+            "referenced result provenance) changed after `baseline validate`", "baseline", bc["contract_id"],
+            "re-run `baseline validate`")
+    elif bc["valid"]:
+        put("baseline_contract", "pass", ref=bc["contract_id"])
     else:
-        v = bc["verification_verdict"]
-        okc = (v in _OK_BASELINE_V) or (v == "waived" and (bc["waiver_reason"] or "").strip())
-        put("baseline_contract", "pass" if okc else "fail", "" if okc else f"verdict {v!r} not acceptable",
-            None if okc else "baseline", bc["contract_id"], None if okc else "record an acceptable baseline.contract")
+        _bok, _breasons, _broute = _baseline_validity(conn, quest_id)
+        reason = "baseline.contract not validator-confirmed: " + ("; ".join(_breasons) if _breasons else "run `baseline validate`")
+        put("baseline_contract", "fail", reason, "baseline", bc["contract_id"], "fix the contract + run `baseline validate`")
 
     if adv: put("campaign_coverage", "advisory")
     else:
@@ -1943,10 +2249,14 @@ def gate_status(ctx, quest_id):
     ab = _latest_bridge_row(conn, quest_id)
     if adv: put("analysis_bridge", "advisory")
     elif ab is None: put("analysis_bridge", "missing", "no analysis.bridge", "analysis", None, "record analysis.bridge + campaign validate")
+    elif ab["valid"] and records.is_stale(conn, quest_id, "campaign", ab["validated_fingerprint"]):
+        put("analysis_bridge", "fail", "analysis bridge is stale: claims/evidence/results/baseline changed after "
+            "`campaign validate`", "analysis", ab["bridge_id"], "re-run `campaign validate`")
     elif ab["valid"]: put("analysis_bridge", "pass", ref=ab["bridge_id"])
     else: put("analysis_bridge", "fail", "analysis bridge not validated", "analysis", ab["bridge_id"], "campaign validate")
 
-    sp = conn.execute("SELECT submission_ready FROM paper_spine WHERE quest_id=?", (quest_id,)).fetchone()
+    sp = conn.execute("SELECT submission_ready, validated_fingerprint FROM paper_spine WHERE quest_id=?",
+                      (quest_id,)).fetchone()
     if adv:
         put("paper_spine", "advisory"); put("outline_valid", "advisory"); put("manuscript_coverage", "advisory")
     elif sp is None:
@@ -1963,37 +2273,72 @@ def gate_status(ctx, quest_id):
             put("outline_valid", "pass" if not orx else "fail", "; ".join(orx),
                 None if not orx else "outline", quest_id, None if not orx else "fix spine + outline validate")
         ready = bool(sp["submission_ready"])
-        put("manuscript_coverage", "pass" if ready else "fail",
-            "" if ready else "submission_ready not validator-confirmed", None if ready else "write", None,
-            None if ready else "resolve gaps + manuscript coverage")
+        if ready and records.is_stale(conn, quest_id, "manuscript", sp["validated_fingerprint"]):
+            put("manuscript_coverage", "fail", "manuscript coverage is stale: paper spine / claims / evidence "
+                "changed after the coverage check", "write", None, "re-run `manuscript coverage`")
+        else:
+            put("manuscript_coverage", "pass" if ready else "fail",
+                "" if ready else "submission_ready not validator-confirmed", None if ready else "write", None,
+                None if ready else "resolve gaps + manuscript coverage")
 
     rv = _latest_verdict_row(conn, quest_id)
     if adv: put("review_verdict", "advisory")
     elif rv is None: put("review_verdict", "missing", "no review verdict", "review", None, "record review.verdict + review validate")
     else:
         v, valid, conf, rt = rv["verdict"], rv["valid"], rv["operator_confirmed"], rv["route_target"]
+        stale = valid and records.is_stale(conn, quest_id, "review", rv["validated_fingerprint"])
         if not valid: put("review_verdict", "fail", "verdict not validated/actionable", "review", rv["verdict_id"], "review validate")
-        elif v == "accept": put("review_verdict", "pass", ref=rv["verdict_id"])
         elif v == "reject": put("review_verdict", "fail", "verdict is reject", rt or "write", rv["verdict_id"], "route follow-ups + re-review")
-        elif records._rigor_order(rigor) >= records._rigor_order("publication"):
+        elif records._rigor_order(rigor) >= records._rigor_order("publication") and v == "borderline":
             put("review_verdict", "fail", "borderline not allowed at publication", rt or "write", rv["verdict_id"], "revise to accept")
-        elif conf: put("review_verdict", "pass", ref=rv["verdict_id"])
-        else: put("review_verdict", "fail", "borderline needs operator confirmation", rt or "write", rv["verdict_id"], "review confirm")
+        elif v == "borderline" and not conf:
+            put("review_verdict", "fail", "borderline needs operator confirmation", rt or "write", rv["verdict_id"], "review confirm")
+        elif stale:
+            put("review_verdict", "fail", "review verdict is stale: paper spine / claims / evidence changed after "
+                "`review validate`", "review", rv["verdict_id"], "re-review + re-run `review validate`")
+        else: put("review_verdict", "pass", ref=rv["verdict_id"])
+
+    # Durable waiver records + finalize-acknowledgement status (Phase 3). An env-waived finalize-sensitive gate
+    # needs a durable quality_gate.waiver(finalize_ack) on a bound quest before finalize is allowed.
+    try:
+        durable_waivers = [dict(gate=r["gate"], source=r["source"], reason=r["reason"],
+                                finalize_ack=bool(r["finalize_ack"]), actor=r["actor"], created_at=r["created_at"])
+                           for r in conn.execute(
+                               "SELECT gate, source, reason, finalize_ack, actor, created_at FROM "
+                               "quality_gate_waiver WHERE quest_id=? ORDER BY created_at, waiver_id", (quest_id,))]
+    except sqlite3.OperationalError:
+        durable_waivers = []
+    env_waived_sensitive = records.env_waived_finalize_gates()
+    acked = records.acked_finalize_gates(conn, quest_id)
+    finalize_ack_missing = sorted(set(env_waived_sensitive) - acked) if bound else []
+
+    # Validator freshness (Phase 5): which computed flags are stale (dependencies changed after validation).
+    # Computed regardless of rigor so staleness is visible even in advisory/scoping mode.
+    def _sfp(rw):
+        return rw["validated_fingerprint"] if rw is not None else None
+    stale_gates = sorted({name for name, kind, fpv in (
+        ("baseline_contract", "baseline", _sfp(bc)),
+        ("analysis_bridge", "campaign", _sfp(ab)),
+        ("manuscript_coverage", "manuscript", _sfp(sp)),
+        ("review_verdict", "review", _sfp(rv)),
+    ) if fpv and records.is_stale(conn, quest_id, kind, fpv)})
 
     fin = []
     if not adv:
-        if gates["manuscript_coverage"]["status"] != "pass": fin.append("manuscript coverage not ready")
-        if gates["review_verdict"]["status"] != "pass": fin.append("review not accepted")
+        if gates["manuscript_coverage"]["status"] not in ("pass", "waived"): fin.append("manuscript coverage not ready")
+        if gates["review_verdict"]["status"] not in ("pass", "waived"): fin.append("review not accepted")
         try:
             if not records.scholarship_audit(conn, quest_id)["ok"]: fin.append("scholarship bar unmet")
         except Exception:
             pass
         best = q["best_result_ref"]
-        if best:
+        if best and not _waived("DEEPRESEARCH_AUTHENTICITY_GATE"):
             backed = conn.execute("SELECT COUNT(*) FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id "
                                   "WHERE c.quest_id=? AND e.source_kind='result' AND e.source_ref=? "
                                   "AND e.relation='supports'", (quest_id, best)).fetchone()[0]
             if not backed: fin.append("headline result not claim-backed (authenticity)")
+        if finalize_ack_missing:
+            fin.append("waiver acknowledgement missing for env-waived gate(s): " + ", ".join(finalize_ack_missing))
     if adv: put("finalize_readiness", "advisory")
     elif fin: put("finalize_readiness", "fail", "; ".join(fin), None, None, "resolve blocking gates above")
     else: put("finalize_readiness", "pass")
@@ -2001,18 +2346,25 @@ def gate_status(ctx, quest_id):
     conn.close()
     emit(envelope("gate status", ok=True, quest_id=quest_id,
                   data={"rigor_level": rigor, "bound": bound, "gates": gates,
+                        "active_waivers": active_waivers,
+                        "durable_waivers": durable_waivers,
+                        "finalize_ack_present": sorted(acked),
+                        "finalize_ack_missing": finalize_ack_missing,
+                        "stale_gates": stale_gates,
                         "finalize_readiness": gates["finalize_readiness"]["status"],
                         "blocking_gates": [k for k, gv in gates.items() if gv["blocking"]]}))
 
 
 # stage -> (table, id column, ref column) the methodology must resolve to (validated where applicable).
 _STAGE_METHODOLOGY = {
-    "scope": ("idea_select", "select_id", "select_ref"),
     "idea": ("idea_select", "select_id", "select_ref"),
     "baseline": ("baseline_contract", "contract_id", "contract_ref"),
-    # NOTE: the `experiment` stage has no fold-time typed methodology record — its methodology (claim evidence
-    # tagged by evidence_kind) is enforced DOWNSTREAM by campaign coverage at analysis->write, so it resolves
-    # as not_applicable here (see methodology_check). `analysis` resolves to the validated analysis_bridge.
+    # NOTE: `scope` and `experiment` have NO fold-time typed methodology record, so they resolve as
+    # not_applicable here (see methodology_check) — NOT a failure. `scope` produces an eval-contract artifact
+    # whose binding is the downstream idea-selection gate (it requires objective_contract_ref); a scope worker
+    # has no idea.select yet, so the prior scope->idea_select mapping always wrong-rejected. `experiment` tags
+    # claim evidence by evidence_kind, enforced DOWNSTREAM by campaign coverage at analysis->write.
+    # `analysis` resolves to the validated analysis_bridge.
     "analysis": ("analysis_bridge", "bridge_id", "bridge_ref"),
     "outline": ("paper_spine", "quest_id", "spine_ref"),
     "write": ("paper_spine", "quest_id", "spine_ref"),
@@ -2056,9 +2408,8 @@ def methodology_check(ctx, quest_id, stage, applied_as):
     if row is None:
         reason = f"applied_as {applied_as!r} does not resolve to a {table} for quest {quest_id!r}"
     elif table == "baseline_contract":
-        v = row["verification_verdict"]
-        resolves = (v in _OK_BASELINE_V) or (v == "waived" and (row["waiver_reason"] or "").strip())
-        reason = "" if resolves else f"baseline.contract verdict {v!r} not acceptable"
+        resolves = bool(row["valid"])
+        reason = "" if resolves else "baseline.contract not validator-confirmed (run `baseline validate`)"
     elif table == "paper_spine":
         resolves = bool(row["submission_ready"])
         reason = "" if resolves else "paper_spine.submission_ready not validator-confirmed"
@@ -2184,10 +2535,11 @@ def manuscript_coverage(ctx, quest_id, artifact_ref, spine_ref, at):
     ready = not reasons
     coverage = {"submission_ready": ready, "reasons": reasons,
                 "n_main_claims": len(main_claims), "unmapped_results": unmapped, "at": at}
+    fp = records.dep_fingerprint(conn, quest_id, "manuscript") if ready else None  # Phase 5: staleness signature
     written = conn.execute(
-        "UPDATE paper_spine SET submission_ready=?, coverage_json=?, coverage_at=?, "
+        "UPDATE paper_spine SET submission_ready=?, coverage_json=?, coverage_at=?, validated_fingerprint=?, "
         "updated_at=COALESCE(?, updated_at) WHERE quest_id=?",
-        (1 if ready else 0, json.dumps(coverage), at, at, quest_id)).rowcount
+        (1 if ready else 0, json.dumps(coverage), at, fp, at, quest_id)).rowcount
     conn.commit()
     conn.close()
     if not written:

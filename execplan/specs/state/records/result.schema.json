@@ -17,7 +17,15 @@
         "experiment_id": { "type": "string" },
         "round_index": { "type": "integer", "minimum": 0 },
         "validity": { "enum": ["unchecked", "valid", "invalid", "incomparable"], "default": "unchecked" },
-        "artifact_ref": { "type": "string" }
+        "artifact_ref": { "type": "string" },
+        "provenance_route": {
+          "enum": ["executed", "imported", "trusted", "waived"],
+          "description": "How this result's provenance is established. 'executed' = a reconstructable local run (provenance must carry command, code_revision-or-worktree, a metric source, run_status; a failed run needs failure_mode). 'imported'/'trusted' = a non-execution route (provenance must carry a 'source' or 'note' citing origin). 'waived' = provenance intentionally deferred (provenance.waiver_reason required). Validator-gated: `result validate` computes provenance_ok from this; the author cannot self-certify."
+        },
+        "provenance": {
+          "type": "object",
+          "description": "Run-manifest fields where applicable: command, config_ref/config_hash, seed, dataset, split, eval_protocol, metric_source, code_revision, worktree, env, log_ref, output_artifacts, run_status, failure_mode, metric_notes; or source/note (imported/trusted); or waiver_reason (waived)."
+        }
       }
     },
     {

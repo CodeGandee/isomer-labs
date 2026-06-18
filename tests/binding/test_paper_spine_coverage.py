@@ -16,10 +16,11 @@ import json, os, subprocess, sqlite3, sys, tempfile, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 H = str(ROOT / "execplan" / "harness" / "bin" / "deepresearch")
 AT = "2026-06-18T00:00:00Z"
-# Waive the OTHER finalize gates so each test isolates the coverage gate (incl. the review gate).
+# Waive the OTHER finalize gates so each test isolates the coverage gate (incl. the review gate). Authenticity
+# passes vacuously here (no best_result_ref), so it needs no env waiver; the review gate IS env-waived (no
+# review verdict in this suite), so the finalize-success test (J5b) records a durable review-verdict ack.
 WAIVE = {"DEEPRESEARCH_SCHOLARSHIP_MIN_REFS": "0", "DEEPRESEARCH_SCHOLARSHIP_MIN_REF_CLAIMS": "0",
-         "DEEPRESEARCH_AUTHENTICITY_GATE": "0", "DEEPRESEARCH_COMPLETENESS_GATE_RIGOR": "none",
-         "DEEPRESEARCH_REVIEW_GATE": "0"}
+         "DEEPRESEARCH_COMPLETENESS_GATE_RIGOR": "none", "DEEPRESEARCH_REVIEW_GATE": "0"}
 # Legacy token check (what `outline validate` used to be), reproduced to show the old grep is fooled.
 _OLD_TOKENS = ["thesis", "claim", "scope", "evaluation_plan", "evidence_grounding"]
 
@@ -183,8 +184,14 @@ def main():
         rc = run(db, ["manuscript", "coverage", "--quest-id", "j5", "--artifact-ref", man, "--at", AT])
         ready = json.loads(rc.stdout)["data"]["submission_ready"]
         check("J5b coverage computes submission_ready=true on a clean paper", ready, rc.stdout[:300])
+        # the review gate is env-waived here (no review verdict in this suite); Phase 3 requires a durable
+        # acknowledgement for the env-waived finalize-sensitive gate before finalize 'complete'.
+        run(db, ["record", "apply", "--json", json.dumps(
+            {"record_type": "quality_gate.waiver", "record_id": "j5:wv", "at": AT, "quest_id": "j5",
+             "gate": "review_verdict", "source": "env", "reason": "coverage-gate suite: review out of scope",
+             "finalize_ack": True})])
         r = finalize(db, "j5")
-        check("J5b new: finalize COMPLETE now allowed (coverage-confirmed)", r.returncode == 0, r.stdout[:200])
+        check("J5b new: finalize COMPLETE now allowed (coverage-confirmed + waiver acked)", r.returncode == 0, r.stdout[:200])
 
         # ---- regime: scoping rigor is advisory (does not block) ----
         print("Regime: scoping rigor is advisory:")

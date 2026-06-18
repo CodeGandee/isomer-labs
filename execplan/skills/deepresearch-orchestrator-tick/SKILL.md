@@ -44,15 +44,21 @@ handoff ids + idempotent `record apply` mean a duplicate fire never double-dispa
    run `$HARNESS completeness audit --quest-id <q>` and branch on `autonomy_mode` × `rigor_level`, enforce the
    publication-quality + scholarship gates before `complete`, then record a `--type finalize.record` outcome
    (`complete`/`stop`/`park`/`publish_and_continue`) + the paired `quest.update` run_state, with an honest
-   closure report. Full gate branches, the publication-bundle checklist, and finalize-honesty rules are in
-   **`reference/finalize-and-dispatch.md`**.
+   closure report. **Waivers are auditable exceptions, not silent bypasses:** if any finalize-sensitive gate is
+   env-waived (`gate status` → `active_waivers` / `finalize_ack_missing`), a bound `complete` is BLOCKED until a
+   durable acknowledgement exists — have the operator record `--type quality_gate.waiver` (gate, `source=env`,
+   `reason`, `finalize_ack=true`) per gate (`gate waiver list` is the audit view). Full gate branches, the
+   publication-bundle checklist, and finalize-honesty rules are in **`reference/finalize-and-dispatch.md`**.
 5. **Else dispatch the next stage — driven by `$HARNESS gate status --quest-id <q>`:** read `data.gates`
    and, when any gate is `blocking`, dispatch to the **first blocking gate's `route_target`** (idea_gate→idea,
    baseline_contract→baseline, campaign_coverage→experiment|analysis, analysis_bridge→analysis,
    paper_spine/outline_valid→outline, manuscript_coverage→write, review_verdict→its route_target). Do NOT route
    on LLM discretion when a hard gate says fail; the same hard guards block the write/finalize/handoff anyway
-   (gate status only makes routing deterministic, it does not replace them). When no gate blocks
-   (`finalize_readiness=pass`), proceed to the cursor's next stage. `decision`/`finalize`/`optimize` you do
+   (gate status only makes routing deterministic, it does not replace them). **Re-validate after changes:** a
+   gate may report `status=fail` with a *stale* reason (or appear in `data.stale_gates`) when evidence/results/
+   claims/spine/review target changed after the validator last ran — route back to re-run the relevant
+   validator (`result`/`baseline`/`campaign`/`manuscript coverage`/`review` validate) before proceeding. When
+   no gate blocks (`finalize_readiness=pass`), proceed to the cursor's next stage. `decision`/`finalize`/`optimize` you do
    yourself (orchestrator-internal); all other stages dispatch to the owning role. The decision discipline (name ≥2 candidates + mark losers + bottleneck
    classification + exploration-depth gate), the `optimize` frontier/search discipline, the `experiment` BO
    path, the **GPU gate** (normally already confirmed; route to operator-control only as a safety fallback),

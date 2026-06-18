@@ -67,7 +67,8 @@ def good(retained_total=8, slate=("A", "B", "C"), novelty="novel", retained_id="
         "baseline_contract_ref": "WAIVER: baseline contract deferred",
         "raw_slate": [cand(x) for x in slate],
         "challenge": {"strongest_rejection": "x", "outside_family_alternative": "y", "why_retained_survives": "z"},
-        "novelty_risk": {"novelty_label": novelty, "novelty_argument": "arg", "risk_notes": "n"},
+        "novelty_risk": {"novelty_label": novelty, "novelty_argument": "arg", "risk_notes": "n",
+                         "known_near_neighbors": ["Smith2023: prior method X (differs: our mechanism Y)"]},
         "selection_gate": [gate("A", retained_total, "retain")] + [gate(x, 4) for x in slate if x != "A"],
         "rejected": [{"candidate_id": x, "reason": "weaker mechanism"} for x in slate if x != "A"] or
                     [{"candidate_id": "Z", "reason": "infeasible"}],
@@ -145,6 +146,18 @@ def main():
         check("J9 new: valid idea.select passes + experiment handoff allowed",
               rv.returncode == 0 and rh.returncode == 0, "validate=%s handoff=%s %s"
               % (rv.returncode, rh.returncode, (rh.stdout + rh.stderr)[:200]))
+
+        print("J10 novelty=novel with no known_near_neighbors (ungrounded novelty):")
+        bad = good(); bad["novelty_risk"]["known_near_neighbors"] = []
+        validate_fails(tmp, "j10", bad, "J10 new: idea validate REJECTS novel with empty known_near_neighbors")
+
+        print("J10b same but with an explicit novelty_waiver (escape hatch):")
+        db = setup(tmp, "j10b")
+        w = good(); w["novelty_risk"]["known_near_neighbors"] = []; w["novelty_waiver"] = "greenfield problem; no close prior"
+        ref = write_json(tmp, "j10b.json", w)
+        record_select(db, "j10b", "j10b:s1", ref)
+        rw = run(db, ["idea", "validate", "--quest-id", "j10b"])
+        check("J10b new: novelty_waiver allows ungrounded novel", rw.returncode == 0, rw.stdout[:200])
 
         print("Regime: scoping rigor advisory:")
         db = setup(tmp, "sc", rigor="scoping"); confirm_gpu(db, "sc")
