@@ -6,6 +6,10 @@ This is a Pixi-managed Python project using a `src/` layout. Importable code liv
 
 External code has two homes: use `extern/tracked/` for vendored or submodule-style dependencies that should be committed, and `extern/orphan/` for local-only checkouts. Do not commit generated Pixi environments, caches, or disposable work from `.pixi/`, `.mypy_cache/`, `.ruff_cache/`, or `tmp/`.
 
+## Domain Language
+
+The canonical Isomer Labs domain language lives in `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`. Consult it when discussing project concepts, naming architecture docs, schema fields, CLI labels, GUI labels, or code identifiers, and before introducing new terms that might conflict with it.
+
 ## Build, Test, and Development Commands
 
 Use Pixi from the repository root:
