@@ -65,7 +65,7 @@ Stop after repeated failure of the same class unless new evidence, code changes,
 
 Use only after the current Research Task already trusts the baseline. Package publication is a downstream packaging action, not a substitute for verification.
 
-Record package identity, provenance, metric contract, caveats, and reusable evidence. If a concrete publication API is required, use `[[tbd-surface:api-artifact-record]]`.
+Record package identity, provenance, metric contract, caveats, and reusable evidence. If a concrete publication API is required, use the accepted Artifact and Provenance recording API.
 
 ## Waive or Block
 

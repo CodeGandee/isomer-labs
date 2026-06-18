@@ -11,7 +11,7 @@ Source-runtime concepts were intentionally translated:
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
 - command execution and source tool wrappers became Capability Binding through an Execution Adapter.
 - source worktree and workspace assumptions became Topic Workspace, Workspace Runtime, Agent Workspace, or semantic Artifact scopes resolved by Workspace Path Resolution.
-- concrete metric-contract paths became metric-contract Artifacts resolved by Workspace Path Resolution, with `[[tbd-surface:schema-evidence-item]]` only for unsettled evidence fields.
+- concrete metric-contract paths became metric-contract Artifacts resolved by Workspace Path Resolution, with accepted Evidence Item fields for evidence semantics.
 - source package-manager, container, and service-endpoint tactics became Execution Adapter choices or Capability Bindings, not required Isomer skill behavior.
 - source scheduler and continuation terms became Workflow Stage recommendations, Gates, Decision Records, observations, or pauses for Operator Agent instruction.
 

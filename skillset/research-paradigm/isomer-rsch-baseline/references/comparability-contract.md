@@ -39,4 +39,4 @@ Do not mix a non-comparable run into the accepted comparison line. Treat changed
 
 The baseline is ready only when later experiment or writing work can cite the comparator without guessing task, data, split, metric ids, metric directions, source identity, evaluation path, provenance, or caveats.
 
-If an accepted metric contract needs a concrete schema or file layout, treat it as a metric-contract Artifact and use semantic Artifact kind through Workspace Path Resolution or `[[tbd-surface:schema-evidence-item]]` for unsettled surfaces.
+If an accepted metric contract needs a concrete schema or file layout, treat it as a metric-contract Artifact and use semantic Artifact kind through Workspace Path Resolution or the accepted Evidence Item fields when metric evidence fields matter.

@@ -79,4 +79,4 @@ For each meaningful Run, record enough of the following to make the evidence reu
 - Do not rerun without a real change in code, command, environment, evidence, or route.
 - Do not hide failed, partial, suspicious, non-comparable, or blocked Runs.
 - Do not spend for maximum evidence before the line is at least solid.
-- Use run log Artifact through Workspace Path Resolution, experiment output Artifact through Workspace Path Resolution, and `[[tbd-surface:api-artifact-record]]` for unsettled execution and recording surfaces.
+- Use run log Artifact through Workspace Path Resolution, experiment output Artifact through Workspace Path Resolution, and the accepted Artifact and Provenance recording API for recording surfaces.

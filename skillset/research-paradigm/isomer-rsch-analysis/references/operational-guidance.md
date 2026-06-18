@@ -14,7 +14,7 @@ Isolate the campaign from the current Run, Research Inquiry Relationship, or res
 
 When the campaign is writing-facing, the campaign Artifact should carry available mapping fields such as selected outline ref, research questions, experimental designs, todo items, section ids, claim links, reviewer items, or target display ids when they exist and matter.
 
-If ids or refs are unclear, recover them through host Artifact, Provenance, or Finding query surfaces instead of guessing. Use `[[tbd-surface:api-artifact-record]]` and `[[tbd-surface:api-finding-query]]` until those surfaces are settled.
+If ids or refs are unclear, recover them through host Artifact, Provenance, or Finding query surfaces instead of guessing. Use the accepted Artifact and Provenance recording API and the accepted Finding query/write API for those recoveries.
 
 Treat campaign ids as system-owned when a host system provides them. Treat slice ids or todo ids as agent-authored semantic ids unless the host contract says otherwise.
 
@@ -75,7 +75,7 @@ At stage start, query recent Findings when resuming, reopening old command paths
 
 At stage end, record a Finding when the campaign produced a reusable cross-slice lesson, failure pattern, or comparability caveat.
 
-Use `[[tbd-surface:api-finding-query]]` until Finding query and write surfaces are settled.
+Use the accepted Finding query/write API when reading or writing reusable Findings.
 
 ## Operator-Facing Campaign Chart Notes
 

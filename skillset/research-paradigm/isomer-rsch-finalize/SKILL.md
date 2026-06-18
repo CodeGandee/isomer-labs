@@ -66,4 +66,4 @@ Read references as needed:
 - Do not finalize a report or manuscript while coverage, evidence, review, proofing, or language checks still block the deliverable.
 - Do not claim completion without showing what is supported, what failed, what remains open, and what would justify reopening.
 - Do not drop the package inventory needed for resumption, review, publication, or archive.
-- Use `[[tbd-surface:schema-gate]]` for unsettled completion Gates.
+- Use the accepted Gate fields for completion Gates.

@@ -21,4 +21,4 @@ Use these action labels to keep Decision Records legible. They are labels for re
 | stop | The current objective should end or be parked. | Gate or finalization handoff |
 | request_operator_gate | The route depends on human preference, scope, cost, privacy, safety, finality, or a missing user-held source. | Gate through the Operator Agent |
 
-Choose the smallest action that resolves the state. If an action would imply a concrete API, schema, storage layout, or scheduler behavior, describe the intended record and use a TBD placeholder such as `[[tbd-surface:schema-decision-record]]` only when the concrete surface must be named.
+Choose the smallest action that resolves the state. If an action would imply a concrete API, schema, storage layout, or scheduler behavior, describe the intended record and use a TBD placeholder only for still-unsettled non-recording surfaces.

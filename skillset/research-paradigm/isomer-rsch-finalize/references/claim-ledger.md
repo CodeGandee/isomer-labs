@@ -27,4 +27,4 @@ For each transition, record what changed, which Evidence Item or Decision Record
 
 Only claims marked supported or carefully scoped partial should appear in final summaries, reports, or manuscript main text. Negative and refuted claims remain valuable evidence, but they need clear framing and should not be disguised as support.
 
-If concrete Research Claim fields matter, use `[[tbd-surface:schema-research-claim]]`.
+If concrete Research Claim fields matter, use the accepted Research Claim fields.

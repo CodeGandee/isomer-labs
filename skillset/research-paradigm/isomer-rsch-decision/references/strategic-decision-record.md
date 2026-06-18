@@ -48,4 +48,4 @@ Use this reference when a route-changing decision needs more than a one-line ver
 
 This structure is most helpful for choosing among idea candidates, selecting experiment groups, launching follow-up analysis, routing after Run results, deciding to pivot or reset, deciding to write or review, and deciding to finalize or stop.
 
-If the concrete Decision Record schema matters, use `[[tbd-surface:schema-decision-record]]`.
+If the concrete Decision Record schema matters, use the accepted Decision Record fields.

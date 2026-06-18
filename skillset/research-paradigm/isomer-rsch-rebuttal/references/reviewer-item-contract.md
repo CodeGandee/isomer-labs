@@ -44,15 +44,13 @@ Use primary route values: `text_revision`, `evidence_repackaging`, `literature_p
 
 ## TBD Surfaces
 
-Use paper Artifact through Workspace Path Resolution for concrete manuscript or rebuttal layouts, `[[tbd-surface:api-artifact-record]]` for record updates, `[[tbd-surface:schema-evidence-item]]` for unsettled evidence fields, and `[[tbd-surface:provider-literature-search]]` for literature provider uncertainty.
+Use paper Artifact through Workspace Path Resolution for concrete manuscript or rebuttal layouts, the accepted Artifact and Provenance recording API for record updates, the accepted Evidence Item fields for evidence fields, and `[[tbd-surface:provider-literature-search]]` for literature provider uncertainty.
 
 | ID | Kind | Missing decision |
 | --- | --- | --- |
 | paper Artifact | resolved path surface | Resolved through Workspace Path Resolution. |
-| api-artifact-record | api | API for recording Artifacts and Provenance Records. |
 | api-execution-command | api | Execution command surface, permissions, and logging behavior. |
 | provider-literature-search | provider | Literature search and paper-reading provider. |
-| schema-evidence-item | schema | Evidence Item fields and validation. |
 
 ## Non-negotiable Rules
 

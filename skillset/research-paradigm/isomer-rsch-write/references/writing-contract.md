@@ -29,7 +29,7 @@ Keep these surfaces aligned when they exist: selected outline Artifact, evidence
 | paper bundle submission call | Artifact and Provenance Record for draft checkpoint, review package, or submission package |
 | outline submit or compile call | Outline Artifact, section-level writing plan, and Gate over outline readiness |
 | analysis campaign launch | Decision Record that routes to `isomer-rsch-analysis` |
-| memory read or write | Finding query, Evidence Item lookup, Artifact note, or durable context query through `[[tbd-surface:api-finding-query]]` |
+| memory read or write | Finding query, Evidence Item lookup, Artifact note, or durable context query through the accepted Finding query/write API |
 | shell or document build execution | Capability Binding through an Execution Adapter using `[[tbd-surface:api-execution-command]]` |
 | literature provider | literature search capability with provider unsettled by `[[tbd-surface:provider-literature-search]]` |
 
@@ -39,7 +39,6 @@ Keep these surfaces aligned when they exist: selected outline Artifact, evidence
 | --- | --- | --- |
 | paper Artifact | resolved path surface | Resolved through Workspace Path Resolution. |
 | semantic Artifact kind | resolved path surface | Resolved through Workspace Path Resolution. |
-| api-finding-query | api | API for querying and writing Findings or durable context. |
 | api-execution-command | api | Execution command surface, permissions, and logging behavior. |
 | provider-literature-search | provider | Literature search and paper-reading provider. |
 

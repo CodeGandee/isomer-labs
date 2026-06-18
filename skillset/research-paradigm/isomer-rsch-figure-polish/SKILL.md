@@ -56,7 +56,7 @@ Read references as needed:
 - Final figure exports as figure output Artifacts resolved by Workspace Path Resolution.
 - Source plotting Artifact or generation path.
 - Visual inspection note and self-review delta.
-- Linked Evidence Item, Research Claim, report section, reviewer item, Decision Record, Gate, or Provenance Record through `[[tbd-surface:api-artifact-record]]`.
+- Linked Evidence Item, Research Claim, report section, reviewer item, Decision Record, Gate, or Provenance Record through the accepted Artifact and Provenance recording API.
 
 ## Guardrails
 

@@ -64,7 +64,7 @@ Do not use this skill when a verified active baseline already exists for the cur
 
 Before treating a baseline as usable, make these fields explicit: comparator identity, baseline id, route, task identity, dataset identity, split contract, evaluation path or evaluation Capability Binding, required metric ids, metric directions, source identity, trusted metrics or output pointers, material environment facts, and known deviations.
 
-The accepted metric contract should be an Artifact. If a concrete storage layout or schema must be named, use semantic Artifact kind through Workspace Path Resolution or `[[tbd-surface:schema-evidence-item]]` until Isomer accepts that surface.
+The accepted metric contract should be an Artifact. If a concrete storage layout or schema must be named, use semantic Artifact kind through Workspace Path Resolution or the accepted Evidence Item fields.
 
 ## Verification
 
@@ -88,4 +88,4 @@ Classify the outcome as `verified-match`, `verified-close`, `verified-diverged`,
 - Do not force full reproduction when a lighter route satisfies the acceptance target.
 - Do not keep doing baseline work after one comparator is accepted, waived, blocked, or route-changed, unless a named comparison risk remains.
 - Do not repeat the same failure class without new evidence, a code change, an environment change, or a route change.
-- Use `[[tbd-surface:policy-baseline-waiver]]` for unsettled waiver rules and `[[tbd-surface:api-gate]]` when a concrete Gate API must be named.
+- Use `[[tbd-surface:policy-baseline-waiver]]` for unsettled waiver rules and the accepted Gate open/resolve/record API when a concrete Gate API must be named.

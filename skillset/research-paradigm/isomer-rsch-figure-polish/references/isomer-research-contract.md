@@ -23,6 +23,12 @@ Ordinary Project, Topic Workspace, Workspace Runtime, task support, Run, Artifac
 
 Do not emit ordinary path TBD placeholders for these surfaces. Workspace plans have precedence, then supported Execution Adapter `ISOMER_*` environment variables, then Project Manifest defaults, then built-in defaults. Environment variables are launch-time adapter inputs, not durable truth; resolved effective paths and their source belong in Workspace Runtime or Provenance Records.
 
+## Research Recording Contracts
+
+Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates are resolved durable record surfaces. Use accepted recording APIs for Artifact and Provenance recording, Finding query/write, and Gate open/resolve/record behavior.
+
+Do not emit recording TBD placeholders for these surfaces. Evidence Items are the support, contradiction, or context boundary for Research Claims. Research Claim status is `open`, `supported`, `refuted`, or `withdrawn` unless a later accepted contract extends it; contradiction and context belong on Evidence Items or claim-evidence links. Findings are primarily scoped to Research Inquiries when an applicable inquiry exists. A Gate may resolve through a Decision Record, but cancelled or superseded Gates can close with a Provenance Record when no meaningful choice was made.
+
 ## Source-Term Mappings
 
 | Source term or operation | Isomer Labs framing |
@@ -44,7 +50,7 @@ This skill describes figure-polishing judgment. It does not define Isomer ordina
 
 ## TBD Surface Registry
 
-Use registered TBD-surface placeholders in skill outcomes when a concrete surface is not settled by an accepted Isomer design. Ordinary Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are settled by Workspace Path Resolution; skills should name semantic workspace scopes or Artifact kinds instead of emitting path TBD placeholders.
+Use registered TBD-surface placeholders in skill outcomes when a concrete surface is not settled by an accepted Isomer design. Ordinary Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are settled by Workspace Path Resolution. Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates are settled by Research Recording Contracts. Skills should name semantic workspace scopes, Artifact kinds, durable record types, or accepted recording APIs instead of emitting TBD placeholders for resolved surfaces.
 
 ### Resolved Workspace Path Surfaces
 
@@ -63,19 +69,26 @@ These former path TBDs are mapped to Workspace Path Resolution and must not be e
 | path-paper-layout | Use paper Artifact through Workspace Path Resolution. |
 | path-figure-output | Use figure output Artifact through Workspace Path Resolution. |
 
+### Resolved Research Recording Surfaces
+
+These former recording TBDs are mapped to Research Recording Contracts and must not be emitted as open TBD placeholders in research-stage skill text.
+
+| Former ID | Resolution |
+| --- | --- |
+| api-artifact-record | Use the accepted Artifact and Provenance recording API through Research Recording Contracts. |
+| api-finding-query | Use the accepted Finding query/write API through Research Recording Contracts. |
+| api-gate | Use the accepted Gate open, resolve, and record API through Research Recording Contracts. |
+| schema-decision-record | Use the accepted Decision Record fields and validation from Research Recording Contracts. |
+| schema-evidence-item | Use the accepted Evidence Item fields and validation from Research Recording Contracts. |
+| schema-research-claim | Use the accepted Research Claim status, evidence-link, and validation rules from Research Recording Contracts. |
+| schema-gate | Use the accepted Gate status and validation rules from Research Recording Contracts. |
+
 ### Open TBD Surfaces
 
 | ID | Kind | Placeholder | Missing decision |
 | --- | --- | --- | --- |
-| api-artifact-record | api | `[[tbd-surface:api-artifact-record]]` | API for recording Artifacts and Provenance Records. |
-| api-finding-query | api | `[[tbd-surface:api-finding-query]]` | API for querying and writing Findings or durable context. |
 | api-execution-command | api | `[[tbd-surface:api-execution-command]]` | Execution command surface, permissions, and logging behavior. |
-| api-gate | api | `[[tbd-surface:api-gate]]` | API for opening, resolving, and recording Gates. |
 | provider-literature-search | provider | `[[tbd-surface:provider-literature-search]]` | Literature search and paper-reading provider. |
-| schema-decision-record | schema | `[[tbd-surface:schema-decision-record]]` | Decision Record fields and validation. |
-| schema-evidence-item | schema | `[[tbd-surface:schema-evidence-item]]` | Evidence Item fields and validation. |
-| schema-research-claim | schema | `[[tbd-surface:schema-research-claim]]` | Research Claim state and fields. |
-| schema-gate | schema | `[[tbd-surface:schema-gate]]` | Gate categories, states, and payload fields. |
 | schema-stage-cursor | schema | `[[tbd-surface:schema-stage-cursor]]` | Workflow Stage cursor and next-stage representation. |
 | schema-agent-team-state | schema | `[[tbd-surface:schema-agent-team-state]]` | Agent Team Instance pause and advancement states. |
 | schema-skill-binding | schema | `[[tbd-surface:schema-skill-binding]]` | Capability Binding projection and skill install schema. |

@@ -64,4 +64,4 @@ Keep baseline identifiers and variant names stable enough that later stages can 
 
 - Do not omit the trusted comparison surface because one headline metric exists.
 - Do not publish a blocked, waived, or verification-incomplete baseline payload as accepted.
-- If concrete payload schemas must be named, use `[[tbd-surface:schema-decision-record]]`, `[[tbd-surface:schema-evidence-item]]`, or `[[tbd-surface:schema-gate]]`.
+- If concrete payload schemas must be named, use the accepted Decision Record fields, the accepted Evidence Item fields, or the accepted Gate fields.

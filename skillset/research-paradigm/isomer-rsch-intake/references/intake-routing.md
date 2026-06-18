@@ -33,4 +33,4 @@ Open or recommend a Gate through the Operator Agent when the next route depends 
 
 ## Route Decision Minimum
 
-The route record should name the chosen handoff, decisive evidence, rejected alternatives, remaining verification, and what should not be repeated. If the concrete Decision Record schema matters, use `[[tbd-surface:schema-decision-record]]`.
+The route record should name the chosen handoff, decisive evidence, rejected alternatives, remaining verification, and what should not be repeated. If the concrete Decision Record schema matters, use the accepted Decision Record fields.

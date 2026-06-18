@@ -32,4 +32,4 @@ Do not finalize a paper-like line while main-text coverage, evidence mapping, re
 - consequence of approval:
 - consequence of denial or pause:
 
-If concrete Gate fields or APIs matter, use `[[tbd-surface:schema-gate]]` or `[[tbd-surface:api-gate]]`.
+If concrete Gate fields or APIs matter, use the accepted Gate fields or the accepted Gate open/resolve/record API.

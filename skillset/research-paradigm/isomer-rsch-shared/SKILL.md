@@ -7,7 +7,7 @@ description: Shared research contract for Isomer Labs research-stage skills, inc
 
 ## Overview
 
-Use this shared skill whenever an Isomer Labs research-stage skill needs common rules for evidence, Artifacts, handoffs, decisions, provenance, or unsettled platform surfaces.
+Use this shared skill whenever an Isomer Labs research-stage skill needs common rules for evidence, Artifacts, handoffs, decisions, provenance, recording, or unsettled platform surfaces.
 
 ## Workflow
 
@@ -17,8 +17,9 @@ When this skill is invoked, execute the following steps in order.
 2. **Apply truth-source order** before making, routing, or revising claims.
 3. **Use durable vocabulary** for Research Topics, Research Inquiries, Research Inquiry Relationships, Research Tasks, Runs, Artifacts, Evidence Items, Findings, Research Claims, Decision Records, Gates, Provenance Records, Capability Bindings, Execution Adapters, and Workflow Stages.
 4. **Map source-runtime concepts** through `references/source-term-mapping.md` instead of importing source APIs, schedulers, command wrappers, provider names, or concrete paths covered by Workspace Path Resolution.
-5. **Mark unsettled concrete surfaces** with ids from `references/tbd-surface-registry.md` only when the surface is not settled by an accepted Isomer contract.
-6. **Write handoffs with durable evidence boundaries**, including affected Evidence Items, Research Claims, Decision Records, Gates, next Workflow Stage, blocker, caveats, and unsettled surfaces.
+5. **Use accepted recording contracts** for Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates.
+6. **Mark unsettled concrete surfaces** with ids from `references/tbd-surface-registry.md` only when the surface is not settled by an accepted Isomer contract.
+7. **Write handoffs with durable evidence boundaries**, including affected Evidence Items, Research Claims, Decision Records, Gates, next Workflow Stage, blocker, caveats, and unsettled surfaces.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
 
@@ -50,6 +51,12 @@ Do not invent concrete paths, filenames, storage roots, command surfaces, provid
 Ordinary Project, Topic Workspace, Workspace Runtime, task support, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are resolved surfaces. Ask for semantic targets such as Topic Workspace, Workspace Runtime, task support directory, run log Artifact, experiment output Artifact, analysis output Artifact, figure output Artifact, paper Artifact, decision Artifact, evidence Artifact, finding Artifact, handoff Artifact, Agent Workspace scratch, Agent Runtime state, or Agent Artifact.
 
 Do not emit ordinary path TBD placeholders for these surfaces. Workspace plans have precedence, then supported Execution Adapter `ISOMER_*` environment variables, then Project Manifest defaults, then built-in defaults. Environment variables are launch-time adapter inputs, not durable truth; resolved effective paths and their source belong in Workspace Runtime or Provenance Records.
+
+## Research Recording Contracts
+
+Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates are resolved durable record surfaces. Use accepted recording APIs for Artifact and Provenance recording, Finding query/write, and Gate open/resolve/record behavior.
+
+Do not emit recording TBD placeholders for these surfaces. Evidence Items are the support, contradiction, or context boundary for Research Claims. Research Claim status is `open`, `supported`, `refuted`, or `withdrawn` unless a later accepted contract extends it; contradiction and context belong on Evidence Items or claim-evidence links. Findings are primarily scoped to Research Inquiries when an applicable inquiry exists. A Gate may resolve through a Decision Record, but cancelled or superseded Gates can close with a Provenance Record when no meaningful choice was made.
 
 ## Handoff Contract
 

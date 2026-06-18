@@ -29,15 +29,11 @@ Find the one-sentence paper idea. Separate observed facts from allowed interpret
 
 ## TBD Surfaces
 
-Use `[[tbd-surface:api-artifact-record]]` for unsettled outline recording, paper Artifacts resolved by Workspace Path Resolution for manuscript outputs, `[[tbd-surface:schema-research-claim]]` for claim fields, `[[tbd-surface:schema-evidence-item]]` for evidence fields, and `[[tbd-surface:schema-decision-record]]` for outline selection decisions.
+Use the accepted Artifact and Provenance recording API for outline recording, paper Artifacts resolved by Workspace Path Resolution for manuscript outputs, the accepted Research Claim fields for claim fields, the accepted Evidence Item fields for evidence fields, and the accepted Decision Record fields for outline selection decisions.
 
 | ID | Kind | Missing decision |
 | --- | --- | --- |
-| api-artifact-record | api | API for recording Artifacts and Provenance Records. |
 | paper Artifact | resolved path surface | Resolved through Workspace Path Resolution. |
-| schema-decision-record | schema | Decision Record fields and validation. |
-| schema-evidence-item | schema | Evidence Item fields and validation. |
-| schema-research-claim | schema | Research Claim state and fields. |
 
 ## Good Outline Definition
 

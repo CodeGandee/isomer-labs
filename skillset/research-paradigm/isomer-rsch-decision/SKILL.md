@@ -66,4 +66,4 @@ Read references as needed:
 - Do not choose among candidate packages without naming the winner, rejected alternatives, and criteria.
 - Do not launch follow-up analysis unless the expected information gain justifies the cost.
 - For paper-facing routes, stop or branch when evidence shows that novelty, evidence sufficiency, or reader value has collapsed beyond reasonable narrowing; ask the Operator Agent before executing a preference-sensitive paper stop.
-- Use `[[tbd-surface:schema-decision-record]]` for unsettled decision fields.
+- Use the accepted Decision Record fields for decision fields.

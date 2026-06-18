@@ -4,7 +4,7 @@ Use this reference when the evidence question is clear but the exact Artifact se
 
 Provenance: see `provenance.md`.
 
-Hard rule: once a supplementary slice is launched as analysis campaign work, its state must become a durable Artifact, Evidence Item, Finding, Decision Record, or Gate update through `[[tbd-surface:api-artifact-record]]`.
+Hard rule: once a supplementary slice is launched as analysis campaign work, its state must become a durable Artifact, Evidence Item, Finding, Decision Record, or Gate update through the accepted Artifact and Provenance recording API.
 
 ## 1. One Launched Supplementary Slice
 
