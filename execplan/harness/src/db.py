@@ -15,6 +15,7 @@ MIGRATIONS = [
     ("quest", "autonomy_mode", "ALTER TABLE quest ADD COLUMN autonomy_mode TEXT"),
     ("quest", "rigor_level",   "ALTER TABLE quest ADD COLUMN rigor_level TEXT"),
     ("claim", "kind",          "ALTER TABLE claim ADD COLUMN kind TEXT NOT NULL DEFAULT 'claim'"),
+    ("claim_evidence", "evidence_kind", "ALTER TABLE claim_evidence ADD COLUMN evidence_kind TEXT"),
 ]
 
 

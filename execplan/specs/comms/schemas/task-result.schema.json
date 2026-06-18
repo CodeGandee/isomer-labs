@@ -45,15 +45,28 @@
     },
     "methodology_used": {
       "type": "array",
-      "description": "Methodology-pack usage for this stage (audit record of which craft was applied; NOT authoritative over DB state). The Orchestrator/Reviewer check it against the stage's REQUIRED_PACKS; each item should be backed by an artifact(kind='methodology-usage') the worker recorded.",
+      "description": "BINDING methodology application for this stage. Each item's applied_as MUST resolve (`methodology check --quest-id <q> --stage <stage> --applied-as <ref>`) to the stage's VALIDATED typed record (idea.select / baseline.contract / analysis.bridge / paper_spine / review.verdict). The Orchestrator rejects any item whose applied_as does not resolve — it is no longer free-text. Background-only reading that produced no validated typed artifact goes in methodology_consulted, NOT here.",
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["pack", "applied_as"],
         "properties": {
-          "pack": { "type": "string", "description": "knowledge_pack pack_id consulted (e.g. ideation-rubric, paper-craft, research-method)" },
+          "pack": { "type": "string", "description": "knowledge_pack pack_id whose craft was applied (e.g. ideation-rubric, paper-craft, research-method)" },
           "cards": { "type": "array", "items": { "type": "string" }, "description": "specific card refs read (e.g. ideation-rubric/references/selection-gate.md)" },
-          "applied_as": { "type": "string", "description": "ref to the durable row/artifact where the methodology was applied (the bound output)" }
+          "applied_as": { "type": "string", "description": "ref that MUST resolve via `methodology check` to the stage's validated typed record (its id or its *_ref artifact path). Free text is rejected." }
+        }
+      }
+    },
+    "methodology_consulted": {
+      "type": "array",
+      "description": "Background reading only (no validated typed application artifact). NOT binding evidence; reported separately from methodology_used so it is never counted as methodology application.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pack"],
+        "properties": {
+          "pack": { "type": "string" },
+          "cards": { "type": "array", "items": { "type": "string" } }
         }
       }
     },

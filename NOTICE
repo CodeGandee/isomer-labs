@@ -1,0 +1,45 @@
+Houmao-DeepResearch
+===================
+
+This project incorporates research-workflow methodology, reference content, and
+document templates derived from third-party projects. Attribution and license
+terms for that incorporated material are consolidated in this file (rather than
+scattered through the operational docs).
+
+-------------------------------------------------------------------------------
+1. DeepScientist  —  Apache License 2.0
+-------------------------------------------------------------------------------
+Portions of the methodology reference packs (execplan/packs/*/references/) and
+the skill content (execplan/skills/) are derived from the DeepScientist project.
+
+    Copyright 2026 ResearAI
+    Licensed under the Apache License, Version 2.0.
+    https://www.apache.org/licenses/LICENSE-2.0
+
+The Apache-2.0 terms govern this incorporated material; this NOTICE provides the
+required attribution. A copy of the Apache-2.0 license is available at the URL
+above.
+
+-------------------------------------------------------------------------------
+2. FermiLink "skilled-scipkg" catalog  —  scientific-software package cards
+-------------------------------------------------------------------------------
+The package routing cards (execplan/packs/science-scipkg/references/packages/)
+and the package index are derived from the FermiLink skilled-scipkg catalog.
+
+    Upstream:        https://github.com/TaoELi/FermiLink
+    Audited commit:  93f089a333a43089fb1a08a73c37d05fd6683214
+
+Routing/knowledge pointers only; no solver runtimes or package source trees are
+vendored. See execplan/packs/science-scipkg/references/PROVENANCE.md.
+
+-------------------------------------------------------------------------------
+3. Venue LaTeX template suites  —  MIT License
+-------------------------------------------------------------------------------
+The venue template suites (execplan/packs/paper-latex/templates/) are vendored
+from the upstream below.
+
+    Copyright (c) 2025 Claude AI Research Skills Contributors
+    Licensed under the MIT License.
+
+Full license text: execplan/packs/paper-latex/templates/UPSTREAM_LICENSE.txt
+Selection/usage notes: execplan/packs/paper-latex/templates/TEMPLATE_NOTES.md

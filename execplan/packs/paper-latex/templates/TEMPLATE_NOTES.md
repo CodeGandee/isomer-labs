@@ -1,4 +1,4 @@
-# DeepScientist Template Notes
+# Venue Template Notes
 
 These templates are vendored from `Orchestra-Research/AI-Research-SKILLs/20-ml-paper-writing` so the `write` skill can use them offline inside local quest workspaces.
 

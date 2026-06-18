@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/paper-spine",
+  "title": "paper_spine record",
+  "description": "Upsert the persistent paper-spine pointer row carried across outline -> write -> review -> finalize. The rich TYPED spine content lives in the spine_ref artifact (runs/<q>/paper/spine.json) and is validated by `outline validate` against the spine content schema. submission_ready is NOT a property here (additionalProperties:false) and is force-reset to 0 on every upsert; only `manuscript coverage` computes it. The finalize coverage gate reads the computed flag, never artifact existence.",
+  "oneOf": [
+    {
+      "title": "paper_spine.upsert",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "spine_ref", "thesis", "n_core_claims"],
+      "properties": {
+        "record_type": { "const": "paper_spine.upsert" },
+        "record_id": { "type": "string", "description": "= quest_id" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "spine_ref": { "type": "string", "description": "loop-relative path to the typed spine.json artifact" },
+        "thesis": { "type": "string", "minLength": 1, "description": "one-sentence thesis" },
+        "core_contribution": { "type": "string" },
+        "central_mechanism": { "type": "string" },
+        "venue_style": { "type": "string" },
+        "n_core_claims": { "type": "integer", "minimum": 1, "maximum": 3 }
+      }
+    }
+  ]
+}

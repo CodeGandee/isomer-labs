@@ -1,4 +1,4 @@
-# Rebuttal flow (ported from DeepScientist `rebuttal`)
+# Rebuttal flow
 
 Writer-owned (`rebuttal` stage). Flow: **review-matrix → action-plan → evidence-update → response-letter**.
 Record artifacts as `artifact.record` (kind report) under `runs/<quest-id>/report/rebuttal/`; new evidence

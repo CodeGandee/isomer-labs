@@ -109,6 +109,53 @@ def _unicode_mainfont(extra_path):
     return None
 
 
+def _svgfix_tex(tex: str, build_dir: Path):
+    """Rewrite \\includesvg[..]{x.svg} -> \\includegraphics[..]{x.pdf} when a sibling .pdf exists (the figure
+    embeds cleanly without an SVG converter — the exact failure that left q1's figures unembedded). Returns
+    (new_tex, n_fixed)."""
+    n = 0
+    def repl(m):
+        nonlocal n
+        opt, path = m.group(1) or "", m.group(2)
+        pdf = path[:-4] + ".pdf"
+        cand = pdf if pdf.startswith("/") else (build_dir / pdf)
+        if Path(cand).exists() or (build_dir / Path(pdf).name).exists():
+            n += 1
+            return f"\\includegraphics{opt}{{{pdf}}}"
+        return m.group(0)
+    new = re.sub(r"\\includesvg(\[[^\]]*\])?\{([^}]+\.svg)\}", repl, tex)
+    return new, n
+
+
+def _inject_venue(tex: str, venue_info):
+    """Best-effort: \\usepackage the venue's conference style after \\documentclass so the compile picks up
+    venue formatting. Non-fatal; if the venue style conflicts the caller retries without it."""
+    if not venue_info or not venue_info.get("staged"):
+        return tex, None
+    styles = [f for f in venue_info.get("files", []) if f.endswith(".sty")
+              and ("conference" in f or venue_info["venue"].split("20")[0] in f or "icml" in f or "neurips" in f)]
+    if not styles:
+        return tex, None
+    stem = Path(styles[0]).stem
+    pkg = f"\\usepackage{{venue-{venue_info['venue']}/{stem}}}\n"
+    out = re.sub(r"(\\documentclass[^\n]*\n)", r"\1" + pkg.replace("\\", "\\\\"), tex, count=1)
+    return out, stem
+
+
+def _latexmk(tex_path: Path, engine: str, env) -> bool:
+    """Compile tex -> pdf with latexmk (runs bibtex when \\bibliography is present). True on a non-empty PDF."""
+    if not shutil.which("latexmk", path=env.get("PATH")):
+        return False
+    flag = {"xelatex": "-pdfxe", "lualatex": "-pdflua"}.get(engine, "-pdf")
+    try:
+        subprocess.run(["latexmk", flag, "-interaction=nonstopmode", "-halt-on-error", tex_path.name],
+                       cwd=str(tex_path.parent), env=env, capture_output=True, text=True, timeout=600)
+    except Exception:
+        return False
+    pdf = tex_path.with_suffix(".pdf")
+    return pdf.exists() and pdf.stat().st_size > 0
+
+
 def render(*, command, input_path, out_path, params, quest_id):
     params = params or {}
     src = Path(input_path) if input_path else None
@@ -141,23 +188,66 @@ def render(*, command, input_path, out_path, params, quest_id):
             common += ["-V", "documentclass=ctexart"]
         if mainfont and engine in ("xelatex", "lualatex"):
             common += ["-V", "mainfont=" + mainfont, "-V", "monofont=DejaVu Sans Mono"]
+        # Bibliography: when a .bib is given, emit natbib \cite + \bibliography (real BibTeX pass via latexmk)
+        # rather than citeproc-inlined text, and copy the bib into the build dir so bibtex resolves it.
+        bibname = None
         if bib and Path(bib).exists():
-            common += ["--citeproc", "--bibliography=" + str(bib)]
-        # intermediate standalone .tex (best-effort)
+            import shutil as _sh
+            bibname = "references"
+            dst = out_pdf.parent / (bibname + ".bib")
+            if Path(bib).resolve() != dst.resolve():  # guard: --bib may already be the build-dir references.bib
+                _sh.copy2(bib, dst)
+            common += ["--natbib", "--bibliography=" + bibname + ".bib"]
+
+        # Emit a standalone .tex, then post-process (figure embedding + venue) and compile via latexmk
+        # (so BibTeX runs and figures embed). Falls back to pandoc-direct-pdf if anything is missing.
+        used_path = None
         try:
-            subprocess.run([pandoc, str(src), "-s", "-o", str(out_tex)] + common,
-                           env=env, capture_output=True, text=True, timeout=300)
+            r = subprocess.run([pandoc, str(src), "-s", "-o", str(out_tex)] + common,
+                               env=env, capture_output=True, text=True, timeout=300)
+            if r.returncode == 0 and out_tex.exists():
+                tex = out_tex.read_text(encoding="utf-8")
+                tex, n_fig = _svgfix_tex(tex, out_pdf.parent)
+                tex, venue_sty = _inject_venue(tex, venue_info)
+                out_tex.write_text(tex, encoding="utf-8")
+                if _latexmk(out_tex, engine, env):
+                    # latexmk writes <stem>.pdf; ensure it lands at out_pdf
+                    built = out_tex.with_suffix(".pdf")
+                    if built != out_pdf and built.exists():
+                        built.replace(out_pdf)
+                    used_path = "latexmk"
+                elif venue_sty:  # venue style may have broken the compile — retry without it
+                    tex2, _ = _svgfix_tex(out_tex.read_text(encoding="utf-8"), out_pdf.parent)
+                    tex2 = re.sub(r"\\usepackage\{venue-[^}]+\}\n", "", tex2)
+                    out_tex.write_text(tex2, encoding="utf-8")
+                    if _latexmk(out_tex, engine, env):
+                        built = out_tex.with_suffix(".pdf")
+                        if built != out_pdf and built.exists():
+                            built.replace(out_pdf)
+                        used_path = "latexmk (venue dropped)"
         except Exception:
-            pass
-        proc = subprocess.run([pandoc, str(src), "-o", str(out_pdf)] + common,
+            used_path = None
+
+        if used_path and out_pdf.exists() and out_pdf.stat().st_size > 0:
+            return {"ok": True, "out_path": str(out_pdf), "format": "pdf",
+                    "summary": f"compiled PDF via pandoc+{engine}+{used_path}" + (" (+CJK)" if cjk else "")
+                               + (" (+bibtex)" if bibname else "") + (f" (+figs:{n_fig})" if n_fig else ""),
+                    "meta": {"engine": engine, "pandoc": True, "tex_path": str(out_tex),
+                             "bytes": out_pdf.stat().st_size, "cjk": cjk, "mainfont": mainfont,
+                             "venue": venue_info, "bibtex": bool(bibname), "figs_embedded": n_fig}}
+
+        # Fallback: original pandoc-direct PDF (today's behavior — no regression)
+        common_fb = [c for c in common if c not in ("--natbib",) and not c.startswith("--bibliography")]
+        if bib and Path(bib).exists():
+            common_fb += ["--citeproc", "--bibliography=" + str(bib)]
+        proc = subprocess.run([pandoc, str(src), "-o", str(out_pdf)] + common_fb,
                               env=env, capture_output=True, text=True, timeout=600)
         if proc.returncode == 0 and out_pdf.exists() and out_pdf.stat().st_size > 0:
             return {"ok": True, "out_path": str(out_pdf), "format": "pdf",
-                    "summary": f"compiled PDF via pandoc+{engine}" + (" (+CJK)" if cjk else "")
-                               + (" (+bib)" if bib else ""),
+                    "summary": f"compiled PDF via pandoc+{engine} (direct fallback)" + (" (+CJK)" if cjk else ""),
                     "meta": {"engine": engine, "pandoc": True, "tex_path": str(out_tex) if out_tex.exists() else None,
-                             "bytes": out_pdf.stat().st_size, "cjk": cjk, "mainfont": mainfont, "venue": venue_info}}
-        # fall through to .tex fallback on compile failure, surfacing the error tail
+                             "bytes": out_pdf.stat().st_size, "cjk": cjk, "mainfont": mainfont, "venue": venue_info,
+                             "note": "latexmk path unavailable; used pandoc-direct (citeproc, includesvg)"}}
         err = (proc.stderr or proc.stdout or "")[-600:]
         _emit_tex_fallback(md, out_tex, title)
         return {"ok": True, "out_path": str(out_tex), "format": "tex",

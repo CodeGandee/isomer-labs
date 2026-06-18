@@ -1,17 +1,18 @@
 ---
 name: deepresearch-shared-guide
-description: Shared harness/comms usage conventions for every DeepResearch agent. Consult before any state read/write, mail send, or reply in the generated deepresearch loop.
+description: Shared harness/comms usage conventions for every deepresearch agent. Consult before any state read/write, mail send, or reply in the generated deepresearch loop.
 ---
 
 # Shared Guide (all roles)
 
 ## Trigger
 
-- A shared usage case: before any state access, record write, mail send, or reply in this loop.
+- A shared usage case: before any state access, record write, mail send, or reply in the loop.
 
 ## Inputs
 
-- `$HARNESS` = the absolute harness path, exported as an env var on each launch profile (and recorded in `runs/prepared-workspace.md`). Invoke commands as `$HARNESS <group> <verb>`.
+- `$HARNESS` = the absolute harness path, exported as an env var on each launch profile (and recorded in
+  `runs/prepared-workspace.md`). Invoke commands as `$HARNESS <group> <verb>`.
 - The in-body `houmao-email-metadata` block of any received mail.
 - Contracts: `specs/comms/templates.toml`, `specs/state/records/*.schema.json`, `specs/collab/topology/topology.toml`.
 
@@ -38,7 +39,7 @@ description: Shared harness/comms usage conventions for every DeepResearch agent
 5. **Outgoing mail flow.** TOML payload → `$HARNESS email validate` → `$HARNESS email render` → deliver via
    `houmao-agent-email-comms`. Rendered mail carries the metadata block. Log lifecycle with
    `$HARNESS email apply` (bookkeeping only; the harness never delivers mail).
-6. **Tree-loop.** Specialists always reply upstream to the Orchestrator; never bypass it. The Orchestrator
+6. **Tree-loop.** Specialists always reply upstream to the orchestrator; never bypass it. The orchestrator
    owns the `handoff` ledger, `decision`/`finalize`, and the self-wakeup continuation.
 7. **`--at` timestamps** are caller-supplied ISO-8601 on every mutating command.
 8. **GPU-use is operator-gated, confirmed PRE-LOOP.** The operator confirms the allowed GPU devices during
@@ -47,10 +48,10 @@ description: Shared harness/comms usage conventions for every DeepResearch agent
    work — experiments, benchmarks, profiling, and analyst ablations — may only run on the confirmed devices;
    no `experiment`- OR `analysis`-stage handoff may open while unconfirmed (hard apply-time gate over both
    stages + invariant `experiment_requires_gpu_confirmation`). A single per-quest confirmation covers both
-   stages. Only the operator confirms, via `$HARNESS gpu confirm`
-   (operator-control). Prefer running GPU work through `$HARNESS experiment run --cmd ...`, which fails
-   closed and injects `CUDA_VISIBLE_DEVICES=<confirmed devices>`; for direct runs, export the confirmed
-   `devices`. Never use a GPU outside the confirmed set, and never self-confirm to unblock work.
+   stages. Only the operator confirms, via `$HARNESS gpu confirm` (operator-control). Prefer running GPU work
+   through `$HARNESS experiment run --cmd ...`, which fails closed and injects
+   `CUDA_VISIBLE_DEVICES=<confirmed devices>`; for direct runs, export the confirmed `devices`. Never use a GPU
+   outside the confirmed set, and never self-confirm to unblock work.
 9. **Every quest passes a MANDATORY pre-launch ambiguity check.** Before a quest can reach
    `run_state=running` it must have a recorded `kind='clarification'` artifact (pre-loop start-gate, fail-closed)
    — the operator-facing setup reviewed the objective across 7 dimensions (objective, acceptance, GPU, domain,
@@ -66,81 +67,31 @@ description: Shared harness/comms usage conventions for every DeepResearch agent
     schema + invariants (`finding_quest_owned`, `reference_quest_owned`). Collect every datum fresh for THIS
     quest, even if the objective matches a prior quest's. Prior quests are invisible to you.
 
-## Research-quality disciplines (DeepScientist-lessons; all roles)
+## Research-quality disciplines (extended-lessons; all roles)
 
-- **Living plan map (Phase 2):** `runs/<q>/plan.md` is a **rendered DB projection** (`$HARNESS plan render`),
+- **Living plan map:** `runs/<q>/plan.md` is a **rendered DB projection** (`$HARNESS plan render`),
   never authoritative and never read back as state — the DB is canonical. `plan status` prints it; `plan
-  validate` runs plan checks + decision lint. The Orchestrator re-renders it at each round close.
-- **Claim roles for completeness (Phase 5):** when recording a `claim.upsert`, set `kind` —
+  validate` runs plan checks + decision lint. The orchestrator re-renders it at each round close.
+- **Claim roles for completeness:** when recording a `claim.upsert`, set `kind` —
   `alternative`/`competing_hypothesis` for a rival explanation you intend to falsify, `limitation` for a
-  documented scoped-out gap, else default `claim`. The Analyst records ablation/mechanism `analysis` rows and
+  documented scoped-out gap, else default `claim`. The analyst records ablation/mechanism `analysis` rows and
   names the competing hypothesis (so `$HARNESS completeness audit` can see them).
-- **Research-completeness (Phase 5):** `$HARNESS completeness audit --quest-id <q>` = the 7 scientific-quality
+- **Research-completeness:** `$HARNESS completeness audit --quest-id <q>` = the 7 scientific-quality
   checks (evidence traceability, no orphan claims, mechanism explanation, named alternatives, ablation-or-
   documented-infeasibility, lit audit, unresolved-discrepancy handling). In `auto`+`publication` it HARD-gates
-  `complete`; otherwise advisory. The Reviewer blocks `revise` on a failing required item when the gate is hard.
-- **Decisions name their losers (Phase 4):** a consequential `decision.record` chooses among ≥2 named
+  `complete`; otherwise advisory. The reviewer blocks `revise` on a failing required item when the gate is hard.
+- **Decisions name their losers:** a consequential `decision.record` chooses among ≥2 named
   candidates with non-winners marked + a Winner/Rejected-alternatives/Decisive-reason `rationale_ref`.
-- **Frozen objective, amendable acceptance (Phase 6):** never edit `objective.md` post-launch (frozen) and
+- **Frozen objective, amendable acceptance:** never edit `objective.md` post-launch (frozen) and
   never edit `acceptance.md` in place — acceptance changes only via the operator-confirmed, append-only
   `amend-acceptance` path (deepresearch-operator-control op 4b).
 
-## Methodology references (ported from DeepScientist; read before stage work)
+## Methodology references + usage audit
 
-These are loop-wide research/writing **craft** packs (`kind='reference'`, enabled by default). Discover with
-`$HARNESS knowledge query --kind reference` and list their files with `$HARNESS knowledge cards`; then READ
-the named file under `execplan/packs/<pack>/references/...`. They are advisory craft, NEVER an authoritative
-state surface (the DB stays canonical; record outcomes via `record apply`). Map any DeepScientist tool names
-inside them (`artifact.*`, `bash_exec`, `memory.*`) to the `$HARNESS` surface.
-- `ideation-rubric` — objective contract, selection gate, divergence/related-work playbooks, eval-contract + baseline-shortlist (scope/idea).
-- `research-method` — evidence ladder, comparability contract, campaign design, decision/optimize/finalize methodology (baseline/experiment/analysis/decision).
-- `paper-craft` — oral-writing principles, section-rewrite checklist, the paper-view/evidence-view outline contract (outline/write).
-- `review-craft` — review dimensions, evidence-authenticity gate, literature benchmark, review templates (review).
-- `rebuttal-craft` — review-matrix→action-plan→evidence-update→response-letter flow + voice rules (rebuttal).
-- `intake-rubric` — trust-rank/reconcile pre-existing assets, current-board packet (intake-audit).
-
-**Evidence ladder (shared vocabulary; from `research-method/references/evidence-ladder.md`).** Spend effort in
-order, never out of order: `minimum` = the result is executable AND comparable to the baseline; `solid` = the
-main comparison is credible — baseline strong + fair, results stable, and **significance testing is present
-whenever superiority is claimed**; `maximum` = broaden/polish only AFTER the line is at least `solid`. Keep
-`auxiliary/dev` evidence (params, diagnostics, mechanism) distinct from `main/test` (claim-carrying) evidence.
-
-**Comparability contract (shared vocabulary; from `research-method/references/comparability-contract.md`).** A
-comparison is trustworthy only when these are explicit: task identity · dataset identity · split contract ·
-evaluation script/path · required metric keys · metric directions · source commit/package identity · known
-deviations — with a verdict of `usable now | usable with caveats | blocked`. If downstream work would have to
-*guess* the comparison contract, the baseline is not ready. Never silently change a dataset/split/metric
-definition/eval path; a robustness slice that changes them must be LABELED generalization/stress-test, not
-apples-to-apples.
-
-## Methodology-usage audit (Tier-3; required, auditable)
-
-Reading a pack is not optional for stages that have a **required pack**. Required packs by stage:
-
-| stage | required pack(s) | cheap bound-output (Tier 4) | audited by |
-|---|---|---|---|
-| intake-audit | `intake-rubric` | trust-ranked intake_asset rows + current-board packet | worker |
-| scope, idea | `ideation-rubric` | idea: a selection-gate score in the idea artifact | worker |
-| baseline | `ideation-rubric` + `research-method` | comparability/eval-contract fields in the baseline artifact | worker |
-| experiment, analysis | `research-method` | evaluation_summary / slice contract in the result/analysis artifact | worker |
-| outline | `paper-craft` | `outline validate` passes | worker |
-| write | `paper-craft` | `manuscript validate` passes | worker |
-| review | `review-craft` | review-report + experiment-todo artifacts exist | worker |
-| rebuttal | `rebuttal-craft` | response-letter artifact exists | worker |
-| decision, optimize, finalize | `research-method` | the decision/frontier/finalize_outcome row | **Orchestrator (self-audit at round close)** |
-
-EVERY stage now has a required pack. **Worker stages:** before replying `status=done` you MUST (1) consult the
-pack via `$HARNESS knowledge cards`; (2) record an **`artifact(kind='methodology-usage')`** (quest-owned, with
-`round_index`, `ref=runs/<q>/methodology/r<r>-<stage>.md`) naming the pack + cards applied and the bound
-output; (3) report `methodology_used[]` `{pack, cards, applied_as}` in the task-result. **Orchestrator-internal
-stages** (`decision`/`optimize`/`finalize`): the Orchestrator records the same methodology-usage artifact at
-round close (no task-result — it is its own worker; see `deepresearch-orchestrator-tick` 5b). The compact
-non-negotiable per-stage checklist lives in the **`deepresearch-on-task-request` body** ("Mandatory stage
-checklists") so it is always in context even if the pack is never opened; the pack holds the depth. This is an
-**audit overlay only — NOT authoritative over DB state** (the `result`/`claim`/`analysis` rows remain the
-truth). The Orchestrator's on-task-result fold gates worker stages (re-dispatch in `auto`, operator-block in
-`assistant`), and `$HARNESS plan validate` warns at round close when any closed required-pack round (worker OR
-internal) has no methodology-usage artifact.
+Loop-wide research/writing **craft** packs
+back every stage, and reading the required pack is auditable (Tier-3 methodology-usage). The full pack catalog,
+the evidence-ladder + comparability-contract shared vocabulary, and the required-pack-by-stage audit table live
+in **`reference/methodology.md`** — read it before stage work.
 
 ## Output
 

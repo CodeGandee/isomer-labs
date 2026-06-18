@@ -168,7 +168,7 @@ expect = 0
 [[invariant]]
 name = "complete_quest_has_scholarship"
 area = "literature"
-description = "Advisory mirror of the finalize scholarship gate (Upgrade 1). A completed quest that was launched under the research-contract regime (has a kind='research-contract' artifact) must position >=1 claim against a reference. Quests predating the regime (no research-contract artifact, e.g. q1/q2) are exempt, so this never flags history."
+description = "Advisory mirror of the finalize scholarship gate. A completed quest that was launched under the research-contract regime (has a kind='research-contract' artifact) must position >=1 claim against a reference. Quests predating the regime (no research-contract artifact) are exempt, so this never flags history."
 check = "SELECT COUNT(*) FROM quest q WHERE q.run_state='completed' AND EXISTS (SELECT 1 FROM artifact a WHERE a.quest_id=q.quest_id AND a.kind='research-contract') AND NOT EXISTS (SELECT 1 FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id WHERE c.quest_id=q.quest_id AND e.source_kind='reference');"
 expect = 0
 
@@ -267,32 +267,32 @@ description = "GPU-use gate: any handoff in a GPU-using-stage round (experiment 
 check = "SELECT COUNT(*) FROM handoff h JOIN round r ON r.quest_id=h.quest_id AND r.round_index=h.round_index WHERE r.stage IN ('experiment','analysis') AND NOT EXISTS (SELECT 1 FROM gpu_allocation g WHERE g.quest_id=h.quest_id AND g.status='confirmed' AND g.devices IS NOT NULL AND g.devices<>'');"
 expect = 0
 
-# ───────────────── DeepScientist-lessons (run mode · plan map · acceptance amendments) ─────────────────
+# ───────────────── extended-lessons (run mode · plan map · acceptance amendments) ─────────────────
 
 [[invariant]]
 name = "running_quest_has_run_mode"
 area = "defaults"
-description = "Phase 1: a LIVE quest must have an operator-chosen run mode (autonomy_mode IN 'auto'/'assistant'). Targets only active states, so terminal pre-feature quests (q1/q2/q3, run_state='completed', autonomy_mode NULL) are exempt and never flag. New quests are forced non-NULL by the launch gate."
+description = "a LIVE quest must have an operator-chosen run mode (autonomy_mode IN 'auto'/'assistant'). Targets only active states, so terminal pre-feature quests (run_state='completed', autonomy_mode NULL) are exempt and never flag. New quests are forced non-NULL by the launch gate."
 check = "SELECT COUNT(*) FROM quest WHERE run_state IN ('running','paused','recovering','waiting_user','parked') AND (autonomy_mode IS NULL OR autonomy_mode NOT IN ('auto','assistant'));"
 expect = 0
 
 [[invariant]]
 name = "plan_revision_monotonic"
 area = "defaults"
-description = "Phase 3: plan_revision is >= 1 for every quest (the column default). The Revisions ledger is append-only so revisions never decrease. Pre-feature quests default to 1 and pass."
+description = "plan_revision is >= 1 for every quest (the column default). The Revisions ledger is append-only so revisions never decrease. Pre-feature quests default to 1 and pass."
 check = "SELECT COUNT(*) FROM quest WHERE plan_revision < 1;"
 expect = 0
 
 [[invariant]]
 name = "plan_map_fresh"
 area = "defaults"
-description = "Phase 2: if a RUNNING quest has a rendered plan map (artifact kind='plan'), it must not be staler than its latest round. Quests with no plan artifact (q1/q2/q3 and any pre-feature quest) are exempt, so history never flags. ISO-8601 UTC timestamps compare lexicographically."
+description = "if a RUNNING quest has a rendered plan map (artifact kind='plan'), it must not be staler than its latest round. Quests with no plan artifact (any pre-feature quest) are exempt, so history never flags. ISO-8601 UTC timestamps compare lexicographically."
 check = "SELECT COUNT(*) FROM quest q WHERE q.run_state='running' AND EXISTS (SELECT 1 FROM artifact a WHERE a.quest_id=q.quest_id AND a.kind='plan') AND (SELECT MAX(a.created_at) FROM artifact a WHERE a.quest_id=q.quest_id AND a.kind='plan') < (SELECT MAX(r.updated_at) FROM round r WHERE r.quest_id=q.quest_id);"
 expect = 0
 
 [[invariant]]
 name = "acceptance_amend_not_self_clearing"
 area = "defaults"
-description = "Phase 6 anti-gaming: a quest must not record a confirmed acceptance amendment and a 'complete' finalize in the SAME round_index (the loop must not weaken acceptance to pass). Round-scoped approximation; quests with no amendment are exempt, so history never flags."
+description = "anti-gaming: a quest must not record a confirmed acceptance amendment and a 'complete' finalize in the SAME round_index (the loop must not weaken acceptance to pass). Round-scoped approximation; quests with no amendment are exempt, so history never flags."
 check = "SELECT COUNT(*) FROM quest q JOIN decision d ON d.quest_id=q.quest_id AND d.route='amend-acceptance' AND d.confirmed=1 JOIN finalize_outcome f ON f.quest_id=q.quest_id AND f.outcome='complete' WHERE d.round_index = q.round_index AND q.run_state='completed';"
 expect = 0

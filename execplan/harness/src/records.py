@@ -16,7 +16,7 @@ from paths import RECORDS_DIR
 # Tables carrying updated_at (set on every write); participant carries no timestamps.
 UPDATED_TABLES = {"quest", "round", "branch", "idea", "experiment", "claim",
                   "finding_memory", "self_wakeup", "handoff", "intake_asset", "frontier_entry",
-                  "gpu_allocation"}
+                  "gpu_allocation", "paper_spine"}
 NO_CREATED = {"participant", "gpu_allocation"}
 
 # record_type -> write spec. id_from: 'record_id' (pk[0]=record_id) | 'fields' (pk cols in payload) |
@@ -49,6 +49,11 @@ RECORD_MAP = {
     "wakeup.attach":           dict(table="self_wakeup", pk=["wakeup_id"], id_from="record_id", mode="update"),
     "wakeup.resolve":          dict(table="self_wakeup", pk=["wakeup_id"], id_from="record_id", mode="update"),
     "artifact.record":         dict(table="artifact", pk=["artifact_id"], id_from="record_id", mode="upsert"),
+    "paper_spine.upsert":      dict(table="paper_spine", pk=["quest_id"], id_from="record_id", mode="upsert", force={"submission_ready": 0}),
+    "review.verdict":          dict(table="review_verdict", pk=["verdict_id"], id_from="record_id", mode="insert", force={"valid": 0}),
+    "idea.select":             dict(table="idea_select", pk=["select_id"], id_from="record_id", mode="insert", force={"valid": 0}),
+    "baseline.contract":       dict(table="baseline_contract", pk=["contract_id"], id_from="record_id", mode="insert"),
+    "analysis.bridge":         dict(table="analysis_bridge", pk=["bridge_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "operator_event.record":   dict(table="operator_intent_event", pk=["event_id"], id_from="record_id", mode="insert"),
     "quirk.append":            dict(table="quirk", pk=["quirk_id"], id_from="record_id", mode="insert"),
     "knowledge_pack.register": dict(table="knowledge_pack", pk=["pack_id"], id_from="record_id", mode="upsert"),
@@ -160,12 +165,121 @@ def _norm(v):
     return int(v) if isinstance(v, bool) else v
 
 
+# ── Skill-caller authority + audit (exposing commands/packs as agent-invokable skills) ──────────────────
+# A write may carry a caller identity set from the CLI `--via` flag:
+#   --via skill:<skill-id>:<role>   an agent invoked a wrapped skill (authority-checked + audited)
+#   --via loop:<role> | operator    the loop / operator (UNRESTRICTED — default when --via is absent)
+# Enforced HERE, the single write path, so it is caller-agnostic and composes with every existing gate (no
+# gate is weakened). loop/operator/orchestrator callers bypass the allowlist (no regression). A skill caller
+# is checked against a per-role allowlist (Tier C reserved → operator/orchestrator; Tier B science writes →
+# owner role; Tier A → any specialist), optionally loop-context-guarded, and every skill-invoked mutation is
+# stamped with a quest-owned audit artifact(kind='skill-invocation') so skill vs loop writes are distinguishable.
+CALLER = {"kind": "loop", "role": None, "skill": None}
+
+
+def set_caller(via):
+    global CALLER
+    if not via:
+        CALLER = {"kind": "loop", "role": None, "skill": None}; return
+    p = str(via).split(":")
+    if p[0] == "skill" and len(p) >= 3:
+        CALLER = {"kind": "skill", "skill": p[1], "role": p[2]}
+    elif p[0] in ("loop", "operator"):
+        CALLER = {"kind": p[0], "role": (p[1] if len(p) > 1 else None), "skill": None}
+    else:
+        CALLER = {"kind": "loop", "role": None, "skill": None}
+
+
+_OPERATOR_ONLY_RT = {"gpu.confirm"}
+_ORCH_ONLY_RT = {"decision.record", "decision.confirm", "finalize.record",
+                 "round.open", "round.update", "round.close", "wakeup.arm", "wakeup.attach", "wakeup.resolve",
+                 "handoff.open", "handoff.advance", "frontier.record", "operator_event.record",
+                 "quest.create", "quest.update", "knowledge_pack.register"}
+_OWNER_RT = {"experiment.upsert": {"experimenter"}, "result.record": {"experimenter"},
+             "measurement.record": {"experimenter"}, "experiment_param.record": {"experimenter"},
+             "search_space.define": {"scout-ideator"}, "analysis.record": {"analyst"},
+             "idea.upsert": {"scout-ideator"}, "intake_asset.record": {"scout-ideator"},
+             "reference.record": {"scout-ideator", "writer"},
+             "claim.upsert": {"writer", "analyst", "reviewer"},
+             "claim_evidence.link": {"writer", "analyst", "reviewer"},
+             "claim_evidence.resolve": {"reviewer", "writer"}}
+_TIER_B_RT = {"experiment.upsert", "result.record", "measurement.record", "experiment_param.record", "analysis.record"}
+_CMD_ROLES = {"experiment run": {"experimenter", "analyst"}, "result validate": {"orchestrator"},
+              "gpu confirm": {"operator"}}
+
+
+def _deny(what, role):
+    raise RecordError(f"skill authority: role {role!r} (via --via skill) may not perform {what!r}; it is "
+                      "operator/orchestrator/owner-reserved. Route it through the Orchestrator (tree-loop) "
+                      "or an operator.")
+
+
+def authorize(record_type):
+    """Per-role allowlist for a SKILL caller (loop/operator/orchestrator bypass)."""
+    if CALLER["kind"] != "skill":
+        return
+    role = CALLER["role"]
+    if role in ("operator", "orchestrator"):
+        return
+    if record_type in _OPERATOR_ONLY_RT or record_type in _ORCH_ONLY_RT:
+        _deny(record_type, role)
+    if record_type in _OWNER_RT and role not in _OWNER_RT[record_type]:
+        _deny(record_type, role)
+
+
+def authorize_command(command):
+    """Role check for stateful COMMANDS not on the record-apply path (experiment run / result validate /
+    gpu confirm). loop/operator/orchestrator bypass."""
+    if CALLER["kind"] != "skill":
+        return
+    role = CALLER["role"]
+    if role in ("operator", "orchestrator"):
+        return
+    allowed = _CMD_ROLES.get(command)
+    if allowed is not None and role not in allowed:
+        _deny(command, role)
+
+
+def loop_guard(conn, record_type, quest_id):
+    """Optional (DEEPRESEARCH_SKILL_LOOP_GUARD=1): a skill-invoked Tier-B science write must run inside an
+    OPEN round for the quest, so free invocation cannot desync round/handoff accounting."""
+    if CALLER["kind"] != "skill" or os.environ.get("DEEPRESEARCH_SKILL_LOOP_GUARD") not in ("1", "true", "yes"):
+        return
+    if record_type not in _TIER_B_RT or not quest_id:
+        return
+    try:
+        n = conn.execute("SELECT COUNT(*) FROM round WHERE quest_id=? AND status='open'", (quest_id,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        return
+    if not n:
+        raise RecordError(f"skill loop-context guard: no OPEN round for quest {quest_id!r}; a Tier-B science "
+                          "write must run inside an active round (set DEEPRESEARCH_SKILL_LOOP_GUARD=0 to relax).")
+
+
+def audit_write(conn, record_type, quest_id, at, detail="", rid=""):
+    """Stamp a quest-owned audit artifact for a skill-invoked mutation (distinguishes skill vs loop writes).
+    Free-text artifact.kind → no schema change; quest-isolated. The id includes the written record_id so two
+    same-record_type writes at the same `at` don't collide (each gets its own audit row)."""
+    if CALLER["kind"] != "skill" or not quest_id or not at:
+        return
+    aid = f"{quest_id}:skillaudit:{record_type}:{rid}:{at}"
+    ref = f"skill={CALLER['skill']} role={CALLER['role']} rt={record_type} {detail}".strip()
+    try:
+        conn.execute("INSERT OR IGNORE INTO artifact(artifact_id,quest_id,kind,ref,created_at) VALUES(?,?,?,?,?)",
+                     (aid, quest_id, "skill-invocation", ref, at))
+    except sqlite3.OperationalError:
+        pass
+
+
 def apply(conn: sqlite3.Connection, payload: dict) -> dict:
     validate(payload)
     rt = payload["record_type"]
     spec = RECORD_MAP[rt]
     table, pk = spec["table"], spec["pk"]
     at = payload["at"]
+    # Skill-caller authority + loop-context guard (caller-agnostic; loop/operator bypass).
+    authorize(rt)
+    loop_guard(conn, rt, payload.get("quest_id"))
 
     # Resolve PK values.
     pkvals = {}
@@ -214,19 +328,24 @@ def apply(conn: sqlite3.Connection, payload: dict) -> dict:
         _gpu_launch_gate(conn, pkvals["quest_id"])
         _autonomy_gate(conn, pkvals["quest_id"])
 
-    # Contract freeze (Phase 6): objective is immutable post-launch; acceptance changes only via a confirmed
+    # Contract freeze: objective is immutable post-launch; acceptance changes only via a confirmed
     # amend-acceptance decision. Pre-launch (not_started) and unchanged refs are free; both gates fail-closed.
     if table == "quest":
         if "objective_ref" in cols:
             _objective_frozen_gate(conn, pkvals["quest_id"], cols["objective_ref"])
         if "acceptance_ref" in cols:
             _acceptance_amend_gate(conn, pkvals["quest_id"], cols["acceptance_ref"])
+        if "baseline_gate" in cols:
+            _baseline_contract_gate(conn, pkvals["quest_id"], cols["baseline_gate"])
 
-    # Pre-finalize gates: a `complete` finalize must meet the scholarship bar (Upgrade 1) and — in auto mode at
-    # the gating rigor (Phase 5) — the research-completeness checklist.
+    # Pre-finalize gates: a `complete` finalize must meet the scholarship bar and — in auto mode at
+    # the gating rigor — the research-completeness checklist.
     if table == "finalize_outcome" and cols.get("outcome") == "complete":
         _finalize_scholarship_gate(conn, cols.get("quest_id"))
         _finalize_completeness_gate(conn, cols.get("quest_id"))
+        _finalize_authenticity_gate(conn, cols.get("quest_id"))
+        _finalize_coverage_gate(conn, cols.get("quest_id"))
+        _finalize_review_gate(conn, cols.get("quest_id"))
 
     # Detect an open->closed round transition BEFORE the write so the plan_revision bump (below) fires once.
     round_closing = False
@@ -242,12 +361,14 @@ def apply(conn: sqlite3.Connection, payload: dict) -> dict:
     elif spec["mode"] == "update":
         _update(conn, table, pk, pkvals, cols)
 
-    # Phase 3: one plan_revision bump per round close (bounded; the Revisions ledger is one row per change).
+    # one plan_revision bump per round close (bounded; the Revisions ledger is one row per change).
     if round_closing:
         _bump_plan_revision(conn, pkvals["quest_id"])
 
+    audit_write(conn, rt, payload.get("quest_id") or pkvals.get("quest_id"), at,
+                detail="rid=" + str(payload.get("record_id", "")), rid=str(payload.get("record_id", "")))
     conn.commit()
-    return {"record_type": rt, "table": table, "pk": pkvals}
+    return {"record_type": rt, "table": table, "pk": pkvals, "via": CALLER}
 
 
 def _insert_or_ignore(conn, table, cols):
@@ -391,7 +512,7 @@ def _clarification_gate(conn, quest_id):
 
 
 def _contract_gate(conn, quest_id):
-    """Pre-loop gate (Upgrade 2): a quest may not START (not_started -> running) until an operator-approved
+    """Pre-loop gate: a quest may not START (not_started -> running) until an operator-approved
     research contract has been recorded — a kind='research-contract' artifact for the quest (the expanded +
     approved objective/acceptance done-bar; see execplan/docs/research-contract.md). This turns a minimal
     operator prompt into a deeper scientific done-bar before the loop optimizes anything. Fail-closed. Resume
@@ -451,7 +572,7 @@ def _effort_gate(conn, quest_id):
 
 # ── Run mode + plan revision (Phases 1, 3) ───────────────────────────────────
 def _autonomy_gate(conn, quest_id):
-    """Pre-loop gate (Phase 1): a quest may not START (not_started -> running) until the operator has chosen a
+    """Pre-loop gate: a quest may not START (not_started -> running) until the operator has chosen a
     run mode (quest.autonomy_mode IN ('auto','assistant')). Orthogonal to execution_mode. Resume transitions
     are exempt — the mode was chosen at first launch. Fail-closed."""
     try:
@@ -470,7 +591,7 @@ def _autonomy_gate(conn, quest_id):
 
 
 def _bump_plan_revision(conn, quest_id):
-    """Increment the quest's plan_revision (Phase 3). Called on each round close and on a confirmed acceptance
+    """Increment the quest's plan_revision. Called on each round close and on a confirmed acceptance
     amendment, so the rendered plan.md `## Revisions` ledger gets one entry per meaningful change."""
     try:
         conn.execute("UPDATE quest SET plan_revision = plan_revision + 1 WHERE quest_id=?", (quest_id,))
@@ -478,7 +599,7 @@ def _bump_plan_revision(conn, quest_id):
         pass
 
 
-# ── Contract freeze: objective immutable; acceptance append-only + operator-gated (Phase 6) ──────────────
+# ── Contract freeze: objective immutable; acceptance append-only + operator-gated ──────────────
 def _objective_frozen_gate(conn, quest_id, new_objective_ref):
     """objective_ref is IMMUTABLE post-launch in this roadmap (acceptance-only amendments). Reject any change
     once the quest has left not_started. Pre-launch edits are free."""
@@ -493,7 +614,7 @@ def _objective_frozen_gate(conn, quest_id, new_objective_ref):
 
 def _acceptance_amend_gate(conn, quest_id, new_acceptance_ref):
     """A post-launch change to quest.acceptance_ref is allowed ONLY when backed by a CONFIRMED
-    decision(route='amend-acceptance') the operator approved (Phase 6). Pre-launch (not_started) edits are free
+    decision(route='amend-acceptance') the operator approved. Pre-launch (not_started) edits are free
     (the contract isn't frozen yet). Append-only: callers write acceptance.md@rev-K and never overwrite rev 1."""
     cur = conn.execute("SELECT run_state, acceptance_ref FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
     if cur is None or cur[0] == "not_started":
@@ -510,7 +631,7 @@ def _acceptance_amend_gate(conn, quest_id, new_acceptance_ref):
             f"a new acceptance.md@rev-K (append-only) — never overwrite the original contract.")
 
 
-# ── Research-completeness checklist + finalize gate (Phase 5) ─────────────────────────────────────────
+# ── Research-completeness checklist + finalize gate ─────────────────────────────────────────
 def _completeness_flag(name, default=True):
     """Per-item required toggle (env override). DEEPRESEARCH_COMPLETENESS_REQUIRE_<NAME>=0 makes an item
     advisory; =1 forces it required. Default 'required' for the new mechanism/alternative/ablation items."""
@@ -521,7 +642,7 @@ def _completeness_flag(name, default=True):
 
 
 def completeness_audit(conn, quest_id, rigor="standard"):
-    """The seven general scientific-quality checks (Phase 5). Composes existing checks (evidence traceability /
+    """The seven general scientific-quality checks. Composes existing checks (evidence traceability /
     no-orphan-claims / lit audit) with new mechanism / named-alternative / ablation-or-infeasibility /
     discrepancy reads. Returns {ok, required, reasons, items}. `ok` reflects only the REQUIRED items; advisory
     items surface in `items` but never set ok=False. Mirrors scholarship_audit in shape."""
@@ -581,7 +702,7 @@ def _rigor_order(level):
 
 
 def _finalize_completeness_gate(conn, quest_id):
-    """Pre-finalize gate (Phase 5): a 'complete' finalize is HARD-BLOCKED only when BOTH autonomy_mode='auto'
+    """Pre-finalize gate: a 'complete' finalize is HARD-BLOCKED only when BOTH autonomy_mode='auto'
     and the contract rigor meets the gating threshold (default 'publication'). Otherwise (assistant any rigor,
     or auto below threshold) the checklist is advisory — the tick recommends and the operator disposes.
     Idempotent; legacy NULL columns exempt; older schemas never break."""
@@ -612,7 +733,7 @@ def _finalize_completeness_gate(conn, quest_id):
             "DEEPRESEARCH_COMPLETENESS_GATE_RIGOR / DEEPRESEARCH_COMPLETENESS_REQUIRE_* env knobs.")
 
 
-# ── Literature / scholarship bar (Upgrade 1) ─────────────────────────────────
+# ── Literature / scholarship bar ─────────────────────────────────
 # Tunable via env (the config knob). Defaults are deliberately modest: the teeth come from claim↔reference
 # linkage, not raw reference count. Set both env vars to 0 to waive the bar (deliberate operator override).
 def _scholarship_thresholds():
@@ -626,7 +747,7 @@ def _scholarship_thresholds():
 
 
 def scholarship_audit(conn, quest_id):
-    """Shared scholarship check (Upgrade 1). Used by `lit audit` (advisory) and the finalize gate (hard).
+    """Shared scholarship check. Used by `lit audit` (advisory) and the finalize gate (hard).
 
     HARD-fail signals (set `ok=False`): too few `reference` rows, or no claim positioned against a reference
     (claim_evidence source_kind='reference'). The claim↔reference link is the real teeth — it forces genuine
@@ -682,7 +803,7 @@ def _has_related_work(quest_id):
 
 
 def _finalize_scholarship_gate(conn, quest_id):
-    """Pre-finalize gate (Upgrade 1): a `complete` finalize is blocked unless the scholarship bar is met
+    """Pre-finalize gate: a `complete` finalize is blocked unless the scholarship bar is met
     (>= min reference rows AND >= min reference-backed claim). Only `complete` is gated (stop/park/publish
     are not). Fail-closed; the error routes the loop back to `write`. Waive via the env knobs in
     `_scholarship_thresholds` (both 0)."""
@@ -709,6 +830,251 @@ def _finalize_scholarship_gate(conn, quest_id):
             "DEEPRESEARCH_SCHOLARSHIP_MIN_REFS=0 and DEEPRESEARCH_SCHOLARSHIP_MIN_REF_CLAIMS=0.")
 
 
+def _finalize_authenticity_gate(conn, quest_id):
+    """Pre-finalize gate (evidence authenticity, from the review-craft authenticity gate — the q1 Finding B
+    defect made hard): a `complete` finalize is blocked unless the quest's headline result
+    (quest.best_result_ref) backs at least one claim via a claim_evidence link of source_kind='result'. This
+    stops the central empirical result from being 'supported' only by a positioning citation. Only `complete`
+    is gated; idempotent re-finalize and quests with no best_result_ref are exempt. Waive with
+    DEEPRESEARCH_AUTHENTICITY_GATE=0. See execplan/packs/review-craft/references/authenticity-gate.md."""
+    if not quest_id or os.environ.get("DEEPRESEARCH_AUTHENTICITY_GATE") in ("0", "false", "no"):
+        return
+    try:
+        if conn.execute("SELECT COUNT(*) FROM finalize_outcome WHERE quest_id=? AND outcome='complete'",
+                        (quest_id,)).fetchone()[0]:
+            return  # idempotent re-finalize / recovery replay
+        best = conn.execute("SELECT best_result_ref FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return  # schema predates the columns: do not block
+    best = best[0] if best else None
+    if not best:
+        return  # no headline result recorded: nothing to authenticate (other gates still apply)
+    backed = conn.execute(
+        "SELECT COUNT(*) FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id "
+        "WHERE c.quest_id=? AND e.source_kind='result' AND e.source_ref=? AND e.relation='supports'",
+        (quest_id, best)).fetchone()[0]
+    if not backed:
+        raise RecordError(
+            f"quest {quest_id!r} cannot finalize as 'complete': the headline result best_result_ref={best!r} "
+            "backs no supported claim (claim_evidence source_kind='result'). The central empirical result must "
+            "substantiate its own claim — a positioning citation cannot stand in for it (review-craft "
+            "authenticity gate, Finding B). Add a result-backed headline claim "
+            "(`claim_evidence.link source_kind='result' source_ref=<best_result_ref>`) and re-bundle, then "
+            "finalize. Override: DEEPRESEARCH_AUTHENTICITY_GATE=0.")
+
+
+def _has_research_contract(conn, quest_id):
+    """True if the quest was launched under the research-contract regime (has a kind='research-contract'
+    artifact). The coverage gate binds only for these quests, so pre-feature / ad-hoc quests are exempt."""
+    try:
+        return conn.execute("SELECT COUNT(*) FROM artifact WHERE quest_id=? AND kind='research-contract'",
+                            (quest_id,)).fetchone()[0] > 0
+    except sqlite3.OperationalError:
+        return False
+
+
+def _finalize_coverage_gate(conn, quest_id):
+    """Pre-finalize gate: a `complete` finalize is HARD-BLOCKED unless the manuscript-coverage validator
+    has computed `paper_spine.submission_ready=1`. Gates on the VALIDATOR-COMPUTED flag — a paper-spine
+    artifact merely existing is NOT sufficient (the writer's paper_spine.upsert force-resets the flag to 0;
+    only `manuscript coverage` sets it). Binds for research-contract quests at rigor >= 'standard'; advisory
+    (no block) for scoping rigor, pre-contract/history quests, or older DBs without the paper_spine table.
+    Idempotent re-finalize is exempt. Waive: DEEPRESEARCH_COVERAGE_GATE=0."""
+    if not quest_id or os.environ.get("DEEPRESEARCH_COVERAGE_GATE") in ("0", "false", "no"):
+        return
+    try:
+        if conn.execute("SELECT COUNT(*) FROM finalize_outcome WHERE quest_id=? AND outcome='complete'",
+                        (quest_id,)).fetchone()[0]:
+            return  # idempotent re-finalize / recovery replay
+        qrow = conn.execute("SELECT rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return  # schema predates the columns: do not block
+    if not qrow:
+        return
+    rigor = qrow[0] or "standard"
+    # Regime: bind only for research-contract quests at standard/publication rigor; scoping is advisory.
+    if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
+        return
+    try:
+        sp = conn.execute("SELECT submission_ready FROM paper_spine WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return  # paper_spine table absent on an un-reinited DB: do not block
+    if not (sp and sp[0]):
+        raise RecordError(
+            f"quest {quest_id!r} cannot finalize as 'complete' (rigor={rigor}): manuscript coverage is not "
+            "validator-confirmed submission_ready. Run `manuscript coverage --quest-id <q> --artifact-ref "
+            "<runs/<q>/report/paper.md> --spine-ref <runs/<q>/paper/spine.json>` and resolve every reported gap "
+            "(unmapped results, main claims without supporting evidence, empty not_claiming/limitations, "
+            "process/draft traces), then re-finalize. A paper-spine artifact existing is NOT sufficient — the "
+            "gate reads the validator-computed flag. Override: DEEPRESEARCH_COVERAGE_GATE=0.")
+
+
+def _finalize_review_gate(conn, quest_id):
+    """Pre-finalize gate: a `complete` finalize is HARD-BLOCKED unless the LATEST review verdict is
+    validator-confirmed actionable (`valid=1`, set by `review validate`) AND permits finalization — `accept`
+    at any bound rigor, or operator-confirmed `borderline` at standard rigor (publication never permits
+    borderline). `reject` / missing / invalid / unconfirmed-borderline all block. Gates on the typed valid
+    verdict, never on a review artifact's existence. Binds for research-contract quests at rigor >= 'standard';
+    advisory for scoping / pre-contract / older DBs. INDEPENDENT of the coverage gate — both must pass
+    (accept AND submission_ready). Idempotent re-finalize exempt. Waive: DEEPRESEARCH_REVIEW_GATE=0."""
+    if not quest_id or os.environ.get("DEEPRESEARCH_REVIEW_GATE") in ("0", "false", "no"):
+        return
+    try:
+        if conn.execute("SELECT COUNT(*) FROM finalize_outcome WHERE quest_id=? AND outcome='complete'",
+                        (quest_id,)).fetchone()[0]:
+            return  # idempotent re-finalize / recovery replay
+        qrow = conn.execute("SELECT rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return
+    if not qrow:
+        return
+    rigor = qrow[0] or "standard"
+    if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
+        return  # advisory for scoping / pre-contract quests
+    try:
+        row = conn.execute("SELECT verdict, valid, operator_confirmed FROM review_verdict WHERE quest_id=? "
+                           "ORDER BY created_at DESC, verdict_id DESC LIMIT 1", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return  # review_verdict table absent on an un-reinited DB: do not block
+    base = f"quest {quest_id!r} cannot finalize as 'complete' (rigor={rigor}): "
+    tail = " Override: DEEPRESEARCH_REVIEW_GATE=0."
+    if row is None:
+        raise RecordError(base + "no review verdict recorded. Run the review stage, record a `review.verdict`, "
+                          "and `review validate` it to an 'accept' before finalizing." + tail)
+    verdict, valid, confirmed = row[0], row[1], row[2]
+    if not valid:
+        raise RecordError(base + f"the latest review verdict ({verdict!r}) is not validator-confirmed actionable "
+                          "— run `review validate` and add the missing todos for the flaws it raised." + tail)
+    if verdict == "reject":
+        raise RecordError(base + "the latest review verdict is 'reject'. Route its follow-ups (`review route`) "
+                          "and re-review to an 'accept' before finalizing." + tail)
+    if verdict == "borderline":
+        if _rigor_order(rigor) >= _rigor_order("publication"):
+            raise RecordError(base + "publication rigor requires an 'accept' verdict; 'borderline' is not "
+                              "sufficient. Route a revision to reach 'accept'." + tail)
+        if not confirmed:
+            raise RecordError(base + "the latest verdict is 'borderline'; it needs operator confirmation "
+                              "(`review confirm`) to finalize at standard rigor, or route a revision to "
+                              "reach 'accept'." + tail)
+    # accept, or operator-confirmed borderline at standard -> the review side passes. The coverage gate is
+    # enforced separately by _finalize_coverage_gate; BOTH are required for a complete finalize.
+
+
+_BASELINE_OK_VERDICTS = {"verified_match", "close_match", "trusted_with_caveats"}
+
+
+def _baseline_contract_gate(conn, quest_id, new_gate):
+    """Pre-write gate: STRENGTHENS the existing quest.baseline_gate. Setting baseline_gate='passed' requires
+    the latest `baseline.contract` to carry an acceptable verification_verdict (verified_match / close_match /
+    trusted_with_caveats); setting 'waived' requires verification_verdict='waived' AND a non-empty waiver_reason.
+    'pending'/'blocked' are unconstrained. Binds for research-contract quests at rigor >= 'standard'; advisory
+    for scoping / pre-contract / older DBs. Waive: DEEPRESEARCH_BASELINE_CONTRACT_GATE=0."""
+    if not quest_id or os.environ.get("DEEPRESEARCH_BASELINE_CONTRACT_GATE") in ("0", "false", "no"):
+        return
+    if new_gate not in ("passed", "waived"):
+        return
+    try:
+        qrow = conn.execute("SELECT rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return
+    rigor = (qrow[0] if qrow else None) or "standard"
+    if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
+        return
+    try:
+        row = conn.execute("SELECT verification_verdict, waiver_reason FROM baseline_contract WHERE quest_id=? "
+                           "ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return  # baseline_contract table absent on an un-reinited DB: do not block
+    base = f"quest {quest_id!r} cannot set baseline_gate={new_gate!r}: "
+    tail = " Override: DEEPRESEARCH_BASELINE_CONTRACT_GATE=0."
+    if row is None:
+        raise RecordError(base + "no typed baseline.contract recorded. Record one (baseline id/name, comparison "
+                          "policy, metric ids, dataset/split, eval protocol, verification verdict) before opening "
+                          "the baseline gate." + tail)
+    verdict, waiver = row[0], row[1]
+    if new_gate == "passed" and verdict not in _BASELINE_OK_VERDICTS:
+        raise RecordError(base + f"latest baseline.contract verdict is {verdict!r}; 'passed' requires one of "
+                          f"{sorted(_BASELINE_OK_VERDICTS)} (or set baseline_gate='waived' with a waiver)." + tail)
+    if new_gate == "waived" and (verdict != "waived" or not (waiver or "").strip()):
+        raise RecordError(base + "'waived' requires a baseline.contract with verification_verdict='waived' AND a "
+                          "non-empty waiver_reason." + tail)
+
+
+def _analysis_bridge_gate(conn, quest_id, round_index, handoff_id):
+    """Hard gate: a handoff whose round stage is 'outline' or 'write' may not open unless the quest has a
+    validator-confirmed analysis bridge (`analysis_bridge.valid=1`, set by `campaign validate`, which requires
+    BOTH a paper-facing bridge AND sufficient per-claim campaign coverage). This stops the Writer from drafting
+    from raw experiment logs / an incomplete campaign. Gates on the typed VALID bridge, never on analysis
+    artifact existence. Binds for research-contract quests at rigor >= 'standard'; advisory otherwise. Waive:
+    DEEPRESEARCH_BRIDGE_GATE=0."""
+    if round_index is None or os.environ.get("DEEPRESEARCH_BRIDGE_GATE") in ("0", "false", "no"):
+        return
+    try:
+        rr = conn.execute("SELECT stage FROM round WHERE quest_id=? AND round_index=?",
+                          (quest_id, round_index)).fetchone()
+    except sqlite3.OperationalError:
+        return
+    if not rr or rr[0] not in ("outline", "write"):
+        return  # guards the analysis -> outline/write transition only
+    try:
+        qrow = conn.execute("SELECT rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return
+    rigor = (qrow[0] if qrow else None) or "standard"
+    if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
+        return
+    try:
+        n = conn.execute("SELECT COUNT(*) FROM analysis_bridge WHERE quest_id=? AND valid=1",
+                         (quest_id,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        return  # analysis_bridge table absent on an un-reinited DB: do not block
+    if not n:
+        raise RecordError(
+            f"{rr[0]} dispatch blocked for quest {quest_id!r} (handoff {handoff_id!r}, rigor={rigor}): no "
+            "validator-confirmed analysis bridge / sufficient campaign coverage. Record a typed `analysis.bridge` "
+            "(claim->evidence map, mechanism interpretation, alternatives, limitations, paper-facing result "
+            "paragraphs) and pass `campaign validate --quest-id <q>` (per-claim coverage by evidence_kind under "
+            "the rigor floor) before the Writer may consume analysis. Override: DEEPRESEARCH_BRIDGE_GATE=0.")
+
+
+def _idea_gate(conn, quest_id, round_index, handoff_id):
+    """Hard gate: a handoff whose round stage is 'experiment' may not open unless the quest has a
+    validator-confirmed idea selection (`idea_select.valid=1`, set by `idea validate`). Blocks shallow /
+    single-proposal / decorative / non-differentiated / below-floor ideas from advancing to experiment. Gates
+    on the typed VALID selection, never on an idea artifact's existence. Binds for research-contract quests at
+    rigor >= 'standard'; advisory for scoping / pre-contract / older DBs. Stage read from the `round` (handoff
+    has no stage column), mirroring _gpu_gate. Waive: DEEPRESEARCH_IDEA_GATE=0."""
+    if round_index is None or os.environ.get("DEEPRESEARCH_IDEA_GATE") in ("0", "false", "no"):
+        return
+    try:
+        rr = conn.execute("SELECT stage FROM round WHERE quest_id=? AND round_index=?",
+                          (quest_id, round_index)).fetchone()
+    except sqlite3.OperationalError:
+        return
+    if not rr or rr[0] != "experiment":
+        return  # the idea gate guards the idea -> experiment transition only
+    try:
+        qrow = conn.execute("SELECT rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return
+    rigor = (qrow[0] if qrow else None) or "standard"
+    if not _has_research_contract(conn, quest_id) or _rigor_order(rigor) < _rigor_order("standard"):
+        return  # advisory for scoping / pre-contract quests
+    try:
+        n = conn.execute("SELECT COUNT(*) FROM idea_select WHERE quest_id=? AND valid=1",
+                         (quest_id,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        return  # idea_select table absent on an un-reinited DB: do not block
+    if not n:
+        raise RecordError(
+            f"experiment dispatch blocked for quest {quest_id!r} (handoff {handoff_id!r}, rigor={rigor}): no "
+            "validator-confirmed idea selection. Record an `idea.select` (multi-candidate raw_slate + challenge "
+            "+ scored selection_gate + concrete rejected[] + a retained idea with mechanism & MVP plan) and pass "
+            "`idea validate --quest-id <q>` (it enforces the rigor slate/score floor and rejects single-proposal/"
+            "decorative/non-differentiated ideas) before the idea may advance to experiment. "
+            "Override: DEEPRESEARCH_IDEA_GATE=0.")
+
+
 def _special(conn, kind, pkvals, payload, at):
     q, h = pkvals["quest_id"], pkvals["handoff_id"]
     if kind == "handoff_open":
@@ -718,6 +1084,8 @@ def _special(conn, kind, pkvals, payload, at):
             r = conn.execute("SELECT round_index FROM handoff WHERE quest_id=? AND handoff_id=?", (q, h)).fetchone()
             ri = r[0] if r else None
         _gpu_gate(conn, q, ri, h)
+        _idea_gate(conn, q, ri, h)
+        _analysis_bridge_gate(conn, q, ri, h)
         existing = conn.execute("SELECT attempt_count FROM handoff WHERE quest_id=? AND handoff_id=?", (q, h)).fetchone()
         if existing is None:
             cols = {k: _norm(v) for k, v in payload.items()

@@ -100,7 +100,7 @@ Continuation + comms ledgers:
   times, status).
 - `mail_log` — physical message lifecycle, referencing the logical `handoff_id`.
 - `operator_intent_event` — pause/resume/stop/override/recover/set-mode/takeover/handback/confirm.
-- `quirk` — append-only framework/system pitfalls (replaces DeepScientist's quirks files).
+- `quirk` — append-only framework/system pitfalls (replaces quirks files).
 
 ## Key transitions (reconstructable)
 

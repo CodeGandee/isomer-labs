@@ -295,11 +295,14 @@ CREATE TABLE IF NOT EXISTS claim_evidence (
     resolved      INTEGER NOT NULL DEFAULT 0,     -- 0=open, 1=resolved/rebutted
     resolution_ref TEXT,                          -- artifact/decision explaining the rebuttal
     resolved_at   TEXT,
+    -- empirical role of this evidence for claim-level campaign coverage. Closed vocab enforced at the
+    -- record layer (SQLite cannot ADD a CHECK via ALTER); NULL on pre-rows (history-safe).
+    evidence_kind TEXT,                            -- baseline_comparison|main_result|ablation|robustness|negative|efficiency|boundary|qualitative|significance|error_analysis
     created_at    TEXT NOT NULL,
     PRIMARY KEY (claim_id, source_kind, source_ref)
 );
 
--- Every state-machine transition / route judgment (replaces DeepScientist runtime_state + decision).
+-- Every state-machine transition / route judgment (replaces the prior runtime_state + decision).
 CREATE TABLE IF NOT EXISTS decision (
     decision_id   TEXT PRIMARY KEY,
     quest_id      TEXT NOT NULL REFERENCES quest(quest_id),
@@ -325,6 +328,102 @@ CREATE TABLE IF NOT EXISTS finalize_outcome (
     next_incumbent_ref TEXT,                       -- branch/result to continue from (publish_and_continue)
     reopen_conditions TEXT,                         -- when/why to resume (park)
     created_at        TEXT NOT NULL
+);
+
+-- paper-spine: the persistent paper contract carried across outline -> write -> review -> finalize.
+-- The rich TYPED content lives in the spine_ref artifact (runs/<q>/paper/spine.json) and is validated by
+-- `outline validate` against the spine content schema. `submission_ready` is VALIDATOR-COMPUTED by
+-- `manuscript coverage` ONLY (the Writer's paper_spine.upsert force-resets it to 0 and cannot set it); the
+-- finalize coverage gate reads this flag, never artifact existence. One spine per quest (PK).
+CREATE TABLE IF NOT EXISTS paper_spine (
+    quest_id          TEXT PRIMARY KEY REFERENCES quest(quest_id),
+    spine_ref         TEXT NOT NULL,               -- loop-relative path to the typed spine.json artifact
+    thesis            TEXT NOT NULL,               -- one-sentence thesis (promoted for routing)
+    core_contribution TEXT,
+    central_mechanism TEXT,
+    venue_style       TEXT,
+    n_core_claims     INTEGER NOT NULL DEFAULT 0,
+    submission_ready  INTEGER NOT NULL DEFAULT 0,  -- 0/1; set ONLY by `manuscript coverage`
+    coverage_json     TEXT,                         -- structured coverage verdict the finalize gate consumes
+    coverage_at       TEXT,
+    created_at        TEXT NOT NULL,
+    updated_at        TEXT NOT NULL
+);
+
+-- review verdict: the Reviewer's typed, binding verdict (append-one-per-review). The rich content
+-- (flaws + todos) lives in the verdict_ref artifact (runs/<q>/review/verdict-<n>.json), validated by
+-- `review validate`, which computes `valid` (actionability: a non-accept verdict MUST carry todos covering its
+-- flaws) and `route_target`. `valid` is VALIDATOR-COMPUTED ONLY (the record force-resets it to 0; the Reviewer
+-- cannot self-certify). The finalize review gate reads the LATEST row's verdict+valid(+operator_confirmed),
+-- never artifact existence. `operator_confirmed` is set by `review confirm` (borderline at standard rigor only).
+CREATE TABLE IF NOT EXISTS review_verdict (
+    verdict_id         TEXT PRIMARY KEY,
+    quest_id           TEXT NOT NULL REFERENCES quest(quest_id),
+    round_index        INTEGER,
+    verdict            TEXT NOT NULL CHECK (verdict IN ('accept','borderline','reject')),
+    verdict_ref        TEXT NOT NULL,            -- artifact path to the typed verdict.json
+    summary            TEXT,
+    valid              INTEGER NOT NULL DEFAULT 0,   -- set ONLY by `review validate`
+    operator_confirmed INTEGER NOT NULL DEFAULT 0,   -- set by `review confirm` (borderline @ standard)
+    route_target       TEXT,                      -- validator-computed: experiment|analysis|write|finalize
+    created_at         TEXT NOT NULL
+);
+
+-- idea selection: the typed, binding idea-selection record (append-one-per-selection). The rich content
+-- (raw_slate + challenge + novelty_risk + selection_gate scores + rejected + retained + experiment plan) lives
+-- in the select_ref artifact (runs/<q>/idea/select-<n>.json), validated by `idea validate`, which enforces the
+-- rigor floor + the selection-pressure rules (multi-candidate slate, scored veto, real rejections, novelty
+-- label, retained-in-slate, score sums) and sets `valid` + `gate_score`. `valid` is VALIDATOR-COMPUTED ONLY
+-- (the record force-resets it to 0; the worker cannot self-certify). The experiment-handoff idea gate reads
+-- `valid` — an idea may not advance to experiment without a validator-confirmed selection.
+CREATE TABLE IF NOT EXISTS idea_select (
+    select_id          TEXT PRIMARY KEY,
+    quest_id           TEXT NOT NULL REFERENCES quest(quest_id),
+    round_index        INTEGER,
+    select_ref         TEXT NOT NULL,            -- artifact path to the typed idea-select.json
+    retained_candidate TEXT,
+    novelty_label      TEXT,
+    gate_score         INTEGER,                  -- validator-computed retained total
+    valid              INTEGER NOT NULL DEFAULT 0,   -- set ONLY by `idea validate`
+    created_at         TEXT NOT NULL
+);
+
+-- baseline/metric contract: the typed comparator contract that STRENGTHENS the existing quest.baseline_gate.
+-- The rich content (metric_ids[], validity_threats[]) lives in the contract_ref artifact; the row promotes the
+-- gate-relevant scalars. The baseline-contract gate requires: baseline_gate=passed -> an acceptable
+-- verification_verdict; baseline_gate=waived -> verification_verdict='waived' AND a waiver_reason.
+CREATE TABLE IF NOT EXISTS baseline_contract (
+    contract_id          TEXT PRIMARY KEY,
+    quest_id             TEXT NOT NULL REFERENCES quest(quest_id),
+    round_index          INTEGER,
+    baseline_id          TEXT,
+    baseline_name        TEXT,
+    comparison_policy    TEXT,
+    primary_metric_id    TEXT,
+    dataset              TEXT,
+    split                TEXT,
+    eval_protocol        TEXT,
+    verification_verdict TEXT NOT NULL CHECK (verification_verdict IN
+                           ('verified_match','close_match','trusted_with_caveats','diverged','broken','waived')),
+    waiver_reason        TEXT,
+    contract_ref         TEXT,                     -- artifact path: metric_ids[] + validity_threats[] rich content
+    created_at           TEXT NOT NULL
+);
+
+-- analysis-to-paper bridge: the typed paper-facing analysis hand-off the Writer consumes INSTEAD of raw
+-- experiment logs. Rich content (supported/refuted claims, mechanism, alternatives, limitations, failure modes,
+-- claim->evidence map, figure/table + section recommendations, paper-facing result paragraphs) lives in the
+-- bridge_ref artifact, validated by `campaign validate`, which ALSO computes per-claim empirical coverage by
+-- evidence_kind under the rigor floor and sets `valid` only when BOTH pass. The analysis->write handoff gate
+-- reads `valid` (the Writer cannot self-certify).
+CREATE TABLE IF NOT EXISTS analysis_bridge (
+    bridge_id    TEXT PRIMARY KEY,
+    quest_id     TEXT NOT NULL REFERENCES quest(quest_id),
+    round_index  INTEGER,
+    bridge_ref   TEXT NOT NULL,            -- artifact path to the typed analysis-bridge.json
+    valid        INTEGER NOT NULL DEFAULT 0,   -- set ONLY by `campaign validate` (bridge structure AND coverage)
+    coverage_json TEXT,                      -- per-claim coverage verdict the gate/report consume
+    created_at   TEXT NOT NULL
 );
 
 -- Durable findings + reflexion, QUEST-OWNED (total isolation: no cross-quest reuse). scope is always 'quest'.
@@ -434,7 +533,7 @@ CREATE TABLE IF NOT EXISTS operator_intent_event (
     created_at  TEXT NOT NULL
 );
 
--- Append-only durable quirks (framework + system pitfalls); replaces DeepScientist quirks files.
+-- Append-only durable quirks (framework + system pitfalls); replaces the prior quirks files.
 CREATE TABLE IF NOT EXISTS quirk (
     quirk_id    TEXT PRIMARY KEY,
     layer       TEXT NOT NULL CHECK (layer IN ('framework','system')),

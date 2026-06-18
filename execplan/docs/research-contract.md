@@ -1,6 +1,6 @@
 # Research-contract expansion (domain-neutral)
 
-> **Status: ACTIVE (Upgrade 2 shipped).** This file defines the *rubric* for turning a minimal operator
+> **Status: ACTIVE.** This file defines the *rubric* for turning a minimal operator
 > prompt into a deeper, operator-approved research contract **before** a quest is created. Enforcement is
 > live: the pre-launch skill `deepresearch-research-contract` runs the expansion, and the harness
 > **hard-gates** `not_started → running` on an approved `kind='research-contract'` artifact (a sibling of the

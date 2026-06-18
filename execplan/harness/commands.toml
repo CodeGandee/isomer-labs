@@ -560,8 +560,8 @@ mutates_state = false
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = []
-summary = "Validate an academic outline: paper idea, scoped claims, method abstraction, evaluation/analysis plan, evidence boundaries."
-description = "Domain-neutral pre-write gate (DeepScientist validate_academic_outline). Checks the outline artifact has a single paper idea, claims scoped to supported evidence, a method abstraction, an evaluation+analysis plan, and explicit evidence boundaries (paper_view vs evidence_view). Used by the Writer before drafting."
+summary = "Structurally validate the typed paper-spine: one thesis, 1-3 falsifiable claims, not-claiming, mapped reviewer objections, section theses, display plan."
+description = "structural pre-write gate. With a typed paper-spine (--spine-ref or the quest's paper_spine row) it validates exactly one thesis, 1-3 falsifiable main_claims (each with what_would_falsify_it + evidence_needed), a non-empty not_claiming boundary, reviewer_objections mapped to evidence/follow-up, a section thesis per experiment-section, and a display plan connected to claims; FAILS on any miss. The legacy markdown token scan (--artifact-ref) is advisory-only and does not gate finalize."
 
 [[command]]
 name = "manuscript validate"
@@ -574,7 +574,111 @@ idempotent = true
 reads = ["runs/state.sqlite"]
 applies = []
 summary = "Validate manuscript-language hygiene: no route/operator/worktree/prompt wording in paper-facing prose."
-description = "Domain-neutral manuscript hygiene gate (DeepScientist validate_manuscript_language). Flags loop-internal wording (route names, operator/worktree/handoff/lane/stage jargon, prompt state) that must not appear in the report/manuscript. Used by the Reviewer alongside `evidence validate`."
+description = "Domain-neutral manuscript hygiene gate (validate_manuscript_language). Flags loop-internal wording (route names, operator/worktree/handoff/lane/stage jargon, prompt state) that must not appear in the report/manuscript. Used by the Reviewer alongside `evidence validate`. (this language firewall is one sub-check of `manuscript coverage`.)"
+
+[[command]]
+name = "manuscript coverage"
+group = "manuscript"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["paper_spine.submission_ready"]
+summary = "Compute submission readiness from the typed paper-spine + claim/evidence/result rows; write submission_ready onto paper_spine."
+description = "coverage validator. Computes paper_spine.submission_ready from: the typed spine validates; every main_claim resolves to a claim row with supporting evidence; no 'supported' claim lacks evidence; no result row is unmapped; not_claiming + limitations present; the manuscript states each main claim and carries no process/draft traces; display_plan present. Writes the validator-computed flag + coverage_json onto the paper_spine row (the Writer cannot self-certify). The finalize coverage gate reads this flag."
+
+[[command]]
+name = "review validate"
+group = "review"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["review_verdict.valid", "review_verdict.route_target"]
+summary = "Validate the latest typed review verdict (schema + actionability) and compute valid + route_target."
+description = "review validator. Loads the latest review_verdict's typed verdict.json and FAILS unless: it matches the content schema; the row/artifact verdict agree; and it is ACTIONABLE (a borderline/reject verdict carries >=1 todo, and missing_experiments->experiment_todo, missing_analysis->analysis_todo, overclaims/unsupported_claims/rewrite_requirements->rewrite_todo). Writes the validator-computed valid flag + route_target onto the review_verdict row (the Reviewer cannot self-certify). The finalize review gate reads valid + verdict."
+
+[[command]]
+name = "review route"
+group = "review"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = false
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = []
+summary = "Deterministic follow-up routing for the latest review verdict (experiment/analysis/write/finalize)."
+description = "read-only routing the Orchestrator consumes after a review pass: reject/borderline route to experiment|analysis|write by the verdict's flaws (most-upstream first); accept routes to finalize. Returns the latest verdict, valid, operator_confirmed, route_target, and whether the review side permits finalization."
+
+[[command]]
+name = "review confirm"
+group = "review"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["review_verdict.operator_confirmed"]
+summary = "Operator: confirm the latest borderline verdict so it may finalize at standard rigor."
+description = "operator action. Sets operator_confirmed=1 on the latest 'borderline' review verdict so the finalize review gate permits completion at standard rigor (publication never permits borderline). Errors if the latest verdict is not 'borderline'."
+
+[[command]]
+name = "idea validate"
+group = "idea"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["idea_select.valid", "idea_select.gate_score"]
+summary = "Validate the typed idea selection (slate/challenge/scored gate/rejections/retained) under rigor floors; compute valid + gate_score."
+description = "idea-selection validator. Loads the latest idea_select's typed select.json and FAILS unless it passes the content schema AND the selection-pressure rules under the quest's rigor floor ([gate_floors]): raw_slate >= slate floor (rejects single-proposal/below-floor); strongest_rejection + outside_family_alternative present; >=1 rejected candidate with a concrete reason; retained in the raw slate; retained has mechanism + MVP experiment plan; selection scores sum consistently; retained total >= score floor; novelty_label != 'not_differentiated' (unless waived). Writes the validator-computed valid + gate_score onto the idea_select row (the worker cannot self-certify). The experiment-handoff idea gate reads valid."
+
+[[command]]
+name = "campaign validate"
+group = "campaign"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["analysis_bridge.valid", "analysis_bridge.coverage_json"]
+summary = "Validate the analysis bridge (paper-facing) AND per-claim campaign coverage by evidence_kind under rigor floors; compute valid."
+description = "analysis->write readiness validator. FAILS unless (a) the latest analysis.bridge passes the typed paper-facing schema (claim->evidence map, paper-facing result paragraphs, limitations, figure/table recs) AND (b) every MAIN claim (kind='claim') meets the rigor coverage floor by evidence_kind ([gate_floors] campaign_required / campaign_baseline / campaign_anyof / campaign_significance_superiority) — claim-level, NOT a global experiment count. Writes the validator-computed valid + coverage_json onto the analysis_bridge row (the analyst cannot self-certify). The analysis->write handoff gate reads valid."
+
+[[command]]
+name = "gate status"
+group = "gate"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = false
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = []
+summary = "Unified machine-readable status of every binding gate (idea/baseline/campaign/bridge/spine/outline/manuscript/review) + finalize readiness, with per-gate route_target."
+description = "integration read. Returns structured JSON: per gate {status(pass|fail|advisory|not_applicable|missing), rigor_level, blocking, reason, latest_record_ref, route_target, required_next_action} plus finalize_readiness and the blocking_gates list. READ-ONLY — it summarizes/guides Orchestrator routing; the hard guards (idea->experiment, baseline contract, analysis->write, finalize coverage/review) remain authoritative and are NOT replaced."
+
+[[command]]
+name = "methodology check"
+group = "methodology"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = false
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = []
+summary = "Resolve a task-result methodology_used[].applied_as to the stage's validated typed record (idea.select/baseline.contract/analysis.bridge/paper_spine/review.verdict)."
+description = "methodology-evidence resolution. Given --quest-id --stage --applied-as, FAILS unless applied_as points at a real, same-quest typed record for that stage that passed its validator (idea_select.valid / baseline_contract acceptable verdict / analysis_bridge.valid / paper_spine.submission_ready / review_verdict.valid). Closes the 'methodology is claimable' hole: free-text methodology usage no longer counts as binding evidence (background-only reading belongs in methodology_consulted)."
 
 [[command]]
 name = "bo suggest"
@@ -690,8 +794,8 @@ mutates_state = false
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = []
-summary = "Emit a DeepScientist-style submission bundle from durable state (evidence ledger + claim-evidence map + submission checklist)."
-description = "Finalize/write step: from claims, claim_evidence, analyses, references, and artifacts, writes evidence_ledger.md, claim_evidence_map.json, and an auto-derived submission_checklist.md (figures present? compiled PDF present? every supported claim has evidence?). Read-only over the DB; writes files only — the publication-grade audit bundle that brings parity with the DeepScientist paper package."
+summary = "Emit a submission bundle from durable state (evidence ledger + claim-evidence map + submission checklist)."
+description = "Finalize/write step: from claims, claim_evidence, analyses, references, and artifacts, writes evidence_ledger.md, claim_evidence_map.json, and an auto-derived submission_checklist.md (figures present? compiled PDF present? every supported claim has evidence?). Read-only over the DB; writes files only — the publication-grade audit bundle."
 
 # Git: commit/tag/branch-record inside an EXISTING worktree. Worktree creation -> workspace-mgr.
 
@@ -819,7 +923,7 @@ mutates_state = true
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = ["runs/state.sqlite", "runs/<quest-id>/figures/"]
-summary = "Publication-quality plot from CSV/JSON data via the enabled compiler adapter (DeepScientist paper-plot)."
+summary = "Publication-quality plot from CSV/JSON data via the enabled compiler adapter (paper-plot)."
 description = "Loads + calls the enabled compiler pack's adapter (paper-plot is a real stdlib SVG plotter; nature-figure for that domain). Options: --input <csv|json>, --ref <out figure path>, --title. Writes the figure to --ref and records an artifact(kind='figure'). With no enabled compiler pack it falls back to the generic stub (records the artifact, renders nothing). See packs/ADAPTER-CONTRACT.md."
 
 [[command]]
@@ -833,7 +937,7 @@ mutates_state = true
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = ["runs/state.sqlite", "runs/<quest-id>/figures/"]
-summary = "Render-inspect-revise QA pass on an existing figure (DeepScientist figure-polish)."
+summary = "Render-inspect-revise QA pass on an existing figure (figure-polish)."
 description = "Resolves the enabled compiler pack (`figure-polish`/`nature-figure`); default stub records a polished artifact + QA notes. For paper_main/appendix surface classes."
 
 [[command]]
@@ -847,7 +951,7 @@ mutates_state = true
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = ["runs/state.sqlite", "runs/<quest-id>/report/slides/"]
-summary = "Build a presentation deck from a paper/report (DeepScientist nature-paper2ppt)."
+summary = "Build a presentation deck from a paper/report (nature-paper2ppt)."
 description = "Resolves the enabled compiler pack (`nature-paper2ppt`); default stub records an artifact(kind='bundle', a .pptx). Selects story figures + speaker notes."
 
 [[command]]
@@ -861,7 +965,7 @@ mutates_state = true
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = ["runs/state.sqlite", "runs/<quest-id>/report/"]
-summary = "Polish/restructure manuscript prose to a venue style (DeepScientist nature-polishing)."
+summary = "Polish/restructure manuscript prose to a venue style (nature-polishing)."
 description = "Loads the enabled template pack adapter (`nature-polishing`); options --input <text/md>, --ref <out>. Writes a polished artifact + editor notes; style only — never adds unsupported claims. Generic stub (artifact recorded) when none enabled."
 
 [[command]]
@@ -875,7 +979,7 @@ mutates_state = true
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = ["runs/state.sqlite", "runs/<quest-id>/report/"]
-summary = "Generate a Data Availability statement + FAIR/dataset-citation package (DeepScientist nature-data)."
+summary = "Generate a Data Availability statement + FAIR/dataset-citation package (nature-data)."
 description = "Resolves the enabled template pack (`nature-data`); default stub records an artifact(kind='report', data-availability). Drafts only from verified data inventory; never invents DOIs/accessions."
 
 [[command]]

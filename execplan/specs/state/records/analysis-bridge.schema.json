@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/analysis-bridge",
+  "title": "analysis_bridge record",
+  "description": "Append the paper-facing analysis bridge (one per analysis pass) that the Writer consumes INSTEAD of raw experiment logs. The rich content (supported/refuted claims, mechanism interpretation, alternatives, limitations, failure modes, claim->evidence map, figure/table + section recommendations, paper-facing result paragraphs) lives in the bridge_ref artifact and is validated by `campaign validate`, which also computes per-claim coverage and sets valid (NOT settable here; force-reset to 0). The analysis->write handoff gate reads valid.",
+  "oneOf": [
+    {
+      "title": "analysis.bridge",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "bridge_ref"],
+      "properties": {
+        "record_type": { "const": "analysis.bridge" },
+        "record_id": { "type": "string", "description": "bridge_id (unique per pass)" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "round_index": { "type": "integer" },
+        "bridge_ref": { "type": "string", "description": "loop-relative path to the typed analysis-bridge.json artifact" }
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# Paper-quality literature benchmark (ported from DeepScientist `review`)
+# Paper-quality literature benchmark
 
 Houmao's `lit audit` only counts reference rows + reference-backed claims against a floor. This procedure
 is the qualitative positioning audit that decides whether a gap is a *writing* fix or a *missing-evidence*

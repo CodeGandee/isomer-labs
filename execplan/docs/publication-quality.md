@@ -1,7 +1,7 @@
-# Publication-grade output (parity with DeepScientist)
+# Publication-grade output
 
 The write→review→finalize path now produces a **submittable paper package**, not a bare Markdown report.
-This is the gap-closing layer identified by comparing q1's output to the DeepScientist counterpart.
+This is the gap-closing layer identified by comparing the loop's output to the reference counterpart.
 
 ## What's enabled
 Publication knowledge packs are **on by default** (`specs/state/seed.toml`), resolved command-aware via
@@ -23,7 +23,7 @@ falls back to the generic stub — it never mis-binds an unrelated adapter.)
   paper-latex `--bib` resolves `\cite`/[@key].
 - `manuscript bundle --quest-id <q> --out-dir runs/<q>/report` — emits **evidence_ledger.md**,
   **claim_evidence_map.json**, and an auto-derived **submission_checklist.md** (figures present? compiled
-  PDF present? every supported claim has evidence? no orphans?) — the DeepScientist-style audit bundle.
+  PDF present? every supported claim has evidence? no orphans?) — the audit bundle.
 
 ## Loop behavior (skills)
 - **Writer (`write`)**: figures (`render plot`) → bibliography (`lit bib`) + Related Work → assemble a
@@ -31,7 +31,7 @@ falls back to the generic stub — it never mis-binds an unrelated adapter.)
   related work, limitations, conclusion) → compile (`render report` = paper-latex) → `manuscript validate`
   → `manuscript bundle`.
 - **Analyst (`analysis`)**: run an **ablation / mechanism-isolation** when the result space admits it, so
-  the paper can isolate the operative mechanism (the main rigor gap vs DeepScientist).
+  the paper can isolate the operative mechanism (the main rigor gap).
 - **Outline**: paper-view + evidence-view + an ablation plan; gated by `outline validate`.
 - **Reviewer (`review`)**: adversarial "objections raised → answered", reference audit, and a
   submission-checklist confirmation.
@@ -41,7 +41,7 @@ falls back to the generic stub — it never mis-binds an unrelated adapter.)
 
 ## Scholarship bar (Related Work & citations)
 
-> **Status note (Upgrade 1 shipped):** this bar is now **enforced**. `$HARNESS lit audit --quest-id <q>`
+> **Status note:** this bar is now **enforced**. `$HARNESS lit audit --quest-id <q>`
 > checks it; the Reviewer **blocks** (`revise`) on a failing audit; and the harness **hard-gates** a
 > `complete` finalize on it (`records.py::_finalize_scholarship_gate`). The hard teeth are: ≥ `min_refs`
 > reference rows AND ≥1 claim positioned against a reference (`claim_evidence source_kind='reference'`).
@@ -102,7 +102,7 @@ CJK compilation needs `ctex`/`xecjk`/`fandol` in the LaTeX toolchain (TinyTeX: `
 ## Verifying parity on a new quest
 After finalize, `runs/<q>/report/` should contain: `paper.pdf` (+ `paper.tex`), **`paper-zh.pdf` (+ `paper-zh.md`)**,
 `figures/*.svg`, `refs/references.bib`, `evidence_ledger.md`, `claim_evidence_map.json`,
-`submission_checklist.md`, and a `review/` note — matching the DeepScientist `paper/` package shape (LaTeX +
+`submission_checklist.md`, and a `review/` note — matching a standard `paper/` package shape (LaTeX +
 figures + bib + ledger + checklist + reviewer pass) **plus a bilingual EN/ZH paper**.
 
 ## Toolchain note

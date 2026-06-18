@@ -7,15 +7,24 @@ Exact ordered commands to take the prepared package live. **Do not run until exp
 - 🟡 **STATE-MUTATING** — writes files / DB / overlay; reversible (see Rollback).
 - 🔴 **LAUNCH-STARTING** — starts live processes / gateway / notifier.
 
+## Render-path toolchain prerequisites (optional; affects output fidelity only)
+The publication packs degrade gracefully if a tool is absent (they still record an artifact), but for
+full-fidelity output install these in the **quest runtime environment**:
+- **paper-latex** (`render report`): `pandoc` + a TeX engine (`xelatex`/`latexmk` + `bibtex`); without them the
+  adapter emits `.tex`-only instead of a compiled PDF.
+- **nature-paper2ppt** (`render slides`): `python-pptx` (real `.pptx`; falls back to a self-contained HTML deck
+  if absent) and `PyMuPDF`/`fitz` (PDF figure extraction; skipped if absent — on-disk `runs/<q>/figures/` still used).
+- **paper-plot / nature-figure / figure-polish** (`render plot|figure|polish`): `matplotlib` for vector figures
+  (paper-plot falls back to stdlib SVG if absent).
+
 ## Variables (set once)
 ```bash
 export PATH="/root/.local/bin:$PATH"
 P=/home/linfeng/houmao_DeepScientist
 HARNESS="$P/execplan/harness/bin/deepresearch"
-QID=q2                                  # next quest id. NOTE: q1 is grandfathered legacy — its repo lives at
-                                        # outputs/fa4-perf-model (preserved, do NOT relocate). New quests follow the per-quest convention below.
+QID=q1                                  # quest id for this run (clean slate: derive the next id from `state query cursor`; q1 if none exist yet)
 SRC_REPO=/ABS/PATH/TO/PROJECT           # OPTIONAL operator source project to seed the quest repo (else git init fresh)
-REPO="$P/runs/$QID/repo"                # quest.workspace_ref — PER-QUEST code repo, lives INSIDE the quest folder (created in Step 4). outputs/ is q1-only legacy; never use it for new quests.
+REPO="$P/runs/$QID/repo"                # quest.workspace_ref — PER-QUEST code repo, lives INSIDE the quest folder (created in Step 4). `outputs/` is unused legacy; never use it.
 MAILROOT="$P/.houmao/mailbox"           # SHARED messaging infra (not per-quest); state DB runs/state.sqlite is also shared
 now(){ date -u +%FT%TZ; }               # caller-supplied ISO-8601 timestamps
 M(){ houmao-mgr project --project-dir "$P" "$@"; }
@@ -27,7 +36,7 @@ M(){ houmao-mgr project --project-dir "$P" "$@"; }
 ```bash
 python3 "$HARNESS" selfcheck            # ok=true, 34 record types, 39 invariants, deps ok
 M status                                # overlay healthy
-M skills list   | grep -c deepresearch- # 9  (8 in-loop + research-contract setup-time skill)
+M skills list   | grep -c deepresearch- # 21 (9 loop/control + 12 pack-wrapper skills; per-role install in agents/skill-bindings.toml)
 M profile list  | grep -c deepresearch- # 6
 M agents list   | grep instances        # instances [] (nothing live yet)
 test ! -f "$P/runs/state.sqlite" && echo "DB absent (expected)"
@@ -223,7 +232,7 @@ houmao-mgr ... # (operator confirms the choice)
 
 # Move the quest to running. QUINTUPLE-GATED at not_started->running: refused unless ALL of (a) a confirmed
 # gpu_allocation exists (GPU start-gate), (b) a kind='clarification' artifact exists (ambiguity-check gate),
-# (c) a kind='research-contract' artifact exists (research-contract gate, Upgrade 2), (d) — when any
+# (c) a kind='research-contract' artifact exists (research-contract gate), (d) — when any
 # participant has tool='claude' — a kind='effort-selection' artifact exists (Claude effort gate), AND (e) a
 # run mode is chosen (quest.autonomy_mode IN auto/assistant — _autonomy_gate).
 # single_active_quest also enforces one running quest at a time.

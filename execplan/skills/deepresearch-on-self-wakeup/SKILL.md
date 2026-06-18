@@ -3,12 +3,12 @@ name: deepresearch-on-self-wakeup
 description: Orchestrator on-event skill for the deepresearch loop. Trigger on received mail with schema_id "deepresearch.email.self-wakeup". Resolve the durable continuation and run one tick to advance the stage machine.
 ---
 
-# On Self-Wakeup (Orchestrator)
+# On Self-Wakeup (orchestrator)
 
 **Trigger:** received mail, `schema_id = "deepresearch.email.self-wakeup"`.
 
-You are the Orchestrator resuming the durable continuation spine. One bounded turn. This is the only
-continuation mechanism — there are no live reminders.
+You are the orchestrator resuming the durable continuation spine. One bounded turn. This is the only
+continuation mechanism — there are no live reminders. See `deepresearch-shared-guide`.
 
 ## Inputs
 

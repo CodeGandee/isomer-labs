@@ -3,10 +3,10 @@ name: deepresearch-operator-control
 description: Operator control skill for the deepresearch loop. Handle status, start, pause, resume, stop, recover, mode switching, and manual steps; route platform mechanics to maintained Houmao skills.
 ---
 
-# Operator Control (Orchestrator / operator)
+# Operator Control (orchestrator / operator)
 
 **Trigger:** operator-origin / freeform control mail, or an operator-invoked lifecycle command. One
-bounded turn.
+bounded turn. See `deepresearch-shared-guide`.
 
 ## Identity
 
@@ -31,11 +31,11 @@ bounded turn.
 4. **set-mode** → `$HARNESS control set-mode` (records `operator_intent_event(set-mode)`). TWO independent axes:
    - `--mode auto|manual` (**execution_mode**, drive cadence): `manual` suspends notifier-driven wakeups
      (operator prompts each bounded pass); it is NOT `paused`.
-   - `--autonomy auto|assistant` (**autonomy_mode**, authority/strictness — Phase 1): `auto` lets the loop
+   - `--autonomy auto|assistant` (**autonomy_mode**, authority/strictness): `auto` lets the loop
      self-dispose (completeness HARD-gates `complete` at publication rigor); `assistant` is advisory (the loop
      recommends, the operator disposes). Chosen pre-launch (a launch gate); change mid-loop only by operator.
    Supply at least one of `--mode`/`--autonomy`.
-4b. **amend-acceptance (Phase 6 — acceptance-only, operator-confirmed, append-only)** → the ONLY post-launch
+4b. **amend-acceptance (acceptance-only, operator-confirmed, append-only)** → the ONLY post-launch
    way to change the done-bar. The objective is **frozen**; only `acceptance.md` may be amended, and only via:
    (i) `decision.record(route='amend-acceptance', requires_user_confirm=1)` with a diff+rationale
    `rationale_ref`; (ii) operator `decision.confirm`; (iii) write a NEW `runs/<q>/objective/acceptance.md@rev-K`
@@ -49,16 +49,9 @@ bounded turn.
    `bump_attempt`; re-validate un-checked results). For a specialist that **acked but never returned a
    result** (turn died mid-work), the re-delivered task-request is new unread mail that re-wakes it; if it
    stays idle, send a direct operator prompt (`houmao-agent-messaging`) telling it to resume that
-   `handoff_id`. Run `$HARNESS state validate`.
+   `handoff_id`. Run `$HARNESS state validate`. **Auth-failure recovery (401 vs 403)** is in
+   `reference/recovery-and-liveness.md`.
 6. **manual-step** → `$HARNESS control manual-context`, do one bounded action, record via the harness, stop.
-6b. **auth posture (credential)** → agents use the `default` bundle's **long-lived OAuth token** (Pro/Max,
-   `claude setup-token`) — it does **not** expire on the ~5h interactive clock, so normal recovery never needs
-   a re-login. Distinguish failures: a **`401 Invalid authentication credentials`** = the token is genuinely
-   bad/lapsed → the **operator** re-runs `claude setup-token` + `credentials claude set --name default
-   --oauth-token …`, then **relaunch agents fresh** (a bare relaunch reuses the home-cached token). A **`403
-   … quota …`** = a *third-party proxy* (`ANTHROPIC_BASE_URL`+`AUTH_TOKEN`) is shadowing the OAuth token in
-   the launch env — **not** a subscription problem; relaunch with those scrubbed (`unset` / `env -u …`). Never
-   paste a token into a prompt. See `docs/credentials.md`.
 7. **confirm-gpus** → record the operator-approved GPU device set for the quest so GPU-using work may run.
    **This is normally a PRE-LOOP / setup action** (Step 3 of the runbook) — GPU confirmation is required
    *before* the quest can move to `running`, so the live loop does not ask again. Use this op mid-loop only
@@ -67,7 +60,7 @@ bounded turn.
    `$HARNESS gpu confirm --quest-id <q> --devices "<list>" --by <operator> --at <ts>` (e.g. `--devices "0"`
    or `"0,1"`; comma list of integer indices only — `all`/`-1`/empty are rejected). This satisfies the hard
    apply-time gate over **both** the `experiment` and `analysis` stages (`experiment_requires_gpu_confirmation`);
-   the Experimenter/Analyst then restrict `CUDA_VISIBLE_DEVICES` to exactly this set (and `experiment run`
+   the experimenter/analyst then restrict `CUDA_VISIBLE_DEVICES` to exactly this set (and `experiment run`
    injects it + fails closed). One confirmation covers the whole quest; re-run only to change the device set.
    **Only the operator may confirm GPUs** — never self-confirm to unblock stalled work. Report current state
    anytime with `$HARNESS gpu status --quest-id <q>`.
@@ -82,24 +75,17 @@ bounded turn.
    `{"record_type":"artifact.record","kind":"clarification","ref":"runs/<q>/objective/clarification.md", ...}`.
    **Only the operator confirms/clarifies** — never fabricate answers to unblock launch. Use mid-loop only as
    a fallback (recover a legacy quest that started before the gate, or amend the brief from new operator input).
-   **Post-launch the brief is NOT freely editable (Phase 6):** the objective is frozen, and acceptance edits
+   **Post-launch the brief is NOT freely editable:** the objective is frozen, and acceptance edits
    MUST go through the operator-confirmed, append-only **amend-acceptance** path (op 4b) — never an in-place
    edit of `objective.md`/`acceptance.md`. Mid-loop clarify-quest may *propose* a narrowed acceptance; it
    lands only after `decision.confirm`.
 
 ## Liveness watchdog (heartbeat + parked-agent recovery)
 
-- **Heartbeat:** keep the loop live without inbound mail by setting a *repeating* gateway reminder on the
-  Orchestrator that prompts it to run **deepresearch-orchestrator-tick** (the tick's step 2 then reconciles
-  stalled handoffs). Via `houmao-agent-gateway`:
-  `houmao-mgr agents single --agent-name orchestrator gateway reminders create --interval-seconds <N> \
-  --prompt "Run deepresearch-orchestrator-tick: heartbeat reconcile (handoff query --stalled), then stop."`
-  Pick `N` ≥ the shortest `result_due_at` window so a dead worker turn is retried within one or two beats.
-- **Claude Code interstitials:** a parked TUI prompt (e.g. *"How is Claude doing this session? 1:Bad 2:Fine
-  3:Good 0:Dismiss"*, trust/permission, or `/clear`-suggestion) blocks the agent's input so neither mail nor
-  reminders advance it. Detect + safely dismiss with the operator helper `execplan/ops/loop-watchdog.sh`
-  (read-only by default; `--apply` sends only the documented **dismiss/0** key to *known* interstitials —
-  never a content answer). After dismissing, the agent's notifier/heartbeat resumes normally.
+Keep the loop live without inbound mail via a repeating gateway heartbeat reminder on the orchestrator, and
+detect/dismiss Claude Code TUI interstitials that block an agent's input. The heartbeat-reminder command, the
+`N`-interval rule, and the `execplan/ops/loop-watchdog.sh` dismiss procedure are in
+**`reference/recovery-and-liveness.md`**.
 
 ## Platform routing (do not reimplement)
 

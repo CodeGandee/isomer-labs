@@ -1,6 +1,6 @@
 # OPTIMIZE_CHECKLIST.md
 
-- [ ] Read the durable frontier summary — in Houmao: `$HARNESS state query frontier` + `$HARNESS bo status` (DeepScientist's `artifact.get_optimization_frontier(...)`)
+- [ ] Read the durable frontier summary — in Houmao: `$HARNESS state query frontier` + `$HARNESS bo status` (`artifact.get_optimization_frontier(...)`)
 - [ ] Select the primary optimize submode: `brief`, `rank`, `seed`, `loop`, `fusion`, or `debug`
 - [ ] Confirm whether the current pass is `explore`, `exploit`, `fusion`, `debug`, or `stop`
 - [ ] Review recent optimization memory before generating new candidates

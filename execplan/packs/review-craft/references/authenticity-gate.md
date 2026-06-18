@@ -1,4 +1,4 @@
-# Evidence Authenticity & Manuscript Coverage gate (ported from DeepScientist `review`)
+# Evidence Authenticity & Manuscript Coverage gate
 
 The anti-fabrication core of review. Houmao's `evidence validate` only checks DB-row consistency
 (supported-claims-without-support, open contradictions, orphans); this gate is the human/agent audit on

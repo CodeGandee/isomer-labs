@@ -3,7 +3,7 @@
 - kind: reference
 - backs: knowledge cards
 - status: **REAL adapter** (stdlib only; follows ../ADAPTER-CONTRACT.md)
-- origin: original Houmao authorship (NO DeepScientist `mentor` skill exists; not a port)
+- origin: original Houmao authorship 
 - entrypoint: `adapter:cards`
 - input: (none; catalog.json)
 - output: repo-owner standards/taste cards

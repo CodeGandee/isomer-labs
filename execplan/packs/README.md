@@ -2,10 +2,9 @@
 
 ## Purpose
 
-Built-in `knowledge_pack` adapters (ported DeepScientist domain/publication helpers). Registered in
+Built-in `knowledge_pack` adapters (domain/publication helper packs). Registered in
 `../specs/state/seed.toml`; the **publication set is ENABLED by default** (paper-latex, paper-plot,
-figure-polish, and the nature-* figure/slides/data/polishing packs) so output quality matches the
-DeepScientist counterparts, while the `science-scipkg` + `mentor-standards` reference packs stay
+figure-polish, and the nature-* figure/slides/data/polishing packs) so output quality matches the reference counterparts. `science-scipkg` is enabled; only `mentor-standards` stays
 **disabled** (the core control plane remains domain-neutral — packs only add render/manuscript adapters).
 Enable/disable per quest/domain to change the matching harness command / stage helper. All packs here ship a
 **real stdlib adapter** (`adapter.py`) plus a committed `examples/` input+output; see `ADAPTER-CONTRACT.md`

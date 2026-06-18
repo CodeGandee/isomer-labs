@@ -1,6 +1,6 @@
 # Outline contract — paper_view vs evidence_view
 
-Ported from DeepScientist `paper-outline`. The outline is ONE selected artifact with two views. The paper
+The outline is ONE selected artifact with two views. The paper
 must be faithful to the evidence but must NOT echo the agent workflow. Record it as
 `artifact.record` (kind `report`) under `runs/<quest-id>/report/outline.*`; the Writer gates on
 `$HARNESS outline validate` before drafting.

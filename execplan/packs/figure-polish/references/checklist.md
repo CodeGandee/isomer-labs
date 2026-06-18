@@ -1,4 +1,4 @@
-# Figure self-review checklist + style contract (ported from DeepScientist `figure-polish`)
+# Figure self-review checklist + style contract
 
 A figure is not final until a **render → inspect → revise** pass is done: open the rendered figure and
 inspect the actual result, not the code.

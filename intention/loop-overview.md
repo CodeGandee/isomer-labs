@@ -2,10 +2,10 @@
 
 ## Source
 
-- Reference system: **DeepScientist** (https://github.com/ResearAI/DeepScientist) — a local-first
+- Reference system: a local-first
   autonomous research studio: one quest = one git repo, persistent findings memory, hypothesis →
   experiment → analysis → write loop, with human takeover preserved throughout.
-- This loop re-expresses DeepScientist's research loop as a Houmao `loop-pro` **tree-loop**, with
+- This loop re-expresses a prior research loop as a Houmao `loop-pro` **tree-loop**, with
   stage logic in generated skills and durable state in loop SQLite + an operator-owned git workspace.
 - Closest in-repo precedent: `KernelAgent/` (a Houmao tree-loop with an Orchestrator that owns round
   iteration / termination, LLM reasoning agents, deterministic harness tools, a reflexion store, and
@@ -38,13 +38,13 @@ LLM agents:
 
 - **Orchestrator** *(LLM, tree-loop root)*: owns the research state machine — selects the next stage,
   tracks round/budget, applies acceptance and stop-loss rules, records every transition in the
-  `decision` log, and arms the next durable self-wakeup. Replaces DeepScientist's `runtime_state.json`
+  `decision` log, and arms the next durable self-wakeup. Replaces `runtime_state.json`
   + `decision` / `intake-audit` stage skills. Owns iteration and termination.
 - **Scout / Ideator** *(LLM)*: scope intake, baseline framing, hypothesis generation, route selection.
-  Replaces DeepScientist `scout` + `idea`.
+  Replaces the prior `scout` + `idea`.
 - **Experimenter** *(LLM, may run as K parallel instances)*: design, implement, and execute a bounded
   experiment inside an **isolated worktree** so parallel routes never clobber each other. Replaces
-  DeepScientist `experiment`; the worktree model preserves DeepScientist's "branches express research
+  the prior `experiment` stage; the worktree model preserves "branches express research
   structure / keep failed routes" principle.
 - **Analyst** *(LLM)*: analysis campaigns — slice/ablate results, decompose errors, judge whether a
   result confirms / blocks / is inconclusive against a parent claim. Replaces `analysis-campaign`.
@@ -61,23 +61,23 @@ Harness tools (deterministic; no LLM; the trust boundary):
 - **Experiment runner**: execute an experiment's run contract and capture results/metrics honestly.
   *Domain-pluggable* — the default is a generic command-runner; domains override it.
 - **Validator**: baseline gate, metric-completeness/comparability checks, manuscript coverage,
-  claim↔evidence consistency. *Partly domain-pluggable.* Replaces DeepScientist `artifact.validate_*`.
+  claim↔evidence consistency. *Partly domain-pluggable.* Replaces the prior `artifact.validate_*`.
 - **Findings store**: persist/retrieve durable findings memory + reflexion notes, **cross-round but
-  per-quest only** (quest-isolated — a quest never reads another quest's findings). Replaces DeepScientist
+  per-quest only** (quest-isolated — a quest never reads another quest's findings). Replaces the prior
   `memory/{ideas,decisions,knowledge}` + reflexion store.
 - **Git checkpoint**: commit durable artifacts into the quest worktree; manage branches/worktrees.
-  Replaces DeepScientist `git.auto_checkpoint`.
+  Replaces the prior `git.auto_checkpoint`.
 - **Artifact compiler**: render reports/figures (e.g. LaTeX/markdown/plots). *Domain-pluggable.*
 - **Idea refiner (Bayesian optimization)**: a deterministic harness command that reads the
   `search_space` + each experiment's `experiment_param` + the primary `measurement`, and proposes the
   next point to evaluate. Used when a quest declares a tunable search space; the proposal is recorded
-  as a new idea/experiment (`experiment_param.proposed_by = 'bo'`). Replaces DeepScientist's
+  as a new idea/experiment (`experiment_param.proposed_by = 'bo'`). Replaces the prior
   Bayesian-optimization hypothesis refinement. The Orchestrator may instead refine ideas heuristically
   from findings memory when no search space is defined.
 - **Literature / web search**: a generic harness command for arxiv + web retrieval; fetched sources
   land in the `reference` table (cached under `runs/<quest>/refs/`) and become `claim_evidence` of
   `source_kind = 'reference'`. References are **quest-owned** — each quest fetches and caches its own
-  sources; no cross-quest reference reuse. Replaces DeepScientist `artifact.arxiv` / deepxiv.
+  sources; no cross-quest reference reuse. Replaces the prior `artifact.arxiv` / deepxiv.
 
 ## Operating Model
 
@@ -123,7 +123,7 @@ Harness tools (deterministic; no LLM; the trust boundary):
 
 - **Validity gates are hard.** A result cannot advance to synthesis unless the baseline gate is
   satisfied (or explicitly waived) and metric completeness/comparability passes. Generalizes
-  DeepScientist's correctness-as-hard-gate rule.
+  correctness-as-hard-gate rule.
 - **Acceptance is objective-defined.** The quest's objective declares its own success/acceptance
   criteria; the platform does not assume a single universal metric.
 
@@ -155,11 +155,10 @@ Harness tools (deterministic; no LLM; the trust boundary):
   quest at a time) and the `.houmao/mailbox` messaging infra. Knowledge packs live under `execplan/packs/`.
   This is platform INFRASTRUCTURE, not a cross-quest data pool.
 - **TOTAL QUEST ISOLATION**: a new quest never re-uses, refers to, or inspects ANY artifact of another
-  quest — not another quest's `runs/<q>/` files, not `outputs/` (q1 legacy), and not its DB rows. Findings
+  quest — not another quest's `runs/<q>/` files, not `outputs/`, and not its DB rows. Findings
   and references are quest-owned (invariants `finding_quest_owned` + `reference_quest_owned`); every quest
   collects its data fresh. Agents read only their own quest's `runs/<this-quest>/` + their worktree.
-- **Legacy**: q1 (the first quest) predates this convention and keeps its repo at top-level
-  `outputs/fa4-perf-model` — preserved as-is for provenance; `outputs/` is q1-only and not used by new quests.
+- `outputs/` is an unused legacy location; every quest's materials live under `runs/<quest-id>/`.
 - Findings memory persists across rounds within a quest, but never across quests.
 
 ## Constraints
@@ -185,7 +184,7 @@ Harness tools (deterministic; no LLM; the trust boundary):
 
 **Still open:**
 
-- **DeepScientist features without a direct Houmao counterpart — operator decisions (resolved):**
+- **Prior-system features without a direct Houmao counterpart — operator decisions (resolved):**
   - **Cross-quest findings visibility → RESOLVED: total quest isolation.** Findings (and references) are
     quest-owned; no shared/global store. Enforced by schema (`quest_id` required, `scope` enum `['quest']`)
     + invariants `finding_quest_owned`/`reference_quest_owned`. A new quest never reuses/inspects another
@@ -207,7 +206,7 @@ Harness tools (deterministic; no LLM; the trust boundary):
   - finalize → **enriched**: complete / stop / park_and_continue_later / publish_and_continue_from_new_incumbent
     (+ `finalize_outcome`).
   - rebuttal → **implemented** as a first-class Writer stage (+ route enum).
-  - DeepScientist domain/publication helpers (paper-outline, paper-plot, figure-polish, nature-figure,
+  - the domain/publication helper packs (paper-outline, paper-plot, figure-polish, nature-figure,
     nature-data, nature-polishing, nature-paper2ppt, science, mentor) → **integrated**: `outline` stage,
     harness extension commands (`render plot|polish|slides`, `manuscript polish|datastmt`, `knowledge query`),
     the `deepresearch-mentor` skill, and built-in `knowledge_pack`s under `execplan/packs/`.
@@ -215,6 +214,6 @@ Harness tools (deterministic; no LLM; the trust boundary):
     the Markdown manuscript → LaTeX article → compiled PDF (XeLaTeX/TinyTeX; auto-detects CJK via `ctexart`
     for the Chinese edition). The publication packs (paper-latex, paper-plot, figure-polish, and the
     nature-* figure/slides/data/polishing packs) are **enabled by default** so output quality matches the
-    DeepScientist counterparts; only `science-scipkg` + `mentor-standards` stay disabled. Plus harness
+    the reference counterparts; only `mentor-standards` stays disabled. Plus harness
     commands `lit bib` (references → `.bib`) and `manuscript bundle` (evidence ledger + claim↔evidence map
     + submission checklist, which tracks the EN + ZH PDFs and orphan claims).

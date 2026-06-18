@@ -1,0 +1,31 @@
+---
+name: deepresearch-paper-craft
+description: Manuscript-writing craft for the outline/write stages — the oral-writing principles, the section-rewrite checklist, the paper-view/evidence-view outline contract, plus outline patterns, oral-package patterns, and experiment-analysis writing patterns. Use when the writer is drafting or rewriting manuscript prose, building or validating the outline, or shaping how evidence reads in the paper. Read-only methodology lookup; surfaces a reference pack and changes no state. (For compiling the manuscript to PDF use paper-latex; for figures use figure; for data-availability polish use manuscript-aux.)
+---
+
+# paper-craft (read-only methodology lookup)
+
+Surfaces the `paper-craft` reference pack for the **writer** during the outline/write stages of the loop.
+The pack is the source of truth; this skill only indexes and points into it, and makes no state change.
+
+## Use
+1. Index the pack:
+   `$HARNESS --via skill:deepresearch-paper-craft:<your-role> knowledge cards --query oral_writing_principles`
+   (or `knowledge query --kind reference`).
+2. Read the relevant file under `execplan/packs/paper-craft/references/` and apply the method:
+   - `references/oral_writing_principles.md` — the oral-writing principles.
+   - `references/section_rewrite_checklist.md` — the section-rewrite checklist.
+   - `references/outline-contract.md` — the paper-view/evidence-view outline contract;
+     `references/outline-patterns.md` — supporting outline patterns.
+   - `references/oral_package_patterns.md`, `references/experiments_analysis_patterns.md` — patterns for the
+     oral package and for writing up experiments/analysis.
+3. Do the stage work and record outcomes through your role's normal skill/commands. The DB stays canonical;
+   this craft is advisory, never an authoritative state surface. Map any external tool names in the
+   files (`artifact.*`, `memory.*`, `bash_exec`) to the `$HARNESS` surface.
+
+## Audit / boundaries
+- `--via skill:deepresearch-paper-craft:<role>` is passed for traceability; read-only, so it records no row.
+- Never finalize, mutate results, confirm GPU, or change quest state from here.
+
+## Stop
+- Return the method to the calling task and continue.

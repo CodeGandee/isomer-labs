@@ -1,4 +1,4 @@
-"""Reference knowledge-pack adapter (DeepScientist methodology ported into Houmao-DeepResearch).
+"""Reference knowledge-pack adapter.
 
 Read-only: `cards()` indexes this pack's references/ (and templates/) so `knowledge cards` can
 surface the methodology files; agents then read the named file for the full procedure/checklist/

@@ -1,4 +1,4 @@
-# Intake-audit methodology (ported from DeepScientist `intake-audit`)
+# Intake-audit methodology
 
 For quests that do NOT start from a blank state: audit, trust-rank, and reconcile pre-existing assets
 (baselines, results, drafts, review materials) before choosing the next anchor. Record findings via Houmao
@@ -8,7 +8,7 @@ records (`intake_asset.record`, `decision.record`) — the DB stays canonical; t
 1. What exists? 2. What is trustworthy? 3. What is directly reusable? 4. Which stage takes over next?
 
 ## Trust ranking (maps onto Houmao `intake_asset.trust`)
-DeepScientist 5-value vocabulary → Houmao's schema-enforced 4-value enum: `trusted` · `usable_with_verification`→`suspect` · `reference_only`/`stale_or_conflicting`→`untrusted` · `missing_context`/reject→`rejected`. Adopt (`adopt_as`) ONLY a `trusted` asset (invariant `intake_adopt_trusted`).
+The source 5-value vocabulary → Houmao's schema-enforced 4-value enum: `trusted` · `usable_with_verification`→`suspect` · `reference_only`/`stale_or_conflicting`→`untrusted` · `missing_context`/reject→`rejected`. Adopt (`adopt_as`) ONLY a `trusted` asset (invariant `intake_adopt_trusted`).
 
 ## Manuscript-visibility ranking (for paper-facing assets)
 `main_text_candidate` · `appendix_or_reproducibility` · `comparator_or_negative_evidence` · `reference_only` · `internal_only`.

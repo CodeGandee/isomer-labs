@@ -25,6 +25,42 @@ execution_mode       = "auto"       # notifier-driven wakeups
 run_state            = "not_started"
 findings_default_scope = "quest"    # always 'quest' — total quest isolation, no cross-quest/global findings
 
+# ───────────────── Binding-gate floors by rigor (read by the harness validators) ─────────────────
+# Rigor-configurable thresholds for the typed binding gates. uses idea_slate_min / idea_score_min in
+# `idea validate`. Env DEEPRESEARCH_IDEA_SLATE_MIN / DEEPRESEARCH_IDEA_SCORE_MIN override per-run (and waive).
+# 'scoping' is advisory (floors 0). 'strict' is reserved for a future rigor_level enum value.
+# adds claim-level campaign coverage floors (by evidence_kind): campaign_required = always-required kinds;
+# campaign_baseline = require baseline_comparison or a baseline waiver; campaign_anyof = >=1 of these kinds;
+# campaign_significance_superiority = a baseline-comparison (superiority) claim also needs significance.
+[gate_floors.scoping]
+idea_slate_min = 0
+idea_score_min = 0
+campaign_required = []
+campaign_baseline = false
+campaign_anyof = []
+campaign_significance_superiority = false
+[gate_floors.standard]
+idea_slate_min = 3
+idea_score_min = 6
+campaign_required = ["main_result"]
+campaign_baseline = true
+campaign_anyof = ["ablation", "robustness", "negative", "boundary", "error_analysis"]
+campaign_significance_superiority = false
+[gate_floors.publication]
+idea_slate_min = 5
+idea_score_min = 7
+campaign_required = ["main_result", "ablation"]
+campaign_baseline = true
+campaign_anyof = ["robustness", "negative", "boundary", "error_analysis"]
+campaign_significance_superiority = true
+[gate_floors.strict]
+idea_slate_min = 6
+idea_score_min = 8
+campaign_required = ["main_result", "ablation", "robustness"]
+campaign_baseline = true
+campaign_anyof = ["negative", "boundary", "error_analysis"]
+campaign_significance_superiority = true
+
 # ───────────────── Role roster (distinct specialists; bound to each quest's participant rows) ─────────────────
 # `tool` is the Houmao binding (claude|codex|gemini). `multi_instance`/`fan_out_max` mark roles that
 # may launch K parallel instances on isolated worktrees. These are TEMPLATES, not participant rows
@@ -99,10 +135,11 @@ summary     = "Skeptical audit of the draft; claim↔evidence coverage."
 # enabled  = 1
 # priority = 100             # among enabled (domain,kind), lowest priority is primary; must be unique
 
-# ── Built-in extension packs (ported DeepScientist domain/publication helpers). ──
+# ── Built-in extension packs (domain/publication helper packs). ──
 # The PUBLICATION path is ON by default: paper-latex, paper-plot, figure-polish, and the nature-*
-# (figure/slides/data/polishing) packs ship enabled=1 so output quality matches the DeepScientist
-# counterparts. Only science-scipkg + mentor-standards stay disabled=0 (enable per quest/domain via
+# (figure/slides/data/polishing) packs ship enabled=1 so output quality matches the reference
+# counterparts. science-scipkg (science/HPC domain reference pack) is now enabled=1 as well. Only
+# mentor-standards stays disabled=0 (enable per quest/domain via
 # `knowledge_pack.register ... enabled=1`). Adapter resolution: among ENABLED packs of one (domain,kind)
 # the lowest unique priority is primary (adapter_priority_unique invariant).
 
@@ -175,7 +212,7 @@ domain  = "science"
 name    = "science-scipkg"
 kind    = "reference"       # FermiLink scipkg package-card catalog; discovered via `knowledge query`
 ref     = "execplan/packs/science-scipkg"
-enabled = 0
+enabled = 1
 priority = 100
 
 [[knowledge_pack]]
@@ -187,7 +224,7 @@ ref     = "execplan/packs/mentor-standards"
 enabled = 0
 priority = 100
 
-# ── Methodology reference packs (ported from DeepScientist skill bodies + reference files). ──
+# ── Methodology reference packs. ──
 # kind='reference' so they back no render/manuscript command and are exempt from adapter_priority_unique
 # (that invariant only constrains runner/validator/compiler/metric_vocab). Surfaced via `knowledge cards` /
 # `knowledge query`; agents READ the indexed files for procedure/checklists/templates. Enabled by default:
@@ -197,7 +234,7 @@ priority = 100
 pack_id = "paper-craft"
 domain  = "general"
 name    = "paper-craft"
-kind    = "reference"       # oral-writing principles, section-rewrite checklist, outline contract (DeepScientist write + paper-outline)
+kind    = "reference"       # oral-writing principles, section-rewrite checklist, outline contract (write + paper-outline)
 ref     = "execplan/packs/paper-craft"
 enabled = 1
 priority = 200
@@ -206,7 +243,7 @@ priority = 200
 pack_id = "ideation-rubric"
 domain  = "general"
 name    = "ideation-rubric"
-kind    = "reference"       # objective contract, selection gate, divergence/related-work playbooks, eval-contract (DeepScientist idea + scout)
+kind    = "reference"       # objective contract, selection gate, divergence/related-work playbooks, eval-contract (idea + scout)
 ref     = "execplan/packs/ideation-rubric"
 enabled = 1
 priority = 201
@@ -215,7 +252,7 @@ priority = 201
 pack_id = "review-craft"
 domain  = "general"
 name    = "review-craft"
-kind    = "reference"       # review dimensions, evidence-authenticity gate, lit benchmark, review templates (DeepScientist review)
+kind    = "reference"       # review dimensions, evidence-authenticity gate, lit benchmark, review templates (review)
 ref     = "execplan/packs/review-craft"
 enabled = 1
 priority = 202
@@ -224,7 +261,7 @@ priority = 202
 pack_id = "rebuttal-craft"
 domain  = "general"
 name    = "rebuttal-craft"
-kind    = "reference"       # review-matrix→action-plan→evidence-update→response-letter flow + voice rules (DeepScientist rebuttal)
+kind    = "reference"       # review-matrix→action-plan→evidence-update→response-letter flow + voice rules (rebuttal)
 ref     = "execplan/packs/rebuttal-craft"
 enabled = 1
 priority = 203
@@ -242,7 +279,7 @@ priority = 204
 pack_id = "intake-rubric"
 domain  = "general"
 name    = "intake-rubric"
-kind    = "reference"       # intake-audit: trust-rank/reconcile pre-existing assets, current-board packet (DeepScientist intake-audit)
+kind    = "reference"       # intake-audit: trust-rank/reconcile pre-existing assets, current-board packet (intake-audit)
 ref     = "execplan/packs/intake-rubric"
 enabled = 1
 priority = 205

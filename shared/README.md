@@ -17,13 +17,12 @@ Knowledge packs live under **`execplan/packs/`** (enabled via `seed.toml` / `kno
 
 ## Per-quest folder & `outputs/` (legacy)
 
-For **q2 and all future quests**, everything a quest produces — objective, baseline, code repo, worktrees,
-rounds, report, figures, refs, findings — lives under **`runs/<quest-id>/`**, and the quest's code repo
-(`quest.workspace_ref`) is **`runs/<quest-id>/repo/`**. The only shared, cross-quest state is the control
-plane: the single DB `runs/state.sqlite` and the `.houmao/mailbox` messaging infra.
+**Every quest** keeps everything it produces — objective, baseline, code repo, worktrees, rounds, report,
+figures, refs, findings — under **`runs/<quest-id>/`**, with the quest's code repo (`quest.workspace_ref`) at
+**`runs/<quest-id>/repo/`**. The only shared, cross-quest state is the control plane: the single DB
+`runs/state.sqlite` and the `.houmao/mailbox` messaging infra.
 
-**`outputs/` is a grandfathered, q1-only legacy location.** q1 predates this convention and keeps its repo at
-`outputs/fa4-perf-model` — it is preserved as-is for provenance and is not relocated. **Do not use `outputs/`
-for any new quest.**
+**`outputs/` is an unused legacy top-level location.** **Do not use `outputs/` for any quest** — all materials
+live under `runs/<quest-id>/`.
 
 Authority: `execplan/specs/workspace/workspace.toml` (`[shared]`, `[meta]` LEGACY note), `execplan/docs/start-runbook.md` (Step 3/4).

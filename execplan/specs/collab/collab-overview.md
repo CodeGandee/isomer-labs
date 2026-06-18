@@ -124,7 +124,7 @@ The Orchestrator selects the next stage from `stage_catalog` (ordered by `ordina
 
 ## Domain / publication extensions (built-in, opt-in)
 
-The DeepScientist domain/publication helpers are integrated but kept off the domain-neutral core path:
+The domain/publication helper packs are integrated but kept off the domain-neutral core path:
 - **Stages** (Writer-owned, paper-oriented, optional): `outline` (paper-outline), `rebuttal`.
 - **Harness extension commands** (stub-safe, resolve a `knowledge_pack` adapter): `render plot`
   (paper-plot), `render polish` (figure-polish), `render slides` (nature-paper2ppt), `manuscript polish`

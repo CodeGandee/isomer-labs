@@ -6,8 +6,10 @@ state writes their contract promises; a domain knowledge-pack adapter replaces t
 """
 from __future__ import annotations
 import json
+import os
 import sys
 import click
+import jsonschema
 
 import db
 import records
@@ -61,9 +63,21 @@ def _apply(ctx, cmd, payload, *, quest_id=None):
 @click.option("--db", "db_path", default=None, help="Override state DB path (default <loop-dir>/runs/state.sqlite).")
 @click.option("--validate-after-write", "vaw", is_flag=True, default=False,
               help="Run `state validate` after each mutating command; fail the command on violations. Off by default.")
+@click.option("--via", default=None,
+              help="Caller identity for authority + audit: 'skill:<skill-id>:<role>' (an agent-invoked skill, "
+                   "authority-checked + audited), or 'loop:<role>'/'operator' (unrestricted; default when omitted).")
 @click.pass_context
-def cli(ctx, db_path, vaw):
-    ctx.obj = {"db": db_path, "vaw": vaw}
+def cli(ctx, db_path, vaw, via):
+    ctx.obj = {"db": db_path, "vaw": vaw, "via": via}
+    records.set_caller(via)  # caller-agnostic gates still apply; this only adds skill-authority + audit
+
+
+def _authz_cmd(command):
+    """Enforce role for a stateful COMMAND invoked as a skill (clean envelope error on denial)."""
+    try:
+        records.authorize_command(command)
+    except records.RecordError as e:
+        emit(envelope(command, ok=False, diagnostics=[str(e)])); sys.exit(1)
 
 
 # ───────────────── state ─────────────────
@@ -239,7 +253,7 @@ def plan_status(ctx, quest_id):
 
 
 def _decision_lint(conn, quest_id):
-    """Warn on consequential decisions that did not name their losers (Phase 4; read-only)."""
+    """Warn on consequential decisions that did not name their losers (read-only)."""
     warns = []
     consequential = ("branch", "reset", "stop", "finalize", "idea", "optimize")
     decs = db.rows(conn, "SELECT decision_id,route,round_index FROM decision WHERE quest_id=?", (quest_id,))
@@ -259,11 +273,12 @@ def _decision_lint(conn, quest_id):
 
 
 def _methodology_lint(conn, quest_id):
-    """Advisory (Tier-3 methodology-usage): for a quest under the research-contract regime, warn when a CLOSED
-    round whose stage requires a methodology pack (records.REQUIRED_PACKS) has no artifact(kind='methodology-
-    usage') for that round_index. Existence check only — per-pack correctness is enforced by the Orchestrator/
-    Reviewer reading task-result.methodology_used. Pre-regime quests (no research-contract artifact) are exempt,
-    so history (q1/q2/q3) never warns. Read-only; never an invariant (so `state validate` stays unaffected)."""
+    """Advisory methodology-usage lint for ORCHESTRATOR-INTERNAL stages only (decision/optimize/finalize) —
+    warn when such a closed round has no artifact(kind='methodology-usage') for its round_index. WORKER stages
+    (idea/baseline/experiment/analysis/write/review) are NOT linted here: their methodology is bound by the
+    typed-record gates + `methodology check` (task-result.methodology_used[].applied_as must resolve to the
+    stage's validated typed record), which supersedes this existence check. Pre-regime quests (no
+    research-contract artifact) are exempt. Read-only; never an invariant (so `state validate` is unaffected)."""
     warns = []
     try:
         regime = conn.execute("SELECT COUNT(*) FROM artifact WHERE quest_id=? AND kind='research-contract'",
@@ -274,6 +289,9 @@ def _methodology_lint(conn, quest_id):
         return warns  # pre-feature / non-regime quest: exempt
     rounds = db.rows(conn, "SELECT round_index,stage FROM round WHERE quest_id=? AND status='closed'", (quest_id,))
     for r in rounds:
+        # Worker stages are bound by their typed-record gates + `methodology check`; lint only the internal stages.
+        if r["stage"] not in records.ORCHESTRATOR_INTERNAL_STAGES:
+            continue
         req = records.REQUIRED_PACKS.get(r["stage"])
         if not req or r["round_index"] is None:
             continue
@@ -309,7 +327,7 @@ def plan_validate(ctx, quest_id):
 @click.option("--quest-id", required=True)
 @click.pass_context
 def plan_diff(ctx, quest_id):
-    """List recorded acceptance revisions (acceptance.md@rev-*) and confirmed amendment decisions (Phase 6)."""
+    """List recorded acceptance revisions (acceptance.md@rev-*) and confirmed amendment decisions."""
     conn = _conn(ctx)
     amends = db.rows(conn, "SELECT decision_id,round_index,rationale_ref,created_at FROM decision WHERE quest_id=? AND route='amend-acceptance' AND confirmed=1 ORDER BY created_at", (quest_id,))
     cur = conn.execute("SELECT acceptance_ref FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
@@ -322,7 +340,7 @@ def plan_diff(ctx, quest_id):
                         "amendments": amends}))
 
 
-# ───────────────── completeness (research-completeness audit; Phase 5) ─────────────────
+# ───────────────── completeness (research-completeness audit) ─────────────────
 @cli.group()
 def completeness(): ...
 
@@ -331,7 +349,7 @@ def completeness(): ...
 @click.option("--quest-id", required=True)
 @click.pass_context
 def completeness_audit_cmd(ctx, quest_id):
-    """Run the seven research-completeness checks (Phase 5). Advisory by default; the finalize gate enforces
+    """Run the seven research-completeness checks. Advisory by default; the finalize gate enforces
     them only in auto mode at the gating rigor (DEEPRESEARCH_COMPLETENESS_GATE_RIGOR, default 'publication')."""
     conn = _conn(ctx)
     row = conn.execute("SELECT autonomy_mode, rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
@@ -755,16 +773,52 @@ def bo_status(ctx, quest_id):
     emit(envelope("bo status", quest_id=quest_id, data={"best_primary": best}))
 
 
-# ───────────────── lit (core; search stubbed) ─────────────────
+# ───────────────── lit (core; real arxiv backend with graceful fallback) ─────────────────
 @cli.group()
 def lit(): ...
 
 
+def _arxiv_query(query=None, arxiv_id=None, max_results=8, timeout=12):
+    """Query the public arXiv API (no key). Returns a list of {arxiv_id,title,authors,year,uri,summary}.
+    Network-dependent; raises on failure so callers can fall back to the stub."""
+    import urllib.parse, urllib.request, xml.etree.ElementTree as ET
+    if arxiv_id:
+        q = "id_list=" + urllib.parse.quote(arxiv_id)
+    else:
+        q = "search_query=" + urllib.parse.quote("all:" + (query or "")) + "&sortBy=relevance"
+    url = f"http://export.arxiv.org/api/query?{q}&max_results={max_results}"
+    raw = urllib.request.urlopen(url, timeout=timeout).read()
+    ns = {"a": "http://www.w3.org/2005/Atom"}
+    out = []
+    for e in ET.fromstring(raw).findall("a:entry", ns):
+        idu = (e.findtext("a:id", "", ns) or "").strip()
+        aid = idu.rsplit("/abs/", 1)[-1]
+        out.append({
+            "arxiv_id": aid,
+            "title": " ".join((e.findtext("a:title", "", ns) or "").split()),
+            "authors": [a.findtext("a:name", "", ns) for a in e.findall("a:author", ns)],
+            "year": (e.findtext("a:published", "", ns) or "")[:4],
+            "uri": idu,
+            "summary": " ".join((e.findtext("a:summary", "", ns) or "").split())[:600],
+        })
+    return out
+
+
 @lit.command("search")
 @click.option("--query", required=True)
-def lit_search(query):
-    emit(envelope("lit search", data={"stub": True, "query": query, "results": [],
-                                      "note": "wire a web/arxiv backend or knowledge-pack to populate results"}))
+@click.option("--max-results", type=int, default=8)
+def lit_search(query, max_results):
+    """Search arXiv for sources matching a query (real backend; falls back to an empty stub if offline)."""
+    try:
+        res = _arxiv_query(query=query, max_results=max_results)
+        emit(envelope("lit search", data={"query": query, "backend": "arxiv", "count": len(res),
+                                          "results": [{"source": "arxiv", "title": r["title"], "uri": r["uri"],
+                                                       "arxiv_id": r["arxiv_id"], "year": r["year"],
+                                                       "authors": r["authors"]} for r in res]}))
+    except Exception as e:
+        emit(envelope("lit search", ok=True, data={"query": query, "backend": "offline-stub", "results": [],
+                                                   "note": f"arxiv query failed ({e}); record references manually via lit fetch"},
+                      warnings=["arxiv search unavailable; offline fallback"]))
 
 
 @lit.command("fetch")
@@ -811,14 +865,39 @@ def lit_bib(ctx, quest_id, out_path):
     conn.close()
     def key(r, i):
         return (r.get("cite_key") or r.get("reference_id") or f"ref{i}").replace(" ", "_")
-    entries = []
+
+    def _arxiv_id_from_uri(u):
+        u = u or ""
+        if "arxiv.org" in u:
+            return u.rsplit("/abs/", 1)[-1].rsplit("/pdf/", 1)[-1].replace(".pdf", "")
+        return None
+
+    entries, enriched = [], 0
     for i, r in enumerate(rows, 1):
         k = key(r, i)
         title = (r.get("title") or r.get("reference_id") or "Untitled").replace("{", "").replace("}", "")
         url = r.get("uri") or ""
-        etype = "misc"
-        entries.append(f"@{etype}{{{k},\n  title = {{{title}}},\n  howpublished = {{\\url{{{url}}}}},\n  note = {{source: {r.get('source','manual')}}}\n}}")
-    bib = "% Generated by `deepresearch lit bib` from recorded reference rows.\n\n" + "\n\n".join(entries) + "\n"
+        # arXiv refs: fetch author/year for a proper @article (graceful fallback to @misc when offline).
+        aid = _arxiv_id_from_uri(url) if r.get("source") == "arxiv" else None
+        meta = None
+        if aid:
+            try:
+                hits = _arxiv_query(arxiv_id=aid, max_results=1)
+                meta = hits[0] if hits else None
+            except Exception:
+                meta = None
+        if meta and meta.get("authors"):
+            authors = " and ".join(meta["authors"])
+            year = meta.get("year") or ""
+            entries.append(f"@article{{{k},\n  title = {{{meta['title'] or title}}},\n  author = {{{authors}}},\n"
+                           f"  year = {{{year}}},\n  eprint = {{{aid}}},\n  archivePrefix = {{arXiv}},\n"
+                           f"  howpublished = {{\\url{{{url}}}}}\n}}")
+            enriched += 1
+        else:
+            entries.append(f"@misc{{{k},\n  title = {{{title}}},\n  howpublished = {{\\url{{{url}}}}},\n"
+                           f"  note = {{source: {r.get('source','manual')}}}\n}}")
+    bib = (f"% Generated by `deepresearch lit bib` from recorded reference rows ({enriched}/{len(entries)} "
+           f"arXiv-enriched).\n\n" + "\n\n".join(entries) + "\n")
     out_abs = out_path if out_path.startswith("/") else str(LOOP_DIR / out_path)
     Path(out_abs).parent.mkdir(parents=True, exist_ok=True)
     Path(out_abs).write_text(bib, encoding="utf-8")
@@ -830,7 +909,7 @@ def lit_bib(ctx, quest_id, out_path):
 @click.option("--quest-id", required=True)
 @click.pass_context
 def lit_audit(ctx, quest_id):
-    """Scholarship-bar audit (Upgrade 1): checks the quest meets the literature bar — enough real reference
+    """Scholarship-bar audit: checks the quest meets the literature bar — enough real reference
     rows AND >= 1 claim positioned against a reference — plus soft warnings (all-`manual` bib, missing
     Related Work heading). The same check backs the hard finalize gate; run it before review/finalize. See
     execplan/docs/publication-quality.md."""
@@ -914,7 +993,12 @@ def experiment_run(ctx, experiment_id, quest_id, cmd, cwd, timeout):
     child environment so executed code is physically restricted to the confirmed set."""
     import os
     import subprocess
+    _authz_cmd("experiment run")  # skill caller must be experimenter/analyst (loop/operator bypass)
     conn = _conn(ctx)
+    try:
+        records.loop_guard(conn, "experiment.upsert", quest_id)  # optional Tier-B loop-context guard (skill caller)
+    except records.RecordError as e:
+        conn.close(); emit(envelope("experiment run", ok=False, quest_id=quest_id, diagnostics=[str(e)])); sys.exit(1)
     try:
         row = conn.execute("SELECT status, devices FROM gpu_allocation WHERE quest_id=?", (quest_id,)).fetchone()
     except Exception:
@@ -972,6 +1056,7 @@ def result_validate(ctx, result_id, validity):
     validity from metric completeness + baseline comparability: no measurements -> invalid; no is_primary
     (objective) measurement -> incomparable; baseline_gate not passed/waived -> incomparable; else valid. A
     knowledge_pack(kind='validator') adapter can supersede this with a domain correctness gate."""
+    _authz_cmd("result validate")  # skill caller must be orchestrator (loop/operator bypass)
     conn = _conn(ctx)
     row = conn.execute("SELECT quest_id FROM result WHERE result_id=?", (result_id,)).fetchone()
     if row is None:
@@ -1121,10 +1206,17 @@ def _opts(f):
 
 @render.command("report")
 @_opts
+@click.option("--bib", default=None, help="Path to a .bib (enables a real BibTeX pass via the compiler adapter).")
+@click.option("--venue", default=None, help="Venue template to compile against (e.g. iclr2026; see paper-latex/templates/).")
 @click.pass_context
-def render_report(ctx, quest_id, artifact_id, ref, input_path, title, at):
+def render_report(ctx, quest_id, artifact_id, ref, input_path, title, at, bib, venue):
+    params = {"title": title}
+    if bib:
+        params["bib"] = bib if bib.startswith("/") else str(LOOP_DIR / bib)
+    if venue:
+        params["venue"] = venue
     _run_adapter(ctx, "render report", adapter_kind="compiler", entry_default="render", quest_id=quest_id,
-                 artifact_id=artifact_id, ref=ref, input_path=input_path, params={"title": title},
+                 artifact_id=artifact_id, ref=ref, input_path=input_path, params=params,
                  artifact_kind="report", at=at)
 
 
@@ -1139,11 +1231,20 @@ def render_figure(ctx, quest_id, artifact_id, ref, input_path, title, at):
 
 @render.command("plot")
 @_opts
+@click.option("--kind", default=None, type=click.Choice(["line", "scatter", "bar"]),
+              help="Chart type for the compiler adapter (paper-plot). Default: line.")
+@click.option("--y-label", "y_label", default=None)
 @click.pass_context
-def render_plot(ctx, quest_id, artifact_id, ref, input_path, title, at):
-    """Publication-quality plot; consumes the enabled compiler adapter (e.g. paper-plot)."""
+def render_plot(ctx, quest_id, artifact_id, ref, input_path, title, at, kind, y_label):
+    """Publication-quality plot; consumes the enabled compiler adapter (paper-plot → matplotlib vector PDF
+    when --ref ends in .pdf, so the figure embeds cleanly in the manuscript)."""
+    params = {"title": title}
+    if kind:
+        params["kind"] = kind
+    if y_label:
+        params["y_label"] = y_label
     _run_adapter(ctx, "render plot", adapter_kind="compiler", entry_default="render", quest_id=quest_id,
-                 artifact_id=artifact_id, ref=ref, input_path=input_path, params={"title": title},
+                 artifact_id=artifact_id, ref=ref, input_path=input_path, params=params,
                  artifact_kind="figure", at=at)
 
 
@@ -1182,8 +1283,8 @@ def _read_artifact_text(artifact_ref):
         return None
 
 
-# Outline-contract markers (paper-craft/references/outline-contract.md). Each check passes if ANY of its
-# tokens appears in the outline artifact (JSON field name or prose heading) — tolerant of md or json shape.
+# Legacy advisory token markers — used ONLY when no typed paper-spine is available. The finalize coverage
+# gate depends on the STRUCTURAL spine validation below, never on this token grep.
 _OUTLINE_CHECKS = {
     "paper_idea":          ("central_thesis", "working_title", "paper idea", "story_spine", "thesis"),
     "scoped_claims":       ("core_claims", "scoped claim", "scope", "claim"),
@@ -1192,30 +1293,783 @@ _OUTLINE_CHECKS = {
     "evidence_boundaries": ("evidence_grounding", "must_not_claim", "evidence boundaries", "evidence_view", "evidence-view"),
 }
 
+# Typed paper-spine CONTENT schema (the rich spine in runs/<q>/paper/spine.json; the thin paper_spine DB row
+# points at it). Enforced by `outline validate` (structural) and `manuscript coverage` (readiness). This is
+# what makes the spine a typed contract, not a free-text artifact.
+_SPINE_CONTENT_SCHEMA = {
+    "type": "object",
+    "required": ["thesis", "core_contribution", "main_claims", "not_claiming",
+                 "experiment_section_map", "display_plan", "reviewer_objections"],
+    "properties": {
+        "thesis": {"type": "string", "minLength": 1},
+        "core_contribution": {"type": "string", "minLength": 1},
+        "venue_style": {"type": "string"},
+        "central_mechanism": {"type": "string"},
+        "main_claims": {
+            "type": "array", "minItems": 1, "maxItems": 3,
+            "items": {"type": "object",
+                      "required": ["claim_id", "scope", "what_would_falsify_it", "evidence_needed"],
+                      "properties": {"claim_id": {"type": "string", "minLength": 1},
+                                     "scope": {"type": "string", "minLength": 1},
+                                     "what_would_falsify_it": {"type": "string", "minLength": 1},
+                                     "evidence_needed": {"type": "array", "minItems": 1}}}},
+        "not_claiming": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "claim_evidence_map": {"type": "object"},
+        "experiment_section_map": {
+            "type": "array", "minItems": 1,
+            "items": {"type": "object", "required": ["section", "thesis"],
+                      "properties": {"section": {"type": "string"}, "thesis": {"type": "string", "minLength": 1}}}},
+        "display_plan": {
+            "type": "array", "minItems": 1,
+            "items": {"type": "object", "required": ["display", "claims"],
+                      "properties": {"display": {"type": "string"}, "claims": {"type": "array", "minItems": 1}}}},
+        "reviewer_objections": {
+            "type": "array", "minItems": 1,
+            "items": {"type": "object", "required": ["objection"],
+                      "anyOf": [{"required": ["answer_route"]}, {"required": ["linked_claims"]},
+                                {"required": ["needed_evidence"]}]}},
+        "weak_points": {"type": "array"},
+        "followups": {"type": "array"}
+    }
+}
+
+
+def _spine_structural_reasons(spine):
+    """Structural validity reasons for a typed paper-spine ([] = valid). Shared by `outline validate` and
+    `gate status` so the structural contract is defined once."""
+    reasons = []
+    try:
+        jsonschema.validate(spine, _SPINE_CONTENT_SCHEMA)
+    except jsonschema.ValidationError as e:
+        reasons.append(f"spine schema: {e.message}")
+    mc = spine.get("main_claims") or []
+    if not (1 <= len(mc) <= 3):
+        reasons.append(f"main_claims must be 1-3 (got {len(mc)})")
+    for c in mc:
+        if not (c.get("what_would_falsify_it") or "").strip():
+            reasons.append(f"claim {c.get('claim_id')!r} is not falsifiable (no what_would_falsify_it)")
+        if not c.get("evidence_needed"):
+            reasons.append(f"claim {c.get('claim_id')!r} has no evidence_needed")
+    if not spine.get("not_claiming"):
+        reasons.append("not_claiming boundary is empty")
+    for o in (spine.get("reviewer_objections") or []):
+        if not (o.get("answer_route") or o.get("linked_claims") or o.get("needed_evidence")):
+            reasons.append(f"reviewer objection {str(o.get('objection',''))[:40]!r} not mapped to evidence/follow-up")
+    for s in (spine.get("experiment_section_map") or []):
+        if not (s.get("thesis") or "").strip():
+            reasons.append(f"section {s.get('section','?')!r} has no thesis")
+    if not spine.get("display_plan"):
+        reasons.append("display_plan is empty")
+    return reasons
+
+
+def _load_spine(ctx, quest_id, spine_ref):
+    """Resolve the typed spine JSON from --spine-ref or the quest's paper_spine row; None if missing/unparseable."""
+    ref = spine_ref
+    if not ref and quest_id:
+        try:
+            conn = _conn(ctx)
+            row = conn.execute("SELECT spine_ref FROM paper_spine WHERE quest_id=?", (quest_id,)).fetchone()
+            conn.close()
+            ref = row[0] if row else None
+        except Exception:
+            ref = None
+    txt = _read_artifact_text(ref)
+    if txt is None:
+        return None
+    try:
+        return json.loads(txt)
+    except Exception:
+        return None
+
 
 @outline.command("validate")
 @click.option("--quest-id", default=None)
-@click.option("--artifact-ref", default=None, help="Path to the outline artifact (loop-relative) to validate.")
-def outline_validate(quest_id, artifact_ref):
-    """Structural pre-write gate (DeepScientist validate_academic_outline). With --artifact-ref it parses the
-    outline and checks for a single paper idea, scoped claims, a method abstraction, an evaluation/analysis
-    plan, and explicit evidence boundaries; falsification criteria are a soft warning. Without --artifact-ref
-    it stays advisory (lists the checks)."""
-    text = _read_artifact_text(artifact_ref)
-    if text is None:
-        emit(envelope("outline validate", ok=True, quest_id=quest_id,
-                      data={"checks": list(_OUTLINE_CHECKS), "artifact_ref": artifact_ref,
-                            "note": "advisory: pass --artifact-ref <outline path> to enforce the contract"}))
+@click.option("--spine-ref", default=None, help="Path to the typed paper-spine JSON (else read from the paper_spine row).")
+@click.option("--artifact-ref", default=None, help="LEGACY markdown outline for the advisory token scan only.")
+@click.pass_context
+def outline_validate(ctx, quest_id, spine_ref, artifact_ref):
+    """Structural pre-write gate. With a typed paper-spine (--spine-ref, or the quest's paper_spine row) it
+    validates: exactly one thesis; 1-3 falsifiable main_claims (each with what_would_falsify_it + evidence_needed);
+    a non-empty not_claiming boundary; reviewer_objections each mapped to evidence or follow-up; a section thesis
+    per experiment-section; and a display plan connected to claims — FAILING on any miss. The legacy
+    --artifact-ref markdown token scan is only an advisory fallback and does NOT gate finalize."""
+    spine = _load_spine(ctx, quest_id, spine_ref)
+    if spine is None:
+        text = _read_artifact_text(artifact_ref)
+        if text is None:
+            emit(envelope("outline validate", ok=True, quest_id=quest_id,
+                          data={"mode": "advisory", "checks": list(_OUTLINE_CHECKS),
+                                "note": "no typed paper-spine found; pass --spine-ref or record paper_spine.upsert "
+                                        "to enforce the structural contract"}))
+            return
+        low = text.lower()
+        results = {name: any(tok in low for tok in toks) for name, toks in _OUTLINE_CHECKS.items()}
+        missing = [n for n, ok in results.items() if not ok]
+        ok = not missing
+        emit(envelope("outline validate", ok=ok, quest_id=quest_id,
+                      data={"mode": "advisory-legacy-token-scan", "checks": results, "missing": missing},
+                      diagnostics=[] if ok else [f"(advisory) outline missing tokens: {missing}"]))
+        if not ok:
+            sys.exit(1)
         return
-    low = text.lower()
-    results = {name: any(tok in low for tok in toks) for name, toks in _OUTLINE_CHECKS.items()}
-    missing = [n for n, ok in results.items() if not ok]
-    warnings = [] if ("what_would_falsify" in low or "falsif" in low) else ["no falsification criteria found (what_would_falsify_it)"]
-    ok = not missing
+    reasons = _spine_structural_reasons(spine)
+    mc = spine.get("main_claims") or []
+    ok = not reasons
     emit(envelope("outline validate", ok=ok, quest_id=quest_id,
-                  data={"checks": results, "missing": missing, "artifact_ref": artifact_ref},
-                  warnings=warnings, diagnostics=[] if ok else [f"outline missing required elements: {missing}"]))
+                  data={"mode": "structural", "thesis": spine.get("thesis"), "n_core_claims": len(mc),
+                        "reasons": reasons},
+                  diagnostics=[] if ok else ["outline not structurally valid: " + "; ".join(reasons)]))
     if not ok:
+        sys.exit(1)
+
+
+# ───────────────── idea selection (idea selection as a binding, handoff-blocking gate) ─────────────────
+@cli.group()
+def idea(): ...
+
+
+# Configurable rigor floors (introduces [gate_floors]). Precedence: seed.toml [gate_floors.<rigor>] overrides
+# these defaults; env DEEPRESEARCH_IDEA_SLATE_MIN / DEEPRESEARCH_IDEA_SCORE_MIN override per-run (and waive).
+_DEFAULT_FLOORS = {
+    "scoping":     {"idea_slate_min": 0, "idea_score_min": 0,
+                    "campaign_required": [], "campaign_baseline": False, "campaign_anyof": [],
+                    "campaign_significance_superiority": False},
+    "standard":    {"idea_slate_min": 3, "idea_score_min": 6,
+                    "campaign_required": ["main_result"], "campaign_baseline": True,
+                    "campaign_anyof": ["ablation", "robustness", "negative", "boundary", "error_analysis"],
+                    "campaign_significance_superiority": False},
+    "publication": {"idea_slate_min": 5, "idea_score_min": 7,
+                    "campaign_required": ["main_result", "ablation"], "campaign_baseline": True,
+                    "campaign_anyof": ["robustness", "negative", "boundary", "error_analysis"],
+                    "campaign_significance_superiority": True},
+    "strict":      {"idea_slate_min": 6, "idea_score_min": 8,
+                    "campaign_required": ["main_result", "ablation", "robustness"], "campaign_baseline": True,
+                    "campaign_anyof": ["negative", "boundary", "error_analysis"],
+                    "campaign_significance_superiority": True},
+}
+_IDEA_SCORE_KEYS = ["novelty", "falsifiability", "feasibility", "evidence_potential", "fit_to_objective"]
+_IDEA_CONTENT_SCHEMA = {
+    "type": "object",
+    "required": ["objective_contract_ref", "baseline_contract_ref", "raw_slate", "challenge",
+                 "novelty_risk", "selection_gate", "rejected", "retained"],
+    "properties": {
+        "objective_contract_ref": {"type": "string", "minLength": 1},
+        "baseline_contract_ref": {"type": "string", "minLength": 1},
+        "raw_slate": {"type": "array", "minItems": 1, "items": {
+            "type": "object", "required": ["candidate_id", "title", "hypothesis", "mechanism",
+                                           "expected_evidence", "risk"],
+            "properties": {"candidate_id": {"type": "string", "minLength": 1}, "title": {"type": "string"},
+                           "hypothesis": {"type": "string", "minLength": 1},
+                           "mechanism": {"type": "string", "minLength": 1},
+                           "expected_evidence": {}, "risk": {"type": "string"}}}},
+        "challenge": {"type": "object",
+                      "required": ["strongest_rejection", "outside_family_alternative", "why_retained_survives"],
+                      "properties": {"strongest_rejection": {"type": "string", "minLength": 1},
+                                     "outside_family_alternative": {"type": "string", "minLength": 1},
+                                     "why_retained_survives": {"type": "string", "minLength": 1}}},
+        "novelty_risk": {"type": "object", "required": ["novelty_label", "novelty_argument", "risk_notes"],
+                         "properties": {"novelty_label": {"enum": ["novel", "incremental_valuable",
+                                                                   "not_differentiated"]},
+                                        "novelty_argument": {"type": "string", "minLength": 1},
+                                        "risk_notes": {"type": "string"},
+                                        "known_near_neighbors": {"type": "array"}}},
+        "selection_gate": {"type": "array", "minItems": 1, "items": {
+            "type": "object", "required": ["candidate_id", "scores", "total", "verdict"],
+            "properties": {"candidate_id": {"type": "string"},
+                           "scores": {"type": "object", "required": _IDEA_SCORE_KEYS,
+                                      "properties": {k: {"type": "integer", "minimum": 0, "maximum": 2}
+                                                     for k in _IDEA_SCORE_KEYS}},
+                           "total": {"type": "integer"}, "verdict": {"type": "string"}}}},
+        "rejected": {"type": "array", "minItems": 1, "items": {
+            "type": "object", "required": ["candidate_id", "reason"],
+            "properties": {"candidate_id": {"type": "string"}, "reason": {"type": "string", "minLength": 1},
+                           "what_would_make_viable": {"type": "string"}}}},
+        "retained": {"type": "object",
+                     "required": ["candidate_id", "hypothesis", "mechanism", "claim_candidate",
+                                  "mvp_experiment_plan", "expected_failure_mode", "boundary_condition"],
+                     "properties": {"candidate_id": {"type": "string", "minLength": 1},
+                                    "hypothesis": {"type": "string", "minLength": 1},
+                                    "mechanism": {"type": "string", "minLength": 1},
+                                    "claim_candidate": {"type": "string"},
+                                    "mvp_experiment_plan": {"type": "string", "minLength": 1},
+                                    "expected_failure_mode": {"type": "string"},
+                                    "boundary_condition": {"type": "string"}}},
+        "experiment_plan_ref": {"type": "string"},
+        "novelty_waiver": {"type": "string"}
+    }
+}
+
+
+def _gate_floors(rigor):
+    rigor = rigor or "standard"
+    floors = dict(_DEFAULT_FLOORS.get(rigor, _DEFAULT_FLOORS["standard"]))
+    try:
+        import tomllib
+        from paths import SEED_TOML
+        gf = (tomllib.load(open(SEED_TOML, "rb")).get("gate_floors", {}) or {}).get(rigor, {})
+        for k, v in gf.items():
+            if k in floors:
+                floors[k] = v  # seed overrides defaults (ints, bools, and list subsets)
+    except Exception:
+        pass
+    for k, env in (("idea_slate_min", "DEEPRESEARCH_IDEA_SLATE_MIN"),
+                   ("idea_score_min", "DEEPRESEARCH_IDEA_SCORE_MIN")):
+        if os.environ.get(env) is not None:
+            try:
+                floors[k] = int(os.environ[env])
+            except ValueError:
+                pass
+    return floors
+
+
+def _latest_idea_select_row(conn, quest_id):
+    return conn.execute(
+        "SELECT select_id, select_ref, valid FROM idea_select WHERE quest_id=? "
+        "ORDER BY created_at DESC, select_id DESC LIMIT 1", (quest_id,)).fetchone()
+
+
+@idea.command("validate")
+@click.option("--quest-id", required=True)
+@click.option("--select-ref", default=None, help="Typed idea-select.json (else the latest idea_select row's ref).")
+@click.pass_context
+def idea_validate(ctx, quest_id, select_ref):
+    """Validate the latest idea selection against the typed schema + selection-pressure rules under the quest's
+    rigor floor. REJECTS: single-proposal / below-floor slate; missing strongest_rejection or
+    outside_family_alternative; no rejected (or rejections without reasons); retained score below floor;
+    novelty_label='not_differentiated' (without a waiver); retained with no mechanism / no MVP plan; retained
+    not in the raw slate; selection scores that don't sum. Writes valid + gate_score onto the idea_select row
+    (the worker cannot self-certify). Exits non-zero on failure. The experiment-handoff idea gate reads valid."""
+    conn = _conn(ctx)
+    row = _latest_idea_select_row(conn, quest_id)
+    if row is None:
+        conn.close()
+        emit(envelope("idea validate", ok=False, quest_id=quest_id,
+                      diagnostics=["no idea.select recorded (record one first)"]))
+        sys.exit(1)
+    qr = conn.execute("SELECT rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    rigor = (qr[0] if qr else None) or "standard"
+    floors = _gate_floors(rigor)
+    ref = select_ref or row["select_ref"]
+    txt = _read_artifact_text(ref)
+    reasons, content = [], None
+    if txt is None:
+        reasons.append(f"idea-select artifact not readable at {ref}")
+    else:
+        try:
+            content = json.loads(txt)
+            jsonschema.validate(content, _IDEA_CONTENT_SCHEMA)
+        except jsonschema.ValidationError as e:
+            reasons.append(f"idea-select schema: {e.message}"); content = None
+        except Exception as e:
+            reasons.append(f"idea-select not parseable: {e}"); content = None
+    score = retained_id = novelty = None
+    if content is not None:
+        slate = content.get("raw_slate", [])
+        slate_ids = {c.get("candidate_id") for c in slate}
+        retained_id = content.get("retained", {}).get("candidate_id")
+        novelty = content.get("novelty_risk", {}).get("novelty_label")
+        if len(slate) < floors["idea_slate_min"]:
+            reasons.append(f"raw_slate has {len(slate)} candidate(s); rigor '{rigor}' requires "
+                           f">= {floors['idea_slate_min']} (single-proposal / below-floor)")
+        if retained_id not in slate_ids:
+            reasons.append(f"retained candidate {retained_id!r} is not present in raw_slate")
+        gate_by_id = {}
+        for g in content.get("selection_gate", []):
+            sc = g.get("scores", {})
+            summed = sum(int(sc.get(k, 0)) for k in _IDEA_SCORE_KEYS)
+            if g.get("total") != summed:
+                reasons.append(f"selection_gate total for {g.get('candidate_id')!r} ({g.get('total')}) "
+                               f"!= sum of its scores ({summed})")
+            gate_by_id[g.get("candidate_id")] = g.get("total")
+        if retained_id not in gate_by_id:
+            reasons.append(f"retained candidate {retained_id!r} has no selection_gate entry")
+        else:
+            score = gate_by_id[retained_id]
+            if score is not None and score < floors["idea_score_min"]:
+                reasons.append(f"retained score {score} < rigor '{rigor}' floor {floors['idea_score_min']}")
+        if novelty == "not_differentiated" and not (content.get("novelty_waiver")
+                                                    or os.environ.get("DEEPRESEARCH_IDEA_NOVELTY_WAIVER")):
+            reasons.append("novelty_label='not_differentiated' (decorative tweak): add real differentiation "
+                           "or an explicit novelty_waiver")
+    valid = not reasons
+    conn.execute("UPDATE idea_select SET valid=?, gate_score=?, retained_candidate=?, novelty_label=? "
+                 "WHERE select_id=?", (1 if valid else 0, score, retained_id, novelty, row["select_id"]))
+    conn.commit(); conn.close()
+    emit(envelope("idea validate", ok=valid, quest_id=quest_id,
+                  data={"valid": valid, "rigor": rigor, "floors": floors, "retained": retained_id,
+                        "gate_score": score, "novelty_label": novelty, "reasons": reasons},
+                  diagnostics=[] if valid else ["idea selection gate FAILED: " + "; ".join(reasons)]))
+    if not valid:
+        sys.exit(1)
+
+
+# ───────────────── campaign coverage + analysis bridge (claim-level empirical sufficiency) ─────────────────
+@cli.group()
+def campaign(): ...
+
+
+# Typed analysis-bridge CONTENT schema (the bridge.json artifact). Enforced by `campaign validate`.
+_BRIDGE_CONTENT_SCHEMA = {
+    "type": "object",
+    "required": ["supported_claims", "mechanism_interpretation", "limitations", "failure_modes",
+                 "recommended_claim_boundaries", "figure_table_recommendations",
+                 "paper_facing_result_paragraphs", "claim_to_evidence_map", "evidence_to_section_recommendations"],
+    "properties": {
+        "supported_claims": {"type": "array"},
+        "weakened_or_refuted_claims": {"type": "array"},
+        "mechanism_interpretation": {"type": "string", "minLength": 1},
+        "alternative_explanations": {"type": "array"},
+        "limitations": {"type": "array", "minItems": 1},
+        "failure_modes": {"type": "array"},
+        "recommended_claim_boundaries": {"type": "array"},
+        "figure_table_recommendations": {"type": "array", "minItems": 1},
+        "paper_facing_result_paragraphs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "claim_to_evidence_map": {"type": "object", "minProperties": 1},
+        "evidence_to_section_recommendations": {}
+    }
+}
+
+
+def _latest_bridge_row(conn, quest_id):
+    return conn.execute(
+        "SELECT bridge_id, bridge_ref, valid FROM analysis_bridge WHERE quest_id=? "
+        "ORDER BY created_at DESC, bridge_id DESC LIMIT 1", (quest_id,)).fetchone()
+
+
+def _claim_coverage(conn, quest_id, floors):
+    """Per-main-claim empirical coverage by evidence_kind under the rigor floor. Returns (ok, reasons, detail).
+    Main claims = claim rows of kind='claim' in status open/supported. baseline satisfied if the claim has a
+    baseline_comparison evidence OR the quest's baseline_gate is 'waived'."""
+    reasons, detail = [], {}
+    bg = conn.execute("SELECT baseline_gate FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    baseline_waived = bool(bg) and bg[0] == "waived"
+    claims = conn.execute("SELECT claim_id FROM claim WHERE quest_id=? AND kind='claim' "
+                          "AND status IN ('open','supported')", (quest_id,)).fetchall()
+    if not claims:
+        return False, ["no main claims (kind='claim') to cover"], detail
+    req = set(floors.get("campaign_required", []))
+    anyof = set(floors.get("campaign_anyof", []))
+    need_baseline = bool(floors.get("campaign_baseline"))
+    need_sig = bool(floors.get("campaign_significance_superiority"))
+    for (cid,) in claims:
+        kinds = {r[0] for r in conn.execute(
+            "SELECT evidence_kind FROM claim_evidence WHERE claim_id=? AND relation='supports' "
+            "AND evidence_kind IS NOT NULL", (cid,))}
+        detail[cid] = sorted(kinds)
+        gaps = []
+        for k in req:
+            if k not in kinds:
+                gaps.append(f"needs {k}")
+        if need_baseline and "baseline_comparison" not in kinds and not baseline_waived:
+            gaps.append("needs baseline_comparison (or a baseline waiver)")
+        if anyof and not (kinds & anyof):
+            gaps.append("needs one of " + "/".join(sorted(anyof)))
+        if need_sig and "baseline_comparison" in kinds and "significance" not in kinds:
+            gaps.append("superiority claim needs significance/uncertainty evidence")
+        if gaps:
+            reasons.append(f"claim {cid}: " + "; ".join(gaps))
+    return (not reasons), reasons, detail
+
+
+@campaign.command("validate")
+@click.option("--quest-id", required=True)
+@click.option("--bridge-ref", default=None, help="Typed analysis-bridge.json (else the latest analysis_bridge row's ref).")
+@click.pass_context
+def campaign_validate(ctx, quest_id, bridge_ref):
+    """analysis->write readiness validator. FAILS unless (a) the latest analysis.bridge is paper-facing
+    (typed schema: claim->evidence map, paper-facing result paragraphs, limitations, figure/table recs), AND
+    (b) per-MAIN-CLAIM empirical coverage by evidence_kind meets the rigor floor ([gate_floors]). Writes the
+    validator-computed valid flag + coverage onto the analysis_bridge row (the analyst cannot self-certify).
+    The analysis->write handoff gate reads valid. Exits non-zero on any gap."""
+    conn = _conn(ctx)
+    row = _latest_bridge_row(conn, quest_id)
+    if row is None:
+        conn.close()
+        emit(envelope("campaign validate", ok=False, quest_id=quest_id,
+                      diagnostics=["no analysis.bridge recorded (record one first)"]))
+        sys.exit(1)
+    qr = conn.execute("SELECT rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    rigor = (qr[0] if qr else None) or "standard"
+    floors = _gate_floors(rigor)
+    reasons = []
+    # (a) bridge structure / paper-facing
+    ref = bridge_ref or row["bridge_ref"]
+    txt = _read_artifact_text(ref)
+    if txt is None:
+        reasons.append(f"analysis-bridge artifact not readable at {ref}")
+    else:
+        try:
+            jsonschema.validate(json.loads(txt), _BRIDGE_CONTENT_SCHEMA)
+        except jsonschema.ValidationError as e:
+            reasons.append(f"analysis-bridge schema (not paper-facing): {e.message}")
+        except Exception as e:
+            reasons.append(f"analysis-bridge not parseable: {e}")
+    # (b) per-claim coverage
+    cov_ok, cov_reasons, cov_detail = _claim_coverage(conn, quest_id, floors)
+    reasons += cov_reasons
+    valid = not reasons
+    coverage = {"valid": valid, "rigor": rigor, "coverage_ok": cov_ok, "per_claim": cov_detail,
+                "reasons": reasons, "floors": {k: floors[k] for k in floors if k.startswith("campaign")}}
+    conn.execute("UPDATE analysis_bridge SET valid=?, coverage_json=? WHERE bridge_id=?",
+                 (1 if valid else 0, json.dumps(coverage), row["bridge_id"]))
+    conn.commit(); conn.close()
+    emit(envelope("campaign validate", ok=valid, quest_id=quest_id, data=coverage,
+                  diagnostics=[] if valid else ["analysis->write gate FAILED: " + "; ".join(reasons)]))
+    if not valid:
+        sys.exit(1)
+
+
+# ───────────────── review verdict (reviewer verdict as a binding, routing-driving gate) ─────────────────
+@cli.group()
+def review(): ...
+
+
+# Typed review-verdict CONTENT schema (the verdict.json artifact). Enforced by `review validate`.
+_VERDICT_CONTENT_SCHEMA = {
+    "type": "object",
+    "required": ["verdict", "summary"],
+    "properties": {
+        "verdict": {"enum": ["accept", "borderline", "reject"]},
+        "summary": {"type": "string", "minLength": 1},
+        "fatal_flaws": {"type": "array", "items": {"type": "string"}},
+        "missing_experiments": {"type": "array", "items": {"type": "string"}},
+        "missing_analysis": {"type": "array", "items": {"type": "string"}},
+        "overclaims": {"type": "array", "items": {"type": "string"}},
+        "unsupported_claims": {"type": "array", "items": {"type": "string"}},
+        "rewrite_requirements": {"type": "array", "items": {"type": "string"}},
+        "external_benchmark": {"type": "array"},
+        "experiment_todo": {"type": "array", "items": {"type": "string"}},
+        "analysis_todo": {"type": "array", "items": {"type": "string"}},
+        "rewrite_todo": {"type": "array", "items": {"type": "string"}},
+        "routing_recommendation": {"type": "string"}
+    }
+}
+
+
+def _latest_verdict_row(conn, quest_id):
+    return conn.execute(
+        "SELECT verdict_id, verdict, verdict_ref, valid, operator_confirmed, route_target "
+        "FROM review_verdict WHERE quest_id=? ORDER BY created_at DESC, verdict_id DESC LIMIT 1",
+        (quest_id,)).fetchone()
+
+
+def _verdict_route_target(v):
+    """Deterministic follow-up stage from the verdict content (most-upstream flaw first)."""
+    if v.get("verdict") == "accept":
+        return "finalize"
+    if v.get("missing_experiments"):
+        return "experiment"
+    if v.get("missing_analysis"):
+        return "analysis"
+    if v.get("overclaims") or v.get("unsupported_claims") or v.get("rewrite_requirements"):
+        return "write"
+    if v.get("experiment_todo"):
+        return "experiment"
+    if v.get("analysis_todo"):
+        return "analysis"
+    return "write"
+
+
+def _verdict_actionability(v):
+    """B-rules. Returns the list of reasons a verdict is NOT actionable ([] = actionable)."""
+    reasons = []
+    verdict = v.get("verdict")
+    if verdict in ("borderline", "reject"):
+        if not (v.get("experiment_todo") or v.get("analysis_todo") or v.get("rewrite_todo")):
+            reasons.append(f"{verdict} verdict has no actionable todo "
+                           "(needs >=1 of experiment_todo/analysis_todo/rewrite_todo)")
+    if v.get("missing_experiments") and not v.get("experiment_todo"):
+        reasons.append("missing_experiments present but no experiment_todo")
+    if v.get("missing_analysis") and not v.get("analysis_todo"):
+        reasons.append("missing_analysis present but no analysis_todo")
+    if (v.get("overclaims") or v.get("unsupported_claims") or v.get("rewrite_requirements")) \
+            and not v.get("rewrite_todo"):
+        reasons.append("overclaims/unsupported_claims/rewrite_requirements present but no rewrite_todo")
+    return reasons
+
+
+@review.command("validate")
+@click.option("--quest-id", required=True)
+@click.option("--verdict-ref", default=None, help="Typed verdict.json (else the latest review_verdict row's ref).")
+@click.pass_context
+def review_validate(ctx, quest_id, verdict_ref):
+    """Validate the latest review verdict: typed schema + ACTIONABILITY (a borderline/reject verdict MUST carry
+    todos that cover the flaws it raises). Computes route_target and writes valid+route_target onto the
+    review_verdict row — the Reviewer cannot self-certify validity. Exits non-zero when invalid/non-actionable."""
+    conn = _conn(ctx)
+    row = _latest_verdict_row(conn, quest_id)
+    if row is None:
+        conn.close()
+        emit(envelope("review validate", ok=False, quest_id=quest_id,
+                      diagnostics=["no review verdict recorded (record a review.verdict first)"]))
+        sys.exit(1)
+    ref = verdict_ref or row["verdict_ref"]
+    txt = _read_artifact_text(ref)
+    reasons, content = [], None
+    if txt is None:
+        reasons.append(f"verdict artifact not readable at {ref}")
+    else:
+        try:
+            content = json.loads(txt)
+            jsonschema.validate(content, _VERDICT_CONTENT_SCHEMA)
+        except jsonschema.ValidationError as e:
+            reasons.append(f"verdict schema: {e.message}"); content = None
+        except Exception as e:
+            reasons.append(f"verdict not parseable: {e}"); content = None
+    if content is not None:
+        if content.get("verdict") != row["verdict"]:
+            reasons.append(f"verdict mismatch: row={row['verdict']!r} artifact={content.get('verdict')!r}")
+        reasons += _verdict_actionability(content)
+    target = _verdict_route_target(content) if content else None
+    valid = not reasons
+    conn.execute("UPDATE review_verdict SET valid=?, route_target=? WHERE verdict_id=?",
+                 (1 if valid else 0, target, row["verdict_id"]))
+    conn.commit(); conn.close()
+    emit(envelope("review validate", ok=valid, quest_id=quest_id,
+                  data={"verdict": row["verdict"], "valid": valid, "route_target": target, "reasons": reasons},
+                  diagnostics=[] if valid else ["review verdict invalid/non-actionable: " + "; ".join(reasons)]))
+    if not valid:
+        sys.exit(1)
+
+
+@review.command("route")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def review_route(ctx, quest_id):
+    """Deterministic follow-up routing for the latest review verdict (the Orchestrator consumes this): reject/
+    borderline -> experiment|analysis|write (by the verdict's flaws); accept -> finalize. Read-only."""
+    conn = _conn(ctx)
+    row = _latest_verdict_row(conn, quest_id)
+    conn.close()
+    if row is None:
+        emit(envelope("review route", ok=True, quest_id=quest_id,
+                      data={"verdict": None, "route_target": None, "note": "no review verdict yet"}))
+        return
+    finalize_ok = bool(row["valid"]) and (row["verdict"] == "accept"
+                                          or (row["verdict"] == "borderline" and row["operator_confirmed"]))
+    emit(envelope("review route", ok=True, quest_id=quest_id,
+                  data={"verdict": row["verdict"], "valid": bool(row["valid"]),
+                        "operator_confirmed": bool(row["operator_confirmed"]),
+                        "route_target": row["route_target"], "finalize_permitted_by_review": finalize_ok}))
+
+
+@review.command("confirm")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def review_confirm(ctx, quest_id):
+    """Operator: confirm the latest BORDERLINE verdict so it may finalize at standard rigor (publication never
+    permits borderline). Errors if the latest verdict is not 'borderline'."""
+    conn = _conn(ctx)
+    row = _latest_verdict_row(conn, quest_id)
+    if row is None or row["verdict"] != "borderline":
+        conn.close()
+        emit(envelope("review confirm", ok=False, quest_id=quest_id,
+                      diagnostics=["latest verdict is not 'borderline' (nothing to confirm)"]))
+        sys.exit(1)
+    conn.execute("UPDATE review_verdict SET operator_confirmed=1 WHERE verdict_id=?", (row["verdict_id"],))
+    conn.commit(); conn.close()
+    emit(envelope("review confirm", ok=True, quest_id=quest_id,
+                  data={"verdict_id": row["verdict_id"], "operator_confirmed": True}))
+
+
+# ───────────────── unified gate status + methodology resolution (integration) ─────────────────
+@cli.group()
+def gate(): ...
+
+
+_OK_BASELINE_V = {"verified_match", "close_match", "trusted_with_caveats"}
+
+
+def _is_bound(conn, quest_id, rigor):
+    """A binding regime (the binding gates bite): research-contract quest at rigor >= standard."""
+    return (records._has_research_contract(conn, quest_id)
+            and records._rigor_order(rigor) >= records._rigor_order("standard"))
+
+
+@gate.command("status")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def gate_status(ctx, quest_id):
+    """Unified, MACHINE-READABLE status of every binding gate + finalize readiness, for deterministic
+    Orchestrator routing. READ-ONLY: it summarizes and guides routing; the hard guards remain
+    authoritative (this does NOT replace them). Each gate: status(pass|fail|advisory|not_applicable|missing),
+    rigor_level, blocking, reason, latest_record_ref, route_target, required_next_action."""
+    conn = _conn(ctx)
+    q = conn.execute("SELECT rigor_level, baseline_gate, best_result_ref FROM quest WHERE quest_id=?",
+                     (quest_id,)).fetchone()
+    if not q:
+        conn.close(); emit(envelope("gate status", ok=False, quest_id=quest_id, diagnostics=["no such quest"])); sys.exit(1)
+    rigor = q["rigor_level"] or "standard"
+    bound = _is_bound(conn, quest_id, rigor)
+    adv = not bound
+    floors = _gate_floors(rigor)
+    gates = {}
+
+    def put(name, status, reason="", route=None, ref=None, action=None):
+        gates[name] = {"status": status, "rigor_level": rigor, "blocking": bool(bound and status == "fail"),
+                       "reason": reason, "latest_record_ref": ref, "route_target": route,
+                       "required_next_action": action}
+
+    r = _latest_idea_select_row(conn, quest_id)
+    if adv: put("idea_gate", "advisory")
+    elif r is None: put("idea_gate", "missing", "no idea.select", "idea", None, "record idea.select + idea validate")
+    elif r["valid"]: put("idea_gate", "pass", ref=r["select_id"])
+    else: put("idea_gate", "fail", "idea selection not validated", "idea", r["select_id"], "fix + idea validate")
+
+    bc = conn.execute("SELECT contract_id, verification_verdict, waiver_reason FROM baseline_contract "
+                      "WHERE quest_id=? ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+    if adv: put("baseline_contract", "advisory")
+    elif q["baseline_gate"] in ("pending", "blocked") and bc is None:
+        put("baseline_contract", "not_applicable", "baseline not yet established")
+    elif bc is None:
+        put("baseline_contract", "fail", "baseline_gate set without a baseline.contract", "baseline", None, "record baseline.contract")
+    else:
+        v = bc["verification_verdict"]
+        okc = (v in _OK_BASELINE_V) or (v == "waived" and (bc["waiver_reason"] or "").strip())
+        put("baseline_contract", "pass" if okc else "fail", "" if okc else f"verdict {v!r} not acceptable",
+            None if okc else "baseline", bc["contract_id"], None if okc else "record an acceptable baseline.contract")
+
+    if adv: put("campaign_coverage", "advisory")
+    else:
+        cov_ok, cov_reasons, _ = _claim_coverage(conn, quest_id, floors)
+        if cov_ok: put("campaign_coverage", "pass")
+        else:
+            route = "experiment" if any(("main_result" in x or "baseline_comparison" in x or "significance" in x)
+                                        for x in cov_reasons) else "analysis"
+            put("campaign_coverage", "fail", "; ".join(cov_reasons), route, None,
+                "add the missing evidence_kind links + campaign validate")
+
+    ab = _latest_bridge_row(conn, quest_id)
+    if adv: put("analysis_bridge", "advisory")
+    elif ab is None: put("analysis_bridge", "missing", "no analysis.bridge", "analysis", None, "record analysis.bridge + campaign validate")
+    elif ab["valid"]: put("analysis_bridge", "pass", ref=ab["bridge_id"])
+    else: put("analysis_bridge", "fail", "analysis bridge not validated", "analysis", ab["bridge_id"], "campaign validate")
+
+    sp = conn.execute("SELECT submission_ready FROM paper_spine WHERE quest_id=?", (quest_id,)).fetchone()
+    if adv:
+        put("paper_spine", "advisory"); put("outline_valid", "advisory"); put("manuscript_coverage", "advisory")
+    elif sp is None:
+        put("paper_spine", "missing", "no paper_spine", "outline", None, "record paper_spine.upsert")
+        put("outline_valid", "missing", "no paper_spine", "outline")
+        put("manuscript_coverage", "missing", "no paper_spine", "write")
+    else:
+        put("paper_spine", "pass", ref=quest_id)
+        spine = _load_spine(ctx, quest_id, None)
+        if spine is None:
+            put("outline_valid", "fail", "spine artifact unreadable", "outline", quest_id, "fix spine + outline validate")
+        else:
+            orx = _spine_structural_reasons(spine)
+            put("outline_valid", "pass" if not orx else "fail", "; ".join(orx),
+                None if not orx else "outline", quest_id, None if not orx else "fix spine + outline validate")
+        ready = bool(sp["submission_ready"])
+        put("manuscript_coverage", "pass" if ready else "fail",
+            "" if ready else "submission_ready not validator-confirmed", None if ready else "write", None,
+            None if ready else "resolve gaps + manuscript coverage")
+
+    rv = _latest_verdict_row(conn, quest_id)
+    if adv: put("review_verdict", "advisory")
+    elif rv is None: put("review_verdict", "missing", "no review verdict", "review", None, "record review.verdict + review validate")
+    else:
+        v, valid, conf, rt = rv["verdict"], rv["valid"], rv["operator_confirmed"], rv["route_target"]
+        if not valid: put("review_verdict", "fail", "verdict not validated/actionable", "review", rv["verdict_id"], "review validate")
+        elif v == "accept": put("review_verdict", "pass", ref=rv["verdict_id"])
+        elif v == "reject": put("review_verdict", "fail", "verdict is reject", rt or "write", rv["verdict_id"], "route follow-ups + re-review")
+        elif records._rigor_order(rigor) >= records._rigor_order("publication"):
+            put("review_verdict", "fail", "borderline not allowed at publication", rt or "write", rv["verdict_id"], "revise to accept")
+        elif conf: put("review_verdict", "pass", ref=rv["verdict_id"])
+        else: put("review_verdict", "fail", "borderline needs operator confirmation", rt or "write", rv["verdict_id"], "review confirm")
+
+    fin = []
+    if not adv:
+        if gates["manuscript_coverage"]["status"] != "pass": fin.append("manuscript coverage not ready")
+        if gates["review_verdict"]["status"] != "pass": fin.append("review not accepted")
+        try:
+            if not records.scholarship_audit(conn, quest_id)["ok"]: fin.append("scholarship bar unmet")
+        except Exception:
+            pass
+        best = q["best_result_ref"]
+        if best:
+            backed = conn.execute("SELECT COUNT(*) FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id "
+                                  "WHERE c.quest_id=? AND e.source_kind='result' AND e.source_ref=? "
+                                  "AND e.relation='supports'", (quest_id, best)).fetchone()[0]
+            if not backed: fin.append("headline result not claim-backed (authenticity)")
+    if adv: put("finalize_readiness", "advisory")
+    elif fin: put("finalize_readiness", "fail", "; ".join(fin), None, None, "resolve blocking gates above")
+    else: put("finalize_readiness", "pass")
+
+    conn.close()
+    emit(envelope("gate status", ok=True, quest_id=quest_id,
+                  data={"rigor_level": rigor, "bound": bound, "gates": gates,
+                        "finalize_readiness": gates["finalize_readiness"]["status"],
+                        "blocking_gates": [k for k, gv in gates.items() if gv["blocking"]]}))
+
+
+# stage -> (table, id column, ref column) the methodology must resolve to (validated where applicable).
+_STAGE_METHODOLOGY = {
+    "scope": ("idea_select", "select_id", "select_ref"),
+    "idea": ("idea_select", "select_id", "select_ref"),
+    "baseline": ("baseline_contract", "contract_id", "contract_ref"),
+    # NOTE: the `experiment` stage has no fold-time typed methodology record — its methodology (claim evidence
+    # tagged by evidence_kind) is enforced DOWNSTREAM by campaign coverage at analysis->write, so it resolves
+    # as not_applicable here (see methodology_check). `analysis` resolves to the validated analysis_bridge.
+    "analysis": ("analysis_bridge", "bridge_id", "bridge_ref"),
+    "outline": ("paper_spine", "quest_id", "spine_ref"),
+    "write": ("paper_spine", "quest_id", "spine_ref"),
+    "review": ("review_verdict", "verdict_id", "verdict_ref"),
+}
+
+
+@cli.group()
+def methodology(): ...
+
+
+@methodology.command("check")
+@click.option("--quest-id", required=True)
+@click.option("--stage", required=True)
+@click.option("--applied-as", required=True, help="A task-result methodology_used[].applied_as ref.")
+@click.pass_context
+def methodology_check(ctx, quest_id, stage, applied_as):
+    """resolve a task-result `methodology_used[].applied_as` to the stage's expected VALIDATED typed record
+    for THIS quest. Exits non-zero (resolves=false) unless applied_as points at a real, same-quest record that
+    passed its validator — so methodology usage can no longer be claimed with free text. Background-only reading
+    belongs in `methodology_consulted`, not here."""
+    m = _STAGE_METHODOLOGY.get(stage)
+    conn = _conn(ctx)
+    if m is None:
+        # Stages with no fold-time typed methodology record (e.g. experiment -> enforced downstream by campaign
+        # coverage; orchestrator-internal decision/optimize/finalize -> the methodology-usage advisory). Resolution
+        # is not_applicable here, NOT a failure — the binding lives in that stage's own gate.
+        conn.close()
+        emit(envelope("methodology check", ok=True, quest_id=quest_id,
+                      data={"resolves": True, "status": "not_applicable", "stage": stage,
+                            "reason": f"stage {stage!r} has no fold-time typed methodology record; "
+                                      "enforced by its own gate (campaign coverage / methodology-usage advisory)"}))
+        return
+    table, idcol, refcol = m
+    try:
+        row = conn.execute(f"SELECT * FROM {table} WHERE quest_id=? AND ({idcol}=? OR {refcol}=?) "
+                           f"ORDER BY created_at DESC LIMIT 1", (quest_id, applied_as, applied_as)).fetchone()
+    except sqlite3.OperationalError:
+        row = None
+    resolves, reason = False, ""
+    if row is None:
+        reason = f"applied_as {applied_as!r} does not resolve to a {table} for quest {quest_id!r}"
+    elif table == "baseline_contract":
+        v = row["verification_verdict"]
+        resolves = (v in _OK_BASELINE_V) or (v == "waived" and (row["waiver_reason"] or "").strip())
+        reason = "" if resolves else f"baseline.contract verdict {v!r} not acceptable"
+    elif table == "paper_spine":
+        resolves = bool(row["submission_ready"])
+        reason = "" if resolves else "paper_spine.submission_ready not validator-confirmed"
+    else:  # idea_select / analysis_bridge / review_verdict carry a `valid` column
+        resolves = bool(row["valid"])
+        reason = "" if resolves else f"{table} referenced by applied_as is not validator-confirmed (valid=0)"
+    conn.close()
+    emit(envelope("methodology check", ok=resolves, quest_id=quest_id,
+                  data={"resolves": resolves, "stage": stage, "table": table, "applied_as": applied_as, "reason": reason},
+                  diagnostics=[] if resolves else [reason]))
+    if not resolves:
         sys.exit(1)
 
 
@@ -1223,7 +2077,7 @@ def outline_validate(quest_id, artifact_ref):
 def manuscript(): ...
 
 
-# Loop/operator jargon that must never surface in paper-facing prose (DeepScientist validate_manuscript_language).
+# Loop/operator jargon that must never surface in paper-facing prose (validate_manuscript_language).
 _MANUSCRIPT_FORBIDDEN = ["route", "handoff", "worktree", "lane", "notifier", "self-wakeup",
                          "the user requested", "paper restart", "this quest", "64 + 64", "64+64", "todo"]
 
@@ -1232,7 +2086,7 @@ _MANUSCRIPT_FORBIDDEN = ["route", "handoff", "worktree", "lane", "notifier", "se
 @click.option("--quest-id", default=None)
 @click.option("--artifact-ref", default=None, help="Path to the manuscript artifact (loop-relative) to scan.")
 def manuscript_validate(quest_id, artifact_ref):
-    """Language-hygiene gate (DeepScientist validate_manuscript_language). With --artifact-ref it scans the
+    """Language-hygiene gate (validate_manuscript_language). With --artifact-ref it scans the
     manuscript for loop-internal/process wording (route/handoff/worktree/notifier/self-wakeup/"the user
     requested"/"paper restart"/batch-arithmetic/TODO) and FAILS on any hit; without --artifact-ref it stays
     advisory (lists the forbidden terms). Matching is word/substring, case-insensitive, line-located."""
@@ -1254,6 +2108,93 @@ def manuscript_validate(quest_id, artifact_ref):
                         "forbidden_terms": _MANUSCRIPT_FORBIDDEN},
                   diagnostics=[] if ok else [f"{len(hits)} loop/process-jargon hit(s) in paper-facing prose"]))
     if not ok:
+        sys.exit(1)
+
+
+@manuscript.command("coverage")
+@click.option("--quest-id", required=True)
+@click.option("--artifact-ref", default=None, help="Manuscript markdown/tex to scan (paper-facing prose).")
+@click.option("--spine-ref", default=None, help="Typed paper-spine JSON (else read from the paper_spine row).")
+@click.option("--at", default=None, help="Caller-supplied ISO-8601 timestamp stamped onto the coverage verdict.")
+@click.pass_context
+def manuscript_coverage(ctx, quest_id, artifact_ref, spine_ref, at):
+    """Validator-COMPUTED submission readiness (the finalize coverage gate's input). Computes submission_ready
+    from: the typed paper-spine validates; every main_claim resolves to a claim row WITH supporting evidence;
+    no 'supported' claim lacks evidence; no result row is unmapped (each referenced by claim_evidence
+    source_kind='result'); not_claiming + weak_points/limitations present; the manuscript names each main claim
+    and carries no process/draft traces (language firewall); display_plan present. WRITES submission_ready +
+    coverage_json onto the paper_spine row — the Writer can NEVER self-certify it. Exits non-zero when not ready."""
+    conn = _conn(ctx)
+    spine = _load_spine(ctx, quest_id, spine_ref)
+    reasons = []
+    if spine is None:
+        reasons.append("no paper-spine found (record paper_spine.upsert + write the typed spine.json first)")
+    else:
+        try:
+            jsonschema.validate(spine, _SPINE_CONTENT_SCHEMA)
+        except jsonschema.ValidationError as e:
+            reasons.append(f"spine invalid: {e.message}")
+    claim_status = {r[0]: r[1] for r in conn.execute(
+        "SELECT claim_id, status FROM claim WHERE quest_id=?", (quest_id,))}
+    supported_ev = {r[0] for r in conn.execute(
+        "SELECT DISTINCT e.claim_id FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id "
+        "WHERE c.quest_id=? AND e.relation='supports'", (quest_id,))}
+    main_claims = (spine.get("main_claims") if spine else []) or []
+    for c in main_claims:
+        cid = c.get("claim_id")
+        if cid not in claim_status:
+            reasons.append(f"main claim {cid!r} has no claim row (record claim.upsert)")
+        elif cid not in supported_ev:
+            reasons.append(f"main claim {cid!r} has no supporting claim_evidence")
+    unsupported = conn.execute(
+        "SELECT COUNT(*) FROM claim c WHERE c.quest_id=? AND c.status='supported' AND NOT EXISTS "
+        "(SELECT 1 FROM claim_evidence e WHERE e.claim_id=c.claim_id AND e.relation='supports')",
+        (quest_id,)).fetchone()[0]
+    if unsupported:
+        reasons.append(f"{unsupported} 'supported' claim(s) lack supporting evidence")
+    unmapped = conn.execute(
+        "SELECT COUNT(*) FROM result r WHERE r.quest_id=? AND NOT EXISTS "
+        "(SELECT 1 FROM claim_evidence e WHERE e.source_kind='result' AND e.source_ref=r.result_id)",
+        (quest_id,)).fetchone()[0]
+    if unmapped:
+        reasons.append(f"{unmapped} result row(s) not mapped to any claim (claim_evidence source_kind='result')")
+    if spine and not spine.get("not_claiming"):
+        reasons.append("not_claiming boundary is empty")
+    has_limitation = conn.execute(
+        "SELECT COUNT(*) FROM claim WHERE quest_id=? AND kind='limitation'", (quest_id,)).fetchone()[0]
+    if spine and not (spine.get("weak_points") or has_limitation):
+        reasons.append("no limitations / weak_points recorded")
+    if spine and not spine.get("display_plan"):
+        reasons.append("display_plan is empty")
+    text = _read_artifact_text(artifact_ref)
+    if artifact_ref and text is None:
+        reasons.append(f"manuscript not readable at {artifact_ref}")
+    if text is not None:
+        low = text.lower()
+        traces = sorted({t for t in _MANUSCRIPT_FORBIDDEN if t in low})
+        if traces:
+            reasons.append(f"process/draft traces in manuscript prose: {traces}")
+        missing_claims = [c.get("claim_id") for c in main_claims
+                          if c.get("claim_id") and str(c.get("claim_id")).lower() not in low
+                          and str(c.get("scope", ""))[:24].lower() not in low]
+        if missing_claims:
+            reasons.append(f"main claim(s) not stated in the manuscript: {missing_claims}")
+    elif spine is not None:
+        reasons.append("no manuscript --artifact-ref provided to scan for coverage/traces")
+    ready = not reasons
+    coverage = {"submission_ready": ready, "reasons": reasons,
+                "n_main_claims": len(main_claims), "unmapped_results": unmapped, "at": at}
+    written = conn.execute(
+        "UPDATE paper_spine SET submission_ready=?, coverage_json=?, coverage_at=?, "
+        "updated_at=COALESCE(?, updated_at) WHERE quest_id=?",
+        (1 if ready else 0, json.dumps(coverage), at, at, quest_id)).rowcount
+    conn.commit()
+    conn.close()
+    if not written:
+        coverage["note"] = "no paper_spine row to write submission_ready onto (record paper_spine.upsert first)"
+    emit(envelope("manuscript coverage", ok=ready, quest_id=quest_id, data=coverage,
+                  diagnostics=[] if ready else ["manuscript not submission_ready: " + "; ".join(reasons)]))
+    if not ready:
         sys.exit(1)
 
 
@@ -1282,7 +2223,7 @@ def manuscript_datastmt(ctx, quest_id, artifact_id, ref, input_path, title, at):
 @click.option("--out-dir", required=True, help="Directory to write the submission bundle into.")
 @click.pass_context
 def manuscript_bundle(ctx, quest_id, out_dir):
-    """Emit a DeepScientist-style submission bundle from durable state: evidence_ledger.md,
+    """Emit a submission bundle from durable state: evidence_ledger.md,
     claim_evidence_map.json, and submission_checklist.md (read-only over the DB; writes files only)."""
     import json as _json
     from paths import LOOP_DIR

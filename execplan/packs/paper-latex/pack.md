@@ -4,7 +4,7 @@
 
 The publication override of the default Markdown `render report`. When enabled, the Writer's
 `$HARNESS render report` produces a compiled **LaTeX article + PDF** instead of raw Markdown — the single
-biggest step toward DeepScientist-grade deliverables.
+biggest step toward publication-grade deliverables.
 
 ## What it does
 - Compiles a Markdown manuscript draft (`--input`) to a LaTeX article and a **compiled PDF** (`--ref`),

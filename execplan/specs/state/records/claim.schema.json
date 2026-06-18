@@ -31,7 +31,10 @@
         "claim_id": { "type": "string" },
         "source_kind": { "enum": ["result", "analysis", "measurement", "reference", "external"] },
         "source_ref": { "type": "string" },
-        "relation": { "enum": ["supports", "contradicts", "contextualizes"] }
+        "relation": { "enum": ["supports", "contradicts", "contextualizes"] },
+        "evidence_kind": { "enum": ["baseline_comparison", "main_result", "ablation", "robustness", "negative",
+                                     "efficiency", "boundary", "qualitative", "significance", "error_analysis"],
+                            "description": "empirical role of this evidence for claim-level campaign coverage (optional, additive)." }
       }
     },
     {

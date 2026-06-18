@@ -13,15 +13,13 @@ task_name = "deepresearch"
 # SHARED state is the control plane — runs/state.sqlite (one DB, single_active_quest) and .houmao/mailbox
 # (messaging infra); those are platform INFRASTRUCTURE, not a cross-quest DATA pool.
 # TOTAL QUEST ISOLATION: a new quest never re-uses, refers to, or inspects ANY artifact of another quest —
-# not its runs/<other-quest>/ files, not outputs/ (q1 legacy), and not its DB rows (findings/references are
+# not its runs/<other-quest>/ files, not outputs/, and not its DB rows (findings/references are
 # quest-owned; invariants finding_quest_owned + reference_quest_owned). Each quest collects everything fresh.
 repo_root_policy = "quest.workspace_ref"        # resolves to runs/<quest-id>/repo (per-quest, inside the quest folder)
 workspace_root = "runs/<quest-id>/workspaces/"  # per-agent worktrees of runs/<quest-id>/repo (loop-dir relative)
 artifact_root = "runs/<quest-id>/"              # the self-contained quest folder (objective..mail)
-# LEGACY (grandfathered): q1 — the first quest — predates this convention and keeps its code repo at the
-# top-level outputs/fa4-perf-model (quest.workspace_ref unchanged). It is PRESERVED as-is for provenance and
-# must not be relocated. outputs/ is a q1-only legacy location: do NOT use outputs/ for any new quest — q2+
-# put their repo at runs/<quest-id>/repo and all materials under runs/<quest-id>/.
+# `outputs/` is an unused legacy top-level location; do NOT use it. Every quest puts its repo at
+# runs/<quest-id>/repo and all materials under runs/<quest-id>/.
 
 [flavor]
 # Primary: git worktrees off the quest repo, so parallel experiment branches never clobber.

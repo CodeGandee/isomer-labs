@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/baseline-contract",
+  "title": "baseline_contract record",
+  "description": "Append a typed baseline/metric contract (one per baseline pass) that STRENGTHENS the existing quest.baseline_gate. The rich content (metric_ids[], validity_threats[]) lives in the contract_ref artifact; this row promotes the gate-relevant scalars. The baseline-contract gate requires: baseline_gate=passed -> verification_verdict in {verified_match, close_match, trusted_with_caveats}; baseline_gate=waived -> verification_verdict='waived' AND a non-empty waiver_reason.",
+  "oneOf": [
+    {
+      "title": "baseline.contract",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "verification_verdict"],
+      "properties": {
+        "record_type": { "const": "baseline.contract" },
+        "record_id": { "type": "string", "description": "contract_id (unique per pass)" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "round_index": { "type": "integer" },
+        "baseline_id": { "type": "string" },
+        "baseline_name": { "type": "string" },
+        "comparison_policy": { "type": "string" },
+        "primary_metric_id": { "type": "string" },
+        "dataset": { "type": "string" },
+        "split": { "type": "string" },
+        "eval_protocol": { "type": "string" },
+        "verification_verdict": { "enum": ["verified_match", "close_match", "trusted_with_caveats",
+                                            "diverged", "broken", "waived"] },
+        "waiver_reason": { "type": "string", "description": "required when verification_verdict='waived'" },
+        "contract_ref": { "type": "string", "description": "artifact with metric_ids[] + validity_threats[]" }
+      }
+    }
+  ]
+}

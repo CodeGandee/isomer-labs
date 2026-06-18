@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/idea-select",
+  "title": "idea_select record",
+  "description": "Append an idea-selection record (one per selection pass). The rich content (raw_slate + challenge + novelty_risk + selection_gate scores + rejected + retained + experiment plan) lives in the select_ref artifact (runs/<q>/idea/select-<n>.json) and is validated by `idea validate`, which enforces the rigor floor + selection-pressure rules and computes valid + gate_score. valid / gate_score are NOT settable here (additionalProperties:false); valid is force-reset to 0. The experiment-handoff idea gate reads valid — an idea may not advance to experiment without a validator-confirmed selection.",
+  "oneOf": [
+    {
+      "title": "idea.select",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "select_ref"],
+      "properties": {
+        "record_type": { "const": "idea.select" },
+        "record_id": { "type": "string", "description": "select_id (unique per selection pass)" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "round_index": { "type": "integer" },
+        "select_ref": { "type": "string", "description": "loop-relative path to the typed idea-select.json artifact" },
+        "retained_candidate": { "type": "string" },
+        "novelty_label": { "enum": ["novel", "incremental_valuable", "not_differentiated"] }
+      }
+    }
+  ]
+}

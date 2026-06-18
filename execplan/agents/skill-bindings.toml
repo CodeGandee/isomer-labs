@@ -1,0 +1,56 @@
+# Authoritative role → installed-skill map (admin/install view).
+#
+# Loop-pro installs each listed skill onto that role's launch profile (the INSTALL boundary). The RUNTIME
+# authority boundary is enforced in harness/src/records.py via the `--via skill:<id>:<role>` allowlist, so a
+# skill that slips onto the wrong role is still blocked apply-time. All pack-wrapper skills are Tier A
+# (read-only reference, or additive render/manuscript output) — none expose stateful/gated actions; those
+# stay in on-task-request / orchestrator-tick / operator-control and are role-gated by records.py + hard gates.
+#
+# Audit naming: `--via skill:<skill>:<role>` for top-level skills; `--via skill:<parent>/<action>:<role>` for
+# the two parent skills (deepresearch-figure, deepresearch-manuscript-aux) — the exact pack identity is kept
+# in the skill-invocation audit artifact.
+
+[skills]
+all           = ["deepresearch-shared-guide"]
+
+orchestrator  = ["deepresearch-orchestrator-tick", "deepresearch-on-task-result", "deepresearch-on-receipt",
+                 "deepresearch-on-self-wakeup", "deepresearch-operator-control", "deepresearch-mentor",
+                 "deepresearch-research-method", "deepresearch-mentor-standards", "deepresearch-paper-latex"]
+
+scout-ideator = ["deepresearch-on-task-request",
+                 "deepresearch-ideation-rubric", "deepresearch-intake-rubric", "deepresearch-research-method",
+                 "deepresearch-figure"]
+
+experimenter  = ["deepresearch-on-task-request",
+                 "deepresearch-research-method", "deepresearch-science-scipkg", "deepresearch-figure"]
+
+analyst       = ["deepresearch-on-task-request",
+                 "deepresearch-research-method", "deepresearch-science-scipkg", "deepresearch-figure"]
+
+writer        = ["deepresearch-on-task-request",
+                 "deepresearch-paper-craft", "deepresearch-rebuttal-craft",
+                 "deepresearch-paper-latex", "deepresearch-slides", "deepresearch-figure",
+                 "deepresearch-manuscript-aux"]
+
+reviewer      = ["deepresearch-on-task-request", "deepresearch-review-craft", "deepresearch-figure"]
+
+# Setup-time / operator-only (not bound to an in-loop specialist).
+operator      = ["deepresearch-operator-control", "deepresearch-research-contract",
+                 "deepresearch-paper-latex", "deepresearch-slides"]
+
+# Pack → skill index (one skill per pack; 2 parent skills group 3+2 similar packs as actions):
+#   paper-latex          -> deepresearch-paper-latex
+#   nature-paper2ppt     -> deepresearch-slides
+#   paper-plot           -> deepresearch-figure (action: plot)
+#   nature-figure        -> deepresearch-figure (action: nature)
+#   figure-polish        -> deepresearch-figure (action: polish)
+#   nature-polishing     -> deepresearch-manuscript-aux (action: polish)
+#   nature-data          -> deepresearch-manuscript-aux (action: datastmt)
+#   ideation-rubric      -> deepresearch-ideation-rubric
+#   research-method      -> deepresearch-research-method
+#   paper-craft          -> deepresearch-paper-craft
+#   review-craft         -> deepresearch-review-craft
+#   rebuttal-craft       -> deepresearch-rebuttal-craft
+#   intake-rubric        -> deepresearch-intake-rubric
+#   science-scipkg       -> deepresearch-science-scipkg   (pack disabled by default)
+#   mentor-standards     -> deepresearch-mentor-standards (pack disabled by default)

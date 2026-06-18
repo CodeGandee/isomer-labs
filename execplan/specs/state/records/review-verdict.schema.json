@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/review-verdict",
+  "title": "review_verdict record",
+  "description": "Append a Reviewer verdict (one per review pass). The rich content (fatal_flaws + missing_experiments/analysis + overclaims + unsupported_claims + rewrite_requirements + experiment_todo/analysis_todo/rewrite_todo + routing_recommendation) lives in the verdict_ref artifact (runs/<q>/review/verdict-<n>.json) and is validated by `review validate`. valid / route_target / operator_confirmed are NOT settable here (additionalProperties:false); valid is force-reset to 0 and computed only by `review validate`. The finalize review gate reads the latest valid verdict, never artifact existence.",
+  "oneOf": [
+    {
+      "title": "review.verdict",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "verdict", "verdict_ref"],
+      "properties": {
+        "record_type": { "const": "review.verdict" },
+        "record_id": { "type": "string", "description": "verdict_id (unique per review pass)" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "round_index": { "type": "integer" },
+        "verdict": { "enum": ["accept", "borderline", "reject"] },
+        "verdict_ref": { "type": "string", "description": "loop-relative path to the typed verdict.json artifact" },
+        "summary": { "type": "string" }
+      }
+    }
+  ]
+}

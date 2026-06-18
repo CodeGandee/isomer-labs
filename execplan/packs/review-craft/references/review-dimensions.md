@@ -1,4 +1,4 @@
-# Review dimensions + disposition (ported from DeepScientist `review`)
+# Review dimensions + disposition
 
 Run an INDEPENDENT skeptical audit — do not mirror prior self-review notes; do not fabricate praise,
 flaws, citations, or fatal defects.
