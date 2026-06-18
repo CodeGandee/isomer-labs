@@ -60,8 +60,13 @@ Harness tools (deterministic; no LLM; the trust boundary):
 - **State store**: read/write the SQLite control plane (the only authority for loop bookkeeping).
 - **Experiment runner**: execute an experiment's run contract and capture results/metrics honestly.
   *Domain-pluggable* — the default is a generic command-runner; domains override it.
-- **Validator**: baseline gate, metric-completeness/comparability checks, manuscript coverage,
-  claim↔evidence consistency. *Partly domain-pluggable.* Replaces the prior `artifact.validate_*`.
+- **Validator + research-quality binding gates**: metric-completeness/comparability checks plus the
+  typed binding gates — idea selection, baseline contract, campaign coverage, analysis bridge, paper
+  spine, manuscript coverage, review verdict — each shaped as *typed record → validator-computed flag →
+  hard handoff/finalize guard*, surfaced by `gate status` and routed deterministically; `methodology
+  check` resolves each `methodology_used[].applied_as` to the stage's validated record (methodology is
+  binding, not advisory). *Partly domain-pluggable.* Replaces the prior `artifact.validate_*`. See
+  `execplan/docs/binding-gates.md` for the per-gate record/validator/guard map.
 - **Findings store**: persist/retrieve durable findings memory + reflexion notes, **cross-round but
   per-quest only** (quest-isolated — a quest never reads another quest's findings). Replaces the prior
   `memory/{ideas,decisions,knowledge}` + reflexion store.

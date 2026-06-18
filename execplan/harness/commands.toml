@@ -139,7 +139,7 @@ idempotent = true
 reads = ["runs/state.sqlite", "../specs/state/invariants.toml"]
 applies = []
 summary = "Read-only plan-map invariants (plan_map_fresh, plan_revision_monotonic) + decision-discipline lint + methodology-usage lint."
-description = "Runs the plan invariants, a decision lint (warns on consequential decisions that chose among <2 named candidates or named no rejected alternative), and a methodology-usage lint (warns when a closed round whose stage has a REQUIRED_PACK lacks an artifact(kind='methodology-usage'); regime-gated to research-contract quests so history is exempt). Warnings are non-fatal; an invariant violation fails the command."
+description = "Runs the plan invariants, a decision lint (warns on consequential decisions that chose among <2 named candidates or named no rejected alternative), and a methodology-usage lint (warns when a closed ORCHESTRATOR-INTERNAL round — decision/optimize/finalize — lacks an artifact(kind='methodology-usage'); worker stages are bound instead by their typed-record gates + `methodology check`, so they are not linted here; regime-gated to research-contract quests so history is exempt). Warnings are non-fatal; an invariant violation fails the command."
 
 [[command]]
 name = "plan diff"

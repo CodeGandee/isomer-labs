@@ -420,11 +420,12 @@ def _update(conn, table, pk, pkvals, cols):
 # ablations / mechanism-isolation re-runs). Any handoff in one of these rounds is GPU-gated.
 GPU_GATED_STAGES = ("experiment", "analysis")
 
-# Methodology packs each stage MUST cite (Tier-3 methodology-usage audit). A WORKER stage records an
-# artifact(kind='methodology-usage') + reports task-result.methodology_used; an ORCHESTRATOR-INTERNAL stage
-# (decision/optimize/finalize) has no worker task-result, so the Orchestrator itself records the artifact at
-# round close. `plan validate` warns (advisory, regime-gated) when a closed round of any stage below lacks the
-# artifact. NOT authoritative over DB state — this is a process-audit overlay only.
+# Methodology packs each stage MUST cite. A WORKER stage binds methodology through its TYPED RECORD + validator
+# (idea.select / baseline.contract / analysis.bridge / paper_spine / review.verdict; `methodology check` resolves
+# task-result.methodology_used[].applied_as to it). An ORCHESTRATOR-INTERNAL stage (decision/optimize/finalize)
+# has no worker task-result and no typed record, so the Orchestrator records an advisory
+# artifact(kind='methodology-usage') at round close; `plan validate` warns (advisory, regime-gated) when a closed
+# orchestrator-internal round lacks it. NOT authoritative over DB state — an audit/advisory overlay only.
 # ORCHESTRATOR_INTERNAL_STAGES marks the ones the Orchestrator self-audits (vs worker-dispatched stages).
 ORCHESTRATOR_INTERNAL_STAGES = ("decision", "optimize", "finalize")
 REQUIRED_PACKS = {

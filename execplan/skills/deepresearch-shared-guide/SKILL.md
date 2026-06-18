@@ -89,9 +89,11 @@ description: Shared harness/comms usage conventions for every deepresearch agent
 ## Methodology references + usage audit
 
 Loop-wide research/writing **craft** packs
-back every stage, and reading the required pack is auditable (Tier-3 methodology-usage). The full pack catalog,
-the evidence-ladder + comparability-contract shared vocabulary, and the required-pack-by-stage audit table live
-in **`reference/methodology.md`** — read it before stage work.
+back every stage. Worker-stage methodology is **binding**: it must be applied through the stage's typed record +
+validator (`methodology check` resolves `methodology_used[].applied_as` to it), while orchestrator-internal
+stages use an advisory `methodology-usage` artifact. The full pack catalog, the evidence-ladder +
+comparability-contract shared vocabulary, and the required-pack-by-stage binding table live in
+**`reference/methodology.md`** — read it before stage work.
 
 ## Output
 
