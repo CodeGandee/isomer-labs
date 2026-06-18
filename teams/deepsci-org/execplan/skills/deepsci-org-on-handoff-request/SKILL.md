@@ -1,0 +1,33 @@
+---
+name: deepsci-org-on-handoff-request
+description: Generated on-event skill for specialist mail with schema_id deepsci-org.email.handoff-request.
+---
+
+# deepsci-org On Handoff Request
+
+## Trigger
+
+Use this skill only for an incoming mail body whose `houmao-email-metadata` block has `schema_id = "deepsci-org.email.handoff-request"`.
+
+## Read First
+
+- `../../specs/comms/templates.toml`
+- `../../specs/comms/schemas/handoff-request.schema.json`
+- `../../specs/collab/topology/topology.toml`
+- `../../specs/participants/participants.toml`
+- `../../specs/run/run-contract.md`
+- `deepsci-org-shared-template`
+
+## Action
+
+1. Confirm `receiver_role` matches the current participant role.
+2. Confirm `sender_role` is `deepsci-org-master` unless the Topic Agent Team Profile explicitly grants specialist dispatch.
+3. Treat the handoff as one bounded Research Task or Research Task slice.
+4. Use the role's Skill Binding projection and Capability Binding refs from the topic profile. Do not assume concrete tools that the topic profile did not bind.
+5. Produce or update Agent Artifacts only inside the role's Agent Workspace. Promote durable dependencies through approved Isomer recording surfaces.
+6. Return one `deepsci-org.email.handoff-result` to `deepsci-org-master` with status, summary, refs, caveats, blockers, Gate recommendations, and recommended next Workflow Stage.
+7. Stop after one bounded pass. Do not sleep, poll, tail logs, or wait in chat.
+
+## Result Rule
+
+Normal results return to `deepsci-org-master`. Publication or review evidence gaps may recommend another route, but the master issues the next handoff unless topic policy grants otherwise.

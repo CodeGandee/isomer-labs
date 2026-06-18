@@ -1,0 +1,115 @@
+# Generated topology contract for deepsci-org.
+
+[topology]
+description = "Tree-loop routing with deepsci-org-master as the internal team root. Normal specialist results return to the immediate upstream role, which is the master by default."
+mode = "tree-loop"
+root_role = "deepsci-org-master"
+result_routing = "local-close"
+direct_specialist_to_specialist_routes_allowed = false
+topic_profile_may_grant_specialist_dispatch = true
+cycle_normalization_required = true
+
+[[nodes]]
+id = "deepsci-org-master"
+description = "Internal root role and only default dispatcher inside the Agent Team Instance."
+kind = "root"
+
+[[nodes]]
+id = "deepsci-org-framer"
+description = "Specialist role for scouting and baseline context."
+kind = "specialist"
+
+[[nodes]]
+id = "deepsci-org-designer"
+description = "Specialist role for idea and optimization context."
+kind = "specialist"
+
+[[nodes]]
+id = "deepsci-org-experimenter"
+description = "Specialist role for implementation and evidence-bearing Runs."
+kind = "specialist"
+
+[[nodes]]
+id = "deepsci-org-analyzer"
+description = "Specialist role for follow-up evidence and claim analysis."
+kind = "specialist"
+
+[[nodes]]
+id = "deepsci-org-publisher"
+description = "Specialist role for report, paper, figure, and presentation surfaces."
+kind = "specialist"
+
+[[nodes]]
+id = "deepsci-org-reviewer"
+description = "Specialist role for independent skeptical audit and rebuttal routing."
+kind = "specialist"
+
+[[routes]]
+id = "master-to-framer"
+description = "Dispatch bounded framing, scouting, or baseline tasks."
+from_role = "deepsci-org-master"
+to_role = "deepsci-org-framer"
+request_schema_id = "deepsci-org.email.handoff-request"
+result_schema_id = "deepsci-org.email.handoff-result"
+predecessor_context = ["current message", "selected Research Topic refs", "selected Research Inquiry refs", "baseline or waiver refs when relevant"]
+normal_result_target = "deepsci-org-master"
+
+[[routes]]
+id = "master-to-designer"
+description = "Dispatch bounded idea, route design, or optimization-frontier tasks."
+from_role = "deepsci-org-master"
+to_role = "deepsci-org-designer"
+request_schema_id = "deepsci-org.email.handoff-request"
+result_schema_id = "deepsci-org.email.handoff-result"
+predecessor_context = ["current message", "accepted frame refs", "objective contract refs", "candidate route refs when available"]
+normal_result_target = "deepsci-org-master"
+
+[[routes]]
+id = "master-to-experimenter"
+description = "Dispatch bounded implementation and main measurement tasks."
+from_role = "deepsci-org-master"
+to_role = "deepsci-org-experimenter"
+request_schema_id = "deepsci-org.email.handoff-request"
+result_schema_id = "deepsci-org.email.handoff-result"
+predecessor_context = ["current message", "selected route refs", "run contract refs", "capability binding refs", "gate constraints"]
+normal_result_target = "deepsci-org-master"
+
+[[routes]]
+id = "master-to-analyzer"
+description = "Dispatch bounded follow-up evidence, ablation, robustness, or claim-update tasks."
+from_role = "deepsci-org-master"
+to_role = "deepsci-org-analyzer"
+request_schema_id = "deepsci-org.email.handoff-request"
+result_schema_id = "deepsci-org.email.handoff-result"
+predecessor_context = ["current message", "parent result refs", "parent Research Claim refs", "analysis slice refs"]
+normal_result_target = "deepsci-org-master"
+
+[[routes]]
+id = "master-to-publisher"
+description = "Dispatch bounded outline, writing, plot, figure, data, or presentation tasks."
+from_role = "deepsci-org-master"
+to_role = "deepsci-org-publisher"
+request_schema_id = "deepsci-org.email.handoff-request"
+result_schema_id = "deepsci-org.email.handoff-result"
+predecessor_context = ["current message", "claim-evidence map refs", "draft refs", "figure refs", "publication Gate refs"]
+normal_result_target = "deepsci-org-master"
+
+[[routes]]
+id = "master-to-reviewer"
+description = "Dispatch bounded skeptical audit or rebuttal-normalization tasks."
+from_role = "deepsci-org-master"
+to_role = "deepsci-org-reviewer"
+request_schema_id = "deepsci-org.email.handoff-request"
+result_schema_id = "deepsci-org.email.handoff-result"
+predecessor_context = ["current message", "draft refs", "claim-evidence map refs", "review item refs", "peer read policy refs"]
+normal_result_target = "deepsci-org-master"
+
+[[routing_exceptions]]
+id = "publication-evidence-gap"
+description = "Publisher or reviewer can recommend returning work to framing, experimentation, analysis, or master decision, but the next handoff is issued by deepsci-org-master unless the Topic Agent Team Profile grants specialist dispatch."
+authority_role = "deepsci-org-master"
+
+[[routing_exceptions]]
+id = "service-request"
+description = "Operational support routes through a Service Request from the Operator Agent or master-controlled handoff; Service Agent Instances are outside Agent Team Instance membership."
+authority_role = "deepsci-org-master"

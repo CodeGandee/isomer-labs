@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepsci-org.email.team-start",
+  "title": "deepsci-org team start mail",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "kind",
+    "run_id",
+    "plan_revision",
+    "payload_id",
+    "domain_agent_team_template_ref",
+    "topic_agent_team_profile_id",
+    "agent_team_instance_id",
+    "research_topic_id",
+    "topic_workspace_ref",
+    "workspace_runtime_ref",
+    "control_mode"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "deepsci-org.email.team-start"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "request"
+      ]
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "domain_agent_team_template_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "topic_agent_team_profile_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "agent_team_instance_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "research_topic_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "research_inquiry_id": {
+      "type": "string"
+    },
+    "research_task_id": {
+      "type": "string"
+    },
+    "topic_workspace_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workspace_runtime_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "control_mode": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "automatic"
+      ]
+    },
+    "effective_topic_context_ref": {
+      "type": "string"
+    },
+    "gate_policy_ref": {
+      "type": "string"
+    },
+    "scheduler_policy_ref": {
+      "type": "string"
+    },
+    "start_instruction": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,183 @@
+# Generated participant contract for the deepsci-org Domain Agent Team Template.
+
+[template]
+description = "Reusable Domain Agent Team Template role map. Concrete Agent Instances are created only after a Topic Agent Team Profile specializes this template."
+id = "deepsci-org"
+isomer_template_layer = "domain_agent_team_template"
+root_role = "deepsci-org-master"
+topology_mode = "tree-loop"
+topic_instantiation_required = true
+default_execution_mode = "manual"
+auto_mode_requires_topic_policy = true
+
+[[roles]]
+id = "deepsci-org-master"
+description = "Internal team root that owns routing, handoff normalization, Decisions, Gates, finalization, parking, and closure."
+role_kind = "operator"
+required = true
+scalable = false
+agent_profile_placeholder = "{deepsci_org_master_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_master_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_master_skill_projection_ref}"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
+optional_skills = ["isomer-rsch-review"]
+hot_context = ["{research_topic_id}", "{research_inquiry_id}", "{workflow_stage_cursor_ref}", "{gate_state_ref}", "{decision_record_refs}", "{handoff_refs}", "{completion_watcher_contract_ref}", "{closure_state_ref}"]
+
+[[roles]]
+id = "deepsci-org-framer"
+description = "Frames the problem, bounds external search, and establishes comparator or baseline context."
+role_kind = "scout"
+required = true
+scalable = false
+agent_profile_placeholder = "{deepsci_org_framer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_framer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_framer_skill_projection_ref}"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]
+optional_skills = ["isomer-rsch-science", "isomer-rsch-paper-outline"]
+hot_context = ["literature neighborhood", "dataset and split contract", "metric contract", "comparator candidates", "source identity", "deviations", "baseline evidence", "{baseline_waiver_policy_ref}"]
+
+[[roles]]
+id = "deepsci-org-designer"
+description = "Converts the accepted frame into a falsifiable route and manages algorithm-first optimization when needed."
+role_kind = "designer"
+required = true
+scalable = false
+agent_profile_placeholder = "{deepsci_org_designer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_designer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_designer_skill_projection_ref}"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"]
+optional_skills = ["isomer-rsch-scout"]
+hot_context = ["current board", "accepted comparator", "objective contract", "candidate frontier", "selected route", "rejected alternatives", "fusion ideas", "stop conditions"]
+
+[[roles]]
+id = "deepsci-org-experimenter"
+description = "Implements selected routes and runs main evidence-bearing Runs."
+role_kind = "experimenter"
+required = true
+scalable = true
+scaling_scope = "research_task"
+agent_profile_placeholder = "{deepsci_org_experimenter_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_experimenter_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_experimenter_skill_projection_ref}"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"]
+optional_skills = ["isomer-rsch-analysis"]
+hot_context = ["code", "environment", "commands", "{run_contract_ref}", "logs", "outputs", "metrics", "reproducibility facts", "failure modes", "Provenance Records"]
+
+[[roles]]
+id = "deepsci-org-analyzer"
+description = "Runs follow-up evidence work, ablations, robustness checks, error analysis, and claim updates."
+role_kind = "analyst"
+required = true
+scalable = true
+scaling_scope = "research_task"
+agent_profile_placeholder = "{deepsci_org_analyzer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_analyzer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_analyzer_skill_projection_ref}"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"]
+optional_skills = ["isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+hot_context = ["parent result", "{parent_claim_ref}", "slice definitions", "comparability verdicts", "analysis findings", "claim updates", "caveats"]
+
+[[roles]]
+id = "deepsci-org-publisher"
+description = "Owns report, paper, figure, and presentation surfaces without changing research truth."
+role_kind = "writer"
+required = true
+scalable = false
+agent_profile_placeholder = "{deepsci_org_publisher_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_publisher_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_publisher_skill_projection_ref}"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+optional_skills = ["nature-data", "nature-figure", "nature-paper2ppt", "nature-polishing"]
+hot_context = ["paper contract", "{claim_evidence_map_ref}", "outline", "{draft_artifact_ref}", "bibliography", "figure inventory", "bundle status", "data availability expectations", "publication Gates"]
+
+[[roles]]
+id = "deepsci-org-reviewer"
+description = "Provides a separate skeptical audit surface and routes rebuttal pressure."
+role_kind = "reviewer"
+required = true
+scalable = false
+agent_profile_placeholder = "{deepsci_org_reviewer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_reviewer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_reviewer_skill_projection_ref}"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"]
+optional_skills = ["isomer-rsch-scout"]
+hot_context = ["draft", "{claim_evidence_map_ref}", "novelty benchmark", "{reviewer_item_refs}", "{revision_log_ref}", "missing-evidence inventory", "likely rejection routes"]
+
+[[stage_routes]]
+workflow_stage = "intake-audit"
+owner_role = "deepsci-org-master"
+description = "Trust-rank and reconcile existing topic state before routing."
+
+[[stage_routes]]
+workflow_stage = "scout"
+owner_role = "deepsci-org-framer"
+description = "Bounded scouting that can change the next route."
+
+[[stage_routes]]
+workflow_stage = "baseline"
+owner_role = "deepsci-org-framer"
+description = "Comparator and metric contract setup; heavy repair can route through topic policy."
+
+[[stage_routes]]
+workflow_stage = "idea"
+owner_role = "deepsci-org-designer"
+description = "Falsifiable route selection."
+
+[[stage_routes]]
+workflow_stage = "optimize"
+owner_role = "deepsci-org-designer"
+description = "Candidate frontier, branch promotion, fusion, and stop decisions."
+
+[[stage_routes]]
+workflow_stage = "experiment"
+owner_role = "deepsci-org-experimenter"
+description = "Main evidence-bearing implementation and measurement."
+
+[[stage_routes]]
+workflow_stage = "analysis-campaign"
+owner_role = "deepsci-org-analyzer"
+description = "Ablation, robustness, error, slice, and claim-critical follow-up work."
+
+[[stage_routes]]
+workflow_stage = "paper-outline"
+owner_role = "deepsci-org-publisher"
+description = "Paper-native outline and evidence view."
+
+[[stage_routes]]
+workflow_stage = "write"
+owner_role = "deepsci-org-publisher"
+description = "Drafting from durable evidence and supported claims."
+
+[[stage_routes]]
+workflow_stage = "paper-plot"
+owner_role = "deepsci-org-publisher"
+alternate_owner_role = "deepsci-org-analyzer"
+description = "Publisher owns paper-facing plots; analyzer may own diagnostic displays."
+
+[[stage_routes]]
+workflow_stage = "figure-polish"
+owner_role = "deepsci-org-publisher"
+alternate_owner_role = "deepsci-org-analyzer"
+description = "Publisher owns final figures; analyzer may own milestone figures."
+
+[[stage_routes]]
+workflow_stage = "review"
+owner_role = "deepsci-org-reviewer"
+description = "Independent skeptical audit."
+
+[[stage_routes]]
+workflow_stage = "rebuttal"
+owner_role = "deepsci-org-reviewer"
+alternate_owner_role = "deepsci-org-publisher"
+description = "Reviewer normalizes pressure and routes work; publisher writes response text."
+
+[[stage_routes]]
+workflow_stage = "decision"
+owner_role = "deepsci-org-master"
+description = "Route, stop, branch, baseline waiver, finalize, reset, and user-preference decisions."
+
+[[stage_routes]]
+workflow_stage = "finalize"
+owner_role = "deepsci-org-master"
+alternate_owner_role = "deepsci-org-publisher"
+description = "Master owns closure; publisher prepares final communication Artifacts."

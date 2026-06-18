@@ -1,0 +1,36 @@
+# Generated invariant list for deepsci-org.
+
+[[invariants]]
+id = "domain-template-not-runtime-team"
+description = "The generated execplan remains a Domain Agent Team Template package and cannot be treated as a Topic Agent Team Profile, Agent Team Instance, Run, or Topic Workspace."
+severity = "error"
+
+[[invariants]]
+id = "topic-profile-before-launch"
+description = "Launch is blocked until a Topic Agent Team Profile replaces required placeholders and selects role, policy, capability, and skill refs."
+severity = "error"
+
+[[invariants]]
+id = "tree-loop-local-close"
+description = "Specialist handoff results return to deepsci-org-master by default; specialist-to-specialist dispatch requires explicit Topic Agent Team Profile authority."
+severity = "error"
+
+[[invariants]]
+id = "manual-default"
+description = "First launch defaults to manual mode unless topic-level policies explicitly enable automatic mode."
+severity = "warning"
+
+[[invariants]]
+id = "gate-sensitive-actions"
+description = "Credential use, paid or long compute, private data access, data export, destructive mutation, baseline waiver, publication-facing finality, and final completion require Gate Policy coverage."
+severity = "error"
+
+[[invariants]]
+id = "runtime-state-boundary"
+description = "Rich research state, command outputs, provider payloads, credentials, and secrets do not belong in this generated package."
+severity = "error"
+
+[[invariants]]
+id = "workspace-runtime-authority"
+description = "Workspace Runtime remains authoritative for Research Tasks, Runs, handoffs, Artifacts, Evidence Items, Findings, Research Claims, Gates, Decision Records, and Provenance Records."
+severity = "error"

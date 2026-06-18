@@ -1,0 +1,36 @@
+# Generated mail template registry for deepsci-org.
+
+[registry]
+description = "Outgoing templated mail follows TOML or JSON payload, JSON Schema validation, Markdown rendering, then maintained Houmao mail delivery."
+loop_slug = "deepsci-org"
+metadata_header = "houmao-email-metadata"
+
+[templates.team_start]
+description = "Start or resume one bounded deepsci-org Run by waking deepsci-org-master."
+template_name = "team_start"
+schema_id = "deepsci-org.email.team-start"
+schema_path = "specs/comms/schemas/team-start.schema.json"
+renderer_path = "specs/comms/renderers/team-start.md.j2"
+payload_format = "json-or-toml"
+kind = "request"
+reply_expectation = "master processes one bounded start or resume pass, then uses on-tick or opens a Gate"
+
+[templates.handoff_request]
+description = "Master-to-specialist request for one bounded Research Task handoff."
+template_name = "handoff_request"
+schema_id = "deepsci-org.email.handoff-request"
+schema_path = "specs/comms/schemas/handoff-request.schema.json"
+renderer_path = "specs/comms/renderers/handoff-request.md.j2"
+payload_format = "json-or-toml"
+kind = "request"
+reply_expectation = "specialist replies with deepsci-org.email.handoff-result to deepsci-org-master"
+
+[templates.handoff_result]
+description = "Specialist-to-master local-close result for one handoff."
+template_name = "handoff_result"
+schema_id = "deepsci-org.email.handoff-result"
+schema_path = "specs/comms/schemas/handoff-result.schema.json"
+renderer_path = "specs/comms/renderers/handoff-result.md.j2"
+payload_format = "json-or-toml"
+kind = "result"
+reply_expectation = "master normalizes result, then dispatches, parks, opens a Gate, or closes"

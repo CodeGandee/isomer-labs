@@ -1,0 +1,24 @@
+```houmao-email-metadata
+schema_id = "deepsci-org.email.team-start"
+schema_version = "1"
+kind = "request"
+run_id = "{{ run_id }}"
+plan_revision = "{{ plan_revision }}"
+payload_id = "{{ payload_id }}"
+topic_agent_team_profile_id = "{{ topic_agent_team_profile_id }}"
+agent_team_instance_id = "{{ agent_team_instance_id }}"
+```
+
+# Start deepsci-org Run
+
+Research Topic: `{{ research_topic_id }}`
+
+Topic Workspace: `{{ topic_workspace_ref }}`
+
+Workspace Runtime: `{{ workspace_runtime_ref }}`
+
+Control Mode: `{{ control_mode }}`
+
+Instruction: {{ start_instruction }}
+
+Process one bounded start or resume pass. Use `deepsci-org-on-team-start`, then run `deepsci-org-on-tick` only when the start handler leaves a safe follow-up action.

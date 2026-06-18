@@ -1,0 +1,14 @@
+# Generated profile placeholder for deepsci-org-analyzer.
+
+[profile]
+description = "Follow-up evidence and claim analysis specialist. The Topic Agent Team Profile may fan this role out for task-level slice execution."
+role_id = "deepsci-org-analyzer"
+agent_profile_placeholder = "{deepsci_org_analyzer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_analyzer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_analyzer_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_analyzer_agent_workspace_ref}"
+generated_skills = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"]
+optional_isomer_skills = ["isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+scalable = true
+scaling_scope = "research_task"

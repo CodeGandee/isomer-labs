@@ -1,0 +1,94 @@
+# Deterministic seed facts for deepsci-org loop-local bookkeeping.
+
+[plan_metadata.loop_slug]
+description = "Generated loop slug."
+value = "deepsci-org"
+
+[plan_metadata.isomer_template_layer]
+description = "Execplan source layer."
+value = "domain_agent_team_template"
+
+[plan_metadata.topology_mode]
+description = "Generated participant topology mode."
+value = "tree-loop"
+
+[plan_metadata.internal_root_role]
+description = "Internal root role inside the Agent Team Instance."
+value = "deepsci-org-master"
+
+[default_control]
+description = "Default control posture before topic specialization supplies concrete Run facts."
+run_state = "not_started"
+execution_mode = "manual"
+control_mode = "manual"
+auto_mode_requires_topic_policy = true
+
+[[participants]]
+role_id = "deepsci-org-master"
+description = "Internal root role and default dispatcher."
+role_kind = "operator"
+required = true
+scalable = false
+agent_profile_ref = "{deepsci_org_master_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_master_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_master_skill_projection_ref}"
+
+[[participants]]
+role_id = "deepsci-org-framer"
+description = "Framing, scouting, and baseline specialist."
+role_kind = "scout"
+required = true
+scalable = false
+agent_profile_ref = "{deepsci_org_framer_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_framer_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_framer_skill_projection_ref}"
+
+[[participants]]
+role_id = "deepsci-org-designer"
+description = "Idea and optimization specialist."
+role_kind = "designer"
+required = true
+scalable = false
+agent_profile_ref = "{deepsci_org_designer_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_designer_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_designer_skill_projection_ref}"
+
+[[participants]]
+role_id = "deepsci-org-experimenter"
+description = "Main implementation and measurement specialist."
+role_kind = "experimenter"
+required = true
+scalable = true
+agent_profile_ref = "{deepsci_org_experimenter_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_experimenter_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_experimenter_skill_projection_ref}"
+
+[[participants]]
+role_id = "deepsci-org-analyzer"
+description = "Follow-up evidence and analysis specialist."
+role_kind = "analyst"
+required = true
+scalable = true
+agent_profile_ref = "{deepsci_org_analyzer_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_analyzer_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_analyzer_skill_projection_ref}"
+
+[[participants]]
+role_id = "deepsci-org-publisher"
+description = "Publication and communication Artifact specialist."
+role_kind = "writer"
+required = true
+scalable = false
+agent_profile_ref = "{deepsci_org_publisher_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_publisher_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_publisher_skill_projection_ref}"
+
+[[participants]]
+role_id = "deepsci-org-reviewer"
+description = "Independent skeptical audit specialist."
+role_kind = "reviewer"
+required = true
+scalable = false
+agent_profile_ref = "{deepsci_org_reviewer_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_reviewer_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_reviewer_skill_projection_ref}"

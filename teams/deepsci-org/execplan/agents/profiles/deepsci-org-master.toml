@@ -1,0 +1,12 @@
+# Generated profile placeholder for deepsci-org-master.
+
+[profile]
+description = "Internal team root. Topic specialization supplies the concrete Agent Profile, Capability Binding, Skill Binding projection, model posture, workspace, mailbox, memory, and launch details."
+role_id = "deepsci-org-master"
+agent_profile_placeholder = "{deepsci_org_master_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_master_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_master_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_master_agent_workspace_ref}"
+generated_skills = ["deepsci-org-shared-template", "deepsci-org-on-team-start", "deepsci-org-on-handoff-result", "deepsci-org-on-tick", "deepsci-org-operator-control"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
+optional_isomer_skills = ["isomer-rsch-review"]

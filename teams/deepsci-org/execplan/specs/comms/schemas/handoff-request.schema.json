@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepsci-org.email.handoff-request",
+  "title": "deepsci-org handoff request mail",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "kind",
+    "run_id",
+    "plan_revision",
+    "payload_id",
+    "handoff_id",
+    "sender_role",
+    "receiver_role",
+    "research_topic_id",
+    "research_task_id",
+    "workflow_stage",
+    "task_scope",
+    "expected_outputs",
+    "result_target_role"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "deepsci-org.email.handoff-request"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "request"
+      ]
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "handoff_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sender_role": {
+      "type": "string",
+      "const": "deepsci-org-master"
+    },
+    "receiver_role": {
+      "type": "string",
+      "enum": [
+        "deepsci-org-framer",
+        "deepsci-org-designer",
+        "deepsci-org-experimenter",
+        "deepsci-org-analyzer",
+        "deepsci-org-publisher",
+        "deepsci-org-reviewer"
+      ]
+    },
+    "research_topic_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "research_inquiry_id": {
+      "type": "string"
+    },
+    "research_task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workflow_stage": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inspected_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expected_outputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence_item_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "research_claim_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "gate_constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "capability_binding_ref": {
+      "type": "string"
+    },
+    "skill_binding_projection_ref": {
+      "type": "string"
+    },
+    "completion_watcher_contract_ref": {
+      "type": "string"
+    },
+    "result_target_role": {
+      "type": "string",
+      "const": "deepsci-org-master"
+    },
+    "predecessor_context_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

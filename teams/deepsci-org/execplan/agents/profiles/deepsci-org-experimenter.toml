@@ -1,0 +1,14 @@
+# Generated profile placeholder for deepsci-org-experimenter.
+
+[profile]
+description = "Main implementation and measurement specialist. The Topic Agent Team Profile may fan this role out for task-level parallel execution."
+role_id = "deepsci-org-experimenter"
+agent_profile_placeholder = "{deepsci_org_experimenter_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_experimenter_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_experimenter_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_experimenter_agent_workspace_ref}"
+generated_skills = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"]
+optional_isomer_skills = ["isomer-rsch-analysis"]
+scalable = true
+scaling_scope = "research_task"

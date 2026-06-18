@@ -1,0 +1,211 @@
+# Generated package metadata for this execplan revision.
+generated_source = true
+generated_with = "houmao-agent-loop-pro execplan-fast-forward"
+scaffold_profile = "execplan-shell"
+loop_slug = "deepsci-org"
+generated_date = "2026-06-18"
+plan_revision = 1
+source_intention_dir = "../intention"
+source_design = "../source/team-design.md"
+isomer_template_layer = "domain_agent_team_template"
+domain_agent_team_template = true
+topic_instantiation_required = true
+topology_mode = "tree-loop"
+internal_root_role = "deepsci-org-master"
+default_execution_mode = "manual"
+auto_mode_requires_topic_policy = true
+purpose_directories = ["specs", "skills", "agents", "harness", "docs"]
+omitted_default_layers = ["adrs"]
+
+# Source posture for generated consumers.
+[source_posture]
+description = "This execplan is generated operational material derived from editable Domain Agent Team Template intention source. Topic-specific values remain placeholders until a Topic Agent Team Profile specializes the template."
+editable_source = "../intention/"
+generated_output = "./"
+isomer_domain_language = "../../.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md"
+
+# Stage status for the fast-forward generation pipeline.
+[[stages]]
+id = "execplan-specs-process"
+description = "Generated the process-first collaboration model."
+status = "generated"
+primary_artifact = "specs/collab/collab-overview.md"
+
+[[stages]]
+id = "execplan-specs-contract"
+description = "Generated objective, participant, topology, communication, state, workspace, and run contracts."
+status = "generated"
+primary_artifact = "specs/"
+
+[[stages]]
+id = "execplan-harness"
+description = "Generated loop-local helper surfaces for validation, queries, mail payload checks, and control context."
+status = "generated"
+primary_artifact = "harness/"
+
+[[stages]]
+id = "execplan-skills"
+description = "Generated shared, on-event, on-tick, and operator-control skills."
+status = "generated"
+primary_artifact = "skills/"
+
+[[stages]]
+id = "execplan-agent-bindings"
+description = "Generated placeholder-backed Houmao agent bindings, profile material, and notifier prompts."
+status = "generated"
+primary_artifact = "agents/bindings.toml"
+
+[[stages]]
+id = "execplan-finalize"
+description = "Generated support docs, metadata, omission notes, and consistency notes."
+status = "generated"
+primary_artifact = "docs/"
+
+# Generated contracts directory.
+[[artifacts]]
+id = "specs"
+description = "Generated machine-readable loop contracts."
+path = "specs/"
+artifact_kind = "dir"
+purpose = "generated loop contracts"
+
+[[artifacts]]
+id = "process-overview"
+description = "Process-first authority for phases, events, ownership, stopping points, and recovery posture."
+path = "specs/collab/collab-overview.md"
+artifact_kind = "markdown"
+purpose = "process authority"
+
+[[artifacts]]
+id = "topology-contract"
+description = "Tree-loop routing contract with deepsci-org-master as the internal root role."
+path = "specs/collab/topology/topology.toml"
+artifact_kind = "toml"
+purpose = "topology validation and route lookup"
+
+[[artifacts]]
+id = "participant-contract"
+description = "Role templates, binding slots, scalable-role posture, and skill projections."
+path = "specs/participants/participants.toml"
+artifact_kind = "toml"
+purpose = "participant contract"
+
+[[artifacts]]
+id = "communication-contract"
+description = "Mail template registry, payload schemas, and Markdown renderers."
+path = "specs/comms/templates.toml"
+artifact_kind = "toml"
+purpose = "mail schema event registry"
+
+[[artifacts]]
+id = "state-contract"
+description = "SQLite bookkeeping schema, deterministic seed, invariant list, and state overview."
+path = "specs/state/"
+artifact_kind = "dir"
+purpose = "loop-local bookkeeping contract"
+
+[[artifacts]]
+id = "workspace-contract"
+description = "Topic Workspace and Agent Workspace placeholder contract for later workspace-manager preparation."
+path = "specs/workspace/workspace.toml"
+artifact_kind = "toml"
+purpose = "workspace readiness contract"
+
+[[artifacts]]
+id = "run-contract"
+description = "Run-level expected inputs, outputs, Gates, parking, and completion semantics."
+path = "specs/run/run-contract.md"
+artifact_kind = "markdown"
+purpose = "run contract"
+
+# Generated skills directory.
+[[artifacts]]
+id = "skills"
+description = "Generated skill packages used by loop participants and operators."
+path = "skills/"
+artifact_kind = "dir"
+purpose = "generated skill packages"
+
+# Generated agent bindings directory.
+[[artifacts]]
+id = "agents"
+description = "Generated concrete agent bindings, profile material, and notifier prompt material."
+path = "agents/"
+artifact_kind = "dir"
+purpose = "generated concrete agent bindings"
+
+# Generated harness directory.
+[[artifacts]]
+id = "harness"
+description = "Generated loop-local helper surface for validation, query, rendering, and controlled apply."
+path = "harness/"
+artifact_kind = "dir"
+purpose = "generated loop-local helper surface"
+
+[[artifacts]]
+id = "harness-cli"
+description = "Loop-local Python command surface for package validation, participant queries, topology queries, mail schema checks, and control status."
+path = "harness/bin/deepsci-org"
+artifact_kind = "python-cli"
+purpose = "generated harness entrypoint"
+
+# Generated support docs directory.
+[[artifacts]]
+id = "docs"
+description = "Generated human support views that summarize authoritative artifacts."
+path = "docs/"
+artifact_kind = "dir"
+purpose = "generated human support views"
+
+[[artifacts]]
+id = "docs-artifact-index"
+description = "Human-readable index of generated artifacts and their authority."
+path = "docs/artifact-index.md"
+artifact_kind = "markdown"
+purpose = "generated support doc"
+
+[[artifacts]]
+id = "docs-operator-guide"
+description = "Operator-facing guide for using the generated package without crossing platform-operation boundaries."
+path = "docs/operator-guide.md"
+artifact_kind = "markdown"
+purpose = "generated support doc"
+
+[[artifacts]]
+id = "docs-runtime-model"
+description = "Human-readable runtime model for notifier-prompted event and tick behavior."
+path = "docs/runtime-model.md"
+artifact_kind = "markdown"
+purpose = "generated support doc"
+
+[[artifacts]]
+id = "docs-validation"
+description = "Validation commands and expected generated package posture."
+path = "docs/validation.md"
+artifact_kind = "markdown"
+purpose = "generated support doc"
+
+[[artifacts]]
+id = "docs-instantiation-guide"
+description = "Guide for specializing the Domain Agent Team Template into a Topic Agent Team Profile."
+path = "docs/instantiation-guide.md"
+artifact_kind = "markdown"
+purpose = "generated support doc"
+
+[[artifacts]]
+id = "docs-consistency-notes"
+description = "Consistency notes comparing intention source and generated material."
+path = "docs/consistency-notes.md"
+artifact_kind = "markdown"
+purpose = "generated support doc"
+
+[[artifacts]]
+id = "docs-omission-notes"
+description = "Intentional omissions for this fast-forward generated revision."
+path = "docs/omission-notes.md"
+artifact_kind = "markdown"
+purpose = "generated support doc"
+
+[[omission_notes]]
+layer = "execplan/adrs"
+description = "Fast-forward generation did not ask interactive execplan decisions, so no execplan-local ADRs were created."

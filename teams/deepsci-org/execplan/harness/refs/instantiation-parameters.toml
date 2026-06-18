@@ -1,0 +1,115 @@
+# Generated placeholder catalog for topic-level instantiation.
+
+[catalog]
+description = "A Topic Agent Team Profile replaces these placeholders with refs from Project Manifest, Research Topic Config, Topic Agent Team Profile, Capability Bindings, Skill Binding projections, policies, provider bindings, Workspace Runtime, or Agent Team Instance records."
+template_id = "deepsci-org"
+isomer_template_layer = "domain_agent_team_template"
+
+[[placeholders]]
+name = "{domain_agent_team_template_ref}"
+description = "Ref for this reusable Domain Agent Team Template."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{research_topic_id}"
+description = "Concrete Research Topic id."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{research_topic_config_ref}"
+description = "Project Manifest-registered Research Topic Config ref."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{topic_workspace_ref}"
+description = "Project Manifest-declared Topic Workspace ref."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{workspace_runtime_ref}"
+description = "Workspace Runtime ref inside the Topic Workspace."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{topic_agent_team_profile_id}"
+description = "Topic-level specialization derived from this template."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{agent_team_instance_id}"
+description = "Runtime team created from the Topic Agent Team Profile."
+required_for_topic_profile = false
+
+[[placeholders]]
+name = "{coordination_policy_ref}"
+description = "Collaboration, handoff, peer-read, retry, escalation, and Gate routing policy."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{gate_policy_ref}"
+description = "Preflight policy for governed actions."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{scheduler_policy_ref}"
+description = "Automatic dispatch, retry, monitoring, checkpoint, resume, or stop policy ref."
+required_for_topic_profile = false
+
+[[placeholders]]
+name = "{capability_binding_ref}"
+description = "Generic capability binding slot, expanded into role-scoped placeholders."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{skill_binding_projection_ref}"
+description = "Provider-neutral skill availability projection, expanded into role-scoped placeholders."
+required_for_topic_profile = true
+
+[[role_placeholder_families]]
+role_id = "deepsci-org-master"
+agent_profile_ref = "{deepsci_org_master_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_master_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_master_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_org_master_agent_workspace_ref}"
+
+[[role_placeholder_families]]
+role_id = "deepsci-org-framer"
+agent_profile_ref = "{deepsci_org_framer_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_framer_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_framer_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_org_framer_agent_workspace_ref}"
+
+[[role_placeholder_families]]
+role_id = "deepsci-org-designer"
+agent_profile_ref = "{deepsci_org_designer_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_designer_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_designer_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_org_designer_agent_workspace_ref}"
+
+[[role_placeholder_families]]
+role_id = "deepsci-org-experimenter"
+agent_profile_ref = "{deepsci_org_experimenter_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_experimenter_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_experimenter_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_org_experimenter_agent_workspace_ref}"
+
+[[role_placeholder_families]]
+role_id = "deepsci-org-analyzer"
+agent_profile_ref = "{deepsci_org_analyzer_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_analyzer_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_analyzer_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_org_analyzer_agent_workspace_ref}"
+
+[[role_placeholder_families]]
+role_id = "deepsci-org-publisher"
+agent_profile_ref = "{deepsci_org_publisher_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_publisher_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_publisher_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_org_publisher_agent_workspace_ref}"
+
+[[role_placeholder_families]]
+role_id = "deepsci-org-reviewer"
+agent_profile_ref = "{deepsci_org_reviewer_agent_profile_ref}"
+capability_binding_ref = "{deepsci_org_reviewer_capability_binding_ref}"
+skill_projection_ref = "{deepsci_org_reviewer_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_org_reviewer_agent_workspace_ref}"

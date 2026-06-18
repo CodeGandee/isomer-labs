@@ -1,0 +1,12 @@
+# Generated profile placeholder for deepsci-org-framer.
+
+[profile]
+description = "Framing, scouting, and baseline specialist. Topic specialization supplies concrete provider and capability choices."
+role_id = "deepsci-org-framer"
+agent_profile_placeholder = "{deepsci_org_framer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_framer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_framer_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_framer_agent_workspace_ref}"
+generated_skills = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]
+optional_isomer_skills = ["isomer-rsch-science", "isomer-rsch-paper-outline"]

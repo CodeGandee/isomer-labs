@@ -1,0 +1,12 @@
+# Generated profile placeholder for deepsci-org-publisher.
+
+[profile]
+description = "Publication and communication Artifact specialist. Topic specialization chooses internal report, paper, figure bundle, slide deck, or venue-specific surfaces."
+role_id = "deepsci-org-publisher"
+agent_profile_placeholder = "{deepsci_org_publisher_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_publisher_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_publisher_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_publisher_agent_workspace_ref}"
+generated_skills = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+optional_isomer_skills = ["nature-data", "nature-figure", "nature-paper2ppt", "nature-polishing"]

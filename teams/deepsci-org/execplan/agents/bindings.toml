@@ -1,0 +1,115 @@
+# Generated Houmao-facing binding contract for the deepsci-org Domain Agent Team Template.
+
+[package]
+description = "Placeholder-backed agent binding package. Concrete project profiles, Agent Instances, Agent Workspaces, mailboxes, gateway refs, notifier posture, and launch facts are prepared later from a Topic Agent Team Profile."
+loop_slug = "deepsci-org"
+manifest = "execplan/manifest.toml"
+harness = "execplan/harness/bin/deepsci-org"
+topology = "execplan/specs/collab/topology/topology.toml"
+participants = "execplan/specs/participants/participants.toml"
+default_execution_mode = "manual"
+topic_instantiation_required = true
+
+[generated_skills]
+description = "Generated skills expected to be installed or made available to prepared participants."
+shared = "execplan/skills/deepsci-org-shared-template"
+team_start = "execplan/skills/deepsci-org-on-team-start"
+handoff_request = "execplan/skills/deepsci-org-on-handoff-request"
+handoff_result = "execplan/skills/deepsci-org-on-handoff-result"
+tick = "execplan/skills/deepsci-org-on-tick"
+operator_control = "execplan/skills/deepsci-org-operator-control"
+
+[[participants]]
+role_id = "deepsci-org-master"
+description = "Internal root and default dispatcher."
+profile_path = "execplan/agents/profiles/deepsci-org-master.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-org-master.md"
+agent_profile_placeholder = "{deepsci_org_master_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_master_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_master_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_master_agent_workspace_ref}"
+generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-team-start", "deepsci-org-on-handoff-result", "deepsci-org-on-tick", "deepsci-org-operator-control"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
+optional_isomer_skills = ["isomer-rsch-review"]
+
+[[participants]]
+role_id = "deepsci-org-framer"
+description = "Framing, scouting, and baseline specialist."
+profile_path = "execplan/agents/profiles/deepsci-org-framer.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-org-framer.md"
+agent_profile_placeholder = "{deepsci_org_framer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_framer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_framer_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_framer_agent_workspace_ref}"
+generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]
+optional_isomer_skills = ["isomer-rsch-science", "isomer-rsch-paper-outline"]
+
+[[participants]]
+role_id = "deepsci-org-designer"
+description = "Idea and optimization specialist."
+profile_path = "execplan/agents/profiles/deepsci-org-designer.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-org-designer.md"
+agent_profile_placeholder = "{deepsci_org_designer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_designer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_designer_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_designer_agent_workspace_ref}"
+generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"]
+optional_isomer_skills = ["isomer-rsch-scout"]
+
+[[participants]]
+role_id = "deepsci-org-experimenter"
+description = "Main implementation and measurement specialist."
+profile_path = "execplan/agents/profiles/deepsci-org-experimenter.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-org-experimenter.md"
+agent_profile_placeholder = "{deepsci_org_experimenter_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_experimenter_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_experimenter_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_experimenter_agent_workspace_ref}"
+generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"]
+optional_isomer_skills = ["isomer-rsch-analysis"]
+scalable = true
+scaling_scope = "research_task"
+
+[[participants]]
+role_id = "deepsci-org-analyzer"
+description = "Follow-up evidence and claim analysis specialist."
+profile_path = "execplan/agents/profiles/deepsci-org-analyzer.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-org-analyzer.md"
+agent_profile_placeholder = "{deepsci_org_analyzer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_analyzer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_analyzer_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_analyzer_agent_workspace_ref}"
+generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"]
+optional_isomer_skills = ["isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+scalable = true
+scaling_scope = "research_task"
+
+[[participants]]
+role_id = "deepsci-org-publisher"
+description = "Publication and communication Artifact specialist."
+profile_path = "execplan/agents/profiles/deepsci-org-publisher.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-org-publisher.md"
+agent_profile_placeholder = "{deepsci_org_publisher_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_publisher_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_publisher_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_publisher_agent_workspace_ref}"
+generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+optional_isomer_skills = ["nature-data", "nature-figure", "nature-paper2ppt", "nature-polishing"]
+
+[[participants]]
+role_id = "deepsci-org-reviewer"
+description = "Independent skeptical audit and rebuttal routing specialist."
+profile_path = "execplan/agents/profiles/deepsci-org-reviewer.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-org-reviewer.md"
+agent_profile_placeholder = "{deepsci_org_reviewer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_reviewer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_reviewer_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_reviewer_agent_workspace_ref}"
+generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"]
+optional_isomer_skills = ["isomer-rsch-scout"]

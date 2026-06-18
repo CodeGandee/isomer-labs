@@ -1,0 +1,37 @@
+```houmao-email-metadata
+schema_id = "deepsci-org.email.handoff-result"
+schema_version = "1"
+kind = "result"
+run_id = "{{ run_id }}"
+plan_revision = "{{ plan_revision }}"
+payload_id = "{{ payload_id }}"
+handoff_id = "{{ handoff_id }}"
+sender_role = "{{ sender_role }}"
+receiver_role = "{{ receiver_role }}"
+```
+
+# Handoff Result
+
+Status: `{{ status }}`
+
+Summary: {{ summary }}
+
+Artifact refs: {{ artifact_refs }}
+
+Evidence Item refs: {{ evidence_item_refs }}
+
+Finding refs: {{ finding_refs }}
+
+Research Claim refs: {{ research_claim_refs }}
+
+Decision Record recommendations: {{ decision_record_recommendations }}
+
+Gate recommendations: {{ gate_recommendations }}
+
+Caveats: {{ caveats }}
+
+Blockers: {{ blockers }}
+
+Recommended next Workflow Stage: `{{ recommended_next_stage }}`
+
+`deepsci-org-master` must normalize this result into Workspace Runtime before relying on it for another handoff, Gate, parking packet, or closure packet.

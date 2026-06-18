@@ -1,0 +1,12 @@
+# Generated profile placeholder for deepsci-org-designer.
+
+[profile]
+description = "Idea and optimization specialist. Topic specialization supplies concrete provider and capability choices."
+role_id = "deepsci-org-designer"
+agent_profile_placeholder = "{deepsci_org_designer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_org_designer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_org_designer_skill_projection_ref}"
+workspace_placeholder = "{deepsci_org_designer_agent_workspace_ref}"
+generated_skills = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"]
+optional_isomer_skills = ["isomer-rsch-scout"]

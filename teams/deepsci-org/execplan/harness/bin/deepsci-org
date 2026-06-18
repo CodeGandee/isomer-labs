@@ -1,0 +1,268 @@
+#!/usr/bin/env python3
+"""Loop-local harness for the generated deepsci-org execplan."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sqlite3
+import sys
+import tomllib
+from pathlib import Path
+from typing import Any
+
+
+EXECPLAN = Path(__file__).resolve().parents[2]
+
+
+def read_toml(path: Path) -> dict[str, Any]:
+    with path.open("rb") as handle:
+        return tomllib.load(handle)
+
+
+def read_json(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def load_payload(path: Path) -> dict[str, Any]:
+    if path.suffix == ".toml":
+        return read_toml(path)
+    return read_json(path)
+
+
+def as_json(data: Any) -> int:
+    print(json.dumps(data, indent=2, sort_keys=True))
+    return 0
+
+
+def template_registry() -> dict[str, Any]:
+    return read_toml(EXECPLAN / "specs/comms/templates.toml")
+
+
+def template_entry(template_name: str) -> dict[str, Any]:
+    templates = template_registry().get("templates", {})
+    if template_name not in templates:
+        known = ", ".join(sorted(templates))
+        raise SystemExit(f"unknown template {template_name!r}; known templates: {known}")
+    return templates[template_name]
+
+
+def validate_schema_subset(schema: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    for field in schema.get("required", []):
+        if field not in payload:
+            errors.append(f"missing required field: {field}")
+    properties = schema.get("properties", {})
+    for field, contract in properties.items():
+        if field not in payload:
+            continue
+        value = payload[field]
+        if "const" in contract and value != contract["const"]:
+            errors.append(f"{field}: expected {contract['const']!r}, got {value!r}")
+        if "enum" in contract and value not in contract["enum"]:
+            errors.append(f"{field}: expected one of {contract['enum']!r}, got {value!r}")
+        expected_type = contract.get("type")
+        if expected_type == "string" and not isinstance(value, str):
+            errors.append(f"{field}: expected string")
+        if expected_type == "array" and not isinstance(value, list):
+            errors.append(f"{field}: expected array")
+        if expected_type == "array" and isinstance(value, list):
+            min_items = contract.get("minItems")
+            if min_items is not None and len(value) < min_items:
+                errors.append(f"{field}: expected at least {min_items} items")
+        if expected_type == "string" and isinstance(value, str):
+            min_length = contract.get("minLength")
+            if min_length is not None and len(value) < min_length:
+                errors.append(f"{field}: expected length >= {min_length}")
+    return errors
+
+
+def validate_package(_: argparse.Namespace) -> int:
+    required_files = [
+        "manifest.toml",
+        "specs/collab/collab-overview.md",
+        "specs/collab/topology/topology.toml",
+        "specs/participants/participants.toml",
+        "specs/comms/templates.toml",
+        "specs/state/state-overview.md",
+        "specs/state/schema.sql",
+        "specs/state/seed.toml",
+        "specs/state/invariants.toml",
+        "specs/workspace/workspace.toml",
+        "specs/run/run-contract.md",
+        "agents/bindings.toml",
+        "harness/commands.toml",
+    ]
+    errors: list[str] = []
+    for relative in required_files:
+        if not (EXECPLAN / relative).exists():
+            errors.append(f"missing required file: {relative}")
+
+    toml_files = [
+        "manifest.toml",
+        "specs/collab/topology/topology.toml",
+        "specs/participants/participants.toml",
+        "specs/comms/templates.toml",
+        "specs/state/seed.toml",
+        "specs/state/invariants.toml",
+        "specs/workspace/workspace.toml",
+        "agents/bindings.toml",
+        "harness/commands.toml",
+        "harness/refs/instantiation-parameters.toml",
+    ]
+    for relative in toml_files:
+        path = EXECPLAN / relative
+        if path.exists():
+            try:
+                read_toml(path)
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"TOML parse failed for {relative}: {exc}")
+
+    for relative in sorted(p.relative_to(EXECPLAN) for p in (EXECPLAN / "specs/comms/schemas").glob("*.json")):
+        try:
+            read_json(EXECPLAN / relative)
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"JSON parse failed for {relative}: {exc}")
+
+    overview = EXECPLAN / "specs/collab/collab-overview.md"
+    if overview.exists():
+        text = overview.read_text(encoding="utf-8")
+        if "```python" not in text:
+            errors.append("collab overview missing python pseudocode block")
+        if "```mermaid" not in text:
+            errors.append("collab overview missing mermaid sequence diagram")
+
+    sql_path = EXECPLAN / "specs/state/schema.sql"
+    if sql_path.exists():
+        try:
+            connection = sqlite3.connect(":memory:")
+            connection.executescript(sql_path.read_text(encoding="utf-8"))
+            connection.close()
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"SQLite schema failed: {exc}")
+
+    manifest = read_toml(EXECPLAN / "manifest.toml") if (EXECPLAN / "manifest.toml").exists() else {}
+    if manifest.get("isomer_template_layer") != "domain_agent_team_template":
+        errors.append("manifest isomer_template_layer must be domain_agent_team_template")
+    if manifest.get("topic_instantiation_required") is not True:
+        errors.append("manifest topic_instantiation_required must be true")
+
+    templates = template_registry().get("templates", {}) if (EXECPLAN / "specs/comms/templates.toml").exists() else {}
+    for name, entry in templates.items():
+        if not (EXECPLAN / entry["schema_path"]).exists():
+            errors.append(f"template {name} schema path missing: {entry['schema_path']}")
+        if not (EXECPLAN / entry["renderer_path"]).exists():
+            errors.append(f"template {name} renderer path missing: {entry['renderer_path']}")
+
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+    print("validation ok")
+    return 0
+
+
+def query(args: argparse.Namespace) -> int:
+    if args.kind == "participants":
+        return as_json(read_toml(EXECPLAN / "specs/participants/participants.toml"))
+    if args.kind == "topology":
+        return as_json(read_toml(EXECPLAN / "specs/collab/topology/topology.toml"))
+    if args.kind == "templates":
+        return as_json(template_registry())
+    raise SystemExit(f"unknown query kind: {args.kind}")
+
+
+def email_schema(args: argparse.Namespace) -> int:
+    entry = template_entry(args.template_name)
+    return as_json(
+        {
+            "template_name": args.template_name,
+            "schema_id": entry["schema_id"],
+            "schema_path": str(EXECPLAN / entry["schema_path"]),
+        }
+    )
+
+
+def email_validate(args: argparse.Namespace) -> int:
+    entry = template_entry(args.template_name)
+    schema = read_json(EXECPLAN / entry["schema_path"])
+    payload = load_payload(Path(args.payload_path))
+    errors = validate_schema_subset(schema, payload)
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+    print("payload ok")
+    return 0
+
+
+def control_status(args: argparse.Namespace) -> int:
+    seed = read_toml(EXECPLAN / "specs/state/seed.toml")
+    default_control = seed["default_control"]
+    return as_json(
+        {
+            "run_id": args.run_id,
+            "run_state": default_control["run_state"],
+            "execution_mode": default_control["execution_mode"],
+            "control_mode": default_control["control_mode"],
+            "auto_mode_requires_topic_policy": default_control["auto_mode_requires_topic_policy"],
+        }
+    )
+
+
+def control_get_mode(_: argparse.Namespace) -> int:
+    seed = read_toml(EXECPLAN / "specs/state/seed.toml")
+    print(seed["default_control"]["execution_mode"])
+    return 0
+
+
+def instantiation_placeholders(_: argparse.Namespace) -> int:
+    return as_json(read_toml(EXECPLAN / "harness/refs/instantiation-parameters.toml"))
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    validate_parser = subparsers.add_parser("validate")
+    validate_parser.set_defaults(func=validate_package)
+
+    query_parser = subparsers.add_parser("query")
+    query_parser.add_argument("kind", choices=["participants", "topology", "templates"])
+    query_parser.set_defaults(func=query)
+
+    email_parser = subparsers.add_parser("email")
+    email_subparsers = email_parser.add_subparsers(dest="email_command", required=True)
+    schema_parser = email_subparsers.add_parser("schema")
+    schema_parser.add_argument("template_name")
+    schema_parser.set_defaults(func=email_schema)
+    validate_payload_parser = email_subparsers.add_parser("validate")
+    validate_payload_parser.add_argument("template_name")
+    validate_payload_parser.add_argument("payload_path")
+    validate_payload_parser.set_defaults(func=email_validate)
+
+    control_parser = subparsers.add_parser("control")
+    control_subparsers = control_parser.add_subparsers(dest="control_command", required=True)
+    status_parser = control_subparsers.add_parser("status")
+    status_parser.add_argument("--run-id", default="{run_id}")
+    status_parser.set_defaults(func=control_status)
+    get_mode_parser = control_subparsers.add_parser("get-mode")
+    get_mode_parser.set_defaults(func=control_get_mode)
+
+    instantiation_parser = subparsers.add_parser("instantiation")
+    instantiation_subparsers = instantiation_parser.add_subparsers(dest="instantiation_command", required=True)
+    placeholders_parser = instantiation_subparsers.add_parser("placeholders")
+    placeholders_parser.set_defaults(func=instantiation_placeholders)
+
+    return parser
+
+
+def main() -> int:
+    parser = build_parser()
+    args = parser.parse_args()
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,51 @@
+# Generated command registry for the deepsci-org harness.
+
+[harness]
+description = "Loop-local helper surface for validation, contract lookup, mail payload checks, and control context. Platform operations remain owned by maintained Houmao skills."
+entrypoint = "harness/bin/deepsci-org"
+loop_slug = "deepsci-org"
+
+[[commands]]
+name = "validate"
+description = "Validate generated package shape, parse generated TOML and JSON files, check the SQLite schema, and verify the process overview has required pseudocode and sequence diagram blocks."
+usage = "execplan/harness/bin/deepsci-org validate"
+
+[[commands]]
+name = "query participants"
+description = "Print participant role contracts as JSON."
+usage = "execplan/harness/bin/deepsci-org query participants"
+
+[[commands]]
+name = "query topology"
+description = "Print topology contract as JSON."
+usage = "execplan/harness/bin/deepsci-org query topology"
+
+[[commands]]
+name = "query templates"
+description = "Print mail template registry as JSON."
+usage = "execplan/harness/bin/deepsci-org query templates"
+
+[[commands]]
+name = "email schema"
+description = "Resolve a mail template name to its schema id and schema path."
+usage = "execplan/harness/bin/deepsci-org email schema handoff_request"
+
+[[commands]]
+name = "email validate"
+description = "Validate one JSON or TOML payload against the generated top-level mail schema constraints."
+usage = "execplan/harness/bin/deepsci-org email validate handoff_request payload.json"
+
+[[commands]]
+name = "control status"
+description = "Print default control context for a run. This is read-only loop-local context, not gateway or notifier inspection."
+usage = "execplan/harness/bin/deepsci-org control status --run-id RUN"
+
+[[commands]]
+name = "control get-mode"
+description = "Print the default generated execution mode."
+usage = "execplan/harness/bin/deepsci-org control get-mode"
+
+[[commands]]
+name = "instantiation placeholders"
+description = "Print topic-level placeholder catalog used to specialize this Domain Agent Team Template."
+usage = "execplan/harness/bin/deepsci-org instantiation placeholders"

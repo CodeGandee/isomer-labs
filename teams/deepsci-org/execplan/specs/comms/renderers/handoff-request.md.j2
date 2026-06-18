@@ -1,0 +1,36 @@
+```houmao-email-metadata
+schema_id = "deepsci-org.email.handoff-request"
+schema_version = "1"
+kind = "request"
+run_id = "{{ run_id }}"
+plan_revision = "{{ plan_revision }}"
+payload_id = "{{ payload_id }}"
+handoff_id = "{{ handoff_id }}"
+sender_role = "{{ sender_role }}"
+receiver_role = "{{ receiver_role }}"
+result_target_role = "{{ result_target_role }}"
+```
+
+# Handoff Request: {{ workflow_stage }}
+
+Research Topic: `{{ research_topic_id }}`
+
+Research Inquiry: `{{ research_inquiry_id }}`
+
+Research Task: `{{ research_task_id }}`
+
+Task scope: {{ task_scope }}
+
+Expected outputs: {{ expected_outputs }}
+
+Inspected inputs: {{ inspected_inputs }}
+
+Gate constraints: {{ gate_constraints }}
+
+Capability Binding: `{{ capability_binding_ref }}`
+
+Skill Binding Projection: `{{ skill_binding_projection_ref }}`
+
+Completion Watcher Contract: `{{ completion_watcher_contract_ref }}`
+
+Return one `deepsci-org.email.handoff-result` to `deepsci-org-master`. Do not dispatch another specialist unless the Topic Agent Team Profile grants that authority.

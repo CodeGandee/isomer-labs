@@ -1,0 +1,87 @@
+# Generated workspace contract for deepsci-org.
+
+[workspace_contract]
+description = "Template-level workspace contract. Concrete Topic Workspace and Agent Workspace paths are supplied by the Project Manifest, Research Topic Config, Topic Agent Team Profile, Agent Team Instance, and workspace preparation stage."
+template_authoring_package = "teams/deepsci-org/"
+editable_intention = "teams/deepsci-org/intention/"
+generated_execplan = "teams/deepsci-org/execplan/"
+tool_local_runs = "teams/deepsci-org/runs/"
+isomer_runtime_truth = "{topic_workspace_ref}"
+workspace_runtime_ref = "{workspace_runtime_ref}"
+project_manifest_ref = "{project_manifest_ref}"
+topic_workspace_ref = "{topic_workspace_ref}"
+research_topic_config_ref = "{research_topic_config_ref}"
+
+[workspace_manager_inputs]
+description = "Inputs to adapt during prepare-workspace through houmao-utils-workspace-mgr or equivalent manual readiness evidence."
+operation_intent = "plan"
+workspace_flavor = "topic-agent-team"
+repo_or_workspace_root_policy = "use topic_workspace_ref from Project Manifest"
+launch_cwd_policy = "launch from each concrete agent_workspace_ref unless the Topic Agent Team Profile overrides it"
+shared_kb_policy = "Use Topic Workspace Artifacts and promoted handoff bundles; do not create a workspace-local teams directory."
+memo_seed_posture = "Topic profile may provide role-scoped memo seeds; this template does not write memory files."
+validation_command_inputs = ["execplan/harness/bin/deepsci-org validate"]
+
+[[agent_workspace_templates]]
+role_id = "deepsci-org-master"
+description = "Master Agent Workspace for route state, handoff normalization notes, Gate tracking refs, and closure packet drafting."
+agent_workspace_ref_placeholder = "{deepsci_org_master_agent_workspace_ref}"
+write_scope = "owned master notes, generated handoff payloads, route summaries, and closure packet drafts"
+peer_read_access = "declared handoff bundles and promoted Artifacts only unless {coordination_policy_ref} grants broader reads"
+
+[[agent_workspace_templates]]
+role_id = "deepsci-org-framer"
+description = "Framer Agent Workspace for literature notes, comparator checks, baseline evidence, and source identity records."
+agent_workspace_ref_placeholder = "{deepsci_org_framer_agent_workspace_ref}"
+write_scope = "owned framing, scout, and baseline Agent Artifacts"
+peer_read_access = "declared handoff bundles and promoted Artifacts"
+
+[[agent_workspace_templates]]
+role_id = "deepsci-org-designer"
+description = "Designer Agent Workspace for objective contracts, idea boards, candidate briefs, and optimization frontier notes."
+agent_workspace_ref_placeholder = "{deepsci_org_designer_agent_workspace_ref}"
+write_scope = "owned route design and optimization Agent Artifacts"
+peer_read_access = "declared handoff bundles and promoted Artifacts"
+
+[[agent_workspace_templates]]
+role_id = "deepsci-org-experimenter"
+description = "Experimenter Agent Workspace for code changes, execution logs, metrics, outputs, and failure records."
+agent_workspace_ref_placeholder = "{deepsci_org_experimenter_agent_workspace_ref}"
+write_scope = "owned implementation and measurement Agent Artifacts for one task or isolated fanout shard"
+peer_read_access = "declared handoff bundles and promoted Artifacts; broader read access requires {coordination_policy_ref}"
+
+[[agent_workspace_templates]]
+role_id = "deepsci-org-analyzer"
+description = "Analyzer Agent Workspace for follow-up slices, ablations, robustness checks, error analysis, and claim updates."
+agent_workspace_ref_placeholder = "{deepsci_org_analyzer_agent_workspace_ref}"
+write_scope = "owned analysis Agent Artifacts for one task or isolated slice shard"
+peer_read_access = "declared handoff bundles and promoted Artifacts; broader read access requires {coordination_policy_ref}"
+
+[[agent_workspace_templates]]
+role_id = "deepsci-org-publisher"
+description = "Publisher Agent Workspace for outlines, drafts, figures, plots, data availability material, and presentation surfaces."
+agent_workspace_ref_placeholder = "{deepsci_org_publisher_agent_workspace_ref}"
+write_scope = "owned publication Agent Artifacts derived from supported evidence"
+peer_read_access = "claim-evidence map, promoted Artifacts, and declared handoff bundles"
+
+[[agent_workspace_templates]]
+role_id = "deepsci-org-reviewer"
+description = "Reviewer Agent Workspace for skeptical audit, revision logs, reviewer item normalization, and rebuttal routing notes."
+agent_workspace_ref_placeholder = "{deepsci_org_reviewer_agent_workspace_ref}"
+write_scope = "owned review Agent Artifacts and route recommendations"
+peer_read_access = "Topic profile decides between broad Peer Read Access and promoted Artifact-only review"
+
+[[read_write_rules]]
+id = "no-workspace-local-teams"
+description = "A Topic Workspace must not contain a workspace-local teams directory for this template."
+severity = "error"
+
+[[read_write_rules]]
+id = "promote-before-dependency"
+description = "Durable dependencies should be promoted into Artifacts, Evidence Items, Findings, Research Claims, Decision Records, Gates, or Provenance Records before another role relies on them."
+severity = "warning"
+
+[[read_write_rules]]
+id = "peer-write-disallowed"
+description = "Peer writes into another Agent Workspace are validation issues unless the Coordination Policy explicitly assigns repair, migration, or cleanup work."
+severity = "error"

@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepsci-org.email.handoff-result",
+  "title": "deepsci-org handoff result mail",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "kind",
+    "run_id",
+    "plan_revision",
+    "payload_id",
+    "handoff_id",
+    "sender_role",
+    "receiver_role",
+    "status",
+    "summary",
+    "recommended_next_stage"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "deepsci-org.email.handoff-result"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "result"
+      ]
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "handoff_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sender_role": {
+      "type": "string",
+      "enum": [
+        "deepsci-org-framer",
+        "deepsci-org-designer",
+        "deepsci-org-experimenter",
+        "deepsci-org-analyzer",
+        "deepsci-org-publisher",
+        "deepsci-org-reviewer"
+      ]
+    },
+    "receiver_role": {
+      "type": "string",
+      "const": "deepsci-org-master"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "blocked",
+        "needs_gate",
+        "partial",
+        "failed"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence_item_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "finding_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "research_claim_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decision_record_recommendations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "gate_recommendations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "caveats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommended_next_stage": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}
