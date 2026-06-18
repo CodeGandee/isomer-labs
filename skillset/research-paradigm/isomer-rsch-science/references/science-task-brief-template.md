@@ -55,7 +55,7 @@ Primary runtime or throughput metric and aggregation rule.
 - test-case: held-out workload
 
 ## Build
-Deterministic build or install commands through an approved Execution Adapter.
+Deterministic build or install commands through approved Execution Adapter Command Requests.
 
 ## Notes
 - deterministic thread, seed, MPI, launcher, and input-file constraints

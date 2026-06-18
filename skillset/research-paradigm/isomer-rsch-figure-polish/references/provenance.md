@@ -8,7 +8,7 @@ Source-runtime concepts were intentionally translated:
 
 - source milestone and paper surfaces became Isomer figure surface classes recorded on Artifacts and Provenance Records.
 - source paper figure catalogs became figure-output Artifact indexes resolved by Workspace Path Resolution.
-- source plotting execution became Capability Binding through an Execution Adapter.
+- source plotting execution became Execution Adapter Command Request with Capability Binding refs.
 - source final-export schema language became existing Artifact, Evidence Item, Provenance Record, and figure output Artifacts resolved by Workspace Path Resolution.
 - source style guidance became a local Matplotlib style asset and a style-contract reference.
 

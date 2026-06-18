@@ -25,15 +25,15 @@ Find the one-sentence paper idea. Separate observed facts from allowed interpret
 | writing-plan compile call | Section-level writing plan Artifact |
 | paper contract | Bundle of outline, claim-evidence map, experiment or analysis matrix, bibliography, displays, and manuscript state |
 | artifact or memory operations | Artifacts, Evidence Items, Findings, Decision Records, Gates, or host APIs |
-| paper paths | paper layout or Artifact layout TBD surfaces |
+| paper paths | paper Artifact or another semantic Artifact kind resolved by Workspace Path Resolution |
 
-## TBD Surfaces
+## Resolved Surfaces
 
 Use the accepted Artifact and Provenance recording API for outline recording, paper Artifacts resolved by Workspace Path Resolution for manuscript outputs, the accepted Research Claim fields for claim fields, the accepted Evidence Item fields for evidence fields, and the accepted Decision Record fields for outline selection decisions.
 
-| ID | Kind | Missing decision |
-| --- | --- | --- |
-| paper Artifact | resolved path surface | Resolved through Workspace Path Resolution. |
+| Surface | Resolution |
+| --- | --- |
+| paper Artifact | Resolved through Workspace Path Resolution. |
 
 ## Good Outline Definition
 

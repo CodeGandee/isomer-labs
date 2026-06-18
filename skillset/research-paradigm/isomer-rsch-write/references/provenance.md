@@ -9,9 +9,9 @@ Source-runtime concepts were intentionally translated:
 - lifecycle-level research work became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage Cursor language.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
-- command execution became Capability Binding through an Execution Adapter.
-- paper paths and generated layouts became Topic Workspace, paper Artifacts or semantic Artifact scopes resolved through Workspace Path Resolution when ordinary locations are needed; non-path TBD placeholders remain for unsettled APIs, schemas, providers, and policies.
-- citation providers became literature search Capability Bindings with provider TBDs.
+- command execution became Execution Adapter Command Request with Capability Binding refs.
+- paper paths and generated layouts became Topic Workspace, paper Artifacts or semantic Artifact scopes resolved through Workspace Path Resolution when ordinary locations are needed; implementation-specific APIs, schemas, providers, and policies remain behind accepted extension refs.
+- citation providers became Literature Provider Binding refs.
 
 Venue LaTeX templates were not imported in this slice. See `deferred-venue-templates.md` for the decision and follow-up criteria.
 

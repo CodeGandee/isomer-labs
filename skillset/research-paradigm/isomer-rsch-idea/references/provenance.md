@@ -10,7 +10,7 @@ Source-runtime concepts were intentionally translated:
 - durable lines became Research Inquiry Relationship decisions.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
-- paper lookup became literature search capability with `[[tbd-surface:provider-literature-search]]`.
+- paper lookup became Literature Provider Binding refs.
 - source default paths map to semantic Artifact scopes resolved by Workspace Path Resolution rather than hard-coded Isomer layouts.
 
 License context: the source project is licensed under Apache 2.0. Preserve this notice near this self-contained adaptation when copying, distributing, or materially revising the skill.

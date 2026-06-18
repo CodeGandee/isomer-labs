@@ -19,7 +19,7 @@ When this skill is invoked, execute the following steps in order.
 4. **Choose the lightest trustworthy route**. Prefer attach, import, or verify-local-existing before full reproduction when they can satisfy the current acceptance target; use `references/route-selection.md` for route criteria.
 5. **Define the metric contract and evidence boundary**. Record comparator identity, task, dataset, split, evaluation path or evaluation Capability Binding, required metric ids, metric directions, source identity, and known deviations.
 6. **Collect only decision-relevant evidence and verify it**. Trace metrics or outputs to durable Evidence Items, Artifacts, Run records, source documents, or accepted reusable packages, then classify comparability with `references/comparability-contract.md`.
-7. **Close the baseline Gate explicitly**. Record a Decision Record that accepts, waives, replaces, blocks, or changes route, and carry caveats into the next Workflow Stage Cursor.
+7. **Close the baseline Gate explicitly**. Record a Decision Record that accepts, waives under a Baseline-Waiver Policy ref, replaces, blocks, or changes route, and carry caveats into the next Workflow Stage Cursor.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
 
@@ -56,7 +56,7 @@ Do not use this skill when a verified active baseline already exists for the cur
 - `comparison-ready`: one comparator is trustworthy enough for downstream comparison and the core metric contract is durable.
 - `paper-repro-ready`: the comparator can support paper-facing reproduction or comparison claims.
 - `reusable-package`: the baseline evidence and provenance are clean enough to package as a reusable Artifact after verification.
-- `waived`: the Research Task must continue without a baseline and the reason is durable.
+- `waived`: the Research Task must continue without a baseline, the Baseline-Waiver Policy ref is recorded, and the reason is durable.
 - `blocked`: the current route cannot clear the Gate cleanly and the next best move is explicit.
 - `route-changed`: the previous route is no longer the best trust-per-cost path and a Decision Record names the replacement.
 
@@ -86,6 +86,6 @@ Classify the outcome as `verified-match`, `verified-close`, `verified-diverged`,
 - Do not treat attach, import, package materialization, or reusable-package publication as baseline acceptance by itself.
 - Do not hide dataset, split, evaluator, metric definition, metric direction, source identity, or environment deviations.
 - Do not force full reproduction when a lighter route satisfies the acceptance target.
-- Do not keep doing baseline work after one comparator is accepted, waived, blocked, or route-changed, unless a named comparison risk remains.
+- Do not keep doing baseline work after one comparator is accepted, waived under a Baseline-Waiver Policy ref, blocked, or route-changed, unless a named comparison risk remains.
 - Do not repeat the same failure class without new evidence, a code change, an environment change, or a route change.
-- Use `[[tbd-surface:policy-baseline-waiver]]` for unsettled waiver rules and the accepted Gate open/resolve/record API when a concrete Gate API must be named.
+- Use Baseline-Waiver Policy refs for waiver routes and the accepted Gate open/resolve/record API when a concrete Gate API must be named.

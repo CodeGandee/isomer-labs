@@ -8,7 +8,7 @@ Prefer durable records over recollection:
 
 1. Operator Agent instruction and explicit Gates.
 2. Selected outline, claim-evidence map, experiment or analysis matrix, bibliography, figure/table catalog, manuscript bundle, Decision Records, Research Claims, Evidence Items, Artifacts, and Provenance Records.
-3. Run records, validated logs, figure renders, tables, code or configuration facts verified through an approved Capability Binding and Execution Adapter.
+3. Run records, validated logs, figure renders, tables, code or configuration facts verified through approved Execution Adapter Command Requests with Capability Binding refs.
 4. Current conversation context, only when durable state is absent or being interpreted.
 
 ## Pre-write Revision Strategy Gate
@@ -30,17 +30,17 @@ Keep these surfaces aligned when they exist: selected outline Artifact, evidence
 | outline submit or compile call | Outline Artifact, section-level writing plan, and Gate over outline readiness |
 | analysis campaign launch | Decision Record that routes to `isomer-rsch-analysis` |
 | memory read or write | Finding query, Evidence Item lookup, Artifact note, or durable context query through the accepted Finding query/write API |
-| shell or document build execution | Capability Binding through an Execution Adapter using `[[tbd-surface:api-execution-command]]` |
-| literature provider | literature search capability with provider unsettled by `[[tbd-surface:provider-literature-search]]` |
+| shell or document build execution | Execution Adapter Command Request with applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs |
+| literature provider | Literature Provider Binding refs |
 
-## Registered TBD Surfaces
+## Resolved Surfaces
 
-| ID | Kind | Missing decision |
-| --- | --- | --- |
-| paper Artifact | resolved path surface | Resolved through Workspace Path Resolution. |
-| semantic Artifact kind | resolved path surface | Resolved through Workspace Path Resolution. |
-| api-execution-command | api | Execution command surface, permissions, and logging behavior. |
-| provider-literature-search | provider | Literature search and paper-reading provider. |
+| Surface | Resolution |
+| --- | --- |
+| paper Artifact | Resolved through Workspace Path Resolution. |
+| semantic Artifact kind | Resolved through Workspace Path Resolution. |
+| command execution | Resolved through Execution Adapter Command Requests. |
+| literature provider | Resolved through Literature Provider Binding refs. |
 
 ## Section Job Discipline
 

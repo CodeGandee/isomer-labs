@@ -4,7 +4,7 @@ Use this reference when writing depends on literature support, reference counts,
 
 ## Citation Truth
 
-Do not hand-write citations, BibTeX entries, venues, dates, metrics, or related-work claims from recollection. Treat bibliography facts as Evidence Items that must come from a verified paper source, DOI or arXiv metadata, proceedings page, journal page, or another accepted literature capability. If the provider is not settled, mark the dependency with `[[tbd-surface:provider-literature-search]]`.
+Do not hand-write citations, BibTeX entries, venues, dates, metrics, or related-work claims from recollection. Treat bibliography facts as Evidence Items that must come from a verified paper source, DOI or arXiv metadata, proceedings page, journal page, or Literature Provider Binding output recorded first as a provider-output Artifact.
 
 ## Search Pattern
 
@@ -16,7 +16,7 @@ For paper-like deliverables, aim for enough verified references to support the c
 
 ## BibTeX Hygiene
 
-Keep bibliography entries machine-usable and consistent with manuscript citations. Check that keys are stable, titles and venues are accurate, duplicate entries are removed, author lists are not malformed, and cited entries appear in the bibliography. Do not claim a bibliography check was run unless it was executed through an approved Execution Adapter.
+Keep bibliography entries machine-usable and consistent with manuscript citations. Check that keys are stable, titles and venues are accurate, duplicate entries are removed, author lists are not malformed, and cited entries appear in the bibliography. Do not claim a bibliography check was run unless it was executed through an approved Execution Adapter Command Request.
 
 ## Related-Work Discipline
 

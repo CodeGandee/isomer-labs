@@ -9,7 +9,7 @@ Source-runtime concepts were intentionally translated:
 - plotting workspaces became figure-generation Artifacts resolved by Workspace Path Resolution.
 - bundled scripts became local style references and deferred resources rather than active runtime dependencies.
 - source data paths became Source Data Artifacts or linked Evidence Items.
-- script execution became Capability Binding through an Execution Adapter.
+- script execution became Execution Adapter Command Request with Capability Binding refs.
 - final exports became Artifacts, Evidence Items, and Provenance Records rather than a source-specific export schema.
 
 License context: the DeepScientist source project is licensed under Apache 2.0. Preserve this notice near this self-contained adaptation when copying, distributing, or materially revising the skill.

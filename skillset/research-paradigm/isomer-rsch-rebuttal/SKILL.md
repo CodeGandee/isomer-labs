@@ -65,6 +65,7 @@ Read references as needed:
 - Do not invent experiment results, response claims, manuscript changes, citations, or reviewer intent.
 - Do not rewrite reviewer meaning during normalization; mark inferred items clearly.
 - Do not launch free-floating supplementary work; every slice must answer named reviewer items.
+- Do not route reviewer-linked baseline-dependent analysis as ready unless the accepted comparator is durable or a Baseline-Waiver Policy ref plus required Gate or Decision Record is durable.
 - Do not treat novelty or positioning pressure as an automatic experiment request.
 - Do not pretend a limitation is solved when it is only reframed.
 - Do not finalize while reviewer-critical feasible rows remain unresolved without an explicit blocker or limitation note.

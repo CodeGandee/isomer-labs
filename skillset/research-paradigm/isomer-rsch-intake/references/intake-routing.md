@@ -29,7 +29,7 @@ Use this reference after state audit and trust ranking to choose the smallest va
 
 ## Gate Rules
 
-Open or recommend a Gate through the Operator Agent when the next route depends on scope, cost, privacy, safety, publication preference, finality, or a human-held source. Do not use a Gate for routine technical ambiguity that durable evidence can resolve.
+Run Gate Policy preflight when the next route depends on scope, cost, credential use, privacy, safety, publication-facing output, finality, external upload, or a human-held source, and open or recommend a Gate when the selected policy requires Operator Agent judgment. Do not use a Gate for routine technical ambiguity that durable evidence can resolve.
 
 ## Route Decision Minimum
 

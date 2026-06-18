@@ -16,7 +16,7 @@ Before writing the report, identify package maturity, one to three core claims, 
 
 ## Stop-Loss Rule
 
-If novelty, evidence sufficiency, or reader value has collapsed beyond reasonable claim narrowing, recommend `isomer-rsch-decision` for stop, Research Inquiry Relationship, or scope downgrade. Do not recommend another cosmetic revision pass. When the route depends on user publication, scope, cost, or non-paper preference, record or ask for a Gate through the Operator Agent.
+If novelty, evidence sufficiency, or reader value has collapsed beyond reasonable claim narrowing, recommend `isomer-rsch-decision` for stop, Research Inquiry Relationship, or scope downgrade. Do not recommend another cosmetic revision pass. When the route depends on publication-facing output, scope, cost, privacy, external upload, or non-paper preference, run Gate Policy preflight and open or reference a Gate when Operator Agent judgment is required.
 
 ## Source-Term Mapping
 
@@ -28,17 +28,17 @@ If novelty, evidence sufficiency, or reader value has collapsed beyond reasonabl
 | experiment todo file | Evidence TODO Artifact or analysis frontier linked to a Decision Record |
 | paper coverage validation call | Gate over manuscript coverage, evidence provenance, citations, language, figures, and bundle state |
 | artifact or memory operations | Artifacts, Evidence Items, Findings, Decision Records, Gates, or host APIs |
-| command execution | Capability Binding through an Execution Adapter using `[[tbd-surface:api-execution-command]]` |
+| command execution | Execution Adapter Command Request with applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs |
 
-## TBD Surfaces
+## Resolved Extension Surfaces
 
-Use paper Artifact through Workspace Path Resolution for concrete manuscript layouts, the accepted Artifact and Provenance recording API for record updates, the accepted Finding query/write API for durable context queries, `[[tbd-surface:provider-literature-search]]` for literature search providers, and the accepted Evidence Item fields for evidence fields.
+Use paper Artifact through Workspace Path Resolution for concrete manuscript layouts, the accepted Artifact and Provenance recording API for record updates, the accepted Finding query/write API for durable context queries, Literature Provider Binding refs for literature search providers, Execution Adapter Command Requests for executable inspection, and the accepted Evidence Item fields for evidence fields.
 
-| ID | Kind | Missing decision |
-| --- | --- | --- |
-| paper Artifact | resolved path surface | Resolved through Workspace Path Resolution. |
-| api-execution-command | api | Execution command surface, permissions, and logging behavior. |
-| provider-literature-search | provider | Literature search and paper-reading provider. |
+| Surface | Resolution |
+| --- | --- |
+| paper Artifact | Resolved through Workspace Path Resolution. |
+| command execution | Resolved through Execution Adapter Command Requests. |
+| literature provider | Resolved through Literature Provider Binding refs. |
 
 ## Review Gate Pass Conditions
 

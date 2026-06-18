@@ -15,7 +15,7 @@ Choose the route that gives the best trust per unit time, compute, and coordinat
 | `verify-local-existing` | A local implementation or evaluation Capability Binding already exists and can be checked cheaply. | Local comparator identity, evaluation path, output location, required metrics, and comparability verdict are verified. |
 | `reproduce` | Source paper, repository, package, or protocol must be rerun to establish trust. | Source identity, evaluation path, expected outputs, deviations, verification evidence, and metric contract are explicit. |
 | `repair` | A known baseline line failed but a bounded fix or route change could recover trust. | Broken point is identified, the fix or route switch is bounded, fresh evidence changes the trust state, and the result is accepted or blocked. |
-| `waive` | The Research Task must continue without a baseline and the reason is real, explicit, and durable. | Decision Record states why the Gate is waived, what was tried or skipped, what risk remains, and how later work should carry the caveat. |
+| `waive` | The Research Task must continue without a baseline and the reason is real, explicit, and durable. | Baseline-Waiver Policy ref is recorded, any required Gate is opened or resolved, and the Decision Record states what was tried or skipped, what risk remains, and how later work should carry the caveat. |
 | `block` | No honest route can clear or waive the Gate within current constraints. | Blocker class, evidence, tried steps, missing dependency, and next best move are durable. |
 | `route-change` | The active path no longer maximizes trust per cost. | Decision Record names the old route, new route, reason, preserved evidence, and next action. |
 
@@ -48,4 +48,4 @@ Escalate to fuller audit, reproduction, or repair when:
 
 ## Stop Rule
 
-Stop baseline work once one accepted comparator, explicit waiver, explicit blocker, or explicit route change is durable. Extra baseline work must name the comparison risk it removes.
+Stop baseline work once one accepted comparator, Baseline-Waiver Policy-backed waiver, explicit blocker, or explicit route change is durable. Extra baseline work must name the comparison risk it removes.

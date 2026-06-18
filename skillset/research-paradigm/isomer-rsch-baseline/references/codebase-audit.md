@@ -14,7 +14,7 @@ Record:
 - metrics computation path
 - output, checkpoint, or trusted-output locations as Evidence Item pointers
 - expected resource class and material hardware assumptions
-- external services, downloads, credentials, or data-export risks that require a Gate
+- external services, downloads, credentials, private data, external upload, or data-export risks that require Gate Policy preflight
 
 ## Implementation Map
 
@@ -22,7 +22,7 @@ Identify key classes, functions, scripts, notebooks, configuration files, or ser
 
 ## Practical Constraints
 
-Check external downloads, service dependencies, credentials, hardware assumptions, brittle setup, undocumented environment requirements, and evaluator assumptions. Route concrete execution through a Capability Binding and use `[[tbd-surface:api-execution-command]]` when the command surface itself must be named.
+Check external downloads, service dependencies, credentials, hardware assumptions, brittle setup, undocumented environment requirements, and evaluator assumptions. Route concrete execution through an Execution Adapter Command Request with the applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs.
 
 ## Baseline Understanding Goal
 

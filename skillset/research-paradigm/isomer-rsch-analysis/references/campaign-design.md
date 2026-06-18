@@ -76,4 +76,4 @@ When resources are tight, optimize for soundness-per-cost:
 - use narrower sweeps, fewer seeds, shorter horizons, smaller held-out subsets, or cheaper diagnostics when they still answer the question honestly
 - record blocked high-value slices explicitly instead of letting them disappear
 
-Use `[[tbd-surface:api-execution-command]]` for unsettled execution command surfaces and analysis output Artifacts resolved by Workspace Path Resolution.
+Use Execution Adapter Command Requests for execution and analysis output Artifacts resolved by Workspace Path Resolution.

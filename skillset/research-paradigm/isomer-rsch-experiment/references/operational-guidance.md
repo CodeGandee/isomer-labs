@@ -34,7 +34,7 @@ Use Findings to avoid repeating known failures or to preserve reusable experimen
 
 ## Recording Rules
 
-Use progress records for long-running execution updates, Evidence Items for results, Decision Records for continue, Research Inquiry Relationship, analysis, write, reset, or stop decisions, and Gates for explicit expensive or risky Operator Agent approvals. Use the accepted Artifact and Provenance recording API for durable record updates.
+Use progress records for long-running execution updates, Evidence Items for results, Decision Records for continue, Research Inquiry Relationship, analysis, write, reset, or stop decisions, and Gate Policy preflight plus Gates for governed expensive, risky, credentialed, private-data, external-upload, long-compute, destructive-change, or publication-facing actions. Use the accepted Artifact and Provenance recording API for durable record updates.
 
 ## Chart Notes
 

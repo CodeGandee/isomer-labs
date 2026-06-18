@@ -36,7 +36,7 @@ Read references as needed:
 - `references/claim-ledger.md` when classifying final claim status and belief changes.
 - `references/package-inventory.md` when code, experiment, analysis, report, paper, review, or release outputs must be checked.
 - `references/resume-packet.md` when the Research Inquiry may continue later.
-- `references/closure-gate-guidance.md` when deciding whether to stop, park, publish, archive, continue, or request Operator Agent approval.
+- `references/closure-gate-guidance.md` when deciding whether to stop, park, publish, archive, continue, or run Gate Policy preflight for Operator Agent approval.
 
 ## Entry Signals
 

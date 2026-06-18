@@ -15,4 +15,4 @@ Classify the figure before polishing because export expectations, review strictn
 - Who will read the figure first: Operator Agent, reviewer, paper reader, internal team, or future agent?
 - Is the figure evidence-facing, claim-facing, or only diagnostic?
 - Will it be down-scaled, embedded in a report, or cited by a Research Claim?
-- Does the surface require a Gate before cost, privacy, export, or external upload?
+- Does Gate Policy preflight require a resolved Gate before cost, privacy, export, publication-facing output, or external upload?

@@ -8,19 +8,19 @@ Do not use decision to paper over state ambiguity. If the active mainline, decis
 
 ## Evidence Gathering
 
-Gather only evidence that can change the route. If shell, repository, environment, or git evidence is needed, gather it through a Capability Binding and Execution Adapter. If the concrete command surface must be named but remains unsettled, use `[[tbd-surface:api-execution-command]]`.
+Gather only evidence that can change the route. If shell, repository, environment, or git evidence is needed, gather it through an Execution Adapter Command Request with the applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs.
 
 ## Baseline Reuse
 
-When the route lands on comparator reuse, separate three questions: whether the candidate can be attached as relevant, whether it can be accepted as active, and whether a waiver is needed. If acceptance or waiver rules are unsettled, use `[[tbd-surface:policy-baseline-waiver]]`.
+When the route lands on comparator reuse, separate three questions: whether the candidate can be attached as relevant, whether it can be accepted as active, and whether a waiver is needed. Use Baseline-Waiver Policy refs for routes that proceed without an accepted active baseline, then run Gate Policy preflight and open a Gate when the waiver policy requires Operator Agent judgment.
 
 ## User Input
 
-Ask the Operator Agent only when multiple options remain plausible and the choice depends on preference, scope, cost, privacy, safety, finality, or missing user-held source. Use a structured Gate with one to three concrete options, tradeoffs, and a recommended option first.
+Use Gate Policy preflight when multiple options remain plausible and the choice depends on preference, scope, cost, credential use, privacy, safety, publication-facing output, finality, external upload, or missing user-held source. Open a structured Gate with one to three concrete options, tradeoffs, and a recommended option first when the selected policy requires Operator Agent judgment.
 
 ## Paper Routes
 
-For paper-facing decisions, judge method fidelity, evidence support, story coherence, coverage state, and reader value. A draft checkpoint is not final. A review package routes to review or rebuttal. If publishability has collapsed, recommend stop or a new Research Inquiry Relationship and ask for an Operator Agent Gate before executing a preference-sensitive stop.
+For paper-facing decisions, judge method fidelity, evidence support, story coherence, coverage state, and reader value. A draft checkpoint is not final. A review package routes to review or rebuttal. If publishability has collapsed, recommend stop or a new Research Inquiry Relationship, then use Gate Policy preflight before executing a preference-sensitive stop.
 
 ## Algorithm-First Routes
 

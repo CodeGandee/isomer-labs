@@ -15,7 +15,7 @@ When this skill is invoked, execute the following steps in order.
 
 1. **Load required context**. Read `references/isomer-research-contract.md` first and read `references/provenance.md` when source provenance or license context matters.
 2. **Select supporting references** from **Reference Routing** when planning, checklist control, execution, evidence quality, operational monitoring, or run recording matters.
-3. **Confirm entry fit and recover inputs**. Recover the selected route, accepted comparator or waiver, metric contract, current workspace context, expected outputs, and prior incident patterns.
+3. **Confirm entry fit and recover inputs**. Recover the selected route, accepted comparator or Baseline-Waiver Policy-backed waiver, metric contract, current workspace context, expected outputs, and prior incident patterns.
 4. **Lock the Run contract**. Define the research question, comparator, dataset or split, metric keys, stop rule, abandonment rule, output expectations, comparability boundary, and strongest alternative hypothesis.
 5. **Implement the minimum hypothesis-bound change**. Keep the comparator read-only, avoid unrelated cleanup, preserve theory fidelity, and revise the plan before changing the route.
 6. **Smoke only when it answers execution uncertainty**. Use a bounded smoke or pilot to verify command path, output schema, evaluator wiring, or environment assumptions, then move to the evidence-bearing Run unless blocked.
@@ -42,7 +42,7 @@ Read references as needed:
 ## Entry Signals
 
 - A selected route or promoted candidate is ready for one bounded implementation pass or main Run.
-- Comparator status, metric contract, expected outputs, and stop rules are known or can be locked before execution.
+- Comparator status, Baseline-Waiver Policy refs when proceeding without an accepted comparator, metric contract, expected outputs, and stop rules are known or can be locked before execution.
 - The Research Task needs a measured result that can support, weaken, narrow, or refute a Research Claim.
 
 ## Exit Criteria
@@ -57,7 +57,7 @@ Read references as needed:
 For each meaningful Run, record enough of the following to make the evidence reusable:
 
 - run id, route id, Research Inquiry Relationship, comparator reference, metric contract, dataset or split, and expected outputs
-- exact execution plan through a Capability Binding and Execution Adapter, with unsettled command surfaces marked as `[[tbd-surface:api-execution-command]]`
+- exact execution plan as an Execution Adapter Command Request with the applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs
 - code or configuration deltas, keep-unchanged contract, seeds, environment notes, and resource constraints
 - smoke or pilot outcomes, main-run logs, output pointers, metric rows, metric completeness, and comparability verdict
 - claim-to-metric mapping, Research Claim update, evaluation summary, failure mode, caveat, and next action
@@ -74,6 +74,7 @@ For each meaningful Run, record enough of the following to make the evidence reu
 ## Guardrails
 
 - Do not silently change dataset, split, metric, evaluator, comparator, or comparison recipe.
+- Do not start a baseline-dependent Run unless the accepted comparator is durable or a Baseline-Waiver Policy ref plus required Gate or Decision Record is durable.
 - Do not confuse smoke or pilot success with main evidence.
 - Do not claim success before durable outputs exist.
 - Do not rerun without a real change in code, command, environment, evidence, or route.

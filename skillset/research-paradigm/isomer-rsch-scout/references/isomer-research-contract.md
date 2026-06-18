@@ -14,7 +14,7 @@ Prefer durable records over recollection:
 
 ## Durable Vocabulary
 
-Use Isomer Labs terms: Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Research Topic Config, Effective Topic Context, Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime, Workspace Boundary, Artifact, Artifact Core Record, Artifact Format Profile, Artifact Extension, Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Agent Team Instance lifecycle state, Coordination Policy, Capability Binding, Execution Adapter, Workflow Stage, Workflow Stage Cursor, and Completion Watcher Contract.
+Use Isomer Labs terms: Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Research Topic Config, Effective Topic Context, Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime, Workspace Boundary, Artifact, Artifact Core Record, Artifact Format Profile, Artifact Extension, Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Agent Team Instance lifecycle state, Coordination Policy, Capability Binding, Skill Binding projection, Research Operation Extension Point, Execution Adapter Command Request, Scheduler Policy, Gate Policy, Literature Provider Binding, Baseline-Waiver Policy, Execution Adapter, Workflow Stage, Workflow Stage Cursor, and Completion Watcher Contract.
 
 
 ## Workspace Path Resolution
@@ -25,9 +25,9 @@ Do not emit ordinary path TBD placeholders for these surfaces. For topic-scoped 
 
 ## CLI Topic Context Resolution
 
-When an `isomer-cli` command needs topic-specific behavior, skills may name Effective Topic Context instead of inventing command-specific lookup rules. Effective Topic Context is the resolved CLI view of the selected Project, Research Topic, Research Topic Config, Topic Workspace, optional lifecycle refs, Topic Agent Team Profile default, Execution Adapter refs, Capability Binding refs, Gate policy refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata.
+When an `isomer-cli` command needs topic-specific behavior, skills may name Effective Topic Context instead of inventing command-specific lookup rules. Effective Topic Context is the resolved CLI view of the selected Project, Research Topic, Research Topic Config, Topic Workspace, optional lifecycle refs, Topic Agent Team Profile default, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Scheduler Policy refs, Gate Policy refs, Literature Provider Binding refs, Baseline-Waiver Policy refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata.
 
-Use only these topic-context identity environment refs when examples must show launch-time topic selection or disambiguation: `ISOMER_RESEARCH_TOPIC_ID`, `ISOMER_TOPIC_WORKSPACE_ID`, `ISOMER_RESEARCH_INQUIRY_ID`, `ISOMER_RESEARCH_TASK_ID`, `ISOMER_RUN_ID`, `ISOMER_AGENT_TEAM_INSTANCE_ID`, and `ISOMER_AGENT_INSTANCE_ID`. These refs do not define command execution, credentials, scheduling, or durable state; durable refs and source metadata belong in Workspace Runtime, Provenance Records, or the applicable lifecycle and recording records.
+Use only these topic-context identity environment refs when examples must show launch-time topic selection or disambiguation: `ISOMER_RESEARCH_TOPIC_ID`, `ISOMER_TOPIC_WORKSPACE_ID`, `ISOMER_RESEARCH_INQUIRY_ID`, `ISOMER_RESEARCH_TASK_ID`, `ISOMER_RUN_ID`, `ISOMER_AGENT_TEAM_INSTANCE_ID`, and `ISOMER_AGENT_INSTANCE_ID`. These refs do not define command execution, credentials, scheduling, provider payloads, command outputs, or durable state; durable refs and source metadata belong in Workspace Runtime, Provenance Records, or the applicable lifecycle and recording records.
 
 ## Research Recording Contracts
 
@@ -41,6 +41,14 @@ Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, 
 
 Do not emit lifecycle TBD placeholders for `schema-stage-cursor`, `schema-agent-team-state`, or `policy-branching`. Research Inquiry is a question object and not a parallel execution scope. Express parallel work only as Topic-level parallelism across Agent Team Instances or Task-level parallelism across Agent Instances inside one Agent Team Instance.
 
+## Research Execution and Extension Contract
+
+Command execution, repository inspection, package management, notebook execution, HPC jobs, document builds, figure rendering, literature search, baseline acceptance, baseline waiver, cost/privacy policy, credential use, data export, Skill Binding, Service Requests, and agent launch behavior are resolved through the Research Execution and Extension Contract.
+
+Use Research Operation Extension Points for the operation slots a skill requires. Use Capability Binding refs and Skill Binding projections for role, profile, skill, data, credential, adapter, and workspace authority. Use Execution Adapter Command Requests for executable or provider-backed dispatch, including Service Request dispatch, Service Agent Instance launch, and Agent Team Instance launch operations; the envelope carries dispatch, preflight, monitoring, and recording refs while Service Request, Service Agent Instance, Agent Team Instance, and Agent Profile records remain distinct domain objects. Use Scheduler Policy refs for dispatch, retry, monitoring, checkpoints, resume behavior, and stop conditions without redefining Workflow Stage Cursor or Agent Team Instance lifecycle state. Use Gate Policy refs for cost, credential, privacy, data-export, long-compute, destructive-change, publication-facing, and other governed-action preflight. Use Literature Provider Bindings for external literature or metadata requests, and record context-only provider output first as provider-output Artifacts before deriving Findings or Evidence Items. Use Baseline-Waiver Policy refs for routes that proceed without an accepted active baseline; those policies may open or reference Gates and must preserve comparator context.
+
+Do not emit TBD placeholders for `api-execution-command`, `provider-literature-search`, `schema-skill-binding`, `policy-scheduler`, `policy-baseline-waiver`, or `policy-cost-privacy-gate`. Provider-specific command bodies, scheduler queues, credential backends, provider payloads, baseline registries, renderers, exporters, service backends, and agent launch mechanisms remain outside generic skill text and belong behind provider bindings, opaque adapter payload refs, credential backends, or Execution Adapter implementations.
+
 ## Source-Term Mappings
 
 | Source term or operation | Isomer Labs framing |
@@ -53,10 +61,10 @@ Do not emit lifecycle TBD placeholders for `schema-stage-cursor`, `schema-agent-
 | bounded unit of research work | Research Task |
 | artifact operation | Artifact, Evidence Item, Decision Record, Gate, Provenance Record, or host API |
 | memory operation | Finding, Evidence Item, Artifact, or durable context query |
-| command execution | Capability Binding through an Execution Adapter |
-| paper lookup | literature search capability; provider is unsettled |
+| command execution | Execution Adapter Command Request with Research Operation Extension Point, Capability Binding, Skill Binding projection, Gate Policy, Scheduler Policy, workspace, and recording refs |
+| paper lookup | Literature Provider Binding; record context-only provider output first as a provider-output Artifact before deriving Findings or Evidence Items |
 | route decision | Decision Record, possibly resolving a Gate |
-| user choice on scope, cost, privacy, safety, or finality | Gate through the Operator Agent |
+| user choice on scope, cost, privacy, safety, publication-facing output, or finality | Gate Policy preflight and Gate through the Operator Agent when human judgment is required |
 
 ## Rejected Runtime Concepts
 
@@ -72,9 +80,9 @@ This skill describes research judgment. It does not define Isomer runtime APIs, 
 
 ## TBD Surface Registry
 
-Use registered TBD-surface placeholders in skill outcomes when a concrete surface is not settled by an accepted Isomer design. Ordinary Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are settled by Workspace Path Resolution. `isomer-cli` topic selection and topic-specific CLI context are settled as Effective Topic Context by CLI Topic Context Resolution, and Artifact Core Records, Artifact Format Profiles, and Artifact Extensions are settled as generic recording metadata by Research Recording Contracts. Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates are settled by Research Recording Contracts. Research Topics, Research Inquiries, Research Inquiry Relationships, Research Tasks, Runs, Workflow Stage Cursors, and Agent Team Instance lifecycle state are settled by Research Lifecycle State. Skills should name semantic workspace scopes, Artifact kinds, durable record types, accepted recording APIs, accepted lifecycle objects, or Effective Topic Context instead of emitting TBD placeholders for resolved surfaces.
+Use registered TBD-surface placeholders in skill outcomes when a concrete surface is not settled by an accepted Isomer design. Ordinary Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are settled by Workspace Path Resolution. `isomer-cli` topic selection and topic-specific CLI context are settled as Effective Topic Context by CLI Topic Context Resolution, and Artifact Core Records, Artifact Format Profiles, and Artifact Extensions are settled as generic recording metadata by Research Recording Contracts. Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates are settled by Research Recording Contracts. Research Topics, Research Inquiries, Research Inquiry Relationships, Research Tasks, Runs, Workflow Stage Cursors, and Agent Team Instance lifecycle state are settled by Research Lifecycle State. Research Operation Extension Points, Execution Adapter Command Requests, Skill Binding projections, Scheduler Policy refs, Gate Policy refs, Literature Provider Bindings, and Baseline-Waiver Policy refs are settled by the Research Execution and Extension Contract. Skills should name semantic workspace scopes, Artifact kinds, durable record types, accepted recording APIs, accepted lifecycle objects, Effective Topic Context, or accepted extension-contract terms instead of emitting TBD placeholders for resolved surfaces.
 
-Effective Topic Context and artifact format customization do not settle execution commands, scheduler policy, Skill Binding projection, credential binding, literature providers, baseline-waiver policy, cost/privacy Gate thresholds, or validation/render/export command behavior. Use the open placeholders below for those concrete surfaces until an accepted design resolves them.
+The Research Execution and Extension Contract settles the generic command, provider, scheduler, Skill Binding, baseline-waiver, and Gate-policy surfaces formerly tracked as open TBDs. Provider-specific command bodies, scheduler queues, provider payload schemas, credential backend details, concrete literature providers, baseline registries, renderer implementations, exporter implementations, service backends, and agent launch mechanisms remain implementation details behind provider bindings, opaque adapter payload refs, credential backends, or Execution Adapter implementations.
 
 ### Resolved Workspace Path Surfaces
 
@@ -117,13 +125,15 @@ These former lifecycle TBDs are mapped to Research Lifecycle State and must not 
 | schema-agent-team-state | Use Agent Team Instance lifecycle state through Research Lifecycle State. |
 | policy-branching | Use Research Inquiry Relationship policy through Research Lifecycle State; create Decision Records only for meaningful route choices. |
 
-### Open TBD Surfaces
+### Resolved Research Execution Extension Surfaces
 
-| ID | Kind | Placeholder | Missing decision |
-| --- | --- | --- | --- |
-| api-execution-command | api | `[[tbd-surface:api-execution-command]]` | Execution command surface, permissions, and logging behavior. |
-| provider-literature-search | provider | `[[tbd-surface:provider-literature-search]]` | Literature search and paper-reading provider. |
-| schema-skill-binding | schema | `[[tbd-surface:schema-skill-binding]]` | Capability Binding projection and skill install schema. |
-| policy-scheduler | policy | `[[tbd-surface:policy-scheduler]]` | Runtime scheduling and continuation policy. |
-| policy-baseline-waiver | policy | `[[tbd-surface:policy-baseline-waiver]]` | Baseline acceptance and waiver rules. |
-| policy-cost-privacy-gate | policy | `[[tbd-surface:policy-cost-privacy-gate]]` | Cost, credential, privacy, and data-export Gate thresholds. |
+These former execution and extension TBDs are mapped to the Research Execution and Extension Contract and must not be emitted as open TBD placeholders in research-stage skill text.
+
+| Former ID | Resolution |
+| --- | --- |
+| api-execution-command | Use Execution Adapter Command Requests with Research Operation Extension Point refs, Capability Binding refs, Skill Binding projection refs, Gate Policy refs, Scheduler Policy refs, workspace refs, and recording refs. |
+| provider-literature-search | Use Literature Provider Bindings and record context-only provider results as provider-output Artifacts before deriving Findings, Evidence Items, or Research Claims. |
+| schema-skill-binding | Use Skill Binding projections from Research Topic Config and Topic Agent Team Profile refs; do not define provider install schemas in generic skill text. |
+| policy-scheduler | Use Scheduler Policy refs for dispatch, retry, monitoring, checkpoint, resume, and stop behavior; keep durable routing state in Workflow Stage Cursor and lifecycle state in Agent Team Instance lifecycle state. |
+| policy-baseline-waiver | Use Baseline-Waiver Policy refs for routes that proceed without an accepted active baseline; waiver policy may open or reference Gates and must preserve comparator context. |
+| policy-cost-privacy-gate | Use Gate Policy refs for cost, credential, privacy, data-export, long-compute, destructive-change, publication-facing, and other governed-action preflight. |

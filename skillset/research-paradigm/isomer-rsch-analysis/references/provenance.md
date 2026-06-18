@@ -9,7 +9,7 @@ Source-runtime concepts were intentionally translated:
 - quest lifecycle language became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage Cursor language.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
-- command execution became Capability Binding through an Execution Adapter.
+- command execution became Execution Adapter Command Request with Capability Binding refs.
 - source worktree and workspace assumptions became Topic Workspace, Workspace Runtime, Agent Workspace, or semantic Artifact scopes resolved by Workspace Path Resolution.
 - scheduler and continuation terms became Workflow Stage Cursor recommendations, Gates, Decision Records, observations, or pauses for Operator Agent instruction.
 

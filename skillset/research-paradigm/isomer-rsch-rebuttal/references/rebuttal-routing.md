@@ -24,7 +24,7 @@ When a complaint is mainly about novelty, related work, or scope, run a focused 
 
 ## Baseline Recovery
 
-When a reviewer requests a comparator that is missing or untrusted, route to baseline before analysis. Do not let a reviewer-linked analysis compare against an unfair or stale baseline.
+When a reviewer requests a comparator that is missing or untrusted, route to baseline before analysis. If the response must proceed without an accepted active comparator, require a Baseline-Waiver Policy ref and any required Gate or Decision Record. Do not let a reviewer-linked analysis compare against an unfair or stale baseline.
 
 ## Closure
 

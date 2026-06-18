@@ -74,6 +74,7 @@ Comparability is a hard boundary:
 
 - keep the same evaluation contract unless the variation is the point
 - keep slice comparisons aligned with the accepted baseline metric contract when baseline comparison matters
+- require a durable accepted comparator, or a Baseline-Waiver Policy ref plus required Gate or Decision Record, before treating a baseline-dependent slice as comparable
 - state exactly what changed and what stayed fixed
 - label new datasets, splits, metrics, or protocols as generalization, stress-test, boundary, failure-analysis, or non-comparable slices
 - do not mix non-comparable slices into the main comparison as direct support
@@ -91,6 +92,7 @@ If a slice needs an extra comparator, treat it as analysis-local support and do 
 ## Guardrails
 
 - Do not disguise a new main experiment as analysis.
+- Do not use a missing or stale comparator as analysis support; route to baseline or decision unless a Baseline-Waiver Policy-backed waiver is durable.
 - Do not hide null, negative, failed, partial, blocked, infeasible, or contradictory slices.
 - Do not widen the campaign after the next route is clear.
 - Do not call subjective inspection objective without rubric, sample, trace, and caveat.

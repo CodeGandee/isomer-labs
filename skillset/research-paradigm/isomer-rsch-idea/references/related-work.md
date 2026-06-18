@@ -26,8 +26,8 @@ Answer these questions:
 
 1. Check durable Findings, paper notes, idea notes, Decision Records, and knowledge cards from the current Research Task.
 2. Reuse validated cross-task knowledge only when the current Operator Agent policy permits it.
-3. Search externally for missing neighborhoods through `[[tbd-surface:provider-literature-search]]`, citation trails, open-web or repository search, and adjacent-domain mechanism search.
-4. Record what was already known, what is new this pass, and what remains unresolved.
+3. Search externally for missing neighborhoods through Literature Provider Binding refs, citation trails, open-web or repository search, and adjacent-domain mechanism search.
+4. Record context-only provider results first as provider-output Artifacts, then record what was already known, what is new this pass, and what remains unresolved as Findings or Evidence Items according to evidence-use intent.
 
 ## Coverage Targets
 

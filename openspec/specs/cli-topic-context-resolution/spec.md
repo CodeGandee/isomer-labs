@@ -47,7 +47,7 @@ The system SHALL define Research Topic Config TOML as topic-specific configurati
 
 #### Scenario: Topic config can carry topic defaults
 - **WHEN** a Research Topic Config is inspected
-- **THEN** it may define topic statement text or refs, Measurable Objective text or refs, default Research Inquiry refs, default Topic Agent Team Profile refs, default Execution Adapter refs, default Control Mode, Capability Binding refs, Gate policy refs, Artifact Format Profile defaults, and Artifact Extension refs
+- **THEN** it may define topic statement text or refs, Measurable Objective text or refs, default Research Inquiry refs, default Topic Agent Team Profile refs, default Execution Adapter refs, default Control Mode, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile defaults, and Artifact Extension refs
 
 #### Scenario: Topic statement can be inline and artifact-backed
 - **WHEN** a Research Topic Config describes the Research Topic
@@ -65,6 +65,14 @@ The system SHALL define Research Topic Config TOML as topic-specific configurati
 - **WHEN** a Research Topic Config contains inline credentials, tokens, API keys, passwords, or secret material
 - **THEN** validation reports the config as invalid and directs the value to a credential backend or a Capability Binding ref
 
+#### Scenario: Topic config extension refs are declarative
+- **WHEN** a Research Topic Config names Research Operation Extension Point refs, Capability Binding refs, Skill Binding projection refs, literature provider refs, baseline-waiver policy refs, scheduler policy refs, cost/privacy Gate policy refs, or Execution Adapter refs
+- **THEN** validation treats those values as declarative refs for later command, provider, policy, and skill availability resolution and does not execute or dereference provider-specific implementation bodies while loading the config
+
+#### Scenario: Topic config does not replace team profile binding
+- **WHEN** a Research Topic Config names topic-level defaults for extension refs, provider refs, policy refs, or Execution Adapter refs
+- **THEN** validation keeps role-scoped, Workflow Stage-scoped, skill-availability, and operation-authority details in Topic Agent Team Profile, Capability Binding, or Skill Binding projection material rather than treating Research Topic Config as the complete execution binding
+
 ### Requirement: Effective Topic Context
 The system SHALL resolve an Effective Topic Context before `isomer-cli` performs a topic-scoped command.
 
@@ -76,9 +84,9 @@ The system SHALL resolve an Effective Topic Context before `isomer-cli` performs
 - **WHEN** the user or environment selects a Research Inquiry, Research Task, Run, Agent Team Instance, Agent Instance, or Topic Agent Team Profile
 - **THEN** the context carries those refs only after validating that they belong to the selected Research Topic and Topic Workspace
 
-#### Scenario: Effective context carries defaults and bindings
-- **WHEN** Research Topic Config or Project Manifest defaults name Topic Agent Team Profiles, Execution Adapters, Capability Binding refs, Control Mode defaults, or Gate policy refs
-- **THEN** the context exposes those values as defaults for the current command without treating unresolved provider, Skill Binding, command execution, scheduler, baseline-waiver, cost, or privacy policy schemas as settled
+#### Scenario: Effective context carries defaults and extension refs
+- **WHEN** Research Topic Config or Project Manifest defaults name Topic Agent Team Profiles, Execution Adapters, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Control Mode defaults, scheduler policy refs, baseline-waiver policy refs, literature provider refs, or Gate policy refs
+- **THEN** the context exposes those values as refs for the current command without treating them as command outputs, runtime truth, credentials, provider payloads, or implementation bodies
 
 #### Scenario: Effective context carries artifact format defaults
 - **WHEN** Research Topic Config, Research Task expected outputs, or explicit command context names Artifact Format Profile defaults or Artifact Extension refs
@@ -86,19 +94,19 @@ The system SHALL resolve an Effective Topic Context before `isomer-cli` performs
 
 #### Scenario: Effective context is process input
 - **WHEN** Effective Topic Context is produced
-- **THEN** the system treats it as a resolved process input for `isomer-cli`, Workspace Path Resolution, Run initialization, and future Execution Adapter command requests, not as a replacement for Research Lifecycle State or Workspace Runtime records
+- **THEN** the system treats it as a resolved process input for `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations, not as a replacement for Research Lifecycle State or Workspace Runtime records
 
 #### Scenario: Run records store refs and resolution sources
-- **WHEN** a Run, Run plan, or future Execution Adapter command request consumes Effective Topic Context
+- **WHEN** a Run, Run plan, Execution Adapter Command Request, or provider-backed extension operation consumes Effective Topic Context
 - **THEN** the durable record stores validated refs, resolution source metadata, and consumed config or default versions instead of storing the full Effective Topic Context snapshot
 
 #### Scenario: Stored context refs remain bounded
 - **WHEN** the durable record stores context refs from Effective Topic Context
-- **THEN** it may include selected Project, Research Topic, Research Topic Config, Topic Workspace, Research Inquiry, Research Task, Run, Topic Agent Team Profile, Agent Team Instance, Agent Instance, Execution Adapter, Capability Binding, Gate policy, Artifact Format Profile, and Artifact Extension refs that influenced the action
+- **THEN** it may include selected Project, Research Topic, Research Topic Config, Topic Workspace, Research Inquiry, Research Task, Run, Topic Agent Team Profile, Agent Team Instance, Agent Instance, Execution Adapter, Capability Binding, Skill Binding projection, Research Operation Extension Point, scheduler policy, baseline-waiver policy, literature provider, Gate policy, Artifact Format Profile, and Artifact Extension refs that influenced the action
 
 #### Scenario: Stored context sources are explainable
 - **WHEN** a context ref or default is stored for audit
-- **THEN** the record identifies whether it came from an explicit selector, current directory, supported environment variable, `.isomer-labs/local.toml`, Project Manifest default, Research Topic Config, Topic Agent Team Profile, Domain Agent Team Template, built-in default, or Workspace Runtime record
+- **THEN** the record identifies whether it came from an explicit selector, current directory, supported environment variable, `.isomer-labs/local.toml`, Project Manifest default, Research Topic Config, Topic Agent Team Profile, Domain Agent Team Template, built-in default, Workspace Runtime record, or explicit command context
 
 ### Requirement: Topic Selection Precedence
 The system SHALL select the Research Topic for topic-scoped commands through deterministic precedence.
@@ -155,7 +163,7 @@ The system SHALL support a bounded set of `ISOMER_*` environment variables for l
 - **THEN** the Effective Topic Context records the environment source and downstream durable records store validated refs rather than treating the environment value as durable truth
 
 ### Requirement: Topic Context Validation
-The system SHALL validate Effective Topic Context before Run creation, Execution Adapter dispatch, or Workspace Runtime mutation.
+The system SHALL validate Effective Topic Context before Run creation, Execution Adapter dispatch, provider-backed extension dispatch, or Workspace Runtime mutation.
 
 #### Scenario: Topic refs are consistent
 - **WHEN** Effective Topic Context includes Research Topic, Topic Workspace, Research Inquiry, Research Task, Run, Agent Team Instance, or Agent Instance refs
@@ -163,15 +171,19 @@ The system SHALL validate Effective Topic Context before Run creation, Execution
 
 #### Scenario: Topic config schema is checked
 - **WHEN** a Research Topic Config is loaded
-- **THEN** validation checks its schema version, required fields, allowed field classes, path bounds, and ref consistency before the config can influence topic-scoped command behavior
+- **THEN** validation checks its schema version, required fields, allowed field classes, path bounds, ref consistency, and extension-ref field classes before the config can influence topic-scoped command behavior
 
 #### Scenario: Missing references are reported
-- **WHEN** Effective Topic Context references a missing Research Topic Config, Topic Workspace, Topic Agent Team Profile, Capability Binding ref, Gate policy ref, Research Task, Run, Agent Team Instance, or Agent Instance
+- **WHEN** Effective Topic Context references a missing Research Topic Config, Topic Workspace, Topic Agent Team Profile, Capability Binding ref, Skill Binding projection ref, Research Operation Extension Point ref, Gate policy ref, scheduler policy ref, baseline-waiver policy ref, literature provider ref, Research Task, Run, Agent Team Instance, or Agent Instance
 - **THEN** validation reports the missing ref and blocks only the command behavior that depends on that ref
 
-#### Scenario: Validation preserves unresolved surfaces
-- **WHEN** Effective Topic Context names unresolved command execution, scheduler, Skill Binding, baseline-waiver, cost/privacy, credential, or provider surfaces
-- **THEN** validation permits registered placeholder refs or opaque refs without inventing those contracts in CLI topic context resolution
+#### Scenario: Validation preserves provider-neutral boundaries
+- **WHEN** Effective Topic Context names execution, scheduler, Skill Binding, baseline-waiver, cost/privacy, credential, literature provider, or data-export extension refs
+- **THEN** validation confirms those refs are syntactically valid and leaves provider-specific implementation behavior to the accepted Research Execution and Extension Contract and selected provider or adapter
+
+#### Scenario: Validation rejects inline implementation bodies
+- **WHEN** Effective Topic Context or its source config includes inline provider-specific command bodies, credentials, tokens, API keys, live process state, command outputs, provider payloads, or scheduler internals
+- **THEN** validation rejects those fields and directs them to the appropriate adapter payload ref, credential backend, Workspace Runtime record, Artifact, or Provenance Record
 
 ### Requirement: Topic Artifact Format Defaults
 The system SHALL allow Research Topic Config and more-specific output specs to select optional Artifact Format Profiles and Artifact Extensions for topic-specific Artifact content.
@@ -201,7 +213,7 @@ The system SHALL allow Research Topic Config and more-specific output specs to s
 - **THEN** the profile only carries declarative hints and opaque future capability refs, while concrete command execution remains governed by the future Execution Adapter command surface
 
 ### Requirement: CLI Command Scope Boundaries
-The system SHALL distinguish project-scoped, topic-scoped, and run-scoped `isomer-cli` command behavior in the first implementation.
+The system SHALL distinguish project-scoped, topic-scoped, run-scoped, and extension-backed `isomer-cli` command behavior in the first implementation.
 
 #### Scenario: Project-scoped command families do not require topic
 - **WHEN** a command validates or inspects the Project Manifest, lists registered Research Topics, lists Topic Workspaces, inspects built-in schemas, or checks project-level config without selecting one Research Topic
@@ -221,6 +233,6 @@ The system SHALL distinguish project-scoped, topic-scoped, and run-scoped `isome
 - **AND WHEN** a command previews or resolves paths for one selected Topic Workspace
 - **THEN** the command is topic-scoped and resolves Effective Topic Context
 
-#### Scenario: Command request remains out of scope
-- **WHEN** `isomer-cli` prepares to execute a shell command, package manager command, HPC job, notebook action, agent launch, or service request
-- **THEN** this contract supplies Effective Topic Context but does not define the concrete Execution Adapter command request, scheduler behavior, or cost/privacy Gate thresholds
+#### Scenario: Extension-backed commands use execution extension contract
+- **WHEN** `isomer-cli` prepares to execute a shell command, package manager command, HPC job, notebook action, literature provider request, document build, figure render, service request, agent launch, baseline-waiver check, or other provider-backed operation
+- **THEN** this contract supplies and validates Effective Topic Context while the Research Execution and Extension Contract defines the command request, extension refs, preflight, scheduler boundary, provider binding, and recording obligations

@@ -20,7 +20,7 @@ List Findings, Evidence Items, Artifacts, Decision Records, prior paper notes, i
 
 | Query | Capability | Reason | New papers | Known papers reconfirmed | Remaining gap |
 | --- | --- | --- | --- | --- | --- |
-| baseline plus limitation keyword | `[[tbd-surface:provider-literature-search]]` | find direct extensions | | | |
+| baseline plus limitation keyword | Literature Provider Binding ref | find direct extensions; record provider output as a provider-output Artifact before deriving Findings or Evidence Items | | | |
 
 ## Paper Buckets
 
@@ -30,7 +30,7 @@ List Findings, Evidence Items, Artifacts, Decision Records, prior paper notes, i
 - Cross-domain transferable mechanisms.
 - Watchlist or uncertain relevance.
 
-For each paper, include title, year, identifier or URL, citation string or key, mechanism summary, task overlap, dataset overlap, metric overlap, implication for the candidate, and status as new, known, or watchlist.
+For each paper, include title, year, identifier or URL, citation string or key, mechanism summary, task overlap, dataset overlap, metric overlap, provider-output Artifact ref when externally sourced, implication for the candidate, and status as new, known, or watchlist.
 
 ## Closest-Prior-Work Table
 

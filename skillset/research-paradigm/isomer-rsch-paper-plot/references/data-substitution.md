@@ -18,7 +18,7 @@ Use the source styles as visual contracts, not as fixed paper reproductions. Kee
 
 ## Rendering and Inspection
 
-- Render through an approved Execution Adapter and capture command, environment, and output paths when the host surface supports it.
+- Render through an approved Execution Adapter Command Request and capture command, environment, and output paths when the host surface supports it.
 - Inspect the actual raster or vector preview before reporting the figure as usable.
 - If labels collide, uncertainty is ambiguous, or visual hierarchy misstates the evidence, revise the figure-generation Artifact and render again.
 - For manuscript, appendix, review, or durable milestone figures, hand off to `$isomer-rsch-figure-polish`.

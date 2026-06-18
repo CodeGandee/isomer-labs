@@ -36,9 +36,9 @@ If the stage goal is a real experiment, continue to the evidence-bearing Run onc
 
 ## Execute and Monitor
 
-Run through a Capability Binding and Execution Adapter. Use non-interactive execution when possible, keep logs durable, report progress for long Runs when state materially changes, avoid silent metric-definition changes, and run the full agreed evaluation rather than only a smoke test.
+Run through an Execution Adapter Command Request with the applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs. Use non-interactive execution when possible, keep logs durable, report progress for long Runs when state materially changes, avoid silent metric-definition changes, and run the full agreed evaluation rather than only a smoke test.
 
-For long-running Runs, prefer an initial bounded smoke when paths are unverified, then monitor through durable logs and Signal Observations. Use `[[tbd-surface:api-execution-command]]` for the concrete command surface and run log Artifact through Workspace Path Resolution for the concrete log layout until those surfaces are accepted.
+For long-running Runs, prefer an initial bounded smoke when paths are unverified, then monitor through durable logs and Signal Observations. Use Execution Adapter Command Requests for executable dispatch and run log Artifacts through Workspace Path Resolution for concrete log layout.
 
 ## Long-Running Monitoring Cadence
 

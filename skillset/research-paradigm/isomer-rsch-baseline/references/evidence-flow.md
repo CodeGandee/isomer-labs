@@ -43,7 +43,7 @@ A local comparator can be more faithful than clean reproduction when it is alrea
 Use when attach, import, or local verification cannot establish trust.
 
 1. Read the source document and source package enough to identify the intended task, data, split, evaluator, metrics, and expected outputs.
-2. Record the execution route as a Capability Binding through an Execution Adapter.
+2. Record the execution route as an Execution Adapter Command Request with Capability Binding refs.
 3. Run the minimum trustworthy reproduction or trusted-output inspection.
 4. Record Run logs, outputs, metric extraction, deviations, and comparability verdict.
 5. Accept, block, repair, or route-change through a Decision Record.
@@ -69,6 +69,6 @@ Record package identity, provenance, metric contract, caveats, and reusable evid
 
 ## Waive or Block
 
-Use waiver only when the Research Task must continue without a baseline and the reason is durable. Use blocker when the Gate cannot honestly clear or waive within current constraints.
+Use waiver only when the Research Task must continue without a baseline, the reason is durable, and a Baseline-Waiver Policy ref plus any required Gate is recorded. Use blocker when the Gate cannot honestly clear or waive within current constraints.
 
-A waiver or blocker Decision Record should state what failed or was skipped, what was tried, which evidence supports the decision, what risk remains, and whether the next best move is attach, import, retry, repair, reset, ask the Operator Agent, decision, idea, experiment, or write.
+A waiver or blocker Decision Record should state the Baseline-Waiver Policy ref when applicable, what failed or was skipped, what was tried, which evidence supports the decision, what risk remains, and whether the next best move is attach, import, retry, repair, reset, open a Gate through Gate Policy preflight, decision, idea, experiment, or write.

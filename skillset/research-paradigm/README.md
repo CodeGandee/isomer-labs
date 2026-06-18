@@ -53,7 +53,7 @@ Translate source concepts into Isomer terms:
 - Source lifecycle work becomes Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, or Workflow Stage, depending on scope.
 - Source artifact APIs become Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - Source memory APIs become Findings, Evidence Items, Artifacts, or durable context queries.
-- Source command execution becomes Capability Binding through an Execution Adapter.
+- Source command execution becomes Execution Adapter Command Request with Capability Binding refs.
 - Source worktree or workspace assumptions become Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime state, or semantic Artifact scopes resolved by Workspace Path Resolution.
 - Source scheduler and continuation terms become Workflow Stage recommendations, Gates, Decision Records, observations, or pauses for Operator Agent instruction.
 

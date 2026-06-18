@@ -65,5 +65,6 @@ Read references as needed:
 - Do not write "no weaknesses" unless likely rejection paths have been listed and resolved, downgraded, or accepted as out of scope.
 - Do not recommend experiments when the real fix is wording, positioning, claim scope, figure presentation, or citation repair.
 - Do not recommend rhetoric when the real blocker is missing evidence.
+- Do not call baseline-dependent claims review-ready unless the accepted comparator is durable or a Baseline-Waiver Policy ref plus required Gate or Decision Record is durable.
 - Do not hide a fatal publishability, value, or evidence collapse behind another cosmetic revision pass.
 - Do not call a manuscript submission-ready unless evidence provenance, manuscript coverage, citation sufficiency, language cleanliness, figure/table status, bundle state, and unresolved Gates all pass.

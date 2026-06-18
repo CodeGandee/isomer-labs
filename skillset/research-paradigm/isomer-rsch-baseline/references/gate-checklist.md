@@ -1,6 +1,6 @@
 # Baseline Gate Checklist
 
-Use this compact checklist before closing a baseline Gate. It is optional; the hard requirement is a durable accepted, blocked, waived, replaced, or route-changed state.
+Use this compact checklist before closing a baseline Gate. It is optional; the hard requirement is a durable accepted, blocked, Baseline-Waiver Policy-backed waived, replaced, or route-changed state.
 
 ## Identity
 
@@ -24,13 +24,13 @@ Use this compact checklist before closing a baseline Gate. It is optional; the h
 - [ ] smoke was used, skipped, or replaced by direct verification for an explicit reason when that choice matters
 - [ ] expected result files, trusted-output pointers, or package records have been checked
 - [ ] metric-contract Artifact exists or will be produced before acceptance
-- [ ] baseline Gate is accepted, blocked, waived, replaced, or route-changed with a durable Decision Record
+- [ ] baseline Gate is accepted, blocked, Baseline-Waiver Policy-backed waived, replaced, or route-changed with a durable Decision Record
 
 ## Blocked Boundary
 
 - [ ] if blocked, the failure class is explicit
 - [ ] if blocked, tried steps and evidence pointers are recorded
-- [ ] if blocked, next best move is attach, import, retry, repair, reset, waive, ask the Operator Agent, or route through decision
+- [ ] if blocked, next best move is attach, import, retry, repair, reset, waive under Baseline-Waiver Policy, open a Gate through Gate Policy preflight, or route through decision
 
 ## Closeout
 

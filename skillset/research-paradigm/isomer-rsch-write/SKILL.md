@@ -32,7 +32,7 @@ Read first:
 
 Read references as needed:
 
-- `references/citation-and-bibliography.md` when the work touches references, BibTeX, literature support, citation counts, or provider uncertainty.
+- `references/citation-and-bibliography.md` when the work touches references, BibTeX, literature support, citation counts, or provider-backed literature output.
 - `references/manuscript-cleanliness.md` before putting local process, execution, operator, or provenance details into manuscript prose.
 - `references/oral-package.md` when upgrading a dense draft into an oral-quality paper package or comparing paper versions.
 - `references/oral-writing.md` when narrative spine, reader onboarding, section jobs, claim calibration, or display prose is weak.
@@ -65,6 +65,7 @@ Read references as needed:
 
 - Do not write citations, metrics, method details, benchmark facts, implementation claims, or artifact availability from recollection.
 - Do not make unsupported claims sound more convincing; obtain evidence, narrow the claim, or mark the blocker.
+- Do not present baseline-dependent claims unless the accepted comparator is durable or a Baseline-Waiver Policy ref plus required Gate or Decision Record is durable.
 - Do not put operator instructions, route history, local execution shorthand, source runtime wording, or draft scaffolding into manuscript prose.
 - Do not treat compile success, section count, display count, or bundle existence as manuscript quality.
 - Do not use polishing as a substitute for missing baselines, missing analysis, weak novelty, or collapsed publishability.

@@ -16,7 +16,7 @@ Use this reference when deciding whether the final outcome should be stop, park,
 
 ## Operator Agent Gate
 
-Request an Operator Agent Gate for true completion, publication, finality, privacy, cost, scope, safety, data export, or irreversible archive decisions. Do not use a Gate for routine missing evidence; route that back through decision, analysis, write, review, or baseline.
+Run Gate Policy preflight for true completion, publication-facing output, finality, privacy, cost, scope, safety, data export, external upload, credential use, or irreversible archive decisions, and open an Operator Agent Gate when the selected policy requires human judgment. Do not use a Gate for routine missing evidence; route that back through decision, analysis, write, review, or baseline.
 
 ## Paper or Report Closure
 

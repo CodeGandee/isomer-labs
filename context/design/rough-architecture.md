@@ -63,17 +63,17 @@ Recommended contents:
 
 `domain-team-templates/` stores optional imported or referenced Domain Agent Team Templates. A Domain Agent Team Template is a reusable method template for a research field; it is not specialized to the user's concrete research topic and is not used directly as a running team.
 
-`research-topics/` stores Research Topic Config TOML files registered by the Project Manifest. A Research Topic Config is lightweight and ref-oriented: it may carry a short topic statement, optional topic statement Artifact refs, Measurable Objective text or refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Gate policy refs, and topic-specific Artifact Format Profile or Artifact Extension defaults. It must not store Runtime state, command outputs, rich Artifact contents, research records, or secrets.
+`research-topics/` stores Research Topic Config TOML files registered by the Project Manifest. A Research Topic Config is lightweight and ref-oriented: it may carry a short topic statement, optional topic statement Artifact refs, Measurable Objective text or refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, and topic-specific Artifact Format Profile or Artifact Extension defaults. It must not store Runtime state, command outputs, provider payloads, scheduler internals, rich Artifact contents, research records, or secrets.
 
-`topic-team-profiles/` stores Topic Agent Team Profiles that the Operator Agent specializes from Domain Agent Team Templates. A Topic Agent Team Profile records the user's research topic, topic-specific role and stage choices, constraints, expected Artifacts, Gate policy, and capability bindings. It is reviewable and editable before launch; it is not an Agent Team Instance.
+`topic-team-profiles/` stores Topic Agent Team Profiles that the Operator Agent specializes from Domain Agent Team Templates. A Topic Agent Team Profile records the user's research topic, topic-specific role and stage choices, constraints, expected Artifacts, Gate policy refs, scheduler policy refs, allowed Research Operation Extension Points, Skill Binding projections, and Capability Bindings. It is reviewable and editable before launch; it is not an Agent Team Instance.
 
 Agent Team Instances are runtime teams created from Topic Agent Team Profiles. A Topic Workspace should not contain a workspace-local `teams/` directory. The selected Topic Agent Team Profile, resolved Agent Team Instance identity, and task handler should be recorded through manifest refs, Workspace Runtime state, or provenance Artifacts.
 
-`agent-profiles/` stores reusable Agent Profiles and capability references for models, tools, skills, execution environments, communication channels, or credentials. It should store references and non-secret configuration. Secrets should live in the user's credential store or another configured secret backend, not in committed TOML files.
+`agent-profiles/` stores reusable Agent Profiles and capability references for models, tools, skills, execution environments, communication channels, or credentials. Skill Binding projections can describe which research-paradigm skills, references, assets, and allowed operation extension points are available to an Agent Role or Agent Profile. These files should store references and non-secret configuration. Secrets should live in the user's credential store or another configured secret backend, not in committed TOML files.
 
 `gui-components/` stores project-scope agent-generated GUI Component Registry entries, component manifests, and optionally source for agent-generated GUI Components. It is not the whole registry: Built-in GUI Components are system-owned and registered by the GUI Backend at startup. Declarative GUI Component Specs are preferred. Executable GUI Components must be registered, validated, sandboxed or isolated according to policy, and approved before the GUI Backend loads them. Direct AG-UI Event Batches may reference only registered component ids when they target Executable GUI Components.
 
-`artifact-formats/` and `artifact-extensions/` store optional declarative topic customization material registered by the Project Manifest. Artifact Format Profiles describe content expectations such as media type, schema refs, template refs, validation hints, renderer hints, export hints, compatibility versions, and opaque future capability refs. Artifact Extensions describe additive topic metadata fields. They must not define executable validators, renderers, exporters, command requests, provider contracts, or mandatory Artifact core fields.
+`artifact-formats/` and `artifact-extensions/` store optional declarative topic customization material registered by the Project Manifest. Artifact Format Profiles describe content expectations such as media type, schema refs, template refs, validation hints, renderer hints, export hints, compatibility versions, and opaque capability refs. Artifact Extensions describe additive topic metadata fields. They must not define executable validators, renderers, exporters, command requests, provider contracts, or mandatory Artifact core fields.
 
 System-owned schemas are Isomer built-in artifacts, not project-local config files. `isomer-cli` should expose commands to query built-in artifact versions, inspect schema documentation, and validate Project Manifests, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Workspace Runtime state, and View Manifests against the built-in schemas.
 
@@ -140,9 +140,9 @@ When one agent's output becomes an input to another agent's durable reasoning, t
 
 Isomer should define Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Roles, Agent Profiles, Capability Bindings, Coordination Policies, Agent Instances, the Operator Agent, and Workflow Stages in provider-neutral terms. An Agent Profile describes how to construct or configure a runtime actor. It can name instructions, skills, tool access, model posture, credentials, communication defaults, environment defaults, memory defaults, and launch posture. An Agent Instance is the concrete actor created from that profile and assigned to an Agent Role for a Run or team execution context.
 
-The first team stage is topic-profile specialization. The Operator Agent selects a Domain Agent Team Template, asks for or infers the user's research topic, and specializes the template into a Topic Agent Team Profile. Examples include which roles to keep, which project paths the team should treat as canonical, which topic constraints apply, which expected Artifacts matter, which credentials or tools are available, and which Gates require user approval. Research Tasks are then handled either directly by the Operator Agent or by one delegated Agent Instance from the Agent Team Instance created from that Topic Agent Team Profile.
+The first team stage is topic-profile specialization. The Operator Agent selects a Domain Agent Team Template, asks for or infers the user's research topic, and specializes the template into a Topic Agent Team Profile. Examples include which roles to keep, which semantic workspace scopes and Artifact kinds the team should treat as canonical, which topic constraints apply, which expected Artifacts matter, which Research Operation Extension Points are allowed, which Skill Binding projections and Capability Bindings are selected, and which Gate policies require user approval. Research Tasks are then handled either directly by the Operator Agent or by one delegated Agent Instance from the Agent Team Instance created from that Topic Agent Team Profile.
 
-An Execution Adapter maps those neutral concepts onto a backend. Houmao is a useful example implementation: Houmao team definitions can map to Domain Agent Team Templates; Houmao specialists, project profiles, native roles, recipes, launch dossiers, and managed agents can map to Topic Agent Team Profiles, Agent Profiles, Capability Bindings, Coordination Policies, Agent Team Instances, and Agent Instances. Isomer should not require Houmao's document names or command structure in its core schema.
+An Execution Adapter maps those neutral concepts onto a backend. Execution Adapter Command Requests are the provider-neutral envelope for command execution, repository inspection, package management, notebook execution, HPC jobs, document builds, figure rendering, Service Request dispatch, Service Agent Instance launch, and Agent Team Instance launch operations. They carry identity refs, Effective Topic Context source metadata, operation kinds, selected Research Operation Extension Point refs, Capability Binding refs, Skill Binding projection refs, Gate policy refs, scheduler policy refs, semantic workspace targets, expected Artifacts, dispatch refs, preflight refs, monitoring refs, and recording obligations. They may reference opaque adapter payload refs, but they do not embed provider-specific command bodies, credentials, provider payloads, scheduler internals, command outputs, or live process state. Houmao is a useful example implementation: Houmao team definitions can map to Domain Agent Team Templates; Houmao specialists, project profiles, native roles, recipes, launch dossiers, and managed agents can map to Topic Agent Team Profiles, Agent Profiles, Capability Bindings, Coordination Policies, Agent Team Instances, and Agent Instances. Isomer should not require Houmao's document names or command structure in its core schema.
 
 ## GUI Backend and Component Handling
 
@@ -201,8 +201,8 @@ research_topic_id = "kernel-a-vs-b"
 scope = "project"
 
 [[artifact_format_profiles]]
-id = "cuda-ncu-profile"
-path = ".isomer-labs/artifact-formats/cuda-ncu-profile.toml"
+id = "cuda-kernel-profile"
+path = ".isomer-labs/artifact-formats/cuda-kernel-profile.toml"
 scope = "project"
 compatibility_version = "0.1"
 
@@ -217,8 +217,8 @@ path = ".isomer-labs/agent-profiles/operator.toml"
 scope = "project"
 
 [[agent_profiles]]
-id = "codex-researcher"
-path = ".isomer-labs/agent-profiles/codex-researcher.toml"
+id = "topic-experimenter"
+path = ".isomer-labs/agent-profiles/topic-experimenter.toml"
 scope = "project"
 
 [[gui_components]]
@@ -242,7 +242,7 @@ measurable_objectives = [
 ]
 
 default_topic_agent_team_profile = "cuda-kernel-investigation"
-default_execution_adapter = "local-pixi"
+default_execution_adapter = "execution-adapter:topic-default"
 default_control_mode = "manual"
 
 [defaults]
@@ -250,16 +250,38 @@ research_inquiry_id = "compute-utilization"
 artifact_tracking = "selective"
 
 [capability_refs]
-command_execution = "capability:local-pixi"
-package_manager = "capability:pixi"
-gpu_profiler = "capability:ncu-local"
+command_execution = "capability:topic-command"
+package_manager = "capability:topic-package-management"
+profiler = "capability:topic-profiler"
+
+[operation_extension_refs]
+command_execution = "operation-extension:topic-command"
+repository_inspection = "operation-extension:topic-repository-readonly"
+package_management = "operation-extension:topic-package-management"
+hpc_job = "operation-extension:topic-hpc-job"
+figure_render = "operation-extension:topic-figure-render"
+literature_search = "operation-extension:literature-search"
+baseline_waiver = "operation-extension:baseline-waiver"
+cost_privacy_gate = "operation-extension:cost-privacy-gate"
+service_request = "operation-extension:service-request"
+agent_launch = "operation-extension:agent-launch"
+
+[skill_binding_projection_refs]
+default = "skill-binding:research-defaults"
+experimenter = "skill-binding:cuda-experimenter"
 
 [gate_policy_refs]
 cost_privacy = "gate-policy:local-safe"
-baseline_waiver = "gate-policy:baseline-required"
+
+[policy_refs]
+scheduler = "scheduler-policy:manual-first"
+baseline_waiver = "baseline-waiver-policy:active-baseline-required"
+
+[provider_binding_refs]
+literature = "provider-binding:project-literature"
 
 [artifact_format_defaults]
-experiment_result = "artifact-format:cuda-ncu-profile"
+experiment_result = "artifact-format:cuda-kernel-profile"
 analysis_report = "artifact-format:cuda-analysis-report"
 
 [artifact_extensions]
@@ -268,7 +290,41 @@ enabled = ["artifact-extension:cuda-kernel-metadata"]
 
 The Domain Agent Team Template file should define the reusable research-field method. The Topic Agent Team Profile file should record the Operator Agent's topic-level specialization and usually bind Agent Roles to Agent Profiles through Capability Bindings. Agent Team Instance records should be created only when the profile is launched. The Project Manifest should discover project-level entries and select defaults, not encode the full team workflow inline.
 
-Before a topic-scoped command runs, `isomer-cli` resolves an Effective Topic Context from explicit selectors, current directory inside a registered Topic Workspace, supported topic-context environment variables, untracked `.isomer-labs/local.toml`, and the Project Manifest default Research Topic. Effective Topic Context is process input for CLI commands, Workspace Path Resolution, Run initialization, and future Execution Adapter command requests; durable Run records store validated refs, source metadata, and consumed config/default versions rather than the full context snapshot.
+A Topic Agent Team Profile can then scope role and Workflow Stage authority without turning Research Topic Config into the complete execution binding:
+
+```toml
+schema_version = "0.1"
+id = "cuda-kernel-investigation"
+research_topic_id = "kernel-a-vs-b"
+domain_agent_team_template = "ml-systems-research"
+
+[coordination]
+policy_ref = "coordination-policy:operator-mediated"
+default_scheduler_policy_ref = "scheduler-policy:manual-first"
+
+[[roles]]
+id = "experimenter"
+agent_profile_ref = "agent-profile:topic-experimenter"
+capability_binding_refs = ["capability:cuda-experimenter"]
+skill_binding_projection_ref = "skill-binding:cuda-experimenter"
+allowed_operation_extension_refs = ["operation-extension:topic-command", "operation-extension:topic-package-management", "operation-extension:topic-hpc-job"]
+
+[[roles]]
+id = "analyst"
+agent_profile_ref = "agent-profile:topic-analyst"
+capability_binding_refs = ["capability:cuda-analyst"]
+skill_binding_projection_ref = "skill-binding:analysis-defaults"
+allowed_operation_extension_refs = ["operation-extension:topic-repository-readonly", "operation-extension:topic-figure-render"]
+
+[[workflow_stages]]
+id = "profile-kernels"
+owner_role = "experimenter"
+expected_artifact_kinds = ["experiment_plan", "experiment_result", "run_log"]
+operation_extension_refs = ["operation-extension:topic-command", "operation-extension:topic-hpc-job"]
+gate_policy_refs = ["gate-policy:local-safe"]
+```
+
+Before a topic-scoped command runs, `isomer-cli` resolves an Effective Topic Context from explicit selectors, current directory inside a registered Topic Workspace, supported topic-context environment variables, untracked `.isomer-labs/local.toml`, and the Project Manifest default Research Topic. Effective Topic Context is process input for CLI commands, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations; durable Run records store validated refs, source metadata, and consumed config/default versions rather than the full context snapshot.
 
 ## Path Rules
 
@@ -322,9 +378,13 @@ A Topic Workspace should be able to declare whether `state.sqlite`, `artifacts/`
 - Agent Workspace boundaries are advisory ownership and peer-read contracts, not filesystem-grade access control.
 - `.isomer-labs/` has no default cache, temporary, or schema directories.
 - `.isomer-labs/local.toml` is untracked user-local active context and contains only candidate identity refs.
-- Research Topic Config files store topic defaults and refs, not Runtime state, research records, rich Artifact contents, command outputs, or secrets.
+- Research Topic Config files store topic defaults and refs, not Runtime state, research records, rich Artifact contents, provider payloads, scheduler internals, command outputs, or secrets.
+- Research Topic Config files may select Research Operation Extension Point refs, Skill Binding projection refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, and Gate policy refs, but role and Workflow Stage authority stays in Topic Agent Team Profiles, Capability Bindings, or Skill Binding projections.
 - Artifact Format Profiles and Artifact Extensions are optional declarative topic customization refs and never mandatory Artifact core fields.
-- Effective Topic Context is resolved process input for topic-scoped commands and path resolution, not durable research state.
+- Effective Topic Context is resolved process input for topic-scoped commands, path resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations, not durable research state.
+- Execution Adapter Command Requests are the shared provider-neutral dispatch envelope for executable and provider-backed operations; provider-specific command bodies, provider payloads, scheduler internals, command outputs, and live process state stay outside generic config and skill text.
+- Baseline-waiver policy is a reusable policy ref that may open or reference a Gate; it does not erase comparator evidence.
+- Literature provider output that is only orientation or scouting context starts as a provider-output Artifact with Provenance before any Finding or Evidence Item derivation.
 - System-owned schemas and other Isomer built-in artifacts are queried and validated through `isomer-cli`.
 - The GUI Backend is started through `isomer-cli` and does not own canonical research state.
 - The GUI Backend serves a predefined browser-side GUI Renderer from a local or configured URL.
@@ -345,6 +405,7 @@ A Topic Workspace should be able to declare whether `state.sqlite`, `artifacts/`
 - Exact Agent Workspace boundary declaration format.
 - Exact Agent Profile schema and Execution Adapter interface.
 - Domain Agent Team Template, Topic Agent Team Profile, and Agent Team Instance file formats.
+- Exact provider-specific adapter payload schemas for command runners, schedulers, literature providers, baseline registries, renderers, exporters, and launched agents.
 - View Manifest schema and supported view types.
 - GUI Component Registry schema, GUI Runtime State schema, GUI Layout Spec schema, Executable GUI Component sandbox contract, AG-UI Render Payload contract, and AG-UI Event Envelope schema.
 - Workspace tracking policy format.

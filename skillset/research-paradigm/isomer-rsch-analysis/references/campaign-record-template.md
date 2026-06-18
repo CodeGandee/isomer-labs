@@ -57,7 +57,7 @@ For `analysis-lite`, keep only the objective, first slice, evidence boundary, an
 - expected outputs or evidence paths:
 - monitoring plan if long-running:
 
-Use `[[tbd-surface:api-execution-command]]` for unsettled execution command surfaces and analysis output Artifacts resolved by Workspace Path Resolution.
+Use Execution Adapter Command Requests for execution and analysis output Artifacts resolved by Workspace Path Resolution.
 
 ## 7. Interpretation Boundary
 

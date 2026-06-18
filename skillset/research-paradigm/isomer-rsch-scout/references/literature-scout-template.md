@@ -16,7 +16,7 @@ Use this template when external search changed the task frame, evaluation contra
 | --- | --- | --- | --- | --- | --- |
 |  |  |  |  |  |  |
 
-Recommended source labels include durable Finding, Artifact, benchmark doc, official repository, paper index, open web, repository search, and user-provided source. If a concrete provider must be named but is unsettled, use `[[tbd-surface:provider-literature-search]]`.
+Recommended source labels include durable Finding, Artifact, benchmark doc, official repository, paper index, Literature Provider Binding ref, open web, repository search, and user-provided source. Record context-only provider results first as provider-output Artifacts before deriving Findings, Evidence Items, or route conclusions.
 
 ## Reference Buckets
 

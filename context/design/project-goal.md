@@ -57,6 +57,7 @@ The project should avoid a single closed pipeline. Instead, it should define com
 - research workflow templates
 - task-specific GUI generation
 - external tool and codebase integrations
+- provider-neutral Research Operation Extension Points and Execution Adapter Command Requests
 - evidence, decision, and provenance records
 
 This modularity should let Isomer Labs integrate into a user's own repository or research workspace. The system should not require the user to move all work into a fully controlled platform directory.

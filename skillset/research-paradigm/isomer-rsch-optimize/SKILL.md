@@ -18,7 +18,7 @@ When this skill is invoked, execute the following steps in order.
 3. **Recover the current frontier**. Refresh candidate Artifacts, View Manifests, Research Inquiry Relationship decisions, recent Runs, Findings, and any existing frontier record before creating or promoting anything.
 4. **Choose exactly one optimize submode**. Pick `brief`, `rank`, `seed`, `loop`, `fusion`, `debug`, or `stop`, and keep one dominant route meaning: `explore`, `exploit`, `fusion`, `debug`, or `stop`.
 5. **Keep object levels separate**. Treat method briefs, durable Research Inquiry Relationship lines, and implementation attempts as different objects with different evidence and promotion thresholds.
-6. **Advance one bounded move**. Shape and rank briefs, promote a line, seed a small implementation pool, run or route one bounded attempt through an Execution Adapter, handle debug, fuse complementary lines, or stop a plateau.
+6. **Advance one bounded move**. Shape and rank briefs, promote a line, seed a small implementation pool, run or route one bounded attempt through an Execution Adapter Command Request, handle debug, fuse complementary lines, or stop a plateau.
 7. **Record the frontier update and next action**. Store the result as Artifacts, Evidence Items, Research Inquiry Relationship decisions, Run references, Decision Records, and Provenance Records as appropriate.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
@@ -89,8 +89,9 @@ Read references as needed:
 
 - Do not create a Research Inquiry Relationship for every implementation attempt.
 - Do not promote every plausible method brief.
+- Do not promote a baseline-dependent line unless the accepted comparator is durable or a Baseline-Waiver Policy ref plus required Gate or Decision Record is durable.
 - Do not mix several major route changes in one optimize pass.
 - Do not hide a plateau under repeated near-duplicate tweaks.
 - Do not use debug as a performance-improvement route; it is bugfix-only.
 - Do not fuse weak or redundant lines merely because multiple lines exist.
-- Use Workflow Stage Cursor for next-stage records and `[[tbd-surface:api-execution-command]]` for unsettled execution surfaces.
+- Use Workflow Stage Cursor for next-stage records and Execution Adapter Command Requests for execution surfaces.

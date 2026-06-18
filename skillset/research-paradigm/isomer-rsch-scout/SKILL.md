@@ -18,7 +18,7 @@ When this skill is invoked, execute the following steps in order.
 3. **Confirm entry fit** using **Entry Signals**. If the frame is already stable and the next stage is obvious, route directly to baseline, idea, experiment, decision, or finalize.
 4. **Reconstruct the current frame from durable state**: Research Topic, task, dataset, split, metric, baseline status, blockers, Findings, Artifacts, and Decision Records.
 5. **Identify only unknowns that change the next stage** and classify whether they block baseline work, idea work, both, or only a non-blocking future detail.
-6. **Reuse local evidence before broad search**. Query durable Findings and inspect local Artifacts first, then use literature search capability only for the unresolved benchmark, paper, repo, or evaluation neighborhood.
+6. **Reuse local evidence before broad search**. Query durable Findings and inspect local Artifacts first, then use Literature Provider Binding refs only for the unresolved benchmark, paper, repo, or evaluation neighborhood.
 7. **Record the evaluation contract, baseline shortlist, and next route** as durable Artifacts or a Decision Record, then stop when baseline, idea, Gate, Decision Record, or blocker is clear.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
@@ -66,4 +66,4 @@ Read references as needed:
 - Do not ask for routine technical clarification before checking local evidence.
 - Do not write long paper summaries that do not change the next stage.
 - Search for disconfirming evidence, not only supporting evidence.
-- Use `[[tbd-surface:provider-literature-search]]` for unsettled paper search and `[[tbd-surface:api-execution-command]]` for unsettled command or repository inspection surfaces.
+- Use Literature Provider Binding refs for paper search and Execution Adapter Command Requests for command or repository inspection surfaces.

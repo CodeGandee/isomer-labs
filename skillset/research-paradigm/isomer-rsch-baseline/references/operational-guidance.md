@@ -28,7 +28,7 @@ For code baselines, prefer a reproducible isolated environment, but choose the r
 
 Source-specific package managers, scripts, containers, service startup commands, and local execution tools are Execution Adapter choices. Record only environment facts that affect trust or comparability, and do not force a generic setup route when it would make the baseline less faithful.
 
-Cost, credential, privacy, data export, and long-running compute choices may require an Operator Agent Gate under `[[tbd-surface:policy-cost-privacy-gate]]`.
+Cost, credential, privacy, data export, external upload, destructive-change, and long-running compute choices are governed by Gate Policy preflight, which opens an Operator Agent Gate only when the selected policy requires human judgment.
 
 ## Reuse and Durable Context
 
@@ -49,4 +49,4 @@ Use explicit classes when blocked:
 - `weak-provenance`
 - `non-comparable-protocol`
 
-A blocked result must state what failed, what was tried, which evidence shows the issue, and whether the next best move is attach, import, retry, repair, reset, waive, ask the Operator Agent, or route through decision.
+A blocked result must state what failed, what was tried, which evidence shows the issue, and whether the next best move is attach, import, retry, repair, reset, waive under Baseline-Waiver Policy, open a Gate through Gate Policy preflight, or route through decision.

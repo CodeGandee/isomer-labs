@@ -1,10 +1,10 @@
 # Research Paradigm Skill Gaps Plan
 
-This plan tracks what remains before `skillset/research-paradigm` can move from method guidance to executable Isomer research workflows. The workspace path layer is treated as settled by Workspace Path Resolution, durable recording surfaces are treated as settled by Research Recording Contracts, and lifecycle state is treated as settled by Research Lifecycle State; this plan focuses on the still-missing runtime integration, capability binding, validation, and optional asset contracts.
+This plan tracks what remains before `skillset/research-paradigm` can move from method guidance to executable Isomer research workflows. The workspace path layer is treated as settled by Workspace Path Resolution, durable recording surfaces are treated as settled by Research Recording Contracts, lifecycle state is treated as settled by Research Lifecycle State, CLI topic context is treated as settled by CLI Topic Context Resolution, and execution/provider extension refs are settled by Research Execution and Extension Contract; this plan now focuses on validation, golden examples, and optional asset contracts.
 
 ## Remaining Placeholder Summary
 
-The remaining registered placeholders are `api-execution-command`, `policy-scheduler`, `policy-cost-privacy-gate`, `schema-skill-binding`, `policy-baseline-waiver`, and `provider-literature-search`. The recommended next major step is Stage 3: define the Execution Adapter Command Surface and runtime-policy boundary, because command execution, Run logging, scheduler separation, and cost/privacy Gates now block the largest number of executable research workflows. After that, settle Skill Binding, baseline waiver policy, and literature provider behavior as separate contracts.
+The formerly remaining registered placeholders are `api-execution-command`, `policy-scheduler`, `policy-cost-privacy-gate`, `schema-skill-binding`, `policy-baseline-waiver`, and `provider-literature-search`. `define-research-execution-extension-contract` mapped them to accepted Research Operation Extension Points, Execution Adapter Command Requests, Capability Binding and Skill Binding projections, scheduler policy refs, Gate policy refs, baseline-waiver policy refs, and literature provider bindings. Those terms have been applied across `skillset/research-paradigm`; the next major step is adding validation so stale placeholders do not return as active guidance.
 
 ## Current Completion Status
 
@@ -12,7 +12,8 @@ The remaining registered placeholders are `api-execution-command`, `policy-sched
 - [x] Stage 2: Research Lifecycle State is implemented, validated, and reflected in shared and local research skill contracts.
 - [x] CLI Topic Context Resolution is implemented, validated, and reflected in main specs, architecture notes, domain language, and shared/local research skill contracts.
 - [x] Archive the completed `define-research-lifecycle-state` and `define-cli-topic-context-resolution` OpenSpec changes after final review.
-- [ ] Stage 3 and later remain open because their registered placeholders still appear in `skillset/research-paradigm`.
+- [x] Stage 3 through Stage 5 contracts are defined and applied by `define-research-execution-extension-contract`; manual validation checks confirmed that stale placeholders do not remain active guidance.
+- [x] Archive the completed `define-research-execution-extension-contract` OpenSpec change after final review.
 
 ## Stage 1: Define Core Research Recording Contracts
 
@@ -27,35 +28,35 @@ The remaining registered placeholders are `api-execution-command`, `policy-sched
 
 - [x] Define lifecycle state for Research Topic, Research Inquiry, Research Task, Run, and Workflow Stage Cursor.
 - [x] Define how a Research Inquiry Relationship is recorded without forcing all exploration paths into a tree.
-- [x] Define branch, pause, resume, supersede, block, finalize, and archive transitions through Research Lifecycle State.
+- [x] Define Research Inquiry Relationship, pause, resume, supersede, block, finalize, and archive transitions through Research Lifecycle State.
 - [x] Define Agent Team Instance lifecycle state, including how it maps to Topic-level and Task-level parallel execution.
 - [x] Map the former `policy-branching` surface to Research Inquiry Relationship policy through Research Lifecycle State.
 - [x] Update skills that route between scout, baseline, idea, experiment, analysis, decision, write, review, rebuttal, and finalize to use the accepted lifecycle terms.
 
 ## Stage 3: Define Execution Adapter Command Surface
 
-- [ ] Define the command execution surface currently represented by `[[tbd-surface:api-execution-command]]`.
-- [ ] Specify how commands declare permissions, working directory, environment variables, inputs, outputs, logs, and expected Artifacts.
-- [ ] Specify how execution records map to Runs, Run logs, Evidence Items, and Provenance Records.
-- [ ] Define long-running execution behavior for experiments, baseline recovery, package checks, HPC jobs, and manual checkpoints.
-- [ ] Define the scheduler and continuation policy currently represented by `[[tbd-surface:policy-scheduler]]`.
-- [ ] Define cost, credential, privacy, and data-export Gate thresholds currently represented by `[[tbd-surface:policy-cost-privacy-gate]]`.
+- [x] Define the command execution surface formerly represented by `api-execution-command` as Execution Adapter Command Request.
+- [x] Specify how commands declare permissions, working directory, environment variables, inputs, outputs, logs, and expected Artifacts through the provider-neutral request envelope and semantic workspace targets.
+- [x] Specify how execution records map to Runs, Run logs, Evidence Items, and Provenance Records through Research Recording Contracts.
+- [x] Define long-running execution behavior for experiments, baseline recovery, package checks, HPC jobs, and manual checkpoints through Scheduler Policy refs, Completion Watcher Contracts, Run observations, and Gate Policy preflight.
+- [x] Define the scheduler and continuation policy formerly represented by `policy-scheduler` as Scheduler Policy refs that do not replace Workflow Stage Cursor or Agent Team Instance lifecycle state.
+- [x] Define cost, credential, privacy, data-export, external-upload, long-compute, destructive-change, and publication-facing Gate thresholds formerly represented by `policy-cost-privacy-gate` as Gate Policy preflight.
 
 ## Stage 4: Define Capability and Skill Binding Contracts
 
-- [ ] Define the Skill Binding schema currently represented by `[[tbd-surface:schema-skill-binding]]`.
-- [ ] Define how Capability Bindings expose tools, credentials, skills, search providers, command execution, package managers, and GUI publishing to Agent Roles.
-- [ ] Define how Domain Agent Team Templates specialize into Topic Agent Team Profiles with per-topic skill and capability bindings.
-- [ ] Define how an Agent Team Instance records the concrete Agent Instances, bindings, workspace refs, and Run participation.
-- [ ] Update shared and per-skill references so they can name accepted bindings instead of generic host API placeholders.
+- [x] Define the Skill Binding surface formerly represented by `schema-skill-binding` as Skill Binding projection refs under Capability Binding, Agent Profile, Topic Agent Team Profile, or Run context.
+- [x] Define how Capability Bindings expose tools, credentials, skills, search providers, command execution, package managers, GUI publishing, and allowed Research Operation Extension Points to Agent Roles.
+- [x] Define how Domain Agent Team Templates specialize into Topic Agent Team Profiles with per-topic skill and capability bindings.
+- [x] Define how an Agent Team Instance records the concrete Agent Instances, bindings, workspace refs, Run participation, and launch refs while launch dispatch uses Execution Adapter Command Requests.
+- [x] Update shared and per-skill references so they can name accepted bindings instead of generic host API placeholders.
 
 ## Stage 5: Define Literature and Citation Provider Contract
 
-- [ ] Define the literature search and paper-reading provider currently represented by `[[tbd-surface:provider-literature-search]]`.
-- [ ] Specify citation metadata, source provenance, paper Artifact refs, repository refs, benchmark refs, and confidence labels.
-- [ ] Define how literature Findings become Evidence Items or remain non-claim context.
-- [ ] Define provider behavior for scout, review, rebuttal, write, paper-outline, and baseline route selection.
-- [ ] Update literature-facing references after the provider contract is accepted.
+- [x] Define the literature search and paper-reading provider surface formerly represented by `provider-literature-search` as Literature Provider Binding refs.
+- [x] Specify citation metadata, source provenance, paper Artifact refs, repository refs, benchmark refs, and confidence labels.
+- [x] Define how literature provider output starts as provider-output Artifacts for context-only use, becomes Findings when distilled, and becomes Evidence Items only when linked by evidence-use intent.
+- [x] Define provider behavior for scout, review, rebuttal, write, paper-outline, and baseline route selection.
+- [x] Update literature-facing references after the provider contract is accepted.
 
 ## Stage 6: Add Skillset Validation Harness
 
@@ -88,9 +89,10 @@ The remaining registered placeholders are `api-execution-command`, `policy-sched
 
 ## Stage 9: Reconcile Skills After Contracts Land
 
-- [ ] Replace resolved TBD placeholders across `skillset/research-paradigm`.
-- [ ] Remove local workaround text that only exists because a platform contract was missing.
-- [ ] Keep unresolved placeholders only for genuinely unsettled surfaces.
-- [ ] Run OpenSpec validation and skillset validation.
-- [ ] Review the final skillset for consistency with Topic Workspace, Agent Workspace, Research Topic, Research Inquiry, and Research Task terminology.
-- [ ] Archive the completed OpenSpec changes in dependency order.
+- [x] Replace resolved TBD placeholders across `skillset/research-paradigm`.
+- [x] Remove local workaround text that only exists because a platform contract was missing.
+- [x] Keep unresolved placeholders only for genuinely unsettled surfaces.
+- [x] Run OpenSpec validation.
+- [ ] Run skillset validation once the validation harness exists.
+- [x] Review the final skillset for consistency with Topic Workspace, Agent Workspace, Research Topic, Research Inquiry, and Research Task terminology.
+- [x] Archive the completed OpenSpec changes in dependency order.

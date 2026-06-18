@@ -13,6 +13,6 @@ Source-runtime concepts were intentionally translated:
 - route promotion became a Research Inquiry Relationship decision and Decision Record under Research Lifecycle State.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
-- command execution became Capability Binding through an Execution Adapter with `[[tbd-surface:api-execution-command]]`.
+- command execution became Execution Adapter Command Request with applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs.
 
 License context: the source project is licensed under Apache 2.0. Preserve this notice near this self-contained adaptation when copying, distributing, or materially revising the skill.

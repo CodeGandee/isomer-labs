@@ -48,7 +48,7 @@ Every loop pass should end with one updated candidate status, one updated next a
 
 ## Execution Protocol
 
-Execution belongs behind Capability Bindings and Execution Adapters. Record commands, logs, outputs, and metrics as Runs, Evidence Items, and Provenance Records. Use `[[tbd-surface:api-execution-command]]` for unsettled command surfaces and run log Artifacts resolved by Workspace Path Resolution.
+Execution belongs behind Execution Adapter Command Requests with Capability Binding refs. Record commands, logs, outputs, and metrics as Runs, Evidence Items, and Provenance Records. Use run log Artifacts resolved by Workspace Path Resolution for concrete log layout.
 
 Prefer bounded smoke before full evaluation unless cheap direct validation is equally informative. Do not rerun the same unchanged candidate. If a candidate fails with a clear root cause, debug deliberately or archive it.
 

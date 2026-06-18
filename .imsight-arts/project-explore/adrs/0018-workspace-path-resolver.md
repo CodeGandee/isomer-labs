@@ -18,4 +18,4 @@ accepted
 - Execution Adapters can still override launch-time paths, but the process environment is not durable truth.
 - Effective Topic Context supplies selected Project, Research Topic, Topic Workspace, Research Task, Run, Agent Team Instance, and Agent Instance refs without making the resolver perform independent Research Topic selection.
 - Validation can audit path source, Project-boundary rules, missing files, and stale references consistently.
-- API, schema, provider, command, scheduler, branching, baseline-waiver, cost, and privacy surfaces remain separate unsettled contracts until their own decisions are accepted.
+- API, schema, provider, command, scheduler, branching, baseline-waiver, cost, and privacy surfaces remain separate contracts. Branching is settled by Research Lifecycle State, while execution, provider, scheduler, Skill Binding projection, baseline-waiver, cost, and privacy extension refs are settled by Research Execution and Extension Contract; Workspace Path Resolver still owns only ordinary path resolution.

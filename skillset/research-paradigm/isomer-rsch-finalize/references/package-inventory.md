@@ -27,4 +27,4 @@ Use this reference when finalization needs to identify the concrete outputs that
 
 For paper-like deliverables, verify that the active outline, evidence ledger, section statuses, coverage checks, language or proofing checks, review output, and final package manifest are current enough for the claimed closure state.
 
-If the concrete report or manuscript layout matters but is unsettled, use paper Artifact or another semantic Artifact kind resolved by Workspace Path Resolution.
+If the concrete report or manuscript layout matters, use paper Artifact or another semantic Artifact kind resolved by Workspace Path Resolution.

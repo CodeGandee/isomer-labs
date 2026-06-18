@@ -15,11 +15,11 @@ The `.isomer-labs/` directory at the project root. It stores project-level confi
 _Avoid_: Control directory, control-plane directory, workspace root, hidden workspace
 
 **Project Manifest**:
-The `.isomer-labs/manifest.toml` file. It is the discovery authority for Research Topics, Research Topic Config paths, Topic Workspaces, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, Artifact Format Profile registrations, Artifact Extension registrations, and project-scope GUI component registry references.
+The `.isomer-labs/manifest.toml` file. It is the discovery authority for Research Topics, Research Topic Config paths, Topic Workspaces, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, Capability Binding refs, provider binding refs, Artifact Format Profile registrations, Artifact Extension registrations, and project-scope GUI component registry references.
 _Avoid_: Workspace index, quest registry, config blob
 
 **Research Topic Config**:
-A Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, topic statement Artifact refs, Measurable Objective text or refs, default Research Inquiry refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Gate policy refs, Artifact Format Profile defaults, and Artifact Extension refs. It is not Workspace Runtime state and must not contain Run status, command outputs, live process ids, resolved command results, rich Artifact contents, Evidence Items, Findings, Gates, Decision Records, Provenance Records, credentials, tokens, API keys, passwords, or secret material.
+A Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, topic statement Artifact refs, Measurable Objective text or refs, default Research Inquiry refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile defaults, and Artifact Extension refs. It is not Workspace Runtime state and must not contain Run status, command outputs, live process ids, resolved command results, provider payloads, scheduler internals, rich Artifact contents, Evidence Items, Findings, Gates, Decision Records, Provenance Records, credentials, tokens, API keys, passwords, or secret material.
 _Avoid_: Runtime config, topic database, workspace state, command log, credential file
 
 **Topic Workspace**:
@@ -31,7 +31,7 @@ The persistent runtime substrate inside a Topic Workspace. It includes `state.sq
 _Avoid_: Run, execution episode, quest state, hidden runtime, project config
 
 **Effective Topic Context**:
-The resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, and future Execution Adapter command requests consume for a topic-scoped command. It includes validated Project, Research Topic, Research Topic Config, Topic Workspace, optional lifecycle refs, Topic Agent Team Profile defaults, Execution Adapter refs, Capability Binding refs, Gate policy refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
+The resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations consume for a topic-scoped command. It includes validated Project, Research Topic, Research Topic Config, Topic Workspace, optional lifecycle refs, Topic Agent Team Profile defaults, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
 _Avoid_: Active workspace, runtime database, lifecycle state, durable context blob
 
 ### Workspace Taxonomy
@@ -115,7 +115,7 @@ A reusable multi-agent template based on the research methodology of a research 
 _Avoid_: Topic Agent Team Profile, Agent Team Instance, live team, project-specific team, provider-specific team as the core term
 
 **Topic Agent Team Profile**:
-A topic-level specialization of one Domain Agent Team Template for a user's research topic. It adapts the domain method to the topic context, selects or tunes roles and Workflow Stages, records constraints and expected Artifacts, and can be reviewed or edited before launch; it is not a running team.
+A topic-level specialization of one Domain Agent Team Template for a user's research topic. It adapts the domain method to the topic context, selects or tunes roles and Workflow Stages, records constraints and expected Artifacts, and can carry role-scoped or Workflow Stage-scoped Capability Binding refs, Skill Binding projections, allowed Research Operation Extension Points, scheduler policy refs, Gate policy refs, literature provider refs, and baseline-waiver policy refs. It can be reviewed or edited before launch; it is not a running team.
 _Avoid_: Domain Agent Team Template, Agent Team Instance, Run, live team, ad hoc role list
 
 **Agent Team Instance**:
@@ -135,11 +135,11 @@ A built-in Isomer operational support team that provides common helper work for 
 _Avoid_: Research Agent Team, Topic Agent Team Profile, Agent Team Instance, hidden Execution Adapter behavior, untracked sysadmin work
 
 **Service Request**:
-A bounded operational support command from the Operator Agent to the Service Team. A Service Request names the supported Project, Topic Workspace, Run, Agent Workspace, Agent Instance, or tech-stack scope; specific task; expected support output; authorization scope; Service Dispatch Form; and completion observation rules. A Service Request can support a Research Task or Run, but it is not itself a Research Task or Workflow Stage.
+A bounded operational support command from the Operator Agent to the Service Team. A Service Request names the supported Project, Topic Workspace, Run, Agent Workspace, Agent Instance, or tech-stack scope; specific task; expected support output; authorization scope; Service Dispatch Form; and completion observation rules. Service Request dispatch uses an Execution Adapter Command Request for dispatch, preflight, monitoring, and recording refs when executable routing is needed, but the Service Request remains the domain record of operational support intent. A Service Request can support a Research Task or Run, but it is not itself a Research Task or Workflow Stage.
 _Avoid_: Research Task, Workflow Stage, untracked support chat, generic ticket without Isomer provenance
 
 **Service Dispatch Form**:
-The runtime form the Operator Agent uses to route a Service Request to the Service Team. In `tool_native_subagent` form, the Operator Agent uses native multi-agent or subagent tooling available in its own execution surface. In `launched_service_agent` form, the Operator Agent or Execution Adapter launches or resolves Service Agent Instances and dispatches Service Requests to them, similar to launching an agent team. The dispatch form is an implementation choice; it does not change Operator Agent command authority or provenance obligations.
+The runtime form the Operator Agent uses to route a Service Request to the Service Team. In `tool_native_subagent` form, the Operator Agent uses native multi-agent or subagent tooling available in its own execution surface. In `launched_service_agent` form, the Operator Agent or Execution Adapter launches or resolves Service Agent Instances and dispatches Service Requests to them, similar to launching an agent team. The dispatch form is selected by the Service Request, while Execution Adapter Command Requests normalize dispatch, preflight, monitoring, and recording for the executable operation. The dispatch form is an implementation choice; it does not change Operator Agent command authority or provenance obligations.
 _Avoid_: Control Mode, Agent Team Instance, Workflow Stage, hidden backend worker
 
 **Agent Role**:
@@ -154,12 +154,16 @@ _Avoid_: Topic Agent Team Profile, Agent Definition, provider-specific specialis
 The connection between an Agent Role or Agent Profile and the capabilities available to it, such as tools, skills, model profiles, data access, credentials, execution adapters, communication channels, or workspace permissions.
 _Avoid_: Binding as an unqualified term, hardcoded runner, tool config, provider-specific profile
 
+**Skill Binding Projection**:
+A provider-neutral projection of which skills are available to an Agent Role, Agent Profile, Topic Agent Team Profile, or Run context. It names skill ids, compatibility refs when known, required references or assets, allowed Research Operation Extension Points, and topic-specific skill parameters. It validates intended skill availability but does not define provider-specific installation, packaging, marketplace, or filesystem layout behavior.
+_Avoid_: Skill installer, package manager schema, provider marketplace record, unscoped skill list
+
 **Agent Instance**:
 A concrete runtime actor created from an Agent Profile and assigned to an Agent Role for a Run or team execution context. Agent Instances own Agent Workspaces; Agent Roles describe responsibilities and workflow ownership.
 _Avoid_: Agent Role as the runtime actor, worker, provider-specific managed agent as the generic term
 
 **Service Agent Instance**:
-A runtime service actor from the Service Team that handles Service Requests at the command of the Operator Agent. A Service Agent Instance can be represented by a tool-native subagent invocation or by a launched service agent, depending on the Service Dispatch Form. It may inspect or modify the authorized support surfaces named by a Service Request, such as a target Agent Workspace's environment setup, but it must record support Artifacts and Provenance Records. It is not a task handler for a Research Task and must not make research decisions.
+A runtime service actor from the Service Team that handles Service Requests at the command of the Operator Agent. A Service Agent Instance can be represented by a tool-native subagent invocation or by a launched service agent, depending on the Service Dispatch Form. Service Agent Instance launch uses an Execution Adapter Command Request for dispatch, preflight, monitoring, and recording refs when a concrete launch is needed, but the Service Agent Instance remains outside Agent Team Instance membership. It may inspect or modify the authorized support surfaces named by a Service Request, such as a target Agent Workspace's environment setup, but it must record support Artifacts and Provenance Records. It is not a task handler for a Research Task and must not make research decisions.
 _Avoid_: Agent Team Instance member, research task Agent Instance, Operator Agent, Execution Adapter internals
 
 **Operator Agent**:
@@ -177,6 +181,30 @@ _Avoid_: Completion source of truth, adapter-only callback, unrecorded watcher c
 **Execution Adapter**:
 A backend-specific bridge that maps Isomer's generic Domain Agent Team Template, Topic Agent Team Profile, Agent Team Instance, Agent Profile, Agent Instance, Capability Binding, Run, Agent Workspace, and Artifact concepts onto a concrete execution engine. Execution Adapters must not change Isomer's core domain language.
 _Avoid_: Research Engine Adapter, backend as the core engine, native-agent layer as the Isomer model, provider lock-in
+
+**Research Operation Extension Point**:
+A provider-neutral operation slot that a research skill can require and a topic, team profile, Capability Binding, provider binding, Gate policy, or Execution Adapter can satisfy by ref. Examples include `command_execution`, `repository_inspection`, `package_management`, `notebook_execution`, `hpc_job`, `document_build`, `figure_render`, `literature_search`, `baseline_acceptance`, `baseline_waiver`, `cost_privacy_gate`, `credential_use`, `data_export`, `skill_binding`, `service_request`, and `agent_launch`.
+_Avoid_: Provider name, concrete command runner, host API, unregistered TBD placeholder
+
+**Execution Adapter Command Request**:
+A provider-neutral dispatch envelope for executable or provider-backed research operations. It carries identity refs, Effective Topic Context source metadata, operation kind, Research Operation Extension Point refs, Capability Binding refs, Skill Binding projection refs, Gate policy refs, semantic workspace targets, expected inputs and outputs, expected Artifact kinds, monitor or scheduler policy refs, opaque adapter payload refs when needed, and Provenance obligations. It does not embed provider-specific command bodies, credentials, provider payloads, scheduler internals, command outputs, or live process state.
+_Avoid_: Shell command schema as core Isomer contract, notebook job schema as core contract, provider payload, runtime log
+
+**Scheduler Policy**:
+A reusable policy ref that authorizes automatic dispatch, retry, queueing, monitoring cadence, long-running checkpoints, manual checkpoint behavior, resume behavior, or stop conditions for a Run, Agent Team Instance, command request, or service request. Scheduler Policy does not own Workflow Stage Cursor state or Agent Team Instance lifecycle state.
+_Avoid_: Lifecycle state, Workflow Stage Cursor, hidden scheduler truth, continuation policy as a lifecycle object
+
+**Gate Policy**:
+A reusable policy ref used by preflight or workflow validation to decide when a governed action must open or reference a Gate. Gate policies may cover cost, credential use, private data, data export, external upload, long-running compute, destructive mutation, publication-facing output, baseline waiver, or other user-controlled resources. A Gate Policy is not itself the pending Gate record.
+_Avoid_: Gate record, ad hoc warning, inline approval flag, command-local boolean
+
+**Literature Provider Binding**:
+A provider binding ref for literature search, paper metadata, citation metadata, paper reading, benchmark lookup, repository lookup, or adjacent-work scouting. It names provider availability and recording obligations without making a specific literature API part of generic Isomer skill behavior.
+_Avoid_: Hardcoded paper search provider, raw provider payload as evidence, citation database as core schema
+
+**Baseline-Waiver Policy**:
+A policy ref that governs whether work may proceed without an accepted active baseline. It distinguishes comparator relevance, active baseline acceptance, explicit waiver, required rationale, promotion limits, and whether a human-return Gate must be opened.
+_Avoid_: Baseline Gate as the only reusable rule, erased comparator evidence, unrecorded waiver
 
 **Workflow Stage**:
 A named step in a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance workflow. A Workflow Stage has an owning Agent Role, expected inputs and outputs, handoff behavior, and optional Gate policy.
@@ -338,7 +366,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use `research_topic_config` for Project Manifest-registered topic-specific defaults and refs.
 - Use `topic_workspace` for a manifest-declared topic-level workspace.
 - Use `topic_workspace_id` for references to the Topic Workspace that owns topic runtime state and files.
-- Use `effective_topic_context` for the resolved process-local context consumed by `isomer-cli`, Workspace Path Resolution, Run initialization, and future Execution Adapter command requests.
+- Use `effective_topic_context` for the resolved process-local context consumed by `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations.
 - Use `research_task` for bounded work recorded inside one Topic Workspace.
 - Use `task_handler` for the Operator Agent or delegated Agent Team Instance member responsible for a Research Task.
 - Use `workspace_runtime` for the persistent workspace substrate that stores and validates state across many Runs.
@@ -362,6 +390,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use `domain_agent_team_template`, `topic_agent_team_profile`, `agent_team_instance`, `operator_agent`, `agent_role`, `agent_profile`, `agent_instance`, `capability_binding`, `coordination_policy`, `execution_adapter`, and `workflow_stage` for team and execution concepts.
 - Use `service_team` for the built-in operational support team, `service_request` for one bounded support assignment, and `service_agent_instance` for the runtime support actor.
 - Use `service_dispatch_form` for the Operator Agent's Service Request routing choice. Use `tool_native_subagent` when the Operator Agent uses native subagent or multi-agent tooling, and `launched_service_agent` when the Operator Agent or Execution Adapter launches or resolves service agents and dispatches requests to them.
+- Use `research_operation_extension_point` for provider-neutral operation slots, `execution_adapter_command_request` for the shared dispatch envelope, `skill_binding_projection` for skill availability projection, `scheduler_policy` for dispatch and monitoring authorization, `gate_policy` for governed-action preflight, `literature_provider_binding` for external literature provider refs, and `baseline_waiver_policy` for baseline bypass rules.
 - Use terms such as `operator`, `reviewer`, `writer`, `coder`, `experimenter`, or `scout` as Agent Role kinds. Model `operator_agent` as an Agent Role and Agent Instance identity, not as a separate entity table outside the generic agent model.
 - Use `completion_watcher_contract` or `watcher_contract` for the resolved per-handoff completion observation contract.
 
@@ -407,6 +436,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - A **Project Config Directory** is config and discovery state; it does not own **Workspace Runtime** or research **Artifacts**.
 - A **Project Manifest** declares zero or more **Research Topics**, **Research Topic Config** paths, and **Topic Workspaces**.
 - A **Research Topic Config** belongs to one **Research Topic** and stores defaults and refs, not Runtime state.
+- A **Research Topic Config** may select topic-level **Research Operation Extension Point** refs, **Capability Binding** refs, **Skill Binding Projection** refs, **Scheduler Policy** refs, **Gate Policy** refs, **Literature Provider Binding** refs, and **Baseline-Waiver Policy** refs.
 - A **Project** contains zero or more **Research Topics**.
 - A **Research Topic** has zero or one active **Topic Workspace** at a time, and may have historical Topic Workspaces after migration, archive, or fork operations.
 - A **Topic Workspace** belongs to one **Research Topic**.
@@ -425,7 +455,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - **Manual Mode** is a **Control Mode** for a Run, not a Project, Research Inquiry, or Research Task mode.
 - A **Topic Workspace** owns one **Workspace Runtime**.
 - A **Workspace Runtime** stores, indexes, validates, and recovers **Run** records, but it is not itself a Run.
-- **Effective Topic Context** is resolved before topic-scoped CLI behavior and supplies selected refs to Workspace Path Resolution without becoming durable research state.
+- **Effective Topic Context** is resolved before topic-scoped CLI behavior and supplies selected refs to Workspace Path Resolution, Run initialization, **Execution Adapter Command Requests**, and provider-backed extension operations without becoming durable research state.
 
 ### Team and Agent Execution
 
@@ -436,7 +466,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - **Agent Runtime** is subordinate to **Workspace Runtime**.
 - A **Domain Agent Team Template** contains default **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Binding** slots, and template parameters for one research field or method family.
 - A **Topic Agent Team Profile** specializes one **Domain Agent Team Template** for a user's research topic.
-- A **Topic Agent Team Profile** contains topic-adapted **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, constraints, and expected **Artifacts**, but it is not running.
+- A **Topic Agent Team Profile** contains topic-adapted **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, **Skill Binding Projections**, allowed **Research Operation Extension Points**, policy refs, constraints, and expected **Artifacts**, but it is not running.
 - An **Agent Team Instance** is created from one **Topic Agent Team Profile** by the **Operator Agent** or **Execution Adapter**.
 - An **Agent Team Instance** contains runtime **Agent Instances**, launch refs, **Agent Workspaces**, Run participation, and resolved execution state.
 - Topic-level **Parallel Execution Scope** runs multiple **Agent Team Instances** under one **Research Topic**.
@@ -463,9 +493,13 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - The **Operator Agent** is the main user interaction point, task controller, team-specialization actor, team-launch actor, and final fallback handler.
 - Human users operate through the **Operator Agent** for commands, approvals, Gate decisions, and task-routing changes.
 - A **Coordination Policy** defines how Agent Instances communicate, hand off work, review outputs, escalate decisions, and use Gates.
+- A **Scheduler Policy** authorizes dispatch, retry, monitoring, checkpoints, resume behavior, and stop conditions; it does not replace **Workflow Stage Cursor** or **Agent Team Instance** lifecycle state.
+- A **Gate Policy** decides when governed actions require or reference a **Gate**; it is separate from the pending or resolved **Gate** record.
 - A **Coordination Policy** can define default **Completion Watcher Contracts** for manual handoffs.
 - A manual handoff stores its resolved **Completion Watcher Contract** before the Operator Agent sends the direct message.
 - An **Execution Adapter** may map Isomer **Agent Profiles** to backend-specific launch material, but those backend concepts are adapter details.
+- An **Execution Adapter Command Request** is the shared envelope for command execution, provider-backed operations, **Service Request** dispatch, **Service Agent Instance** launch, and **Agent Team Instance** launch operations; it carries dispatch, preflight, monitoring, and recording refs without replacing their distinct domain records.
+- **Research Operation Extension Points** are provider-neutral slots; provider-specific command bodies, payloads, queues, APIs, and credentials stay outside generic skill text and topic config.
 - A **Workspace Boundary** declares intended write ownership and **Peer Read Access** for an **Agent Workspace**.
 - A **Workspace Boundary** belongs to an **Agent Workspace**, but it is not itself a workspace.
 - **Peer Read Access** allows inspection of declared readable files, but it does not grant write ownership or filesystem-grade protection.
@@ -481,6 +515,8 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - A **Decision Record** may resolve a **Gate**, select or create a **Research Inquiry**, record a **Research Inquiry Relationship**, archive a Research Topic, or record another meaningful choice.
 - A **Decision Record** should cite relevant **Evidence Items**, **Artifacts**, or **Provenance Records** when the choice depends on research evidence.
 - A **Gate** can block a Workflow Stage action until the human user resolves it.
+- A **Baseline-Waiver Policy** may open or reference a **Gate**, but the policy ref remains separate from the Gate record and does not erase comparator evidence.
+- A **Literature Provider Binding** result that is only orientation or scouting context should be recorded first as a provider-output **Artifact** with **Provenance Records**, then optionally distilled into a **Finding** or linked as an **Evidence Item** when evidence-use intent changes.
 - An **Artifact Core Record** remains valid when an **Artifact Format Profile** or **Artifact Extension** is missing, unsupported, disabled, or unknown.
 - **Artifact Format Profiles** and **Artifact Extensions** attach as optional refs or metadata; they do not become mandatory core Artifact fields.
 
@@ -514,8 +550,8 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use **Project Config Directory** for `.isomer-labs/`. Reserve "control plane" for compact runtime state, especially SQLite-backed Workspace Runtime state.
 - Do not use bare "workspace" when **Project**, **Topic Workspace**, and **Agent Workspace** are all plausible readings.
 - Do not call **Project** or **Project Config Directory** a workspace.
-- Use **Research Topic Config** for topic-specific defaults and refs. Do not use it for **Workspace Runtime** state, command logs, research records, rich Artifact contents, or secrets.
-- Use **Effective Topic Context** for resolved process input to topic-scoped command behavior. Do not describe it as durable lifecycle state or a full snapshot stored on every Run.
+- Use **Research Topic Config** for topic-specific defaults and refs. Do not use it for **Workspace Runtime** state, command logs, research records, rich Artifact contents, provider payloads, scheduler internals, command outputs, or secrets.
+- Use **Effective Topic Context** for resolved process input to topic-scoped command behavior, path resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations. Do not describe it as durable lifecycle state or a full snapshot stored on every Run.
 - Use **Topic Workspace** instead of "quest" or "quest workspace" for Isomer-managed research execution areas. "Quest" is DeepScientist reference language, not Isomer canonical language.
 - Use **Research Topic** for the root research problem or investigation intent that initiates the research and drives Topic Agent Team Profile specialization. Do not use **Research Goal** as a separate level.
 - Use **Measurable Objective** only for optional metric-bearing content inside a **Research Topic**. Do not model measurable and exploratory as exclusive goal kinds.
@@ -531,7 +567,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 - Use **Agent Workspace** for per-agent work areas inside a Topic Workspace. Do not call it a secure sandbox.
 - Do not put `teams/` under a **Topic Workspace**. **Domain Agent Team Templates**, **Topic Agent Team Profiles**, and **Agent Team Instance** refs are project-level or built-in references; the workspace records Topic Agent Team Profile identity, Agent Team Instance identity, and task-handler identity through manifest refs, Workspace Runtime, or provenance Artifacts.
-- Use **Domain Agent Team Template**, **Topic Agent Team Profile**, **Agent Team Instance**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Coordination Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
+- Use **Domain Agent Team Template**, **Topic Agent Team Profile**, **Agent Team Instance**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Skill Binding Projection**, **Research Operation Extension Point**, **Execution Adapter Command Request**, **Coordination Policy**, **Scheduler Policy**, **Gate Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
 - Use **Agent Instance** for the concrete runtime actor that owns an Agent Workspace. Do not use **Agent Role** as the workspace owner except when discussing responsibility or workflow ownership.
 - Use **Operator Agent** for the user-facing controller, topic-profile author, team launcher, task router, and fallback handler. Do not model direct human operation of team Agent Instances or runtime state. Use **Coordination Policy** for the rules that govern collaboration among delegated team agents.
 - Manual Mode still routes user intent through the **Operator Agent**. Do not describe manual direct messages as untracked human-to-agent chat.
@@ -541,6 +577,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Treat **Service Team** work as Operator Agent commanded work. Do not describe Service Team members as self-directed agents that interpret user goals or choose research actions.
 - Use **Service Dispatch Form** to describe whether a Service Request used native subagent tooling or launched service agents. Do not model launched Service Agent Instances as a research **Agent Team Instance**.
 - Record user-visible environment repair or setup mutation as a **Service Request** when it creates Artifacts or changes project, workspace, runtime, dependency, or environment state. Do not hide this work only inside **Execution Adapter** internals.
+- Route Service Request dispatch, Service Agent Instance launch, and Agent Team Instance launch through **Execution Adapter Command Requests** for dispatch, preflight, monitoring, and recording while preserving their distinct domain records.
 - A **Service Request** authorization scope documents intended support access. Do not describe it as filesystem-grade isolation or security enforcement.
 - Operator, reviewer, writer, coder, experimenter, and scout should be Agent Role kinds, not separate entity types.
 - Treat Houmao's specialist, project profile, native role, recipe, launch dossier, and managed-agent concepts as possible mappings inside a Houmao **Execution Adapter**. Do not use them as Isomer core terms.

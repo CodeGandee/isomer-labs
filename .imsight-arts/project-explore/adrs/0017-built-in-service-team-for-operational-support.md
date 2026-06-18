@@ -15,13 +15,13 @@ accepted
 
 ## Decision
 
-Add **Service Team**, **Service Request**, **Service Dispatch Form**, and **Service Agent Instance** as Isomer concepts. The Operator Agent may open Service Requests for Projects, Topic Workspaces, Runs, Agent Workspaces, Agent Instances, or tech-stack support scopes. For each Service Request, the Operator Agent chooses a Service Dispatch Form. In `tool_native_subagent` form, the Operator Agent uses native multi-agent or subagent tooling available in its execution surface. In `launched_service_agent` form, the Operator Agent or Execution Adapter launches or resolves Service Agent Instances and dispatches Service Requests to them. Workspace-scoped Service Requests use Workspace Runtime for handoff and completion records, and support work that changes state must produce Artifacts and Provenance Records.
+Add **Service Team**, **Service Request**, **Service Dispatch Form**, and **Service Agent Instance** as Isomer concepts. The Operator Agent may open Service Requests for Projects, Topic Workspaces, Runs, Agent Workspaces, Agent Instances, or tech-stack support scopes. For each Service Request, the Operator Agent chooses a Service Dispatch Form. In `tool_native_subagent` form, the Operator Agent uses native multi-agent or subagent tooling available in its execution surface. In `launched_service_agent` form, the Operator Agent or Execution Adapter launches or resolves Service Agent Instances and dispatches Service Requests to them. Service Request dispatch and Service Agent Instance launch operations use Execution Adapter Command Requests for dispatch, preflight, monitoring, and recording refs, while Service Requests, Service Dispatch Forms, and Service Agent Instances remain distinct domain records. Workspace-scoped Service Requests use Workspace Runtime for handoff and completion records, and support work that changes state must produce Artifacts and Provenance Records.
 
 ## Consequences
 
 - Research teams stay focused on research methodology, task execution, evidence, and review.
 - Common environment and compatibility work has a durable Isomer record instead of living only in ad hoc chat or adapter behavior.
-- Tool-native subagents and launched service agents are both valid Service Team realization paths.
+- Tool-native subagents and launched service agents are both valid Service Team realization paths, with dispatch normalized through Execution Adapter Command Requests when execution preflight, monitoring, or recording applies.
 - Service Agent Instances are outside Agent Team Instance membership and cannot be selected as Task Handlers for Research Tasks.
 - Launched Service Agent Instances do not become a research Agent Team Instance.
 - The Service Team does not own Research Topics, Research Claims, Gates, or research decisions.

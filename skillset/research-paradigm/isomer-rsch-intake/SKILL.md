@@ -65,4 +65,4 @@ Read references as needed:
 - Do not inspect the whole repository when a smaller evidence set answers the routing issue.
 - Do not mark an existing baseline, Run, analysis result, draft, or review package as trusted unless provenance, role, and comparability are clear enough.
 - Do not import paper-facing assets as current-method support until legacy-method, comparator, negative-evidence, appendix-only, and latest-method roles are separated.
-- Use a Capability Binding through an Execution Adapter for command, git, repository, or environment inspection, and use `[[tbd-surface:api-execution-command]]` only when the concrete execution surface must be named.
+- Use Execution Adapter Command Requests with Capability Binding refs for command, git, repository, or environment inspection.

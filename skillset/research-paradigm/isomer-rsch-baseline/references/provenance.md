@@ -9,7 +9,7 @@ Source-runtime concepts were intentionally translated:
 - quest lifecycle language became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage Cursor language.
 - artifact operations such as `artifact.confirm_baseline(...)`, `artifact.waive_baseline(...)`, package attachment, package import, and package publication became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, host Artifact APIs, or reusable Artifact packages.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
-- command execution and source tool wrappers became Capability Binding through an Execution Adapter.
+- command execution and source tool wrappers became Execution Adapter Command Request with Capability Binding refs.
 - source worktree and workspace assumptions became Topic Workspace, Workspace Runtime, Agent Workspace, or semantic Artifact scopes resolved by Workspace Path Resolution.
 - concrete metric-contract paths became metric-contract Artifacts resolved by Workspace Path Resolution, with accepted Evidence Item fields for evidence semantics.
 - source package-manager, container, and service-endpoint tactics became Execution Adapter choices or Capability Bindings, not required Isomer skill behavior.

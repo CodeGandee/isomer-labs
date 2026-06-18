@@ -23,4 +23,4 @@ Record enough information that another agent can find, inspect, regenerate, and 
 
 ## Gate Conditions
 
-Open or record a Gate when final export involves cost, private data, credentialed services, external upload, venue-specific compliance, or irreversible publication-facing decisions.
+Run Gate Policy preflight before final export when it involves cost, private data, credentialed services, external upload, venue-specific compliance, or irreversible publication-facing decisions, and open or record a Gate when the selected policy requires Operator Agent judgment.

@@ -9,9 +9,9 @@ Source-runtime concepts were intentionally translated:
 - lifecycle-level research work became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage Cursor language.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
-- command execution became Capability Binding through an Execution Adapter.
+- command execution became Execution Adapter Command Request with Capability Binding refs.
 - review follow-up policies became Gates or Decision Records.
-- paper paths, review packet paths, and generated layouts became paper Artifacts or semantic Artifact scopes resolved through Workspace Path Resolution when ordinary locations are needed; non-path TBD placeholders remain for unsettled APIs, schemas, providers, and policies.
-- literature providers became literature search Capability Bindings with provider TBDs.
+- paper paths, review packet paths, and generated layouts became paper Artifacts or semantic Artifact scopes resolved through Workspace Path Resolution when ordinary locations are needed; implementation-specific APIs, schemas, providers, and policies remain behind accepted extension refs.
+- literature providers became Literature Provider Binding refs.
 
 License context: the source project is licensed under Apache 2.0. Preserve this notice near this self-contained adaptation when copying, distributing, or materially revising the skill.

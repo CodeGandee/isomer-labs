@@ -4,7 +4,7 @@ Use this reference when a review must judge novelty, paper quality, venue fit, c
 
 ## When to Run
 
-Run a literature benchmark before calling a substantial manuscript strong unless the user explicitly limits the review to local evidence. Use `[[tbd-surface:provider-literature-search]]` for unsettled search providers.
+Run a literature benchmark before calling a substantial manuscript strong unless the user explicitly limits the review to local evidence. Use Literature Provider Binding refs for provider-backed search and record context-only results as provider-output Artifacts before deriving Findings or Evidence Items.
 
 ## Comparison Set
 

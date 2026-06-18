@@ -18,7 +18,7 @@ When this skill is invoked, execute the following steps in order.
 3. **Route the chart style** using `references/style-routing.md`; if the task does not fit a supported family, ask for a narrower chart target or hand off to a custom figure route.
 4. **Read the matching per-style reference** from **Reference Routing** and extract only the visual contract needed for the current Artifact.
 5. **Create a figure-generation Artifact** under the host figure-output surface, keep source data beside it, and substitute data according to `references/data-substitution.md`.
-6. **Render and inspect the first-pass figure** through an approved Execution Adapter and record the rendered output as an Evidence Item or Artifact.
+6. **Render and inspect the first-pass figure** through an approved Execution Adapter Command Request and record the rendered output as an Evidence Item or Artifact.
 7. **Route the result**. Keep it as a first-pass figure, or hand durable milestone, report, review, appendix, or manuscript figures to `$isomer-rsch-figure-polish`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user prompt, then execute the plan.

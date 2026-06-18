@@ -7,9 +7,9 @@ The adaptation preserves reusable methodology: scientific task classification, p
 Source-runtime concepts were intentionally translated:
 
 - source Science Evidence Graph language became linked Isomer Evidence Items, Artifacts, Research Claims, Validation Evidence Items, Decision Records, Gates, and Provenance Records.
-- source command execution became Capability Binding through an Execution Adapter.
+- source command execution became Execution Adapter Command Request with Capability Binding refs.
 - source package cards became routing references that never prove runtime availability.
-- source HPC-through-shell guidance became SSH, scheduler, queue, SLURM, log, and monitoring discipline through an Execution Adapter.
+- source HPC-through-shell guidance became SSH, scheduler, queue, SLURM, log, and monitoring discipline through Execution Adapter Command Requests.
 - source startup briefs became science-task brief Artifacts or handoff notes.
 - source package-catalog generation was deferred instead of copied as a bulky generated resource.
 

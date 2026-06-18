@@ -40,17 +40,17 @@ Use primary route values: `text_revision`, `evidence_repackaging`, `literature_p
 | manuscript edit mode | Capability Binding or deliverable format constraint |
 | analysis campaign launch | Decision Record routing reviewer-linked slices to `isomer-rsch-analysis` |
 | artifact or memory operations | Artifacts, Evidence Items, Findings, Decision Records, Gates, or host APIs |
-| command execution | Capability Binding through an Execution Adapter using `[[tbd-surface:api-execution-command]]` |
+| command execution | Execution Adapter Command Request with applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs |
 
-## TBD Surfaces
+## Resolved Extension Surfaces
 
-Use paper Artifact through Workspace Path Resolution for concrete manuscript or rebuttal layouts, the accepted Artifact and Provenance recording API for record updates, the accepted Evidence Item fields for evidence fields, and `[[tbd-surface:provider-literature-search]]` for literature provider uncertainty.
+Use paper Artifact through Workspace Path Resolution for concrete manuscript or rebuttal layouts, the accepted Artifact and Provenance recording API for record updates, the accepted Evidence Item fields for evidence fields, Literature Provider Binding refs for literature provider-backed search, and Execution Adapter Command Requests for executable inspection.
 
-| ID | Kind | Missing decision |
-| --- | --- | --- |
-| paper Artifact | resolved path surface | Resolved through Workspace Path Resolution. |
-| api-execution-command | api | Execution command surface, permissions, and logging behavior. |
-| provider-literature-search | provider | Literature search and paper-reading provider. |
+| Surface | Resolution |
+| --- | --- |
+| paper Artifact | Resolved through Workspace Path Resolution. |
+| command execution | Resolved through Execution Adapter Command Requests. |
+| literature provider | Resolved through Literature Provider Binding refs. |
 
 ## Non-negotiable Rules
 

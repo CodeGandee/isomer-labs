@@ -70,13 +70,13 @@ A selected route package should include:
 - minimal validation and strongest falsification experiment
 - hard constraints, comparability boundary, abandonment condition, and expected evidence burden
 - why this route won now over the incumbent, a small local tweak, and at least one outside-family alternative
-- next Workflow Stage Cursor, unresolved provider surfaces such as `[[tbd-surface:provider-literature-search]]`, and semantic Artifact kind through Workspace Path Resolution
+- next Workflow Stage Cursor, Literature Provider Binding refs used for external search, and semantic Artifact kind through Workspace Path Resolution
 
 ## Durable Outputs
 
 - Objective contract Artifact.
 - Current-board packet Artifact.
-- Literature survey or related-work Evidence Items.
+- Literature provider-output Artifacts, literature survey Artifacts, related-work Findings, or related-work Evidence Items.
 - Candidate frontier, rejected-candidate notes, and pre-idea drafts.
 - Selected route Artifact and Decision Record, or blocker with next-stage recommendation.
 - Optional paper-outline seed Artifact when the route is likely to support a paper-facing Research Claim.

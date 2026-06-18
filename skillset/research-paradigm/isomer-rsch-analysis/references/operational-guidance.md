@@ -2,7 +2,7 @@
 
 Use this reference when the analysis route needs longer operational notes than the main control surface.
 
-Provenance: see `provenance.md`. Source runtime calls are mapped to Isomer host surfaces or TBD placeholders.
+Provenance: see `provenance.md`. Source runtime calls are mapped to Isomer host surfaces or accepted extension refs.
 
 ## Artifact Tactics
 
@@ -31,14 +31,14 @@ Useful slice summary fields include:
 - `failure_mode`
 - `next_action`
 
-## Resource Gate
+## Gate Policy Preflight
 
-Before launching a multi-slice campaign or expensive slice, record the current execution envelope:
+Before launching a multi-slice campaign or expensive slice, run Gate Policy preflight and record the current execution envelope:
 
 - available GPUs, CPUs, memory, and storage
 - expected wall-clock budget
 - concurrency or queue limits
-- services, credentials, dependencies, or data access that may block execution
+- services, credentials, dependencies, private data, external upload, or data access that may block execution
 
 For each planned slice, decide explicitly:
 
@@ -65,7 +65,7 @@ Use the execution route that is most faithful, observable, and efficient while p
 - If the same failure class appears again without route or evidence change, stop widening and route through decision.
 - If the same slice repeatedly fails because the environment cannot support it, stop retrying and redesign the slice set around the real resource envelope.
 
-Use `[[tbd-surface:api-execution-command]]` until command execution, monitoring, and logging behavior are settled.
+Use Execution Adapter Command Requests for command execution, monitoring, and logging behavior, and preserve the selected Gate Policy refs or resolved Gate decision in the dispatch record when preflight governs the slice.
 
 ## Durable Context Note
 

@@ -9,8 +9,8 @@ Source-runtime concepts were intentionally translated:
 - quest lifecycle language became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage Cursor language.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
-- command, git, package, graph, and document checks became Capability Binding through an Execution Adapter or durable Artifacts.
-- source file layouts and paper-bundle paths became package inventory fields or semantic Artifact scopes resolved by Workspace Path Resolution; non-path TBD placeholders remain only for unsettled APIs, schemas, providers, and policies.
+- command, git, package, graph, and document checks became Execution Adapter Command Request with Capability Binding refs or durable Artifacts.
+- source file layouts and paper-bundle paths became package inventory fields or semantic Artifact scopes resolved by Workspace Path Resolution; implementation-specific APIs, schemas, providers, and policies remain behind accepted extension refs.
 - scheduler and continuation terms became Workflow Stage Cursor recommendations, Gates, Decision Records, observations, or pauses for Operator Agent instruction.
 
 License context: the source project is licensed under Apache 2.0. Preserve this notice near this self-contained adaptation when copying, distributing, or materially revising the skill.

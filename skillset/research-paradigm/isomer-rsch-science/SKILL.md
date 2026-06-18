@@ -18,7 +18,7 @@ When this skill is invoked, execute the following steps in order.
 3. **Route package or domain knowledge** using `references/domain-index.md` and `references/package-index-decision.md`; treat catalog knowledge as routing guidance, not runtime proof.
 4. **Check the environment before computed work** using `references/package-check-playbook.md`; verify imports, executables, versions, modules, credentials, queue access, data availability, and smoke paths through approved Execution Adapters.
 5. **Prepare or refine the science task brief** with `references/science-task-brief-template.md` when the task needs bounded objectives, inputs, constraints, success criteria, deliverables, or handoff context.
-6. **Execute and monitor scientific work** through a Capability Binding and Execution Adapter; for SSH, scheduler, queue, or SLURM work, follow `references/hpc-execution-adapter.md`.
+6. **Execute and monitor scientific work** through Execution Adapter Command Requests with the applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs; for SSH, scheduler, queue, or SLURM work, follow `references/hpc-execution-adapter.md`.
 7. **Record evidence and claims** using `references/evidence-recording.md` and `references/claim-type-discipline.md`, then route to next Workflow Stage, Gate, Decision Record, blocker, or report.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user prompt, then execute the plan.
@@ -68,4 +68,4 @@ Read references as needed:
 - Do not weaken tolerances, filters, physical models, convergence criteria, validation checks, or scientific semantics merely to pass.
 - Do not submit remote or HPC jobs without a log path, job id or status plan when available, and a monitoring cadence.
 - Do not record science evidence only in chat; create durable Artifacts, Evidence Items, Research Claims, Decision Records, Gates, or Provenance Records through the host surface.
-- Use `[[tbd-surface:api-execution-command]]` for unsettled execution commands and run log Artifacts resolved by Workspace Path Resolution.
+- Use Execution Adapter Command Requests for execution and run log Artifacts resolved by Workspace Path Resolution for concrete logs.

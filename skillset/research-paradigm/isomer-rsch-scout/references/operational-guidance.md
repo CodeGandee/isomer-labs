@@ -16,7 +16,7 @@ Classify every unresolved unknown as blocking baseline, blocking idea, blocking 
 
 ## Literature and Repository Search
 
-Use the literature search capability and repository inspection only for the unresolved neighborhood. When concrete execution or repository inspection is required, route it through a Capability Binding and Execution Adapter. If the provider or command surface must be named but remains unsettled, use `[[tbd-surface:provider-literature-search]]` or `[[tbd-surface:api-execution-command]]`.
+Use Literature Provider Binding refs and repository inspection only for the unresolved neighborhood. When concrete execution or repository inspection is required, route it through an Execution Adapter Command Request with the applicable Research Operation Extension Point, Capability Binding, policy, workspace, and recording refs.
 
 ## Blocked-State Handling
 

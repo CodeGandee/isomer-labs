@@ -19,6 +19,6 @@ Use these action labels to keep Decision Records legible. They are labels for re
 | iterate | The current stage should continue with a bounded correction. | stage-local plan |
 | reset | The current line is invalid enough to restart a route. | Decision Record and new scout or idea route |
 | stop | The current objective should end or be parked. | Gate or finalization handoff |
-| request_operator_gate | The route depends on human preference, scope, cost, privacy, safety, finality, or a missing user-held source. | Gate through the Operator Agent |
+| request_operator_gate | Gate Policy preflight says the route depends on human preference, scope, cost, credential use, privacy, safety, publication-facing output, finality, external upload, or a missing user-held source. | Gate opened for Operator Agent judgment |
 
 Choose the smallest action that resolves the state. If an action would imply a concrete API, schema, storage layout, or scheduler behavior, describe the intended record and use a TBD placeholder only for still-unsettled non-recording surfaces.

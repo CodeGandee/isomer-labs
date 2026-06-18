@@ -18,7 +18,7 @@ When this skill is invoked, execute the following steps in order.
 3. **Check decision readiness**. If the current mainline, latest decisive result, stale routes, or blocker state is unclear, route through intake before judging.
 4. **State the exact route question** and gather only evidence that can change that decision.
 5. **Compare the smallest valid actions** using support, contradiction, cost, risk, user preference, scope, and changed facts.
-6. **Open a Gate only for true Operator Agent choices** such as scope, cost, privacy, safety, publication preference, finality, or missing user-held source.
+6. **Use Gate Policy preflight for governed choices** such as cost, credential use, privacy, safety, publication-facing output, finality, external upload, or missing user-held source, and open a Gate only when the selected policy requires Operator Agent judgment.
 7. **Record the Decision Record and handoff** with verdict, action, rationale, evidence, rejected alternatives, consequences, actor, timestamp, next Workflow Stage Cursor, pause, or blocker.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
@@ -47,7 +47,7 @@ Read references as needed:
 ## Exit Criteria
 
 - Verdict, rationale, evidence, rejected alternatives, consequences, actor, and timestamp are recorded.
-- Any true user preference, scope, cost, safety, privacy, or finality choice is represented as a Gate.
+- Any true user preference, scope, cost, safety, privacy, publication-facing, or finality choice is represented by Gate Policy preflight and a Gate when human judgment is required.
 - The next Workflow Stage Cursor, pause, or blocker is explicit.
 - The route does not need later stages to guess what was decided or why.
 
@@ -65,5 +65,5 @@ Read references as needed:
 - Do not choose finalization unless closure criteria are satisfied.
 - Do not choose among candidate packages without naming the winner, rejected alternatives, and criteria.
 - Do not launch follow-up analysis unless the expected information gain justifies the cost.
-- For paper-facing routes, stop or open a Research Inquiry Relationship when evidence shows that novelty, evidence sufficiency, or reader value has collapsed beyond reasonable narrowing; ask the Operator Agent before executing a preference-sensitive paper stop.
+- For paper-facing routes, stop or open a Research Inquiry Relationship when evidence shows that novelty, evidence sufficiency, or reader value has collapsed beyond reasonable narrowing; run Gate Policy preflight and open a Gate before executing a preference-sensitive paper stop.
 - Use the accepted Decision Record fields for decision fields.
