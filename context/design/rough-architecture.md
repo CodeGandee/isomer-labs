@@ -2,9 +2,9 @@
 
 ## Part 1: Isomer-Managed Project Directory Layout
 
-This section defines the directory layout for a user-owned Project that Isomer Labs manages. The Project remains the user's repository, checkout, or directory tree. Isomer adds one project-level Project Config Directory, `.isomer-labs/`, and discovers all Isomer Workspaces through `.isomer-labs/manifest.toml`. A Research Thread is the user-facing line of inquiry, and an Isomer Workspace is the project-local storage/runtime for one Research Task handled by the Operator Agent or a delegated Agent Instance from an Agent Team Instance created from a Topic Agent Team Profile.
+This section defines the directory layout for a user-owned Project that Isomer Labs manages. The Project remains the user's repository, checkout, or directory tree. Isomer adds one project-level Project Config Directory, `.isomer-labs/`, and discovers Topic Workspaces through `.isomer-labs/manifest.toml`. A Research Topic is the root problem or investigation intent, a Research Inquiry is a question under that topic, and a Topic Workspace is the project-local storage/runtime area for one Research Topic.
 
-The key rule is that `.isomer-labs/` is the config and discovery root, not the required storage root for all research work. Workspaces may live in arbitrary directories inside the project as long as the manifest references them.
+The key rule is that `.isomer-labs/` is the config and discovery root, not the required storage root for all research work. Topic Workspaces may live in arbitrary directories inside the Project as long as the manifest references them.
 
 ## Top-Level Shape
 
@@ -12,12 +12,15 @@ The key rule is that `.isomer-labs/` is the config and discovery root, not the r
 <project-root>/
   .isomer-labs/
     manifest.toml
+    research-topics/
     domain-team-templates/
     topic-team-profiles/
     agent-profiles/
+    artifact-formats/
+    artifact-extensions/
     gui-components/
 
-  <workspace-dir-a>/
+  <topic-workspace-dir-a>/
     state.sqlite
     artifacts/
     agents/
@@ -25,7 +28,7 @@ The key rule is that `.isomer-labs/` is the config and discovery root, not the r
     runs/
     logs/
 
-  <workspace-dir-b>/
+  <topic-workspace-dir-b>/
     state.sqlite
     artifacts/
     agents/
@@ -47,31 +50,38 @@ Recommended contents:
 ```text
 .isomer-labs/
   manifest.toml          # required project discovery manifest
+  research-topics/       # registered Research Topic Config TOML files
   domain-team-templates/ # optional imported or referenced Domain Agent Team Templates
   topic-team-profiles/   # Topic Agent Team Profiles specialized for research topics
   agent-profiles/        # reusable Agent Profiles and capability references
+  artifact-formats/      # optional declarative Artifact Format Profiles
+  artifact-extensions/   # optional additive Artifact Extensions
   gui-components/        # optional project-scope agent-generated component manifests and sources
 ```
 
-`manifest.toml` is the Project Manifest and the authority for Isomer Workspace discovery. The engine must not infer managed Isomer Workspaces by scanning arbitrary directories. A directory becomes an Isomer Workspace only when the Project Manifest declares it.
+`manifest.toml` is the Project Manifest and the authority for Topic Workspace discovery and Research Topic Config registration. The engine must not infer managed Topic Workspaces or Research Topic Config files by scanning arbitrary directories. A directory becomes a Topic Workspace only when the Project Manifest declares it.
 
 `domain-team-templates/` stores optional imported or referenced Domain Agent Team Templates. A Domain Agent Team Template is a reusable method template for a research field; it is not specialized to the user's concrete research topic and is not used directly as a running team.
 
+`research-topics/` stores Research Topic Config TOML files registered by the Project Manifest. A Research Topic Config is lightweight and ref-oriented: it may carry a short topic statement, optional topic statement Artifact refs, Measurable Objective text or refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Gate policy refs, and topic-specific Artifact Format Profile or Artifact Extension defaults. It must not store Runtime state, command outputs, rich Artifact contents, research records, or secrets.
+
 `topic-team-profiles/` stores Topic Agent Team Profiles that the Operator Agent specializes from Domain Agent Team Templates. A Topic Agent Team Profile records the user's research topic, topic-specific role and stage choices, constraints, expected Artifacts, Gate policy, and capability bindings. It is reviewable and editable before launch; it is not an Agent Team Instance.
 
-Agent Team Instances are runtime teams created from Topic Agent Team Profiles. An Isomer Workspace should not contain a workspace-local `teams/` directory. The selected Topic Agent Team Profile, resolved Agent Team Instance identity, and task handler should be recorded through manifest refs, Workspace Runtime state, or provenance Artifacts.
+Agent Team Instances are runtime teams created from Topic Agent Team Profiles. A Topic Workspace should not contain a workspace-local `teams/` directory. The selected Topic Agent Team Profile, resolved Agent Team Instance identity, and task handler should be recorded through manifest refs, Workspace Runtime state, or provenance Artifacts.
 
 `agent-profiles/` stores reusable Agent Profiles and capability references for models, tools, skills, execution environments, communication channels, or credentials. It should store references and non-secret configuration. Secrets should live in the user's credential store or another configured secret backend, not in committed TOML files.
 
 `gui-components/` stores project-scope agent-generated GUI Component Registry entries, component manifests, and optionally source for agent-generated GUI Components. It is not the whole registry: Built-in GUI Components are system-owned and registered by the GUI Backend at startup. Declarative GUI Component Specs are preferred. Executable GUI Components must be registered, validated, sandboxed or isolated according to policy, and approved before the GUI Backend loads them. Direct AG-UI Event Batches may reference only registered component ids when they target Executable GUI Components.
 
+`artifact-formats/` and `artifact-extensions/` store optional declarative topic customization material registered by the Project Manifest. Artifact Format Profiles describe content expectations such as media type, schema refs, template refs, validation hints, renderer hints, export hints, compatibility versions, and opaque future capability refs. Artifact Extensions describe additive topic metadata fields. They must not define executable validators, renderers, exporters, command requests, provider contracts, or mandatory Artifact core fields.
+
 System-owned schemas are Isomer built-in artifacts, not project-local config files. `isomer-cli` should expose commands to query built-in artifact versions, inspect schema documentation, and validate Project Manifests, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Workspace Runtime state, and View Manifests against the built-in schemas.
 
-`.isomer-labs/` should not include default cache or temporary directories. Runtime scratch, render cache, executable component build output, and disposable discovery output should live under an Isomer Workspace, an explicit tool cache, or the operating system's temporary directory.
+`.isomer-labs/` should not include default cache or temporary directories. Runtime scratch, render cache, executable component build output, and disposable discovery output should live under a Topic Workspace, an explicit tool cache, or the operating system's temporary directory. `.isomer-labs/local.toml` is allowed as untracked user-local active context and should contain only candidate identity refs.
 
 ## Workspace Directories
 
-An Isomer Workspace is a durable research execution area referenced by `.isomer-labs/manifest.toml`. It is scoped to one Research Task and records a task handler: the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance created from a Topic Agent Team Profile. It may live anywhere under the Project root, for example:
+A Topic Workspace is a durable research execution area referenced by `.isomer-labs/manifest.toml`. It is scoped to one Research Topic and owns that topic's Workspace Runtime, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs. It may live anywhere under the Project root, for example:
 
 ```text
 research/main/
@@ -80,7 +90,7 @@ research/team-alpha-task-001/
 dswork/workspace/
 ```
 
-The recommended minimal Isomer Workspace layout is:
+The recommended minimal Topic Workspace layout is:
 
 ```text
 <workspace>/
@@ -106,7 +116,7 @@ The recommended minimal Isomer Workspace layout is:
 
 ## Agent Workspace Layout
 
-Each Agent Instance inside an active Agent Team Instance should get an Agent Workspace under the Isomer Workspace. The purpose is to keep each agent's local work, runtime state, and intermediate Artifacts from colliding with other agents' work while keeping collaboration inspectable.
+Each Agent Instance inside an active Agent Team Instance should get an Agent Workspace under the Topic Workspace. The purpose is to keep each agent's local work, runtime state, and intermediate Artifacts from colliding with other agents' work while keeping collaboration inspectable.
 
 Recommended shape:
 
@@ -148,48 +158,35 @@ GUI Layout Specs are JSON or JSON-compatible layout declarations. They arrange r
 
 ## Manifest Sketch
 
-The exact schema is a later architecture part. This sketch shows the intended relationship between project config and arbitrary project-local Isomer Workspaces:
+The exact schema is a later architecture part. This sketch shows the intended relationship between Project configuration, Research Topic Config files, and arbitrary project-local Topic Workspaces:
 
 ```toml
 schema_version = "0.1"
 project_id = "isomer-labs-example"
-active_workspace = "main"
+default_research_topic = "kernel-a-vs-b"
 
 [defaults]
 operator_agent = "operator"
 domain_agent_team_template = "ml-systems-research"
-topic_agent_team_profile = "research-basic"
 
 [gui]
 component_registry = ".isomer-labs/gui-components"
 ag_ui_payload_retention = "envelope_only"
 default_layout_ref = "workspace-or-project-layout-json"
 
-[[workspaces]]
-id = "main"
-path = "research/main"
-kind = "research"
+[[research_topics]]
+id = "kernel-a-vs-b"
+config_path = ".isomer-labs/research-topics/kernel-a-vs-b.toml"
+topic_workspace_id = "kernel-a-vs-b"
 status = "active"
-state_db = "state.sqlite"
-description = "Primary Isomer Workspace."
-thread_id = "main-thread"
-research_task_id = "main-thread/initial-analysis"
-task_handler = "operator"
-topic_agent_team_profile = "research-basic"
-agent_team_instance = "research-basic/run-001"
+schema_version = "0.1"
 
-[[workspaces]]
-id = "paper-draft"
-path = "papers/first-study/isomer-workspace"
-kind = "research"
-status = "parked"
-state_db = "state.sqlite"
-description = "Isomer Workspace for the first paper draft Research Thread."
-thread_id = "paper-draft"
-research_task_id = "paper-draft/write-outline"
-task_handler = "research-basic/writer"
-topic_agent_team_profile = "research-basic"
-agent_team_instance = "research-basic/run-002"
+[[topic_workspaces]]
+id = "kernel-a-vs-b"
+research_topic_id = "kernel-a-vs-b"
+path = "topic-workspaces/kernel-a-vs-b"
+runtime_db = "state.sqlite"
+status = "active"
 
 [[domain_agent_team_templates]]
 id = "ml-systems-research"
@@ -197,10 +194,21 @@ path = ".isomer-labs/domain-team-templates/ml-systems-research.toml"
 scope = "project"
 
 [[topic_agent_team_profiles]]
-id = "research-basic"
-path = ".isomer-labs/topic-team-profiles/research-basic.toml"
+id = "cuda-kernel-investigation"
+path = ".isomer-labs/topic-team-profiles/cuda-kernel-investigation.toml"
 template = "ml-systems-research"
-research_topic_ref = "context/research-topic.md"
+research_topic_id = "kernel-a-vs-b"
+scope = "project"
+
+[[artifact_format_profiles]]
+id = "cuda-ncu-profile"
+path = ".isomer-labs/artifact-formats/cuda-ncu-profile.toml"
+scope = "project"
+compatibility_version = "0.1"
+
+[[artifact_extensions]]
+id = "cuda-kernel-metadata"
+path = ".isomer-labs/artifact-extensions/cuda-kernel-metadata.toml"
 scope = "project"
 
 [[agent_profiles]]
@@ -220,21 +228,61 @@ kind = "declarative"
 scope = "project"
 ```
 
+The registered Research Topic Config then selects topic-specific defaults:
+
+```toml
+schema_version = "0.1"
+research_topic_id = "kernel-a-vs-b"
+
+topic_statement = "Why is CUDA kernel A faster than kernel B?"
+topic_statement_artifact_refs = ["artifact:topic-brief"]
+measurable_objectives = [
+  "Identify the dominant performance cause",
+  "Validate the explanation with profiling evidence"
+]
+
+default_topic_agent_team_profile = "cuda-kernel-investigation"
+default_execution_adapter = "local-pixi"
+default_control_mode = "manual"
+
+[defaults]
+research_inquiry_id = "compute-utilization"
+artifact_tracking = "selective"
+
+[capability_refs]
+command_execution = "capability:local-pixi"
+package_manager = "capability:pixi"
+gpu_profiler = "capability:ncu-local"
+
+[gate_policy_refs]
+cost_privacy = "gate-policy:local-safe"
+baseline_waiver = "gate-policy:baseline-required"
+
+[artifact_format_defaults]
+experiment_result = "artifact-format:cuda-ncu-profile"
+analysis_report = "artifact-format:cuda-analysis-report"
+
+[artifact_extensions]
+enabled = ["artifact-extension:cuda-kernel-metadata"]
+```
+
 The Domain Agent Team Template file should define the reusable research-field method. The Topic Agent Team Profile file should record the Operator Agent's topic-level specialization and usually bind Agent Roles to Agent Profiles through Capability Bindings. Agent Team Instance records should be created only when the profile is launched. The Project Manifest should discover project-level entries and select defaults, not encode the full team workflow inline.
+
+Before a topic-scoped command runs, `isomer-cli` resolves an Effective Topic Context from explicit selectors, current directory inside a registered Topic Workspace, supported topic-context environment variables, untracked `.isomer-labs/local.toml`, and the Project Manifest default Research Topic. Effective Topic Context is process input for CLI commands, Workspace Path Resolution, Run initialization, and future Execution Adapter command requests; durable Run records store validated refs, source metadata, and consumed config/default versions rather than the full context snapshot.
 
 ## Path Rules
 
 All manifest paths are resolved relative to the project root by default.
 
-Isomer Workspace paths must stay inside the Project root unless a future explicit trust policy allows external paths. The first implementation should reject paths that escape through absolute paths, `..`, symlinks, or platform-specific path quirks.
+Topic Workspace paths must stay inside the Project root unless a future explicit trust policy allows external paths. The first implementation should reject paths that escape through absolute paths, `..`, symlinks, or platform-specific path quirks.
 
-Workspace ids must be stable and unique within one Project Manifest. The id is the logical name used by CLI commands, GUI routes, state records, and cross-Artifact references. The path may move through an explicit migration, but the id should not change casually.
+Topic Workspace ids must be stable and unique within one Project Manifest. The id is the logical name used by CLI commands, GUI routes, state records, and cross-Artifact references. The path may move through an explicit migration, but the id should not change casually.
 
-The active workspace is a convenience pointer, not the only valid Isomer Workspace. Commands should accept an explicit workspace id and should fall back to `active_workspace` only when the user did not specify one.
+The local active context in `.isomer-labs/local.toml` is a convenience pointer, not shared project truth. Topic-scoped commands should accept explicit topic or workspace selectors and fall back to local active context only after current-directory and supported environment selection.
 
-The engine should open only Project Manifest-declared Isomer Workspaces. It may inspect directories for repair or import workflows, but it must not treat an undeclared directory as managed state.
+The engine should open only Project Manifest-declared Topic Workspaces. It may inspect directories for repair or import workflows, but it must not treat an undeclared directory as managed state.
 
-Agent Workspace paths must stay inside their parent Isomer Workspace. Agent Instance ids should be stable within the relevant Agent Team Instance or Run record. Peer writes should be treated as validation issues unless the workflow explicitly assigns a repair, migration, or cleanup task.
+Agent Workspace paths must stay inside their parent Topic Workspace. Agent Instance ids should be stable within the relevant Agent Team Instance or Run record. Peer writes should be treated as validation issues unless the workflow explicitly assigns a repair, migration, or cleanup task.
 
 ## Tracking and Ignore Posture
 
@@ -243,24 +291,24 @@ The default tracking posture should be transparent but conservative:
 - Track `.isomer-labs/manifest.toml`.
 - Track project-level Domain Agent Team Template, Topic Agent Team Profile, and Agent Profile files when they contain no secrets.
 - Track project-scope GUI component manifests, Declarative GUI Component Specs, and GUI Layout Specs when they contain no secrets or bulky generated output.
-- Treat Isomer Workspace tracking as a workspace policy, because some Projects should commit research Artifacts and others should keep them local.
+- Treat Topic Workspace tracking as a workspace policy, because some Projects should commit research Artifacts and others should keep them local.
 - Never store secrets in tracked Isomer config files.
 
-An Isomer Workspace should be able to declare whether `state.sqlite`, `artifacts/`, `views/`, `runs/`, and `logs/` are intended to be committed, ignored, or selectively exported. The architecture should not assume one universal policy for all research Projects.
+A Topic Workspace should be able to declare whether `state.sqlite`, `artifacts/`, `views/`, `runs/`, and `logs/` are intended to be committed, ignored, or selectively exported. The architecture should not assume one universal policy for all research Projects.
 
 ## Invariants
 
 - `.isomer-labs/manifest.toml` is the project discovery authority.
 - `.isomer-labs/` is the config root, not the required workspace root.
-- Research Threads are the user-facing research lifecycle concept.
-- Isomer Workspaces can live in arbitrary project-local directories.
-- An Isomer Workspace is managed only when the Project Manifest references it.
-- Each Isomer Workspace is scoped to one Research Task and records a task handler.
+- Research Topics initiate work; Research Inquiries are questions under a Research Topic.
+- Topic Workspaces can live in arbitrary project-local directories.
+- A Topic Workspace is managed only when the Project Manifest references it.
+- Each Topic Workspace is scoped to one Research Topic and owns Research Tasks, Runs, Artifacts, Agent Workspaces, logs, and View Manifests for that topic.
 - A task handler is the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance created from a Topic Agent Team Profile.
-- Each Isomer Workspace owns its control-plane SQLite database and rich file Artifacts.
+- Each Topic Workspace owns its Workspace Runtime SQLite database and rich file Artifacts.
 - Workspace Runtime is the persistent substrate for state, refs, validation, and per-Run records; a Run is one bounded Research Task execution attempt recorded through that substrate.
-- Isomer Workspaces do not contain `teams/`; selected Topic Agent Team Profile identity, selected Agent Team Instance identity, and task-handler identity are recorded through manifest refs, Workspace Runtime state, or provenance Artifacts.
-- GUI View Manifests live in the Isomer Workspace and are generated from engine state.
+- Topic Workspaces do not contain `teams/`; selected Topic Agent Team Profile identity, selected Agent Team Instance identity, and task-handler identity are recorded through manifest refs, Workspace Runtime state, or provenance Artifacts.
+- GUI View Manifests live in the Topic Workspace and are generated from engine state.
 - Each active Agent Instance should have an Agent Workspace for its Agent Runtime and Agent Artifacts.
 - Agent Roles describe responsibilities; Agent Instances own Agent Workspaces.
 - Domain Agent Team Templates are reusable research-field method templates.
@@ -273,6 +321,10 @@ An Isomer Workspace should be able to declare whether `state.sqlite`, `artifacts
 - Houmao can be an Execution Adapter, but Isomer core docs and schemas should use provider-neutral multi-agent terms.
 - Agent Workspace boundaries are advisory ownership and peer-read contracts, not filesystem-grade access control.
 - `.isomer-labs/` has no default cache, temporary, or schema directories.
+- `.isomer-labs/local.toml` is untracked user-local active context and contains only candidate identity refs.
+- Research Topic Config files store topic defaults and refs, not Runtime state, research records, rich Artifact contents, command outputs, or secrets.
+- Artifact Format Profiles and Artifact Extensions are optional declarative topic customization refs and never mandatory Artifact core fields.
+- Effective Topic Context is resolved process input for topic-scoped commands and path resolution, not durable research state.
 - System-owned schemas and other Isomer built-in artifacts are queried and validated through `isomer-cli`.
 - The GUI Backend is started through `isomer-cli` and does not own canonical research state.
 - The GUI Backend serves a predefined browser-side GUI Renderer from a local or configured URL.
@@ -296,4 +348,4 @@ An Isomer Workspace should be able to declare whether `state.sqlite`, `artifacts
 - View Manifest schema and supported view types.
 - GUI Component Registry schema, GUI Runtime State schema, GUI Layout Spec schema, Executable GUI Component sandbox contract, AG-UI Render Payload contract, and AG-UI Event Envelope schema.
 - Workspace tracking policy format.
-- Import flow for an existing directory that should become an Isomer Workspace.
+- Import flow for an existing directory that should become a Topic Workspace.

@@ -2,7 +2,7 @@
 
 ## Intent
 
-Isomer Labs aims to become an interactive, semi-automatic research-conduction platform. A human user defines the research goal, supplies context, chooses constraints, and steers the work at critical decision points. Multi-agent research teams do the heavy research work between those points.
+Isomer Labs aims to become an interactive, semi-automatic research-conduction platform. A human user defines the Research Topic, supplies context, chooses constraints, and steers the work at critical decision points. Multi-agent research teams do the heavy research work between those points.
 
 The platform should help a user move from a research question to useful artifacts: literature notes, hypotheses, baselines, experiment plans, implementation work, result analyses, reports, figures, and decision records. The system should not replace the researcher. It should make the research process more observable, easier to steer, and easier to reuse.
 
@@ -20,12 +20,12 @@ The platform should treat human steering as part of the research loop.
 
 The user should be able to:
 
-- set the research goal and success criteria
+- set the Research Topic and optional Measurable Objectives
 - provide background materials, code, data, and constraints
 - approve or redirect research plans
 - choose among candidate ideas or experiment routes
 - inspect intermediate artifacts before the system builds on them
-- pause, branch, resume, or archive research threads
+- pause, relate, resume, or archive Research Inquiries and Research Topics
 - override team composition and workflow structure when needed
 
 The system should ask for human input at moments where autonomy is risky or preference-heavy, such as problem framing, baseline acceptance, experiment route selection, claim strength, and final recommendations.
@@ -47,7 +47,7 @@ Isomer Labs should learn from that model, but it should differ in these design d
 
 ## Modular, White-Box Platform
 
-Isomer Labs should expose its structure clearly. Users should be able to inspect the active goal, team roles, task plan, artifacts, decisions, prompts, tool calls, and research state. The platform should make it clear why a team is doing a task and what evidence supports each conclusion.
+Isomer Labs should expose its structure clearly. Users should be able to inspect the active Research Topic, Research Inquiries, team roles, task plan, artifacts, decisions, prompts, tool calls, and research state. The platform should make it clear why a team is doing a task and what evidence supports each conclusion.
 
 The project should avoid a single closed pipeline. Instead, it should define composable pieces:
 
@@ -72,7 +72,7 @@ The GUI remains separate from the research engine. The engine should be useful f
 ## Desired Research Loop
 
 ```text
-User goal and context
+Research Topic and context
         |
         v
 Operator agent clarifies topic and proposes Topic Agent Team Profile/workflow

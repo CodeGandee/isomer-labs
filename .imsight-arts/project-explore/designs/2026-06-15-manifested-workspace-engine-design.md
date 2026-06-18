@@ -36,7 +36,7 @@ Accepted ADRs:
 
 ## Overview
 
-Isomer Labs uses a manifested workspace engine as its primary architecture. The Project Manifest at `.isomer-labs/manifest.toml` is the discovery authority for project configuration and project-local Topic Workspaces. A Research Topic is the root research problem or investigation intent that initiates investigation and Topic Agent Team Profile specialization; Research Inquiries are user- or agent-generated questions under that topic. Each Topic Workspace is scoped to one Research Topic and records the topic's Research Inquiries, Research Tasks, Runs, Artifacts, selected Topic Agent Team Profiles, and selected Agent Team Instances when delegated. Topic Workspaces may live in arbitrary directories inside the user-owned Project, but each workspace must be declared in the Project Manifest before the engine treats it as managed state.
+Isomer Labs uses a manifested workspace engine as its primary architecture. The Project Manifest at `.isomer-labs/manifest.toml` is the discovery authority for project configuration, Research Topic Config files, and project-local Topic Workspaces. A Research Topic is the root research problem or investigation intent that initiates investigation and Topic Agent Team Profile specialization; Research Inquiries are user- or agent-generated questions under that topic. Each Topic Workspace is scoped to one Research Topic and records the topic's Research Inquiries, Research Tasks, Runs, Artifacts, selected Topic Agent Team Profiles, and selected Agent Team Instances when delegated. Topic Workspaces may live in arbitrary directories inside the user-owned Project, but each workspace must be declared in the Project Manifest before the engine treats it as managed state.
 
 Each Topic Workspace owns its Workspace Runtime and research outputs for its Research Topic. Compact control-plane state lives in SQLite. Rich Artifacts remain ordinary files, such as Markdown notes, JSON outputs, logs, code, figures, reports, and View Manifests. During team execution, each concrete Agent Instance receives an Agent Workspace inside the Topic Workspace for agent-owned runtime state and Agent Artifacts. These workspaces create advisory ownership boundaries, not filesystem-grade access control. The Operator Agent is the human-facing coordination boundary between user intent, Agent Team Instance activity, durable state, and GUI-facing views.
 
@@ -64,7 +64,7 @@ Parallel execution has two approved scopes. At the Research Topic level, the use
 
 ### CLI or Agent Entry Point
 
-The engine can be used without a GUI. CLI or agent workflows can create Topic Workspaces, validate Project Manifests, inspect state, run the operator loop, and read or write Artifacts.
+The engine can be used without a GUI. CLI or agent workflows can create Topic Workspaces, validate Project Manifests, inspect state, run the operator loop, and read or write Artifacts. Topic-scoped CLI commands first resolve Effective Topic Context so the command, Workspace Path Resolver, Run initialization, and future Execution Adapter command request agree on the selected Research Topic, Topic Workspace, defaults, and source metadata.
 
 ### GUI Backend and Renderer
 
@@ -78,15 +78,18 @@ Project-level configuration lives under the `.isomer-labs/` Project Config Direc
 
 The Project Manifest is responsible for:
 
+- registering Research Topics and their Research Topic Config TOML paths
 - listing known Topic Workspaces
-- naming the active Research Topic, active Research Inquiry, or active Topic Workspace when applicable
+- naming the default Research Topic when applicable
 - declaring relative Topic Workspace paths
 - declaring each Topic Workspace's Research Topic, selected Topic Agent Team Profiles, and selected Agent Team Instances when delegated
 - storing project-level defaults
-- pointing to reusable Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profiles, and GUI Component Registry entries
+- pointing to reusable Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profiles, Artifact Format Profile registrations, Artifact Extension registrations, and GUI Component Registry entries
 - defining compatibility versions for Project Manifest and Workspace Runtime schemas
 
-The Project Manifest must be validated before Runs start. Missing workspace paths, duplicate topic workspace ids, paths outside the Project root, stale schema versions, and invalid active-topic-workspace references are configuration errors.
+Research Topic Config files store topic-specific defaults and refs, not Runtime state. They may contain short topic statements, topic statement Artifact refs, Measurable Objective text or refs, default Research Inquiry refs, default Topic Agent Team Profile refs, default Execution Adapter refs, Capability Binding refs, Gate policy refs, Artifact Format Profile defaults, and Artifact Extension refs. They must not contain Run status, command outputs, live process ids, resolved command results, Artifact contents, Evidence Items, Findings, Gates, Decision Records, Provenance Records, credentials, tokens, API keys, passwords, or secret material.
+
+The Project Manifest must be validated before Runs start. Missing workspace paths, duplicate topic workspace ids, paths outside the Project root, stale schema versions, missing Research Topic Config refs, and invalid default Research Topic refs are configuration errors. `.isomer-labs/local.toml` may hold untracked user-local active context for interactive use, but it is not shared project truth and must contain only candidate identity refs.
 
 System-owned schemas and other Isomer built-in artifacts are not stored under `.isomer-labs/` by default. `isomer-cli` should query those built-ins, show supported versions, and validate project files against them.
 
@@ -110,6 +113,8 @@ The exact layout can evolve, but the split must stay clear: SQLite stores compac
 ### Workspace Path Resolver
 
 All Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, and Agent Workspace paths should resolve through one Workspace Path Resolver. Research skills should request semantic targets such as Topic Workspace, task support directory, run log, analysis output Artifact, paper draft Artifact, figure Artifact, Agent Runtime state, or Agent Workspace scratch; they should not assemble paths directly or emit ordinary path TBD placeholders for surfaces covered by this resolver.
+
+When an Effective Topic Context is available, Workspace Path Resolution consumes the validated Project, Research Topic, Topic Workspace, Research Task, Run, Agent Team Instance, and Agent Instance refs from that context. The resolver still applies its normal path precedence and does not perform independent Research Topic selection.
 
 Resolution precedence is deterministic:
 
@@ -143,6 +148,8 @@ ISOMER_AGENT_WORKSPACE_LOGS_DIR
 `BASE` names the directory containing many Topic Workspaces. `CURRENT` names the process-bound Topic Workspace. Topic Workspace subdirectory variables include `TOPIC_WORKSPACE` so they cannot be confused with Agent Workspace subdirectories. The resolver should derive semantic Artifact class paths under `ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR`, such as `intake/`, `baselines/`, `experiments/<run-id>/`, `analysis/<campaign-id>/`, `figures/<figure-set-id>/`, `paper/<paper-id-or-default>/`, `decisions/`, `evidence/`, `findings/`, and `handoffs/`, unless a recorded workspace plan overrides them.
 
 Every resolved path must be canonicalized before use. Paths should remain inside the Project by default; a path outside the Project root is invalid unless the recorded workspace plan or Project Manifest explicitly permits that external root. The resolver must record the effective path set and each value's source, such as `plan`, `env`, `manifest`, or `default`, in Workspace Runtime or a Provenance Record before downstream research work depends on it.
+
+Effective Topic Context is process input, not durable research state. When a Run, Run plan, or future Execution Adapter command request consumes it, the durable record should store validated refs, source metadata, and consumed config/default versions rather than the full context snapshot.
 
 ### Agent Profile and Execution Adapter
 
@@ -200,7 +207,7 @@ The Operator Agent should prefer bounded turns and durable state over long live 
 
 The Artifact and provenance service records what happened and why. It is responsible for:
 
-- Artifact ids and paths
+- generic Artifact Core Records with ids, Topic Workspace ids, Artifact kinds, status, locators, timestamps, and media type when known
 - prompt records
 - tool-call records
 - handoff records
@@ -211,6 +218,8 @@ The Artifact and provenance service records what happened and why. It is respons
 - timestamps and actor ids
 
 This service should expose validation commands so the engine can detect broken refs, missing files, invalid transitions, unresolved Gates, and unsupported Research Claims.
+
+Topic-specific Artifact Format Profiles and Artifact Extensions attach as optional refs or metadata. Artifact Format Profiles are declarative-only: they can describe media type expectations, schema refs, template refs, validation hints, renderer hints, export hints, compatibility versions, and opaque future capability refs, but they do not define executable validators, renderers, exporters, command requests, provider contracts, or adapter-specific runtime behavior. Artifact Extensions are additive topic metadata contracts and must not shadow or redefine Artifact Core Record fields.
 
 ### View Manifest Generator
 
@@ -374,6 +383,9 @@ Full AG-UI payload retention should be disabled by default. If a user explicitly
 Early tests should focus on contracts that will be expensive to change later:
 
 - manifest parsing and path normalization
+- Research Topic Config registration and validation
+- Effective Topic Context resolution and source reporting
+- topic-context identity environment variable validation
 - Topic Workspace discovery from `.isomer-labs/manifest.toml`
 - Workspace Runtime creation, schema versioning, and support directory validation
 - Research Topic to Topic Workspace binding plus Research Inquiry and Research Task lifecycle state
@@ -387,6 +399,7 @@ Early tests should focus on contracts that will be expensive to change later:
 - advisory peer-read behavior, peer-write issue detection, and Agent Artifact promotion
 - SQLite migration creation and version checks
 - Artifact ref validation
+- generic Artifact Core Record fallback when Artifact Format Profiles or Artifact Extensions are missing, unsupported, disabled, or unknown
 - Gate lifecycle transitions
 - handoff status transitions and retry limits
 - Research Claim and Evidence Item consistency rules
@@ -401,6 +414,10 @@ These tests can start with `unittest` under `tests/unit/`, with filesystem and S
 ## Key Constraints
 
 - Project state discovery starts from `.isomer-labs/manifest.toml`.
+- The Project Manifest registers Research Topic Config files and Topic Workspaces.
+- Research Topic Config files store topic defaults and refs, not Workspace Runtime state, command outputs, research records, Artifact contents, or secrets.
+- Effective Topic Context is resolved process input for topic-scoped CLI behavior and path resolution, not a durable lifecycle object.
+- Durable Run records store validated refs, source metadata, and consumed config/default versions rather than full Effective Topic Context snapshots.
 - Research Topics are root research problems or investigation intents; Research Inquiries are questions under a topic.
 - Research Inquiry is not a parallel execution scope.
 - Topic Workspaces are project-local directories referenced by the Project Manifest.
@@ -429,12 +446,14 @@ These tests can start with `unittest` under `tests/unit/`, with filesystem and S
 - Executable GUI Components must be registered, validated, sandboxed or isolated according to policy, and approved before loading.
 - Project-scoped approve-all can remove repeated Executable GUI Component approval until revoked, but it does not bypass validation or publisher authentication.
 - SQLite stores compact control-plane state; files store rich Artifacts.
+- Artifact Core Records stay generic and minimal; Artifact Format Profiles and Artifact Extensions remain optional declarative refs or metadata.
 - The Operator Agent coordinates team work and mediates between user intent, Agent Instance execution, durable state, and GUI-facing views.
 - The first implementation should avoid a fully declarative graph engine until the manifested workspace loop proves useful.
 
 ## Open Questions
 
 - Exact TOML schema for `.isomer-labs/manifest.toml`.
+- Exact Research Topic Config schema evolution policy.
 - Exact Topic Workspace directory layout.
 - Initial Domain Agent Team Template, Topic Agent Team Profile, and Agent Team Instance file formats.
 - Initial View Manifest schema and supported view types.

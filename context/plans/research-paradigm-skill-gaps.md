@@ -6,6 +6,14 @@ This plan tracks what remains before `skillset/research-paradigm` can move from 
 
 The remaining registered placeholders are `api-execution-command`, `policy-scheduler`, `policy-cost-privacy-gate`, `schema-skill-binding`, `policy-baseline-waiver`, and `provider-literature-search`. The recommended next major step is Stage 3: define the Execution Adapter Command Surface and runtime-policy boundary, because command execution, Run logging, scheduler separation, and cost/privacy Gates now block the largest number of executable research workflows. After that, settle Skill Binding, baseline waiver policy, and literature provider behavior as separate contracts.
 
+## Current Completion Status
+
+- [x] Stage 1: Core Research Recording Contracts are implemented in main specs and research-paradigm skill references.
+- [x] Stage 2: Research Lifecycle State is implemented, validated, and reflected in shared and local research skill contracts.
+- [x] CLI Topic Context Resolution is implemented, validated, and reflected in main specs, architecture notes, domain language, and shared/local research skill contracts.
+- [x] Archive the completed `define-research-lifecycle-state` and `define-cli-topic-context-resolution` OpenSpec changes after final review.
+- [ ] Stage 3 and later remain open because their registered placeholders still appear in `skillset/research-paradigm`.
+
 ## Stage 1: Define Core Research Recording Contracts
 
 - [x] Define the Artifact and Provenance recording API currently represented by `[[tbd-surface:api-artifact-record]]`.

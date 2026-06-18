@@ -11,12 +11,16 @@ A user-owned repository, checkout, or directory tree that Isomer Labs manages. A
 _Avoid_: Quest root, system-owned workspace, platform directory
 
 **Project Config Directory**:
-The `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profiles, and GUI Component Registry refs. It should not contain default cache, temporary, or schema directories. System-owned schemas are Isomer built-in artifacts queried and validated through `isomer-cli`.
+The `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Research Topic Config files, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profiles, Artifact Format Profiles, Artifact Extensions, and GUI Component Registry refs. It should not contain default cache, temporary, or schema directories. System-owned schemas are Isomer built-in artifacts queried and validated through `isomer-cli`. `.isomer-labs/local.toml` is allowed only as untracked user-local active context.
 _Avoid_: Control directory, control-plane directory, workspace root, hidden workspace
 
 **Project Manifest**:
-The `.isomer-labs/manifest.toml` file. It is the discovery authority for Topic Workspaces, active topic workspace selection, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, and project-scope GUI component registry references.
+The `.isomer-labs/manifest.toml` file. It is the discovery authority for Research Topics, Research Topic Config paths, Topic Workspaces, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, Artifact Format Profile registrations, Artifact Extension registrations, and project-scope GUI component registry references.
 _Avoid_: Workspace index, quest registry, config blob
+
+**Research Topic Config**:
+A Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, topic statement Artifact refs, Measurable Objective text or refs, default Research Inquiry refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Gate policy refs, Artifact Format Profile defaults, and Artifact Extension refs. It is not Workspace Runtime state and must not contain Run status, command outputs, live process ids, resolved command results, rich Artifact contents, Evidence Items, Findings, Gates, Decision Records, Provenance Records, credentials, tokens, API keys, passwords, or secret material.
+_Avoid_: Runtime config, topic database, workspace state, command log, credential file
 
 **Topic Workspace**:
 A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs. It references selected Topic Agent Team Profiles and Agent Team Instances used for the topic, but it does not contain a workspace-local `teams/` directory.
@@ -25,6 +29,10 @@ _Avoid_: Isomer Workspace, quest, quest workspace, run directory, task workspace
 **Workspace Runtime**:
 The persistent runtime substrate inside a Topic Workspace. It includes `state.sqlite`, schema version, runtime directories, refs, validation state, and support files that let Research Inquiries, Research Tasks, Runs, Artifacts, handoffs, Gates, and View Manifests be recorded, resumed, inspected, and validated.
 _Avoid_: Run, execution episode, quest state, hidden runtime, project config
+
+**Effective Topic Context**:
+The resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, and future Execution Adapter command requests consume for a topic-scoped command. It includes validated Project, Research Topic, Research Topic Config, Topic Workspace, optional lifecycle refs, Topic Agent Team Profile defaults, Execution Adapter refs, Capability Binding refs, Gate policy refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
+_Avoid_: Active workspace, runtime database, lifecycle state, durable context blob
 
 ### Workspace Taxonomy
 
@@ -206,6 +214,18 @@ _Avoid_: Write sharing, filesystem permission, unrestricted shared workspace
 A durable file or file-backed output produced or used during research work, such as a literature note, hypothesis, baseline report, experiment plan, result table, figure, report, Decision Record, prompt record, or tool output.
 _Avoid_: Blob, attachment, output only
 
+**Artifact Core Record**:
+The generic minimal index for one Artifact. It contains only stable Artifact id, Topic Workspace id, Artifact kind, status, locator kind, locator, timestamps, and media type when known. Lifecycle refs, producer refs, Run refs, Provenance Record refs, Evidence Item refs, supersession refs, format profile refs, extension refs, validation outcomes, and renderer hints attach through links, metadata records, Provenance Records, or other accepted recording APIs.
+_Avoid_: Format-specific Artifact schema, full artifact content, mandatory extension record
+
+**Artifact Format Profile**:
+An optional declarative profile for content-level Artifact expectations. It can describe Artifact kind applicability, media type expectations, schema refs, template refs, validation hints, renderer hints, export hints, opaque future capability refs, compatibility version, and status. It must not define executable validators, renderers, exporters, command requests, provider contracts, adapter-specific runtime behavior, or mandatory Artifact core fields.
+_Avoid_: Command runner, validator implementation, renderer implementation, provider plugin, required Artifact field
+
+**Artifact Extension**:
+An optional additive metadata contract for topic-specific Artifact metadata, such as CUDA kernel metadata or GPU hardware context. It can add extension records, metadata records, sidecar Artifacts, validation hints, or renderer hints linked to an Artifact Core Record, but it must not shadow, rename, or redefine core Artifact fields or accepted durable record refs.
+_Avoid_: Core Artifact schema, mandatory Artifact field, replacement record type
+
 **Research Claim**:
 A statement made inside a Research Topic or Research Inquiry that may need support, contradiction handling, or withdrawal. A Research Claim can be open, supported, refuted, or withdrawn.
 _Avoid_: Assertion, conclusion as an unsupported statement, finding
@@ -315,8 +335,10 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use `project_root` for the root path of the user-owned Project.
 - Use `project_config_dir` for `.isomer-labs/`.
 - Use `project_manifest` for `.isomer-labs/manifest.toml`.
+- Use `research_topic_config` for Project Manifest-registered topic-specific defaults and refs.
 - Use `topic_workspace` for a manifest-declared topic-level workspace.
 - Use `topic_workspace_id` for references to the Topic Workspace that owns topic runtime state and files.
+- Use `effective_topic_context` for the resolved process-local context consumed by `isomer-cli`, Workspace Path Resolution, Run initialization, and future Execution Adapter command requests.
 - Use `research_task` for bounded work recorded inside one Topic Workspace.
 - Use `task_handler` for the Operator Agent or delegated Agent Team Instance member responsible for a Research Task.
 - Use `workspace_runtime` for the persistent workspace substrate that stores and validates state across many Runs.
@@ -353,7 +375,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 ### Artifacts, Evidence, and Decisions
 
-- Use `artifact`, `gate`, and `provenance_record` for durable output, decision-point, and production-history concepts.
+- Use `artifact`, `artifact_core_record`, `artifact_format_profile`, `artifact_extension`, `gate`, and `provenance_record` for durable output, optional topic-specific Artifact expectations, decision-point, and production-history concepts.
 - Use `research_claim`, `evidence_item`, `finding`, and `decision_record` for claim/evidence/decision semantics.
 - Use `signal_observation` for observed completion signals before Operator Agent normalization.
 
@@ -383,7 +405,8 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - A **Project** is the outer container and is not a **Topic Workspace**.
 - A **Project Config Directory** contains one **Project Manifest**.
 - A **Project Config Directory** is config and discovery state; it does not own **Workspace Runtime** or research **Artifacts**.
-- A **Project Manifest** declares zero or more **Topic Workspaces**.
+- A **Project Manifest** declares zero or more **Research Topics**, **Research Topic Config** paths, and **Topic Workspaces**.
+- A **Research Topic Config** belongs to one **Research Topic** and stores defaults and refs, not Runtime state.
 - A **Project** contains zero or more **Research Topics**.
 - A **Research Topic** has zero or one active **Topic Workspace** at a time, and may have historical Topic Workspaces after migration, archive, or fork operations.
 - A **Topic Workspace** belongs to one **Research Topic**.
@@ -402,6 +425,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - **Manual Mode** is a **Control Mode** for a Run, not a Project, Research Inquiry, or Research Task mode.
 - A **Topic Workspace** owns one **Workspace Runtime**.
 - A **Workspace Runtime** stores, indexes, validates, and recovers **Run** records, but it is not itself a Run.
+- **Effective Topic Context** is resolved before topic-scoped CLI behavior and supplies selected refs to Workspace Path Resolution without becoming durable research state.
 
 ### Team and Agent Execution
 
@@ -457,6 +481,8 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - A **Decision Record** may resolve a **Gate**, select or create a **Research Inquiry**, record a **Research Inquiry Relationship**, archive a Research Topic, or record another meaningful choice.
 - A **Decision Record** should cite relevant **Evidence Items**, **Artifacts**, or **Provenance Records** when the choice depends on research evidence.
 - A **Gate** can block a Workflow Stage action until the human user resolves it.
+- An **Artifact Core Record** remains valid when an **Artifact Format Profile** or **Artifact Extension** is missing, unsupported, disabled, or unknown.
+- **Artifact Format Profiles** and **Artifact Extensions** attach as optional refs or metadata; they do not become mandatory core Artifact fields.
 
 ### GUI and Views
 
@@ -488,6 +514,8 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use **Project Config Directory** for `.isomer-labs/`. Reserve "control plane" for compact runtime state, especially SQLite-backed Workspace Runtime state.
 - Do not use bare "workspace" when **Project**, **Topic Workspace**, and **Agent Workspace** are all plausible readings.
 - Do not call **Project** or **Project Config Directory** a workspace.
+- Use **Research Topic Config** for topic-specific defaults and refs. Do not use it for **Workspace Runtime** state, command logs, research records, rich Artifact contents, or secrets.
+- Use **Effective Topic Context** for resolved process input to topic-scoped command behavior. Do not describe it as durable lifecycle state or a full snapshot stored on every Run.
 - Use **Topic Workspace** instead of "quest" or "quest workspace" for Isomer-managed research execution areas. "Quest" is DeepScientist reference language, not Isomer canonical language.
 - Use **Research Topic** for the root research problem or investigation intent that initiates the research and drives Topic Agent Team Profile specialization. Do not use **Research Goal** as a separate level.
 - Use **Measurable Objective** only for optional metric-bearing content inside a **Research Topic**. Do not model measurable and exploratory as exclusive goal kinds.
@@ -527,6 +555,9 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use **Research Claim** for statements that need evidence status. Use **Finding** only after evidence has been distilled into a reusable insight.
 - Use **Decision Record** for the durable result of a choice. Use **Gate** for the pending decision point before that choice is resolved.
 - Use **Signal Observation** for raw or normalized completion-signal observations that have not yet become authoritative handoff completion.
+- Use **Artifact Core Record** for the minimal generic Artifact index.
+- Use **Artifact Format Profile** for declarative content expectations only. Do not use it for executable validation, rendering, export, provider behavior, or command requests.
+- Use **Artifact Extension** for additive topic metadata only. Do not let an extension shadow, rename, or redefine core Artifact fields.
 
 ### GUI and Views
 
