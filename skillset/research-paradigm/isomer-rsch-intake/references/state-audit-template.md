@@ -8,7 +8,7 @@ Use this template when intake needs a durable Artifact that explains what exists
 - Research Topic:
 - latest Operator Agent instruction:
 - entry reason:
-- recommended next Workflow Stage, Gate, Decision Record, or blocker:
+- recommended next Workflow Stage Cursor, Gate, Decision Record, or blocker:
 
 ## Asset Matrix
 
@@ -64,7 +64,7 @@ Use this template when intake needs a durable Artifact that explains what exists
 
 ## Route Recommendation
 
-- next Workflow Stage:
+- next Workflow Stage Cursor:
 - why now:
 - evidence supporting route:
 - strongest caveat:

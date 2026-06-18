@@ -64,4 +64,4 @@ The evaluation summary should include takeaway, claim update, comparator relatio
 
 ## Decide the Next Move
 
-End with one of: continue current line, branch a new line, launch analysis, move to writing, reset, stop, or blocker. If analysis is selected, record why the expected information gain justifies added compute, time, or annotation budget.
+End with one of: continue current line, open a new Research Inquiry Relationship, launch analysis, move to writing, reset, stop, or blocker. If analysis is selected, record why the expected information gain justifies added compute, time, or annotation budget.

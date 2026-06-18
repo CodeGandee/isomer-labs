@@ -17,7 +17,7 @@ Use this reference when a route-changing decision needs more than a one-line ver
 - consequences:
 - actor:
 - timestamp or run context:
-- next Workflow Stage, pause, or blocker:
+- next Workflow Stage Cursor, pause, or blocker:
 
 ## Structured Shape
 
@@ -26,7 +26,7 @@ Use this reference when a route-changing decision needs more than a one-line ver
   "kind": "decision_record",
   "route_question": "",
   "verdict": "good | neutral | bad | blocked",
-  "action": "continue | launch_experiment | launch_analysis | branch | reuse_baseline | write | review | finalize | iterate | reset | stop | request_operator_gate",
+  "action": "continue | launch_experiment | launch_analysis | open_inquiry_relationship | reuse_baseline | write | review | finalize | iterate | reset | stop | request_operator_gate",
   "reason": "Concrete evidence-backed reason.",
   "evidence_items": [],
   "rejected_alternatives": [],

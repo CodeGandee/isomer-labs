@@ -47,4 +47,4 @@ Keep it short for attach, import, or local verification. Expand only when the ro
 - active blocker:
 - latest evidence:
 - Gate state:
-- next Workflow Stage when accepted, blocked, waived, or route-changed:
+- next Workflow Stage Cursor when accepted, blocked, waived, or route-changed:

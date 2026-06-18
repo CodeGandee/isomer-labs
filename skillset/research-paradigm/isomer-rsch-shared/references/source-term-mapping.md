@@ -8,6 +8,10 @@ language.
 | Source term or operation | Isomer Labs framing |
 | --- | --- |
 | lifecycle-level research work | Research Topic, Research Inquiry, or Research Task depending on scope |
+| Research Goal | Research Topic; put metrics or targets in optional Measurable Objectives |
+| Research Thread | Research Inquiry |
+| Research Branch | Research Inquiry Relationship; do not imply a tree or branch collection |
+| Isomer Workspace | Topic Workspace through Workspace Path Resolution |
 | initial goal or objective text | Research Topic with optional Measurable Objective |
 | bounded unit of research work | Research Task |
 | one execution attempt | Run |
@@ -40,6 +44,6 @@ Operator Agent instruction.
 
 ## Unsettled Surface Rule
 
-When a method needs a concrete API, schema, provider, command, runner home, prompt-injection mechanism, generated layout, or path outside Workspace Path Resolution, use a registered TBD-surface placeholder and add or reuse the id in `tbd-surface-registry.md`.
+When a method needs a concrete API, schema, provider, command, runner home, prompt-injection mechanism, generated layout, or path outside Workspace Path Resolution, Research Recording Contracts, and Research Lifecycle State, use a registered TBD-surface placeholder and add or reuse the id in `tbd-surface-registry.md`.
 
 Do not guess folders such as artifacts, experiments, paper, memory, runs, or agent homes as ad hoc Isomer defaults. Name the semantic Artifact kind or workspace scope and let the Workspace Path Resolver choose the effective path.

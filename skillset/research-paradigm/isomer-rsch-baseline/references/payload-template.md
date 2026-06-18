@@ -53,7 +53,7 @@ Include:
 - supporting Evidence Items:
 - comparability verdict:
 - caveats:
-- next Workflow Stage:
+- next Workflow Stage Cursor:
 - Gate reference:
 
 ## Variant Rules

@@ -7,7 +7,7 @@ description: Make one explicit research route judgment from durable evidence and
 
 ## Overview
 
-Use this skill when evidence needs a go, stop, branch, reuse-comparator, write, finalize, reset, Gate, or blocker decision.
+Use this skill when evidence needs a go, stop, Research Inquiry Relationship, reuse-comparator, write, finalize, reset, Gate, or blocker decision.
 
 ## Workflow
 
@@ -19,7 +19,7 @@ When this skill is invoked, execute the following steps in order.
 4. **State the exact route question** and gather only evidence that can change that decision.
 5. **Compare the smallest valid actions** using support, contradiction, cost, risk, user preference, scope, and changed facts.
 6. **Open a Gate only for true Operator Agent choices** such as scope, cost, privacy, safety, publication preference, finality, or missing user-held source.
-7. **Record the Decision Record and handoff** with verdict, action, rationale, evidence, rejected alternatives, consequences, actor, timestamp, next Workflow Stage, pause, or blocker.
+7. **Record the Decision Record and handoff** with verdict, action, rationale, evidence, rejected alternatives, consequences, actor, timestamp, next Workflow Stage Cursor, pause, or blocker.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
 
@@ -40,7 +40,7 @@ Read references as needed:
 
 ## Entry Signals
 
-- Durable evidence needs a go, stop, branch, reuse-comparator, write, finalize, reset, Gate, or blocker judgment.
+- Durable evidence needs a go, stop, Research Inquiry Relationship, reuse-comparator, write, finalize, reset, Gate, or blocker judgment.
 - The board is clear enough to decide, or intake can be routed first.
 - A user-facing or operator-facing choice needs rationale and consequences.
 
@@ -48,14 +48,14 @@ Read references as needed:
 
 - Verdict, rationale, evidence, rejected alternatives, consequences, actor, and timestamp are recorded.
 - Any true user preference, scope, cost, safety, privacy, or finality choice is represented as a Gate.
-- The next Workflow Stage, pause, or blocker is explicit.
+- The next Workflow Stage Cursor, pause, or blocker is explicit.
 - The route does not need later stages to guess what was decided or why.
 
 ## Durable Outputs
 
 - Decision Record.
 - Optional Gate and user-facing milestone.
-- Next Workflow Stage, pause, or blocker.
+- Next Workflow Stage Cursor, pause, or blocker.
 - Optional checkpoint or resume packet when the authoritative active node changes.
 
 ## Guardrails
@@ -65,5 +65,5 @@ Read references as needed:
 - Do not choose finalization unless closure criteria are satisfied.
 - Do not choose among candidate packages without naming the winner, rejected alternatives, and criteria.
 - Do not launch follow-up analysis unless the expected information gain justifies the cost.
-- For paper-facing routes, stop or branch when evidence shows that novelty, evidence sufficiency, or reader value has collapsed beyond reasonable narrowing; ask the Operator Agent before executing a preference-sensitive paper stop.
+- For paper-facing routes, stop or open a Research Inquiry Relationship when evidence shows that novelty, evidence sufficiency, or reader value has collapsed beyond reasonable narrowing; ask the Operator Agent before executing a preference-sensitive paper stop.
 - Use the accepted Decision Record fields for decision fields.

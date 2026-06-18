@@ -6,7 +6,7 @@ The adaptation preserves reusable methodology: atomic reviewer-item normalizatio
 
 Source-runtime concepts were intentionally translated:
 
-- lifecycle-level research work became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage language.
+- lifecycle-level research work became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage Cursor language.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
 - command execution became Capability Binding through an Execution Adapter.

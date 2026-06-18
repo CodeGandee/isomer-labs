@@ -38,7 +38,7 @@ Hard gates before promotion:
 - relation to literature
 - citation or bibliography pointers from the survey
 - metric key, expected direction, minimal experiment, abandonment condition, and strongest alternative hypothesis
-- next Workflow Stage and any Gate or Decision Record needed before execution
+- next Workflow Stage Cursor and any Gate or Decision Record needed before execution
 
 ## Promotion Rule
 

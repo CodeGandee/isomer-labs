@@ -7,7 +7,7 @@ description: Frame a research task, narrow unknowns, inspect literature or local
 
 ## Overview
 
-Use this skill when the research frame, metric, benchmark neighborhood, or baseline direction is not clear enough to choose the next Workflow Stage.
+Use this skill when the research frame, metric, benchmark neighborhood, or baseline direction is not clear enough to choose the next Workflow Stage Cursor.
 
 ## Workflow
 
@@ -48,7 +48,7 @@ Read references as needed:
 
 - The task frame and evaluation contract are recorded.
 - A comparator shortlist exists, or the handoff justifies why ideation can proceed without more baseline scouting.
-- The next Workflow Stage, Gate, Decision Record, or blocker is explicit.
+- The next Workflow Stage Cursor, Gate, Decision Record, or blocker is explicit.
 - If external search changed the route, the retained references and rejected references are recorded.
 
 ## Durable Outputs
@@ -56,7 +56,7 @@ Read references as needed:
 - Task frame and evaluation contract Artifact.
 - Comparator shortlist or route justification.
 - Literature notes only when they change routing.
-- Next Workflow Stage or blocker.
+- Next Workflow Stage Cursor or blocker.
 - Optional Decision Record when scout resolves a contested route.
 
 ## Guardrails

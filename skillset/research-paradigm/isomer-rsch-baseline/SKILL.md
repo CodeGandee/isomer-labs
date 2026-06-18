@@ -19,7 +19,7 @@ When this skill is invoked, execute the following steps in order.
 4. **Choose the lightest trustworthy route**. Prefer attach, import, or verify-local-existing before full reproduction when they can satisfy the current acceptance target; use `references/route-selection.md` for route criteria.
 5. **Define the metric contract and evidence boundary**. Record comparator identity, task, dataset, split, evaluation path or evaluation Capability Binding, required metric ids, metric directions, source identity, and known deviations.
 6. **Collect only decision-relevant evidence and verify it**. Trace metrics or outputs to durable Evidence Items, Artifacts, Run records, source documents, or accepted reusable packages, then classify comparability with `references/comparability-contract.md`.
-7. **Close the baseline Gate explicitly**. Record a Decision Record that accepts, waives, replaces, blocks, or changes route, and carry caveats into the next Workflow Stage.
+7. **Close the baseline Gate explicitly**. Record a Decision Record that accepts, waives, replaces, blocks, or changes route, and carry caveats into the next Workflow Stage Cursor.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
 
@@ -78,7 +78,7 @@ Classify the outcome as `verified-match`, `verified-close`, `verified-diverged`,
 - Comparator identity, source identity, route, acceptance target, and known deviations.
 - Verification Evidence Items for logs, outputs, source documents, package records, local evaluation results, or Run records.
 - Decision Record that accepts, waives, replaces, blocks, or changes the baseline route.
-- Gate state and next recommended Workflow Stage.
+- Gate state and next recommended Workflow Stage Cursor.
 
 ## Guardrails
 

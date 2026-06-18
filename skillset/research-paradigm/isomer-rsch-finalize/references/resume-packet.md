@@ -7,7 +7,7 @@ Use this reference when the Research Inquiry is pausing, parking, publishing wit
 ### 1. Current State
 
 - Research Topic:
-- present Workflow Stage:
+- present Workflow Stage Cursor:
 - final recommendation at pause time:
 - closure state: stop | park | publish | archive | continue later | new loop
 
@@ -44,7 +44,7 @@ Use this reference when the Research Inquiry is pausing, parking, publishing wit
 
 ### 7. Do-Not-Repeat Notes
 
-- failed branches not worth retrying unchanged:
+- failed lines not worth retrying unchanged:
 - misleading metrics or comparability traps:
 - known environment, execution, or tooling pitfalls:
 

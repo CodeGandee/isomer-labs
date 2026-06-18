@@ -27,7 +27,7 @@ Use this template when scout needs a durable evaluation contract that baseline, 
 ## Known Ambiguities
 - ambiguity:
 - why it matters:
-- blocked Workflow Stage:
+- blocked Workflow Stage Cursor:
 - Gate or user choice needed:
 
 ## Decision Impact

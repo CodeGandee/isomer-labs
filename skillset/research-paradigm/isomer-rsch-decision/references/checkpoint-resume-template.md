@@ -7,7 +7,7 @@ Use this when later turns could otherwise resume from the wrong node, route, or 
 ### 1. Current Route
 
 - current route label:
-- current Workflow Stage:
+- current Workflow Stage Cursor:
 - short route judgment:
 
 ### 2. Current Active Node

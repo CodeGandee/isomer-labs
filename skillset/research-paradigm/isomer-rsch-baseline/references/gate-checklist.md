@@ -14,7 +14,7 @@ Use this compact checklist before closing a baseline Gate. It is optional; the h
 
 - [ ] next execution, verification, acceptance, blocker, waiver, or route-switch step is explicit
 - [ ] active uncertainty is written as a concrete question
-- [ ] next Workflow Stage is known if this Gate clears or blocks
+- [ ] next Workflow Stage Cursor is known if this Gate clears or blocks
 
 ## Core Gate
 
@@ -36,4 +36,4 @@ Use this compact checklist before closing a baseline Gate. It is optional; the h
 
 - [ ] concise baseline summary written
 - [ ] caveats carried forward
-- [ ] next Workflow Stage named explicitly
+- [ ] next Workflow Stage Cursor named explicitly

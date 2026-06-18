@@ -7,7 +7,7 @@ Use this taxonomy to classify existing assets before reuse. Trust is a route dec
 - accepted: provenance, metric or content role, and comparability are clear enough that later skills can rely on the asset without rerunning intake.
 - usable-with-verification: the asset is likely relevant, but a bounded check must confirm provenance, metric, code path, draft role, or review status.
 - reference-only: the asset is useful context but must not become active evidence for the current mainline.
-- stale-or-conflicting: the asset conflicts with newer evidence, belongs to a superseded branch, or uses an incompatible protocol.
+- stale-or-conflicting: the asset conflicts with newer evidence, belongs to a superseded Research Inquiry Relationship, or uses an incompatible protocol.
 - missing-context: the asset cannot be interpreted because its source, role, parameters, or relationship to the current Research Task is unclear.
 
 ## Paper-Facing Visibility

@@ -7,7 +7,7 @@ description: Run a skeptical audit of a substantial draft, report, or paper-like
 
 ## Overview
 
-Use this skill when a substantial draft, report, or paper-like Artifact needs an independent, evidence-grounded audit before revision, rebuttal, finalization, or a stop or branch decision.
+Use this skill when a substantial draft, report, or paper-like Artifact needs an independent, evidence-grounded audit before revision, rebuttal, finalization, or a stop or Research Inquiry Relationship decision.
 
 ## Workflow
 
@@ -57,7 +57,7 @@ Read references as needed:
 - Revision log Artifact.
 - Evidence TODO Artifact when the review finds true evidence gaps.
 - Literature benchmark or comparison matrix when novelty or venue standards affect the judgment.
-- Decision Record or Gate for route choice, claim downgrade, stop, branch, review closure, or finalization readiness.
+- Decision Record or Gate for route choice, claim downgrade, stop, Research Inquiry Relationship, review closure, or finalization readiness.
 
 ## Guardrails
 

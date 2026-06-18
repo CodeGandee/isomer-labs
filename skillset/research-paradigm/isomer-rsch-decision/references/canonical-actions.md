@@ -4,12 +4,12 @@ Use these action labels to keep Decision Records legible. They are labels for re
 
 | Action | Use when | Typical next output |
 | --- | --- | --- |
-| continue | The active route remains valid and only needs the next bounded step. | Workflow Stage handoff |
+| continue | The active route remains valid and only needs the next bounded step. | Workflow Stage Cursor handoff |
 | launch_experiment | A selected route needs one main Run. | experiment handoff |
 | launch_analysis | A main result needs focused follow-up evidence. | analysis handoff |
-| branch | A new Research Inquiry Relationship should be opened or recommended. | Decision Record and branch rationale |
-| prepare_branch | A plausible branch needs a brief or feasibility check before activation. | idea or optimize handoff |
-| activate_branch | A prepared branch becomes the active mainline. | current-board update |
+| open_inquiry_relationship | A new Research Inquiry Relationship should be opened or recommended. | Decision Record and relationship rationale |
+| prepare_inquiry_relationship | A plausible Research Inquiry Relationship needs a brief or feasibility check before activation. | idea or optimize handoff |
+| activate_inquiry_relationship | A prepared Research Inquiry Relationship becomes the active mainline. | current-board update |
 | reuse_baseline | Existing comparator evidence should remain active. | baseline handoff or acceptance note |
 | attach_baseline | An existing comparator should be linked, verified, or accepted. | baseline handoff |
 | publish_baseline | A baseline state is ready for downstream use. | Decision Record or Gate |

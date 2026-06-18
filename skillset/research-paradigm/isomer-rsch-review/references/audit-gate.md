@@ -16,7 +16,7 @@ Before writing the report, identify package maturity, one to three core claims, 
 
 ## Stop-Loss Rule
 
-If novelty, evidence sufficiency, or reader value has collapsed beyond reasonable claim narrowing, recommend `isomer-rsch-decision` for stop, branch, or scope downgrade. Do not recommend another cosmetic revision pass. When the route depends on user publication, scope, cost, or non-paper preference, record or ask for a Gate through the Operator Agent.
+If novelty, evidence sufficiency, or reader value has collapsed beyond reasonable claim narrowing, recommend `isomer-rsch-decision` for stop, Research Inquiry Relationship, or scope downgrade. Do not recommend another cosmetic revision pass. When the route depends on user publication, scope, cost, or non-paper preference, record or ask for a Gate through the Operator Agent.
 
 ## Source-Term Mapping
 

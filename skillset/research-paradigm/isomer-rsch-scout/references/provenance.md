@@ -6,11 +6,11 @@ The adaptation preserves reusable methodology: bounded framing, minimum-unknown 
 
 Source-runtime concepts were intentionally translated:
 
-- quest lifecycle language became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage language.
+- quest lifecycle language became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage Cursor language.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
 - command and repository inspection became Capability Binding through an Execution Adapter.
 - paper-provider names became literature search capability with `[[tbd-surface:provider-literature-search]]` where a concrete provider remains unsettled.
-- scheduler and continuation terms became Workflow Stage recommendations, Gates, Decision Records, observations, or pauses for Operator Agent instruction.
+- scheduler and continuation terms became Workflow Stage Cursor recommendations, Gates, Decision Records, observations, or pauses for Operator Agent instruction.
 
 License context: the source project is licensed under Apache 2.0. Preserve this notice near this self-contained adaptation when copying, distributing, or materially revising the skill.

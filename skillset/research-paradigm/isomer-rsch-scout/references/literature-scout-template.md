@@ -48,7 +48,7 @@ For each serious candidate, record method name, paper evidence, repository evide
 
 ## Next Route Recommendation
 
-- recommended Workflow Stage:
+- recommended Workflow Stage Cursor:
 - why that stage is now justified:
 - blocker if the stage still cannot start:
 - Decision Record needed:

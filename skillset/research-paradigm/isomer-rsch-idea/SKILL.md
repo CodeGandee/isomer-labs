@@ -56,7 +56,7 @@ Read references as needed:
 - Objective contract, current-board packet, literature survey update, and candidate frontier are durable Artifacts or Evidence Items.
 - Serious surviving candidates have pre-idea drafts or equivalent challenge memos.
 - One falsifiable route is selected with a Research Inquiry Relationship decision, or the blocker preventing selection is recorded.
-- The handoff names the next Workflow Stage: optimize, experiment, scout, baseline, decision, write, or blocker.
+- The handoff names the next Workflow Stage Cursor: optimize, experiment, scout, baseline, decision, write, or blocker.
 
 ## Selected Route Contract
 
@@ -70,7 +70,7 @@ A selected route package should include:
 - minimal validation and strongest falsification experiment
 - hard constraints, comparability boundary, abandonment condition, and expected evidence burden
 - why this route won now over the incumbent, a small local tweak, and at least one outside-family alternative
-- next Workflow Stage and any unresolved TBD surfaces such as `[[tbd-surface:policy-branching]]`, `[[tbd-surface:provider-literature-search]]`, or semantic Artifact kind through Workspace Path Resolution
+- next Workflow Stage Cursor, unresolved provider surfaces such as `[[tbd-surface:provider-literature-search]]`, and semantic Artifact kind through Workspace Path Resolution
 
 ## Durable Outputs
 

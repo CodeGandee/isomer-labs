@@ -32,7 +32,7 @@ Read first:
 
 Read references as needed:
 
-- `references/plan-template.md` before substantial code edits, expensive execution, or branch-sensitive work.
+- `references/plan-template.md` before substantial code edits, expensive execution, or route-relationship-sensitive work.
 - `references/checklist-template.md` when the active frontier, next step, blocked state, or closeout needs a visible control surface.
 - `references/evidence-ladder.md` when deciding whether the package is minimum, solid, or maximum evidence, or whether the work is auxiliary or main.
 - `references/execution-playbook.md` for run contracts, preflight checks, smoke and pilot discipline, long-running monitoring, output validation, and next-route decisions.

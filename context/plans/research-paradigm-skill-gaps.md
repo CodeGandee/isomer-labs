@@ -1,24 +1,28 @@
 # Research Paradigm Skill Gaps Plan
 
-This plan tracks what remains before `skillset/research-paradigm` can move from method guidance to executable Isomer research workflows. The workspace path layer is treated as settled by Workspace Path Resolution; this plan focuses on the still-missing platform contracts, runtime integration, validation, and optional assets.
+This plan tracks what remains before `skillset/research-paradigm` can move from method guidance to executable Isomer research workflows. The workspace path layer is treated as settled by Workspace Path Resolution, durable recording surfaces are treated as settled by Research Recording Contracts, and lifecycle state is treated as settled by Research Lifecycle State; this plan focuses on the still-missing runtime integration, capability binding, validation, and optional asset contracts.
+
+## Remaining Placeholder Summary
+
+The remaining registered placeholders are `api-execution-command`, `policy-scheduler`, `policy-cost-privacy-gate`, `schema-skill-binding`, `policy-baseline-waiver`, and `provider-literature-search`. The recommended next major step is Stage 3: define the Execution Adapter Command Surface and runtime-policy boundary, because command execution, Run logging, scheduler separation, and cost/privacy Gates now block the largest number of executable research workflows. After that, settle Skill Binding, baseline waiver policy, and literature provider behavior as separate contracts.
 
 ## Stage 1: Define Core Research Recording Contracts
 
-- [ ] Define the Artifact and Provenance recording API currently represented by `[[tbd-surface:api-artifact-record]]`.
-- [ ] Define the Finding query/write API currently represented by `[[tbd-surface:api-finding-query]]`.
-- [ ] Define the Gate open/resolve/record API currently represented by `[[tbd-surface:api-gate]]`.
-- [ ] Define durable schemas for Decision Records, Evidence Items, Research Claims, and Gates.
-- [ ] Specify validation rules for broken refs, missing files, unsupported Research Claims, unresolved Gates, and stale Provenance Records.
-- [ ] Update research-paradigm skill references to replace recording/schema TBDs where the accepted contracts apply.
+- [x] Define the Artifact and Provenance recording API currently represented by `[[tbd-surface:api-artifact-record]]`.
+- [x] Define the Finding query/write API currently represented by `[[tbd-surface:api-finding-query]]`.
+- [x] Define the Gate open/resolve/record API currently represented by `[[tbd-surface:api-gate]]`.
+- [x] Define durable schemas for Decision Records, Evidence Items, Research Claims, and Gates.
+- [x] Specify validation rules for broken refs, missing files, unsupported Research Claims, unresolved Gates, and stale Provenance Records.
+- [x] Update research-paradigm skill references to replace recording/schema TBDs where the accepted contracts apply.
 
 ## Stage 2: Define Research Lifecycle State
 
-- [ ] Define lifecycle state for Research Topic, Research Inquiry, Research Task, Run, and Workflow Stage Cursor.
-- [ ] Define how a Research Inquiry Relationship is recorded without forcing all exploration paths into a tree.
-- [ ] Define branch, pause, resume, supersede, block, finalize, and archive transitions.
-- [ ] Define Agent Team Instance pause and advancement state, including how it maps to Topic-level and Task-level parallel execution.
-- [ ] Define the policy currently represented by `[[tbd-surface:policy-branching]]`.
-- [ ] Update skills that route between scout, baseline, idea, experiment, analysis, decision, write, review, rebuttal, and finalize to use the accepted lifecycle terms.
+- [x] Define lifecycle state for Research Topic, Research Inquiry, Research Task, Run, and Workflow Stage Cursor.
+- [x] Define how a Research Inquiry Relationship is recorded without forcing all exploration paths into a tree.
+- [x] Define branch, pause, resume, supersede, block, finalize, and archive transitions through Research Lifecycle State.
+- [x] Define Agent Team Instance lifecycle state, including how it maps to Topic-level and Task-level parallel execution.
+- [x] Map the former `policy-branching` surface to Research Inquiry Relationship policy through Research Lifecycle State.
+- [x] Update skills that route between scout, baseline, idea, experiment, analysis, decision, write, review, rebuttal, and finalize to use the accepted lifecycle terms.
 
 ## Stage 3: Define Execution Adapter Command Surface
 

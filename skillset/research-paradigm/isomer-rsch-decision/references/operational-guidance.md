@@ -20,7 +20,7 @@ Ask the Operator Agent only when multiple options remain plausible and the choic
 
 ## Paper Routes
 
-For paper-facing decisions, judge method fidelity, evidence support, story coherence, coverage state, and reader value. A draft checkpoint is not final. A review package routes to review or rebuttal. If publishability has collapsed, recommend stop or branch and ask for an Operator Agent Gate before executing a preference-sensitive stop.
+For paper-facing decisions, judge method fidelity, evidence support, story coherence, coverage state, and reader value. A draft checkpoint is not final. A review package routes to review or rebuttal. If publishability has collapsed, recommend stop or a new Research Inquiry Relationship and ask for an Operator Agent Gate before executing a preference-sensitive stop.
 
 ## Algorithm-First Routes
 

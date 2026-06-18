@@ -14,7 +14,7 @@ Prefer durable records over recollection:
 
 ## Durable Vocabulary
 
-Use Isomer Labs terms: Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime, Workspace Boundary, Artifact, Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Coordination Policy, Capability Binding, Execution Adapter, Workflow Stage, and Completion Watcher Contract.
+Use Isomer Labs terms: Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime, Workspace Boundary, Artifact, Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Agent Team Instance lifecycle state, Coordination Policy, Capability Binding, Execution Adapter, Workflow Stage, Workflow Stage Cursor, and Completion Watcher Contract.
 
 Do not invent concrete paths, filenames, storage roots, command surfaces, provider names, schemas, or generated layouts. Use a registered TBD placeholder when a skill outcome must mention an unsettled concrete surface.
 
@@ -31,11 +31,21 @@ Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decisi
 
 Do not emit recording TBD placeholders for these surfaces. Evidence Items are the support, contradiction, or context boundary for Research Claims. Research Claim status is `open`, `supported`, `refuted`, or `withdrawn` unless a later accepted contract extends it; contradiction and context belong on Evidence Items or claim-evidence links. Findings are primarily scoped to Research Inquiries when an applicable inquiry exists. A Gate may resolve through a Decision Record, but cancelled or superseded Gates can close with a Provenance Record when no meaningful choice was made.
 
+## Research Lifecycle State
+
+Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Workflow Stage Cursor, and Agent Team Instance lifecycle state are resolved lifecycle surfaces. Use Workflow Stage Cursor for durable routing state, not scheduling. Use Agent Team Instance lifecycle state for planned, active, paused, blocked, completed, stopped, or archived team execution state; optional active or relevant Research Inquiry refs are context and routing anchors, not execution scope. Use Research Inquiry Relationships for inquiry graph links and require Decision Records only when a meaningful route choice was made.
+
+Do not emit lifecycle TBD placeholders for `schema-stage-cursor`, `schema-agent-team-state`, or `policy-branching`. Research Inquiry is a question object and not a parallel execution scope. Express parallel work only as Topic-level parallelism across Agent Team Instances or Task-level parallelism across Agent Instances inside one Agent Team Instance.
+
 ## Source-Term Mappings
 
 | Source term or operation | Isomer Labs framing |
 | --- | --- |
 | lifecycle-level research work | Research Topic, Research Inquiry, or Research Task depending on scope |
+| Research Goal | Research Topic; put metrics or targets in optional Measurable Objectives |
+| Research Thread | Research Inquiry |
+| Research Branch | Research Inquiry Relationship; do not imply a tree or branch collection |
+| Isomer Workspace | Topic Workspace through Workspace Path Resolution |
 | initial goal or objective text | Research Topic with optional Measurable Objective |
 | bounded unit of research work | Research Task |
 | one execution attempt | Run |
@@ -57,10 +67,10 @@ Do not port source runtime scheduling terms as Isomer concepts. The Operator Age
 | Source behavior | Isomer skill text should say |
 | --- | --- |
 | `workspace_mode` | source runtime collaboration detail; do not use as an Isomer mode |
-| `continuation_policy` | recommend the next Workflow Stage, Gate, Decision Record, observation, or pause |
+| `continuation_policy` | recommend the next Workflow Stage Cursor, Gate, Decision Record, observation, or pause |
 | `auto_continue` | source scheduler detail; do not schedule turns in skill text |
 | `wait_for_user_or_resume` | pause for Operator Agent instruction, or record a Gate or handoff state |
-| `continuation_anchor` | next recommended Workflow Stage or Decision Record target |
+| `continuation_anchor` | next recommended Workflow Stage Cursor or Decision Record target |
 | `continuation_reason` | pause reason, Gate reason, failure reason, or Decision Record rationale |
 
 ## Evidence Boundaries
@@ -71,11 +81,11 @@ Claims must be tied to Evidence Items. Negative, partial, null, failed, blocked,
 
 This skill describes research judgment. It does not define Isomer runtime APIs, schedulers, credentials, mailbox routes, gateway routes, concrete agent launch behavior, or ordinary path layouts covered by Workspace Path Resolution.
 
-When a source behavior implies execution, literature lookup, storage, state mutation, monitoring, or chart generation, describe the intended Isomer record, semantic Artifact kind, workspace scope, or capability. Mark the concrete surface as unsettled only when it is outside accepted Isomer contracts.
+When a source behavior implies execution, literature lookup, storage, lifecycle state, route branching, state mutation, monitoring, or chart generation, describe the intended Isomer record, semantic Artifact kind, workspace scope, or capability. Mark the concrete surface as unsettled only when it is outside accepted Isomer contracts.
 
 ## TBD Surface Registry
 
-Use registered TBD-surface placeholders in skill outcomes when a concrete surface is not settled by an accepted Isomer design. Ordinary Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are settled by Workspace Path Resolution. Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates are settled by Research Recording Contracts. Skills should name semantic workspace scopes, Artifact kinds, durable record types, or accepted recording APIs instead of emitting TBD placeholders for resolved surfaces.
+Use registered TBD-surface placeholders in skill outcomes when a concrete surface is not settled by an accepted Isomer design. Ordinary Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are settled by Workspace Path Resolution. Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates are settled by Research Recording Contracts. Research Topics, Research Inquiries, Research Inquiry Relationships, Research Tasks, Runs, Workflow Stage Cursors, and Agent Team Instance lifecycle state are settled by Research Lifecycle State. Skills should name semantic workspace scopes, Artifact kinds, durable record types, accepted recording APIs, or accepted lifecycle objects instead of emitting TBD placeholders for resolved surfaces.
 
 ### Resolved Workspace Path Surfaces
 
@@ -108,16 +118,23 @@ These former recording TBDs are mapped to Research Recording Contracts and must 
 | schema-research-claim | Use the accepted Research Claim status, evidence-link, and validation rules from Research Recording Contracts. |
 | schema-gate | Use the accepted Gate status and validation rules from Research Recording Contracts. |
 
+### Resolved Research Lifecycle Surfaces
+
+These former lifecycle TBDs are mapped to Research Lifecycle State and must not be emitted as open TBD placeholders in research-stage skill text.
+
+| Former ID | Resolution |
+| --- | --- |
+| schema-stage-cursor | Use Workflow Stage Cursor as durable routing state through Research Lifecycle State. |
+| schema-agent-team-state | Use Agent Team Instance lifecycle state through Research Lifecycle State. |
+| policy-branching | Use Research Inquiry Relationship policy through Research Lifecycle State; create Decision Records only for meaningful route choices. |
+
 ### Open TBD Surfaces
 
 | ID | Kind | Placeholder | Missing decision |
 | --- | --- | --- | --- |
 | api-execution-command | api | `[[tbd-surface:api-execution-command]]` | Execution command surface, permissions, and logging behavior. |
 | provider-literature-search | provider | `[[tbd-surface:provider-literature-search]]` | Literature search and paper-reading provider. |
-| schema-stage-cursor | schema | `[[tbd-surface:schema-stage-cursor]]` | Workflow Stage cursor and next-stage representation. |
-| schema-agent-team-state | schema | `[[tbd-surface:schema-agent-team-state]]` | Agent Team Instance pause and advancement states. |
 | schema-skill-binding | schema | `[[tbd-surface:schema-skill-binding]]` | Capability Binding projection and skill install schema. |
 | policy-scheduler | policy | `[[tbd-surface:policy-scheduler]]` | Runtime scheduling and continuation policy. |
-| policy-branching | policy | `[[tbd-surface:policy-branching]]` | Policy for recording Research Inquiry Relationships and route decisions. |
 | policy-baseline-waiver | policy | `[[tbd-surface:policy-baseline-waiver]]` | Baseline acceptance and waiver rules. |
 | policy-cost-privacy-gate | policy | `[[tbd-surface:policy-cost-privacy-gate]]` | Cost, credential, privacy, and data-export Gate thresholds. |

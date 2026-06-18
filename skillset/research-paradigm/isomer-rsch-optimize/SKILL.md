@@ -57,14 +57,14 @@ Read references as needed:
 
 - Candidate briefs, frontier state, Research Inquiry Relationship decisions, implementation attempts, and any Run evidence are durable.
 - Exactly one dominant next route is recommended, promoted, stopped, debugged, fused, or blocked.
-- The handoff separates frontier updates from implementation attempts and identifies the next Workflow Stage.
+- The handoff separates frontier updates from implementation attempts and identifies the next Workflow Stage Cursor.
 
 ## Object Model
 
 - Method brief: an Artifact describing a possible direction without opening a durable Research Inquiry Relationship.
-- Durable line: a promoted Research Inquiry Relationship with enough expected value, differentiation, and execution path clarity to deserve relationship-level state under `[[tbd-surface:policy-branching]]`.
+- Durable line: a promoted Research Inquiry Relationship with enough expected value, differentiation, and execution path clarity to deserve relationship-level state under Research Lifecycle State.
 - Implementation attempt: a bounded Run or Evidence Item inside one durable line, such as one patch, smoke candidate, debug candidate, or fusion candidate.
-- Frontier record: an Artifact or View Manifest summarizing active lines, recent Runs, stagnant branches, candidate backlog, route meaning, and next action.
+- Frontier record: an Artifact or View Manifest summarizing active lines, recent Runs, stagnant lines, candidate backlog, route meaning, and next action.
 
 ## Optimize Submodes
 
@@ -92,5 +92,5 @@ Read references as needed:
 - Do not mix several major route changes in one optimize pass.
 - Do not hide a plateau under repeated near-duplicate tweaks.
 - Do not use debug as a performance-improvement route; it is bugfix-only.
-- Do not fuse weak or redundant lines merely because multiple branches exist.
-- Use `[[tbd-surface:schema-stage-cursor]]` for unsettled next-stage records and `[[tbd-surface:api-execution-command]]` for unsettled execution surfaces.
+- Do not fuse weak or redundant lines merely because multiple lines exist.
+- Use Workflow Stage Cursor for next-stage records and `[[tbd-surface:api-execution-command]]` for unsettled execution surfaces.

@@ -24,7 +24,7 @@ Prefer routes that attack a real bottleneck, stay compatible with the existing a
 
 ## Selection Output
 
-A good route decision records the winner, strongest alternatives, criteria, expected learning, why rejected options lost, residual risk, and exact next Workflow Stage.
+A good route decision records the winner, strongest alternatives, criteria, expected learning, why rejected options lost, residual risk, and exact next Workflow Stage Cursor.
 
 ## Negative-Result Paper Gate
 

@@ -10,7 +10,7 @@ Source-runtime concepts were intentionally translated:
 - durable lines became promoted Research Inquiry Relationships and Research Inquiry Relationship decisions.
 - implementation attempts became bounded Runs, Evidence Items, or implementation-attempt Artifacts.
 - frontier records became View Manifests or frontier Artifacts.
-- route promotion became a Research Inquiry Relationship decision and Decision Record under `[[tbd-surface:policy-branching]]`.
+- route promotion became a Research Inquiry Relationship decision and Decision Record under Research Lifecycle State.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
 - command execution became Capability Binding through an Execution Adapter with `[[tbd-surface:api-execution-command]]`.

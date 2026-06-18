@@ -48,7 +48,7 @@ Draft by bounded section jobs: introduction, related work, method, experiments, 
 
 ## Publishability Stop-Loss
 
-If current evidence, novelty boundary, or reader value cannot support a defensible paper after reasonable claim narrowing, stop drafting and route to `isomer-rsch-decision` for stop, branch, scope downgrade, or non-paper objective. Cosmetic revision is not an answer to collapsed evidence or value.
+If current evidence, novelty boundary, or reader value cannot support a defensible paper after reasonable claim narrowing, stop drafting and route to `isomer-rsch-decision` for stop, Research Inquiry Relationship, scope downgrade, or non-paper objective. Cosmetic revision is not an answer to collapsed evidence or value.
 
 ## Validation
 

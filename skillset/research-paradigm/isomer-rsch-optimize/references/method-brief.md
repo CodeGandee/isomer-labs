@@ -74,4 +74,4 @@ Usually optimize or experiment.
 
 ## Promotion Rule
 
-Do not promote a method brief into a Research Inquiry Relationship until expected value, differentiation, and execution path clarity justify the cost under `[[tbd-surface:policy-branching]]`.
+Do not promote a method brief into a Research Inquiry Relationship until expected value, differentiation, and execution path clarity satisfy the Research Lifecycle State promotion policy.

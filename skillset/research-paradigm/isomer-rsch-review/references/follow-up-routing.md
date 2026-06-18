@@ -12,7 +12,7 @@ Use this reference after the audit identifies serious issues.
 | Concrete evidence gap, ablation, robustness check, error analysis, failure analysis, or evidence mapping issue | `isomer-rsch-analysis` |
 | Figure/table quality weakness after the underlying data exists | `isomer-rsch-figure-polish` or `isomer-rsch-paper-plot` |
 | Concrete reviewer comments requiring point-by-point response | `isomer-rsch-rebuttal` |
-| Non-trivial route, cost, claim downgrade, stop, branch, or publication-scope choice | `isomer-rsch-decision` |
+| Non-trivial route, cost, claim downgrade, stop, Research Inquiry Relationship, or publication-scope choice | `isomer-rsch-decision` |
 | Manuscript is truly ready after review and Gates pass | `isomer-rsch-finalize` |
 
 ## Follow-up Gates
