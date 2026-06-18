@@ -19,6 +19,7 @@ isomer_labs = { path = ".", editable = true }
 lint = "ruff check ."
 typecheck = "mypy src"
 test = "python -m unittest discover -s tests/unit"
+validate-research-skills = "python scripts/validate_research_paradigm_skillset.py skillset/research-paradigm"
 
 [tool.pixi.dependencies]
 python = "3.11.*"

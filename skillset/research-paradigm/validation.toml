@@ -1,0 +1,42 @@
+[allow_zones]
+stale_terms_file_globs = [
+  "PROVENANCE.md",
+  "licenses/*.md",
+  "*/references/provenance.md",
+  "*/references/source-term-mapping.md",
+]
+stale_terms_section_headings = [
+  "Source-Term Mapping",
+  "Source-Term Mappings",
+]
+runtime_coupling_file_globs = [
+  "PROVENANCE.md",
+  "licenses/*.md",
+  "*/references/provenance.md",
+  "*/references/source-term-mapping.md",
+  "*/references/deferred-resources.md",
+  "*/references/deferred-venue-templates.md",
+  "*/references/package-index-decision.md",
+]
+runtime_coupling_section_headings = [
+  "Source-Term Mapping",
+  "Source-Term Mappings",
+  "Rejected Source Runtime Concepts",
+  "Rejected Runtime Concepts",
+  "Runtime Boundary",
+]
+resolved_id_file_globs = [
+  "isomer-rsch-shared/references/tbd-surface-registry.md",
+]
+resolved_id_section_headings = [
+  "Research Recording Contracts",
+  "Research Lifecycle State",
+  "Research Execution and Extension Contract",
+  "TBD Surface Registry",
+  "Resolved Workspace Path Surfaces",
+  "Resolved Research Recording Surfaces",
+  "Resolved Research Lifecycle Surfaces",
+  "Resolved Research Execution Extension Surfaces",
+  "Resolved Surfaces",
+  "Resolved Extension Surfaces",
+]
