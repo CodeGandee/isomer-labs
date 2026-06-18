@@ -32,12 +32,13 @@ Accepted ADRs:
 - `0009-register-gui-components-before-loading.md`
 - `0010-project-scoped-gui-component-approve-all.md`
 - `0011-domain-topic-team-lifecycle.md`
+- `0018-workspace-path-resolver.md`
 
 ## Overview
 
-Isomer Labs uses a manifested workspace engine as its primary architecture. The Project Manifest at `.isomer-labs/manifest.toml` is the discovery authority for project configuration and project-local Isomer Workspaces. A Research Thread is the user-facing line of inquiry; it can span multiple Research Tasks. Each Isomer Workspace is scoped to one Research Task and records its task handler: the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance created from a Topic Agent Team Profile. Isomer Workspaces may live in arbitrary directories inside the user-owned Project, but each workspace must be declared in the Project Manifest before the engine treats it as managed state.
+Isomer Labs uses a manifested workspace engine as its primary architecture. The Project Manifest at `.isomer-labs/manifest.toml` is the discovery authority for project configuration and project-local Topic Workspaces. A Research Topic is the root research problem or investigation intent that initiates investigation and Topic Agent Team Profile specialization; Research Inquiries are user- or agent-generated questions under that topic. Each Topic Workspace is scoped to one Research Topic and records the topic's Research Inquiries, Research Tasks, Runs, Artifacts, selected Topic Agent Team Profiles, and selected Agent Team Instances when delegated. Topic Workspaces may live in arbitrary directories inside the user-owned Project, but each workspace must be declared in the Project Manifest before the engine treats it as managed state.
 
-Each Isomer Workspace owns its Workspace Runtime and research outputs for its Research Task. Compact control-plane state lives in SQLite. Rich Artifacts remain ordinary files, such as Markdown notes, JSON outputs, logs, code, figures, reports, and View Manifests. During team execution, each concrete Agent Instance receives an Agent Workspace for agent-owned runtime state and Agent Artifacts. These workspaces create advisory ownership boundaries, not filesystem-grade access control. The Operator Agent is the human-facing coordination boundary between user intent, Agent Team Instance activity, durable state, and GUI-facing views.
+Each Topic Workspace owns its Workspace Runtime and research outputs for its Research Topic. Compact control-plane state lives in SQLite. Rich Artifacts remain ordinary files, such as Markdown notes, JSON outputs, logs, code, figures, reports, and View Manifests. During team execution, each concrete Agent Instance receives an Agent Workspace inside the Topic Workspace for agent-owned runtime state and Agent Artifacts. These workspaces create advisory ownership boundaries, not filesystem-grade access control. The Operator Agent is the human-facing coordination boundary between user intent, Agent Team Instance activity, durable state, and GUI-facing views.
 
 Isomer's core multi-agent model is backend-neutral. Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Roles, Agent Profiles, Capability Bindings, Coordination Policies, Agent Instances, Runs, and Agent Workspaces should make sense for many execution backends. Backend-specific systems, including Houmao, should appear only through Execution Adapter mappings.
 
@@ -47,25 +48,27 @@ The GUI is not the engine. The engine remains useful through command-line and ag
 
 ### Human User
 
-The human user defines the research goal, provides context, sets constraints, approves or edits teams and workflows, resolves gated decisions, and steers active Research Threads through the Operator Agent. The user can pause, create Research Branches, resume, archive, override team composition, or alter workflow structure.
+The human user defines the Research Topic, provides context, sets constraints, approves or edits teams and workflows, resolves gated decisions, and steers active Research Inquiries through the Operator Agent. The user can pause, create follow-up Research Inquiries, record Research Inquiry Relationships, resume, archive, override team composition, or alter workflow structure.
 
 ### Operator Agent
 
 The Operator Agent is the project-facing Agent Role and Agent Instance responsible for user-facing coordination. It turns user intent into executable team instructions, specializes Domain Agent Team Templates into Topic Agent Team Profiles, launches Topic Agent Team Profiles into Agent Team Instances, dispatches work to delegated Agent Instances, records decisions, and asks the user for input when a decision is irreversible or claim-shaping.
 
-The Operator Agent does not silently finalize research direction, waive baselines, choose high-impact Research Branches, strengthen Research Claims, archive work, or end a Project without a recorded Gate.
+The Operator Agent does not silently finalize research direction, waive baselines, choose high-impact Research Inquiries or Inquiry Relationships, strengthen Research Claims, archive work, or end a Project without a recorded Gate.
 
 ### Team Agent Roles
 
 Team Agent Roles perform bounded role-owned work. Early roles can include scout, planner, literature reviewer, experimenter, analyst, writer, reviewer, and decision-support. A Topic Agent Team Profile binds these roles to Workflow Stages, capabilities, profiles, tools, skills, topic constraints, and handoff rules before launch. An Agent Team Instance is the runtime team created from that profile. Each active Agent Instance should write to its own Agent Workspace by convention; peer agents may inspect declared readable files, but the engine does not enforce OS-level file permissions.
 
+Parallel execution has two approved scopes. At the Research Topic level, the user can run multiple Agent Team Instances in parallel to compare teams, strategies, or independent inquiry paths. At the Research Task level, a selected Agent Team Instance can distribute one task across multiple Agent Instances. Research Inquiry is not a parallel execution scope; it organizes questions, not concurrent worker ownership.
+
 ### CLI or Agent Entry Point
 
-The engine can be used without a GUI. CLI or agent workflows can create Isomer Workspaces, validate Project Manifests, inspect state, run the operator loop, and read or write Artifacts.
+The engine can be used without a GUI. CLI or agent workflows can create Topic Workspaces, validate Project Manifests, inspect state, run the operator loop, and read or write Artifacts.
 
 ### GUI Backend and Renderer
 
-The GUI Backend is a built-in HTTP server started through `isomer-cli`. It reports the URL that the user opens in a browser, serves the predefined GUI Renderer, reads View Manifests from Isomer Workspaces, receives authenticated AG-UI Event Batches, validates GUI Component Registry entries, resolves AG-UI Render Payloads to GUI Component Instances, exposes GUI Backend APIs, and records GUI-facing metadata. The GUI Renderer renders task-specific interfaces from View Manifests, GUI Layout Specs, registered GUI Components, GUI Component Instances, and live updates produced from AG-UI Render Payloads. User actions, approvals, redirects, and comments return through defined action channels to the Operator Agent. The GUI does not own research state, team execution, or Artifact provenance.
+The GUI Backend is a built-in HTTP server started through `isomer-cli`. It reports the URL that the user opens in a browser, serves the predefined GUI Renderer, reads View Manifests from Topic Workspaces, receives authenticated AG-UI Event Batches, validates GUI Component Registry entries, resolves AG-UI Render Payloads to GUI Component Instances, exposes GUI Backend APIs, and records GUI-facing metadata. The GUI Renderer renders task-specific interfaces from View Manifests, GUI Layout Specs, registered GUI Components, GUI Component Instances, and live updates produced from AG-UI Render Payloads. User actions, approvals, redirects, and comments return through defined action channels to the Operator Agent. The GUI does not own research state, team execution, or Artifact provenance.
 
 ## Components & Responsibilities
 
@@ -75,33 +78,71 @@ Project-level configuration lives under the `.isomer-labs/` Project Config Direc
 
 The Project Manifest is responsible for:
 
-- listing known Isomer Workspaces
-- naming the active Research Thread or active Isomer Workspace when applicable
-- declaring relative Isomer Workspace paths
-- declaring each Isomer Workspace's Research Task, task handler, selected Topic Agent Team Profile, and selected Agent Team Instance when delegated
+- listing known Topic Workspaces
+- naming the active Research Topic, active Research Inquiry, or active Topic Workspace when applicable
+- declaring relative Topic Workspace paths
+- declaring each Topic Workspace's Research Topic, selected Topic Agent Team Profiles, and selected Agent Team Instances when delegated
 - storing project-level defaults
 - pointing to reusable Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profiles, and GUI Component Registry entries
 - defining compatibility versions for Project Manifest and Workspace Runtime schemas
 
-The Project Manifest must be validated before Runs start. Missing workspace paths, duplicate workspace ids, paths outside the Project root, stale schema versions, and invalid active-workspace references are configuration errors.
+The Project Manifest must be validated before Runs start. Missing workspace paths, duplicate topic workspace ids, paths outside the Project root, stale schema versions, and invalid active-topic-workspace references are configuration errors.
 
 System-owned schemas and other Isomer built-in artifacts are not stored under `.isomer-labs/` by default. `isomer-cli` should query those built-ins, show supported versions, and validate project files against them.
 
 ### Workspace Runtime
 
-Each Isomer Workspace stores one Workspace Runtime plus Artifacts. The Workspace Runtime is the persistent substrate that holds compact control-plane state, schema version, runtime directories, refs, and validation state across many Runs. A workspace should have a stable root path and a small internal layout, for example:
+Each Topic Workspace stores one Workspace Runtime plus Artifacts. The Workspace Runtime is the persistent substrate that holds compact control-plane state, schema version, runtime directories, refs, and validation state across many Runs. A workspace should have a stable root path and a small internal layout, for example:
 
 ```text
-<workspace>/
+<topic-workspace>/
   state.sqlite
   artifacts/
   agents/
+  tasks/
   views/
   runs/
   logs/
 ```
 
 The exact layout can evolve, but the split must stay clear: SQLite stores compact control-plane facts and references; files store rich content. `runs/` stores per-Run records for bounded execution episodes; it is part of the Workspace Runtime, not a separate workspace-level lifecycle object.
+
+### Workspace Path Resolver
+
+All Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, and Agent Workspace paths should resolve through one Workspace Path Resolver. Research skills should request semantic targets such as Topic Workspace, task support directory, run log, analysis output Artifact, paper draft Artifact, figure Artifact, Agent Runtime state, or Agent Workspace scratch; they should not assemble paths directly or emit ordinary path TBD placeholders for surfaces covered by this resolver.
+
+Resolution precedence is deterministic:
+
+1. Recorded workspace plan for the Research Task, Run, handoff, Agent Team Instance, or Agent Instance.
+2. Supported `ISOMER_*` environment variables exported by the Execution Adapter for the current process.
+3. Project Manifest defaults.
+4. Built-in defaults.
+
+The built-in Topic Workspace base directory is `<project>/topic-workspaces/`. A Topic Workspace without a recorded or configured path defaults to `<project>/topic-workspaces/<topic-id>/`. Within that Topic Workspace, default support paths are `state.sqlite`, `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/`. Task support directories default to `tasks/<task-id>/`; Run directories default to `runs/<run-id>/`; Agent Workspaces default to `agents/<agent-instance-id>/`.
+
+Execution Adapters may export this bounded environment override set:
+
+```text
+ISOMER_PROJECT_ROOT
+ISOMER_PROJECT_CONFIG_DIR
+ISOMER_TOPIC_WORKSPACE_BASE_DIR
+ISOMER_CURRENT_TOPIC_WORKSPACE_DIR
+ISOMER_TOPIC_WORKSPACE_RUNTIME_DB
+ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR
+ISOMER_TOPIC_WORKSPACE_TASKS_DIR
+ISOMER_TOPIC_WORKSPACE_RUNS_DIR
+ISOMER_TOPIC_WORKSPACE_VIEWS_DIR
+ISOMER_TOPIC_WORKSPACE_LOGS_DIR
+ISOMER_AGENT_WORKSPACE_DIR
+ISOMER_AGENT_WORKSPACE_RUNTIME_DIR
+ISOMER_AGENT_WORKSPACE_ARTIFACTS_DIR
+ISOMER_AGENT_WORKSPACE_SCRATCH_DIR
+ISOMER_AGENT_WORKSPACE_LOGS_DIR
+```
+
+`BASE` names the directory containing many Topic Workspaces. `CURRENT` names the process-bound Topic Workspace. Topic Workspace subdirectory variables include `TOPIC_WORKSPACE` so they cannot be confused with Agent Workspace subdirectories. The resolver should derive semantic Artifact class paths under `ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR`, such as `intake/`, `baselines/`, `experiments/<run-id>/`, `analysis/<campaign-id>/`, `figures/<figure-set-id>/`, `paper/<paper-id-or-default>/`, `decisions/`, `evidence/`, `findings/`, and `handoffs/`, unless a recorded workspace plan overrides them.
+
+Every resolved path must be canonicalized before use. Paths should remain inside the Project by default; a path outside the Project root is invalid unless the recorded workspace plan or Project Manifest explicitly permits that external root. The resolver must record the effective path set and each value's source, such as `plan`, `env`, `manifest`, or `default`, in Workspace Runtime or a Provenance Record before downstream research work depends on it.
 
 ### Agent Profile and Execution Adapter
 
@@ -111,14 +152,14 @@ An Execution Adapter maps Agent Profiles, Domain Agent Team Templates, Topic Age
 
 ### Agent Workspace
 
-An Agent Workspace is a per-agent work area inside an Isomer Workspace. For each team execution, the engine should construct an Agent Workspace for each participating Agent Instance that needs local runtime state, scratch files, logs, or Agent Artifacts. The owning Agent Role remains responsibility metadata, not the workspace owner.
+An Agent Workspace is a per-agent work area inside a Topic Workspace. For each team execution, the engine should construct an Agent Workspace for each participating Agent Instance that needs local runtime state, scratch files, logs, or Agent Artifacts. The owning Agent Role remains responsibility metadata, not the workspace owner.
 
 An Agent Workspace should have an advisory Workspace Boundary. The boundary can be expressed by a `README.md`, a small manifest, or both. It declares the owning agent, intended writable paths, and paths that peer agents may read. This boundary is a collaboration contract, not a security boundary. An agent with system tools may still modify peer files, so Isomer should validate and record behavior instead of assuming hard isolation.
 
 One possible layout is:
 
 ```text
-<workspace>/
+<topic-workspace>/
   agents/
     <agent-instance-id>/
       README.md
@@ -143,15 +184,15 @@ The Topic Agent Team Profile is concrete enough for the user to review, edit, ap
 
 The Operator control loop manages the user-facing research loop:
 
-1. Read the Project Manifest and active Research Thread or Isomer Workspace.
-2. Load the research goal, context, and constraints.
+1. Read the Project Manifest and active Research Topic, Research Inquiry, or Topic Workspace.
+2. Load the research topic, inquiry question, context, and constraints.
 3. Specialize or load a Topic Agent Team Profile and workflow.
 4. Ask the user to approve or edit the Topic Agent Team Profile and workflow.
 5. Launch an Agent Team Instance when delegation is needed, then dispatch bounded work to delegated Agent Instances.
 6. Record outputs, prompts, tool calls, Evidence Items, Decision Records, and state transitions.
 7. Generate or update View Manifests.
 8. Return to the user for irreversible or claim-shaping decisions.
-9. Continue, create Research Branches, pause, archive, or finalize according to recorded decisions.
+9. Continue, create Research Inquiries or Inquiry Relationships, pause, archive, or finalize according to recorded decisions.
 
 The Operator Agent should prefer bounded turns and durable state over long live sessions. Recovery should use persisted state, handoffs, Gates, and Run records instead of relying on in-memory conversation state.
 
@@ -205,11 +246,12 @@ The GUI must tolerate View Manifest version mismatches, missing Artifacts, unava
 
 The first SQLite schema should stay compact and implementation-focused. It should include these entity families:
 
-- `workspace`: workspace id, schema version, root path, research task id, task handler id, selected topic agent team profile id, selected agent team instance id, status, created time, updated time
-- `workspace_runtime`: workspace id, runtime schema version, state db path, support directory refs, validation status, updated time
-- `research_thread`: thread id, research goal ref, goal kind, lifecycle state, active research branch id, created time, updated time
-- `research_branch`: branch id, research thread id, parent branch id, status, hypothesis ref, created time, updated time
-- `research_task`: research task id, research thread id, research branch id when applicable, workspace id, task handler id, selected topic agent team profile id, selected agent team instance id, status, summary ref
+- `topic_workspace`: topic workspace id, schema version, root path, research topic id, selected topic agent team profile refs, selected agent team instance refs, status, created time, updated time
+- `workspace_runtime`: topic workspace id, runtime schema version, state db path, support directory refs, validation status, updated time
+- `research_topic`: topic id, topic statement ref, optional measurable objective refs, selected topic agent team profile refs, lifecycle state, created time, updated time
+- `research_inquiry`: inquiry id, research topic id, question ref, lifecycle state, status, created time, updated time
+- `research_inquiry_relationship`: relationship id, research topic id, from inquiry id, to inquiry id, relation type, rationale ref, status, created time, updated time
+- `research_task`: research task id, research topic id, research inquiry id, topic workspace id, task handler id, participating agent instance refs, selected topic agent team profile id, selected agent team instance id, status, summary ref
 - `domain_agent_team_template`: template id, research field, method family, source path, status, compatibility version
 - `topic_agent_team_profile`: profile id, template id, research topic ref, source path, specialization refs, status, approved flag
 - `agent_team_instance`: instance id, profile id, source path, runtime refs, status, active flag
@@ -218,29 +260,29 @@ The first SQLite schema should stay compact and implementation-focused. It shoul
 - `coordination_policy`: policy id, domain agent team template id or topic agent team profile id or agent team instance id, communication mode, handoff rules ref, review rules ref, escalation rules ref
 - `capability_binding`: binding id, domain agent team template id or topic agent team profile id or agent team instance id, agent role id or agent profile id, capability kind, capability ref, scope
 - `workflow_stage`: stage id, domain agent team template id or topic agent team profile id or agent team instance id, ordinal, owner agent role id, gate policy
-- `run`: run id, workspace id, research task id, research thread id, research branch id, task handler id, topic agent team profile id, agent team instance id, status, current stage, started time, finished time
+- `run`: run id, topic workspace id, research task id, research topic id, research inquiry id, task handler id, topic agent team profile id, agent team instance id, status, current stage, started time, finished time
 - `handoff`: handoff id, run id, from agent role id, to agent role id, stage id, status, attempt count, due time
 - `agent_instance`: agent instance id, agent profile id, agent team instance id, run id, agent role id, execution adapter id, provider instance ref, status
-- `agent_workspace`: agent workspace id, workspace id, agent team instance id, run id, agent role id, agent instance id, root path, status, boundary ref
+- `agent_workspace`: agent workspace id, topic workspace id, agent team instance id, run id, agent role id, agent instance id, root path, status, boundary ref
 - `agent_runtime`: agent runtime id, agent workspace id, run id, status, prompt refs, tool trace refs, log path
 - `workspace_boundary`: boundary id, agent workspace id, declaration path, readable path rules, owner write path rules, advisory flag
-- `artifact`: artifact id, workspace id, owner agent workspace id when applicable, kind, path, content type, producing run or stage, promotion state
+- `artifact`: artifact id, topic workspace id, owner agent workspace id when applicable, kind, path, content type, producing run or stage, promotion state
 - `decision_record`: decision id, run id, stage id, kind, selected option, rationale artifact ref, user gate flag
 - `gate`: gate id, run id, decision id, status, required actor, consequence summary
 - `prompt_record`: prompt id, run id, agent role id, agent instance id, path, model or runner ref
 - `tool_call_record`: tool call id, run id, agent role id, agent instance id, tool name, input ref, output ref, status
 - `research_claim`: claim id, run id, status, text ref
-- `evidence_item`: evidence id, workspace id, source kind, source ref, summary ref
+- `evidence_item`: evidence id, topic workspace id, source kind, source ref, summary ref
 - `claim_evidence_link`: link id, claim id, evidence id, relation, resolved flag
-- `finding`: finding id, research thread id, status, summary ref, primary evidence id
-- `view_manifest`: view id, workspace id, path, schema version, component refs, layout spec refs, status
+- `finding`: finding id, research inquiry id, status, summary ref, primary evidence id
+- `view_manifest`: view id, topic workspace id, path, schema version, component refs, layout spec refs, status
 - `gui_component`: component id, project id, source path, manifest path, component kind, registration source, dependency refs, build output ref, sandbox policy, producer agent instance id, approval state, compatibility version, status
-- `gui_component_instance`: instance id, component id, project id, workspace id, run id, view id, render payload id, layout slot id, visible state ref, lifecycle status
+- `gui_component_instance`: instance id, component id, project id, topic workspace id, run id, view id, render payload id, layout slot id, visible state ref, lifecycle status
 - `gui_component_approval_policy`: project id, approve-all flag, enabled by actor id, enabled time, revoked time, status
-- `gui_runtime_state`: runtime state id, project id, workspace id, session id, active view id, layout spec id, component instance refs, filter state ref, selection state ref, connection status, updated time
-- `gui_layout_spec`: layout spec id, project id, workspace id, path or inline ref, schema version, component instance refs, status
-- `ag_ui_render_payload`: payload id, project id, workspace id, run id, publisher agent instance id, component hint, data refs, schema refs, layout spec refs, payload ref when explicitly retained, status
-- `ag_ui_event_envelope`: envelope id, project id, workspace id, run id, agent team instance id, agent instance id, component id, artifact refs, timestamp, status, retention policy, payload ref when explicitly retained
+- `gui_runtime_state`: runtime state id, project id, topic workspace id, session id, active view id, layout spec id, component instance refs, filter state ref, selection state ref, connection status, updated time
+- `gui_layout_spec`: layout spec id, project id, topic workspace id, path or inline ref, schema version, component instance refs, status
+- `ag_ui_render_payload`: payload id, project id, topic workspace id, run id, publisher agent instance id, component hint, data refs, schema refs, layout spec refs, payload ref when explicitly retained, status
+- `ag_ui_event_envelope`: envelope id, project id, topic workspace id, run id, agent team instance id, agent instance id, component id, artifact refs, timestamp, status, retention policy, payload ref when explicitly retained
 
 Rich content should stay outside SQLite unless it is a short label, status, id, path, timestamp, or scalar value needed for validation and scheduling.
 
@@ -250,7 +292,7 @@ Rich content should stay outside SQLite unless it is a short label, status, id, 
 User goal and context
         |
         v
-.isomer-labs/manifest.toml resolves Research Thread, Isomer Workspace, Topic Agent Team Profile, and GUI registry
+.isomer-labs/manifest.toml resolves Research Topic, Research Inquiry, Topic Workspace, Topic Agent Team Profile, and GUI registry
         |
         v
 Operator Agent loads Workspace Runtime state and specializes or selects a Topic Agent Team Profile
@@ -294,12 +336,12 @@ GUI Backend and Renderer show View Manifests, layout, AG-UI Render Payload updat
 User actions return through the Operator Agent
         |
         v
-User steers, creates Research Branches, pauses, archives, or continues
+User steers, creates Research Inquiries or Inquiry Relationships, pauses, archives, or continues
 ```
 
 ## Error Handling & Edge Cases
 
-Project Manifest validation must catch invalid workspace references before the engine opens an Isomer Workspace. Workspace paths should be relative to the project root unless the project explicitly allows another rule. Paths outside the project root should be rejected by default.
+Project Manifest validation must catch invalid workspace references before the engine opens a Topic Workspace. Workspace paths should be relative to the project root unless the project explicitly allows another rule. Paths outside the project root should be rejected by default.
 
 State migrations must be explicit. If a workspace schema is too old or too new, the engine should stop with a clear message rather than partially opening it.
 
@@ -323,7 +365,7 @@ Direct AG-UI Event Batches from unknown publishers, malformed AG-UI Render Paylo
 
 Invalid GUI Layout Specs should fail before the GUI Renderer applies them. Unknown component instance refs, unregistered component ids, unsupported layout schema versions, conflicting slot ids, or non-JSON executable layout content should surface as GUI issues and Operator Agent notifications.
 
-GUI Backend API calls should be authenticated and scoped to a Project, Isomer Workspace, Run, Agent Team Instance, Agent Instance, or Operator Agent as appropriate. An API call that updates GUI Runtime State must not bypass Gate resolution or mutate canonical research state directly.
+GUI Backend API calls should be authenticated and scoped to a Project, Topic Workspace, Run, Agent Team Instance, Agent Instance, or Operator Agent as appropriate. An API call that updates GUI Runtime State must not bypass Gate resolution or mutate canonical research state directly.
 
 Full AG-UI payload retention should be disabled by default. If a user explicitly enables it, the retention posture should be visible through the Operator Agent and GUI because payloads can contain sensitive research context or bulky generated UI data.
 
@@ -332,9 +374,10 @@ Full AG-UI payload retention should be disabled by default. If a user explicitly
 Early tests should focus on contracts that will be expensive to change later:
 
 - manifest parsing and path normalization
-- Isomer Workspace discovery from `.isomer-labs/manifest.toml`
+- Topic Workspace discovery from `.isomer-labs/manifest.toml`
 - Workspace Runtime creation, schema versioning, and support directory validation
-- Research Thread lifecycle state and Research Task to Isomer Workspace binding
+- Research Topic to Topic Workspace binding plus Research Inquiry and Research Task lifecycle state
+- topic-level parallel execution across Agent Team Instances and task-level parallel execution across Agent Instances
 - rejection of workspace paths outside the project root
 - Domain Agent Team Template and Topic Agent Team Profile validation for Agent Roles, Workflow Stages, Coordination Policy, Capability Bindings, and required topic specialization
 - Domain Agent Team Template specialization into Topic Agent Team Profile records
@@ -351,17 +394,19 @@ Early tests should focus on contracts that will be expensive to change later:
 - GUI Layout Spec validation and component-instance layout resolution
 - GUI Component Registry validation, executable component approval, and approve-all revocation behavior
 - AG-UI Render Payload routing, component resolution, GUI Runtime State updates, GUI Backend API authorization, AG-UI Event Envelope persistence, payload-retention opt-in behavior, and publisher authentication
-- end-to-end creation of a minimal Isomer Workspace, Research Thread, Topic Agent Team Profile, Agent Team Instance, Run, Artifact, Gate, and View Manifest
+- end-to-end creation of a minimal Topic Workspace, Research Topic, Research Inquiry, Topic Agent Team Profile, Agent Team Instance, Run, Artifact, Gate, and View Manifest
 
 These tests can start with `unittest` under `tests/unit/`, with filesystem and SQLite checks promoted to `tests/integration/` when needed.
 
 ## Key Constraints
 
 - Project state discovery starts from `.isomer-labs/manifest.toml`.
-- Research Threads are the user-facing research lifecycle concept.
-- Isomer Workspaces are project-local directories referenced by the Project Manifest.
-- Each Isomer Workspace is scoped to one Research Task and records a task handler.
-- Isomer Workspaces do not contain a workspace-local `teams/` directory.
+- Research Topics are root research problems or investigation intents; Research Inquiries are questions under a topic.
+- Research Inquiry is not a parallel execution scope.
+- Topic Workspaces are project-local directories referenced by the Project Manifest.
+- Each Topic Workspace is scoped to one Research Topic; Research Tasks inside it record task handlers.
+- Topic-level parallel execution uses multiple Agent Team Instances under one Research Topic; task-level parallel execution distributes one Research Task across multiple Agent Instances inside one selected Agent Team Instance.
+- Topic Workspaces do not contain a workspace-local `teams/` directory.
 - Domain Agent Team Templates are reusable research-field method templates.
 - Topic Agent Team Profiles are topic-level specializations of Domain Agent Team Templates, and they are not running teams.
 - Agent Team Instances are runtime teams created from Topic Agent Team Profiles.
@@ -390,11 +435,11 @@ These tests can start with `unittest` under `tests/unit/`, with filesystem and S
 ## Open Questions
 
 - Exact TOML schema for `.isomer-labs/manifest.toml`.
-- Exact Isomer Workspace directory layout.
+- Exact Topic Workspace directory layout.
 - Initial Domain Agent Team Template, Topic Agent Team Profile, and Agent Team Instance file formats.
 - Initial View Manifest schema and supported view types.
 - GUI Component Registry schema, GUI Runtime State schema, GUI Layout Spec schema, and Executable GUI Component sandbox contract.
 - AG-UI Render Payload contract, AG-UI Event Envelope schema, and payload-retention controls.
 - Migration command shape and schema-version policy.
-- Exact representation for selected Topic Agent Team Profile refs, selected Agent Team Instance refs, task-handler refs, and Research Task ids inside Project Manifest and Workspace Runtime.
+- Exact representation for selected Topic Agent Team Profile refs, selected Agent Team Instance refs, task-handler refs, participating Agent Instance refs, and Research Task ids inside Project Manifest and Workspace Runtime.
 - How much DeepScientist skill and artifact structure should be adapted into initial workspace templates.

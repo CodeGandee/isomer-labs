@@ -4,7 +4,7 @@ Use this reference when choosing how implementation work should proceed after a 
 
 ## Brief-Only
 
-Use no-code candidate briefs when the direction is underspecified, multiple distinct directions still need ranking, or a new Research Branch should not be promoted yet.
+Use no-code candidate briefs when the direction is underspecified, multiple distinct directions still need ranking, or a new Research Inquiry Relationship should not be promoted yet.
 
 ## Stepwise Generation
 

@@ -103,4 +103,4 @@ Bad:
 
 - skipping durable slice recording for a real launched supplementary run and calling it a read-only audit afterward
 
-Use `[[tbd-surface:path-agent-workspace]]` when the assigned execution surface layout is unsettled.
+Use Agent Workspace resolved by Workspace Path Resolution for assigned execution surfaces.

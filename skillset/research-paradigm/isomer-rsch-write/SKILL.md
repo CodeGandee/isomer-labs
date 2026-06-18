@@ -68,4 +68,4 @@ Read references as needed:
 - Do not put operator instructions, route history, local execution shorthand, source runtime wording, or draft scaffolding into manuscript prose.
 - Do not treat compile success, section count, display count, or bundle existence as manuscript quality.
 - Do not use polishing as a substitute for missing baselines, missing analysis, weak novelty, or collapsed publishability.
-- Do not import venue templates or write into a concrete paper layout unless that surface is provided by the user or resolved by `[[tbd-surface:path-paper-layout]]`.
+- Do not import venue templates or write into a concrete paper layout unless that surface is provided by the user or resolved as a paper Artifact through Workspace Path Resolution.

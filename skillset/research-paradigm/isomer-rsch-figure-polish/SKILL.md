@@ -53,7 +53,7 @@ Read references as needed:
 
 ## Durable Outputs
 
-- Final figure exports under `[[tbd-surface:path-figure-output]]`.
+- Final figure exports as figure output Artifacts resolved by Workspace Path Resolution.
 - Source plotting Artifact or generation path.
 - Visual inspection note and self-review delta.
 - Linked Evidence Item, Research Claim, report section, reviewer item, Decision Record, Gate, or Provenance Record through `[[tbd-surface:api-artifact-record]]`.

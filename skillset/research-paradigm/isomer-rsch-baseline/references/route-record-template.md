@@ -26,7 +26,7 @@ Keep it short for attach, import, or local verification. Expand only when the ro
 
 ## Execution Choice
 
-- Isomer Workspace or Agent Workspace:
+- Topic Workspace or Agent Workspace:
 - Capability Binding or Execution Adapter:
 - evaluation path, procedure, or trusted-output source:
 - expected outputs:

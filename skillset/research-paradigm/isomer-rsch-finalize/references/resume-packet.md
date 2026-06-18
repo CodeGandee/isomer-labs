@@ -1,12 +1,12 @@
 # Resume Packet
 
-Use this reference when the Research Thread is pausing, parking, publishing with follow-up, or otherwise needs a compact restart path.
+Use this reference when the Research Inquiry is pausing, parking, publishing with follow-up, or otherwise needs a compact restart path.
 
 ## Recommended Structure
 
 ### 1. Current State
 
-- Research Goal:
+- Research Topic:
 - present Workflow Stage:
 - final recommendation at pause time:
 - closure state: stop | park | publish | archive | continue later | new loop

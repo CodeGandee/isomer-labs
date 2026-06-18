@@ -7,7 +7,7 @@ Canonical domain language for the manifested workspace engine design. These term
 ### Project and Workspace
 
 **Project**:
-A user-owned repository, checkout, or directory tree that Isomer Labs manages. A Project becomes Isomer-managed when it has a `.isomer-labs/` Project Config Directory and a Project Manifest that declares Isomer Workspaces.
+A user-owned repository, checkout, or directory tree that Isomer Labs manages. A Project becomes Isomer-managed when it has a `.isomer-labs/` Project Config Directory and a Project Manifest that declares Topic Workspaces.
 _Avoid_: Quest root, system-owned workspace, platform directory
 
 **Project Config Directory**:
@@ -15,33 +15,34 @@ The `.isomer-labs/` directory at the project root. It stores project-level confi
 _Avoid_: Control directory, control-plane directory, workspace root, hidden workspace
 
 **Project Manifest**:
-The `.isomer-labs/manifest.toml` file. It is the discovery authority for Isomer Workspaces, active workspace selection, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, and project-scope GUI component registry references.
+The `.isomer-labs/manifest.toml` file. It is the discovery authority for Topic Workspaces, active topic workspace selection, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, and project-scope GUI component registry references.
 _Avoid_: Workspace index, quest registry, config blob
 
-**Isomer Workspace**:
-A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Task. It owns a Workspace Runtime, rich research Artifacts, generated View Manifests, Run records, and logs. It records the task handler: the Operator Agent or a delegated Agent Instance from a selected Agent Team Instance. It references the selected Topic Agent Team Profile and any Agent Team Instance created from it, but it does not contain a workspace-local `teams/` directory.
-_Avoid_: Quest, quest workspace, run directory, system workspace
+**Topic Workspace**:
+A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs. It references selected Topic Agent Team Profiles and Agent Team Instances used for the topic, but it does not contain a workspace-local `teams/` directory.
+_Avoid_: Isomer Workspace, quest, quest workspace, run directory, task workspace, system workspace
 
 **Workspace Runtime**:
-The persistent runtime substrate inside an Isomer Workspace. It includes `state.sqlite`, schema version, runtime directories, refs, validation state, and support files that let many Runs be recorded, resumed, inspected, and validated.
+The persistent runtime substrate inside a Topic Workspace. It includes `state.sqlite`, schema version, runtime directories, refs, validation state, and support files that let Research Inquiries, Research Tasks, Runs, Artifacts, handoffs, Gates, and View Manifests be recorded, resumed, inspected, and validated.
 _Avoid_: Run, execution episode, quest state, hidden runtime, project config
 
 ### Workspace Taxonomy
 
 Use **workspace** only for the two filesystem work areas that Isomer manages directly:
 
-- **Isomer Workspace**: the research-level work area declared by the Project Manifest.
-- **Agent Workspace**: the per-agent work area inside an Isomer Workspace.
+- **Topic Workspace**: the topic-level work area declared by the Project Manifest.
+- **Agent Workspace**: the per-agent work area inside a Topic Workspace.
 
 Other space-like terms have narrower meanings:
 
-- **Project** is the outer user-owned repository, checkout, or directory tree. It is not an Isomer Workspace.
+- **Project** is the outer user-owned repository, checkout, or directory tree. It is not a Topic Workspace.
 - **Project Config Directory** is `.isomer-labs/`. It is configuration and discovery state, not a workspace.
-- **Workspace Runtime** is persistent runtime state inside an Isomer Workspace, not a separate workspace.
+- **Workspace Runtime** is persistent runtime state inside a Topic Workspace, not a separate workspace.
 - **Agent Runtime** is runtime state inside an Agent Workspace, not a separate workspace.
 - **Workspace Boundary** is an advisory ownership and peer-read declaration for an Agent Workspace, not a filesystem-enforced space.
-- **Research Thread** is the user-facing research lifecycle object. It can span many Isomer Workspaces, but it is not itself a workspace.
-- **Research Task** is the bounded unit of work handled by the Operator Agent or by one delegated Agent Instance from an Agent Team Instance in one Isomer Workspace. It is not a workspace.
+- **Research Topic** is the root research problem or investigation intent that initiates work and topic-level team specialization. It is not a workspace.
+- **Research Inquiry** is a question or line of inquiry under a Research Topic. It is recorded inside the topic's Topic Workspace, but it is not itself a workspace.
+- **Research Task** is the bounded unit of work handled by the Operator Agent or by one delegated Agent Instance from an Agent Team Instance inside one Topic Workspace. It is not a workspace.
 - **Run** is a bounded execution episode recorded through Workspace Runtime, not a workspace.
 
 The containment relationship is:
@@ -55,50 +56,45 @@ Project
     Agent Team Instance refs
     Operator Agent configuration
     GUI Component Registry references
-  Isomer Workspace(s), declared by the Project Manifest
-    one Research Task
-    one task handler: Operator Agent or delegated Agent Team Instance member
-    optional selected Topic Agent Team Profile reference
-    optional selected Agent Team Instance reference after launch
-    Workspace Runtime
-    Agent Workspace(s), created for Agent Instances during team execution
-      Agent Runtime
-      Workspace Boundary
+  Research Topic(s)
+    Topic Workspace, declared by the Project Manifest
+      Workspace Runtime
+      Research Inquiry graph
+        Research Task(s)
+      Agent Workspace(s), created for Agent Instances during team execution
+        Agent Runtime
+        Workspace Boundary
 ```
 
 ### Research Lifecycle
 
-**Research Thread**:
-A user-facing line of inquiry within a Project. A Research Thread has a Research Goal, lifecycle state, Decision Records, Artifacts, Research Branches, Research Tasks, and one or more Runs. Its work can be distributed across multiple Isomer Workspaces.
-_Avoid_: Quest, project, workspace, run
-
-**Research Goal**:
-The user-facing intent for a Research Thread. A Research Goal can be measurable or exploratory; it does not need to include a numeric target.
-_Avoid_: Objective as the umbrella term, task prompt, assignment
+**Research Topic**:
+The root research problem or investigation intent that initiates an investigation, such as "Why is CUDA kernel A faster than kernel B?" A Research Topic frames user intent, Project context, constraints, optional Measurable Objectives, and the Topic Agent Team Profile specialization used to investigate it.
+_Avoid_: Research Goal, Research Inquiry, Research Task, project, workspace
 
 **Measurable Objective**:
-A Research Goal kind with a metric, target, or optimization direction, such as improving performance by a fixed percentage or improving it as much as possible.
-_Avoid_: Research goal as if all goals are measurable, benchmark only
+An optional metric, target, tolerance, or optimization direction contained by a Research Topic. A Research Topic can have zero, one, or many Measurable Objectives, and a measurable objective does not make the topic non-exploratory.
+_Avoid_: Goal kind, exclusive measurable goal, benchmark only
 
-**Exploratory Goal**:
-A Research Goal kind focused on understanding, explanation, discovery, or factor identification, such as figuring out how a system works or identifying critical factors that affect performance.
-_Avoid_: Vague goal, non-measurable objective
+**Research Inquiry**:
+A question or line of inquiry under a Research Topic, produced by the user, Operator Agent, or Agent Team Instance to work out the topic. A Research Inquiry can have lifecycle state, Decision Records, Artifacts, Inquiry Relationships, Research Tasks, and one or more Runs through those tasks. It is not a parallel execution scope.
+_Avoid_: Research Topic, Research Task, Research Branch, parallel execution scope, quest, project, workspace, run
 
-**Research Branch**:
-A forked line of work inside a Research Thread. A Research Branch can carry its own hypothesis, Research Tasks, Artifacts, Runs, Evidence Items, Research Claims, Findings, and Decision Records.
-_Avoid_: Route, experiment route, path, Git branch unless referring to an actual Git branch
+**Research Inquiry Relationship**:
+A typed connection between Research Inquiries under a Research Topic, such as decomposes, follows from, contradicts, supports, blocks, supersedes, or alternative to. Inquiry relationships form an exploration graph and do not imply that inquiry must be represented as a tree.
+_Avoid_: Research Branch, route, experiment route, path, Git branch unless referring to an actual Git branch
 
 **Research Task**:
-A bounded unit of research work inside one Isomer Workspace. A Research Task belongs to a Research Thread or Research Branch, has expected inputs and outputs, names a task handler, and can be attempted through one or more Runs. The task handler can be the Operator Agent or a delegated Agent Instance from an Agent Team Instance.
-_Avoid_: Task Scope, Isomer Workspace, Run, Workflow Stage, general to-do item
+A bounded development, setup, experiment, analysis, writing, or operational action inside a Topic Workspace that helps answer a Research Inquiry. A Research Task belongs to one Research Inquiry and one Research Topic, has expected inputs and outputs, names an accountable task handler, and can be attempted through one or more Runs. The task handler can be the Operator Agent or a delegated Agent Instance from an Agent Team Instance. For task-level parallel execution, a Research Task can also record multiple participating Agent Instances from the selected Agent Team Instance.
+_Avoid_: Task Scope, Topic Workspace, Run, Workflow Stage, task workspace, general to-do item
 
 **Run**:
 A bounded execution attempt for one Research Task. A Run has its own lifecycle, status, actor participation, prompts, tool calls, handoffs, outputs, and logs; its records are stored through the Workspace Runtime.
-_Avoid_: Research task, research thread, workspace, quest
+_Avoid_: Research task, research inquiry, workspace, quest
 
 **Control Mode**:
 A Run-level setting that defines whether the Operator Agent controls the Run automatically or manually. In `automatic` mode, the Operator Agent or scheduler may dispatch according to the approved workflow and Gate policy. In `manual` mode, the Operator Agent drives selected task Agent Instances or Service Agent Instances through direct manual handoffs according to the user's prompt scope.
-_Avoid_: Project mode, Research Thread mode, global manual switch, handoff-only mode
+_Avoid_: Project mode, Research Inquiry mode, global manual switch, handoff-only mode
 
 **Manual Mode**:
 A Control Mode for a Run where the Operator Agent sends direct messages to delegated task Agent Instances or Service Agent Instances through durable handoffs, watches configured completion signals, and records completion in Workspace Runtime. Manual Mode does not bypass Gates, and it does not make file creation, channel replies, or direct inspection authoritative without Operator Agent normalization.
@@ -115,19 +111,23 @@ A topic-level specialization of one Domain Agent Team Template for a user's rese
 _Avoid_: Domain Agent Team Template, Agent Team Instance, Run, live team, ad hoc role list
 
 **Agent Team Instance**:
-A concrete runtime team created from a Topic Agent Team Profile by the Operator Agent or Execution Adapter. It has launched Agent Instances, runtime refs, Agent Workspaces, and Run participation; Isomer Workspaces reference Agent Team Instances when a Research Task is delegated to the running team.
+A concrete runtime team created from a Topic Agent Team Profile by the Operator Agent or Execution Adapter. It has launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. Topic Workspaces can reference multiple Agent Team Instances when the user runs topic-level parallel execution.
 _Avoid_: Domain Agent Team Template, Topic Agent Team Profile, workspace-local team, ad hoc role list
+
+**Parallel Execution Scope**:
+The approved level where the user or Operator Agent starts concurrent execution. Topic-level parallel execution runs different Agent Team Instances under one Research Topic, usually to compare team profiles, strategies, or independent inquiry paths. Task-level parallel execution distributes one Research Task across multiple Agent Instances inside the selected Agent Team Instance. Research Inquiry is not a parallel execution scope.
+_Avoid_: Research Inquiry parallelism, branch-level parallelism, implicit parallelism without a recorded scope
 
 **Agent Team**:
 An umbrella phrase for a multi-agent structure. Use **Domain Agent Team Template** for the research-field method, **Topic Agent Team Profile** for the user's topic-level specialization, and **Agent Team Instance** for the runtime team. Avoid using **Agent Team** alone in schema names, manifest fields, or GUI labels when template, profile, or instance is the intended meaning.
 _Avoid_: Provider-specific specialist group, prompt bundle, full execution graph, role list only, concrete team when template, profile, or instance is meant
 
 **Service Team**:
-A built-in Isomer operational support team that provides common helper work for Projects, Isomer Workspaces, Runs, Agent Workspaces, and Agent Instances. The Service Team can configure development environments for a target Agent Workspace and tech stack, repair dependency, runtime, tool, or system compatibility issues, collect diagnostics, and write support Artifacts. Service Team members act at the command of the Operator Agent through specific Service Requests. The Service Team is not a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance, and it does not own Research Goals, Research Claims, Gates, or research decisions.
+A built-in Isomer operational support team that provides common helper work for Projects, Topic Workspaces, Runs, Agent Workspaces, and Agent Instances. The Service Team can configure development environments for a target Agent Workspace and tech stack, repair dependency, runtime, tool, or system compatibility issues, collect diagnostics, and write support Artifacts. Service Team members act at the command of the Operator Agent through specific Service Requests. The Service Team is not a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance, and it does not own Research Topics, Research Claims, Gates, or research decisions.
 _Avoid_: Research Agent Team, Topic Agent Team Profile, Agent Team Instance, hidden Execution Adapter behavior, untracked sysadmin work
 
 **Service Request**:
-A bounded operational support command from the Operator Agent to the Service Team. A Service Request names the supported Project, Isomer Workspace, Run, Agent Workspace, Agent Instance, or tech-stack scope; specific task; expected support output; authorization scope; Service Dispatch Form; and completion observation rules. A Service Request can support a Research Task or Run, but it is not itself a Research Task or Workflow Stage.
+A bounded operational support command from the Operator Agent to the Service Team. A Service Request names the supported Project, Topic Workspace, Run, Agent Workspace, Agent Instance, or tech-stack scope; specific task; expected support output; authorization scope; Service Dispatch Form; and completion observation rules. A Service Request can support a Research Task or Run, but it is not itself a Research Task or Workflow Stage.
 _Avoid_: Research Task, Workflow Stage, untracked support chat, generic ticket without Isomer provenance
 
 **Service Dispatch Form**:
@@ -181,7 +181,7 @@ _Avoid_: Owning workspace, task type, unmanaged worker
 ### Agent Workspace and Collaboration
 
 **Agent Workspace**:
-A per-agent work area inside an Isomer Workspace assigned to one Agent Instance for owned scratch files, local runtime state, logs, and Agent Artifacts. It is an advisory ownership boundary: Isomer records and documents expected access, but does not provide filesystem-grade access control.
+A per-agent work area inside a Topic Workspace assigned to one Agent Instance for owned scratch files, local runtime state, logs, and Agent Artifacts. It is an advisory ownership boundary: Isomer records and documents expected access, but does not provide filesystem-grade access control.
 _Avoid_: Private sandbox, secure workspace, role directory as a generic term
 
 **Agent Runtime**:
@@ -207,7 +207,7 @@ A durable file or file-backed output produced or used during research work, such
 _Avoid_: Blob, attachment, output only
 
 **Research Claim**:
-A statement made by a Research Thread that may need support, contradiction handling, or withdrawal. A Research Claim can be open, supported, refuted, or withdrawn.
+A statement made inside a Research Topic or Research Inquiry that may need support, contradiction handling, or withdrawal. A Research Claim can be open, supported, refuted, or withdrawn.
 _Avoid_: Assertion, conclusion as an unsupported statement, finding
 
 **Evidence Item**:
@@ -289,7 +289,7 @@ A live protocol batch published to the GUI Backend by the Operator Agent or an a
 _Avoid_: View Manifest, Artifact, Provenance Record, durable state transition
 
 **AG-UI Event Envelope**:
-The durable metadata record for an AG-UI Event Batch. The envelope stores publisher identity, Project, Isomer Workspace, Run, Agent Team Instance, Agent Instance, component id, Artifact refs, timestamps, status, and retention policy. The envelope is persisted by default, while full event payload content is saved only by explicit user instruction.
+The durable metadata record for an AG-UI Event Batch. The envelope stores publisher identity, Project, Topic Workspace, Run, Agent Team Instance, Agent Instance, component id, Artifact refs, timestamps, status, and retention policy. The envelope is persisted by default, while full event payload content is saved only by explicit user instruction.
 _Avoid_: Full event replay by default, prompt log, canonical artifact content
 
 **GUI Component Approve-All Policy**:
@@ -297,7 +297,7 @@ A project-scoped approval posture that the human user enables through the Operat
 _Avoid_: Session-only approval, workspace-only approval, bypassing validation
 
 **GUI Runtime State**:
-The GUI Backend-owned live state for a browser GUI session or project GUI session. It includes active workspace and view selection, GUI Component Instances, AG-UI Render Payload refs, layout state, filters, selections, expanded panels, pending visual updates, and connection status. It can be changed through GUI Backend APIs and reflected immediately by the GUI Renderer. It is not canonical research state unless converted into an Artifact, View Manifest, Decision Record, or Provenance Record.
+The GUI Backend-owned live state for a browser GUI session or project GUI session. It includes active Topic Workspace and view selection, GUI Component Instances, AG-UI Render Payload refs, layout state, filters, selections, expanded panels, pending visual updates, and connection status. It can be changed through GUI Backend APIs and reflected immediately by the GUI Renderer. It is not canonical research state unless converted into an Artifact, View Manifest, Decision Record, or Provenance Record.
 _Avoid_: Workspace Runtime, research state, durable artifact, browser-only state
 
 **GUI Backend API**:
@@ -315,23 +315,22 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use `project_root` for the root path of the user-owned Project.
 - Use `project_config_dir` for `.isomer-labs/`.
 - Use `project_manifest` for `.isomer-labs/manifest.toml`.
-- Use `isomer_workspace` for a manifest-declared workspace.
-- Use `research_task` for the bounded work handled in one Isomer Workspace.
+- Use `topic_workspace` for a manifest-declared topic-level workspace.
+- Use `topic_workspace_id` for references to the Topic Workspace that owns topic runtime state and files.
+- Use `research_task` for bounded work recorded inside one Topic Workspace.
 - Use `task_handler` for the Operator Agent or delegated Agent Team Instance member responsible for a Research Task.
 - Use `workspace_runtime` for the persistent workspace substrate that stores and validates state across many Runs.
-- Use `agent_workspace` only for a per-agent work area inside an Isomer Workspace.
-- Avoid bare `workspace` when the scope could mean Project, Isomer Workspace, or Agent Workspace.
+- Use `agent_workspace` only for a per-agent work area inside a Topic Workspace.
+- Avoid bare `workspace` when the scope could mean Project, Topic Workspace, or Agent Workspace.
 
 ### Research Lifecycle
 
-- Use `research_thread` for a user-facing line of inquiry.
-- Use `research_goal` for the user-facing intent attached to a Research Thread.
-- Use `goal_kind` for the distinction between `measurable_objective` and `exploratory_goal`.
-- Use `measurable_objective` only for Research Goals with metrics, targets, or optimization direction.
-- Use `exploratory_goal` for Research Goals centered on understanding, explanation, discovery, or factor identification.
-- Use `research_branch` for a forked line of work inside a Research Thread.
-- Use `active_research_branch_id` for the active Research Branch pointer.
-- Use `research_task_id` for the Research Task realized by an Isomer Workspace.
+- Use `research_topic` for the root research problem or investigation intent that initiates work and topic-level team specialization.
+- Use `research_inquiry` for a user-facing line of inquiry.
+- Use `measurable_objective` for optional metric, target, tolerance, or optimization-direction fields contained by a Research Topic.
+- Use `inquiry_relationship` or `research_inquiry_relationship` for typed graph links between Research Inquiries.
+- Use `research_task_id` for a bounded work item recorded inside a Topic Workspace.
+- Use `parallel_execution_scope` for the approved level of concurrent execution; valid values are Research Topic and Research Task, not Research Inquiry.
 - Use `run` for one bounded execution episode recorded in Workspace Runtime.
 - Use `control_mode` for the Run-level distinction between `automatic` and `manual`.
 - Use `prompt_scope_kind` for the Manual Mode distinction between `single_stage` and `multi_step`.
@@ -346,7 +345,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 ### Agent Workspace and Collaboration
 
-- Use `agent_workspace` for a per-agent work area inside an Isomer Workspace.
+- Use `agent_workspace` for a per-agent work area inside a Topic Workspace.
 - Use `agent_runtime` for execution state and support files scoped to one Agent Workspace.
 - Use `agent_artifact` when an Artifact's producing or owning agent matters.
 - Use `workspace_boundary` for advisory ownership and readable-surface declarations.
@@ -381,29 +380,33 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 ### Project and Research Lifecycle
 
 - A **Project** has one **Project Config Directory**.
-- A **Project** is the outer container and is not an **Isomer Workspace**.
+- A **Project** is the outer container and is not a **Topic Workspace**.
 - A **Project Config Directory** contains one **Project Manifest**.
 - A **Project Config Directory** is config and discovery state; it does not own **Workspace Runtime** or research **Artifacts**.
-- A **Project Manifest** declares zero or more **Isomer Workspaces**.
-- A **Project** contains zero or more **Research Threads**.
-- A **Research Thread** has one **Research Goal**.
-- A **Research Goal** has a goal kind: **Measurable Objective** or **Exploratory Goal**.
-- A **Research Thread** contains zero or more **Research Branches**.
-- A **Research Branch** belongs to one **Research Thread**.
-- A **Research Thread** can span one or more **Research Tasks**.
-- A **Research Task** belongs to one **Research Thread** or **Research Branch**.
-- An **Isomer Workspace** realizes exactly one **Research Task**.
-- A **Research Task** records one **Task Handler**: the **Operator Agent** or a delegated **Agent Instance** from a selected **Agent Team Instance**.
+- A **Project Manifest** declares zero or more **Topic Workspaces**.
+- A **Project** contains zero or more **Research Topics**.
+- A **Research Topic** has zero or one active **Topic Workspace** at a time, and may have historical Topic Workspaces after migration, archive, or fork operations.
+- A **Topic Workspace** belongs to one **Research Topic**.
+- A **Research Topic** contains zero or more **Measurable Objectives**.
+- A **Research Topic** can be exploratory whether or not it contains Measurable Objectives.
+- A **Research Topic** contains a graph of zero or more **Research Inquiries**.
+- A **Research Inquiry** belongs to one **Research Topic**.
+- A **Research Inquiry Relationship** connects two **Research Inquiries** under a **Research Topic**.
+- A **Research Inquiry** can span one or more **Research Tasks**.
+- A **Research Inquiry** is not a **Parallel Execution Scope**.
+- A **Research Task** belongs to one **Research Inquiry** and one **Topic Workspace**.
+- A **Research Task** records one accountable **Task Handler**: the **Operator Agent** or a delegated **Agent Instance** from a selected **Agent Team Instance**.
+- A **Research Task** may record multiple participating **Agent Instances** for task-level parallel execution inside the selected **Agent Team Instance**.
 - A **Research Task** can be attempted through one or more **Runs**.
 - A **Run** has one **Control Mode**.
-- **Manual Mode** is a **Control Mode** for a Run, not a Project, Research Thread, or Research Task mode.
-- An **Isomer Workspace** owns one **Workspace Runtime**.
+- **Manual Mode** is a **Control Mode** for a Run, not a Project, Research Inquiry, or Research Task mode.
+- A **Topic Workspace** owns one **Workspace Runtime**.
 - A **Workspace Runtime** stores, indexes, validates, and recovers **Run** records, but it is not itself a Run.
 
 ### Team and Agent Execution
 
-- An **Isomer Workspace** may contain many **Agent Workspaces** during team execution.
-- An **Agent Workspace** is contained by exactly one **Isomer Workspace**.
+- A **Topic Workspace** may contain many **Agent Workspaces** during team execution.
+- An **Agent Workspace** is contained by exactly one **Topic Workspace**.
 - An **Agent Workspace** belongs to one **Agent Instance** within a team execution context.
 - An **Agent Workspace** contains one **Agent Runtime** and zero or more **Agent Artifacts**.
 - **Agent Runtime** is subordinate to **Workspace Runtime**.
@@ -412,12 +415,15 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - A **Topic Agent Team Profile** contains topic-adapted **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, constraints, and expected **Artifacts**, but it is not running.
 - An **Agent Team Instance** is created from one **Topic Agent Team Profile** by the **Operator Agent** or **Execution Adapter**.
 - An **Agent Team Instance** contains runtime **Agent Instances**, launch refs, **Agent Workspaces**, Run participation, and resolved execution state.
+- Topic-level **Parallel Execution Scope** runs multiple **Agent Team Instances** under one **Research Topic**.
+- Task-level **Parallel Execution Scope** distributes one **Research Task** across multiple **Agent Instances** within one selected **Agent Team Instance**.
+- **Research Inquiry** must not be used as a **Parallel Execution Scope**.
 - All non-operator task **Agent Instances** belong to an **Agent Team Instance**.
-- An **Isomer Workspace** may reference one selected **Agent Team Instance** when its **Research Task** is delegated to a team.
-- Reusable **Domain Agent Team Templates**, editable **Topic Agent Team Profiles**, and **Agent Team Instance** refs live outside the Isomer Workspace.
+- A **Topic Workspace** may reference selected **Agent Team Instances** for topic-level execution, and individual **Research Tasks** record the task handler and participating Agent Instances that perform the work.
+- Reusable **Domain Agent Team Templates**, editable **Topic Agent Team Profiles**, and **Agent Team Instance** refs live outside the Topic Workspace.
 - The built-in **Service Team** is Isomer infrastructure, not a **Domain Agent Team Template**, **Topic Agent Team Profile**, or **Agent Team Instance**.
 - A **Project** can use the built-in **Service Team** without declaring it as a project research team.
-- The **Operator Agent** may open a **Service Request** for a **Project**, **Isomer Workspace**, **Run**, **Agent Workspace**, **Agent Instance**, or tech-stack support scope.
+- The **Operator Agent** may open a **Service Request** for a **Project**, **Topic Workspace**, **Run**, **Agent Workspace**, **Agent Instance**, or tech-stack support scope.
 - Service Team members act only through specific **Service Requests** from the **Operator Agent**.
 - A **Service Request** can support a **Research Task** or **Run**, but it is not a **Research Task** or **Workflow Stage**.
 - The **Operator Agent** chooses a **Service Dispatch Form** for each **Service Request**.
@@ -448,7 +454,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 - A **Research Claim** can be supported, contradicted, or contextualized by one or more **Evidence Items**.
 - A **Finding** is distilled from Research Claims and Evidence Items.
-- A **Decision Record** may resolve a **Gate**, select a **Research Branch**, archive a Research Thread, or record another meaningful choice.
+- A **Decision Record** may resolve a **Gate**, select or create a **Research Inquiry**, record a **Research Inquiry Relationship**, archive a Research Topic, or record another meaningful choice.
 - A **Decision Record** should cite relevant **Evidence Items**, **Artifacts**, or **Provenance Records** when the choice depends on research evidence.
 - A **Gate** can block a Workflow Stage action until the human user resolves it.
 
@@ -480,21 +486,23 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 ### Project and Research Lifecycle
 
 - Use **Project Config Directory** for `.isomer-labs/`. Reserve "control plane" for compact runtime state, especially SQLite-backed Workspace Runtime state.
-- Do not use bare "workspace" when **Project**, **Isomer Workspace**, and **Agent Workspace** are all plausible readings.
+- Do not use bare "workspace" when **Project**, **Topic Workspace**, and **Agent Workspace** are all plausible readings.
 - Do not call **Project** or **Project Config Directory** a workspace.
-- Use **Isomer Workspace** instead of "quest" or "quest workspace" for Isomer-managed research execution areas. "Quest" is DeepScientist reference language, not Isomer canonical language.
-- Use **Research Thread** for the user-facing research lifecycle. Do not use **Isomer Workspace** when discussing pause, branch, resume, archive, or goal-level steering unless the storage location itself matters.
-- Use **Research Goal** as the umbrella term. Use **Measurable Objective** only for the metric-bearing kind of Research Goal.
-- Use **Research Branch** for forked lines of work. Avoid "route" as a first-class noun except when quoting prior docs or describing informal route-selection language.
-- Use **Research Task** for the bounded unit of work handled in one Isomer Workspace.
+- Use **Topic Workspace** instead of "quest" or "quest workspace" for Isomer-managed research execution areas. "Quest" is DeepScientist reference language, not Isomer canonical language.
+- Use **Research Topic** for the root research problem or investigation intent that initiates the research and drives Topic Agent Team Profile specialization. Do not use **Research Goal** as a separate level.
+- Use **Measurable Objective** only for optional metric-bearing content inside a **Research Topic**. Do not model measurable and exploratory as exclusive goal kinds.
+- Use **Research Inquiry** for questions or lines of inquiry under a **Research Topic**. Do not use **Topic Workspace** when discussing pause, resume, archive, or topic-level steering unless the storage location itself matters.
+- Use **Research Inquiry Relationship** for graph links between inquiries. Do not use **Research Branch** unless quoting stale docs or referring to a separate compatibility migration.
+- Use **Research Task** for a bounded unit of work recorded inside one Topic Workspace.
 - Use **Task Handler** for the **Operator Agent** or delegated **Agent Team Instance** member that controls the Research Task.
-- Use **Workspace Runtime** for the persistent state substrate owned by an Isomer Workspace. Use **Run** only for bounded execution attempts for a Research Task.
-- Use **Control Mode** for Run-level manual versus automatic control. Do not describe Manual Mode as a Project-wide or Research Thread-wide switch.
+- Use **Parallel Execution Scope** only at the **Research Topic** level or **Research Task** level. Do not describe a **Research Inquiry** as running in parallel.
+- Use **Workspace Runtime** for the persistent state substrate owned by a Topic Workspace. Use **Run** only for bounded execution attempts for a Research Task.
+- Use **Control Mode** for Run-level manual versus automatic control. Do not describe Manual Mode as a Project-wide or Research Inquiry-wide switch.
 
 ### Team and Agent Execution
 
-- Use **Agent Workspace** for per-agent work areas inside an Isomer Workspace. Do not call it a secure sandbox.
-- Do not put `teams/` under an **Isomer Workspace**. **Domain Agent Team Templates**, **Topic Agent Team Profiles**, and **Agent Team Instance** refs are project-level or built-in references; the workspace records Topic Agent Team Profile identity, Agent Team Instance identity, and task-handler identity through manifest refs, Workspace Runtime, or provenance Artifacts.
+- Use **Agent Workspace** for per-agent work areas inside a Topic Workspace. Do not call it a secure sandbox.
+- Do not put `teams/` under a **Topic Workspace**. **Domain Agent Team Templates**, **Topic Agent Team Profiles**, and **Agent Team Instance** refs are project-level or built-in references; the workspace records Topic Agent Team Profile identity, Agent Team Instance identity, and task-handler identity through manifest refs, Workspace Runtime, or provenance Artifacts.
 - Use **Domain Agent Team Template**, **Topic Agent Team Profile**, **Agent Team Instance**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Coordination Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
 - Use **Agent Instance** for the concrete runtime actor that owns an Agent Workspace. Do not use **Agent Role** as the workspace owner except when discussing responsibility or workflow ownership.
 - Use **Operator Agent** for the user-facing controller, topic-profile author, team launcher, task router, and fallback handler. Do not model direct human operation of team Agent Instances or runtime state. Use **Coordination Policy** for the rules that govern collaboration among delegated team agents.

@@ -6,15 +6,15 @@ As a researcher revising a paper, I want Isomer Labs to map reviewer feedback to
 
 ## Scenario
 
-The user imports a draft manuscript, reviewer comments, figure files, experiment logs, and prior notes. The Research Goal is to decide how to revise the paper and produce a supported response plan. Isomer Labs creates a Research Thread with Research Tasks for feedback mapping and targeted revision work.
+The user imports a draft manuscript, reviewer comments, figure files, experiment logs, and prior notes. The Research Topic is deciding how to revise the paper and produce a supported response plan. Isomer Labs creates a Research Inquiry with Research Tasks for feedback mapping and targeted revision work.
 
 ## Step-by-Step Description
 
-1. The user asks the Operator Agent to create a Research Thread and supplies the manuscript, reviews, constraints, and deadline.
+1. The user asks the Operator Agent to create a Research Topic and initial Research Inquiry, then supplies the manuscript, reviews, constraints, and deadline.
 2. The Operator Agent specializes or reuses a Topic Agent Team Profile with critique mapper, evidence auditor, experiment planner, writer, and reviewer roles.
 3. The Operator Agent asks the user to edit the Topic Agent Team Profile, task handler, and gated decisions for claim strengthening, new experiments, and final response text.
 4. The Operator Agent creates the Research Task `map-review-feedback`.
-5. The Project Manifest declares an Isomer Workspace for that Research Task, its task handler, and the selected Topic Agent Team Profile.
+5. The Project Manifest declares a Topic Workspace for the Research Topic, and Workspace Runtime records that Research Task, its task handler, and the selected Topic Agent Team Profile.
 6. A Run starts; the Execution Adapter launches an Agent Team Instance from the Topic Agent Team Profile, and its critique mapper, evidence auditor, experiment planner, writer, and reviewer Agent Instances receive Agent Workspaces with advisory Workspace Boundaries.
 7. The critique mapper turns reviewer comments into issue Artifacts and links them to manuscript sections.
 8. The evidence auditor maps each issue to Research Claims, Evidence Items, missing support, and contradiction risks.
@@ -22,7 +22,7 @@ The user imports a draft manuscript, reviewer comments, figure files, experiment
 10. The GUI Backend and Renderer show a reviewer-response matrix, claim-risk view, and pending Gate list using Built-in GUI Components.
 11. The Operator Agent presents a Gate asking the user to approve the revision strategy and choose which targeted analyses to run.
 12. The Operator Agent records the approved plan as a Decision Record.
-13. For each approved analysis, Isomer creates a new Research Task with its own Isomer Workspace.
+13. For each approved analysis, Isomer records a new Research Task inside the same Topic Workspace.
 14. The Agent Team Instance created from the Topic Agent Team Profile executes Runs, records result Artifacts, and updates Evidence Items.
 15. The writer drafts response text and manuscript edits only for claims with enough support.
 16. The reviewer audits claim strength, unsupported wording, and missing provenance.
@@ -110,8 +110,8 @@ sequenceDiagram
   Operator->>Profile: Specialize or reuse<br/>Topic Agent Team Profile
   Operator->>User: Present Topic Agent Team<br/>Profile and gated decisions
   User->>Operator: Approve Topic Agent Team<br/>Profile, handler, Gate policy
-  Operator->>PM: Declare feedback Task,<br/>handler, Workspace
-  Operator->>Runtime: Initialize feedback mapping<br/>Workspace Runtime
+  Operator->>PM: Declare Topic Workspace<br/>for Research Topic
+  Operator->>Runtime: Record feedback Task,<br/>handler, and runtime refs
   Operator->>Adapter: Launch Agent Team Instance<br/>from Topic Agent Team Profile
   Adapter->>Team: Create Agent Team<br/>Instance
   Adapter->>Agents: Start feedback<br/>mapping Run
@@ -125,8 +125,7 @@ sequenceDiagram
   Operator->>Runtime: Submit revision strategy<br/>Gate decision
   Runtime->>Provenance: Store revision strategy<br/>Decision Record
   loop For each approved targeted analysis
-    Operator->>PM: Declare Research Task,<br/>handler, Workspace
-    Operator->>Runtime: Initialize analysis<br/>Workspace Runtime
+    Operator->>Runtime: Record Research Task,<br/>handler, and runtime refs
     Adapter->>Agents: Start analysis<br/>Run
     Agents->>Provenance: Store result Artifacts<br/>and Evidence Items
     Provenance->>Runtime: Update Research Claims<br/>and Run status
@@ -143,11 +142,11 @@ sequenceDiagram
 
 ## Durable Outputs
 
-- Research Thread for paper revision
+- Research Topic and Research Inquiry for paper revision
 - Research Tasks for feedback mapping and approved targeted analyses
 - Topic Agent Team Profile specialized from a Domain Agent Team Template, with critique mapper, evidence auditor, experiment planner, writer, and reviewer roles
 - Agent Team Instance launched from the Topic Agent Team Profile
-- Isomer Workspaces scoped to each Research Task, task handler, selected Topic Agent Team Profile, and selected Agent Team Instance
+- One Topic Workspace scoped to the Research Topic, with Research Tasks, task handlers, selected Topic Agent Team Profile, and selected Agent Team Instance recorded inside it
 - Reviewer-response matrix, issue list, claim-risk map, experiment plan, result summaries, and response draft as Artifacts
 - Evidence Items linked to revised Research Claims
 - Gates for revision strategy, claim strengthening, new analyses, and final package approval

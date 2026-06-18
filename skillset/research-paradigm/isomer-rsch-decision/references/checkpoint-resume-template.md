@@ -12,7 +12,7 @@ Use this when later turns could otherwise resume from the wrong node, route, or 
 
 ### 2. Current Active Node
 
-- active Research Branch, Run, paper node, report, or Decision Record pair:
+- active Research Inquiry Relationship, Run, paper node, report, or Decision Record pair:
 - why this is the authoritative resume point now:
 
 ### 3. Node History

@@ -11,7 +11,7 @@ Use this template when creating or reviewing a durable Run record.
 
 - run_id:
 - Research Task:
-- Research Branch:
+- Research Inquiry Relationship:
 - selected_route:
 - comparator_reference:
 - metric_contract:

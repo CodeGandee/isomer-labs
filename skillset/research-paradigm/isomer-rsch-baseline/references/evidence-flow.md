@@ -16,7 +16,7 @@ Good evidence ties the attached package to the comparator that later stages will
 
 ## Import Provided Package or Bundle
 
-Use when the user or Isomer Workspace already provides a prepared package, bundle, snapshot, or result set.
+Use when the user or Topic Workspace already provides a prepared package, bundle, snapshot, or result set.
 
 1. Materialize or reference the imported Artifact package.
 2. Keep provenance durable through a Provenance Record or equivalent package metadata.

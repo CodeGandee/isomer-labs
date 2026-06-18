@@ -12,7 +12,7 @@ Use this reference when the active candidate pool needs one shared surface. The 
 ## Field Rules
 
 - `Level` is `brief`, `durable_line`, or `implementation`.
-- `Parent` may be a Research Branch, route id, Run id, or candidate id.
+- `Parent` may be a Research Inquiry Relationship, route id, Run id, or candidate id.
 - `Strategy` should usually be `explore`, `exploit`, `fusion`, or `debug`.
 - `Status` should be specific: proposed, held, promoted, smoke running, smoke passed, smoke failed, full evaluation running, succeeded, failed, archived, blocked, or stopped.
 - `Promote or Archive` must be a clear recommendation, not an empty placeholder.

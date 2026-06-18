@@ -1,6 +1,6 @@
 # Route Criteria
 
-Use this reference when choosing among Research Branches, idea packages, experiment groups, analysis campaigns, paper-facing routes, or blockers.
+Use this reference when choosing among Research Inquiry Relationships, idea packages, experiment groups, analysis campaigns, paper-facing routes, or blockers.
 
 ## Core Question
 

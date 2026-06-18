@@ -10,7 +10,7 @@ Before substantial implementation work or a real main Run, create or update visi
 
 ## Working Boundaries
 
-Only modify the active Isomer Workspace for this experiment line. Treat the accepted comparator as read-only. Keep durable outputs inside accepted Artifact surfaces and use `[[tbd-surface:path-experiment-output]]` where the concrete layout is unsettled.
+Only modify the active Topic Workspace for this experiment line. Treat the accepted comparator as read-only. Keep durable outputs inside accepted Artifact surfaces and record durable outputs as experiment output Artifacts resolved by Workspace Path Resolution.
 
 ## Resource and Environment Rules
 
@@ -22,7 +22,7 @@ A meaningful experiment pass should leave behind:
 
 - Run contract Artifact.
 - durable command, config, log, output, metric, and environment pointers.
-- Run log Artifact or Evidence Item under `[[tbd-surface:path-run-logs]]`.
+- Run log Artifact or Evidence Item resolved by Workspace Path Resolution.
 - metric records and evaluation summary.
 - Research Claim update.
 - Decision Record for next route.

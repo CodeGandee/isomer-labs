@@ -14,20 +14,27 @@ Prefer durable records over recollection:
 
 ## Durable Vocabulary
 
-Use Isomer Labs terms: Research Thread, Research Goal, Research Task, Research Branch, Run, Isomer Workspace, Workspace Runtime, Agent Workspace, Artifact, Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Coordination Policy, Capability Binding, Execution Adapter, Workflow Stage, and Completion Watcher Contract.
+Use Isomer Labs terms: Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime, Workspace Boundary, Artifact, Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Coordination Policy, Capability Binding, Execution Adapter, Workflow Stage, and Completion Watcher Contract.
 
 Do not invent concrete paths, filenames, storage roots, command surfaces, provider names, schemas, or generated layouts. Use the registered TBD-surface placeholder form when a skill outcome must mention an unsettled concrete surface.
+
+
+## Workspace Path Resolution
+
+Ordinary Project, Topic Workspace, Workspace Runtime, task support, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are resolved surfaces. Ask for semantic targets such as Topic Workspace, Workspace Runtime, task support directory, run log Artifact, experiment output Artifact, analysis output Artifact, figure output Artifact, paper Artifact, decision Artifact, evidence Artifact, finding Artifact, handoff Artifact, Agent Workspace scratch, Agent Runtime state, or Agent Artifact.
+
+Do not emit ordinary path TBD placeholders for these surfaces. Workspace plans have precedence, then supported Execution Adapter `ISOMER_*` environment variables, then Project Manifest defaults, then built-in defaults. Environment variables are launch-time adapter inputs, not durable truth; resolved effective paths and their source belong in Workspace Runtime or Provenance Records.
 
 ## Source-Term Mappings
 
 | Source term or operation | Isomer Labs framing |
 | --- | --- |
-| lifecycle-level research work | Research Thread |
-| initial goal or objective text | Research Goal, Measurable Objective, or Exploratory Goal |
+| lifecycle-level research work | Research Topic, Research Inquiry, or Research Task depending on scope |
+| initial goal or objective text | Research Topic with optional Measurable Objective |
 | bounded unit of research work | Research Task |
 | one execution attempt | Run |
-| forked research route | Research Branch |
-| filesystem area for one task | Isomer Workspace, if storage scope is known |
+| forked research route | Research Inquiry Relationship plus Decision Record when a choice is made |
+| filesystem area for topic, task, run, output, or agent work | Topic Workspace, Workspace Runtime, semantic Artifact kind, or Agent Workspace through Workspace Path Resolution |
 | persistent task state | Workspace Runtime |
 | per-agent scratch or local trace area | Agent Workspace or Agent Runtime |
 | source artifact operation | Artifact, Evidence Item, Decision Record, Gate, Provenance Record, or host Artifact API |
@@ -47,8 +54,8 @@ Do not invent concrete paths, filenames, storage roots, command surfaces, provid
 | baseline confirmation call | Decision Record that resolves the baseline Gate as accepted, plus metric-contract Artifact and Evidence Items |
 | baseline waiver call | Decision Record that resolves or bypasses the baseline Gate under `[[tbd-surface:policy-baseline-waiver]]` |
 | baseline overwrite call | Decision Record that replaces an accepted comparator after a material metric, code, data, or variant change |
-| canonical metric-contract file path | metric-contract Artifact; concrete storage uses `[[tbd-surface:path-artifact-layout]]` |
-| trusted output path | Evidence Item pointer; concrete path uses `[[tbd-surface:path-artifact-layout]]` or `[[tbd-surface:path-run-logs]]` |
+| canonical metric-contract file path | metric-contract Artifact through Workspace Path Resolution |
+| trusted output path | Evidence Item pointer or run log Artifact through Workspace Path Resolution |
 | attached or imported package root | reusable Artifact package with Provenance Record |
 | local service comparator | Capability Binding plus Evidence Items from evaluation observations |
 
@@ -69,7 +76,7 @@ Do not port source runtime scheduling terms as Isomer concepts. The Operator Age
 
 Every baseline handoff should state:
 
-- Current Research Task or Research Branch scope.
+- Current Research Topic, Research Inquiry, or Research Task scope.
 - Acceptance target and active route.
 - Comparator identity, source identity, and baseline id.
 - Metric contract fields inspected or still missing.
@@ -86,25 +93,35 @@ Claims must be tied to Evidence Items. Negative, partial, null, failed, blocked,
 
 ## Runtime Boundary
 
-This skill describes research judgment. It does not define Isomer runtime APIs, schedulers, storage layouts, credentials, mailbox routes, gateway routes, service endpoints, package managers, container runtimes, or concrete agent launch behavior.
+This skill describes research judgment. It does not define Isomer runtime APIs, schedulers, ordinary path layouts covered by Workspace Path Resolution, credentials, mailbox routes, gateway routes, service endpoints, package managers, container runtimes, or concrete agent launch behavior.
 
-When a source behavior implies execution, literature lookup, storage, state mutation, monitoring, publication, or chart generation, describe the intended Isomer record or capability and mark the concrete surface as unsettled.
+When a source behavior implies execution, literature lookup, storage, state mutation, monitoring, publication, or chart generation, describe the intended Isomer record, semantic Artifact kind, workspace scope, or capability. Mark the concrete surface as unsettled only when it is outside accepted Isomer contracts.
 
 ## TBD Surface Registry
 
-Use registered TBD-surface placeholders in skill outcomes when a concrete surface is not settled by an accepted Isomer design.
+Use registered TBD-surface placeholders in skill outcomes when a concrete surface is not settled by an accepted Isomer design. Ordinary Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are settled by Workspace Path Resolution; skills should name semantic workspace scopes or Artifact kinds instead of emitting path TBD placeholders.
+
+### Resolved Workspace Path Surfaces
+
+These former path TBDs are mapped to Workspace Path Resolution and must not be emitted as path-prefixed TBD placeholders in research-stage skill text.
+
+| Former ID | Resolution |
+| --- | --- |
+| path-isomer-workspace | Legacy name for Topic Workspace; use Topic Workspace through Workspace Path Resolution. |
+| path-topic-workspace | Use Topic Workspace through Workspace Path Resolution. |
+| path-workspace-runtime | Use Workspace Runtime through Workspace Path Resolution. |
+| path-agent-workspace | Use Agent Workspace or Agent Runtime through Workspace Path Resolution. |
+| path-artifact-layout | Use semantic Artifact kinds through Workspace Path Resolution. |
+| path-run-logs | Use Run log Artifact or Run log scope through Workspace Path Resolution. |
+| path-experiment-output | Use experiment output Artifact through Workspace Path Resolution. |
+| path-analysis-output | Use analysis output Artifact through Workspace Path Resolution. |
+| path-paper-layout | Use paper Artifact through Workspace Path Resolution. |
+| path-figure-output | Use figure output Artifact through Workspace Path Resolution. |
+
+### Open TBD Surfaces
 
 | ID | Kind | Placeholder | Missing decision |
 | --- | --- | --- | --- |
-| path-isomer-workspace | path | `[[tbd-surface:path-isomer-workspace]]` | Concrete Isomer Workspace path convention. |
-| path-workspace-runtime | path | `[[tbd-surface:path-workspace-runtime]]` | Concrete Workspace Runtime storage layout. |
-| path-agent-workspace | path | `[[tbd-surface:path-agent-workspace]]` | Concrete Agent Workspace layout. |
-| path-artifact-layout | path | `[[tbd-surface:path-artifact-layout]]` | Artifact directory and naming layout. |
-| path-run-logs | path | `[[tbd-surface:path-run-logs]]` | Run log and result file layout. |
-| path-experiment-output | path | `[[tbd-surface:path-experiment-output]]` | Experiment output layout. |
-| path-analysis-output | path | `[[tbd-surface:path-analysis-output]]` | Analysis output layout. |
-| path-paper-layout | path | `[[tbd-surface:path-paper-layout]]` | Report or manuscript layout. |
-| path-figure-output | path | `[[tbd-surface:path-figure-output]]` | Figure source and export layout. |
 | api-artifact-record | api | `[[tbd-surface:api-artifact-record]]` | API for recording Artifacts and Provenance Records. |
 | api-finding-query | api | `[[tbd-surface:api-finding-query]]` | API for querying and writing Findings or durable context. |
 | api-execution-command | api | `[[tbd-surface:api-execution-command]]` | Execution command surface, permissions, and logging behavior. |
@@ -118,6 +135,6 @@ Use registered TBD-surface placeholders in skill outcomes when a concrete surfac
 | schema-agent-team-state | schema | `[[tbd-surface:schema-agent-team-state]]` | Agent Team Instance pause and advancement states. |
 | schema-skill-binding | schema | `[[tbd-surface:schema-skill-binding]]` | Capability Binding projection and skill install schema. |
 | policy-scheduler | policy | `[[tbd-surface:policy-scheduler]]` | Runtime scheduling and continuation policy. |
-| policy-branching | policy | `[[tbd-surface:policy-branching]]` | When a candidate route becomes a Research Branch. |
+| policy-branching | policy | `[[tbd-surface:policy-branching]]` | Policy for recording Research Inquiry Relationships and route decisions. |
 | policy-baseline-waiver | policy | `[[tbd-surface:policy-baseline-waiver]]` | Baseline acceptance and waiver rules. |
 | policy-cost-privacy-gate | policy | `[[tbd-surface:policy-cost-privacy-gate]]` | Cost, credential, privacy, and data-export Gate thresholds. |

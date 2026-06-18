@@ -64,7 +64,7 @@ Do not use this skill when a verified active baseline already exists for the cur
 
 Before treating a baseline as usable, make these fields explicit: comparator identity, baseline id, route, task identity, dataset identity, split contract, evaluation path or evaluation Capability Binding, required metric ids, metric directions, source identity, trusted metrics or output pointers, material environment facts, and known deviations.
 
-The accepted metric contract should be an Artifact. If a concrete storage layout or schema must be named, use `[[tbd-surface:path-artifact-layout]]` or `[[tbd-surface:schema-evidence-item]]` until Isomer accepts that surface.
+The accepted metric contract should be an Artifact. If a concrete storage layout or schema must be named, use semantic Artifact kind through Workspace Path Resolution or `[[tbd-surface:schema-evidence-item]]` until Isomer accepts that surface.
 
 ## Verification
 

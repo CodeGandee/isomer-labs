@@ -211,7 +211,7 @@ Direct Agent Instance inspection is useful for manual recovery and ambiguous sta
 
 Stale handoffs should surface as recoverable state. The Operator Agent can inspect the target, resend, extend the due time, reroute, mark failed, or ask the user.
 
-A multi-step manual prompt cannot bypass Gates. It must stop for irreversible or claim-shaping decisions, including baseline acceptance or waiver, Research Branch selection, Research Claim strengthening, finalization, destructive actions, and archival actions.
+A multi-step manual prompt cannot bypass Gates. It must stop for irreversible or claim-shaping decisions, including baseline acceptance or waiver, follow-up Research Inquiry or Research Inquiry Relationship selection, Research Claim strengthening, finalization, destructive actions, and archival actions.
 
 Manual mode cannot advance beyond the user's declared prompt scope. If the next step would require interpretation that was not in the prompt, the Operator Agent summarizes state and asks the user.
 
@@ -236,7 +236,7 @@ Early tests should cover:
 
 ## Key Constraints
 
-- Manual mode is Run-level, not Project-level, Research Thread-level, or Research Task-level.
+- Manual mode is Run-level, not Project-level, Research Topic-level, Research Inquiry-level, or Research Task-level.
 - Human users still operate through the Operator Agent.
 - Every manual direct message opens a handoff before send.
 - Completion signal sources are not authoritative until normalized into Workspace Runtime.

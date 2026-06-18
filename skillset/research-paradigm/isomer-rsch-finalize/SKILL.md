@@ -7,7 +7,7 @@ description: Consolidate final research claims, limitations, recommendations, an
 
 ## Overview
 
-Use this skill when a Research Thread or Research Task may be ready to stop, pause, publish, archive, or start a new loop.
+Use this skill when a Research Inquiry or Research Task may be ready to stop, pause, publish, archive, or start a new loop.
 
 ## Workflow
 
@@ -35,12 +35,12 @@ Read references as needed:
 - `references/finalization-checklist.md` before closing, pausing, archiving, publishing, or handing off.
 - `references/claim-ledger.md` when classifying final claim status and belief changes.
 - `references/package-inventory.md` when code, experiment, analysis, report, paper, review, or release outputs must be checked.
-- `references/resume-packet.md` when the Research Thread may continue later.
+- `references/resume-packet.md` when the Research Inquiry may continue later.
 - `references/closure-gate-guidance.md` when deciding whether to stop, park, publish, archive, continue, or request Operator Agent approval.
 
 ## Entry Signals
 
-- A Research Thread or Research Task may be ready to stop, pause, publish, archive, or start a new loop.
+- A Research Inquiry or Research Task may be ready to stop, pause, publish, archive, or start a new loop.
 - Comparator state, accepted Runs, analysis outputs, writing outputs, reviews, blockers, and Gates are available for closure review.
 - The Operator Agent needs a final claim ledger, handoff, or completion Gate.
 

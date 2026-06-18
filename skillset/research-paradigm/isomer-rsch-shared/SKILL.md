@@ -15,9 +15,9 @@ When this skill is invoked, execute the following steps in order.
 
 1. **Load shared references** from **Reference Routing** when source-term mapping, rejected runtime concepts, or TBD-surface registration matters.
 2. **Apply truth-source order** before making, routing, or revising claims.
-3. **Use durable vocabulary** for Research Threads, Research Tasks, Runs, Artifacts, Evidence Items, Findings, Research Claims, Decision Records, Gates, Provenance Records, Capability Bindings, Execution Adapters, and Workflow Stages.
-4. **Map source-runtime concepts** through `references/source-term-mapping.md` instead of importing source APIs, schedulers, command wrappers, concrete paths, or provider names.
-5. **Mark unsettled concrete surfaces** with ids from `references/tbd-surface-registry.md`.
+3. **Use durable vocabulary** for Research Topics, Research Inquiries, Research Inquiry Relationships, Research Tasks, Runs, Artifacts, Evidence Items, Findings, Research Claims, Decision Records, Gates, Provenance Records, Capability Bindings, Execution Adapters, and Workflow Stages.
+4. **Map source-runtime concepts** through `references/source-term-mapping.md` instead of importing source APIs, schedulers, command wrappers, provider names, or concrete paths covered by Workspace Path Resolution.
+5. **Mark unsettled concrete surfaces** with ids from `references/tbd-surface-registry.md` only when the surface is not settled by an accepted Isomer contract.
 6. **Write handoffs with durable evidence boundaries**, including affected Evidence Items, Research Claims, Decision Records, Gates, next Workflow Stage, blocker, caveats, and unsettled surfaces.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
@@ -27,7 +27,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 Read references as needed:
 
 - `references/source-term-mapping.md` for source-term mappings and rejected runtime concepts.
-- `references/tbd-surface-registry.md` for registered placeholders for unsettled concrete paths, APIs, schemas, providers, commands, and policies.
+- `references/tbd-surface-registry.md` for registered placeholders for unsettled APIs, schemas, providers, commands, policies, and any concrete path surface outside Workspace Path Resolution.
 
 ## Truth-Source Order
 
@@ -41,15 +41,21 @@ Prefer durable records over recollection:
 
 ## Durable Vocabulary
 
-Use Isomer Labs terms: Research Thread, Research Goal, Research Task, Research Branch, Run, Isomer Workspace, Workspace Runtime, Agent Workspace, Artifact, Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Coordination Policy, Capability Binding, Execution Adapter, Workflow Stage, and Completion Watcher Contract.
+Use Isomer Labs terms: Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime, Workspace Boundary, Artifact, Agent Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Signal Observation, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Coordination Policy, Capability Binding, Execution Adapter, Workflow Stage, and Completion Watcher Contract.
 
-Do not invent concrete paths, filenames, storage roots, command surfaces, provider names, schemas, or generated layouts. Use `[[tbd-surface:<id>]]` from `references/tbd-surface-registry.md` when a skill outcome must mention an unsettled concrete surface.
+Do not invent concrete paths, filenames, storage roots, command surfaces, provider names, schemas, or generated layouts. Use a registered TBD-surface placeholder from `references/tbd-surface-registry.md` when a skill outcome must mention an unsettled concrete surface.
+
+## Workspace Path Resolution
+
+Ordinary Project, Topic Workspace, Workspace Runtime, task support, Run, Artifact, View Manifest, log, Agent Workspace, and Agent Runtime paths are resolved surfaces. Ask for semantic targets such as Topic Workspace, Workspace Runtime, task support directory, run log Artifact, experiment output Artifact, analysis output Artifact, figure output Artifact, paper Artifact, decision Artifact, evidence Artifact, finding Artifact, handoff Artifact, Agent Workspace scratch, Agent Runtime state, or Agent Artifact.
+
+Do not emit ordinary path TBD placeholders for these surfaces. Workspace plans have precedence, then supported Execution Adapter `ISOMER_*` environment variables, then Project Manifest defaults, then built-in defaults. Environment variables are launch-time adapter inputs, not durable truth; resolved effective paths and their source belong in Workspace Runtime or Provenance Records.
 
 ## Handoff Contract
 
 Every stage or companion handoff should state:
 
-- Current Research Task or Research Branch scope.
+- Current Research Topic, Research Inquiry, or Research Task scope.
 - Inputs and durable sources inspected.
 - Outputs produced or updated.
 - Evidence Items and Research Claims affected.
@@ -63,6 +69,6 @@ Claims must be tied to Evidence Items. Negative, partial, null, failed, or contr
 
 ## Runtime Boundary
 
-Research-paradigm skills describe research judgment. They do not define Isomer runtime APIs, schedulers, storage layouts, credentials, mailbox routes, gateway routes, or concrete agent launch behavior.
+Research-paradigm skills describe research judgment. They do not define Isomer runtime APIs, schedulers, credentials, mailbox routes, gateway routes, concrete agent launch behavior, or ordinary path layouts covered by Workspace Path Resolution.
 
-When a source behavior implies execution, literature lookup, storage, or state mutation, describe the intended Isomer record or capability and mark the concrete surface as unsettled.
+When a source behavior implies execution, literature lookup, storage, or state mutation, describe the intended Isomer record, semantic Artifact kind, workspace scope, or capability. Mark the concrete surface as unsettled only when it is outside accepted Isomer contracts.

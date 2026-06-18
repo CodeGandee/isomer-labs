@@ -8,7 +8,7 @@ Keep scouting conclusion-first and bounded. Identify the minimum unknowns, resol
 
 ## Durable State Reuse
 
-Before broad new search, query durable Findings and inspect existing Artifacts, Research Goal text, baseline state, literature notes, benchmark notes, and Decision Records. If the frame is already explicit after reuse, record the next route and stop.
+Before broad new search, query durable Findings and inspect existing Artifacts, Research Topic text, baseline state, literature notes, benchmark notes, and Decision Records. If the frame is already explicit after reuse, record the next route and stop.
 
 ## Unknown Classification
 

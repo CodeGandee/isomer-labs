@@ -1,6 +1,6 @@
 # Human Gates for Irreversible or Claim-Shaping Decisions
 
-Isomer Labs will return to the human user for irreversible or claim-shaping decisions rather than gating every workflow stage. The default gate set includes goal framing, Topic Agent Team Profile and workflow approval, baseline acceptance or waiver, Research Branch selection, Research Claim strength, finalization, and destructive or archival actions.
+Isomer Labs will return to the human user for irreversible or claim-shaping decisions rather than gating every workflow stage. The default gate set includes topic framing, Topic Agent Team Profile and workflow approval, baseline acceptance or waiver, follow-up Research Inquiry or Research Inquiry Relationship selection, Research Claim strength, finalization, and destructive or archival actions.
 
 ## Status
 

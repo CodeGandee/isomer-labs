@@ -56,7 +56,7 @@ Read references as needed:
 
 For each meaningful Run, record enough of the following to make the evidence reusable:
 
-- run id, route id, Research Branch, comparator reference, metric contract, dataset or split, and expected outputs
+- run id, route id, Research Inquiry Relationship, comparator reference, metric contract, dataset or split, and expected outputs
 - exact execution plan through a Capability Binding and Execution Adapter, with unsettled command surfaces marked as `[[tbd-surface:api-execution-command]]`
 - code or configuration deltas, keep-unchanged contract, seeds, environment notes, and resource constraints
 - smoke or pilot outcomes, main-run logs, output pointers, metric rows, metric completeness, and comparability verdict
@@ -79,4 +79,4 @@ For each meaningful Run, record enough of the following to make the evidence reu
 - Do not rerun without a real change in code, command, environment, evidence, or route.
 - Do not hide failed, partial, suspicious, non-comparable, or blocked Runs.
 - Do not spend for maximum evidence before the line is at least solid.
-- Use `[[tbd-surface:path-run-logs]]`, `[[tbd-surface:path-experiment-output]]`, and `[[tbd-surface:api-artifact-record]]` for unsettled execution and recording surfaces.
+- Use run log Artifact through Workspace Path Resolution, experiment output Artifact through Workspace Path Resolution, and `[[tbd-surface:api-artifact-record]]` for unsettled execution and recording surfaces.

@@ -57,7 +57,7 @@ For `analysis-lite`, keep only the objective, first slice, evidence boundary, an
 - expected outputs or evidence paths:
 - monitoring plan if long-running:
 
-Use `[[tbd-surface:api-execution-command]]` for unsettled execution command surfaces and `[[tbd-surface:path-analysis-output]]` for unsettled output layouts.
+Use `[[tbd-surface:api-execution-command]]` for unsettled execution command surfaces and analysis output Artifacts resolved by Workspace Path Resolution.
 
 ## 7. Interpretation Boundary
 
@@ -76,7 +76,7 @@ Use `[[tbd-surface:api-execution-command]]` for unsettled execution command surf
 - reviewer or rebuttal item:
 - write-back target:
 
-Use `[[tbd-surface:path-paper-layout]]` when a concrete report or manuscript layout is needed but unsettled.
+Use paper Artifact resolved by Workspace Path Resolution when a report or manuscript output is needed.
 
 ## 9. Current Frontier
 

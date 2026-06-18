@@ -23,7 +23,7 @@ Classify paper or report assets separately from scientific trust:
 ## Reuse Rules
 
 - Existing baselines need metric contract, source, and comparability before acceptance.
-- Existing main Runs need enough fields to show that the Run is genuinely the accepted result for the current Research Branch.
+- Existing main Runs need enough fields to show that the Run is genuinely the accepted result for the current Research Inquiry Relationship.
 - Existing analysis outputs need slice question, comparison boundary, status, and claim impact.
 - Existing outlines, drafts, or paper bundles need selected role, evidence support, and coverage state before they become active writing inputs.
 - Review packages route to review or rebuttal work when reviewer comments define the real task.

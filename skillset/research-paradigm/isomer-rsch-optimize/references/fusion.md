@@ -35,7 +35,7 @@ Use fusion only when at least two lines have real strengths, the strengths are c
 
 - two lines with the same mechanism under different names
 - two weak lines with no clear strengths
-- lines that only coexist because multiple Research Branches exist
+- lines that only coexist because multiple Research Inquiry Relationships exist
 
 ## Exit Rule
 

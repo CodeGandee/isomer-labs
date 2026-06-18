@@ -14,7 +14,7 @@ accepted
 
 ## Consequences
 
-- The GUI Backend must authenticate direct agent publishers and associate every AG-UI Event Batch with a Project, Isomer Workspace, Run, Agent Team Instance, Agent Instance, and Artifact or component reference when available.
+- The GUI Backend must authenticate direct agent publishers and associate every AG-UI Event Batch with a Project, Topic Workspace, Run, Agent Team Instance, Agent Instance, and Artifact or component reference when available.
 - The GUI Backend resolves AG-UI Render Payloads to registered GUI Components, creates or updates GUI Component Instances, and updates GUI Runtime State.
 - Direct AG-UI Event Batches are live interaction traffic, not canonical research state. Durable claims, Gates, decisions, Artifacts, and reusable views still need Workspace Runtime, Artifact, View Manifest, or Provenance Records.
 - ADR 0008 defines the default retention boundary: persist AG-UI Event Envelopes by default, and save full event payload content only when the human user explicitly instructs the system to retain it.

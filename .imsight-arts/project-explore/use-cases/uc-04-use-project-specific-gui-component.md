@@ -12,7 +12,7 @@ The component instance lifecycle has two supported paths. In create-on-message m
 
 ## Step-by-Step Description
 
-1. The user reviews existing experiment Artifacts in an active Research Thread and notices that built-in tables do not expose the error patterns clearly.
+1. The user reviews existing experiment Artifacts in an active Research Inquiry and notices that built-in tables do not expose the error patterns clearly.
 2. The user tells the Operator Agent the visualization idea: group failed examples by cluster, link each cluster to metrics, notes, candidate fixes, and source Artifacts, and keep a Run timeline beside the view.
 3. The Operator Agent uses `isomer-cli` to start the built-in GUI Backend, which reports a browser URL for the predefined GUI Renderer.
 4. The user opens the GUI Backend URL in a browser.

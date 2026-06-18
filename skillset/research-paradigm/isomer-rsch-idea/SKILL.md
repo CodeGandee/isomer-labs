@@ -7,7 +7,7 @@ description: Convert a research objective and current evidence board into a smal
 
 ## Overview
 
-Use this skill when a Research Task needs candidate hypotheses, limitation analysis, route selection, or a new Research Branch from current evidence.
+Use this skill when a Research Task needs candidate hypotheses, limitation analysis, route selection, or a new Research Inquiry Relationship from current evidence.
 
 ## Workflow
 
@@ -19,7 +19,7 @@ When this skill is invoked, execute the following steps in order.
 4. **Compress the current board**. Use `references/current-board.md` to identify the incumbent, latest decisive result, strongest negative evidence, active blocker, stale routes, and decision scope.
 5. **Refresh literature and history before promotion**. Use `references/literature-survey.md`, `references/related-work.md`, and `references/research-history.md` to compare direct-field, adjacent, and cross-domain prior work.
 6. **Generate and challenge a small frontier**. Use `references/idea-sourcing.md`, `references/thinking-flow.md`, `references/brainstorming.md`, and `references/pre-idea-draft.md` to produce differentiated candidates and stress-test the serious survivors.
-7. **Select one falsifiable route or record the blocker**. Use `references/selection-gate.md` and **Exit Criteria** to produce a selected route package, Research Branch decision, or blocker handoff.
+7. **Select one falsifiable route or record the blocker**. Use `references/selection-gate.md` and **Exit Criteria** to produce a selected route package, Research Inquiry Relationship decision, or blocker handoff.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
 
@@ -41,12 +41,12 @@ Read references as needed:
 - `references/thinking-flow.md` when limitation analysis, mechanism mapping, falsification, or anti-self-deception checks need a tighter reasoning path.
 - `references/brainstorming.md` when a bounded divergent pass is needed.
 - `references/pre-idea-draft.md` before promoting serious candidates.
-- `references/selection-gate.md` before final selection, Research Branch promotion, or handoff to optimize or experiment.
+- `references/selection-gate.md` before final selection, Research Inquiry Relationship promotion, or handoff to optimize or experiment.
 - `references/paper-outline-seed.md` when the selected route is likely to become a paper-facing line and needs an early outline seed.
 
 ## Entry Signals
 
-- The Research Task needs hypotheses, limitation analysis, route selection, or a new Research Branch.
+- The Research Task needs hypotheses, limitation analysis, route selection, or a new Research Inquiry Relationship.
 - The accepted comparator, metric contract, or waiver is already clear enough to compare candidate routes.
 - The current evidence board is coherent enough to identify the incumbent, decisive results, blockers, and stale routes.
 - False-progress signals, hard constraints, or abandonment conditions need to be explicit before experimentation.
@@ -55,7 +55,7 @@ Read references as needed:
 
 - Objective contract, current-board packet, literature survey update, and candidate frontier are durable Artifacts or Evidence Items.
 - Serious surviving candidates have pre-idea drafts or equivalent challenge memos.
-- One falsifiable route is selected with a Research Branch decision, or the blocker preventing selection is recorded.
+- One falsifiable route is selected with a Research Inquiry Relationship decision, or the blocker preventing selection is recorded.
 - The handoff names the next Workflow Stage: optimize, experiment, scout, baseline, decision, write, or blocker.
 
 ## Selected Route Contract
@@ -70,7 +70,7 @@ A selected route package should include:
 - minimal validation and strongest falsification experiment
 - hard constraints, comparability boundary, abandonment condition, and expected evidence burden
 - why this route won now over the incumbent, a small local tweak, and at least one outside-family alternative
-- next Workflow Stage and any unresolved TBD surfaces such as `[[tbd-surface:policy-branching]]`, `[[tbd-surface:provider-literature-search]]`, or `[[tbd-surface:path-artifact-layout]]`
+- next Workflow Stage and any unresolved TBD surfaces such as `[[tbd-surface:policy-branching]]`, `[[tbd-surface:provider-literature-search]]`, or semantic Artifact kind through Workspace Path Resolution
 
 ## Durable Outputs
 

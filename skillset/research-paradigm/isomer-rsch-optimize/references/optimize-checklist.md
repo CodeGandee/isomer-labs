@@ -12,7 +12,7 @@ Use this checklist for a non-trivial optimize pass.
 - [ ] Check whether the method-brief slate covers more than one mechanism family.
 - [ ] Candidate briefs updated or confirmed.
 - [ ] Candidate ranking updated.
-- [ ] Promote only the strongest brief or briefs into durable Research Branches when justified.
+- [ ] Promote only the strongest brief or briefs into durable Research Inquiry Relationships when justified.
 - [ ] Current implementation-attempt pool recorded.
 - [ ] Smoke or pilot queue defined when execution is needed.
 - [ ] Full-evaluation queue defined when justified.

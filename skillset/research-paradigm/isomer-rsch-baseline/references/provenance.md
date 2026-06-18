@@ -6,12 +6,12 @@ The adaptation preserves reusable methodology: route selection, comparator-first
 
 Source-runtime concepts were intentionally translated:
 
-- quest lifecycle language became Research Thread, Research Task, Research Branch, Run, and Workflow Stage language.
+- quest lifecycle language became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage language.
 - artifact operations such as `artifact.confirm_baseline(...)`, `artifact.waive_baseline(...)`, package attachment, package import, and package publication became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, host Artifact APIs, or reusable Artifact packages.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
 - command execution and source tool wrappers became Capability Binding through an Execution Adapter.
-- source worktree and workspace assumptions became Isomer Workspace, Workspace Runtime, Agent Workspace, or TBD placeholders.
-- concrete metric-contract paths became metric-contract Artifacts plus `[[tbd-surface:path-artifact-layout]]` or `[[tbd-surface:schema-evidence-item]]` when a concrete surface must be named.
+- source worktree and workspace assumptions became Topic Workspace, Workspace Runtime, Agent Workspace, or semantic Artifact scopes resolved by Workspace Path Resolution.
+- concrete metric-contract paths became metric-contract Artifacts resolved by Workspace Path Resolution, with `[[tbd-surface:schema-evidence-item]]` only for unsettled evidence fields.
 - source package-manager, container, and service-endpoint tactics became Execution Adapter choices or Capability Bindings, not required Isomer skill behavior.
 - source scheduler and continuation terms became Workflow Stage recommendations, Gates, Decision Records, observations, or pauses for Operator Agent instruction.
 

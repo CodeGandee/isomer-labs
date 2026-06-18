@@ -8,7 +8,7 @@ Defer venue template import. The templates are useful upstream material, but the
 
 ## Why Not Import Now
 
-- The templates imply concrete manuscript layouts that Isomer has not settled; use `[[tbd-surface:path-paper-layout]]` when a paper layout must be named.
+- The templates imply concrete manuscript layouts that Isomer has not settled; use paper Artifact resolved by Workspace Path Resolution when a paper output must be named.
 - Some files contain sample manuscript content, venue instructions, TODO macros, or source-local template notes that are not directly useful as an Isomer writing method.
 - Importing multiple venue packages would increase bundle size without improving the core writing workflow.
 - Venue style files can carry license and update obligations that should be checked in a resource-focused follow-up.

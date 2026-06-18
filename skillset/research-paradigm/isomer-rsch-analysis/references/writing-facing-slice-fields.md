@@ -59,4 +59,4 @@ Why it is weak:
 
 - Use `paper_role`, `paper_placement`, `main_or_appendix`, or `tier` only when the report or paper contract has equivalent fields.
 - If the host uses different field names, keep the semantic information and map the concrete schema through `[[tbd-surface:schema-evidence-item]]`.
-- If the report layout is unsettled, use `[[tbd-surface:path-paper-layout]]`.
+- Use paper Artifacts resolved by Workspace Path Resolution for report outputs.

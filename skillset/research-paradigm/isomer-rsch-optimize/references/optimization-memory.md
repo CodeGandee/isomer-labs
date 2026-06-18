@@ -14,7 +14,7 @@ Use this template when the optimize pass creates a reusable success pattern, fai
 ## Context
 
 - Research Task:
-- Research Branch or route:
+- Research Inquiry Relationship or route:
 - candidate id:
 - strategy:
 

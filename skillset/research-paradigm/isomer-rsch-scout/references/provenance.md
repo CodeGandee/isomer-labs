@@ -6,7 +6,7 @@ The adaptation preserves reusable methodology: bounded framing, minimum-unknown 
 
 Source-runtime concepts were intentionally translated:
 
-- quest lifecycle language became Research Thread, Research Task, Research Branch, Run, and Workflow Stage language.
+- quest lifecycle language became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage language.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
 - command and repository inspection became Capability Binding through an Execution Adapter.

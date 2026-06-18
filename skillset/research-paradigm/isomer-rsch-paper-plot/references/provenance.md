@@ -6,7 +6,7 @@ The adaptation preserves reusable methodology: style routing, first-pass figure 
 
 Source-runtime concepts were intentionally translated:
 
-- plotting workspaces became figure-generation Artifacts under `[[tbd-surface:path-figure-output]]`.
+- plotting workspaces became figure-generation Artifacts resolved by Workspace Path Resolution.
 - bundled scripts became local style references and deferred resources rather than active runtime dependencies.
 - source data paths became Source Data Artifacts or linked Evidence Items.
 - script execution became Capability Binding through an Execution Adapter.

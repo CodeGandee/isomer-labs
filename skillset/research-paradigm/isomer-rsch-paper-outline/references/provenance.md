@@ -6,10 +6,10 @@ The adaptation preserves reusable methodology: paper-view and evidence-view spli
 
 Source-runtime concepts were intentionally translated:
 
-- lifecycle-level research work became Research Thread, Research Task, Research Branch, Run, and Workflow Stage language.
+- lifecycle-level research work became Research Inquiry, Research Task, Research Inquiry Relationship, Run, and Workflow Stage language.
 - artifact operations became Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - memory operations became Findings, Evidence Items, Artifacts, or durable context queries.
-- paper paths and generated layouts became Artifact layout, paper layout, or TBD placeholders.
+- paper paths and generated layouts became paper Artifacts or semantic Artifact scopes resolved through Workspace Path Resolution when ordinary locations are needed; non-path TBD placeholders remain for unsettled APIs, schemas, providers, and policies.
 - outline validation and writing-plan compilation became Gates and durable writing-plan Artifacts.
 
 License context: the source project is licensed under Apache 2.0. Preserve this notice near this self-contained adaptation when copying, distributing, or materially revising the skill.

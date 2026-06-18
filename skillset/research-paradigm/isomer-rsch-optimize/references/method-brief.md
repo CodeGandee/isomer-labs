@@ -1,6 +1,6 @@
 # Method Brief
 
-Use this template for a branchless candidate direction before it becomes a durable Research Branch.
+Use this template for a candidate direction before it becomes a durable Research Inquiry Relationship.
 
 ## Template
 
@@ -59,7 +59,7 @@ What Evidence Item should improve if this works?
 
 ## Foundation
 
-- source Research Branch, Run, comparator, or Evidence Item:
+- source Research Inquiry Relationship, Run, comparator, or Evidence Item:
 - why this foundation is the right starting point:
 
 ## Promote Now
@@ -74,4 +74,4 @@ Usually optimize or experiment.
 
 ## Promotion Rule
 
-Do not promote a method brief into a Research Branch until expected value, differentiation, and execution path clarity justify the cost under `[[tbd-surface:policy-branching]]`.
+Do not promote a method brief into a Research Inquiry Relationship until expected value, differentiation, and execution path clarity justify the cost under `[[tbd-surface:policy-branching]]`.

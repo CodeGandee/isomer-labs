@@ -60,7 +60,7 @@ Read references as needed:
 ## Durable Outputs
 
 - Source data Artifact or linked Evidence Item.
-- Figure-generation Artifact, including script or notebook path through `[[tbd-surface:path-figure-output]]`.
+- Figure-generation Artifact, including script or notebook path through figure output Artifact through Workspace Path Resolution.
 - First-pass rendered figure and inspection note.
 - Optional handoff to figure polish with target surface, claim, comparison, and unresolved visual issues.
 

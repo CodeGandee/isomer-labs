@@ -1,6 +1,6 @@
 # Finalization Checklist
 
-Use this checklist before closing, pausing, archiving, publishing, or handing off a Research Thread or Research Task.
+Use this checklist before closing, pausing, archiving, publishing, or handing off a Research Inquiry or Research Task.
 
 ## Core Closure Questions
 

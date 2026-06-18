@@ -2,7 +2,7 @@
 
 This subtree contains portable research-stage skills for Isomer Labs agents. The skills capture reusable research practice: framing a problem, accepting a baseline, choosing ideas, running experiments, analyzing evidence, writing, reviewing, rebutting, finalizing, plotting, figure polishing, and scientific computation.
 
-The skills are adapted from richer source research skills, but they are written as Isomer-native bundles. They use Isomer concepts such as Research Task, Research Branch, Run, Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Operator Agent, Agent Team Instance, Capability Binding, Execution Adapter, and Workflow Stage.
+The skills are adapted from richer source research skills, but they are written as Isomer-native bundles. They use Isomer concepts such as Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Topic Workspace, Workspace Runtime, Agent Workspace, Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Operator Agent, Agent Team Instance, Capability Binding, Execution Adapter, and Workflow Stage.
 
 ## Skill Set
 
@@ -16,7 +16,7 @@ The skills are adapted from richer source research skills, but they are written 
 | `isomer-rsch-optimize` | Manage algorithm-first candidates, frontier ranking, promotion, bounded attempts, fusion, or debug routes. |
 | `isomer-rsch-experiment` | Turn a selected route into one trustworthy measured result. |
 | `isomer-rsch-analysis` | Run follow-up evidence work such as ablations, robustness checks, error analysis, failure analysis, or review-linked slices. |
-| `isomer-rsch-decision` | Make explicit go, stop, branch, write, finalize, reset, Gate, or blocker decisions from durable evidence. |
+| `isomer-rsch-decision` | Make explicit go, stop, route, write, finalize, reset, Gate, or blocker decisions from durable evidence. |
 | `isomer-rsch-finalize` | Consolidate final claims, limitations, recommendations, and closure or handoff state. |
 | `isomer-rsch-write` | Draft or refine reports, papers, or summaries from existing evidence. |
 | `isomer-rsch-review` | Audit substantial drafts, reports, or paper-like artifacts skeptically. |
@@ -32,7 +32,7 @@ Stage and companion skills should read `isomer-rsch-shared/SKILL.md` first when 
 
 Each stage or companion skill should be usable as a self-contained bundle. `SKILL.md` is the concise entrypoint, `references/` holds source-derived playbooks and templates, `assets/` or `scripts/` are used only when a sanitized resource is directly useful, and `agents/openai.yaml` gives the UI manifest with `interface.display_name` equal to the skill name.
 
-Long source details should move into one-level local references linked directly from `SKILL.md`. Active skill docs should not require `context/explore/`, `extern/orphan/`, archived OpenSpec paths, absolute local paths, or another skill folder outside this subtree.
+Long source details should move into one-level local references linked directly from `SKILL.md`. Active skill docs should not require source-analysis paths, source checkouts, archived OpenSpec paths, absolute local paths, or another skill folder outside this subtree.
 
 Deferred resource decisions should be recorded inside the relevant skill's local references. Current deferrals include broad venue LaTeX templates for `isomer-rsch-write`, fixed-data plotting scripts for `isomer-rsch-paper-plot`, and the large generated science package-card catalog for `isomer-rsch-science`.
 
@@ -50,14 +50,14 @@ Preserve source richness by moving detail into bundled resources:
 
 Translate source concepts into Isomer terms:
 
-- Source lifecycle work becomes Research Thread, Research Task, Research Branch, Run, or Workflow Stage, depending on scope.
+- Source lifecycle work becomes Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, or Workflow Stage, depending on scope.
 - Source artifact APIs become Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
 - Source memory APIs become Findings, Evidence Items, Artifacts, or durable context queries.
 - Source command execution becomes Capability Binding through an Execution Adapter.
-- Source worktree or workspace assumptions become Isomer Workspace, Workspace Runtime, Agent Workspace, or a TBD placeholder.
+- Source worktree or workspace assumptions become Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime state, or semantic Artifact scopes resolved by Workspace Path Resolution.
 - Source scheduler and continuation terms become Workflow Stage recommendations, Gates, Decision Records, observations, or pauses for Operator Agent instruction.
 
-Mark unsettled concrete surfaces explicitly. If the source skill depends on a path, filename, command wrapper, runtime API, storage root, runner home, prompt-injection mechanism, paper-search provider, generated layout, or schema that Isomer has not accepted, use `[[tbd-surface:<id>]]` and list the id in the relevant TBD registry.
+Mark unsettled concrete surfaces explicitly. If the source skill depends on a filename, command wrapper, runtime API, runner home, prompt-injection mechanism, paper-search provider, generated layout, schema, or path outside Workspace Path Resolution that Isomer has not accepted, use a registered TBD-surface placeholder and list the id in the relevant TBD registry.
 
 ## Skill Writing Constraints
 

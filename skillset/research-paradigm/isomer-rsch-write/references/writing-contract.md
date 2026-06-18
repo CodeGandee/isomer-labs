@@ -19,7 +19,7 @@ Never make an unsupported claim sound more convincing. If evidence is missing, o
 
 ## Paper Contract Surfaces
 
-Keep these surfaces aligned when they exist: selected outline Artifact, evidence ledger or claim-evidence map, experiment or analysis matrix, references bibliography, figure/table catalog, manuscript source or rendered bundle, review or rebuttal packet, and bundle manifest. Concrete paths and storage layouts are not defined by this skill; use `[[tbd-surface:path-paper-layout]]` or `[[tbd-surface:path-artifact-layout]]` when a concrete layout must be named.
+Keep these surfaces aligned when they exist: selected outline Artifact, evidence ledger or claim-evidence map, experiment or analysis matrix, references bibliography, figure/table catalog, manuscript source or rendered bundle, review or rebuttal packet, and bundle manifest. Concrete paths and storage layouts are not defined by this skill; use paper Artifact or another semantic Artifact kind resolved by Workspace Path Resolution when a concrete layout must be named.
 
 ## Source-Term Mapping
 
@@ -37,8 +37,8 @@ Keep these surfaces aligned when they exist: selected outline Artifact, evidence
 
 | ID | Kind | Missing decision |
 | --- | --- | --- |
-| path-paper-layout | path | Report or manuscript layout. |
-| path-artifact-layout | path | Artifact directory and naming layout. |
+| paper Artifact | resolved path surface | Resolved through Workspace Path Resolution. |
+| semantic Artifact kind | resolved path surface | Resolved through Workspace Path Resolution. |
 | api-finding-query | api | API for querying and writing Findings or durable context. |
 | api-execution-command | api | Execution command surface, permissions, and logging behavior. |
 | provider-literature-search | provider | Literature search and paper-reading provider. |

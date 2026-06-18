@@ -10,7 +10,7 @@ Use a durable campaign Artifact when lineage, slice-level isolated state, review
 
 If a campaign assigns slice work to specific Agent Workspaces or Workspace Runtime surfaces, run each slice in the assigned surface unless there is a concrete reason to switch. Record that reason as Provenance.
 
-Branch or isolate the campaign from the current Run, Research Branch, or result Artifact rather than mutating a completed parent in place when lineage matters. Only create or launch the campaign after verifying that listed slices are executable with the current assets and runtime, or after marking infeasible slices explicitly.
+Isolate the campaign from the current Run, Research Inquiry Relationship, or result Artifact rather than mutating a completed parent in place when lineage matters. Only create or launch the campaign after verifying that listed slices are executable with the current assets and runtime, or after marking infeasible slices explicitly.
 
 When the campaign is writing-facing, the campaign Artifact should carry available mapping fields such as selected outline ref, research questions, experimental designs, todo items, section ids, claim links, reviewer items, or target display ids when they exist and matter.
 
@@ -85,4 +85,4 @@ When a campaign result becomes an operator-facing or report-facing chart:
 - use color to separate campaign-critical slices from background slices, not to decorate every slice equally
 - keep the main boundary change obvious in compact previews
 
-Use `[[tbd-surface:path-figure-output]]` when figure source and export layout is unsettled.
+Use figure output Artifacts resolved by Workspace Path Resolution for figure source and exports.

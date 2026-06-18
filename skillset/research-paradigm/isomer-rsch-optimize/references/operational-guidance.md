@@ -26,7 +26,7 @@ Preserve this discipline: clarify bottleneck, constraints, and comparability fir
 
 ## Promotion Protocol
 
-Promote a method brief into a Research Branch only when it clearly dominates nearby alternatives, is top-ranked and sufficiently distinct, the Operator Agent requested it, or the frontier says it is the strongest next move.
+Promote a method brief into a Research Inquiry Relationship only when it clearly dominates nearby alternatives, is top-ranked and sufficiently distinct, the Operator Agent requested it, or the frontier says it is the strongest next move.
 
 Default promotion rule: promote one candidate when it clearly dominates, at most two or three when structural uncertainty remains, and at most one per mechanism family unless a documented override is justified.
 
@@ -48,7 +48,7 @@ Every loop pass should end with one updated candidate status, one updated next a
 
 ## Execution Protocol
 
-Execution belongs behind Capability Bindings and Execution Adapters. Record commands, logs, outputs, and metrics as Runs, Evidence Items, and Provenance Records. Use `[[tbd-surface:api-execution-command]]` for unsettled command surfaces and `[[tbd-surface:path-run-logs]]` for unsettled log layouts.
+Execution belongs behind Capability Bindings and Execution Adapters. Record commands, logs, outputs, and metrics as Runs, Evidence Items, and Provenance Records. Use `[[tbd-surface:api-execution-command]]` for unsettled command surfaces and run log Artifacts resolved by Workspace Path Resolution.
 
 Prefer bounded smoke before full evaluation unless cheap direct validation is equally informative. Do not rerun the same unchanged candidate. If a candidate fails with a clear root cause, debug deliberately or archive it.
 

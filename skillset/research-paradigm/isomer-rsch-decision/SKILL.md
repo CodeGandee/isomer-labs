@@ -33,7 +33,7 @@ Read first:
 Read references as needed:
 
 - `references/strategic-decision-record.md` when a route-changing Decision Record needs a durable structure.
-- `references/route-criteria.md` when choosing among Research Branches, candidate packages, experiments, paper routes, or blockers.
+- `references/route-criteria.md` when choosing among Research Inquiry Relationships, candidate packages, experiments, paper routes, or blockers.
 - `references/canonical-actions.md` when translating the route outcome into the smallest valid next action.
 - `references/checkpoint-resume-template.md` when the decision changes the authoritative resume point.
 - `references/operational-guidance.md` when user input, baseline reuse, paper-route stop-loss, or algorithm-first frontier judgment matters.

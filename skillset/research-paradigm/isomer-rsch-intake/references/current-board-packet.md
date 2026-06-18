@@ -20,7 +20,7 @@ Use this reference when the intake result must give the next skill one authorita
 # Current Board Packet
 
 ## Active Scope
-- Research Thread or Research Task:
+- Research Inquiry or Research Task:
 - current mainline:
 - incumbent:
 - recommended next Workflow Stage:

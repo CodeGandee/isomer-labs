@@ -7,7 +7,7 @@ description: Audit and reconcile an existing research state before choosing the 
 
 ## Overview
 
-Use this skill when a Research Thread or Research Task already has drafts, baselines, runs, reviews, files, or user-provided state and the next Workflow Stage is not trustworthy yet.
+Use this skill when a Research Inquiry or Research Task already has drafts, baselines, runs, reviews, files, or user-provided state and the next Workflow Stage is not trustworthy yet.
 
 ## Workflow
 
@@ -16,7 +16,7 @@ When this skill is invoked, execute the following steps in order.
 1. **Load required context**. Read `references/isomer-research-contract.md` first and read `references/provenance.md` when source provenance or license context matters.
 2. **Select supporting references** from **Reference Routing** when state audit structure, trust taxonomy, current-board fields, or routing detail matters.
 3. **Confirm entry fit** using **Entry Signals**. If the task is blank or the next stage is already obvious from durable evidence, route directly to scout, baseline, experiment, write, decision, or finalize instead of running intake.
-4. **Read durable intent before inspecting files**. Start from the Research Goal, Operator Agent instruction, active Research Task, existing Decision Records, Findings, Artifacts, Evidence Items, and any known status surfaces.
+4. **Read durable intent before inspecting files**. Start from the Research Topic, Operator Agent instruction, active Research Task, existing Decision Records, Findings, Artifacts, Evidence Items, and any known status surfaces.
 5. **Inventory only decision-relevant assets** across baselines, Runs, analysis outputs, writing outputs, review packages, provenance, and blockers.
 6. **Trust-rank and reconcile assets** into accepted, usable-with-verification, reference-only, stale-or-conflicting, or missing-context states, then record the honest repair or backfill need.
 7. **Compile one current-board packet and route the handoff** with the trusted mainline, active blocker, stale routes to ignore, budget class, recommended Workflow Stage, Gate, Decision Record, or blocker.
@@ -39,7 +39,7 @@ Read references as needed:
 
 ## Entry Signals
 
-- The Research Thread or Research Task already has drafts, baselines, Runs, reviews, files, or user-provided state.
+- The Research Inquiry or Research Task already has drafts, baselines, Runs, reviews, files, or user-provided state.
 - The current board is stale, conflicting, incomplete, or not trustworthy enough for a stage transition.
 - The Operator Agent needs a recommended next Workflow Stage, Gate, Decision Record, or blocker.
 

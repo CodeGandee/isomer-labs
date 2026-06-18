@@ -4,8 +4,8 @@ Use this template when intake needs a durable Artifact that explains what exists
 
 ## Intake Summary
 
-- Research Thread or Research Task:
-- Research Goal:
+- Research Inquiry or Research Task:
+- Research Topic:
 - latest Operator Agent instruction:
 - entry reason:
 - recommended next Workflow Stage, Gate, Decision Record, or blocker:

@@ -16,7 +16,7 @@ When this skill is invoked, execute the following steps in order.
 1. **Load required context**. Read `references/isomer-research-contract.md` first and read `references/provenance.md` when source provenance or license context matters.
 2. **Select supporting references** from **Reference Routing** when paper triage, literature notes, evaluation contracts, baseline shortlists, or operational guidance matter.
 3. **Confirm entry fit** using **Entry Signals**. If the frame is already stable and the next stage is obvious, route directly to baseline, idea, experiment, decision, or finalize.
-4. **Reconstruct the current frame from durable state**: Research Goal, task, dataset, split, metric, baseline status, blockers, Findings, Artifacts, and Decision Records.
+4. **Reconstruct the current frame from durable state**: Research Topic, task, dataset, split, metric, baseline status, blockers, Findings, Artifacts, and Decision Records.
 5. **Identify only unknowns that change the next stage** and classify whether they block baseline work, idea work, both, or only a non-blocking future detail.
 6. **Reuse local evidence before broad search**. Query durable Findings and inspect local Artifacts first, then use literature search capability only for the unresolved benchmark, paper, repo, or evaluation neighborhood.
 7. **Record the evaluation contract, baseline shortlist, and next route** as durable Artifacts or a Decision Record, then stop when baseline, idea, Gate, Decision Record, or blocker is clear.

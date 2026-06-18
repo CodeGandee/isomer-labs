@@ -7,12 +7,12 @@ language.
 
 | Source term or operation | Isomer Labs framing |
 | --- | --- |
-| lifecycle-level research work | Research Thread |
-| initial goal or objective text | Research Goal, Measurable Objective, or Exploratory Goal |
+| lifecycle-level research work | Research Topic, Research Inquiry, or Research Task depending on scope |
+| initial goal or objective text | Research Topic with optional Measurable Objective |
 | bounded unit of research work | Research Task |
 | one execution attempt | Run |
-| forked research route | Research Branch |
-| filesystem area for one task | Isomer Workspace, if storage scope is known |
+| forked research route | Research Inquiry Relationship plus Decision Record when a choice is made |
+| filesystem area for topic, task, run, output, or agent work | Topic Workspace, Workspace Runtime, semantic Artifact kind, or Agent Workspace through Workspace Path Resolution |
 | persistent task state | Workspace Runtime |
 | per-agent scratch or local trace area | Agent Workspace or Agent Runtime |
 | artifact operation | Artifact, Evidence Item, Decision Record, Gate, Provenance Record, or host API |
@@ -40,10 +40,6 @@ Operator Agent instruction.
 
 ## Unsettled Surface Rule
 
-When a method needs a concrete path, API, schema, provider, command, storage
-root, runner home, prompt-injection mechanism, or generated layout, use
-`[[tbd-surface:<id>]]` and add or reuse the id in `tbd-surface-registry.md`.
+When a method needs a concrete API, schema, provider, command, runner home, prompt-injection mechanism, generated layout, or path outside Workspace Path Resolution, use a registered TBD-surface placeholder and add or reuse the id in `tbd-surface-registry.md`.
 
-Do not guess folders such as artifacts, experiments, paper, memory, runs, or
-agent homes as Isomer defaults.
-
+Do not guess folders such as artifacts, experiments, paper, memory, runs, or agent homes as ad hoc Isomer defaults. Name the semantic Artifact kind or workspace scope and let the Workspace Path Resolver choose the effective path.

@@ -96,4 +96,4 @@ If a slice needs an extra comparator, treat it as analysis-local support and do 
 - Do not call subjective inspection objective without rubric, sample, trace, and caveat.
 - Do not call a writing-facing slice complete while its target outline, evidence ledger, section, claim, table, reviewer item, or rebuttal item is stale or unmapped.
 - If two slices in a row fail to change the claim boundary, frontier, or next route, stop widening and route through decision, write, experiment, or an explicit blocker.
-- Use `[[tbd-surface:path-analysis-output]]` for unsettled analysis layouts.
+- Use analysis output Artifacts resolved by Workspace Path Resolution.

@@ -6,7 +6,7 @@ As a researcher running a fragile experiment workflow, I want to manually direct
 
 ## Scenario
 
-The user has a Measurable Objective: improve a model's robustness on a new evaluation set. The Project already has a baseline implementation and a partially working evaluation script. The user wants automatic team execution for routine baseline, experiment, analysis, and review work, but wants Manual Mode for a fragile environment-repair step routed through the Service Team and a custom error-analysis pass.
+The user has a Research Topic with a Measurable Objective: improve a model's robustness on a new evaluation set. The Project already has a baseline implementation and a partially working evaluation script. The user wants automatic team execution for routine baseline, experiment, analysis, and review work, but wants Manual Mode for a fragile environment-repair step routed through the Service Team and a custom error-analysis pass.
 
 This use case is split into substages so each transition is easier to inspect:
 
@@ -33,7 +33,7 @@ flowchart LR
 
 ### Purpose
 
-Create the Research Thread, approve the team profile and watcher defaults, then run baseline validation automatically.
+Create the Research Topic and initial Research Inquiry, approve the team profile and watcher defaults, then run baseline validation automatically.
 
 ### User Activity Diagram
 
@@ -52,11 +52,11 @@ flowchart TD
 
 ### Steps
 
-1. The user asks the Operator Agent to create a Research Thread with a Measurable Objective, robustness metric, expected baseline behavior, and a constraint that fragile environment repair should stay under manual control.
-2. The Operator Agent validates the Project Manifest, selected Isomer Workspaces, and available built-in artifacts through `isomer-cli`.
+1. The user asks the Operator Agent to create a Research Topic with a Measurable Objective, robustness metric, expected baseline behavior, and a constraint that fragile environment repair should stay under manual control.
+2. The Operator Agent validates the Project Manifest, selected Topic Workspaces, and available built-in artifacts through `isomer-cli`.
 3. The Operator Agent specializes or reuses a Topic Agent Team Profile with implementation, experimenter, analyst, and reviewer roles.
 4. The Operator Agent asks the user to approve the Topic Agent Team Profile, Workflow Stages, Gate policy, and Coordination Policy defaults for Manual Mode Completion Watcher Contracts.
-5. The Operator Agent creates a `validate-baseline` Research Task and declares an Isomer Workspace for it in the Project Manifest.
+5. The Operator Agent declares a Topic Workspace for the Research Topic in the Project Manifest and records the `validate-baseline` Research Task inside it.
 6. An automatic Run starts with `control_mode = automatic`; the Execution Adapter launches or resolves the Agent Team Instance and its Agent Instances.
 7. The experimenter Agent Instance runs the baseline validation automatically and records logs, metrics, and result tables as Artifacts.
 8. The analyst Agent Instance compares baseline metrics with expected values and creates Evidence Items for the baseline Gate.
@@ -304,7 +304,7 @@ flowchart TD
   U1["Review error analysis<br/>and audit evidence"]
   U2{"Choose next<br/>research action"}
   U3["Continue<br/>experiments"]
-  U4["Create Research Branch<br/>for failure cluster"]
+  U4["Create follow-up<br/>Research Inquiry"]
   U5["Stop and<br/>write report"]
   U6["Decision Record<br/>is stored"]
 
@@ -317,7 +317,7 @@ flowchart TD
 ### Steps
 
 1. The Operator Agent emits or updates View Manifests for the error-cluster summary, reviewer audit, manual handoff status, and next-action Gate.
-2. The Operator Agent presents a Gate asking the user whether to continue experiments, create a Research Branch for the failure cluster, or stop and write a report.
+2. The Operator Agent presents a Gate asking the user whether to continue experiments, create a follow-up Research Inquiry for the failure cluster, or stop and write a report.
 3. The user's decision is recorded as a Decision Record with links to the manual Run handoffs, Signal Observations, Artifacts, Evidence Items, and Research Claims.
 
 ### Mermaid Sequence
@@ -335,7 +335,7 @@ sequenceDiagram
   Operator->>Runtime: Read completed automatic Runs<br/>and manual handoffs
   Runtime->>Views: Request error analysis<br/>and next-action Gate views
   Views->>GUI: Emit View<br/>Manifests
-  GUI->>Operator: Surface continue,<br/>branch, or stop Gate
+  GUI->>Operator: Surface continue,<br/>inquiry, or stop Gate
   Operator->>User: Ask next<br/>research decision
   User->>Operator: Select next<br/>action
   Operator->>Runtime: Submit Gate<br/>decision
@@ -344,11 +344,11 @@ sequenceDiagram
 
 ## Durable Outputs
 
-- Research Thread with a Measurable Objective for robustness improvement
+- Research Topic with a Measurable Objective for robustness improvement and a Research Inquiry for baseline, candidate, and error-analysis work
 - Topic Agent Team Profile with implementation, experimenter, analyst, and reviewer roles
 - Coordination Policy defaults for Manual Mode Completion Watcher Contracts
 - Agent Team Instance launched or resolved from the Topic Agent Team Profile
-- Isomer Workspaces for baseline validation, candidate experiments, manual environment repair, and manual error analysis as needed
+- One Topic Workspace for the Research Topic, with Research Tasks for baseline validation, candidate experiments, manual environment repair, and manual error analysis as needed
 - Automatic Runs for baseline validation and candidate experiments with `control_mode = automatic`
 - Manual Runs for environment repair and error analysis with `control_mode = manual`
 - Manual Run prompt-scope metadata for `single_stage` repair and `multi_step` error analysis

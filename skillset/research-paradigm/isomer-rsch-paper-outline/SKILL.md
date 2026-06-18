@@ -65,4 +65,4 @@ Read references as needed:
 - Do not treat a section list as a mature outline.
 - Do not escalate observations into claims without evidence and falsification boundaries.
 - Do not mark a mature full-empirical outline ready without visible reviewer objections and analysis-plan coverage, unless the paper scope is explicitly downgraded.
-- Use `[[tbd-surface:api-artifact-record]]` for unsettled outline recording and `[[tbd-surface:path-paper-layout]]` for unsettled paper layouts.
+- Use `[[tbd-surface:api-artifact-record]]` for unsettled outline recording and paper Artifacts resolved by Workspace Path Resolution for paper outputs.

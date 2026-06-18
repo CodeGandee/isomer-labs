@@ -19,7 +19,7 @@ Isomer science skills do not embed an HPC scheduler. Operate SSH, queue, schedul
 - job id or equivalent durable handle.
 - submit command or script Artifact.
 - input paths.
-- log paths under `[[tbd-surface:path-run-logs]]`.
+- log outputs as run log Artifacts resolved by Workspace Path Resolution.
 - output paths under the accepted experiment or run-output surface.
 - monitoring cadence and final status.
 - validation status and caveats.

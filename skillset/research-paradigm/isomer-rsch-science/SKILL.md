@@ -68,4 +68,4 @@ Read references as needed:
 - Do not weaken tolerances, filters, physical models, convergence criteria, validation checks, or scientific semantics merely to pass.
 - Do not submit remote or HPC jobs without a log path, job id or status plan when available, and a monitoring cadence.
 - Do not record science evidence only in chat; create durable Artifacts, Evidence Items, Research Claims, Decision Records, Gates, or Provenance Records through the host surface.
-- Use `[[tbd-surface:api-execution-command]]` for unsettled execution commands and `[[tbd-surface:path-run-logs]]` for unsettled log layouts.
+- Use `[[tbd-surface:api-execution-command]]` for unsettled execution commands and run log Artifacts resolved by Workspace Path Resolution.

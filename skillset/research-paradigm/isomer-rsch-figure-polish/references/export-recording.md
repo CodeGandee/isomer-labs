@@ -14,7 +14,7 @@ Record enough information that another agent can find, inspect, regenerate, and 
 
 - source data Artifact or Evidence Item path.
 - figure-generation Artifact or script path.
-- final export paths under `[[tbd-surface:path-figure-output]]`.
+- final export paths as figure output Artifacts resolved by Workspace Path Resolution.
 - surface class.
 - main Research Claim, comparison, report section, or reviewer item.
 - visual inspection result.

@@ -14,6 +14,6 @@ accepted
 
 ## Consequences
 
-- The GUI Backend should store publisher identity, Project, Isomer Workspace, Run, Agent Team Instance, Agent Instance, render payload id, component id, component instance id, layout spec id, Artifact refs, timestamps, status, and retention policy for each direct AG-UI Event Batch.
+- The GUI Backend should store publisher identity, Project, Topic Workspace, Run, Agent Team Instance, Agent Instance, render payload id, component id, component instance id, layout spec id, Artifact refs, timestamps, status, and retention policy for each direct AG-UI Event Batch.
 - Canonical recovery should use Workspace Runtime state, Artifacts, View Manifests, component refs, and Provenance Records instead of assuming full AG-UI replay is available.
 - Full AG-UI payload retention is explicit, user-directed behavior. It should be visible in the Operator Agent interaction because full payloads may contain sensitive research context, large data, or generated UI details.

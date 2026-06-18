@@ -4,7 +4,7 @@ Use this reference at the start of a fresh idea pass and whenever an existing id
 
 ## Survey Header
 
-- Research Task or Research Branch id.
+- Research Task or Research Inquiry Relationship id.
 - Date.
 - Comparator id or method name.
 - Task, dataset, and metric contract.
@@ -43,7 +43,7 @@ For each serious candidate, state the closest prior art, mechanism overlap, what
 
 ## Codebase Translation Note
 
-Connect the literature back to the current implementation surface: relevant modules, required implementation levers, likely feasibility blockers, and cheapest falsification path. Use `[[tbd-surface:path-artifact-layout]]` rather than inventing repository-specific output paths.
+Connect the literature back to the current implementation surface: relevant modules, required implementation levers, likely feasibility blockers, and cheapest falsification path. Use semantic Artifact kind through Workspace Path Resolution rather than inventing repository-specific output paths.
 
 ## Citation-Ready Shortlist
 

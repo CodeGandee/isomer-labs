@@ -1,6 +1,6 @@
 # Candidate Ranking
 
-Use this reference before promoting method briefs into durable Research Branches.
+Use this reference before promoting method briefs into durable Research Inquiry Relationships.
 
 ## Template
 

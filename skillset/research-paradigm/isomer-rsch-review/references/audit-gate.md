@@ -32,11 +32,11 @@ If novelty, evidence sufficiency, or reader value has collapsed beyond reasonabl
 
 ## TBD Surfaces
 
-Use `[[tbd-surface:path-paper-layout]]` for concrete manuscript layouts, `[[tbd-surface:api-artifact-record]]` for record updates, `[[tbd-surface:api-finding-query]]` for durable context queries, `[[tbd-surface:provider-literature-search]]` for literature search providers, and `[[tbd-surface:schema-evidence-item]]` for unsettled evidence fields.
+Use paper Artifact through Workspace Path Resolution for concrete manuscript layouts, `[[tbd-surface:api-artifact-record]]` for record updates, `[[tbd-surface:api-finding-query]]` for durable context queries, `[[tbd-surface:provider-literature-search]]` for literature search providers, and `[[tbd-surface:schema-evidence-item]]` for unsettled evidence fields.
 
 | ID | Kind | Missing decision |
 | --- | --- | --- |
-| path-paper-layout | path | Report or manuscript layout. |
+| paper Artifact | resolved path surface | Resolved through Workspace Path Resolution. |
 | api-artifact-record | api | API for recording Artifacts and Provenance Records. |
 | api-finding-query | api | API for querying and writing Findings or durable context. |
 | api-execution-command | api | Execution command surface, permissions, and logging behavior. |

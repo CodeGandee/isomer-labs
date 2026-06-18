@@ -1,6 +1,6 @@
 # Current Board Packet
 
-Use this reference before widening the idea frontier. The goal is to compress the currently relevant durable state into one board surface so ideation does not continue from stale Research Branches, stale narratives, or stale blockers.
+Use this reference before widening the idea frontier. The goal is to compress the currently relevant durable state into one board surface so ideation does not continue from stale Research Inquiry directions, stale narratives, or stale blockers.
 
 ## Minimal Fields
 
