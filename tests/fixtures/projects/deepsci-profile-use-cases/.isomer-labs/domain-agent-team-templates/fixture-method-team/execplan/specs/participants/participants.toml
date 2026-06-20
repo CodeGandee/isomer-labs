@@ -1,0 +1,44 @@
+[template]
+id = "fixture-method-team"
+description = "Minimal generic Domain Agent Team Template fixture."
+isomer_template_layer = "domain_agent_team_template"
+root_role = "fixture-coordinator"
+topology_mode = "linear-review"
+topic_instantiation_required = true
+default_execution_mode = "manual"
+auto_mode_requires_topic_policy = false
+
+[[roles]]
+id = "fixture-coordinator"
+description = "Coordinates fixture work and review."
+role_kind = "operator"
+required = true
+scalable = false
+agent_profile_placeholder = "{fixture_coordinator_agent_profile_ref}"
+capability_binding_placeholder = "{fixture_coordinator_capability_binding_ref}"
+skill_projection_placeholder = "{fixture_coordinator_skill_projection_ref}"
+required_skills = ["fixture-coordinate"]
+optional_skills = ["fixture-review"]
+
+[[roles]]
+id = "fixture-researcher"
+description = "Performs bounded fixture research tasks."
+role_kind = "researcher"
+required = true
+scalable = true
+scaling_scope = "research_task"
+agent_profile_placeholder = "{fixture_researcher_agent_profile_ref}"
+capability_binding_placeholder = "{fixture_researcher_capability_binding_ref}"
+skill_projection_placeholder = "{fixture_researcher_skill_projection_ref}"
+required_skills = ["fixture-research"]
+optional_skills = ["fixture-summarize"]
+
+[[stage_routes]]
+workflow_stage = "coordinate"
+owner_role = "fixture-coordinator"
+description = "Coordinate fixture work."
+
+[[stage_routes]]
+workflow_stage = "research"
+owner_role = "fixture-researcher"
+description = "Run bounded fixture research."

@@ -1,0 +1,19 @@
+[catalog]
+description = "Fixture placeholder catalog."
+template_id = "fixture-method-team"
+isomer_template_layer = "domain_agent_team_template"
+
+[[placeholders]]
+name = "{domain_agent_team_template_ref}"
+description = "Template ref."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{research_topic_id}"
+description = "Concrete Research Topic id."
+required_for_topic_profile = true
+
+[[placeholders]]
+name = "{topic_workspace_ref}"
+description = "Concrete Topic Workspace ref."
+required_for_topic_profile = true

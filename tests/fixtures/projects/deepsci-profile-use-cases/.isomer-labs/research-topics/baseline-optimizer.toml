@@ -1,0 +1,22 @@
+schema_version = "isomer-research-topic-config.v1"
+research_topic_id = "baseline-optimizer"
+topic_statement = "Reproduce a baseline method and optimize it under measured acceptance criteria."
+measurable_objectives = ["reproduce-baseline-metric", "improve-primary-score"]
+default_domain_agent_team_template_id = "deepsci-org"
+default_topic_agent_team_profile_id = "uc-02-baseline-optimizer"
+coordination_policy_ref = "coordination-policy:baseline-optimizer-mixed-control"
+baseline_waiver_policy_ref = "baseline-waiver-policy:baseline-optimizer-requires-evidence"
+literature_provider_ref = "literature-provider:baseline-optimizer-benchmark"
+
+[gate_policy_refs]
+default = "gate-policy:baseline-optimizer-baseline-acceptance"
+automatic_closeout = "gate-policy:baseline-optimizer-automatic-closeout"
+
+[scheduler_policy_refs]
+default = "scheduler-policy:baseline-optimizer-bounded"
+
+[capability_binding_refs]
+default = "capability-binding:baseline-optimizer-default"
+
+[skill_binding_projection_refs]
+default = "skill-projection:baseline-optimizer-default"

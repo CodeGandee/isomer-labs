@@ -9,3 +9,4 @@ This directory contains scenario use cases for semi-automatic research with Isom
 - [Use Case 3: Plan and Execute a Paper Revision](uc-03-plan-and-execute-paper-revision.md)
 - [Use Case 4: Generate a Task-Specific GUI Component](uc-04-use-project-specific-gui-component.md)
 - [Use Case 5: Mix Manual and Automatic Runs](uc-05-mix-manual-and-automatic-runs.md)
+- [Use Case 6: Capstone Roadmap Verification with Flash Attention 4 Runtime Prediction on DGX Spark GB10](uc-06-flash-attention-gb10-runtime-prediction.md)

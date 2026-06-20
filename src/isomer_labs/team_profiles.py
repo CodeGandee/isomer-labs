@@ -33,7 +33,14 @@ _PROFILE_RUNTIME_KEYS = {
     "gateway_state",
     "agent_team_instance_id",
     "agent_instance_id",
+    "houmao_managed_agent_id",
+    "houmao_managed_agent_ids",
+    "managed_agent_id",
+    "managed_agent_ids",
     "adapter_launch_ref",
+    "houmao_launch_ref",
+    "launch_ref",
+    "launch_refs",
     "launch_dossier_ref",
     "provider_payload",
     "provider_payloads",
@@ -235,6 +242,7 @@ def validate_topic_agent_team_profile(
             )
         )
     _validate_project_scope(profile, project, diagnostics)
+    _validate_topic_local_refs(profile, project, diagnostics)
     _validate_roles(profile, template, diagnostics)
     _validate_fanout(profile, template, diagnostics)
     _validate_policy_posture(profile, diagnostics)
@@ -373,6 +381,42 @@ def _validate_project_scope(
                     field="topic_workspace_id",
                     message="Topic Agent Team Profile references another Research Topic's Topic Workspace.",
                 )
+            )
+
+
+def _validate_topic_local_refs(
+    profile: TopicAgentTeamProfile,
+    project: Project | None,
+    diagnostics: list[Diagnostic],
+) -> None:
+    if project is None:
+        return
+    other_topic_ids = sorted(topic.id for topic in project.manifest.research_topics if topic.id != profile.research_topic_id)
+    if not other_topic_ids:
+        return
+    for field_name, value in (
+        ("coordination_policy_ref", profile.coordination_policy_ref),
+        ("gate_policy_ref", profile.gate_policy_ref),
+        ("scheduler_policy_ref", profile.scheduler_policy_ref),
+        ("baseline_waiver_policy_ref", profile.baseline_waiver_policy_ref),
+        ("literature_provider_ref", profile.literature_provider_ref),
+        ("automatic_mode_policy_ref", profile.automatic_mode_policy_ref),
+    ):
+        _validate_topic_ref_value(profile, field_name, value, other_topic_ids, diagnostics)
+    for index, artifact_ref in enumerate(profile.expected_artifacts):
+        _validate_topic_ref_value(profile, f"expected_artifacts[{index}]", artifact_ref, other_topic_ids, diagnostics)
+    for binding in profile.role_bindings:
+        for field_name, value in (
+            ("agent_profile_ref", binding.agent_profile_ref),
+            ("capability_binding_ref", binding.capability_binding_ref),
+            ("skill_binding_projection_ref", binding.skill_binding_projection_ref),
+        ):
+            _validate_topic_ref_value(
+                profile,
+                f"role_bindings.{binding.role_id}.{field_name}",
+                value,
+                other_topic_ids,
+                diagnostics,
             )
 
 
@@ -569,6 +613,36 @@ def _validate_agent_workspace_topic(
                 message="Agent Workspace ref points at another Research Topic's Topic Workspace.",
             )
         )
+
+
+def _validate_topic_ref_value(
+    profile: TopicAgentTeamProfile,
+    field: str,
+    value: str | None,
+    other_topic_ids: list[str],
+    diagnostics: list[Diagnostic],
+) -> None:
+    if value is None:
+        return
+    leaked_topic = next((topic_id for topic_id in other_topic_ids if _ref_encodes_topic_id(value, topic_id)), None)
+    if leaked_topic is None:
+        return
+    diagnostics.append(
+        Diagnostic(
+            code="ISO019",
+            severity="error",
+            concept="Topic Agent Team Profile isolation",
+            path=profile.source_path,
+            field=field,
+            message=f"Topic-local ref encodes another Research Topic id: {leaked_topic}.",
+        )
+    )
+
+
+def _ref_encodes_topic_id(value: str, topic_id: str) -> bool:
+    normalized = value.replace("/", ":")
+    tokens = [token for token in normalized.split(":") if token]
+    return any(token == topic_id or token.startswith(f"{topic_id}-") or token.startswith(f"{topic_id}_") for token in tokens)
 
 
 def _scan_profile_for_forbidden_fields(

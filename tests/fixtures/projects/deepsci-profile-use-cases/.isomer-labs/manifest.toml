@@ -1,0 +1,65 @@
+schema_version = "isomer-project-manifest.v1"
+
+[defaults]
+research_topic_id = "novel-biomarker"
+topic_workspace_id = "novel-biomarker"
+domain_agent_team_template_id = "deepsci-org"
+topic_agent_team_profile_id = "uc-01-novel-biomarker"
+
+[[research_topics]]
+id = "novel-biomarker"
+config_path = ".isomer-labs/research-topics/novel-biomarker.toml"
+topic_workspace_id = "novel-biomarker"
+status = "active"
+
+[[research_topics]]
+id = "baseline-optimizer"
+config_path = ".isomer-labs/research-topics/baseline-optimizer.toml"
+topic_workspace_id = "baseline-optimizer"
+status = "active"
+
+[[topic_workspaces]]
+id = "novel-biomarker"
+research_topic_id = "novel-biomarker"
+path = "topic-workspaces/novel-biomarker"
+status = "active"
+
+[[topic_workspaces]]
+id = "baseline-optimizer"
+research_topic_id = "baseline-optimizer"
+path = "topic-workspaces/baseline-optimizer"
+status = "active"
+
+[[domain_agent_team_templates]]
+id = "fixture-method-team"
+source_path = ".isomer-labs/domain-agent-team-templates/fixture-method-team/execplan"
+source_kind = "project"
+status = "active"
+
+[[topic_agent_team_profiles]]
+id = "uc-01-novel-biomarker"
+path = ".isomer-labs/team-profiles/uc-01-novel-biomarker.toml"
+domain_agent_team_template_id = "deepsci-org"
+research_topic_id = "novel-biomarker"
+status = "active"
+
+[[topic_agent_team_profiles]]
+id = "uc-03-novel-biomarker-revision"
+path = ".isomer-labs/team-profiles/uc-03-novel-biomarker-revision.toml"
+domain_agent_team_template_id = "deepsci-org"
+research_topic_id = "novel-biomarker"
+status = "active"
+
+[[topic_agent_team_profiles]]
+id = "uc-02-baseline-optimizer"
+path = ".isomer-labs/team-profiles/uc-02-baseline-optimizer.toml"
+domain_agent_team_template_id = "deepsci-org"
+research_topic_id = "baseline-optimizer"
+status = "active"
+
+[[topic_agent_team_profiles]]
+id = "uc-05-baseline-optimizer-mixed"
+path = ".isomer-labs/team-profiles/uc-05-baseline-optimizer-mixed.toml"
+domain_agent_team_template_id = "deepsci-org"
+research_topic_id = "baseline-optimizer"
+status = "active"

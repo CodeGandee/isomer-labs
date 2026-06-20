@@ -1,0 +1,96 @@
+schema_version = "isomer-topic-agent-team-profile.v1"
+id = "uc-01-novel-biomarker"
+domain_agent_team_template_id = "deepsci-org"
+research_topic_id = "novel-biomarker"
+topic_workspace_id = "novel-biomarker"
+coordination_policy_ref = "coordination-policy:novel-biomarker-manual-review"
+gate_policy_ref = "gate-policy:novel-biomarker-follow-up-inquiry"
+scheduler_policy_ref = "scheduler-policy:novel-biomarker-manual"
+baseline_waiver_policy_ref = "baseline-waiver-policy:novel-biomarker-exploratory"
+literature_provider_ref = "literature-provider:novel-biomarker-curated"
+default_execution_mode = "manual"
+reviewer_read_access_policy = "promoted-artifacts-only"
+expected_artifacts = ["artifact:novel-biomarker:research-inquiry-map", "artifact:novel-biomarker:scout-report", "artifact:novel-biomarker:follow-up-inquiry-options"]
+constraints = ["use_case:UC-01", "scout-framer-required", "analyzer-summarizes-evidence", "reviewer-checks-follow-up-inquiry-gate"]
+
+[[role_bindings]]
+role_id = "deepsci-org-master"
+active = true
+agent_profile_ref = "agent-profile:novel-biomarker:master"
+capability_binding_ref = "capability-binding:novel-biomarker:master"
+skill_binding_projection_ref = "skill-projection:novel-biomarker:master"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-master"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
+optional_skills = ["isomer-rsch-review"]
+
+[[role_bindings]]
+role_id = "deepsci-org-framer"
+active = true
+agent_profile_ref = "agent-profile:novel-biomarker:framer"
+capability_binding_ref = "capability-binding:novel-biomarker:framer"
+skill_binding_projection_ref = "skill-projection:novel-biomarker:framer"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-framer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]
+optional_skills = ["isomer-rsch-science"]
+
+[[role_bindings]]
+role_id = "deepsci-org-designer"
+active = true
+agent_profile_ref = "agent-profile:novel-biomarker:designer"
+capability_binding_ref = "capability-binding:novel-biomarker:designer"
+skill_binding_projection_ref = "skill-projection:novel-biomarker:designer"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-designer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"]
+optional_skills = ["isomer-rsch-scout"]
+
+[[role_bindings]]
+role_id = "deepsci-org-experimenter"
+active = true
+agent_profile_ref = "agent-profile:novel-biomarker:experimenter"
+capability_binding_ref = "capability-binding:novel-biomarker:experimenter"
+skill_binding_projection_ref = "skill-projection:novel-biomarker:experimenter"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-experimenter"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"]
+optional_skills = ["isomer-rsch-analysis"]
+
+[[role_bindings]]
+role_id = "deepsci-org-analyzer"
+active = true
+agent_profile_ref = "agent-profile:novel-biomarker:analyzer"
+capability_binding_ref = "capability-binding:novel-biomarker:analyzer"
+skill_binding_projection_ref = "skill-projection:novel-biomarker:analyzer"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-analyzer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"]
+optional_skills = ["isomer-rsch-paper-plot"]
+
+[[role_bindings]]
+role_id = "deepsci-org-publisher"
+active = true
+agent_profile_ref = "agent-profile:novel-biomarker:publisher"
+capability_binding_ref = "capability-binding:novel-biomarker:publisher"
+skill_binding_projection_ref = "skill-projection:novel-biomarker:publisher"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-publisher"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+optional_skills = ["nature-polishing"]
+
+[[role_bindings]]
+role_id = "deepsci-org-reviewer"
+active = true
+agent_profile_ref = "agent-profile:novel-biomarker:reviewer"
+capability_binding_ref = "capability-binding:novel-biomarker:reviewer"
+skill_binding_projection_ref = "skill-projection:novel-biomarker:reviewer"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-reviewer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"]
+optional_skills = ["isomer-rsch-scout"]
+
+[[fanout_policies]]
+role_id = "deepsci-org-experimenter"
+parallel_execution_scope = "research_task"
+max_shards = 2
+allocation_rule = "fanout:novel-biomarker:uc-01-experimenter"
+
+[[fanout_policies]]
+role_id = "deepsci-org-analyzer"
+parallel_execution_scope = "research_task"
+max_shards = 2
+allocation_rule = "fanout:novel-biomarker:uc-01-analyzer"

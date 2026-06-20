@@ -47,10 +47,22 @@ RUNTIME_TRUTH_KEYS = {
     "scheduler_internals",
     "provider_payload",
     "provider_payloads",
+    "pixi_install_output",
+    "pixi_install_outputs",
+    "pixi_prepared_environment_path",
+    "pixi_prepared_environment_paths",
+    "prepared_environment_path",
+    "prepared_environment_paths",
+    "environment_readiness",
+    "environment_readiness_record",
+    "environment_readiness_records",
+    "environment_readiness_status",
     "mailbox_state",
     "gateway_state",
     "mailbox_ref",
     "gateway_ref",
+    "agent_workspace_state",
+    "agent_workspace_states",
     "agent_team_instance_state",
     "adapter_launch_ref",
     "launch_dossier_ref",
@@ -62,6 +74,7 @@ def build_project_state(project: Project) -> ProjectState:
     diagnostics.extend(scan_for_forbidden_fields(project.manifest.raw, "Project Manifest", project.manifest_path))
     diagnostics.extend(_duplicate_id_diagnostics(project))
     diagnostics.extend(_validate_workspace_registrations(project))
+    diagnostics.extend(_validate_environment_bindings(project))
     diagnostics.extend(_validate_template_registrations(project))
     diagnostics.extend(_validate_profile_registrations(project))
 
@@ -169,13 +182,6 @@ def _duplicate_id_diagnostics(project: Project) -> list[Diagnostic]:
             )
         )
     for profile_id in sorted(id_ for id_, count in profile_counts.items() if count > 1):
-        active_profiles = [
-            profile
-            for profile in project.manifest.topic_agent_team_profiles
-            if profile.id == profile_id and profile.status != "archived"
-        ]
-        if len(active_profiles) <= 1:
-            continue
         diagnostics.append(
             Diagnostic(
                 code="ISO004",
@@ -248,6 +254,98 @@ def _validate_workspace_registrations(project: Project) -> list[Diagnostic]:
                         message="Research Topic registration references a Topic Workspace assigned to a different Research Topic.",
                     )
                 )
+    return diagnostics
+
+
+def _validate_environment_bindings(project: Project) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    topic_ids = {topic.id for topic in project.manifest.research_topics}
+    project_binding_keys = Counter(
+        (binding.research_topic_id, binding.pixi_environment, binding.purpose or "")
+        for binding in project.manifest.topic_pixi_environment_bindings
+        if binding.status == "active"
+    )
+    standalone_binding_keys = Counter(
+        (binding.research_topic_id, binding.manifest_path_input, binding.pixi_environment or "", binding.purpose or "")
+        for binding in project.manifest.topic_standalone_pixi_bindings
+        if binding.status == "active"
+    )
+
+    for project_binding in project.manifest.topic_pixi_environment_bindings:
+        if project_binding.status == "archived":
+            continue
+        if project_binding.research_topic_id not in topic_ids:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO008",
+                    severity="error",
+                    concept="Topic Pixi environment binding",
+                    path=project.manifest_path,
+                    field=f"topic_pixi_environment_bindings.{project_binding.research_topic_id}.research_topic_id",
+                    message="Topic Pixi environment binding references an unregistered Research Topic.",
+                )
+            )
+
+    for standalone_binding in project.manifest.topic_standalone_pixi_bindings:
+        if standalone_binding.status == "archived":
+            continue
+        if standalone_binding.research_topic_id not in topic_ids:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO008",
+                    severity="error",
+                    concept="Topic standalone Pixi binding",
+                    path=project.manifest_path,
+                    field=f"topic_standalone_pixi_bindings.{standalone_binding.research_topic_id}.research_topic_id",
+                    message="Topic standalone Pixi binding references an unregistered Research Topic.",
+                )
+            )
+        resolved_manifest_path = resolve_project_path(project.root, standalone_binding.manifest_path_input)
+        if not is_within(resolved_manifest_path, project.root):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO005",
+                    severity="error",
+                    concept="Topic standalone Pixi binding",
+                    path=project.manifest_path,
+                    field=f"topic_standalone_pixi_bindings.{standalone_binding.research_topic_id}.manifest_path",
+                    message="Standalone Pixi manifest path resolves outside the Project root.",
+                )
+            )
+
+    for research_topic_id, pixi_environment, purpose in sorted(
+        key for key, count in project_binding_keys.items() if count > 1
+    ):
+        diagnostics.append(
+            Diagnostic(
+                code="ISO004",
+                severity="error",
+                concept="Topic Pixi environment binding",
+                path=project.manifest_path,
+                field="topic_pixi_environment_bindings",
+                message=(
+                    "Duplicate active Topic Pixi environment binding is registered: "
+                    f"{research_topic_id}/{pixi_environment}/{purpose or 'default'}."
+                ),
+            )
+        )
+
+    for research_topic_id, manifest_path_input, pixi_environment, purpose in sorted(
+        key for key, count in standalone_binding_keys.items() if count > 1
+    ):
+        diagnostics.append(
+            Diagnostic(
+                code="ISO004",
+                severity="error",
+                concept="Topic standalone Pixi binding",
+                path=project.manifest_path,
+                field="topic_standalone_pixi_bindings",
+                message=(
+                    "Duplicate active Topic standalone Pixi binding is registered: "
+                    f"{research_topic_id}/{manifest_path_input}/{pixi_environment or 'default'}/{purpose or 'default'}."
+                ),
+            )
+        )
     return diagnostics
 
 

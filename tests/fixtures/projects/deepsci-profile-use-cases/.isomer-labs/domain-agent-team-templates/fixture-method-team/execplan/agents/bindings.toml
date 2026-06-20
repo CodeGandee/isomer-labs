@@ -1,0 +1,34 @@
+[package]
+description = "Placeholder-backed fixture binding package."
+loop_slug = "fixture-method-team"
+manifest = "execplan/manifest.toml"
+participants = "execplan/specs/participants/participants.toml"
+default_execution_mode = "manual"
+topic_instantiation_required = true
+
+[generated_skills]
+shared = "execplan/skills/fixture-shared-template"
+
+[[participants]]
+role_id = "fixture-coordinator"
+profile_path = "execplan/agents/profiles/fixture-coordinator.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/fixture-coordinator.md"
+agent_profile_placeholder = "{fixture_coordinator_agent_profile_ref}"
+capability_binding_placeholder = "{fixture_coordinator_capability_binding_ref}"
+skill_projection_placeholder = "{fixture_coordinator_skill_projection_ref}"
+workspace_placeholder = "{fixture_coordinator_agent_workspace_ref}"
+required_isomer_skills = ["fixture-coordinate"]
+optional_isomer_skills = ["fixture-review"]
+
+[[participants]]
+role_id = "fixture-researcher"
+profile_path = "execplan/agents/profiles/fixture-researcher.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/fixture-researcher.md"
+agent_profile_placeholder = "{fixture_researcher_agent_profile_ref}"
+capability_binding_placeholder = "{fixture_researcher_capability_binding_ref}"
+skill_projection_placeholder = "{fixture_researcher_skill_projection_ref}"
+workspace_placeholder = "{fixture_researcher_agent_workspace_ref}"
+required_isomer_skills = ["fixture-research"]
+optional_isomer_skills = ["fixture-summarize"]
+scalable = true
+scaling_scope = "research_task"

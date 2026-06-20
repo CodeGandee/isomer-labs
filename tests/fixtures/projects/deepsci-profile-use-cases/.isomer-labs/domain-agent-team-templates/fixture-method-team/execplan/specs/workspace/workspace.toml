@@ -1,0 +1,21 @@
+[workspace_contract]
+description = "Declarative workspace contract for the fixture template."
+topic_workspace_ref = "{topic_workspace_ref}"
+workspace_runtime_ref = "{workspace_runtime_ref}"
+
+[[agent_workspace_templates]]
+role_id = "fixture-coordinator"
+agent_workspace_ref_placeholder = "{fixture_coordinator_agent_workspace_ref}"
+write_scope = "coordinator notes"
+peer_read_access = "promoted Artifacts only"
+
+[[agent_workspace_templates]]
+role_id = "fixture-researcher"
+agent_workspace_ref_placeholder = "{fixture_researcher_agent_workspace_ref}"
+write_scope = "research notes"
+peer_read_access = "promoted Artifacts only"
+
+[[read_write_rules]]
+id = "no-workspace-local-teams"
+description = "A Topic Workspace must not contain a workspace-local teams directory for this template."
+severity = "error"

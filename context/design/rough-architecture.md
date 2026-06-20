@@ -61,6 +61,8 @@ Recommended contents:
 
 `manifest.toml` is the Project Manifest and the authority for Topic Workspace discovery and Research Topic Config registration. The engine must not infer managed Topic Workspaces or Research Topic Config files by scanning arbitrary directories. A directory becomes a Topic Workspace only when the Project Manifest declares it.
 
+The Project Manifest is also the authority for Research Topic to Pixi environment intent. Project-root Pixi environments are declared through repeated `topic_pixi_environment_bindings` entries, and optional standalone Pixi isolation is declared through repeated `topic_standalone_pixi_bindings` entries with Project-root-relative manifest paths. A Research Topic may bind to multiple Project-root Pixi environments, but Isomer must not infer any topic-to-environment relationship from Research Topic ids, Pixi environment names, or naming conventions.
+
 `domain-team-templates/` stores optional imported or referenced Domain Agent Team Templates. A Domain Agent Team Template is a reusable method template for a research field; it is not specialized to the user's concrete research topic and is not used directly as a running team.
 
 `research-topics/` stores Research Topic Config TOML files registered by the Project Manifest. A Research Topic Config is lightweight and ref-oriented: it may carry a short topic statement, optional topic statement Artifact refs, Measurable Objective text or refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, and topic-specific Artifact Format Profile or Artifact Extension defaults. It must not store Runtime state, command outputs, provider payloads, scheduler internals, rich Artifact contents, research records, or secrets.
@@ -355,6 +357,7 @@ A Topic Workspace should be able to declare whether `state.sqlite`, `artifacts/`
 ## Invariants
 
 - `.isomer-labs/manifest.toml` is the project discovery authority.
+- Research Topic to Pixi environment bindings are explicit Project Manifest refs, not inferred from names.
 - `.isomer-labs/` is the config root, not the required workspace root.
 - Research Topics initiate work; Research Inquiries are questions under a Research Topic.
 - Topic Workspaces can live in arbitrary project-local directories.

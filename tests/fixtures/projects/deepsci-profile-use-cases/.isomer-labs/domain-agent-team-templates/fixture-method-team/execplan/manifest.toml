@@ -1,0 +1,44 @@
+loop_slug = "fixture-method-team"
+isomer_template_layer = "domain_agent_team_template"
+domain_agent_team_template = true
+topic_instantiation_required = true
+topology_mode = "linear-review"
+internal_root_role = "fixture-coordinator"
+default_execution_mode = "manual"
+auto_mode_requires_topic_policy = false
+
+[[artifacts]]
+id = "participant-contract"
+path = "specs/participants/participants.toml"
+artifact_kind = "toml"
+purpose = "participant contract"
+
+[[artifacts]]
+id = "bindings"
+path = "agents/bindings.toml"
+artifact_kind = "toml"
+purpose = "binding path contract"
+
+[[artifacts]]
+id = "workspace-contract"
+path = "specs/workspace/workspace.toml"
+artifact_kind = "toml"
+purpose = "workspace boundary contract"
+
+[[artifacts]]
+id = "state-contract"
+path = "specs/state/schema.sql"
+artifact_kind = "sql"
+purpose = "loop-local state contract"
+
+[[artifacts]]
+id = "run-contract"
+path = "specs/run/run-contract.md"
+artifact_kind = "markdown"
+purpose = "run contract"
+
+[[artifacts]]
+id = "shared-skill"
+path = "skills/fixture-shared-template"
+artifact_kind = "skill"
+purpose = "generated skill path"

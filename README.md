@@ -42,14 +42,15 @@ The current reference package is:
 - `DeepScientist`: cloned from `https://github.com/ResearAI/DeepScientist` into
   `extern/orphan/DeepScientist` with `--depth=1`.
 
-## Milestone 1 CLI
+## Milestone 1-4 CLI
 
-The package exposes `isomer-cli` for Project discovery, Project Manifest validation, Effective Topic Context inspection, side-effect-free Workspace Path Resolution previews, and the first Milestone 2/3 Domain Agent Team Template and Topic Agent Team Profile checks.
+The package exposes `isomer-cli` for Project discovery, Project Manifest validation, Effective Topic Context inspection, side-effect-free Workspace Path Resolution previews, Milestone 2/3 Domain Agent Team Template and Topic Agent Team Profile checks, and read-only Milestone 4 Pixi readiness diagnostics.
 
 Common examples:
 
 ```bash
 pixi run isomer-cli init
+pixi run isomer-cli doctor --json
 pixi run isomer-cli validate --json
 pixi run isomer-cli topics list
 pixi run isomer-cli workspaces list
@@ -61,11 +62,33 @@ pixi run isomer-cli team-templates inspect deepsci-org --json
 pixi run isomer-cli team-templates validate deepsci-org
 pixi run isomer-cli team-profiles specialize --topic default --profile-id default-deepsci --use-case UC-01 --json
 pixi run isomer-cli team-profiles validate .isomer-labs/team-profiles/default-deepsci.toml
+pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases validate --json
+pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases team-templates validate fixture-method-team
+pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases team-profiles validate .isomer-labs/team-profiles/uc-01-novel-biomarker.toml
 ```
 
 `isomer-cli init` creates `.isomer-labs/manifest.toml`, `.isomer-labs/research-topics/default.toml`, and `topic-workspaces/default/`. It does not create `state.sqlite` or Workspace Runtime subdirectories.
 
-`team-templates` exposes the repository-local `teams/deepsci-org/execplan/` package as the seed Domain Agent Team Template. `team-profiles specialize` derives a design-time Topic Agent Team Profile preview from Effective Topic Context, policy refs, Capability Binding refs, Skill Binding Projection refs, and Agent Workspace refs. It does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state unless `--write` is explicitly requested for the profile TOML file.
+`isomer-cli doctor` checks host Pixi availability, Project-level Pixi configuration, optional `requires-pixi`, `pixi.lock` presence, and selected Research Topic environment bindings. It is read-only: it does not install Pixi environments, create lockfiles, create Topic Workspace runtime state, create Agent Workspaces, or edit Project config. When no Project is discoverable, it still runs dependency-only host checks. JSON output uses the existing `isomer-cli-output.v1` wrapper and reports `mutated: false`.
+
+Project Manifest records topic-to-Pixi intent explicitly. Project-root Pixi environments use repeated `[[topic_pixi_environment_bindings]]` entries, and standalone topic isolation uses repeated `[[topic_standalone_pixi_bindings]]` entries. A Research Topic can bind to multiple Project-root Pixi environments through multiple active rows. Isomer never infers topic-to-environment relationships from Research Topic ids, Pixi environment names, or naming conventions such as `<topic-slug>-<env-purpose>`.
+
+```toml
+[[topic_pixi_environment_bindings]]
+research_topic_id = "default"
+pixi_environment = "default"
+purpose = "runtime"
+
+[[topic_standalone_pixi_bindings]]
+research_topic_id = "default"
+manifest_path = "topic-workspaces/default/pixi.toml"
+pixi_environment = "default"
+purpose = "isolated-check"
+```
+
+`team-templates` exposes the repository-local `teams/deepsci-org/execplan/` package as the seed Domain Agent Team Template and validates project-local templates through the same CLI. The reusable Milestone 2/3 fixture Project lives at `tests/fixtures/projects/deepsci-profile-use-cases/`; it registers two Research Topics, four static `deepsci-org` Topic Agent Team Profiles for UC-01, UC-02, UC-03, and UC-05, and a minimal `fixture-method-team` project-local Domain Agent Team Template.
+
+`team-profiles specialize` derives a design-time Topic Agent Team Profile preview from Effective Topic Context, policy refs, Capability Binding refs, Skill Binding Projection refs, and Agent Workspace refs. It does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state. When `--write` is explicitly requested, it writes only the profile TOML file and reports a deterministic `registration_suggestion` object for adding the profile to the Project Manifest.
 
 ## Status
 

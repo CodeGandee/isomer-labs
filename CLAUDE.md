@@ -43,8 +43,11 @@ pixi run isomer-cli paths preview --topic default
 pixi run isomer-cli schemas list
 pixi run isomer-cli team-templates list
 pixi run isomer-cli team-templates validate deepsci-org
-pixi run isomer-cli team-profiles specialize --topic default --profile-id default-deepsci --use-case UC-01 --json
+pixi run isomer-cli team-profiles specialize --topic default --profile-id default-deepsci --use-case UC-01 --write --json
 pixi run isomer-cli team-profiles validate .isomer-labs/team-profiles/default-deepsci.toml
+pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases validate --json
+pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases team-templates validate fixture-method-team
+pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases team-profiles validate .isomer-labs/team-profiles/uc-01-novel-biomarker.toml
 ```
 
 Target Python 3.11. Tests use `unittest` (not pytest). Ruff is the style authority; mypy is the type authority.
@@ -81,7 +84,7 @@ The CLI layer (`cli.py`) is thin Click glue: it builds a `CliOptions` dataclass 
 
 ### Team template and profile surfaces
 
-`team_templates.py` discovers the built-in `deepsci-org` Domain Agent Team Template from `teams/deepsci-org/execplan/`, parses its generated TOML/JSON contracts, validates role mappings, artifact paths, placeholders, and optional harness output, and exposes deterministic report records. `team_profiles.py` derives design-time Topic Agent Team Profile previews from Effective Topic Context, validates role bindings, fanout policy, reviewer access policy, topic isolation, and rejects runtime truth or secret-like fields. These commands are pure configuration and validation surfaces: they do not launch Houmao agents, create Agent Team Instances, write mailboxes, or create Workspace Runtime records.
+`team_templates.py` discovers the built-in `deepsci-org` Domain Agent Team Template from `teams/deepsci-org/execplan/`, parses its generated TOML/JSON contracts, validates role mappings, artifact paths, placeholders, and optional harness output, and exposes deterministic report records. `team_profiles.py` derives design-time Topic Agent Team Profile previews from Effective Topic Context, validates role bindings, fanout policy, reviewer access policy, topic isolation, and rejects runtime truth, launch facts, Houmao managed-agent ids, and secret-like fields. These commands are pure configuration and validation surfaces: they do not launch Houmao agents, create Agent Team Instances, write mailboxes, or create Workspace Runtime records. `team-profiles specialize --write` writes only the profile TOML file and emits a structured `registration_suggestion`; Project Manifest mutation is left to a future explicit registration command.
 
 ### Schemas and validation philosophy
 
@@ -92,6 +95,7 @@ The CLI layer (`cli.py`) is thin Click glue: it builds a `CliOptions` dataclass 
 - `openspec/` — OpenSpec specs and changes are the design authority. Active changes live in `openspec/changes/`; merged ones in `openspec/changes/archive/`. Specs cover things Milestone 1 deps on (cli-topic-context-resolution, workspace-path-resolution) and things not yet built (research-lifecycle-state, research-recording-contracts, research-execution-extension-contract). Use the openspec skills (`openspec-new-change`, `openspec-apply-change`, etc.) for spec-driven work; the roadmap says to promote OpenSpec contracts into tests before implementing each major API.
 - `skillset/research-paradigm/` — the research-paradigm skill bundle; `validate-research-skills` is a release gate and the only test outside `tests/unit`.
 - `teams/deepsci-org/execplan/` — the first seed Domain Agent Team Template, validated through `team-templates` and specialized into design-time Topic Agent Team Profiles through `team-profiles`.
+- `tests/fixtures/projects/deepsci-profile-use-cases/` — reusable Milestone 2/3 fixture Project with two Research Topics, four static `deepsci-org` use-case profiles, and the minimal project-local `fixture-method-team` template. Treat it as contributor/test fixture material, not a stable user example.
 - `extern/orphan/` — local-only checkouts (notably `DeepScientist`); never committed. Add vendored/committed deps under `extern/tracked/`.
 
 ## Conventions

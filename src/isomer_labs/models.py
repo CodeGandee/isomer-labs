@@ -330,11 +330,49 @@ class TopicWorkspaceRegistration:
 
 
 @dataclass(frozen=True)
+class TopicPixiEnvironmentBinding:
+    research_topic_id: str
+    pixi_environment: str
+    purpose: str | None
+    status: str
+    source_path: Path
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "research_topic_id": self.research_topic_id,
+            "pixi_environment": self.pixi_environment,
+            "purpose": self.purpose,
+            "status": self.status,
+        }
+
+
+@dataclass(frozen=True)
+class TopicStandalonePixiBinding:
+    research_topic_id: str
+    manifest_path_input: str
+    pixi_environment: str | None
+    purpose: str | None
+    status: str
+    source_path: Path
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "research_topic_id": self.research_topic_id,
+            "manifest_path": self.manifest_path_input,
+            "pixi_environment": self.pixi_environment,
+            "purpose": self.purpose,
+            "status": self.status,
+        }
+
+
+@dataclass(frozen=True)
 class ProjectManifest:
     schema_version: str
     source_path: Path
     research_topics: list[ResearchTopicRegistration]
     topic_workspaces: list[TopicWorkspaceRegistration]
+    topic_pixi_environment_bindings: list[TopicPixiEnvironmentBinding] = field(default_factory=list)
+    topic_standalone_pixi_bindings: list[TopicStandalonePixiBinding] = field(default_factory=list)
     domain_agent_team_templates: list[DomainAgentTeamTemplateRegistration] = field(default_factory=list)
     topic_agent_team_profiles: list[TopicAgentTeamProfileRegistration] = field(default_factory=list)
     defaults: dict[str, Any] = field(default_factory=dict)
@@ -348,6 +386,20 @@ class ProjectManifest:
 
     def first_workspace(self, workspace_id: str) -> TopicWorkspaceRegistration | None:
         return next((workspace for workspace in self.topic_workspaces if workspace.id == workspace_id), None)
+
+    def active_topic_pixi_environment_bindings(self, topic_id: str) -> list[TopicPixiEnvironmentBinding]:
+        return [
+            binding
+            for binding in self.topic_pixi_environment_bindings
+            if binding.research_topic_id == topic_id and binding.status == "active"
+        ]
+
+    def active_topic_standalone_pixi_bindings(self, topic_id: str) -> list[TopicStandalonePixiBinding]:
+        return [
+            binding
+            for binding in self.topic_standalone_pixi_bindings
+            if binding.research_topic_id == topic_id and binding.status == "active"
+        ]
 
     def first_domain_agent_team_template(self, template_id: str) -> DomainAgentTeamTemplateRegistration | None:
         return next((template for template in self.domain_agent_team_templates if template.id == template_id), None)
@@ -389,6 +441,12 @@ class ProjectManifest:
             "path": str(self.source_path),
             "research_topics": [topic.to_json() for topic in self.research_topics],
             "topic_workspaces": [workspace.to_json() for workspace in self.topic_workspaces],
+            "topic_pixi_environment_bindings": [
+                binding.to_json() for binding in self.topic_pixi_environment_bindings
+            ],
+            "topic_standalone_pixi_bindings": [
+                binding.to_json() for binding in self.topic_standalone_pixi_bindings
+            ],
             "domain_agent_team_templates": [template.to_json() for template in self.domain_agent_team_templates],
             "topic_agent_team_profiles": [profile.to_json() for profile in self.topic_agent_team_profiles],
             "defaults": self.defaults,

@@ -12,8 +12,9 @@ import click
 from isomer_labs.builtins import list_built_in_schemas
 from isomer_labs.context import resolve_effective_topic_context
 from isomer_labs.diagnostics import Diagnostic, has_errors
+from isomer_labs.doctor import build_doctor_report, render_doctor_text
 from isomer_labs.init_project import initialize_project
-from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, SelectionRequest
+from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, SelectionRequest, TopicAgentTeamProfile
 from isomer_labs.paths import preview_paths
 from isomer_labs.project import discover_project
 from isomer_labs.rendering import render_diagnostics, render_json, render_key_values
@@ -58,6 +59,7 @@ COMMAND_SURFACE = """Milestone 1 Isomer Labs Project discovery and path preview 
 \b
 Command surface:
   init
+  doctor
   validate
   topics list
   workspaces list
@@ -204,6 +206,44 @@ def validate_command(
             manifest=manifest,
             output_format=output_format,
             json_output=json_output,
+        )
+    )
+
+
+@app.command(name="doctor", help="Run read-only dependency, Project, and topic diagnostics.")
+@_common_options
+@_topic_selection_options
+@click.pass_context
+def doctor_command(
+    ctx: click.Context,
+    project: str | None,
+    manifest: str | None,
+    output_format: str | None,
+    json_output: bool,
+    research_topic_id: str | None,
+    topic_workspace_id: str | None,
+    research_inquiry_id: str | None,
+    research_task_id: str | None,
+    run_id: str | None,
+    agent_team_instance_id: str | None,
+    agent_instance_id: str | None,
+    topic_agent_team_profile_id: str | None,
+) -> int:
+    return _cmd_doctor(
+        _merge_options(
+            ctx,
+            project=project,
+            manifest=manifest,
+            output_format=output_format,
+            json_output=json_output,
+            research_topic_id=research_topic_id,
+            topic_workspace_id=topic_workspace_id,
+            research_inquiry_id=research_inquiry_id,
+            research_task_id=research_task_id,
+            run_id=run_id,
+            agent_team_instance_id=agent_team_instance_id,
+            agent_instance_id=agent_instance_id,
+            topic_agent_team_profile_id=topic_agent_team_profile_id,
         )
     )
 
@@ -597,6 +637,53 @@ def _cmd_validate(options: CliOptions) -> int:
     return _emit("validate", options, payload, diagnostics, _render_validate_text(project is not None, diagnostics))
 
 
+def _cmd_doctor(options: CliOptions) -> int:
+    project, discovery_diagnostics = _discover(options)
+    if project is None and not _project_selector_requested(options):
+        discovery_diagnostics = [
+            diagnostic for diagnostic in discovery_diagnostics if diagnostic.code != "ISO001"
+        ]
+    state: ProjectState | None = None
+    project_diagnostics: list[Diagnostic] = []
+    context: EffectiveTopicContext | None = None
+    context_diagnostics: list[Diagnostic] = []
+    topic_skipped = True
+    if project is not None:
+        state = build_project_state(project)
+        project_diagnostics = list(state.diagnostics)
+        request = _selection_request_from_options(options)
+        resolved_context, resolved_diagnostics = resolve_effective_topic_context(
+            state,
+            request,
+            cwd=Path.cwd(),
+            env=os.environ,
+        )
+        if resolved_context is None and not _topic_selector_requested(options):
+            context_diagnostics = [
+                diagnostic for diagnostic in resolved_diagnostics if diagnostic.code != "ISO013"
+            ]
+            topic_skipped = True
+        else:
+            context = resolved_context
+            context_diagnostics = list(resolved_diagnostics)
+            topic_skipped = False
+    report = build_doctor_report(
+        project=project,
+        discovery_diagnostics=discovery_diagnostics,
+        project_diagnostics=project_diagnostics,
+        context=context,
+        context_diagnostics=context_diagnostics,
+        topic_skipped=topic_skipped,
+    )
+    if _output_format(options) == "json":
+        click.echo(render_json("doctor", report.to_payload(), report.diagnostics))
+    else:
+        lines = [*render_doctor_text(report), *render_diagnostics(report.diagnostics)]
+        if lines:
+            click.echo("\n".join(lines))
+    return 0 if report.ok else 1
+
+
 def _cmd_topics_list(options: CliOptions) -> int:
     project, diagnostics = _discover(options)
     topics: list[dict[str, object]] = []
@@ -798,14 +885,17 @@ def _cmd_team_profiles_specialize(
     profile_report = validate_topic_agent_team_profile(profile, template_report.template, project=context.project)
     diagnostics.extend(profile_report.diagnostics)
     written_path = None
+    registration_suggestion: dict[str, str] | None = None
     if write_profile and not has_errors(diagnostics):
         profile.source_path.parent.mkdir(parents=True, exist_ok=True)
         profile.source_path.write_text(profile_to_toml(profile), encoding="utf-8")
         written_path = str(profile.source_path)
+        registration_suggestion = _profile_registration_suggestion(context.project.root, profile)
     payload = {
         "profile": profile.to_json(),
         "validation": profile_report.to_json(),
         "written_path": written_path,
+        "registration_suggestion": registration_suggestion,
     }
     lines = [
         f"Topic Agent Team Profile: {profile.id}",
@@ -814,6 +904,14 @@ def _cmd_team_profiles_specialize(
     ]
     if written_path is not None:
         lines.append(f"Written: {written_path}")
+        if registration_suggestion is not None:
+            lines.append(
+                "Registration suggestion: add [[topic_agent_team_profiles]] "
+                f'id="{registration_suggestion["id"]}" '
+                f'path="{registration_suggestion["path"]}" '
+                f'domain_agent_team_template_id="{registration_suggestion["domain_agent_team_template_id"]}" '
+                f'research_topic_id="{registration_suggestion["research_topic_id"]}".'
+            )
     return _emit("team-profiles specialize", options, payload, diagnostics, lines)
 
 
@@ -879,6 +977,19 @@ def _context_for_options(options: CliOptions) -> tuple[EffectiveTopicContext | N
     return context, diagnostics
 
 
+def _selection_request_from_options(options: CliOptions) -> SelectionRequest:
+    return SelectionRequest(
+        research_topic_id=_value(options, "research_topic_id"),
+        topic_workspace_id=_value(options, "topic_workspace_id"),
+        research_inquiry_id=_value(options, "research_inquiry_id"),
+        research_task_id=_value(options, "research_task_id"),
+        run_id=_value(options, "run_id"),
+        agent_team_instance_id=_value(options, "agent_team_instance_id"),
+        agent_instance_id=_value(options, "agent_instance_id"),
+        topic_agent_team_profile_id=_value(options, "topic_agent_team_profile_id"),
+    )
+
+
 def _discover(options: CliOptions) -> tuple[Project | None, list[Diagnostic]]:
     return discover_project(
         cwd=Path.cwd(),
@@ -895,6 +1006,26 @@ def _discover_optional(options: CliOptions) -> tuple[Project | None, list[Diagno
     if _value(options, "project") is None and _value(options, "manifest") is None:
         return None, []
     return project, diagnostics
+
+
+def _project_selector_requested(options: CliOptions) -> bool:
+    return _value(options, "project") is not None or _value(options, "manifest") is not None
+
+
+def _topic_selector_requested(options: CliOptions) -> bool:
+    return any(
+        _value(options, name) is not None
+        for name in (
+            "research_topic_id",
+            "topic_workspace_id",
+            "research_inquiry_id",
+            "research_task_id",
+            "run_id",
+            "agent_team_instance_id",
+            "agent_instance_id",
+            "topic_agent_team_profile_id",
+        )
+    )
 
 
 def _unknown_template_diagnostic(template_id: str) -> Diagnostic:
@@ -954,6 +1085,25 @@ def _resolve_profile_cli_path(
         )
         return None
     return (project.root / registration.path_input).expanduser().resolve(strict=False)
+
+
+def _profile_registration_suggestion(project_root: Path, profile: TopicAgentTeamProfile) -> dict[str, str]:
+    return {
+        "target": "Project Manifest",
+        "section": "topic_agent_team_profiles",
+        "id": profile.id,
+        "path": _project_relative_path(project_root, profile.source_path),
+        "domain_agent_team_template_id": profile.domain_agent_team_template_id,
+        "research_topic_id": profile.research_topic_id,
+        "status": "active",
+    }
+
+
+def _project_relative_path(project_root: Path, path: Path) -> str:
+    try:
+        return path.resolve(strict=False).relative_to(project_root.resolve(strict=False)).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def _emit(

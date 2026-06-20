@@ -1,0 +1,96 @@
+schema_version = "isomer-topic-agent-team-profile.v1"
+id = "uc-02-baseline-optimizer"
+domain_agent_team_template_id = "deepsci-org"
+research_topic_id = "baseline-optimizer"
+topic_workspace_id = "baseline-optimizer"
+coordination_policy_ref = "coordination-policy:baseline-optimizer-mixed-control"
+gate_policy_ref = "gate-policy:baseline-optimizer-baseline-acceptance"
+scheduler_policy_ref = "scheduler-policy:baseline-optimizer-bounded"
+baseline_waiver_policy_ref = "baseline-waiver-policy:baseline-optimizer-requires-evidence"
+literature_provider_ref = "literature-provider:baseline-optimizer-benchmark"
+default_execution_mode = "manual"
+reviewer_read_access_policy = "promoted-artifacts-only"
+expected_artifacts = ["artifact:baseline-optimizer:baseline-reproduction-report", "artifact:baseline-optimizer:metric-table", "artifact:baseline-optimizer:optimization-frontier"]
+constraints = ["use_case:UC-02", "measurable_objective:reproduce-baseline-metric", "measurable_objective:improve-primary-score", "baseline-acceptance-or-waiver-required"]
+
+[[role_bindings]]
+role_id = "deepsci-org-master"
+active = true
+agent_profile_ref = "agent-profile:baseline-optimizer:master"
+capability_binding_ref = "capability-binding:baseline-optimizer:master"
+skill_binding_projection_ref = "skill-projection:baseline-optimizer:master"
+agent_workspace_ref = "topic-workspaces/baseline-optimizer/agent-workspaces/uc-02-baseline-optimizer/deepsci-org-master"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
+optional_skills = ["isomer-rsch-review"]
+
+[[role_bindings]]
+role_id = "deepsci-org-framer"
+active = true
+agent_profile_ref = "agent-profile:baseline-optimizer:framer"
+capability_binding_ref = "capability-binding:baseline-optimizer:framer"
+skill_binding_projection_ref = "skill-projection:baseline-optimizer:framer"
+agent_workspace_ref = "topic-workspaces/baseline-optimizer/agent-workspaces/uc-02-baseline-optimizer/deepsci-org-framer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]
+optional_skills = ["isomer-rsch-science"]
+
+[[role_bindings]]
+role_id = "deepsci-org-designer"
+active = true
+agent_profile_ref = "agent-profile:baseline-optimizer:designer"
+capability_binding_ref = "capability-binding:baseline-optimizer:designer"
+skill_binding_projection_ref = "skill-projection:baseline-optimizer:designer"
+agent_workspace_ref = "topic-workspaces/baseline-optimizer/agent-workspaces/uc-02-baseline-optimizer/deepsci-org-designer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"]
+optional_skills = ["isomer-rsch-scout"]
+
+[[role_bindings]]
+role_id = "deepsci-org-experimenter"
+active = true
+agent_profile_ref = "agent-profile:baseline-optimizer:experimenter"
+capability_binding_ref = "capability-binding:baseline-optimizer:experimenter"
+skill_binding_projection_ref = "skill-projection:baseline-optimizer:experimenter"
+agent_workspace_ref = "topic-workspaces/baseline-optimizer/agent-workspaces/uc-02-baseline-optimizer/deepsci-org-experimenter"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"]
+optional_skills = ["isomer-rsch-analysis"]
+
+[[role_bindings]]
+role_id = "deepsci-org-analyzer"
+active = true
+agent_profile_ref = "agent-profile:baseline-optimizer:analyzer"
+capability_binding_ref = "capability-binding:baseline-optimizer:analyzer"
+skill_binding_projection_ref = "skill-projection:baseline-optimizer:analyzer"
+agent_workspace_ref = "topic-workspaces/baseline-optimizer/agent-workspaces/uc-02-baseline-optimizer/deepsci-org-analyzer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"]
+optional_skills = ["isomer-rsch-paper-plot"]
+
+[[role_bindings]]
+role_id = "deepsci-org-publisher"
+active = true
+agent_profile_ref = "agent-profile:baseline-optimizer:publisher"
+capability_binding_ref = "capability-binding:baseline-optimizer:publisher"
+skill_binding_projection_ref = "skill-projection:baseline-optimizer:publisher"
+agent_workspace_ref = "topic-workspaces/baseline-optimizer/agent-workspaces/uc-02-baseline-optimizer/deepsci-org-publisher"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+optional_skills = ["nature-data"]
+
+[[role_bindings]]
+role_id = "deepsci-org-reviewer"
+active = true
+agent_profile_ref = "agent-profile:baseline-optimizer:reviewer"
+capability_binding_ref = "capability-binding:baseline-optimizer:reviewer"
+skill_binding_projection_ref = "skill-projection:baseline-optimizer:reviewer"
+agent_workspace_ref = "topic-workspaces/baseline-optimizer/agent-workspaces/uc-02-baseline-optimizer/deepsci-org-reviewer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"]
+optional_skills = ["isomer-rsch-scout"]
+
+[[fanout_policies]]
+role_id = "deepsci-org-experimenter"
+parallel_execution_scope = "research_task"
+max_shards = 3
+allocation_rule = "fanout:baseline-optimizer:uc-02-experimenter"
+
+[[fanout_policies]]
+role_id = "deepsci-org-analyzer"
+parallel_execution_scope = "research_task"
+max_shards = 3
+allocation_rule = "fanout:baseline-optimizer:uc-02-analyzer"

@@ -1,0 +1,22 @@
+schema_version = "isomer-research-topic-config.v1"
+research_topic_id = "novel-biomarker"
+topic_statement = "Explore whether a new biomarker family has enough evidence for a follow-up research inquiry."
+measurable_objectives = ["rank-literature-evidence", "identify-follow-up-inquiry"]
+default_domain_agent_team_template_id = "deepsci-org"
+default_topic_agent_team_profile_id = "uc-01-novel-biomarker"
+coordination_policy_ref = "coordination-policy:novel-biomarker-manual-review"
+baseline_waiver_policy_ref = "baseline-waiver-policy:novel-biomarker-exploratory"
+literature_provider_ref = "literature-provider:novel-biomarker-curated"
+
+[gate_policy_refs]
+default = "gate-policy:novel-biomarker-follow-up-inquiry"
+final_approval = "gate-policy:novel-biomarker-final-approval"
+
+[scheduler_policy_refs]
+default = "scheduler-policy:novel-biomarker-manual"
+
+[capability_binding_refs]
+default = "capability-binding:novel-biomarker-default"
+
+[skill_binding_projection_refs]
+default = "skill-projection:novel-biomarker-default"

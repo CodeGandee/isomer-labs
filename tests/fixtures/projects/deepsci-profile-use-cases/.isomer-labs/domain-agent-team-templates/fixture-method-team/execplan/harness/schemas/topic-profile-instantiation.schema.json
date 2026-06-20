@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fixture-method-team.topic-profile-instantiation",
+  "title": "fixture method team topic profile instantiation parameters",
+  "type": "object",
+  "required": [
+    "domain_agent_team_template_ref",
+    "research_topic_id",
+    "topic_workspace_ref"
+  ],
+  "properties": {
+    "domain_agent_team_template_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "research_topic_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "topic_workspace_ref": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

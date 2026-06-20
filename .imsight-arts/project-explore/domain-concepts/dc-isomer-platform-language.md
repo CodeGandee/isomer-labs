@@ -15,11 +15,11 @@ The `.isomer-labs/` directory at the project root. It stores project-level confi
 _Avoid_: Control directory, control-plane directory, workspace root, hidden workspace
 
 **Project Manifest**:
-The `.isomer-labs/manifest.toml` file. It is the discovery authority for Research Topics, Research Topic Config paths, Topic Workspaces, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, Capability Binding refs, provider binding refs, Artifact Format Profile registrations, Artifact Extension registrations, and project-scope GUI component registry references.
+The `.isomer-labs/manifest.toml` file. It is the discovery authority for Research Topics, Research Topic Config paths, Topic Workspaces, explicit Research Topic to Project-root Pixi environment bindings through repeated `topic_pixi_environment_bindings` entries, optional standalone Pixi isolation bindings through repeated `topic_standalone_pixi_bindings` entries, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, Capability Binding refs, provider binding refs, Artifact Format Profile registrations, Artifact Extension registrations, and project-scope GUI component registry references.
 _Avoid_: Workspace index, quest registry, config blob
 
 **Research Topic Config**:
-A Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, topic statement Artifact refs, Measurable Objective text or refs, default Research Inquiry refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile defaults, and Artifact Extension refs. It is not Workspace Runtime state and must not contain Run status, command outputs, live process ids, resolved command results, provider payloads, scheduler internals, rich Artifact contents, Evidence Items, Findings, Gates, Decision Records, Provenance Records, credentials, tokens, API keys, passwords, or secret material.
+A Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, topic statement Artifact refs, Measurable Objective text or refs, default Research Inquiry refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile defaults, and Artifact Extension refs. It does not own Pixi environment bindings; those belong in the Project Manifest. It is not Workspace Runtime state and must not contain Run status, command outputs, live process ids, resolved command results, provider payloads, scheduler internals, rich Artifact contents, Evidence Items, Findings, Gates, Decision Records, Provenance Records, credentials, tokens, API keys, passwords, or secret material.
 _Avoid_: Runtime config, topic database, workspace state, command log, credential file
 
 **Topic Workspace**:
@@ -31,7 +31,7 @@ The persistent runtime substrate inside a Topic Workspace. It includes `state.sq
 _Avoid_: Run, execution episode, quest state, hidden runtime, project config
 
 **Effective Topic Context**:
-The resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations consume for a topic-scoped command. It includes validated Project, Research Topic, Research Topic Config, Topic Workspace, optional lifecycle refs, Topic Agent Team Profile defaults, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
+The resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations consume for a topic-scoped command. It includes validated Project, Research Topic, Research Topic Config, Topic Workspace, Project Manifest topic Pixi environment bindings when relevant, optional lifecycle refs, Topic Agent Team Profile defaults, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
 _Avoid_: Active workspace, runtime database, lifecycle state, durable context blob
 
 ### Workspace Taxonomy
@@ -159,7 +159,7 @@ A provider-neutral projection of which skills are available to an Agent Role, Ag
 _Avoid_: Skill installer, package manager schema, provider marketplace record, unscoped skill list
 
 **Agent Instance**:
-A concrete runtime actor created from an Agent Profile and assigned to an Agent Role for a Run or team execution context. Agent Instances own Agent Workspaces; Agent Roles describe responsibilities and workflow ownership.
+A concrete runtime actor created from an Agent Profile and assigned to an Agent Role for a Run or team execution context. Agent Instance ids are globally unique by design. Agent Instances own Agent Workspaces; Agent Roles describe responsibilities and workflow ownership.
 _Avoid_: Agent Role as the runtime actor, worker, provider-specific managed agent as the generic term
 
 **Service Agent Instance**:
@@ -461,7 +461,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 - A **Topic Workspace** may contain many **Agent Workspaces** during team execution.
 - An **Agent Workspace** is contained by exactly one **Topic Workspace**.
-- An **Agent Workspace** belongs to one **Agent Instance** within a team execution context.
+- An **Agent Workspace** belongs to one globally identified **Agent Instance** within a team execution context.
 - An **Agent Workspace** contains one **Agent Runtime** and zero or more **Agent Artifacts**.
 - **Agent Runtime** is subordinate to **Workspace Runtime**.
 - A **Domain Agent Team Template** contains default **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Binding** slots, and template parameters for one research field or method family.
@@ -566,6 +566,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 ### Team and Agent Execution
 
 - Use **Agent Workspace** for per-agent work areas inside a Topic Workspace. Do not call it a secure sandbox.
+- Use globally unique **Agent Instance** ids for default Agent Workspace paths under `<topic-workspace>/agents/<agent-instance-id>/`; do not encode Agent Team Instance membership only in the directory hierarchy.
 - Do not put `teams/` under a **Topic Workspace**. **Domain Agent Team Templates**, **Topic Agent Team Profiles**, and **Agent Team Instance** refs are project-level or built-in references; the workspace records Topic Agent Team Profile identity, Agent Team Instance identity, and task-handler identity through manifest refs, Workspace Runtime, or provenance Artifacts.
 - Use **Domain Agent Team Template**, **Topic Agent Team Profile**, **Agent Team Instance**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Skill Binding Projection**, **Research Operation Extension Point**, **Execution Adapter Command Request**, **Coordination Policy**, **Scheduler Policy**, **Gate Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
 - Use **Agent Instance** for the concrete runtime actor that owns an Agent Workspace. Do not use **Agent Role** as the workspace owner except when discussing responsibility or workflow ownership.

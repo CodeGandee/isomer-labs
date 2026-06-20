@@ -14,6 +14,8 @@ from isomer_labs.models import (
     ProjectManifest,
     ResearchTopicRegistration,
     TopicAgentTeamProfileRegistration,
+    TopicPixiEnvironmentBinding,
+    TopicStandalonePixiBinding,
     TopicWorkspaceRegistration,
 )
 
@@ -30,6 +32,8 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
 
     topics = _parse_research_topics(path, raw, schema_version, diagnostics)
     workspaces = _parse_topic_workspaces(path, raw, schema_version, diagnostics)
+    pixi_environment_bindings = _parse_topic_pixi_environment_bindings(path, raw, diagnostics)
+    standalone_pixi_bindings = _parse_topic_standalone_pixi_bindings(path, raw, diagnostics)
     templates = _parse_domain_agent_team_templates(path, raw, diagnostics)
     profiles = _parse_topic_agent_team_profiles(path, raw, diagnostics)
     artifact_format_profiles = _registration_ids(raw.get("artifact_format_profiles"))
@@ -52,6 +56,8 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
         source_path=path,
         research_topics=topics,
         topic_workspaces=workspaces,
+        topic_pixi_environment_bindings=pixi_environment_bindings,
+        topic_standalone_pixi_bindings=standalone_pixi_bindings,
         domain_agent_team_templates=templates,
         topic_agent_team_profiles=profiles,
         defaults=defaults,
@@ -144,6 +150,95 @@ def _parse_topic_workspaces(
             )
         )
     return workspaces
+
+
+def _parse_topic_pixi_environment_bindings(
+    path: Path,
+    raw: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> list[TopicPixiEnvironmentBinding]:
+    bindings: list[TopicPixiEnvironmentBinding] = []
+    for index, item in enumerate(_table_items(raw.get("topic_pixi_environment_bindings"))):
+        field = f"topic_pixi_environment_bindings[{index}]"
+        research_topic_id = _first_string(item, ("research_topic_id", "topic_id"))
+        pixi_environment = _first_string(item, ("pixi_environment", "environment", "pixi_env"))
+        status = _status_string(item, path, field, "Topic Pixi environment binding", diagnostics)
+        missing: list[str] = []
+        if research_topic_id is None:
+            missing.append("research_topic_id")
+        if pixi_environment is None:
+            missing.append("pixi_environment")
+        if missing:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Topic Pixi environment binding",
+                    path=path,
+                    field=field,
+                    message=f"Topic Pixi environment binding must include {', '.join(missing)}.",
+                )
+            )
+            continue
+        if status is None:
+            continue
+        assert research_topic_id is not None
+        assert pixi_environment is not None
+        bindings.append(
+            TopicPixiEnvironmentBinding(
+                research_topic_id=research_topic_id,
+                pixi_environment=pixi_environment,
+                purpose=_first_string(item, ("purpose",)),
+                status=status,
+                source_path=path,
+            )
+        )
+    return bindings
+
+
+def _parse_topic_standalone_pixi_bindings(
+    path: Path,
+    raw: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> list[TopicStandalonePixiBinding]:
+    bindings: list[TopicStandalonePixiBinding] = []
+    for index, item in enumerate(_table_items(raw.get("topic_standalone_pixi_bindings"))):
+        field = f"topic_standalone_pixi_bindings[{index}]"
+        research_topic_id = _first_string(item, ("research_topic_id", "topic_id"))
+        manifest_path = _first_string(item, ("manifest_path", "path", "pixi_manifest_path"))
+        status = _status_string(item, path, field, "Topic standalone Pixi binding", diagnostics)
+        missing: list[str] = []
+        if research_topic_id is None:
+            missing.append("research_topic_id")
+        if manifest_path is None:
+            missing.append("manifest_path")
+        if missing:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Topic standalone Pixi binding",
+                    path=path,
+                    field=field,
+                    message=f"Topic standalone Pixi binding must include {', '.join(missing)}.",
+                )
+            )
+            continue
+        if status is None:
+            continue
+        assert research_topic_id is not None
+        assert manifest_path is not None
+        bindings.append(
+            TopicStandalonePixiBinding(
+                research_topic_id=research_topic_id,
+                manifest_path_input=manifest_path,
+                pixi_environment=_first_string(item, ("pixi_environment", "environment", "pixi_env")),
+                purpose=_first_string(item, ("purpose",)),
+                status=status,
+                source_path=path,
+            )
+        )
+    return bindings
 
 
 def _parse_domain_agent_team_templates(
@@ -295,4 +390,27 @@ def _first_string(data: dict[str, Any], keys: tuple[str, ...]) -> str | None:
         value = data.get(key)
         if isinstance(value, str) and value:
             return value
+    return None
+
+
+def _status_string(
+    data: dict[str, Any],
+    path: Path,
+    field: str,
+    concept: str,
+    diagnostics: list[Diagnostic],
+) -> str | None:
+    value = data.get("status", "active")
+    if value in {"active", "archived"}:
+        return str(value)
+    diagnostics.append(
+        Diagnostic(
+            code="ISO003",
+            severity="error",
+            concept=concept,
+            path=path,
+            field=f"{field}.status",
+            message="Status must be active or archived.",
+        )
+    )
     return None

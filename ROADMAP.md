@@ -2,7 +2,7 @@
 
 ## Current Baseline
 
-Isomer Labs now has a Milestone 1 `isomer-cli` implementation for Project discovery, Project Manifest validation, Effective Topic Context inspection, Workspace Path Resolution previews, built-in schema listing, and Project initialization. The repo also contains `teams/deepsci-org/`, a generated Domain Agent Team Template with intention source, execplan contracts, seven role profiles, generated skills, notifier prompts, a harness, a loop-local state contract, and an instantiation guide.
+Isomer Labs now has a Milestone 1 `isomer-cli` implementation for Project discovery, Project Manifest validation, Effective Topic Context inspection, Workspace Path Resolution previews, built-in schema listing, and Project initialization. It also has Milestone 2 and 3 static validation for the `deepsci-org` Domain Agent Team Template, project-local template fixtures, and design-time Topic Agent Team Profiles for multiple Research Topics. The repo contains `teams/deepsci-org/`, a generated Domain Agent Team Template with intention source, execplan contracts, seven role profiles, generated skills, notifier prompts, a harness, a loop-local state contract, and an instantiation guide.
 
 This version of Isomer Labs should make `deepsci-org` work inside the Isomer framework before broadening into other team templates. The main path is to register `deepsci-org` as a Domain Agent Team Template, specialize it into Topic Agent Team Profiles for different Research Topics, instantiate multiple Agent Team Instances through a Houmao Execution Adapter, and record the resulting Runs, handoffs, Artifacts, Gates, and Provenance Records inside topic-scoped Workspace Runtime state.
 
@@ -17,6 +17,7 @@ The use cases in `.imsight-arts/project-explore/use-cases/` are roadmap acceptan
 - **UC-03 Plan and Execute a Paper Revision** verifies multi-task planning, claim-risk mapping, targeted analysis Runs, response drafting, final approval Gates, and reviewer audit records.
 - **UC-04 Generate a Task-Specific GUI Component** verifies GUI Backend, View Manifest, GUI Component Registry, AG-UI Event Envelope, and gated executable component behavior.
 - **UC-05 Mix Manual and Automatic Runs** verifies automatic baseline work, single-stage manual repair, automatic candidate Runs, multi-step manual handoffs, Completion Watcher Contracts, Signal Observations, and durable closeout.
+- **UC-06 Capstone Roadmap Verification with Flash Attention 4 Runtime Prediction on DGX Spark GB10** is the practical end-to-end acceptance test for this roadmap. It combines Project discovery, Pixi readiness, `deepsci-org` template validation, Topic Agent Team Profile specialization, Workspace Runtime, Houmao-backed Agent Team Instance launch, parallel topics, task-level fanout, Operator Agent handoffs, Service Requests, Gates, Artifacts, Evidence Items, Research Claims, CUDA/PTX/SASS-backed white-box execution-model records, component-time prediction views, model report packaging, and a pass/fail roadmap verification verdict.
 
 ## Milestone 1: Platform Skeleton and Project Discovery
 
@@ -42,12 +43,12 @@ Goal: make `teams/deepsci-org/execplan/` a first-class, validated Domain Agent T
 
 Major steps:
 
-- [ ] Register or reference `teams/deepsci-org/execplan/` from Project Manifest or built-in template discovery without copying runtime state into a Topic Workspace.
-- [ ] Validate the generated package manifest, participant contract, role profiles, notifier prompts, generated skills, harness schemas, state contract, workspace contract, and run contract.
-- [ ] Map the seven template roles (`deepsci-org-master`, `framer`, `designer`, `experimenter`, `analyzer`, `publisher`, and `reviewer`) to Isomer Agent Roles, Workflow Stages, Capability Binding slots, and Skill Binding Projection slots.
-- [ ] Verify that topic-specific placeholders remain unresolved at the Domain Agent Team Template layer and are only filled by a Topic Agent Team Profile.
-- [ ] Add CLI and unit-test coverage for listing, inspecting, and validating Domain Agent Team Templates, with `deepsci-org` as the seed fixture.
-- [ ] Keep the generated `teams/deepsci-org/execplan/harness/bin/deepsci-org` validation path useful as a template-level diagnostic input.
+- [x] Register or reference `teams/deepsci-org/execplan/` from Project Manifest or built-in template discovery without copying runtime state into a Topic Workspace.
+- [x] Validate the generated package manifest, participant contract, role profiles, notifier prompts, generated skills, harness schemas, state contract, workspace contract, and run contract.
+- [x] Map the seven template roles (`deepsci-org-master`, `framer`, `designer`, `experimenter`, `analyzer`, `publisher`, and `reviewer`) to Isomer Agent Roles, Workflow Stages, Capability Binding slots, and Skill Binding Projection slots.
+- [x] Verify that topic-specific placeholders remain unresolved at the Domain Agent Team Template layer and are only filled by a Topic Agent Team Profile.
+- [x] Add CLI and unit-test coverage for listing, inspecting, and validating Domain Agent Team Templates, with `deepsci-org` as the seed fixture.
+- [x] Keep the generated `teams/deepsci-org/execplan/harness/bin/deepsci-org` validation path useful as a template-level diagnostic input.
 
 Exit criteria:
 
@@ -60,12 +61,12 @@ Goal: specialize `deepsci-org` into separate Topic Agent Team Profiles for concr
 
 Major steps:
 
-- [ ] Extend Project Manifest and Research Topic Config loading to reference Domain Agent Team Templates, default Topic Agent Team Profiles, Execution Adapter refs, Capability Binding refs, Skill Binding Projection refs, Gate Policy refs, Scheduler Policy refs, provider refs, and baseline-waiver policy refs.
-- [ ] Implement Topic Agent Team Profile generation from `teams/deepsci-org/execplan/docs/instantiation-guide.md` and the execplan placeholder contracts.
-- [ ] Replace topic placeholders with Effective Topic Context refs, selected roles, expected Artifacts, Agent Profile refs, Capability Binding refs, Skill Binding Projection refs, Agent Workspace refs, policy refs, and provider refs.
-- [ ] Support multiple Research Topics in one Project, each with its own `deepsci-org` Topic Agent Team Profile and Topic Workspace.
-- [ ] Validate role activation, scalable `experimenter` and `analyzer` fanout policy, reviewer read-access policy, manual-mode default, and automatic-mode opt-in requirements.
-- [ ] Add fixture Projects for UC-01, UC-02, UC-03, and UC-05 that specialize the same `deepsci-org` Domain Agent Team Template differently without launching agents.
+- [x] Extend Project Manifest and Research Topic Config loading to reference Domain Agent Team Templates, default Topic Agent Team Profiles, Execution Adapter refs, Capability Binding refs, Skill Binding Projection refs, Gate Policy refs, Scheduler Policy refs, provider refs, and baseline-waiver policy refs.
+- [x] Implement Topic Agent Team Profile generation from `teams/deepsci-org/execplan/docs/instantiation-guide.md` and the execplan placeholder contracts.
+- [x] Replace topic placeholders with Effective Topic Context refs, selected roles, expected Artifacts, Agent Profile refs, Capability Binding refs, Skill Binding Projection refs, Agent Workspace refs, policy refs, and provider refs.
+- [x] Support multiple Research Topics in one Project, each with its own `deepsci-org` Topic Agent Team Profile and Topic Workspace.
+- [x] Validate role activation, scalable `experimenter` and `analyzer` fanout policy, reviewer read-access policy, manual-mode default, and automatic-mode opt-in requirements.
+- [x] Add fixture Projects for UC-01, UC-02, UC-03, and UC-05 that specialize the same `deepsci-org` Domain Agent Team Template differently without launching agents.
 
 Exit criteria:
 
@@ -209,6 +210,7 @@ Exit criteria:
 - [ ] Keep Houmao terms inside the Houmao Execution Adapter unless the domain language explicitly promotes them.
 - [ ] Promote OpenSpec contracts into tests before implementing each major API.
 - [ ] Treat `.imsight-arts/project-explore/use-cases/` as acceptance-test source material and update the relevant roadmap milestone whenever a use case becomes runnable.
+- [ ] Treat UC-06 as the capstone roadmap verification fixture once Milestone 10 surfaces are available, and require its roadmap verdict to link concrete pass/fail evidence for Milestones 1 through 10.
 - [ ] Preserve research-paradigm skillset validation as a release gate.
 - [ ] Prefer small, inspectable records over opaque automation, especially around Gates, Evidence Items, Research Claims, Agent Team Instance lifecycle state, and Provenance Records.
 - [ ] Keep user-owned Project files first-class: Isomer should manage Topic Workspaces and records without forcing all research work into a hidden platform directory.
