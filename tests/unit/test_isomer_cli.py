@@ -118,6 +118,8 @@ class IsomerCliTests(unittest.TestCase):
             "context show",
             "paths preview",
             "schemas list",
+            "team-templates",
+            "team-profiles",
         ):
             self.assertIn(command, help_text)
         pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
@@ -393,3 +395,285 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIn("isomer-project-manifest", names)
         self.assertFalse(any("openspec" in name.lower() for name in names))
         self.assertNotIn("implement-isomer-cli-project-discovery", output)
+
+    def make_deepsci_profile_project(self, root: Path) -> None:
+        write(
+            root / ".isomer-labs" / "manifest.toml",
+            """
+            schema_version = "isomer-project-manifest.v1"
+
+            [defaults]
+            research_topic_id = "alpha"
+            domain_agent_team_template_id = "deepsci-org"
+            topic_agent_team_profile_id = "uc-01-alpha"
+
+            [[research_topics]]
+            id = "alpha"
+            config_path = ".isomer-labs/research-topics/alpha.toml"
+            topic_workspace_id = "alpha"
+
+            [[research_topics]]
+            id = "beta"
+            config_path = ".isomer-labs/research-topics/beta.toml"
+            topic_workspace_id = "beta"
+
+            [[topic_workspaces]]
+            id = "alpha"
+            research_topic_id = "alpha"
+            path = "topic-workspaces/alpha"
+
+            [[topic_workspaces]]
+            id = "beta"
+            research_topic_id = "beta"
+            path = "topic-workspaces/beta"
+
+            [[topic_agent_team_profiles]]
+            id = "uc-01-alpha"
+            path = ".isomer-labs/team-profiles/uc-01-alpha.toml"
+            domain_agent_team_template_id = "deepsci-org"
+            research_topic_id = "alpha"
+
+            [[topic_agent_team_profiles]]
+            id = "uc-02-beta"
+            path = ".isomer-labs/team-profiles/uc-02-beta.toml"
+            domain_agent_team_template_id = "deepsci-org"
+            research_topic_id = "beta"
+
+            [[topic_agent_team_profiles]]
+            id = "uc-03-alpha"
+            path = ".isomer-labs/team-profiles/uc-03-alpha.toml"
+            domain_agent_team_template_id = "deepsci-org"
+            research_topic_id = "alpha"
+
+            [[topic_agent_team_profiles]]
+            id = "uc-05-beta"
+            path = ".isomer-labs/team-profiles/uc-05-beta.toml"
+            domain_agent_team_template_id = "deepsci-org"
+            research_topic_id = "beta"
+            """,
+        )
+        write(
+            root / ".isomer-labs" / "research-topics" / "alpha.toml",
+            """
+            schema_version = "isomer-research-topic-config.v1"
+            research_topic_id = "alpha"
+            topic_statement = "Explore a new direction"
+            default_domain_agent_team_template_id = "deepsci-org"
+            default_topic_agent_team_profile_id = "uc-01-alpha"
+            coordination_policy_ref = "coordination-policy:alpha-manual"
+            gate_policy_ref = "gate-policy:alpha-human-return"
+            baseline_waiver_policy_ref = "baseline-waiver-policy:alpha"
+
+            [capability_binding_refs]
+            default = "capability-binding:alpha-default"
+
+            [skill_binding_projection_refs]
+            default = "skill-projection:alpha-default"
+            """,
+        )
+        write(
+            root / ".isomer-labs" / "research-topics" / "beta.toml",
+            """
+            schema_version = "isomer-research-topic-config.v1"
+            research_topic_id = "beta"
+            topic_statement = "Optimize a baseline"
+            default_domain_agent_team_template_id = "deepsci-org"
+            default_topic_agent_team_profile_id = "uc-02-beta"
+            coordination_policy_ref = "coordination-policy:beta-manual"
+            gate_policy_ref = "gate-policy:beta-human-return"
+            scheduler_policy_ref = "scheduler-policy:beta"
+            """,
+        )
+        write(root / ".isomer-labs" / "team-profiles" / "uc-01-alpha.toml", self.profile_fixture("uc-01-alpha", "alpha", "UC-01"))
+        write(root / ".isomer-labs" / "team-profiles" / "uc-02-beta.toml", self.profile_fixture("uc-02-beta", "beta", "UC-02"))
+        write(root / ".isomer-labs" / "team-profiles" / "uc-03-alpha.toml", self.profile_fixture("uc-03-alpha", "alpha", "UC-03"))
+        write(root / ".isomer-labs" / "team-profiles" / "uc-05-beta.toml", self.profile_fixture("uc-05-beta", "beta", "UC-05", automatic=True))
+        (root / "topic-workspaces" / "alpha").mkdir(parents=True)
+        (root / "topic-workspaces" / "beta").mkdir(parents=True)
+
+    def profile_fixture(
+        self,
+        profile_id: str,
+        topic_id: str,
+        use_case: str,
+        *,
+        automatic: bool = False,
+        workspace_topic_id: str | None = None,
+        runtime_truth: bool = False,
+        missing_fanout: bool = False,
+    ) -> str:
+        workspace_topic = workspace_topic_id or topic_id
+        execution_mode = "automatic" if automatic else "manual"
+        automatic_policy = 'automatic_mode_policy_ref = "automatic-mode-policy:test"\n' if automatic else ""
+        runtime_line = 'run_status = "done"\n' if runtime_truth else ""
+        roles = [
+            ("deepsci-org-master", ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"], ["isomer-rsch-review"]),
+            ("deepsci-org-framer", ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"], ["isomer-rsch-science", "isomer-rsch-paper-outline"]),
+            ("deepsci-org-designer", ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"], ["isomer-rsch-scout"]),
+            ("deepsci-org-experimenter", ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"], ["isomer-rsch-analysis"]),
+            ("deepsci-org-analyzer", ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"], ["isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]),
+            ("deepsci-org-publisher", ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"], ["nature-data", "nature-figure", "nature-paper2ppt", "nature-polishing"]),
+            ("deepsci-org-reviewer", ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"], ["isomer-rsch-scout"]),
+        ]
+        role_blocks = []
+        for role_id, required, optional in roles:
+            role_blocks.append(
+                f"""
+                [[role_bindings]]
+                role_id = "{role_id}"
+                active = true
+                agent_profile_ref = "{profile_id}:{role_id}:agent-profile"
+                capability_binding_ref = "{profile_id}:{role_id}:capability-binding"
+                skill_binding_projection_ref = "{profile_id}:{role_id}:skill-binding-projection"
+                agent_workspace_ref = "topic-workspaces/{workspace_topic}/agent-workspaces/{profile_id}/{role_id}"
+                required_skills = {json.dumps(required)}
+                optional_skills = {json.dumps(optional)}
+                """
+            )
+        fanout = ""
+        if not missing_fanout:
+            fanout = f"""
+                [[fanout_policies]]
+                role_id = "deepsci-org-experimenter"
+                parallel_execution_scope = "research_task"
+                max_shards = 2
+                allocation_rule = "{profile_id}:experimenter-shards"
+
+                [[fanout_policies]]
+                role_id = "deepsci-org-analyzer"
+                parallel_execution_scope = "research_task"
+                max_shards = 2
+                allocation_rule = "{profile_id}:analyzer-shards"
+                """
+        return textwrap.dedent(
+            f"""
+            schema_version = "isomer-topic-agent-team-profile.v1"
+            id = "{profile_id}"
+            domain_agent_team_template_id = "deepsci-org"
+            research_topic_id = "{topic_id}"
+            topic_workspace_id = "{topic_id}"
+            coordination_policy_ref = "coordination-policy:{topic_id}"
+            gate_policy_ref = "gate-policy:{topic_id}"
+            baseline_waiver_policy_ref = "baseline-waiver-policy:{topic_id}"
+            default_execution_mode = "{execution_mode}"
+            {automatic_policy}reviewer_read_access_policy = "promoted-artifacts-only"
+            expected_artifacts = ["{use_case}:research-plan", "{use_case}:evidence-summary"]
+            constraints = ["use_case:{use_case}"]
+            {runtime_line}
+            {"".join(role_blocks)}
+            {fanout}
+            """
+        )
+
+    def test_team_templates_cli_commands_are_deterministic(self) -> None:
+        status, output = self.run_cli(["team-templates", "list", "--json"])
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["deepsci-org"], [template["id"] for template in data["templates"]])
+        self.assertEqual("valid", data["templates"][0]["validation_status"])
+
+        status, output = self.run_cli(["team-templates", "inspect", "deepsci-org", "--json"])
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(7, len(data["template"]["roles"]))
+        self.assertIn("deepsci-org-reviewer", {role["id"] for role in data["template"]["roles"]})
+
+        status, output = self.run_cli(["team-templates", "validate", "missing-template", "--json"])
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("ISO016", data["diagnostics"][0]["code"])
+
+    def test_profile_manifest_context_specialize_and_validate(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+
+        status, output = self.run_cli(["validate", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["ok"])
+
+        status, output = self.run_cli(["context", "show", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("deepsci-org", data["context"]["domain_agent_team_template_id"])
+        self.assertEqual("uc-01-alpha", data["context"]["topic_agent_team_profile_id"])
+        self.assertEqual("coordination-policy:alpha-manual", data["context"]["profile_refs"]["coordination_policy_ref"])
+
+        status, output = self.run_cli(
+            ["team-profiles", "specialize", "--topic", "alpha", "--profile-id", "preview-alpha", "--use-case", "UC-01", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("preview-alpha", data["profile"]["id"])
+        self.assertEqual("research-inquiry-map", data["profile"]["expected_artifacts"][0])
+        self.assertIsNone(data["written_path"])
+
+        status, output = self.run_cli(
+            ["team-profiles", "validate", ".isomer-labs/team-profiles/uc-01-alpha.toml", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["ok"])
+
+    def test_profile_validation_rejects_isolation_and_runtime_truth(self) -> None:
+        root = self.make_root()
+        write(
+            root / ".isomer-labs" / "manifest.toml",
+            """
+            schema_version = "isomer-project-manifest.v1"
+
+            [defaults]
+            research_topic_id = "alpha"
+            topic_agent_team_profile_id = "dup"
+
+            [[research_topics]]
+            id = "alpha"
+            config_path = ".isomer-labs/research-topics/alpha.toml"
+            topic_workspace_id = "alpha"
+
+            [[research_topics]]
+            id = "beta"
+            config_path = ".isomer-labs/research-topics/beta.toml"
+            topic_workspace_id = "beta"
+
+            [[topic_workspaces]]
+            id = "alpha"
+            research_topic_id = "alpha"
+            path = "topic-workspaces/alpha"
+
+            [[topic_workspaces]]
+            id = "beta"
+            research_topic_id = "beta"
+            path = "topic-workspaces/beta"
+
+            [[topic_agent_team_profiles]]
+            id = "dup"
+            path = ".isomer-labs/team-profiles/dup.toml"
+            domain_agent_team_template_id = "deepsci-org"
+            research_topic_id = "alpha"
+
+            [[topic_agent_team_profiles]]
+            id = "dup"
+            path = ".isomer-labs/team-profiles/dup-beta.toml"
+            domain_agent_team_template_id = "deepsci-org"
+            research_topic_id = "beta"
+
+            [[topic_agent_team_profiles]]
+            id = "workspace-local"
+            path = "topic-workspaces/alpha/teams/workspace-local.toml"
+            domain_agent_team_template_id = "deepsci-org"
+            research_topic_id = "alpha"
+            """,
+        )
+        write(root / ".isomer-labs" / "research-topics" / "alpha.toml", 'research_topic_id = "alpha"\ndefault_topic_agent_team_profile_id = "dup"\n')
+        write(root / ".isomer-labs" / "research-topics" / "beta.toml", 'research_topic_id = "beta"\n')
+        write(root / ".isomer-labs" / "team-profiles" / "dup.toml", self.profile_fixture("dup", "alpha", "UC-01", workspace_topic_id="beta", runtime_truth=True, missing_fanout=True))
+        write(root / ".isomer-labs" / "team-profiles" / "dup-beta.toml", self.profile_fixture("dup", "beta", "UC-02"))
+
+        status, output = self.run_cli(["validate", "--json"], cwd=root)
+        data = json.loads(output)
+        codes = {diagnostic["code"] for diagnostic in data["diagnostics"]}
+        self.assertEqual(1, status)
+        self.assertTrue({"ISO004", "ISO009", "ISO019", "ISO020"} <= codes, data["diagnostics"])

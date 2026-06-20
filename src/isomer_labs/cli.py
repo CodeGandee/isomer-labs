@@ -17,6 +17,20 @@ from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, Sel
 from isomer_labs.paths import preview_paths
 from isomer_labs.project import discover_project
 from isomer_labs.rendering import render_diagnostics, render_json, render_key_values
+from isomer_labs.team_profiles import (
+    parse_topic_agent_team_profile,
+    profile_to_toml,
+    specialize_topic_agent_team_profile,
+    validate_topic_agent_team_profile,
+)
+from isomer_labs.team_templates import (
+    BUILT_IN_DEEPSCI_ORG_ID,
+    discover_domain_agent_team_templates,
+    find_domain_agent_team_template,
+    resolve_template_source_path,
+    validate_domain_agent_team_template,
+)
+from isomer_labs.toml_loader import load_toml
 from isomer_labs.validation import build_project_state
 
 
@@ -50,6 +64,11 @@ Command surface:
   context show
   paths preview
   schemas list
+  team-templates list
+  team-templates inspect
+  team-templates validate
+  team-profiles specialize
+  team-profiles validate
 """
 
 
@@ -353,6 +372,168 @@ def schemas_list_command(
     )
 
 
+@app.group(name="team-templates", help="Domain Agent Team Template commands.")
+def team_templates_group() -> None:
+    pass
+
+
+@team_templates_group.command(name="list", help="List registered Domain Agent Team Templates.")
+@_common_options
+@click.pass_context
+def team_templates_list_command(
+    ctx: click.Context,
+    project: str | None,
+    manifest: str | None,
+    output_format: str | None,
+    json_output: bool,
+) -> int:
+    return _cmd_team_templates_list(
+        _merge_options(
+            ctx,
+            project=project,
+            manifest=manifest,
+            output_format=output_format,
+            json_output=json_output,
+        )
+    )
+
+
+@team_templates_group.command(name="inspect", help="Inspect a registered Domain Agent Team Template.")
+@_common_options
+@click.argument("template_id")
+@click.pass_context
+def team_templates_inspect_command(
+    ctx: click.Context,
+    project: str | None,
+    manifest: str | None,
+    output_format: str | None,
+    json_output: bool,
+    template_id: str,
+) -> int:
+    return _cmd_team_templates_inspect(
+        _merge_options(
+            ctx,
+            project=project,
+            manifest=manifest,
+            output_format=output_format,
+            json_output=json_output,
+        ),
+        template_id,
+    )
+
+
+@team_templates_group.command(name="validate", help="Validate a registered Domain Agent Team Template.")
+@_common_options
+@click.argument("template_id")
+@click.pass_context
+def team_templates_validate_command(
+    ctx: click.Context,
+    project: str | None,
+    manifest: str | None,
+    output_format: str | None,
+    json_output: bool,
+    template_id: str,
+) -> int:
+    return _cmd_team_templates_validate(
+        _merge_options(
+            ctx,
+            project=project,
+            manifest=manifest,
+            output_format=output_format,
+            json_output=json_output,
+        ),
+        template_id,
+    )
+
+
+@app.group(name="team-profiles", help="Topic Agent Team Profile commands.")
+def team_profiles_group() -> None:
+    pass
+
+
+@team_profiles_group.command(name="specialize", help="Derive a candidate Topic Agent Team Profile.")
+@_common_options
+@_topic_selection_options
+@click.option("--template", "template_id", default=None, help="Domain Agent Team Template id.")
+@click.option("--profile-id", default=None, help="Candidate Topic Agent Team Profile id.")
+@click.option("--role", "roles", multiple=True, help="Agent Role id to activate. May be repeated.")
+@click.option("--expected-artifact", "expected_artifacts", multiple=True, help="Expected Artifact ref. May be repeated.")
+@click.option("--use-case", default=None, help="Use-case fixture label such as UC-01.")
+@click.option("--write", "write_profile", is_flag=True, help="Write the generated profile to the Project Config Directory.")
+@click.pass_context
+def team_profiles_specialize_command(
+    ctx: click.Context,
+    project: str | None,
+    manifest: str | None,
+    output_format: str | None,
+    json_output: bool,
+    research_topic_id: str | None,
+    topic_workspace_id: str | None,
+    research_inquiry_id: str | None,
+    research_task_id: str | None,
+    run_id: str | None,
+    agent_team_instance_id: str | None,
+    agent_instance_id: str | None,
+    topic_agent_team_profile_id: str | None,
+    template_id: str | None,
+    profile_id: str | None,
+    roles: tuple[str, ...],
+    expected_artifacts: tuple[str, ...],
+    use_case: str | None,
+    write_profile: bool,
+) -> int:
+    return _cmd_team_profiles_specialize(
+        _merge_options(
+            ctx,
+            project=project,
+            manifest=manifest,
+            output_format=output_format,
+            json_output=json_output,
+            research_topic_id=research_topic_id,
+            topic_workspace_id=topic_workspace_id,
+            research_inquiry_id=research_inquiry_id,
+            research_task_id=research_task_id,
+            run_id=run_id,
+            agent_team_instance_id=agent_team_instance_id,
+            agent_instance_id=agent_instance_id,
+            topic_agent_team_profile_id=topic_agent_team_profile_id,
+        ),
+        template_id=template_id,
+        profile_id=profile_id,
+        roles=list(roles),
+        expected_artifacts=list(expected_artifacts),
+        use_case=use_case,
+        write_profile=write_profile,
+    )
+
+
+@team_profiles_group.command(name="validate", help="Validate a Topic Agent Team Profile file.")
+@_common_options
+@click.option("--template", "template_id", default=None, help="Domain Agent Team Template id.")
+@click.argument("profile_path", required=False)
+@click.pass_context
+def team_profiles_validate_command(
+    ctx: click.Context,
+    project: str | None,
+    manifest: str | None,
+    output_format: str | None,
+    json_output: bool,
+    template_id: str | None,
+    profile_path: str | None,
+) -> int:
+    return _cmd_team_profiles_validate(
+        _merge_options(
+            ctx,
+            project=project,
+            manifest=manifest,
+            output_format=output_format,
+            json_output=json_output,
+        ),
+        template_id=template_id,
+        profile_path=profile_path,
+    )
+
+
 def _merge_options(
     ctx: click.Context,
     *,
@@ -523,6 +704,155 @@ def _cmd_schemas_list(options: CliOptions) -> int:
     return _emit("schemas list", options, payload, [], lines)
 
 
+def _cmd_team_templates_list(options: CliOptions) -> int:
+    project, diagnostics = _discover_optional(options)
+    templates = []
+    for registration in discover_domain_agent_team_templates(project):
+        report = validate_domain_agent_team_template(project, registration, include_harness=False)
+        diagnostics.extend(report.diagnostics)
+        templates.append(
+            {
+                "id": registration.id,
+                "source_kind": registration.source_kind,
+                "source_path": str(resolve_template_source_path(project, registration)),
+                "validation_status": "valid" if report.ok else "invalid",
+            }
+        )
+    payload = {"templates": sorted(templates, key=lambda item: str(item["id"]))}
+    lines = ["Domain Agent Team Templates"]
+    lines.extend(
+        f"- {template['id']} ({template['source_kind']}, {template['validation_status']}) {template['source_path']}"
+        for template in payload["templates"]
+    )
+    return _emit("team-templates list", options, payload, diagnostics, lines)
+
+
+def _cmd_team_templates_inspect(options: CliOptions, template_id: str) -> int:
+    project, diagnostics = _discover_optional(options)
+    registration = find_domain_agent_team_template(template_id, project)
+    if registration is None:
+        diagnostics.append(_unknown_template_diagnostic(template_id))
+        return _emit("team-templates inspect", options, {"template": None}, diagnostics, [])
+    report = validate_domain_agent_team_template(project, registration, include_harness=False)
+    diagnostics.extend(report.diagnostics)
+    payload = {"template": report.template.to_json() if report.template is not None else None}
+    lines: list[str] = []
+    if report.template is not None:
+        lines = [
+            f"Domain Agent Team Template: {report.template.id}",
+            f"Source: {report.template.source_path}",
+            "Agent Roles",
+            *[f"- {role.id} ({role.role_kind}, required={role.required}, scalable={role.scalable})" for role in report.template.roles],
+            "Workflow Stages",
+            *[f"- {route.workflow_stage}: {route.owner_role}" for route in report.template.workflow_stage_routes],
+        ]
+    return _emit("team-templates inspect", options, payload, diagnostics, lines)
+
+
+def _cmd_team_templates_validate(options: CliOptions, template_id: str) -> int:
+    project, diagnostics = _discover_optional(options)
+    registration = find_domain_agent_team_template(template_id, project)
+    if registration is None:
+        diagnostics.append(_unknown_template_diagnostic(template_id))
+        return _emit("team-templates validate", options, {"ok": False, "template": None}, diagnostics, [])
+    report = validate_domain_agent_team_template(project, registration, include_harness=True)
+    diagnostics.extend(report.diagnostics)
+    payload = {
+        "ok": report.ok,
+        "template": report.template.to_json() if report.template is not None else None,
+    }
+    lines = [f"Domain Agent Team Template {template_id} valid."] if report.ok else []
+    return _emit("team-templates validate", options, payload, diagnostics, lines)
+
+
+def _cmd_team_profiles_specialize(
+    options: CliOptions,
+    *,
+    template_id: str | None,
+    profile_id: str | None,
+    roles: list[str],
+    expected_artifacts: list[str],
+    use_case: str | None,
+    write_profile: bool,
+) -> int:
+    context, diagnostics = _context_for_options(options)
+    if context is None:
+        return _emit("team-profiles specialize", options, {"profile": None}, diagnostics, [])
+    selected_template_id = template_id or context.domain_agent_team_template_id or BUILT_IN_DEEPSCI_ORG_ID
+    registration = find_domain_agent_team_template(selected_template_id, context.project)
+    if registration is None:
+        diagnostics.append(_unknown_template_diagnostic(selected_template_id))
+        return _emit("team-profiles specialize", options, {"profile": None}, diagnostics, [])
+    template_report = validate_domain_agent_team_template(context.project, registration, include_harness=False)
+    diagnostics.extend(template_report.diagnostics)
+    if template_report.template is None:
+        return _emit("team-profiles specialize", options, {"profile": None}, diagnostics, [])
+    profile = specialize_topic_agent_team_profile(
+        context,
+        template_report.template,
+        profile_id=profile_id,
+        selected_role_ids=roles or None,
+        expected_artifacts=expected_artifacts or None,
+        use_case=use_case,
+    )
+    profile_report = validate_topic_agent_team_profile(profile, template_report.template, project=context.project)
+    diagnostics.extend(profile_report.diagnostics)
+    written_path = None
+    if write_profile and not has_errors(diagnostics):
+        profile.source_path.parent.mkdir(parents=True, exist_ok=True)
+        profile.source_path.write_text(profile_to_toml(profile), encoding="utf-8")
+        written_path = str(profile.source_path)
+    payload = {
+        "profile": profile.to_json(),
+        "validation": profile_report.to_json(),
+        "written_path": written_path,
+    }
+    lines = [
+        f"Topic Agent Team Profile: {profile.id}",
+        f"Template: {profile.domain_agent_team_template_id}",
+        f"Research Topic: {profile.research_topic_id}",
+    ]
+    if written_path is not None:
+        lines.append(f"Written: {written_path}")
+    return _emit("team-profiles specialize", options, payload, diagnostics, lines)
+
+
+def _cmd_team_profiles_validate(
+    options: CliOptions,
+    *,
+    template_id: str | None,
+    profile_path: str | None,
+) -> int:
+    project, diagnostics = _discover_optional(options)
+    path = _resolve_profile_cli_path(project, profile_path, diagnostics)
+    if path is None:
+        return _emit("team-profiles validate", options, {"profile": None, "ok": False}, diagnostics, [])
+    raw, load_diagnostics = load_toml(path, "Topic Agent Team Profile")
+    diagnostics.extend(load_diagnostics)
+    profile = None
+    if raw is not None:
+        profile, parse_diagnostics = parse_topic_agent_team_profile(path, raw)
+        diagnostics.extend(parse_diagnostics)
+    selected_template_id = template_id or (profile.domain_agent_team_template_id if profile is not None else None) or BUILT_IN_DEEPSCI_ORG_ID
+    registration = find_domain_agent_team_template(selected_template_id, project)
+    template = None
+    if registration is None:
+        diagnostics.append(_unknown_template_diagnostic(selected_template_id))
+    else:
+        template_report = validate_domain_agent_team_template(project, registration, include_harness=False)
+        diagnostics.extend(template_report.diagnostics)
+        template = template_report.template
+    report = validate_topic_agent_team_profile(profile, template, project=project, source_path=path)
+    diagnostics.extend(report.diagnostics)
+    payload = {
+        "ok": report.ok and not has_errors(diagnostics),
+        "profile": profile.to_json() if profile is not None else None,
+        "validation": report.to_json(),
+    }
+    lines = [f"Topic Agent Team Profile {profile.id} valid."] if profile is not None and payload["ok"] else []
+    return _emit("team-profiles validate", options, payload, diagnostics, lines)
+
+
 def _context_for_options(options: CliOptions) -> tuple[EffectiveTopicContext | None, list[Diagnostic]]:
     project, diagnostics = _discover(options)
     if project is None:
@@ -556,6 +886,74 @@ def _discover(options: CliOptions) -> tuple[Project | None, list[Diagnostic]]:
         project_selector=_value(options, "project"),
         manifest_selector=_value(options, "manifest"),
     )
+
+
+def _discover_optional(options: CliOptions) -> tuple[Project | None, list[Diagnostic]]:
+    project, diagnostics = _discover(options)
+    if project is not None:
+        return project, diagnostics
+    if _value(options, "project") is None and _value(options, "manifest") is None:
+        return None, []
+    return project, diagnostics
+
+
+def _unknown_template_diagnostic(template_id: str) -> Diagnostic:
+    return Diagnostic(
+        code="ISO016",
+        severity="error",
+        concept="Domain Agent Team Template",
+        field="template_id",
+        message=f"Unknown Domain Agent Team Template: {template_id}.",
+    )
+
+
+def _resolve_profile_cli_path(
+    project: Project | None,
+    profile_path: str | None,
+    diagnostics: list[Diagnostic],
+) -> Path | None:
+    if profile_path is not None:
+        path = Path(profile_path)
+        if path.is_absolute() or project is None:
+            return path.expanduser().resolve(strict=False)
+        return (project.root / path).expanduser().resolve(strict=False)
+    if project is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO020",
+                severity="error",
+                concept="Topic Agent Team Profile",
+                message="A Project or explicit profile path is required to validate a Topic Agent Team Profile.",
+            )
+        )
+        return None
+    profile_id = project.manifest.default_topic_agent_team_profile_id()
+    if profile_id is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO020",
+                severity="error",
+                concept="Topic Agent Team Profile",
+                path=project.manifest_path,
+                field="defaults.topic_agent_team_profile_id",
+                message="No Topic Agent Team Profile path was provided and the Project Manifest has no default profile.",
+            )
+        )
+        return None
+    registration = project.manifest.first_topic_agent_team_profile(profile_id)
+    if registration is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO020",
+                severity="error",
+                concept="Topic Agent Team Profile",
+                path=project.manifest_path,
+                field="defaults.topic_agent_team_profile_id",
+                message="Project Manifest default profile id is not registered.",
+            )
+        )
+        return None
+    return (project.root / registration.path_input).expanduser().resolve(strict=False)
 
 
 def _emit(

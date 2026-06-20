@@ -44,7 +44,7 @@ The current reference package is:
 
 ## Milestone 1 CLI
 
-The package exposes `isomer-cli` for Project discovery, Project Manifest validation, Effective Topic Context inspection, and side-effect-free Workspace Path Resolution previews.
+The package exposes `isomer-cli` for Project discovery, Project Manifest validation, Effective Topic Context inspection, side-effect-free Workspace Path Resolution previews, and the first Milestone 2/3 Domain Agent Team Template and Topic Agent Team Profile checks.
 
 Common examples:
 
@@ -56,9 +56,16 @@ pixi run isomer-cli workspaces list
 pixi run isomer-cli context show --topic default --json
 pixi run isomer-cli paths preview --topic default
 pixi run isomer-cli schemas list
+pixi run isomer-cli team-templates list
+pixi run isomer-cli team-templates inspect deepsci-org --json
+pixi run isomer-cli team-templates validate deepsci-org
+pixi run isomer-cli team-profiles specialize --topic default --profile-id default-deepsci --use-case UC-01 --json
+pixi run isomer-cli team-profiles validate .isomer-labs/team-profiles/default-deepsci.toml
 ```
 
 `isomer-cli init` creates `.isomer-labs/manifest.toml`, `.isomer-labs/research-topics/default.toml`, and `topic-workspaces/default/`. It does not create `state.sqlite` or Workspace Runtime subdirectories.
+
+`team-templates` exposes the repository-local `teams/deepsci-org/execplan/` package as the seed Domain Agent Team Template. `team-profiles specialize` derives a design-time Topic Agent Team Profile preview from Effective Topic Context, policy refs, Capability Binding refs, Skill Binding Projection refs, and Agent Workspace refs. It does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state unless `--write` is explicitly requested for the profile TOML file.
 
 ## Status
 

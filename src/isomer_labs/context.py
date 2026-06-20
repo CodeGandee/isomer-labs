@@ -12,10 +12,12 @@ from isomer_labs.models import (
     Project,
     ProjectState,
     ResearchTopicRegistration,
+    ResearchTopicConfig,
     SelectionRequest,
     TopicWorkspaceRegistration,
 )
 from isomer_labs.path_utils import canonicalize, is_within, resolve_project_path
+from isomer_labs.team_templates import BUILT_IN_DEEPSCI_ORG_ID
 
 
 IDENTITY_ENV_FIELDS = {
@@ -26,6 +28,7 @@ IDENTITY_ENV_FIELDS = {
     "ISOMER_RUN_ID": "run_id",
     "ISOMER_AGENT_TEAM_INSTANCE_ID": "agent_team_instance_id",
     "ISOMER_AGENT_INSTANCE_ID": "agent_instance_id",
+    "ISOMER_TOPIC_AGENT_TEAM_PROFILE_ID": "topic_agent_team_profile_id",
 }
 
 
@@ -34,6 +37,7 @@ class Candidate:
     source: str
     research_topic_id: str | None = None
     topic_workspace_id: str | None = None
+    topic_agent_team_profile_id: str | None = None
     lifecycle_refs: dict[str, str] = field(default_factory=dict)
 
 
@@ -86,6 +90,12 @@ def resolve_effective_topic_context(
         return None, diagnostics
 
     topic_config = state.topic_configs.get(topic.id)
+    template_id, profile_id, profile_source, profile_refs = _select_template_and_profile(
+        state,
+        topic_config,
+        selected,
+        request,
+    )
     schema_versions = {
         "project_manifest": state.project.manifest.schema_version,
         "research_topic_registration": topic.schema_version,
@@ -121,8 +131,13 @@ def resolve_effective_topic_context(
             "research_topic_config": "Project Manifest",
             "topic_workspace_id": selected.source if selected.topic_workspace_id is not None else workspace_source,
             "topic_workspace_path": workspace_source,
+            "domain_agent_team_template_id": profile_source,
+            "topic_agent_team_profile_id": profile_source,
         },
         lifecycle_refs=lifecycle_refs,
+        domain_agent_team_template_id=template_id,
+        topic_agent_team_profile_id=profile_id,
+        profile_refs=profile_refs,
     )
     return context, diagnostics
 
@@ -236,6 +251,7 @@ def _selection_candidates(
         source="explicit selector",
         research_topic_id=request.research_topic_id,
         topic_workspace_id=request.topic_workspace_id,
+        topic_agent_team_profile_id=request.topic_agent_team_profile_id,
         lifecycle_refs=request.lifecycle_refs(),
         diagnostics=diagnostics,
     )
@@ -256,7 +272,12 @@ def _selection_candidates(
         source="environment",
         research_topic_id=env_refs.get("research_topic_id"),
         topic_workspace_id=env_refs.get("topic_workspace_id"),
-        lifecycle_refs={key: value for key, value in env_refs.items() if key not in {"research_topic_id", "topic_workspace_id"}},
+        topic_agent_team_profile_id=env_refs.get("topic_agent_team_profile_id"),
+        lifecycle_refs={
+            key: value
+            for key, value in env_refs.items()
+            if key not in {"research_topic_id", "topic_workspace_id", "topic_agent_team_profile_id"}
+        },
         diagnostics=diagnostics,
     )
     if env_candidate is not None:
@@ -268,10 +289,11 @@ def _selection_candidates(
             source=".isomer-labs/local.toml",
             research_topic_id=state.local_context.refs.get("research_topic_id"),
             topic_workspace_id=state.local_context.refs.get("topic_workspace_id"),
+            topic_agent_team_profile_id=state.local_context.refs.get("topic_agent_team_profile_id"),
             lifecycle_refs={
                 key: value
                 for key, value in state.local_context.refs.items()
-                if key not in {"research_topic_id", "topic_workspace_id"}
+                if key not in {"research_topic_id", "topic_workspace_id", "topic_agent_team_profile_id"}
             },
             diagnostics=diagnostics,
         )
@@ -297,13 +319,28 @@ def _candidate_from_refs(
     source: str,
     research_topic_id: str | None,
     topic_workspace_id: str | None,
+    topic_agent_team_profile_id: str | None,
     lifecycle_refs: dict[str, str],
     diagnostics: list[Diagnostic],
 ) -> Candidate | None:
-    if research_topic_id is None and topic_workspace_id is None and not lifecycle_refs:
+    if research_topic_id is None and topic_workspace_id is None and topic_agent_team_profile_id is None and not lifecycle_refs:
         return None
 
     inferred_topic_id = research_topic_id
+    if topic_agent_team_profile_id is not None:
+        profile = state.project.manifest.first_topic_agent_team_profile(topic_agent_team_profile_id)
+        if profile is not None:
+            if inferred_topic_id is not None and inferred_topic_id != profile.research_topic_id:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO012",
+                        severity="error",
+                        concept="Effective Topic Context",
+                        field="topic_agent_team_profile_id",
+                        message=f"{source} selected conflicting Research Topic and Topic Agent Team Profile refs.",
+                    )
+                )
+            inferred_topic_id = inferred_topic_id or profile.research_topic_id
     if topic_workspace_id is not None:
         workspace = state.project.manifest.first_workspace(topic_workspace_id)
         if workspace is None:
@@ -360,6 +397,7 @@ def _candidate_from_refs(
         source=source,
         research_topic_id=inferred_topic_id,
         topic_workspace_id=topic_workspace_id,
+        topic_agent_team_profile_id=topic_agent_team_profile_id,
         lifecycle_refs=lifecycle_refs,
     )
 
@@ -392,3 +430,43 @@ def _manifest_path_default(project: Project, key: str) -> str | None:
     if isinstance(value, str) and value:
         return value
     return None
+
+
+def _select_template_and_profile(
+    state: ProjectState,
+    topic_config: ResearchTopicConfig | None,
+    selected: Candidate,
+    request: SelectionRequest,
+) -> tuple[str | None, str | None, str, dict[str, object]]:
+    profile_refs = dict(topic_config.refs) if topic_config is not None else {}
+    profile_id = request.topic_agent_team_profile_id
+    source = "explicit selector" if profile_id is not None else "none"
+    if profile_id is None and topic_config is not None:
+        profile_id = topic_config.default_topic_agent_team_profile_id()
+        if profile_id is not None:
+            source = "Research Topic Config default"
+    if profile_id is None:
+        profile_id = state.project.manifest.default_topic_agent_team_profile_id()
+        if profile_id is not None:
+            source = "Project Manifest default"
+    if profile_id is None and selected.topic_agent_team_profile_id is not None:
+        profile_id = selected.topic_agent_team_profile_id
+        source = selected.source
+    profile_registration = state.project.manifest.first_topic_agent_team_profile(profile_id) if profile_id is not None else None
+
+    template_id = None
+    if profile_registration is not None:
+        template_id = profile_registration.domain_agent_team_template_id
+    if template_id is None and topic_config is not None:
+        template_id = topic_config.default_domain_agent_team_template_id()
+        if template_id is not None and profile_id is None:
+            source = "Research Topic Config default"
+    if template_id is None:
+        template_id = state.project.manifest.default_domain_agent_team_template_id()
+        if template_id is not None and profile_id is None:
+            source = "Project Manifest default"
+    if template_id is None:
+        template_id = BUILT_IN_DEEPSCI_ORG_ID
+        if profile_id is None:
+            source = "template default"
+    return template_id, profile_id, source, profile_refs

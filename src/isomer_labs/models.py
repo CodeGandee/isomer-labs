@@ -13,6 +13,282 @@ OUTPUT_SCHEMA_VERSION = "isomer-cli-output.v1"
 PROJECT_MANIFEST_SCHEMA_VERSION = "isomer-project-manifest.v1"
 RESEARCH_TOPIC_CONFIG_SCHEMA_VERSION = "isomer-research-topic-config.v1"
 LOCAL_ACTIVE_CONTEXT_SCHEMA_VERSION = "isomer-local-active-context.v1"
+DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION = "isomer-domain-agent-team-template-ref.v1"
+TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION = "isomer-topic-agent-team-profile.v1"
+
+
+@dataclass(frozen=True)
+class DomainAgentTeamTemplateRegistration:
+    id: str
+    source_path_input: str | None
+    source_kind: str
+    schema_version: str
+    status: str
+    source_path: Path
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "source_path": self.source_path_input,
+            "source_kind": self.source_kind,
+            "schema_version": self.schema_version,
+            "status": self.status,
+        }
+
+
+@dataclass(frozen=True)
+class TopicAgentTeamProfileRegistration:
+    id: str
+    path_input: str
+    domain_agent_team_template_id: str
+    research_topic_id: str
+    schema_version: str
+    status: str
+    source_path: Path
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "path": self.path_input,
+            "domain_agent_team_template_id": self.domain_agent_team_template_id,
+            "research_topic_id": self.research_topic_id,
+            "schema_version": self.schema_version,
+            "status": self.status,
+        }
+
+
+@dataclass(frozen=True)
+class TemplateArtifact:
+    id: str
+    path_input: str
+    artifact_kind: str
+    purpose: str | None = None
+    description: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "path": self.path_input,
+            "artifact_kind": self.artifact_kind,
+            "purpose": self.purpose,
+            "description": self.description,
+        }
+
+
+@dataclass(frozen=True)
+class AgentRoleDefinition:
+    id: str
+    role_kind: str
+    description: str
+    required: bool
+    scalable: bool
+    scaling_scope: str | None = None
+    agent_profile_placeholder: str | None = None
+    capability_binding_placeholder: str | None = None
+    skill_projection_placeholder: str | None = None
+    workspace_placeholder: str | None = None
+    required_skills: list[str] = field(default_factory=list)
+    optional_skills: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "role_kind": self.role_kind,
+            "description": self.description,
+            "required": self.required,
+            "scalable": self.scalable,
+            "scaling_scope": self.scaling_scope,
+            "agent_profile_placeholder": self.agent_profile_placeholder,
+            "capability_binding_placeholder": self.capability_binding_placeholder,
+            "skill_projection_placeholder": self.skill_projection_placeholder,
+            "workspace_placeholder": self.workspace_placeholder,
+            "required_skills": self.required_skills,
+            "optional_skills": self.optional_skills,
+        }
+
+
+@dataclass(frozen=True)
+class WorkflowStageRoute:
+    workflow_stage: str
+    owner_role: str
+    alternate_owner_role: str | None = None
+    description: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "workflow_stage": self.workflow_stage,
+            "owner_role": self.owner_role,
+            "alternate_owner_role": self.alternate_owner_role,
+            "description": self.description,
+        }
+
+
+@dataclass(frozen=True)
+class TemplateParameter:
+    name: str
+    description: str | None
+    required_for_topic_profile: bool
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "description": self.description,
+            "required_for_topic_profile": self.required_for_topic_profile,
+        }
+
+
+@dataclass(frozen=True)
+class DomainAgentTeamTemplate:
+    id: str
+    source_path: Path
+    source_kind: str
+    root_role: str | None
+    topology_mode: str | None
+    default_execution_mode: str | None
+    topic_instantiation_required: bool
+    auto_mode_requires_topic_policy: bool
+    artifacts: list[TemplateArtifact] = field(default_factory=list)
+    roles: list[AgentRoleDefinition] = field(default_factory=list)
+    workflow_stage_routes: list[WorkflowStageRoute] = field(default_factory=list)
+    parameters: list[TemplateParameter] = field(default_factory=list)
+    raw_metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "source_path": str(self.source_path),
+            "source_kind": self.source_kind,
+            "root_role": self.root_role,
+            "topology_mode": self.topology_mode,
+            "default_execution_mode": self.default_execution_mode,
+            "topic_instantiation_required": self.topic_instantiation_required,
+            "auto_mode_requires_topic_policy": self.auto_mode_requires_topic_policy,
+            "artifacts": [artifact.to_json() for artifact in self.artifacts],
+            "roles": [role.to_json() for role in self.roles],
+            "workflow_stage_routes": [route.to_json() for route in self.workflow_stage_routes],
+            "parameters": [parameter.to_json() for parameter in self.parameters],
+        }
+
+
+@dataclass(frozen=True)
+class RoleBinding:
+    role_id: str
+    active: bool
+    agent_profile_ref: str | None = None
+    capability_binding_ref: str | None = None
+    skill_binding_projection_ref: str | None = None
+    agent_workspace_ref: str | None = None
+    required_skills: list[str] = field(default_factory=list)
+    optional_skills: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "role_id": self.role_id,
+            "active": self.active,
+            "agent_profile_ref": self.agent_profile_ref,
+            "capability_binding_ref": self.capability_binding_ref,
+            "skill_binding_projection_ref": self.skill_binding_projection_ref,
+            "agent_workspace_ref": self.agent_workspace_ref,
+            "required_skills": self.required_skills,
+            "optional_skills": self.optional_skills,
+        }
+
+
+@dataclass(frozen=True)
+class FanoutPolicy:
+    role_id: str
+    parallel_execution_scope: str
+    max_shards: int | None = None
+    allocation_rule: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "role_id": self.role_id,
+            "parallel_execution_scope": self.parallel_execution_scope,
+            "max_shards": self.max_shards,
+            "allocation_rule": self.allocation_rule,
+        }
+
+
+@dataclass(frozen=True)
+class TopicAgentTeamProfile:
+    id: str
+    domain_agent_team_template_id: str
+    research_topic_id: str
+    topic_workspace_id: str | None
+    source_path: Path
+    schema_version: str
+    role_bindings: list[RoleBinding] = field(default_factory=list)
+    expected_artifacts: list[str] = field(default_factory=list)
+    constraints: list[str] = field(default_factory=list)
+    coordination_policy_ref: str | None = None
+    gate_policy_ref: str | None = None
+    scheduler_policy_ref: str | None = None
+    baseline_waiver_policy_ref: str | None = None
+    literature_provider_ref: str | None = None
+    default_execution_mode: str | None = None
+    automatic_mode_policy_ref: str | None = None
+    reviewer_read_access_policy: str | None = None
+    fanout_policies: list[FanoutPolicy] = field(default_factory=list)
+    raw: dict[str, Any] = field(default_factory=dict)
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "domain_agent_team_template_id": self.domain_agent_team_template_id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "path": str(self.source_path),
+            "schema_version": self.schema_version,
+            "role_bindings": [binding.to_json() for binding in self.role_bindings],
+            "expected_artifacts": self.expected_artifacts,
+            "constraints": self.constraints,
+            "coordination_policy_ref": self.coordination_policy_ref,
+            "gate_policy_ref": self.gate_policy_ref,
+            "scheduler_policy_ref": self.scheduler_policy_ref,
+            "baseline_waiver_policy_ref": self.baseline_waiver_policy_ref,
+            "literature_provider_ref": self.literature_provider_ref,
+            "default_execution_mode": self.default_execution_mode,
+            "automatic_mode_policy_ref": self.automatic_mode_policy_ref,
+            "reviewer_read_access_policy": self.reviewer_read_access_policy,
+            "fanout_policies": [policy.to_json() for policy in self.fanout_policies],
+        }
+
+
+@dataclass(frozen=True)
+class TemplateValidationReport:
+    template_id: str
+    source_path: Path
+    ok: bool
+    diagnostics: list[Diagnostic]
+    template: DomainAgentTeamTemplate | None = None
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "template_id": self.template_id,
+            "source_path": str(self.source_path),
+            "ok": self.ok,
+            "template": self.template.to_json() if self.template is not None else None,
+            "diagnostics": [diagnostic.to_json() for diagnostic in self.diagnostics],
+        }
+
+
+@dataclass(frozen=True)
+class ProfileValidationReport:
+    profile_id: str
+    source_path: Path
+    ok: bool
+    diagnostics: list[Diagnostic]
+    profile: TopicAgentTeamProfile | None = None
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "profile_id": self.profile_id,
+            "source_path": str(self.source_path),
+            "ok": self.ok,
+            "profile": self.profile.to_json() if self.profile is not None else None,
+            "diagnostics": [diagnostic.to_json() for diagnostic in self.diagnostics],
+        }
 
 
 @dataclass(frozen=True)
@@ -59,6 +335,8 @@ class ProjectManifest:
     source_path: Path
     research_topics: list[ResearchTopicRegistration]
     topic_workspaces: list[TopicWorkspaceRegistration]
+    domain_agent_team_templates: list[DomainAgentTeamTemplateRegistration] = field(default_factory=list)
+    topic_agent_team_profiles: list[TopicAgentTeamProfileRegistration] = field(default_factory=list)
     defaults: dict[str, Any] = field(default_factory=dict)
     path_defaults: dict[str, Any] = field(default_factory=dict)
     artifact_format_profiles: list[str] = field(default_factory=list)
@@ -70,6 +348,12 @@ class ProjectManifest:
 
     def first_workspace(self, workspace_id: str) -> TopicWorkspaceRegistration | None:
         return next((workspace for workspace in self.topic_workspaces if workspace.id == workspace_id), None)
+
+    def first_domain_agent_team_template(self, template_id: str) -> DomainAgentTeamTemplateRegistration | None:
+        return next((template for template in self.domain_agent_team_templates if template.id == template_id), None)
+
+    def first_topic_agent_team_profile(self, profile_id: str) -> TopicAgentTeamProfileRegistration | None:
+        return next((profile for profile in self.topic_agent_team_profiles if profile.id == profile_id), None)
 
     def default_research_topic_id(self) -> str | None:
         for key in ("research_topic_id", "default_research_topic_id", "default_topic_id"):
@@ -85,12 +369,28 @@ class ProjectManifest:
                 return value
         return None
 
+    def default_domain_agent_team_template_id(self) -> str | None:
+        for key in ("domain_agent_team_template_id", "default_domain_agent_team_template_id"):
+            value = self.defaults.get(key)
+            if isinstance(value, str) and value:
+                return value
+        return None
+
+    def default_topic_agent_team_profile_id(self) -> str | None:
+        for key in ("topic_agent_team_profile_id", "default_topic_agent_team_profile_id"):
+            value = self.defaults.get(key)
+            if isinstance(value, str) and value:
+                return value
+        return None
+
     def to_json(self) -> dict[str, object]:
         return {
             "schema_version": self.schema_version,
             "path": str(self.source_path),
             "research_topics": [topic.to_json() for topic in self.research_topics],
             "topic_workspaces": [workspace.to_json() for workspace in self.topic_workspaces],
+            "domain_agent_team_templates": [template.to_json() for template in self.domain_agent_team_templates],
+            "topic_agent_team_profiles": [profile.to_json() for profile in self.topic_agent_team_profiles],
             "defaults": self.defaults,
             "path_defaults": self.path_defaults,
             "artifact_format_profiles": self.artifact_format_profiles,
@@ -119,6 +419,30 @@ class ResearchTopicConfig:
             "defaults": self.defaults,
             "refs": self.refs,
         }
+
+    def default_domain_agent_team_template_id(self) -> str | None:
+        for key in (
+            "default_domain_agent_team_template_id",
+            "domain_agent_team_template_id",
+            "default_domain_agent_team_template_ref",
+            "domain_agent_team_template_ref",
+        ):
+            value = self.refs.get(key)
+            if isinstance(value, str) and value:
+                return value
+        return None
+
+    def default_topic_agent_team_profile_id(self) -> str | None:
+        for key in (
+            "default_topic_agent_team_profile_id",
+            "topic_agent_team_profile_id",
+            "default_topic_agent_team_profile_ref",
+            "topic_agent_team_profile_ref",
+        ):
+            value = self.refs.get(key)
+            if isinstance(value, str) and value:
+                return value
+        return None
 
 
 @dataclass(frozen=True)
@@ -179,7 +503,6 @@ class SelectionRequest:
             "run_id": self.run_id,
             "agent_team_instance_id": self.agent_team_instance_id,
             "agent_instance_id": self.agent_instance_id,
-            "topic_agent_team_profile_id": self.topic_agent_team_profile_id,
         }
         return {key: value for key, value in refs.items() if value is not None}
 
@@ -195,6 +518,9 @@ class EffectiveTopicContext:
     schema_versions: dict[str, str]
     sources: dict[str, str]
     lifecycle_refs: dict[str, str] = field(default_factory=dict)
+    domain_agent_team_template_id: str | None = None
+    topic_agent_team_profile_id: str | None = None
+    profile_refs: dict[str, object] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -209,6 +535,9 @@ class EffectiveTopicContext:
             "schema_versions": self.schema_versions,
             "sources": self.sources,
             "lifecycle_refs": self.lifecycle_refs,
+            "domain_agent_team_template_id": self.domain_agent_team_template_id,
+            "topic_agent_team_profile_id": self.topic_agent_team_profile_id,
+            "profile_refs": self.profile_refs,
         }
 
 

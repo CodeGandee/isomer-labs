@@ -7,9 +7,13 @@ from typing import Any
 
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import (
+    DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION,
     PROJECT_MANIFEST_SCHEMA_VERSION,
+    TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION,
+    DomainAgentTeamTemplateRegistration,
     ProjectManifest,
     ResearchTopicRegistration,
+    TopicAgentTeamProfileRegistration,
     TopicWorkspaceRegistration,
 )
 
@@ -26,6 +30,8 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
 
     topics = _parse_research_topics(path, raw, schema_version, diagnostics)
     workspaces = _parse_topic_workspaces(path, raw, schema_version, diagnostics)
+    templates = _parse_domain_agent_team_templates(path, raw, diagnostics)
+    profiles = _parse_topic_agent_team_profiles(path, raw, diagnostics)
     artifact_format_profiles = _registration_ids(raw.get("artifact_format_profiles"))
     artifact_extensions = _registration_ids(raw.get("artifact_extensions"))
 
@@ -46,6 +52,8 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
         source_path=path,
         research_topics=topics,
         topic_workspaces=workspaces,
+        domain_agent_team_templates=templates,
+        topic_agent_team_profiles=profiles,
         defaults=defaults,
         path_defaults=path_defaults,
         artifact_format_profiles=artifact_format_profiles,
@@ -136,6 +144,113 @@ def _parse_topic_workspaces(
             )
         )
     return workspaces
+
+
+def _parse_domain_agent_team_templates(
+    path: Path,
+    raw: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> list[DomainAgentTeamTemplateRegistration]:
+    registrations: list[DomainAgentTeamTemplateRegistration] = []
+    for index, item in enumerate(_table_items(raw.get("domain_agent_team_templates"))):
+        field = f"domain_agent_team_templates[{index}]"
+        template_id = _first_string(item, ("id", "domain_agent_team_template_id", "template_id", "ref"))
+        source_kind = _first_string(item, ("source_kind", "kind")) or "project"
+        source_path = _first_string(item, ("source_path", "path", "template_path", "execplan_path", "source"))
+        if template_id is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Domain Agent Team Template registration",
+                    path=path,
+                    field=f"{field}.id",
+                    message="Domain Agent Team Template registration must include an id.",
+                )
+            )
+            continue
+        if source_path is None and source_kind != "built-in":
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Domain Agent Team Template registration",
+                    path=path,
+                    field=f"{field}.source_path",
+                    message="Domain Agent Team Template registration must include a source path unless it is built-in.",
+                )
+            )
+            continue
+        registrations.append(
+            DomainAgentTeamTemplateRegistration(
+                id=template_id,
+                source_path_input=source_path,
+                source_kind=source_kind,
+                schema_version=_first_string(item, ("schema_version",)) or DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION,
+                status=_first_string(item, ("status",)) or "active",
+                source_path=path,
+            )
+        )
+    return registrations
+
+
+def _parse_topic_agent_team_profiles(
+    path: Path,
+    raw: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> list[TopicAgentTeamProfileRegistration]:
+    registrations: list[TopicAgentTeamProfileRegistration] = []
+    for index, item in enumerate(_table_items(raw.get("topic_agent_team_profiles"))):
+        field = f"topic_agent_team_profiles[{index}]"
+        profile_id = _first_string(item, ("id", "topic_agent_team_profile_id", "profile_id", "ref"))
+        profile_path = _first_string(item, ("path", "profile_path", "source_path", "config_path", "source"))
+        template_id = _first_string(
+            item,
+            (
+                "domain_agent_team_template_id",
+                "domain_agent_team_template_ref",
+                "template_id",
+                "template_ref",
+            ),
+        )
+        research_topic_id = _first_string(item, ("research_topic_id", "topic_id"))
+        missing: list[str] = []
+        if profile_id is None:
+            missing.append("id")
+        if profile_path is None:
+            missing.append("path")
+        if template_id is None:
+            missing.append("domain_agent_team_template_id")
+        if research_topic_id is None:
+            missing.append("research_topic_id")
+        if missing:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Topic Agent Team Profile registration",
+                    path=path,
+                    field=field,
+                    message=f"Topic Agent Team Profile registration must include {', '.join(missing)}.",
+                )
+            )
+            continue
+        assert profile_id is not None
+        assert profile_path is not None
+        assert template_id is not None
+        assert research_topic_id is not None
+        registrations.append(
+            TopicAgentTeamProfileRegistration(
+                id=profile_id,
+                path_input=profile_path,
+                domain_agent_team_template_id=template_id,
+                research_topic_id=research_topic_id,
+                schema_version=_first_string(item, ("schema_version",)) or TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION,
+                status=_first_string(item, ("status",)) or "active",
+                source_path=path,
+            )
+        )
+    return registrations
 
 
 def _table_items(value: object) -> list[dict[str, Any]]:

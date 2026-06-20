@@ -6,6 +6,14 @@ This is a Pixi-managed Python project using a `src/` layout. Importable code liv
 
 External code has two homes: use `extern/tracked/` for vendored or submodule-style dependencies that should be committed, and `extern/orphan/` for local-only checkouts. Do not commit generated Pixi environments, caches, or disposable work from `.pixi/`, `.mypy_cache/`, `.ruff_cache/`, or `tmp/`.
 
+## Houmao Integration
+
+This version of Isomer Labs will mainly use Houmao for underlying Agent Team construction and management. Keep Houmao as an implementation and adapter layer unless the canonical Isomer domain language explicitly promotes a Houmao term into core Isomer schema or UI language.
+
+The local Houmao source checkout lives at `~/workspace/code/houmao` and should be exposed inside this repository as the ignored symlink `extern/orphan/houmao`. Use a local Houmao build when Isomer work needs agent team launch, mailbox, gateway, inspection, or other Houmao-backed behavior.
+
+When Isomer work reveals defects or missing behavior in Houmao, fix those problems in the Houmao checkout as separate local work while preserving the repository boundary. Validate Houmao changes with Houmao's own commands before depending on them from Isomer Labs.
+
 ## Domain Language
 
 The canonical Isomer Labs domain language lives in `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`. Consult it when discussing project concepts, naming architecture docs, schema fields, CLI labels, GUI labels, or code identifiers, and before introducing new terms that might conflict with it.

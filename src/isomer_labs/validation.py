@@ -6,8 +6,15 @@ from collections import Counter
 from pathlib import Path
 
 from isomer_labs.diagnostics import Diagnostic
-from isomer_labs.models import Project, ProjectState, ResearchTopicConfig
+from isomer_labs.models import Project, ProjectState, ResearchTopicConfig, TemplateValidationReport
 from isomer_labs.path_utils import is_within, resolve_project_path
+from isomer_labs.team_profiles import parse_topic_agent_team_profile, validate_topic_agent_team_profile
+from isomer_labs.team_templates import (
+    BUILT_IN_DEEPSCI_ORG_ID,
+    find_domain_agent_team_template,
+    resolve_template_source_path,
+    validate_domain_agent_team_template,
+)
 from isomer_labs.toml_loader import load_toml
 from isomer_labs.topic_config import parse_local_active_context, parse_research_topic_config
 
@@ -40,6 +47,13 @@ RUNTIME_TRUTH_KEYS = {
     "scheduler_internals",
     "provider_payload",
     "provider_payloads",
+    "mailbox_state",
+    "gateway_state",
+    "mailbox_ref",
+    "gateway_ref",
+    "agent_team_instance_state",
+    "adapter_launch_ref",
+    "launch_dossier_ref",
 }
 
 
@@ -48,6 +62,8 @@ def build_project_state(project: Project) -> ProjectState:
     diagnostics.extend(scan_for_forbidden_fields(project.manifest.raw, "Project Manifest", project.manifest_path))
     diagnostics.extend(_duplicate_id_diagnostics(project))
     diagnostics.extend(_validate_workspace_registrations(project))
+    diagnostics.extend(_validate_template_registrations(project))
+    diagnostics.extend(_validate_profile_registrations(project))
 
     topic_configs: dict[str, ResearchTopicConfig] = {}
     for topic in project.manifest.research_topics:
@@ -86,6 +102,9 @@ def build_project_state(project: Project) -> ProjectState:
             )
         topic_configs.setdefault(topic.id, config)
 
+    diagnostics.extend(_validate_topic_config_profile_defaults(project, topic_configs))
+    diagnostics.extend(_validate_profile_files(project))
+
     local_context = None
     local_path = project.config_dir / "local.toml"
     if local_path.exists():
@@ -114,6 +133,8 @@ def _duplicate_id_diagnostics(project: Project) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     topic_counts = Counter(topic.id for topic in project.manifest.research_topics)
     workspace_counts = Counter(workspace.id for workspace in project.manifest.topic_workspaces)
+    template_counts = Counter(template.id for template in project.manifest.domain_agent_team_templates)
+    profile_counts = Counter(profile.id for profile in project.manifest.topic_agent_team_profiles)
     for topic_id in sorted(id_ for id_, count in topic_counts.items() if count > 1):
         diagnostics.append(
             Diagnostic(
@@ -134,6 +155,35 @@ def _duplicate_id_diagnostics(project: Project) -> list[Diagnostic]:
                 path=project.manifest_path,
                 field="topic_workspaces.id",
                 message=f"Duplicate Topic Workspace id is registered: {workspace_id}.",
+            )
+        )
+    for template_id in sorted(id_ for id_, count in template_counts.items() if count > 1):
+        diagnostics.append(
+            Diagnostic(
+                code="ISO004",
+                severity="error",
+                concept="Project Manifest",
+                path=project.manifest_path,
+                field="domain_agent_team_templates.id",
+                message=f"Duplicate Domain Agent Team Template id is registered: {template_id}.",
+            )
+        )
+    for profile_id in sorted(id_ for id_, count in profile_counts.items() if count > 1):
+        active_profiles = [
+            profile
+            for profile in project.manifest.topic_agent_team_profiles
+            if profile.id == profile_id and profile.status != "archived"
+        ]
+        if len(active_profiles) <= 1:
+            continue
+        diagnostics.append(
+            Diagnostic(
+                code="ISO004",
+                severity="error",
+                concept="Project Manifest",
+                path=project.manifest_path,
+                field="topic_agent_team_profiles.id",
+                message=f"Duplicate Topic Agent Team Profile id is registered: {profile_id}.",
             )
         )
     return diagnostics
@@ -199,6 +249,221 @@ def _validate_workspace_registrations(project: Project) -> list[Diagnostic]:
                     )
                 )
     return diagnostics
+
+
+def _validate_template_registrations(project: Project) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for template in project.manifest.domain_agent_team_templates:
+        if template.status == "archived":
+            continue
+        source_path = resolve_template_source_path(project, template)
+        if template.source_kind != "built-in" and not is_within(source_path, project.root):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO016",
+                    severity="error",
+                    concept="Domain Agent Team Template registration",
+                    path=project.manifest_path,
+                    field=f"domain_agent_team_templates.{template.id}.source_path",
+                    message="Domain Agent Team Template source path resolves outside the Project root.",
+                )
+            )
+        if _is_under_topic_workspace(project, source_path):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO016",
+                    severity="error",
+                    concept="Domain Agent Team Template registration",
+                    path=project.manifest_path,
+                    field=f"domain_agent_team_templates.{template.id}.source_path",
+                    message="Domain Agent Team Template source must not live inside a Topic Workspace.",
+                )
+            )
+    return diagnostics
+
+
+def _validate_profile_registrations(project: Project) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    topic_ids = {topic.id for topic in project.manifest.research_topics}
+    template_ids = _registered_template_ids(project)
+    for profile in project.manifest.topic_agent_team_profiles:
+        if profile.status == "archived":
+            continue
+        profile_path = resolve_project_path(project.root, profile.path_input)
+        if not is_within(profile_path, project.root):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO019",
+                    severity="error",
+                    concept="Topic Agent Team Profile registration",
+                    path=project.manifest_path,
+                    field=f"topic_agent_team_profiles.{profile.id}.path",
+                    message="Topic Agent Team Profile path resolves outside the Project root.",
+                )
+            )
+        if _is_under_topic_workspace_teams(project, profile_path):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO019",
+                    severity="error",
+                    concept="Topic Agent Team Profile registration",
+                    path=project.manifest_path,
+                    field=f"topic_agent_team_profiles.{profile.id}.path",
+                    message="Topic Agent Team Profile files must not live under a Topic Workspace teams directory.",
+                )
+            )
+        if profile.research_topic_id not in topic_ids:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO020",
+                    severity="error",
+                    concept="Topic Agent Team Profile registration",
+                    path=project.manifest_path,
+                    field=f"topic_agent_team_profiles.{profile.id}.research_topic_id",
+                    message="Topic Agent Team Profile references an unregistered Research Topic.",
+                )
+            )
+        if profile.domain_agent_team_template_id not in template_ids:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO020",
+                    severity="error",
+                    concept="Topic Agent Team Profile registration",
+                    path=project.manifest_path,
+                    field=f"topic_agent_team_profiles.{profile.id}.domain_agent_team_template_id",
+                    message="Topic Agent Team Profile references an unregistered Domain Agent Team Template.",
+                )
+            )
+    return diagnostics
+
+
+def _validate_topic_config_profile_defaults(
+    project: Project,
+    topic_configs: dict[str, ResearchTopicConfig],
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    template_ids = _registered_template_ids(project)
+    for topic_id, config in sorted(topic_configs.items()):
+        profile_id = config.default_topic_agent_team_profile_id()
+        if profile_id is None:
+            continue
+        profile = project.manifest.first_topic_agent_team_profile(profile_id)
+        if profile is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO020",
+                    severity="error",
+                    concept="Research Topic Config",
+                    path=config.source_path,
+                    field="default_topic_agent_team_profile_id",
+                    message="Research Topic Config references an unknown default Topic Agent Team Profile.",
+                )
+            )
+            continue
+        if profile.research_topic_id != topic_id:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO019",
+                    severity="error",
+                    concept="Research Topic Config",
+                    path=config.source_path,
+                    field="default_topic_agent_team_profile_id",
+                    message="Default Topic Agent Team Profile belongs to a different Research Topic.",
+                )
+            )
+        if profile.domain_agent_team_template_id not in template_ids:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO020",
+                    severity="error",
+                    concept="Research Topic Config",
+                    path=config.source_path,
+                    field="default_topic_agent_team_profile_id",
+                    message="Default Topic Agent Team Profile specializes an unregistered Domain Agent Team Template.",
+                )
+            )
+    return diagnostics
+
+
+def _validate_profile_files(project: Project) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    template_reports: dict[str, TemplateValidationReport] = {}
+    for profile_ref in project.manifest.topic_agent_team_profiles:
+        if profile_ref.status == "archived":
+            continue
+        path = resolve_project_path(project.root, profile_ref.path_input)
+        if not is_within(path, project.root) or _is_under_topic_workspace_teams(project, path):
+            continue
+        raw, load_diagnostics = load_toml(path, "Topic Agent Team Profile")
+        diagnostics.extend(load_diagnostics)
+        if raw is None:
+            continue
+        profile, parse_diagnostics = parse_topic_agent_team_profile(path, raw)
+        diagnostics.extend(parse_diagnostics)
+        registration = find_domain_agent_team_template(profile_ref.domain_agent_team_template_id, project)
+        template = None
+        if registration is not None:
+            report = template_reports.get(registration.id)
+            if report is None:
+                report = validate_domain_agent_team_template(project, registration, include_harness=False)
+                template_reports[registration.id] = report
+            diagnostics.extend(report.diagnostics)
+            template = report.template
+        profile_report = validate_topic_agent_team_profile(profile, template, project=project, source_path=path)
+        diagnostics.extend(profile_report.diagnostics)
+        if profile is not None:
+            if profile.id != profile_ref.id:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO020",
+                        severity="error",
+                        concept="Topic Agent Team Profile",
+                        path=path,
+                        field="id",
+                        message="Topic Agent Team Profile id does not match the Project Manifest registration.",
+                    )
+                )
+            if profile.research_topic_id != profile_ref.research_topic_id:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO019",
+                        severity="error",
+                        concept="Topic Agent Team Profile isolation",
+                        path=path,
+                        field="research_topic_id",
+                        message="Topic Agent Team Profile Research Topic does not match its Project Manifest registration.",
+                    )
+                )
+    return diagnostics
+
+
+def _registered_template_ids(project: Project) -> set[str]:
+    return {BUILT_IN_DEEPSCI_ORG_ID} | {
+        template.id for template in project.manifest.domain_agent_team_templates if template.status != "archived"
+    }
+
+
+def _is_under_topic_workspace_teams(project: Project, path: Path) -> bool:
+    for workspace_path in _topic_workspace_paths(project):
+        if is_within(path, workspace_path / "teams"):
+            return True
+    return False
+
+
+def _is_under_topic_workspace(project: Project, path: Path) -> bool:
+    return any(is_within(path, workspace_path) for workspace_path in _topic_workspace_paths(project))
+
+
+def _topic_workspace_paths(project: Project) -> list[Path]:
+    paths: list[Path] = []
+    for workspace in project.manifest.topic_workspaces:
+        if workspace.path_input is not None:
+            paths.append(resolve_project_path(project.root, workspace.path_input))
+        elif workspace.research_topic_id is not None:
+            paths.append(resolve_project_path(project.root, f"topic-workspaces/{workspace.research_topic_id}"))
+    for topic in project.manifest.research_topics:
+        paths.append(resolve_project_path(project.root, f"topic-workspaces/{topic.id}"))
+    return paths
 
 
 def _scan_for_forbidden_fields(

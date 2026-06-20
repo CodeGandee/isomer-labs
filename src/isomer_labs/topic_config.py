@@ -21,6 +21,9 @@ LOCAL_CONTEXT_ALLOWED_FIELDS = {
     "research_inquiry_id",
     "research_task_id",
     "run_id",
+    "agent_team_instance_id",
+    "agent_instance_id",
+    "topic_agent_team_profile_id",
 }
 
 
@@ -102,9 +105,16 @@ def parse_local_active_context(path: Path, raw: dict[str, Any]) -> tuple[LocalAc
 def _collect_refs(raw: dict[str, Any]) -> dict[str, Any]:
     keys = (
         "default_research_inquiry_id",
+        "default_domain_agent_team_template_id",
         "default_topic_agent_team_profile_id",
+        "domain_agent_team_template_id",
+        "domain_agent_team_template_ref",
+        "topic_agent_team_profile_id",
+        "topic_agent_team_profile_ref",
         "default_execution_adapter_id",
         "default_control_mode",
+        "coordination_policy_ref",
+        "coordination_policy_refs",
         "capability_binding_refs",
         "skill_binding_projection_refs",
         "research_operation_extension_point_refs",
