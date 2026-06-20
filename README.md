@@ -42,6 +42,24 @@ The current reference package is:
 - `DeepScientist`: cloned from `https://github.com/ResearAI/DeepScientist` into
   `extern/orphan/DeepScientist` with `--depth=1`.
 
+## Milestone 1 CLI
+
+The package exposes `isomer-cli` for Project discovery, Project Manifest validation, Effective Topic Context inspection, and side-effect-free Workspace Path Resolution previews.
+
+Common examples:
+
+```bash
+pixi run isomer-cli init
+pixi run isomer-cli validate --json
+pixi run isomer-cli topics list
+pixi run isomer-cli workspaces list
+pixi run isomer-cli context show --topic default --json
+pixi run isomer-cli paths preview --topic default
+pixi run isomer-cli schemas list
+```
+
+`isomer-cli init` creates `.isomer-labs/manifest.toml`, `.isomer-labs/research-topics/default.toml`, and `topic-workspaces/default/`. It does not create `state.sqlite` or Workspace Runtime subdirectories.
+
 ## Status
 
 Initial sketch. Structure and scope are expected to change.

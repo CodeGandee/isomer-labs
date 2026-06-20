@@ -1,8 +1,11 @@
 [project]
-dependencies = ["scipy>=1.17.1,<2", "mdutils>=1.8.1,<2", "ruff>=0.15.16,<0.16", "mkdocs-material>=9.7.6,<10", "mypy>=2.1.0,<3", "attrs>=26.1.0,<27", "omegaconf>=2.3.0,<3", "imageio>=2.37.3,<3", "jinja2>=3.1.6,<4", "jsonschema>=4.26.0,<5"]
+dependencies = ["scipy>=1.17.1,<2", "mdutils>=1.8.1,<2", "ruff>=0.15.16,<0.16", "mkdocs-material>=9.7.6,<10", "mypy>=2.1.0,<3", "attrs>=26.1.0,<27", "omegaconf>=2.3.0,<3", "imageio>=2.37.3,<3", "jinja2>=3.1.6,<4", "jsonschema>=4.26.0,<5", "click>=8.4.1,<9"]
 name = "isomer-labs"
 requires-python = ">= 3.11"
 version = "0.1.0"
+
+[project.scripts]
+isomer-cli = "isomer_labs.cli:main"
 
 [build-system]
 build-backend = "hatchling.build"
@@ -20,6 +23,9 @@ lint = "ruff check ."
 typecheck = "mypy src"
 test = "python -m unittest discover -s tests/unit"
 validate-research-skills = "python scripts/validate_research_paradigm_skillset.py skillset/research-paradigm"
+
+[tool.ruff]
+extend-exclude = ["teams/lfeng-team"]
 
 [tool.pixi.dependencies]
 python = "3.11.*"

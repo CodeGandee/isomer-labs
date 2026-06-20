@@ -269,7 +269,7 @@ packages:
 - pypi: ./
   name: isomer-labs
   version: 0.1.0
-  sha256: 0e6f5137b2230c9aeb96ad43ac53378417f9a88d6f1e8ebf64ff8754412c6dbc
+  sha256: faa0ec0aba72f8832ef66c5ae2eb7164d0d438598f692b4c5edaa9645abbdea9
   requires_dist:
   - scipy>=1.17.1,<2
   - mdutils>=1.8.1,<2
@@ -281,6 +281,7 @@ packages:
   - imageio>=2.37.3,<3
   - jinja2>=3.1.6,<4
   - jsonschema>=4.26.0,<5
+  - click>=8.4.1,<9
   requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
   name: jinja2
