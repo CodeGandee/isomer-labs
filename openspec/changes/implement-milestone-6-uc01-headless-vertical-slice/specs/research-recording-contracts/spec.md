@@ -5,10 +5,10 @@ The system SHALL record UC-01 research outputs as durable Artifacts or Artifact-
 
 #### Scenario: Accepted handoff output becomes Artifact-backed record
 - **WHEN** Operator Agent normalization accepts a UC-01 handoff output
-- **THEN** the system records the output as an Artifact, Evidence Item, Finding or claim candidate, review note, inquiry option, or Provenance Record according to its evidence-use intent
+- **THEN** the system records the output as a seed-source summary, Flash Attention implementation note, GB10 or Blackwell feature note, attention-kernel bottleneck note, shape-family constraint, correctness constraint, Evidence Item, Finding or claim candidate, review note, inquiry option, or Provenance Record according to its evidence-use intent
 
 #### Scenario: Rich content is file-backed
-- **WHEN** UC-01 output contains literature notes, tables, claim graph inputs, review notes, or inquiry comparison text
+- **WHEN** UC-01 output contains seed-source summaries, Flash Attention implementation notes, GB10 feature notes, tables, claim graph inputs, review notes, or inquiry comparison text
 - **THEN** the system stores rich content as project-local files or Artifact payloads and stores refs in Workspace Runtime rather than embedding the full content in generic lifecycle fields
 
 ### Requirement: UC-01 Evidence Boundary
@@ -27,11 +27,15 @@ The system SHALL record follow-up inquiry choice through Gate and Decision Recor
 
 #### Scenario: Gate includes options
 - **WHEN** UC-01 generates follow-up inquiry options
-- **THEN** the Gate or linked Artifact records the candidate options, governed action, actor refs, affected lifecycle refs, and status
+- **THEN** the Gate or linked Artifact records the candidate options, governed action, actor refs, affected lifecycle refs, route classification candidates, and status
 
 #### Scenario: Decision Record captures selection
 - **WHEN** the follow-up inquiry Gate is resolved
-- **THEN** the Decision Record records the selected option, rationale, actor, timestamp, consequence summary, selected Research Inquiry ref, rejected alternatives when material, and supporting Artifact or Evidence Item refs
+- **THEN** the Decision Record records the selected option, route classification, rationale, actor, timestamp, consequence summary, selected Research Inquiry ref, rejected alternatives when material, and supporting Artifact or Evidence Item refs
+
+#### Scenario: Measured optimization is deferred
+- **WHEN** the selected follow-up inquiry route is UC-07-style measured optimization
+- **THEN** UC-01 records the route decision and selected Research Inquiry ref without recording baseline measurement, candidate optimization, speedup, utilization, or correctness-result Artifacts
 
 ### Requirement: UC-01 Provenance Coverage
 The system SHALL attach Provenance Records to UC-01 runtime mutations and research records.
@@ -48,7 +52,7 @@ The system SHALL attach Provenance Records to UC-01 runtime mutations and resear
 The system SHALL record View Manifest refs for UC-01 semantic views without requiring GUI runtime state.
 
 #### Scenario: Literature matrix manifest is recorded
-- **WHEN** UC-01 records seed-source summaries and literature notes
+- **WHEN** UC-01 records seed-source summaries, Flash Attention implementation notes, and GB10 or Blackwell feature notes
 - **THEN** it records a literature matrix View Manifest that references the source Artifacts and Evidence Items
 
 #### Scenario: Claim graph and inquiry comparison manifests are recorded

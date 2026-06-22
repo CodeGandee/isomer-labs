@@ -16,7 +16,7 @@ The system SHALL emit deterministic JSON for the UC-01 headless workflow through
 
 #### Scenario: JSON output reports created records
 - **WHEN** a user runs `isomer-cli --print-json ...` for the UC-01 headless workflow
-- **THEN** the output uses `isomer-cli-output.v1` and includes `ok`, `mutated`, selected Project and topic refs, Agent Team Instance ref, Research Inquiry refs, Research Task refs, Run refs, handoff refs, Artifact refs, Evidence Item refs, Gate ref, Decision Record ref, View Manifest refs, Provenance refs, diagnostics, and live or simulated mode
+- **THEN** the output uses `isomer-cli-output.v1` and includes `ok`, `mutated`, selected Project and topic refs, Agent Team Instance ref, Research Inquiry refs, Research Task refs, Run refs, handoff refs, Artifact refs, Evidence Item refs, Gate ref, Decision Record ref, route classification, View Manifest refs, Provenance refs, diagnostics, and live or simulated mode
 
 #### Scenario: Text output is structured
 - **WHEN** a user runs the UC-01 headless workflow without `--print-json`
@@ -28,6 +28,10 @@ The system SHALL make UC-01 workflow mutation explicit and keep inspection and d
 #### Scenario: Run command mutates explicitly
 - **WHEN** the user invokes the UC-01 run command in simulated or live mode
 - **THEN** the command may create Workspace Runtime records, adapter payloads, Artifacts, Gates, Decision Records, View Manifests, and Provenance Records and reports `mutated: true` in JSON output
+
+#### Scenario: Run command does not start UC-07 work
+- **WHEN** the UC-01 run command records a follow-up inquiry classified as UC-07-style measured optimization
+- **THEN** the command exits after recording the Gate, Decision Record, selected Research Inquiry, and route classification without running measurement, baseline, or candidate optimization commands
 
 #### Scenario: Validate command is read-only
 - **WHEN** the user invokes UC-01 validation or dry inspection for an existing run

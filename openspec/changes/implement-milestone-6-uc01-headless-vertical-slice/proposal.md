@@ -1,14 +1,16 @@
 ## Why
 
-Milestone 5 proves Isomer can launch, inspect, stop, dispatch, observe, and normalize one Houmao-backed Agent Team Instance, but the platform still lacks a repeatable research workflow that turns those mechanics into durable research state. Milestone 6 should make UC-01, Explore a New Research Direction, the first headless vertical slice that starts from a fixture Project and ends with recorded Artifacts, Evidence Items, a follow-up Research Inquiry Gate, and a Decision Record.
+Milestone 5 proves Isomer can launch, inspect, stop, dispatch, observe, and normalize one Houmao-backed Agent Team Instance, but the platform still lacks a repeatable research workflow that turns those mechanics into durable research state. Milestone 6 should make UC-01, Explore a New Research Direction, the first headless vertical slice that starts from a pinned Flash Attention 4 on GB10 fixture Project and ends with recorded Artifacts, Evidence Items, a follow-up Research Inquiry Gate, and a Decision Record.
 
 ## What Changes
 
-- Add a UC-01 fixture Project and repeatable headless workflow that initializes Workspace Runtime, prepares readiness, creates a `deepsci-mini` Agent Team Instance, launches or simulates the team through the Houmao Execution Adapter, dispatches bounded scouting and synthesis-review handoffs, and normalizes their outputs.
-- Add host-facing recording paths for the minimal UC-01 research records: seed-source summaries, literature notes, claim candidates, Evidence Items, review notes, inquiry options, follow-up Gate, selected Research Inquiry, Decision Record, and Provenance Records.
+- Add a UC-01 fixture Project and repeatable headless workflow for Research Topic `flash-attention-gb10-peak-performance-optimization`, seed Research Inquiry `gb10-flash-attention-4-direction-selection`, Research Task `map-gb10-flash-attention-optimization-directions`, and a `deepsci-mini` Agent Team Instance.
+- Launch or simulate the `deepsci-mini` team through the Houmao Execution Adapter, dispatch bounded scouting and synthesis-review handoffs, and normalize their outputs without running GB10 measurements or optimization experiments.
+- Add host-facing recording paths for the minimal UC-01 research records: seed-source summaries, Flash Attention implementation notes, GB10 or Blackwell feature notes, attention-kernel bottleneck notes, shape-family constraints, correctness constraints, claim candidates, Evidence Items, review notes, inquiry options, follow-up Gate, selected Research Inquiry, Decision Record, and Provenance Records.
 - Add or extend Workspace Runtime persistence and validation for Artifact, Evidence Item, Finding or claim-candidate, Gate, Decision Record, View Manifest, and Provenance refs needed by the UC-01 path.
 - Add a CLI or manual-test runner that executes the UC-01 path with root-level `--print-json`, supports adapter-simulated mode for deterministic tests, and can be live-gated for real Houmao.
-- Add minimal View Manifest records for literature matrix, claim graph, and inquiry comparison as durable CLI-readable records without requiring a GUI renderer.
+- Add minimal View Manifest records for literature matrix, claim graph, and inquiry comparison as durable CLI-readable semantic records without requiring a GUI renderer or GUI Component Instances.
+- Make the selected follow-up inquiry explicitly classify the next step as UC-07-style measured optimization, more scouting, or a different Flash Attention 4 investigation.
 - Keep Houmao-specific refs inside adapter payloads, manifests, or adapter tables; generic UC-01 records should use Isomer domain terms.
 
 ## Capabilities

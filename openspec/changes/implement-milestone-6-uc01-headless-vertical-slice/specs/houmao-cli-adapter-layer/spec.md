@@ -16,11 +16,15 @@ The system SHALL provide an adapter-simulated mode for UC-01 that exercises the 
 
 #### Scenario: Simulated mode produces handoff observations
 - **WHEN** UC-01 runs in simulated adapter mode
-- **THEN** the adapter layer produces deterministic dispatch, observation, and normalization inputs for scouting and synthesis-review handoffs without invoking real Houmao live mutations
+- **THEN** the adapter layer produces deterministic dispatch, observation, and normalization inputs for Flash Attention 4 on GB10 scouting and synthesis-review handoffs without invoking real Houmao live mutations
 
 #### Scenario: Simulated mode preserves payload refs
 - **WHEN** simulated adapter mode produces command-like outputs
 - **THEN** the system records bounded adapter payload refs so runtime summaries and validation use the same ref patterns as live mode
+
+#### Scenario: Simulated mode stops before measured optimization
+- **WHEN** simulated UC-01 output selects a UC-07-style measured optimization follow-up inquiry
+- **THEN** the adapter layer records the decision path and does not simulate benchmark, baseline, candidate optimization, or correctness-check execution
 
 ### Requirement: UC-01 Live Houmao Cleanup
 The system SHALL preserve cleanup and recovery state for UC-01 live Houmao runs.

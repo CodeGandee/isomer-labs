@@ -5,17 +5,21 @@ The system SHALL record the UC-01 headless path as a Research Inquiry graph unde
 
 #### Scenario: Seed inquiry is created
 - **WHEN** the UC-01 runner starts work for the selected Research Topic
-- **THEN** it records a seed Research Inquiry with source refs, status, scope notes, and Provenance Record refs
+- **THEN** it records seed Research Inquiry `gb10-flash-attention-4-direction-selection` under Research Topic `flash-attention-gb10-peak-performance-optimization` with source refs, status, scope notes, and Provenance Record refs
 
 #### Scenario: Follow-up inquiry is linked
 - **WHEN** the follow-up inquiry decision is resolved
 - **THEN** the selected follow-up Research Inquiry is recorded and linked to the seed inquiry or Research Topic with a durable Research Inquiry Relationship
 
 ### Requirement: UC-01 Research Tasks and Runs
-The system SHALL represent scouting, analysis, review, and closeout work as bounded Research Tasks and Runs.
+The system SHALL represent scouting, synthesis-review, and closeout work as bounded Research Tasks and Runs.
+
+#### Scenario: Pinned mapping task is created
+- **WHEN** the UC-01 runner starts the fixture workflow
+- **THEN** it records Research Task `map-gb10-flash-attention-optimization-directions` under seed Research Inquiry `gb10-flash-attention-4-direction-selection`
 
 #### Scenario: Handoff-backed tasks are recorded
-- **WHEN** the runner delegates scouting, analysis, or review work to an Agent Instance
+- **WHEN** the runner delegates scouting or synthesis-review work to a `deepsci-mini` Agent Instance
 - **THEN** it records a Research Task and Run linked to the Research Inquiry, Agent Team Instance, target Agent Instance, handoff state, expected output refs, and Provenance Records
 
 #### Scenario: Run completion follows normalization
@@ -32,6 +36,10 @@ The system SHALL represent follow-up inquiry selection as lifecycle state govern
 #### Scenario: Gate resolution updates lifecycle refs
 - **WHEN** the follow-up Gate is resolved
 - **THEN** the seed Research Inquiry, selected follow-up Research Inquiry, closeout Run, and Workflow Stage Cursor refs point to the resolving Decision Record or Provenance Record
+
+#### Scenario: Gate records route classification
+- **WHEN** the follow-up Gate is resolved for UC-01
+- **THEN** the Decision Record classifies the selected follow-up path as UC-07-style measured optimization, more scouting, or a different Flash Attention 4 investigation without starting measured optimization work
 
 ### Requirement: UC-01 Restart Recovery
 The system SHALL recover UC-01 lifecycle state after process restart without requiring live Houmao inspection.
