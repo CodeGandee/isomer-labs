@@ -9,7 +9,12 @@ from typing import Mapping
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.paths import preview_paths
+from isomer_labs.runtime.adapter_handoff_validation import validate_adapter_handoff_records
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
+from isomer_labs.runtime.validation_utils import (
+    missing_ref_diagnostics as _missing_ref_diagnostics,
+    owner_diagnostics as _owner_diagnostics,
+)
 
 
 def _validate_metadata(
@@ -384,6 +389,10 @@ def _validate_adapter_records(
     diagnostics: list[Diagnostic] = []
     teams = {record.id for record in store.list_agent_team_instances()}
     agents = {record.id for record in store.list_agent_instances()}
+    handoffs = {record.id: record for record in store.list_handoffs()}
+    lifecycle_by_kind: dict[str, set[str]] = {}
+    for record in store.list_lifecycle_records():
+        lifecycle_by_kind.setdefault(record.record_kind, set()).add(record.id)
     path_plans = {record.id: record for record in store.list_path_plans()}
     manifest_refs = {record.id: record for record in store.list_adapter_manifest_refs()}
     payload_refs = {record.id: record for record in store.list_adapter_payload_refs()}
@@ -432,24 +441,24 @@ def _validate_adapter_records(
                     message="Adapter manifest file is missing.",
                 )
             )
-    for record in store.list_adapter_reconciliation_records():
+    for reconciliation in store.list_adapter_reconciliation_records():
         diagnostics.extend(
             _owner_diagnostics(
                 context,
                 store.db_path,
-                record.id,
-                record.research_topic_id,
-                record.topic_workspace_id,
+                reconciliation.id,
+                reconciliation.research_topic_id,
+                reconciliation.topic_workspace_id,
             )
         )
-        if record.agent_team_instance_id not in teams:
+        if reconciliation.agent_team_instance_id not in teams:
             diagnostics.append(
                 Diagnostic(
                     code="ISO041",
                     severity="error",
                     concept="Execution Adapter reconciliation",
                     path=store.db_path,
-                    field=record.id,
+                    field=reconciliation.id,
                     message="Reconciliation record points to a missing Agent Team Instance.",
                 )
             )
@@ -563,6 +572,18 @@ def _validate_adapter_records(
                     message=f"Adapter command run is {command.status}; inspect or reconcile before treating the backend state as current.",
                 )
             )
+    diagnostics.extend(
+        validate_adapter_handoff_records(
+            context,
+            store,
+            handoffs=handoffs,
+            teams=teams,
+            agents=agents,
+            command_runs=command_runs,
+            payload_refs=payload_refs,
+            lifecycle_by_kind=lifecycle_by_kind,
+        )
+    )
     for materialization in store.list_adapter_materializations():
         diagnostics.extend(_owner_diagnostics(context, store.db_path, materialization.id, materialization.research_topic_id, materialization.topic_workspace_id))
         if materialization.agent_team_instance_id not in teams:
@@ -659,30 +680,6 @@ def _validate_adapter_records(
     return diagnostics
 
 
-def _missing_ref_diagnostics(
-    path: Path,
-    concept: str,
-    record_id: str,
-    ref_kind: str,
-    refs: list[str],
-    known: Mapping[str, object],
-) -> list[Diagnostic]:
-    diagnostics: list[Diagnostic] = []
-    for ref in refs:
-        if ref not in known:
-            diagnostics.append(
-                Diagnostic(
-                    code="ISO041",
-                    severity="error",
-                    concept=concept,
-                    path=path,
-                    field=record_id,
-                    message=f"Record points to a missing adapter {ref_kind} ref: {ref}.",
-                )
-            )
-    return diagnostics
-
-
 def _validate_lifecycle_transitions(store: WorkspaceRuntimeStore) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     for transition in store.list_lifecycle_transitions():
@@ -702,39 +699,6 @@ def _validate_lifecycle_transitions(store: WorkspaceRuntimeStore) -> list[Diagno
                     message=f"Lifecycle transition is missing required field(s): {', '.join(missing_fields)}.",
                 )
             )
-    return diagnostics
-
-
-def _owner_diagnostics(
-    context: EffectiveTopicContext,
-    path: Path,
-    record_id: str,
-    research_topic_id: str,
-    topic_workspace_id: str,
-) -> list[Diagnostic]:
-    diagnostics: list[Diagnostic] = []
-    if research_topic_id != context.research_topic.id:
-        diagnostics.append(
-            Diagnostic(
-                code="ISO041",
-                severity="error",
-                concept="Workspace Runtime record",
-                path=path,
-                field=record_id,
-                message="Runtime record references another Research Topic.",
-            )
-        )
-    if topic_workspace_id != context.topic_workspace_id:
-        diagnostics.append(
-            Diagnostic(
-                code="ISO041",
-                severity="error",
-                concept="Workspace Runtime record",
-                path=path,
-                field=record_id,
-                message="Runtime record references another Topic Workspace.",
-            )
-        )
     return diagnostics
 
 

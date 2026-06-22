@@ -4,7 +4,7 @@ Milestone 5 needs a stable launch boundary between Isomer's Houmao Execution Ada
 
 ## Status
 
-accepted
+accepted, implemented as existing adapter foundation
 
 ## Considered Options
 
@@ -14,4 +14,4 @@ accepted
 
 ## Consequences
 
-Isomer must materialize or select Houmao project-profile launch material before launch and record the resulting Houmao runtime refs as opaque adapter payload refs. Gateway, mailbox, passive-server, and selected-agent commands remain post-launch control and observation surfaces for this milestone.
+Isomer materializes or selects Houmao project-profile launch material before launch and records the resulting Houmao runtime refs as opaque adapter payload refs through the existing CLI-backed adapter layer. The revised Milestone 5 change treats this launch entrypoint as foundation and focuses new work on handoff dispatch, observation, and normalization.

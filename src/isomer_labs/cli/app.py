@@ -87,6 +87,9 @@ Command surface:
   team-instances stop
   team-instances reconcile
   team-instances adopt
+  handoffs dispatch
+  handoffs observe
+  handoffs normalize
   team-templates list
   team-templates inspect
   team-templates validate
@@ -1824,6 +1827,7 @@ def _output_format(options: CliOptions) -> str:
 
 def _register_commands() -> None:
     from isomer_labs.cli.commands.doctor import register_doctor_commands
+    from isomer_labs.cli.commands.handoffs import register_handoff_commands
     from isomer_labs.cli.commands.project import register_project_commands
     from isomer_labs.cli.commands.runtime import register_runtime_commands
     from isomer_labs.cli.commands.team_instances import register_team_instance_commands
@@ -1834,6 +1838,7 @@ def _register_commands() -> None:
     register_doctor_commands(app)
     register_runtime_commands(app)
     register_team_instance_commands(app)
+    register_handoff_commands(app)
     register_team_template_commands(app)
     register_team_profile_commands(app)
 

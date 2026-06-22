@@ -272,6 +272,24 @@ class IsomerCliTests(unittest.TestCase):
                 payload = {{"agent_id": "hm-" + str(option("--name")), "agent_name": option("--name")}}
             elif "agents" in args and "stop" in args:
                 payload = {{"stopped": True, "agent_name": option("--name")}}
+            elif "mail" in args and "send" in args:
+                payload = {{
+                    "message_id": "msg-" + str(option("--handoff")),
+                    "handoff": option("--handoff"),
+                    "from": option("--from"),
+                    "to": option("--to"),
+                    "message_file": option("--message-file"),
+                }}
+            elif "mail" in args and "read" in args:
+                payload = {{
+                    "handoff": option("--handoff"),
+                    "messages": [{{"message_id": "reply-" + str(option("--handoff")), "status": "candidate_completion"}}],
+                }}
+            elif "gateway" in args and "events" in args:
+                payload = {{
+                    "handoff": option("--handoff"),
+                    "events": [{{"event_id": "event-" + str(option("--handoff")), "status": "candidate_completion"}}],
+                }}
             else:
                 print(json.dumps({{"ok": False, "args": args}}))
                 raise SystemExit(2)
@@ -279,6 +297,70 @@ class IsomerCliTests(unittest.TestCase):
             """,
         )
         return f"{sys.executable} {script}"
+
+    def fake_houmao_env(self, root: Path, **extra: str) -> dict[str, str]:
+        env = {
+            "ISOMER_HOUMAO_COMMAND": self.fake_houmao_command(root),
+            "HOME": str(root),
+            "PATH": os.environ.get("PATH", ""),
+        }
+        env.update(extra)
+        return env
+
+    def create_alpha_runtime_team(self, root: Path, instance_id: str) -> None:
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        for command in (
+            ["runtime", "init", "--topic", "alpha", "--json"],
+            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            [
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                instance_id,
+                "--json",
+            ],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+    def launch_alpha_houmao_team(self, root: Path, instance_id: str, env: dict[str, str]) -> None:
+        for command in (
+            [
+                "team-instances",
+                "launch-material",
+                "prepare",
+                instance_id,
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+            [
+                "team-instances",
+                "launch",
+                instance_id,
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+        ):
+            status, output = self.run_cli(command, cwd=root, env=env)
+            self.assertEqual(0, status, output)
+
+    def alpha_agent_pair(self, instance_id: str) -> tuple[str, str]:
+        return (
+            f"{instance_id}-deepsci-org-master",
+            f"{instance_id}-deepsci-org-experimenter",
+        )
 
     def check(self, data: dict[str, object], check_id: str) -> dict[str, object]:
         checks = data["checks"]
@@ -307,10 +389,26 @@ class IsomerCliTests(unittest.TestCase):
             "schemas list",
             "team-templates",
             "team-profiles",
+            "handoffs",
+            "handoffs dispatch",
+            "handoffs observe",
+            "handoffs normalize",
         ):
             self.assertIn(command, help_text)
         pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         self.assertEqual("isomer_labs.cli:main", pyproject["project"]["scripts"]["isomer-cli"])
+
+        for help_args in (
+            ["handoffs", "--help"],
+            ["handoffs", "dispatch", "--help"],
+            ["handoffs", "observe", "--help"],
+            ["handoffs", "normalize", "--help"],
+        ):
+            help_result = runner.invoke(cli.app, help_args)
+            self.assertEqual(0, help_result.exit_code, help_result.output)
+            self.assertNotIn("--json", help_result.output)
+            self.assertNotIn("--format json", help_result.output)
+            self.assertNotIn("--format=json", help_result.output)
 
     def test_doctor_help_documents_read_only_common_topic_options(self) -> None:
         runner = CliRunner()
@@ -1749,6 +1847,409 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         self.assertGreaterEqual(data["runtime"]["counts"]["adapter_command_runs"], 30)
         self.assertGreaterEqual(data["runtime"]["counts"]["adapter_payload_refs"], 30)
+
+    def test_houmao_handoffs_preflight_failure_writes_no_runtime_records(self) -> None:
+        root = self.make_root()
+        instance_id = "ati-alpha-no-mail"
+        self.create_alpha_runtime_team(root, instance_id)
+        source_agent, target_agent = self.alpha_agent_pair(instance_id)
+
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "handoffs",
+                "dispatch",
+                "--topic",
+                "alpha",
+                "--agent-team-instance",
+                instance_id,
+                "--source-agent-instance",
+                source_agent,
+                "--target-agent-instance",
+                target_agent,
+                "--run",
+                "run-alpha-no-mail",
+                "--message",
+                "Try a handoff without a launched adapter.",
+            ],
+            cwd=root,
+            env={"HOME": str(root), "PATH": ""},
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        codes = {diagnostic["code"] for diagnostic in data["diagnostics"]}
+        self.assertIn("ISO070", codes)
+        self.assertIn("ISO077", codes)
+
+        status, output = self.run_cli(["team-instances", "show", instance_id, "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        summary = data["summary"]
+        self.assertEqual([], summary["handoffs"])
+        self.assertEqual([], summary["adapter_handoff_dispatches"])
+        self.assertEqual([], summary["agent_team_instance"]["run_ids"])
+
+    def test_houmao_handoffs_dispatch_observe_accept_and_text_output(self) -> None:
+        root = self.make_root()
+        instance_id = "ati-alpha-handoff"
+        self.create_alpha_runtime_team(root, instance_id)
+        env = self.fake_houmao_env(root)
+        self.launch_alpha_houmao_team(root, instance_id, env)
+        source_agent, target_agent = self.alpha_agent_pair(instance_id)
+        runtime_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "inspect-live",
+                instance_id,
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+            cwd=root,
+            env=env,
+        )
+        self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "handoffs",
+                "dispatch",
+                "--topic",
+                "alpha",
+                "--agent-team-instance",
+                instance_id,
+                "--source-agent-instance",
+                source_agent,
+                "--target-agent-instance",
+                target_agent,
+                "--run",
+                "run-alpha-handoff",
+                "--message",
+                "Draft the experiment execution handoff.",
+                "--expected-output",
+                "artifact:alpha:handoff-result",
+                "--completion-watcher-contract",
+                "completion-watcher:alpha:handoff",
+                "--actor",
+                "operator-agent:test",
+            ],
+            cwd=root,
+            env=env,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("isomer-cli-output.v1", data["output_schema_version"])
+        self.assertTrue(data["mutated"])
+        dispatch = data["dispatch"]
+        handoff_id = dispatch["handoff_id"]
+        self.assertEqual("sent", dispatch["status"])
+        self.assertEqual("run-alpha-handoff", dispatch["run_id"])
+        self.assertGreaterEqual(len(dispatch["command_run_ids"]), 1)
+        self.assertGreaterEqual(len(dispatch["payload_ref_ids"]), 2)
+        self.assertNotIn("message_id", output)
+
+        observation_ids = []
+        for source_name, extra_args in (
+            ("mail", []),
+            ("gateway", []),
+            ("file", ["--payload-json", "handoff-observation.json"]),
+            ("inspection", []),
+        ):
+            if source_name == "file":
+                write(
+                    root / "handoff-observation.json",
+                    json.dumps({"candidate_completion": True, "summary": "file observation"}, sort_keys=True),
+                )
+            status, output = self.run_cli(
+                [
+                    "--print-json",
+                    "handoffs",
+                    "observe",
+                    str(handoff_id),
+                    "--topic",
+                    "alpha",
+                    "--source",
+                    source_name,
+                    "--summary",
+                    f"{source_name} candidate completion",
+                    "--actor",
+                    "operator-agent:test",
+                    *extra_args,
+                ],
+                cwd=root,
+                env=env,
+            )
+            data = json.loads(output)
+            self.assertEqual(0, status, output)
+            observation = data["observation"]
+            self.assertEqual("candidate_completion", observation["status"])
+            self.assertFalse(observation["completion_authority"])
+            observation_ids.append(observation["signal_observation_id"])
+            self.assertNotIn("message_id", output)
+            self.assertNotIn("event_id", output)
+
+        with sqlite3.connect(runtime_path) as db:
+            run_status = db.execute("SELECT status FROM lifecycle_records WHERE id = ?", ("run-alpha-handoff",)).fetchone()[0]
+            evidence_count = db.execute(
+                "SELECT COUNT(*) FROM lifecycle_records WHERE record_kind = 'evidence_item'"
+            ).fetchone()[0]
+        self.assertEqual("running", run_status)
+        self.assertEqual(0, evidence_count)
+
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "handoffs",
+                "normalize",
+                str(handoff_id),
+                "--topic",
+                "alpha",
+                "--status",
+                "accepted",
+                "--signal-observation",
+                str(observation_ids[0]),
+                "--output-artifact",
+                "artifact:alpha:handoff-result",
+                "--rationale",
+                "Operator accepted the candidate output.",
+                "--actor",
+                "operator-agent:test",
+            ],
+            cwd=root,
+            env=env,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        normalization = data["normalization"]
+        self.assertEqual("accepted", normalization["status"])
+        self.assertEqual("run-alpha-handoff", normalization["run_id"])
+        self.assertEqual(["artifact:alpha:handoff-result"], normalization["output_artifact_refs"])
+        with sqlite3.connect(runtime_path) as db:
+            run_status = db.execute("SELECT status FROM lifecycle_records WHERE id = ?", ("run-alpha-handoff",)).fetchone()[0]
+        self.assertEqual("complete", run_status)
+
+        status, output = self.run_cli(
+            [
+                "handoffs",
+                "dispatch",
+                "--topic",
+                "alpha",
+                "--agent-team-instance",
+                instance_id,
+                "--source-agent-instance",
+                source_agent,
+                "--target-agent-instance",
+                target_agent,
+                "--run",
+                "run-alpha-text",
+                "--message",
+                "Text dispatch path.",
+            ],
+            cwd=root,
+            env=env,
+        )
+        self.assertEqual(0, status, output)
+        self.assertIn("Handoff dispatch status: sent", output)
+        self.assertNotIn("isomer-cli-output.v1", output)
+        text_handoff_id = next(line.split(":", 1)[1].strip() for line in output.splitlines() if line.startswith("Handoff: "))
+
+        status, output = self.run_cli(
+            [
+                "handoffs",
+                "observe",
+                text_handoff_id,
+                "--topic",
+                "alpha",
+                "--source",
+                "mail",
+                "--summary",
+                "text observation",
+            ],
+            cwd=root,
+            env=env,
+        )
+        self.assertEqual(0, status, output)
+        self.assertIn("Handoff observation status: candidate_completion", output)
+        self.assertIn("Completion authority: no", output)
+        text_observation_id = next(
+            line.split(":", 1)[1].strip() for line in output.splitlines() if line.startswith("Signal Observation: ")
+        )
+
+        status, output = self.run_cli(
+            [
+                "handoffs",
+                "normalize",
+                text_handoff_id,
+                "--topic",
+                "alpha",
+                "--status",
+                "accepted",
+                "--signal-observation",
+                text_observation_id,
+                "--output-artifact",
+                "artifact:alpha:text-handoff",
+            ],
+            cwd=root,
+            env=env,
+        )
+        self.assertEqual(0, status, output)
+        self.assertIn("Handoff normalization status: accepted", output)
+        self.assertNotIn("isomer-cli-output.v1", output)
+
+        status, output = self.run_cli(["team-instances", "show", instance_id, "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        summary = data["summary"]
+        handoff_records = {record["id"]: record for record in summary["handoffs"]}
+        self.assertEqual("accepted", handoff_records[handoff_id]["status"])
+        self.assertEqual("candidate_completion", summary["signal_observations"][0]["status"])
+        self.assertEqual({"file", "gateway", "inspection", "mail"}, {record["observation_kind"] for record in summary["signal_observations"]})
+        serialized_summary = json.dumps(summary, sort_keys=True)
+        for forbidden_field in ("message_id", "event_id", "mailbox_id", "managed_agent_id", "gateway_url"):
+            self.assertNotIn(forbidden_field, serialized_summary)
+
+        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertGreaterEqual(data["runtime"]["counts"]["adapter_handoff_dispatch_records"], 2)
+        self.assertGreaterEqual(data["runtime"]["counts"]["signal_observation_records"], 5)
+        self.assertGreaterEqual(data["runtime"]["counts"]["handoff_normalization_records"], 2)
+
+    def test_houmao_handoffs_rejected_repair_and_stale_validation_recover_from_disk(self) -> None:
+        root = self.make_root()
+        instance_id = "ati-alpha-repair"
+        self.create_alpha_runtime_team(root, instance_id)
+        env = self.fake_houmao_env(root)
+        self.launch_alpha_houmao_team(root, instance_id, env)
+        source_agent, target_agent = self.alpha_agent_pair(instance_id)
+        runtime_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+
+        def dispatch_for_run(run_id: str) -> str:
+            status, output = self.run_cli(
+                [
+                    "--print-json",
+                    "handoffs",
+                    "dispatch",
+                    "--topic",
+                    "alpha",
+                    "--agent-team-instance",
+                    instance_id,
+                    "--source-agent-instance",
+                    source_agent,
+                    "--target-agent-instance",
+                    target_agent,
+                    "--run",
+                    run_id,
+                    "--message",
+                    f"Dispatch for {run_id}.",
+                ],
+                cwd=root,
+                env=env,
+            )
+            data = json.loads(output)
+            self.assertEqual(0, status, output)
+            return str(data["dispatch"]["handoff_id"])
+
+        def observe_mail(handoff_id: str) -> str:
+            status, output = self.run_cli(
+                [
+                    "--print-json",
+                    "handoffs",
+                    "observe",
+                    handoff_id,
+                    "--topic",
+                    "alpha",
+                    "--source",
+                    "mail",
+                    "--summary",
+                    "mail candidate",
+                ],
+                cwd=root,
+                env=env,
+            )
+            data = json.loads(output)
+            self.assertEqual(0, status, output)
+            return str(data["observation"]["signal_observation_id"])
+
+        rejected_handoff_id = dispatch_for_run("run-alpha-rejected")
+        rejected_signal_id = observe_mail(rejected_handoff_id)
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "handoffs",
+                "normalize",
+                rejected_handoff_id,
+                "--topic",
+                "alpha",
+                "--status",
+                "rejected",
+                "--signal-observation",
+                rejected_signal_id,
+                "--corrective-ref",
+                "service-request:alpha:reject-repair",
+                "--rationale",
+                "The returned payload did not satisfy the handoff.",
+            ],
+            cwd=root,
+            env=env,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("rejected", data["normalization"]["status"])
+
+        repair_handoff_id = dispatch_for_run("run-alpha-repair")
+        repair_signal_id = observe_mail(repair_handoff_id)
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "handoffs",
+                "normalize",
+                repair_handoff_id,
+                "--topic",
+                "alpha",
+                "--status",
+                "repair_routed",
+                "--signal-observation",
+                repair_signal_id,
+                "--corrective-ref",
+                "service-request:alpha:repair-route",
+                "--rationale",
+                "Route a repair handoff.",
+            ],
+            cwd=root,
+            env=env,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("repair_routed", data["normalization"]["status"])
+
+        stale_handoff_id = dispatch_for_run("run-alpha-stale")
+        with sqlite3.connect(runtime_path) as db:
+            db.execute(
+                "UPDATE handoff_records SET stale_after = ? WHERE id = ?",
+                ("2000-01-01T00:00:00Z", stale_handoff_id),
+            )
+
+        status, output = self.run_cli(["team-instances", "show", instance_id, "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        handoff_records = {record["id"]: record for record in data["summary"]["handoffs"]}
+        self.assertEqual("rejected", handoff_records[rejected_handoff_id]["status"])
+        self.assertEqual("repair", handoff_records[repair_handoff_id]["status"])
+        normalizations = {record["handoff_id"]: record for record in data["summary"]["handoff_normalizations"]}
+        self.assertEqual(["service-request:alpha:reject-repair"], normalizations[rejected_handoff_id]["corrective_refs"])
+        self.assertEqual(["service-request:alpha:repair-route"], normalizations[repair_handoff_id]["corrective_refs"])
+
+        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertIn("ISO045", {diagnostic["code"] for diagnostic in data["diagnostics"]})
 
     def test_houmao_launch_failed_preflight_writes_no_material(self) -> None:
         root = self.make_root()

@@ -1,0 +1,47 @@
+# Generated placeholder catalog for deepsci-mini Topic Agent Team Profile instantiation.
+
+[template]
+description = "Placeholder catalog for specializing deepsci-mini into a Topic Agent Team Profile."
+domain_agent_team_template_id = "deepsci-mini"
+topic_instantiation_required = true
+
+[[roles]]
+role_id = "deepsci-mini-lead"
+agent_profile_ref = "{deepsci_mini_lead_agent_profile_ref}"
+capability_binding_ref = "{deepsci_mini_lead_capability_binding_ref}"
+skill_projection_ref = "{deepsci_mini_lead_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_mini_lead_agent_workspace_ref}"
+
+[[roles]]
+role_id = "deepsci-mini-scout"
+agent_profile_ref = "{deepsci_mini_scout_agent_profile_ref}"
+capability_binding_ref = "{deepsci_mini_scout_capability_binding_ref}"
+skill_projection_ref = "{deepsci_mini_scout_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_mini_scout_agent_workspace_ref}"
+
+[[roles]]
+role_id = "deepsci-mini-synth-reviewer"
+agent_profile_ref = "{deepsci_mini_synth_reviewer_agent_profile_ref}"
+capability_binding_ref = "{deepsci_mini_synth_reviewer_capability_binding_ref}"
+skill_projection_ref = "{deepsci_mini_synth_reviewer_skill_projection_ref}"
+agent_workspace_ref = "{deepsci_mini_synth_reviewer_agent_workspace_ref}"
+
+[[topic_refs]]
+name = "research_topic_id"
+placeholder = "{research_topic_id}"
+
+[[topic_refs]]
+name = "research_inquiry_id"
+placeholder = "{research_inquiry_id}"
+
+[[topic_refs]]
+name = "topic_workspace_ref"
+placeholder = "{topic_workspace_ref}"
+
+[[topic_refs]]
+name = "workspace_runtime_ref"
+placeholder = "{workspace_runtime_ref}"
+
+[[topic_refs]]
+name = "gate_policy_ref"
+placeholder = "{gate_policy_ref}"

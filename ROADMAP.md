@@ -2,7 +2,7 @@
 
 ## Current Baseline
 
-Isomer Labs now has a Milestone 1 `isomer-cli` implementation for Project discovery, Project Manifest validation, Effective Topic Context inspection, Workspace Path Resolution previews, built-in schema listing, and Project initialization. It also has Milestone 2 and 3 static validation for the `deepsci-org` Domain Agent Team Template, project-local template fixtures, and design-time Topic Agent Team Profiles for multiple Research Topics. Milestone 4 adds topic-scoped Workspace Runtime state with schema metadata, path plans, topic environment readiness records, pre-launch Agent Team Instance records, Agent Instance and Agent Workspace records, initial Workflow Stage Cursor records, validation, inspection, and two-topic isolation coverage. The repo contains `teams/deepsci-org/`, a generated Domain Agent Team Template with intention source, execplan contracts, seven role profiles, generated skills, notifier prompts, a harness, a loop-local state contract, and an instantiation guide.
+Isomer Labs now has a Milestone 1 `isomer-cli` implementation for Project discovery, Project Manifest validation, Effective Topic Context inspection, Workspace Path Resolution previews, built-in schema listing, and Project initialization. It also has Milestone 2 and 3 static validation for the `deepsci-org` Domain Agent Team Template, project-local template fixtures, and design-time Topic Agent Team Profiles for multiple Research Topics. Milestone 4 adds topic-scoped Workspace Runtime state with schema metadata, path plans, topic environment readiness records, pre-launch Agent Team Instance records, Agent Instance and Agent Workspace records, initial Workflow Stage Cursor records, validation, inspection, and two-topic isolation coverage. Milestone 5 adds the Houmao Execution Adapter launch, inspect, stop, reconciliation, adoption, manual handoff dispatch, Signal Observation, and Operator normalization path. The repo contains `teams/deepsci-org/`, a generated Domain Agent Team Template with intention source, execplan contracts, seven role profiles, generated skills, notifier prompts, a harness, a loop-local state contract, and an instantiation guide.
 
 This version of Isomer Labs should make `deepsci-org` work inside the Isomer framework before broadening into other team templates. The main path is to register `deepsci-org` as a Domain Agent Team Template, specialize it into Topic Agent Team Profiles for different Research Topics, create pre-launch Agent Team Instance records inside Workspace Runtime, then let Milestone 5 map those records through a Houmao Execution Adapter and record the resulting Runs, handoffs, Artifacts, Gates, and Provenance Records inside topic-scoped Workspace Runtime state.
 
@@ -98,17 +98,17 @@ Goal: use the local Houmao build to launch and manage a `deepsci-org` Agent Team
 
 Major steps:
 
-- [ ] Implement a Houmao Execution Adapter that maps Isomer Domain Agent Team Template, Topic Agent Team Profile, Agent Team Instance, Agent Profile, Agent Instance, Agent Workspace, Run, and Artifact refs onto Houmao launch, mailbox, gateway, notifier, and inspection surfaces.
-- [ ] Use `extern/orphan/houmao` as the local Houmao source and build target while keeping Houmao source changes in the Houmao checkout.
-- [ ] Materialize Houmao launch material from `teams/deepsci-org/execplan/agents/`, generated skills, notifier prompts, topology, and communication templates.
-- [ ] Launch a manual-mode `deepsci-org` Agent Team Instance for one Research Topic and record Houmao refs without exposing Houmao terms as Isomer core schema fields.
-- [ ] Dispatch one handoff from `deepsci-org-master` to a specialist, receive the result through Houmao mail or gateway surfaces, and normalize it into Workspace Runtime.
-- [ ] Fix Houmao defects discovered during launch in the Houmao repo, validate them with Houmao's own commands, and document the local build expectation in Isomer adapter tests.
+- [x] Implement a Houmao Execution Adapter that maps Isomer Domain Agent Team Template, Topic Agent Team Profile, Agent Team Instance, Agent Profile, Agent Instance, Agent Workspace, Run, and Artifact refs onto Houmao launch, mailbox, gateway, notifier, and inspection surfaces.
+- [x] Use `extern/orphan/houmao` as the local Houmao source and build target while keeping Houmao source changes in the Houmao checkout.
+- [x] Materialize Houmao launch material from `teams/deepsci-org/execplan/agents/`, generated skills, notifier prompts, topology, and communication templates.
+- [x] Launch a manual-mode `deepsci-org` Agent Team Instance for one Research Topic and record Houmao refs without exposing Houmao terms as Isomer core schema fields.
+- [x] Dispatch one handoff from `deepsci-org-master` to a specialist, receive the result through Houmao mail or gateway surfaces, and normalize it into Workspace Runtime.
+- [x] Fix Houmao defects discovered during launch in the Houmao repo when any are found, validate them with Houmao's own commands, and document the local build expectation in Isomer adapter tests. This pass found no required Houmao source changes; live validation remains gated by `ISOMER_MANUAL_LIVE_HOUMAO=1`.
 
 Exit criteria:
 
-- Isomer can start, inspect, and stop one Houmao-backed `deepsci-org` Agent Team Instance from a Topic Agent Team Profile.
-- A manual handoff round produces a recorded Run, handoff state, Agent Instance refs, Adapter refs, and Provenance Records in the Topic Workspace.
+- [x] Isomer can start, inspect, and stop one Houmao-backed `deepsci-org` Agent Team Instance from a Topic Agent Team Profile.
+- [x] A manual handoff round produces a recorded Run, handoff state, Agent Instance refs, Adapter refs, and Provenance Records in the Topic Workspace.
 
 ## Milestone 6: UC-01 Headless Vertical Slice
 
@@ -156,8 +156,10 @@ Major steps:
 - [ ] Implement Run creation with `control_mode` values `manual` and `automatic`, plus manual prompt-scope metadata for `single_stage` and `multi_step`.
 - [ ] Add Artifact Core Records and recording APIs for Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates.
 - [ ] Resolve Completion Watcher Contracts from Coordination Policy and copy the resolved contract onto each handoff.
-- [ ] Implement Signal Observation records for Houmao mail, gateway events, file observations, agent inspection, and adapter events.
-- [ ] Implement completion normalization so downstream state changes only after the Operator Agent accepts a result and records produced Artifact refs and Provenance Records.
+- [x] Implement Signal Observation records for Houmao mail, gateway events, file observations, and bounded agent inspection.
+- [x] Implement handoff completion normalization so downstream Run state changes only after the Operator Agent accepts a result and records produced Artifact refs and Provenance Records.
+- [ ] Extend Signal Observation records to adapter events and broader Operator Control Loop views.
+- [ ] Extend completion normalization across automatic/manual Control Mode, Gates, and built-in views.
 - [ ] Add Gate handling for baseline waiver, credential use, cost, private data, destructive mutation, publication-facing output, claim strengthening, finalization, and archival actions.
 - [ ] Define View Manifests and GUI Backend reads for Agent Team Instance status, Run timelines, handoff queues, Artifact lists, Research Claim graphs, decision queues, and pending Gates.
 - [ ] Promote the UC-01 headless test to a built-in-view acceptance test with literature matrix, claim graph, inquiry comparison, Run timeline, and pending Gate inspection.

@@ -1,0 +1,20 @@
+# Generated Houmao profile material for deepsci-mini-scout.
+
+[profile]
+description = "Source scouting and lightweight literature profile for deepsci-mini."
+role_id = "deepsci-mini-scout"
+profile_kind = "generated-houmao-agent-profile"
+launch_posture = "topic-profile-specialized"
+memo_seed_policy = "optional-topic-profile-seed"
+notifier_prompt_path = "../notifier-prompts/deepsci-mini-scout.md"
+workspace_policy_ref = "../../specs/workspace/workspace.toml"
+
+[skills]
+generated = ["deepsci-mini-shared-template", "deepsci-mini-on-handoff-request"]
+required_isomer = ["isomer-rsch-shared", "isomer-rsch-scout"]
+optional_isomer = ["isomer-rsch-baseline", "isomer-rsch-science", "isomer-rsch-paper-outline"]
+
+[boundaries]
+may_dispatch = []
+normal_result_target = "deepsci-mini-lead"
+expected_outputs = ["seed_source_summary", "literature_note", "claim_candidate_note", "evidence_item_candidate"]

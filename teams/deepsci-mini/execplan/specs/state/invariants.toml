@@ -1,0 +1,26 @@
+# Generated invariant list for deepsci-mini.
+
+[[invariants]]
+id = "root-role-is-lead"
+description = "The generated tree-loop root role must be deepsci-mini-lead."
+severity = "error"
+
+[[invariants]]
+id = "specialist-results-return-to-lead"
+description = "Specialist handoff results must return to deepsci-mini-lead through local-close routing."
+severity = "error"
+
+[[invariants]]
+id = "manual-is-not-paused"
+description = "Manual execution mode changes wakeup authority but does not pause the run."
+severity = "error"
+
+[[invariants]]
+id = "gate-before-closeout"
+description = "UC-01 closeout requires a follow-up Research Inquiry Gate and Decision Record."
+severity = "error"
+
+[[invariants]]
+id = "claim-candidates-need-evidence"
+description = "Claim candidates are not supported Research Claims without accepted Evidence Item refs."
+severity = "warning"

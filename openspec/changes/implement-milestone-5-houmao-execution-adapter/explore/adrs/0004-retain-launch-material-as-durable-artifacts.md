@@ -4,7 +4,7 @@ Milestone 5 launch material is part of the reproducible record for why and how a
 
 ## Status
 
-accepted
+accepted, implemented as existing adapter foundation
 
 ## Considered Options
 
@@ -14,4 +14,4 @@ accepted
 
 ## Consequences
 
-Workspace Runtime storage will grow with each launch attempt, but debugging, audit, and replay evidence will not depend on rebuildable cache directories. Validation should report missing launch material as missing durable evidence rather than silently regenerating or ignoring it.
+Workspace Runtime storage grows with each launch attempt, but debugging, audit, and replay evidence do not depend on rebuildable cache directories. The revised Milestone 5 change treats durable launch material retention as foundation and extends the same durable-evidence rule to handoff payloads, observations, normalization artifacts, and adapter logs.

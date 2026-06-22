@@ -57,6 +57,7 @@ The platform intentionally does not:
 - Agent Team Instance record creation with Agent Instance records, Agent Workspace records, and directory materialization.
 - Houmao adapter quick launch, prepare-only materialization, inspect-live, stop, reconcile, and adopt.
 - Houmao adapter JSON manifests (`adapter-link.json`, `launch-material-manifest.json`, `adapter-runtime-manifest.json`), command payload recording, manifest digest tracking, and material drift detection.
+- Manual handoff dispatch, Signal Observation ingestion, and Operator Agent handoff normalization for the Houmao Execution Adapter.
 
 ### Partially Implemented
 
@@ -67,8 +68,8 @@ The platform intentionally does not:
 
 ### Planned / Future Work
 
-- Operator Agent handoff normalization across Execution Adapters.
-- Full Run lifecycle with automatic and manual Control Mode.
+- Automatic Completion Watcher Contract execution and multi-step manual Control Mode.
+- Full Run lifecycle with automatic fanout and long-running recovery.
 - GUI Backend runtime rendering and View Manifest consumption.
 - Service Agent Instance launch and Service Request monitoring.
 - Research Claim, Evidence Item, Finding, and Decision Record workflow integration.

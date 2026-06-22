@@ -1,0 +1,18 @@
+```houmao-email-metadata
+schema_id = "deepsci-mini.email.team-start"
+schema_version = "1"
+kind = "request"
+run_id = "{{ run_id }}"
+plan_revision = "{{ plan_revision }}"
+receiver_role = "deepsci-mini-lead"
+```
+
+# Start deepsci-mini Run
+
+Research Topic: `{{ research_topic_id }}`
+
+Research Inquiry: `{{ research_inquiry_id }}`
+
+{{ summary }}
+
+Process one bounded start or resume pass. Use `deepsci-mini-on-team-start`, then run `deepsci-mini-on-tick` only when the start handler leaves a safe follow-up action.

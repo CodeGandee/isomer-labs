@@ -8,7 +8,6 @@ The following options are available on most commands:
 
 - `--project TEXT` — explicit Project root selector.
 - `--manifest TEXT` — explicit Project Manifest selector.
-- `--format [text|json]` — output format.
 - `--print-json` — emit deterministic JSON for the selected command.
 - `-h, --help` — show help for the command.
 
@@ -18,7 +17,7 @@ Many topic-scoped commands also accept lifecycle selectors such as `--topic`, `-
 
 ## Output Posture
 
-JSON output uses the `isomer-cli-output.v1` wrapper and includes a `mutated` flag when the command mutates Project files, Workspace Runtime records, adapter manifests, or live Houmao state. Read-only commands report `mutated: false`. Text output is intended for human inspection and may omit nested details that JSON includes.
+JSON output uses the `isomer-cli-output.v1` wrapper and includes a `mutated` flag when the command mutates Project files, Workspace Runtime records, adapter manifests, or live Houmao state. Use root-level `--print-json` for every command that needs deterministic JSON. Without `--print-json`, commands print structured human-readable text. Command-local `--json`, `--format json`, and `--format=json` are not public command shapes.
 
 ## Command Groups
 
@@ -267,6 +266,51 @@ pixi run isomer-cli --print-json team-instances adopt ati-default-deepsci \
   --topic default --yes
 ```
 
+### `handoffs dispatch`
+
+Dispatch a manual handoff through the selected Execution Adapter.
+
+**Side effects:** writes or reuses a Run lifecycle record, writes a Handoff record, links the handoff and Run to the Agent Team Instance, writes durable handoff payload files, invokes Houmao mail dispatch for the Houmao adapter, and records adapter command and payload refs. Requires ready Workspace Runtime and a launched, adopted, or linked adapter context.
+
+```bash
+pixi run isomer-cli --print-json handoffs dispatch \
+  --topic default \
+  --agent-team-instance ati-default-deepsci \
+  --source-agent-instance ati-default-deepsci-deepsci-org-master \
+  --target-agent-instance ati-default-deepsci-deepsci-org-experimenter \
+  --run run-default-first-handoff \
+  --message "Draft the first experiment execution plan." \
+  --expected-output artifact:default:first-handoff
+```
+
+### `handoffs observe`
+
+Record a non-authoritative Signal Observation for a handoff.
+
+**Side effects:** writes a Signal Observation record, durable observation payload files, and any adapter command/payload refs needed to read mail or gateway output. Observation alone does not complete a Run, accept a handoff, promote returned claims into Evidence Items, or accept an Artifact.
+
+```bash
+pixi run isomer-cli --print-json handoffs observe <handoff-id> --topic default --source mail
+pixi run isomer-cli --print-json handoffs observe <handoff-id> --topic default --source gateway
+pixi run isomer-cli --print-json handoffs observe <handoff-id> --topic default --source file --payload-json handoff-observation.json
+pixi run isomer-cli --print-json handoffs observe <handoff-id> --topic default --source inspection
+```
+
+### `handoffs normalize`
+
+Record the Operator Agent decision for a handoff result.
+
+**Side effects:** writes a handoff normalization record and payload ref, updates the Handoff record, records output Artifact lifecycle refs when supplied, and completes the linked Run only for `accepted`. Supported statuses are `accepted`, `rejected`, `blocked`, `superseded`, `repair_routed`, and `follow_up`.
+
+```bash
+pixi run isomer-cli --print-json handoffs normalize <handoff-id> \
+  --topic default \
+  --status accepted \
+  --signal-observation <signal-observation-id> \
+  --output-artifact artifact:default:first-handoff \
+  --rationale "Accepted after Operator review."
+```
+
 ### `team-templates list`
 
 List registered Domain Agent Team Templates.
@@ -349,6 +393,9 @@ pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases 
 | `team-instances stop` | no | yes (outcome) | no | yes |
 | `team-instances reconcile` | no | yes | yes (runtime manifest) | no |
 | `team-instances adopt` | no | yes | no | no |
+| `handoffs dispatch` | no | yes | yes (handoff payloads) | yes |
+| `handoffs observe` | no | yes | yes (observation payloads) | mail/gateway only |
+| `handoffs normalize` | no | yes | yes (normalization payloads) | no |
 | `team-templates list` | no | no | no | no |
 | `team-templates inspect` | no | no | no | no |
 | `team-templates validate` | no | no | no | no |

@@ -14,4 +14,4 @@ accepted
 
 ## Consequences
 
-Default Isomer launch preflight stays fast and non-mutating. Houmao runtime tests and live launch smoke checks remain part of live-gated integration or manual validation, not the baseline adapter availability check.
+Default Isomer launch and handoff preflight stays fast and non-mutating. Houmao runtime tests, live launch smoke checks, and live handoff rounds remain part of live-gated integration or manual validation, not the baseline adapter availability check.

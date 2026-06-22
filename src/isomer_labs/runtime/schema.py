@@ -33,6 +33,9 @@ CORE_RUNTIME_SCHEMA_TABLES = (
     "validation_issues",
 )
 ADAPTER_RUNTIME_SCHEMA_TABLES = (
+    "adapter_handoff_dispatch_records",
+    "signal_observation_records",
+    "handoff_normalization_records",
     "adapter_manifest_refs",
     "adapter_reconciliation_records",
     "adapter_payload_refs",
@@ -161,6 +164,67 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             stale_after TEXT,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS adapter_handoff_dispatch_records (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            handoff_id TEXT NOT NULL,
+            agent_team_instance_id TEXT NOT NULL,
+            source_agent_instance_id TEXT NOT NULL,
+            target_agent_instance_id TEXT NOT NULL,
+            adapter_id TEXT NOT NULL,
+            status TEXT NOT NULL,
+            research_task_id TEXT,
+            run_id TEXT,
+            command_run_ids_json TEXT NOT NULL,
+            payload_ref_ids_json TEXT NOT NULL,
+            expected_output_refs_json TEXT NOT NULL,
+            completion_watcher_contract_refs_json TEXT NOT NULL,
+            diagnostics_json TEXT NOT NULL,
+            actor_ref TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS signal_observation_records (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            handoff_id TEXT NOT NULL,
+            run_id TEXT,
+            agent_team_instance_id TEXT NOT NULL,
+            source_agent_instance_id TEXT,
+            target_agent_instance_id TEXT,
+            adapter_id TEXT NOT NULL,
+            observation_kind TEXT NOT NULL,
+            status TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            command_run_ids_json TEXT NOT NULL,
+            payload_ref_ids_json TEXT NOT NULL,
+            diagnostics_json TEXT NOT NULL,
+            actor_ref TEXT,
+            observed_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS handoff_normalization_records (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            handoff_id TEXT NOT NULL,
+            run_id TEXT,
+            status TEXT NOT NULL,
+            rationale TEXT NOT NULL,
+            signal_observation_ids_json TEXT NOT NULL,
+            output_artifact_refs_json TEXT NOT NULL,
+            corrective_refs_json TEXT NOT NULL,
+            payload_ref_ids_json TEXT NOT NULL,
+            actor_ref TEXT,
+            created_at TEXT NOT NULL,
             provenance_refs_json TEXT NOT NULL
         );
 

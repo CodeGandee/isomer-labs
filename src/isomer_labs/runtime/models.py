@@ -5,6 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
+from isomer_labs.runtime.adapter_handoffs import (
+    ADAPTER_HANDOFF_DISPATCH_STATUSES as ADAPTER_HANDOFF_DISPATCH_STATUSES,
+    HANDOFF_NORMALIZATION_STATUSES as HANDOFF_NORMALIZATION_STATUSES,
+    SIGNAL_OBSERVATION_STATUSES as SIGNAL_OBSERVATION_STATUSES,
+    AdapterHandoffDispatchRecord as AdapterHandoffDispatchRecord,
+    HandoffNormalizationRecord as HandoffNormalizationRecord,
+    SignalObservationRecord as SignalObservationRecord,
+)
+
 
 WORKSPACE_RUNTIME_SCHEMA_VERSION = "isomer-workspace-runtime.v1"
 RUNTIME_DIRECTORIES = ("artifacts", "agents", "tasks", "runs", "views", "logs")
@@ -46,7 +55,23 @@ LIFECYCLE_STATUSES = (
 AGENT_TEAM_INSTANCE_STATUSES = ("planned", "ready", "running", "blocked", "failed", "stale", "stopped", "cancelled", "superseded", "archived")
 AGENT_INSTANCE_STATUSES = ("planned", "ready", "running", "blocked", "failed", "stale", "stopped", "archived")
 AGENT_WORKSPACE_STATUSES = ("ready", "missing", "stale", "archived")
-HANDOFF_STATUSES = ("draft", "sent", "observing", "complete", "blocked", "failed", "stale", "cancelled", "superseded", "archived")
+HANDOFF_STATUSES = (
+    "draft",
+    "sent",
+    "observing",
+    "candidate",
+    "accepted",
+    "complete",
+    "rejected",
+    "blocked",
+    "failed",
+    "repair",
+    "follow_up",
+    "stale",
+    "cancelled",
+    "superseded",
+    "archived",
+)
 ADAPTER_MANIFEST_KINDS = ("adapter_link", "launch_material", "adapter_runtime")
 ADAPTER_RECONCILIATION_STATES = (
     "linked",

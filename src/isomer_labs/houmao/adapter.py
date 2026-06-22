@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 import json
 import os
@@ -32,13 +32,18 @@ from isomer_labs.houmao.manifests import (
 )
 from isomer_labs.models import EffectiveTopicContext, TopicAgentTeamProfile
 from isomer_labs.runtime.models import (
+    AdapterHandoffDispatchRecord,
     AdapterCommandRunRecord,
+    HandoffNormalizationRecord,
+    HandoffRecord,
     AdapterInspectionSnapshotRecord,
     AdapterLaunchAttemptRecord,
     AdapterManifestRefRecord,
     AdapterMaterializationRecord,
     AdapterPayloadRefRecord,
     AdapterStopOutcomeRecord,
+    RuntimeLifecycleRecord,
+    SignalObservationRecord,
     utc_timestamp,
 )
 
@@ -153,6 +158,44 @@ class HoumaoCommandCatalog:
 
     def agent_stop(self, project_dir: Path, *, name: str) -> HoumaoCommandSpec:
         return HoumaoCommandSpec("agent_stop", ["--print-json", "project", "--project-dir", str(project_dir), "agents", "stop", "--name", name])
+
+    def handoff_dispatch(self, project_dir: Path, *, source: str, target: str, message_file: Path, handoff_id: str) -> HoumaoCommandSpec:
+        return HoumaoCommandSpec(
+            "manual_handoff",
+            [
+                "--print-json",
+                "project",
+                "--project-dir",
+                str(project_dir),
+                "mail",
+                "send",
+                "--from",
+                source,
+                "--to",
+                target,
+                "--handoff",
+                handoff_id,
+                "--message-file",
+                str(message_file),
+            ],
+        )
+
+    def handoff_observe(self, project_dir: Path, *, handoff_id: str, source: str) -> HoumaoCommandSpec:
+        command = "gateway" if source == "gateway" else "mail"
+        action = "events" if source == "gateway" else "read"
+        return HoumaoCommandSpec(
+            "manual_handoff_observe",
+            [
+                "--print-json",
+                "project",
+                "--project-dir",
+                str(project_dir),
+                command,
+                action,
+                "--handoff",
+                handoff_id,
+            ],
+        )
 
     def global_agents_list(self) -> HoumaoCommandSpec:
         return HoumaoCommandSpec("preflight_global_agents", ["--print-json", "agents", "global", "list", "--state", "all"])
@@ -385,6 +428,9 @@ class HoumaoAdapterPaths:
     launch_logs: Path
     inspection_snapshots: Path
     stop_outcomes: Path
+    handoff_payloads: Path
+    handoff_observations: Path
+    handoff_normalizations: Path
     houmao_project_dir: Path
     generated_profile_root: Path
     agent_material_roots: dict[str, Path]
@@ -397,6 +443,9 @@ class HoumaoAdapterPaths:
             "launch_logs": str(self.launch_logs),
             "inspection_snapshots": str(self.inspection_snapshots),
             "stop_outcomes": str(self.stop_outcomes),
+            "handoff_payloads": str(self.handoff_payloads),
+            "handoff_observations": str(self.handoff_observations),
+            "handoff_normalizations": str(self.handoff_normalizations),
             "houmao_project_dir": str(self.houmao_project_dir),
             "generated_profile_root": str(self.generated_profile_root),
             "agent_material_roots": {key: str(value) for key, value in self.agent_material_roots.items()},
@@ -557,6 +606,72 @@ class HoumaoStopResult:
             "command_run_ids": self.command_run_ids,
             "payload_ref_ids": self.payload_ref_ids,
             "stop_outcome_id": self.stop_outcome_id,
+            "diagnostics": [diagnostic.to_json() for diagnostic in self.diagnostics],
+        }
+
+
+@dataclass(frozen=True)
+class HoumaoHandoffDispatchResult:
+    status: str
+    handoff_id: str | None
+    run_id: str | None
+    dispatch_record_id: str | None
+    command_run_ids: list[str]
+    payload_ref_ids: list[str]
+    diagnostics: list[Diagnostic]
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "handoff_id": self.handoff_id,
+            "run_id": self.run_id,
+            "dispatch_record_id": self.dispatch_record_id,
+            "command_run_ids": self.command_run_ids,
+            "payload_ref_ids": self.payload_ref_ids,
+            "diagnostics": [diagnostic.to_json() for diagnostic in self.diagnostics],
+        }
+
+
+@dataclass(frozen=True)
+class HoumaoHandoffObservationResult:
+    status: str
+    handoff_id: str
+    signal_observation_id: str | None
+    command_run_ids: list[str]
+    payload_ref_ids: list[str]
+    completion_authority: bool
+    diagnostics: list[Diagnostic]
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "handoff_id": self.handoff_id,
+            "signal_observation_id": self.signal_observation_id,
+            "command_run_ids": self.command_run_ids,
+            "payload_ref_ids": self.payload_ref_ids,
+            "completion_authority": self.completion_authority,
+            "diagnostics": [diagnostic.to_json() for diagnostic in self.diagnostics],
+        }
+
+
+@dataclass(frozen=True)
+class HoumaoHandoffNormalizationResult:
+    status: str
+    handoff_id: str
+    normalization_record_id: str | None
+    run_id: str | None
+    output_artifact_refs: list[str]
+    payload_ref_ids: list[str]
+    diagnostics: list[Diagnostic]
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "handoff_id": self.handoff_id,
+            "normalization_record_id": self.normalization_record_id,
+            "run_id": self.run_id,
+            "output_artifact_refs": self.output_artifact_refs,
+            "payload_ref_ids": self.payload_ref_ids,
             "diagnostics": [diagnostic.to_json() for diagnostic in self.diagnostics],
         }
 
@@ -1186,6 +1301,402 @@ class HoumaoAdapterFacade:
             diagnostics=diagnostics,
         )
 
+    def dispatch_handoff(
+        self,
+        *,
+        context: EffectiveTopicContext,
+        store: Any,
+        summary: Any,
+        source_agent_instance_id: str,
+        target_agent_instance_id: str,
+        message: str,
+        run_id: str | None,
+        research_task_id: str | None,
+        expected_output_refs: list[str],
+        completion_watcher_contract_refs: list[str],
+        actor_ref: str | None,
+    ) -> HoumaoHandoffDispatchResult:
+        diagnostics: list[Diagnostic] = []
+        team_id = summary.agent_team_instance.id
+        source_agent = _summary_agent(summary, source_agent_instance_id)
+        target_agent = _summary_agent(summary, target_agent_instance_id)
+        if source_agent is None:
+            diagnostics.append(_adapter_diagnostic("ISO041", "error", f"Unknown source Agent Instance: {source_agent_instance_id}.", field="source_agent_instance_id"))
+        if target_agent is None:
+            diagnostics.append(_adapter_diagnostic("ISO041", "error", f"Unknown target Agent Instance: {target_agent_instance_id}.", field="target_agent_instance_id"))
+        latest_reconciliation = store.latest_adapter_reconciliation_record(agent_team_instance_id=team_id)
+        latest_launch = store.latest_adapter_launch_attempt(agent_team_instance_id=team_id)
+        if latest_launch is None and (latest_reconciliation is None or latest_reconciliation.state not in {"adopted", "linked", "launched_by_isomer", "external_detected"}):
+            diagnostics.append(_adapter_diagnostic("ISO077", "error", "Handoff dispatch requires a launched, adopted, or linked Houmao adapter context.", field="agent_team_instance_id"))
+        preflight = self.preflight(
+            context=context,
+            store=store,
+            agent_team_instance_id=team_id,
+            houmao_project_dir=None,
+            run_probes=False,
+        )
+        diagnostics.extend(preflight.diagnostics)
+        if has_errors(diagnostics):
+            return HoumaoHandoffDispatchResult(
+                status="failed",
+                handoff_id=None,
+                run_id=run_id,
+                dispatch_record_id=None,
+                command_run_ids=[],
+                payload_ref_ids=[],
+                diagnostics=diagnostics,
+            )
+
+        timestamp = utc_timestamp()
+        run_record = store.ensure_run_record(
+            context=context,
+            agent_team_instance_id=team_id,
+            run_id=run_id,
+            research_task_id=research_task_id,
+            actor_ref=actor_ref,
+        )
+        handoff_id = f"handoff-{_slug(team_id)}-{_slug(run_record.id)}-{_slug(target_agent_instance_id)}"
+        paths = build_houmao_adapter_paths(
+            context.topic_workspace_path,
+            team_id,
+            [record.id for record in summary.agent_instances],
+            houmao_project_dir=_latest_houmao_project_dir(summary),
+        )
+        self._record_path_plans(context, store, team_id, paths, diagnostics)
+        if has_errors(diagnostics):
+            return HoumaoHandoffDispatchResult(
+                status="failed",
+                handoff_id=None,
+                run_id=run_record.id,
+                dispatch_record_id=None,
+                command_run_ids=[],
+                payload_ref_ids=[],
+                diagnostics=diagnostics,
+            )
+        _ensure_adapter_directories(paths)
+        dispatch_payload_path = paths.handoff_payloads / f"{handoff_id}-dispatch.json"
+        source_name = _houmao_name_for_agent(summary, source_agent_instance_id)
+        target_name = _houmao_name_for_agent(summary, target_agent_instance_id)
+        dispatch_payload = {
+            "kind": "houmao_manual_handoff_dispatch",
+            "handoff_id": handoff_id,
+            "agent_team_instance_id": team_id,
+            "source_agent_instance_id": source_agent_instance_id,
+            "target_agent_instance_id": target_agent_instance_id,
+            "source_houmao_agent_name": source_name,
+            "target_houmao_agent_name": target_name,
+            "run_id": run_record.id,
+            "research_task_id": research_task_id,
+            "expected_output_refs": expected_output_refs,
+            "completion_watcher_contract_refs": completion_watcher_contract_refs,
+            "message": message,
+            "created_at": timestamp,
+        }
+        _write_json_file(dispatch_payload_path, dispatch_payload)
+        dispatch_payload_ref = self._record_payload_ref(
+            context,
+            store,
+            agent_team_instance_id=team_id,
+            agent_instance_id=target_agent_instance_id,
+            payload_kind="handoff_dispatch_payload",
+            payload_path=dispatch_payload_path,
+            payload_digest=file_digest(dispatch_payload_path),
+            source="isomer_handoff_dispatch",
+            command_run_id=None,
+            path_plan_id=_path_plan_id_by_surface(store, context.topic_workspace_id, adapter_handoff_payload_surface(team_id)),
+        )
+        runner = self._runner(context.project.root)
+        result = runner.run(
+            self.catalog.handoff_dispatch(
+                paths.houmao_project_dir,
+                source=source_name,
+                target=target_name,
+                message_file=dispatch_payload_path,
+                handoff_id=handoff_id,
+            ),
+            env=self.env,
+        )
+        command_record_id, command_payload_ref_id = self._record_command_result(
+            context,
+            store,
+            team_id,
+            target_agent_instance_id,
+            result,
+            paths.command_payloads,
+            actor_ref=actor_ref,
+        )
+        diagnostics.extend(result.diagnostics)
+        status = "failed" if has_errors(diagnostics) else "sent"
+        handoff = HandoffRecord(
+            id=handoff_id,
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            source_actor_ref=source_agent_instance_id,
+            target_actor_ref=target_agent_instance_id,
+            status=status,
+            created_at=timestamp,
+            updated_at=utc_timestamp(),
+            research_task_id=research_task_id,
+            run_id=run_record.id,
+            agent_team_instance_id=team_id,
+            completion_watcher_contract_refs=completion_watcher_contract_refs,
+            expected_output_refs=expected_output_refs,
+            provenance_refs=[f"provenance:houmao-handoff-dispatch:{handoff_id}:{timestamp}"],
+        )
+        store.record_handoff(handoff)
+        store.link_agent_team_instance_refs(team_id, run_ids=[run_record.id], handoff_ids=[handoff_id])
+        dispatch_record_id = f"adapter-handoff-dispatch-{_slug(handoff_id)}-{_timestamp_slug(timestamp)}"
+        payload_ref_ids = [dispatch_payload_ref, command_payload_ref_id]
+        store.record_adapter_handoff_dispatch(
+            AdapterHandoffDispatchRecord(
+                id=dispatch_record_id,
+                research_topic_id=context.research_topic.id,
+                topic_workspace_id=context.topic_workspace_id,
+                handoff_id=handoff_id,
+                agent_team_instance_id=team_id,
+                source_agent_instance_id=source_agent_instance_id,
+                target_agent_instance_id=target_agent_instance_id,
+                adapter_id=HOUMAO_ADAPTER_ID,
+                status=status,
+                research_task_id=research_task_id,
+                run_id=run_record.id,
+                command_run_ids=[command_record_id],
+                payload_ref_ids=payload_ref_ids,
+                expected_output_refs=expected_output_refs,
+                completion_watcher_contract_refs=completion_watcher_contract_refs,
+                diagnostics=[diagnostic.to_json() for diagnostic in diagnostics],
+                actor_ref=actor_ref,
+                created_at=timestamp,
+                updated_at=utc_timestamp(),
+                provenance_refs=[f"provenance:houmao-handoff-dispatch:{handoff_id}:{timestamp}"],
+            )
+        )
+        return HoumaoHandoffDispatchResult(
+            status=status,
+            handoff_id=handoff_id,
+            run_id=run_record.id,
+            dispatch_record_id=dispatch_record_id,
+            command_run_ids=[command_record_id],
+            payload_ref_ids=payload_ref_ids,
+            diagnostics=diagnostics,
+        )
+
+    def observe_handoff(
+        self,
+        *,
+        context: EffectiveTopicContext,
+        store: Any,
+        summary: Any,
+        handoff: HandoffRecord,
+        observation_source: str,
+        observation_payload_path: Path | None,
+        summary_text: str | None,
+        actor_ref: str | None,
+    ) -> HoumaoHandoffObservationResult:
+        diagnostics: list[Diagnostic] = []
+        team_id = summary.agent_team_instance.id
+        paths = build_houmao_adapter_paths(
+            context.topic_workspace_path,
+            team_id,
+            [record.id for record in summary.agent_instances],
+            houmao_project_dir=_latest_houmao_project_dir(summary),
+        )
+        self._record_path_plans(context, store, team_id, paths, diagnostics)
+        if has_errors(diagnostics):
+            return HoumaoHandoffObservationResult(
+                status="failed",
+                handoff_id=handoff.id,
+                signal_observation_id=None,
+                command_run_ids=[],
+                payload_ref_ids=[],
+                completion_authority=False,
+                diagnostics=diagnostics,
+            )
+        _ensure_adapter_directories(paths)
+        timestamp = utc_timestamp()
+        command_run_ids: list[str] = []
+        payload_ref_ids: list[str] = []
+        observed_payload: dict[str, object]
+        if observation_source in {"mail", "gateway"}:
+            result = self._runner(context.project.root).run(
+                self.catalog.handoff_observe(paths.houmao_project_dir, handoff_id=handoff.id, source=observation_source),
+                env=self.env,
+            )
+            command_record_id, command_payload_ref_id = self._record_command_result(
+                context,
+                store,
+                team_id,
+                None,
+                result,
+                paths.command_payloads,
+                actor_ref=actor_ref,
+            )
+            command_run_ids.append(command_record_id)
+            payload_ref_ids.append(command_payload_ref_id)
+            diagnostics.extend(result.diagnostics)
+            observed_payload = {"source": observation_source, "command_result": result.to_json()}
+        elif observation_source == "file" and observation_payload_path is not None:
+            observed_payload = _load_observation_file(observation_payload_path, diagnostics)
+        else:
+            latest_snapshot = summary.adapter_inspection_snapshots[-1] if summary.adapter_inspection_snapshots else None
+            observed_payload = {
+                "source": observation_source,
+                "inspection_snapshot": latest_snapshot.to_json() if latest_snapshot is not None else None,
+            }
+        observation_suffix = f"{_slug(observation_source)}-{_timestamp_slug(timestamp)}-{_stable_suffix(observed_payload)}"
+        observation_path = paths.handoff_observations / f"{handoff.id}-observation-{observation_suffix}.json"
+        observation_doc = {
+            "kind": "houmao_manual_handoff_observation",
+            "handoff_id": handoff.id,
+            "source": observation_source,
+            "summary": summary_text or _observation_summary(observed_payload),
+            "candidate_completion": not has_errors(diagnostics),
+            "payload": observed_payload,
+            "observed_at": timestamp,
+        }
+        _write_json_file(observation_path, observation_doc)
+        observation_payload_ref = self._record_payload_ref(
+            context,
+            store,
+            agent_team_instance_id=team_id,
+            agent_instance_id=handoff.target_actor_ref,
+            payload_kind=f"handoff_observation:{observation_source}",
+            payload_path=observation_path,
+            payload_digest=file_digest(observation_path),
+            source=f"houmao_handoff_{observation_source}",
+            command_run_id=command_run_ids[-1] if command_run_ids else None,
+            path_plan_id=_path_plan_id_by_surface(store, context.topic_workspace_id, adapter_handoff_observation_surface(team_id)),
+        )
+        payload_ref_ids.append(observation_payload_ref)
+        status = "failed" if has_errors(diagnostics) else "candidate_completion"
+        observation_id = f"signal-observation-{_slug(handoff.id)}-{observation_suffix}"
+        store.record_signal_observation(
+            SignalObservationRecord(
+                id=observation_id,
+                research_topic_id=context.research_topic.id,
+                topic_workspace_id=context.topic_workspace_id,
+                handoff_id=handoff.id,
+                run_id=handoff.run_id,
+                agent_team_instance_id=team_id,
+                source_agent_instance_id=handoff.source_actor_ref,
+                target_agent_instance_id=handoff.target_actor_ref,
+                adapter_id=HOUMAO_ADAPTER_ID,
+                observation_kind=observation_source,
+                status=status,
+                summary=summary_text or _observation_summary(observed_payload),
+                command_run_ids=command_run_ids,
+                payload_ref_ids=payload_ref_ids,
+                diagnostics=[diagnostic.to_json() for diagnostic in diagnostics],
+                actor_ref=actor_ref,
+                observed_at=timestamp,
+                provenance_refs=[f"provenance:houmao-signal-observation:{handoff.id}:{timestamp}"],
+            )
+        )
+        store.record_handoff(replace(handoff, status="candidate" if status == "candidate_completion" else "failed", updated_at=utc_timestamp()))
+        return HoumaoHandoffObservationResult(
+            status=status,
+            handoff_id=handoff.id,
+            signal_observation_id=observation_id,
+            command_run_ids=command_run_ids,
+            payload_ref_ids=payload_ref_ids,
+            completion_authority=False,
+            diagnostics=diagnostics,
+        )
+
+    def normalize_handoff(
+        self,
+        *,
+        context: EffectiveTopicContext,
+        store: Any,
+        handoff: HandoffRecord,
+        status: str,
+        rationale: str,
+        signal_observation_ids: list[str],
+        output_artifact_refs: list[str],
+        corrective_refs: list[str],
+        actor_ref: str | None,
+    ) -> HoumaoHandoffNormalizationResult:
+        diagnostics: list[Diagnostic] = []
+        timestamp = utc_timestamp()
+        paths = build_houmao_adapter_paths(
+            context.topic_workspace_path,
+            handoff.agent_team_instance_id or "unknown-team",
+            [],
+            houmao_project_dir=None,
+        )
+        self._record_path_plans(context, store, handoff.agent_team_instance_id or "unknown-team", paths, diagnostics)
+        if has_errors(diagnostics):
+            return HoumaoHandoffNormalizationResult(status="failed", handoff_id=handoff.id, normalization_record_id=None, run_id=handoff.run_id, output_artifact_refs=output_artifact_refs, payload_ref_ids=[], diagnostics=diagnostics)
+        _ensure_adapter_directories(paths)
+        normalization_id = f"handoff-normalization-{_slug(handoff.id)}-{_slug(status)}-{_timestamp_slug(timestamp)}"
+        normalization_path = paths.handoff_normalizations / f"{normalization_id}.json"
+        normalization_doc = {
+            "kind": "houmao_manual_handoff_normalization",
+            "handoff_id": handoff.id,
+            "status": status,
+            "rationale": rationale,
+            "signal_observation_ids": signal_observation_ids,
+            "output_artifact_refs": output_artifact_refs,
+            "corrective_refs": corrective_refs,
+            "actor_ref": actor_ref,
+            "created_at": timestamp,
+        }
+        _write_json_file(normalization_path, normalization_doc)
+        payload_ref_id = self._record_payload_ref(
+            context,
+            store,
+            agent_team_instance_id=handoff.agent_team_instance_id or "unknown-team",
+            agent_instance_id=None,
+            payload_kind="handoff_normalization",
+            payload_path=normalization_path,
+            payload_digest=file_digest(normalization_path),
+            source="isomer_handoff_normalization",
+            command_run_id=None,
+            path_plan_id=_path_plan_id_by_surface(store, context.topic_workspace_id, adapter_handoff_normalization_surface(handoff.agent_team_instance_id or "unknown-team")),
+        )
+        for artifact_ref in output_artifact_refs:
+            _record_artifact_lifecycle(context, store, artifact_ref, timestamp, actor_ref)
+        if status == "accepted" and handoff.run_id is not None:
+            run = store.get_lifecycle_record(handoff.run_id)
+            if run is not None:
+                store.upsert_lifecycle_record(
+                    replace(
+                        run,
+                        status="complete",
+                        updated_at=timestamp,
+                        transition_metadata={**run.transition_metadata, "handoff_normalization_id": normalization_id},
+                    )
+                )
+        handoff_status = _handoff_status_from_normalization(status)
+        store.record_handoff(replace(handoff, status=handoff_status, updated_at=timestamp))
+        store.record_handoff_normalization(
+            HandoffNormalizationRecord(
+                id=normalization_id,
+                research_topic_id=context.research_topic.id,
+                topic_workspace_id=context.topic_workspace_id,
+                handoff_id=handoff.id,
+                run_id=handoff.run_id,
+                status=status,
+                rationale=rationale,
+                signal_observation_ids=signal_observation_ids,
+                output_artifact_refs=output_artifact_refs,
+                corrective_refs=corrective_refs,
+                payload_ref_ids=[payload_ref_id],
+                actor_ref=actor_ref,
+                created_at=timestamp,
+                provenance_refs=[f"provenance:houmao-handoff-normalization:{handoff.id}:{timestamp}"],
+            )
+        )
+        return HoumaoHandoffNormalizationResult(
+            status=status,
+            handoff_id=handoff.id,
+            normalization_record_id=normalization_id,
+            run_id=handoff.run_id,
+            output_artifact_refs=output_artifact_refs,
+            payload_ref_ids=[payload_ref_id],
+            diagnostics=diagnostics,
+        )
+
     def _runner(self, project_root: Path) -> Any:
         return self.runner or HoumaoCommandRunner(project_root, env=self.env)
 
@@ -1415,6 +1926,9 @@ def build_houmao_adapter_paths(
         launch_logs=root / "logs",
         inspection_snapshots=root / "inspection-snapshots",
         stop_outcomes=root / "stop-outcomes",
+        handoff_payloads=root / "handoff-payloads",
+        handoff_observations=root / "handoff-observations",
+        handoff_normalizations=root / "handoff-normalizations",
         houmao_project_dir=(houmao_project_dir or root / "houmao-project").resolve(strict=False),
         generated_profile_root=root / "houmao-project-files",
         agent_material_roots={agent_id: root / "launch-material" / "agents" / _slug(agent_id) for agent_id in agent_instance_ids},
@@ -1432,6 +1946,9 @@ def houmao_adapter_path_plan_targets(agent_team_instance_id: str, paths: HoumaoA
         adapter_launch_log_surface(agent_team_instance_id): paths.launch_logs,
         adapter_inspection_snapshot_surface(agent_team_instance_id): paths.inspection_snapshots,
         adapter_stop_outcome_surface(agent_team_instance_id): paths.stop_outcomes,
+        adapter_handoff_payload_surface(agent_team_instance_id): paths.handoff_payloads,
+        adapter_handoff_observation_surface(agent_team_instance_id): paths.handoff_observations,
+        adapter_handoff_normalization_surface(agent_team_instance_id): paths.handoff_normalizations,
         adapter_houmao_project_surface(agent_team_instance_id): paths.houmao_project_dir,
         adapter_generated_profile_surface(agent_team_instance_id): paths.generated_profile_root,
     }
@@ -1466,6 +1983,18 @@ def adapter_inspection_snapshot_surface(agent_team_instance_id: str) -> str:
 
 def adapter_stop_outcome_surface(agent_team_instance_id: str) -> str:
     return f"houmao_stop_outcomes:{HOUMAO_ADAPTER_ID}:{agent_team_instance_id}"
+
+
+def adapter_handoff_payload_surface(agent_team_instance_id: str) -> str:
+    return f"houmao_handoff_payloads:{HOUMAO_ADAPTER_ID}:{agent_team_instance_id}"
+
+
+def adapter_handoff_observation_surface(agent_team_instance_id: str) -> str:
+    return f"houmao_handoff_observations:{HOUMAO_ADAPTER_ID}:{agent_team_instance_id}"
+
+
+def adapter_handoff_normalization_surface(agent_team_instance_id: str) -> str:
+    return f"houmao_handoff_normalizations:{HOUMAO_ADAPTER_ID}:{agent_team_instance_id}"
 
 
 def adapter_houmao_project_surface(agent_team_instance_id: str) -> str:
@@ -1540,6 +2069,120 @@ def _adapter_reconciliation_record(context: EffectiveTopicContext, agent_team_in
     )
 
 
+def _summary_agent(summary: Any, agent_instance_id: str) -> Any | None:
+    for agent in summary.agent_instances:
+        if agent.id == agent_instance_id:
+            return agent
+    return None
+
+
+def _latest_houmao_project_dir(summary: Any) -> Path | None:
+    for manifest_ref in reversed(summary.adapter_manifest_refs):
+        if manifest_ref.manifest_kind == ManifestKind.ADAPTER_LINK.value:
+            try:
+                manifest = json.loads(Path(manifest_ref.manifest_path).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            houmao = manifest.get("houmao")
+            if isinstance(houmao, dict) and isinstance(houmao.get("project_dir"), str):
+                return Path(str(houmao["project_dir"])).expanduser().resolve(strict=False)
+    return None
+
+
+def _houmao_name_for_agent(summary: Any, agent_instance_id: str) -> str:
+    latest_launch = summary.adapter_launch_attempts[-1] if summary.adapter_launch_attempts else None
+    if latest_launch is not None:
+        for ref in latest_launch.adapter_refs:
+            if isinstance(ref, dict) and ref.get("agent_instance_id") == agent_instance_id and isinstance(ref.get("houmao_agent_name"), str):
+                return str(ref["houmao_agent_name"])
+    for manifest_ref in reversed(summary.adapter_manifest_refs):
+        if manifest_ref.manifest_kind != ManifestKind.ADAPTER_LINK.value:
+            continue
+        try:
+            manifest = json.loads(Path(manifest_ref.manifest_path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        for binding in _bindings_from_link(manifest):
+            if binding.get("agent_instance_id") == agent_instance_id and isinstance(binding.get("houmao_agent_name"), str):
+                return str(binding["houmao_agent_name"])
+    return _houmao_agent_name(agent_instance_id)
+
+
+def _path_plan_id_by_surface(store: Any, topic_workspace_id: str, surface: str) -> str | None:
+    plan = store.get_path_plan(topic_workspace_id, surface)
+    return plan.id if plan is not None else None
+
+
+def _load_observation_file(path: Path, diagnostics: list[Diagnostic]) -> dict[str, object]:
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        diagnostics.append(_adapter_diagnostic("ISO063", "error", f"Observation file could not be read: {exc}.", path=path))
+        return {"source": "file", "error": str(exc)}
+    try:
+        loaded = json.loads(raw)
+    except json.JSONDecodeError:
+        return {"source": "file", "text": raw}
+    if isinstance(loaded, dict):
+        return {"source": "file", "json": loaded}
+    return {"source": "file", "json": loaded}
+
+
+def _observation_summary(payload: Mapping[str, object]) -> str:
+    source = str(payload.get("source", "adapter"))
+    if "command_result" in payload:
+        command = payload["command_result"]
+        if isinstance(command, dict):
+            status = command.get("status") or command.get("returncode") or "observed"
+            return f"{source} observation status: {status}"
+    if "json" in payload:
+        return f"{source} observation JSON payload recorded"
+    if "text" in payload:
+        text = str(payload["text"]).strip().splitlines()
+        return text[0][:160] if text else f"{source} observation text recorded"
+    return f"{source} observation recorded"
+
+
+def _record_artifact_lifecycle(
+    context: EffectiveTopicContext,
+    store: Any,
+    artifact_ref: str,
+    timestamp: str,
+    actor_ref: str | None,
+) -> None:
+    existing = store.get_lifecycle_record(artifact_ref)
+    if existing is not None:
+        return
+    refs: dict[str, str] = {}
+    if actor_ref is not None:
+        refs["actor_ref"] = actor_ref
+    store.upsert_lifecycle_record(
+        RuntimeLifecycleRecord(
+            id=artifact_ref,
+            record_kind="artifact",
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            status="complete",
+            created_at=timestamp,
+            updated_at=timestamp,
+            lifecycle_refs=refs,
+            transition_metadata={"source": "handoff_normalization"},
+            provenance_refs=[f"provenance:artifact:{artifact_ref}:{timestamp}"],
+        )
+    )
+
+
+def _handoff_status_from_normalization(status: str) -> str:
+    return {
+        "accepted": "accepted",
+        "rejected": "rejected",
+        "blocked": "blocked",
+        "superseded": "superseded",
+        "repair_routed": "repair",
+        "follow_up": "follow_up",
+    }.get(status, "blocked")
+
+
 def _ensure_adapter_directories(paths: HoumaoAdapterPaths) -> None:
     for path in [
         paths.adapter_root,
@@ -1548,6 +2191,9 @@ def _ensure_adapter_directories(paths: HoumaoAdapterPaths) -> None:
         paths.launch_logs,
         paths.inspection_snapshots,
         paths.stop_outcomes,
+        paths.handoff_payloads,
+        paths.handoff_observations,
+        paths.handoff_normalizations,
         paths.houmao_project_dir,
         paths.generated_profile_root,
         *paths.agent_material_roots.values(),

@@ -267,8 +267,9 @@ def _create_team_instance(root: Path, env: dict[str, str], team_id: str) -> None
 
 
 def _run_cli(root: Path, env: dict[str, str], args: list[str]) -> dict[str, Any]:
+    normalized_args = _normalize_cli_args(args)
     completed = subprocess.run(
-        [sys.executable, "-m", "isomer_labs", *args],
+        [sys.executable, "-m", "isomer_labs", *normalized_args],
         cwd=root,
         env=env,
         check=False,
@@ -280,8 +281,33 @@ def _run_cli(root: Path, env: dict[str, str], args: list[str]) -> dict[str, Any]
         "stdout": completed.stdout,
         "stderr": completed.stderr,
         "json": _parse_json(completed.stdout),
-        "args": args,
+        "args": normalized_args,
     }
+
+
+def _normalize_cli_args(args: list[str]) -> list[str]:
+    normalized: list[str] = []
+    print_json = False
+    index = 0
+    while index < len(args):
+        value = args[index]
+        if value == "--json":
+            print_json = True
+            index += 1
+            continue
+        if value == "--format=json":
+            print_json = True
+            index += 1
+            continue
+        if value == "--format" and index + 1 < len(args) and args[index + 1] == "json":
+            print_json = True
+            index += 2
+            continue
+        normalized.append(value)
+        index += 1
+    if print_json and "--print-json" not in normalized:
+        normalized.insert(0, "--print-json")
+    return normalized
 
 
 def _run_houmao(env: dict[str, str], args: list[str]) -> dict[str, Any]:
@@ -423,6 +449,31 @@ def _fake_houmao_mgr_source() -> str:
                 record["state"] = "stopped"
                 agents[name] = record
             payload = {"stopped": True, "agent_name": name}
+        elif "mail" in args and "send" in args:
+            handoffs = state.setdefault("handoffs", {})
+            handoff_id = str(option("--handoff"))
+            record = {
+                "message_id": "msg-" + handoff_id,
+                "handoff": handoff_id,
+                "from": option("--from"),
+                "to": option("--to"),
+                "message_file": option("--message-file"),
+                "state": "sent",
+            }
+            handoffs[handoff_id] = record
+            payload = record
+        elif "mail" in args and "read" in args:
+            handoff_id = str(option("--handoff"))
+            payload = {
+                "handoff": handoff_id,
+                "messages": [{"message_id": "reply-" + handoff_id, "status": "candidate_completion"}],
+            }
+        elif "gateway" in args and "events" in args:
+            handoff_id = str(option("--handoff"))
+            payload = {
+                "handoff": handoff_id,
+                "events": [{"event_id": "event-" + handoff_id, "status": "candidate_completion"}],
+            }
         else:
             payload = {"ok": False, "args": args}
             print(json.dumps(payload, sort_keys=True))

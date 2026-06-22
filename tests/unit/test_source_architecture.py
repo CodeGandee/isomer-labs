@@ -53,6 +53,7 @@ class SourceArchitectureTests(unittest.TestCase):
             "project.py",
             "doctor.py",
             "runtime.py",
+            "handoffs.py",
             "team_templates.py",
             "team_profiles.py",
             "team_instances/commands.py",

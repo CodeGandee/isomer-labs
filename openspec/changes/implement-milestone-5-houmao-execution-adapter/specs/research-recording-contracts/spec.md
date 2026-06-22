@@ -1,19 +1,19 @@
 ## ADDED Requirements
 
-### Requirement: Adapter Launch Provenance
-The system SHALL record Provenance Records for Houmao adapter launch, inspection, stop, handoff dispatch, observation, and normalization operations.
+### Requirement: Handoff Adapter Provenance
+The system SHALL record Provenance Records for Houmao-backed handoff dispatch, observation, and normalization operations.
 
-#### Scenario: Launch provenance names source refs
-- **WHEN** a Houmao-backed Agent Team Instance launch is attempted
-- **THEN** Provenance Records name the actor, Project, Research Topic, Topic Workspace, Agent Team Instance, Topic Agent Team Profile, Domain Agent Team Template, launch material refs, Execution Adapter ref, and readiness record ref
+#### Scenario: Dispatch provenance names source refs
+- **WHEN** a Houmao-backed handoff dispatch is attempted
+- **THEN** Provenance Records name the actor, Project, Research Topic, Topic Workspace, Agent Team Instance, source Agent Instance, target Agent Instance, Run or Research Task refs, expected output refs, Completion Watcher Contract refs, Execution Adapter ref, adapter payload refs, and readiness or Gate refs when relevant
 
-#### Scenario: Inspection provenance names adapter snapshot
-- **WHEN** live adapter inspection records a snapshot or Artifact
-- **THEN** Provenance Records link the snapshot to the inspected Agent Team Instance or Agent Instance refs and opaque adapter refs
+#### Scenario: Observation provenance names adapter payload
+- **WHEN** adapter observation records a Signal Observation, snapshot, or Artifact
+- **THEN** Provenance Records link the observation to the handoff, Run, Agent Team Instance, Agent Instance refs when known, opaque adapter refs, adapter payload refs, and observation source
 
-#### Scenario: Stop provenance records cleanup
-- **WHEN** a stop or cleanup request runs
-- **THEN** Provenance Records capture requested targets, adapter response summary, remaining live refs when known, diagnostics, and actor ref
+#### Scenario: Normalization provenance records decision
+- **WHEN** a normalization request accepts, rejects, blocks, supersedes, or routes repair for a candidate handoff result
+- **THEN** Provenance Records capture the Operator Agent actor, reviewed Signal Observation refs, decision rationale, output refs, corrective refs when present, and affected lifecycle refs
 
 ### Requirement: Adapter Signal Observation Recording
 The system SHALL record Houmao mail, gateway, file, and inspection signals as Signal Observations linked to runtime lifecycle refs.

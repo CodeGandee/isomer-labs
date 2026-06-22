@@ -1,0 +1,20 @@
+# Generated Houmao profile material for deepsci-mini-lead.
+
+[profile]
+description = "Internal root profile for deepsci-mini routing, normalization, Gates, Decision Records, and closeout."
+role_id = "deepsci-mini-lead"
+profile_kind = "generated-houmao-agent-profile"
+launch_posture = "topic-profile-specialized"
+memo_seed_policy = "optional-topic-profile-seed"
+notifier_prompt_path = "../notifier-prompts/deepsci-mini-lead.md"
+workspace_policy_ref = "../../specs/workspace/workspace.toml"
+
+[skills]
+generated = ["deepsci-mini-shared-template", "deepsci-mini-on-team-start", "deepsci-mini-on-handoff-result", "deepsci-mini-on-tick", "deepsci-mini-operator-control"]
+required_isomer = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
+optional_isomer = ["isomer-rsch-review"]
+
+[boundaries]
+may_dispatch = ["deepsci-mini-scout", "deepsci-mini-synth-reviewer"]
+must_not_store = ["credentials", "provider_payloads", "live_process_ids", "raw_mail_as_truth"]
+normalization_required = true

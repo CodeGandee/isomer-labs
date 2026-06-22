@@ -37,9 +37,49 @@ Generated files live under `runtime/adapters/houmao/<agent-team-instance-id>/` i
 - `logs/` — adapter command logs.
 - `inspection-snapshots/` — bounded read-only inspection snapshots.
 - `stop-outcomes/` — records of stop command results.
+- `handoff-payloads/` — durable Isomer-authored dispatch payloads handed to Houmao.
+- `handoff-observations/` — non-authoritative Signal Observation payloads collected from mail, gateway, file, or inspection sources.
+- `handoff-normalizations/` — Operator Agent normalization payloads that accept, reject, block, supersede, repair-route, or follow up on a candidate result.
 - `houmao-project-overlay/` — generated Houmao project overlay directory.
 
-The adapter records path plans for the adapter root, launch material, per-Agent Instance material, command payloads, logs, inspection snapshots, stop outcomes, and the generated Houmao project overlay. These files are durable runtime records, not cache.
+The adapter records path plans for the adapter root, launch material, per-Agent Instance material, command payloads, logs, inspection snapshots, stop outcomes, handoff payloads, handoff observations, handoff normalizations, and the generated Houmao project overlay. These files are durable runtime records, not cache.
+
+## Manual Handoff Round
+
+Handoff commands are a generic Isomer CLI surface backed here by Houmao. Use `--print-json` at the root when scripts need deterministic JSON; without it, the commands print structured human-readable status lines. The handoff commands do not expose command-local `--json` or `--format json` flags.
+
+```bash
+isomer-cli --print-json handoffs dispatch \
+  --topic <research-topic-id> \
+  --agent-team-instance <agent-team-instance-id> \
+  --source-agent-instance <source-agent-instance-id> \
+  --target-agent-instance <target-agent-instance-id> \
+  --run <run-id> \
+  --message "Please produce the requested handoff result." \
+  --expected-output artifact:<topic>:handoff-result
+```
+
+`handoffs dispatch` requires a ready Workspace Runtime and a launched, adopted, or linked Houmao adapter context. It creates or reuses the selected Run, writes a durable dispatch payload, invokes the Houmao mail dispatch command, records an `HandoffRecord`, and links adapter command and payload refs. Houmao message ids, gateway event ids, mailbox details, managed-agent ids, and command payload internals stay inside adapter payload JSON or adapter-specific records.
+
+```bash
+isomer-cli --print-json handoffs observe <handoff-id> --topic <research-topic-id> --source mail
+isomer-cli --print-json handoffs observe <handoff-id> --topic <research-topic-id> --source gateway
+isomer-cli --print-json handoffs observe <handoff-id> --topic <research-topic-id> --source file --payload-json handoff-observation.json
+isomer-cli --print-json handoffs observe <handoff-id> --topic <research-topic-id> --source inspection
+```
+
+`handoffs observe` records a Signal Observation. A Signal Observation is not completion authority: it can move a handoff into candidate state, but it does not complete the Run, promote a returned claim into an Evidence Item, or accept an Artifact. The Operator Agent must normalize the result.
+
+```bash
+isomer-cli --print-json handoffs normalize <handoff-id> \
+  --topic <research-topic-id> \
+  --status accepted \
+  --signal-observation <signal-observation-id> \
+  --output-artifact artifact:<topic>:handoff-result \
+  --rationale "Operator accepted the candidate result."
+```
+
+`handoffs normalize` records the Operator Agent decision. `accepted` marks the handoff accepted and completes the linked Run. `rejected`, `blocked`, `superseded`, `repair_routed`, and `follow_up` preserve the observations and rationale; `repair_routed` maps the handoff to repair state and should include a corrective Service Request or follow-up ref when available.
 
 ## Backend Resolution
 
@@ -50,6 +90,16 @@ ISOMER_HOUMAO_COMMAND="/path/to/houmao-mgr" isomer-cli team-instances launch <id
 ```
 
 If `houmao-mgr` is not on `PATH`, Isomer looks for a Pixi-backed checkout at `extern/orphan/houmao`, `ISOMER_HOUMAO_CHECKOUT`, or `~/workspace/code/houmao`.
+
+Before live mutation, use read-only checks:
+
+```bash
+isomer-cli --print-json doctor --topic <research-topic-id>
+isomer-cli --print-json runtime validate --topic <research-topic-id> --require-ready-readiness
+houmao-mgr --version
+```
+
+The expected local checkout is `extern/orphan/houmao`, usually a symlink to `~/workspace/code/houmao`. Isomer tests and manual checks must not write into or commit that checkout. If a Houmao defect blocks launch, mail, gateway, inspection, or stop behavior, fix it in the Houmao repository and validate it there before depending on it from Isomer.
 
 ## Manifests and Reconciliation
 
@@ -96,9 +146,22 @@ isomer-cli --print-json team-instances stop <agent-team-instance-id> --adapter h
 
 - Missing Houmao checkout or command: set `ISOMER_HOUMAO_COMMAND`, add `houmao-mgr` to `PATH`, or expose the local checkout at `extern/orphan/houmao`.
 - Failed preflight: run `isomer-cli runtime validate --require-ready-readiness --topic <topic>` and verify the selected Agent Team Instance exists.
+- Failed handoff dispatch: verify the Agent Team Instance has a launched, adopted, or linked Houmao adapter context and that source and target Agent Instance ids belong to that team.
+- Stale handoff: run `handoffs observe` again if a fresh adapter signal exists, or record `handoffs normalize --status rejected`, `--status blocked`, or `--status repair_routed` with rationale.
+- Rejected or repair-routed result: keep the Signal Observation ids attached to the normalization and include corrective Service Request or follow-up refs with `--corrective-ref`.
 - Invalid CLI JSON: inspect the adapter command payload under `runtime/adapters/houmao/<id>/command-payloads/`; the normal CLI output is redacted and bounded.
 - Direct edit drift: run `isomer-cli team-instances inspect-live <id> --integrity --topic <topic>` or `reconcile` to compare current file digests with `launch-material-manifest.json`.
 - Partial launch: run `inspect-live --adapter houmao` to discover known live refs, then run `stop --adapter houmao` if cleanup is needed.
 - Partial stop: use `inspect-live --adapter houmao` again and review `runtime validate` warnings before retrying stop.
+
+## Manual Validation
+
+The live-gated handoff manual test is:
+
+```bash
+pixi run python tests/manual/houmao_handoff_round.py --live-houmao
+```
+
+Set `ISOMER_MANUAL_LIVE_HOUMAO=1` before running it against a real Houmao checkout. Without `--live-houmao`, the script uses a local fake Houmao command and validates the Isomer-side handoff records only.
 
 See [Troubleshooting](troubleshooting.md) for the full diagnostics guide.

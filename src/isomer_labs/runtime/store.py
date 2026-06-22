@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 import sqlite3
 from typing import Callable, Mapping
@@ -19,18 +19,22 @@ from isomer_labs.runtime.models import (
     ADAPTER_MANIFEST_KINDS,
     ADAPTER_COMMAND_RUN_STATUSES,
     ADAPTER_INSPECTION_STATUSES,
+    ADAPTER_HANDOFF_DISPATCH_STATUSES,
     ADAPTER_LAUNCH_ATTEMPT_STATUSES,
     ADAPTER_MATERIALIZATION_STATUSES,
     ADAPTER_RECONCILIATION_STATES,
     ADAPTER_STOP_OUTCOME_STATUSES,
+    HANDOFF_NORMALIZATION_STATUSES,
     HANDOFF_STATUSES,
     READINESS_STATUSES,
     RUNTIME_PATH_SURFACES,
+    SIGNAL_OBSERVATION_STATUSES,
     WORKSPACE_RUNTIME_SCHEMA_VERSION,
     AgentInstanceRecord,
     AgentTeamInstanceRecord,
     AgentWorkspaceRecord,
     AdapterCommandRunRecord,
+    AdapterHandoffDispatchRecord,
     AdapterInspectionSnapshotRecord,
     AdapterLaunchAttemptRecord,
     AdapterManifestRefRecord,
@@ -38,9 +42,11 @@ from isomer_labs.runtime.models import (
     AdapterPayloadRefRecord,
     AdapterReconciliationRecord,
     AdapterStopOutcomeRecord,
+    HandoffNormalizationRecord,
     HandoffRecord,
     PathPlanRecord,
     RuntimeLifecycleRecord,
+    SignalObservationRecord,
     TopicEnvironmentReadinessRecord,
     ValidationIssueRecord,
     WorkspaceRuntimeMetadata,
@@ -50,6 +56,7 @@ from isomer_labs.runtime.identifiers import _path_plan_id, _provenance_ref, _slu
 from isomer_labs.runtime.readiness import _readiness_diagnostic
 from isomer_labs.runtime.rows import (
     _row_to_adapter_command_run,
+    _row_to_adapter_handoff_dispatch,
     _row_to_adapter_inspection_snapshot,
     _row_to_adapter_launch_attempt,
     _row_to_adapter_manifest_ref,
@@ -61,9 +68,11 @@ from isomer_labs.runtime.rows import (
     _row_to_agent_team_instance,
     _row_to_agent_workspace,
     _row_to_handoff,
+    _row_to_handoff_normalization,
     _row_to_lifecycle_record,
     _row_to_path_plan,
     _row_to_readiness,
+    _row_to_signal_observation,
 )
 from isomer_labs.runtime.schema import (
     RUNTIME_SCHEMA_TABLES,
@@ -140,6 +149,9 @@ class AgentTeamInstanceSummary:
     path_plans: list[PathPlanRecord]
     workflow_stage_cursors: list[RuntimeLifecycleRecord]
     handoffs: list[HandoffRecord]
+    adapter_handoff_dispatches: list[AdapterHandoffDispatchRecord] = field(default_factory=list)
+    signal_observations: list[SignalObservationRecord] = field(default_factory=list)
+    handoff_normalizations: list[HandoffNormalizationRecord] = field(default_factory=list)
     adapter_manifest_refs: list[AdapterManifestRefRecord] = field(default_factory=list)
     reconciliation_records: list[AdapterReconciliationRecord] = field(default_factory=list)
     adapter_payload_refs: list[AdapterPayloadRefRecord] = field(default_factory=list)
@@ -157,6 +169,9 @@ class AgentTeamInstanceSummary:
             "path_plans": [record.to_json() for record in self.path_plans],
             "workflow_stage_cursors": [record.to_json() for record in self.workflow_stage_cursors],
             "handoffs": [record.to_json() for record in self.handoffs],
+            "adapter_handoff_dispatches": [record.to_json() for record in self.adapter_handoff_dispatches],
+            "signal_observations": [record.to_json() for record in self.signal_observations],
+            "handoff_normalizations": [record.to_json() for record in self.handoff_normalizations],
             "adapter_manifest_refs": [record.to_json() for record in self.adapter_manifest_refs],
             "reconciliation_records": [record.to_json() for record in self.reconciliation_records],
             "adapter_payload_refs": [record.to_json() for record in self.adapter_payload_refs],
@@ -285,6 +300,48 @@ class WorkspaceRuntimeStore:
             _row_to_lifecycle_record(row)
             for row in self.connection.execute("SELECT * FROM lifecycle_records ORDER BY record_kind, id")
         ]
+
+    def get_lifecycle_record(self, record_id: str) -> RuntimeLifecycleRecord | None:
+        row = self.connection.execute(
+            "SELECT * FROM lifecycle_records WHERE id = ?",
+            (record_id,),
+        ).fetchone()
+        return _row_to_lifecycle_record(row) if row is not None else None
+
+    def ensure_run_record(
+        self,
+        *,
+        context: EffectiveTopicContext,
+        agent_team_instance_id: str,
+        run_id: str | None,
+        research_task_id: str | None,
+        actor_ref: str | None,
+    ) -> RuntimeLifecycleRecord:
+        timestamp = utc_timestamp()
+        selected_run_id = run_id or f"run-{_slug(agent_team_instance_id)}-{_slug(research_task_id or 'manual-handoff')}"
+        existing = self.get_lifecycle_record(selected_run_id)
+        if existing is not None:
+            return existing
+        refs = {"agent_team_instance_id": agent_team_instance_id}
+        if research_task_id is not None:
+            refs["research_task_id"] = research_task_id
+        if actor_ref is not None:
+            refs["actor_ref"] = actor_ref
+        record = RuntimeLifecycleRecord(
+            id=selected_run_id,
+            record_kind="run",
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            status="running",
+            created_at=timestamp,
+            updated_at=timestamp,
+            lifecycle_refs=refs,
+            transition_metadata={"source": "handoff_dispatch"},
+            provenance_refs=[_provenance_ref("run", selected_run_id)],
+        )
+        self.upsert_lifecycle_record(record)
+        self.link_agent_team_instance_refs(agent_team_instance_id, run_ids=[selected_run_id])
+        return record
 
     def record_lifecycle_transition(
         self,
@@ -586,6 +643,9 @@ class WorkspaceRuntimeStore:
         ]
         adapter_manifest_refs = self.list_adapter_manifest_refs(agent_team_instance_id=team_id)
         reconciliation_records = self.list_adapter_reconciliation_records(agent_team_instance_id=team_id)
+        adapter_handoff_dispatches = self.list_adapter_handoff_dispatches(agent_team_instance_id=team_id)
+        signal_observations = self.list_signal_observations(agent_team_instance_id=team_id)
+        handoff_normalizations = self.list_handoff_normalizations(handoff_ids=[record.id for record in handoffs])
         adapter_payload_refs = self.list_adapter_payload_refs(agent_team_instance_id=team_id)
         adapter_command_runs = self.list_adapter_command_runs(agent_team_instance_id=team_id)
         adapter_materializations = self.list_adapter_materializations(agent_team_instance_id=team_id)
@@ -601,6 +661,9 @@ class WorkspaceRuntimeStore:
             path_plans=path_plans,
             workflow_stage_cursors=workflow_stage_cursors,
             handoffs=handoffs,
+            adapter_handoff_dispatches=adapter_handoff_dispatches,
+            signal_observations=signal_observations,
+            handoff_normalizations=handoff_normalizations,
             adapter_manifest_refs=adapter_manifest_refs,
             reconciliation_records=reconciliation_records,
             adapter_payload_refs=adapter_payload_refs,
@@ -622,6 +685,29 @@ class WorkspaceRuntimeStore:
             _row_to_agent_workspace(row)
             for row in self.connection.execute("SELECT * FROM agent_workspaces ORDER BY id")
         ]
+
+    def link_agent_team_instance_refs(
+        self,
+        team_id: str,
+        *,
+        run_ids: list[str] | None = None,
+        handoff_ids: list[str] | None = None,
+        status: str | None = None,
+    ) -> AgentTeamInstanceRecord | None:
+        team = self.get_agent_team_instance(team_id)
+        if team is None:
+            return None
+        next_run_ids = list(dict.fromkeys([*team.run_ids, *(run_ids or [])]))
+        next_handoff_ids = list(dict.fromkeys([*team.handoff_ids, *(handoff_ids or [])]))
+        updated = replace(
+            team,
+            run_ids=next_run_ids,
+            handoff_ids=next_handoff_ids,
+            status=status or team.status,
+            updated_at=utc_timestamp(),
+        )
+        self._insert_agent_team_instance(updated)
+        return updated
 
     def record_handoff(self, record: HandoffRecord) -> None:
         if record.status not in HANDOFF_STATUSES:
@@ -661,6 +747,191 @@ class WorkspaceRuntimeStore:
         return [
             _row_to_handoff(row)
             for row in self.connection.execute("SELECT * FROM handoff_records ORDER BY id")
+        ]
+
+    def record_adapter_handoff_dispatch(self, record: AdapterHandoffDispatchRecord) -> None:
+        if record.status not in ADAPTER_HANDOFF_DISPATCH_STATUSES:
+            raise ValueError(f"Unsupported adapter handoff dispatch status: {record.status}")
+        self.connection.execute(
+            """
+            INSERT OR REPLACE INTO adapter_handoff_dispatch_records
+                (
+                    id, research_topic_id, topic_workspace_id, handoff_id,
+                    agent_team_instance_id, source_agent_instance_id,
+                    target_agent_instance_id, adapter_id, status, research_task_id,
+                    run_id, command_run_ids_json, payload_ref_ids_json,
+                    expected_output_refs_json, completion_watcher_contract_refs_json,
+                    diagnostics_json, actor_ref, created_at, updated_at,
+                    provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.handoff_id,
+                record.agent_team_instance_id,
+                record.source_agent_instance_id,
+                record.target_agent_instance_id,
+                record.adapter_id,
+                record.status,
+                record.research_task_id,
+                record.run_id,
+                _dumps(record.command_run_ids),
+                _dumps(record.payload_ref_ids),
+                _dumps(record.expected_output_refs),
+                _dumps(record.completion_watcher_contract_refs),
+                _dumps(record.diagnostics),
+                record.actor_ref,
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def list_adapter_handoff_dispatches(
+        self,
+        *,
+        agent_team_instance_id: str | None = None,
+        handoff_id: str | None = None,
+    ) -> list[AdapterHandoffDispatchRecord]:
+        if not _table_exists(self.connection, "adapter_handoff_dispatch_records"):
+            return []
+        clauses: list[str] = []
+        values: list[str] = []
+        if agent_team_instance_id is not None:
+            clauses.append("agent_team_instance_id = ?")
+            values.append(agent_team_instance_id)
+        if handoff_id is not None:
+            clauses.append("handoff_id = ?")
+            values.append(handoff_id)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        rows = self.connection.execute(
+            f"SELECT * FROM adapter_handoff_dispatch_records{where} ORDER BY created_at, id",
+            tuple(values),
+        )
+        return [_row_to_adapter_handoff_dispatch(row) for row in rows]
+
+    def record_signal_observation(self, record: SignalObservationRecord) -> None:
+        if record.status not in SIGNAL_OBSERVATION_STATUSES:
+            raise ValueError(f"Unsupported Signal Observation status: {record.status}")
+        self.connection.execute(
+            """
+            INSERT OR REPLACE INTO signal_observation_records
+                (
+                    id, research_topic_id, topic_workspace_id, handoff_id, run_id,
+                    agent_team_instance_id, source_agent_instance_id,
+                    target_agent_instance_id, adapter_id, observation_kind, status,
+                    summary, command_run_ids_json, payload_ref_ids_json,
+                    diagnostics_json, actor_ref, observed_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.handoff_id,
+                record.run_id,
+                record.agent_team_instance_id,
+                record.source_agent_instance_id,
+                record.target_agent_instance_id,
+                record.adapter_id,
+                record.observation_kind,
+                record.status,
+                record.summary,
+                _dumps(record.command_run_ids),
+                _dumps(record.payload_ref_ids),
+                _dumps(record.diagnostics),
+                record.actor_ref,
+                record.observed_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def list_signal_observations(
+        self,
+        *,
+        agent_team_instance_id: str | None = None,
+        handoff_id: str | None = None,
+    ) -> list[SignalObservationRecord]:
+        if not _table_exists(self.connection, "signal_observation_records"):
+            return []
+        clauses: list[str] = []
+        values: list[str] = []
+        if agent_team_instance_id is not None:
+            clauses.append("agent_team_instance_id = ?")
+            values.append(agent_team_instance_id)
+        if handoff_id is not None:
+            clauses.append("handoff_id = ?")
+            values.append(handoff_id)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        rows = self.connection.execute(
+            f"SELECT * FROM signal_observation_records{where} ORDER BY observed_at, id",
+            tuple(values),
+        )
+        return [_row_to_signal_observation(row) for row in rows]
+
+    def record_handoff_normalization(self, record: HandoffNormalizationRecord) -> None:
+        if record.status not in HANDOFF_NORMALIZATION_STATUSES:
+            raise ValueError(f"Unsupported handoff normalization status: {record.status}")
+        self.connection.execute(
+            """
+            INSERT OR REPLACE INTO handoff_normalization_records
+                (
+                    id, research_topic_id, topic_workspace_id, handoff_id,
+                    run_id, status, rationale, signal_observation_ids_json,
+                    output_artifact_refs_json, corrective_refs_json,
+                    payload_ref_ids_json, actor_ref, created_at,
+                    provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.handoff_id,
+                record.run_id,
+                record.status,
+                record.rationale,
+                _dumps(record.signal_observation_ids),
+                _dumps(record.output_artifact_refs),
+                _dumps(record.corrective_refs),
+                _dumps(record.payload_ref_ids),
+                record.actor_ref,
+                record.created_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def list_handoff_normalizations(
+        self,
+        *,
+        handoff_id: str | None = None,
+        handoff_ids: list[str] | None = None,
+    ) -> list[HandoffNormalizationRecord]:
+        if not _table_exists(self.connection, "handoff_normalization_records"):
+            return []
+        if handoff_ids is not None:
+            if not handoff_ids:
+                return []
+            placeholders = ", ".join("?" for _ in handoff_ids)
+            rows = self.connection.execute(
+                f"SELECT * FROM handoff_normalization_records WHERE handoff_id IN ({placeholders}) ORDER BY created_at, id",
+                tuple(handoff_ids),
+            )
+            return [_row_to_handoff_normalization(row) for row in rows]
+        if handoff_id is not None:
+            rows = self.connection.execute(
+                "SELECT * FROM handoff_normalization_records WHERE handoff_id = ? ORDER BY created_at, id",
+                (handoff_id,),
+            )
+            return [_row_to_handoff_normalization(row) for row in rows]
+        return [
+            _row_to_handoff_normalization(row)
+            for row in self.connection.execute("SELECT * FROM handoff_normalization_records ORDER BY created_at, id")
         ]
 
     def record_validation_issue(self, issue: ValidationIssueRecord) -> None:
@@ -1189,7 +1460,7 @@ class WorkspaceRuntimeStore:
     def _insert_agent_team_instance(self, record: AgentTeamInstanceRecord) -> None:
         self.connection.execute(
             """
-            INSERT INTO agent_team_instances
+            INSERT OR REPLACE INTO agent_team_instances
                 (
                     id, research_topic_id, topic_workspace_id,
                     topic_agent_team_profile_id, domain_agent_team_template_id,

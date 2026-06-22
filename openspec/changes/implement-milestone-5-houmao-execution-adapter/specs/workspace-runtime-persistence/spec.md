@@ -1,54 +1,46 @@
 ## ADDED Requirements
 
-### Requirement: Adapter Launch State Persistence
-The system SHALL persist Houmao adapter launch state in Workspace Runtime through opaque adapter refs linked to generic Agent Team Instance, Agent Instance, Run, handoff, path plan, Artifact, and Provenance records.
+### Requirement: Adapter Handoff Dispatch Persistence
+The system SHALL persist Houmao-backed manual handoff dispatch state through provider-neutral handoff records linked to opaque adapter refs and payload refs.
 
-#### Scenario: Launch attempt is recorded
-- **WHEN** a Houmao-backed Agent Team Instance launch starts
-- **THEN** Workspace Runtime records a launch attempt with Agent Team Instance ref, Execution Adapter ref, launch material refs, status, timestamps, diagnostics, and Provenance refs
+#### Scenario: Dispatch record is persisted
+- **WHEN** a Houmao-backed manual handoff is dispatched
+- **THEN** Workspace Runtime records the handoff ref, Agent Team Instance ref, source Agent Instance ref, target Agent Instance ref, Run or Research Task ref, Execution Adapter ref, dispatch status, expected output refs, Completion Watcher Contract refs, timestamps, diagnostics, adapter payload refs, and Provenance refs
 
-#### Scenario: Launch material refs are durable
-- **WHEN** Workspace Runtime stores launch material refs for a Houmao launch attempt
-- **THEN** those refs identify durable file-backed Artifacts or adapter payload refs and are not recorded as disposable cache refs
+#### Scenario: Dispatch refs are opaque
+- **WHEN** Workspace Runtime records Houmao-specific message ids, mailbox ids, gateway event ids, managed-agent ids, session refs, or command payload ids for a handoff
+- **THEN** it stores them as opaque adapter refs, adapter payload refs, or adapter command refs rather than generic handoff, Run, Agent Team Instance, or Agent Instance fields
 
-#### Scenario: Adapter refs are opaque
-- **WHEN** Workspace Runtime records Houmao-specific launch, mailbox, gateway, notifier, or managed-agent ids
-- **THEN** it stores them as opaque adapter refs or adapter payload refs rather than generic Agent Team Instance or Agent Instance fields
+#### Scenario: Dispatch state is topic scoped
+- **WHEN** handoff dispatch state is written
+- **THEN** validation requires every linked Agent Team Instance, Agent Instance, Run, Research Task, path plan, Artifact, and adapter payload ref to belong to the selected Topic Workspace
 
-#### Scenario: Agent mapping is recoverable
-- **WHEN** a Houmao-backed Agent Team Instance is reopened after process restart
-- **THEN** Workspace Runtime can reconstruct the mapping between generic Agent Instance ids and opaque Houmao adapter refs
+### Requirement: Signal Observation Persistence
+The system SHALL persist Houmao mail, gateway, file, command, and bounded inspection signals as Signal Observations linked to runtime lifecycle refs.
 
-#### Scenario: Launch state is topic scoped
-- **WHEN** adapter launch state is written
-- **THEN** validation requires every linked Agent Team Instance, Agent Instance, Agent Workspace, Run, path plan, and Artifact ref to belong to the selected Topic Workspace
+#### Scenario: Observation is persisted
+- **WHEN** Houmao mail, gateway events, files, command output, or inspection snapshots indicate handoff progress, failure, or candidate completion
+- **THEN** Workspace Runtime records a Signal Observation with handoff ref, Run ref when known, Agent Team Instance ref, Agent Instance refs when known, adapter refs, adapter payload refs, timestamp, diagnostics, and Provenance refs
 
-### Requirement: Adapter Inspection Snapshot Persistence
-The system SHALL persist or return Houmao inspection snapshots without overwriting authoritative lifecycle records.
+#### Scenario: Observation does not silently change lifecycle
+- **WHEN** a Signal Observation suggests candidate completion or failure
+- **THEN** Workspace Runtime keeps the observation visible without silently changing handoff, Run, Agent Team Instance, or Workflow Stage Cursor terminal state
 
-#### Scenario: Inspection snapshot is linked
-- **WHEN** live adapter inspection returns Houmao state
-- **THEN** the system records or returns an inspection snapshot linked to the Agent Team Instance, Agent Instance refs when known, adapter refs, timestamp, and Provenance refs
+#### Scenario: Observation payload is bounded
+- **WHEN** an observation includes rich reply text, logs, transcripts, command output, mailbox content, or generated files
+- **THEN** Workspace Runtime stores refs to Artifacts, logs, or adapter payload files rather than embedding rich content inline in lifecycle records
 
-#### Scenario: Inspection does not silently change lifecycle
-- **WHEN** inspection shows a Houmao-managed agent as stopped, failed, stale, or unreachable
-- **THEN** the system reports the observation and records diagnostics or Signal Observations without silently changing generic lifecycle state unless a stop, recovery, or normalization operation accepts the change
+### Requirement: Handoff Normalization Persistence
+The system SHALL persist accepted, rejected, blocked, superseded, and repair-routed handoff normalization outcomes.
 
-#### Scenario: Inspection payload is bounded
-- **WHEN** inspection returns large logs, transcripts, command output, or mailbox content
-- **THEN** Workspace Runtime stores refs to Artifacts, logs, or adapter payload files rather than embedding rich content inline
+#### Scenario: Accepted normalization is durable
+- **WHEN** the Operator Agent accepts a Houmao-observed handoff result
+- **THEN** Workspace Runtime records accepted handoff state, Run updates, output Artifact refs, normalization rationale, actor ref, timestamp, and Provenance refs
 
-### Requirement: Adapter Stop and Recovery State
-The system SHALL preserve stop and recovery outcomes for Houmao-backed Agent Team Instances.
+#### Scenario: Rejected or repair-routed normalization is durable
+- **WHEN** the Operator Agent rejects a candidate result, blocks it, supersedes it, or routes repair
+- **THEN** Workspace Runtime records the outcome status, rationale, affected Signal Observation refs, produced refs when retained, corrective Service Request or follow-up handoff refs when present, actor ref, timestamp, and Provenance refs
 
-#### Scenario: Stop outcome is durable
-- **WHEN** a stop command completes
-- **THEN** Workspace Runtime records stopped, failed, partial, or stale stop outcome state with adapter refs, diagnostics, timestamp, and Provenance refs
-
-#### Scenario: Partial cleanup remains visible
-- **WHEN** some Houmao-managed actors remain reachable after stop
-- **THEN** the runtime keeps the launch and adapter refs visible and reports cleanup diagnostics instead of deleting records
-
-#### Scenario: Recovery summarizes adapter state
-- **WHEN** a launched Agent Team Instance is inspected after process restart
-- **THEN** the system reconstructs generic runtime summaries and adapter state summaries from persisted Workspace Runtime records and live Houmao inspection when available
+#### Scenario: Normalization state survives restart
+- **WHEN** Isomer restarts after a handoff dispatch, observation, or normalization
+- **THEN** Workspace Runtime can reconstruct the handoff state, linked Signal Observations, output refs, adapter payload refs, and Provenance refs from persisted records

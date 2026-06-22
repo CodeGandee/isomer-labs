@@ -26,7 +26,19 @@ pixi run isomer-cli --print-json team-instances create \
   --id ati-default-deepsci
 ```
 
-For Houmao-backed launch paths, see [docs/workflows.md](docs/workflows.md) and [docs/houmao-adapter.md](docs/houmao-adapter.md).
+After a Houmao-backed Agent Team Instance is launched or adopted, manual handoff rounds use one root JSON switch for every command:
+
+```bash
+pixi run isomer-cli --print-json handoffs dispatch \
+  --topic default \
+  --agent-team-instance ati-default-deepsci \
+  --target-agent-instance ati-default-deepsci-deepsci-org-experimenter \
+  --message "Draft the first experiment handoff."
+pixi run isomer-cli --print-json handoffs observe <handoff-id> --topic default --source mail
+pixi run isomer-cli --print-json handoffs normalize <handoff-id> --topic default --status accepted --signal-observation <signal-observation-id> --output-artifact artifact:default:first-handoff
+```
+
+For Houmao-backed launch paths, handoff behavior, and live-gated validation, see [docs/workflows.md](docs/workflows.md) and [docs/houmao-adapter.md](docs/houmao-adapter.md).
 
 ## Status
 

@@ -1,87 +1,64 @@
-## 1. Adapter Record Foundation
+## 1. Existing Adapter Foundation Audit
 
-- [ ] 1.1 Add Houmao adapter dataclasses for adapter availability, preflight result, launch material plan, launch attempt, adapter ref mapping, inspection snapshot, stop outcome, dispatch result, Signal Observation, and normalization result.
-- [ ] 1.2 Add Workspace Runtime tables or typed store helpers for opaque Execution Adapter refs, adapter payload refs, launch attempts, inspection snapshots, stop outcomes, dispatch records, Signal Observations, and adapter-linked Provenance refs.
-- [ ] 1.3 Add migration or schema-version handling so Milestone 5 runtime records are rejected on unsupported Workspace Runtime schema versions before any live adapter mutation.
-- [ ] 1.4 Add serialization helpers that keep Houmao-specific ids inside adapter payload JSON or adapter tables and out of generic Agent Team Instance, Agent Instance, Run, handoff, and Artifact fields.
-- [ ] 1.5 Add validation helpers for adapter record ownership, missing adapter refs, stale launch state, missing launch material paths, and cross-topic adapter leakage.
+- [x] 1.1 Audit current `team-instances launch`, `launch-material prepare`, `inspect-live`, `stop`, `reconcile`, and `adopt` behavior against the current main specs before adding handoff behavior.
+- [x] 1.2 Record only real gaps from the audit as implementation subtasks; do not rebuild already-passing launch material, quick launch, inspect-live, stop, manifest reconciliation, or adoption behavior.
+- [x] 1.3 Confirm new work uses current modules under `src/isomer_labs/cli/commands/`, `src/isomer_labs/houmao/`, and `src/isomer_labs/runtime/` and does not restore removed compatibility shims.
+- [x] 1.4 Confirm all new JSON output uses root-level `isomer-cli --print-json ...` through existing CLI output helpers and does not add command-local JSON flags.
 
-## 2. Local Houmao Checkout and Preflight
+## 2. Runtime Handoff and Observation Records
 
-- [ ] 2.1 Add Houmao checkout resolution for `extern/orphan/houmao` plus a documented local override for tests or operator runs.
-- [ ] 2.2 Add preflight checks for current Workspace Runtime schema, initialized runtime, ready Topic Environment Readiness, selected Agent Team Instance, validated Topic Agent Team Profile, Agent Instance records, Agent Workspace directories, and path plans.
-- [ ] 2.3 Add the read-only Houmao capability gate: resolve checkout path, verify `tmux -V`, run `pixi run houmao-mgr --version`, run `pixi run houmao-mgr --print-json system-skills list`, run `pixi run houmao-mgr --print-json project --project-dir <project> status`, and run `pixi run houmao-mgr --print-json agents global list`.
-- [ ] 2.4 Add deterministic diagnostics for missing Houmao checkout, missing Houmao command/API capability, invalid launch material inputs, unresolved Gates, missing recording obligations, and unavailable environment readiness.
-- [ ] 2.5 Add tests proving failed preflight does not create launch material, start Houmao agents, send handoffs, or mark launch state active.
+- [x] 2.1 Add or extend runtime models, schema, rows, and store helpers for handoff dispatch records, Signal Observations, normalization outcomes, adapter payload refs, adapter command refs, and adapter-linked Provenance refs.
+- [x] 2.2 Add Run creation or lookup helpers for the first manual handoff round under a launched or adopted Agent Team Instance.
+- [x] 2.3 Add serialization helpers that keep Houmao mailbox ids, gateway event ids, message ids, managed-agent ids, session refs, and command payload refs inside adapter payload JSON or adapter tables.
+- [x] 2.4 Add schema-version handling so unsupported Workspace Runtime schema versions are rejected before handoff dispatch, observation ingestion, or normalization mutation.
+- [x] 2.5 Extend runtime validation for missing adapter refs, stale handoffs, missing durable handoff payload files, broken Signal Observation refs, unresolved Gates, and cross-topic adapter leakage.
 
-## 3. Launch Material Generation
+## 3. Houmao Handoff Adapter
 
-- [ ] 3.1 Add a launch-material builder that reads `teams/deepsci-org/execplan/agents/`, generated skills, notifier prompts, topology, communication templates, and Topic Agent Team Profile role bindings.
-- [ ] 3.2 Add path-plan creation for adapter launch-material root, per-agent launch material, notifier prompt copies, mailbox metadata, gateway metadata, and adapter logs before files are written.
-- [ ] 3.3 Generate per-Agent Instance launch material under the corresponding Agent Workspace or recorded Agent Workspace path plan.
-- [ ] 3.4 Generate or select Houmao project-profile launch material for the public `houmao-mgr --print-json project --project-dir <dir> agents launch --profile <generated-profile>` path.
-- [ ] 3.5 Record launch material refs and Provenance refs in Workspace Runtime without writing to `.isomer-labs/` or the Houmao checkout, and do not classify any Milestone 5 adapter launch material as cache-like.
-- [ ] 3.6 Add validation that rejects launch material paths outside the Project root or selected Topic Workspace unless a future accepted external-root contract permits them.
-- [ ] 3.7 Add tests for launch-material determinism, topic scoping, missing template inputs, path-plan source detail, and absence of workspace-local `teams/` output.
+- [x] 3.1 Extend `src/isomer_labs/houmao/adapter.py` or focused Houmao package modules with `dispatch_handoff`, `observe_handoff`, and `normalize_handoff` operations.
+- [x] 3.2 Implement handoff dispatch from `deepsci-org-master` to one selected specialist Agent Instance through Houmao mail or gateway surfaces.
+- [x] 3.3 Implement observation ingestion for Houmao mail replies, gateway events, file observations, command payloads, and bounded inspection output as Signal Observations.
+- [x] 3.4 Implement Operator Agent normalization that can accept a candidate handoff result and record accepted handoff state, Run updates, output Artifact refs, rationale, and Provenance refs.
+- [x] 3.5 Implement rejection, blocked, superseded, repair, and follow-up routing that keeps observations visible and records rationale plus corrective Service Request or handoff refs when present.
+- [x] 3.6 Add preflight diagnostics for missing Houmao checkout, unavailable mail or gateway capability, invalid Agent Instance mapping, unresolved Gate, missing recording obligations, and unavailable runtime readiness.
 
-## 4. Houmao Launch Inspect Stop Adapter
+## 4. Handoffs CLI Surface
 
-- [ ] 4.1 Implement a Houmao adapter facade with `preflight`, `materialize`, `launch`, `inspect`, `stop`, `dispatch_handoff`, `observe`, and `normalize` methods.
-- [ ] 4.2 Implement manual-mode Agent Team Instance launch from existing Workspace Runtime records and generated launch material through the public Houmao project-profile CLI launch path.
-- [ ] 4.3 Record launch attempts with status, adapter refs, Agent Instance mapping, diagnostics, timestamps, and Provenance refs.
-- [ ] 4.4 Implement live inspection that returns deterministic generic runtime summaries plus bounded adapter inspection snapshots.
-- [ ] 4.5 Implement stop behavior that records stopped, failed, partial, or stale outcomes and preserves launch records for audit.
-- [ ] 4.6 Add partial-launch recovery behavior that exposes known Agent Instance mappings and stop diagnostics without deleting runtime records.
-- [ ] 4.7 Add mocked unit tests for successful launch, failed launch, inspect snapshot recording, stop success, partial stop, stale inspection, and process-restart recovery.
+- [x] 4.1 Add a top-level `isomer-cli handoffs` command group in the modular CLI command package and register it from the CLI app.
+- [x] 4.2 Add `isomer-cli handoffs dispatch` with Project selectors, topic selectors, Agent Team Instance selector, source and target Agent Instance selectors, Run or Research Task refs, expected output refs, structured text output, deterministic `--print-json` output, and explicit mutation reporting.
+- [x] 4.3 Add `isomer-cli handoffs observe` with selectors for handoff, Run, Agent Team Instance, observation source, adapter payload refs, structured text output, deterministic `--print-json` output, and non-authoritative observation reporting.
+- [x] 4.4 Add `isomer-cli handoffs normalize` with accepted, rejected, blocked, superseded, repair, and follow-up outcomes, rationale capture, output Artifact refs, structured text output, deterministic `--print-json` output, and explicit mutation reporting.
+- [x] 4.5 Update root help, handoff command help, and command-surface tests so `handoffs` is discoverable and the commands do not advertise `--json`, `--format json`, or `--format=json`.
 
-## 5. Manual Handoff and Signal Observation Flow
+## 5. Tests
 
-- [ ] 5.1 Add Run creation or lookup helpers for the first manual handoff round under a launched Agent Team Instance.
-- [ ] 5.2 Implement manual handoff dispatch from `deepsci-org-master` to one selected specialist Agent Instance through Houmao mail or gateway surfaces.
-- [ ] 5.3 Record handoff dispatch refs, source actor ref, target actor ref, Run or Research Task ref, Completion Watcher Contract refs, expected output refs, adapter refs, and Provenance refs.
-- [ ] 5.4 Implement observation ingestion for Houmao mail, gateway events, file observations, and adapter inspection output as Signal Observations.
-- [ ] 5.5 Implement Operator Agent normalization that can accept a candidate handoff result and record accepted handoff state, Run updates, output Artifact refs, and Provenance Records.
-- [ ] 5.6 Implement rejection or repair routing that keeps observations visible and records rejected, blocked, superseded, or Service Request refs with rationale.
-- [ ] 5.7 Add tests proving adapter observations alone do not mark handoffs or Runs complete.
+- [x] 5.1 Add mocked unit tests for dispatch preflight failure with no Houmao mail, gateway mutation, accepted handoff state, or Run completion.
+- [x] 5.2 Add mocked unit tests for successful dispatch, persisted handoff refs, adapter payload refs, command refs, Run linkage, and Provenance refs.
+- [x] 5.3 Add mocked unit tests for observation ingestion from mail, gateway, file, and inspection-like payloads as Signal Observations.
+- [x] 5.4 Add mocked unit tests proving adapter observations alone do not mark handoffs or Runs complete and do not promote returned claims into Evidence Items.
+- [x] 5.5 Add mocked unit tests for accepted normalization, rejected normalization, repair routing, stale handoff validation, restart recovery, and no-Houmao-field leakage in generic output.
+- [x] 5.6 Add CLI tests for structured text output and root-level `--print-json` output for `handoffs dispatch`, `handoffs observe`, and `handoffs normalize`.
 
-## 6. CLI and API Surface
+## 6. Houmao Repository Boundary and Live Validation
 
-- [ ] 6.1 Add `isomer-cli team-instances launch` with Project selectors, topic selectors, Agent Team Instance selector, adapter selector, text output, deterministic JSON, and explicit mutation reporting.
-- [ ] 6.2 Add `isomer-cli team-instances inspect-live` for bounded Houmao adapter inspection without creating Agent Team Instances or launching additional agents.
-- [ ] 6.3 Add `isomer-cli team-instances stop` with deterministic stop outcome output and cleanup diagnostics.
-- [ ] 6.4 Add a top-level `isomer-cli handoffs dispatch` command with Project selectors, topic selectors, Agent Team Instance selector, Run or Research Task refs, text output, deterministic JSON, and explicit mutation reporting.
-- [ ] 6.5 Add `isomer-cli handoffs observe` and `isomer-cli handoffs normalize` command paths that record Signal Observations and accepted or rejected normalization results.
-- [ ] 6.6 Update root help, command-surface text, JSON output shapes, and read-only command tests for all Milestone 5 commands.
-- [ ] 6.7 Add CLI tests for launch preflight failure, mocked launch success, inspect-live, stop, handoff dispatch, observation, normalization, and no-Houmao-field leakage in generic output.
+- [x] 6.1 Add or update a live-test capability check that reports Houmao checkout path, read-only capability-gate results, and skipped or unavailable status before mutation.
+- [x] 6.2 Add a live-gated integration or manual test that uses the existing launch foundation, dispatches one handoff, observes a Houmao mail or gateway result, normalizes it into Workspace Runtime, and stops or reports cleanup state.
+- [x] 6.3 Document the read-only Houmao capability-gate commands, optional live/manual validation commands, and the rule that Houmao defects are fixed in the Houmao repository before Isomer depends on them.
+- [x] 6.4 Add safeguards so Isomer tests do not write into or commit `extern/orphan/houmao` except through explicit separate Houmao work.
 
-## 7. Runtime Validation and Recovery
+## 7. Documentation and Roadmap
 
-- [ ] 7.1 Extend runtime validation to report missing adapter refs, missing durable launch material files, stale adapter snapshots, partial stop outcomes, unresolved launch Gates, and cross-topic adapter leakage.
-- [ ] 7.2 Validate that launched Agent Team Instances retain generic lifecycle refs and opaque adapter refs after process restart.
-- [ ] 7.3 Validate that inspection snapshots with large logs, transcripts, mailbox content, or command output store file-backed refs rather than inline rich content.
-- [ ] 7.4 Validate that adapter records do not treat specialist claims, measurements, or summaries as Evidence Item support until normalized into accepted recording objects.
-- [ ] 7.5 Add negative tests for missing Houmao checkout, invalid launch material path, missing Agent Workspace, missing readiness, unsupported runtime schema, unresolved Gate, stale handoff, and broken adapter mapping.
+- [x] 7.1 Update README command examples and narrative for `handoffs dispatch`, `handoffs observe`, `handoffs normalize`, root-level `--print-json`, and live-test availability.
+- [x] 7.2 Update developer notes for adapter record boundaries, opaque Houmao refs, local Houmao build expectations, Signal Observation authority, and no-Houmao-term generic schema policy.
+- [x] 7.3 Update troubleshooting notes for failed handoff preflight, missing readiness, missing Houmao checkout, missing mail or gateway capability, stale handoff, rejected result, and repair routing.
+- [x] 7.4 Update ROADMAP.md Milestone 5 checklist only after implementation and validation are complete.
 
-## 8. Houmao Repository Boundary and Live Tests
+## 8. Verification
 
-- [ ] 8.1 Add a live-test capability check that reports Houmao checkout path, read-only capability-gate results, and skipped status when unavailable.
-- [ ] 8.2 Add a live-gated integration or manual test that launches one manual-mode `deepsci-org` Agent Team Instance through the local Houmao checkout using the public project-profile CLI launch path.
-- [ ] 8.3 Extend the live-gated test to dispatch one handoff, observe a Houmao mail or gateway result, normalize it into Workspace Runtime, and stop the Agent Team Instance.
-- [ ] 8.4 Document the read-only Houmao capability-gate commands, optional live/manual validation commands, and the rule that Houmao defects are fixed in the Houmao repository before Isomer depends on them.
-- [ ] 8.5 Add safeguards so Isomer tests do not write into or commit `extern/orphan/houmao` except through explicit separate Houmao work.
-
-## 9. Documentation and Roadmap
-
-- [ ] 9.1 Update README command examples and narrative for Milestone 5 launch, inspect-live, stop, handoff observation, normalization, and live-test availability.
-- [ ] 9.2 Update ROADMAP.md Milestone 5 checklist only after implementation and validation are complete.
-- [ ] 9.3 Add developer notes for adapter record boundaries, opaque Houmao refs, local Houmao build expectations, and no-Houmao-term generic schema policy.
-- [ ] 9.4 Add troubleshooting notes for failed preflight, missing readiness, missing Houmao checkout, partial launch, partial stop, and rejected handoff result.
-
-## 10. Verification
-
-- [ ] 10.1 Run `openspec validate --all` after implementation and after any spec edits.
-- [ ] 10.2 Run `pixi run lint`.
-- [ ] 10.3 Run `pixi run typecheck`.
-- [ ] 10.4 Run `pixi run test`.
-- [ ] 10.5 Run `pixi run validate-research-skills`.
-- [ ] 10.6 Run the live-gated Houmao integration or manual test when the local Houmao checkout passes its own validation, and record skipped status otherwise.
+- [x] 8.1 Run `openspec validate implement-milestone-5-houmao-execution-adapter --strict` after spec edits.
+- [x] 8.2 Run `openspec validate --all` after implementation.
+- [x] 8.3 Run `pixi run lint`.
+- [x] 8.4 Run `pixi run typecheck`.
+- [x] 8.5 Run `pixi run test`.
+- [x] 8.6 Run `pixi run validate-research-skills`.
+- [x] 8.7 Run the live-gated Houmao integration or manual test when the local Houmao checkout passes its own validation, and record skipped status otherwise. Skipped live mode because `ISOMER_MANUAL_LIVE_HOUMAO=1` was not set; fake manual mode passed.

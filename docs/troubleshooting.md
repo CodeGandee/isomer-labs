@@ -147,6 +147,60 @@ Recovery:
 - Retry `stop` after resolving any underlying issue (missing `houmao-mgr`, changed agent names, stale manifests).
 - Run `reconcile` to record the outcome.
 
+## Handoff Dispatch Preflight
+
+Symptom: `handoffs dispatch` returns `ISO070`, `ISO077`, or another adapter diagnostic and does not create a handoff.
+
+Diagnosis:
+
+```bash
+pixi run isomer-cli --print-json runtime validate --topic default --require-ready-readiness
+pixi run isomer-cli --print-json team-instances show <id> --topic default
+pixi run isomer-cli --print-json team-instances inspect-live <id> --topic default --adapter houmao
+```
+
+Recovery:
+
+- If Houmao is missing, set `ISOMER_HOUMAO_COMMAND`, add `houmao-mgr` to `PATH`, or expose `extern/orphan/houmao` as a symlink to the local checkout.
+- If the Agent Team Instance has not been launched, linked, or adopted, run the launch, reconcile, or adopt workflow first.
+- If source or target Agent Instance ids are wrong, use `team-instances show` and choose ids from that team only.
+- If readiness is blocked, record repair as a Service Request before dispatching handoffs.
+
+## Handoff Observation and Normalization
+
+Symptom: `handoffs observe` records a candidate result, but the Run still appears `running`.
+
+Explanation: this is expected. Signal Observations are non-authoritative adapter observations. They do not complete Runs, accept Artifacts, or promote returned claims into Evidence Items.
+
+Recovery:
+
+```bash
+pixi run isomer-cli --print-json handoffs normalize <handoff-id> \
+  --topic default \
+  --status accepted \
+  --signal-observation <signal-observation-id> \
+  --output-artifact artifact:default:accepted-result
+```
+
+Use `--status rejected`, `--status blocked`, `--status superseded`, `--status repair_routed`, or `--status follow_up` when the candidate result is not acceptable. Add `--rationale` and `--corrective-ref` so the rejected or repair-routed state has durable context.
+
+## Stale Handoff
+
+Symptom: `runtime validate` reports `ISO045` for a handoff.
+
+Diagnosis:
+
+```bash
+pixi run isomer-cli --print-json team-instances show <id> --topic default
+pixi run isomer-cli --print-json runtime validate --topic default
+```
+
+Recovery:
+
+- Run `handoffs observe` again if a fresh Houmao mail, gateway, file, or inspection signal exists.
+- Normalize the handoff as accepted, rejected, blocked, superseded, repair-routed, or follow-up after Operator review.
+- If the adapter payload is missing or corrupt, inspect `handoff-payloads/`, `handoff-observations/`, and `command-payloads/` under the adapter root, then rerun validation.
+
 ## Direct Houmao Reconciliation
 
 Symptom: you launched agents directly with `houmao-mgr` and Isomer does not know about them.

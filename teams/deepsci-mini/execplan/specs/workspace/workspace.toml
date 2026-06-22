@@ -1,0 +1,56 @@
+# Generated workspace contract for deepsci-mini.
+
+[workspace]
+description = "Topic Workspace and Agent Workspace placeholder contract. Concrete paths are supplied by the Project Manifest, Topic Agent Team Profile, Workspace Runtime, or workspace manager."
+workspace_flavor = "isomer-topic-workspace"
+topic_workspace_ref = "{topic_workspace_ref}"
+workspace_runtime_ref = "{workspace_runtime_ref}"
+agent_workspace_root_ref = "{topic_workspace_ref}/agents"
+run_artifact_root_ref = "{topic_workspace_ref}/runs"
+artifact_root_ref = "{topic_workspace_ref}/artifacts"
+view_manifest_root_ref = "{topic_workspace_ref}/views"
+
+[[agent_workspaces]]
+role_id = "deepsci-mini-lead"
+description = "Lead workspace for routing notes, Gate packets, and closeout packets."
+workspace_placeholder = "{deepsci_mini_lead_agent_workspace_ref}"
+write_scope = "lead-owned routing, Gate, Decision Record, parking, and closeout notes"
+peer_read_policy = "promoted-artifacts-and-handoff-bundles"
+
+[[agent_workspaces]]
+role_id = "deepsci-mini-scout"
+description = "Scout workspace for source summaries, literature notes, and Evidence Item candidates."
+workspace_placeholder = "{deepsci_mini_scout_agent_workspace_ref}"
+write_scope = "source summaries, literature notes, claim candidates, Evidence Item candidates"
+peer_read_policy = "promoted-artifacts-and-handoff-bundles"
+
+[[agent_workspaces]]
+role_id = "deepsci-mini-synth-reviewer"
+description = "Synthesis-review workspace for factor clusters, inquiry comparison, weak-claim notes, and review notes."
+workspace_placeholder = "{deepsci_mini_synth_reviewer_agent_workspace_ref}"
+write_scope = "factor clusters, inquiry options, weak-claim notes, review notes"
+peer_read_policy = "promoted-artifacts-and-handoff-bundles"
+
+[[expected_artifacts]]
+kind = "seed_source_summary"
+description = "Source summary Artifact produced or curated by deepsci-mini-scout."
+
+[[expected_artifacts]]
+kind = "literature_note"
+description = "Literature note Artifact produced or curated by deepsci-mini-scout."
+
+[[expected_artifacts]]
+kind = "claim_candidate_note"
+description = "Provisional claim candidate Artifact or metadata ref."
+
+[[expected_artifacts]]
+kind = "synthesis_note"
+description = "Factor cluster and inquiry comparison Artifact produced by deepsci-mini-synth-reviewer."
+
+[[expected_artifacts]]
+kind = "review_note"
+description = "Skeptical review Artifact produced by deepsci-mini-synth-reviewer."
+
+[[expected_artifacts]]
+kind = "decision_record"
+description = "Decision Record Artifact or Workspace Runtime record for selected follow-up Research Inquiry."

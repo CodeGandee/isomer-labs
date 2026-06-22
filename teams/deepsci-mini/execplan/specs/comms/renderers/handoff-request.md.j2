@@ -1,0 +1,32 @@
+```houmao-email-metadata
+schema_id = "deepsci-mini.email.handoff-request"
+schema_version = "1"
+kind = "request"
+run_id = "{{ run_id }}"
+plan_revision = "{{ plan_revision }}"
+handoff_id = "{{ handoff_id }}"
+sender_role = "{{ sender_role }}"
+receiver_role = "{{ receiver_role }}"
+```
+
+# deepsci-mini Handoff Request
+
+Workflow Stage: `{{ workflow_stage }}`
+
+Research Topic: `{{ research_topic_id }}`
+
+Research Inquiry: `{{ research_inquiry_id }}`
+
+Research Task: `{{ research_task_id }}`
+
+## Request
+
+{{ summary }}
+
+## Expected Outputs
+
+{% for output in expected_outputs -%}
+- {{ output }}
+{% endfor %}
+
+Return one `deepsci-mini.email.handoff-result` to `deepsci-mini-lead`. Do not dispatch another participant.

@@ -8,6 +8,7 @@ from isomer_labs.runtime.models import (
     AgentInstanceRecord,
     AgentTeamInstanceRecord,
     AgentWorkspaceRecord,
+    AdapterHandoffDispatchRecord,
     AdapterCommandRunRecord,
     AdapterInspectionSnapshotRecord,
     AdapterLaunchAttemptRecord,
@@ -16,9 +17,11 @@ from isomer_labs.runtime.models import (
     AdapterPayloadRefRecord,
     AdapterReconciliationRecord,
     AdapterStopOutcomeRecord,
+    HandoffNormalizationRecord,
     HandoffRecord,
     PathPlanRecord,
     RuntimeLifecycleRecord,
+    SignalObservationRecord,
     TopicEnvironmentReadinessRecord,
 )
 from isomer_labs.runtime.serialization import (
@@ -137,6 +140,73 @@ def _row_to_handoff(row: sqlite3.Row) -> HandoffRecord:
         completion_watcher_contract_refs=_loads_list(row["completion_watcher_contract_refs_json"]),
         expected_output_refs=_loads_list(row["expected_output_refs_json"]),
         stale_after=row["stale_after"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_adapter_handoff_dispatch(row: sqlite3.Row) -> AdapterHandoffDispatchRecord:
+    return AdapterHandoffDispatchRecord(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        handoff_id=row["handoff_id"],
+        agent_team_instance_id=row["agent_team_instance_id"],
+        source_agent_instance_id=row["source_agent_instance_id"],
+        target_agent_instance_id=row["target_agent_instance_id"],
+        adapter_id=row["adapter_id"],
+        status=row["status"],
+        research_task_id=row["research_task_id"],
+        run_id=row["run_id"],
+        command_run_ids=_loads_list(row["command_run_ids_json"]),
+        payload_ref_ids=_loads_list(row["payload_ref_ids_json"]),
+        expected_output_refs=_loads_list(row["expected_output_refs_json"]),
+        completion_watcher_contract_refs=_loads_list(row["completion_watcher_contract_refs_json"]),
+        diagnostics=_loads_json_list(row["diagnostics_json"]),
+        actor_ref=row["actor_ref"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_signal_observation(row: sqlite3.Row) -> SignalObservationRecord:
+    return SignalObservationRecord(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        handoff_id=row["handoff_id"],
+        run_id=row["run_id"],
+        agent_team_instance_id=row["agent_team_instance_id"],
+        source_agent_instance_id=row["source_agent_instance_id"],
+        target_agent_instance_id=row["target_agent_instance_id"],
+        adapter_id=row["adapter_id"],
+        observation_kind=row["observation_kind"],
+        status=row["status"],
+        summary=row["summary"],
+        command_run_ids=_loads_list(row["command_run_ids_json"]),
+        payload_ref_ids=_loads_list(row["payload_ref_ids_json"]),
+        diagnostics=_loads_json_list(row["diagnostics_json"]),
+        actor_ref=row["actor_ref"],
+        observed_at=row["observed_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_handoff_normalization(row: sqlite3.Row) -> HandoffNormalizationRecord:
+    return HandoffNormalizationRecord(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        handoff_id=row["handoff_id"],
+        run_id=row["run_id"],
+        status=row["status"],
+        rationale=row["rationale"],
+        signal_observation_ids=_loads_list(row["signal_observation_ids_json"]),
+        output_artifact_refs=_loads_list(row["output_artifact_refs_json"]),
+        corrective_refs=_loads_list(row["corrective_refs_json"]),
+        payload_ref_ids=_loads_list(row["payload_ref_ids_json"]),
+        actor_ref=row["actor_ref"],
+        created_at=row["created_at"],
         provenance_refs=_loads_list(row["provenance_refs_json"]),
     )
 

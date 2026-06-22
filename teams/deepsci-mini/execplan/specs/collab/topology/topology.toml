@@ -1,0 +1,50 @@
+# Generated topology contract for deepsci-mini.
+
+[topology]
+description = "Tree-loop routing with deepsci-mini-lead as the internal root role. Normal specialist results return to the lead."
+mode = "tree-loop"
+root_role = "deepsci-mini-lead"
+result_routing = "local-close"
+direct_specialist_to_specialist_routes_allowed = false
+topic_profile_may_grant_specialist_dispatch = false
+cycle_normalization_required = true
+
+[[nodes]]
+id = "deepsci-mini-lead"
+description = "Internal root role and only default dispatcher inside the Agent Team Instance."
+kind = "root"
+
+[[nodes]]
+id = "deepsci-mini-scout"
+description = "Specialist role for bounded scouting and lightweight literature notes."
+kind = "specialist"
+
+[[nodes]]
+id = "deepsci-mini-synth-reviewer"
+description = "Specialist role for evidence synthesis, inquiry comparison, and skeptical review notes."
+kind = "specialist"
+
+[[routes]]
+id = "lead-to-scout"
+description = "Dispatch bounded UC-01 source, literature, and Evidence Item candidate scouting."
+from_role = "deepsci-mini-lead"
+to_role = "deepsci-mini-scout"
+request_schema_id = "deepsci-mini.email.handoff-request"
+result_schema_id = "deepsci-mini.email.handoff-result"
+predecessor_context = ["current message", "selected Research Topic refs", "selected Research Inquiry refs", "seed source refs", "topic constraints"]
+normal_result_target = "deepsci-mini-lead"
+
+[[routes]]
+id = "lead-to-synth-reviewer"
+description = "Dispatch bounded UC-01 factor synthesis, inquiry option comparison, and weak-claim review."
+from_role = "deepsci-mini-lead"
+to_role = "deepsci-mini-synth-reviewer"
+request_schema_id = "deepsci-mini.email.handoff-request"
+result_schema_id = "deepsci-mini.email.handoff-result"
+predecessor_context = ["current message", "accepted scout Artifact refs", "accepted Evidence Item refs", "claim candidate refs", "Gate policy refs"]
+normal_result_target = "deepsci-mini-lead"
+
+[[routing_exceptions]]
+id = "follow-up-inquiry-gate"
+description = "The follow-up inquiry choice returns to the Operator Agent and human user through a Gate instead of a specialist-to-specialist handoff."
+authority_role = "deepsci-mini-lead"

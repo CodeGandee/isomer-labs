@@ -1,0 +1,22 @@
+```houmao-email-metadata
+schema_id = "deepsci-mini.email.handoff-result"
+schema_version = "1"
+kind = "result"
+run_id = "{{ run_id }}"
+plan_revision = "{{ plan_revision }}"
+handoff_id = "{{ handoff_id }}"
+sender_role = "{{ sender_role }}"
+receiver_role = "deepsci-mini-lead"
+```
+
+# deepsci-mini Handoff Result
+
+Status: `{{ status }}`
+
+Recommended next Workflow Stage: `{{ recommended_next_stage }}`
+
+## Summary
+
+{{ summary }}
+
+`deepsci-mini-lead` must normalize this result into Workspace Runtime before relying on it for another handoff, Gate, parking packet, or closure packet.

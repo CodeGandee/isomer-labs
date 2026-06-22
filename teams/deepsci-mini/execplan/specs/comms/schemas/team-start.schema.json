@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepsci-mini.email.team-start",
+  "title": "deepsci-mini team start mail",
+  "type": "object",
+  "required": ["schema_id", "schema_version", "kind", "run_id", "plan_revision", "research_topic_id", "research_inquiry_id", "receiver_role", "summary"],
+  "properties": {
+    "schema_id": {"const": "deepsci-mini.email.team-start"},
+    "schema_version": {"const": "1"},
+    "kind": {"const": "request"},
+    "run_id": {"type": "string", "minLength": 1},
+    "plan_revision": {"type": "string", "minLength": 1},
+    "research_topic_id": {"type": "string", "minLength": 1},
+    "research_inquiry_id": {"type": "string", "minLength": 1},
+    "receiver_role": {"const": "deepsci-mini-lead"},
+    "summary": {"type": "string", "minLength": 1},
+    "expected_outputs": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

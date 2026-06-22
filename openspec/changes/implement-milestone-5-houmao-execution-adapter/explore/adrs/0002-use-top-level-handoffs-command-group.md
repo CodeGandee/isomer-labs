@@ -14,4 +14,4 @@ accepted
 
 ## Consequences
 
-Milestone 5 should add command paths such as `isomer-cli handoffs dispatch`, `isomer-cli handoffs observe`, and `isomer-cli handoffs normalize`, with `--agent-team-instance` used when the operation targets a launched Agent Team Instance. Public CLI tests and docs should treat handoffs as Workspace Runtime records while preserving links back to the selected Agent Team Instance.
+Milestone 5 should add command paths such as `isomer-cli handoffs dispatch`, `isomer-cli handoffs observe`, and `isomer-cli handoffs normalize`, with `--agent-team-instance` used when the operation targets a launched Agent Team Instance. Public CLI tests and docs should treat handoffs as Workspace Runtime records while preserving links back to the selected Agent Team Instance. Handoff commands should use structured human-readable output by default and root-level `isomer-cli --print-json ...` for deterministic JSON.

@@ -115,6 +115,43 @@ pixi run isomer-cli --print-json team-instances inspect-live ati-default-deepsci
 
 `inspect-live` records a bounded inspection snapshot in Workspace Runtime but does not launch or stop agents.
 
+## Manual Handoff Round
+
+After quick launch, adoption, or another linked Houmao context, dispatch one bounded handoff from the Operator or master Agent Instance to a specialist Agent Instance.
+
+```bash
+pixi run isomer-cli --print-json handoffs dispatch \
+  --topic default \
+  --agent-team-instance ati-default-deepsci \
+  --source-agent-instance ati-default-deepsci-deepsci-org-master \
+  --target-agent-instance ati-default-deepsci-deepsci-org-experimenter \
+  --run run-default-first-handoff \
+  --message "Draft the first experiment execution plan." \
+  --expected-output artifact:default:first-handoff
+```
+
+Observe adapter output as a Signal Observation. Mail and gateway observations invoke Houmao; file and inspection observations are useful for replay, recovery, and bounded manual validation.
+
+```bash
+pixi run isomer-cli --print-json handoffs observe <handoff-id> --topic default --source mail
+pixi run isomer-cli --print-json handoffs observe <handoff-id> --topic default --source gateway
+pixi run isomer-cli --print-json handoffs observe <handoff-id> --topic default --source file --payload-json handoff-observation.json
+pixi run isomer-cli --print-json handoffs observe <handoff-id> --topic default --source inspection
+```
+
+Normalize only after the Operator Agent has reviewed the candidate result. Observations alone do not complete Runs or promote returned claims into Evidence Items.
+
+```bash
+pixi run isomer-cli --print-json handoffs normalize <handoff-id> \
+  --topic default \
+  --status accepted \
+  --signal-observation <signal-observation-id> \
+  --output-artifact artifact:default:first-handoff \
+  --rationale "Accepted after Operator review."
+```
+
+For failed results, use `--status rejected`, `--status blocked`, `--status superseded`, `--status repair_routed`, or `--status follow_up`, and include corrective refs when the next action has a durable Service Request or follow-up handoff.
+
 ## Stop
 
 Stopping a Houmao-backed Agent Team Instance is an explicit live mutation.

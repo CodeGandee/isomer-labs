@@ -25,7 +25,7 @@ A Topic Workspace is a project-local directory declared by the Project Manifest,
 - `runs/` — Run records and supporting files.
 - `views/` — generated View Manifests and GUI view material.
 - `logs/` — workspace-level logs.
-- `runtime/adapters/houmao/<agent-team-instance-id>/` — Houmao adapter-generated manifests, launch material, command payloads, snapshots, and stop outcomes.
+- `runtime/adapters/houmao/<agent-team-instance-id>/` — Houmao adapter-generated manifests, launch material, command payloads, snapshots, stop outcomes, handoff payloads, Signal Observation payloads, and normalization payloads.
 
 The path plan for each surface is recorded in Workspace Runtime so that commands can resolve paths consistently.
 
@@ -50,6 +50,9 @@ Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 - `AdapterLaunchAttemptRecord` — launch attempt status, agent instance ids, command run ids, manifest ref ids, payload ref ids, adapter refs, diagnostics, and timestamps.
 - `AdapterInspectionSnapshotRecord` — inspection status, command run ids, manifest ref ids, snapshot payload ref id, live observation summary, diagnostics, and actor ref.
 - `AdapterStopOutcomeRecord` — stop outcome status, target agent instance ids, command run ids, payload ref ids, remaining live refs, diagnostics, and actor ref.
+- `AdapterHandoffDispatchRecord` — handoff dispatch status, source and target Agent Instance ids, Run and Research Task refs, command run ids, payload refs, expected output refs, Completion Watcher Contract refs, diagnostics, and provenance refs.
+- `SignalObservationRecord` — non-authoritative adapter observation status, observation kind, summary, command run ids, payload refs, source and target Agent Instance ids, Run ref, diagnostics, and provenance refs.
+- `HandoffNormalizationRecord` — Operator Agent normalization status, rationale, Signal Observation ids, output Artifact refs, corrective refs, payload refs, diagnostics, and provenance refs.
 
 ## Path Plans
 
@@ -79,6 +82,9 @@ The Houmao Execution Adapter generates material under `<topic-workspace>/runtime
 - `logs/` — adapter command logs.
 - `inspection-snapshots/` — bounded read-only inspection snapshots.
 - `stop-outcomes/` — records of stop command results.
+- `handoff-payloads/` — dispatch payloads written by Isomer before invoking Houmao mail or gateway surfaces.
+- `handoff-observations/` — Signal Observation payloads collected from mail, gateway, file, or inspection sources.
+- `handoff-normalizations/` — Operator Agent normalization payloads for accepted, rejected, blocked, superseded, repair-routed, or follow-up outcomes.
 - `houmao-project-overlay/` — generated Houmao project overlay directory.
 
 These files are durable runtime records unless a later accepted contract explicitly classifies a file as disposable. Do not treat them as temporary cache.
@@ -99,7 +105,7 @@ The following are durable records:
 - Agent Team Instance, Agent Instance, and Agent Workspace records.
 - Topic Environment Readiness records.
 - Adapter manifests (`adapter-link.json`, `launch-material-manifest.json`, `adapter-runtime-manifest.json`).
-- Adapter command payloads, command run records, materialization records, launch attempt records, inspection snapshots, and stop outcome records.
+- Adapter command payloads, command run records, materialization records, launch attempt records, inspection snapshots, stop outcome records, handoff dispatch records, Signal Observation records, and handoff normalization records.
 - Workspace-level Artifacts, Agent Artifacts, Decision Records, Provenance Records, and Evidence Items.
 
 The following are not durable research state and may be regenerated or lost:

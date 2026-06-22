@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepsci-mini.email.handoff-result",
+  "title": "deepsci-mini handoff result mail",
+  "type": "object",
+  "required": ["schema_id", "schema_version", "kind", "run_id", "plan_revision", "handoff_id", "sender_role", "receiver_role", "status", "summary", "recommended_next_stage"],
+  "properties": {
+    "schema_id": {"const": "deepsci-mini.email.handoff-result"},
+    "schema_version": {"const": "1"},
+    "kind": {"const": "result"},
+    "run_id": {"type": "string", "minLength": 1},
+    "plan_revision": {"type": "string", "minLength": 1},
+    "handoff_id": {"type": "string", "minLength": 1},
+    "sender_role": {"enum": ["deepsci-mini-scout", "deepsci-mini-synth-reviewer"]},
+    "receiver_role": {"const": "deepsci-mini-lead"},
+    "status": {"enum": ["completed", "partial", "blocked", "failed", "needs_gate"]},
+    "summary": {"type": "string", "minLength": 1},
+    "artifact_refs": {"type": "array", "items": {"type": "string"}},
+    "evidence_item_refs": {"type": "array", "items": {"type": "string"}},
+    "claim_candidate_refs": {"type": "array", "items": {"type": "string"}},
+    "gate_recommendations": {"type": "array", "items": {"type": "string"}},
+    "caveats": {"type": "array", "items": {"type": "string"}},
+    "blockers": {"type": "array", "items": {"type": "string"}},
+    "recommended_next_stage": {"enum": ["scout", "synthesis-review", "decision", "finalize", "blocked"]}
+  },
+  "additionalProperties": true
+}

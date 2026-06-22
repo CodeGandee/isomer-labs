@@ -1,0 +1,20 @@
+# Generated Houmao profile material for deepsci-mini-synth-reviewer.
+
+[profile]
+description = "Evidence synthesis and skeptical review profile for deepsci-mini."
+role_id = "deepsci-mini-synth-reviewer"
+profile_kind = "generated-houmao-agent-profile"
+launch_posture = "topic-profile-specialized"
+memo_seed_policy = "optional-topic-profile-seed"
+notifier_prompt_path = "../notifier-prompts/deepsci-mini-synth-reviewer.md"
+workspace_policy_ref = "../../specs/workspace/workspace.toml"
+
+[skills]
+generated = ["deepsci-mini-shared-template", "deepsci-mini-on-handoff-request"]
+required_isomer = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-analysis", "isomer-rsch-review"]
+optional_isomer = ["isomer-rsch-science", "isomer-rsch-paper-plot"]
+
+[boundaries]
+may_dispatch = []
+normal_result_target = "deepsci-mini-lead"
+expected_outputs = ["synthesis_note", "review_note", "research_inquiry_options", "weak_claim_notes"]

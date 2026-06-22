@@ -1,0 +1,23 @@
+# Generated deterministic seed values for deepsci-mini loop-local state.
+
+[default_control]
+description = "Default generated control context for deepsci-mini."
+run_state = "not_started"
+execution_mode = "manual"
+control_mode = "manual"
+auto_mode_requires_topic_policy = true
+
+[[participants]]
+role_id = "deepsci-mini-lead"
+role_kind = "operator"
+active = true
+
+[[participants]]
+role_id = "deepsci-mini-scout"
+role_kind = "scout"
+active = true
+
+[[participants]]
+role_id = "deepsci-mini-synth-reviewer"
+role_kind = "analyst_reviewer"
+active = true

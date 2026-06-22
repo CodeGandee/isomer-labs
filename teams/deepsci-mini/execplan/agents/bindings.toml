@@ -1,0 +1,56 @@
+# Generated concrete Houmao agent bindings for deepsci-mini.
+
+[package]
+description = "Placeholder-backed Houmao agent bindings for deepsci-mini."
+loop_slug = "deepsci-mini"
+harness = "execplan/harness/bin/deepsci-mini"
+system_skill_posture = "houmao-managed-agent-system-skills-preinstalled"
+skill_installation_mode = "project-profile"
+workspace_policy_ref = "execplan/specs/workspace/workspace.toml"
+
+[generated_skills]
+shared = "execplan/skills/deepsci-mini-shared-template"
+team_start = "execplan/skills/deepsci-mini-on-team-start"
+handoff_request = "execplan/skills/deepsci-mini-on-handoff-request"
+handoff_result = "execplan/skills/deepsci-mini-on-handoff-result"
+tick = "execplan/skills/deepsci-mini-on-tick"
+operator_control = "execplan/skills/deepsci-mini-operator-control"
+
+[[participants]]
+role_id = "deepsci-mini-lead"
+description = "Internal root, default dispatcher, handoff normalizer, Gate owner, and Decision Record steward."
+profile_path = "execplan/agents/profiles/deepsci-mini-lead.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-mini-lead.md"
+agent_profile_placeholder = "{deepsci_mini_lead_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_mini_lead_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_mini_lead_skill_projection_ref}"
+workspace_placeholder = "{deepsci_mini_lead_agent_workspace_ref}"
+generated_skill_names = ["deepsci-mini-shared-template", "deepsci-mini-on-team-start", "deepsci-mini-on-handoff-result", "deepsci-mini-on-tick", "deepsci-mini-operator-control"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
+optional_isomer_skills = ["isomer-rsch-review"]
+
+[[participants]]
+role_id = "deepsci-mini-scout"
+description = "Source scouting and lightweight literature specialist."
+profile_path = "execplan/agents/profiles/deepsci-mini-scout.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-mini-scout.md"
+agent_profile_placeholder = "{deepsci_mini_scout_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_mini_scout_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_mini_scout_skill_projection_ref}"
+workspace_placeholder = "{deepsci_mini_scout_agent_workspace_ref}"
+generated_skill_names = ["deepsci-mini-shared-template", "deepsci-mini-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-scout"]
+optional_isomer_skills = ["isomer-rsch-baseline", "isomer-rsch-science", "isomer-rsch-paper-outline"]
+
+[[participants]]
+role_id = "deepsci-mini-synth-reviewer"
+description = "Evidence synthesis, inquiry comparison, and skeptical review specialist."
+profile_path = "execplan/agents/profiles/deepsci-mini-synth-reviewer.toml"
+notifier_prompt_path = "execplan/agents/notifier-prompts/deepsci-mini-synth-reviewer.md"
+agent_profile_placeholder = "{deepsci_mini_synth_reviewer_agent_profile_ref}"
+capability_binding_placeholder = "{deepsci_mini_synth_reviewer_capability_binding_ref}"
+skill_projection_placeholder = "{deepsci_mini_synth_reviewer_skill_projection_ref}"
+workspace_placeholder = "{deepsci_mini_synth_reviewer_agent_workspace_ref}"
+generated_skill_names = ["deepsci-mini-shared-template", "deepsci-mini-on-handoff-request"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-analysis", "isomer-rsch-review"]
+optional_isomer_skills = ["isomer-rsch-science", "isomer-rsch-paper-plot"]
