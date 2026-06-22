@@ -167,6 +167,12 @@ def main():
         print("F6 all gates pass -> finalize_readiness=pass:")
         db = setup(tmp, "f6"); db_of["f6"] = db
         add_claim(db, "f6", "C1"); link(db, "C1", ["main_result", "baseline_comparison", "ablation"])
+        rec(db, {"record_type": "scope.contract", "record_id": "f6:sc", "at": AT, "quest_id": "f6", "contract":
+                 {"objective": "Predict FA4 forward latency within 6% MAPE", "research_question": "can a cost model predict it?",
+                  "non_goals": "no backward", "primary_metric": "MAPE", "metric_direction": "minimize",
+                  "dataset": "bench", "split": "test", "eval_protocol": "eval.py", "false_progress_signals": "train-split leak",
+                  "baseline_route_expectation": "imported", "acceptance_criteria": "MAPE<8%"}})
+        run(db, ["scope", "validate", "--quest-id", "f6"])  # idea selection (bound) requires a valid scope contract
         good_idea(tmp, "f6")
         rec(db, {"record_type": "baseline.contract", "record_id": "f6:bc", "at": AT, "quest_id": "f6",
                  "baseline_id": "b", "baseline_name": "BL", "comparison_policy": "higher-is-better",

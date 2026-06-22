@@ -421,6 +421,23 @@ CREATE TABLE IF NOT EXISTS idea_select (
     created_at         TEXT NOT NULL
 );
 
+-- scope/eval contract: the UPSTREAM typed research contract (objective + evaluation plan) that the idea
+-- stage must proceed from. The content (objective, research_question, non_goals, primary_metric,
+-- metric_direction, dataset, split, eval_protocol, false_progress_signals, baseline_route_expectation,
+-- acceptance_criteria, constraints, waivers{}) lives in the `contract` JSON. valid is VALIDATOR-computed
+-- (set ONLY by `scope validate`; the author cannot self-certify); idea selection requires a valid contract
+-- in bound mode. validated_fingerprint lets the gates detect a stale validation.
+CREATE TABLE IF NOT EXISTS scope_contract (
+    contract_id          TEXT PRIMARY KEY,
+    quest_id             TEXT NOT NULL REFERENCES quest(quest_id),
+    round_index          INTEGER,
+    contract             TEXT,                     -- the typed objective + eval-contract JSON
+    contract_ref         TEXT,                     -- optional rich artifact path
+    valid                INTEGER NOT NULL DEFAULT 0, -- 0/1; set ONLY by `scope validate`
+    validated_fingerprint TEXT,                      -- dependency signature at validation time (staleness)
+    created_at           TEXT NOT NULL
+);
+
 -- baseline/metric contract: the typed comparator contract that STRENGTHENS the existing quest.baseline_gate.
 -- The rich content (metric_ids[], validity_threats[]) lives in the contract_ref artifact; the row promotes the
 -- gate-relevant scalars. Acceptability is VALIDATOR-computed: `baseline validate` sets valid=1; the

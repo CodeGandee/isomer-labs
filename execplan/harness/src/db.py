@@ -33,6 +33,17 @@ MIGRATIONS = [
 # New TABLES added after the initial schema. Existing DBs (not re-init'd) get them here on connect; fresh DBs
 # also get them from schema.sql. Purely additive (CREATE TABLE IF NOT EXISTS) — no row is ever rewritten.
 NEW_TABLES = [
+    ("scope_contract",
+     "CREATE TABLE IF NOT EXISTS scope_contract ("
+     "  contract_id TEXT PRIMARY KEY,"
+     "  quest_id TEXT NOT NULL REFERENCES quest(quest_id),"
+     "  round_index INTEGER,"
+     "  contract TEXT,"
+     "  contract_ref TEXT,"
+     "  valid INTEGER NOT NULL DEFAULT 0,"
+     "  validated_fingerprint TEXT,"
+     "  created_at TEXT NOT NULL"
+     ")"),
     ("quality_gate_waiver",
      "CREATE TABLE IF NOT EXISTS quality_gate_waiver ("
      "  waiver_id TEXT PRIMARY KEY,"

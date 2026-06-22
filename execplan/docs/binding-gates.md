@@ -15,8 +15,9 @@ routing but does **not** replace the hard guards — they remain authoritative a
 
 | Gate | Typed record (table) | Validator command | Hard guard (records.py) — blocks | `gate status` key |
 |---|---|---|---|---|
+| Scope / eval contract | `scope.contract` (`scope_contract`, `valid`) | `scope validate` | idea selection requires it (via `idea validate`, bound) | `scope_contract` |
 | Idea selection | `idea.select` (`idea_select`, `valid`) | `idea validate` | idea→experiment handoff (`_idea_gate`) | `idea_gate` |
-| Baseline contract | `baseline.contract` (`baseline_contract`, `verification_verdict`) | (author-asserted verdict) | `quest.baseline_gate=passed/waived` (`_baseline_contract_gate`) | `baseline_contract` |
+| Baseline contract | `baseline.contract` (`baseline_contract`, `valid`) | `baseline validate` (route + eval contract + provenance-backed result) | `quest.baseline_gate=passed/waived` (`_baseline_contract_gate`) | `baseline_contract` |
 | Campaign coverage | claim evidence `evidence_kind` + `analysis.bridge` (`analysis_bridge`, `valid`) | `campaign validate` | analysis→outline/write handoff (`_analysis_bridge_gate`) | `campaign_coverage`, `analysis_bridge` |
 | Paper spine / outline | `paper_spine.upsert` (`paper_spine`) | `outline validate` (structural) | (feeds manuscript coverage) | `paper_spine`, `outline_valid` |
 | Manuscript coverage | `paper_spine` (`submission_ready`) | `manuscript coverage` | `finalize_outcome=complete` (`_finalize_coverage_gate`) | `manuscript_coverage` |
@@ -28,8 +29,9 @@ Plus the pre-existing finalize guards (`_finalize_scholarship_gate`, `_finalize_
 ## Methodology resolution
 `task-result.methodology_used[].applied_as` is **not free text**: the Orchestrator runs `methodology check
 --quest-id <q> --stage <stage> --applied-as <ref>`, which resolves it to the stage's **validated** typed record
-(idea.select / baseline.contract / analysis.bridge / paper_spine / review.verdict). The `experiment` stage and
-the orchestrator-internal stages (decision/optimize/finalize) have no fold-time typed record — experiment is
+(scope.contract / idea.select / baseline.contract / analysis.bridge / paper_spine / review.verdict). The
+`experiment` stage and the orchestrator-internal stages (decision/optimize/finalize) have no fold-time typed
+record — experiment is
 bound downstream by campaign coverage; the internal stages use an advisory `artifact(kind='methodology-usage')`
 that `plan validate` warns about. Background-only reading goes in `methodology_consulted[]` (never counted).
 
@@ -52,6 +54,7 @@ plus `finalize_readiness` and `blocking_gates[]`. The Orchestrator dispatches to
 ## Environment waivers (operator override; default = enforced)
 | Env var | Waives |
 |---|---|
+| `DEEPRESEARCH_SCOPE_GATE=0` | scope/eval-contract requirement at idea selection |
 | `DEEPRESEARCH_IDEA_GATE=0` | idea→experiment gate |
 | `DEEPRESEARCH_BASELINE_CONTRACT_GATE=0` | baseline-contract gate |
 | `DEEPRESEARCH_BRIDGE_GATE=0` | analysis→write bridge gate |

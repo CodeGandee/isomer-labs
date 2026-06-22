@@ -1141,6 +1141,97 @@ def result_validate(ctx, result_id, validity):
              "provenance_reasons": prov_reasons, "quest_id": quest_id}, quest_id=quest_id)
 
 
+_SCOPE_REQUIRED = ["objective", "research_question", "non_goals", "primary_metric", "metric_direction",
+                   "dataset", "split", "eval_protocol", "false_progress_signals",
+                   "baseline_route_expectation", "acceptance_criteria"]
+# objective / primary_metric / metric_direction are the core target — never waivable.
+_SCOPE_WAIVABLE = {"research_question", "non_goals", "dataset", "split", "eval_protocol",
+                   "false_progress_signals", "baseline_route_expectation", "acceptance_criteria"}
+_SCOPE_VAGUE = {"", "tbd", "todo", "n/a", "na", "?", "unknown", "tba", "later"}
+
+
+def _scope_waived():
+    """Operator override: skip the scope/eval-contract requirement (advisory). Surfaced in gate status."""
+    return os.environ.get("DEEPRESEARCH_SCOPE_GATE") in ("0", "false", "no")
+
+
+def _load_scope_contract(conn, quest_id):
+    try:
+        row = conn.execute("SELECT contract FROM scope_contract WHERE quest_id=? "
+                           "ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return {}
+    if not row or not row["contract"]:
+        return {}
+    try:
+        return json.loads(row["contract"]) or {}
+    except Exception:
+        return {}
+
+
+def _latest_scope_row(conn, quest_id):
+    try:
+        return conn.execute("SELECT contract_id, valid, validated_fingerprint FROM scope_contract WHERE quest_id=? "
+                           "ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        return None
+
+
+def _scope_verdict(contract):
+    """Validator for the typed scope/eval contract. Returns (ok, reasons). objective must be concrete (not
+    vague/placeholder); each required field must be present, or — if waivable — listed in contract.waivers
+    with a reason. objective/primary_metric/metric_direction are the core target and cannot be waived."""
+    contract = contract or {}
+    waivers = contract.get("waivers") or {}
+    s = lambda k: (str(contract.get(k)).strip() if contract.get(k) is not None else "")
+    reasons = []
+    obj = s("objective")
+    if (not obj) or obj.lower() in _SCOPE_VAGUE or len(obj) < 12:
+        reasons.append("vague or missing objective (state a concrete research target)")
+    for f in _SCOPE_REQUIRED:
+        if f == "objective" or s(f):
+            continue
+        if f in _SCOPE_WAIVABLE and isinstance(waivers, dict) and str(waivers.get(f) or "").strip():
+            continue  # intentionally deferred with a reason
+        reasons.append(f"missing {f}" + (" (or waive it in contract.waivers with a reason)" if f in _SCOPE_WAIVABLE else ""))
+    return (not reasons), reasons
+
+
+@cli.group()
+def scope(): ...
+
+
+@scope.command("validate")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def scope_validate(ctx, quest_id):
+    """Validator-owned scope/eval-contract gate. Computes whether the latest scope.contract is sufficiently
+    specific (concrete objective; research question; non-goals; primary metric + direction; dataset/split/eval
+    protocol; false-progress signals; baseline-route expectation; acceptance criteria — waivable fields may be
+    deferred via contract.waivers{field: reason}) and writes the validator-owned `valid` flag + a freshness
+    fingerprint. Idea selection requires a valid contract in bound mode; the author cannot self-certify.
+    Exits non-zero (+reasons) on a gap."""
+    _authz_cmd("scope validate")  # orchestrator (loop/operator bypass)
+    conn = _conn(ctx)
+    row = conn.execute("SELECT contract_id FROM scope_contract WHERE quest_id=? "
+                       "ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+    if row is None:
+        conn.close()
+        emit(envelope("scope validate", ok=False, quest_id=quest_id,
+                      diagnostics=["no scope.contract recorded (record one first)"]))
+        sys.exit(1)
+    ok, reasons = _scope_verdict(_load_scope_contract(conn, quest_id))
+    fp = records.dep_fingerprint(conn, quest_id, "scope") if ok else None
+    conn.execute("UPDATE scope_contract SET valid=?, validated_fingerprint=? WHERE contract_id=?",
+                 (1 if ok else 0, fp, row["contract_id"]))
+    conn.commit(); conn.close()
+    emit(envelope("scope validate", ok=ok, quest_id=quest_id,
+                  data={"valid": ok, "contract_id": row["contract_id"], "reasons": reasons},
+                  diagnostics=[] if ok else ["scope/eval contract gate FAILED: " + "; ".join(reasons)]))
+    if not ok:
+        sys.exit(1)
+
+
 def _baseline_result_provenance(conn, evidence_ref):
     """A 'reproduced' baseline must cite a baseline result_id that carries validated provenance (Phase-1 flag)."""
     if not (evidence_ref or "").strip():
@@ -1746,6 +1837,15 @@ def idea_validate(ctx, quest_id, select_ref):
                                                          or os.environ.get("DEEPRESEARCH_IDEA_NOVELTY_WAIVER")):
             reasons.append("novelty_label='novel' but known_near_neighbors is empty: name the closest prior "
                            "work the retained idea is differentiated against (or set an explicit novelty_waiver)")
+    # Upstream scope/eval contract: in bound mode, idea selection must proceed from a validator-confirmed,
+    # non-stale scope.contract (waivable with DEEPRESEARCH_SCOPE_GATE=0).
+    if _is_bound(conn, quest_id, rigor) and not _scope_waived():
+        sc = _latest_scope_row(conn, quest_id)
+        if sc is None or not sc["valid"]:
+            reasons.append("no validator-confirmed scope/eval contract — record a `scope.contract` (objective + "
+                           "evaluation plan) and run `scope validate` before promoting an idea")
+        elif records.is_stale(conn, quest_id, "scope", sc["validated_fingerprint"]):
+            reasons.append("scope/eval contract is STALE (changed after `scope validate`) — re-run `scope validate`")
     valid = not reasons
     conn.execute("UPDATE idea_select SET valid=?, gate_score=?, retained_candidate=?, novelty_label=? "
                  "WHERE select_id=?", (1 if valid else 0, score, retained_id, novelty, row["select_id"]))
@@ -2190,7 +2290,8 @@ def gate_status(ctx, quest_id):
     # hard guards while gate status keeps reporting fail/missing, so the routing view disagrees with what the
     # guards will actually do. Surface them: a waived gate reports status='waived' (non-blocking, carrying a
     # waiver_source) and every active waiver is listed at the top level (`active_waivers`).
-    _GATE_WAIVERS = {"idea_gate": "DEEPRESEARCH_IDEA_GATE",
+    _GATE_WAIVERS = {"scope_contract": "DEEPRESEARCH_SCOPE_GATE",
+                     "idea_gate": "DEEPRESEARCH_IDEA_GATE",
                      "baseline_contract": "DEEPRESEARCH_BASELINE_CONTRACT_GATE",
                      "analysis_bridge": "DEEPRESEARCH_BRIDGE_GATE",
                      "manuscript_coverage": "DEEPRESEARCH_COVERAGE_GATE",
@@ -2211,6 +2312,19 @@ def gate_status(ctx, quest_id):
                        "latest_record_ref": ref, "route_target": None if waived else route,
                        "required_next_action": None if waived else action,
                        "waived": waived, "waiver_source": (f"env:{wv}" if waived else None)}
+
+    sc = _latest_scope_row(conn, quest_id)
+    if adv: put("scope_contract", "advisory")
+    elif sc is None: put("scope_contract", "missing", "no scope/eval contract", "scope", None, "record scope.contract + scope validate")
+    elif sc["valid"] and records.is_stale(conn, quest_id, "scope", sc["validated_fingerprint"]):
+        put("scope_contract", "fail", "scope/eval contract is stale: contract changed after `scope validate`",
+            "scope", sc["contract_id"], "re-run `scope validate`")
+    elif sc["valid"]: put("scope_contract", "pass", ref=sc["contract_id"])
+    else:
+        _sok, _sreasons = _scope_verdict(_load_scope_contract(conn, quest_id))
+        put("scope_contract", "fail", "scope/eval contract not validator-confirmed: "
+            + ("; ".join(_sreasons) if _sreasons else "run `scope validate`"), "scope", sc["contract_id"],
+            "fix the contract + run `scope validate`")
 
     r = _latest_idea_select_row(conn, quest_id)
     if adv: put("idea_gate", "advisory")
@@ -2317,6 +2431,7 @@ def gate_status(ctx, quest_id):
     def _sfp(rw):
         return rw["validated_fingerprint"] if rw is not None else None
     stale_gates = sorted({name for name, kind, fpv in (
+        ("scope_contract", "scope", _sfp(sc)),
         ("baseline_contract", "baseline", _sfp(bc)),
         ("analysis_bridge", "campaign", _sfp(ab)),
         ("manuscript_coverage", "manuscript", _sfp(sp)),
@@ -2357,14 +2472,13 @@ def gate_status(ctx, quest_id):
 
 # stage -> (table, id column, ref column) the methodology must resolve to (validated where applicable).
 _STAGE_METHODOLOGY = {
+    "scope": ("scope_contract", "contract_id", "contract_ref"),
     "idea": ("idea_select", "select_id", "select_ref"),
     "baseline": ("baseline_contract", "contract_id", "contract_ref"),
-    # NOTE: `scope` and `experiment` have NO fold-time typed methodology record, so they resolve as
-    # not_applicable here (see methodology_check) — NOT a failure. `scope` produces an eval-contract artifact
-    # whose binding is the downstream idea-selection gate (it requires objective_contract_ref); a scope worker
-    # has no idea.select yet, so the prior scope->idea_select mapping always wrong-rejected. `experiment` tags
-    # claim evidence by evidence_kind, enforced DOWNSTREAM by campaign coverage at analysis->write.
-    # `analysis` resolves to the validated analysis_bridge.
+    # NOTE: `scope` resolves to the validator-confirmed `scope_contract` (set by `scope validate`). The
+    # `experiment` stage has NO fold-time typed methodology record, so it resolves as not_applicable here (see
+    # methodology_check) — NOT a failure: `experiment` tags claim evidence by evidence_kind, enforced
+    # DOWNSTREAM by campaign coverage at analysis->write. `analysis` resolves to the validated analysis_bridge.
     "analysis": ("analysis_bridge", "bridge_id", "bridge_ref"),
     "outline": ("paper_spine", "quest_id", "spine_ref"),
     "write": ("paper_spine", "quest_id", "spine_ref"),

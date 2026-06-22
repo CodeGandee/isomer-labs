@@ -39,7 +39,8 @@ Reading a pack is not optional for stages that have a **required pack**. Require
 | stage | required pack(s) | binding typed record + validator (what `applied_as` resolves to) | audited by |
 |---|---|---|---|
 | intake-audit | `intake-rubric` | trust-ranked intake_asset rows + current-board packet | worker |
-| scope, idea | `ideation-rubric` | `idea.select` + `idea validate` (idea selection gate) | worker |
+| scope | `ideation-rubric` | `scope.contract` + `scope validate` (typed objective + eval contract; validator-owned `valid`) | worker |
+| idea | `ideation-rubric` | `idea.select` + `idea validate` (idea selection gate; requires a valid `scope.contract` in bound mode) | worker |
 | baseline | `ideation-rubric` + `research-method` | `baseline.contract` + `baseline validate` (validator-owned `valid`; route-specific verification) → the baseline-contract gate | worker |
 | experiment | `research-method` | (no fold-time record) evidence_kind on `claim_evidence`, bound downstream by campaign coverage | worker |
 | analysis | `research-method` | `analysis.bridge` + `campaign validate` (campaign coverage + bridge) | worker |

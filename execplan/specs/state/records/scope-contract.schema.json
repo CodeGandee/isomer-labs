@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/scope-contract",
+  "title": "scope_contract record",
+  "description": "The UPSTREAM typed research contract (objective + evaluation plan) the idea/baseline/experiment stages must proceed from. The typed content lives in the `contract` object; `scope validate` computes the validator-owned `valid` flag (the author cannot self-certify, force=0 on write). In bound mode idea selection requires a valid scope contract. Required content (validated by `scope validate`, all but objective/primary_metric/metric_direction waivable via contract.waivers{field: reason}): objective, research_question, non_goals, primary_metric, metric_direction, dataset, split, eval_protocol, false_progress_signals, baseline_route_expectation, acceptance_criteria; constraints optional.",
+  "oneOf": [
+    {
+      "title": "scope.contract",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "record_id", "at", "quest_id", "contract"],
+      "properties": {
+        "record_type": { "const": "scope.contract" },
+        "record_id": { "type": "string", "description": "contract_id (unique per pass)" },
+        "at": { "type": "string" },
+        "quest_id": { "type": "string" },
+        "round_index": { "type": "integer", "minimum": 0 },
+        "contract": {
+          "type": "object",
+          "description": "Typed objective + eval-contract: objective, research_question, non_goals, primary_metric, metric_direction, dataset, split, eval_protocol, false_progress_signals, baseline_route_expectation, acceptance_criteria, constraints; waivers{field: reason} intentionally defers waivable fields."
+        },
+        "contract_ref": { "type": "string", "description": "optional rich artifact (prose objective/eval-contract)" }
+      }
+    }
+  ]
+}

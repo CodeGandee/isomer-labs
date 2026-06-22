@@ -32,8 +32,13 @@ requires a VALIDATED contract (`valid=1`) on a real route, and `=waived` a valid
 author-asserted `verification_verdict` alone no longer passes (the baseline-contract gate strengthens, not
 replaces, the existing gate). May `$HARNESS lit search/fetch` → `--type reference.record`. **Use the `ideation-rubric` pack**
 (`$HARNESS knowledge cards`): for `scope`, fill the **eval-contract** (task · dataset · split · official eval
-path · primary metric + direction · fair-comparison rule · useful-improvement threshold) and compare baseline
-routes **attach / import / verify-local / reproduce / reject** (don't force one route) per
+path · primary metric + direction · fair-comparison rule · useful-improvement threshold) AND record it as a
+typed **`scope.contract`** (objective · research_question · non_goals · primary_metric · metric_direction ·
+dataset · split · eval_protocol · false_progress_signals · baseline_route_expectation · acceptance_criteria ·
+constraints; defer a waivable field only via `contract.waivers{field: reason}`) — the orchestrator runs
+**`$HARNESS scope validate`** (sets the validator-owned `valid`); a vague objective or missing metric/eval
+plan is rejected, and **idea selection cannot proceed from an unvalidated scope contract** in bound mode. Then
+compare baseline routes **attach / import / verify-local / reproduce / reject** (don't force one route) per
 `comparability-contract`; for `idea`, run the **divergence→convergence** protocol (6–12 raw ideas across ≥2
 mechanism families → 2–3 candidates), apply the **selection gate** (0/1/2 on
 novelty/falsifiability/feasibility/evidence/fit; <7/10 ⇒ don't promote) and write a **pre-idea draft** + an

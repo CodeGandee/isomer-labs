@@ -26,6 +26,9 @@ You are the orchestrator collecting a specialist's result. One bounded turn. See
 2. **Fold in** (the specialist already wrote its rows; you confirm/gate):
    - `experiment` result → `$HARNESS result validate` (sets `result.validity`); if a new valid best,
      `$HARNESS record apply --type quest.update --best_result_ref ...`.
+   - `scope` → `$HARNESS scope validate --quest-id <q>` (computes the validator-owned `valid` on the typed
+     `scope.contract`: concrete objective + primary metric/direction + eval plan or explicit waivers). A vague
+     or under-specified scope is rejected; idea selection (bound) cannot proceed until it passes.
    - `baseline` → **first** `$HARNESS baseline validate --quest-id <q>` (computes the validator-owned `valid`
      flag from the contract's `baseline_route` + eval contract + route-specific verification), **then** set the
      gate: `$HARNESS record apply --type quest.update --baseline_gate passed|waived|blocked`. `passed`/`waived`
@@ -47,7 +50,7 @@ You are the orchestrator collecting a specialist's result. One bounded turn. See
    at standard rigor needs an operator `review confirm` before finalize (publication never permits borderline).
 2b. **Methodology-resolution check (Tier-3 gate).** For each `methodology_used[]` item, run
    `$HARNESS methodology check --quest-id <q> --stage <stage> --applied-as <item.applied_as>`. It must
-   **resolve** (the ref points at the stage's validated typed record: idea.select / baseline.contract /
+   **resolve** (the ref points at the stage's validated typed record: scope.contract / idea.select / baseline.contract /
    analysis.bridge / paper_spine / review.verdict). `methodology_used` is NO LONGER free text — an item whose
    `applied_as` does not resolve is treated as missing (background-only reading belongs in
    `methodology_consulted`, which does not count). If any required pack lacks a RESOLVING `methodology_used`
@@ -65,8 +68,9 @@ You are the orchestrator collecting a specialist's result. One bounded turn. See
    `$HARNESS handoff query --quest-id <q>`): close the round (`--type round.close`) and **route via
    `$HARNESS gate status --quest-id <q>`** — do NOT route on prose/LLM discretion when a hard gate says
    fail. Read `data.gates`: dispatch the next stage to the **first blocking gate's `route_target`**
-   (idea_gate→idea, baseline_contract→baseline, campaign_coverage→experiment|analysis, analysis_bridge→analysis,
-   paper_spine/outline_valid→outline, manuscript_coverage→write, review_verdict→its `route_target`); if
+   (scope_contract→scope, idea_gate→idea, baseline_contract→baseline, campaign_coverage→experiment|analysis,
+   analysis_bridge→analysis, paper_spine/outline_valid→outline, manuscript_coverage→write,
+   review_verdict→its `route_target`); if
    `finalize_readiness=pass` (no blocking gates), route to finalize. Then arm the continuation (as in
    `deepresearch-orchestrator-tick`). **If not complete:** stop and wait for the next worker's result.
 5. `$HARNESS email apply` (in); archive the mail on success.

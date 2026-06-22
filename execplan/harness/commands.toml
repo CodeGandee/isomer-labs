@@ -655,6 +655,19 @@ summary = "Validate the analysis bridge (paper-facing) AND per-claim campaign co
 description = "analysis->write readiness validator. FAILS unless (a) the latest analysis.bridge passes the typed paper-facing schema (claim->evidence map, paper-facing result paragraphs, limitations, figure/table recs) AND (b) every MAIN claim (kind='claim') meets the rigor coverage floor by evidence_kind ([gate_floors] campaign_required / campaign_baseline / campaign_anyof / campaign_significance_superiority) — claim-level, NOT a global experiment count. Writes the validator-computed valid + coverage_json onto the analysis_bridge row (the analyst cannot self-certify). The analysis->write handoff gate reads valid. An evidence_kind is counted ONLY when its result has validated provenance (Phase 1) AND it carries valid kind-specific proof (Phase 4: e.g. ablation needs changed_factor/controls/delta + a resolvable parent_result; significance needs method+effect; reference/external needs an explicit source) — otherwise it is reported 'not counted' with a clear reason. Waive proof with DEEPRESEARCH_EVIDENCE_PROOF_GATE=0 (visible in gate status; finalize-sensitive)."
 
 [[command]]
+name = "scope validate"
+group = "scope"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["scope_contract.valid"]
+summary = "Validate the latest scope.contract (objective + evaluation plan is specific enough for the rigor); compute valid."
+description = "Validator-owned scope/eval-contract gate. FAILS unless the latest scope.contract carries a concrete (non-vague) objective + a primary metric + metric direction (these are never waivable), plus research_question, non_goals, dataset, split, eval_protocol, false_progress_signals, baseline_route_expectation, acceptance_criteria — each either present or intentionally deferred via contract.waivers{field: reason}. Writes the validator-computed valid flag + a freshness fingerprint onto the scope_contract row (author cannot self-certify). In bound mode idea selection requires a valid, non-stale scope contract; `methodology check --stage scope` resolves to it. Waive with DEEPRESEARCH_SCOPE_GATE=0 (visible in gate status)."
+
+[[command]]
 name = "baseline validate"
 group = "baseline"
 tier = "core"

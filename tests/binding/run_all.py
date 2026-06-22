@@ -14,6 +14,7 @@ SUITES = [
     ("unified gate status / methodology resolution", "test_gate_status_methodology.py"),
     ("waiver durability / finalize acknowledgement", "test_waiver_durability.py"),
     ("validator freshness / stale computed flags", "test_validator_freshness.py"),
+    ("typed scope / eval contract", "test_scope_contract.py"),
 ]
 
 

@@ -30,7 +30,23 @@ def setup(tmp, qid, rigor="standard"):
     c.execute("INSERT INTO artifact(artifact_id,quest_id,kind,ref,created_at) VALUES(?,?,?,?,?)",
               (qid + ":rc", qid, "research-contract", "c", AT))
     c.commit(); c.close()
+    add_valid_scope(db, qid)  # idea selection (bound) requires a validator-confirmed scope/eval contract
     return db
+
+
+GOOD_SCOPE = {"objective": "Predict FA4 forward latency within 6% MAPE across configs",
+              "research_question": "Can a learned cost model predict FA4 latency?", "non_goals": "no backward pass",
+              "primary_metric": "MAPE", "metric_direction": "minimize", "dataset": "FA4-bench", "split": "test",
+              "eval_protocol": "eval.py --split test", "false_progress_signals": "metric on train split; one GPU only",
+              "baseline_route_expectation": "imported", "acceptance_criteria": "MAPE < 8% on test",
+              "constraints": "single GPU generation"}
+
+
+def add_valid_scope(db, qid, contract=None):
+    run(db, ["record", "apply", "--json", json.dumps(
+        {"record_type": "scope.contract", "record_id": qid + ":sc", "at": AT, "quest_id": qid,
+         "contract": contract or GOOD_SCOPE})])
+    return run(db, ["scope", "validate", "--quest-id", qid])
 
 
 def record_select(db, qid, sid, ref):

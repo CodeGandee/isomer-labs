@@ -53,6 +53,7 @@ RECORD_MAP = {
     "paper_spine.upsert":      dict(table="paper_spine", pk=["quest_id"], id_from="record_id", mode="upsert", force={"submission_ready": 0}),
     "review.verdict":          dict(table="review_verdict", pk=["verdict_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "idea.select":             dict(table="idea_select", pk=["select_id"], id_from="record_id", mode="insert", force={"valid": 0}),
+    "scope.contract":          dict(table="scope_contract", pk=["contract_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "baseline.contract":       dict(table="baseline_contract", pk=["contract_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "analysis.bridge":         dict(table="analysis_bridge", pk=["bridge_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "quality_gate.waiver":     dict(table="quality_gate_waiver", pk=["waiver_id"], id_from="record_id", mode="insert"),
@@ -211,7 +212,8 @@ _OWNER_RT = {"experiment.upsert": {"experimenter"}, "result.record": {"experimen
              "claim_evidence.resolve": {"reviewer", "writer"}}
 _TIER_B_RT = {"experiment.upsert", "result.record", "measurement.record", "experiment_param.record", "analysis.record"}
 _CMD_ROLES = {"experiment run": {"experimenter", "analyst"}, "result validate": {"orchestrator"},
-              "baseline validate": {"orchestrator"}, "gpu confirm": {"operator"}}
+              "baseline validate": {"orchestrator"}, "scope validate": {"orchestrator"},
+              "gpu confirm": {"operator"}}
 
 
 def _deny(what, role):
@@ -1066,6 +1068,12 @@ def dep_fingerprint(conn, quest_id, kind):
     """Stable signature of the dependencies a validator-computed flag rests on. kind ∈
     {baseline, campaign, manuscript, review}. Returns '' if the inputs cannot be read (treated as not-checked)."""
     try:
+        if kind == "scope":
+            row = conn.execute("SELECT contract_id, contract, contract_ref FROM scope_contract WHERE quest_id=? "
+                               "ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+            if not row:
+                return ""
+            return _fp([f"{k}={row[k]}" for k in row.keys()])
         if kind == "baseline":
             row = conn.execute(
                 "SELECT contract_id, baseline_route, evidence_ref, verification_verdict, waiver_reason, "
