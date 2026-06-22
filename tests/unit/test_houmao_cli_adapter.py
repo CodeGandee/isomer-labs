@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from isomer_labs.houmao_cli_adapter import (
+from isomer_labs.houmao.adapter import (
     HOUMAO_COMMAND_ENV,
     HoumaoCommandCatalog,
     HoumaoCommandRunner,
@@ -34,7 +34,7 @@ class HoumaoCliAdapterTests(unittest.TestCase):
     def test_runner_parses_json_success(self) -> None:
         runner = HoumaoCommandRunner(Path("/tmp/project"), env={HOUMAO_COMMAND_ENV: "houmao-mgr"})
         completed = subprocess.CompletedProcess(["houmao-mgr"], 0, stdout='{"ok": true}\n', stderr="")
-        with patch("isomer_labs.houmao_cli_adapter.subprocess.run", return_value=completed):
+        with patch("isomer_labs.houmao.adapter.subprocess.run", return_value=completed):
             result = runner.run(HoumaoCommandCatalog().system_skills_list())
         self.assertTrue(result.succeeded)
         self.assertEqual({"ok": True}, result.parsed_json)
@@ -44,19 +44,19 @@ class HoumaoCliAdapterTests(unittest.TestCase):
         runner = HoumaoCommandRunner(Path("/tmp/project"), env={HOUMAO_COMMAND_ENV: "houmao-mgr"})
         catalog = HoumaoCommandCatalog()
         invalid = subprocess.CompletedProcess(["houmao-mgr"], 0, stdout="not-json\n", stderr="")
-        with patch("isomer_labs.houmao_cli_adapter.subprocess.run", return_value=invalid):
+        with patch("isomer_labs.houmao.adapter.subprocess.run", return_value=invalid):
             invalid_result = runner.run(catalog.system_skills_list())
         self.assertEqual("invalid_json", invalid_result.status)
         self.assertIn("ISO071", {diagnostic.code for diagnostic in invalid_result.diagnostics})
 
         nonzero = subprocess.CompletedProcess(["houmao-mgr"], 2, stdout='{"ok": false}\n', stderr="failed")
-        with patch("isomer_labs.houmao_cli_adapter.subprocess.run", return_value=nonzero):
+        with patch("isomer_labs.houmao.adapter.subprocess.run", return_value=nonzero):
             nonzero_result = runner.run(catalog.system_skills_list())
         self.assertEqual("failed", nonzero_result.status)
         self.assertIn("ISO072", {diagnostic.code for diagnostic in nonzero_result.diagnostics})
 
         with patch(
-            "isomer_labs.houmao_cli_adapter.subprocess.run",
+            "isomer_labs.houmao.adapter.subprocess.run",
             side_effect=subprocess.TimeoutExpired(["houmao-mgr"], 1, output="", stderr="late"),
         ):
             timeout_result = runner.run(catalog.system_skills_list(), timeout_seconds=1)

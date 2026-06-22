@@ -2,7 +2,6 @@
 
 ## Purpose
 Define the read-only `isomer-cli doctor` diagnostics contract for host dependency, Project, and Research Topic readiness checks.
-
 ## Requirements
 ### Requirement: Read-only Doctor Command
 The system SHALL provide a top-level `isomer-cli doctor` command that reports dependency, Project, and topic readiness diagnostics without mutating Project files, Topic Workspaces, Workspace Runtime state, or Pixi environments.
@@ -80,11 +79,11 @@ The system SHALL validate explicit Project Manifest topic Pixi environment bindi
 The system SHALL emit deterministic text and versioned JSON output for `doctor` suitable for CI, unit tests, and future Operator Agent consumption.
 
 #### Scenario: JSON output is wrapped
-- **WHEN** a user runs `isomer-cli doctor --json`
+- **WHEN** a user runs `isomer-cli --print-json doctor`
 - **THEN** the response uses the existing `isomer-cli-output.v1` wrapper and includes `ok`, `mode`, `mutated`, `checks`, and `diagnostics`
 
 #### Scenario: Mutated flag is false
-- **WHEN** a user runs `isomer-cli doctor --json`
+- **WHEN** a user runs `isomer-cli --print-json doctor`
 - **THEN** the JSON payload reports `mutated` as false
 
 #### Scenario: Checks have stable shape

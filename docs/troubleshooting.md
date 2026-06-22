@@ -15,7 +15,7 @@ Recovery:
 
 ```bash
 pixi run isomer-cli init
-pixi run isomer-cli validate --json
+pixi run isomer-cli --print-json validate
 ```
 
 `init` mutates the Project filesystem. If a Project already exists but the command cannot find it, use `--project` to point to the correct root.
@@ -27,8 +27,8 @@ Symptom: `doctor` or `runtime prepare` reports missing Pixi, missing `pixi.lock`
 Diagnosis:
 
 ```bash
-pixi run isomer-cli doctor --topic default --json
-pixi run isomer-cli runtime validate --topic default --require-ready-readiness --json
+pixi run isomer-cli --print-json doctor --topic default
+pixi run isomer-cli --print-json runtime validate --topic default --require-ready-readiness
 ```
 
 Recovery:
@@ -59,7 +59,7 @@ Symptom: `runtime init` reports an unsupported schema version.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli runtime inspect --topic default --json
+pixi run isomer-cli --print-json runtime inspect --topic default
 ```
 
 Recovery:
@@ -74,8 +74,8 @@ Symptom: `runtime validate` reports missing Agent Workspace directories.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli team-instances show <id> --topic default --json
-pixi run isomer-cli paths preview --topic default --json
+pixi run isomer-cli --print-json team-instances show <id> --topic default
+pixi run isomer-cli --print-json paths preview --topic default
 ```
 
 Recovery:
@@ -90,7 +90,7 @@ Symptom: a command returns non-zero and JSON output is incomplete or redacted.
 Diagnosis:
 
 - Inspect the adapter command payload under `topic-workspaces/<topic>/runtime/adapters/houmao/<id>/command-payloads/`.
-- Run the command with `--json` and capture stderr.
+- Run the command with `--print-json` and capture stderr.
 
 Recovery:
 
@@ -104,8 +104,8 @@ Symptom: `inspect-live --integrity` or `reconcile` reports material drift.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli team-instances inspect-live <id> --topic default --adapter houmao --integrity --json
-pixi run isomer-cli team-instances reconcile <id> --topic default --json
+pixi run isomer-cli --print-json team-instances inspect-live <id> --topic default --adapter houmao --integrity
+pixi run isomer-cli --print-json team-instances reconcile <id> --topic default
 ```
 
 Recovery:
@@ -120,8 +120,8 @@ Symptom: `team-instances launch` returned a partial or failed status, but some H
 Diagnosis:
 
 ```bash
-pixi run isomer-cli team-instances inspect-live <id> --topic default --adapter houmao --json
-pixi run isomer-cli runtime validate --topic default --json
+pixi run isomer-cli --print-json team-instances inspect-live <id> --topic default --adapter houmao
+pixi run isomer-cli --print-json runtime validate --topic default
 ```
 
 Recovery:
@@ -137,8 +137,8 @@ Symptom: `team-instances stop` returned partial or failed, and some agents remai
 Diagnosis:
 
 ```bash
-pixi run isomer-cli team-instances inspect-live <id> --topic default --adapter houmao --json
-pixi run isomer-cli runtime validate --topic default --json
+pixi run isomer-cli --print-json team-instances inspect-live <id> --topic default --adapter houmao
+pixi run isomer-cli --print-json runtime validate --topic default
 ```
 
 Recovery:
@@ -159,8 +159,8 @@ Diagnosis:
 Recovery:
 
 ```bash
-pixi run isomer-cli team-instances reconcile <id> --topic default --adapter houmao --json
-pixi run isomer-cli team-instances adopt <id> --topic default --adapter houmao --yes --json
+pixi run isomer-cli --print-json team-instances reconcile <id> --topic default --adapter houmao
+pixi run isomer-cli --print-json team-instances adopt <id> --topic default --adapter houmao --yes
 ```
 
 `adopt` records an explicit decision to associate externally launched state with the Agent Team Instance. It requires `--yes`.
@@ -169,10 +169,10 @@ pixi run isomer-cli team-instances adopt <id> --topic default --adapter houmao -
 
 When a command fails unexpectedly:
 
-1. Run `isomer-cli validate --json` to check the Project Manifest.
-2. Run `isomer-cli doctor --json` to check host and Project Pixi state.
-3. Run `isomer-cli context show --topic <topic> --json` to inspect Effective Topic Context.
-4. Run `isomer-cli runtime validate --topic <topic> --json` to inspect Workspace Runtime.
+1. Run `isomer-cli --print-json validate` to check the Project Manifest.
+2. Run `isomer-cli --print-json doctor` to check host and Project Pixi state.
+3. Run `isomer-cli --print-json context show --topic <topic>` to inspect Effective Topic Context.
+4. Run `isomer-cli --print-json runtime validate --topic <topic>` to inspect Workspace Runtime.
 5. For Houmao issues, verify `houmao-mgr` availability or set `ISOMER_HOUMAO_COMMAND`.
 6. Inspect adapter payloads and manifests under `topic-workspaces/<topic>/runtime/adapters/houmao/<id>/`.
 7. Escalate repair to explicit Service Requests rather than hiding it inside read-only diagnostics.

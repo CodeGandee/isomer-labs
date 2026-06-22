@@ -32,6 +32,11 @@ FORBIDDEN_TERMS: list[tuple[str, str]] = [
 ]
 
 README_LINK_TARGETS = ["docs/index.md", "docs/getting-started.md", "docs/isomer-cli.md"]
+STALE_ISOMER_JSON_PATTERNS = [
+    re.compile(r"\bisomer-cli\b[^\n]*\s--json\b"),
+    re.compile(r"\bisomer-cli\b[^\n]*\s--format(?:=|\s+)json\b"),
+    re.compile(r"^\s*--json\s*$"),
+]
 
 
 def get_repo_root() -> Path:
@@ -130,6 +135,21 @@ def check_forbidden_terms(repo_root: Path) -> list[str]:
     return issues
 
 
+def check_stale_isomer_cli_json_examples(repo_root: Path) -> list[str]:
+    issues: list[str] = []
+    paths = [repo_root / "README.md", *sorted((repo_root / "docs").glob("*.md"))]
+    for path in paths:
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        for line_number, line in enumerate(content.splitlines(), start=1):
+            if any(pattern.search(line) for pattern in STALE_ISOMER_JSON_PATTERNS):
+                issues.append(
+                    f"{path.relative_to(repo_root)}:{line_number}: use root-level isomer-cli --print-json instead of command-local JSON flags"
+                )
+    return issues
+
+
 def validate_docs(repo_root: Path) -> list[str]:
     issues: list[str] = []
     issues.extend(check_required_pages(repo_root))
@@ -139,6 +159,7 @@ def validate_docs(repo_root: Path) -> list[str]:
         issues.append("Could not discover public isomer-cli commands")
     else:
         issues.extend(check_cli_coverage(repo_root, commands))
+    issues.extend(check_stale_isomer_cli_json_examples(repo_root))
     issues.extend(check_forbidden_terms(repo_root))
     return issues
 

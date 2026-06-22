@@ -11,6 +11,7 @@ from scripts.validate_docs import (
     check_forbidden_terms,
     check_readme_links,
     check_required_pages,
+    check_stale_isomer_cli_json_examples,
 )
 
 
@@ -89,6 +90,24 @@ class ValidateDocsTests(unittest.TestCase):
 
     def test_forbidden_term_list_is_non_empty(self) -> None:
         self.assertTrue(FORBIDDEN_TERMS)
+
+    def test_stale_isomer_cli_json_examples_are_reported(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "README.md").write_text("pixi run isomer-cli validate --json\n", encoding="utf-8")
+            (root / "docs" / "isomer-cli.md").write_text("pixi run isomer-cli --print-json validate\n", encoding="utf-8")
+            issues = check_stale_isomer_cli_json_examples(root)
+            self.assertEqual(1, len(issues))
+            self.assertIn("--print-json", issues[0])
+
+    def test_houmao_print_json_examples_are_allowed(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "README.md").write_text("houmao-mgr --print-json system-skills list\n", encoding="utf-8")
+            (root / "docs" / "houmao.md").write_text("pixi run isomer-cli --print-json validate\n", encoding="utf-8")
+            self.assertEqual([], check_stale_isomer_cli_json_examples(root))
 
 
 if __name__ == "__main__":

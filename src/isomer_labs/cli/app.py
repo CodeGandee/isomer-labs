@@ -1,4 +1,4 @@
-"""Command line interface for Isomer Labs Milestone 1."""
+"""Command line interface for Isomer Labs."""
 
 from __future__ import annotations
 
@@ -11,10 +11,12 @@ from typing import Any, Sequence
 import click
 
 from isomer_labs.builtins import list_built_in_schemas
+from isomer_labs.cli.options import CliOptions, common_options as _common_options, value as _value
+from isomer_labs.cli.output import OutputMode, emit_output, output_format
 from isomer_labs.context import resolve_effective_topic_context
 from isomer_labs.diagnostics import Diagnostic, has_errors
 from isomer_labs.doctor import build_doctor_report, render_doctor_text
-from isomer_labs.houmao_manifests import (
+from isomer_labs.houmao.manifests import (
     HOUMAO_ADAPTER_ID,
     AgentBinding,
     ManifestKind,
@@ -29,19 +31,19 @@ from isomer_labs.houmao_manifests import (
     reconcile_houmao_manifests,
     write_json_manifest,
 )
-from isomer_labs.houmao_cli_adapter import HoumaoAdapterFacade
+from isomer_labs.houmao.adapter import HoumaoAdapterFacade
 from isomer_labs.init_project import initialize_project
 from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, SelectionRequest, TopicAgentTeamProfile
 from isomer_labs.paths import preview_paths
 from isomer_labs.project import discover_project
-from isomer_labs.rendering import render_diagnostics, render_json, render_key_values
-from isomer_labs.runtime_store import (
+from isomer_labs.rendering import render_key_values
+from isomer_labs.runtime.store import (
     initialize_workspace_runtime,
     open_workspace_runtime,
     prepare_topic_environment_readiness,
 )
-from isomer_labs.runtime_models import AdapterManifestRefRecord, AdapterReconciliationRecord, utc_timestamp
-from isomer_labs.runtime_validation import inspect_workspace_runtime, validate_workspace_runtime
+from isomer_labs.runtime.models import AdapterManifestRefRecord, AdapterReconciliationRecord, utc_timestamp
+from isomer_labs.runtime.validation import inspect_workspace_runtime, validate_workspace_runtime
 from isomer_labs.team_profiles import (
     parse_topic_agent_team_profile,
     profile_to_toml,
@@ -57,25 +59,6 @@ from isomer_labs.team_templates import (
 )
 from isomer_labs.toml_loader import load_toml
 from isomer_labs.validation import build_project_state
-
-
-@dataclass(frozen=True)
-class CliOptions:
-    project: str | None = None
-    manifest: str | None = None
-    output_format: str | None = None
-    json_output: bool = False
-    topic_id: str | None = None
-    topic_id_option: str | None = None
-    topic_statement: str | None = None
-    research_topic_id: str | None = None
-    topic_workspace_id: str | None = None
-    research_inquiry_id: str | None = None
-    research_task_id: str | None = None
-    run_id: str | None = None
-    agent_team_instance_id: str | None = None
-    agent_instance_id: str | None = None
-    topic_agent_team_profile_id: str | None = None
 
 
 COMMAND_SURFACE = """Milestone 1 Isomer Labs Project discovery and path preview CLI.
@@ -136,1194 +119,32 @@ def build_parser() -> click.Group:
 
     return app
 
-
-def _common_options(command: Any) -> Any:
-    command = click.option("--json", "json_output", is_flag=True, help="Emit JSON.")(command)
-    command = click.option(
-        "--format",
-        "output_format",
-        type=click.Choice(("text", "json")),
-        default=None,
-        help="Output format.",
-    )(command)
-    command = click.option("--manifest", default=None, help="Explicit Project Manifest selector.")(command)
-    command = click.option("--project", default=None, help="Explicit Project root selector.")(command)
-    return command
-
-
-def _topic_selection_options(command: Any) -> Any:
-    command = click.option(
-        "--topic-agent-team-profile",
-        "topic_agent_team_profile_id",
-        default=None,
-        help="Topic Agent Team Profile id.",
-    )(command)
-    command = click.option("--agent-instance", "agent_instance_id", default=None, help="Agent Instance id.")(command)
-    command = click.option(
-        "--agent-team-instance",
-        "agent_team_instance_id",
-        default=None,
-        help="Agent Team Instance id.",
-    )(command)
-    command = click.option("--run", "run_id", default=None, help="Run id.")(command)
-    command = click.option("--task", "research_task_id", default=None, help="Research Task id.")(command)
-    command = click.option("--research-inquiry", "research_inquiry_id", default=None, help="Research Inquiry id.")(command)
-    command = click.option("--topic-workspace", "topic_workspace_id", default=None, help="Topic Workspace id.")(command)
-    command = click.option("--topic", "research_topic_id", default=None, help="Research Topic id.")(command)
-    return command
-
-
 @click.group(
     context_settings={"help_option_names": ["-h", "--help"]},
     help=COMMAND_SURFACE,
     invoke_without_command=True,
 )
 @_common_options
+@click.option("--print-json", "print_json", is_flag=True, help="Emit deterministic JSON for the selected command.")
 @click.pass_context
 def app(
     ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
+    project: str | None = None,
+    manifest: str | None = None,
+    output_format: str | None = None,
+    json_output: bool = False,
+    print_json: bool = False,
 ) -> None:
+    output_mode = OutputMode(print_json=print_json or json_output or output_format == "json")
     ctx.obj = CliOptions(
         project=project,
         manifest=manifest,
         output_format=output_format,
         json_output=json_output,
+        output_mode=output_mode,
     )
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
-
-
-@app.command(name="init", help="Initialize the smallest valid Project configuration.")
-@_common_options
-@click.argument("topic_id", required=False)
-@click.option("--topic-id", "topic_id_option", help="Research Topic id to initialize.")
-@click.option("--topic-statement", help="Short inline Research Topic statement.")
-@click.pass_context
-def init_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    topic_id: str | None,
-    topic_id_option: str | None,
-    topic_statement: str | None,
-) -> int:
-    return _cmd_init(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            topic_id=topic_id,
-            topic_id_option=topic_id_option,
-            topic_statement=topic_statement,
-        )
-    )
-
-
-@app.command(name="validate", help="Validate the Project Manifest and registered configs.")
-@_common_options
-@click.pass_context
-def validate_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-) -> int:
-    return _cmd_validate(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-        )
-    )
-
-
-@app.command(name="doctor", help="Run read-only dependency, Project, and topic diagnostics.")
-@_common_options
-@_topic_selection_options
-@click.pass_context
-def doctor_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-) -> int:
-    return _cmd_doctor(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        )
-    )
-
-
-@app.group(name="topics", help="Research Topic commands.")
-def topics_group() -> None:
-    pass
-
-
-@topics_group.command(name="list", help="List registered Research Topics.")
-@_common_options
-@click.pass_context
-def topics_list_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-) -> int:
-    return _cmd_topics_list(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-        )
-    )
-
-
-@app.group(name="workspaces", help="Topic Workspace commands.")
-def workspaces_group() -> None:
-    pass
-
-
-@workspaces_group.command(name="list", help="List registered Topic Workspaces.")
-@_common_options
-@click.pass_context
-def workspaces_list_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-) -> int:
-    return _cmd_workspaces_list(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-        )
-    )
-
-
-@app.group(name="context", help="Effective Topic Context commands.")
-def context_group() -> None:
-    pass
-
-
-@context_group.command(name="show", help="Show resolved Effective Topic Context.")
-@_common_options
-@_topic_selection_options
-@click.pass_context
-def context_show_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-) -> int:
-    return _cmd_context_show(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        )
-    )
-
-
-@app.group(name="paths", help="Workspace Path Resolution commands.")
-def paths_group() -> None:
-    pass
-
-
-@paths_group.command(name="preview", help="Preview workspace paths without creating them.")
-@_common_options
-@_topic_selection_options
-@click.pass_context
-def paths_preview_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-) -> int:
-    return _cmd_paths_preview(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        )
-    )
-
-
-@app.group(name="schemas", help="Built-in schema commands.")
-def schemas_group() -> None:
-    pass
-
-
-@schemas_group.command(name="list", help="List Isomer built-in schemas and contracts.")
-@_common_options
-@click.pass_context
-def schemas_list_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-) -> int:
-    return _cmd_schemas_list(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-        )
-    )
-
-
-@app.group(name="runtime", help="Workspace Runtime commands.")
-def runtime_group() -> None:
-    pass
-
-
-@runtime_group.command(name="init", help="Initialize or reopen the selected Workspace Runtime.")
-@_common_options
-@_topic_selection_options
-@click.pass_context
-def runtime_init_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-) -> int:
-    return _cmd_runtime_init(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        )
-    )
-
-
-@runtime_group.command(name="prepare", help="Record selected topic environment readiness.")
-@_common_options
-@_topic_selection_options
-@click.option("--actor", "actor_ref", default=None, help="Actor ref to record on the readiness check.")
-@click.pass_context
-def runtime_prepare_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    actor_ref: str | None,
-) -> int:
-    return _cmd_runtime_prepare(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        actor_ref=actor_ref,
-    )
-
-
-@runtime_group.command(name="inspect", help="Inspect Workspace Runtime metadata without mutation.")
-@_common_options
-@_topic_selection_options
-@click.pass_context
-def runtime_inspect_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-) -> int:
-    return _cmd_runtime_inspect(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        )
-    )
-
-
-@runtime_group.command(name="validate", help="Validate Workspace Runtime records without mutation.")
-@_common_options
-@_topic_selection_options
-@click.option(
-    "--require-ready-readiness",
-    is_flag=True,
-    help="Treat missing or failed readiness as a launch-facing error.",
-)
-@click.pass_context
-def runtime_validate_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    require_ready_readiness: bool,
-) -> int:
-    return _cmd_runtime_validate(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        require_ready_readiness=require_ready_readiness,
-    )
-
-
-@app.group(name="team-instances", help="Agent Team Instance commands.")
-def team_instances_group() -> None:
-    pass
-
-
-@team_instances_group.command(name="create", help="Create an Agent Team Instance record.")
-@_common_options
-@_topic_selection_options
-@click.option("--id", "instance_id", default=None, help="Agent Team Instance id.")
-@click.pass_context
-def team_instances_create_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    instance_id: str | None,
-) -> int:
-    return _cmd_team_instances_create(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        instance_id=instance_id,
-    )
-
-
-@team_instances_group.command(name="list", help="List Agent Team Instance records.")
-@_common_options
-@_topic_selection_options
-@click.pass_context
-def team_instances_list_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-) -> int:
-    return _cmd_team_instances_list(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        )
-    )
-
-
-@team_instances_group.command(name="show", help="Show one Agent Team Instance record.")
-@_common_options
-@_topic_selection_options
-@click.argument("agent_team_instance_id_arg")
-@click.pass_context
-def team_instances_show_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    agent_team_instance_id_arg: str,
-) -> int:
-    return _cmd_team_instances_show(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        agent_team_instance_id_arg,
-    )
-
-
-@team_instances_group.group(name="adapter-link", help="Houmao adapter link manifest commands.")
-def team_instances_adapter_link_group() -> None:
-    pass
-
-
-@team_instances_adapter_link_group.command(name="export", help="Write or print a Houmao adapter link JSON manifest.")
-@_common_options
-@_topic_selection_options
-@click.argument("agent_team_instance_id_arg")
-@click.option("--output", "output_path", default=None, help="Output path for adapter-link.json.")
-@click.option("--print", "print_manifest", is_flag=True, help="Print the manifest instead of writing it.")
-@click.option("--houmao-project-dir", default=None, help="Houmao project overlay directory ref.")
-@click.option("--actor", "actor_ref", default=None, help="Actor ref for manifest provenance.")
-@click.pass_context
-def team_instances_adapter_link_export_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    agent_team_instance_id_arg: str,
-    output_path: str | None,
-    print_manifest: bool,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
-) -> int:
-    return _cmd_team_instances_adapter_link_export(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        agent_team_instance_id=agent_team_instance_id_arg,
-        output_path=output_path,
-        print_manifest=print_manifest,
-        houmao_project_dir=houmao_project_dir,
-        actor_ref=actor_ref,
-    )
-
-
-@team_instances_group.group(name="launch-material", help="Agent Team Instance launch material commands.")
-def team_instances_launch_material_group() -> None:
-    pass
-
-
-@team_instances_launch_material_group.command(name="prepare", help="Prepare Houmao launch material without launching agents.")
-@_common_options
-@_topic_selection_options
-@click.argument("agent_team_instance_id_arg")
-@click.option("--adapter", default="houmao", type=click.Choice(("houmao",)), help="Execution Adapter.")
-@click.option("--houmao-project-dir", default=None, help="Houmao project overlay directory ref.")
-@click.option("--actor", "actor_ref", default=None, help="Actor ref for materialization provenance.")
-@click.pass_context
-def team_instances_launch_material_prepare_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    agent_team_instance_id_arg: str,
-    adapter: str,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
-) -> int:
-    return _cmd_team_instances_launch_material_prepare(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        agent_team_instance_id=agent_team_instance_id_arg,
-        adapter=adapter,
-        houmao_project_dir=houmao_project_dir,
-        actor_ref=actor_ref,
-    )
-
-
-@team_instances_group.command(name="launch", help="Quick-launch a Houmao-backed Agent Team Instance.")
-@_common_options
-@_topic_selection_options
-@click.argument("agent_team_instance_id_arg")
-@click.option("--adapter", default="houmao", type=click.Choice(("houmao",)), help="Execution Adapter.")
-@click.option("--houmao-project-dir", default=None, help="Houmao project overlay directory ref.")
-@click.option("--actor", "actor_ref", default=None, help="Actor ref for launch provenance.")
-@click.pass_context
-def team_instances_launch_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    agent_team_instance_id_arg: str,
-    adapter: str,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
-) -> int:
-    return _cmd_team_instances_launch(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        agent_team_instance_id=agent_team_instance_id_arg,
-        adapter=adapter,
-        houmao_project_dir=houmao_project_dir,
-        actor_ref=actor_ref,
-    )
-
-
-@team_instances_group.command(name="inspect-live", help="Inspect Houmao adapter manifest integrity without mutation.")
-@_common_options
-@_topic_selection_options
-@click.argument("agent_team_instance_id_arg")
-@click.option("--adapter", default=None, type=click.Choice(("houmao",)), help="Execution Adapter for live inspection.")
-@click.option("--integrity", is_flag=True, help="Include manifest and material integrity status.")
-@click.option("--link-manifest", default=None, help="Explicit adapter-link.json path.")
-@click.option("--launch-material-manifest", default=None, help="Explicit launch-material-manifest.json path.")
-@click.option("--runtime-manifest", default=None, help="Explicit adapter-runtime-manifest.json path.")
-@click.option("--live-state-json", default=None, help="Path to deterministic Houmao live-state JSON for tests or offline inspection.")
-@click.option("--houmao-project-dir", default=None, help="Houmao project overlay directory ref for read-only inspection.")
-@click.option("--actor", "actor_ref", default=None, help="Actor ref for inspection provenance.")
-@click.pass_context
-def team_instances_inspect_live_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    agent_team_instance_id_arg: str,
-    adapter: str | None,
-    integrity: bool,
-    link_manifest: str | None,
-    launch_material_manifest: str | None,
-    runtime_manifest: str | None,
-    live_state_json: str | None,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
-) -> int:
-    return _cmd_team_instances_manifest_inspect(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        agent_team_instance_id=agent_team_instance_id_arg,
-        link_manifest=link_manifest,
-        launch_material_manifest=launch_material_manifest,
-        runtime_manifest=runtime_manifest,
-        live_state_json=live_state_json,
-        houmao_project_dir=houmao_project_dir,
-        include_integrity=integrity,
-        adapter=adapter,
-        actor_ref=actor_ref,
-    )
-
-
-@team_instances_group.command(name="stop", help="Stop a Houmao-backed Agent Team Instance.")
-@_common_options
-@_topic_selection_options
-@click.argument("agent_team_instance_id_arg")
-@click.option("--adapter", default="houmao", type=click.Choice(("houmao",)), help="Execution Adapter.")
-@click.option("--link-manifest", default=None, help="Explicit adapter-link.json path.")
-@click.option("--actor", "actor_ref", default=None, help="Actor ref for stop provenance.")
-@click.pass_context
-def team_instances_stop_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    agent_team_instance_id_arg: str,
-    adapter: str,
-    link_manifest: str | None,
-    actor_ref: str | None,
-) -> int:
-    return _cmd_team_instances_stop(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        agent_team_instance_id=agent_team_instance_id_arg,
-        adapter=adapter,
-        link_manifest=link_manifest,
-        actor_ref=actor_ref,
-    )
-
-
-@team_instances_group.command(name="reconcile", help="Record Houmao adapter manifest reconciliation state.")
-@_common_options
-@_topic_selection_options
-@click.argument("agent_team_instance_id_arg")
-@click.option("--link-manifest", default=None, help="Explicit adapter-link.json path.")
-@click.option("--launch-material-manifest", default=None, help="Explicit launch-material-manifest.json path.")
-@click.option("--runtime-manifest", default=None, help="Explicit adapter-runtime-manifest.json path.")
-@click.option("--live-state-json", default=None, help="Path to deterministic Houmao live-state JSON for tests or offline reconciliation.")
-@click.option("--houmao-project-dir", default=None, help="Houmao project overlay directory ref for read-only inspection.")
-@click.option("--actor", "actor_ref", default=None, help="Actor ref for reconciliation provenance.")
-@click.pass_context
-def team_instances_reconcile_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    agent_team_instance_id_arg: str,
-    link_manifest: str | None,
-    launch_material_manifest: str | None,
-    runtime_manifest: str | None,
-    live_state_json: str | None,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
-) -> int:
-    return _cmd_team_instances_reconcile(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        agent_team_instance_id=agent_team_instance_id_arg,
-        link_manifest=link_manifest,
-        launch_material_manifest=launch_material_manifest,
-        runtime_manifest=runtime_manifest,
-        live_state_json=live_state_json,
-        houmao_project_dir=houmao_project_dir,
-        actor_ref=actor_ref,
-        adopt=False,
-    )
-
-
-@team_instances_group.command(name="adopt", help="Adopt externally launched Houmao runtime state.")
-@_common_options
-@_topic_selection_options
-@click.argument("agent_team_instance_id_arg")
-@click.option("--yes", "approved", is_flag=True, help="Confirm adoption of externally launched adapter state.")
-@click.option("--link-manifest", default=None, help="Explicit adapter-link.json path.")
-@click.option("--launch-material-manifest", default=None, help="Explicit launch-material-manifest.json path.")
-@click.option("--runtime-manifest", default=None, help="Explicit adapter-runtime-manifest.json path.")
-@click.option("--live-state-json", default=None, help="Path to deterministic Houmao live-state JSON for tests or offline adoption.")
-@click.option("--houmao-project-dir", default=None, help="Houmao project overlay directory ref for read-only inspection.")
-@click.option("--actor", "actor_ref", default=None, help="Actor ref for adoption provenance.")
-@click.pass_context
-def team_instances_adopt_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    agent_team_instance_id_arg: str,
-    approved: bool,
-    link_manifest: str | None,
-    launch_material_manifest: str | None,
-    runtime_manifest: str | None,
-    live_state_json: str | None,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
-) -> int:
-    return _cmd_team_instances_reconcile(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        agent_team_instance_id=agent_team_instance_id_arg,
-        link_manifest=link_manifest,
-        launch_material_manifest=launch_material_manifest,
-        runtime_manifest=runtime_manifest,
-        live_state_json=live_state_json,
-        houmao_project_dir=houmao_project_dir,
-        actor_ref=actor_ref,
-        adopt=True,
-        approved=approved,
-    )
-
-
-@app.group(name="team-templates", help="Domain Agent Team Template commands.")
-def team_templates_group() -> None:
-    pass
-
-
-@team_templates_group.command(name="list", help="List registered Domain Agent Team Templates.")
-@_common_options
-@click.pass_context
-def team_templates_list_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-) -> int:
-    return _cmd_team_templates_list(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-        )
-    )
-
-
-@team_templates_group.command(name="inspect", help="Inspect a registered Domain Agent Team Template.")
-@_common_options
-@click.argument("template_id")
-@click.pass_context
-def team_templates_inspect_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    template_id: str,
-) -> int:
-    return _cmd_team_templates_inspect(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-        ),
-        template_id,
-    )
-
-
-@team_templates_group.command(name="validate", help="Validate a registered Domain Agent Team Template.")
-@_common_options
-@click.argument("template_id")
-@click.pass_context
-def team_templates_validate_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    template_id: str,
-) -> int:
-    return _cmd_team_templates_validate(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-        ),
-        template_id,
-    )
-
-
-@app.group(name="team-profiles", help="Topic Agent Team Profile commands.")
-def team_profiles_group() -> None:
-    pass
-
-
-@team_profiles_group.command(name="specialize", help="Derive a candidate Topic Agent Team Profile.")
-@_common_options
-@_topic_selection_options
-@click.option("--template", "template_id", default=None, help="Domain Agent Team Template id.")
-@click.option("--profile-id", default=None, help="Candidate Topic Agent Team Profile id.")
-@click.option("--role", "roles", multiple=True, help="Agent Role id to activate. May be repeated.")
-@click.option("--expected-artifact", "expected_artifacts", multiple=True, help="Expected Artifact ref. May be repeated.")
-@click.option("--use-case", default=None, help="Use-case fixture label such as UC-01.")
-@click.option("--write", "write_profile", is_flag=True, help="Write the generated profile to the Project Config Directory.")
-@click.pass_context
-def team_profiles_specialize_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    research_topic_id: str | None,
-    topic_workspace_id: str | None,
-    research_inquiry_id: str | None,
-    research_task_id: str | None,
-    run_id: str | None,
-    agent_team_instance_id: str | None,
-    agent_instance_id: str | None,
-    topic_agent_team_profile_id: str | None,
-    template_id: str | None,
-    profile_id: str | None,
-    roles: tuple[str, ...],
-    expected_artifacts: tuple[str, ...],
-    use_case: str | None,
-    write_profile: bool,
-) -> int:
-    return _cmd_team_profiles_specialize(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-            research_topic_id=research_topic_id,
-            topic_workspace_id=topic_workspace_id,
-            research_inquiry_id=research_inquiry_id,
-            research_task_id=research_task_id,
-            run_id=run_id,
-            agent_team_instance_id=agent_team_instance_id,
-            agent_instance_id=agent_instance_id,
-            topic_agent_team_profile_id=topic_agent_team_profile_id,
-        ),
-        template_id=template_id,
-        profile_id=profile_id,
-        roles=list(roles),
-        expected_artifacts=list(expected_artifacts),
-        use_case=use_case,
-        write_profile=write_profile,
-    )
-
-
-@team_profiles_group.command(name="validate", help="Validate a Topic Agent Team Profile file.")
-@_common_options
-@click.option("--template", "template_id", default=None, help="Domain Agent Team Template id.")
-@click.argument("profile_path", required=False)
-@click.pass_context
-def team_profiles_validate_command(
-    ctx: click.Context,
-    project: str | None,
-    manifest: str | None,
-    output_format: str | None,
-    json_output: bool,
-    template_id: str | None,
-    profile_path: str | None,
-) -> int:
-    return _cmd_team_profiles_validate(
-        _merge_options(
-            ctx,
-            project=project,
-            manifest=manifest,
-            output_format=output_format,
-            json_output=json_output,
-        ),
-        template_id=template_id,
-        profile_path=profile_path,
-    )
-
-
-def _merge_options(
-    ctx: click.Context,
-    *,
-    project: str | None = None,
-    manifest: str | None = None,
-    output_format: str | None = None,
-    json_output: bool = False,
-    **values: str | None,
-) -> CliOptions:
-    root = ctx.find_root().obj
-    root_options = root if isinstance(root, CliOptions) else CliOptions()
-    return replace(
-        root_options,
-        project=project if project is not None else root_options.project,
-        manifest=manifest if manifest is not None else root_options.manifest,
-        output_format=output_format if output_format is not None else root_options.output_format,
-        json_output=root_options.json_output or json_output,
-        **values,
-    )
 
 
 def _cmd_init(options: CliOptions) -> int:
@@ -1339,15 +160,14 @@ def _cmd_init(options: CliOptions) -> int:
         "project_root": str(project_root.resolve(strict=False)),
         "research_topic_id": topic_id,
     }
-    if _output_format(options) == "json":
-        click.echo(render_json("init", payload, diagnostics))
-    elif diagnostics:
-        click.echo("\n".join(render_diagnostics(diagnostics)))
-    else:
-        click.echo(f"Initialized Project: {project_root.resolve(strict=False)}")
-        click.echo(f"Research Topic: {topic_id}")
-        click.echo(f"Project Manifest: {project_root.resolve(strict=False) / '.isomer-labs' / 'manifest.toml'}")
-    return 1 if has_errors(diagnostics) else 0
+    lines = []
+    if not diagnostics:
+        lines = [
+            f"Initialized Project: {project_root.resolve(strict=False)}",
+            f"Research Topic: {topic_id}",
+            f"Project Manifest: {project_root.resolve(strict=False) / '.isomer-labs' / 'manifest.toml'}",
+        ]
+    return _emit("init", options, payload, diagnostics, lines)
 
 
 def _cmd_validate(options: CliOptions) -> int:
@@ -1406,13 +226,7 @@ def _cmd_doctor(options: CliOptions) -> int:
         context_diagnostics=context_diagnostics,
         topic_skipped=topic_skipped,
     )
-    if _output_format(options) == "json":
-        click.echo(render_json("doctor", report.to_payload(), report.diagnostics))
-    else:
-        lines = [*render_doctor_text(report), *render_diagnostics(report.diagnostics)]
-        if lines:
-            click.echo("\n".join(lines))
-    return 0 if report.ok else 1
+    return _emit("doctor", options, report.to_payload(), report.diagnostics, render_doctor_text(report))
 
 
 def _cmd_topics_list(options: CliOptions) -> int:
@@ -1586,12 +400,12 @@ def _cmd_team_templates_validate(options: CliOptions, template_id: str) -> int:
 def _cmd_team_profiles_specialize(
     options: CliOptions,
     *,
-    template_id: str | None,
-    profile_id: str | None,
-    roles: list[str],
-    expected_artifacts: list[str],
-    use_case: str | None,
-    write_profile: bool,
+    template_id: str | None = None,
+    profile_id: str | None = None,
+    roles: Sequence[str] = (),
+    expected_artifacts: Sequence[str] = (),
+    use_case: str | None = None,
+    write_profile: bool = False,
 ) -> int:
     context, diagnostics = _context_for_options(options)
     if context is None:
@@ -1609,8 +423,8 @@ def _cmd_team_profiles_specialize(
         context,
         template_report.template,
         profile_id=profile_id,
-        selected_role_ids=roles or None,
-        expected_artifacts=expected_artifacts or None,
+        selected_role_ids=list(roles) or None,
+        expected_artifacts=list(expected_artifacts) or None,
         use_case=use_case,
     )
     profile_report = validate_topic_agent_team_profile(profile, template_report.template, project=context.project)
@@ -1649,8 +463,8 @@ def _cmd_team_profiles_specialize(
 def _cmd_team_profiles_validate(
     options: CliOptions,
     *,
-    template_id: str | None,
-    profile_path: str | None,
+    template_id: str | None = None,
+    profile_path: str | None = None,
 ) -> int:
     project, diagnostics = _discover_optional(options)
     path = _resolve_profile_cli_path(project, profile_path, diagnostics)
@@ -1875,10 +689,10 @@ def _cmd_team_instances_adapter_link_export(
     options: CliOptions,
     *,
     agent_team_instance_id: str,
-    output_path: str | None,
-    print_manifest: bool,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
+    output_path: str | None = None,
+    print_manifest: bool = False,
+    houmao_project_dir: str | None = None,
+    actor_ref: str | None = None,
 ) -> int:
     context, diagnostics = _context_for_options(options)
     payload: dict[str, Any] = {
@@ -1968,10 +782,10 @@ def _cmd_team_instances_adapter_link_export(
 def _cmd_team_instances_launch_material_prepare(
     options: CliOptions,
     *,
-    agent_team_instance_id: str,
-    adapter: str,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
+    agent_team_instance_id: str = "",
+    adapter: str = "",
+    houmao_project_dir: str | None = None,
+    actor_ref: str | None = None,
 ) -> int:
     command_name = "team-instances launch-material prepare"
     context, diagnostics = _context_for_options(options)
@@ -2049,10 +863,10 @@ def _cmd_team_instances_launch_material_prepare(
 def _cmd_team_instances_launch(
     options: CliOptions,
     *,
-    agent_team_instance_id: str,
-    adapter: str,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
+    agent_team_instance_id: str = "",
+    adapter: str = "",
+    houmao_project_dir: str | None = None,
+    actor_ref: str | None = None,
 ) -> int:
     command_name = "team-instances launch"
     context, diagnostics = _context_for_options(options)
@@ -2128,15 +942,15 @@ def _cmd_team_instances_launch(
 def _cmd_team_instances_manifest_inspect(
     options: CliOptions,
     *,
-    agent_team_instance_id: str,
-    link_manifest: str | None,
-    launch_material_manifest: str | None,
-    runtime_manifest: str | None,
-    live_state_json: str | None,
-    houmao_project_dir: str | None,
-    include_integrity: bool,
-    adapter: str | None,
-    actor_ref: str | None,
+    agent_team_instance_id: str = "",
+    link_manifest: str | None = None,
+    launch_material_manifest: str | None = None,
+    runtime_manifest: str | None = None,
+    live_state_json: str | None = None,
+    houmao_project_dir: str | None = None,
+    include_integrity: bool = False,
+    adapter: str | None = None,
+    actor_ref: str | None = None,
 ) -> int:
     context, diagnostics = _context_for_options(options)
     payload: dict[str, Any] = {
@@ -2235,10 +1049,10 @@ def _cmd_team_instances_manifest_inspect(
 def _cmd_team_instances_stop(
     options: CliOptions,
     *,
-    agent_team_instance_id: str,
-    adapter: str,
-    link_manifest: str | None,
-    actor_ref: str | None,
+    agent_team_instance_id: str = "",
+    adapter: str = "",
+    link_manifest: str | None = None,
+    actor_ref: str | None = None,
 ) -> int:
     command_name = "team-instances stop"
     context, diagnostics = _context_for_options(options)
@@ -2293,14 +1107,14 @@ def _cmd_team_instances_stop(
 def _cmd_team_instances_reconcile(
     options: CliOptions,
     *,
-    agent_team_instance_id: str,
-    link_manifest: str | None,
-    launch_material_manifest: str | None,
-    runtime_manifest: str | None,
-    live_state_json: str | None,
-    houmao_project_dir: str | None,
-    actor_ref: str | None,
-    adopt: bool,
+    agent_team_instance_id: str = "",
+    link_manifest: str | None = None,
+    launch_material_manifest: str | None = None,
+    runtime_manifest: str | None = None,
+    live_state_json: str | None = None,
+    houmao_project_dir: str | None = None,
+    actor_ref: str | None = None,
+    adopt: bool = False,
     approved: bool = False,
 ) -> int:
     command_name = "team-instances adopt" if adopt else "team-instances reconcile"
@@ -2520,9 +1334,9 @@ def _agent_bindings_from_summary(summary: Any) -> list[AgentBinding]:
 
 def _manifest_output_path(
     context: EffectiveTopicContext,
-    agent_team_instance_id: str,
-    output_path: str | None,
-    manifest_kind: str,
+    agent_team_instance_id: str = "",
+    output_path: str | None = None,
+    manifest_kind: str = "",
 ) -> Path:
     if output_path is not None:
         path = Path(output_path)
@@ -2540,12 +1354,12 @@ def _manifest_output_path(
 def _load_manifest_set(
     context: EffectiveTopicContext,
     *,
-    agent_team_instance_id: str,
-    link_manifest: str | None,
-    launch_material_manifest: str | None,
-    runtime_manifest: str | None,
+    agent_team_instance_id: str = "",
+    link_manifest: str | None = None,
+    launch_material_manifest: str | None = None,
+    runtime_manifest: str | None = None,
     diagnostics: list[Diagnostic],
-    require_link: bool,
+    require_link: bool = False,
 ) -> _LoadedManifestSet:
     paths = manifest_paths(context.topic_workspace_path, agent_team_instance_id)
     link_path = _resolve_manifest_cli_path(context, link_manifest, paths.adapter_link)
@@ -2596,9 +1410,9 @@ def _resolve_manifest_cli_path(
 def _load_manifest_if_present(
     path: Path,
     *,
-    expected_kind: str,
+    expected_kind: str = "",
     diagnostics: list[Diagnostic],
-    required: bool,
+    required: bool = False,
 ) -> dict[str, object] | None:
     if not path.exists():
         if required:
@@ -2614,8 +1428,8 @@ def _load_manifest_if_present(
 def _load_or_collect_live_state(
     context: EffectiveTopicContext,
     *,
-    live_state_json: str | None,
-    houmao_project_dir: str | None,
+    live_state_json: str | None = None,
+    houmao_project_dir: str | None = None,
     link_manifest: dict[str, object] | None,
 ) -> tuple[dict[str, object], list[Diagnostic]]:
     if live_state_json is not None:
@@ -2687,12 +1501,12 @@ def _record_adapter_manifest_ref(
     store: Any,
     *,
     context: EffectiveTopicContext,
-    agent_team_instance_id: str,
-    adapter_manifest_kind: str,
+    agent_team_instance_id: str = "",
+    adapter_manifest_kind: str = "",
     manifest_path: Path,
-    manifest_digest: str,
-    source: str,
-    path_plan_id: str | None,
+    manifest_digest: str = "",
+    source: str = "",
+    path_plan_id: str | None = None,
     agent_instance_ids: list[str],
 ) -> None:
     timestamp = utc_timestamp()
@@ -2718,9 +1532,9 @@ def _record_adapter_manifest_ref(
 def _adapter_reconciliation_record(
     context: EffectiveTopicContext,
     *,
-    agent_team_instance_id: str,
+    agent_team_instance_id: str = "",
     result: Any,
-    actor_ref: str | None,
+    actor_ref: str | None = None,
 ) -> AdapterReconciliationRecord:
     timestamp = utc_timestamp()
     state = str(result.state)
@@ -2995,13 +1809,7 @@ def _emit(
     diagnostics: list[Diagnostic],
     text_lines: list[str],
 ) -> int:
-    if _output_format(options) == "json":
-        click.echo(render_json(command, payload, diagnostics))
-    else:
-        lines = [*text_lines, *render_diagnostics(diagnostics)]
-        if lines:
-            click.echo("\n".join(lines))
-    return 1 if has_errors(diagnostics) else 0
+    return emit_output(command, options, payload, diagnostics, text_lines)
 
 
 def _render_validate_text(project_found: bool, diagnostics: list[Diagnostic]) -> list[str]:
@@ -3011,13 +1819,26 @@ def _render_validate_text(project_found: bool, diagnostics: list[Diagnostic]) ->
 
 
 def _output_format(options: CliOptions) -> str:
-    if bool(_value(options, "json_output", False)):
-        return "json"
-    return str(_value(options, "output_format", "text") or "text")
+    return output_format(options)
 
 
-def _value(options: CliOptions, name: str, default: object | None = None) -> Any:
-    return getattr(options, name, default)
+def _register_commands() -> None:
+    from isomer_labs.cli.commands.doctor import register_doctor_commands
+    from isomer_labs.cli.commands.project import register_project_commands
+    from isomer_labs.cli.commands.runtime import register_runtime_commands
+    from isomer_labs.cli.commands.team_instances import register_team_instance_commands
+    from isomer_labs.cli.commands.team_profiles import register_team_profile_commands
+    from isomer_labs.cli.commands.team_templates import register_team_template_commands
+
+    register_project_commands(app)
+    register_doctor_commands(app)
+    register_runtime_commands(app)
+    register_team_instance_commands(app)
+    register_team_template_commands(app)
+    register_team_profile_commands(app)
+
+
+_register_commands()
 
 
 if __name__ == "__main__":

@@ -31,13 +31,13 @@ This command mutates the Project filesystem. It does not create `state.sqlite`, 
 `isomer-cli validate` checks the Project Manifest and registered Research Topic Configs. It is read-only.
 
 ```bash
-pixi run isomer-cli validate --json
+pixi run isomer-cli --print-json validate
 ```
 
 Use `isomer-cli doctor` to check host Pixi availability, Project-level Pixi configuration, and Research Topic environment bindings. It is also read-only.
 
 ```bash
-pixi run isomer-cli doctor --json
+pixi run isomer-cli --print-json doctor
 ```
 
 ## Inspect Context and Paths
@@ -45,7 +45,7 @@ pixi run isomer-cli doctor --json
 Before creating runtime state, resolve the Effective Topic Context and preview filesystem paths.
 
 ```bash
-pixi run isomer-cli context show --topic default --json
+pixi run isomer-cli --print-json context show --topic default
 pixi run isomer-cli paths preview --topic default
 ```
 
@@ -56,13 +56,13 @@ Both commands are read-only. `context show` displays the resolved Project, Resea
 `isomer-cli runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It creates `state.sqlite`, records schema metadata, and creates the default runtime directories (`artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, `logs/`).
 
 ```bash
-pixi run isomer-cli runtime init --topic default --json
+pixi run isomer-cli --print-json runtime init --topic default
 ```
 
 `isomer-cli runtime prepare` records Topic Environment Readiness. It checks only explicit Project Manifest bindings (`topic_pixi_environment_bindings` and `topic_standalone_pixi_bindings`) and records `ready`, `failed`, or `blocked` status. It does not install Pixi environments implicitly.
 
 ```bash
-pixi run isomer-cli runtime prepare --topic default --json
+pixi run isomer-cli --print-json runtime prepare --topic default
 ```
 
 If readiness is `failed` or `blocked`, repair is explicit. Treat environment setup or compatibility work as a Service Request rather than hiding it inside `runtime prepare`.
@@ -70,7 +70,7 @@ If readiness is `failed` or `blocked`, repair is explicit. Treat environment set
 ## Validate Readiness
 
 ```bash
-pixi run isomer-cli runtime validate --topic default --require-ready-readiness --json
+pixi run isomer-cli --print-json runtime validate --topic default --require-ready-readiness
 ```
 
 This command is read-only and reports launch-facing errors when readiness is not `ready`.
@@ -80,18 +80,17 @@ This command is read-only and reports launch-facing errors when readiness is not
 An Agent Team Instance is a concrete runtime team created from a Topic Agent Team Profile. The `team-instances create` command writes Agent Instance records, Agent Workspace records, path plans, initial Workflow Stage Cursor records, and provenance refs, and it materializes Agent Workspace directories. It does not launch Houmao agents or write adapter-specific launch material.
 
 ```bash
-pixi run isomer-cli team-instances create \
+pixi run isomer-cli --print-json team-instances create \
   --topic default \
   --topic-agent-team-profile default-deepsci \
-  --id ati-default-deepsci \
-  --json
+  --id ati-default-deepsci
 ```
 
 You can list and inspect the record:
 
 ```bash
 pixi run isomer-cli team-instances list --topic default
-pixi run isomer-cli team-instances show ati-default-deepsci --topic default --json
+pixi run isomer-cli --print-json team-instances show ati-default-deepsci --topic default
 ```
 
 At this point the Project has a durable Agent Team Instance record but no live agents. To launch through the Houmao adapter, see [Houmao Adapter](houmao-adapter.md) and [Workflows](workflows.md).

@@ -18,7 +18,7 @@ import click
 from click.testing import CliRunner
 
 from isomer_labs import cli
-from isomer_labs.houmao_manifests import (
+from isomer_labs.houmao.manifests import (
     ManifestKind,
     ManifestValidationError,
     MaterialFileRef,
@@ -61,12 +61,37 @@ class IsomerCliTests(unittest.TestCase):
         env: dict[str, str] | None = None,
     ) -> tuple[int, str]:
         root = cwd or self.make_root()
+        normalized_args = self.normalize_cli_args(args)
         runner = CliRunner()
         with contextlib.chdir(root), patch.dict(os.environ, env or {}, clear=True):
-            result = runner.invoke(cli.app, args, standalone_mode=False)
+            result = runner.invoke(cli.app, normalized_args, standalone_mode=False)
         if result.exception is not None:
             raise result.exception
         return int(result.return_value or 0), result.output
+
+    def normalize_cli_args(self, args: list[str]) -> list[str]:
+        normalized: list[str] = []
+        print_json = False
+        index = 0
+        while index < len(args):
+            value = args[index]
+            if value == "--json":
+                print_json = True
+                index += 1
+                continue
+            if value == "--format=json":
+                print_json = True
+                index += 1
+                continue
+            if value == "--format" and index + 1 < len(args) and args[index + 1] == "json":
+                print_json = True
+                index += 2
+                continue
+            normalized.append(value)
+            index += 1
+        if print_json and "--print-json" not in normalized:
+            normalized.insert(0, "--print-json")
+        return normalized
 
     def init_project(self, root: Path, topic_id: str = "default") -> None:
         status, output = self.run_cli(["--project", str(root), "init", topic_id], cwd=root)
@@ -287,15 +312,44 @@ class IsomerCliTests(unittest.TestCase):
         pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         self.assertEqual("isomer_labs.cli:main", pyproject["project"]["scripts"]["isomer-cli"])
 
-    def test_doctor_help_documents_read_only_common_topic_and_json_options(self) -> None:
+    def test_doctor_help_documents_read_only_common_topic_options(self) -> None:
         runner = CliRunner()
         result = runner.invoke(cli.app, ["doctor", "--help"])
         self.assertEqual(0, result.exit_code, result.output)
         self.assertIn("Run read-only dependency, Project, and topic diagnostics.", result.output)
-        for option in ("--project", "--manifest", "--topic", "--json", "--format"):
+        for option in ("--project", "--manifest", "--topic"):
             self.assertIn(option, result.output)
+        self.assertNotIn("--json", result.output)
+        self.assertNotIn("--format", result.output)
         self.assertNotIn("--fix", result.output)
         self.assertNotIn("--prepare", result.output)
+
+    def test_root_print_json_is_documented_and_applies_to_subcommands(self) -> None:
+        root = self.make_root()
+        runner = CliRunner()
+        help_result = runner.invoke(cli.app, ["--help"])
+        self.assertEqual(0, help_result.exit_code, help_result.output)
+        self.assertIn("--print-json", help_result.output)
+        self.assertNotIn("--json", help_result.output)
+        self.assertNotIn("--format", help_result.output)
+
+        for args in (
+            ["--print-json", "validate"],
+            ["--print-json", "doctor"],
+            ["--print-json", "runtime", "inspect"],
+            ["--print-json", "team-instances", "list"],
+        ):
+            status, output = self.run_cli(args, cwd=root)
+            data = json.loads(output)
+            self.assertIn(status, (0, 1))
+            self.assertEqual("isomer-cli-output.v1", data["output_schema_version"])
+
+    def test_default_output_is_structured_text_not_json(self) -> None:
+        root = self.make_root()
+        status, output = self.run_cli(["validate"], cwd=root)
+        self.assertEqual(1, status)
+        self.assertNotIn("isomer-cli-output.v1", output)
+        self.assertIn("ERROR | ISO001", output)
 
     def test_doctor_dependency_only_reports_missing_and_found_pixi(self) -> None:
         root = self.make_root()
@@ -1609,6 +1663,10 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(Path(data["materialization"]["link_manifest_path"]).is_file())
         self.assertTrue(Path(data["materialization"]["launch_material_manifest_path"]).is_file())
         self.assertFalse((Path(data["materialization"]["paths"]["adapter_root"]) / "adapter-runtime-manifest.json").exists())
+        path_plan_ids = data["materialization"]["path_plan_ids"]
+        self.assertTrue(any("adapter_manifest-houmao-ati-alpha-cli-adapter_link" in item for item in path_plan_ids))
+        self.assertTrue(any("adapter_manifest-houmao-ati-alpha-cli-launch_material" in item for item in path_plan_ids))
+        self.assertTrue(any("adapter_manifest-houmao-ati-alpha-cli-adapter_runtime" in item for item in path_plan_ids))
 
         status, output = self.run_cli(
             [
@@ -1680,6 +1738,11 @@ class IsomerCliTests(unittest.TestCase):
         self.assertGreaterEqual(len(summary["adapter_stop_outcomes"]), 1)
         self.assertGreaterEqual(len(summary["adapter_command_runs"]), 30)
         self.assertGreaterEqual(len(summary["adapter_payload_refs"]), 30)
+        manifest_refs = {record["manifest_kind"]: record for record in summary["adapter_manifest_refs"]}
+        self.assertEqual({"adapter_link", "launch_material", "adapter_runtime"}, set(manifest_refs))
+        self.assertTrue(all(record["path_plan_id"] for record in manifest_refs.values()))
+        launch_manifest_refs = set(summary["adapter_launch_attempts"][0]["manifest_ref_ids"])
+        self.assertTrue(set(manifest_refs) <= {record_id.rsplit("-", 1)[-1] for record_id in launch_manifest_refs})
 
         status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)

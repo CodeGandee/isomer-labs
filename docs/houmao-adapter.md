@@ -11,7 +11,7 @@ Houmao-specific concepts such as specialist, project profile, native role, recip
 Use the quick path when Isomer should prepare material and launch the Houmao managed agents in one command:
 
 ```bash
-isomer-cli team-instances launch <agent-team-instance-id> --adapter houmao --topic <research-topic-id> --json
+isomer-cli --print-json team-instances launch <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
 ```
 
 Quick launch runs preflight, writes shared launch material, creates or updates `adapter-link.json` and `launch-material-manifest.json`, launches one Houmao managed agent per Isomer Agent Instance, writes `adapter-runtime-manifest.json`, and records command runs, payload refs, a launch attempt, and reconciliation state in Workspace Runtime.
@@ -21,7 +21,7 @@ Quick launch runs preflight, writes shared launch material, creates or updates `
 Use the manual path when the operator wants to inspect or edit Houmao material before invoking Houmao directly:
 
 ```bash
-isomer-cli team-instances launch-material prepare <agent-team-instance-id> --adapter houmao --topic <research-topic-id> --json
+isomer-cli --print-json team-instances launch-material prepare <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
 ```
 
 Prepare-only writes the same material and manifests but does not launch, stop, message, or inspect Houmao managed agents. The JSON output includes bounded manual guidance for equivalent `houmao-mgr` commands. After direct Houmao work, use `inspect-live`, `reconcile`, or `adopt` so Isomer can compare manifests, file digests, and read-only Houmao observations.
@@ -83,13 +83,13 @@ The adapter can report these reconciliation states:
 `inspect-live --adapter houmao` runs read-only Houmao CLI inspection and records a bounded adapter inspection snapshot. It does not launch or stop agents.
 
 ```bash
-isomer-cli team-instances inspect-live <agent-team-instance-id> --adapter houmao --topic <research-topic-id> --json
+isomer-cli --print-json team-instances inspect-live <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
 ```
 
 `stop --adapter houmao` is an explicit live mutation. It targets known mapped Houmao agent names from manifests or launch attempts and records a stopped, partial, failed, or stale outcome.
 
 ```bash
-isomer-cli team-instances stop <agent-team-instance-id> --adapter houmao --topic <research-topic-id> --json
+isomer-cli --print-json team-instances stop <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
 ```
 
 ## Troubleshooting

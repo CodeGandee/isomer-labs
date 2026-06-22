@@ -36,6 +36,10 @@ The system SHALL document every public `isomer-cli` command with purpose, prereq
 - **WHEN** documentation validation runs
 - **THEN** every public command exposed by `isomer-cli --help` and documented command groups is represented in the CLI reference, or the validation reports the missing command
 
+#### Scenario: Global JSON mode is documented
+- **WHEN** a reader opens the CLI reference
+- **THEN** it documents root-level `--print-json` as the canonical JSON output switch and does not present command-local `--json` or `--format json` as normal usage
+
 #### Scenario: Side effects are explicit
 - **WHEN** a documented command can mutate Project files, Workspace Runtime records, adapter manifests, generated launch material, or live Houmao-managed agents
 - **THEN** the command reference states the mutation boundary before or alongside the command example
@@ -99,6 +103,10 @@ The system SHALL provide a repository-local documentation verification path that
 #### Scenario: Docs validation checks command coverage
 - **WHEN** docs validation runs
 - **THEN** it checks that the CLI reference includes current public command names and reports missing or stale command names
+
+#### Scenario: Docs validation checks stale JSON examples
+- **WHEN** docs validation runs after this change
+- **THEN** it reports stale Isomer CLI examples that use command-local `--json` or `--format json` instead of root-level `--print-json`
 
 #### Scenario: Docs validation checks canonical language posture
 - **WHEN** docs validation runs

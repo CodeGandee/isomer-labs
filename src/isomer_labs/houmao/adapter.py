@@ -10,15 +10,16 @@ import shlex
 import shutil
 import subprocess
 from time import monotonic
-from typing import Any, Literal, Mapping, Protocol
+from typing import Any, Iterable, Literal, Mapping, Protocol
 
 from isomer_labs.diagnostics import Diagnostic, has_errors
-from isomer_labs.houmao_manifests import (
+from isomer_labs.houmao.manifests import (
     HOUMAO_ADAPTER_ID,
     AgentBinding,
     ManifestKind,
     MaterialFileRef,
     ReconciliationResult,
+    adapter_manifest_path_plan_surface,
     build_adapter_link_manifest,
     build_adapter_runtime_manifest,
     build_launch_material_manifest,
@@ -30,7 +31,7 @@ from isomer_labs.houmao_manifests import (
     write_json_manifest,
 )
 from isomer_labs.models import EffectiveTopicContext, TopicAgentTeamProfile
-from isomer_labs.runtime_models import (
+from isomer_labs.runtime.models import (
     AdapterCommandRunRecord,
     AdapterInspectionSnapshotRecord,
     AdapterLaunchAttemptRecord,
@@ -1251,6 +1252,10 @@ class HoumaoAdapterFacade:
         for manifest_kind, manifest_path, manifest_digest, source in refs:
             timestamp = utc_timestamp()
             record_id = f"adapter-manifest-ref-{_slug(summary.agent_team_instance.id)}-{_slug(manifest_kind)}"
+            path_plan = store.get_path_plan(
+                context.topic_workspace_id,
+                adapter_manifest_path_plan_surface(summary.agent_team_instance.id, manifest_kind),
+            )
             store.record_adapter_manifest_ref(
                 AdapterManifestRefRecord(
                     id=record_id,
@@ -1262,7 +1267,7 @@ class HoumaoAdapterFacade:
                     manifest_path=str(manifest_path.resolve(strict=False)),
                     manifest_digest=manifest_digest,
                     source=source,
-                    path_plan_id=None,
+                    path_plan_id=path_plan.id if path_plan is not None else None,
                     agent_instance_ids=[record.id for record in summary.agent_instances],
                     created_at=timestamp,
                     updated_at=timestamp,
@@ -1419,6 +1424,9 @@ def build_houmao_adapter_paths(
 def houmao_adapter_path_plan_targets(agent_team_instance_id: str, paths: HoumaoAdapterPaths) -> dict[str, Path]:
     targets = {
         adapter_root_surface(agent_team_instance_id): paths.adapter_root,
+        adapter_manifest_path_plan_surface(agent_team_instance_id, ManifestKind.ADAPTER_LINK.value): paths.adapter_root / "adapter-link.json",
+        adapter_manifest_path_plan_surface(agent_team_instance_id, ManifestKind.LAUNCH_MATERIAL.value): paths.adapter_root / "launch-material-manifest.json",
+        adapter_manifest_path_plan_surface(agent_team_instance_id, ManifestKind.ADAPTER_RUNTIME.value): paths.adapter_root / "adapter-runtime-manifest.json",
         adapter_launch_material_surface(agent_team_instance_id): paths.launch_material_root,
         adapter_command_payload_surface(agent_team_instance_id): paths.command_payloads,
         adapter_launch_log_surface(agent_team_instance_id): paths.launch_logs,
@@ -1510,7 +1518,7 @@ def _failed_materialization(paths: HoumaoAdapterPaths, diagnostics: list[Diagnos
 
 
 def _adapter_reconciliation_record(context: EffectiveTopicContext, agent_team_instance_id: str, result: Any, actor_ref: str | None) -> Any:
-    from isomer_labs.runtime_models import AdapterReconciliationRecord
+    from isomer_labs.runtime.models import AdapterReconciliationRecord
 
     timestamp = utc_timestamp()
     state = str(result.state)
@@ -1670,7 +1678,27 @@ def _agents_from_results(results: list[HoumaoCommandResult]) -> list[dict[str, o
         elif isinstance(parsed, list):
             agents.extend(item for item in parsed if isinstance(item, dict))
     redacted = redact_payload(agents)
-    return redacted if isinstance(redacted, list) else agents
+    return _deduplicate_agent_records(redacted if isinstance(redacted, list) else agents)
+
+
+def _deduplicate_agent_records(agents: Iterable[object]) -> list[dict[str, object]]:
+    deduplicated: list[dict[str, object]] = []
+    seen: set[str] = set()
+    for agent in agents:
+        if not isinstance(agent, dict):
+            continue
+        key = str(
+            agent.get("agent_id")
+            or agent.get("managed_agent_id")
+            or agent.get("agent_name")
+            or agent.get("name")
+            or canonical_json_digest(agent)
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduplicated.append(agent)
+    return deduplicated
 
 
 def _adapter_diagnostic(

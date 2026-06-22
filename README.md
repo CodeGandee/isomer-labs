@@ -17,14 +17,13 @@ The same base capabilities can form different research teams, workflows, and fee
 ```bash
 pixi install
 pixi run isomer-cli init
-pixi run isomer-cli validate --json
-pixi run isomer-cli runtime init --topic default --json
-pixi run isomer-cli runtime prepare --topic default --json
-pixi run isomer-cli team-instances create \
+pixi run isomer-cli --print-json validate
+pixi run isomer-cli --print-json runtime init --topic default
+pixi run isomer-cli --print-json runtime prepare --topic default
+pixi run isomer-cli --print-json team-instances create \
   --topic default \
   --topic-agent-team-profile default-deepsci \
-  --id ati-default-deepsci \
-  --json
+  --id ati-default-deepsci
 ```
 
 For Houmao-backed launch paths, see [docs/workflows.md](docs/workflows.md) and [docs/houmao-adapter.md](docs/houmao-adapter.md).

@@ -33,12 +33,12 @@
 
 ## 4. Quick Launch Integration
 
-- [ ] 4.1 Extend Houmao quick launch preflight to resolve manifest path plans before launch material is written.
-- [ ] 4.2 Write or update `adapter-link.json` before Isomer invokes Houmao quick launch.
-- [ ] 4.3 Write or update `launch-material-manifest.json` with generated material refs, raw file digests, source, editable policy, and Provenance refs before launch.
-- [ ] 4.4 Write or update `adapter-runtime-manifest.json` after quick launch inspection records live Houmao refs and mapping confidence.
-- [ ] 4.5 Link quick-launch manifest refs, launch attempt records, runtime records, and Provenance Records in Workspace Runtime.
-- [ ] 4.6 Preserve existing Milestone 5 launch, inspect, stop, and handoff behavior while adding manifest refs and reconciliation summaries.
+- [x] 4.1 Extend Houmao quick launch preflight to resolve manifest path plans before launch material is written.
+- [x] 4.2 Write or update `adapter-link.json` before Isomer invokes Houmao quick launch.
+- [x] 4.3 Write or update `launch-material-manifest.json` with generated material refs, raw file digests, source, editable policy, and Provenance refs before launch.
+- [x] 4.4 Write or update `adapter-runtime-manifest.json` after quick launch inspection records live Houmao refs and mapping confidence.
+- [x] 4.5 Link quick-launch manifest refs, launch attempt records, runtime records, and Provenance Records in Workspace Runtime.
+- [x] 4.6 Preserve existing Milestone 5 launch, inspect, stop, and handoff behavior while adding manifest refs and reconciliation summaries.
 
 ## 5. CLI and API Surface
 
@@ -59,8 +59,8 @@
 - [x] 6.6 Add unit tests for Workspace Runtime opaque manifest refs, reconciliation records, and restart-safe lookup.
 - [x] 6.7 Add CLI tests for adapter link export, integrity inspection, reconcile, adopt, text output, and JSON output.
 - [x] 6.8 Add tests proving direct Houmao adoption does not mark handoff or Run completion accepted without Operator Agent normalization.
-- [ ] 6.9 Add live-gated or manual validation for Isomer quick launch followed by reconciliation.
-- [ ] 6.10 Add live-gated or manual validation for direct `houmao-mgr` launch followed by Isomer reconcile and adopt.
+- [x] 6.9 Add live-gated or manual validation for Isomer quick launch followed by reconciliation.
+- [x] 6.10 Add live-gated or manual validation for direct `houmao-mgr` launch followed by Isomer reconcile and adopt.
 
 ## 7. Documentation and Review
 
@@ -68,4 +68,4 @@
 - [x] 7.2 Document the JSON manifest files, their CLI-first workflow, and which fields are safe to inspect or edit manually during recovery.
 - [x] 7.3 Document that Isomer does not expose the full Houmao management surface and that low-level Houmao edits remain direct `houmao-mgr` workflows.
 - [x] 7.4 Run `pixi run lint`, `pixi run typecheck`, and `pixi run test`.
-- [ ] 7.5 Run relevant live-gated or manual Houmao validation when the local Houmao checkout is available.
+- [x] 7.5 Run relevant live-gated or manual Houmao validation when the local Houmao checkout is available.

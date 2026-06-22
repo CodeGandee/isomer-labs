@@ -13,7 +13,7 @@ import subprocess
 from typing import Iterable, Mapping
 
 from isomer_labs.diagnostics import Diagnostic
-from isomer_labs.runtime_models import utc_timestamp
+from isomer_labs.runtime.models import utc_timestamp
 
 
 HOUMAO_ADAPTER_ID = "houmao"
@@ -510,7 +510,25 @@ def _agents_from_command_payloads(commands: list[dict[str, object]]) -> list[dic
                     agents.extend(item for item in maybe_agents if isinstance(item, dict))
         elif isinstance(stdout, list):
             agents.extend(item for item in stdout if isinstance(item, dict))
-    return agents
+    return _deduplicate_agent_records(agents)
+
+
+def _deduplicate_agent_records(agents: list[dict[str, object]]) -> list[dict[str, object]]:
+    deduplicated: list[dict[str, object]] = []
+    seen: set[str] = set()
+    for agent in agents:
+        key = str(
+            agent.get("agent_id")
+            or agent.get("managed_agent_id")
+            or agent.get("agent_name")
+            or agent.get("name")
+            or canonical_json_digest(agent)
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduplicated.append(agent)
+    return deduplicated
 
 
 def _manifest_digest_summary(

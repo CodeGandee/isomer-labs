@@ -9,7 +9,7 @@ The following options are available on most commands:
 - `--project TEXT` — explicit Project root selector.
 - `--manifest TEXT` — explicit Project Manifest selector.
 - `--format [text|json]` — output format.
-- `--json` — emit JSON; shorthand for `--format json`.
+- `--print-json` — emit deterministic JSON for the selected command.
 - `-h, --help` — show help for the command.
 
 When `--project` is omitted, `isomer-cli` walks up from the current working directory until it finds a `.isomer-labs/` Project Config Directory.
@@ -42,8 +42,8 @@ Run read-only dependency, Project, and topic diagnostics.
 **Side effects:** none. Checks host Pixi availability, Project-level Pixi configuration, optional `requires-pixi`, `pixi.lock` presence, and selected Research Topic environment bindings. Does not install Pixi environments, create lockfiles, create Topic Workspace runtime state, create Agent Workspaces, or edit Project config.
 
 ```bash
-pixi run isomer-cli doctor --json
-pixi run isomer-cli doctor --topic default --json
+pixi run isomer-cli --print-json doctor
+pixi run isomer-cli --print-json doctor --topic default
 ```
 
 ### `validate`
@@ -53,8 +53,8 @@ Validate the Project Manifest and registered configs.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli validate --json
-pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases validate --json
+pixi run isomer-cli --print-json validate
+pixi run isomer-cli --print-json --project tests/fixtures/projects/deepsci-profile-use-cases validate
 ```
 
 ### `topics list`
@@ -65,7 +65,7 @@ List registered Research Topics.
 
 ```bash
 pixi run isomer-cli topics list
-pixi run isomer-cli topics list --json
+pixi run isomer-cli --print-json topics list
 ```
 
 ### `workspaces list`
@@ -76,7 +76,7 @@ List registered Topic Workspaces.
 
 ```bash
 pixi run isomer-cli workspaces list
-pixi run isomer-cli workspaces list --json
+pixi run isomer-cli --print-json workspaces list
 ```
 
 ### `context show`
@@ -86,7 +86,7 @@ Show resolved Effective Topic Context.
 **Side effects:** none. The resolved context is process-local and is not stored as Workspace Runtime state.
 
 ```bash
-pixi run isomer-cli context show --topic default --json
+pixi run isomer-cli --print-json context show --topic default
 ```
 
 ### `paths preview`
@@ -97,7 +97,7 @@ Preview workspace paths without creating them.
 
 ```bash
 pixi run isomer-cli paths preview --topic default
-pixi run isomer-cli paths preview --topic default --json
+pixi run isomer-cli --print-json paths preview --topic default
 ```
 
 ### `schemas list`
@@ -108,7 +108,7 @@ List Isomer built-in schemas and contracts.
 
 ```bash
 pixi run isomer-cli schemas list
-pixi run isomer-cli schemas list --json
+pixi run isomer-cli --print-json schemas list
 ```
 
 ### `runtime init`
@@ -118,7 +118,7 @@ Initialize or reopen the selected Workspace Runtime.
 **Side effects:** creates or reopens `<topic-workspace>/state.sqlite`, stores schema metadata, records owner Research Topic and Topic Workspace refs, persists path plans for `state.sqlite`, `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/`, and creates those default runtime directories. Reopening a current-schema runtime is idempotent. Unsupported older or newer schemas produce diagnostics and do not create directories or rewrite owner refs.
 
 ```bash
-pixi run isomer-cli runtime init --topic default --json
+pixi run isomer-cli --print-json runtime init --topic default
 ```
 
 ### `runtime prepare`
@@ -128,8 +128,8 @@ Record selected topic environment readiness.
 **Side effects:** writes or updates a `TopicEnvironmentReadinessRecord` in Workspace Runtime. Checks only explicit Project Manifest `topic_pixi_environment_bindings` and `topic_standalone_pixi_bindings`. Does not install Pixi environments or perform hidden repair.
 
 ```bash
-pixi run isomer-cli runtime prepare --topic default --json
-pixi run isomer-cli runtime prepare --topic default --actor operator --json
+pixi run isomer-cli --print-json runtime prepare --topic default
+pixi run isomer-cli --print-json runtime prepare --topic default --actor operator
 ```
 
 ### `runtime inspect`
@@ -140,7 +140,7 @@ Inspect Workspace Runtime metadata without mutation.
 
 ```bash
 pixi run isomer-cli runtime inspect --topic default
-pixi run isomer-cli runtime inspect --topic default --json
+pixi run isomer-cli --print-json runtime inspect --topic default
 ```
 
 ### `runtime validate`
@@ -151,7 +151,7 @@ Validate Workspace Runtime records without mutation.
 
 ```bash
 pixi run isomer-cli runtime validate --topic default
-pixi run isomer-cli runtime validate --topic default --require-ready-readiness --json
+pixi run isomer-cli --print-json runtime validate --topic default --require-ready-readiness
 ```
 
 ### `team-instances create`
@@ -163,11 +163,10 @@ Create an Agent Team Instance record.
 **Prerequisites:** Workspace Runtime must be initialized and readiness should be `ready` for launch-facing work.
 
 ```bash
-pixi run isomer-cli team-instances create \
+pixi run isomer-cli --print-json team-instances create \
   --topic default \
   --topic-agent-team-profile default-deepsci \
-  --id ati-default-deepsci \
-  --json
+  --id ati-default-deepsci
 ```
 
 ### `team-instances list`
@@ -178,7 +177,7 @@ List Agent Team Instance records.
 
 ```bash
 pixi run isomer-cli team-instances list --topic default
-pixi run isomer-cli team-instances list --topic default --json
+pixi run isomer-cli --print-json team-instances list --topic default
 ```
 
 ### `team-instances show`
@@ -188,7 +187,7 @@ Show one Agent Team Instance record.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli team-instances show ati-default-deepsci --topic default --json
+pixi run isomer-cli --print-json team-instances show ati-default-deepsci --topic default
 ```
 
 ### `team-instances adapter-link export`
@@ -198,8 +197,8 @@ Write or print a Houmao adapter link JSON manifest.
 **Side effects:** writes `adapter-link.json` under the Topic Workspace adapter directory unless `--print` is used. Does not launch agents.
 
 ```bash
-pixi run isomer-cli team-instances adapter-link export ati-default-deepsci --topic default --json
-pixi run isomer-cli team-instances adapter-link export ati-default-deepsci --topic default --print --json
+pixi run isomer-cli --print-json team-instances adapter-link export ati-default-deepsci --topic default
+pixi run isomer-cli --print-json team-instances adapter-link export ati-default-deepsci --topic default --print
 ```
 
 ### `team-instances launch-material prepare`
@@ -209,8 +208,8 @@ Prepare Houmao launch material without launching agents.
 **Side effects:** writes shared launch material, creates or updates `adapter-link.json` and `launch-material-manifest.json`, and records materialization state in Workspace Runtime. Does not launch, stop, message, or inspect Houmao managed agents.
 
 ```bash
-pixi run isomer-cli team-instances launch-material prepare ati-default-deepsci \
-  --topic default --adapter houmao --json
+pixi run isomer-cli --print-json team-instances launch-material prepare ati-default-deepsci \
+  --topic default --adapter houmao
 ```
 
 ### `team-instances launch`
@@ -220,8 +219,8 @@ Quick-launch a Houmao-backed Agent Team Instance.
 **Side effects:** runs preflight, writes shared launch material, creates or updates `adapter-link.json` and `launch-material-manifest.json`, launches one Houmao managed agent per Isomer Agent Instance, writes `adapter-runtime-manifest.json`, and records command runs, payload refs, a launch attempt, and reconciliation state in Workspace Runtime. This is a live mutation of external Houmao state.
 
 ```bash
-pixi run isomer-cli team-instances launch ati-default-deepsci \
-  --topic default --adapter houmao --json
+pixi run isomer-cli --print-json team-instances launch ati-default-deepsci \
+  --topic default --adapter houmao
 ```
 
 ### `team-instances inspect-live`
@@ -231,8 +230,8 @@ Inspect Houmao adapter manifest integrity without mutation.
 **Side effects:** none. Runs read-only Houmao CLI inspection and records a bounded adapter inspection snapshot in Workspace Runtime. The snapshot is a durable record of the observation; the underlying Houmao state is not modified.
 
 ```bash
-pixi run isomer-cli team-instances inspect-live ati-default-deepsci \
-  --topic default --adapter houmao --integrity --json
+pixi run isomer-cli --print-json team-instances inspect-live ati-default-deepsci \
+  --topic default --adapter houmao --integrity
 ```
 
 ### `team-instances stop`
@@ -242,8 +241,8 @@ Stop a Houmao-backed Agent Team Instance.
 **Side effects:** an explicit live mutation. Targets known mapped Houmao agent names from manifests or launch attempts and records a stopped, partial, failed, or stale outcome in Workspace Runtime.
 
 ```bash
-pixi run isomer-cli team-instances stop ati-default-deepsci \
-  --topic default --adapter houmao --json
+pixi run isomer-cli --print-json team-instances stop ati-default-deepsci \
+  --topic default --adapter houmao
 ```
 
 ### `team-instances reconcile`
@@ -253,8 +252,8 @@ Record Houmao adapter manifest reconciliation state.
 **Side effects:** writes or updates `adapter-runtime-manifest.json` and records an `AdapterReconciliationRecord` in Workspace Runtime. Does not start, stop, or message Houmao-managed agents.
 
 ```bash
-pixi run isomer-cli team-instances reconcile ati-default-deepsci \
-  --topic default --json
+pixi run isomer-cli --print-json team-instances reconcile ati-default-deepsci \
+  --topic default
 ```
 
 ### `team-instances adopt`
@@ -264,8 +263,8 @@ Adopt externally launched Houmao runtime state.
 **Side effects:** records an explicit decision to associate externally launched Houmao runtime state with the selected Agent Team Instance. Requires `--yes` to confirm.
 
 ```bash
-pixi run isomer-cli team-instances adopt ati-default-deepsci \
-  --topic default --yes --json
+pixi run isomer-cli --print-json team-instances adopt ati-default-deepsci \
+  --topic default --yes
 ```
 
 ### `team-templates list`
@@ -276,7 +275,7 @@ List registered Domain Agent Team Templates.
 
 ```bash
 pixi run isomer-cli team-templates list
-pixi run isomer-cli team-templates list --json
+pixi run isomer-cli --print-json team-templates list
 ```
 
 ### `team-templates inspect`
@@ -286,7 +285,7 @@ Inspect a registered Domain Agent Team Template.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli team-templates inspect deepsci-org --json
+pixi run isomer-cli --print-json team-templates inspect deepsci-org
 ```
 
 ### `team-templates validate`
@@ -307,10 +306,10 @@ Derive a candidate Topic Agent Team Profile.
 **Side effects:** by default, prints a design-time preview without writing files. When `--write` is requested, writes only the profile TOML file to the Project Config Directory and reports a deterministic `registration_suggestion` object for adding the profile to the Project Manifest. Does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state.
 
 ```bash
-pixi run isomer-cli team-profiles specialize \
-  --topic default --profile-id default-deepsci --use-case UC-01 --json
-pixi run isomer-cli team-profiles specialize \
-  --topic default --profile-id default-deepsci --use-case UC-01 --write --json
+pixi run isomer-cli --print-json team-profiles specialize \
+  --topic default --profile-id default-deepsci --use-case UC-01
+pixi run isomer-cli --print-json team-profiles specialize \
+  --topic default --profile-id default-deepsci --use-case UC-01 --write
 ```
 
 ### `team-profiles validate`
