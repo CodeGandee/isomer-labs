@@ -37,6 +37,12 @@ BUILT_IN_SCHEMAS = (
         description="Side-effect-free Workspace Path Resolution preview output.",
     ),
     BuiltInSchema(
+        name="isomer-workspace-runtime",
+        kind="schema",
+        schema_version="isomer-workspace-runtime.v1",
+        description="Topic Workspace SQLite runtime state for paths, readiness, lifecycle, and team records.",
+    ),
+    BuiltInSchema(
         name="isomer-diagnostics",
         kind="contract",
         schema_version="isomer-diagnostics.v1",

@@ -4,11 +4,11 @@
 TBD - created by archiving changes implement-isomer-cli-project-discovery and refactor-isomer-cli-to-click. Update Purpose after archive.
 ## Requirements
 ### Requirement: CLI Entrypoint and Command Surface
-The system SHALL provide an installed `isomer-cli` command with Project discovery, template inspection, and Topic Agent Team Profile validation commands.
+The system SHALL provide an installed `isomer-cli` command with Project discovery, doctor diagnostics, Workspace Runtime management, topic environment readiness preparation, Agent Team Instance record management, template inspection, and Topic Agent Team Profile validation commands.
 
 #### Scenario: CLI exposes project-discovery commands
 - **WHEN** a user runs `isomer-cli --help`
-- **THEN** the command help lists `init`, `validate`, `topics list`, `workspaces list`, `context show`, `paths preview`, and `schemas list`
+- **THEN** the command help lists `init`, `validate`, `doctor`, `topics list`, `workspaces list`, `context show`, `paths preview`, `schemas list`, `runtime init`, `runtime prepare`, `runtime inspect`, `runtime validate`, `team-instances create`, `team-instances list`, and `team-instances show`
 
 #### Scenario: CLI exposes template and profile commands
 - **WHEN** a user runs `isomer-cli --help`
@@ -176,7 +176,7 @@ The system SHALL expose the built-in schema and contract names known to the Mile
 - **THEN** the command does not create schema files under `.isomer-labs/`
 
 ### Requirement: Diagnostics and Output Formats
-The system SHALL produce deterministic diagnostics and machine-readable output for Project discovery, template inspection, and Topic Agent Team Profile commands.
+The system SHALL produce deterministic diagnostics and machine-readable output for Project discovery, doctor diagnostics, Workspace Runtime management, topic environment readiness preparation, Agent Team Instance record management, template inspection, and Topic Agent Team Profile commands.
 
 #### Scenario: Diagnostics include stable codes
 - **WHEN** validation reports an error
@@ -187,12 +187,39 @@ The system SHALL produce deterministic diagnostics and machine-readable output f
 - **THEN** diagnostic output identifies the offending field or path without printing the secret value
 
 #### Scenario: JSON output is deterministic
-- **WHEN** a user requests JSON output for `validate`, `topics list`, `workspaces list`, `context show`, `paths preview`, `schemas list`, `team-templates list`, `team-templates inspect`, `team-templates validate`, `team-profiles specialize`, or `team-profiles validate`
+- **WHEN** a user requests JSON output for `validate`, `doctor`, `topics list`, `workspaces list`, `context show`, `paths preview`, `schemas list`, `runtime init`, `runtime prepare`, `runtime inspect`, `runtime validate`, `team-instances create`, `team-instances list`, `team-instances show`, `team-templates list`, `team-templates inspect`, `team-templates validate`, `team-profiles specialize`, or `team-profiles validate`
 - **THEN** the command emits deterministic JSON suitable for unit tests and future Operator Agent consumption
 
 #### Scenario: JSON output is versioned but provisional
-- **WHEN** a user requests JSON output from a command added for template registration or Topic Agent Team Profile specialization
+- **WHEN** a user requests JSON output from a command added for doctor diagnostics, Workspace Runtime management, topic environment readiness preparation, Agent Team Instance record management, template registration, or Topic Agent Team Profile specialization
 - **THEN** the response includes an output schema version and is treated as a developer contract rather than a durable public research-record API
+
+### Requirement: Runtime Command Side-effect Boundaries
+The system SHALL make Workspace Runtime mutations explicit in CLI behavior while preserving the read-only guarantees of inspection and design-time commands.
+
+#### Scenario: Runtime init is the runtime creation command
+- **WHEN** a user runs `isomer-cli runtime init`
+- **THEN** the command may create or reopen `state.sqlite` and the default Workspace Runtime directories for the selected Topic Workspace
+
+#### Scenario: Runtime prepare is the readiness preparation command
+- **WHEN** a user runs `isomer-cli runtime prepare`
+- **THEN** the command may record selected topic Pixi environment use, readiness status, readiness diagnostics, and preparation provenance in the selected Workspace Runtime
+
+#### Scenario: Runtime inspect is read-only
+- **WHEN** a user runs `isomer-cli runtime inspect`
+- **THEN** the command reads Workspace Runtime metadata and selected record counts without creating or mutating runtime state
+
+#### Scenario: Runtime validate is read-only
+- **WHEN** a user runs `isomer-cli runtime validate`
+- **THEN** the command reports Workspace Runtime diagnostics without creating directories, changing statuses, or repairing records
+
+#### Scenario: Team instance create is explicit mutation
+- **WHEN** a user runs `isomer-cli team-instances create`
+- **THEN** the command may create Agent Team Instance, Agent Instance, Agent Workspace, path plan, Workflow Stage Cursor, and Provenance records for the selected Topic Workspace
+
+#### Scenario: Team instance inspection is read-only
+- **WHEN** a user runs `isomer-cli team-instances list` or `isomer-cli team-instances show`
+- **THEN** the command reads Workspace Runtime records without creating Agent Team Instances, Agent Instances, Agent Workspaces, Runs, Houmao launch material, or adapter refs
 
 ### Requirement: Click Command Registration
 The system SHALL implement the Milestone 1 `isomer-cli` command surface with Click command groups while preserving the established Project discovery command behavior.
@@ -253,4 +280,34 @@ The system SHALL document the completed Milestone 2 and 3 command surface and fi
 #### Scenario: Roadmap reflects verified completion
 - **WHEN** all Milestone 2 and 3 verification commands pass
 - **THEN** ROADMAP Milestone 2 and 3 checklist items are marked complete without marking Milestone 4 or Houmao launch work complete
+
+### Requirement: Houmao adapter launch CLI surface
+The system SHALL expose Houmao adapter launch, prepare-only, inspect-live, and stop behavior through explicit `isomer-cli team-instances` commands with deterministic text and JSON output.
+
+#### Scenario: Help lists adapter launch commands
+- **WHEN** a user runs `isomer-cli team-instances --help`
+- **THEN** the command help lists `launch`, `launch-material prepare`, `inspect-live`, and `stop` without presenting Houmao-specific command names as core Isomer concepts
+
+#### Scenario: Quick launch command reports mutation
+- **WHEN** a user runs `isomer-cli team-instances launch <agent-team-instance-id> --adapter houmao --json`
+- **THEN** the command emits deterministic JSON with Project, Research Topic, Topic Workspace, Agent Team Instance, selected Execution Adapter, launch attempt refs, manifest refs, diagnostics, and an explicit mutation summary
+
+#### Scenario: Prepare-only command reports manual guidance
+- **WHEN** a user runs `isomer-cli team-instances launch-material prepare <agent-team-instance-id> --adapter houmao --json`
+- **THEN** the command emits deterministic JSON with generated material refs, manifest refs, validation diagnostics, and bounded manual `houmao-mgr` guidance without launching Houmao-managed agents
+
+### Requirement: Houmao adapter CLI side-effect boundaries
+The system SHALL make side effects explicit for all Houmao adapter CLI commands.
+
+#### Scenario: Inspect-live is read-only by default
+- **WHEN** a user runs `isomer-cli team-instances inspect-live <agent-team-instance-id> --adapter houmao`
+- **THEN** the command may read Workspace Runtime, manifests, and live Houmao state, but it does not create Agent Team Instances, launch agents, stop agents, or write adoption state unless a separate explicit recording or reconciliation command is used
+
+#### Scenario: Stop is explicit mutation
+- **WHEN** a user runs `isomer-cli team-instances stop <agent-team-instance-id> --adapter houmao`
+- **THEN** the command reports that it may mutate live Houmao state and records the stop outcome in Workspace Runtime when the selected runtime schema supports adapter stop records
+
+#### Scenario: Failed preflight has no live mutation
+- **WHEN** quick launch or stop preflight fails
+- **THEN** the command returns deterministic diagnostics and does not start, stop, message, or edit Houmao-managed agents
 

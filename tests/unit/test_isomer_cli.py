@@ -4,7 +4,9 @@ import contextlib
 import json
 import os
 import shutil
+import sqlite3
 import subprocess
+import sys
 import tempfile
 import textwrap
 import tomllib
@@ -16,6 +18,18 @@ import click
 from click.testing import CliRunner
 
 from isomer_labs import cli
+from isomer_labs.houmao_manifests import (
+    ManifestKind,
+    ManifestValidationError,
+    MaterialFileRef,
+    build_adapter_link_manifest,
+    build_launch_material_manifest,
+    canonical_json_digest,
+    file_digest,
+    load_json_manifest,
+    reconcile_houmao_manifests,
+    write_json_manifest,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -152,6 +166,17 @@ class IsomerCliTests(unittest.TestCase):
         if lockfile:
             write(root / "pixi.lock", "version: 1\n")
 
+    def add_topic_pixi_binding(self, root: Path, topic_id: str, pixi_environment: str) -> None:
+        self.append_manifest(
+            root,
+            f"""
+            [[topic_pixi_environment_bindings]]
+            research_topic_id = "{topic_id}"
+            pixi_environment = "{pixi_environment}"
+            purpose = "runtime"
+            """,
+        )
+
     def append_manifest(self, root: Path, content: str) -> None:
         manifest_path = root / ".isomer-labs" / "manifest.toml"
         current = manifest_path.read_text(encoding="utf-8")
@@ -175,6 +200,60 @@ class IsomerCliTests(unittest.TestCase):
             patch("isomer_labs.doctor.shutil.which", return_value=path),
             patch("isomer_labs.doctor.subprocess.run", side_effect=fake_run),
         )
+
+    def fake_houmao_command(self, root: Path) -> str:
+        script = root / "fake-houmao-mgr.py"
+        write(
+            script,
+            f"""
+            #!{sys.executable}
+            import json
+            import os
+            import sys
+
+            args = sys.argv[1:]
+            if "--version" in args:
+                print("houmao-mgr 0.0.0")
+                raise SystemExit(0)
+
+            fail_on = os.environ.get("HOUMAO_FAKE_FAIL_ON")
+            if fail_on and fail_on in " ".join(args):
+                print(json.dumps({{"ok": False, "failed_on": fail_on, "args": args}}))
+                raise SystemExit(2)
+
+            def option(name, default=None):
+                if name in args:
+                    index = args.index(name)
+                    if index + 1 < len(args):
+                        return args[index + 1]
+                return default
+
+            payload = {{"ok": True, "args": args}}
+            if "system-skills" in args and "list" in args:
+                payload = {{"skills": []}}
+            elif "global" in args and "list" in args:
+                payload = {{"agents": []}}
+            elif "project" in args and "init" in args:
+                payload = {{"project": {{"status": "initialized"}}}}
+            elif "specialist" in args and "create" in args:
+                payload = {{"specialist": {{"name": option("--name")}}}}
+            elif "profile" in args and "create" in args:
+                payload = {{"profile": {{"name": option("--name"), "agent_name": option("--agent-name")}}}}
+            elif "agents" in args and "launch" in args:
+                payload = {{"agent_id": "hm-" + str(option("--name")), "agent_name": option("--name"), "profile": option("--profile")}}
+            elif "agents" in args and "list" in args:
+                payload = {{"agents": []}}
+            elif "agents" in args and "get" in args:
+                payload = {{"agent_id": "hm-" + str(option("--name")), "agent_name": option("--name")}}
+            elif "agents" in args and "stop" in args:
+                payload = {{"stopped": True, "agent_name": option("--name")}}
+            else:
+                print(json.dumps({{"ok": False, "args": args}}))
+                raise SystemExit(2)
+            print(json.dumps(payload))
+            """,
+        )
+        return f"{sys.executable} {script}"
 
     def check(self, data: dict[str, object], check_id: str) -> dict[str, object]:
         checks = data["checks"]
@@ -684,6 +763,95 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertIn("ISO005", {diagnostic["code"] for diagnostic in data["diagnostics"]})
 
+    def test_runtime_init_prepare_inspect_validate_and_side_effect_boundaries(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        self.add_project_pixi_manifest(root, lockfile=True)
+        self.add_topic_pixi_binding(root, "default", "default")
+
+        which_patch, run_patch = self.patch_pixi()
+        with which_patch, run_patch:
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
+
+        status, output = self.run_cli(["runtime", "inspect", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["runtime"]["exists"])
+        self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
+
+        status, output = self.run_cli(["runtime", "init", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue(data["runtime"]["created"])
+        runtime_root = root / "topic-workspaces" / "default"
+        self.assertTrue((runtime_root / "state.sqlite").is_file())
+        for directory in ("artifacts", "agents", "tasks", "runs", "views", "logs"):
+            self.assertTrue((runtime_root / directory).is_dir())
+        surfaces = {record["surface"] for record in data["runtime"]["path_plans"]}
+        self.assertTrue({"workspace_runtime_db", "artifacts", "agents", "tasks", "runs", "views", "logs"} <= surfaces)
+
+        status, output = self.run_cli(["runtime", "init", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertFalse(data["runtime"]["created"])
+
+        status, output = self.run_cli(["runtime", "prepare", "--actor", "operator-agent:test", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        readiness = data["preparation"]["readiness"]
+        self.assertEqual("ready", readiness["status"])
+        self.assertEqual(["default"], readiness["project_pixi_environment_refs"])
+        self.assertEqual("operator-agent:test", readiness["actor_ref"])
+
+        status, output = self.run_cli(["runtime", "inspect", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual("ready", data["runtime"]["latest_readiness"]["status"])
+        self.assertEqual(1, data["runtime"]["counts"]["readiness_records"])
+
+        status, output = self.run_cli(["runtime", "validate", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["ok"])
+        self.assertFalse(data["mutated"])
+        self.assertFalse((runtime_root / ".pixi").exists())
+        self.assertFalse(any("houmao" in path.name for path in runtime_root.rglob("*")))
+
+    def test_runtime_prepare_requires_initialized_runtime_and_records_repair_boundary(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        self.add_project_pixi_manifest(root, environments=("analysis",), lockfile=True)
+        self.add_topic_pixi_binding(root, "default", "missing-env")
+
+        status, output = self.run_cli(["runtime", "prepare", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO040", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+        self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
+
+        status, output = self.run_cli(["runtime", "init", "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+        status, output = self.run_cli(["runtime", "prepare", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        readiness = data["preparation"]["readiness"]
+        self.assertEqual("failed", readiness["status"])
+        self.assertIn("Service Request", readiness["repair_service_request_hint"])
+        self.assertIn("ISO043", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        status, output = self.run_cli(["runtime", "inspect", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("failed", data["runtime"]["latest_readiness"]["status"])
+
     def test_topics_workspaces_and_schemas_list_use_declared_sources(self) -> None:
         root = self.make_root()
         write(
@@ -1121,6 +1289,610 @@ class IsomerCliTests(unittest.TestCase):
         )
         self.assertEqual(0, status, output)
         self.assertIn("Registration suggestion: add [[topic_agent_team_profiles]]", output)
+
+    def test_team_instances_create_list_show_and_duplicate_are_runtime_only(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main", "beta-main"), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        self.add_topic_pixi_binding(root, "beta", "beta-main")
+
+        for command in (
+            ["runtime", "init", "--topic", "alpha", "--json"],
+            ["runtime", "prepare", "--topic", "alpha", "--json"],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-manual",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        creation = data["creation"]
+        team = creation["agent_team_instance"]
+        self.assertEqual("ati-alpha-manual", team["id"])
+        self.assertEqual("uc-01-alpha", team["topic_agent_team_profile_id"])
+        self.assertEqual(7, len(creation["agent_instances"]))
+        self.assertEqual(7, len(creation["agent_workspaces"]))
+        self.assertEqual(0, len(team["run_ids"]))
+        self.assertNotIn("houmao", output.lower())
+        self.assertTrue((root / "topic-workspaces" / "alpha" / "agents").is_dir())
+        self.assertFalse((root / "topic-workspaces" / "alpha" / "launch-dossiers").exists())
+
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-manual",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO046", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        status, output = self.run_cli(["team-instances", "list", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["ati-alpha-manual"], [item["id"] for item in data["agent_team_instances"]])
+
+        status, output = self.run_cli(
+            ["team-instances", "show", "ati-alpha-manual", "--topic", "alpha", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        summary = data["summary"]
+        self.assertEqual(7, len(summary["agent_instances"]))
+        self.assertEqual(7, len(summary["agent_workspaces"]))
+        self.assertGreaterEqual(len(summary["workflow_stage_cursors"]), 7)
+
+        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        first_workspace = root / summary["path_plans"][0]["path"]
+        if not first_workspace.is_absolute():
+            first_workspace = root / first_workspace
+        shutil.rmtree(first_workspace)
+        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO044", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_houmao_json_manifest_helpers_round_trip_digest_drift_and_redaction(self) -> None:
+        root = self.make_root()
+        material_path = root / "launch" / "profile.json"
+        write(material_path, '{"profile": "alpha"}\n')
+        link_manifest = build_adapter_link_manifest(
+            project_root=root,
+            research_topic_id="alpha",
+            topic_workspace_id="alpha",
+            topic_workspace_path=root / "topic-workspaces" / "alpha",
+            agent_team_instance_id="ati-alpha",
+            topic_agent_team_profile_id="uc-01-alpha",
+            domain_agent_team_template_id="deepsci-org",
+            agent_bindings=[],
+            houmao_project_dir=root / ".houmao",
+            actor_ref="operator-agent:test",
+            created_at="2026-06-22T00:00:00Z",
+        )
+        link_path = root / "adapter-link.json"
+        digest = write_json_manifest(link_path, link_manifest, expected_kind=ManifestKind.ADAPTER_LINK.value)
+        loaded = load_json_manifest(link_path, expected_kind=ManifestKind.ADAPTER_LINK.value)
+        self.assertEqual(digest, canonical_json_digest(loaded))
+        self.assertEqual(digest, canonical_json_digest(json.loads(link_path.read_text(encoding="utf-8"))))
+
+        material_manifest = build_launch_material_manifest(
+            link_manifest=loaded,
+            material_files=[
+                MaterialFileRef(
+                    path=str(material_path),
+                    digest=file_digest(material_path),
+                    source="isomer_generated",
+                    editable_policy="user_editable",
+                )
+            ],
+            source="unit-test",
+            created_at="2026-06-22T00:00:00Z",
+        )
+        result = reconcile_houmao_manifests(
+            link_manifest=loaded,
+            launch_material_manifest=material_manifest,
+            material_base_dir=root,
+        )
+        self.assertEqual("linked", result.state)
+        self.assertEqual([], result.material_drift)
+
+        material_path.write_text('{"profile": "changed"}\n', encoding="utf-8")
+        drifted = reconcile_houmao_manifests(
+            link_manifest=loaded,
+            launch_material_manifest=material_manifest,
+            material_base_dir=root,
+        )
+        self.assertEqual("drifted", drifted.state)
+        self.assertEqual("changed", drifted.material_drift[0]["status"])
+
+        secret_manifest = dict(link_manifest)
+        secret_manifest["api_key"] = "SHOULD_NOT_LEAK"
+        with self.assertRaises(ManifestValidationError):
+            write_json_manifest(root / "secret.json", secret_manifest, expected_kind=ManifestKind.ADAPTER_LINK.value)
+
+    def test_houmao_manifest_cli_export_inspect_reconcile_and_adopt(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        for command in (
+            ["runtime", "init", "--topic", "alpha", "--json"],
+            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            [
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-manual",
+                "--json",
+            ],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "adapter-link",
+                "export",
+                "ati-alpha-manual",
+                "--topic",
+                "alpha",
+                "--houmao-project-dir",
+                ".houmao",
+                "--actor",
+                "operator-agent:test",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual("adapter_link", data["manifest"]["manifest_kind"])
+        link_path = Path(data["manifest_path"])
+        self.assertTrue(link_path.is_file())
+        self.assertEqual("adapter-link.json", link_path.name)
+
+        status, output = self.run_cli(
+            ["team-instances", "inspect-live", "ati-alpha-manual", "--topic", "alpha", "--integrity", "--json"],
+            cwd=root,
+            env={},
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual("linked", data["reconciliation"]["state"])
+
+        status, output = self.run_cli(
+            ["team-instances", "reconcile", "ati-alpha-manual", "--topic", "alpha", "--actor", "operator-agent:test", "--json"],
+            cwd=root,
+            env={},
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual("linked", data["reconciliation"]["state"])
+        runtime_manifest_path = Path(data["runtime_manifest_path"])
+        self.assertTrue(runtime_manifest_path.is_file())
+        self.assertEqual("adapter-runtime-manifest.json", runtime_manifest_path.name)
+
+        live_state = root / "live-state.json"
+        live_state.write_text(
+            json.dumps({"available": True, "agents": [{"agent_id": "hm-alpha", "agent_name": "deepsci-org-master"}]}),
+            encoding="utf-8",
+        )
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "adopt",
+                "ati-alpha-manual",
+                "--topic",
+                "alpha",
+                "--live-state-json",
+                str(live_state),
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO064", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "adopt",
+                "ati-alpha-manual",
+                "--topic",
+                "alpha",
+                "--live-state-json",
+                str(live_state),
+                "--yes",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("adopted", data["reconciliation"]["state"])
+
+        status, output = self.run_cli(["team-instances", "show", "ati-alpha-manual", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        summary = data["summary"]
+        self.assertGreaterEqual(len(summary["adapter_manifest_refs"]), 2)
+        self.assertGreaterEqual(len(summary["reconciliation_records"]), 2)
+        self.assertEqual([], summary["handoffs"])
+        self.assertEqual(0, len(summary["agent_team_instance"]["run_ids"]))
+
+        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(2, data["runtime"]["counts"]["adapter_reconciliation_records"])
+
+    def test_houmao_prepare_launch_inspect_and_stop_use_cli_adapter_records(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        for command in (
+            ["runtime", "init", "--topic", "alpha", "--json"],
+            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            [
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-cli",
+                "--json",
+            ],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        env = {
+            "ISOMER_HOUMAO_COMMAND": self.fake_houmao_command(root),
+            "HOME": str(root),
+            "PATH": os.environ.get("PATH", ""),
+        }
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "launch-material",
+                "prepare",
+                "ati-alpha-cli",
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+            cwd=root,
+            env=env,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual("prepared", data["materialization"]["status"])
+        self.assertGreater(len(data["manual_guidance"]), 0)
+        self.assertTrue(Path(data["materialization"]["link_manifest_path"]).is_file())
+        self.assertTrue(Path(data["materialization"]["launch_material_manifest_path"]).is_file())
+        self.assertFalse((Path(data["materialization"]["paths"]["adapter_root"]) / "adapter-runtime-manifest.json").exists())
+
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "launch",
+                "ati-alpha-cli",
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+            cwd=root,
+            env=env,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual("launched", data["launch"]["status"])
+        self.assertGreaterEqual(len(data["launch"]["command_run_ids"]), 22)
+        self.assertTrue(Path(data["launch"]["runtime_manifest_path"]).is_file())
+        self.assertEqual("launched_by_isomer", data["launch"]["reconciliation"]["state"])
+
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "inspect-live",
+                "ati-alpha-cli",
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+            cwd=root,
+            env=env,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual("observed", data["inspection"]["status"])
+        self.assertGreaterEqual(len(data["inspection"]["command_run_ids"]), 8)
+
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "stop",
+                "ati-alpha-cli",
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+            cwd=root,
+            env=env,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual("stopped", data["stop"]["status"])
+
+        status, output = self.run_cli(["team-instances", "show", "ati-alpha-cli", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        summary = data["summary"]
+        self.assertGreaterEqual(len(summary["adapter_materializations"]), 2)
+        self.assertGreaterEqual(len(summary["adapter_launch_attempts"]), 1)
+        self.assertGreaterEqual(len(summary["adapter_inspection_snapshots"]), 1)
+        self.assertGreaterEqual(len(summary["adapter_stop_outcomes"]), 1)
+        self.assertGreaterEqual(len(summary["adapter_command_runs"]), 30)
+        self.assertGreaterEqual(len(summary["adapter_payload_refs"]), 30)
+
+        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertGreaterEqual(data["runtime"]["counts"]["adapter_command_runs"], 30)
+        self.assertGreaterEqual(data["runtime"]["counts"]["adapter_payload_refs"], 30)
+
+    def test_houmao_launch_failed_preflight_writes_no_material(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        for command in (
+            ["runtime", "init", "--topic", "alpha", "--json"],
+            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            [
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-no-houmao",
+                "--json",
+            ],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "launch",
+                "ati-alpha-no-houmao",
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+            cwd=root,
+            env={"PATH": "", "HOME": str(root)},
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO070", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+        adapter_root = root / "topic-workspaces" / "alpha" / "runtime" / "adapters" / "houmao" / "ati-alpha-no-houmao"
+        self.assertFalse(adapter_root.exists())
+
+    def test_houmao_partial_launch_preserves_recovery_records(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        for command in (
+            ["runtime", "init", "--topic", "alpha", "--json"],
+            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            [
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-partial",
+                "--json",
+            ],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        env = {
+            "ISOMER_HOUMAO_COMMAND": self.fake_houmao_command(root),
+            "HOUMAO_FAKE_FAIL_ON": "deepsci-org-framer",
+            "HOME": str(root),
+            "PATH": os.environ.get("PATH", ""),
+        }
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "launch",
+                "ati-alpha-partial",
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+            cwd=root,
+            env=env,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("partial", data["launch"]["status"])
+        self.assertTrue(Path(data["launch"]["runtime_manifest_path"]).is_file())
+
+        status, output = self.run_cli(["team-instances", "show", "ati-alpha-partial", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        attempts = data["summary"]["adapter_launch_attempts"]
+        self.assertEqual(1, len(attempts))
+        self.assertEqual("partial", attempts[0]["status"])
+        self.assertGreater(len(attempts[0]["adapter_refs"]), 0)
+        self.assertLess(len(attempts[0]["adapter_refs"]), 7)
+        self.assertGreater(len(attempts[0]["command_run_ids"]), 0)
+
+        stop_env = {
+            "ISOMER_HOUMAO_COMMAND": self.fake_houmao_command(root),
+            "HOUMAO_FAKE_FAIL_ON": "deepsci-org-framer",
+            "HOME": str(root),
+            "PATH": os.environ.get("PATH", ""),
+        }
+        status, output = self.run_cli(
+            [
+                "team-instances",
+                "stop",
+                "ati-alpha-partial",
+                "--topic",
+                "alpha",
+                "--adapter",
+                "houmao",
+                "--json",
+            ],
+            cwd=root,
+            env=stop_env,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("partial", data["stop"]["status"])
+
+    def test_workspace_runtime_schema_diagnostics_transaction_rollback_and_isolation(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main", "beta-main"), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        self.add_topic_pixi_binding(root, "beta", "beta-main")
+
+        for topic, profile, instance in (
+            ("alpha", "uc-01-alpha", "ati-alpha"),
+            ("beta", "uc-02-beta", "ati-beta"),
+        ):
+            for command in (
+                ["runtime", "init", "--topic", topic, "--json"],
+                ["runtime", "prepare", "--topic", topic, "--json"],
+                [
+                    "team-instances",
+                    "create",
+                    "--topic",
+                    topic,
+                    "--topic-agent-team-profile",
+                    profile,
+                    "--id",
+                    instance,
+                    "--json",
+                ],
+            ):
+                status, output = self.run_cli(command, cwd=root)
+                self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(["team-instances", "list", "--topic", "alpha", "--json"], cwd=root)
+        alpha = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["ati-alpha"], [item["id"] for item in alpha["agent_team_instances"]])
+
+        status, output = self.run_cli(["team-instances", "list", "--topic", "beta", "--json"], cwd=root)
+        beta = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["ati-beta"], [item["id"] for item in beta["agent_team_instances"]])
+
+        alpha_db = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(alpha_db) as connection:
+            before = connection.execute("SELECT COUNT(*) FROM lifecycle_records").fetchone()[0]
+            with self.assertRaises(sqlite3.IntegrityError):
+                with connection:
+                    connection.execute(
+                        """
+                        INSERT INTO lifecycle_records
+                            (
+                                id, record_kind, research_topic_id, topic_workspace_id,
+                                status, created_at, updated_at, lifecycle_refs_json,
+                                transition_metadata_json, provenance_refs_json
+                            )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            "rollback-sentinel",
+                            "run",
+                            "alpha",
+                            "alpha",
+                            "planned",
+                            "2026-01-01T00:00:00Z",
+                            "2026-01-01T00:00:00Z",
+                            "{}",
+                            "{}",
+                            "[]",
+                        ),
+                    )
+                    connection.execute(
+                        "INSERT INTO lifecycle_records (id) VALUES (?)",
+                        ("broken-row",),
+                    )
+            after = connection.execute("SELECT COUNT(*) FROM lifecycle_records").fetchone()[0]
+            self.assertEqual(before, after)
+            connection.execute(
+                "UPDATE runtime_metadata SET value = ? WHERE key = 'schema_version'",
+                ("isomer-workspace-runtime.v2",),
+            )
+
+        status, output = self.run_cli(["runtime", "inspect", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("newer", data["diagnostics"][0]["message"])
 
     def test_profile_validation_rejects_isolation_and_runtime_truth(self) -> None:
         root = self.make_root()

@@ -2,9 +2,9 @@
 
 ## Current Baseline
 
-Isomer Labs now has a Milestone 1 `isomer-cli` implementation for Project discovery, Project Manifest validation, Effective Topic Context inspection, Workspace Path Resolution previews, built-in schema listing, and Project initialization. It also has Milestone 2 and 3 static validation for the `deepsci-org` Domain Agent Team Template, project-local template fixtures, and design-time Topic Agent Team Profiles for multiple Research Topics. The repo contains `teams/deepsci-org/`, a generated Domain Agent Team Template with intention source, execplan contracts, seven role profiles, generated skills, notifier prompts, a harness, a loop-local state contract, and an instantiation guide.
+Isomer Labs now has a Milestone 1 `isomer-cli` implementation for Project discovery, Project Manifest validation, Effective Topic Context inspection, Workspace Path Resolution previews, built-in schema listing, and Project initialization. It also has Milestone 2 and 3 static validation for the `deepsci-org` Domain Agent Team Template, project-local template fixtures, and design-time Topic Agent Team Profiles for multiple Research Topics. Milestone 4 adds topic-scoped Workspace Runtime state with schema metadata, path plans, topic environment readiness records, pre-launch Agent Team Instance records, Agent Instance and Agent Workspace records, initial Workflow Stage Cursor records, validation, inspection, and two-topic isolation coverage. The repo contains `teams/deepsci-org/`, a generated Domain Agent Team Template with intention source, execplan contracts, seven role profiles, generated skills, notifier prompts, a harness, a loop-local state contract, and an instantiation guide.
 
-This version of Isomer Labs should make `deepsci-org` work inside the Isomer framework before broadening into other team templates. The main path is to register `deepsci-org` as a Domain Agent Team Template, specialize it into Topic Agent Team Profiles for different Research Topics, instantiate multiple Agent Team Instances through a Houmao Execution Adapter, and record the resulting Runs, handoffs, Artifacts, Gates, and Provenance Records inside topic-scoped Workspace Runtime state.
+This version of Isomer Labs should make `deepsci-org` work inside the Isomer framework before broadening into other team templates. The main path is to register `deepsci-org` as a Domain Agent Team Template, specialize it into Topic Agent Team Profiles for different Research Topics, create pre-launch Agent Team Instance records inside Workspace Runtime, then let Milestone 5 map those records through a Houmao Execution Adapter and record the resulting Runs, handoffs, Artifacts, Gates, and Provenance Records inside topic-scoped Workspace Runtime state.
 
 Houmao is the primary underlying implementation layer for Agent Team construction and management in this phase. Isomer keeps the generic domain language: Houmao roles, launch dossiers, mailboxes, gateway refs, specialists, and managed-agent details belong inside the Houmao Execution Adapter unless the canonical domain language explicitly promotes a term into Isomer core language.
 
@@ -80,12 +80,12 @@ Goal: add enough Workspace Runtime to create, reopen, inspect, and validate mult
 
 Major steps:
 
-- [ ] Implement Workspace Runtime creation with schema versioning, migration checks, and default directories for `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/`.
-- [ ] Add durable records for Research Topics, Research Inquiries, Research Tasks, Runs, Workflow Stage Cursors, Topic Agent Team Profiles, Agent Team Instances, Agent Instances, Agent Workspaces, and handoff state.
-- [ ] Record resolved paths and path sources before Agent Workspaces, Run logs, Artifacts, View Manifests, or Houmao launch material depend on them.
-- [ ] Treat the `deepsci-org` loop-local state contract as adapter bookkeeping input, not as a replacement for canonical Workspace Runtime state.
-- [ ] Add validation for broken refs, missing Agent Workspaces, invalid lifecycle transitions, stale handoffs, unresolved Gates, unsupported Research Claims, stale Provenance Records, and schema-version mismatches.
-- [ ] Add integration tests that create two Research Topics, specialize `deepsci-org` for both, and instantiate separate Agent Team Instance records under separate Topic Workspaces.
+- [x] Implement Workspace Runtime creation with schema versioning, migration checks, and default directories for `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/`.
+- [x] Add durable records for Research Topics, Research Inquiries, Research Tasks, Runs, Workflow Stage Cursors, Topic Agent Team Profiles, Agent Team Instances, Agent Instances, Agent Workspaces, and handoff state.
+- [x] Record resolved paths and path sources before Agent Workspaces, Run logs, Artifacts, View Manifests, or Houmao launch material depend on them.
+- [x] Treat the `deepsci-org` loop-local state contract as adapter bookkeeping input, not as a replacement for canonical Workspace Runtime state.
+- [x] Add validation for broken refs, missing Agent Workspaces, invalid lifecycle transitions, stale handoffs, unresolved Gates, unsupported Research Claims, stale Provenance Records, and schema-version mismatches.
+- [x] Add integration tests that create two Research Topics, specialize `deepsci-org` for both, and instantiate separate Agent Team Instance records under separate Topic Workspaces.
 
 Exit criteria:
 
