@@ -38,6 +38,8 @@ Ruff is the linting authority for style issues. MyPy is the type-checking author
 
 Use Python `unittest` unless the project explicitly adopts another framework. Name test files `test_<module>.py` and test classes or methods after the behavior being verified. Keep fast, deterministic tests in `tests/unit/`; place filesystem, service, or multi-component checks in `tests/integration/`. Manual tests should not be collected by the default `pixi run test` command.
 
+When a test or manual validation needs a coding agent and no other provider is specified, use Claude through the repo-local Kimi-compatible launcher at `scripts/claude-kimi.sh`. Developers should copy `.env.example` to `.env`, fill the prefixed `CLAUDE_KIMI_*` values, and keep `.env` uncommitted. The launcher maps those prefixed values to Claude-compatible environment variables only for the child process; do not copy real API keys into tests, fixtures, docs, or committed config.
+
 ## Commit & Pull Request Guidelines
 
 Current history uses concise Conventional Commit-style subjects, for example `docs: sketch lab readme`. Continue that pattern with prefixes such as `feat:`, `fix:`, `docs:`, `test:`, and `chore:`.
