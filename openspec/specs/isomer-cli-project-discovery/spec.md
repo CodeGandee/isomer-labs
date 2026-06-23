@@ -356,3 +356,131 @@ The system SHALL use root-level `--print-json` as the canonical JSON output swit
 - **WHEN** a user runs `isomer-cli --help`
 - **THEN** the root help lists `--print-json` as the global machine-readable output switch
 
+### Requirement: Handoff CLI Surface
+The system SHALL expose top-level deterministic CLI commands for manual handoff dispatch, observation, and normalization while preserving existing read-only command guarantees.
+
+#### Scenario: Handoff group is discoverable
+- **WHEN** a user runs `isomer-cli --help`
+- **THEN** the command help lists a top-level `handoffs` command group without presenting Houmao-specific command names as core Isomer concepts
+
+#### Scenario: Handoff dispatch command is explicit mutation
+- **WHEN** a user runs `isomer-cli handoffs dispatch` for a launched or adopted Agent Team Instance
+- **THEN** the command may create or update Run, handoff, adapter dispatch, adapter payload, Signal Observation, Artifact, and Provenance records for the selected Topic Workspace
+
+#### Scenario: Handoff observe command is explicit mutation
+- **WHEN** a user runs `isomer-cli handoffs observe`
+- **THEN** the command may ingest Houmao mail, gateway, file, or bounded inspection signals as Signal Observations while keeping adapter observations separate from accepted handoff completion
+
+#### Scenario: Handoff normalize command is explicit mutation
+- **WHEN** a user runs `isomer-cli handoffs normalize`
+- **THEN** the command may record accepted, rejected, blocked, superseded, repair-routed, or follow-up handoff normalization results with Run, Artifact, and Provenance refs
+
+#### Scenario: Runtime record inspection remains read-only
+- **WHEN** a user runs `runtime inspect`, `runtime validate`, `team-instances list`, `team-instances show`, or future read-only handoff inspection commands
+- **THEN** those commands do not launch Houmao agents, send handoffs, stop agents, normalize results, or mutate adapter records
+
+### Requirement: Handoff CLI Output
+The system SHALL emit structured human-readable text by default and deterministic root-level `--print-json` output for manual handoff commands.
+
+#### Scenario: Handoff dispatch JSON names runtime and adapter refs
+- **WHEN** a user runs `isomer-cli --print-json handoffs dispatch`
+- **THEN** the output includes generic Project, Research Topic, Topic Workspace, Agent Team Instance, source Agent Instance, target Agent Instance, handoff, Run, expected output, adapter dispatch, adapter payload, and Provenance refs plus diagnostics
+
+#### Scenario: Handoff observe JSON keeps signals non-authoritative
+- **WHEN** a user runs `isomer-cli --print-json handoffs observe`
+- **THEN** the output includes Signal Observation refs, adapter payload refs, candidate status, diagnostics, and a field or diagnostic that indicates the observation did not mark the handoff accepted
+
+#### Scenario: Handoff normalize JSON reports accepted or rejected result
+- **WHEN** a user runs `isomer-cli --print-json handoffs normalize`
+- **THEN** the output includes the handoff ref, normalization status, Run updates, Artifact refs, rejected or repair refs when present, Provenance refs, and diagnostics
+
+#### Scenario: Handoff text output is structured
+- **WHEN** a user runs `isomer-cli handoffs dispatch`, `isomer-cli handoffs observe`, or `isomer-cli handoffs normalize` without `--print-json`
+- **THEN** the command emits structured human-readable text that names the selected Project, Research Topic, Topic Workspace, handoff status, relevant runtime refs, and diagnostics without dumping raw Houmao payloads
+
+#### Scenario: Handoff commands do not add local JSON flags
+- **WHEN** a user inspects help for `handoffs dispatch`, `handoffs observe`, or `handoffs normalize`
+- **THEN** the commands do not advertise command-local `--json`, `--format json`, or `--format=json` flags and rely on root-level `--print-json` for machine-readable output
+
+### Requirement: UC-01 Headless Manual Harness
+The system SHALL expose a manual harness for running or validating the UC-01 headless workflow from an Isomer Project while keeping named UC-01 orchestration out of the product CLI.
+
+#### Scenario: UC-01 harness is discoverable
+- **WHEN** a user runs `isomer-cli --help`
+- **THEN** the command surface does not include `uc01`, `uc01 run`, or `uc01 inspect`
+- **AND** workflow docs point to `tests/manual/uc01_headless_vertical_slice`
+
+#### Scenario: UC-01 harness uses generic context APIs
+- **WHEN** a user runs the UC-01 manual harness
+- **THEN** the harness resolves the Project, Research Topic, Topic Workspace, Topic Agent Team Profile, adapter mode, actor ref, and follow-up inquiry selection through generic CLI commands or reusable Python APIs
+
+### Requirement: UC-01 Deterministic JSON Output
+The system SHALL emit deterministic JSON for the UC-01 headless workflow through the manual harness.
+
+#### Scenario: JSON output reports created records
+- **WHEN** a user runs `pixi run python tests/manual/uc01_headless_vertical_slice`
+- **THEN** the output includes `ok`, selected Project and topic refs, Agent Team Instance ref, Research Inquiry refs, Research Task refs, Run refs, handoff refs, Artifact refs, Evidence Item refs, Gate ref, Decision Record ref, route classification, View Manifest refs, Provenance refs, diagnostics, and live or simulated mode
+
+#### Scenario: Generic commands keep structured output behavior
+- **WHEN** a user runs generic Isomer CLI commands with or without `--print-json`
+- **THEN** those commands keep their generic JSON or human-readable output behavior without adding command-local `--json`, `--format json`, or `--format=json` options
+
+### Requirement: UC-01 Harness Side-effect Boundary
+The system SHALL make UC-01 workflow mutation explicit and keep fixture validation side-effect free.
+
+#### Scenario: Harness mutates only temporary fixture copies
+- **WHEN** the user invokes the UC-01 harness in simulated or live mode
+- **THEN** the harness copies the fixture Project to a temporary directory before creating Workspace Runtime records, adapter payloads, Artifacts, Gates, Decision Records, View Manifests, and Provenance Records
+
+#### Scenario: Harness does not start UC-07 work
+- **WHEN** the UC-01 harness records a follow-up inquiry classified as UC-07-style measured optimization
+- **THEN** the harness exits after recording the Gate, Decision Record, selected Research Inquiry, and route classification without running measurement, baseline, or candidate optimization commands
+
+#### Scenario: Fixture validation is read-only
+- **WHEN** the user invokes generic `validate` against the pinned UC-01 fixture Project
+- **THEN** the command reports Project diagnostics without creating runtime records, launching agents, dispatching handoffs, or resolving Gates
+
+### Requirement: UC-01 Live Gate Reporting
+The system SHALL report live-gated Houmao validation status before UC-01 live mutation.
+
+#### Scenario: Missing live gate skips live mode
+- **WHEN** live Houmao mode is requested without the required live-validation environment gate
+- **THEN** the harness exits the live check with a deterministic skipped status and does not mutate Project files, Workspace Runtime, adapter files, or live Houmao state for that live copy
+
+#### Scenario: Capability report precedes live mutation
+- **WHEN** live Houmao mode is allowed
+- **THEN** the harness reports the Houmao command resolution, checkout path candidates, read-only capability checks, and cleanup plan before running launch, handoff, or stop mutations
+
+### Requirement: Use-Case Command Boundary
+The public `isomer-cli` command surface SHALL expose reusable platform operations rather than named use-case acceptance runners unless a later accepted product spec explicitly promotes the command.
+
+#### Scenario: UC-01 command group is absent
+- **WHEN** a user runs `isomer-cli --help`
+- **THEN** the command surface does not list `uc01`, `uc01 run`, or `uc01 inspect`
+
+#### Scenario: Generic commands remain available
+- **WHEN** a manual acceptance harness needs to validate a Project, prepare Workspace Runtime state, create or inspect Agent Team Instance records, dispatch or normalize handoffs, or validate runtime records
+- **THEN** it can use generic command groups such as `validate`, `runtime`, `team-instances`, `handoffs`, `team-templates`, and `team-profiles`
+
+#### Scenario: Root print-json remains global
+- **WHEN** a manual acceptance harness invokes generic CLI commands for deterministic output
+- **THEN** it uses root-level `--print-json` and no command-local `--json`, `--format json`, or `--format=json` options are introduced for use-case harness behavior
+
+### Requirement: Manual Harness Entry Points Are Outside Product CLI
+Named use-case acceptance runners SHALL be invoked through test or manual script entry points outside the installed `isomer-cli` command surface.
+
+#### Scenario: UC-01 harness has script entry point
+- **WHEN** a developer wants to run the pinned UC-01 headless acceptance path
+- **THEN** they use a documented command such as `pixi run python tests/manual/uc01_headless_vertical_slice` or an equivalent manual script entry point
+
+#### Scenario: Harness output is not product CLI schema
+- **WHEN** the UC-01 harness prints a deterministic summary
+- **THEN** the summary may include harness-specific fields, but core CLI commands still emit the versioned `isomer-cli-output.v1` wrapper only for generic platform commands
+
+### Requirement: Product Promotion Requires Spec Update
+A named use-case command SHALL require an accepted spec update before it appears in `isomer-cli`.
+
+#### Scenario: Future use-case command is proposed
+- **WHEN** a future milestone wants `isomer-cli uc07` or another named use-case command
+- **THEN** the proposal identifies why the command is reusable product behavior, adds or modifies CLI requirements, and updates command-surface tests before implementation
+

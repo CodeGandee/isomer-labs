@@ -2,7 +2,6 @@
 
 ## Purpose
 Define Isomer Labs research lifecycle state for Research Topics, Research Inquiries, Research Tasks, Runs, Workflow Stage Cursors, Research Inquiry Relationships, Agent Team Instance lifecycle state, and validation boundaries.
-
 ## Requirements
 ### Requirement: Research Execution Levels
 The system SHALL define Research Topic, Research Inquiry, Research Task, and Run as distinct research execution levels with explicit ownership relationships.
@@ -220,3 +219,90 @@ The system SHALL prevent direct Houmao operation from bypassing Isomer handoff a
 #### Scenario: Adopted runtime keeps normalization boundary
 - **WHEN** an externally launched Houmao-backed Agent Team Instance is adopted
 - **THEN** existing and future handoff completion still requires the same Operator Agent normalization path as Isomer-launched runtime
+
+### Requirement: Manual Handoff Lifecycle Normalization
+The system SHALL separate manual handoff dispatch, adapter observation, candidate completion, accepted completion, rejection, repair, and stale states in lifecycle state.
+
+#### Scenario: Dispatch sets handoff observing
+- **WHEN** the Operator Agent dispatches a manual handoff through Houmao
+- **THEN** the handoff records source actor, target actor, Run or Research Task ref, Agent Team Instance ref, status, Completion Watcher Contract refs, adapter dispatch refs, and Provenance refs
+
+#### Scenario: Adapter reply is candidate completion
+- **WHEN** Houmao mail, gateway, file, or bounded inspection surfaces return a specialist result
+- **THEN** the system records candidate completion as a Signal Observation or candidate handoff state without marking the handoff accepted
+
+#### Scenario: Operator normalization accepts completion
+- **WHEN** the Operator Agent reviews and accepts the candidate result
+- **THEN** the system records accepted handoff state, Run updates, output Artifact refs, normalization rationale, and Provenance refs
+
+#### Scenario: Rejected result remains linked
+- **WHEN** the Operator Agent rejects or requests repair for a candidate result
+- **THEN** the system keeps the observation and produced refs visible and records rejected, blocked, superseded, corrective Service Request, or follow-up handoff state with rationale
+
+#### Scenario: Stale handoff remains recoverable
+- **WHEN** a Houmao-backed handoff remains open beyond its staleness threshold or expected observation window
+- **THEN** validation reports the stale handoff without deleting dispatch records, Signal Observations, adapter refs, Run refs, or produced Artifact refs
+
+### Requirement: Handoff Lifecycle Respects Adapter Boundary
+The system SHALL use existing Agent Team Instance lifecycle records as context for handoff behavior without letting adapter observations rewrite unrelated lifecycle state.
+
+#### Scenario: Handoff requires active or adopted target context
+- **WHEN** a Houmao-backed handoff targets an Agent Team Instance
+- **THEN** dispatch verifies that the target has a valid launched, adopted, or otherwise accepted adapter context before sending the handoff
+
+#### Scenario: Observation does not rewrite team lifecycle
+- **WHEN** a handoff observation reports a specialist reply, failure, or unreachable actor
+- **THEN** the system records handoff or Signal Observation state and does not silently change Agent Team Instance or Agent Instance terminal lifecycle state without an explicit stop, recovery, or normalization operation
+
+### Requirement: UC-01 Research Inquiry Graph
+The system SHALL record the UC-01 headless path as a Research Inquiry graph under one Research Topic rather than as an unstructured run log.
+
+#### Scenario: Seed inquiry is created
+- **WHEN** the UC-01 runner starts work for the selected Research Topic
+- **THEN** it records seed Research Inquiry `gb10-flash-attention-4-direction-selection` under Research Topic `flash-attention-gb10-peak-performance-optimization` with source refs, status, scope notes, and Provenance Record refs
+
+#### Scenario: Follow-up inquiry is linked
+- **WHEN** the follow-up inquiry decision is resolved
+- **THEN** the selected follow-up Research Inquiry is recorded and linked to the seed inquiry or Research Topic with a durable Research Inquiry Relationship
+
+### Requirement: UC-01 Research Tasks and Runs
+The system SHALL represent scouting, synthesis-review, and closeout work as bounded Research Tasks and Runs.
+
+#### Scenario: Pinned mapping task is created
+- **WHEN** the UC-01 runner starts the fixture workflow
+- **THEN** it records Research Task `map-gb10-flash-attention-optimization-directions` under seed Research Inquiry `gb10-flash-attention-4-direction-selection`
+
+#### Scenario: Handoff-backed tasks are recorded
+- **WHEN** the runner delegates scouting or synthesis-review work to a `deepsci-mini` Agent Instance
+- **THEN** it records a Research Task and Run linked to the Research Inquiry, Agent Team Instance, target Agent Instance, handoff state, expected output refs, and Provenance Records
+
+#### Scenario: Run completion follows normalization
+- **WHEN** a UC-01 handoff produces a Signal Observation
+- **THEN** the associated Run remains non-terminal until the Operator Agent records accepted normalization or another terminal normalization outcome
+
+### Requirement: UC-01 Gate and Decision Lifecycle
+The system SHALL represent follow-up inquiry selection as lifecycle state governed by a Gate and resolved by a Decision Record.
+
+#### Scenario: Follow-up Gate blocks closeout action
+- **WHEN** UC-01 follow-up inquiry options are ready but no selection has been recorded
+- **THEN** the follow-up selection action is blocked by an open Gate while unrelated inspection remains allowed
+
+#### Scenario: Gate resolution updates lifecycle refs
+- **WHEN** the follow-up Gate is resolved
+- **THEN** the seed Research Inquiry, selected follow-up Research Inquiry, closeout Run, and Workflow Stage Cursor refs point to the resolving Decision Record or Provenance Record
+
+#### Scenario: Gate records route classification
+- **WHEN** the follow-up Gate is resolved for UC-01
+- **THEN** the Decision Record classifies the selected follow-up path as UC-07-style measured optimization, more scouting, or a different Flash Attention 4 investigation without starting measured optimization work
+
+### Requirement: UC-01 Restart Recovery
+The system SHALL recover UC-01 lifecycle state after process restart without requiring live Houmao inspection.
+
+#### Scenario: Restart preserves route state
+- **WHEN** the Workspace Runtime is reopened after a completed UC-01 simulated or live run
+- **THEN** the Research Topic, Research Inquiries, Research Tasks, Runs, Gate, Decision Record, handoffs, Workflow Stage Cursors, and Agent Team Instance refs remain inspectable from persisted records
+
+#### Scenario: Partial UC-01 run remains visible
+- **WHEN** the runner stops after recording some but not all UC-01 lifecycle records
+- **THEN** runtime validation reports missing or open lifecycle obligations without deleting completed records
+

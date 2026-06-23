@@ -2,7 +2,6 @@
 
 ## Purpose
 Define the durable research recording contract for Isomer Labs, including Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, Gates, record linkage, recording/query APIs, and validation behavior.
-
 ## Requirements
 ### Requirement: Durable Research Record Identity
 The system SHALL define durable research records for Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, and Gates inside a Topic Workspace.
@@ -304,3 +303,108 @@ The system SHALL record reconciliation diagnostics as durable Artifacts or adapt
 #### Scenario: Adoption decision is auditable
 - **WHEN** an externally launched Houmao-backed Agent Team Instance is adopted or rejected
 - **THEN** the system records the adoption decision, mapping confidence, manifest refs, diagnostics, actor ref, timestamp, and Provenance Records
+
+### Requirement: Handoff Adapter Provenance
+The system SHALL record Provenance Records for Houmao-backed handoff dispatch, observation, and normalization operations.
+
+#### Scenario: Dispatch provenance names source refs
+- **WHEN** a Houmao-backed handoff dispatch is attempted
+- **THEN** Provenance Records name the actor, Project, Research Topic, Topic Workspace, Agent Team Instance, source Agent Instance, target Agent Instance, Run or Research Task refs, expected output refs, Completion Watcher Contract refs, Execution Adapter ref, adapter payload refs, and readiness or Gate refs when relevant
+
+#### Scenario: Observation provenance names adapter payload
+- **WHEN** adapter observation records a Signal Observation, snapshot, or Artifact
+- **THEN** Provenance Records link the observation to the handoff, Run, Agent Team Instance, Agent Instance refs when known, opaque adapter refs, adapter payload refs, and observation source
+
+#### Scenario: Normalization provenance records decision
+- **WHEN** a normalization request accepts, rejects, blocks, supersedes, or routes repair for a candidate handoff result
+- **THEN** Provenance Records capture the Operator Agent actor, reviewed Signal Observation refs, decision rationale, output refs, corrective refs when present, and affected lifecycle refs
+
+### Requirement: Adapter Signal Observation Recording
+The system SHALL record Houmao mail, gateway, file, and inspection signals as Signal Observations linked to runtime lifecycle refs.
+
+#### Scenario: Mail observation is recorded
+- **WHEN** Houmao mail returns a delegated agent reply
+- **THEN** the system records a Signal Observation with handoff ref, Run ref when known, source Agent Instance ref, adapter payload ref, timestamp, and Provenance refs
+
+#### Scenario: Gateway observation is recorded
+- **WHEN** Houmao gateway state reports progress, failure, or candidate completion
+- **THEN** the system records a Signal Observation linked to relevant Agent Team Instance, Agent Instance, Run, handoff, and adapter refs
+
+#### Scenario: Observation content remains file-backed
+- **WHEN** an observation includes rich reply text, logs, transcripts, generated files, or tool output
+- **THEN** the system records or links that content as Artifacts, logs, or adapter payload refs instead of embedding it in lifecycle records
+
+### Requirement: Handoff Result Normalization Recording
+The system SHALL convert accepted manual handoff results into durable Run, Artifact, Decision Record, Evidence Item, Finding, or Provenance refs according to research recording contracts.
+
+#### Scenario: Accepted result records outputs
+- **WHEN** the Operator Agent accepts a Houmao-observed handoff result
+- **THEN** the system records output Artifact refs, Run status updates, handoff accepted state, and Provenance Records
+
+#### Scenario: Result is not automatically evidence
+- **WHEN** a Houmao-backed specialist returns a claim, measurement, literature summary, or analysis note
+- **THEN** the result is not treated as Evidence Item support for a Research Claim until normalized into accepted Evidence Item or Finding records
+
+#### Scenario: Rejected result records rationale
+- **WHEN** the Operator Agent rejects a candidate handoff result
+- **THEN** the system records rejection rationale, affected refs, any corrective Service Request or follow-up handoff refs, and Provenance Records
+
+### Requirement: UC-01 Artifact Recording Bundle
+The system SHALL record UC-01 research outputs as durable Artifacts or Artifact-linked records with Provenance Records.
+
+#### Scenario: Accepted handoff output becomes Artifact-backed record
+- **WHEN** Operator Agent normalization accepts a UC-01 handoff output
+- **THEN** the system records the output as a seed-source summary, Flash Attention implementation note, GB10 or Blackwell feature note, attention-kernel bottleneck note, shape-family constraint, correctness constraint, Evidence Item, Finding or claim candidate, review note, inquiry option, or Provenance Record according to its evidence-use intent
+
+#### Scenario: Rich content is file-backed
+- **WHEN** UC-01 output contains seed-source summaries, Flash Attention implementation notes, GB10 feature notes, tables, claim graph inputs, review notes, or inquiry comparison text
+- **THEN** the system stores rich content as project-local files or Artifact payloads and stores refs in Workspace Runtime rather than embedding the full content in generic lifecycle fields
+
+### Requirement: UC-01 Evidence Boundary
+The system SHALL keep Evidence Items as the boundary for claim support in the UC-01 path.
+
+#### Scenario: Evidence Item records source relation
+- **WHEN** a seed source, literature note, or review note is used as evidence in UC-01
+- **THEN** the system records an Evidence Item with source ref, relation intent, summary or summary ref, quality or confidence label when known, and Provenance Record refs
+
+#### Scenario: Claim candidate remains candidate without evidence
+- **WHEN** a claim candidate has no accepted Evidence Item links
+- **THEN** validation does not treat it as a supported Research Claim and reports unsupported support attempts as recording issues
+
+### Requirement: UC-01 Gate and Decision Records
+The system SHALL record follow-up inquiry choice through Gate and Decision Record objects rather than a freeform log entry.
+
+#### Scenario: Gate includes options
+- **WHEN** UC-01 generates follow-up inquiry options
+- **THEN** the Gate or linked Artifact records the candidate options, governed action, actor refs, affected lifecycle refs, route classification candidates, and status
+
+#### Scenario: Decision Record captures selection
+- **WHEN** the follow-up inquiry Gate is resolved
+- **THEN** the Decision Record records the selected option, route classification, rationale, actor, timestamp, consequence summary, selected Research Inquiry ref, rejected alternatives when material, and supporting Artifact or Evidence Item refs
+
+#### Scenario: Measured optimization is deferred
+- **WHEN** the selected follow-up inquiry route is UC-07-style measured optimization
+- **THEN** UC-01 records the route decision and selected Research Inquiry ref without recording baseline measurement, candidate optimization, speedup, utilization, or correctness-result Artifacts
+
+### Requirement: UC-01 Provenance Coverage
+The system SHALL attach Provenance Records to UC-01 runtime mutations and research records.
+
+#### Scenario: Runner records provenance
+- **WHEN** the UC-01 runner creates or updates Research Inquiries, Research Tasks, Runs, handoffs, Artifacts, Evidence Items, Gates, Decision Records, View Manifests, or Agent Team Instance refs
+- **THEN** each created or updated record has a Provenance Record or provenance ref naming the actor, action summary, source refs, output refs, and timestamp
+
+#### Scenario: Corrective closeout preserves prior provenance
+- **WHEN** a UC-01 result is rejected, repaired, superseded, or replaced
+- **THEN** the system records corrective Provenance Records instead of rewriting or deleting the prior records
+
+### Requirement: UC-01 View Manifest Records
+The system SHALL record View Manifest refs for UC-01 semantic views without requiring GUI runtime state.
+
+#### Scenario: Literature matrix manifest is recorded
+- **WHEN** UC-01 records seed-source summaries, Flash Attention implementation notes, and GB10 or Blackwell feature notes
+- **THEN** it records a literature matrix View Manifest that references the source Artifacts and Evidence Items
+
+#### Scenario: Claim graph and inquiry comparison manifests are recorded
+- **WHEN** UC-01 records claim candidates and follow-up inquiry options
+- **THEN** it records claim graph and inquiry comparison View Manifests that reference the relevant Findings or claim candidates, Evidence Items, Gate, Decision Record, and Research Inquiry refs
+

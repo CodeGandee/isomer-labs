@@ -235,3 +235,111 @@ The system SHALL keep Houmao manifest and runtime details out of generic Workspa
 - **WHEN** generic Isomer APIs inspect Agent Team Instance, Agent Instance, Run, handoff, or Artifact records linked to Houmao manifests
 - **THEN** the records expose generic refs and adapter payload refs, not generic fields named after Houmao project profiles, gateways, mailboxes, managed agents, sessions, or native manifest paths
 
+### Requirement: Adapter Handoff Dispatch Persistence
+The system SHALL persist Houmao-backed manual handoff dispatch state through provider-neutral handoff records linked to opaque adapter refs and payload refs.
+
+#### Scenario: Dispatch record is persisted
+- **WHEN** a Houmao-backed manual handoff is dispatched
+- **THEN** Workspace Runtime records the handoff ref, Agent Team Instance ref, source Agent Instance ref, target Agent Instance ref, Run or Research Task ref, Execution Adapter ref, dispatch status, expected output refs, Completion Watcher Contract refs, timestamps, diagnostics, adapter payload refs, and Provenance refs
+
+#### Scenario: Dispatch refs are opaque
+- **WHEN** Workspace Runtime records Houmao-specific message ids, mailbox ids, gateway event ids, managed-agent ids, session refs, or command payload ids for a handoff
+- **THEN** it stores them as opaque adapter refs, adapter payload refs, or adapter command refs rather than generic handoff, Run, Agent Team Instance, or Agent Instance fields
+
+#### Scenario: Dispatch state is topic scoped
+- **WHEN** handoff dispatch state is written
+- **THEN** validation requires every linked Agent Team Instance, Agent Instance, Run, Research Task, path plan, Artifact, and adapter payload ref to belong to the selected Topic Workspace
+
+### Requirement: Signal Observation Persistence
+The system SHALL persist Houmao mail, gateway, file, command, and bounded inspection signals as Signal Observations linked to runtime lifecycle refs.
+
+#### Scenario: Observation is persisted
+- **WHEN** Houmao mail, gateway events, files, command output, or inspection snapshots indicate handoff progress, failure, or candidate completion
+- **THEN** Workspace Runtime records a Signal Observation with handoff ref, Run ref when known, Agent Team Instance ref, Agent Instance refs when known, adapter refs, adapter payload refs, timestamp, diagnostics, and Provenance refs
+
+#### Scenario: Observation does not silently change lifecycle
+- **WHEN** a Signal Observation suggests candidate completion or failure
+- **THEN** Workspace Runtime keeps the observation visible without silently changing handoff, Run, Agent Team Instance, or Workflow Stage Cursor terminal state
+
+#### Scenario: Observation payload is bounded
+- **WHEN** an observation includes rich reply text, logs, transcripts, command output, mailbox content, or generated files
+- **THEN** Workspace Runtime stores refs to Artifacts, logs, or adapter payload files rather than embedding rich content inline in lifecycle records
+
+### Requirement: Handoff Normalization Persistence
+The system SHALL persist accepted, rejected, blocked, superseded, and repair-routed handoff normalization outcomes.
+
+#### Scenario: Accepted normalization is durable
+- **WHEN** the Operator Agent accepts a Houmao-observed handoff result
+- **THEN** Workspace Runtime records accepted handoff state, Run updates, output Artifact refs, normalization rationale, actor ref, timestamp, and Provenance refs
+
+#### Scenario: Rejected or repair-routed normalization is durable
+- **WHEN** the Operator Agent rejects a candidate result, blocks it, supersedes it, or routes repair
+- **THEN** Workspace Runtime records the outcome status, rationale, affected Signal Observation refs, produced refs when retained, corrective Service Request or follow-up handoff refs when present, actor ref, timestamp, and Provenance refs
+
+#### Scenario: Normalization state survives restart
+- **WHEN** Isomer restarts after a handoff dispatch, observation, or normalization
+- **THEN** Workspace Runtime can reconstruct the handoff state, linked Signal Observations, output refs, adapter payload refs, and Provenance refs from persisted records
+
+### Requirement: UC-01 Runtime Research Records
+The system SHALL persist the minimal research records needed by the UC-01 headless path in Workspace Runtime or file-backed payloads linked from Workspace Runtime.
+
+#### Scenario: Runtime stores UC-01 records
+- **WHEN** the UC-01 runner records Artifacts, Evidence Items, Findings or claim candidates, Gates, Decision Records, View Manifests, or Provenance Records
+- **THEN** Workspace Runtime stores stable ids, record kinds, statuses, Topic Workspace refs, Research Topic refs, lifecycle refs, content refs when applicable, timestamps, and Provenance refs
+
+#### Scenario: Runtime records remain topic scoped
+- **WHEN** a UC-01 runtime record is written
+- **THEN** validation confirms that its Research Topic, Topic Workspace, Agent Team Instance, Run, Artifact, Gate, Decision Record, and path refs belong to the selected Topic Workspace
+
+### Requirement: UC-01 Manual Harness Recording
+The system SHALL let the manual harness write and read UC-01 research records through generic runtime store helpers without exposing SQL details to product CLI or adapter code.
+
+#### Scenario: Harness writes record bundle
+- **WHEN** the UC-01 manual harness accepts a handoff result
+- **THEN** runtime helpers can write the associated Artifact, Evidence Item, Finding or claim candidate, Provenance Record, and lifecycle links in one transaction
+
+#### Scenario: Harness reads summary
+- **WHEN** the UC-01 manual harness requests a UC-01 summary
+- **THEN** harness code returns Research Inquiry, Research Task, Run, handoff, Artifact, Evidence Item, Gate, Decision Record, View Manifest, and Provenance refs needed for deterministic JSON output
+
+### Requirement: UC-01 Harness Validation
+The manual harness SHALL validate the UC-01 recording graph and report incomplete vertical-slice state without silently repairing it.
+
+#### Scenario: Missing UC-01 record is reported by the harness
+- **WHEN** a UC-01 run is missing a required Artifact, Evidence Item, Gate, Decision Record, View Manifest, or Provenance ref
+- **THEN** the harness reports a diagnostic naming the missing record type and referring lifecycle object
+
+#### Scenario: Open follow-up Gate is reported
+- **WHEN** a UC-01 follow-up Gate remains open after runner closeout is requested
+- **THEN** the harness reports the open Gate as a blocker for UC-01 completion while preserving all recorded options
+
+### Requirement: UC-01 Harness Inspection Summary
+The manual harness SHALL include UC-01 research records in deterministic inspection output.
+
+#### Scenario: Runtime inspect reports counts
+- **WHEN** a user inspects or validates the Workspace Runtime after a UC-01 run
+- **THEN** harness JSON includes counts or summaries for UC-01 Artifacts, Evidence Items, Findings or claim candidates, Gates, Decision Records, View Manifests, and Provenance Records
+
+#### Scenario: Team instance show includes UC-01 refs
+- **WHEN** a user shows the UC-01 Agent Team Instance after runner completion
+- **THEN** the summary includes linked Research Inquiry, Research Task, Run, handoff, accepted output Artifact, Gate, Decision Record, and View Manifest refs without exposing Houmao native fields
+
+### Requirement: Agent Instance ids are globally unique
+The system SHALL generate Agent Instance ids that are globally unique within the Project and SHALL reject any creation or validation request that would produce a duplicate id.
+
+#### Scenario: New Agent Instance receives a globally unique id
+- **WHEN** the system creates an Agent Instance record for an Agent Team Instance
+- **THEN** the generated Agent Instance id is unique across all Agent Instance records in the Project
+
+#### Scenario: Duplicate Agent Instance id is rejected at creation
+- **WHEN** an Agent Team Instance creation request would generate an Agent Instance id that already exists
+- **THEN** the system rejects the request with a validation diagnostic and leaves existing records unchanged
+
+#### Scenario: Runtime validation reports duplicate Agent Instance ids
+- **WHEN** `runtime validate` scans Agent Instance records and finds two records with the same id
+- **THEN** the system reports a workspace issue identifying the duplicate id and both records
+
+#### Scenario: Agent Workspace path uses the globally unique Agent Instance id
+- **WHEN** the system creates an Agent Workspace path plan for an Agent Instance
+- **THEN** the path plan derives the Agent Workspace directory from the globally unique Agent Instance id as `<topic-workspace>/agents/<agent-instance-id>/`
+
