@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-admin-project-aware"
+  short_description: "Resolve project context"
+  default_prompt: "Use $isomer-admin-project-aware to resolve the Isomer Project, selected topic, workspace, templates, runtimes, and service surfaces."

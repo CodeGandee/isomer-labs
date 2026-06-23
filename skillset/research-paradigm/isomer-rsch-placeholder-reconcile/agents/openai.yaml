@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-placeholder-reconcile"
-  short_description: "Resolve placeholders"
-  default_prompt: "Use $isomer-rsch-placeholder-reconcile to build or repair a Topic Team Instantiation Packet."

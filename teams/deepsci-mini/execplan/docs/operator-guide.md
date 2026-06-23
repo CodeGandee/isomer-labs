@@ -8,7 +8,7 @@ This generated support document explains how an operator should use the `deepsci
 
 ## Creation and Specialization
 
-Before launch, materialize the selected Research Topic's fixed Topic Agent Team Profile Bundle from `deepsci-mini`. The topic profile must choose concrete role bindings, expected UC-01 Artifacts, Coordination Policy, Gate Policy, Skill Binding projection refs, Capability Binding refs, adapter posture, and bundle-local approval provenance.
+Before launch, specialize `deepsci-mini` by copying its template material into the selected Research Topic's fixed Topic Agent Team Profile Bundle, normally `<topic-workspace>/team-profile/execplan/`. Read the copied `team-specialization-guide.md`, create `team-specialization-plan.md`, adapt the copied material for the Research Topic, and record a `Final Report` before profile approval and materialization. The topic profile must choose concrete role bindings, expected UC-01 Artifacts, Coordination Policy, Gate Policy, Skill Binding projection refs, Capability Binding refs, adapter posture, and bundle-local approval provenance.
 
 ## Default Team
 

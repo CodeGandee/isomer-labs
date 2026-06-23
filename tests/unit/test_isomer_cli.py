@@ -1477,6 +1477,9 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue((bundle_path / "instantiation-packet.toml").is_file())
         self.assertTrue((bundle_path / "approval.toml").is_file())
         self.assertTrue((bundle_path / "execplan" / "manifest.toml").is_file())
+        copied_specialization_guide = bundle_path / "execplan" / "team-specialization-guide.md"
+        self.assertTrue(copied_specialization_guide.is_file())
+        self.assertIn("deepsci-mini Team Specialization Guide", copied_specialization_guide.read_text(encoding="utf-8"))
         copied_operator_guide = (bundle_path / "execplan" / "docs" / "operator-guide.md").read_text(encoding="utf-8")
         self.assertIn("expected GB10 UC-01 source-map Artifacts", copied_operator_guide)
         source_operator_guide = (REPO_ROOT / "teams" / "deepsci-mini" / "execplan" / "docs" / "operator-guide.md").read_text(

@@ -7,16 +7,8 @@ default_tool = "codex"
 headless = true
 description = "Topic-scoped Service Team actor for bounded environment setup, Topic Team Specialization support, monitoring, diagnostics, and support Artifact writing."
 required_isomer_skills = [
-  "isomer-rsch-project-aware",
-  "isomer-rsch-service-request-route",
-  "isomer-rsch-template-inspect",
-  "isomer-rsch-topic-context-resolve",
-  "isomer-rsch-placeholder-reconcile",
-  "isomer-rsch-topic-profile-draft",
-  "isomer-rsch-profile-review-approval",
-  "isomer-rsch-profile-materialize",
-  "isomer-rsch-team-launch-orchestrate",
-  "isomer-rsch-topic-service-agent-support",
+  "isomer-srv-topic-service-agent-support",
+  "isomer-srv-env-setup",
 ]
 bounded_context_refs = [
   "{research_topic_id}",

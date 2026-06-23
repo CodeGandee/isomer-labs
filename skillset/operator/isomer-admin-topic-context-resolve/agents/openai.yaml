@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-admin-topic-context-resolve"
+  short_description: "Resolve topic refs"
+  default_prompt: "Use $isomer-admin-topic-context-resolve to resolve topic-specific refs for Topic Team Specialization."

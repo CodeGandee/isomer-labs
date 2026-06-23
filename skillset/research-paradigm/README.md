@@ -2,6 +2,8 @@
 
 This subtree contains portable research-stage skills for Isomer Labs agents. The skills capture reusable research practice: framing a problem, accepting a baseline, choosing ideas, running experiments, analyzing evidence, writing, reviewing, rebutting, finalizing, plotting, figure polishing, and scientific computation.
 
+Project Operator Session and Operator Agent skills live under `skillset/operator/` and use `isomer-admin-*` names. Service Team skills live under `skillset/service/` and use `isomer-srv-*` names.
+
 The skills are adapted from richer source research skills, but they are written as Isomer-native bundles. They use Isomer concepts such as Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Topic Workspace, Workspace Runtime, Agent Workspace, Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Operator Agent, Agent Team Instance, Capability Binding, Execution Adapter, and Workflow Stage.
 
 ## Skill Set
@@ -71,4 +73,4 @@ Do not port source runtime APIs, concrete storage layouts, scheduler fields, cre
 
 Keep negative, partial, failed, blocked, infeasible, null, and contradictory results visible as evidence. Do not let polished prose, summaries, or route recommendations hide missing evidence or broken comparability.
 
-Active skill docs should use `isomer-rsch-*` names. Historical archive files may mention older names only as migration history.
+Active research-stage skill docs should use `isomer-rsch-*` names. Operator/admin skills such as project awareness, Service Request routing, Topic Team Specialization orchestration, approval provenance, profile materialization, and team launch orchestration should use `isomer-admin-*` names under `skillset/operator/`. Historical archive files may mention older names only as migration history.

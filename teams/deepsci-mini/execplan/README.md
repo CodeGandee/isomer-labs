@@ -12,3 +12,4 @@ Generated Houmao loop-pro operational material for the `deepsci-mini` Domain Age
 - `agents/`: generated Houmao profile material, bindings, and notifier prompts.
 - `harness/`: generated validation, query, mail schema, control, and placeholder helper surface.
 - `docs/`: generated human support views.
+- `team-specialization-guide.md`: operator-facing guide for copying this template into `<topic-workspace>/team-profile/execplan/` and adapting the copied material for one Research Topic.

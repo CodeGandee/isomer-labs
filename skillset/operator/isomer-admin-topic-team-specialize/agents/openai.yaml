@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-admin-topic-team-specialize"
+  short_description: "Specialize domain team templates for topics"
+  default_prompt: "Use $isomer-admin-topic-team-specialize to copy, understand, plan, adapt, and report a Domain Agent Team Template specialization for a Research Topic."

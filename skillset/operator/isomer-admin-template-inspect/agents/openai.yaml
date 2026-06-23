@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-admin-template-inspect"
+  short_description: "Inspect team template"
+  default_prompt: "Use $isomer-admin-template-inspect to inspect a Domain Agent Team Template before Topic Team Specialization."

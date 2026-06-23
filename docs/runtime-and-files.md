@@ -22,7 +22,7 @@ A Topic Workspace is a project-local directory declared by the Project Manifest,
 - `pixi.lock` — the Topic Workspace Pixi lockfile.
 - `.pixi/` — the Pixi-managed environment directory for the Topic Workspace. This directory is generated and rebuildable, not durable research state.
 - `team-profile/profile.toml` — the authoritative Topic Agent Team Profile file inside the Research Topic's one Topic Agent Team Profile Bundle referenced by the Project Manifest.
-- `team-profile/execplan/` — optional copied and topic-specialized template material for the topic's dedicated team.
+- `team-profile/execplan/` — optional copied and topic-specialized template material for the topic's dedicated team, including `team-specialization-guide.md` and `team-specialization-plan.md` when the operator uses the topic-team specialization workflow.
 - `team-profile/instantiation-packet.toml` — optional approved Topic Team Instantiation Packet used to materialize the bundle.
 - `team-profile/approval.toml` — optional bundle-local approval provenance with `approval_ref`, approval actor or session ref, approval mode, review summary, and validation result.
 - `team-profile/validation/` and `team-profile/provenance/` — validation outputs and provenance refs for the topic-level profile bundle.

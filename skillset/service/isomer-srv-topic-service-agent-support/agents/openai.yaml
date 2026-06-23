@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-srv-topic-service-agent-support"
+  short_description: "Support topic service"
+  default_prompt: "Use $isomer-srv-topic-service-agent-support to perform bounded Topic Service Agent work."
