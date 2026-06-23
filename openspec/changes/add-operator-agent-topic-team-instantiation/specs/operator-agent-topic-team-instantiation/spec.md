@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Project Operator Session Topic-Team Instantiation Workflow
-The system SHALL instantiate topic-level teams through a Project Operator Session or Operator Agent workflow that specializes a Domain Agent Team Template before any Agent Team Instance is launched or resolved.
+The system SHALL instantiate topic-level teams through a Project Operator Session or Operator Agent workflow that performs Topic Team Specialization before any Agent Team Instance is launched or resolved.
 
 #### Scenario: Project operator discovers project and topic surfaces
 - **WHEN** a user points an agent with Isomer system skills at an Isomer Project root
@@ -20,7 +20,7 @@ The system SHALL instantiate topic-level teams through a Project Operator Sessio
 - **THEN** the system requires a topic-level instantiation packet or approved Topic Agent Team Profile before Agent Team Instance creation or Houmao launch materialization
 
 ### Requirement: Topic Team Instantiation Packet
-The system SHALL represent agent-mediated specialization output as a structured instantiation packet before materializing a Topic Agent Team Profile.
+The system SHALL represent agent-mediated Topic Team Specialization output as a structured instantiation packet before materializing a Topic Agent Team Profile.
 
 #### Scenario: Packet records resolved substitutions and bundle target
 - **WHEN** the Project Operator Session, Operator Agent, or Topic Service Agent resolves template placeholders for a Research Topic
@@ -57,7 +57,7 @@ The system SHALL provide bounded Isomer skills for project-operator-capable agen
 - **THEN** it can use skills for project awareness, topic discovery, template discovery, Topic Service Agent discovery, Service Request routing, review Gate preparation, materialization, launch orchestration, runtime recording, and handoff orchestration
 
 #### Scenario: Topic Service Agent skills are discoverable
-- **WHEN** a Topic Service Agent receives a Service Request for topic-team instantiation support
+- **WHEN** a Topic Service Agent receives a Service Request for Topic Team Specialization support
 - **THEN** it can use topic-specific Service Team skills for template inspection, topic context resolution, placeholder reconciliation, topic environment readiness, Agent Workspace setup, diagnostics, monitoring, and support Artifact writing
 
 #### Scenario: Skills do not bypass validators

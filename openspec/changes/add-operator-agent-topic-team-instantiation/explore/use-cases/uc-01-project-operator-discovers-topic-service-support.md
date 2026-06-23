@@ -6,7 +6,7 @@ As an Isomer maintainer, I want any agent with Isomer system skills to become pr
 
 ## Scenario
 
-The user opens the Isomer Labs repository and asks an Isomer-skilled agent to instantiate a topic team from the `deepsci-mini` Domain Agent Team Template. The agent acts as a Project Operator Session because the current working directory is an Isomer Project root. It discovers the Project Manifest, available Research Topics, Topic Workspaces, Domain Agent Team Templates, existing Topic Agent Team Profiles, Workspace Runtime refs, and available Topic Service Agent definitions or live refs. If topic-scoped support is needed, it opens a bounded Service Request instead of hardcoding topic-team specialization in Python.
+The user opens the Isomer Labs repository and asks an Isomer-skilled agent to instantiate a topic team from the `deepsci-mini` Domain Agent Team Template. The agent acts as a Project Operator Session because the current working directory is an Isomer Project root. It discovers the Project Manifest, available Research Topics, Topic Workspaces, Domain Agent Team Templates, existing Topic Agent Team Profiles, Workspace Runtime refs, and available Topic Service Agent definitions or live refs. If topic-scoped support is needed, it opens a bounded Service Request instead of hardcoding Topic Team Specialization in Python.
 
 ## Assumptions
 
@@ -23,7 +23,7 @@ The user opens the Isomer Labs repository and asks an Isomer-skilled agent to in
 4. The Project Operator Session lists Domain Agent Team Templates and confirms that `deepsci-mini` is a reusable template rather than a launchable topic team.
 5. The Project Operator Session inspects existing Topic Agent Team Profiles and Workspace Runtime refs for the selected Research Topic.
 6. The Project Operator Session discovers available Topic Service Agent definitions or live Topic Service Agent refs for the selected Topic Workspace.
-7. The Project Operator Session determines that topic-team specialization needs topic-scoped support, such as template inspection, placeholder reconciliation, topic environment readiness, or Agent Workspace setup.
+7. The Project Operator Session determines that Topic Team Specialization needs topic-scoped support, such as template inspection, placeholder reconciliation, topic environment readiness, or Agent Workspace setup.
 8. The Project Operator Session creates a Service Request that names the Project, Research Topic, Topic Workspace, Domain Agent Team Template, expected support output, authorization scope, Service Dispatch Form, and provenance obligations.
 9. The system validates that the Service Request is bounded service work and not a Research Task, Workflow Stage, Gate, or Agent Team Instance launch.
 10. The Project Operator Session dispatches the Service Request to a Topic Service Agent through a tool-native or launched-service dispatch form.
@@ -83,7 +83,7 @@ sequenceDiagram
   Adapter-->>Session: Topic Service Agent availability
   Session->>Runtime: Create bounded Service Request
   Runtime-->>Session: Service Request ref and dispatch constraints
-  Session->>Service: Dispatch template-instantiation support request
+  Session->>Service: Dispatch Topic Team Specialization support request
   Service-->>Session: Accept request or report unavailable
   Session->>Runtime: Record dispatch provenance
 ```
@@ -117,6 +117,6 @@ This use case passes when a non-Houmao Project Operator Session can discover pro
 
 ## Evidence
 
-- Domain language defines Project Operator Session, Topic Service Agent, Service Request, and Topic Team Instantiation Packet in `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`.
+- Domain language defines Project Operator Session, Topic Service Agent, Service Request, Topic Team Specialization, and Topic Team Instantiation Packet in `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`.
 - The change proposal requires backend-neutral project discovery and Topic Service Agent discovery in `openspec/changes/add-operator-agent-topic-team-instantiation/proposal.md`.
 - The operator workflow scenarios require project discovery, template inspection, and service support in `openspec/changes/add-operator-agent-topic-team-instantiation/specs/operator-agent-topic-team-instantiation/spec.md`.

@@ -1,6 +1,6 @@
 # System Design
 
-This page describes the current Isomer Labs architecture: Project discovery, Effective Topic Context, Workspace Path Resolution, Workspace Runtime, the flow from Domain Agent Team Template to Topic Agent Team Profile to Agent Team Instance, the Operator Agent role, the Execution Adapter boundary, and the boundary between implemented behavior and future roadmap behavior.
+This page describes the current Isomer Labs architecture: Project discovery, Effective Topic Context, Workspace Path Resolution, Workspace Runtime, Topic Team Specialization from Domain Agent Team Template to Topic Agent Team Profile, Agent Team Instance creation, the Operator Agent role, the Execution Adapter boundary, and the boundary between implemented behavior and future roadmap behavior.
 
 ## Project Discovery
 
@@ -62,6 +62,8 @@ Workspace Runtime is the persistent substrate inside a Topic Workspace. It owns:
 
 A **Domain Agent Team Template** is a reusable research-field method. It names default Agent Roles, Workflow Stages, Coordination Policy, Capability Binding slots, and template parameters, but it does not include a concrete research topic or project paths.
 
+**Topic Team Specialization** adapts one Domain Agent Team Template for one Research Topic. It resolves topic context, template placeholders, role bindings, Workflow Stages, policy refs, and copied template material choices before the team becomes launch-facing runtime state.
+
 A **Topic Agent Team Profile** specializes one Domain Agent Team Template for a user's Research Topic. It adapts roles and Workflow Stages to the topic context, records constraints and expected Artifacts, and can carry Capability Binding refs, Skill Binding Projections, allowed Research Operation Extension Points, and policy refs. It is a design-time artifact, not a running team.
 
 An **Agent Team Instance** is a concrete runtime team created from a Topic Agent Team Profile. It contains launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. `isomer-cli team-instances create` writes the Agent Team Instance record, Agent Instance records, Agent Workspace records, path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories. It does not launch backend agents or write adapter-specific launch material.
@@ -70,7 +72,7 @@ Topic-level Parallel Execution Scope means multiple Research Topics run concurre
 
 ## Operator Agent
 
-The **Operator Agent** is the project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user. It specializes Domain Agent Team Templates into Topic Agent Team Profiles, launches Topic Agent Team Profiles into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions.
+The **Operator Agent** is the project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user. It performs Topic Team Specialization, launches Topic Agent Team Profiles into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions.
 
 Human users operate through the Operator Agent. User-origin commands, approvals, Gate decisions, and task-routing changes enter Isomer through the Operator Agent. The Operator Agent can handle a Research Task directly or delegate it to a team Agent Instance.
 

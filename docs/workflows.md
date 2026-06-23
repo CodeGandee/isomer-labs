@@ -43,9 +43,9 @@ pixi run isomer-cli --print-json runtime validate --topic default --require-read
 
 `runtime init` creates `state.sqlite` and runtime directories. `runtime prepare` records Topic Environment Readiness. If readiness is not `ready`, treat repair as a Service Request rather than rerunning `runtime prepare`.
 
-## Topic Agent Team Profile Validation
+## Topic Team Specialization and Profile Validation
 
-Before launching a team, validate the Domain Agent Team Template and Topic Agent Team Profile.
+Before launching a team, validate the Domain Agent Team Template and the Topic Agent Team Profile produced by Topic Team Specialization.
 
 ```bash
 pixi run isomer-cli team-templates list
@@ -54,14 +54,14 @@ pixi run isomer-cli team-templates validate deepsci-org
 pixi run isomer-cli team-profiles validate topic-workspaces/default/team-profile/profile.toml
 ```
 
-To derive a candidate profile without writing it:
+To preview Topic Team Specialization without writing it:
 
 ```bash
 pixi run isomer-cli --print-json team-profiles specialize \
   --topic default --use-case UC-01
 ```
 
-Authoritative materialization persists the profile as the Research Topic's one Topic Agent Team Profile Bundle under the owning Topic Workspace and records only the Project Manifest ref in Project Config. Preview commands may still report a `registration_suggestion` object for compatibility while the packet-backed materializer is being implemented.
+Authoritative Topic Team Specialization records a Topic Team Instantiation Packet, persists the profile as the Research Topic's one Topic Agent Team Profile Bundle under the owning Topic Workspace, and records only the Project Manifest ref in Project Config. Preview commands may still report a `registration_suggestion` object for compatibility while the packet-backed materializer is being implemented.
 
 ## UC-01 Headless Exploration
 

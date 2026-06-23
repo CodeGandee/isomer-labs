@@ -2,7 +2,7 @@
 
 ## User Story
 
-As an Isomer maintainer, I want an approved Topic Team Instantiation Packet to materialize a Topic Agent Team Profile and launch or simulate a `deepsci-mini` Agent Team Instance, so that runtime records prove topic-team instantiation is agent-mediated and not a hardcoded template substitution path.
+As an Isomer maintainer, I want an approved Topic Team Instantiation Packet to materialize a Topic Agent Team Profile and launch or simulate a `deepsci-mini` Agent Team Instance, so that runtime records prove Topic Team Specialization and topic-team instantiation are agent-mediated and not a hardcoded template substitution path.
 
 ## Scenario
 

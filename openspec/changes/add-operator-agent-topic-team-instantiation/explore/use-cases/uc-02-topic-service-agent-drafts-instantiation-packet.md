@@ -2,11 +2,11 @@
 
 ## User Story
 
-As a Project Operator Session, I want a Topic Service Agent to inspect `deepsci-mini` and the selected Research Topic, so that the system can produce a reviewable Topic Team Instantiation Packet without encoding topic-specific substitutions in product code.
+As a Project Operator Session, I want a Topic Service Agent to support Topic Team Specialization for `deepsci-mini` and the selected Research Topic, so that the system can produce a reviewable Topic Team Instantiation Packet without encoding topic-specific substitutions in product code.
 
 ## Scenario
 
-A Project Operator Session has discovered a Research Topic, Topic Workspace, `deepsci-mini` Domain Agent Team Template, and a Topic Service Agent. The Project Operator Session sends a Service Request asking the Topic Service Agent to inspect the template, resolve topic context, reconcile placeholders, and draft a Topic Team Instantiation Packet. The Topic Service Agent returns packet material plus support Artifacts and diagnostics. The packet is still review material: it is not an approval record, Topic Agent Team Profile, Agent Team Instance, or Houmao launch payload.
+A Project Operator Session has discovered a Research Topic, Topic Workspace, `deepsci-mini` Domain Agent Team Template, and a Topic Service Agent. The Project Operator Session sends a Service Request asking the Topic Service Agent to support Topic Team Specialization by inspecting the template, resolving topic context, reconciling placeholders, and drafting a Topic Team Instantiation Packet. The Topic Service Agent returns packet material plus support Artifacts and diagnostics. The packet is still review material: it is not an approval record, Topic Agent Team Profile, Agent Team Instance, or Houmao launch payload.
 
 ## Assumptions
 
@@ -17,7 +17,7 @@ A Project Operator Session has discovered a Research Topic, Topic Workspace, `de
 
 ## Step-by-Step Description
 
-1. The Project Operator Session dispatches a Service Request to the Topic Service Agent for topic-team instantiation support.
+1. The Project Operator Session dispatches a Service Request to the Topic Service Agent for Topic Team Specialization support.
 2. The Topic Service Agent validates that the Service Request scope names one Project, one Research Topic, one Topic Workspace, and one Domain Agent Team Template.
 3. The Topic Service Agent inspects the `deepsci-mini` template manifest, placeholder catalog, role binding slots, workflow stages, workspace contract, instantiation schema, and validation diagnostics.
 4. The Topic Service Agent resolves the Effective Topic Context, Research Topic Config, Topic Workspace ref, Workspace Runtime readiness, policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, and Gate policy refs.
@@ -72,7 +72,7 @@ sequenceDiagram
   participant Validator as Generic Isomer<br/>Validators
   participant Artifacts as Support Artifact<br/>Store
 
-  Session->>Runtime: Dispatch Service Request for instantiation support
+  Session->>Runtime: Dispatch Service Request for Topic Team Specialization support
   Runtime-->>Service: Deliver bounded Service Request
   Service->>Template: Inspect deepsci-mini manifest and placeholders
   Template-->>Service: Placeholder catalog, role slots, workspace contract

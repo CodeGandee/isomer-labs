@@ -20,7 +20,7 @@ The system SHALL preserve the reusable template boundary when instantiation meta
 
 #### Scenario: Template may require topic instantiation
 - **WHEN** a Domain Agent Team Template declares `topic_instantiation_required`
-- **THEN** the system accepts the declaration and reports that the template must be specialized through a Topic Agent Team Profile before Agent Team Instance creation
+- **THEN** the system accepts the declaration and reports that the template must go through Topic Team Specialization before Agent Team Instance creation
 
 #### Scenario: Template validation rejects concrete packet output
 - **WHEN** a Domain Agent Team Template source file contains an approved instantiation packet, concrete Topic Agent Team Profile, concrete Agent Workspace path, live adapter ref, user approval decision, or Topic Service Agent runtime ref

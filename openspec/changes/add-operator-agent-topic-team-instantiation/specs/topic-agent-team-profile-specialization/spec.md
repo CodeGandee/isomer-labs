@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Packet-Backed Profile Bundle Materialization
-The system SHALL materialize authoritative Topic Agent Team Profiles as the selected Research Topic's single Topic Agent Team Profile Bundle from validated instantiation packets approved by a Project Operator Session or Operator Agent.
+The system SHALL materialize authoritative Topic Agent Team Profiles as the selected Research Topic's single Topic Agent Team Profile Bundle from validated Topic Team Specialization packets approved by a Project Operator Session or Operator Agent.
 
 #### Scenario: Packet materializes profile bundle
 - **WHEN** an instantiation packet passes validation and approval
@@ -16,7 +16,7 @@ The system SHALL materialize authoritative Topic Agent Team Profiles as the sele
 - **THEN** validation rejects the request and reports that each Research Topic has one authoritative topic team
 
 #### Scenario: Bundle contains copied specialized material
-- **WHEN** a Domain Agent Team Template such as `deepsci-mini` requires deep topic specialization
+- **WHEN** a Domain Agent Team Template such as `deepsci-mini` requires deep Topic Team Specialization
 - **THEN** materialization copies editable template material such as `execplan/` into the Topic Agent Team Profile Bundle, applies approved topic-specific changes there, and leaves the source Domain Agent Team Template unchanged
 
 #### Scenario: Cross-topic profile bundle placement is rejected

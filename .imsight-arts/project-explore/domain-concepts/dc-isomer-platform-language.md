@@ -48,7 +48,7 @@ Other space-like terms have narrower meanings:
 - **Workspace Runtime** is persistent runtime state inside a Topic Workspace, not a separate workspace.
 - **Agent Runtime** is runtime state inside an Agent Workspace, not a separate workspace.
 - **Workspace Boundary** is an advisory ownership and peer-read declaration for an Agent Workspace, not a filesystem-enforced space.
-- **Research Topic** is the root research problem or investigation intent that initiates work and topic-level team specialization. It is not a workspace.
+- **Research Topic** is the root research problem or investigation intent that initiates work and Topic Team Specialization. It is not a workspace.
 - **Research Inquiry** is a question or line of inquiry under a Research Topic. It is recorded inside the topic's Topic Workspace, but it is not itself a workspace.
 - **Research Task** is the bounded unit of work handled by the Operator Agent or by one delegated Agent Instance from an Agent Team Instance inside one Topic Workspace. It is not a workspace.
 - **Run** is a bounded execution episode recorded through Workspace Runtime, not a workspace.
@@ -67,7 +67,7 @@ Project
   Research Topic(s)
     Topic Workspace, declared by the Project Manifest
       Workspace Runtime
-      Topic Agent Team Profile Bundle(s)
+      Topic Agent Team Profile Bundle
       Research Inquiry graph
         Research Task(s)
       Agent Workspace(s), created for Agent Instances during team execution
@@ -78,7 +78,7 @@ Project
 ### Research Lifecycle
 
 **Research Topic**:
-The root research problem or investigation intent that initiates an investigation, such as "Why is CUDA kernel A faster than kernel B?" A Research Topic frames user intent, Project context, constraints, optional Measurable Objectives, and the Topic Agent Team Profile specialization used to investigate it.
+The root research problem or investigation intent that initiates an investigation, such as "Why is CUDA kernel A faster than kernel B?" A Research Topic frames user intent, Project context, constraints, optional Measurable Objectives, and the Topic Team Specialization used to investigate it.
 _Avoid_: Research Goal, Research Inquiry, Research Task, project, workspace
 
 **Measurable Objective**:
@@ -123,6 +123,10 @@ _Avoid_: Domain Agent Team Template, Agent Team Instance, Run, live team, ad hoc
 A fixed Topic Workspace directory, `<topic-workspace>/team-profile/`, that stores the Research Topic's one authoritative Topic Agent Team Profile and its editable topic-specialized material. It contains `profile.toml`, the approved Topic Team Instantiation Packet, copied and topic-modified template material such as `execplan/`, validation outputs, revision or provenance records, and launch-facing diagnostics. The Project Manifest keeps a ref to this single bundle for discovery. The bundle is topic-level design material, not Workspace Runtime state, not an Agent Team Instance, and not Houmao adapter launch material.
 _Avoid_: Project Config Directory profile body, Topic Workspace `teams/` directory, runtime team directory, adapter launch material, template source overwrite
 
+**Topic Team Specialization**:
+The design-time process that adapts one Domain Agent Team Template for one Research Topic and produces or revises that topic's Topic Agent Team Profile and Topic Agent Team Profile Bundle. It resolves topic context, template placeholders, role bindings, Workflow Stages, policy refs, expected Artifacts, copied template material choices, and launch-facing blockers. The authoritative path records this work in a Topic Team Instantiation Packet before profile bundle materialization. Topic Team Specialization ends before Agent Team Instance creation, adapter launch materialization, or live agent launch.
+_Avoid_: Topic Team Instantiation when only the template-to-profile adaptation is meant, Agent Team Instance creation, adapter launch, runtime team
+
 **Agent Team Instance**:
 A concrete runtime team created from the Research Topic's Topic Agent Team Profile by the Operator Agent or Execution Adapter. It has launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. A Research Topic is handled by one topic team lineage; retries or relaunches may be recorded for audit, but Isomer does not use multiple active Agent Team Instances to compare strategies inside one Research Topic.
 _Avoid_: Domain Agent Team Template, Topic Agent Team Profile, workspace-local team, ad hoc role list
@@ -132,11 +136,11 @@ The approved level where the user or Operator Agent starts concurrent execution.
 _Avoid_: Research Inquiry parallelism, branch-level parallelism, implicit parallelism without a recorded scope
 
 **Agent Team**:
-An umbrella phrase for a multi-agent structure. Use **Domain Agent Team Template** for the research-field method, **Topic Agent Team Profile** for the user's topic-level specialization, and **Agent Team Instance** for the runtime team. Avoid using **Agent Team** alone in schema names, manifest fields, or GUI labels when template, profile, or instance is the intended meaning.
+An umbrella phrase for a multi-agent structure. Use **Domain Agent Team Template** for the research-field method, **Topic Team Specialization** for the template-to-topic adaptation process, **Topic Agent Team Profile** for the user's topic-level design-time team, and **Agent Team Instance** for the runtime team. Avoid using **Agent Team** alone in schema names, manifest fields, or GUI labels when template, specialization, profile, or instance is the intended meaning.
 _Avoid_: Provider-specific specialist group, prompt bundle, full execution graph, role list only, concrete team when template, profile, or instance is meant
 
 **Service Team**:
-A built-in Isomer operational support team that provides common helper work for Projects, Topic Workspaces, Runs, Agent Workspaces, and Agent Instances. The Service Team can configure development environments for a target Agent Workspace and tech stack, repair dependency, runtime, tool, or system compatibility issues, collect diagnostics, support Domain Agent Team Template specialization, and write support Artifacts. Service Team members act at the command of a Project Operator Session or Operator Agent through specific Service Requests. The Service Team is not a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance, and it does not own Research Topics, Research Claims, Gates, or research decisions.
+A built-in Isomer operational support team that provides common helper work for Projects, Topic Workspaces, Runs, Agent Workspaces, and Agent Instances. The Service Team can configure development environments for a target Agent Workspace and tech stack, repair dependency, runtime, tool, or system compatibility issues, collect diagnostics, support Topic Team Specialization, and write support Artifacts. Service Team members act at the command of a Project Operator Session or Operator Agent through specific Service Requests. The Service Team is not a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance, and it does not own Research Topics, Research Claims, Gates, or research decisions.
 _Avoid_: Research Agent Team, Topic Agent Team Profile, Agent Team Instance, hidden Execution Adapter behavior, untracked sysadmin work
 
 **Service Request**:
@@ -176,7 +180,7 @@ A project-aware operating posture of any agent that has Isomer system skills ava
 _Avoid_: Houmao-only operator, hidden project daemon, persistent Agent Instance requirement, direct human operation of team Agent Instances
 
 **Topic Service Agent**:
-A topic-scoped Service Agent Instance from the Service Team, usually launched or resolved through Houmao, that handles Service Requests for one Research Topic or Topic Workspace. A Topic Service Agent can prepare topic environment readiness, configure Agent Workspaces, inspect Domain Agent Team Templates for topic specialization, draft Topic Team Instantiation Packets, monitor Agent Team Instances, collect diagnostics, and write support Artifacts. It acts at the command of a Project Operator Session or Operator Agent and remains outside Agent Team Instance membership. It must not own Research Topics, Research Claims, Gates, Decision Records, or research task-routing authority.
+A topic-scoped Service Agent Instance from the Service Team, usually launched or resolved through Houmao, that handles Service Requests for one Research Topic or Topic Workspace. A Topic Service Agent can prepare topic environment readiness, configure Agent Workspaces, inspect Domain Agent Team Templates for Topic Team Specialization, draft Topic Team Instantiation Packets, monitor Agent Team Instances, collect diagnostics, and write support Artifacts. It acts at the command of a Project Operator Session or Operator Agent and remains outside Agent Team Instance membership. It must not own Research Topics, Research Claims, Gates, Decision Records, or research task-routing authority.
 _Avoid_: Topic Operator, Operator Agent, Agent Team Instance member, research team lead, hidden orchestration daemon
 
 **Topic Service Master**:
@@ -184,11 +188,11 @@ A coordination posture or Agent Profile for a Topic Service Agent that routes mu
 _Avoid_: Project operator, research master, team owner, owner of Gate decisions
 
 **Topic Team Instantiation Packet**:
-A reviewable planning and provenance artifact that records how a Project Operator Session, Operator Agent, or Topic Service Agent proposes to specialize a Domain Agent Team Template into a Topic Agent Team Profile for one Research Topic. It records source template refs, topic refs, target Topic Agent Team Profile Bundle refs, role bindings, policy refs, expected Artifacts, resolved placeholders, copied template material choices, explicit deferrals, Service Request outputs when used, approval context, and validation refs. It is not itself a Topic Agent Team Profile, Agent Team Instance, Service Request, Gate, Decision Record, runtime state, or adapter launch payload.
+A reviewable planning and provenance artifact that records a proposed or approved Topic Team Specialization. It records source template refs, topic refs, target Topic Agent Team Profile Bundle refs, role bindings, policy refs, expected Artifacts, resolved placeholders, copied template material choices, explicit deferrals, Service Request outputs when used, approval context, and validation refs. It is not itself a Topic Agent Team Profile, Agent Team Instance, Service Request, Gate, Decision Record, runtime state, or adapter launch payload.
 _Avoid_: Topic Agent Team Profile, launch profile, Houmao launch dossier, approval record, runtime team
 
 **Operator Agent**:
-A durable project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user, specializes Domain Agent Team Templates into Topic Agent Team Profiles, launches Topic Agent Team Profiles into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions. A Project Operator Session can act in this capacity without requiring a Houmao-managed Operator Agent to exist first; when the operator is persisted or launched, represent it as an Operator Agent. Human users operate through the Operator Agent or active Project Operator Session: user-origin commands, approvals, Gate decisions, and task-routing changes enter Isomer through the operator surface. The Operator Agent can handle a Research Task directly or delegate it to a team Agent Instance.
+A durable project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user, performs Topic Team Specialization, launches Topic Agent Team Profiles into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions. A Project Operator Session can act in this capacity without requiring a Houmao-managed Operator Agent to exist first; when the operator is persisted or launched, represent it as an Operator Agent. Human users operate through the Operator Agent or active Project Operator Session: user-origin commands, approvals, Gate decisions, and task-routing changes enter Isomer through the operator surface. The Operator Agent can handle a Research Task directly or delegate it to a team Agent Instance.
 _Avoid_: Controller as a separate entity outside Agent Role and Agent Instance, backend-specific operator implementation
 
 **Coordination Policy**:
@@ -396,7 +400,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 ### Research Lifecycle
 
-- Use `research_topic` for the root research problem or investigation intent that initiates work and topic-level team specialization.
+- Use `research_topic` for the root research problem or investigation intent that initiates work and Topic Team Specialization.
 - Use `research_inquiry` for a user-facing line of inquiry.
 - Use `measurable_objective` for optional metric, target, tolerance, or optimization-direction fields contained by a Research Topic.
 - Use `inquiry_relationship` or `research_inquiry_relationship` for typed graph links between Research Inquiries.
@@ -408,7 +412,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 ### Team and Agent Execution
 
-- Use `domain_agent_team_template`, `topic_team_instantiation_packet`, `topic_agent_team_profile`, `agent_team_instance`, `project_operator_session`, `operator_agent`, `agent_role`, `agent_profile`, `agent_instance`, `capability_binding`, `coordination_policy`, `execution_adapter`, and `workflow_stage` for team and execution concepts.
+- Use `domain_agent_team_template`, `topic_team_specialization`, `topic_team_instantiation_packet`, `topic_agent_team_profile`, `agent_team_instance`, `project_operator_session`, `operator_agent`, `agent_role`, `agent_profile`, `agent_instance`, `capability_binding`, `coordination_policy`, `execution_adapter`, and `workflow_stage` for team and execution concepts.
 - Use `service_team` for the built-in operational support team, `service_request` for one bounded support assignment, `service_agent_instance` for the runtime support actor, `topic_service_agent` for a topic-scoped service actor, and `topic_service_master` for a coordination posture or Agent Profile of a Topic Service Agent.
 - Use `service_dispatch_form` for the project operator's Service Request routing choice. Use `tool_native_subagent` when the Project Operator Session or Operator Agent uses native subagent or multi-agent tooling, and `launched_service_agent` when the Project Operator Session, Operator Agent, or Execution Adapter launches or resolves service agents and dispatches requests to them.
 - Use `research_operation_extension_point` for provider-neutral operation slots, `execution_adapter_command_request` for the shared dispatch envelope, `skill_binding_projection` for skill availability projection, `scheduler_policy` for dispatch and monitoring authorization, `gate_policy` for governed-action preflight, `literature_provider_binding` for external literature provider refs, and `baseline_waiver_policy` for baseline bypass rules.
@@ -486,7 +490,8 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - An **Agent Workspace** contains one **Agent Runtime** and zero or more **Agent Artifacts**.
 - **Agent Runtime** is subordinate to **Workspace Runtime**.
 - A **Domain Agent Team Template** contains default **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Binding** slots, and template parameters for one research field or method family.
-- A **Topic Agent Team Profile** specializes one **Domain Agent Team Template** for a user's research topic.
+- **Topic Team Specialization** adapts one **Domain Agent Team Template** for one **Research Topic**.
+- A **Topic Agent Team Profile** is the design-time result of **Topic Team Specialization**.
 - A **Topic Agent Team Profile** contains topic-adapted **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, **Skill Binding Projections**, allowed **Research Operation Extension Points**, policy refs, constraints, and expected **Artifacts**, but it is not running.
 - An **Agent Team Instance** is created from one **Topic Agent Team Profile** by the **Operator Agent** or **Execution Adapter**.
 - An **Agent Team Instance** contains runtime **Agent Instances**, launch refs, **Agent Workspaces**, Run participation, and resolved execution state.
@@ -511,13 +516,13 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - A **Topic Service Agent** is a **Service Agent Instance** scoped to one **Research Topic** or **Topic Workspace**.
 - A **Topic Service Agent** may support Domain Agent Team Template inspection and Topic Agent Team Profile materialization, but it does not become a member of the materialized **Agent Team Instance**.
 - A **Topic Service Master** is a coordination posture or **Agent Profile** for a **Topic Service Agent**, not a separate research controller.
-- A **Topic Team Instantiation Packet** records proposed specialization from **Domain Agent Team Template** to **Topic Agent Team Profile**; it is review and provenance material, not runtime team state.
+- A **Topic Team Instantiation Packet** records a proposed or approved **Topic Team Specialization**; it is review and provenance material, not runtime team state.
 - When a **Service Agent Instance** changes project, workspace, runtime, dependency, or environment state, the **Project Operator Session** or **Operator Agent** records the **Service Request**, support **Artifacts**, and **Provenance Records**.
 - Workspace-scoped **Service Requests** use **Workspace Runtime** for handoff and completion records.
 - An **Agent Profile** describes how an **Execution Adapter** can construct or configure an **Agent Instance**.
 - An **Agent Instance** is assigned to one **Agent Role** for a Run or team execution context.
 - An **Agent Role** may be served by different **Agent Instances** across retries, Runs, or adapter implementations.
-- The **Operator Agent** is the durable main user interaction point, task controller, team-specialization actor, team-launch actor, and final fallback handler when Isomer records a persisted operator actor.
+- The **Operator Agent** is the durable main user interaction point, task controller, Topic Team Specialization actor, team-launch actor, and final fallback handler when Isomer records a persisted operator actor.
 - A **Project Operator Session** can act as the project-facing operator surface before or instead of launching a durable **Operator Agent**.
 - Human users operate through the **Project Operator Session** or **Operator Agent** for commands, approvals, Gate decisions, and task-routing changes.
 - A **Coordination Policy** defines how Agent Instances communicate, hand off work, review outputs, escalate decisions, and use Gates.
@@ -581,7 +586,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use **Research Topic Config** for topic-specific defaults and refs. Do not use it for **Workspace Runtime** state, command logs, research records, rich Artifact contents, provider payloads, scheduler internals, command outputs, or secrets.
 - Use **Effective Topic Context** for resolved process input to topic-scoped command behavior, path resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations. Do not describe it as durable lifecycle state or a full snapshot stored on every Run.
 - Use **Topic Workspace** instead of "quest" or "quest workspace" for Isomer-managed research execution areas. "Quest" is DeepScientist reference language, not Isomer canonical language.
-- Use **Research Topic** for the root research problem or investigation intent that initiates the research and drives Topic Agent Team Profile specialization. Do not use **Research Goal** as a separate level.
+- Use **Research Topic** for the root research problem or investigation intent that initiates the research and drives Topic Team Specialization. Do not use **Research Goal** as a separate level.
 - Use **Measurable Objective** only for optional metric-bearing content inside a **Research Topic**. Do not model measurable and exploratory as exclusive goal kinds.
 - Use **Research Inquiry** for questions or lines of inquiry under a **Research Topic**. Do not use **Topic Workspace** when discussing pause, resume, archive, or topic-level steering unless the storage location itself matters.
 - Use **Research Inquiry Relationship** for graph links between inquiries. Do not use **Research Branch** unless quoting stale docs or referring to a separate compatibility migration.
@@ -595,20 +600,20 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 - Use **Agent Workspace** for per-agent work areas inside a Topic Workspace. Do not call it a secure sandbox.
 - Use globally unique **Agent Instance** ids for default Agent Workspace paths under `<topic-workspace>/agents/<agent-instance-id>/`; do not encode Agent Team Instance membership only in the directory hierarchy.
-- Store the deeply specialized **Topic Agent Team Profile** as one **Topic Agent Team Profile Bundle** under `<topic-workspace>/team-profile/`, with `profile.toml` and copied topic-edited template material. Do not overwrite the source **Domain Agent Team Template** when specializing a topic.
+- Store the deeply specialized **Topic Agent Team Profile** as one **Topic Agent Team Profile Bundle** under `<topic-workspace>/team-profile/`, with `profile.toml` and copied topic-edited template material. Do not overwrite the source **Domain Agent Team Template** during Topic Team Specialization.
 - Do not put `teams/` under a **Topic Workspace**. Use the fixed `team-profile/` directory for the topic-level profile bundle. **Domain Agent Team Templates** remain project-level or built-in references; the Project Manifest keeps the **Topic Agent Team Profile Bundle** ref, and the workspace records Topic Agent Team Profile identity, Agent Team Instance identity, and task-handler identity through Workspace Runtime or provenance Artifacts.
-- Use **Domain Agent Team Template**, **Topic Team Instantiation Packet**, **Topic Agent Team Profile**, **Agent Team Instance**, **Project Operator Session**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Skill Binding Projection**, **Research Operation Extension Point**, **Execution Adapter Command Request**, **Coordination Policy**, **Scheduler Policy**, **Gate Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
+- Use **Domain Agent Team Template**, **Topic Team Specialization**, **Topic Team Instantiation Packet**, **Topic Agent Team Profile**, **Agent Team Instance**, **Project Operator Session**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Skill Binding Projection**, **Research Operation Extension Point**, **Execution Adapter Command Request**, **Coordination Policy**, **Scheduler Policy**, **Gate Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
 - Use **Agent Instance** for the concrete runtime actor that owns an Agent Workspace. Do not use **Agent Role** as the workspace owner except when discussing responsibility or workflow ownership.
 - Use **Project Operator Session** for an Isomer-skilled agent session that becomes project-aware from a project root before or instead of launching a durable Operator Agent.
 - Use **Operator Agent** for the durable user-facing controller, topic-profile author, team launcher, task router, and fallback handler. Do not model direct human operation of team Agent Instances or runtime state. Use **Coordination Policy** for the rules that govern collaboration among delegated team agents.
 - Manual Mode still routes user intent through the **Project Operator Session** or **Operator Agent**. Do not describe manual direct messages as untracked human-to-agent chat.
 - Use **Completion Watcher Contract** for the resolved per-handoff watcher rules. Do not treat file creation, channel replies, direct inspection, or adapter events as authoritative completion until the **Operator Agent** records the handoff result in **Workspace Runtime**.
 - Treat the **Operator Agent** as outside Agent Team Instance membership. Every other task Agent Instance should be a member of an Agent Team Instance.
-- Use **Service Team** only for common operational support, such as environment setup, dependency repair, runtime diagnostics, system compatibility fixes, and support for topic-team specialization. Do not assign research ownership, Research Claims, or Gate decisions to the Service Team.
+- Use **Service Team** only for common operational support, such as environment setup, dependency repair, runtime diagnostics, system compatibility fixes, and support for Topic Team Specialization. Do not assign research ownership, Research Claims, or Gate decisions to the Service Team.
 - Treat **Service Team** work as Project Operator Session or Operator Agent commanded work. Do not describe Service Team members as self-directed agents that interpret user goals or choose research actions.
 - Use **Topic Service Agent** for a topic-scoped Service Agent Instance, usually Houmao-backed, that helps with one Research Topic or Topic Workspace. Do not call it a Topic Operator, research team lead, or Agent Team Instance member.
 - Use **Topic Service Master** only as a coordination posture or Agent Profile for a Topic Service Agent. Do not make it a new holder of research authority.
-- Use **Topic Team Instantiation Packet** for reviewable specialization material before a Topic Agent Team Profile Bundle is written. Do not use it as an approval record, runtime record, or Houmao launch payload.
+- Use **Topic Team Instantiation Packet** for reviewable Topic Team Specialization material before a Topic Agent Team Profile Bundle is written. Do not use it as an approval record, runtime record, or Houmao launch payload.
 - Use **Service Dispatch Form** to describe whether a Service Request used native subagent tooling or launched service agents. Do not model launched Service Agent Instances as a research **Agent Team Instance**.
 - Record user-visible environment repair or setup mutation as a **Service Request** when it creates Artifacts or changes project, workspace, runtime, dependency, or environment state. Do not hide this work only inside **Execution Adapter** internals.
 - Route Service Request dispatch, Service Agent Instance launch, and Agent Team Instance launch through **Execution Adapter Command Requests** for dispatch, preflight, monitoring, and recording while preserving their distinct domain records.

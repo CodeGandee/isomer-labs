@@ -50,7 +50,7 @@ The platform intentionally does not:
 - Effective Topic Context resolution.
 - Side-effect-free Workspace Path Resolution previews.
 - Domain Agent Team Template registration, inspection, and validation.
-- Topic Agent Team Profile specialization, validation, and optional write.
+- Topic Team Specialization, Topic Agent Team Profile validation, and optional write.
 - Workspace Runtime initialization, reopening, and schema checking.
 - Topic Environment Readiness recording.
 - Read-only Workspace Runtime inspection and validation.

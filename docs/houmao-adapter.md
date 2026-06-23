@@ -124,7 +124,7 @@ Created by `team-instances adapter-link export` or by launch/prepare commands. I
 
 ### `launch-material-manifest.json`
 
-Created by launch or prepare commands. It stores a digest-backed inventory of generated launch material files. `inspect-live --integrity` and `reconcile` compare current file digests against this manifest to detect drift.
+Created by launch or prepare commands after Topic Team Specialization and Agent Team Instance recording. It stores a digest-backed inventory of generated launch material files. `inspect-live --integrity` and `reconcile` compare current file digests against this manifest to detect drift.
 
 ### `adapter-runtime-manifest.json`
 

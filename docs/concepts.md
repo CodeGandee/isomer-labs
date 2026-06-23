@@ -12,7 +12,7 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 **Research Topic Config**: a Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, Measurable Objectives, default Research Inquiry refs, the Topic Agent Team Profile Bundle ref, Execution Adapter refs, Capability Binding refs, Skill Binding Projection refs, and policy refs. It does not own Pixi environment bindings or Workspace Runtime state.
 
-**Research Topic**: the root research problem or investigation intent that initiates work and topic-level team specialization.
+**Research Topic**: the root research problem or investigation intent that initiates work and Topic Team Specialization.
 
 **Topic Workspace**: a project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs.
 
@@ -36,6 +36,8 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 **Topic Agent Team Profile**: a topic-level specialization of one Domain Agent Team Template for a user's research topic. It adapts the domain method to the topic context, selects or tunes roles and Workflow Stages, records constraints and expected Artifacts, and can carry role-scoped or Workflow Stage-scoped Capability Binding refs, Skill Binding Projections, allowed Research Operation Extension Points, and policy refs. Each Research Topic has one authoritative Topic Agent Team Profile at a time; topic-level parallelism means multiple Research Topics researched by different dedicated teams, not one topic researched by multiple teams. For deep specialization, it is stored as a Topic Agent Team Profile Bundle inside the owning Topic Workspace. It can be reviewed or edited before launch; it is not a running team.
 
+**Topic Team Specialization**: the design-time process that adapts one Domain Agent Team Template for one Research Topic and produces or revises that topic's Topic Agent Team Profile and Topic Agent Team Profile Bundle. It resolves topic context, template placeholders, role bindings, Workflow Stages, policy refs, expected Artifacts, copied template material choices, and launch-facing blockers. It ends before Agent Team Instance creation or live launch.
+
 **Topic Agent Team Profile Bundle**: a fixed Topic Workspace directory, `<topic-workspace>/team-profile/`, that stores the Research Topic's one authoritative Topic Agent Team Profile and its editable topic-specialized material. It contains `profile.toml`, the approved Topic Team Instantiation Packet, copied and topic-modified template material such as `execplan/`, validation outputs, and provenance refs. The Project Manifest keeps a ref to the bundle for discovery.
 
 **Agent Team Instance**: a concrete runtime team created from a Topic Agent Team Profile by the Operator Agent or Execution Adapter. It has launched Agent Instances, runtime refs, Agent Workspaces, and Run participation.
@@ -46,7 +48,7 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 **Agent Instance**: a concrete runtime actor created from an Agent Profile and assigned to an Agent Role for a Run or team execution context. Agent Instance ids are globally unique by design. Agent Instances own Agent Workspaces.
 
-**Operator Agent**: the project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user, specializes Domain Agent Team Templates into Topic Agent Team Profiles, launches Topic Agent Team Profiles into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions. Human users operate through the Operator Agent.
+**Operator Agent**: the project-facing Agent Role and corresponding Agent Instance that acts as the main interaction point with the user, performs Topic Team Specialization, launches Topic Agent Team Profiles into Agent Team Instances, controls or delegates Research Tasks, resolves fallback handling, and records task routing decisions. Human users operate through the Operator Agent.
 
 **Execution Adapter**: a backend-specific bridge that maps Isomer's generic Domain Agent Team Template, Topic Agent Team Profile, Agent Team Instance, Agent Profile, Agent Instance, Capability Binding, Run, Agent Workspace, and Artifact concepts onto a concrete execution engine. Execution Adapters must not change Isomer's core domain language.
 

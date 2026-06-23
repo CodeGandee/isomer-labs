@@ -353,9 +353,9 @@ pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases 
 
 ### `team-profiles specialize`
 
-Derive a candidate Topic Agent Team Profile for the selected Research Topic.
+Preview Topic Team Specialization for the selected Research Topic by deriving a candidate Topic Agent Team Profile.
 
-**Side effects:** by default, prints a design-time preview without writing files. Legacy preview-write behavior may write a single profile file, but authoritative topic-team materialization writes the Research Topic's one Topic Agent Team Profile Bundle under `team-profile/` in the owning Topic Workspace and keeps only the Project Manifest ref in Project Config. Does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state.
+**Side effects:** by default, prints a design-time Topic Team Specialization preview without writing files. Legacy preview-write behavior may write a single profile file, but authoritative Topic Team Specialization writes the Research Topic's one Topic Agent Team Profile Bundle under `team-profile/` in the owning Topic Workspace and keeps only the Project Manifest ref in Project Config. Does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state.
 
 ```bash
 pixi run isomer-cli --print-json team-profiles specialize \

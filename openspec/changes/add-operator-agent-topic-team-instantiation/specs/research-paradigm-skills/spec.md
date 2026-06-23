@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Isomer Project Operator and Topic Service Skills
-The repository SHALL include provider-neutral skill instructions for Project Operator Sessions, Operator Agents, and Topic Service Agents to instantiate topic teams from Domain Agent Team Templates.
+The repository SHALL include provider-neutral skill instructions for Project Operator Sessions, Operator Agents, and Topic Service Agents to perform Topic Team Specialization and instantiate topic teams from Domain Agent Team Templates.
 
 #### Scenario: Project awareness skill exists
 - **WHEN** an agent is pointed at an Isomer Project root
@@ -12,7 +12,7 @@ The repository SHALL include provider-neutral skill instructions for Project Ope
 - **THEN** a skill instructs it to open a bounded Service Request to a Topic Service Agent with scope, expected output, authorization, dispatch form, and provenance obligations
 
 #### Scenario: Template inspection skill exists
-- **WHEN** the project operator or Topic Service Agent needs to specialize a Domain Agent Team Template
+- **WHEN** the project operator or Topic Service Agent needs to perform Topic Team Specialization
 - **THEN** a skill instructs it to inspect template manifest, placeholder catalog, role bindings, workflow stages, workspace contract, instantiation schema, and validation diagnostics
 
 #### Scenario: Topic context resolution skill exists
@@ -33,7 +33,7 @@ The repository SHALL include provider-neutral skill instructions for Project Ope
 
 #### Scenario: Topic Service Agent support skills exist
 - **WHEN** a Topic Service Agent receives a Service Request
-- **THEN** skills instruct it to perform only bounded Service Team work such as environment readiness, work-agent setup, instantiation support, monitoring, diagnostics, and support Artifact writing
+- **THEN** skills instruct it to perform only bounded Service Team work such as environment readiness, work-agent setup, Topic Team Specialization support, monitoring, diagnostics, and support Artifact writing
 
 ### Requirement: Project Operator and Topic Service Skills Stay Bounded
 Project operator and Topic Service Agent skills SHALL describe orchestration and support decisions without granting authority to bypass Isomer validation, Gates, or runtime recording.

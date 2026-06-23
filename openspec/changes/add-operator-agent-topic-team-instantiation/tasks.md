@@ -1,7 +1,7 @@
 ## 1. Domain Language and Template Inspection Foundations
 
-- [ ] 1.1 Update canonical domain language for Project Operator Session, Topic Service Agent, Topic Service Master, and their Service Request boundaries.
-- [ ] 1.2 Add a generic Topic Team Instantiation Packet model, parser, serializer, and validator that captures template ref, topic refs, the fixed Topic Workspace-local Topic Agent Team Profile Bundle path, role bindings, policy refs, expected Artifacts, copied template material plan, approval state, deferrals, Project Operator Session provenance, Topic Service Agent provenance, and validation refs.
+- [ ] 1.1 Update canonical domain language for Topic Team Specialization, Project Operator Session, Topic Service Agent, Topic Service Master, and their Service Request boundaries.
+- [ ] 1.2 Add a generic Topic Team Instantiation Packet model, parser, serializer, and validator that captures Topic Team Specialization input and output: template ref, topic refs, the fixed Topic Workspace-local Topic Agent Team Profile Bundle path, role bindings, policy refs, expected Artifacts, copied template material plan, approval state, deferrals, Project Operator Session provenance, Topic Service Agent provenance, and validation refs.
 - [ ] 1.3 Add packet validation diagnostics for missing required fields, unresolved required placeholders, invalid deferrals, cross-topic refs, runtime truth, and secret-like fields.
 - [ ] 1.4 Extend Domain Agent Team Template inspection to expose placeholder catalogs, instantiation schema paths, role binding slots, Agent Workspace placeholders, and workflow stage ownership.
 - [ ] 1.5 Extend Domain Agent Team Template validation so `topic_instantiation_required` and placeholder catalogs are accepted at template layer.
@@ -10,7 +10,7 @@
 ## 2. Topic Agent Team Profile Bundle Materialization
 
 - [ ] 2.1 Add a packet-backed profile bundle materialization API that writes or previews the Research Topic's Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/` from a validated instantiation packet, including `profile.toml`, packet metadata, copied topic-edited template material, validation outputs, and provenance refs.
-- [ ] 2.2 Update existing profile specialization preview output so synthetic Python defaults are labeled as preview or candidate material, not authoritative instantiation.
+- [ ] 2.2 Update existing Topic Team Specialization preview output so synthetic Python defaults are labeled as preview or candidate material, not authoritative instantiation.
 - [ ] 2.3 Extend Topic Agent Team Profile validation to recognize profile bundle layout, packet provenance, copied material refs, and save-time versus launch-facing validation.
 - [ ] 2.4 Reject launch-facing profiles with unresolved required placeholders unless the linked packet explicitly defers them and reports launch blockers.
 - [ ] 2.5 Reject materialization or Project Manifest registration when a Topic Agent Team Profile Bundle path is outside the selected Topic Workspace or inside another Research Topic's Topic Workspace.
@@ -26,7 +26,7 @@
 - [ ] 3.5 Create `isomer-placeholder-reconcile` skill instructions for mapping template placeholders to concrete values or explicit deferrals in an instantiation packet.
 - [ ] 3.6 Create `isomer-topic-profile-draft` and `isomer-profile-review-gate` skill instructions for drafting reviewable profile bundle material, copied template material changes, and approval requests.
 - [ ] 3.7 Create `isomer-profile-materialize` and `isomer-team-launch-orchestrate` skill instructions for calling generic validators/materializers and routing launch requests through the Houmao adapter.
-- [ ] 3.8 Create Topic Service Agent skill instructions for topic environment readiness, work-agent setup, template-instantiation support, Agent Team Instance monitoring, diagnostics, and support Artifact writing.
+- [ ] 3.8 Create Topic Service Agent skill instructions for topic environment readiness, work-agent setup, Topic Team Specialization support, Agent Team Instance monitoring, diagnostics, and support Artifact writing.
 - [ ] 3.9 Add research skill validation coverage for the new project-operator and Topic Service Agent skill files and their required references.
 
 ## 4. Houmao Topic Service Agent Definition and Adapter Provenance
@@ -50,7 +50,7 @@
 
 ## 6. CLI, Docs, and Roadmap
 
-- [ ] 6.1 Update CLI help/docs for profile specialization preview versus packet-backed authoritative profile bundle materialization.
+- [ ] 6.1 Update CLI help/docs for Topic Team Specialization preview versus packet-backed authoritative profile bundle materialization.
 - [ ] 6.2 Update Domain Agent Team Template docs to explain placeholder catalogs, `topic_instantiation_required`, and project-operator plus Topic Service Agent instantiation.
 - [ ] 6.3 Update Houmao adapter docs to show Topic Service Agent launch and project-operator orchestration above adapter launch mechanics.
 - [ ] 6.4 Update UC-01 workflow docs and troubleshooting to run the project-operator and Topic Service Agent packet path before team simulation or launch.
