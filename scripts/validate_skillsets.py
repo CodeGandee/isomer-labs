@@ -45,11 +45,36 @@ ACTIVE_REF_FILES = ("AGENTS.md", "ROADMAP.md", "pyproject.toml")
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
 
 TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
+    "## Subskills",
     "team-specialization-guide.md",
     "team-specialization-plan.md",
     "Generated Guide",
     "Final Report",
     "<topic-workspace>/team-profile/execplan/",
+)
+
+TOPIC_TEAM_SPECIALIZATION_SUBSKILLS = (
+    "project-awareness.md",
+    "template-inspection.md",
+    "topic-context-resolution.md",
+    "service-request-routing.md",
+    "placeholder-reconciliation.md",
+    "topic-profile-drafting.md",
+    "profile-review-approval.md",
+    "profile-materialization.md",
+    "team-launch-orchestration.md",
+)
+
+INCORPORATED_OPERATOR_SKILLS = (
+    "isomer-admin-project-aware",
+    "isomer-admin-template-inspect",
+    "isomer-admin-topic-context-resolve",
+    "isomer-admin-service-request-route",
+    "isomer-admin-placeholder-reconcile",
+    "isomer-admin-topic-profile-draft",
+    "isomer-admin-profile-review-approval",
+    "isomer-admin-profile-materialize",
+    "isomer-admin-team-launch-orchestrate",
 )
 
 DEEPSCI_MINI_GUIDE_REQUIRED_TERMS = (
@@ -104,6 +129,22 @@ def first_line_containing(lines: tuple[str, ...], term: str) -> int:
         if term in line:
             return line_number
     return 1
+
+
+def line_index_containing(lines: tuple[str, ...], term: str) -> int | None:
+    for index, line in enumerate(lines):
+        if term in line:
+            return index
+    return None
+
+
+def has_numbered_step_after(lines: tuple[str, ...], start_index: int) -> bool:
+    for line in lines[start_index + 1 :]:
+        if line.startswith("## ") and line.strip() != "## Workflow":
+            return False
+        if re.match(r"^\d+\.\s+", line):
+            return True
+    return False
 
 
 def strip_scalar(value: str) -> str:
@@ -288,10 +329,24 @@ def validate_migrated_operator_refs(repo_root: Path) -> list[Diagnostic]:
 
 def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    skill_md = repo_root / "skillset" / "operator" / TOPIC_TEAM_SPECIALIZATION_SKILL / "SKILL.md"
+    skill_dir = repo_root / "skillset" / "operator" / TOPIC_TEAM_SPECIALIZATION_SKILL
+    skill_md = skill_dir / "SKILL.md"
     if not skill_md.exists():
         add(diagnostics, repo_root, skill_md, 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} is required")
         return diagnostics
+    if (skill_dir / "evals").exists():
+        add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must not contain evals/")
+    for incorporated_skill in INCORPORATED_OPERATOR_SKILLS:
+        incorporated_path = repo_root / "skillset" / "operator" / incorporated_skill
+        if incorporated_path.exists():
+            add(
+                diagnostics,
+                repo_root,
+                incorporated_path,
+                1,
+                "OPS003",
+                f"{incorporated_skill} has been incorporated into {TOPIC_TEAM_SPECIALIZATION_SKILL} and must not be a standalone skill",
+            )
     lines = read_lines(skill_md)
     text = "\n".join(lines)
     for term in TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS:
@@ -304,6 +359,25 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
                 "OPS003",
                 f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must document '{term}'",
             )
+    references_dir = skill_dir / "references"
+    for subskill_file_name in TOPIC_TEAM_SPECIALIZATION_SUBSKILLS:
+        subskill_path = references_dir / subskill_file_name
+        if not subskill_path.exists():
+            add(diagnostics, repo_root, subskill_path, 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include references/{subskill_file_name}")
+            continue
+        if f"references/{subskill_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subskills"), "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must link references/{subskill_file_name}")
+        subskill_lines = read_lines(subskill_path)
+        workflow_index = line_index_containing(subskill_lines, "## Workflow")
+        if workflow_index is None:
+            add(diagnostics, repo_root, subskill_path, 1, "OPS003", f"references/{subskill_file_name} must include a ## Workflow section")
+            continue
+        if workflow_index > 8:
+            add(diagnostics, repo_root, subskill_path, workflow_index + 1, "OPS003", f"references/{subskill_file_name} must place ## Workflow near the top")
+        if not has_numbered_step_after(subskill_lines, workflow_index):
+            add(diagnostics, repo_root, subskill_path, workflow_index + 1, "OPS003", f"references/{subskill_file_name} workflow must use numbered steps")
+        if "does not map cleanly" not in "\n".join(subskill_lines):
+            add(diagnostics, repo_root, subskill_path, workflow_index + 1, "OPS003", f"references/{subskill_file_name} must include a freeform fallback")
     return diagnostics
 
 

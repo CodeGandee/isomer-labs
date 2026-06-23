@@ -1,87 +1,88 @@
 ## Context
 
-The current operator skillset exposes many fine-grained skills: project awareness, template inspection, topic context resolution, placeholder reconciliation, topic profile drafting, review and approval, materialization, and launch orchestration. That split is useful for implementation, but it is awkward as an operator-facing workflow. A Project Operator Session usually needs to perform a coherent operation: understand a Domain Agent Team Template, copy it into the selected Topic Workspace profile bundle, adapt it for a Research Topic, and leave auditable evidence of what changed.
+`isomer-admin-topic-team-specialize` already belongs in the operator skillset because Topic Team Specialization is an operator-facing workflow, not a runtime adapter detail. This redo narrows the change around the skill bundle shape: use the `skill-creator` model for concise skill packaging, use the Imsight style for executable skill structure, and keep Isomer's canonical Topic Team Specialization boundaries intact.
 
-The earlier Topic Team Specialization design already decided that deep specialization lives inside the Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, with copied and topic-edited template material such as `execplan/`. This change adds a module-level skill around that copied template root. For `deepsci-mini`, the natural copied template root is `team-profile/execplan/` because the template declares `execplan` as the copyable material root.
+The target workflow still adapts one Domain Agent Team Template for one Research Topic. The skill copies selected template material into the Research Topic's fixed Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, works inside the copied template root such as `<topic-workspace>/team-profile/execplan/` for `deepsci-mini`, and produces human-readable guide and plan artifacts before structured packet/profile validation. Project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, topic profile drafting, review approval, materialization, and launch orchestration live as local subskill pages inside this module skill.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Add one coherent operator skill, `isomer-admin-topic-team-specialize`, for Domain Agent Team Template understanding and topic adaptation.
-- Make `team-specialization-guide.md` the durable guide for understanding how a copied template works.
-- Make `team-specialization-plan.md` the durable plan and final report for adapting copied template material to the selected Research Topic.
-- Keep guide, plan, and adapted material inside the Topic Agent Team Profile Bundle's copied template root.
-- Let the module skill prepare Topic Team Instantiation Packet inputs and review points while leaving authoritative validation, approval, materialization, and launch boundaries intact.
-- Add `team-specialization-guide.md` to `deepsci-mini` so the first supported template has an explicit specialization guide.
+- Maintain `isomer-admin-topic-team-specialize` as one coherent module-level operator skill for Topic Team Specialization.
+- Shape the skill as a lean Codex skill bundle with minimal `SKILL.md` frontmatter, `agents/openai.yaml`, local subskill pages in `references/`, no `evals/`, and no auxiliary docs.
+- Format the skill and each subskill page according to the Imsight style guide: near-top `## Workflow`, numbered steps, concise workflow lines, detail sections for longer rules, and a fallback for freeform tasks.
+- Incorporate former helper-skill behavior as local subskills so the module no longer calls separate skills for its normal workflow.
+- Preserve `team-specialization-guide.md`, `team-specialization-plan.md`, generated-guide marking, pre-adaptation checklist, and post-adaptation `Final Report`.
+- Keep copied material inside the Topic Agent Team Profile Bundle and keep Domain Agent Team Template source material generic.
+- Validate the skill with skill-creator validation and repository skillset validation.
 
 **Non-Goals:**
 
-- Do not remove all fine-grained `isomer-admin-*` skills in this change; they can remain as helper skills or internal references until a later cleanup.
-- Do not make Python infer topic-specific adaptations from hardcoded template knowledge.
-- Do not store guide, plan, or adapted material outside the Topic Agent Team Profile Bundle.
-- Do not make the module skill bypass packet, profile bundle, runtime, or adapter validators.
+- Do not add `evals/` to this skill or require subagent benchmark scaffolding for this change.
+- Do not keep standalone operator skill folders whose behavior is incorporated as local subskills.
+- Do not make the module skill an approval, materialization, runtime recording, or launch surface.
 - Do not create a second active Topic Agent Team Profile Bundle or profile id for one Research Topic.
+- Do not edit Domain Agent Team Template source while specializing a topic.
 
 ## Decisions
 
-### Decision: Add a Module-Level Skill
+### Decision: Use a Lean Skill-Creator Bundle
 
-`isomer-admin-topic-team-specialize` should be the preferred operator entrypoint for turning a Domain Agent Team Template into topic-specific copied material. It behaves like a module-level function:
+The target skill bundle should contain only the files needed for another agent to use the skill: `SKILL.md`, `agents/openai.yaml`, and directly useful local subskill pages under `references/`. The `SKILL.md` frontmatter should contain only `name` and `description`, and `agents/openai.yaml` should expose deterministic UI metadata with a default prompt that names `$isomer-admin-topic-team-specialize`.
 
-```text
-isomer-admin-topic-team-specialize(project_root, topic_ref_or_prompt, domain_team_template_ref)
-  -> copied template root
-  -> team-specialization-guide.md
-  -> team-specialization-plan.md
-  -> adapted copied material
-  -> final report
-  -> packet/profile-bundle inputs
-```
+Alternative considered: keep `evals/` inside the skill for future benchmarking. The user clarified that this skill does not need eval artifacts, so validation and manual checks are enough for this change.
 
-Alternative considered: keep asking operators to call `isomer-admin-template-inspect`, `isomer-admin-topic-context-resolve`, `isomer-admin-placeholder-reconcile`, and `isomer-admin-topic-profile-draft` directly. That keeps each skill small, but it exposes implementation details as workflow design and makes operator use feel like manually orchestrating private helper functions.
+### Decision: Use Local Subskills for Former Helper Calls
 
-### Decision: Store Guide and Plan in the Copied Template Root
+The module should not call separate operator skills for its normal workflow. Instead, it should expose a `## Subskills` table and one-level local pages for project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, topic profile drafting, profile review approval, profile materialization, and team launch orchestration. This keeps the module self-contained while preserving the conceptual boundaries of each operation.
 
-The module skill first copies selected Domain Agent Team Template material into the Topic Agent Team Profile Bundle, then operates on the copied template root. For `deepsci-mini`, that means `team-profile/execplan/team-specialization-guide.md` and `team-profile/execplan/team-specialization-plan.md`.
+Alternative considered: keep a helper function map that points to standalone operator skills. That keeps duplication low, but it makes the module depend on external skill invocation and conflicts with the desired subskill style.
 
-Alternative considered: store the guide and plan at `team-profile/` root. That keeps them visible, but the user's desired rule is “same dir as the copied template,” and the guide describes the inner working of the copied template material, not the whole bundle.
+### Decision: Remove Incorporated Standalone Skills
 
-### Decision: Prefer Source Guide, Generate When Missing
+The standalone operator skill folders for project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, topic profile drafting, profile review approval, profile materialization, and team launch orchestration should be removed once their behavior is present as local subskills. This leaves one canonical operator entrypoint and avoids two active sources of workflow truth.
 
-If copied template material contains `team-specialization-guide.md`, the operator must read it before adaptation. If it is missing, the operator must inspect copied material and create one in the copied template root with a clear generated marker, such as:
+Alternative considered: keep the standalone folders as compatibility surfaces. That keeps older prompts working, but it preserves the duplication that the module skill is meant to remove.
 
-```markdown
-> Generated Guide: This file was generated by the Project Operator Session from copied Domain Agent Team Template material because no source `team-specialization-guide.md` existed. Review before treating it as authoritative.
-```
+### Decision: Use Imsight Workflow Formatting
 
-Alternative considered: fail when the guide is absent. That would force every existing template to add the file before specialization can proceed. Generating a clearly marked guide keeps progress possible while preserving reviewability.
+`SKILL.md` and each subskill page should place a `## Workflow` near the top and make that workflow the executable entrypoint. Steps should be numbered and concise. Longer rules belong in sections such as generated guide rules, plan structure, subskill routing, output contract, guardrails, reference routing, and exit criteria. Each workflow should end with a fallback that tells the agent to build and execute a step-by-step plan from the available constraints when the default procedure does not match the user's task.
 
-### Decision: Plan Before Adaptation, Final Report After Adaptation
+Alternative considered: keep a narrative operating model as the main entrypoint. That explains intent, but it makes the skill less predictable for agents that expect a direct workflow.
 
-`team-specialization-plan.md` must be created before topic adaptation begins. It must include a checklist or task list that names intended adaptations. After adaptation completes, the same file must include a `Final Report` section that summarizes completed edits, deferred edits, generated guide status, validation status, packet/profile outputs, and unresolved blockers.
+### Decision: Keep Topic Team Specialization as the Domain Boundary
 
-Alternative considered: let the Topic Team Instantiation Packet be the only plan artifact. The packet is structured and validator-facing, but it is not a good place to explain template internals, rewrite strategy, or narrative adaptation rationale.
+The module skill may resolve project/topic context, inspect a Domain Agent Team Template, copy material into `<topic-workspace>/team-profile/`, read or create `team-specialization-guide.md`, write `team-specialization-plan.md`, adapt copied material, append a `Final Report`, and report packet/profile inputs. It must stop before claiming approval, materialization, launch readiness, or Agent Team Instance creation.
 
-### Decision: Preserve Structured Packet and Validation Boundaries
+Alternative considered: let the module skill own the full path through launch. That would hide Topic Team Instantiation Packet approval, Topic Agent Team Profile validation, Workspace Runtime recording, and Execution Adapter preflight inside one broad skill.
 
-The module skill can prepare or update packet-shaped inputs, copied material plans, topic edit summaries, review points, and launch blockers. It must not treat adapted copied material as authoritative launch material until packet and profile bundle validation, approval provenance, and materialization complete through existing generic APIs or CLI commands.
+### Decision: Keep Guide and Plan in the Copied Template Root
 
-Alternative considered: make the module skill write the authoritative profile bundle directly. That would hide validation and approval boundaries inside a broad operator skill and recreate the same “hidden operator” problem the packet design solved.
+For `deepsci-mini`, the copied template root is `<topic-workspace>/team-profile/execplan/`, so the skill should place `team-specialization-guide.md` and `team-specialization-plan.md` there. If the guide is missing from copied material, the skill should synthesize it from copied template files and include the visible generated marker. The plan should exist before adaptation and gain a `Final Report` after adaptation.
+
+Alternative considered: put guide and plan at `team-profile/` root. That makes them easy to find but separates them from the copied template material they explain.
+
+### Decision: Validate Both Skill Structure and Domain Terms
+
+Validation should combine skill-creator's `quick_validate.py`, repository skillset validation, OpenSpec validation, and focused tests or manual checks that verify required Topic Team Specialization terms. The validator should not require `evals/`; instead it should check concrete bundle structure, local reference integrity, manifest metadata, Imsight workflow shape, required guide/plan terms, and `deepsci-mini` guide coverage.
+
+Alternative considered: rely only on `pixi run test`. Unit tests are useful, but they do not by themselves catch malformed skill frontmatter, missing UI metadata, stale local references, or style drift in operator skills.
 
 ## Risks / Trade-offs
 
-- Module skill becomes too broad -> Keep the skill bounded to copied template understanding and adaptation; approval, materialization, and launch stay in their existing bounded skills.
-- Generated guides appear authoritative -> Require a visible generated marker and include generated-guide status in the final report.
+- The module skill becomes too broad -> Keep approval, materialization, runtime recording, and launch orchestration as explicit boundary subskills with validation and provenance checks.
+- Removing `evals/` reduces benchmark evidence -> Use focused validation commands and manual smoke checks for this operator skill.
+- Generated guides look authoritative -> Require the exact visible generated marker and include generated-guide status in the final report.
 - Plan and packet duplicate information -> Treat `team-specialization-plan.md` as human-readable adaptation rationale and the Topic Team Instantiation Packet as structured validation and provenance input.
-- Existing templates lack guides -> Add `team-specialization-guide.md` to `deepsci-mini` and allow generated guides for other templates.
-- Adaptation edits become hard to audit -> Require checklist items before edits and a `Final Report` after edits.
-- Existing validation ignores guide/plan files -> Extend operator skill validation or targeted tests so the module skill and supported template guide are present and internally consistent.
+- Imsight formatting drifts over time -> Add validation or tests for near-top workflow, numbered steps, and fallback text in both `SKILL.md` and local subskill pages.
 
 ## Migration Plan
 
-1. Add `skillset/operator/isomer-admin-topic-team-specialize/` with module-level instructions and examples that treat lower-level skills as helper functions.
-2. Add `teams/deepsci-mini/execplan/team-specialization-guide.md` describing placeholders, assumptions, team workflow, contracts, cooperation example, and specialization guidance.
-3. Update operator README and validation so `isomer-admin-topic-team-specialize` is the preferred entrypoint for Domain Agent Team Template adaptation.
-4. Add tests or manual fixtures proving the generated or source guide and plan flow writes/validates the expected artifacts under the copied template root.
-5. Keep the lower-level skills available for now, then consider a later cleanup change after the module skill has proven stable.
+1. Update `skillset/operator/isomer-admin-topic-team-specialize/SKILL.md` so it follows the Imsight entrypoint structure, selects local subskills from a table, and keeps longer rules in detail sections.
+2. Keep `skillset/operator/isomer-admin-topic-team-specialize/agents/openai.yaml` synchronized with the skill name, short description, and default prompt.
+3. Add local subskill pages under `skillset/operator/isomer-admin-topic-team-specialize/references/`, and give each page its own near-top numbered `## Workflow` and fallback.
+4. Remove `skillset/operator/isomer-admin-topic-team-specialize/evals/` and avoid adding auxiliary docs that do not directly support skill execution.
+5. Keep or update `teams/deepsci-mini/execplan/team-specialization-guide.md` as the source guide for the primary supported template.
+6. Remove standalone operator skill folders whose behavior is now represented by local subskills.
+7. Update operator skillset docs and validation so the module skill is discoverable, no-`evals/`, and checked for required subskills plus the Topic Team Specialization guide/plan contract.
+8. Run skill-creator validation, repository skillset validation, OpenSpec validation, and focused tests or smoke checks.

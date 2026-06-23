@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-admin-team-launch-orchestrate"
-  short_description: "Orchestrate launch"
-  default_prompt: "Use $isomer-admin-team-launch-orchestrate to create or launch a topic team from approved profile bundle and runtime material."

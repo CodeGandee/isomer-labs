@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-admin-service-request-route"
-  short_description: "Route service work"
-  default_prompt: "Use $isomer-admin-service-request-route to create a bounded Service Request for topic-scoped service support."

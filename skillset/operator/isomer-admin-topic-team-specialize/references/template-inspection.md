@@ -1,21 +1,16 @@
----
-name: isomer-admin-template-inspect
-description: Inspect Domain Agent Team Template manifests, placeholder catalogs, role bindings, workflow stages, workspace contracts, and diagnostics.
----
-
-# Isomer Template Inspection
+# Template Inspection
 
 ## Workflow
 
-When this skill is invoked, execute the following steps in order.
+When this subskill is selected, execute the following steps in order.
 
 1. Resolve the selected Domain Agent Team Template registration and source path.
 2. Inspect manifest metadata, `topic_instantiation_required`, placeholder catalog, instantiation schema path, copyable material declarations, and source-boundary diagnostics.
-3. Inspect role definitions, role binding slots, required skills, Agent Workspace placeholders, workflow stage ownership, and workspace contract constraints.
+3. Inspect role definitions, role binding slots, required skills, Agent Workspace placeholders, Workflow Stage ownership, and workspace contract constraints.
 4. Report unresolved or invalid template-layer material without converting placeholders into concrete topic values.
 5. Return a template inspection summary suitable for placeholder reconciliation and profile bundle drafting.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to inspect only the template artifacts required by the requested decision, then execute it.
+If the user's task does not map cleanly to these steps, use your native planning tool to inspect only the template artifacts required by the requested decision, then execute the plan.
 
 ## Reference Routing
 
@@ -29,16 +24,11 @@ Read as needed:
 - `execplan/harness/schemas/topic-profile-instantiation.schema.json` for packet-facing schema expectations.
 - Generated agent profiles only to understand placeholders, not to launch agents directly.
 
-## Entry Signals
-
-- Topic Team Specialization needs the template's placeholder catalog and role binding slots.
-- A Project Operator Session or Topic Service Agent must confirm whether a template is reusable and not directly launchable.
-
 ## Exit Criteria
 
-- Placeholder names, role slots, copyable material, schema paths, and workflow stage ownership are explicit.
+- Placeholder names, role slots, copyable material, schema paths, and Workflow Stage ownership are explicit.
 - Template-boundary errors or missing files are reported.
-- No concrete Topic Agent Team Profile Bundle is written by this skill.
+- No concrete Topic Agent Team Profile Bundle is written by this subskill.
 
 ## Guardrails
 

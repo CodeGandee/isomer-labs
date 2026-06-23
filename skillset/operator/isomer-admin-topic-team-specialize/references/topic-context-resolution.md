@@ -1,21 +1,16 @@
----
-name: isomer-admin-topic-context-resolve
-description: Resolve topic-specific project refs, Effective Topic Context, Workspace Runtime readiness, policies, and binding refs for Topic Team Specialization.
----
-
-# Isomer Topic Context Resolve
+# Topic Context Resolution
 
 ## Workflow
 
-When this skill is invoked, execute the following steps in order.
+When this subskill is selected, execute the following steps in order.
 
 1. Resolve the selected Research Topic, Research Topic Config, Topic Workspace, and Effective Topic Context.
 2. Read policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, Gate policy refs, and default execution mode from durable project material.
 3. Inspect Workspace Runtime presence and Topic Environment Readiness status without treating runtime truth as profile configuration.
 4. Return concrete refs that can fill a Topic Team Instantiation Packet or explicit blockers when refs are missing.
-5. Record which refs came from Project Manifest, Research Topic Config, local context, or user selection.
+5. Record whether refs came from Project Manifest, Research Topic Config, local context, service output, or user selection.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to resolve only the topic refs needed for the requested artifact, then execute it.
+If the user's task does not map cleanly to these steps, use your native planning tool to resolve only the topic refs needed for the requested artifact, then execute the plan.
 
 ## Reference Routing
 
@@ -28,11 +23,6 @@ Read as needed:
 
 - Domain Agent Team Template parameter catalog for required placeholder names.
 - Policy or provider registration docs when a ref is ambiguous.
-
-## Entry Signals
-
-- Placeholder reconciliation needs concrete topic, workspace, runtime, policy, provider, or binding refs.
-- A launch or materialization decision depends on readiness status.
 
 ## Exit Criteria
 

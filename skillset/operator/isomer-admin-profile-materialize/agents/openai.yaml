@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-admin-profile-materialize"
-  short_description: "Materialize profile"
-  default_prompt: "Use $isomer-admin-profile-materialize to validate and write an approved Topic Agent Team Profile Bundle."

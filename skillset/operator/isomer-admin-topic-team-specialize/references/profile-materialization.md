@@ -1,15 +1,10 @@
----
-name: isomer-admin-profile-materialize
-description: Call generic Isomer validators and materializers to write approved Topic Agent Team Profile Bundles under the selected Topic Workspace.
----
-
-# Isomer Profile Materialize
+# Profile Materialization
 
 ## Workflow
 
-When this skill is invoked, execute the following steps in order.
+When this subskill is selected, execute the following steps in order.
 
-1. Confirm the selected Research Topic, Topic Workspace, Domain Agent Team Template, packet path, and approval provenance.
+1. Confirm the selected Research Topic, Topic Workspace, Domain Agent Team Template, packet path or packet inputs, and approval provenance.
 2. Run generic packet and profile-bundle validation before mutation.
 3. Materialize the approved Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, including `profile.toml`, packet, approval, validation, copied template material, and provenance files.
 4. Report the Project Manifest registration ref that should point at the bundle's `profile.toml`.
@@ -28,11 +23,6 @@ Read as needed:
 
 - Project Manifest registration guidance.
 - Validation diagnostics from previous draft or approval passes.
-
-## Entry Signals
-
-- The packet is approved and ready to write an authoritative topic profile bundle.
-- A Project Operator Session needs to convert reviewable material into durable bundle files.
 
 ## Exit Criteria
 

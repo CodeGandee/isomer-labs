@@ -56,6 +56,16 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Team Specialize
 
+            ## Workflow
+
+            1. Select from the subskills.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Subskills
+
+            Use `references/project-awareness.md`, `references/template-inspection.md`, `references/topic-context-resolution.md`, `references/service-request-routing.md`, `references/placeholder-reconciliation.md`, `references/topic-profile-drafting.md`, `references/profile-review-approval.md`, `references/profile-materialization.md`, and `references/team-launch-orchestration.md`.
+
             Use `team-specialization-guide.md`, `team-specialization-plan.md`, `Generated Guide`, `{final_report}`, and `<topic-workspace>/team-profile/execplan/`.
             """,
         )
@@ -68,6 +78,19 @@ class SkillsetValidatorTests(unittest.TestCase):
               default_prompt: "Use $isomer-admin-topic-team-specialize to validate this fixture."
             """,
         )
+        for subskill_name in validator.TOPIC_TEAM_SPECIALIZATION_SUBSKILLS:
+            write(
+                root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subskill_name,
+                f"""
+                # {subskill_name}
+
+                ## Workflow
+
+                1. Run the subskill fixture step.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+                """,
+            )
 
     def write_deepsci_mini_guide(self, root: Path, *, omit_contract: bool = False) -> None:
         contract = "" if omit_contract else "contract"
@@ -98,6 +121,49 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("Final Report" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_team_subskills(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        (root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "project-awareness.md").unlink()
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("project-awareness.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_topic_team_evals(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "evals" / "evals.json", "{}")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("must not contain evals/" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_incorporated_standalone_skill(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-project-aware" / "SKILL.md",
+            """
+            ---
+            name: isomer-admin-project-aware
+            description: Duplicated fixture skill.
+            ---
+
+            # Duplicate
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("incorporated into isomer-admin-topic-team-specialize" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_deepsci_mini_guide_terms(self) -> None:
         root = self.make_root()

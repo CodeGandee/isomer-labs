@@ -15,21 +15,40 @@ isomer-admin-topic-team-specialize(project_root, topic_ref_or_prompt, domain_tea
 
 Run the workflow from a Project Operator Session or Operator Agent that is already pointed at the Isomer Project root, or that can resolve the project root from the user's prompt or current working directory.
 
-Treat lower-level operator skills as helper functions inside this module skill. The user should not have to invoke template inspection, topic context resolution, placeholder reconciliation, topic profile drafting, approval, or materialization as separate steps just to get copied topic-specialized template material.
+Treat project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, profile drafting, review approval, materialization, and launch orchestration as local subskills inside this module skill. The user should not have to invoke separate skills just to get copied topic-specialized template material.
 
 Use this workflow for one Research Topic and one Domain Agent Team Template at a time. Topic-level parallelism means separate Research Topics can each have their own dedicated Topic Agent Team Profile Bundle; it does not mean one Research Topic should get multiple competing teams.
 
 ## Workflow
 
-1. Resolve project awareness: identify `project_root`, the Project Manifest, the selected Research Topic, the selected Topic Workspace, the selected `domain_team_template_ref`, existing Topic Agent Team Profile Bundle refs, Workspace Runtime refs, and known Topic Service Agent refs.
-2. Inspect the Domain Agent Team Template: read its template manifest, copyable material declarations, placeholder catalog or instantiation parameters, role binding slots, workflow stages, workspace contracts, and diagnostics.
-3. Create or confirm the selected Topic Workspace and the Topic Agent Team Profile Bundle root at `<topic-workspace>/team-profile/`.
-4. Copy selected Domain Agent Team Template material into the Topic Agent Team Profile Bundle before editing it. For `deepsci-mini`, the default copied template root is `<topic-workspace>/team-profile/execplan/`.
-5. In the copied template root, look for `team-specialization-guide.md`. If it exists, read it first before adaptation. If it is missing, inspect the copied material and create `team-specialization-guide.md` in the copied root with the required generated marker below.
-6. Create `team-specialization-plan.md` in the copied template root before adaptation. The plan must include a checklist that names intended adaptations, unresolved decisions, expected validation, and packet/profile outputs.
-7. Adapt only the copied template material according to the plan. Resolve placeholders, rewrite role instructions, update prompt text, adjust contract refs, and revise code-like template material as needed for the Research Topic.
-8. Append or update a `Final Report` section in `team-specialization-plan.md` after adaptation. Record completed edits, deferred edits, generated-guide status, validation status, packet/profile outputs, review points, and unresolved blockers.
-9. Report the resulting paths and packet/profile inputs to the user or caller: copied template root, guide path, plan path, changed files, placeholder resolutions, deferrals, validation refs, proposed Topic Team Instantiation Packet fields, proposed Topic Agent Team Profile Bundle material, and required approval or launch blockers.
+1. Execute the **Project Awareness** subskill to identify `project_root`, the Project Manifest, the selected Research Topic, the selected Topic Workspace, existing Topic Agent Team Profile Bundle refs, Workspace Runtime refs, Domain Agent Team Template refs, and known Topic Service Agent refs.
+2. Execute the **Template Inspection** subskill for the selected `domain_team_template_ref`; read template manifest data, copyable material declarations, placeholder or instantiation parameters, role binding slots, workflow stages, workspace contracts, and diagnostics.
+3. Execute the **Topic Context Resolution** subskill to gather Effective Topic Context, Workspace Runtime readiness, policies, Capability Binding refs, Skill Binding Projection refs, provider refs, and Gate policy refs.
+4. Execute the **Service Request Routing** subskill only when bounded Service Team support is needed for environment readiness, copied material diagnostics, placeholder reconnaissance, monitoring, or support Artifact writing.
+5. Create or confirm the selected Topic Workspace and the Topic Agent Team Profile Bundle root at `<topic-workspace>/team-profile/`, then copy selected Domain Agent Team Template material before editing it. For `deepsci-mini`, the default copied template root is `<topic-workspace>/team-profile/execplan/`.
+6. In the copied template root, handle `team-specialization-guide.md`. If it exists, read it first before adaptation; if it is missing, create it in the copied root with the required generated marker. See **Generated Guide Rule**.
+7. Create `team-specialization-plan.md` in the copied template root before adaptation. The plan must include a checklist that names intended adaptations, unresolved decisions, expected validation, and packet/profile outputs. See **Plan Structure**.
+8. Execute the **Placeholder Reconciliation** subskill, then adapt only the copied template material according to the plan. Resolve placeholders, rewrite role instructions, update prompt text, adjust contract refs, and revise code-like template material as needed for the Research Topic.
+9. Append or update a `Final Report` section in `team-specialization-plan.md`, then execute the **Topic Profile Drafting** subskill to report draft Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.
+10. Stop at specialization output unless the user explicitly asks for the next boundary. For approval, materialization, or launch work, execute the matching boundary subskill from the **Subskills** table and preserve all validation and provenance checks.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project context, copied-template constraints, subskills, output contract, and guardrails in this skill, then execute the plan.
+
+## Subskills
+
+Load only the subskill pages needed for the user's task.
+
+| Subskill | Use For | Detail |
+| --- | --- | --- |
+| Project Awareness | Resolve Project, Research Topic, Topic Workspace, templates, profile refs, runtime refs, and Topic Service Agent refs | [references/project-awareness.md](references/project-awareness.md) |
+| Template Inspection | Inspect Domain Agent Team Template manifests, placeholders, roles, workflow stages, copyable material, and diagnostics | [references/template-inspection.md](references/template-inspection.md) |
+| Topic Context Resolution | Resolve Effective Topic Context, Workspace Runtime readiness, policies, bindings, provider refs, and Gate policy refs | [references/topic-context-resolution.md](references/topic-context-resolution.md) |
+| Service Request Routing | Route bounded Service Requests to Topic Service Agents when operational support is needed | [references/service-request-routing.md](references/service-request-routing.md) |
+| Placeholder Reconciliation | Map template placeholders to concrete topic values, copied material plans, topic edits, deferrals, blockers, and packet-shaped provenance | [references/placeholder-reconciliation.md](references/placeholder-reconciliation.md) |
+| Topic Profile Drafting | Draft reviewable Topic Agent Team Profile Bundle material from specialization outputs | [references/topic-profile-drafting.md](references/topic-profile-drafting.md) |
+| Profile Review Approval | Review draft profile material and prepare bundle-local approval provenance | [references/profile-review-approval.md](references/profile-review-approval.md) |
+| Profile Materialization | Validate and write an approved Topic Agent Team Profile Bundle under the selected Topic Workspace | [references/profile-materialization.md](references/profile-materialization.md) |
+| Team Launch Orchestration | Cross from approved profile material into Workspace Runtime and Houmao Execution Adapter launch work | [references/team-launch-orchestration.md](references/team-launch-orchestration.md) |
 
 ## Generated Guide Rule
 
@@ -68,22 +87,6 @@ Create `team-specialization-plan.md` before editing copied material. Use this st
 ```
 
 Leave `Final Report` empty or marked pending until adaptation is complete. After adaptation, fill it with completed edits, deferred edits, generated-guide status, validation status, packet/profile outputs, and unresolved blockers.
-
-## Helper Function Map
-
-Use `isomer-admin-project-aware(project_root, topic_ref_or_prompt)` to gather project, topic, workspace, template, profile bundle, runtime, and service refs when that context is not already clear.
-
-Use `isomer-admin-template-inspect(domain_team_template_ref)` to understand template manifests, placeholder catalogs, role binding slots, workflow stages, workspace contracts, copyable material declarations, and diagnostics.
-
-Use `isomer-admin-topic-context-resolve(project_ref, topic_ref, topic_workspace_ref)` to gather topic-specific values such as Effective Topic Context, Workspace Runtime readiness, policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, and Gate policy refs.
-
-Use `isomer-admin-service-request-route(service_request)` only for bounded support work, such as environment readiness checks, copied material diagnostics, or placeholder reconnaissance.
-
-Use `isomer-admin-placeholder-reconcile(template_report, topic_context, service_outputs)` to shape placeholder resolutions, copied material plans, topic edits, explicit deferrals, unresolved blockers, and packet-shaped approval provenance.
-
-Use `isomer-admin-topic-profile-draft(instantiation_packet)` for reviewable Topic Agent Team Profile Bundle material after copied material has a guide, a plan, and topic edits.
-
-Use `isomer-admin-profile-review-approval(profile_bundle_draft)`, `isomer-admin-profile-materialize(approved_packet, approval_ref)`, and `isomer-admin-team-launch-orchestrate(profile_bundle_ref, workspace_runtime_ref, adapter_ref)` only at their own boundaries. This module prepares their inputs; it does not replace approval, materialization, runtime, or adapter validation.
 
 ## Output Contract
 

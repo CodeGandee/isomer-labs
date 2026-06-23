@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-admin-topic-profile-draft"
-  short_description: "Draft profile bundle"
-  default_prompt: "Use $isomer-admin-topic-profile-draft to draft reviewable Topic Agent Team Profile Bundle material."

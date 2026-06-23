@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-admin-profile-review-approval"
-  short_description: "Review profile bundle"
-  default_prompt: "Use $isomer-admin-profile-review-approval to review a profile bundle draft and prepare approval provenance."

@@ -1,13 +1,8 @@
----
-name: isomer-admin-service-request-route
-description: Route bounded Service Requests from a Project Operator Session or Operator Agent to topic-scoped Topic Service Agents.
----
-
-# Isomer Service Request Routing
+# Service Request Routing
 
 ## Workflow
 
-When this skill is invoked, execute the following steps in order.
+When this subskill is selected, execute the following steps in order.
 
 1. Identify the requester as a Project Operator Session or Operator Agent and identify the selected Research Topic and Topic Workspace.
 2. Define the Service Request scope, expected outputs, allowed file surfaces, validation obligations, approval posture, and provenance refs.
@@ -15,7 +10,7 @@ When this skill is invoked, execute the following steps in order.
 4. Write or dispatch the bounded request using the project's supported Service Request, mailbox, or handoff surface.
 5. Record the request ref, target service-agent ref, expected support Artifact refs, and return criteria for the operator.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded Service Request from the requested support work, then execute it.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded Service Request from the requested support work, then execute the plan.
 
 ## Reference Routing
 
@@ -28,11 +23,6 @@ Read as needed:
 
 - `docs/runtime-and-files.md` for runtime and workspace boundaries.
 - The selected Domain Agent Team Template workspace contract when the request touches Agent Workspace setup.
-
-## Entry Signals
-
-- The operator needs topic-scoped help with environment readiness, template inspection, placeholder reconciliation, monitoring, diagnostics, or support Artifact writing.
-- The task belongs to the Service Team rather than a research team member.
 
 ## Exit Criteria
 
