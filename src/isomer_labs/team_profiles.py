@@ -152,7 +152,7 @@ def specialize_topic_agent_team_profile(
                     role.id,
                     f"{final_profile_id}:{role.id}:skill-binding-projection",
                 ),
-                agent_workspace_ref=f"topic-workspaces/{context.research_topic.id}/agent-workspaces/{final_profile_id}/{role.id}",
+                agent_workspace_ref=None,
                 required_skills=list(role.required_skills),
                 optional_skills=list(role.optional_skills),
             )
@@ -457,7 +457,6 @@ def _validate_roles(
                 ("agent_profile_ref", binding.agent_profile_ref),
                 ("capability_binding_ref", binding.capability_binding_ref),
                 ("skill_binding_projection_ref", binding.skill_binding_projection_ref),
-                ("agent_workspace_ref", binding.agent_workspace_ref),
             ):
                 if value is None:
                     diagnostics.append(
@@ -467,7 +466,7 @@ def _validate_roles(
                             concept="Topic Agent Team Profile role",
                             path=profile.source_path,
                             field=f"role_bindings.{role.id}.{field_name}",
-                            message="Active Agent Role bindings must resolve profile, capability, skill projection, and Agent Workspace refs.",
+                            message="Active Agent Role bindings must resolve profile, capability, and skill projection refs.",
                         )
                     )
             missing_skills = sorted(set(role.required_skills) - set(binding.required_skills))

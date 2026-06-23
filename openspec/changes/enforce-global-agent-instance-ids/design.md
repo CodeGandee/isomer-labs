@@ -21,8 +21,8 @@ ADR 0023 accepted that Agent Instance ids are globally unique by design and that
 
 ## Decisions
 
-1. **Use a deterministic global id with embedded team and role context.**
-   Agent Instance ids will be generated as `agent-<uuid>` or a deterministic slug that includes a project-scoped counter. The chosen form is `agent-<topic-workspace-id>-<team-instance-counter>-<role-slug>-<uuid-short>` so that directories remain readable while still being globally unique. This satisfies ADR 0023 without losing human inspectability.
+1. **Use a globally unique id with embedded topic, team, and role context.**
+   Agent Instance ids will be generated as `agent-<topic-workspace-id>-<agent-team-instance-id>-<role-slug>-<uuid-short>` so that directories remain readable while still being globally unique. Automatically generated Agent Team Instance ids already contain a counter; user-supplied Agent Team Instance ids are preserved as the team context. This satisfies ADR 0023 without losing human inspectability.
 
 2. **Generate ids inside `WorkspaceRuntimeStore.create_agent_team_instance`.**
    The store already has access to the Topic Workspace and Agent Team Instance context. It will generate ids there and pass them into `AgentInstanceRecord` and the Agent Workspace path plan.
@@ -39,7 +39,7 @@ ADR 0023 accepted that Agent Instance ids are globally unique by design and that
 ## Risks / Trade-offs
 
 - [Risk] Existing tests may encode the old `{team_id}-{role}` id shape. → Mitigation: update test fixtures and assertions as part of this change; no production migration is needed because no Agent Team Instances have been launched in production.
-- [Risk] Long ids make directory names harder to read in file explorers. → Mitigation: include a short role slug and team counter in the id; the uuid component is truncated to 8 characters.
+- [Risk] Long ids make directory names harder to read in file explorers. → Mitigation: include topic, team, and role slugs in the id; the uuid component is truncated to 8 characters.
 - [Risk] Future adapters may assume role-derived ids. → Mitigation: adapters receive Agent Instance records via Workspace Runtime and should use the `id` field, not derive ids from role names.
 
 ## Migration Plan
@@ -48,5 +48,5 @@ No runtime migration is required. This change affects only new Agent Team Instan
 
 ## Open Questions
 
-- Should the global id include the Agent Team Instance id verbatim, or only a counter? The chosen design uses a counter for brevity.
+- Should the global id include the Agent Team Instance id verbatim, or only a counter? The chosen design uses the Agent Team Instance id so user-supplied team ids remain traceable.
 - Should profile fixtures retain `agent_workspace_ref` as an explicit override, or remove it and rely on the default? The chosen design removes stale explicit overrides and lets the resolver use the default.

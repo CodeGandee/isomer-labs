@@ -13,8 +13,10 @@ tmp/
 .env
 
 .claude/
+.claude
 .codex/
+.codex
 .git/
 .agents/skills
-
+# Isolated implementation worktrees
 .imsight-arts/impl-branches/

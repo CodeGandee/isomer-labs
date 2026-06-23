@@ -10,6 +10,7 @@ from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.paths import preview_paths
 from isomer_labs.runtime.adapter_handoff_validation import validate_adapter_handoff_records
+from isomer_labs.runtime.agent_identity import project_agent_instance_id_locations
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
 from isomer_labs.runtime.validation_utils import (
     missing_ref_diagnostics as _missing_ref_diagnostics,
@@ -317,6 +318,43 @@ def _validate_agent_team_instances(
                     message="Agent Workspace directory is missing.",
                 )
             )
+    return diagnostics
+
+
+def _validate_global_agent_instance_id_uniqueness(
+    context: EffectiveTopicContext,
+    store: WorkspaceRuntimeStore,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    id_locations, scan_issues = project_agent_instance_id_locations(context.project)
+    for db_path, message in scan_issues:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO040",
+                severity="warning",
+                concept="Agent Instance Identity",
+                path=db_path,
+                message=f"Could not read Agent Instance ids for duplicate scan: {message}.",
+            )
+        )
+
+    for agent_id, locations in id_locations.items():
+        if len(locations) > 1:
+            records = ", ".join(location.record_ref() for location in locations)
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO041",
+                    severity="error",
+                    concept="Agent Instance Identity",
+                    path=store.db_path,
+                    field=agent_id,
+                    message=(
+                        f"Agent Instance id {agent_id} appears in multiple Project runtime records: "
+                        f"{records}."
+                    ),
+                )
+            )
+
     return diagnostics
 
 
