@@ -1,8 +1,8 @@
-# Placeholder Reconciliation
+# Map Placeholders
 
 ## Workflow
 
-When this subskill is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
 1. Read the template inspection summary, topic context resolution, copied template root status, and any Topic Service Agent support outputs.
 2. For each required placeholder, choose a concrete value, copied material plan, proposed topic edit, or explicit deferral with reason, launch impact, and required action.

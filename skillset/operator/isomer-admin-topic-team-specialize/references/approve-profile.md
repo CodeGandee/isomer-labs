@@ -1,8 +1,8 @@
-# Profile Review Approval
+# Approve Profile
 
 ## Workflow
 
-When this subskill is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
 1. Read the draft profile bundle summary, packet validation report, copied material plan, proposed topic edits, and launch blockers.
 2. Present review points: selected roles, inactive roles, role binding refs, policy refs, expected Artifacts, copied material, service outputs, unresolved placeholders, and provenance refs.

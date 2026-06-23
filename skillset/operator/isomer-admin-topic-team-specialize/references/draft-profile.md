@@ -1,8 +1,8 @@
-# Topic Profile Drafting
+# Draft Profile
 
 ## Workflow
 
-When this subskill is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
 1. Read the Topic Team Instantiation Packet inputs, specialization plan final report, and selected Domain Agent Team Template inspection summary.
 2. Draft reviewable Topic Agent Team Profile Bundle contents: profile fields, role bindings, policy refs, expected Artifacts, copied material plan, proposed topic edits, launch blockers, and provenance refs.

@@ -58,13 +58,14 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Workflow
 
-            1. Select from the subskills.
+            1. **Manual mode**: Select one subcommand, load only its detail page, and report the result.
+            2. **Automatic mode**: Run `fast-forward`.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
-            ## Subskills
+            ## Subcommands
 
-            Use `references/project-awareness.md`, `references/template-inspection.md`, `references/topic-context-resolution.md`, `references/service-request-routing.md`, `references/placeholder-reconciliation.md`, `references/topic-profile-drafting.md`, `references/profile-review-approval.md`, `references/profile-materialization.md`, and `references/team-launch-orchestration.md`.
+            Use `references/resolve-project.md`, `references/inspect-template.md`, `references/resolve-context.md`, `references/route-service.md`, `references/map-placeholders.md`, `references/draft-profile.md`, `references/approve-profile.md`, `references/materialize-profile.md`, `references/launch-team.md`, and `references/fast-forward.md`.
 
             Use `team-specialization-guide.md`, `team-specialization-plan.md`, `Generated Guide`, `{final_report}`, and `<topic-workspace>/team-profile/execplan/`.
             """,
@@ -78,17 +79,26 @@ class SkillsetValidatorTests(unittest.TestCase):
               default_prompt: "Use $isomer-admin-topic-team-specialize to validate this fixture."
             """,
         )
-        for subskill_name in validator.TOPIC_TEAM_SPECIALIZATION_SUBSKILLS:
+        for subcommand_name in validator.TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS:
             write(
-                root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subskill_name,
+                root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subcommand_name,
                 f"""
-                # {subskill_name}
+                # {subcommand_name}
 
                 ## Workflow
 
-                1. Run the subskill fixture step.
+                1. Run the subcommand fixture step.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
+                """,
+            )
+        for support_reference_name in validator.TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES:
+            write(
+                root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / support_reference_name,
+                f"""
+                # {support_reference_name}
+
+                Local support reference.
                 """,
             )
 
@@ -122,16 +132,16 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("Final Report" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_operator_validator_requires_topic_team_subskills(self) -> None:
+    def test_operator_validator_requires_topic_team_subcommands(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        (root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "project-awareness.md").unlink()
+        (root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "resolve-project.md").unlink()
 
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS003", codes(diagnostics))
-        self.assertTrue(any("project-awareness.md" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("resolve-project.md" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_topic_team_evals(self) -> None:
         root = self.make_root()
@@ -164,6 +174,28 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("incorporated into isomer-admin-topic-team-specialize" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_external_topic_team_support_refs(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "resolve-project.md",
+            """
+            # Resolve Project
+
+            ## Workflow
+
+            1. Read `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("must keep required support references inside its skill directory" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_deepsci_mini_guide_terms(self) -> None:
         root = self.make_root()

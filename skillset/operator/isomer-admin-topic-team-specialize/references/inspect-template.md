@@ -1,8 +1,8 @@
-# Template Inspection
+# Inspect Template
 
 ## Workflow
 
-When this subskill is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the selected Domain Agent Team Template registration and source path.
 2. Inspect manifest metadata, `topic_instantiation_required`, placeholder catalog, instantiation schema path, copyable material declarations, and source-boundary diagnostics.
@@ -28,7 +28,7 @@ Read as needed:
 
 - Placeholder names, role slots, copyable material, schema paths, and Workflow Stage ownership are explicit.
 - Template-boundary errors or missing files are reported.
-- No concrete Topic Agent Team Profile Bundle is written by this subskill.
+- No concrete Topic Agent Team Profile Bundle is written by this subcommand.
 
 ## Guardrails
 

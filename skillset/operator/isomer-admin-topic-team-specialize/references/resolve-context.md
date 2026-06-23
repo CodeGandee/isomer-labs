@@ -1,8 +1,8 @@
-# Topic Context Resolution
+# Resolve Context
 
 ## Workflow
 
-When this subskill is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the selected Research Topic, Research Topic Config, Topic Workspace, and Effective Topic Context.
 2. Read policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, Gate policy refs, and default execution mode from durable project material.

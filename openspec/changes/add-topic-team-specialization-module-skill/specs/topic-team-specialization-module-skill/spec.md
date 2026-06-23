@@ -19,9 +19,21 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
 - **THEN** it does not contain an `evals/` directory or auxiliary docs that are not needed to execute the skill
 
-#### Scenario: Local subskills exist
+#### Scenario: Local subcommands exist
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
-- **THEN** it contains local subskill pages for project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, topic profile drafting, profile review approval, profile materialization, and team launch orchestration under `references/`
+- **THEN** it contains local subcommand pages named `resolve-project`, `inspect-template`, `resolve-context`, `route-service`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `launch-team`, and `fast-forward` under `references/`
+
+#### Scenario: Subcommand names are short
+- **WHEN** local subcommand pages are inspected
+- **THEN** each subcommand filename uses a short verb-object form such as `do-something.md`
+
+#### Scenario: Required support references are local
+- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **THEN** it contains local support references for Isomer domain language and runtime/file boundaries under `references/`
+
+#### Scenario: External support refs are absent
+- **WHEN** the `isomer-admin-topic-team-specialize` skill entrypoint and local references are inspected
+- **THEN** they do not reference `.imsight-arts/`, `docs/`, `extern/`, or absolute local support paths for information needed to execute the skill
 
 #### Scenario: Incorporated standalone skills are absent
 - **WHEN** the operator skillset is inspected
@@ -36,34 +48,42 @@ The module skill SHALL follow the Imsight skill-entrypoint structure.
 
 #### Scenario: Workflow steps are numbered
 - **WHEN** the `## Workflow` section is inspected
-- **THEN** it uses numbered steps that state concise actions for resolving context, copying template material, reading or creating guide material, planning, adapting, reporting, and preserving validation boundaries
+- **THEN** it uses numbered steps that select manual single-subcommand mode, automatic `fast-forward` mode, ambiguity handling, and shared validation boundaries
 
 #### Scenario: Detailed rules are separated
-- **WHEN** generated-guide rules, plan structure, subskill routing, output fields, or guardrails require detail
+- **WHEN** generated-guide rules, plan structure, subcommand routing, output fields, or guardrails require detail
 - **THEN** `SKILL.md` keeps that detail in named sections outside the concise workflow steps
 
 #### Scenario: Freeform fallback exists
 - **WHEN** the user's task does not map cleanly to the default workflow steps
-- **THEN** the skill tells the agent to use its native planning tool to build and execute a step-by-step plan from the project context, copied-template constraints, subskills, output contract, and guardrails
+- **THEN** the skill tells the agent to use its native planning tool to build and execute a step-by-step plan from the project context, copied-template constraints, subcommands, output contract, and guardrails
 
-#### Scenario: Subskills have Imsight workflows
-- **WHEN** each local subskill page is inspected
+#### Scenario: Subcommands have Imsight workflows
+- **WHEN** each local subcommand page is inspected
 - **THEN** it contains a near-top `## Workflow` section, numbered workflow steps, and a fallback for tasks that do not map cleanly to the default steps
 
-### Requirement: Subskill Incorporation
-The module skill SHALL incorporate former helper-skill behavior as local subskills instead of requiring normal workflow calls to separate skills.
+### Requirement: Subcommand Incorporation
+The module skill SHALL incorporate former helper-skill behavior as local subcommands instead of requiring normal workflow calls to separate skills.
 
-#### Scenario: Entrypoint routes to local subskills
+#### Scenario: Entrypoint routes to local subcommands
 - **WHEN** `SKILL.md` describes project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, topic profile drafting, profile review approval, profile materialization, or team launch orchestration
-- **THEN** it routes the agent to local subskill pages through a `## Subskills` table
+- **THEN** it routes the agent to local subcommand pages through a `## Subcommands` table
+
+#### Scenario: Manual mode selects one subcommand
+- **WHEN** the user names one local subcommand or asks for one bounded operation
+- **THEN** the entrypoint loads only that subcommand page, executes that workflow, and reports that subcommand's output
 
 #### Scenario: Normal specialization avoids external skill calls
 - **WHEN** the module skill performs its normal Topic Team Specialization workflow
-- **THEN** it uses local subskills for project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, and topic profile drafting instead of asking the user to invoke separate operator skills
+- **THEN** it uses local subcommands for project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, and topic profile drafting instead of asking the user to invoke separate operator skills
+
+#### Scenario: Fast-forward performs automatic specialization
+- **WHEN** the user asks to fully specialize, instantiate, adapt end-to-end, or says `fast-forward`
+- **THEN** the module skill executes `fast-forward` to run the full Topic Team Specialization path through draft profile output
 
 #### Scenario: Boundary operations remain explicit
 - **WHEN** approval, materialization, or launch work is requested after specialization
-- **THEN** the module skill uses the local profile review approval, profile materialization, or team launch orchestration subskill and preserves all validation and provenance boundaries
+- **THEN** the module skill uses the local `approve-profile`, `materialize-profile`, or `launch-team` subcommand and preserves all validation and provenance boundaries
 
 ### Requirement: Topic Team Specialization Workflow
 The module skill SHALL guide a Project Operator Session or Operator Agent through adapting one Domain Agent Team Template for one Research Topic.
@@ -134,7 +154,7 @@ The implementation SHALL validate the module skill with skill-creator and reposi
 
 #### Scenario: Operator skillset validation runs
 - **WHEN** `pixi run validate-operator-skills` runs
-- **THEN** it accepts the module skill, detects missing required guide, plan, or subskill terms, verifies local subskill workflow structure, and does not require `evals/`
+- **THEN** it accepts the module skill, detects missing required guide, plan, support-reference, or subcommand terms, verifies local subcommand workflow structure and naming, rejects external support refs, and does not require `evals/`
 
 #### Scenario: OpenSpec validation runs
 - **WHEN** `openspec validate add-topic-team-specialization-module-skill --strict` runs

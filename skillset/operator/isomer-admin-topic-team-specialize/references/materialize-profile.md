@@ -1,8 +1,8 @@
-# Profile Materialization
+# Materialize Profile
 
 ## Workflow
 
-When this subskill is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
 1. Confirm the selected Research Topic, Topic Workspace, Domain Agent Team Template, packet path or packet inputs, and approval provenance.
 2. Run generic packet and profile-bundle validation before mutation.

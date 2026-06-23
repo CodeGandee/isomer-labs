@@ -45,7 +45,11 @@ ACTIVE_REF_FILES = ("AGENTS.md", "ROADMAP.md", "pyproject.toml")
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
 
 TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
-    "## Subskills",
+    "Manual mode",
+    "Automatic mode",
+    "## Subcommands",
+    "fast-forward",
+    "load only its detail page",
     "team-specialization-guide.md",
     "team-specialization-plan.md",
     "Generated Guide",
@@ -53,16 +57,30 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "<topic-workspace>/team-profile/execplan/",
 )
 
-TOPIC_TEAM_SPECIALIZATION_SUBSKILLS = (
-    "project-awareness.md",
-    "template-inspection.md",
-    "topic-context-resolution.md",
-    "service-request-routing.md",
-    "placeholder-reconciliation.md",
-    "topic-profile-drafting.md",
-    "profile-review-approval.md",
-    "profile-materialization.md",
-    "team-launch-orchestration.md",
+TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
+    "resolve-project.md",
+    "inspect-template.md",
+    "resolve-context.md",
+    "route-service.md",
+    "map-placeholders.md",
+    "draft-profile.md",
+    "approve-profile.md",
+    "materialize-profile.md",
+    "launch-team.md",
+    "fast-forward.md",
+)
+
+TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES = (
+    "isomer-domain-language.md",
+    "runtime-and-file-boundaries.md",
+)
+
+TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS = (
+    ".imsight-arts/",
+    "docs/",
+    "extern/",
+    "/data/",
+    "/home/",
 )
 
 INCORPORATED_OPERATOR_SKILLS = (
@@ -359,25 +377,66 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
                 "OPS003",
                 f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must document '{term}'",
             )
+    skill_workflow_index = line_index_containing(lines, "## Workflow")
+    if skill_workflow_index is None:
+        add(diagnostics, repo_root, skill_md, 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include a ## Workflow section")
+    else:
+        if skill_workflow_index > 24:
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must place ## Workflow near the top")
+        if not has_numbered_step_after(lines, skill_workflow_index):
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} workflow must use numbered steps")
+        if "does not map cleanly" not in text:
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include a freeform fallback")
     references_dir = skill_dir / "references"
-    for subskill_file_name in TOPIC_TEAM_SPECIALIZATION_SUBSKILLS:
-        subskill_path = references_dir / subskill_file_name
-        if not subskill_path.exists():
-            add(diagnostics, repo_root, subskill_path, 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include references/{subskill_file_name}")
+    for support_file_name in TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES:
+        support_path = references_dir / support_file_name
+        if not support_path.exists():
+            add(diagnostics, repo_root, support_path, 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include references/{support_file_name}")
+    allowed_reference_names = set(TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS) | set(TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_reference_names:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "OPS003",
+                f"{TOPIC_TEAM_SPECIALIZATION_SKILL} has unexpected reference page references/{reference_path.name}",
+            )
+    for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
+        skill_file_lines = read_lines(skill_file)
+        for line_number, line in enumerate(skill_file_lines, start=1):
+            for forbidden_ref in TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS:
+                if forbidden_ref in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_file,
+                        line_number,
+                        "OPS003",
+                        f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must keep required support references inside its skill directory; found '{forbidden_ref}'",
+                    )
+    for subcommand_file_name in TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS:
+        subcommand_name = subcommand_file_name.removesuffix(".md")
+        subcommand_path = references_dir / subcommand_file_name
+        if not re.match(r"^[a-z]+-[a-z]+$", subcommand_name) or len(subcommand_name) > 24:
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"subcommand '{subcommand_name}' must be a short verb-object name")
+        if not subcommand_path.exists():
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include references/{subcommand_file_name}")
             continue
-        if f"references/{subskill_file_name}" not in text:
-            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subskills"), "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must link references/{subskill_file_name}")
-        subskill_lines = read_lines(subskill_path)
-        workflow_index = line_index_containing(subskill_lines, "## Workflow")
+        if f"references/{subcommand_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must link references/{subcommand_file_name}")
+        subcommand_lines = read_lines(subcommand_path)
+        workflow_index = line_index_containing(subcommand_lines, "## Workflow")
         if workflow_index is None:
-            add(diagnostics, repo_root, subskill_path, 1, "OPS003", f"references/{subskill_file_name} must include a ## Workflow section")
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"references/{subcommand_file_name} must include a ## Workflow section")
             continue
         if workflow_index > 8:
-            add(diagnostics, repo_root, subskill_path, workflow_index + 1, "OPS003", f"references/{subskill_file_name} must place ## Workflow near the top")
-        if not has_numbered_step_after(subskill_lines, workflow_index):
-            add(diagnostics, repo_root, subskill_path, workflow_index + 1, "OPS003", f"references/{subskill_file_name} workflow must use numbered steps")
-        if "does not map cleanly" not in "\n".join(subskill_lines):
-            add(diagnostics, repo_root, subskill_path, workflow_index + 1, "OPS003", f"references/{subskill_file_name} must include a freeform fallback")
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS003", f"references/{subcommand_file_name} must place ## Workflow near the top")
+        if not has_numbered_step_after(subcommand_lines, workflow_index):
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS003", f"references/{subcommand_file_name} workflow must use numbered steps")
+        if "does not map cleanly" not in "\n".join(subcommand_lines):
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS003", f"references/{subcommand_file_name} must include a freeform fallback")
     return diagnostics
 
 

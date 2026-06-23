@@ -1,8 +1,8 @@
-# Service Request Routing
+# Route Service
 
 ## Workflow
 
-When this subskill is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
 1. Identify the requester as a Project Operator Session or Operator Agent and identify the selected Research Topic and Topic Workspace.
 2. Define the Service Request scope, expected outputs, allowed file surfaces, validation obligations, approval posture, and provenance refs.
@@ -21,7 +21,7 @@ Read first:
 
 Read as needed:
 
-- `docs/runtime-and-files.md` for runtime and workspace boundaries.
+- `references/runtime-and-file-boundaries.md` for runtime and workspace boundaries.
 - The selected Domain Agent Team Template workspace contract when the request touches Agent Workspace setup.
 
 ## Exit Criteria

@@ -4,29 +4,31 @@
 - [x] 1.2 Keep `SKILL.md` frontmatter limited to `name` and `description`, with the name matching the folder.
 - [x] 1.3 Keep `agents/openai.yaml` synchronized with `display_name`, `short_description`, and a `default_prompt` that names `$isomer-admin-topic-team-specialize`.
 - [x] 1.4 Remove `skillset/operator/isomer-admin-topic-team-specialize/evals/` and keep eval scaffolding out of this skill.
-- [x] 1.5 Add only directly useful local subskill pages under `skillset/operator/isomer-admin-topic-team-specialize/references/`; avoid auxiliary skill docs such as README, changelog, installation guide, or quick reference files inside this skill.
+- [x] 1.5 Add only directly useful local subcommand pages under `skillset/operator/isomer-admin-topic-team-specialize/references/`; avoid auxiliary skill docs such as README, changelog, installation guide, or quick reference files inside this skill.
+- [x] 1.6 Add local support references for Isomer domain language and runtime/file boundaries inside the skill directory.
 
 ## 2. Imsight Workflow Format
 
 - [x] 2.1 Put `## Workflow` near the top of `SKILL.md`, before detailed guide, plan, helper, output, or guardrail sections.
-- [x] 2.2 Write the workflow as concise numbered steps covering subskill execution, copied material setup, guide handling, plan creation, adaptation, final report, and packet/profile reporting.
-- [x] 2.3 Keep longer procedures in named detail sections such as `Subskills`, `Generated Guide Rule`, `Plan Structure`, `Output Contract`, and `Guardrails`.
-- [x] 2.4 Add the Imsight fallback for tasks that do not map cleanly to the default workflow, telling the agent to build and execute a step-by-step plan from this skill's constraints and subskills.
-- [x] 2.5 Ensure every local subskill page has a near-top numbered `## Workflow` and a freeform fallback.
+- [x] 2.2 Write the workflow as concise numbered steps covering manual single-subcommand mode and automatic `fast-forward` mode.
+- [x] 2.3 Keep longer procedures in named detail sections such as `Subcommands`, `Generated Guide Rule`, `Plan Structure`, `Output Contract`, and `Guardrails`.
+- [x] 2.4 Add the Imsight fallback for tasks that do not map cleanly to the default workflow, telling the agent to build and execute a step-by-step plan from this skill's constraints and subcommands.
+- [x] 2.5 Ensure every local subcommand page has a near-top numbered `## Workflow` and a freeform fallback.
 
-## 3. Local Subskill Incorporation
+## 3. Local Subcommand Incorporation
 
-- [x] 3.1 Add a `## Subskills` table in `SKILL.md` that links to one-level local reference pages.
-- [x] 3.2 Incorporate project awareness as `references/project-awareness.md`.
-- [x] 3.3 Incorporate template inspection as `references/template-inspection.md`.
-- [x] 3.4 Incorporate topic context resolution as `references/topic-context-resolution.md`.
-- [x] 3.5 Incorporate Service Request routing as `references/service-request-routing.md`.
-- [x] 3.6 Incorporate placeholder reconciliation as `references/placeholder-reconciliation.md`.
-- [x] 3.7 Incorporate topic profile drafting as `references/topic-profile-drafting.md`.
-- [x] 3.8 Incorporate profile review approval as `references/profile-review-approval.md`.
-- [x] 3.9 Incorporate profile materialization as `references/profile-materialization.md`.
-- [x] 3.10 Incorporate team launch orchestration as `references/team-launch-orchestration.md`.
-- [x] 3.11 Remove the incorporated standalone operator skill folders.
+- [x] 3.1 Add a `## Subcommands` table in `SKILL.md` that links to one-level local reference pages.
+- [x] 3.2 Incorporate project awareness as `references/resolve-project.md`.
+- [x] 3.3 Incorporate template inspection as `references/inspect-template.md`.
+- [x] 3.4 Incorporate topic context resolution as `references/resolve-context.md`.
+- [x] 3.5 Incorporate Service Request routing as `references/route-service.md`.
+- [x] 3.6 Incorporate placeholder reconciliation as `references/map-placeholders.md`.
+- [x] 3.7 Incorporate topic profile drafting as `references/draft-profile.md`.
+- [x] 3.8 Incorporate profile review approval as `references/approve-profile.md`.
+- [x] 3.9 Incorporate profile materialization as `references/materialize-profile.md`.
+- [x] 3.10 Incorporate team launch orchestration as `references/launch-team.md`.
+- [x] 3.11 Incorporate automatic full specialization as `references/fast-forward.md`.
+- [x] 3.12 Remove the incorporated standalone operator skill folders.
 
 ## 4. Topic Team Specialization Contract
 
@@ -39,9 +41,9 @@
 
 ## 5. Documentation and Validation
 
-- [x] 5.1 Update operator skillset docs so `isomer-admin-topic-team-specialize` is the preferred entrypoint for Topic Team Specialization and uses local subskills.
+- [x] 5.1 Update operator skillset docs so `isomer-admin-topic-team-specialize` is the preferred entrypoint for Topic Team Specialization and uses local subcommands.
 - [x] 5.2 Keep `teams/deepsci-mini/execplan/team-specialization-guide.md` present and covering placeholders, assumptions, workflow, contracts, and cooperation examples.
-- [x] 5.3 Ensure repository validation checks the module skill terms, local subskill pages, no-`evals/` rule, and absence of incorporated standalone skill folders.
+- [x] 5.3 Ensure repository validation checks the module skill terms, local subcommand pages, local support references, no-`evals/` rule, absence of incorporated standalone skill folders, and absence of external support refs.
 - [x] 5.4 Run `pixi run python /home/huangzhe/.codex/skills/.system/skill-creator/scripts/quick_validate.py skillset/operator/isomer-admin-topic-team-specialize`.
 - [x] 5.5 Run `python skillset/skill-creator/scripts/quick_validate.py skillset/operator/isomer-admin-topic-team-specialize`.
 - [x] 5.6 Run `pixi run validate-operator-skills`.

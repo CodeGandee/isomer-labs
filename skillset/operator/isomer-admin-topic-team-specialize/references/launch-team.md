@@ -1,8 +1,8 @@
-# Team Launch Orchestration
+# Launch Team
 
 ## Workflow
 
-When this subskill is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
 1. Confirm that the selected Topic Agent Team Profile comes from an approved profile bundle or an explicitly supported legacy path.
 2. Validate Workspace Runtime initialization, Topic Environment Readiness, profile provenance, Agent Team Instance creation inputs, and launch blockers.

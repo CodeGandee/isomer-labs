@@ -1,14 +1,14 @@
-# Project Awareness
+# Resolve Project
 
 ## Workflow
 
-When this subskill is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
-1. Resolve the project root from the user-provided path or current working directory, then confirm the Project Manifest and canonical domain language path.
+1. Resolve the project root from the user-provided path or current working directory, then confirm the Project Manifest and the bundled `references/isomer-domain-language.md` reference.
 2. Read the supplied topic prompt, topic file, or Research Topic ref, then list matching Research Topics and Topic Workspaces.
 3. Inspect Project Manifest defaults, Research Topic Config refs, Domain Agent Team Templates, Topic Agent Team Profile Bundle registrations, Workspace Runtime refs, and known Topic Service Agent surfaces.
 4. If the selected Topic Workspace is missing, propose the minimal creation or registration action and keep mutations behind normal Isomer CLI or API surfaces.
-5. Return the selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, profile bundle, runtime, and service-agent refs with blockers for the next subskill.
+5. Return the selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, profile bundle, runtime, and service-agent refs with blockers for the next subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project root, topic material, and requested outcome, then execute the plan.
 
@@ -17,12 +17,12 @@ If the user's task does not map cleanly to these steps, use your native planning
 Read first:
 
 - The Project Manifest and selected Research Topic Config.
-- `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md` for canonical terms.
+- `references/isomer-domain-language.md` for canonical terms.
 
 Read as needed:
 
-- `docs/runtime-and-files.md` when path ownership or runtime placement is unclear.
-- `teams/*/execplan/manifest.toml` when Domain Agent Team Template discovery matters.
+- `references/runtime-and-file-boundaries.md` when path ownership or runtime placement is unclear.
+- The selected Domain Agent Team Template manifest when template discovery matters.
 
 ## Exit Criteria
 
