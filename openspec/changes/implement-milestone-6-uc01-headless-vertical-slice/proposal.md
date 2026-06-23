@@ -8,7 +8,7 @@ Milestone 5 proves Isomer can launch, inspect, stop, dispatch, observe, and norm
 - Launch or simulate the `deepsci-mini` team through the Houmao Execution Adapter, dispatch bounded scouting and synthesis-review handoffs, and normalize their outputs without running GB10 measurements or optimization experiments.
 - Add host-facing recording paths for the minimal UC-01 research records: seed-source summaries, Flash Attention implementation notes, GB10 or Blackwell feature notes, attention-kernel bottleneck notes, shape-family constraints, correctness constraints, claim candidates, Evidence Items, review notes, inquiry options, follow-up Gate, selected Research Inquiry, Decision Record, and Provenance Records.
 - Add or extend Workspace Runtime persistence and validation for Artifact, Evidence Item, Finding or claim-candidate, Gate, Decision Record, View Manifest, and Provenance refs needed by the UC-01 path.
-- Add a CLI or manual-test runner that executes the UC-01 path with root-level `--print-json`, supports adapter-simulated mode for deterministic tests, and can be live-gated for real Houmao.
+- Add a manual-test runner under `tests/manual/` that executes the UC-01 path through generic CLI/runtime APIs, supports adapter-simulated mode for deterministic tests, and can be live-gated for real Houmao.
 - Add minimal View Manifest records for literature matrix, claim graph, and inquiry comparison as durable CLI-readable semantic records without requiring a GUI renderer or GUI Component Instances.
 - Make the selected follow-up inquiry explicitly classify the next step as UC-07-style measured optimization, more scouting, or a different Flash Attention 4 investigation.
 - Keep Houmao-specific refs inside adapter payloads, manifests, or adapter tables; generic UC-01 records should use Isomer domain terms.
@@ -23,8 +23,8 @@ Milestone 5 proves Isomer can launch, inspect, stop, dispatch, observe, and norm
 
 - `research-lifecycle-state`: Add UC-01 lifecycle expectations for Research Inquiry creation, Research Task routing, Run closeout, follow-up inquiry selection, Gate resolution, and Decision Record linkage.
 - `research-recording-contracts`: Add minimal recording requirements for UC-01 Artifacts, Evidence Items, Findings or claim candidates, Decision Records, Gates, View Manifest refs, and Provenance Records.
-- `workspace-runtime-persistence`: Persist and validate the runtime-visible research records needed by UC-01 and include them in Agent Team Instance and runtime inspection summaries.
-- `isomer-cli-project-discovery`: Expose the UC-01 headless runner or manual validation surface through the modular CLI/test command shape with root-level `--print-json` output.
+- `workspace-runtime-persistence`: Persist runtime-visible research records needed by UC-01 through generic record kinds while leaving UC-01 summaries and closeout assertions in the manual harness.
+- `isomer-cli-project-discovery`: Keep the product CLI generic and expose the UC-01 headless validation surface through the manual harness.
 - `houmao-cli-adapter-layer`: Require UC-01 to use the Houmao adapter boundary and live-gated or simulated execution without leaking Houmao native fields into generic research records.
 
 ## Impact

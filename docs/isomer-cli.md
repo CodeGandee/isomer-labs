@@ -311,6 +311,15 @@ pixi run isomer-cli --print-json handoffs normalize <handoff-id> \
   --rationale "Accepted after Operator review."
 ```
 
+### UC-01 Manual Harness
+
+UC-01 is intentionally not a product CLI command. Run the pinned acceptance path from the manual harness so case-specific ids, fixture output specs, simulated handoff payloads, summaries, and closeout assertions stay outside `src/isomer_labs`.
+
+```bash
+pixi run python tests/manual/uc01_headless_vertical_slice
+ISOMER_MANUAL_LIVE_HOUMAO=1 pixi run python tests/manual/uc01_headless_vertical_slice --live-houmao
+```
+
 ### `team-templates list`
 
 List registered Domain Agent Team Templates.

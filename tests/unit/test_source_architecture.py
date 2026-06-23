@@ -120,6 +120,16 @@ class SourceArchitectureTests(unittest.TestCase):
         self.assertEqual([], unexpected)
         self.assertFalse((SRC_ROOT / "adapter" / "__init__.py").exists())
 
+    def test_named_use_case_orchestration_stays_out_of_src(self) -> None:
+        forbidden_names = {"uc01", "uc02", "uc03", "uc04", "uc05", "uc06", "uc07"}
+        violations: list[str] = []
+        for path in sorted(SRC_ROOT.rglob("*.py")):
+            relative = path.relative_to(SRC_ROOT)
+            parts = {Path(part).stem for part in relative.parts}
+            if "workflows" in relative.parts or parts & forbidden_names:
+                violations.append(relative.as_posix())
+        self.assertEqual([], violations)
+
 
 if __name__ == "__main__":
     unittest.main()

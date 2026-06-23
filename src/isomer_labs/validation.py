@@ -10,6 +10,7 @@ from isomer_labs.models import Project, ProjectState, ResearchTopicConfig, Templ
 from isomer_labs.path_utils import is_within, resolve_project_path
 from isomer_labs.team_profiles import parse_topic_agent_team_profile, validate_topic_agent_team_profile
 from isomer_labs.team_templates import (
+    BUILT_IN_DEEPSCI_MINI_ID,
     BUILT_IN_DEEPSCI_ORG_ID,
     find_domain_agent_team_template,
     resolve_template_source_path,
@@ -536,7 +537,7 @@ def _validate_profile_files(project: Project) -> list[Diagnostic]:
 
 
 def _registered_template_ids(project: Project) -> set[str]:
-    return {BUILT_IN_DEEPSCI_ORG_ID} | {
+    return {BUILT_IN_DEEPSCI_ORG_ID, BUILT_IN_DEEPSCI_MINI_ID} | {
         template.id for template in project.manifest.domain_agent_team_templates if template.status != "archived"
     }
 

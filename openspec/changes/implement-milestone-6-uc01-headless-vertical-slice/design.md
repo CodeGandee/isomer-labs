@@ -4,7 +4,7 @@ Milestone 5 established the Houmao Execution Adapter foundation: Isomer can prep
 
 The current runtime already has generic lifecycle records for Research Inquiry, Research Task, Run, Artifact, Gate, Evidence Item, Decision Record, Provenance Record, and related kinds, but the code only uses a subset of them. The current research-recording specs define the concepts, while implementation still needs focused storage helpers, validation, CLI output, and a repeatable workflow that writes real records. Milestone 6 should use those generic record kinds first and add specialized tables only if the lifecycle record shape cannot preserve required links, status, or file-backed content.
 
-The audience for this change is the operator and future automation: a user should be able to run one command or manual script, inspect deterministic JSON, and see a coherent Topic Workspace with the UC-01 research path recorded. A future GUI or richer Operator Agent can consume the same records later.
+The audience for this change is the operator and future automation: a user should be able to run one manual harness, inspect deterministic JSON, and see a coherent Topic Workspace with the UC-01 research path recorded. A future GUI or richer Operator Agent can consume the same records later.
 
 ## Goals / Non-Goals
 
@@ -15,7 +15,7 @@ The audience for this change is the operator and future automation: a user shoul
 - Record a minimal but coherent Research Inquiry graph, Research Tasks, Runs, handoffs, Artifacts, Evidence Items, Findings or claim candidates, a follow-up Gate, a selected follow-up Research Inquiry, a Decision Record, View Manifest records, and Provenance Records.
 - Keep all UC-01 records topic-scoped and restart-safe through Workspace Runtime.
 - Use the existing Houmao adapter and handoff normalization boundary; adapter observations remain non-authoritative until Operator Agent normalization.
-- Expose structured human-readable output and root-level `--print-json` output for the UC-01 path.
+- Expose deterministic manual-harness JSON for the UC-01 path while keeping product CLI output behavior generic.
 - Keep Houmao native terms out of generic lifecycle, recording, and view records.
 - End with a follow-up Decision Record that classifies the next path as UC-07-style measured optimization, more scouting, or a different Flash Attention 4 investigation.
 
@@ -30,9 +30,9 @@ The audience for this change is the operator and future automation: a user shoul
 
 ## Decisions
 
-### Decision: Treat UC-01 as a fixture-backed workflow package
+### Decision: Treat UC-01 as a fixture-backed manual harness
 
-The implementation should add a fixture Project and a runner/manual test that drives the public CLI and runtime APIs. The fixture should include Research Topic `flash-attention-gb10-peak-performance-optimization`, Topic Workspace, seed Research Inquiry `gb10-flash-attention-4-direction-selection`, Research Task `map-gb10-flash-attention-optimization-directions`, one `deepsci-mini` Topic Agent Team Profile, explicit Pixi readiness binding, expected output refs, and a follow-up-inquiry Gate policy ref. The runner should avoid hidden setup beyond explicit runtime init, runtime prepare, team creation, adapter launch or simulation, handoff rounds, and recording calls.
+The implementation should add a fixture Project and a manual harness under `tests/manual/` that drives generic CLI and runtime APIs. The fixture should include Research Topic `flash-attention-gb10-peak-performance-optimization`, Topic Workspace, seed Research Inquiry `gb10-flash-attention-4-direction-selection`, Research Task `map-gb10-flash-attention-optimization-directions`, one `deepsci-mini` Topic Agent Team Profile, explicit Pixi readiness binding, expected output refs, and a follow-up-inquiry Gate policy ref. The harness should avoid hidden setup beyond explicit runtime init, runtime prepare, team creation, adapter launch or simulation, handoff rounds, and recording calls.
 
 Alternative considered: encode UC-01 directly as a permanent built-in command with hardcoded data. That would prove less about normal Projects and more about one special command path, so the fixture should stay Project-shaped and the runner should operate through standard Project discovery.
 

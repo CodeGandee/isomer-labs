@@ -34,6 +34,11 @@ from isomer_labs.houmao.manifests import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_PROJECT = REPO_ROOT / "tests" / "fixtures" / "projects" / "deepsci-profile-use-cases"
+UC01_FIXTURE_PROJECT = REPO_ROOT / "tests" / "fixtures" / "projects" / "uc01-headless-gb10"
+UC01_RESEARCH_TOPIC_ID = "flash-attention-gb10-peak-performance-optimization"
+UC01_SEED_INQUIRY_ID = "gb10-flash-attention-4-direction-selection"
+UC01_RESEARCH_TASK_ID = "map-gb10-flash-attention-optimization-directions"
+UC01_PROFILE_ID = "uc-01-gb10-deepsci-mini"
 FIXTURE_PROFILE_IDS = (
     "uc-01-novel-biomarker",
     "uc-02-baseline-optimizer",
@@ -100,6 +105,11 @@ class IsomerCliTests(unittest.TestCase):
     def copy_fixture_project(self, name: str = "fixture-project") -> Path:
         root = self.make_root() / name
         shutil.copytree(FIXTURE_PROJECT, root)
+        return root
+
+    def copy_uc01_fixture_project(self, name: str = "uc01-fixture-project") -> Path:
+        root = self.make_root() / name
+        shutil.copytree(UC01_FIXTURE_PROJECT, root)
         return root
 
     def make_two_topic_project(self, root: Path) -> None:
@@ -395,6 +405,8 @@ class IsomerCliTests(unittest.TestCase):
             "handoffs normalize",
         ):
             self.assertIn(command, help_text)
+        for command in ("uc01", "uc01 run", "uc01 inspect"):
+            self.assertNotIn(command, help_text)
         pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         self.assertEqual("isomer_labs.cli:main", pyproject["project"]["scripts"]["isomer-cli"])
 
@@ -409,6 +421,7 @@ class IsomerCliTests(unittest.TestCase):
             self.assertNotIn("--json", help_result.output)
             self.assertNotIn("--format json", help_result.output)
             self.assertNotIn("--format=json", help_result.output)
+        self.assertNotEqual(0, runner.invoke(cli.app, ["uc01", "--help"]).exit_code)
 
     def test_doctor_help_documents_read_only_common_topic_options(self) -> None:
         runner = CliRunner()
@@ -1266,8 +1279,17 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["team-templates", "list", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual(["deepsci-org"], [template["id"] for template in data["templates"]])
-        self.assertEqual("valid", data["templates"][0]["validation_status"])
+        self.assertEqual(["deepsci-mini", "deepsci-org"], [template["id"] for template in data["templates"]])
+        self.assertTrue(all(template["validation_status"] == "valid" for template in data["templates"]))
+
+        status, output = self.run_cli(["team-templates", "inspect", "deepsci-mini", "--json"])
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(3, len(data["template"]["roles"]))
+        self.assertEqual(
+            {"deepsci-mini-lead", "deepsci-mini-scout", "deepsci-mini-synth-reviewer"},
+            {role["id"] for role in data["template"]["roles"]},
+        )
 
         status, output = self.run_cli(["team-templates", "inspect", "deepsci-org", "--json"])
         data = json.loads(output)
@@ -1278,7 +1300,7 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["--project", str(FIXTURE_PROJECT), "team-templates", "list", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual(["deepsci-org", "fixture-method-team"], [template["id"] for template in data["templates"]])
+        self.assertEqual(["deepsci-mini", "deepsci-org", "fixture-method-team"], [template["id"] for template in data["templates"]])
         self.assertTrue(all(template["validation_status"] == "valid" for template in data["templates"]))
 
         status, output = self.run_cli(
@@ -1302,6 +1324,116 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("ISO016", data["diagnostics"][0]["code"])
+
+    def test_uc01_fixture_validates_and_rejects_runtime_truth_leakage(self) -> None:
+        status, output = self.run_cli(["--project", str(UC01_FIXTURE_PROJECT), "validate", "--json"])
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["ok"])
+        self.assertEqual(UC01_RESEARCH_TOPIC_ID, data["manifest"]["defaults"]["research_topic_id"])
+        self.assertEqual("deepsci-mini", data["manifest"]["defaults"]["domain_agent_team_template_id"])
+        self.assertEqual(UC01_PROFILE_ID, data["manifest"]["defaults"]["topic_agent_team_profile_id"])
+        self.assertEqual(
+            UC01_RESEARCH_TASK_ID,
+            data["topic_configs"][UC01_RESEARCH_TOPIC_ID]["defaults"]["research_task_id"],
+        )
+        self.assertEqual(
+            "gate-policy:uc01-follow-up-inquiry",
+            data["topic_configs"][UC01_RESEARCH_TOPIC_ID]["refs"]["follow_up_gate_policy_ref"],
+        )
+        self.assertFalse((UC01_FIXTURE_PROJECT / f"topic-workspaces/{UC01_RESEARCH_TOPIC_ID}/state.sqlite").exists())
+
+        root = self.copy_uc01_fixture_project("uc01-runtime-truth")
+        topic_config = root / ".isomer-labs" / "research-topics" / f"{UC01_RESEARCH_TOPIC_ID}.toml"
+        topic_config.write_text(
+            topic_config.read_text(encoding="utf-8") + '\n[leaked_runtime]\ngates = ["gate-should-not-live-here"]\n',
+            encoding="utf-8",
+        )
+        status, output = self.run_cli(["--project", str(root), "validate", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["ok"])
+        self.assertIn("ISO009", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_uc01_fixture_uses_generic_deepsci_mini_runtime_setup(self) -> None:
+        root = self.copy_uc01_fixture_project("uc01-generic-runtime")
+        for command in (
+            ["--project", str(root), "runtime", "init", "--json"],
+            ["--project", str(root), "runtime", "prepare", "--json"],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "--project",
+                str(root),
+                "team-instances",
+                "create",
+                "--topic-agent-team-profile",
+                UC01_PROFILE_ID,
+                "--id",
+                "ati-uc01-generic",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        creation = data["creation"]
+        self.assertEqual("ati-uc01-generic", creation["agent_team_instance"]["id"])
+        self.assertEqual(
+            ["deepsci-mini-lead", "deepsci-mini-scout", "deepsci-mini-synth-reviewer"],
+            sorted(agent["agent_role_id"] for agent in creation["agent_instances"]),
+        )
+
+        status, output = self.run_cli(["--project", str(root), "runtime", "validate", "--json"], cwd=root)
+        validated = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(validated["ok"])
+        self.assertEqual([], validated["diagnostics"])
+        self.assertNotIn("uc01", validated["runtime"])
+
+    def test_uc01_manual_harness_simulated_run_and_live_gate_skip_are_structured(self) -> None:
+        env = dict(os.environ)
+        env.pop("ISOMER_MANUAL_LIVE_HOUMAO", None)
+        env["PYTHONPATH"] = (
+            str(REPO_ROOT / "src")
+            + os.pathsep
+            + str(REPO_ROOT / "tests" / "manual")
+            + os.pathsep
+            + env.get("PYTHONPATH", "")
+        )
+        completed = subprocess.run(
+            [sys.executable, str(REPO_ROOT / "tests" / "manual" / "uc01_headless_vertical_slice")],
+            cwd=REPO_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        data = json.loads(completed.stdout)
+        self.assertTrue(data["ok"])
+        self.assertEqual("uc07-measured-optimization", data["simulated"]["route_classification"])
+        self.assertEqual("ati-uc01-gb10-deepsci-mini", data["simulated"]["agent_team_instance_ref"])
+        self.assertEqual(9, data["simulated"]["artifact_count"])
+        self.assertEqual(3, data["simulated"]["evidence_item_count"])
+        self.assertEqual(3, data["simulated"]["view_manifest_count"])
+        self.assertEqual("skipped", data["live"]["status"])
+        self.assertEqual("ISO080", data["live"]["diagnostics"][0]["code"])
+        self.assertTrue(data["uc01_summary"]["complete"])
+        serialized = json.dumps(data, sort_keys=True)
+        for forbidden in (
+            "baseline_measurement",
+            "candidate_optimization",
+            "speedup",
+            "utilization",
+            "correctness_result",
+            "automatic_replay",
+            "compute_budget_gate",
+        ):
+            self.assertNotIn(forbidden, serialized)
 
     def test_profile_manifest_context_specialize_and_validate(self) -> None:
         status, output = self.run_cli(["--project", str(FIXTURE_PROJECT), "validate", "--json"])
