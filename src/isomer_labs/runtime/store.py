@@ -15,6 +15,7 @@ from isomer_labs.models import (
     TopicAgentTeamProfile,
 )
 from isomer_labs.paths import preview_paths
+from isomer_labs.runtime.agent_identity import project_agent_instance_id_locations
 from isomer_labs.runtime.models import (
     ADAPTER_MANIFEST_KINDS,
     ADAPTER_COMMAND_RUN_STATUSES,
@@ -476,22 +477,22 @@ class WorkspaceRuntimeStore:
         workflow_stage_cursors: list[RuntimeLifecycleRecord] = []
         agent_instance_ids: list[str] = []
         agent_workspace_ids: list[str] = []
+        generated_ids = [
+            (binding, _agent_instance_id(context.topic_workspace_id, team_id, binding.role_id))
+            for binding in active_bindings
+        ]
+        diagnostics.extend(
+            self._agent_instance_id_conflict_diagnostics(
+                context,
+                [(binding.role_id, agent_id) for binding, agent_id in generated_ids],
+            )
+        )
+        if has_errors(diagnostics):
+            return None, diagnostics
 
         try:
             with self.connection:
-                for binding in active_bindings:
-                    agent_id = _agent_instance_id(team_id, binding.role_id)
-                    if self._agent_instance_id_exists(agent_id):
-                        diagnostics.append(
-                            Diagnostic(
-                                code="ISO041",
-                                severity="error",
-                                concept="Agent Instance Identity",
-                                field="id",
-                                message=f"Generated Agent Instance id already exists: {agent_id}.",
-                            )
-                        )
-                        return None, diagnostics
+                for binding, agent_id in generated_ids:
                     workspace_id = f"agent-workspace-{agent_id}"
                     surface = f"agent_workspace:{agent_id}"
                     workspace_path = context.topic_workspace_path / "agents" / agent_id
@@ -685,12 +686,60 @@ class WorkspaceRuntimeStore:
             adapter_stop_outcomes=adapter_stop_outcomes,
         )
 
-    def _agent_instance_id_exists(self, agent_id: str) -> bool:
-        row = self.connection.execute(
-            "SELECT 1 FROM agent_instances WHERE id = ?",
-            (agent_id,),
-        ).fetchone()
-        return row is not None
+    def _agent_instance_id_conflict_diagnostics(
+        self,
+        context: EffectiveTopicContext,
+        generated_ids: list[tuple[str, str]],
+    ) -> list[Diagnostic]:
+        diagnostics: list[Diagnostic] = []
+        by_id: dict[str, list[str]] = {}
+        for role_id, agent_id in generated_ids:
+            by_id.setdefault(agent_id, []).append(role_id)
+        for agent_id, role_ids in by_id.items():
+            if len(role_ids) > 1:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO041",
+                        severity="error",
+                        concept="Agent Instance Identity",
+                        field=agent_id,
+                        message=(
+                            f"Generated Agent Instance id {agent_id} is assigned to multiple "
+                            f"roles in the same creation request: {', '.join(role_ids)}."
+                        ),
+                    )
+                )
+
+        existing_locations, scan_issues = project_agent_instance_id_locations(context.project)
+        for db_path, message in scan_issues:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO040",
+                    severity="error",
+                    concept="Agent Instance Identity",
+                    path=db_path,
+                    message=f"Could not read Agent Instance ids for creation-time duplicate scan: {message}.",
+                )
+            )
+
+        for _, agent_id in generated_ids:
+            locations = existing_locations.get(agent_id, [])
+            if locations:
+                records = ", ".join(location.record_ref() for location in locations)
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO041",
+                        severity="error",
+                        concept="Agent Instance Identity",
+                        path=self.db_path,
+                        field=agent_id,
+                        message=(
+                            f"Generated Agent Instance id {agent_id} already exists in the Project: "
+                            f"{records}."
+                        ),
+                    )
+                )
+        return diagnostics
 
     def list_agent_instances(self) -> list[AgentInstanceRecord]:
         return [

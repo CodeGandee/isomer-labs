@@ -2,7 +2,7 @@
 
 ## 1. Identifier Generation
 
-- [x] 1.1 Add a helper in `src/isomer_labs/runtime/identifiers.py` that generates a globally unique Agent Instance id containing topic workspace, team counter, role slug, and a short random suffix.
+- [x] 1.1 Add a helper in `src/isomer_labs/runtime/identifiers.py` that generates a globally unique Agent Instance id containing topic workspace, Agent Team Instance id, role slug, and a short random suffix.
 - [x] 1.2 Update `WorkspaceRuntimeStore.next_agent_team_instance_id` if the counter logic needs to account for globally scoped uniqueness. (No change needed: Agent Instance ids use a UUID suffix for global uniqueness.)
 
 ## 2. Agent Instance and Workspace Creation

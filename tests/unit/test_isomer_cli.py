@@ -1702,7 +1702,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(7, len(alpha_agents))
         alpha_agent_ids = {agent["id"] for agent in alpha_agents}
         for agent_id in alpha_agent_ids:
-            self.assertTrue(agent_id.startswith("agent-"))
+            self.assertTrue(agent_id.startswith("agent-alpha-"))
 
         status, output = self.run_cli(
             [
@@ -1763,8 +1763,145 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
-        concepts = {diagnostic["concept"] for diagnostic in data["diagnostics"]}
-        self.assertIn("Agent Instance Identity", concepts)
+        identity_diagnostics = [
+            diagnostic
+            for diagnostic in data["diagnostics"]
+            if diagnostic["concept"] == "Agent Instance Identity"
+        ]
+        self.assertTrue(identity_diagnostics)
+        messages = "\n".join(diagnostic["message"] for diagnostic in identity_diagnostics)
+        self.assertIn(duplicate_agent_id, messages)
+        self.assertIn("ati-alpha-global", messages)
+        self.assertIn("ati-beta-duplicate", messages)
+
+    def test_agent_instance_creation_rejects_project_wide_duplicate_ids(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main", "beta-main"), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        self.add_topic_pixi_binding(root, "beta", "beta-main")
+
+        for topic in ("alpha", "beta"):
+            for command in (
+                ["runtime", "init", "--topic", topic, "--json"],
+                ["runtime", "prepare", "--topic", topic, "--json"],
+            ):
+                status, output = self.run_cli(command, cwd=root)
+                self.assertEqual(0, status, output)
+
+        def forced_id(topic_workspace_id: str, team_id: str, role_id: str) -> str:
+            return f"agent-forced-{role_id}"
+
+        with patch("isomer_labs.runtime.store._agent_instance_id", side_effect=forced_id):
+            status, output = self.run_cli(
+                [
+                    "team-instances",
+                    "create",
+                    "--topic",
+                    "alpha",
+                    "--topic-agent-team-profile",
+                    "uc-01-alpha",
+                    "--id",
+                    "ati-alpha-forced",
+                    "--json",
+                ],
+                cwd=root,
+            )
+            self.assertEqual(0, status, output)
+
+            beta_db = root / "topic-workspaces" / "beta" / "state.sqlite"
+            before_counts = self.runtime_counts(beta_db)
+            status, output = self.run_cli(
+                [
+                    "team-instances",
+                    "create",
+                    "--topic",
+                    "beta",
+                    "--topic-agent-team-profile",
+                    "uc-02-beta",
+                    "--id",
+                    "ati-beta-forced",
+                    "--json",
+                ],
+                cwd=root,
+            )
+            data = json.loads(output)
+            self.assertEqual(1, status)
+            self.assertFalse(data["mutated"])
+            self.assertIn("Agent Instance Identity", {diagnostic["concept"] for diagnostic in data["diagnostics"]})
+            self.assertEqual(before_counts, self.runtime_counts(beta_db))
+
+    def test_agent_instance_creation_rejection_does_not_commit_partial_rows(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+
+        for command in (
+            ["runtime", "init", "--topic", "alpha", "--json"],
+            ["runtime", "prepare", "--topic", "alpha", "--json"],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        alpha_db = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        existing_agent_id = "agent-alpha-existing-conflict"
+        with sqlite3.connect(alpha_db) as db:
+            db.execute(
+                """
+                INSERT INTO agent_instances (
+                    id, agent_team_instance_id, agent_role_id, research_topic_id,
+                    topic_workspace_id, agent_profile_ref, status, created_at,
+                    updated_at, provenance_refs_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    existing_agent_id,
+                    "ati-alpha-existing",
+                    "deepsci-org-existing",
+                    "alpha",
+                    "alpha",
+                    None,
+                    "planned",
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-01T00:00:00Z",
+                    "[]",
+                ),
+            )
+        before_counts = self.runtime_counts(alpha_db)
+
+        def generated_id(topic_workspace_id: str, team_id: str, role_id: str) -> str:
+            if role_id == "deepsci-org-experimenter":
+                return existing_agent_id
+            return f"agent-alpha-{role_id}-candidate"
+
+        with patch("isomer_labs.runtime.store._agent_instance_id", side_effect=generated_id):
+            status, output = self.run_cli(
+                [
+                    "team-instances",
+                    "create",
+                    "--topic",
+                    "alpha",
+                    "--topic-agent-team-profile",
+                    "uc-01-alpha",
+                    "--id",
+                    "ati-alpha-rollback",
+                    "--json",
+                ],
+                cwd=root,
+            )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertEqual(before_counts, self.runtime_counts(alpha_db))
+
+    def runtime_counts(self, runtime_path: Path) -> dict[str, int]:
+        tables = ("agent_team_instances", "agent_instances", "agent_workspaces", "path_plans")
+        with sqlite3.connect(runtime_path) as db:
+            return {
+                table: int(db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
+                for table in tables
+            }
 
     def test_houmao_json_manifest_helpers_round_trip_digest_drift_and_redaction(self) -> None:
         root = self.make_root()

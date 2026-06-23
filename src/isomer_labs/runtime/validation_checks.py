@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
-import sqlite3
 from typing import Mapping
 
-from isomer_labs.context import resolve_topic_workspace
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.paths import preview_paths
 from isomer_labs.runtime.adapter_handoff_validation import validate_adapter_handoff_records
+from isomer_labs.runtime.agent_identity import project_agent_instance_id_locations
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
 from isomer_labs.runtime.validation_utils import (
     missing_ref_diagnostics as _missing_ref_diagnostics,
@@ -327,40 +326,21 @@ def _validate_global_agent_instance_id_uniqueness(
     store: WorkspaceRuntimeStore,
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    id_locations: dict[str, list[str]] = {}
-
-    for topic in context.project.manifest.research_topics:
-        _, workspace_path, _, resolve_diagnostics = resolve_topic_workspace(
-            context.project, topic, None
-        )
-        if workspace_path is None:
-            diagnostics.extend(resolve_diagnostics)
-            continue
-        db_path = workspace_path / "state.sqlite"
-        if not db_path.exists():
-            continue
-        try:
-            connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-            connection.row_factory = sqlite3.Row
-            rows = connection.execute("SELECT id FROM agent_instances").fetchall()
-            connection.close()
-        except sqlite3.Error as exc:
-            diagnostics.append(
-                Diagnostic(
-                    code="ISO040",
-                    severity="warning",
-                    concept="Agent Instance Identity",
-                    path=db_path,
-                    message=f"Could not read Agent Instance ids for duplicate scan: {exc}.",
-                )
+    id_locations, scan_issues = project_agent_instance_id_locations(context.project)
+    for db_path, message in scan_issues:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO040",
+                severity="warning",
+                concept="Agent Instance Identity",
+                path=db_path,
+                message=f"Could not read Agent Instance ids for duplicate scan: {message}.",
             )
-            continue
-        for row in rows:
-            agent_id = row["id"]
-            id_locations.setdefault(agent_id, []).append(str(workspace_path))
+        )
 
     for agent_id, locations in id_locations.items():
         if len(locations) > 1:
+            records = ", ".join(location.record_ref() for location in locations)
             diagnostics.append(
                 Diagnostic(
                     code="ISO041",
@@ -369,8 +349,8 @@ def _validate_global_agent_instance_id_uniqueness(
                     path=store.db_path,
                     field=agent_id,
                     message=(
-                        f"Agent Instance id {agent_id} appears in multiple Topic Workspaces: "
-                        f"{', '.join(locations)}."
+                        f"Agent Instance id {agent_id} appears in multiple Project runtime records: "
+                        f"{records}."
                     ),
                 )
             )
