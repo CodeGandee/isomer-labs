@@ -45,10 +45,14 @@ ACTIVE_REF_FILES = ("AGENTS.md", "ROADMAP.md", "pyproject.toml")
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
 
 TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
+    "Default help mode",
+    "invoked without a prompt",
     "Manual mode",
     "Automatic mode",
     "## Subcommands",
+    "references/help.md",
     "fast-forward",
+    "step-by-step",
     "load only its detail page",
     "team-specialization-guide.md",
     "team-specialization-plan.md",
@@ -58,6 +62,7 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
 )
 
 TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
+    "help.md",
     "resolve-project.md",
     "inspect-template.md",
     "resolve-context.md",
@@ -67,7 +72,10 @@ TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
     "materialize-profile.md",
     "launch-team.md",
     "fast-forward.md",
+    "step-by-step.md",
 )
+
+TOPIC_TEAM_SPECIALIZATION_NAMING_EXCEPTIONS = {"help", "step-by-step"}
 
 TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES = (
     "isomer-domain-language.md",
@@ -418,8 +426,10 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
     for subcommand_file_name in TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS:
         subcommand_name = subcommand_file_name.removesuffix(".md")
         subcommand_path = references_dir / subcommand_file_name
-        if not re.match(r"^[a-z]+-[a-z]+$", subcommand_name) or len(subcommand_name) > 24:
-            add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"subcommand '{subcommand_name}' must be a short verb-object name")
+        if subcommand_name not in TOPIC_TEAM_SPECIALIZATION_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+-[a-z]+$", subcommand_name):
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"subcommand '{subcommand_name}' must be a short verb-object name or an allowed command")
+        if len(subcommand_name) > 24:
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"subcommand '{subcommand_name}' must be short")
         if not subcommand_path.exists():
             add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include references/{subcommand_file_name}")
             continue

@@ -58,14 +58,16 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Workflow
 
-            1. **Manual mode**: Select one subcommand, load only its detail page, and report the result.
-            2. **Automatic mode**: Run `fast-forward`.
+            1. **Default help mode**: If invoked without a prompt, run `help`.
+            2. **Manual mode**: Select one subcommand, load only its detail page, and report the result.
+            3. **Guided mode**: Run `step-by-step`.
+            4. **Automatic mode**: Run `fast-forward`.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
             ## Subcommands
 
-            Use `references/resolve-project.md`, `references/inspect-template.md`, `references/resolve-context.md`, `references/map-placeholders.md`, `references/draft-profile.md`, `references/approve-profile.md`, `references/materialize-profile.md`, `references/launch-team.md`, and `references/fast-forward.md`.
+            Use `references/help.md`, `references/resolve-project.md`, `references/inspect-template.md`, `references/resolve-context.md`, `references/map-placeholders.md`, `references/draft-profile.md`, `references/approve-profile.md`, `references/materialize-profile.md`, `references/launch-team.md`, `references/fast-forward.md`, and `references/step-by-step.md`.
 
             Use `team-specialization-guide.md`, `team-specialization-plan.md`, `Generated Guide`, `{final_report}`, and `<topic-workspace>/team-profile/execplan/`.
             """,

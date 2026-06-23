@@ -8,16 +8,18 @@ Install these skills into the agent surface that acts as the Project Operator Se
 
 | Skill | Purpose |
 | --- | --- |
-| `isomer-admin-topic-team-specialize` | Run the module-level Topic Team Specialization workflow. It exposes short local subcommands such as `resolve-project`, `inspect-template`, and `fast-forward`; it copies Domain Agent Team Template material into `<topic-workspace>/team-profile/`, reads or creates `team-specialization-guide.md`, creates `team-specialization-plan.md`, adapts copied material, records a `Final Report`, and reports packet/profile inputs. |
+| `isomer-admin-topic-team-specialize` | Run the module-level Topic Team Specialization workflow. It exposes short local subcommands such as `help`, `resolve-project`, `inspect-template`, `step-by-step`, and `fast-forward`; it copies Domain Agent Team Template material into `<topic-workspace>/team-profile/`, reads or creates `team-specialization-guide.md`, creates `team-specialization-plan.md`, adapts copied material, records a `Final Report`, and reports packet/profile inputs. |
 
 ## Example: Specialize a Domain Team for a New Topic
 
 Use this flow when a user gives a research topic and asks the operator to instantiate a topic-level team from a Domain Agent Team Template such as `deepsci-mini`.
 
-1. `isomer-admin-topic-team-specialize fast-forward(project_root, topic_ref_or_prompt, template_ref)` uses local subcommands to resolve project and topic context, inspect the template, reconcile placeholders, copy template material into `<topic-workspace>/team-profile/`, read or create `team-specialization-guide.md`, create `team-specialization-plan.md`, adapt copied material, record a `Final Report`, and report Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.
-2. If the user wants manual specialization, call one subcommand at a time, such as `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, or `draft-profile`.
-3. If the user explicitly approves continuing past specialization, the same skill's local `approve-profile` and `materialize-profile` subcommands handle approval provenance and validated bundle writing.
-4. The operator reports copied material paths, packet/profile inputs, approval or materialization status, validation refs, and blockers.
+1. The operator can ask `isomer-admin-topic-team-specialize` to fast-forward specialization for a named research topic and Domain Agent Team Template. The skill uses local subcommands to resolve project and topic context, inspect the template, reconcile placeholders, copy template material into `<topic-workspace>/team-profile/`, read or create `team-specialization-guide.md`, create `team-specialization-plan.md`, adapt copied material, record a `Final Report`, and report Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.
+2. If the user wants usage information, call `isomer-admin-topic-team-specialize help`; invoking `isomer-admin-topic-team-specialize` without a prompt defaults to the same help output.
+3. If the user wants guided specialization, call `step-by-step`; it follows the same required path as `fast-forward` but explains each step and waits for user confirmation before continuing.
+4. If the user wants manual specialization, call one subcommand at a time, such as `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, or `draft-profile`.
+5. If the user explicitly approves continuing past specialization, the same skill's local `approve-profile` and `materialize-profile` subcommands handle approval provenance and validated bundle writing.
+6. The operator reports copied material paths, packet/profile inputs, approval or materialization status, validation refs, and blockers.
 
 ```mermaid
 sequenceDiagram
@@ -26,7 +28,7 @@ sequenceDiagram
     participant Store as Isomer Project and Topic Workspace
 
     User->>Operator: Request topic team for research topic
-    Operator->>Store: isomer-admin-topic-team-specialize(project_root, topic_ref_or_prompt, template_ref)
+    Operator->>Store: Request fast-forward specialization for topic and template
     Store-->>Operator: Project, topic, workspace, template refs
     Operator->>Store: fast-forward runs local subcommands
     Store-->>Operator: Copied guide, plan, topic edits, packet/profile inputs
@@ -40,7 +42,7 @@ sequenceDiagram
 
 Use this flow when a Topic Agent Team Profile Bundle already exists and the user asks the operator to create or launch the topic's runtime team.
 
-1. `isomer-admin-topic-team-specialize resolve-project(project_root, topic_ref)` and `resolve-context` resolve the selected Research Topic, Topic Workspace, approved profile bundle, Workspace Runtime, and launch-relevant adapter refs.
+1. `resolve-project` and `resolve-context` resolve the selected Research Topic, Topic Workspace, approved profile bundle, Workspace Runtime, and launch-relevant adapter refs.
 2. The local `approve-profile` subcommand refreshes approval when the existing bundle has stale approval, unresolved launch blockers, or requires a fresh user decision before launch.
 3. The local `launch-team` subcommand creates or selects the Agent Team Instance, preserves profile bundle and packet provenance, and routes adapter launch materialization.
 4. The operator reports runtime refs, adapter refs, launch diagnostics, launch blockers, and the next operator action to the user.

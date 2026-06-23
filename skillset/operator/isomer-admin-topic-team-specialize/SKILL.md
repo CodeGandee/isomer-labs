@@ -5,11 +5,7 @@ description: Specialize a Domain Agent Team Template into topic-specific copied 
 
 # Isomer Admin Topic Team Specialize
 
-Use this as the module-level operator workflow for Domain Agent Team Template understanding and Topic Team Specialization. The workflow acts like one function:
-
-```text
-isomer-admin-topic-team-specialize(project_root, topic_ref_or_prompt, domain_team_template_ref)
-```
+Use this as the module-level operator workflow for Domain Agent Team Template understanding and Topic Team Specialization. It helps an operator adapt one reusable domain team template for one research topic by copying template material into the topic workspace, guiding topic-specific edits, and producing reviewable packet/profile inputs.
 
 ## Operating Model
 
@@ -21,12 +17,14 @@ Use this workflow for one Research Topic and one Domain Agent Team Template at a
 
 ## Workflow
 
-When this skill is invoked, choose one of two modes.
+When this skill is invoked, choose one of four modes.
 
-1. **Manual mode**: If the user names one subcommand or asks for one bounded operation, select that subcommand from the **Subcommands** table, load only its detail page, execute its workflow, and report its output.
-2. **Automatic mode**: If the user asks to fully specialize, instantiate, adapt end-to-end, or says `fast-forward`, select `fast-forward`, load [references/fast-forward.md](references/fast-forward.md), execute the full specialization workflow, and stop at the approval/materialization/launch boundary unless explicitly instructed otherwise.
-3. If the request is ambiguous, prefer manual mode when a single bounded operation is clearly named; otherwise prefer `fast-forward` for a request to specialize a Domain Agent Team Template for a Research Topic.
-4. Preserve the **Guardrails** and **Output Contract** for both modes.
+1. **Default help mode**: If this skill is invoked without a prompt, select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
+2. **Manual mode**: If the user asks for help, names one subcommand, or asks for one bounded operation, select that subcommand from the **Subcommands** table, load only its detail page, execute its workflow, and report its output.
+3. **Guided mode**: If the user asks to specialize step by step, proceed interactively, or confirm each stage, select `step-by-step`, load [references/step-by-step.md](references/step-by-step.md), execute one required specialization step at a time, and wait for user confirmation before continuing.
+4. **Automatic mode**: If the user asks to fully specialize, instantiate, adapt end-to-end, or says `fast-forward`, select `fast-forward`, load [references/fast-forward.md](references/fast-forward.md), execute the full specialization workflow, and stop at the approval/materialization/launch boundary unless explicitly instructed otherwise.
+5. If the request is ambiguous, prefer manual mode when a single bounded operation is clearly named; prefer `step-by-step` when the user asks for guided confirmation; otherwise prefer `fast-forward` for a request to specialize a Domain Agent Team Template for a Research Topic.
+6. Preserve the **Guardrails** and **Output Contract** for all modes.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project context, copied-template constraints, subcommands, output contract, and guardrails in this skill, then execute the plan.
 
@@ -36,6 +34,7 @@ Load only the subcommand pages needed for the user's task.
 
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
+| `help` | Print what this skill does, how to invoke it, available modes, subcommands, outputs, and guardrails | [references/help.md](references/help.md) |
 | `resolve-project` | Resolve Project, Research Topic, Topic Workspace, template refs, profile refs, and runtime refs | [references/resolve-project.md](references/resolve-project.md) |
 | `inspect-template` | Inspect Domain Agent Team Template manifests, placeholders, roles, Workflow Stages, copyable material, and diagnostics | [references/inspect-template.md](references/inspect-template.md) |
 | `resolve-context` | Resolve Effective Topic Context, Workspace Runtime readiness, policies, bindings, provider refs, and Gate policy refs | [references/resolve-context.md](references/resolve-context.md) |
@@ -45,6 +44,7 @@ Load only the subcommand pages needed for the user's task.
 | `materialize-profile` | Validate and write an approved Topic Agent Team Profile Bundle under the selected Topic Workspace | [references/materialize-profile.md](references/materialize-profile.md) |
 | `launch-team` | Cross from approved profile material into Workspace Runtime and Houmao Execution Adapter launch work | [references/launch-team.md](references/launch-team.md) |
 | `fast-forward` | Automatically execute the full Topic Team Specialization path through draft profile output | [references/fast-forward.md](references/fast-forward.md) |
+| `step-by-step` | Execute the same required specialization path as `fast-forward`, but pause for user confirmation before each step | [references/step-by-step.md](references/step-by-step.md) |
 
 ## Generated Guide Rule
 

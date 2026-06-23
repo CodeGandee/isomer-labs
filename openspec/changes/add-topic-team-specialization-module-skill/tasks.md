@@ -10,7 +10,7 @@
 ## 2. Imsight Workflow Format
 
 - [x] 2.1 Put `## Workflow` near the top of `SKILL.md`, before detailed guide, plan, helper, output, or guardrail sections.
-- [x] 2.2 Write the workflow as concise numbered steps covering manual single-subcommand mode and automatic `fast-forward` mode.
+- [x] 2.2 Write the workflow as concise numbered steps covering default help mode, manual single-subcommand mode, guided `step-by-step` mode, and automatic `fast-forward` mode.
 - [x] 2.3 Keep longer procedures in named detail sections such as `Subcommands`, `Generated Guide Rule`, `Plan Structure`, `Output Contract`, and `Guardrails`.
 - [x] 2.4 Add the Imsight fallback for tasks that do not map cleanly to the default workflow, telling the agent to build and execute a step-by-step plan from this skill's constraints and subcommands.
 - [x] 2.5 Ensure every local subcommand page has a near-top numbered `## Workflow` and a freeform fallback.
@@ -18,21 +18,23 @@
 ## 3. Local Subcommand Incorporation
 
 - [x] 3.1 Add a `## Subcommands` table in `SKILL.md` that links to one-level local reference pages.
-- [x] 3.2 Incorporate project awareness as `references/resolve-project.md`.
-- [x] 3.3 Incorporate template inspection as `references/inspect-template.md`.
-- [x] 3.4 Incorporate topic context resolution as `references/resolve-context.md`.
-- [x] 3.5 Incorporate placeholder reconciliation as `references/map-placeholders.md`.
-- [x] 3.6 Incorporate topic profile drafting as `references/draft-profile.md`.
-- [x] 3.7 Incorporate profile review approval as `references/approve-profile.md`.
-- [x] 3.8 Incorporate profile materialization as `references/materialize-profile.md`.
-- [x] 3.9 Incorporate team launch orchestration as `references/launch-team.md`.
-- [x] 3.10 Incorporate automatic full specialization as `references/fast-forward.md`.
-- [x] 3.11 Remove `references/route-service.md` from this module workflow.
-- [x] 3.12 Remove the incorporated standalone operator skill folders.
+- [x] 3.2 Add usage output as `references/help.md`.
+- [x] 3.3 Incorporate project awareness as `references/resolve-project.md`.
+- [x] 3.4 Incorporate template inspection as `references/inspect-template.md`.
+- [x] 3.5 Incorporate topic context resolution as `references/resolve-context.md`.
+- [x] 3.6 Incorporate placeholder reconciliation as `references/map-placeholders.md`.
+- [x] 3.7 Incorporate topic profile drafting as `references/draft-profile.md`.
+- [x] 3.8 Incorporate profile review approval as `references/approve-profile.md`.
+- [x] 3.9 Incorporate profile materialization as `references/materialize-profile.md`.
+- [x] 3.10 Incorporate team launch orchestration as `references/launch-team.md`.
+- [x] 3.11 Incorporate automatic full specialization as `references/fast-forward.md`.
+- [x] 3.12 Incorporate guided full specialization as `references/step-by-step.md`.
+- [x] 3.13 Remove `references/route-service.md` from this module workflow.
+- [x] 3.14 Remove the incorporated standalone operator skill folders.
 
 ## 4. Topic Team Specialization Contract
 
-- [x] 4.1 Preserve `isomer-admin-topic-team-specialize(project_root, topic_ref_or_prompt, domain_team_template_ref)` as the module-level operator entrypoint.
+- [x] 4.1 Explain the module-level operator purpose in plain text instead of using code-like invocation syntax.
 - [x] 4.2 Document that selected Domain Agent Team Template material is copied into `<topic-workspace>/team-profile/` before topic-specific editing.
 - [x] 4.3 Keep the `deepsci-mini` copied template root as `<topic-workspace>/team-profile/execplan/`.
 - [x] 4.4 Require `team-specialization-guide.md` to be read first when present, or generated with the visible generated marker when missing.

@@ -21,11 +21,23 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 
 #### Scenario: Local subcommands exist
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
-- **THEN** it contains local subcommand pages named `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `launch-team`, and `fast-forward` under `references/`
+- **THEN** it contains local subcommand pages named `help`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `launch-team`, `fast-forward`, and `step-by-step` under `references/`
 
 #### Scenario: Subcommand names are short
 - **WHEN** local subcommand pages are inspected
-- **THEN** each subcommand filename uses a short verb-object form such as `do-something.md`
+- **THEN** each subcommand filename uses a short verb-object form such as `do-something.md`, except the intentional `help.md` and `step-by-step.md` commands
+
+#### Scenario: Help subcommand prints usage
+- **WHEN** the user invokes the local `help` subcommand
+- **THEN** the skill prints what `isomer-admin-topic-team-specialize` does, how to invoke it, available modes, subcommands, outputs, and guardrails
+
+#### Scenario: Empty invocation defaults to help
+- **WHEN** the skill is invoked without a prompt
+- **THEN** the entrypoint selects `help` and prints the same usage output
+
+#### Scenario: Step-by-step performs guided specialization
+- **WHEN** the user asks to specialize step by step, proceed interactively, or confirm each stage
+- **THEN** the module skill executes `step-by-step`, follows the same required specialization path as `fast-forward`, explains the current step, and waits for user confirmation before continuing to the next step
 
 #### Scenario: Service routing subcommand is absent
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
@@ -52,7 +64,7 @@ The module skill SHALL follow the Imsight skill-entrypoint structure.
 
 #### Scenario: Workflow steps are numbered
 - **WHEN** the `## Workflow` section is inspected
-- **THEN** it uses numbered steps that select manual single-subcommand mode, automatic `fast-forward` mode, ambiguity handling, and shared validation boundaries
+- **THEN** it uses numbered steps that select default help mode for empty invocation, manual single-subcommand mode, guided `step-by-step` mode, automatic `fast-forward` mode, ambiguity handling, and shared validation boundaries
 
 #### Scenario: Detailed rules are separated
 - **WHEN** generated-guide rules, plan structure, subcommand routing, output fields, or guardrails require detail
@@ -85,6 +97,10 @@ The module skill SHALL incorporate former helper-skill behavior as local subcomm
 - **WHEN** the user asks to fully specialize, instantiate, adapt end-to-end, or says `fast-forward`
 - **THEN** the module skill executes `fast-forward` to run the full Topic Team Specialization path through draft profile output
 
+#### Scenario: Step-by-step confirms before continuing
+- **WHEN** `step-by-step` completes one required specialization step
+- **THEN** it summarizes what happened and waits for user confirmation before executing the next step
+
 #### Scenario: Boundary operations remain explicit
 - **WHEN** approval, materialization, or launch work is requested after specialization
 - **THEN** the module skill uses the local `approve-profile`, `materialize-profile`, or `launch-team` subcommand and preserves all validation and provenance boundaries
@@ -92,9 +108,9 @@ The module skill SHALL incorporate former helper-skill behavior as local subcomm
 ### Requirement: Topic Team Specialization Workflow
 The module skill SHALL guide a Project Operator Session or Operator Agent through adapting one Domain Agent Team Template for one Research Topic.
 
-#### Scenario: Module function is explicit
+#### Scenario: Module purpose is plain text
 - **WHEN** operator documentation or skill text describes the workflow
-- **THEN** it presents `isomer-admin-topic-team-specialize(project_root, topic_ref_or_prompt, domain_team_template_ref)` as the preferred module-level entrypoint
+- **THEN** it explains in plain text that the skill adapts one Domain Agent Team Template for one Research Topic by copying template material into the topic workspace and producing reviewable specialization outputs
 
 #### Scenario: Template material is copied before adaptation
 - **WHEN** a Project Operator Session specializes a Domain Agent Team Template for a Research Topic
