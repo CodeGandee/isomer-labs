@@ -1,14 +1,14 @@
 # Runtime and Files
 
-This page describes durable runtime files, generated adapter files, manifests, payload refs, and the boundary between durable records and cache. It covers Project files, Topic Workspace files, Workspace Runtime records, path plans, Agent Workspaces, adapter material, manifests, and command payloads.
+This page describes durable runtime files, generated adapter files, manifests, payload refs, Topic Workspace Pixi files, and the boundary between durable records and cache. It covers Project files, Topic Workspace files, Workspace Runtime records, path plans, Agent Workspaces, adapter material, manifests, and command payloads.
 
 ## Project Files
 
 A Project is a user-owned directory tree. After `isomer-cli init`, the Project Config Directory `.isomer-labs/` contains:
 
-- `manifest.toml` — the Project Manifest, the discovery authority for Research Topics, Topic Workspaces, and Pixi environment bindings.
-- `research-topics/<topic-id>.toml` — Research Topic Config files with topic defaults and refs.
-- `team-profiles/<profile-id>.toml` — optional Topic Agent Team Profile definitions.
+- `manifest.toml` — the Project Manifest, the discovery authority for Research Topics, Topic Workspaces, Topic Workspace Pixi workspace bindings through `topic_standalone_pixi_bindings`, optional Project-root Pixi environment bindings through `topic_pixi_environment_bindings`, Domain Agent Team Template refs, the single Topic Agent Team Profile Bundle ref for each Research Topic, and project defaults.
+- `research-topics/<topic-id>.toml` — Research Topic Config files with topic defaults and refs. Research Topic Config files do not own Pixi environment bindings or Workspace Runtime state.
+- `domain-agent-team-templates/` — optional project-local Domain Agent Team Template material referenced by the Project Manifest. Built-in templates do not need a local directory.
 - `team-instances/<instance-id>.toml` — optional Agent Team Instance refs or configuration.
 - `local.toml` — optional untracked user-local active context.
 
@@ -16,8 +16,15 @@ The Project Config Directory should not contain default cache, temporary files, 
 
 ## Topic Workspace Files
 
-A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `topic-workspaces/<topic-workspace-id>/`. It owns:
+A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `topic-workspaces/<topic-workspace-id>/`. It is a Pixi workspace by default. The Project Manifest records its Pixi manifest through `topic_standalone_pixi_bindings`; Isomer does not infer the binding by crawling Topic Workspace paths. It owns:
 
+- `pixi.toml` or `pyproject.toml` — the Topic Workspace Pixi manifest, declaring the topic-scoped Python version, research dependencies, and optional named environments.
+- `pixi.lock` — the Topic Workspace Pixi lockfile.
+- `.pixi/` — the Pixi-managed environment directory for the Topic Workspace. This directory is generated and rebuildable, not durable research state.
+- `team-profile/profile.toml` — the authoritative Topic Agent Team Profile file inside the Research Topic's one Topic Agent Team Profile Bundle referenced by the Project Manifest.
+- `team-profile/execplan/` — optional copied and topic-specialized template material for the topic's dedicated team.
+- `team-profile/instantiation-packet.toml` — optional approved Topic Team Instantiation Packet used to materialize the bundle.
+- `team-profile/validation/` and `team-profile/provenance/` — validation outputs and provenance refs for the topic-level profile bundle.
 - `state.sqlite` — the Workspace Runtime database.
 - `artifacts/` — workspace-level research Artifacts.
 - `agents/` — Agent Workspace directories, one per Agent Instance.
@@ -27,6 +34,8 @@ A Topic Workspace is a project-local directory declared by the Project Manifest,
 - `logs/` — workspace-level logs.
 - `runtime/adapters/houmao/<agent-team-instance-id>/` — Houmao adapter-generated manifests, launch material, command payloads, snapshots, stop outcomes, handoff payloads, Signal Observation payloads, and normalization payloads.
 
+The Topic Workspace does not contain a workspace-local `teams/` directory. Domain Agent Team Templates belong in built-in or Project Config refs, while the Research Topic's one Topic Agent Team Profile Bundle lives under `team-profile/` in the owning Topic Workspace. The Project Manifest keeps a ref to that bundle for discovery.
+
 The path plan for each surface is recorded in Workspace Runtime so that commands can resolve paths consistently.
 
 ## Workspace Runtime Records
@@ -35,10 +44,10 @@ Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 
 - `WorkspaceRuntimeMetadata` — schema version, Project root, Project Manifest path, Research Topic id, Topic Workspace id, Topic Workspace path, timestamps, and provenance refs.
 - `PathPlanRecord` — id, Topic Workspace id, surface, path, source, source detail, and created timestamp.
-- `TopicEnvironmentReadinessRecord` — readiness status, project Pixi environment refs, standalone Pixi manifest refs, diagnostics, checked timestamp, actor ref, and optional repair Service Request hint.
-- `AgentTeamInstanceRecord` — id, Research Topic id, Topic Workspace id, Topic Agent Team Profile id, Domain Agent Team Template id, status, agent instance ids, agent workspace ids, run ids, workflow stage cursor ids, blocker refs, handoff ids, and provenance refs.
+- `TopicEnvironmentReadinessRecord` — readiness status, Topic Workspace Pixi manifest refs, selected Pixi environment refs, optional Project-root Pixi environment refs for platform or shared tooling use, diagnostics, checked timestamp, actor ref, and optional repair Service Request hint.
+- `AgentTeamInstanceRecord` — id, Research Topic id, Topic Workspace id, Topic Agent Team Profile ref, Domain Agent Team Template id, status, agent instance ids, agent workspace ids, run ids, workflow stage cursor ids, blocker refs, handoff ids, and provenance refs.
 - `AgentInstanceRecord` — id, Agent Team Instance id, Agent Role id, Research Topic id, Topic Workspace id, Agent Profile ref, status, and provenance refs.
-- `AgentWorkspaceRecord` — id, Agent Instance id, Topic Workspace id, Path Plan id, status, and provenance refs.
+- `AgentWorkspaceRecord` — id, globally unique Agent Instance id, Topic Workspace id, flat Agent Workspace Path Plan id, status, and provenance refs.
 - `RuntimeLifecycleRecord` — generic lifecycle records for Research Topic, Research Inquiry, Research Task, Run, Workflow Stage Cursor, Topic Workspace, Topic Agent Team Profile, Artifact, Gate, Research Claim, Evidence Item, Decision Record, and Provenance Record.
 - `HandoffRecord` — source actor, target actor, status, Research Task id, Run id, Agent Team Instance id, Completion Watcher Contract refs, expected output refs, staleness rules, and provenance refs.
 - `ValidationIssueRecord` — severity, code, concept, message, record ref, and provenance refs.
@@ -56,13 +65,17 @@ Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 
 ## Path Plans
 
-Path Plan records map a named surface to a concrete filesystem path. Surfaces include `workspace_runtime_db`, `artifacts`, `agents`, `tasks`, `runs`, `views`, `logs`, and adapter-specific surfaces such as `adapter_manifest:houmao:<agent-team-instance-id>:<kind>`.
+Path Plan records map a named surface to a concrete filesystem path. Surfaces include `workspace_runtime_db`, `artifacts`, `agents`, `tasks`, `runs`, `views`, `logs`, per-agent surfaces such as `agent_workspace:<agent-instance-id>`, and adapter-specific surfaces such as `adapter_manifest:houmao:<agent-team-instance-id>:<kind>`.
 
 Commands use Path Plan records to locate durable files without recomputing layout from configuration. `isomer-cli paths preview` prints the path plan without creating files.
 
 ## Agent Workspaces
 
-Agent Workspaces live under `<topic-workspace>/agents/<agent-instance-id>/`. Each Agent Workspace belongs to one globally unique Agent Instance. The directory contains:
+Agent Workspaces live under `<topic-workspace>/agents/<agent-instance-id>/`. Each Agent Workspace belongs to one globally unique Agent Instance. This flat layout remains the default when multiple Research Topics run in parallel with different dedicated teams; Agent Team Instance membership, Run participation, Agent Role assignment, and task participation belong in Workspace Runtime records, not in the Agent Workspace directory hierarchy.
+
+Agent Workspaces inherit the selected Topic Workspace Pixi environment by default. They do not contain their own `pixi.toml`, `pyproject.toml`, `pixi.lock`, or `.pixi/` directory unless an explicit Service Request creates a divergent environment and records support Artifacts and Provenance Records.
+
+The directory contains:
 
 - owned scratch files and local runtime state;
 - Agent Artifacts produced or curated by the agent;
@@ -100,6 +113,8 @@ Payloads are redacted before storage if they contain secret-like fields such as 
 The following are durable records:
 
 - Project Manifest and Research Topic Config files.
+- Topic Workspace Pixi manifests and lockfiles.
+- Topic Agent Team Profile Bundles under `<topic-workspace>/team-profile/`.
 - Workspace Runtime `state.sqlite` and its records.
 - Path Plan records.
 - Agent Team Instance, Agent Instance, and Agent Workspace records.
@@ -113,6 +128,7 @@ The following are not durable research state and may be regenerated or lost:
 - GUI Runtime State in the GUI Backend.
 - AG-UI Event Batch payload content unless the user explicitly enables retention.
 - Process-local Effective Topic Context.
+- Topic Workspace `.pixi/` environment directories.
 - Uncommitted scratch files inside Agent Workspaces that have not been recorded as Artifacts or Provenance Records.
 
 ## Summary
@@ -122,6 +138,10 @@ The following are not durable research state and may be regenerated or lost:
 | Project Manifest | `.isomer-labs/manifest.toml` | yes |
 | Research Topic Config | `.isomer-labs/research-topics/<id>.toml` | yes |
 | Topic Workspace | `topic-workspaces/<id>/` | yes (directory) |
+| Topic Workspace Pixi manifest | `<topic-workspace>/pixi.toml` or `<topic-workspace>/pyproject.toml` | yes |
+| Topic Workspace Pixi lockfile | `<topic-workspace>/pixi.lock` | yes |
+| Topic Workspace Pixi environment | `<topic-workspace>/.pixi/` | no |
+| Topic Agent Team Profile Bundle | `<topic-workspace>/team-profile/` | yes |
 | Workspace Runtime DB | `<topic-workspace>/state.sqlite` | yes |
 | Runtime directories | `<topic-workspace>/{artifacts,agents,tasks,runs,views,logs}/` | yes |
 | Agent Workspace | `<topic-workspace>/agents/<agent-instance-id>/` | yes |

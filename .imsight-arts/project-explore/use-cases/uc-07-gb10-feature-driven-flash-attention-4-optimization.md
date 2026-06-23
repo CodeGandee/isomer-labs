@@ -20,9 +20,9 @@ UC-07 is a focused research-direction slice that demonstrates how a smaller team
 
 ## Main Success Scenario
 
-1. The maintainer checks out a user-owned Isomer Project fixture for UC-07 and verifies that it contains a `.isomer-labs/` Project Config Directory, Project Manifest, Research Topic `flash-attention-gb10-peak-performance-optimization`, Topic Workspace, and Project-root Pixi manifest.
+1. The maintainer checks out a user-owned Isomer Project fixture for UC-07 and verifies that it contains a `.isomer-labs/` Project Config Directory, Project Manifest, Research Topic `flash-attention-gb10-peak-performance-optimization`, Topic Workspace, and a Topic Workspace Pixi manifest and lockfile inside the Topic Workspace.
 2. The Operator Agent runs the CLI baseline: `isomer-cli validate`, `topics list`, `workspaces list`, `context show --topic flash-attention-gb10-peak-performance-optimization`, `paths preview --topic flash-attention-gb10-peak-performance-optimization`, and `schemas list`.
-3. The Operator Agent runs `isomer-cli doctor --topic flash-attention-gb10-peak-performance-optimization --json` and confirms that Pixi is available, Project-level Pixi configuration is found, and explicit topic Pixi bindings are valid.
+3. The Operator Agent runs `isomer-cli doctor --topic flash-attention-gb10-peak-performance-optimization --json` and confirms that Pixi is available, the Topic Workspace Pixi manifest exists, a matching `pixi.lock` is present, and explicit topic Pixi bindings are valid.
 4. The Operator Agent lists, inspects, and validates the `deepsci-mini` Domain Agent Team Template and checks that the template remains topic-neutral.
 5. The Operator Agent creates or loads a Topic Agent Team Profile for `flash-attention-gb10-peak-performance-optimization`, validates that topic-specific refs, Agent Workspace refs, policy refs, and expected Artifacts do not leak into other topics.
 6. The Operator Agent creates or opens Workspace Runtime in the Topic Workspace, records schema version, resolved paths, path sources, default runtime directories, and a readiness record for the bound Pixi environment.

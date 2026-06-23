@@ -66,7 +66,7 @@ A **Topic Agent Team Profile** specializes one Domain Agent Team Template for a 
 
 An **Agent Team Instance** is a concrete runtime team created from a Topic Agent Team Profile. It contains launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. `isomer-cli team-instances create` writes the Agent Team Instance record, Agent Instance records, Agent Workspace records, path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories. It does not launch backend agents or write adapter-specific launch material.
 
-Topic-level Parallel Execution Scope allows multiple Agent Team Instances under one Research Topic, usually to compare team profiles, strategies, or independent inquiry paths. Task-level Parallel Execution Scope distributes one Research Task across multiple Agent Instances inside the selected Agent Team Instance. Research Inquiry is not a Parallel Execution Scope.
+Topic-level Parallel Execution Scope means multiple Research Topics run concurrently, each researched by its own dedicated Agent Team Instance. It does not mean one Research Topic is handled by multiple competing teams. Task-level Parallel Execution Scope distributes one Research Task across multiple Agent Instances inside the selected topic team. Research Inquiry is not a Parallel Execution Scope.
 
 ## Operator Agent
 

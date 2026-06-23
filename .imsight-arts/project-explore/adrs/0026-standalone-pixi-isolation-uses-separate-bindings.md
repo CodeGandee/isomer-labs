@@ -4,7 +4,7 @@ Isomer Labs will represent optional standalone topic Pixi isolation with a separ
 
 ## Status
 
-accepted
+accepted, with updated default semantics after ADR-0027
 
 ## Considered Options
 
@@ -18,3 +18,4 @@ accepted
 - `topic_standalone_pixi_bindings` records explicit standalone manifest refs and must not be discovered by crawling Topic Workspaces.
 - `doctor` can validate standalone manifest presence and Project containment without installing environments.
 - Runtime preparation can later record resolved standalone environment readiness and provenance in Workspace Runtime.
+- After ADR 0027, `topic_standalone_pixi_bindings` is the default representation for Topic Workspace Pixi workspaces, not only an opt-in isolation escape hatch. The Project Manifest still records the binding explicitly rather than inferring it from Topic Workspace paths.

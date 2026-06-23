@@ -13,7 +13,7 @@ The following options are available on most commands:
 
 When `--project` is omitted, `isomer-cli` walks up from the current working directory until it finds a `.isomer-labs/` Project Config Directory.
 
-Many topic-scoped commands also accept lifecycle selectors such as `--topic`, `--topic-workspace`, `--research-inquiry`, `--task`, `--run`, `--agent-team-instance`, `--agent-instance`, and `--topic-agent-team-profile`. These selectors refine the Effective Topic Context. They do not by themselves mutate state.
+Many topic-scoped commands also accept lifecycle selectors such as `--topic`, `--topic-workspace`, `--research-inquiry`, `--task`, `--run`, `--agent-team-instance`, and `--agent-instance`. These selectors refine the Effective Topic Context. They do not by themselves mutate state.
 
 ## Output Posture
 
@@ -159,12 +159,11 @@ Create an Agent Team Instance record.
 
 **Side effects:** writes Agent Team Instance record, Agent Instance records, Agent Workspace records, Agent Workspace path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories under `<topic-workspace>/agents/<agent-instance-id>/`. Does not launch Houmao agents, create mailboxes, write launch dossiers, or store adapter-specific launch refs.
 
-**Prerequisites:** Workspace Runtime must be initialized and readiness should be `ready` for launch-facing work.
+**Prerequisites:** Workspace Runtime must be initialized, the Research Topic's single Topic Agent Team Profile Bundle must be materialized, and readiness should be `ready` for launch-facing work.
 
 ```bash
 pixi run isomer-cli --print-json team-instances create \
   --topic default \
-  --topic-agent-team-profile default-deepsci \
   --id ati-default-deepsci
 ```
 
@@ -354,26 +353,26 @@ pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases 
 
 ### `team-profiles specialize`
 
-Derive a candidate Topic Agent Team Profile.
+Derive a candidate Topic Agent Team Profile for the selected Research Topic.
 
-**Side effects:** by default, prints a design-time preview without writing files. When `--write` is requested, writes only the profile TOML file to the Project Config Directory and reports a deterministic `registration_suggestion` object for adding the profile to the Project Manifest. Does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state.
+**Side effects:** by default, prints a design-time preview without writing files. Legacy preview-write behavior may write a single profile file, but authoritative topic-team materialization writes the Research Topic's one Topic Agent Team Profile Bundle under `team-profile/` in the owning Topic Workspace and keeps only the Project Manifest ref in Project Config. Does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state.
 
 ```bash
 pixi run isomer-cli --print-json team-profiles specialize \
-  --topic default --profile-id default-deepsci --use-case UC-01
+  --topic default --use-case UC-01
 pixi run isomer-cli --print-json team-profiles specialize \
-  --topic default --profile-id default-deepsci --use-case UC-01 --write
+  --topic default --use-case UC-01 --write
 ```
 
 ### `team-profiles validate`
 
-Validate a Topic Agent Team Profile file.
+Validate a Topic Agent Team Profile file or a `profile.toml` file inside a Topic Agent Team Profile Bundle.
 
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli team-profiles validate .isomer-labs/team-profiles/default-deepsci.toml
-pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases team-profiles validate .isomer-labs/team-profiles/uc-01-novel-biomarker.toml
+pixi run isomer-cli team-profiles validate topic-workspaces/default/team-profile/profile.toml
+pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases team-profiles validate topic-workspaces/novel-biomarker/team-profile/profile.toml
 ```
 
 ## Side-effect Summary

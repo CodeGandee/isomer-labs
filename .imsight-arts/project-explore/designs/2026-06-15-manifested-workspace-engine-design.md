@@ -60,7 +60,7 @@ The Operator Agent does not silently finalize research direction, waive baseline
 
 Team Agent Roles perform bounded role-owned work. Early roles can include scout, planner, literature reviewer, experimenter, analyst, writer, reviewer, and decision-support. A Topic Agent Team Profile binds these roles to Workflow Stages, capabilities, profiles, tools, skills, topic constraints, and handoff rules before launch. An Agent Team Instance is the runtime team created from that profile. Each active Agent Instance should write to its own Agent Workspace by convention; peer agents may inspect declared readable files, but the engine does not enforce OS-level file permissions.
 
-Parallel execution has two approved scopes. At the Research Topic level, the user can run multiple Agent Team Instances in parallel to compare teams, strategies, or independent inquiry paths. At the Research Task level, a selected Agent Team Instance can distribute one task across multiple Agent Instances. Research Inquiry is not a parallel execution scope; it organizes questions, not concurrent worker ownership.
+Parallel execution has two approved scopes. At the Research Topic level, the user can run multiple Research Topics in parallel, each handled by its own dedicated Agent Team Instance. At the Research Task level, a selected Agent Team Instance can distribute one task across multiple Agent Instances. Research Inquiry is not a parallel execution scope; it organizes questions, not concurrent worker ownership.
 
 ### CLI or Agent Entry Point
 
@@ -389,7 +389,7 @@ Early tests should focus on contracts that will be expensive to change later:
 - Topic Workspace discovery from `.isomer-labs/manifest.toml`
 - Workspace Runtime creation, schema versioning, and support directory validation
 - Research Topic to Topic Workspace binding plus Research Inquiry and Research Task lifecycle state
-- topic-level parallel execution across Agent Team Instances and task-level parallel execution across Agent Instances
+- topic-level parallel execution across multiple Research Topics with different dedicated Agent Team Instances, and task-level parallel execution across Agent Instances
 - rejection of workspace paths outside the project root
 - Domain Agent Team Template and Topic Agent Team Profile validation for Agent Roles, Workflow Stages, Coordination Policy, Capability Bindings, and required topic specialization
 - Domain Agent Team Template specialization into Topic Agent Team Profile records
@@ -422,7 +422,7 @@ These tests can start with `unittest` under `tests/unit/`, with filesystem and S
 - Research Inquiry is not a parallel execution scope.
 - Topic Workspaces are project-local directories referenced by the Project Manifest.
 - Each Topic Workspace is scoped to one Research Topic; Research Tasks inside it record task handlers.
-- Topic-level parallel execution uses multiple Agent Team Instances under one Research Topic; task-level parallel execution distributes one Research Task across multiple Agent Instances inside one selected Agent Team Instance.
+- Topic-level parallel execution uses multiple Research Topics, each with one dedicated Agent Team Instance; task-level parallel execution distributes one Research Task across multiple Agent Instances inside one selected Agent Team Instance.
 - Topic Workspaces do not contain a workspace-local `teams/` directory.
 - Domain Agent Team Templates are reusable research-field method templates.
 - Topic Agent Team Profiles are topic-level specializations of Domain Agent Team Templates, and they are not running teams.

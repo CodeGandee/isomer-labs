@@ -1,6 +1,6 @@
 # Doctor is Read-only
 
-`isomer-cli doctor` will be a read-only diagnostic command. It checks required dependencies such as Pixi, Project-level Pixi configuration, topic-specific Pixi environment refs, version requirements, lock/readiness signals, and launch preconditions, but it does not install environments, create Workspace Runtime records, or mutate Topic Workspaces.
+`isomer-cli doctor` will be a read-only diagnostic command. It checks required dependencies such as Pixi, Project-level Pixi configuration, Topic Workspace Pixi manifests, topic-specific Pixi environment refs, version requirements, lock/readiness signals, and launch preconditions, but it does not install environments, create Workspace Runtime records, or mutate Topic Workspaces.
 
 ## Status
 

@@ -1,6 +1,6 @@
 # Domain and Topic Agent Team Lifecycle
 
-Isomer Labs will expose agent teams through three user-facing lifecycle terms: **Domain Agent Team Template**, **Topic Agent Team Profile**, and **Agent Team Instance**. A Domain Agent Team Template captures the research methodology of a research field, a Topic Agent Team Profile specializes that method for a user's research topic before anything is running, and an Agent Team Instance exists only after the profile is launched for execution.
+Isomer Labs will expose agent teams through three user-facing lifecycle terms: **Domain Agent Team Template**, **Topic Agent Team Profile**, and **Agent Team Instance**. A Domain Agent Team Template captures the research methodology of a research field, a Topic Agent Team Profile specializes that method for one Research Topic before anything is running, and an Agent Team Instance exists only after that topic profile is launched for execution. Each Research Topic has one dedicated topic team lineage; topic-level parallelism means multiple Research Topics run at the same time with different dedicated teams.
 
 ## Status
 
@@ -16,4 +16,5 @@ accepted
 
 - User-facing docs, GUI labels, schema fields, and manifest fields should expose the domain/topic distinction.
 - The Operator Agent specializes Domain Agent Team Templates into Topic Agent Team Profiles before launching Agent Team Instances.
+- A single Research Topic should not register multiple active Topic Agent Team Profiles or launch multiple competing Agent Team Instances. A materially different team strategy should be modeled as a revised profile or a new Research Topic.
 - **Agent Profile** remains the individual-agent construction/configuration term; avoid bare "Profile" when team-level and individual-agent concepts are both in scope.

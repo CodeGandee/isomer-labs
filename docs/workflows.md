@@ -51,17 +51,17 @@ Before launching a team, validate the Domain Agent Team Template and Topic Agent
 pixi run isomer-cli team-templates list
 pixi run isomer-cli --print-json team-templates inspect deepsci-org
 pixi run isomer-cli team-templates validate deepsci-org
-pixi run isomer-cli team-profiles validate .isomer-labs/team-profiles/default-deepsci.toml
+pixi run isomer-cli team-profiles validate topic-workspaces/default/team-profile/profile.toml
 ```
 
 To derive a candidate profile without writing it:
 
 ```bash
 pixi run isomer-cli --print-json team-profiles specialize \
-  --topic default --profile-id default-deepsci --use-case UC-01
+  --topic default --use-case UC-01
 ```
 
-Add `--write` to persist the profile to the Project Config Directory. The command reports a `registration_suggestion` object that you can add to the Project Manifest.
+Authoritative materialization persists the profile as the Research Topic's one Topic Agent Team Profile Bundle under the owning Topic Workspace and records only the Project Manifest ref in Project Config. Preview commands may still report a `registration_suggestion` object for compatibility while the packet-backed materializer is being implemented.
 
 ## UC-01 Headless Exploration
 
@@ -89,7 +89,6 @@ Create a record for a team before launching it. This separates design-time profi
 ```bash
 pixi run isomer-cli --print-json team-instances create \
   --topic default \
-  --topic-agent-team-profile default-deepsci \
   --id ati-default-deepsci
 
 pixi run isomer-cli team-instances list --topic default

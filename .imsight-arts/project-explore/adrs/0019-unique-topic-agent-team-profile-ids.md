@@ -4,7 +4,9 @@ Topic Agent Team Profile registrations in a Project Manifest must use unique ids
 
 ## Status
 
-accepted
+superseded by ADR-0029
+
+This ADR is retained for history. ADR-0029 replaces the profile-id uniqueness rule with a stronger one-topic-one-team rule: a Research Topic owns one authoritative Topic Agent Team Profile Bundle at a fixed path, so profile identity is derived from Research Topic and Topic Workspace identity rather than a selectable profile id.
 
 ## Considered Options
 

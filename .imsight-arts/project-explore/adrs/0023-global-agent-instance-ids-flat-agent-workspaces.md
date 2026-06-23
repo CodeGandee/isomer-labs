@@ -16,6 +16,6 @@ accepted
 ## Consequences
 
 - Workspace Runtime validation must reject duplicate Agent Instance ids across the Project-level runtime discovery surface.
-- Repeated or parallel Agent Team Instances rely on globally unique Agent Instance ids rather than path nesting to avoid Agent Workspace collisions.
+- Repeated launch attempts and parallel Research Topics rely on globally unique Agent Instance ids rather than path nesting to avoid Agent Workspace collisions.
 - Agent Team Instance membership, Run participation, role assignment, and task participation belong in Workspace Runtime records, not in the Agent Workspace directory hierarchy.
 - The Workspace Path Resolver should derive the default Agent Workspace path from the selected Topic Workspace and Agent Instance id as `<topic-workspace>/agents/<agent-instance-id>/`.

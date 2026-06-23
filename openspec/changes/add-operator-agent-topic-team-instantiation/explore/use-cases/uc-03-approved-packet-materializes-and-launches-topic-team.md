@@ -11,7 +11,7 @@ A Project Operator Session receives a valid Topic Team Instantiation Packet from
 ## Assumptions
 
 - Deterministic tests may use a fixture Topic Service Agent output instead of a live Houmao Topic Service Agent.
-- Live Houmao launch is optional and gated; profile materialization and runtime provenance must still be testable without live Houmao.
+- Live Houmao launch is optional and gated; profile bundle materialization and runtime provenance must still be testable without live Houmao.
 - The Houmao adapter can reject template-only launch requests.
 - The Project Operator Session remains outside Agent Team Instance membership unless the profile explicitly defines a team operator role.
 
@@ -20,10 +20,10 @@ A Project Operator Session receives a valid Topic Team Instantiation Packet from
 1. The Project Operator Session receives a validated Topic Team Instantiation Packet draft from a Topic Service Agent or deterministic fixture.
 2. The Project Operator Session renders a user-facing review that shows selected roles, inactive roles, role binding refs, capability refs, skill projections, Agent Workspace refs, policy refs, expected Artifacts, unresolved placeholders, launch blockers, Service Request outputs, and provenance.
 3. The user approves the draft, edits it, rejects it, or the deterministic test harness supplies explicit test approval.
-4. If approval is granted, the Project Operator Session calls generic Isomer profile materialization APIs with the approved packet.
-5. The system writes the Topic Agent Team Profile under the Project Config Directory and records packet ref, project operator actor or session ref, Topic Service Agent refs when used, approval ref, source template ref, and validation result.
-6. The Project Operator Session requests Agent Team Instance creation from the approved Topic Agent Team Profile.
-7. Workspace Runtime rejects the request if the packet is missing, invalid, rejected, unapproved, preview-only, or has unresolved launch-blocking deferrals.
+4. If approval is granted, the Project Operator Session calls generic Isomer profile bundle materialization APIs with the approved packet.
+5. The system writes the Research Topic's one Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, including `profile.toml`, the approved packet, copied topic-specialized template material, validation outputs, and provenance refs.
+6. The Project Operator Session requests Agent Team Instance creation from the approved Topic Agent Team Profile for that Research Topic.
+7. Workspace Runtime rejects the request if the packet is missing, invalid, rejected, unapproved, preview-only, has unresolved launch-blocking deferrals, or would create a competing active team for the same Research Topic.
 8. Workspace Runtime creates Agent Team Instance runtime records only after packet and profile validation pass.
 9. The Project Operator Session asks the Houmao adapter to materialize launch inputs from approved profile/runtime state.
 10. The Houmao adapter rejects any request that contains only the `deepsci-mini` Domain Agent Team Template without approved profile/runtime material.
@@ -128,7 +128,7 @@ If the Houmao adapter receives only the `deepsci-mini` Domain Agent Team Templat
 
 ### A5: Live Houmao Is Unavailable
 
-If live Houmao launch is unavailable, deterministic profile materialization and runtime provenance tests can still pass through simulated adapter refs. Live launch remains an optional gated validation path.
+If live Houmao launch is unavailable, deterministic profile bundle materialization and runtime provenance tests can still pass through simulated adapter refs. Live launch remains an optional gated validation path.
 
 ## Pass Criteria
 
@@ -136,6 +136,6 @@ This use case passes when the system can prove the order of operations: approved
 
 ## Evidence
 
-- The change proposal requires approved packet-backed profile materialization and forbids template-specific hardcoded substitution in `openspec/changes/add-operator-agent-topic-team-instantiation/proposal.md`.
+- The change proposal requires approved packet-backed profile bundle materialization and forbids template-specific hardcoded substitution in `openspec/changes/add-operator-agent-topic-team-instantiation/proposal.md`.
 - The Houmao adapter spec requires approved launch inputs, template-only rejection, project operator provenance, and Topic Service Agent managed-agent separation in `openspec/changes/add-operator-agent-topic-team-instantiation/specs/houmao-cli-adapter-layer/spec.md`.
 - The Workspace Runtime spec requires packet/profile links, project operator provenance, Topic Service Agent support refs, and non-membership for operators and service agents in `openspec/changes/add-operator-agent-topic-team-instantiation/specs/workspace-runtime-persistence/spec.md`.

@@ -82,7 +82,6 @@ An Agent Team Instance is a concrete runtime team created from a Topic Agent Tea
 ```bash
 pixi run isomer-cli --print-json team-instances create \
   --topic default \
-  --topic-agent-team-profile default-deepsci \
   --id ati-default-deepsci
 ```
 

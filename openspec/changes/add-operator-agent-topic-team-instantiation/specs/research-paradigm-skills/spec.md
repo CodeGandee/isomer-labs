@@ -25,7 +25,7 @@ The repository SHALL include provider-neutral skill instructions for Project Ope
 
 #### Scenario: Profile drafting and review skills exist
 - **WHEN** a Project Operator Session or Operator Agent reviews a Topic Agent Team Profile draft
-- **THEN** skills instruct it to produce reviewable profile material, summarize role and policy choices, identify launch blockers, include Topic Service Agent support outputs when relevant, and request approval before materialization
+- **THEN** skills instruct it to produce reviewable profile bundle material, summarize copied and rewritten template content, summarize role and policy choices, identify launch blockers, include Topic Service Agent support outputs when relevant, and request approval before materialization
 
 #### Scenario: Materialization and launch orchestration skills exist
 - **WHEN** the project operator has approval to proceed

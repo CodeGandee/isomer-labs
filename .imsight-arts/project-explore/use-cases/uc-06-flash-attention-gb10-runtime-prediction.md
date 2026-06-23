@@ -15,10 +15,10 @@ UC-06 is the final acceptance path for ROADMAP.md. Earlier use cases still test 
 UC-06 is not just a research example. It is the system acceptance fixture that should become runnable as ROADMAP.md milestones mature.
 
 - It starts from a user-owned Project and uses only Project Manifest-declared Research Topics, Topic Workspaces, Domain Agent Team Templates, Topic Agent Team Profiles, and Pixi environment bindings.
-- It uses `teams/deepsci-org` as the Domain Agent Team Template and specializes it into topic-specific Topic Agent Team Profiles.
+- It uses `teams/deepsci-org` as the Domain Agent Team Template and specializes it into one Topic Agent Team Profile per Research Topic.
 - It uses local Houmao as the underlying implementation layer through a Houmao Execution Adapter, while keeping Houmao-specific terms inside adapter records rather than Isomer core schema fields.
 - It creates Workspace Runtime state, Agent Team Instance records, Agent Instance records, Agent Workspaces, Runs, handoffs, Service Requests, Gates, Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, View Manifests, and GUI Component records.
-- It verifies both topic-level parallel execution across multiple Agent Team Instances and task-level fanout for scalable `deepsci-org-experimenter` and `deepsci-org-analyzer` roles.
+- It verifies both topic-level parallel execution across multiple Research Topics with different dedicated Agent Team Instances and task-level fanout for scalable `deepsci-org-experimenter` and `deepsci-org-analyzer` roles.
 - It produces a final white-box prediction model that accepts a Flash Attention 4 input description plus CUDA source, PTX, and SASS references, then returns predicted runtime in milliseconds, uncertainty or validity scope, and an additive or compositional explanation of which GB10 execution-system terms dominate the prediction.
 
 ## Assumptions and Scope
@@ -29,7 +29,7 @@ UC-06 is not just a research example. It is the system acceptance fixture that s
 - CUDA kernel source code, PTX, and SASS are required modeling inputs. They may come from checked-in source, generated build Artifacts, disassembly commands, or user-provided files, but UC-06 must record their identity, compiler flags, target architecture, hashes, and provenance before the model can make accepted predictions.
 - The accepted model should be compositional: it should estimate time consumed by named execution-system parts and record how those parts add, overlap, serialize, or form a critical path. A single fitted equation with no source-to-PTX-to-SASS traceability is insufficient.
 - The primary Research Topic is named `flash-attention-gb10-runtime-prediction`. A companion Research Topic or strategy topic, such as `flash-attention-gb10-blackbox-baseline` or `flash-attention-gb10-model-ablation`, verifies multi-topic and multi-team isolation.
-- The Project Manifest explicitly binds each Research Topic to Project-root Pixi environments, for example `gb10-cuda-runtime`, `gb10-profiling`, `gb10-modeling`, and `gb10-analysis`, or to an opt-in standalone Pixi manifest. Isomer never infers the binding from names.
+- The Project Manifest explicitly binds each Research Topic to a Topic Workspace Pixi workspace through `topic_standalone_pixi_bindings`. The Topic Workspace for `flash-attention-gb10-runtime-prediction` contains its own Pixi manifest and lockfile. The companion topics each have their own Topic Workspace Pixi workspaces, so dependencies do not leak across topics. Isomer never infers the binding from names.
 - Manual Mode is required for credentialed, destructive, expensive, private, or long-running hardware actions. Automatic mode is allowed for bounded analysis, validation, report drafting, replay, and prediction-model checks.
 
 ## Roadmap Verification Matrix
@@ -67,9 +67,9 @@ flowchart LR
 
 ## Main Success Scenario
 
-1. The maintainer checks out a user-owned Isomer Project fixture for UC-06 and verifies that it contains a `.isomer-labs/` Project Config Directory, Project Manifest, primary Research Topic, companion Research Topic, Topic Workspaces, and Project-root Pixi manifest.
+1. The maintainer checks out a user-owned Isomer Project fixture for UC-06 and verifies that it contains a `.isomer-labs/` Project Config Directory, Project Manifest, primary Research Topic, companion Research Topic, Topic Workspaces, and a Topic Workspace Pixi manifest and lockfile inside each Topic Workspace.
 2. The Operator Agent runs the Milestone 1 CLI path: `isomer-cli validate`, `topics list`, `workspaces list`, `context show --topic flash-attention-gb10-runtime-prediction`, `paths preview --topic flash-attention-gb10-runtime-prediction`, and `schemas list`.
-3. The Operator Agent runs `isomer-cli doctor --topic flash-attention-gb10-runtime-prediction --json` and confirms that Pixi is available, Project-level Pixi configuration is found, `pixi.lock` status is reported, and explicit topic Pixi bindings are valid.
+3. The Operator Agent runs `isomer-cli doctor --topic flash-attention-gb10-runtime-prediction --json` and confirms that Pixi is available, the Topic Workspace Pixi manifest exists, a matching `pixi.lock` is present, and explicit topic Pixi bindings are valid.
 4. The Operator Agent lists, inspects, and validates the `deepsci-org` Domain Agent Team Template and checks that the template remains topic-neutral.
 5. The Operator Agent specializes or loads Topic Agent Team Profiles for `flash-attention-gb10-runtime-prediction` and the companion topic, then validates both profiles and confirms that topic-specific refs, Agent Workspace refs, policy refs, and expected Artifacts do not cross.
 6. The Operator Agent creates or opens Workspace Runtime in each Topic Workspace, records schema version, resolved paths, path sources, default runtime directories, and a readiness record for the bound Pixi environments.
@@ -270,10 +270,10 @@ If Manual Mode completion signals disagree, such as a channel reply without the 
 UC-06 passes only when all of the following are true:
 
 1. The Project can be validated, reopened, and inspected after process restart without losing or corrupting Workspace Runtime records.
-2. The same `deepsci-org` Domain Agent Team Template can support multiple Topic Agent Team Profiles and multiple Agent Team Instances without topic-specific leakage.
+2. The same `deepsci-org` Domain Agent Team Template can support multiple Research Topics, with one Topic Agent Team Profile and one dedicated Agent Team Instance lineage per topic, without topic-specific leakage.
 3. At least one Houmao-backed manual handoff round is launched, observed, normalized, and recorded through Workspace Runtime.
 4. The primary Flash Attention 4 on GB10 Research Topic records input-schema, CUDA source, PTX, SASS, calibration, validation, white-box execution-system modeling, analysis, review, and final model Artifacts with Provenance Records.
-5. Task-level fanout occurs for at least one experimenter or analyzer Research Task, and topic-level parallel execution occurs for at least one companion Agent Team Instance.
+5. Task-level fanout occurs for at least one experimenter or analyzer Research Task, and topic-level parallel execution occurs for at least one companion Research Topic with its own dedicated Agent Team Instance.
 6. Manual Mode and automatic mode both occur in the same Topic Workspace without bypassing Gate Policy or completion normalization.
 7. Built-in views and at least one project-specific GUI path are exercised, with Gate handling for executable component behavior when applicable.
 8. A new prediction query can produce `predicted_runtime_ms` from an input descriptor and recorded CUDA/PTX/SASS artifacts without directly running and measuring the queried Flash Attention 4 input.

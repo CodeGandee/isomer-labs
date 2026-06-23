@@ -12,6 +12,7 @@ The near-term pressure comes from UC-01. The UC-01 manual harness can prove gene
 
 - Treat Domain Agent Team Templates as generic, placeholder-bearing material until a project-operator and Topic Service Agent workflow specializes them.
 - Define a Topic Team Instantiation Packet that records how template placeholders become Topic Agent Team Profile values or approved deferrals.
+- Materialize deep specialization as the Research Topic's one Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, including `profile.toml`, copied topic-edited template material, packet, validation, and provenance files; Project Config keeps only the discovery ref to that bundle.
 - Add Isomer system skills for project discovery, topic discovery, Topic Service Agent discovery, Service Request routing, template inspection, context resolution, placeholder reconciliation, profile drafting, review Gate preparation, materialization, and launch orchestration.
 - Add topic-specific Service Team skills and Houmao-compatible Topic Service Agent definition material for topic setup, instantiation support, monitoring, and diagnostics.
 - Make Python code validate, persist, and launch from approved packets instead of inventing topic-specific defaults as the authoritative path.
@@ -23,7 +24,9 @@ The near-term pressure comes from UC-01. The UC-01 manual harness can prove gene
 - Do not require live Houmao for deterministic tests; simulated packets and Topic Service Agent artifacts are acceptable for core validation.
 - Do not make a Project Operator Session require Houmao launch or a durable Operator Agent identity.
 - Do not make the Execution Adapter responsible for topic reasoning, placeholder choice, or user approval.
-- Do not store credentials, live process state, or rich research outputs in Topic Agent Team Profile files.
+- Do not store credentials, live process state, or rich research outputs in Topic Agent Team Profile Bundle files.
+- Do not store copied topic-team source under a Topic Workspace `teams/` directory.
+- Do not support multiple active topic-team profiles or competing Agent Team Instances for one Research Topic; topic-level parallelism means multiple Research Topics researched by different dedicated teams.
 - Do not remove CLI preview commands if they remain explicitly preview-only and side-effect-light.
 
 ## Decisions
@@ -42,13 +45,25 @@ Alternative considered: call these actors topic operators. That name collides wi
 
 ### Decision: Introduce a Topic Team Instantiation Packet
 
-The agent-mediated workflow should produce a structured packet before writing a Topic Agent Team Profile. The packet names the source Domain Agent Team Template, selected Research Topic, Topic Workspace, Workspace Runtime ref, target Topic Agent Team Profile id, role bindings, policy refs, expected Artifacts, unresolved or deferred placeholders, approval state, Project Operator Session provenance, Topic Service Agent provenance when used, and validation refs.
+The agent-mediated workflow should produce a structured packet before writing a Topic Agent Team Profile. The packet names the source Domain Agent Team Template, selected Research Topic, Topic Workspace, Workspace Runtime ref, target Topic Agent Team Profile Bundle path, role bindings, policy refs, expected Artifacts, unresolved or deferred placeholders, approval state, Project Operator Session provenance, Topic Service Agent provenance when used, and validation refs. The packet does not choose among multiple profile ids for the same topic.
 
 Alternative considered: let `specialize_topic_agent_team_profile()` keep generating defaults. That is simple, but it makes Python the hidden operator and loses the reviewable reasoning that the domain model expects.
 
+### Decision: Store Deep Specialization Inside the Topic Workspace
+
+Authoritative topic-team materialization should write the Research Topic's one Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`. The bundle contains `profile.toml`, the approved instantiation packet, copied and topic-edited template material such as `execplan/`, validation outputs, and provenance refs. A Project Manifest registration points at the bundle's `profile.toml`; runtime records point back to the profile and packet provenance.
+
+Alternative considered: keep only `.isomer-labs/team-profiles/<profile-id>.toml`. That is compact, but it cannot hold rewritten prompts, topic-specific skills, workflow contracts, or copied template material. Another rejected option was `.isomer-labs/team-profiles/<profile-id>/`, which would separate tightly coupled topic source from its Topic Workspace. A third rejected option was `<topic-workspace>/team-profiles/<profile-id>/`, which implies multiple selectable profiles under one topic. A fourth rejected option was `<topic-workspace>/teams/`, which makes profile bundles look like running teams.
+
+### Decision: One Research Topic Has One Topic Team
+
+Each Research Topic is handled by one topic-level team lineage. Topic-level parallelism means multiple Research Topics run at the same time, each with a different dedicated team, not one Research Topic running multiple competing teams. A materially different team strategy should become a revised profile or a new Research Topic.
+
+Alternative considered: allow multiple Topic Agent Team Profile variants and Agent Team Instances under one Research Topic. That makes profile selection, task routing, and runtime diagnostics ambiguous.
+
 ### Decision: Use Skills for Agent Judgment, Python for Validation and Recording
 
-Project-operator-capable agents should use explicit skills for project awareness, topic discovery, service routing, template inspection, topic context resolution, placeholder reconciliation, profile drafting, profile review Gate preparation, profile materialization, and team launch orchestration. Topic Service Agents should use topic-specific Service Team skills for environment setup, template instantiation support, monitoring, diagnostics, and support Artifact writing. Python modules should expose parsers, validators, deterministic renderers, store APIs, and adapter APIs.
+Project-operator-capable agents should use explicit skills for project awareness, topic discovery, service routing, template inspection, topic context resolution, placeholder reconciliation, profile drafting, profile review Gate preparation, profile bundle materialization, and team launch orchestration. Topic Service Agents should use topic-specific Service Team skills for environment setup, template instantiation support, monitoring, diagnostics, and support Artifact writing. Python modules should expose parsers, validators, deterministic renderers, store APIs, and adapter APIs.
 
 Alternative considered: encode orchestration as one product CLI command. That would hide the agent boundary again and make later multi-agent operation harder to test.
 
@@ -75,7 +90,7 @@ Alternative considered: keep UC-01 harness independent of agent-mediated instant
 - Project-operator skills become too broad -> Keep each skill bounded to one artifact or decision: discover, inspect, resolve, route service, reconcile, draft, review, materialize, launch.
 - Topic Service Agents accidentally gain research authority -> Keep Service Request scopes explicit and validation rules clear that Topic Service Agents cannot own Research Claims, Gates, task routing, or Agent Team Instance membership.
 - Tests become dependent on live Houmao -> Use deterministic packet fixtures and simulated Topic Service Agent outputs for unit/manual tests; keep live launch optional and gated.
-- Packets duplicate profile fields -> Treat packets as provenance and review material; Topic Agent Team Profiles remain the durable design-time profile.
+- Packets and copied material duplicate some template/profile fields -> Treat the bundle as the authoritative topic-specialized design material, and keep the packet as provenance and review material inside that bundle.
 - Placeholder deferrals hide launch blockers -> Require explicit deferred-placeholder diagnostics and review state; block launch-facing operations when required launch placeholders remain unresolved.
 - Existing CLI users depend on preview defaults -> Keep preview output, but mark it as candidate and require packet-backed materialization for authoritative creation.
 
@@ -85,10 +100,10 @@ Alternative considered: keep UC-01 harness independent of agent-mediated instant
 2. Add packet schema, validators, and template placeholder inspection for `deepsci-mini` and generic templates.
 3. Add Isomer system skills under the repository skillset for project-operator behavior and Topic Service Agent support.
 4. Add Houmao launch/profile definition material for Topic Service Agents, including a Topic Service Master posture when a topic needs one coordinating service actor.
-5. Update profile specialization APIs so they accept a validated packet and treat old synthetic preview generation as preview-only.
-6. Update Agent Team Instance creation and Houmao launch flows to link runtime records to approved packet/profile provenance and Topic Service Agent provenance when used.
+5. Update profile specialization APIs so they accept a validated packet, copy editable template material into a Topic Workspace Topic Agent Team Profile Bundle, and treat old synthetic preview generation as preview-only.
+6. Update Agent Team Instance creation and Houmao launch flows to link runtime records to approved packet/profile bundle provenance and Topic Service Agent provenance when used.
 7. Revise UC-01 manual acceptance to use a deterministic project-operator and Topic Service Agent packet path before creating or simulating the team.
-8. Keep rollback simple: generated packet/profile material is additive and can be ignored by older preview-only flows, but launch-facing tests should require the new provenance once this change lands.
+8. Keep rollback simple: generated packet/profile bundle material is additive and can be ignored by older preview-only flows, but launch-facing tests should require the new provenance once this change lands.
 
 ## Open Questions
 

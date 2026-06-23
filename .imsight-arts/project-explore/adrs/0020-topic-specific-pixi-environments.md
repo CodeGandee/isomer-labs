@@ -4,7 +4,7 @@ Isomer Labs will treat Pixi as a required Project dependency and will use the Pr
 
 ## Status
 
-accepted
+superseded by ADR-0027
 
 ## Considered Options
 

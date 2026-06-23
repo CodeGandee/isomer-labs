@@ -11,19 +11,19 @@ A user-owned repository, checkout, or directory tree that Isomer Labs manages. A
 _Avoid_: Quest root, system-owned workspace, platform directory
 
 **Project Config Directory**:
-The `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Research Topic Config files, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profiles, Artifact Format Profiles, Artifact Extensions, and GUI Component Registry refs. It should not contain default cache, temporary, or schema directories. System-owned schemas are Isomer built-in artifacts queried and validated through `isomer-cli`. `.isomer-labs/local.toml` is allowed only as untracked user-local active context.
+The `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Research Topic Config files, Domain Agent Team Template refs or project-local template material, the single Topic Agent Team Profile Bundle ref for each Research Topic, Agent Team Instance refs, Agent Profile refs, Artifact Format Profile refs, Artifact Extension refs, and GUI Component Registry refs. Topic Agent Team Profile Bundle bodies live inside their owning Topic Workspaces. The Project Config Directory should not contain default cache, temporary, or schema directories. System-owned schemas are Isomer built-in artifacts queried and validated through `isomer-cli`. `.isomer-labs/local.toml` is allowed only as untracked user-local active context.
 _Avoid_: Control directory, control-plane directory, workspace root, hidden workspace
 
 **Project Manifest**:
-The `.isomer-labs/manifest.toml` file. It is the discovery authority for Research Topics, Research Topic Config paths, Topic Workspaces, explicit Research Topic to Project-root Pixi environment bindings through repeated `topic_pixi_environment_bindings` entries, optional standalone Pixi isolation bindings through repeated `topic_standalone_pixi_bindings` entries, project defaults, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profile references, Capability Binding refs, provider binding refs, Artifact Format Profile registrations, Artifact Extension registrations, and project-scope GUI component registry references.
+The `.isomer-labs/manifest.toml` file. It is the discovery authority for Research Topics, Research Topic Config paths, Topic Workspaces, explicit Research Topic to Project-root Pixi environment bindings through repeated `topic_pixi_environment_bindings` entries, Topic Workspace Pixi workspace bindings through repeated `topic_standalone_pixi_bindings` entries, project defaults, Domain Agent Team Templates, Topic Agent Team Profile Bundle refs, Agent Team Instances, Agent Profile references, Capability Binding refs, provider binding refs, Artifact Format Profile registrations, Artifact Extension registrations, and project-scope GUI component registry references. After ADR 0027, `topic_standalone_pixi_bindings` is the default representation for Topic Workspace Pixi workspaces, while `topic_pixi_environment_bindings` remains available for Project-root environments such as platform tooling.
 _Avoid_: Workspace index, quest registry, config blob
 
 **Research Topic Config**:
-A Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, topic statement Artifact refs, Measurable Objective text or refs, default Research Inquiry refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile defaults, and Artifact Extension refs. It does not own Pixi environment bindings; those belong in the Project Manifest. It is not Workspace Runtime state and must not contain Run status, command outputs, live process ids, resolved command results, provider payloads, scheduler internals, rich Artifact contents, Evidence Items, Findings, Gates, Decision Records, Provenance Records, credentials, tokens, API keys, passwords, or secret material.
+A Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, topic statement Artifact refs, Measurable Objective text or refs, default Research Inquiry refs, the Topic Agent Team Profile Bundle ref, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile defaults, and Artifact Extension refs. It does not own Pixi environment bindings; those belong in the Project Manifest. It is not Workspace Runtime state and must not contain Run status, command outputs, live process ids, resolved command results, provider payloads, scheduler internals, rich Artifact contents, Evidence Items, Findings, Gates, Decision Records, Provenance Records, credentials, tokens, API keys, passwords, or secret material.
 _Avoid_: Runtime config, topic database, workspace state, command log, credential file
 
 **Topic Workspace**:
-A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs. It references selected Topic Agent Team Profiles and Agent Team Instances used for the topic, but it does not contain a workspace-local `teams/` directory.
+A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs. It references the selected Agent Team Instance lineage used for the topic, but it does not contain a workspace-local `teams/` directory.
 _Avoid_: Isomer Workspace, quest, quest workspace, run directory, task workspace, system workspace
 
 **Workspace Runtime**:
@@ -31,7 +31,7 @@ The persistent runtime substrate inside a Topic Workspace. It includes `state.sq
 _Avoid_: Run, execution episode, quest state, hidden runtime, project config
 
 **Effective Topic Context**:
-The resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations consume for a topic-scoped command. It includes validated Project, Research Topic, Research Topic Config, Topic Workspace, Project Manifest topic Pixi environment bindings when relevant, optional lifecycle refs, Topic Agent Team Profile defaults, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
+The resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations consume for a topic-scoped command. It includes validated Project, Research Topic, Research Topic Config, Topic Workspace, Project Manifest topic Pixi environment bindings and Topic Workspace Pixi workspace bindings when relevant, optional lifecycle refs, the Topic Agent Team Profile default, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
 _Avoid_: Active workspace, runtime database, lifecycle state, durable context blob
 
 ### Workspace Taxonomy
@@ -60,13 +60,14 @@ Project
   .isomer-labs/ Project Config Directory
     manifest.toml Project Manifest
     Domain Agent Team Template references
-    Topic Agent Team Profile definitions
+    Topic Agent Team Profile Bundle refs
     Agent Team Instance refs
     Operator Agent configuration
     GUI Component Registry references
   Research Topic(s)
     Topic Workspace, declared by the Project Manifest
       Workspace Runtime
+      Topic Agent Team Profile Bundle(s)
       Research Inquiry graph
         Research Task(s)
       Agent Workspace(s), created for Agent Instances during team execution
@@ -115,15 +116,19 @@ A reusable multi-agent template based on the research methodology of a research 
 _Avoid_: Topic Agent Team Profile, Agent Team Instance, live team, project-specific team, provider-specific team as the core term
 
 **Topic Agent Team Profile**:
-A topic-level specialization of one Domain Agent Team Template for a user's research topic. It adapts the domain method to the topic context, selects or tunes roles and Workflow Stages, records constraints and expected Artifacts, and can carry role-scoped or Workflow Stage-scoped Capability Binding refs, Skill Binding projections, allowed Research Operation Extension Points, scheduler policy refs, Gate policy refs, literature provider refs, and baseline-waiver policy refs. It can be reviewed or edited before launch; it is not a running team.
+A topic-level specialization of one Domain Agent Team Template for a user's research topic. It adapts the domain method to the topic context, selects or tunes roles and Workflow Stages, records constraints and expected Artifacts, and can carry role-scoped or Workflow Stage-scoped Capability Binding refs, Skill Binding projections, allowed Research Operation Extension Points, scheduler policy refs, Gate policy refs, literature provider refs, and baseline-waiver policy refs. Each Research Topic has one authoritative Topic Agent Team Profile at a time; a materially different team strategy should become a revised or archived profile for the same topic, or a new Research Topic, not a second active profile under the same Topic Workspace. For deep specialization, it is stored as a Topic Agent Team Profile Bundle inside the owning Topic Workspace with copied and topic-edited template material. It can be reviewed or edited before launch; it is not a running team.
 _Avoid_: Domain Agent Team Template, Agent Team Instance, Run, live team, ad hoc role list
 
+**Topic Agent Team Profile Bundle**:
+A fixed Topic Workspace directory, `<topic-workspace>/team-profile/`, that stores the Research Topic's one authoritative Topic Agent Team Profile and its editable topic-specialized material. It contains `profile.toml`, the approved Topic Team Instantiation Packet, copied and topic-modified template material such as `execplan/`, validation outputs, revision or provenance records, and launch-facing diagnostics. The Project Manifest keeps a ref to this single bundle for discovery. The bundle is topic-level design material, not Workspace Runtime state, not an Agent Team Instance, and not Houmao adapter launch material.
+_Avoid_: Project Config Directory profile body, Topic Workspace `teams/` directory, runtime team directory, adapter launch material, template source overwrite
+
 **Agent Team Instance**:
-A concrete runtime team created from a Topic Agent Team Profile by the Operator Agent or Execution Adapter. It has launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. Topic Workspaces can reference multiple Agent Team Instances when the user runs topic-level parallel execution.
+A concrete runtime team created from the Research Topic's Topic Agent Team Profile by the Operator Agent or Execution Adapter. It has launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. A Research Topic is handled by one topic team lineage; retries or relaunches may be recorded for audit, but Isomer does not use multiple active Agent Team Instances to compare strategies inside one Research Topic.
 _Avoid_: Domain Agent Team Template, Topic Agent Team Profile, workspace-local team, ad hoc role list
 
 **Parallel Execution Scope**:
-The approved level where the user or Operator Agent starts concurrent execution. Topic-level parallel execution runs different Agent Team Instances under one Research Topic, usually to compare team profiles, strategies, or independent inquiry paths. Task-level parallel execution distributes one Research Task across multiple Agent Instances inside the selected Agent Team Instance. Research Inquiry is not a parallel execution scope.
+The approved level where the user or Operator Agent starts concurrent execution. Research Topic-level parallel execution runs multiple Research Topics concurrently, with each topic handled by its own single topic team. Task-level parallel execution distributes one Research Task across multiple Agent Instances inside that topic's Agent Team Instance. Research Inquiry is not a parallel execution scope.
 _Avoid_: Research Inquiry parallelism, branch-level parallelism, implicit parallelism without a recorded scope
 
 **Agent Team**:
@@ -179,7 +184,7 @@ A coordination posture or Agent Profile for a Topic Service Agent that routes mu
 _Avoid_: Project operator, research master, team owner, owner of Gate decisions
 
 **Topic Team Instantiation Packet**:
-A reviewable planning and provenance artifact that records how a Project Operator Session, Operator Agent, or Topic Service Agent proposes to specialize a Domain Agent Team Template into a Topic Agent Team Profile for one Research Topic. It records source template refs, topic refs, role bindings, policy refs, expected Artifacts, resolved placeholders, explicit deferrals, Service Request outputs when used, approval context, and validation refs. It is not itself a Topic Agent Team Profile, Agent Team Instance, Service Request, Gate, Decision Record, runtime state, or adapter launch payload.
+A reviewable planning and provenance artifact that records how a Project Operator Session, Operator Agent, or Topic Service Agent proposes to specialize a Domain Agent Team Template into a Topic Agent Team Profile for one Research Topic. It records source template refs, topic refs, target Topic Agent Team Profile Bundle refs, role bindings, policy refs, expected Artifacts, resolved placeholders, copied template material choices, explicit deferrals, Service Request outputs when used, approval context, and validation refs. It is not itself a Topic Agent Team Profile, Agent Team Instance, Service Request, Gate, Decision Record, runtime state, or adapter launch payload.
 _Avoid_: Topic Agent Team Profile, launch profile, Houmao launch dossier, approval record, runtime team
 
 **Operator Agent**:
@@ -485,12 +490,12 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - A **Topic Agent Team Profile** contains topic-adapted **Agent Roles**, **Workflow Stages**, **Coordination Policy**, **Capability Bindings**, **Skill Binding Projections**, allowed **Research Operation Extension Points**, policy refs, constraints, and expected **Artifacts**, but it is not running.
 - An **Agent Team Instance** is created from one **Topic Agent Team Profile** by the **Operator Agent** or **Execution Adapter**.
 - An **Agent Team Instance** contains runtime **Agent Instances**, launch refs, **Agent Workspaces**, Run participation, and resolved execution state.
-- Topic-level **Parallel Execution Scope** runs multiple **Agent Team Instances** under one **Research Topic**.
-- Task-level **Parallel Execution Scope** distributes one **Research Task** across multiple **Agent Instances** within one selected **Agent Team Instance**.
+- Topic-level **Parallel Execution Scope** runs multiple **Research Topics** concurrently, each with its own dedicated **Agent Team Instance** lineage.
+- Task-level **Parallel Execution Scope** distributes one **Research Task** across multiple **Agent Instances** within that topic's selected **Agent Team Instance**.
 - **Research Inquiry** must not be used as a **Parallel Execution Scope**.
 - All non-operator task **Agent Instances** belong to an **Agent Team Instance**.
-- A **Topic Workspace** may reference selected **Agent Team Instances** for topic-level execution, and individual **Research Tasks** record the task handler and participating Agent Instances that perform the work.
-- Reusable **Domain Agent Team Templates**, editable **Topic Agent Team Profiles**, and **Agent Team Instance** refs live outside the Topic Workspace.
+- A **Topic Workspace** may reference its selected **Agent Team Instance** lineage for topic-level execution, and individual **Research Tasks** record the task handler and participating Agent Instances that perform the work.
+- Reusable **Domain Agent Team Templates** live outside the Topic Workspace. The editable **Topic Agent Team Profile Bundle** lives inside the Topic Workspace, and **Agent Team Instance** refs or runtime records live in Project Config or Workspace Runtime according to their record kind.
 - The built-in **Service Team** is Isomer infrastructure, not a **Domain Agent Team Template**, **Topic Agent Team Profile**, or **Agent Team Instance**.
 - A **Project** can use the built-in **Service Team** without declaring it as a project research team.
 - A **Project Operator Session** may be any Isomer-skilled agent session operating from an Isomer Project root; it does not require Houmao launch or persisted Agent Instance identity before it can discover project context.
@@ -582,7 +587,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Use **Research Inquiry Relationship** for graph links between inquiries. Do not use **Research Branch** unless quoting stale docs or referring to a separate compatibility migration.
 - Use **Research Task** for a bounded unit of work recorded inside one Topic Workspace.
 - Use **Task Handler** for the **Operator Agent** or delegated **Agent Team Instance** member that controls the Research Task.
-- Use **Parallel Execution Scope** only at the **Research Topic** level or **Research Task** level. Do not describe a **Research Inquiry** as running in parallel.
+- Use **Parallel Execution Scope** only for concurrent **Research Topics** or **Research Task** fanout inside one topic team. Do not describe a **Research Inquiry** as running in parallel, and do not model multiple active topic teams under one **Research Topic**.
 - Use **Workspace Runtime** for the persistent state substrate owned by a Topic Workspace. Use **Run** only for bounded execution attempts for a Research Task.
 - Use **Control Mode** for Run-level manual versus automatic control. Do not describe Manual Mode as a Project-wide or Research Inquiry-wide switch.
 
@@ -590,7 +595,8 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 - Use **Agent Workspace** for per-agent work areas inside a Topic Workspace. Do not call it a secure sandbox.
 - Use globally unique **Agent Instance** ids for default Agent Workspace paths under `<topic-workspace>/agents/<agent-instance-id>/`; do not encode Agent Team Instance membership only in the directory hierarchy.
-- Do not put `teams/` under a **Topic Workspace**. **Domain Agent Team Templates**, **Topic Agent Team Profiles**, and **Agent Team Instance** refs are project-level or built-in references; the workspace records Topic Agent Team Profile identity, Agent Team Instance identity, and task-handler identity through manifest refs, Workspace Runtime, or provenance Artifacts.
+- Store the deeply specialized **Topic Agent Team Profile** as one **Topic Agent Team Profile Bundle** under `<topic-workspace>/team-profile/`, with `profile.toml` and copied topic-edited template material. Do not overwrite the source **Domain Agent Team Template** when specializing a topic.
+- Do not put `teams/` under a **Topic Workspace**. Use the fixed `team-profile/` directory for the topic-level profile bundle. **Domain Agent Team Templates** remain project-level or built-in references; the Project Manifest keeps the **Topic Agent Team Profile Bundle** ref, and the workspace records Topic Agent Team Profile identity, Agent Team Instance identity, and task-handler identity through Workspace Runtime or provenance Artifacts.
 - Use **Domain Agent Team Template**, **Topic Team Instantiation Packet**, **Topic Agent Team Profile**, **Agent Team Instance**, **Project Operator Session**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Skill Binding Projection**, **Research Operation Extension Point**, **Execution Adapter Command Request**, **Coordination Policy**, **Scheduler Policy**, **Gate Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.
 - Use **Agent Instance** for the concrete runtime actor that owns an Agent Workspace. Do not use **Agent Role** as the workspace owner except when discussing responsibility or workflow ownership.
 - Use **Project Operator Session** for an Isomer-skilled agent session that becomes project-aware from a project root before or instead of launching a durable Operator Agent.
@@ -602,7 +608,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Treat **Service Team** work as Project Operator Session or Operator Agent commanded work. Do not describe Service Team members as self-directed agents that interpret user goals or choose research actions.
 - Use **Topic Service Agent** for a topic-scoped Service Agent Instance, usually Houmao-backed, that helps with one Research Topic or Topic Workspace. Do not call it a Topic Operator, research team lead, or Agent Team Instance member.
 - Use **Topic Service Master** only as a coordination posture or Agent Profile for a Topic Service Agent. Do not make it a new holder of research authority.
-- Use **Topic Team Instantiation Packet** for reviewable specialization material before a Topic Agent Team Profile is written. Do not use it as an approval record, runtime record, or Houmao launch payload.
+- Use **Topic Team Instantiation Packet** for reviewable specialization material before a Topic Agent Team Profile Bundle is written. Do not use it as an approval record, runtime record, or Houmao launch payload.
 - Use **Service Dispatch Form** to describe whether a Service Request used native subagent tooling or launched service agents. Do not model launched Service Agent Instances as a research **Agent Team Instance**.
 - Record user-visible environment repair or setup mutation as a **Service Request** when it creates Artifacts or changes project, workspace, runtime, dependency, or environment state. Do not hide this work only inside **Execution Adapter** internals.
 - Route Service Request dispatch, Service Agent Instance launch, and Agent Team Instance launch through **Execution Adapter Command Requests** for dispatch, preflight, monitoring, and recording while preserving their distinct domain records.

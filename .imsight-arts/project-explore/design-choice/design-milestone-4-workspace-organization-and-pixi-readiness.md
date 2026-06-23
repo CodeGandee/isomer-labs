@@ -1,5 +1,7 @@
 # Milestone 4 Workspace Organization and Pixi Readiness
 
+> Update note: ADR 0027 supersedes ADR 0020 and changes the default from Project-root Pixi environments to Topic Workspace Pixi workspaces. The binding authority, read-only `doctor`, separate `runtime prepare`, and Service Request repair rules below remain valid; the default manifest location and environment scope now follow the Topic Workspace Pixi workspace standard.
+
 ## Context
 
 Milestone 4 needs enough Workspace Runtime to create, reopen, inspect, and validate multiple Agent Team Instance records across Topic Workspaces before Milestone 5 launches live Houmao-backed agents. The key design pressure is that Isomer must use Pixi as a required environment manager while preserving Isomer's existing workspace language: Project, Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime, and Service Request.
@@ -7,8 +9,9 @@ Milestone 4 needs enough Workspace Runtime to create, reopen, inspect, and valid
 ## Decisions
 
 - Pixi is a required Project dependency. `isomer-cli doctor` must check for it and inspect Project-level Pixi configuration before launch preflight proceeds.
-- The Project-level Pixi manifest is the authority for Pixi environments, while the Project Manifest explicitly records which Pixi environment or environments each Research Topic uses through repeated `[[topic_pixi_environment_bindings]]` tables. Topic-to-environment relationships are not inferred from names.
-- A Topic Workspace may optionally opt into standalone Pixi isolation through Project Manifest `[[topic_standalone_pixi_bindings]]` when the Project explicitly needs stronger isolation for incompatible dependencies, platform constraints, or risky setup work.
+- Each Topic Workspace is a Pixi workspace by default. It contains its own Pixi manifest and lockfile, installs its own environment under `<topic-workspace>/.pixi/`, and exposes that environment as the shared default Python environment for Agent Workspaces under the topic. The Project Manifest records each Topic Workspace Pixi manifest through `[[topic_standalone_pixi_bindings]]`.
+- The Project-level Pixi manifest, when present, supplies the Isomer platform environment for tools such as `isomer-cli`. It is not the default execution environment for research agents.
+- A Research Topic may still bind to a Project-root Pixi environment through `[[topic_pixi_environment_bindings]]` for platform or shared tooling topics. Topic-to-environment relationships are not inferred from names.
 - Project Manifest stores Research Topic to Project-root Pixi environment bindings with `research_topic_id`, `pixi_environment`, optional `purpose`, and optional `status`, and stores standalone isolation bindings separately with `research_topic_id`, `manifest_path`, optional `pixi_environment`, optional `purpose`, and optional `status`. Research Topic Config does not own Pixi environment bindings. Workspace Runtime stores the resolved environment use, readiness status, and provenance after preparation.
 - Milestone 4 prepares and records topic environment readiness before real Houmao launch, but live Houmao launch refs, mailbox refs, gateway refs, managed-agent ids, and handoff traffic remain Milestone 5 concerns.
 - Agent Instance ids are globally unique by design. The default Agent Workspace path is `<topic-workspace>/agents/<agent-instance-id>/`.
@@ -31,13 +34,14 @@ Milestone 4 needs enough Workspace Runtime to create, reopen, inspect, and valid
 
 ## Related ADRs
 
-- ADR 0020: Topic-specific Pixi Environments
+- ADR 0020: Topic-specific Pixi Environments (superseded by ADR 0027)
 - ADR 0021: Topic Config Owns Environment Intent (superseded by ADR 0025)
 - ADR 0022: Milestone 4 Prepares Topic Environment Readiness
 - ADR 0023: Global Agent Instance ids and Flat Agent Workspaces
 - ADR 0024: Doctor is Read-only
 - ADR 0025: Project Manifest Owns Topic Pixi Environment Bindings
 - ADR 0026: Standalone Pixi Isolation Uses Separate Manifest Bindings
+- ADR 0027: Topic Workspaces Are Default Pixi Workspaces
 
 ## Deferred Choices
 

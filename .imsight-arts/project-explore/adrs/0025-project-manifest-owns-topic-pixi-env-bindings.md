@@ -4,7 +4,7 @@ Isomer Labs will record which Pixi environment or environments each Research Top
 
 ## Status
 
-accepted
+accepted, with updated default semantics after ADR-0027
 
 ## Considered Options
 
@@ -18,4 +18,4 @@ accepted
 - Research Topic Config remains a topic defaults and refs surface, not the owner of Project-level environment policy.
 - Workspace Runtime records resolved environment readiness, selected environment use, and preparation provenance after a mutating preparation step.
 - Validation should reject or warn on bindings that reference unknown Research Topic ids, missing Pixi environments, duplicate active topic/environment pairs, malformed purpose labels, or unsupported status values.
-- Standalone Pixi isolation uses a separate `topic_standalone_pixi_bindings` table, as recorded by ADR 0026.
+- Standalone Pixi isolation uses a separate `topic_standalone_pixi_bindings` table, as recorded by ADR 0026. After ADR 0027, `topic_standalone_pixi_bindings` is also the default table for Topic Workspace Pixi workspaces, while `topic_pixi_environment_bindings` remains available for Project-root environments such as platform tooling.

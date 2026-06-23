@@ -94,7 +94,7 @@ sequenceDiagram
 - Template inspection support Artifact
 - Effective Topic Context resolution support Artifact
 - Placeholder reconciliation support Artifact
-- Topic Team Instantiation Packet draft with source template ref, Research Topic ref, Topic Workspace ref, Workspace Runtime ref, target Topic Agent Team Profile id, role bindings, policy refs, expected Artifacts, approval state, deferrals, Project Operator Session provenance, Topic Service Agent provenance, and validation refs
+- Topic Team Instantiation Packet draft with source template ref, Research Topic ref, Topic Workspace ref, Workspace Runtime ref, target Topic Agent Team Profile Bundle path, role bindings, policy refs, expected Artifacts, approval state, deferrals, Project Operator Session provenance, Topic Service Agent provenance, and validation refs
 - Validation diagnostics for rejected runtime truth, missing required values, cross-topic refs, or secret-like fields
 
 ## Alternative and Exception Flows
@@ -113,7 +113,7 @@ If the Service Request asks the Topic Service Agent to choose a research directi
 
 ## Pass Criteria
 
-This use case passes when the Topic Service Agent produces a validated Topic Team Instantiation Packet draft for `deepsci-mini`, records support provenance, and leaves user approval, profile materialization, runtime team creation, and research decisions outside the Topic Service Agent's authority.
+This use case passes when the Topic Service Agent produces a validated Topic Team Instantiation Packet draft for `deepsci-mini`, records support provenance, and leaves user approval, profile bundle materialization, runtime team creation, and research decisions outside the Topic Service Agent's authority.
 
 ## Evidence
 

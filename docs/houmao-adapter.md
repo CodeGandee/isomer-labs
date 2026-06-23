@@ -120,7 +120,7 @@ The expected local checkout is `extern/orphan/houmao`, usually a symlink to `~/w
 
 ### `adapter-link.json`
 
-Created by `team-instances adapter-link export` or by launch/prepare commands. It stores project refs, the Agent Team Instance id, the Topic Agent Team Profile id, the Domain Agent Team Template id, agent bindings, and the Houmao project overlay directory.
+Created by `team-instances adapter-link export` or by launch/prepare commands. It stores project refs, the Agent Team Instance id, the Research Topic's Topic Agent Team Profile ref, the Domain Agent Team Template id, agent bindings, and the Houmao project overlay directory.
 
 ### `launch-material-manifest.json`
 

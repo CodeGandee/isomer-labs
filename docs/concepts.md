@@ -6,15 +6,15 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 **Project**: a user-owned repository, checkout, or directory tree that Isomer Labs manages. A Project becomes Isomer-managed when it has a `.isomer-labs/` Project Config Directory and a Project Manifest that declares Research Topics and Topic Workspaces.
 
-**Project Config Directory**: the `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Research Topic Config files, Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Agent Profiles, Artifact Format Profiles, Artifact Extensions, and GUI Component Registry refs. It does not own Workspace Runtime state, default cache, or temporary files.
+**Project Config Directory**: the `.isomer-labs/` directory at the project root. It stores project-level configuration and references, especially the Project Manifest, Research Topic Config files, Domain Agent Team Template refs or material, the single Topic Agent Team Profile Bundle ref for each Research Topic, Agent Team Instance refs, Agent Profile refs, Artifact Format Profile refs, Artifact Extension refs, and GUI Component Registry refs. It does not own Workspace Runtime state, Topic Agent Team Profile Bundle bodies, default cache, or temporary files.
 
-**Project Manifest**: the `.isomer-labs/manifest.toml` file. It is the discovery authority for Research Topics, Research Topic Config paths, Topic Workspaces, explicit Research Topic to Pixi environment bindings through repeated `topic_pixi_environment_bindings` entries, optional standalone Pixi isolation bindings through repeated `topic_standalone_pixi_bindings` entries, and project defaults.
+**Project Manifest**: the `.isomer-labs/manifest.toml` file. It is the discovery authority for Research Topics, Research Topic Config paths, Topic Workspaces, Topic Workspace Pixi workspace bindings through repeated `topic_standalone_pixi_bindings` entries, optional Project-root Pixi environment bindings through repeated `topic_pixi_environment_bindings` entries, and project defaults.
 
-**Research Topic Config**: a Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, Measurable Objectives, default Research Inquiry refs, default Topic Agent Team Profile refs, Execution Adapter refs, Capability Binding refs, Skill Binding Projection refs, and policy refs. It does not own Pixi environment bindings or Workspace Runtime state.
+**Research Topic Config**: a Project Manifest-registered TOML file for one Research Topic. It stores topic-specific defaults and refs, such as a short topic statement, Measurable Objectives, default Research Inquiry refs, the Topic Agent Team Profile Bundle ref, Execution Adapter refs, Capability Binding refs, Skill Binding Projection refs, and policy refs. It does not own Pixi environment bindings or Workspace Runtime state.
 
 **Research Topic**: the root research problem or investigation intent that initiates work and topic-level team specialization.
 
-**Topic Workspace**: a project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs.
+**Topic Workspace**: a project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs.
 
 **Workspace Runtime**: the persistent runtime substrate inside a Topic Workspace. It includes `state.sqlite`, schema version, runtime directories, refs, validation state, and support files that let Research Inquiries, Research Tasks, Runs, Artifacts, handoffs, Gates, and View Manifests be recorded, resumed, inspected, and validated.
 
@@ -34,7 +34,9 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 **Domain Agent Team Template**: a reusable multi-agent template based on the research methodology of a research field. It names default Agent Roles, Workflow Stages, Coordination Policy, Capability Binding slots, and template parameters, but it does not include a user's concrete research topic, project paths, credentials, or launch choices.
 
-**Topic Agent Team Profile**: a topic-level specialization of one Domain Agent Team Template for a user's research topic. It adapts the domain method to the topic context, selects or tunes roles and Workflow Stages, records constraints and expected Artifacts, and can carry role-scoped or Workflow Stage-scoped Capability Binding refs, Skill Binding Projections, allowed Research Operation Extension Points, and policy refs. It can be reviewed or edited before launch; it is not a running team.
+**Topic Agent Team Profile**: a topic-level specialization of one Domain Agent Team Template for a user's research topic. It adapts the domain method to the topic context, selects or tunes roles and Workflow Stages, records constraints and expected Artifacts, and can carry role-scoped or Workflow Stage-scoped Capability Binding refs, Skill Binding Projections, allowed Research Operation Extension Points, and policy refs. Each Research Topic has one authoritative Topic Agent Team Profile at a time; topic-level parallelism means multiple Research Topics researched by different dedicated teams, not one topic researched by multiple teams. For deep specialization, it is stored as a Topic Agent Team Profile Bundle inside the owning Topic Workspace. It can be reviewed or edited before launch; it is not a running team.
+
+**Topic Agent Team Profile Bundle**: a fixed Topic Workspace directory, `<topic-workspace>/team-profile/`, that stores the Research Topic's one authoritative Topic Agent Team Profile and its editable topic-specialized material. It contains `profile.toml`, the approved Topic Team Instantiation Packet, copied and topic-modified template material such as `execplan/`, validation outputs, and provenance refs. The Project Manifest keeps a ref to the bundle for discovery.
 
 **Agent Team Instance**: a concrete runtime team created from a Topic Agent Team Profile by the Operator Agent or Execution Adapter. It has launched Agent Instances, runtime refs, Agent Workspaces, and Run participation.
 
@@ -54,7 +56,7 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 ## Agent Workspace and Collaboration
 
-**Agent Workspace**: a per-agent work area inside a Topic Workspace assigned to one Agent Instance for owned scratch files, local runtime state, logs, and Agent Artifacts. It is an advisory ownership boundary: Isomer records expected access, but does not provide filesystem-grade access control.
+**Agent Workspace**: a per-agent work area inside a Topic Workspace assigned to one globally unique Agent Instance for owned scratch files, local runtime state, logs, and Agent Artifacts. It uses the parent Topic Workspace Pixi environment by default and remains an advisory ownership boundary: Isomer records expected access, but does not provide filesystem-grade access control.
 
 **Agent Runtime**: the durable execution state and support files scoped to one Agent Workspace, such as prompt records, tool-call traces, temporary run notes, local logs, and recovery files for that agent.
 

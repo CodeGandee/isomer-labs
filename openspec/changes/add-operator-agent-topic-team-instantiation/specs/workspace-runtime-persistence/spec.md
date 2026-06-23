@@ -5,7 +5,7 @@ The system SHALL record the approved instantiation source when creating Agent Te
 
 #### Scenario: Team instance links packet and profile
 - **WHEN** an Agent Team Instance is created from a Topic Agent Team Profile materialized by an approved instantiation packet
-- **THEN** Workspace Runtime records or links the Agent Team Instance to the Topic Agent Team Profile ref, packet ref, approval ref, project operator actor or session ref, Topic Service Agent refs when used, and validation result provenance
+- **THEN** Workspace Runtime records or links the Agent Team Instance to the Topic Agent Team Profile ref, Topic Agent Team Profile Bundle ref, packet ref, approval ref, project operator actor or session ref, Topic Service Agent refs when used, and validation result provenance
 
 #### Scenario: Runtime creation rejects unapproved packet
 - **WHEN** a launch-facing Agent Team Instance creation request references an instantiation packet that is missing, invalid, rejected, or unapproved
@@ -15,6 +15,10 @@ The system SHALL record the approved instantiation source when creating Agent Te
 - **WHEN** a Topic Agent Team Profile only has preview provenance and no approved instantiation packet or equivalent explicit approval
 - **THEN** launch-facing Agent Team Instance creation reports a diagnostic rather than silently treating synthetic preview defaults as authoritative
 
+#### Scenario: Competing team instance for one topic is rejected
+- **WHEN** a launch-facing Agent Team Instance creation request would create a competing active topic team for a Research Topic that already has an active Agent Team Instance lineage
+- **THEN** Workspace Runtime rejects the request and explains that topic-level parallelism requires another Research Topic with its own dedicated team
+
 ### Requirement: Project Operator and Topic Service Runtime Actor Records
 The system SHALL represent project operator provenance and Topic Service Agent provenance distinctly from research team membership.
 
@@ -23,7 +27,7 @@ The system SHALL represent project operator provenance and Topic Service Agent p
 - **THEN** runtime records include project operator actor or session provenance distinct from team member Agent Instances and Service Agent Instances
 
 #### Scenario: Topic Service Agent support is recorded
-- **WHEN** a Topic Service Agent supports profile materialization, environment setup, diagnostics, monitoring, or launch preparation
+- **WHEN** a Topic Service Agent supports profile bundle materialization, environment setup, diagnostics, monitoring, or launch preparation
 - **THEN** Workspace Runtime or linked support metadata records the Service Request ref, Topic Service Agent ref, support Artifacts, and Provenance Records
 
 #### Scenario: Operators and service agents are not team members by default

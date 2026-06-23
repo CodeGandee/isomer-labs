@@ -22,9 +22,13 @@ The system SHALL instantiate topic-level teams through a Project Operator Sessio
 ### Requirement: Topic Team Instantiation Packet
 The system SHALL represent agent-mediated specialization output as a structured instantiation packet before materializing a Topic Agent Team Profile.
 
-#### Scenario: Packet records resolved substitutions
+#### Scenario: Packet records resolved substitutions and bundle target
 - **WHEN** the Project Operator Session, Operator Agent, or Topic Service Agent resolves template placeholders for a Research Topic
-- **THEN** the packet records source template ref, Research Topic ref, Topic Workspace ref, Workspace Runtime ref, target Topic Agent Team Profile id, role bindings, policy refs, expected Artifact refs or kinds, control mode, approval state, project operator provenance, Topic Service Agent provenance when used, and validation refs
+- **THEN** the packet records source template ref, Research Topic ref, Topic Workspace ref, Workspace Runtime ref, target Topic Agent Team Profile Bundle path inside the owning Topic Workspace, role bindings, policy refs, expected Artifact refs or kinds, control mode, copied template material plan, approval state, project operator provenance, Topic Service Agent provenance when used, and validation refs
+
+#### Scenario: Packet target is fixed per topic
+- **WHEN** a packet attempts to select a second profile id, alternate profile bundle path, or competing team for an already selected Research Topic
+- **THEN** packet validation rejects the packet and reports that topic-level parallelism requires a separate Research Topic with its own dedicated team
 
 #### Scenario: Packet records explicit deferrals
 - **WHEN** a required placeholder cannot be resolved at profile time
@@ -37,13 +41,13 @@ The system SHALL represent agent-mediated specialization output as a structured 
 ### Requirement: Project Operator Review Gate
 The system SHALL require reviewable project-operator output before writing an authoritative Topic Agent Team Profile.
 
-#### Scenario: Draft profile is reviewable
+#### Scenario: Draft profile bundle is reviewable
 - **WHEN** a Project Operator Session or Operator Agent reviews a Topic Agent Team Profile draft from an instantiation packet
-- **THEN** the user-facing review includes selected roles, inactive roles, role binding refs, capability refs, skill projections, Agent Workspace refs, policy refs, expected Artifacts, unresolved placeholders, launch blockers, Service Request outputs when relevant, and provenance
+- **THEN** the user-facing review includes selected roles, inactive roles, role binding refs, capability refs, skill projections, Agent Workspace refs, policy refs, expected Artifacts, copied or rewritten template material, unresolved placeholders, launch blockers, Service Request outputs when relevant, and provenance
 
 #### Scenario: Approval precedes materialization
 - **WHEN** a Topic Agent Team Profile is written as authoritative material
-- **THEN** the write records approval context or deterministic test approval and links the written profile to the instantiation packet
+- **THEN** the write records approval context or deterministic test approval and links the written Topic Agent Team Profile Bundle to the instantiation packet
 
 ### Requirement: Isomer Project Operator and Topic Service Skills
 The system SHALL provide bounded Isomer skills for project-operator-capable agents and Houmao-backed Topic Service Agents to perform topic-team instantiation and orchestration.
@@ -69,4 +73,4 @@ The system SHALL keep template-specific placeholder substitution out of authorit
 
 #### Scenario: Preview defaults are labeled
 - **WHEN** a CLI or API path emits synthetic Topic Agent Team Profile preview values without an approved instantiation packet
-- **THEN** the output identifies the values as preview or candidate material and does not treat them as an approved profile materialization
+- **THEN** the output identifies the values as preview or candidate material and does not treat them as an approved profile bundle materialization

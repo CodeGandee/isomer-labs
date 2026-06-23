@@ -5,10 +5,10 @@ The Houmao adapter SHALL launch or resolve Agent Team Instances only from approv
 
 #### Scenario: Adapter consumes approved launch inputs
 - **WHEN** a Project Operator Session or Operator Agent requests Houmao launch materialization for an Agent Team Instance
-- **THEN** the adapter consumes the approved Topic Agent Team Profile, Agent Team Instance runtime record, Agent Instance records, Agent Workspace path plans, packet provenance refs, and Topic Service Agent support refs when present rather than inspecting a Domain Agent Team Template directly
+- **THEN** the adapter consumes the approved Topic Agent Team Profile Bundle, Agent Team Instance runtime record, Agent Instance records, Agent Workspace path plans, packet provenance refs, and Topic Service Agent support refs when present rather than inspecting a Domain Agent Team Template directly
 
 #### Scenario: Adapter rejects template-only launch
-- **WHEN** a launch request provides only a Domain Agent Team Template such as `deepsci-mini` without an approved Topic Agent Team Profile and Agent Team Instance record
+- **WHEN** a launch request provides only a Domain Agent Team Template such as `deepsci-mini` without an approved Topic Agent Team Profile Bundle and Agent Team Instance record
 - **THEN** the adapter rejects the request with an Isomer diagnostic and does not create Houmao launch material or live agents
 
 #### Scenario: Adapter records project operator provenance

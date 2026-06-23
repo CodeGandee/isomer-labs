@@ -25,3 +25,7 @@ The system SHALL preserve the reusable template boundary when instantiation meta
 #### Scenario: Template validation rejects concrete packet output
 - **WHEN** a Domain Agent Team Template source file contains an approved instantiation packet, concrete Topic Agent Team Profile, concrete Agent Workspace path, live adapter ref, user approval decision, or Topic Service Agent runtime ref
 - **THEN** template validation rejects the file as crossing from template material into topic, service, or runtime material
+
+#### Scenario: Template source is copied before topic edits
+- **WHEN** a Project Operator Session, Operator Agent, or Topic Service Agent needs to rewrite prompts, skills, workflow contracts, or execplan material for a topic
+- **THEN** the system copies the required template material into the Topic Agent Team Profile Bundle and applies topic edits there rather than editing the Domain Agent Team Template source
