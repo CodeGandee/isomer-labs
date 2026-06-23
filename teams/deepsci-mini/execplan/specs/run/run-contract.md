@@ -10,7 +10,8 @@ This generated run contract defines the expected shape of a bounded `deepsci-min
 - `{research_inquiry_id}`.
 - `{research_task_id}`.
 - `{run_id}`.
-- `{topic_agent_team_profile_id}`.
+- `{topic_agent_team_profile_bundle_ref}`.
+- `{topic_agent_team_profile_id}` when emitted as derived runtime metadata.
 - `{agent_team_instance_id}`.
 - `{workspace_runtime_ref}`.
 - `{gate_policy_ref}`.

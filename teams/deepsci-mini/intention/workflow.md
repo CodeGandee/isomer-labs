@@ -8,7 +8,7 @@ This file describes how work should move through `deepsci-mini` after a Topic Ag
 {domain_agent_team_template_ref}
   |
   v
-{topic_agent_team_profile_id} for {research_topic_id}
+{topic_agent_team_profile_bundle_ref} for {research_topic_id}
   |
   v
 {agent_team_instance_id}
@@ -22,8 +22,8 @@ The Domain Agent Team Template owns reusable method shape. The Topic Agent Team 
 ## Manual UC-01 Flow
 
 1. The Operator Agent resolves Effective Topic Context for `{research_topic_id}` and selects `deepsci-mini` as `{domain_agent_team_template_ref}`.
-2. `{topic_agent_team_profile_id}` specializes the template with UC-01 constraints, expected Artifact kinds, Skill Binding projection refs, Capability Binding refs, Gate policy refs, and literature provider refs when available.
-3. `{agent_team_instance_id}` launches or simulates from the profile; `deepsci-mini-lead` becomes the root role inside the team.
+2. The Topic Agent Team Profile Bundle specializes the template with UC-01 constraints, expected Artifact kinds, Skill Binding projection refs, Capability Binding refs, Gate policy refs, and literature provider refs when available.
+3. `{agent_team_instance_id}` launches or simulates from the approved profile bundle; `deepsci-mini-lead` becomes the root role inside the team.
 4. The lead creates or receives the initial `{research_inquiry_id}` and a bounded `{research_task_id}` for UC-01.
 5. The lead dispatches a scout handoff to `deepsci-mini-scout`.
 6. The scout returns seed-source summaries, literature notes, claim candidates, Evidence Item candidates, caveats, blockers, and suggested synthesis focus.

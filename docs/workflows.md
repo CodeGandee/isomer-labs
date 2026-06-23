@@ -61,11 +61,17 @@ pixi run isomer-cli --print-json team-profiles specialize \
   --topic default --use-case UC-01
 ```
 
-Authoritative Topic Team Specialization records a Topic Team Instantiation Packet, persists the profile as the Research Topic's one Topic Agent Team Profile Bundle under the owning Topic Workspace, and records only the Project Manifest ref in Project Config. Preview commands may still report a `registration_suggestion` object for compatibility while the packet-backed materializer is being implemented.
+Authoritative Topic Team Specialization records a Topic Team Instantiation Packet, persists the profile as the Research Topic's one Topic Agent Team Profile Bundle under the owning Topic Workspace, and records only the Project Manifest ref in Project Config. Preview commands may still report a `registration_suggestion` object for compatibility, but launch-facing profile identity is derived from the Research Topic and fixed `team-profile/` bundle path.
+
+```bash
+pixi run isomer-cli --print-json team-profiles materialize \
+  --topic flash-attention-gb10-peak-performance-optimization \
+  --packet fixtures/uc01/topic-team-instantiation-packet.toml --write
+```
 
 ## UC-01 Headless Exploration
 
-Use this workflow to run the pinned UC-01 fixture from Project discovery through follow-up Research Inquiry selection without a GUI renderer. The fixture topic is `flash-attention-gb10-peak-performance-optimization`; it uses the `deepsci-mini` Topic Agent Team Profile and stops after recording the follow-up Gate and Decision Record.
+Use this workflow to run the pinned UC-01 fixture from Project discovery through follow-up Research Inquiry selection without a GUI renderer. The fixture topic is `flash-attention-gb10-peak-performance-optimization`; the manual harness first materializes a deterministic `deepsci-mini` Topic Agent Team Profile Bundle from the packet fixture, then creates or simulates the Agent Team Instance and stops after recording the follow-up Gate and Decision Record.
 
 ```bash
 pixi run isomer-cli --project tests/fixtures/projects/uc01-headless-gb10 --print-json validate

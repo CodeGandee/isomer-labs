@@ -122,7 +122,13 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             workflow_stage_cursor_ids_json TEXT NOT NULL,
             blocker_refs_json TEXT NOT NULL,
             handoff_ids_json TEXT NOT NULL,
-            provenance_refs_json TEXT NOT NULL
+            provenance_refs_json TEXT NOT NULL,
+            topic_agent_team_profile_bundle_ref TEXT,
+            instantiation_packet_ref TEXT,
+            approval_ref TEXT,
+            project_operator_ref TEXT,
+            topic_service_agent_refs_json TEXT NOT NULL DEFAULT '[]',
+            validation_refs_json TEXT NOT NULL DEFAULT '[]'
         );
 
         CREATE TABLE IF NOT EXISTS agent_instances (
@@ -386,6 +392,25 @@ def _create_schema(connection: sqlite3.Connection) -> None:
         );
         """
     )
+    _ensure_agent_team_instance_provenance_columns(connection)
+
+
+def _ensure_agent_team_instance_provenance_columns(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] if isinstance(row, sqlite3.Row) else row[1]
+        for row in connection.execute("PRAGMA table_info(agent_team_instances)")
+    }
+    additions = {
+        "topic_agent_team_profile_bundle_ref": "TEXT",
+        "instantiation_packet_ref": "TEXT",
+        "approval_ref": "TEXT",
+        "project_operator_ref": "TEXT",
+        "topic_service_agent_refs_json": "TEXT NOT NULL DEFAULT '[]'",
+        "validation_refs_json": "TEXT NOT NULL DEFAULT '[]'",
+    }
+    for column, declaration in additions.items():
+        if column not in columns:
+            connection.execute(f"ALTER TABLE agent_team_instances ADD COLUMN {column} {declaration}")
 
 
 def _write_metadata(connection: sqlite3.Connection, metadata: WorkspaceRuntimeMetadata) -> None:

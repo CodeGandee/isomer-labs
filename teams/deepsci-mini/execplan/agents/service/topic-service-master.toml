@@ -1,0 +1,49 @@
+schema_version = "isomer-topic-service-agent-profile.v1"
+service_agent_profile_id = "deepsci-mini-topic-service-master"
+service_agent_kind = "topic_service_master"
+service_team_scope = "topic"
+houmao_agent_profile_kind = "managed_agent_profile"
+default_tool = "codex"
+headless = true
+description = "Topic-scoped Service Team actor for bounded environment setup, Topic Team Specialization support, monitoring, diagnostics, and support Artifact writing."
+required_isomer_skills = [
+  "isomer-rsch-project-aware",
+  "isomer-rsch-service-request-route",
+  "isomer-rsch-template-inspect",
+  "isomer-rsch-topic-context-resolve",
+  "isomer-rsch-placeholder-reconcile",
+  "isomer-rsch-topic-profile-draft",
+  "isomer-rsch-profile-review-approval",
+  "isomer-rsch-profile-materialize",
+  "isomer-rsch-team-launch-orchestrate",
+  "isomer-rsch-topic-service-agent-support",
+]
+bounded_context_refs = [
+  "{research_topic_id}",
+  "{topic_workspace_ref}",
+  "{workspace_runtime_ref}",
+  "{service_request_ref}",
+  "{topic_agent_team_profile_bundle_ref}",
+]
+not_team_member_by_default = true
+
+[service_boundaries]
+may_do = [
+  "topic_environment_readiness",
+  "work_agent_setup_support",
+  "template_inspection_support",
+  "placeholder_reconciliation_support",
+  "copied_material_planning",
+  "topic_edit_drafting",
+  "agent_team_instance_monitoring",
+  "diagnostics",
+  "support_artifact_writing",
+]
+must_not_do = [
+  "own_research_claims",
+  "own_gates",
+  "select_research_task_routes",
+  "join_research_team_membership_without_profile_role",
+  "store_credentials",
+  "store_live_process_state",
+]

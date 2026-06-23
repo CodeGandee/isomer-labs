@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-profile-review-approval"
+  short_description: "Review profile bundle"
+  default_prompt: "Use $isomer-rsch-profile-review-approval to review a profile bundle draft and prepare approval provenance."

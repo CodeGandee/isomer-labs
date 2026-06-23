@@ -334,7 +334,7 @@ pixi run isomer-cli --print-json team-templates list
 
 Inspect a registered Domain Agent Team Template.
 
-**Side effects:** none.
+**Side effects:** none. The output includes template roles, Workflow Stage ownership, placeholder catalog entries, instantiation schema paths, and copyable material declarations such as `execplan/` for templates that support Topic Team Specialization.
 
 ```bash
 pixi run isomer-cli --print-json team-templates inspect deepsci-org
@@ -355,13 +355,28 @@ pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases 
 
 Preview Topic Team Specialization for the selected Research Topic by deriving a candidate Topic Agent Team Profile.
 
-**Side effects:** by default, prints a design-time Topic Team Specialization preview without writing files. Legacy preview-write behavior may write a single profile file, but authoritative Topic Team Specialization writes the Research Topic's one Topic Agent Team Profile Bundle under `team-profile/` in the owning Topic Workspace and keeps only the Project Manifest ref in Project Config. Does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state.
+**Side effects:** by default, prints preview or candidate material without writing files. `--profile-id` is preview-only and is not accepted by the packet-backed authoritative materialization path. Legacy preview-write behavior may write a single profile file, but authoritative Topic Team Specialization writes the Research Topic's one Topic Agent Team Profile Bundle under `team-profile/` in the owning Topic Workspace and keeps only the Project Manifest ref in Project Config. Does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state.
 
 ```bash
 pixi run isomer-cli --print-json team-profiles specialize \
   --topic default --use-case UC-01
 pixi run isomer-cli --print-json team-profiles specialize \
   --topic default --use-case UC-01 --write
+```
+
+### `team-profiles materialize`
+
+Materialize an approved packet-backed Topic Agent Team Profile Bundle for the selected Research Topic.
+
+**Side effects:** without `--write`, previews validation and planned bundle paths. With `--write`, writes `<topic-workspace>/team-profile/profile.toml`, `instantiation-packet.toml`, `approval.toml`, validation output, provenance files, and copied topic-edited template material. It does not mutate Workspace Runtime, launch Houmao agents, or create an Agent Team Instance.
+
+```bash
+pixi run isomer-cli --print-json team-profiles materialize \
+  --topic flash-attention-gb10-peak-performance-optimization \
+  --packet fixtures/uc01/topic-team-instantiation-packet.toml
+pixi run isomer-cli --print-json team-profiles materialize \
+  --topic flash-attention-gb10-peak-performance-optimization \
+  --packet fixtures/uc01/topic-team-instantiation-packet.toml --write
 ```
 
 ### `team-profiles validate`
@@ -408,6 +423,7 @@ pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases 
 | `team-templates inspect` | no | no | no | no |
 | `team-templates validate` | no | no | no | no |
 | `team-profiles specialize` | only with `--write` | no | no | no |
+| `team-profiles materialize` | yes with `--write` | no | no | no |
 | `team-profiles validate` | no | no | no | no |
 
 ## Environment Variables

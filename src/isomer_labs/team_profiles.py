@@ -17,6 +17,11 @@ from isomer_labs.models import (
     TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION,
     TopicAgentTeamProfile,
 )
+from isomer_labs.profile_bundle_validation import (
+    validate_bundle_layout,
+    validate_profile_provenance,
+    validate_unresolved_placeholders,
+)
 
 
 _PROFILE_RUNTIME_KEYS = {
@@ -115,6 +120,16 @@ def parse_topic_agent_team_profile(
         automatic_mode_policy_ref=_string(data.get("automatic_mode_policy_ref")),
         reviewer_read_access_policy=_string(data.get("reviewer_read_access_policy")),
         fanout_policies=_parse_fanout_policies(data.get("fanout_policies")),
+        profile_bundle_ref=_string(data.get("profile_bundle_ref")) or _string(data.get("profile_bundle_path")),
+        instantiation_packet_ref=_string(data.get("instantiation_packet_ref")),
+        approval_ref=_string(data.get("approval_ref")),
+        approval_actor_ref=_string(data.get("approval_actor_ref")),
+        approval_mode=_string(data.get("approval_mode")),
+        project_operator_ref=_string(data.get("project_operator_ref")),
+        topic_service_agent_refs=_string_list(data.get("topic_service_agent_refs")),
+        copied_material_refs=_string_list(data.get("copied_material_refs")),
+        validation_refs=_string_list(data.get("validation_refs")),
+        launch_blocker_refs=_string_list(data.get("launch_blocker_refs")),
         raw=raw,
     )
     return profile, diagnostics
@@ -189,7 +204,7 @@ def specialize_topic_agent_team_profile(
         automatic_mode_policy_ref=_first_ref(profile_refs, "automatic_mode_policy_ref", "automatic_mode_policy_refs"),
         reviewer_read_access_policy=_first_ref(profile_refs, "reviewer_read_access_policy") or "promoted-artifacts-only",
         fanout_policies=fanout_policies,
-        raw={},
+        raw={"profile_materialization": "preview", "preview": True},
     )
 
 
@@ -199,6 +214,7 @@ def validate_topic_agent_team_profile(
     *,
     project: Project | None = None,
     source_path: Path | None = None,
+    launch_facing: bool = False,
 ) -> ProfileValidationReport:
     diagnostics: list[Diagnostic] = []
     if profile is None:
@@ -246,6 +262,9 @@ def validate_topic_agent_team_profile(
     _validate_roles(profile, template, diagnostics)
     _validate_fanout(profile, template, diagnostics)
     _validate_policy_posture(profile, diagnostics)
+    validate_bundle_layout(profile, project, diagnostics)
+    validate_profile_provenance(profile, diagnostics, launch_facing=launch_facing)
+    validate_unresolved_placeholders(profile, diagnostics, launch_facing=launch_facing)
     return ProfileValidationReport(profile.id, profile.source_path, not has_errors(diagnostics), diagnostics, profile)
 
 
@@ -259,6 +278,12 @@ def profile_to_toml(profile: TopicAgentTeamProfile) -> str:
     if profile.topic_workspace_id is not None:
         lines.append(f'topic_workspace_id = "{profile.topic_workspace_id}"')
     for key, value in (
+        ("profile_bundle_ref", profile.profile_bundle_ref),
+        ("instantiation_packet_ref", profile.instantiation_packet_ref),
+        ("approval_ref", profile.approval_ref),
+        ("approval_actor_ref", profile.approval_actor_ref),
+        ("approval_mode", profile.approval_mode),
+        ("project_operator_ref", profile.project_operator_ref),
         ("coordination_policy_ref", profile.coordination_policy_ref),
         ("gate_policy_ref", profile.gate_policy_ref),
         ("scheduler_policy_ref", profile.scheduler_policy_ref),
@@ -270,6 +295,10 @@ def profile_to_toml(profile: TopicAgentTeamProfile) -> str:
     ):
         if value is not None:
             lines.append(f'{key} = "{value}"')
+    lines.append(_array_line("topic_service_agent_refs", profile.topic_service_agent_refs))
+    lines.append(_array_line("copied_material_refs", profile.copied_material_refs))
+    lines.append(_array_line("validation_refs", profile.validation_refs))
+    lines.append(_array_line("launch_blocker_refs", profile.launch_blocker_refs))
     lines.append(_array_line("expected_artifacts", profile.expected_artifacts))
     lines.append(_array_line("constraints", profile.constraints))
     for binding in profile.role_bindings:

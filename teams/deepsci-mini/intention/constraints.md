@@ -13,8 +13,8 @@ This file records guardrails and unresolved decisions for future Topic Agent Tea
 
 ## Topic Specialization Constraints
 
-- A concrete topic must create `{topic_agent_team_profile_id}` before launch.
-- `{topic_agent_team_profile_id}` must select or tune expected Artifacts, Coordination Policy, Capability Binding refs, Skill Binding projection refs, Gate policy refs, Scheduler policy refs, literature provider refs, and allowed Research Operation Extension Point refs.
+- A concrete topic must materialize its fixed Topic Agent Team Profile Bundle at `{topic_agent_team_profile_bundle_ref}` before launch.
+- The Topic Agent Team Profile Bundle must select or tune expected Artifacts, Coordination Policy, Capability Binding refs, Skill Binding projection refs, Gate policy refs, Scheduler policy refs, literature provider refs, and allowed Research Operation Extension Point refs.
 - `{agent_team_instance_id}` must be created only from an approved Topic Agent Team Profile.
 - Agent Profiles and Capability Bindings should carry provider-neutral refs; provider-specific payloads belong behind `{execution_adapter_ref}` or adapter-owned payload refs.
 - `{research_topic_config_ref}` can select defaults and refs, but it must not become the complete team workflow or runtime state store.

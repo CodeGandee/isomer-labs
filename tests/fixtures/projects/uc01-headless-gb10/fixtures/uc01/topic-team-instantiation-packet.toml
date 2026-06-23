@@ -1,0 +1,176 @@
+schema_version = "isomer-topic-team-instantiation-packet.v1"
+source_template_ref = "deepsci-mini"
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+topic_workspace_ref = "flash-attention-gb10-peak-performance-optimization"
+workspace_runtime_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/.isomer-runtime/state.sqlite"
+target_profile_bundle_path = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/team-profile"
+control_mode = "manual"
+project_operator_ref = "project-operator-session:uc01-deterministic"
+project_operator_session_ref = "project-operator-session:uc01-deterministic"
+topic_service_agent_refs = ["topic-service-agent:uc01-deterministic-service-master"]
+service_request_refs = ["service-request:uc01-topic-team-specialization"]
+validation_refs = ["validation:uc01-topic-team-instantiation-packet"]
+expected_artifacts = [
+  "artifact:uc01:seed-source-summary",
+  "artifact:uc01:flash-attention-implementation-notes",
+  "artifact:uc01:gb10-feature-notes",
+  "artifact:uc01:attention-kernel-bottleneck-notes",
+  "artifact:uc01:shape-family-constraints",
+  "artifact:uc01:correctness-constraints",
+  "artifact:uc01:claim-candidates",
+  "artifact:uc01:review-notes",
+  "artifact:uc01:follow-up-inquiry-options",
+  "artifact:uc01:decision-record",
+]
+constraints = ["use_case:UC-01", "route_classification_required", "no_gb10_measurement_in_milestone_6"]
+
+[policy_refs]
+coordination_policy_ref = "coordination-policy:uc01-manual"
+gate_policy_ref = "gate-policy:uc01-follow-up-inquiry"
+reviewer_read_access_policy = "promoted-artifacts-only"
+
+[[role_bindings]]
+role_id = "deepsci-mini-lead"
+active = true
+agent_profile_ref = "uc01-topic-team:deepsci-mini-lead:agent-profile"
+capability_binding_ref = "uc01-topic-team:deepsci-mini-lead:capability-binding"
+skill_binding_projection_ref = "uc01-topic-team:deepsci-mini-lead:skill-binding-projection"
+agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-lead"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
+optional_skills = ["isomer-rsch-review"]
+
+[[role_bindings]]
+role_id = "deepsci-mini-scout"
+active = true
+agent_profile_ref = "uc01-topic-team:deepsci-mini-scout:agent-profile"
+capability_binding_ref = "uc01-topic-team:deepsci-mini-scout:capability-binding"
+skill_binding_projection_ref = "uc01-topic-team:deepsci-mini-scout:skill-binding-projection"
+agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-scout"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-scout"]
+optional_skills = ["isomer-rsch-baseline", "isomer-rsch-science", "isomer-rsch-paper-outline"]
+
+[[role_bindings]]
+role_id = "deepsci-mini-synth-reviewer"
+active = true
+agent_profile_ref = "uc01-topic-team:deepsci-mini-synth-reviewer:agent-profile"
+capability_binding_ref = "uc01-topic-team:deepsci-mini-synth-reviewer:capability-binding"
+skill_binding_projection_ref = "uc01-topic-team:deepsci-mini-synth-reviewer:skill-binding-projection"
+agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-synth-reviewer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-analysis", "isomer-rsch-review"]
+optional_skills = ["isomer-rsch-science", "isomer-rsch-paper-plot"]
+
+[[copied_material]]
+source_path = "execplan/"
+target_path = "execplan"
+required = true
+purpose = "Topic-specialized deepsci-mini execplan copy."
+
+[[topic_edits]]
+target_path = "execplan/docs/operator-guide.md"
+description = "Pin the copied operator guide to the GB10 UC-01 topic instead of generic UC-01 wording."
+search = "expected UC-01 Artifacts"
+replace = "expected GB10 UC-01 source-map Artifacts"
+
+[[placeholder_resolutions]]
+name = "research_topic_id"
+value = "flash-attention-gb10-peak-performance-optimization"
+required = true
+
+[[placeholder_resolutions]]
+name = "research_inquiry_id"
+value = "gb10-flash-attention-4-direction-selection"
+required = true
+
+[[placeholder_resolutions]]
+name = "topic_workspace_ref"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization"
+required = true
+
+[[placeholder_resolutions]]
+name = "workspace_runtime_ref"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/.isomer-runtime/state.sqlite"
+required = true
+
+[[placeholder_resolutions]]
+name = "topic_agent_team_profile_bundle_ref"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/team-profile"
+required = true
+
+[[placeholder_resolutions]]
+name = "topic_agent_team_profile_id"
+value = "flash-attention-gb10-peak-performance-optimization-deepsci-mini"
+required = true
+
+[[placeholder_resolutions]]
+name = "gate_policy_ref"
+value = "gate-policy:uc01-follow-up-inquiry"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-lead.agent_profile_ref"
+value = "uc01-topic-team:deepsci-mini-lead:agent-profile"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-lead.capability_binding_ref"
+value = "uc01-topic-team:deepsci-mini-lead:capability-binding"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-lead.skill_projection_ref"
+value = "uc01-topic-team:deepsci-mini-lead:skill-binding-projection"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-lead.agent_workspace_ref"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-lead"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-scout.agent_profile_ref"
+value = "uc01-topic-team:deepsci-mini-scout:agent-profile"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-scout.capability_binding_ref"
+value = "uc01-topic-team:deepsci-mini-scout:capability-binding"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-scout.skill_projection_ref"
+value = "uc01-topic-team:deepsci-mini-scout:skill-binding-projection"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-scout.agent_workspace_ref"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-scout"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-synth-reviewer.agent_profile_ref"
+value = "uc01-topic-team:deepsci-mini-synth-reviewer:agent-profile"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-synth-reviewer.capability_binding_ref"
+value = "uc01-topic-team:deepsci-mini-synth-reviewer:capability-binding"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-synth-reviewer.skill_projection_ref"
+value = "uc01-topic-team:deepsci-mini-synth-reviewer:skill-binding-projection"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-synth-reviewer.agent_workspace_ref"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-synth-reviewer"
+required = true
+
+[approval]
+state = "approved"
+approval_ref = "approval:uc01-deterministic-topic-team-profile"
+approval_actor_ref = "project-operator-session:uc01-deterministic"
+approval_mode = "deterministic_test"
+review_summary = "Deterministic fixture approval for GB10 UC-01 deepsci-mini topic team specialization."
+validation_result_ref = "validation:uc01-topic-team-instantiation-packet"
+approved_at = "2026-06-23T00:00:00Z"

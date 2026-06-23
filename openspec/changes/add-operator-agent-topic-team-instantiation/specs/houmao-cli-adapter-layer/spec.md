@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Project-Operator Launch Orchestration Boundary
-The Houmao adapter SHALL launch or resolve Agent Team Instances only from approved Isomer profile/runtime material and SHALL NOT perform topic-profile reasoning itself.
+The Houmao adapter SHALL launch or resolve Agent Team Instances only from approved Isomer profile bundle and runtime material and SHALL NOT perform topic-profile reasoning itself.
 
 #### Scenario: Adapter consumes approved launch inputs
 - **WHEN** a Project Operator Session or Operator Agent requests Houmao launch materialization for an Agent Team Instance

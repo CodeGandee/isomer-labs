@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
-import subprocess
 from typing import Any
 
 from isomer_labs.diagnostics import Diagnostic, has_errors
@@ -21,6 +20,7 @@ from isomer_labs.models import (
     WorkflowStageRoute,
 )
 from isomer_labs.path_utils import canonicalize, is_within, resolve_project_path
+from isomer_labs.team_template_harness import harness_diagnostics, validate_workspace_contract
 from isomer_labs.toml_loader import load_toml
 
 
@@ -51,6 +51,20 @@ _BOUNDARY_KEYS = {
     "topic_workspace_ref",
     "workspace_runtime_ref",
     "topic_agent_team_profile_id",
+    "topic_agent_team_profile_bundle_ref",
+    "target_profile_bundle_path",
+    "profile_bundle_path",
+    "instantiation_packet_ref",
+    "approval_ref",
+    "approval_state",
+    "approval_actor_ref",
+    "approval_mode",
+    "project_operator_ref",
+    "project_operator_session_ref",
+    "topic_service_agent_ref",
+    "topic_service_agent_refs",
+    "service_request_ref",
+    "service_request_refs",
     "agent_team_instance_id",
     "agent_instance_id",
     "adapter_launch_ref",
@@ -209,15 +223,16 @@ def validate_domain_agent_team_template(
     artifacts = _parse_artifacts(source_path, manifest.data if manifest is not None else {}, diagnostics)
     roles = _parse_roles(participants.data if participants is not None else {}, bindings.data if bindings is not None else {}, source_path, diagnostics)
     stage_routes = _parse_stage_routes(participants.data if participants is not None else {}, diagnostics)
-    template_parameters = _parse_parameters(parameters.data if parameters is not None else {})
+    copyable_materials = _parse_copyable_materials(source_path, manifest.data if manifest is not None else {}, diagnostics)
+    template_parameters = _parse_parameters(source_path, parameters.data if parameters is not None else {})
 
     if manifest is not None:
         _validate_manifest_metadata(registration, manifest, diagnostics)
     _validate_deepsci_role_contract(registration.id, roles, diagnostics)
     _validate_referenced_binding_paths(source_path, bindings.data if bindings is not None else {}, diagnostics)
-    _validate_workspace_contract(source_path, workspace_contract.data if workspace_contract is not None else {}, diagnostics)
+    validate_workspace_contract(source_path, workspace_contract.data if workspace_contract is not None else {}, diagnostics)
     if include_harness:
-        diagnostics.extend(_harness_diagnostics(source_path))
+        diagnostics.extend(harness_diagnostics(source_path))
 
     template = None
     if manifest is not None or participants is not None:
@@ -244,6 +259,8 @@ def validate_domain_agent_team_template(
             roles=roles,
             workflow_stage_routes=stage_routes,
             parameters=template_parameters,
+            instantiation_schema_paths=["harness/schemas/topic-profile-instantiation.schema.json"],
+            copyable_materials=copyable_materials,
             raw_metadata=manifest_data,
         )
     return TemplateValidationReport(registration.id, source_path, not has_errors(diagnostics), diagnostics, template)
@@ -321,9 +338,44 @@ def _parse_artifacts(source_path: Path, raw: dict[str, Any], diagnostics: list[D
                 artifact_kind=artifact_kind,
                 purpose=_string(item.get("purpose")),
                 description=_string(item.get("description")),
+                copyable=_bool(item.get("copyable"), default=False),
             )
         )
     return artifacts
+
+
+def _parse_copyable_materials(source_path: Path, raw: dict[str, Any], diagnostics: list[Diagnostic]) -> list[TemplateArtifact]:
+    copyable: list[TemplateArtifact] = []
+    for index, item in enumerate(_dict_items(raw.get("copyable_materials"))):
+        artifact_id = _string(item.get("id")) or _string(item.get("name"))
+        path_input = _string(item.get("path")) or _string(item.get("source_path"))
+        artifact_kind = _string(item.get("artifact_kind")) or "dir"
+        if artifact_id is None or path_input is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO017",
+                    severity="error",
+                    concept="Domain Agent Team Template copyable material",
+                    path=source_path / "manifest.toml",
+                    field=f"copyable_materials[{index}]",
+                    message="Copyable material declarations must include id and path.",
+                )
+            )
+            continue
+        _require_path(source_path, path_input, "Domain Agent Team Template copyable material", diagnostics)
+        copyable.append(
+            TemplateArtifact(
+                id=artifact_id,
+                path_input=path_input,
+                artifact_kind=artifact_kind,
+                purpose=_string(item.get("purpose")),
+                description=_string(item.get("description")),
+                copyable=True,
+            )
+        )
+    if copyable:
+        return copyable
+    return [artifact for artifact in _parse_artifacts(source_path, raw, []) if artifact.copyable]
 
 
 def _parse_roles(
@@ -398,16 +450,53 @@ def _parse_stage_routes(raw: dict[str, Any], diagnostics: list[Diagnostic]) -> l
     return stage_routes
 
 
-def _parse_parameters(raw: dict[str, Any]) -> list[TemplateParameter]:
-    return [
-        TemplateParameter(
-            name=_string(item.get("name")) or "",
-            description=_string(item.get("description")),
-            required_for_topic_profile=_bool(item.get("required_for_topic_profile"), default=False),
-        )
-        for item in _dict_items(raw.get("placeholders"))
-        if _string(item.get("name")) is not None
-    ]
+def _parse_parameters(source_path: Path, raw: dict[str, Any]) -> list[TemplateParameter]:
+    parameters: list[TemplateParameter] = []
+    for table_name in ("placeholders", "topic_refs"):
+        for item in _dict_items(raw.get(table_name)):
+            name = _string(item.get("name"))
+            if name is None:
+                continue
+            parameters.append(
+                TemplateParameter(
+                    name=name,
+                    description=_string(item.get("description")),
+                    required_for_topic_profile=_bool(item.get("required_for_topic_profile"), default=True),
+                    placeholder=_string(item.get("placeholder")),
+                    source_path=str(source_path / "harness/refs/instantiation-parameters.toml"),
+                    expected_replacement_layer=_string(item.get("expected_replacement_layer")) or "topic_agent_team_profile_bundle",
+                    blocks_profile_save=_bool(item.get("blocks_profile_save"), default=False),
+                    blocks_launch=_bool(item.get("blocks_launch"), default=not _bool(item.get("derived"), default=False)),
+                    derived=_bool(item.get("derived"), default=False),
+                )
+            )
+    for item in _dict_items(raw.get("roles")):
+        role_id = _string(item.get("role_id"))
+        if role_id is None:
+            continue
+        for field_name in (
+            "agent_profile_ref",
+            "capability_binding_ref",
+            "skill_projection_ref",
+            "agent_workspace_ref",
+        ):
+            placeholder = _string(item.get(field_name))
+            if placeholder is None:
+                continue
+            parameters.append(
+                TemplateParameter(
+                    name=f"{role_id}.{field_name}",
+                    description=f"{role_id} {field_name} binding slot.",
+                    required_for_topic_profile=True,
+                    placeholder=placeholder,
+                    source_path=str(source_path / "harness/refs/instantiation-parameters.toml"),
+                    expected_replacement_layer="role_binding",
+                    blocks_profile_save=False,
+                    blocks_launch=True,
+                    derived=False,
+                )
+            )
+    return parameters
 
 
 def _validate_manifest_metadata(
@@ -590,72 +679,6 @@ def _validate_referenced_binding_paths(
                 )
                 continue
             _require_path(source_path, path_input, "Domain Agent Team Template binding", diagnostics)
-
-
-def _validate_workspace_contract(
-    source_path: Path,
-    raw: dict[str, Any],
-    diagnostics: list[Diagnostic],
-) -> None:
-    rules = _dict_items(raw.get("read_write_rules"))
-    if "no-workspace-local-teams" not in {_string(item.get("id")) for item in rules}:
-        diagnostics.append(
-            Diagnostic(
-                code="ISO017",
-                severity="error",
-                concept="Domain Agent Team Template workspace contract",
-                path=source_path / "specs/workspace/workspace.toml",
-                field="read_write_rules",
-                message="Workspace contract must prohibit a workspace-local teams directory.",
-            )
-        )
-
-
-def _harness_diagnostics(source_path: Path) -> list[Diagnostic]:
-    harness = source_path / "harness/bin/deepsci-org"
-    if not harness.exists():
-        return []
-    try:
-        result = subprocess.run(
-            [str(harness), "validate"],
-            cwd=source_path,
-            text=True,
-            capture_output=True,
-            timeout=15,
-            check=False,
-        )
-    except OSError as exc:
-        return [
-            Diagnostic(
-                code="ISO021",
-                severity="warning",
-                concept="Domain Agent Team Template harness",
-                path=harness,
-                message=f"Generated harness validation could not be run: {exc}.",
-            )
-        ]
-    except subprocess.TimeoutExpired:
-        return [
-            Diagnostic(
-                code="ISO021",
-                severity="warning",
-                concept="Domain Agent Team Template harness",
-                path=harness,
-                message="Generated harness validation timed out.",
-            )
-        ]
-    if result.returncode == 0:
-        return []
-    message = (result.stderr or result.stdout or "Generated harness validation failed.").strip().splitlines()[0]
-    return [
-        Diagnostic(
-            code="ISO021",
-            severity="error",
-            concept="Domain Agent Team Template harness",
-            path=harness,
-            message=message,
-        )
-    ]
 
 
 def _require_path(source_path: Path, path_input: str, concept: str, diagnostics: list[Diagnostic]) -> None:

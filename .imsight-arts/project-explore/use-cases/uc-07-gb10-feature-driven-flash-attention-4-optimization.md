@@ -8,7 +8,7 @@ As the Isomer Labs maintainer and GPU systems researcher, I want a compact, feat
 
 The practical Research Topic is: "how to make Flash Attention 4 run as fast as possible on DGX Spark GB10 by exploiting GB10-specific architectural features." The investigation starts from a measured baseline on GB10, explores candidate optimizations that map to Blackwell features, and produces a ranked decision procedure with speedup evidence and accuracy checks. This use case is intentionally smaller than UC-06: it uses the `deepsci-mini` Domain Agent Team Template, focuses on executable kernel experiments rather than white-box prediction modeling, and validates Milestone 6-style end-to-end research recording with only three Agent Roles.
 
-UC-07 is a focused research-direction slice that demonstrates how a smaller team can still produce durable, evidence-backed optimization decisions without the operational weight of a seven-role organization.
+UC-07 is a focused research-direction slice that demonstrates how a smaller team can still produce durable, evidence-backed optimization decisions without the operational weight of a seven-role organization. It also exercises Topic Team Specialization as a real topic setup path: a Project Operator Session understands the supplied GB10 Flash Attention 4 topic, reads `deepsci-mini`, creates or confirms the Topic Workspace, copies required template material into `<topic-workspace>/team-profile/`, and uses agent skills to specialize placeholders, profile text, workflow instructions, and code-like template material before launch.
 
 ## Scope and Assumptions
 
@@ -17,30 +17,33 @@ UC-07 is a focused research-direction slice that demonstrates how a smaller team
 - The investigation is bounded to GB10-specific features: Tensor Core precision modes, shared memory and L2 hierarchy, asynchronous copy and warp specialization, cluster-level cooperation, and tile/pipeline choices that match GB10 capacity.
 - Numerical correctness must be checked when precision or kernel layout changes; speedup without accuracy validation is insufficient.
 - Manual Mode is required for credentialed, destructive, expensive, private, or long-running hardware actions. Automatic mode is allowed for bounded analysis, ranking-table updates, report drafting, and replay.
+- Topic Team Specialization is packet-backed. Synthetic preview profiles can help inspection, but UC-07 launch or simulation requires an approved Topic Team Instantiation Packet and Topic Agent Team Profile Bundle under the Topic Workspace.
 
 ## Main Success Scenario
 
 1. The maintainer checks out a user-owned Isomer Project fixture for UC-07 and verifies that it contains a `.isomer-labs/` Project Config Directory, Project Manifest, Research Topic `flash-attention-gb10-peak-performance-optimization`, Topic Workspace, and a Topic Workspace Pixi manifest and lockfile inside the Topic Workspace.
 2. The Operator Agent runs the CLI baseline: `isomer-cli validate`, `topics list`, `workspaces list`, `context show --topic flash-attention-gb10-peak-performance-optimization`, `paths preview --topic flash-attention-gb10-peak-performance-optimization`, and `schemas list`.
 3. The Operator Agent runs `isomer-cli doctor --topic flash-attention-gb10-peak-performance-optimization --json` and confirms that Pixi is available, the Topic Workspace Pixi manifest exists, a matching `pixi.lock` is present, and explicit topic Pixi bindings are valid.
-4. The Operator Agent lists, inspects, and validates the `deepsci-mini` Domain Agent Team Template and checks that the template remains topic-neutral.
-5. The Operator Agent creates or loads a Topic Agent Team Profile for `flash-attention-gb10-peak-performance-optimization`, validates that topic-specific refs, Agent Workspace refs, policy refs, and expected Artifacts do not leak into other topics.
-6. The Operator Agent creates or opens Workspace Runtime in the Topic Workspace, records schema version, resolved paths, path sources, default runtime directories, and a readiness record for the bound Pixi environment.
-7. The Operator Agent creates the first Research Inquiry `gb10-flash-attention-4-peak-performance-optimization`, plus initial Research Tasks for GB10 feature inventory, baseline measurement, candidate optimization design, and accuracy validation plan.
-8. Through the Houmao Execution Adapter, the Operator Agent launches a manual-mode `deepsci-mini` Agent Team Instance from the Topic Agent Team Profile.
-9. The `deepsci-mini-lead` Agent Instance dispatches a first handoff to the `deepsci-mini-scout` Agent Instance, receives a result through Houmao mail or gateway surfaces, and the Operator Agent normalizes the handoff into Workspace Runtime with produced Artifacts and Provenance Records.
-10. The `deepsci-mini-scout` records a GB10 feature inventory and Flash Attention 4 baseline Artifact, including attention shape parameters, precision or dtype, causal or masking mode, kernel variant, hardware target statement, compiler flags, target architecture, source identity, and measured baseline runtime.
-11. The `deepsci-mini-scout` proposes a shortlist of candidate optimizations mapped to GB10 features, such as FP4/FP8 Tensor Core accumulation, shared-memory tile sizing, async copy staging, warp-group specialization, cluster multicast, and split-k or split-seq strategies.
-12. The `deepsci-mini-lead` opens a Gate for the baseline measurement run and GB10 compute budget. The user accepts, requests repair, or records a waiver or blocker.
-13. The `deepsci-mini-scout` runs the approved baseline measurement on GB10, preserving commands, environment refs, raw timings, profiler traces, kernel configs, input descriptors, and correctness outputs as Artifacts.
-14. The `deepsci-mini-lead` dispatches candidate optimization experiments to the `deepsci-mini-scout`. Each experiment varies one GB10-relevant knob, measures runtime, records utilization counters, and checks attention correctness against the baseline.
-15. The `deepsci-mini-synth-reviewer` Agent Instance analyzes the experiment Artifacts, clusters results by GB10 feature, estimates speedup and risk for each candidate, and produces a ranked optimization table.
-16. The `deepsci-mini-synth-reviewer` flags candidates where the speedup claim is unsupported, where accuracy tolerance is violated, or where the optimization is generic rather than GB10-specific.
-17. The `deepsci-mini-lead` opens a decision Gate asking the user to approve the top-ranked optimization candidates for a final combination run or further investigation.
-18. After approval, the `deepsci-mini-scout` runs the recommended combination of optimizations on representative shape families and records combined speedup, utilization, and accuracy Artifacts.
-19. The `deepsci-mini-synth-reviewer` audits the combined results for unsupported GB10 internal claims, missing accuracy validation, and generic advice, then produces a final optimization report.
-20. The `deepsci-mini-lead` opens a final Gate asking the user to accept the optimization plan, request more experiments, branch to a follow-up Research Inquiry, or park the team with a resume packet.
-21. The Operator Agent records the final Decision Record, validates the Topic Workspace, reopens the Project after process restart, and emits a pass/fail verdict for the focused optimization slice.
+4. The Project Operator Session lists, inspects, and validates the `deepsci-mini` Domain Agent Team Template and checks that the template remains topic-neutral.
+5. The Project Operator Session or Topic Service Agent resolves the supplied GB10 Flash Attention 4 topic context, reads the template placeholder catalog, drafts a Topic Team Instantiation Packet, and proposes the copied material and topic edits needed for the optimization work.
+6. After user approval or packet-shaped deterministic test approval, the Project Operator Session materializes the Research Topic's Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, including `profile.toml`, the approved packet, copied topic-specialized `deepsci-mini` material, bundle-local `approval_ref`, validation output, and provenance refs.
+7. The Operator Agent validates that topic-specific refs, Agent Workspace refs, policy refs, expected Artifacts, copied material, and launch blockers in the Topic Agent Team Profile Bundle do not leak into other topics.
+8. The Operator Agent creates or opens Workspace Runtime in the Topic Workspace, records schema version, resolved paths, path sources, default runtime directories, and a readiness record for the bound Pixi environment.
+9. The Operator Agent creates the first Research Inquiry `gb10-flash-attention-4-peak-performance-optimization`, plus initial Research Tasks for GB10 feature inventory, baseline measurement, candidate optimization design, and accuracy validation plan.
+10. Through the Houmao Execution Adapter, the Operator Agent launches a manual-mode `deepsci-mini` Agent Team Instance from the approved Topic Agent Team Profile Bundle.
+11. The `deepsci-mini-lead` Agent Instance dispatches a first handoff to the `deepsci-mini-scout` Agent Instance, receives a result through Houmao mail or gateway surfaces, and the Operator Agent normalizes the handoff into Workspace Runtime with produced Artifacts and Provenance Records.
+12. The `deepsci-mini-scout` records a GB10 feature inventory and Flash Attention 4 baseline Artifact, including attention shape parameters, precision or dtype, causal or masking mode, kernel variant, hardware target statement, compiler flags, target architecture, source identity, and measured baseline runtime.
+13. The `deepsci-mini-scout` proposes a shortlist of candidate optimizations mapped to GB10 features, such as FP4/FP8 Tensor Core accumulation, shared-memory tile sizing, async copy staging, warp-group specialization, cluster multicast, and split-k or split-seq strategies.
+14. The `deepsci-mini-lead` opens a Gate for the baseline measurement run and GB10 compute budget. The user accepts, requests repair, or records a waiver or blocker.
+15. The `deepsci-mini-scout` runs the approved baseline measurement on GB10, preserving commands, environment refs, raw timings, profiler traces, kernel configs, input descriptors, and correctness outputs as Artifacts.
+16. The `deepsci-mini-lead` dispatches candidate optimization experiments to the `deepsci-mini-scout`. Each experiment varies one GB10-relevant knob, measures runtime, records utilization counters, and checks attention correctness against the baseline.
+17. The `deepsci-mini-synth-reviewer` Agent Instance analyzes the experiment Artifacts, clusters results by GB10 feature, estimates speedup and risk for each candidate, and produces a ranked optimization table.
+18. The `deepsci-mini-synth-reviewer` flags candidates where the speedup claim is unsupported, where accuracy tolerance is violated, or where the optimization is generic rather than GB10-specific.
+19. The `deepsci-mini-lead` opens a decision Gate asking the user to approve the top-ranked optimization candidates for a final combination run or further investigation.
+20. After approval, the `deepsci-mini-scout` runs the recommended combination of optimizations on representative shape families and records combined speedup, utilization, and accuracy Artifacts.
+21. The `deepsci-mini-synth-reviewer` audits the combined results for unsupported GB10 internal claims, missing accuracy validation, and generic advice, then produces a final optimization report.
+22. The `deepsci-mini-lead` opens a final Gate asking the user to accept the optimization plan, request more experiments, branch to a follow-up Research Inquiry, or park the team with a resume packet.
+23. The Operator Agent records the final Decision Record, validates the Topic Workspace, reopens the Project after process restart, and emits a pass/fail verdict for the focused optimization slice.
 
 ## Mermaid Use Case Diagram
 
@@ -53,7 +56,7 @@ flowchart LR
 
   subgraph Isomer["Isomer Labs Focused Optimization Fixture"]
     UC1([Verify Project<br/>and CLI Baseline])
-    UC2([Validate deepsci-mini<br/>Template and Profile])
+    UC2([Specialize deepsci-mini<br/>Profile Bundle])
     UC3([Create Workspace<br/>Runtime Records])
     UC4([Launch Houmao-backed<br/>Agent Team Instance])
     UC5([Record Handoffs,<br/>Runs, and Provenance])
@@ -93,6 +96,7 @@ sequenceDiagram
   participant CLI as isomer-cli
   participant PM as Project<br/>Manifest
   participant Doctor as Doctor<br/>Diagnostics
+  participant Profile as Topic Agent Team<br/>Profile Bundle
   participant Runtime as Workspace<br/>Runtime
   participant Adapter as Houmao Execution<br/>Adapter
   participant Houmao as Local Houmao<br/>Build
@@ -105,11 +109,12 @@ sequenceDiagram
   CLI-->>Maintainer: Return deterministic<br/>Project discovery evidence
   Maintainer->>Doctor: Run doctor for<br/>optimization topic
   Doctor-->>Maintainer: Return Pixi, Project,<br/>and topic readiness checks
-  Maintainer->>CLI: Inspect and validate<br/>deepsci-mini template and profile
-  CLI-->>Maintainer: Return template/profile<br/>validation evidence
+  Maintainer->>CLI: Inspect deepsci-mini template<br/>and draft specialization packet
+  CLI->>Profile: Copy template material<br/>and apply approved topic edits
+  Profile-->>Maintainer: Return profile bundle,<br/>packet, and validation evidence
   Maintainer->>Runtime: Create Workspace Runtime<br/>and resolved path records
   Runtime-->>Maintainer: Confirm schema version,<br/>dirs, refs, and readiness
-  Maintainer->>Adapter: Launch Agent Team Instance<br/>from deepsci-mini profile
+  Maintainer->>Adapter: Launch Agent Team Instance<br/>from deepsci-mini profile bundle
   Adapter->>Houmao: Materialize launch material,<br/>mailboxes, gateway refs
   Houmao-->>Adapter: Return managed-agent<br/>adapter refs
   Adapter->>Runtime: Record Agent Team Instance,<br/>Agent Instances, adapter refs
@@ -178,10 +183,11 @@ If Manual Mode completion signals disagree, such as a channel reply without the 
 
 ## Durable Outputs
 
-- UC-07 fixture Project with Research Topic `flash-attention-gb10-peak-performance-optimization`, Project Manifest entry, Topic Workspace, explicit Pixi environment binding, `deepsci-mini` Domain Agent Team Template registration, and Topic Agent Team Profile
-- CLI evidence for Project discovery, validation, topic listing, workspace listing, Effective Topic Context, Workspace Path Resolution, schema listing, template inspection, template validation, profile generation, and profile validation
+- UC-07 fixture Project with Research Topic `flash-attention-gb10-peak-performance-optimization`, Project Manifest entry, Topic Workspace, explicit Pixi environment binding, `deepsci-mini` Domain Agent Team Template registration, and approved Topic Agent Team Profile Bundle
+- CLI evidence for Project discovery, validation, topic listing, workspace listing, Effective Topic Context, Workspace Path Resolution, schema listing, template inspection, template validation, packet validation, profile bundle materialization, and profile validation
 - Doctor diagnostics showing Pixi, Project, and topic readiness checks with `mutated: false`
-- Workspace Runtime records for Research Topic, Research Inquiry `gb10-flash-attention-4-peak-performance-optimization`, Research Tasks, Runs, Workflow Stage Cursors, Topic Agent Team Profile, Agent Team Instance, Agent Instances, Agent Workspaces, resolved paths, handoffs, readiness state, and schema version
+- Topic Team Instantiation Packet and Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, with copied topic-specialized `deepsci-mini` material, placeholder substitutions, explicit deferrals, validation outputs, bundle-local `approval_ref`, and provenance refs
+- Workspace Runtime records for Research Topic, Research Inquiry `gb10-flash-attention-4-peak-performance-optimization`, Research Tasks, Runs, Workflow Stage Cursors, Topic Agent Team Profile Bundle ref, Agent Team Instance, Agent Instances, Agent Workspaces, resolved paths, handoffs, readiness state, and schema version
 - Houmao Execution Adapter records for launch, inspection, mail or gateway routing, managed-agent refs, and stop or park operations, stored as adapter refs rather than core Isomer schema terms
 - GB10 feature inventory Artifact listing relevant Blackwell features and their expected relevance to Flash Attention 4
 - Flash Attention 4 baseline measurement Artifact with input shape, precision, kernel variant, compiler flags, target architecture, measured runtime, utilization counters, and correctness output
@@ -197,7 +203,7 @@ If Manual Mode completion signals disagree, such as a channel reply without the 
 UC-07 passes only when all of the following are true:
 
 1. The Project can be validated, reopened, and inspected after process restart without losing or corrupting Workspace Runtime records.
-2. The `deepsci-mini` Domain Agent Team Template can be specialized into a Topic Agent Team Profile for the optimization topic without topic-specific leakage.
+2. The `deepsci-mini` Domain Agent Team Template can be specialized into an approved Topic Agent Team Profile Bundle for the optimization topic by copying template material into `<topic-workspace>/team-profile/`, applying topic edits there, and preserving a packet-backed audit trail without topic-specific leakage.
 3. At least one Houmao-backed manual handoff round is launched, observed, normalized, and recorded through Workspace Runtime.
 4. The Flash Attention 4 on GB10 optimization topic records baseline measurement, candidate optimization experiments, synthesis-review ranking, and final plan Artifacts with Provenance Records.
 5. Manual Mode and automatic mode can both occur in the same Topic Workspace without bypassing Gate Policy or completion normalization.
@@ -216,7 +222,7 @@ UC-07 passes only when all of the following are true:
 ## Relationship to Existing Use Cases
 
 - UC-07 is a focused sibling to UC-06. It reuses the same GB10/Flash Attention 4 domain but swaps the capstone `deepsci-org` runtime-prediction objective for a smaller `deepsci-mini` optimization objective.
-- It extends UC-01 by showing that the three-role `deepsci-mini` template can handle a concrete hardware-bound optimization topic, not just open research-direction exploration.
+- It extends UC-01 by showing that the three-role `deepsci-mini` template can be packet-specialized, copied into a Topic Agent Team Profile Bundle, and launched for a concrete hardware-bound optimization topic, not just open research-direction exploration.
 - It extends UC-02 by making the baseline-to-optimization loop explicit and tying each candidate to a GB10-specific feature.
 - It is intentionally narrower than UC-03 because it does not require paper revision or publication review; it stops at a technical optimization plan.
 - It can feed UC-04 if the user later asks for a project-specific GUI Component that renders the ranked optimization table or baseline-to-optimized comparison; UC-07 itself does not exercise a GUI path.

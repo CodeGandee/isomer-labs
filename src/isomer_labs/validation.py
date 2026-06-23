@@ -385,10 +385,25 @@ def _validate_profile_registrations(project: Project) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     topic_ids = {topic.id for topic in project.manifest.research_topics}
     template_ids = _registered_template_ids(project)
+    active_bundle_paths_by_topic: dict[str, list[Path]] = {}
     for profile in project.manifest.topic_agent_team_profiles:
         if profile.status == "archived":
             continue
         profile_path = resolve_project_path(project.root, profile.path_input)
+        if _is_topic_profile_bundle_path(project, profile.research_topic_id, profile_path):
+            active_bundle_paths_by_topic.setdefault(profile.research_topic_id, []).append(profile_path)
+            expected_path = _topic_profile_bundle_path(project, profile.research_topic_id)
+            if expected_path is not None and profile_path != expected_path:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO019",
+                        severity="error",
+                        concept="Topic Agent Team Profile Bundle registration",
+                        path=project.manifest_path,
+                        field=f"topic_agent_team_profiles.{profile.id}.path",
+                        message="Topic Agent Team Profile Bundle registration must point at the owning Topic Workspace team-profile/profile.toml path.",
+                    )
+                )
         if not is_within(profile_path, project.root):
             diagnostics.append(
                 Diagnostic(
@@ -433,6 +448,19 @@ def _validate_profile_registrations(project: Project) -> list[Diagnostic]:
                     message="Topic Agent Team Profile references an unregistered Domain Agent Team Template.",
                 )
             )
+    for topic_id, paths in sorted(active_bundle_paths_by_topic.items()):
+        if len(paths) <= 1:
+            continue
+        diagnostics.append(
+            Diagnostic(
+                code="ISO094",
+                severity="error",
+                concept="Topic Agent Team Profile Bundle registration",
+                path=project.manifest_path,
+                field=f"topic_agent_team_profiles.{topic_id}",
+                message="A Research Topic can register only one active Topic Agent Team Profile Bundle; topic-level parallelism requires another Research Topic.",
+            )
+        )
     return diagnostics
 
 
@@ -551,6 +579,27 @@ def _is_under_topic_workspace_teams(project: Project, path: Path) -> bool:
 
 def _is_under_topic_workspace(project: Project, path: Path) -> bool:
     return any(is_within(path, workspace_path) for workspace_path in _topic_workspace_paths(project))
+
+
+def _is_topic_profile_bundle_path(project: Project, topic_id: str, path: Path) -> bool:
+    expected = _topic_profile_bundle_path(project, topic_id)
+    if expected is not None and path == expected:
+        return True
+    return path.name == "profile.toml" and path.parent.name == "team-profile" and _is_under_topic_workspace(project, path)
+
+
+def _topic_profile_bundle_path(project: Project, topic_id: str) -> Path | None:
+    topic = project.manifest.first_topic(topic_id)
+    if topic is None:
+        return None
+    workspace = project.manifest.first_workspace(topic.topic_workspace_id) if topic.topic_workspace_id is not None else None
+    if workspace is None:
+        matching = [workspace for workspace in project.manifest.topic_workspaces if workspace.research_topic_id == topic_id]
+        if len(matching) == 1:
+            workspace = matching[0]
+    if workspace is not None and workspace.path_input is not None:
+        return resolve_project_path(project.root, workspace.path_input) / "team-profile" / "profile.toml"
+    return resolve_project_path(project.root, f"topic-workspaces/{topic_id}") / "team-profile" / "profile.toml"
 
 
 def _topic_workspace_paths(project: Project) -> list[Path]:

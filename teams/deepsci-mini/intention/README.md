@@ -30,4 +30,4 @@ This directory is editable intention source for `deepsci-mini` as a small Domain
 
 ## Template Boundary
 
-This package may be registered or referenced as `{domain_agent_team_template_ref}` from a Project Manifest. A concrete topic must create `{topic_agent_team_profile_id}` from this template before launch. A running team exists only after `{agent_team_instance_id}` is created from that profile.
+This package may be registered or referenced as `{domain_agent_team_template_ref}` from a Project Manifest. A concrete topic must materialize its fixed Topic Agent Team Profile Bundle at `{topic_agent_team_profile_bundle_ref}` from this template before launch. A running team exists only after `{agent_team_instance_id}` is created from that profile bundle.

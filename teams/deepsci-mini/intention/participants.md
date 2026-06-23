@@ -7,8 +7,8 @@ This file describes the default Agent Roles in the `deepsci-mini` Domain Agent T
 - Topology intention: tree-loop.
 - Root role: `deepsci-mini-lead`.
 - Specialist roles: `deepsci-mini-scout` and `deepsci-mini-synth-reviewer`.
-- Routing rule: specialists return durable handoffs to `deepsci-mini-lead`; they do not dispatch peers unless `{topic_agent_team_profile_id}` explicitly grants that authority through `{coordination_policy_ref}`.
-- Runtime rule: a concrete `{agent_instance_id}` exists only after `{agent_team_instance_id}` is launched from `{topic_agent_team_profile_id}`.
+- Routing rule: specialists return durable handoffs to `deepsci-mini-lead`; they do not dispatch peers unless the approved Topic Agent Team Profile Bundle explicitly grants that authority through `{coordination_policy_ref}`.
+- Runtime rule: a concrete `{agent_instance_id}` exists only after `{agent_team_instance_id}` is launched from the approved Topic Agent Team Profile Bundle.
 
 ## Topic-Level Binding Slots
 

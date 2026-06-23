@@ -118,6 +118,7 @@ Goal: enable Use Case 1, Explore a New Research Direction, as the first testable
 Major steps:
 
 - [x] Add a UC-01 fixture Project for Research Topic `flash-attention-gb10-peak-performance-optimization`, one Topic Workspace, one `deepsci-mini` Topic Agent Team Profile, initial Research Inquiry `gb10-flash-attention-4-direction-selection`, Research Task `map-gb10-flash-attention-optimization-directions`, and one follow-up-inquiry Gate policy.
+- [x] Materialize `deepsci-mini` through a deterministic Project Operator Session and Topic Service Agent Topic Team Instantiation Packet before the UC-01 Agent Team Instance is created or simulated.
 - [x] Launch or simulate a manual-mode `deepsci-mini` Agent Team Instance that routes bounded scouting and synthesis-review work through the Houmao Execution Adapter.
 - [x] Record seed-source summaries, Flash Attention implementation notes, GB10 or Blackwell feature notes, claim candidates, Evidence Items, review notes, and inquiry options as Artifacts or provisional research records.
 - [x] Present a follow-up Research Inquiry Gate through the manual harness or Operator Agent text output and record the selected inquiry as a Decision Record.
@@ -136,7 +137,7 @@ Goal: enable Use Case 7 as the first measured optimization acceptance test, usin
 
 Major steps:
 
-- [ ] Add or extend the UC-07 fixture Project with Research Topic `flash-attention-gb10-peak-performance-optimization`, explicit Pixi environment binding, `deepsci-mini` Domain Agent Team Template registration, and a Topic Agent Team Profile with lead, scout, and synthesis-reviewer Agent Workspaces.
+- [ ] Add or extend the UC-07 fixture Project with Research Topic `flash-attention-gb10-peak-performance-optimization`, explicit Pixi environment binding, `deepsci-mini` Domain Agent Team Template registration, and a packet-backed Topic Agent Team Profile Bundle with lead, scout, and synthesis-reviewer Agent Workspaces.
 - [ ] Run the CLI baseline for validation, topic listing, workspace listing, Effective Topic Context, Workspace Path Resolution, schema listing, doctor diagnostics, template inspection, and profile validation using root-level `--print-json` for machine-readable output.
 - [ ] Launch or simulate a manual-mode `deepsci-mini` Agent Team Instance through the Houmao Execution Adapter and normalize at least one manual handoff round into Workspace Runtime.
 - [ ] Record a GB10 feature inventory, Flash Attention 4 baseline scope, baseline measurement Artifact, candidate optimization Artifacts, speedup evidence, utilization evidence, and correctness checks.

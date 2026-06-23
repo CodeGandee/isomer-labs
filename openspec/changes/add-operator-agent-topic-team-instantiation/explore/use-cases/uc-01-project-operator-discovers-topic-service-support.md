@@ -6,28 +6,30 @@ As an Isomer maintainer, I want any agent with Isomer system skills to become pr
 
 ## Scenario
 
-The user opens the Isomer Labs repository and asks an Isomer-skilled agent to instantiate a topic team from the `deepsci-mini` Domain Agent Team Template. The agent acts as a Project Operator Session because the current working directory is an Isomer Project root. It discovers the Project Manifest, available Research Topics, Topic Workspaces, Domain Agent Team Templates, existing Topic Agent Team Profiles, Workspace Runtime refs, and available Topic Service Agent definitions or live refs. If topic-scoped support is needed, it opens a bounded Service Request instead of hardcoding Topic Team Specialization in Python.
+The user opens the Isomer Labs repository and asks an Isomer-skilled agent to instantiate a topic team from the `deepsci-mini` Domain Agent Team Template for a supplied research topic prompt or topic file. The agent acts as a Project Operator Session because the current working directory is an Isomer Project root. It discovers the Project Manifest, available Research Topics, Topic Workspaces, Domain Agent Team Templates, existing Topic Agent Team Profiles, Workspace Runtime refs, and available Topic Service Agent definitions or live refs. If the selected topic needs a workspace or topic-scoped support, it creates or confirms the Topic Workspace and opens a bounded Service Request instead of hardcoding Topic Team Specialization in Python.
 
 ## Assumptions
 
 - The project root is the current working directory or is supplied explicitly by the user.
+- The research topic is supplied as a user prompt, topic file, or existing Research Topic ref.
 - A Project Operator Session can be Codex, Houmao, Claude, Kimi, or another agent surface with Isomer system skills installed.
 - The Project Operator Session is not required to be a Houmao-managed Agent Instance.
 - Topic Service Agents are Service Team members and are not Agent Team Instance members.
 
 ## Step-by-Step Description
 
-1. The user points an Isomer-skilled agent at the Isomer Project root and requests a topic team from `deepsci-mini`.
+1. The user points an Isomer-skilled agent at the Isomer Project root and requests a topic team from `deepsci-mini` for a topic prompt, topic file, or existing Research Topic.
 2. The Project Operator Session resolves the Project root and loads the Project Manifest.
-3. The Project Operator Session lists Research Topics and Topic Workspaces and selects the user-requested Research Topic or asks the user to choose when multiple topics are plausible.
-4. The Project Operator Session lists Domain Agent Team Templates and confirms that `deepsci-mini` is a reusable template rather than a launchable topic team.
-5. The Project Operator Session inspects existing Topic Agent Team Profiles and Workspace Runtime refs for the selected Research Topic.
-6. The Project Operator Session discovers available Topic Service Agent definitions or live Topic Service Agent refs for the selected Topic Workspace.
-7. The Project Operator Session determines that Topic Team Specialization needs topic-scoped support, such as template inspection, placeholder reconciliation, topic environment readiness, or Agent Workspace setup.
-8. The Project Operator Session creates a Service Request that names the Project, Research Topic, Topic Workspace, Domain Agent Team Template, expected support output, authorization scope, Service Dispatch Form, and provenance obligations.
-9. The system validates that the Service Request is bounded service work and not a Research Task, Workflow Stage, Gate, or Agent Team Instance launch.
-10. The Project Operator Session dispatches the Service Request to a Topic Service Agent through a tool-native or launched-service dispatch form.
-11. The Project Operator Session records the Service Request ref and waits for Topic Service Agent support output before reviewing any Topic Agent Team Profile draft.
+3. The Project Operator Session reads the supplied topic material, lists Research Topics and Topic Workspaces, and selects the user-requested Research Topic or asks the user to choose when multiple topics are plausible.
+4. The Project Operator Session creates or confirms the selected Research Topic's Topic Workspace before any topic-level team material is written.
+5. The Project Operator Session lists Domain Agent Team Templates and confirms that `deepsci-mini` is a reusable template rather than a launchable topic team.
+6. The Project Operator Session inspects existing Topic Agent Team Profiles, Topic Agent Team Profile Bundle refs, and Workspace Runtime refs for the selected Research Topic.
+7. The Project Operator Session discovers available Topic Service Agent definitions or live Topic Service Agent refs for the selected Topic Workspace.
+8. The Project Operator Session determines that Topic Team Specialization needs topic-scoped support, such as template inspection, placeholder reconciliation, topic environment readiness, copied material planning, profile text editing, or Agent Workspace setup.
+9. The Project Operator Session creates a Service Request that names the Project, Research Topic, Topic Workspace, Domain Agent Team Template, expected support output, authorization scope, Service Dispatch Form, and provenance obligations.
+10. The system validates that the Service Request is bounded service work and not a Research Task, Workflow Stage, Gate, or Agent Team Instance launch.
+11. The Project Operator Session dispatches the Service Request to a Topic Service Agent through a tool-native or launched-service dispatch form.
+12. The Project Operator Session records the Service Request ref and waits for Topic Service Agent support output before reviewing any Topic Agent Team Profile Bundle draft.
 
 ## Mermaid Use Case Diagram
 
@@ -70,7 +72,7 @@ sequenceDiagram
   participant Adapter as Houmao Adapter
   participant Service as Topic Service Agent
 
-  User->>Session: Request topic team from deepsci-mini
+  User->>Session: Request topic team from deepsci-mini<br/>for topic prompt or file
   Session->>CLI: Resolve project root
   CLI->>Manifest: Load Project Manifest
   Manifest-->>Session: Project, topics, and workspace refs
@@ -92,6 +94,8 @@ sequenceDiagram
 
 - Project root resolution evidence
 - Project Manifest topic and workspace discovery output
+- Topic prompt or topic file interpretation evidence
+- Selected or created Topic Workspace ref for the Research Topic
 - Domain Agent Team Template inspection output for `deepsci-mini`
 - Topic Service Agent discovery output or unavailable diagnostic
 - Service Request with scope, expected output, authorization, dispatch form, and completion observation rules
@@ -113,7 +117,7 @@ If no Topic Service Agent definition or live ref exists, the Project Operator Se
 
 ## Pass Criteria
 
-This use case passes when a non-Houmao Project Operator Session can discover project and topic surfaces, identify `deepsci-mini` as a Domain Agent Team Template, and route a bounded Service Request to a Topic Service Agent without creating an Agent Team Instance or hardcoding template-specific substitutions.
+This use case passes when a non-Houmao Project Operator Session can discover project and topic surfaces, understand the supplied research topic, create or confirm the Topic Workspace, identify `deepsci-mini` as a Domain Agent Team Template, and route a bounded Service Request to a Topic Service Agent without creating an Agent Team Instance or hardcoding template-specific substitutions.
 
 ## Evidence
 

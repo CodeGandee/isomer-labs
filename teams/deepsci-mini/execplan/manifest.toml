@@ -142,3 +142,10 @@ description = "Generated human support views that summarize authoritative artifa
 path = "docs/"
 artifact_kind = "dir"
 purpose = "generated human support views"
+
+[[copyable_materials]]
+id = "execplan"
+description = "Complete generated execplan material copied into a Topic Agent Team Profile Bundle for topic-specific specialization."
+path = "."
+artifact_kind = "dir"
+purpose = "topic-specialized copy root"

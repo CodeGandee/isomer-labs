@@ -4,6 +4,8 @@ The Houmao Execution Adapter lets Isomer Labs launch and reconcile an Agent Team
 
 Houmao-specific concepts such as specialist, project profile, native role, recipe, launch dossier, and managed-agent id belong to this adapter. They are not promoted to generic Isomer domain language unless an accepted spec explicitly does so.
 
+The adapter consumes approved Isomer launch inputs: the materialized Topic Agent Team Profile Bundle, Agent Team Instance runtime record, Agent Instance records, Agent Workspace path plans, packet provenance refs, and Topic Service Agent support refs when present. It rejects preview-only profiles and template-only launch attempts because placeholder choice, copied material planning, topic edits, and approval belong to the Project Operator Session and Topic Service Agent layer above the adapter.
+
 ## Launch Paths
 
 ### Quick launch
@@ -93,6 +95,8 @@ ISOMER_MANUAL_LIVE_HOUMAO=1 pixi run python tests/manual/uc01_headless_vertical_
 Simulated mode is the default regression path. It produces deterministic dispatch, Signal Observation, normalization, adapter payload, and adapter command records for the pinned Flash Attention 4 on GB10 topic without mutating live Houmao. Live mode requires `ISOMER_MANUAL_LIVE_HOUMAO=1`; otherwise the command reports a skipped live validation before creating runtime or adapter state.
 
 UC-01 generic records stay provider-neutral. Research Inquiries, Research Tasks, Runs, Artifacts, Evidence Items, Findings, Gates, Decision Records, View Manifests, and Provenance Records use Isomer refs and topic-scoped lifecycle metadata. Houmao command outputs, managed-agent ids, mail or gateway details, project overlays, and cleanup observations belong in adapter payload refs, adapter manifests, or adapter-scoped runtime records.
+
+Before the simulated or live adapter path creates runtime team records, the UC-01 harness materializes the deterministic Topic Team Instantiation Packet into `<topic-workspace>/team-profile/`. This proves that `deepsci-mini` is inspected and specialized as a Domain Agent Team Template before Houmao launch or adapter-simulated handoffs.
 
 The selected UC-01 route classification can be `uc07-measured-optimization`, `more-scouting`, or `different-flash-attention-4-investigation`. Even when the selected route points toward UC-07, the harness stops after the follow-up Gate, Decision Record, and selected Research Inquiry; it does not create measurement, baseline, optimization, speedup, utilization, correctness-result, automatic replay, or compute-budget Gate records.
 

@@ -64,6 +64,7 @@ class TemplateArtifact:
     artifact_kind: str
     purpose: str | None = None
     description: str | None = None
+    copyable: bool = False
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -72,6 +73,7 @@ class TemplateArtifact:
             "artifact_kind": self.artifact_kind,
             "purpose": self.purpose,
             "description": self.description,
+            "copyable": self.copyable,
         }
 
 
@@ -128,12 +130,24 @@ class TemplateParameter:
     name: str
     description: str | None
     required_for_topic_profile: bool
+    placeholder: str | None = None
+    source_path: str | None = None
+    expected_replacement_layer: str | None = None
+    blocks_profile_save: bool = False
+    blocks_launch: bool = False
+    derived: bool = False
 
     def to_json(self) -> dict[str, object]:
         return {
             "name": self.name,
             "description": self.description,
             "required_for_topic_profile": self.required_for_topic_profile,
+            "placeholder": self.placeholder,
+            "source_path": self.source_path,
+            "expected_replacement_layer": self.expected_replacement_layer,
+            "blocks_profile_save": self.blocks_profile_save,
+            "blocks_launch": self.blocks_launch,
+            "derived": self.derived,
         }
 
 
@@ -151,6 +165,8 @@ class DomainAgentTeamTemplate:
     roles: list[AgentRoleDefinition] = field(default_factory=list)
     workflow_stage_routes: list[WorkflowStageRoute] = field(default_factory=list)
     parameters: list[TemplateParameter] = field(default_factory=list)
+    instantiation_schema_paths: list[str] = field(default_factory=list)
+    copyable_materials: list[TemplateArtifact] = field(default_factory=list)
     raw_metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, object]:
@@ -167,6 +183,8 @@ class DomainAgentTeamTemplate:
             "roles": [role.to_json() for role in self.roles],
             "workflow_stage_routes": [route.to_json() for route in self.workflow_stage_routes],
             "parameters": [parameter.to_json() for parameter in self.parameters],
+            "instantiation_schema_paths": self.instantiation_schema_paths,
+            "copyable_materials": [artifact.to_json() for artifact in self.copyable_materials],
         }
 
 
@@ -230,6 +248,16 @@ class TopicAgentTeamProfile:
     automatic_mode_policy_ref: str | None = None
     reviewer_read_access_policy: str | None = None
     fanout_policies: list[FanoutPolicy] = field(default_factory=list)
+    profile_bundle_ref: str | None = None
+    instantiation_packet_ref: str | None = None
+    approval_ref: str | None = None
+    approval_actor_ref: str | None = None
+    approval_mode: str | None = None
+    project_operator_ref: str | None = None
+    topic_service_agent_refs: list[str] = field(default_factory=list)
+    copied_material_refs: list[str] = field(default_factory=list)
+    validation_refs: list[str] = field(default_factory=list)
+    launch_blocker_refs: list[str] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, object]:
@@ -252,6 +280,16 @@ class TopicAgentTeamProfile:
             "automatic_mode_policy_ref": self.automatic_mode_policy_ref,
             "reviewer_read_access_policy": self.reviewer_read_access_policy,
             "fanout_policies": [policy.to_json() for policy in self.fanout_policies],
+            "profile_bundle_ref": self.profile_bundle_ref,
+            "instantiation_packet_ref": self.instantiation_packet_ref,
+            "approval_ref": self.approval_ref,
+            "approval_actor_ref": self.approval_actor_ref,
+            "approval_mode": self.approval_mode,
+            "project_operator_ref": self.project_operator_ref,
+            "topic_service_agent_refs": self.topic_service_agent_refs,
+            "copied_material_refs": self.copied_material_refs,
+            "validation_refs": self.validation_refs,
+            "launch_blocker_refs": self.launch_blocker_refs,
         }
 
 

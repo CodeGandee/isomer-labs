@@ -15,8 +15,16 @@ from typing import Any, Mapping
 
 from isomer_labs.context import resolve_effective_topic_context
 from isomer_labs.diagnostics import Diagnostic, has_errors
-from isomer_labs.models import DomainAgentTeamTemplate, EffectiveTopicContext, SelectionRequest, TopicAgentTeamProfile
+from isomer_labs.models import (
+    TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION,
+    DomainAgentTeamTemplate,
+    EffectiveTopicContext,
+    SelectionRequest,
+    TopicAgentTeamProfile,
+    TopicAgentTeamProfileRegistration,
+)
 from isomer_labs.project import discover_project
+from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
 from isomer_labs.runtime.models import RuntimeLifecycleRecord
 from isomer_labs.runtime.store import (
     WorkspaceRuntimeStore,
@@ -32,6 +40,7 @@ from isomer_labs.team_templates import (
     validate_domain_agent_team_template,
 )
 from isomer_labs.toml_loader import load_toml
+from isomer_labs.topic_team_instantiation import parse_topic_team_instantiation_packet
 from isomer_labs.validation import build_project_state
 
 from uc01_headless_vertical_slice.constants import (
@@ -465,6 +474,32 @@ def load_uc01_profile_and_template(
     context: EffectiveTopicContext,
 ) -> tuple[TopicAgentTeamProfile | None, DomainAgentTeamTemplate | None, list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
+    template_registration = find_domain_agent_team_template(BUILT_IN_DEEPSCI_MINI_ID, context.project)
+    template = None
+    if template_registration is not None:
+        template_report = validate_domain_agent_team_template(context.project, template_registration, include_harness=False)
+        diagnostics.extend(template_report.diagnostics)
+        template = template_report.template
+    packet_path = context.project.root / "fixtures" / "uc01" / "topic-team-instantiation-packet.toml"
+    if packet_path.exists() and template is not None:
+        raw_packet, packet_load_diagnostics = load_toml(packet_path, "Topic Team Instantiation Packet")
+        diagnostics.extend(packet_load_diagnostics)
+        if raw_packet is not None:
+            packet, packet_parse_diagnostics = parse_topic_team_instantiation_packet(packet_path, raw_packet)
+            diagnostics.extend(packet_parse_diagnostics)
+            if packet is not None:
+                materialization = materialize_topic_agent_team_profile_bundle(
+                    context,
+                    template,
+                    packet,
+                    write=True,
+                    overwrite=True,
+                )
+                diagnostics.extend(materialization.diagnostics)
+                if materialization.profile is not None:
+                    _register_materialized_profile_for_manual_run(context, materialization.profile)
+                return materialization.profile, template, diagnostics
+
     profile_id = context.topic_agent_team_profile_id or UC01_PROFILE_ID
     registration = context.project.manifest.first_topic_agent_team_profile(profile_id)
     if registration is None:
@@ -502,6 +537,32 @@ def load_uc01_profile_and_template(
     profile_report = validate_topic_agent_team_profile(profile, template_report.template, project=context.project, source_path=profile_path)
     diagnostics.extend(profile_report.diagnostics)
     return profile, template_report.template, diagnostics
+
+
+def _register_materialized_profile_for_manual_run(
+    context: EffectiveTopicContext,
+    profile: TopicAgentTeamProfile,
+) -> None:
+    if context.project.manifest.first_topic_agent_team_profile(profile.id) is not None:
+        return
+    context.project.manifest.topic_agent_team_profiles.append(
+        TopicAgentTeamProfileRegistration(
+            id=profile.id,
+            path_input=_project_relative_path(context.project.root, profile.source_path),
+            domain_agent_team_template_id=profile.domain_agent_team_template_id,
+            research_topic_id=profile.research_topic_id,
+            schema_version=TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION,
+            status="active",
+            source_path=context.project.manifest_path,
+        )
+    )
+
+
+def _project_relative_path(project_root: Path, path: Path) -> str:
+    try:
+        return path.resolve(strict=False).relative_to(project_root.resolve(strict=False)).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def _write_uc01_records(
@@ -884,4 +945,3 @@ def _run_json(root: Path, env: Mapping[str, str], args: list[str]) -> dict[str, 
 def _require(condition: bool, message: str, payload: object) -> None:
     if not condition:
         raise RuntimeError(f"{message}: {json.dumps(payload, indent=2, sort_keys=True)}")
-

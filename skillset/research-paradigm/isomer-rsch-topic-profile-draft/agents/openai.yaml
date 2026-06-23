@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-topic-profile-draft"
+  short_description: "Draft profile bundle"
+  default_prompt: "Use $isomer-rsch-topic-profile-draft to draft reviewable Topic Agent Team Profile Bundle material."

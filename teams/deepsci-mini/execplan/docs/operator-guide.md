@@ -8,7 +8,7 @@ This generated support document explains how an operator should use the `deepsci
 
 ## Creation and Specialization
 
-Before launch, create a `{topic_agent_team_profile_id}` from `deepsci-mini`. The topic profile must choose concrete role bindings, expected UC-01 Artifacts, Coordination Policy, Gate Policy, Skill Binding projection refs, Capability Binding refs, and adapter posture.
+Before launch, materialize the selected Research Topic's fixed Topic Agent Team Profile Bundle from `deepsci-mini`. The topic profile must choose concrete role bindings, expected UC-01 Artifacts, Coordination Policy, Gate Policy, Skill Binding projection refs, Capability Binding refs, adapter posture, and bundle-local approval provenance.
 
 ## Default Team
 
@@ -19,7 +19,7 @@ Before launch, create a `{topic_agent_team_profile_id}` from `deepsci-mini`. The
 ## Suggested UC-01 Manual Flow
 
 1. Resolve Effective Topic Context for the selected Research Topic.
-2. Create or reuse a `deepsci-mini` Topic Agent Team Profile.
+2. Materialize or reuse the selected Research Topic's `deepsci-mini` Topic Agent Team Profile Bundle.
 3. Create an Agent Team Instance with one Agent Instance per role.
 4. Start the lead.
 5. Dispatch one scout handoff.

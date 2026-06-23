@@ -35,6 +35,7 @@ from isomer_labs.houmao.adapter import HoumaoAdapterFacade
 from isomer_labs.init_project import initialize_project
 from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, SelectionRequest, TopicAgentTeamProfile
 from isomer_labs.paths import preview_paths
+from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
 from isomer_labs.project import discover_project
 from isomer_labs.rendering import render_key_values
 from isomer_labs.runtime.store import (
@@ -57,6 +58,7 @@ from isomer_labs.team_templates import (
     resolve_template_source_path,
     validate_domain_agent_team_template,
 )
+from isomer_labs.topic_team_instantiation import parse_topic_team_instantiation_packet
 from isomer_labs.toml_loader import load_toml
 from isomer_labs.validation import build_project_state
 
@@ -94,6 +96,7 @@ Command surface:
   team-templates inspect
   team-templates validate
   team-profiles specialize
+  team-profiles materialize
   team-profiles validate
 """
 
@@ -441,12 +444,13 @@ def _cmd_team_profiles_specialize(
         registration_suggestion = _profile_registration_suggestion(context.project.root, profile)
     payload = {
         "profile": profile.to_json(),
+        "materialization": "preview",
         "validation": profile_report.to_json(),
         "written_path": written_path,
         "registration_suggestion": registration_suggestion,
     }
     lines = [
-        f"Topic Agent Team Profile: {profile.id}",
+        f"Topic Agent Team Profile preview: {profile.id}",
         f"Template: {profile.domain_agent_team_template_id}",
         f"Research Topic: {profile.research_topic_id}",
     ]
@@ -461,6 +465,59 @@ def _cmd_team_profiles_specialize(
                 f'research_topic_id="{registration_suggestion["research_topic_id"]}".'
             )
     return _emit("team-profiles specialize", options, payload, diagnostics, lines)
+
+
+def _cmd_team_profiles_materialize(
+    options: CliOptions,
+    *,
+    packet_path: str,
+    template_id: str | None = None,
+    write_bundle: bool = False,
+    overwrite: bool = False,
+) -> int:
+    context, diagnostics = _context_for_options(options)
+    if context is None:
+        return _emit("team-profiles materialize", options, {"materialization": None, "ok": False}, diagnostics, [])
+    packet_file = _resolve_cli_path(context.project.root, packet_path)
+    raw, load_diagnostics = load_toml(packet_file, "Topic Team Instantiation Packet")
+    diagnostics.extend(load_diagnostics)
+    packet = None
+    if raw is not None:
+        packet, parse_diagnostics = parse_topic_team_instantiation_packet(packet_file, raw)
+        diagnostics.extend(parse_diagnostics)
+    selected_template_id = template_id or (packet.source_template_ref if packet is not None else None) or context.domain_agent_team_template_id or BUILT_IN_DEEPSCI_ORG_ID
+    registration = find_domain_agent_team_template(selected_template_id, context.project)
+    if registration is None:
+        diagnostics.append(_unknown_template_diagnostic(selected_template_id))
+        return _emit("team-profiles materialize", options, {"materialization": None, "ok": False}, diagnostics, [])
+    template_report = validate_domain_agent_team_template(context.project, registration, include_harness=False)
+    diagnostics.extend(template_report.diagnostics)
+    if packet is None or template_report.template is None:
+        return _emit("team-profiles materialize", options, {"materialization": None, "ok": False}, diagnostics, [])
+    result = materialize_topic_agent_team_profile_bundle(
+        context,
+        template_report.template,
+        packet,
+        write=write_bundle,
+        overwrite=overwrite,
+    )
+    diagnostics.extend(result.diagnostics)
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": result.written,
+        "materialization": result.to_json(),
+        "registration_suggestion": (
+            _profile_registration_suggestion(context.project.root, result.profile)
+            if result.profile is not None and not has_errors(diagnostics)
+            else None
+        ),
+    }
+    lines = [
+        f"Topic Agent Team Profile Bundle: {result.bundle_path}",
+        f"Profile: {result.profile_path}",
+        f"Written: {str(result.written).lower()}",
+    ]
+    return _emit("team-profiles materialize", options, payload, diagnostics, lines)
 
 
 def _cmd_team_profiles_validate(
@@ -730,6 +787,7 @@ def _cmd_team_instances_adapter_link_export(
         agent_bindings=_agent_bindings_from_summary(summary),
         houmao_project_dir=houmao_dir,
         actor_ref=actor_ref,
+        operator_provenance=_operator_provenance_from_summary(summary, actor_ref),
     )
     digest = canonical_json_digest(manifest)
     written_path: Path | None = None
@@ -1335,6 +1393,27 @@ def _agent_bindings_from_summary(summary: Any) -> list[AgentBinding]:
     ]
 
 
+def _operator_provenance_from_summary(summary: Any, actor_ref: str | None) -> dict[str, object]:
+    team = summary.agent_team_instance
+    data: dict[str, object] = {}
+    if actor_ref:
+        data["actor_ref"] = actor_ref
+    for key in (
+        "topic_agent_team_profile_bundle_ref",
+        "instantiation_packet_ref",
+        "approval_ref",
+        "project_operator_ref",
+    ):
+        value = getattr(team, key, None)
+        if value:
+            data[key] = value
+    for key in ("topic_service_agent_refs", "validation_refs"):
+        value = getattr(team, key, None)
+        if value:
+            data[key] = list(value)
+    return data
+
+
 def _manifest_output_path(
     context: EffectiveTopicContext,
     agent_team_instance_id: str = "",
@@ -1784,6 +1863,13 @@ def _resolve_profile_cli_path(
         )
         return None
     return (project.root / registration.path_input).expanduser().resolve(strict=False)
+
+
+def _resolve_cli_path(project_root: Path, path_input: str) -> Path:
+    path = Path(path_input).expanduser()
+    if path.is_absolute():
+        return path.resolve(strict=False)
+    return (project_root / path).resolve(strict=False)
 
 
 def _profile_registration_suggestion(project_root: Path, profile: TopicAgentTeamProfile) -> dict[str, str]:

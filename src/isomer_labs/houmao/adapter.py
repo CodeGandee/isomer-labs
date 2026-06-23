@@ -741,6 +741,7 @@ class HoumaoAdapterFacade:
         source: str,
     ) -> HoumaoMaterializationResult:
         diagnostics: list[Diagnostic] = []
+        diagnostics.extend(_launchable_profile_diagnostics(profile))
         agent_team_instance_id = summary.agent_team_instance.id
         paths = build_houmao_adapter_paths(
             context.topic_workspace_path,
@@ -753,6 +754,7 @@ class HoumaoAdapterFacade:
             return _failed_materialization(paths, diagnostics)
         _ensure_adapter_directories(paths)
 
+        operator_provenance = _bounded_operator_provenance(summary, profile, actor_ref)
         profile_by_role = {binding.role_id: binding for binding in profile.role_bindings}
         workspace_by_agent = {workspace.agent_instance_id: workspace for workspace in summary.agent_workspaces}
         path_plan_by_id = {plan.id: plan for plan in store.list_path_plans()}
@@ -784,6 +786,7 @@ class HoumaoAdapterFacade:
                     "name": houmao_profile,
                     "tool": "codex",
                     "system_prompt_file": str(system_prompt_path),
+                    "operator_provenance": operator_provenance,
                 },
             )
             _write_json_file(
@@ -797,6 +800,7 @@ class HoumaoAdapterFacade:
                     "agent_name": houmao_agent_name,
                     "workdir": str(workdir),
                     "headless": True,
+                    "operator_provenance": operator_provenance,
                 },
             )
             _write_json_file(
@@ -808,6 +812,7 @@ class HoumaoAdapterFacade:
                     "profile": houmao_profile,
                     "agent_name": houmao_agent_name,
                     "workdir": str(workdir),
+                    "operator_provenance": operator_provenance,
                 },
             )
             agents.append(
@@ -860,6 +865,7 @@ class HoumaoAdapterFacade:
             ],
             houmao_project_dir=paths.houmao_project_dir,
             actor_ref=actor_ref,
+            operator_provenance=operator_provenance,
         )
         launch_material_manifest = build_launch_material_manifest(
             link_manifest=link_manifest,
@@ -905,7 +911,10 @@ class HoumaoAdapterFacade:
                 created_at=timestamp,
                 updated_at=timestamp,
                 actor_ref=actor_ref,
-                provenance_refs=[f"provenance:houmao-materialization:{agent_team_instance_id}:{timestamp}"],
+                provenance_refs=[
+                    f"provenance:houmao-materialization:{agent_team_instance_id}:{timestamp}",
+                    *_operator_provenance_ref_list(operator_provenance),
+                ],
             )
         )
         return HoumaoMaterializationResult(
@@ -970,6 +979,7 @@ class HoumaoAdapterFacade:
         command_run_ids: list[str] = []
         payload_ref_ids: list[str] = []
         adapter_refs: list[dict[str, object]] = []
+        operator_provenance = _bounded_operator_provenance(summary, profile, actor_ref)
         command_specs = [self.catalog.project_init(materialization.paths.houmao_project_dir)]
         for agent in materialization.agents:
             command_specs.extend(
@@ -1007,6 +1017,7 @@ class HoumaoAdapterFacade:
                 result,
                 materialization.paths.command_payloads,
                 actor_ref=actor_ref,
+                operator_provenance=operator_provenance,
             )
             command_run_ids.append(command_record_id)
             payload_ref_ids.append(payload_ref_id)
@@ -1081,10 +1092,21 @@ class HoumaoAdapterFacade:
                 updated_at=launch_finished,
                 finished_at=launch_finished,
                 actor_ref=actor_ref,
-                provenance_refs=[f"provenance:houmao-launch:{summary.agent_team_instance.id}:{launch_started}"],
+                provenance_refs=[
+                    f"provenance:houmao-launch:{summary.agent_team_instance.id}:{launch_started}",
+                    *_operator_provenance_ref_list(operator_provenance),
+                ],
             )
         )
-        store.record_adapter_reconciliation(_adapter_reconciliation_record(context, summary.agent_team_instance.id, reconciliation, actor_ref))
+        store.record_adapter_reconciliation(
+            _adapter_reconciliation_record(
+                context,
+                summary.agent_team_instance.id,
+                reconciliation,
+                actor_ref,
+                operator_provenance=operator_provenance,
+            )
+        )
         return HoumaoLaunchResult(
             status=launch_status,
             preflight=preflight,
@@ -1125,6 +1147,7 @@ class HoumaoAdapterFacade:
                 results.append(runner.run(self.catalog.agent_get(paths.houmao_project_dir, name=agent_name), env=self.env))
         command_run_ids: list[str] = []
         payload_ref_ids: list[str] = []
+        operator_provenance = _bounded_summary_provenance(summary, actor_ref)
         for result in results:
             command_record_id, payload_ref_id = self._record_command_result(
                 context,
@@ -1134,6 +1157,7 @@ class HoumaoAdapterFacade:
                 result,
                 paths.command_payloads,
                 actor_ref=actor_ref,
+                operator_provenance=operator_provenance,
             )
             command_run_ids.append(command_record_id)
             payload_ref_ids.append(payload_ref_id)
@@ -1154,7 +1178,14 @@ class HoumaoAdapterFacade:
         timestamp = utc_timestamp()
         snapshot_path = paths.inspection_snapshots / f"inspection-{_timestamp_slug(timestamp)}.json"
         snapshot_path.parent.mkdir(parents=True, exist_ok=True)
-        _write_json_file(snapshot_path, {"live_state": live_state, "reconciliation": reconciliation.to_json()})
+        _write_json_file(
+            snapshot_path,
+            {
+                "live_state": live_state,
+                "reconciliation": reconciliation.to_json(),
+                "operator_provenance": operator_provenance,
+            },
+        )
         snapshot_ref_id = self._record_payload_ref(
             context,
             store,
@@ -1183,10 +1214,21 @@ class HoumaoAdapterFacade:
                 diagnostics=[diagnostic.to_json() for diagnostic in diagnostics],
                 inspected_at=timestamp,
                 actor_ref=actor_ref,
-                provenance_refs=[f"provenance:houmao-inspection:{summary.agent_team_instance.id}:{timestamp}"],
+                provenance_refs=[
+                    f"provenance:houmao-inspection:{summary.agent_team_instance.id}:{timestamp}",
+                    *_operator_provenance_ref_list(operator_provenance),
+                ],
             )
         )
-        store.record_adapter_reconciliation(_adapter_reconciliation_record(context, summary.agent_team_instance.id, reconciliation, actor_ref))
+        store.record_adapter_reconciliation(
+            _adapter_reconciliation_record(
+                context,
+                summary.agent_team_instance.id,
+                reconciliation,
+                actor_ref,
+                operator_provenance=operator_provenance,
+            )
+        )
         return HoumaoInspectionResult(
             status="failed" if has_errors(diagnostics) else "observed",
             command_run_ids=command_run_ids,
@@ -1231,6 +1273,7 @@ class HoumaoAdapterFacade:
         runner = self._runner(context.project.root)
         command_run_ids: list[str] = []
         payload_ref_ids: list[str] = []
+        operator_provenance = _bounded_summary_provenance(summary, actor_ref)
         stopped = 0
         for target in targets:
             agent_name = target.get("houmao_agent_name")
@@ -1245,6 +1288,7 @@ class HoumaoAdapterFacade:
                 result,
                 paths.command_payloads,
                 actor_ref=actor_ref,
+                operator_provenance=operator_provenance,
             )
             command_run_ids.append(command_record_id)
             payload_ref_ids.append(payload_ref_id)
@@ -1261,7 +1305,15 @@ class HoumaoAdapterFacade:
             status = "stale"
         timestamp = utc_timestamp()
         outcome_path = paths.stop_outcomes / f"stop-{_timestamp_slug(timestamp)}.json"
-        _write_json_file(outcome_path, {"status": status, "targets": targets, "command_run_ids": command_run_ids})
+        _write_json_file(
+            outcome_path,
+            {
+                "status": status,
+                "targets": targets,
+                "command_run_ids": command_run_ids,
+                "operator_provenance": operator_provenance,
+            },
+        )
         outcome_ref_id = self._record_payload_ref(
             context,
             store,
@@ -1290,7 +1342,10 @@ class HoumaoAdapterFacade:
                 diagnostics=[diagnostic.to_json() for diagnostic in diagnostics],
                 stopped_at=timestamp,
                 actor_ref=actor_ref,
-                provenance_refs=[f"provenance:houmao-stop:{summary.agent_team_instance.id}:{timestamp}"],
+                provenance_refs=[
+                    f"provenance:houmao-stop:{summary.agent_team_instance.id}:{timestamp}",
+                    *_operator_provenance_ref_list(operator_provenance),
+                ],
             )
         )
         return HoumaoStopResult(
@@ -1798,6 +1853,7 @@ class HoumaoAdapterFacade:
         payload_root: Path,
         *,
         actor_ref: str | None,
+        operator_provenance: Mapping[str, object] | None = None,
     ) -> tuple[str, str]:
         timestamp = utc_timestamp()
         record_id = (
@@ -1805,7 +1861,10 @@ class HoumaoAdapterFacade:
             f"{_timestamp_slug(timestamp)}-{_stable_suffix({'argv': result.argv, 'agent_instance_id': agent_instance_id})}"
         )
         payload_path = payload_root / f"{record_id}.json"
-        _write_json_file(payload_path, result.to_json())
+        payload = result.to_json()
+        if operator_provenance:
+            payload["operator_provenance"] = dict(operator_provenance)
+        _write_json_file(payload_path, payload)
         payload_ref_id = self._record_payload_ref(
             context,
             store,
@@ -1838,7 +1897,10 @@ class HoumaoAdapterFacade:
                 payload_ref_ids=[payload_ref_id],
                 diagnostics=[diagnostic.to_json() for diagnostic in result.diagnostics],
                 actor_ref=actor_ref,
-                provenance_refs=[f"provenance:houmao-command:{agent_team_instance_id}:{timestamp}"],
+                provenance_refs=[
+                    f"provenance:houmao-command:{agent_team_instance_id}:{timestamp}",
+                    *_operator_provenance_ref_list(operator_provenance),
+                ],
             )
         )
         return record_id, payload_ref_id
@@ -2046,7 +2108,14 @@ def _failed_materialization(paths: HoumaoAdapterPaths, diagnostics: list[Diagnos
     )
 
 
-def _adapter_reconciliation_record(context: EffectiveTopicContext, agent_team_instance_id: str, result: Any, actor_ref: str | None) -> Any:
+def _adapter_reconciliation_record(
+    context: EffectiveTopicContext,
+    agent_team_instance_id: str,
+    result: Any,
+    actor_ref: str | None,
+    *,
+    operator_provenance: Mapping[str, object] | None = None,
+) -> Any:
     from isomer_labs.runtime.models import AdapterReconciliationRecord
 
     timestamp = utc_timestamp()
@@ -2065,8 +2134,75 @@ def _adapter_reconciliation_record(context: EffectiveTopicContext, agent_team_in
         diagnostics=[diagnostic.to_json() for diagnostic in result.diagnostics],
         actor_ref=actor_ref,
         created_at=timestamp,
-        provenance_refs=[f"provenance:houmao-reconciliation:{agent_team_instance_id}:{timestamp}"],
+        provenance_refs=[
+            f"provenance:houmao-reconciliation:{agent_team_instance_id}:{timestamp}",
+            *_operator_provenance_ref_list(operator_provenance),
+        ],
     )
+
+
+def _bounded_operator_provenance(summary: Any, profile: TopicAgentTeamProfile, actor_ref: str | None) -> dict[str, object]:
+    data = _bounded_summary_provenance(summary, actor_ref)
+    for key, value in (
+        ("topic_agent_team_profile_bundle_ref", profile.profile_bundle_ref),
+        ("instantiation_packet_ref", profile.instantiation_packet_ref),
+        ("approval_ref", profile.approval_ref),
+        ("approval_actor_ref", profile.approval_actor_ref),
+        ("approval_mode", profile.approval_mode),
+        ("project_operator_ref", profile.project_operator_ref),
+    ):
+        if value:
+            data[key] = value
+    if profile.topic_service_agent_refs:
+        data["topic_service_agent_refs"] = list(profile.topic_service_agent_refs)
+    if profile.validation_refs:
+        data["validation_refs"] = list(profile.validation_refs)
+    return data
+
+
+def _bounded_summary_provenance(summary: Any, actor_ref: str | None) -> dict[str, object]:
+    team = getattr(summary, "agent_team_instance", None)
+    data: dict[str, object] = {}
+    if actor_ref:
+        data["actor_ref"] = actor_ref
+    if team is None:
+        return data
+    for key in (
+        "topic_agent_team_profile_bundle_ref",
+        "instantiation_packet_ref",
+        "approval_ref",
+        "project_operator_ref",
+    ):
+        value = getattr(team, key, None)
+        if value:
+            data[key] = value
+    for key in ("topic_service_agent_refs", "validation_refs"):
+        value = getattr(team, key, None)
+        if value:
+            data[key] = list(value)
+    return data
+
+
+def _operator_provenance_ref_list(operator_provenance: Mapping[str, object] | None) -> list[str]:
+    if not operator_provenance:
+        return []
+    refs: list[str] = []
+    for key in (
+        "actor_ref",
+        "project_operator_ref",
+        "topic_agent_team_profile_bundle_ref",
+        "instantiation_packet_ref",
+        "approval_ref",
+        "approval_actor_ref",
+    ):
+        value = operator_provenance.get(key)
+        if isinstance(value, str) and value:
+            refs.append(value)
+    for key in ("topic_service_agent_refs", "validation_refs"):
+        value = operator_provenance.get(key)
+        if isinstance(value, list):
+            refs.extend(item for item in value if isinstance(item, str) and item)
+    return list(dict.fromkeys(refs))
 
 
 def _summary_agent(summary: Any, agent_instance_id: str) -> Any | None:
@@ -2271,6 +2407,31 @@ def _houmao_profile_name(agent_team_instance_id: str, agent_role_id: str) -> str
 
 def _houmao_agent_name(agent_instance_id: str) -> str:
     return f"isomer-{_slug(agent_instance_id)}"[:96]
+
+
+def _launchable_profile_diagnostics(profile: TopicAgentTeamProfile) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    if profile.raw.get("preview") is True:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO097",
+                severity="error",
+                concept="Houmao adapter launch material",
+                field="profile_materialization",
+                message="Houmao launch materialization requires approved profile bundle/runtime material, not preview-only Topic Agent Team Profile output.",
+            )
+        )
+    if profile.profile_bundle_ref is not None and (profile.instantiation_packet_ref is None or profile.approval_ref is None):
+        diagnostics.append(
+            Diagnostic(
+                code="ISO095",
+                severity="error",
+                concept="Houmao adapter launch material",
+                field="profile_bundle_ref",
+                message="Houmao launch materialization requires packet and approval provenance for profile bundles.",
+            )
+        )
+    return diagnostics
 
 
 def _agent_for_command(spec: HoumaoCommandSpec, by_name: Mapping[str, HoumaoMaterializedAgent]) -> HoumaoMaterializedAgent | None:

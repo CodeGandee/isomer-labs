@@ -261,10 +261,11 @@ def build_adapter_link_manifest(
     agent_bindings: list[AgentBinding],
     houmao_project_dir: Path | None,
     actor_ref: str | None,
+    operator_provenance: Mapping[str, object] | None = None,
     created_at: str | None = None,
 ) -> dict[str, object]:
     timestamp = created_at or utc_timestamp()
-    return {
+    manifest: dict[str, object] = {
         "schema_version": HOUMAO_MANIFEST_SCHEMA_VERSION,
         "manifest_kind": ManifestKind.ADAPTER_LINK.value,
         "adapter_id": HOUMAO_ADAPTER_ID,
@@ -291,6 +292,9 @@ def build_adapter_link_manifest(
             f"provenance:houmao-adapter-link:{agent_team_instance_id}",
         ],
     }
+    if operator_provenance:
+        manifest["operator_provenance"] = dict(operator_provenance)
+    return manifest
 
 
 def build_launch_material_manifest(
@@ -311,6 +315,7 @@ def build_launch_material_manifest(
         "link_manifest_digest": canonical_json_digest(link_manifest),
         "project": link_manifest.get("project", {}),
         "agent_team_instance": link_manifest.get("agent_team_instance", {}),
+        "operator_provenance": link_manifest.get("operator_provenance", {}),
         "files": [item.to_json() for item in material_files],
         "provenance_refs": [
             f"provenance:houmao-launch-material:{_manifest_team_id(link_manifest)}",

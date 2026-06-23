@@ -469,6 +469,46 @@ class WorkspaceRuntimeStore:
                 )
             )
             return None, diagnostics
+        if profile.raw.get("preview") is True:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO097",
+                    severity="error",
+                    concept="Topic Agent Team Profile",
+                    field="profile_materialization",
+                    message="Agent Team Instance creation cannot use preview-only Topic Agent Team Profile material.",
+                )
+            )
+            return None, diagnostics
+        if profile.profile_bundle_ref is not None and (profile.instantiation_packet_ref is None or profile.approval_ref is None):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO095",
+                    severity="error",
+                    concept="Topic Agent Team Profile provenance",
+                    field="profile_bundle_ref",
+                    message="Agent Team Instance creation from a profile bundle requires packet and approval provenance.",
+                )
+            )
+            return None, diagnostics
+        if profile.profile_bundle_ref is not None:
+            existing_active = [
+                record
+                for record in self.list_agent_team_instances()
+                if record.research_topic_id == context.research_topic.id
+                and record.status in {"planned", "ready", "running", "blocked"}
+            ]
+            if existing_active:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO094",
+                        severity="error",
+                        concept="Agent Team Instance",
+                        field="research_topic_id",
+                        message="This Research Topic already has an active topic-team lineage; topic-level parallelism requires another Research Topic.",
+                    )
+                )
+                return None, diagnostics
 
         now = utc_timestamp()
         agent_instances: list[AgentInstanceRecord] = []
@@ -568,6 +608,12 @@ class WorkspaceRuntimeStore:
                     agent_workspace_ids=agent_workspace_ids,
                     workflow_stage_cursor_ids=[record.id for record in workflow_stage_cursors],
                     provenance_refs=[_provenance_ref("agent-team-instance", team_id)],
+                    topic_agent_team_profile_bundle_ref=profile.profile_bundle_ref,
+                    instantiation_packet_ref=profile.instantiation_packet_ref,
+                    approval_ref=profile.approval_ref,
+                    project_operator_ref=profile.project_operator_ref,
+                    topic_service_agent_refs=list(profile.topic_service_agent_refs),
+                    validation_refs=list(profile.validation_refs),
                 )
                 self._insert_agent_team_instance(team_record)
         except sqlite3.Error as exc:
@@ -1534,9 +1580,12 @@ class WorkspaceRuntimeStore:
                     status, created_at, updated_at, agent_instance_ids_json,
                     agent_workspace_ids_json, run_ids_json,
                     workflow_stage_cursor_ids_json, blocker_refs_json,
-                    handoff_ids_json, provenance_refs_json
+                    handoff_ids_json, provenance_refs_json,
+                    topic_agent_team_profile_bundle_ref, instantiation_packet_ref,
+                    approval_ref, project_operator_ref, topic_service_agent_refs_json,
+                    validation_refs_json
                 )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 record.id,
@@ -1554,6 +1603,12 @@ class WorkspaceRuntimeStore:
                 _dumps(record.blocker_refs),
                 _dumps(record.handoff_ids),
                 _dumps(record.provenance_refs),
+                record.topic_agent_team_profile_bundle_ref,
+                record.instantiation_packet_ref,
+                record.approval_ref,
+                record.project_operator_ref,
+                _dumps(record.topic_service_agent_refs),
+                _dumps(record.validation_refs),
             ),
         )
 

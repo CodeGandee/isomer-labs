@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-project-aware"
+  short_description: "Resolve project context"
+  default_prompt: "Use $isomer-rsch-project-aware to resolve the Isomer Project, selected topic, workspace, templates, runtimes, and service surfaces."

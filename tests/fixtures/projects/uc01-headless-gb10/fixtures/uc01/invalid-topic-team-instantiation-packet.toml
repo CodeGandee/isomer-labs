@@ -1,0 +1,25 @@
+schema_version = "isomer-topic-team-instantiation-packet.v1"
+source_template_ref = "deepsci-mini"
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+topic_workspace_ref = "flash-attention-gb10-peak-performance-optimization"
+workspace_runtime_ref = "topic-workspaces/other-topic/.isomer-runtime/state.sqlite"
+target_profile_bundle_path = "topic-workspaces/other-topic/team-profile"
+profile_id = "user-selected-profile-id"
+control_mode = "manual"
+expected_artifacts = ["artifact:other-topic:leak"]
+api_key = "redacted-fixture-secret"
+command_output = "runtime truth must not live in packets"
+
+[policy_refs]
+coordination_policy_ref = "coordination-policy:other-topic"
+
+[[role_bindings]]
+role_id = "deepsci-mini-lead"
+active = true
+agent_profile_ref = "{unresolved_agent_profile_ref}"
+capability_binding_ref = "other-topic:capability"
+skill_binding_projection_ref = "other-topic:skill-projection"
+required_skills = ["isomer-rsch-shared"]
+
+[approval]
+state = "draft"

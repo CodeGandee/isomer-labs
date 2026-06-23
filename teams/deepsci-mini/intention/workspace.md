@@ -15,7 +15,7 @@ This file records workspace and artifact expectations for the `deepsci-mini` Dom
 
 - `{project_ref}` is the user-owned repository, checkout, or directory tree managed by Isomer.
 - `{project_config_dir}` is the Project Config Directory, usually `.isomer-labs/`.
-- `{project_manifest_ref}` is the discovery authority for `{research_topic_config_ref}`, `{topic_workspace_ref}`, `{domain_agent_team_template_ref}`, `{topic_agent_team_profile_id}`, `{agent_team_instance_id}`, Agent Profiles, Capability Binding refs, provider binding refs, Artifact Format Profile refs, and GUI Component Registry refs.
+- `{project_manifest_ref}` is the discovery authority for `{research_topic_config_ref}`, `{topic_workspace_ref}`, `{domain_agent_team_template_ref}`, `{topic_agent_team_profile_bundle_ref}`, `{agent_team_instance_id}`, Agent Profiles, Capability Binding refs, provider binding refs, Artifact Format Profile refs, and GUI Component Registry refs.
 - `{research_topic_config_ref}` stores topic defaults and refs for `{research_topic_id}`; it must not store Workspace Runtime state, Run status, command outputs, provider payloads, rich Artifact contents, credentials, or secrets.
 - `{topic_workspace_ref}` is the Project Manifest-declared Topic Workspace for one Research Topic.
 

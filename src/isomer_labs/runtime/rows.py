@@ -77,6 +77,7 @@ def _row_to_readiness(row: sqlite3.Row) -> TopicEnvironmentReadinessRecord:
 
 
 def _row_to_agent_team_instance(row: sqlite3.Row) -> AgentTeamInstanceRecord:
+    keys = set(row.keys())
     return AgentTeamInstanceRecord(
         id=row["id"],
         research_topic_id=row["research_topic_id"],
@@ -93,6 +94,14 @@ def _row_to_agent_team_instance(row: sqlite3.Row) -> AgentTeamInstanceRecord:
         blocker_refs=_loads_list(row["blocker_refs_json"]),
         handoff_ids=_loads_list(row["handoff_ids_json"]),
         provenance_refs=_loads_list(row["provenance_refs_json"]),
+        topic_agent_team_profile_bundle_ref=(
+            row["topic_agent_team_profile_bundle_ref"] if "topic_agent_team_profile_bundle_ref" in keys else None
+        ),
+        instantiation_packet_ref=row["instantiation_packet_ref"] if "instantiation_packet_ref" in keys else None,
+        approval_ref=row["approval_ref"] if "approval_ref" in keys else None,
+        project_operator_ref=row["project_operator_ref"] if "project_operator_ref" in keys else None,
+        topic_service_agent_refs=_loads_list(row["topic_service_agent_refs_json"]) if "topic_service_agent_refs_json" in keys else [],
+        validation_refs=_loads_list(row["validation_refs_json"]) if "validation_refs_json" in keys else [],
     )
 
 

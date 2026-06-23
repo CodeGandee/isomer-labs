@@ -5,7 +5,7 @@ The system SHALL materialize authoritative Topic Agent Team Profiles as the sele
 
 #### Scenario: Packet materializes profile bundle
 - **WHEN** an instantiation packet passes validation and approval
-- **THEN** the system can write the Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/` using the packet's template ref, Research Topic ref, Topic Workspace ref, role bindings, policy refs, expected Artifacts, control mode, constraints, copied template material plan, and provenance refs
+- **THEN** the system can write the Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/` using the packet's template ref, Research Topic ref, Topic Workspace ref, role bindings, policy refs, expected Artifacts, control mode, constraints, copied template material plan, approval ref, and provenance refs
 
 #### Scenario: Project config keeps only profile bundle refs
 - **WHEN** a Topic Agent Team Profile Bundle is materialized
@@ -25,14 +25,14 @@ The system SHALL materialize authoritative Topic Agent Team Profiles as the sele
 
 #### Scenario: Profile records packet provenance
 - **WHEN** a Topic Agent Team Profile is materialized from a packet
-- **THEN** `profile.toml` or adjacent bundle metadata records the packet ref, project operator actor or session ref, Topic Service Agent refs when used, approval ref, source template ref, copied material refs, and validation result
+- **THEN** `profile.toml` or adjacent bundle metadata records the packet ref, project operator actor or session ref, Topic Service Agent refs when used, bundle-local approval ref, approval mode, source template ref, copied material refs, and validation result
 
 #### Scenario: Synthetic preview is not authoritative
 - **WHEN** `team-profiles specialize` generates a profile without an approved instantiation packet
 - **THEN** the output is treated as preview material and does not by itself satisfy launch-facing profile bundle materialization requirements
 
 ### Requirement: Placeholder Reconciliation in Profiles
-The system SHALL reject unresolved required placeholders in launch-facing Topic Agent Team Profiles unless the approved instantiation packet explicitly defers them with approval context.
+The system SHALL reject unresolved required placeholders in launch-facing Topic Agent Team Profiles unless the approved instantiation packet explicitly defers them with bundle-local approval provenance.
 
 #### Scenario: Required profile placeholders are resolved
 - **WHEN** a Topic Agent Team Profile Bundle is validated for launch-facing use
@@ -47,8 +47,8 @@ The system SHALL prove profile bundle materialization through deterministic proj
 
 #### Scenario: Deterministic packet fixture materializes profile
 - **WHEN** the test suite loads a deterministic instantiation packet fixture for `deepsci-mini`
-- **THEN** profile bundle materialization produces a valid Topic Agent Team Profile Bundle with copied specialized template material and without hardcoded role substitution in product code
+- **THEN** profile bundle materialization produces a valid Topic Agent Team Profile Bundle with copied specialized template material, packet-shaped deterministic approval provenance, and no hardcoded role substitution in product code
 
 #### Scenario: Invalid packet is rejected
-- **WHEN** a packet omits required role bindings, crosses topic refs, leaves required launch placeholders unresolved without deferral, or includes runtime truth in profile material
+- **WHEN** a packet omits required role bindings, crosses topic refs, leaves required launch placeholders unresolved without deferral, or includes runtime truth in profile bundle material
 - **THEN** validation rejects the packet or resulting profile before Agent Team Instance creation

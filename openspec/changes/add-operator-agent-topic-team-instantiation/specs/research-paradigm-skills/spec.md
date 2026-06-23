@@ -4,8 +4,8 @@
 The repository SHALL include provider-neutral skill instructions for Project Operator Sessions, Operator Agents, and Topic Service Agents to perform Topic Team Specialization and instantiate topic teams from Domain Agent Team Templates.
 
 #### Scenario: Project awareness skill exists
-- **WHEN** an agent is pointed at an Isomer Project root
-- **THEN** a skill instructs it to resolve the project root, inspect Project Manifest, list Research Topics, locate Topic Workspaces, discover Domain Agent Team Templates, and discover Topic Service Agents
+- **WHEN** an agent is pointed at an Isomer Project root with a topic prompt, topic file, or existing Research Topic ref
+- **THEN** a skill instructs it to resolve the project root, inspect Project Manifest, read supplied topic material, list Research Topics, locate or create the selected Topic Workspace, discover Domain Agent Team Templates, and discover Topic Service Agents
 
 #### Scenario: Service request routing skill exists
 - **WHEN** a Project Operator Session or Operator Agent needs topic-scoped service help
@@ -21,11 +21,11 @@ The repository SHALL include provider-neutral skill instructions for Project Ope
 
 #### Scenario: Placeholder reconciliation skill exists
 - **WHEN** the project operator or Topic Service Agent maps template placeholders to topic-specific values
-- **THEN** a skill instructs it to record resolved substitutions, explicit deferrals, unresolved blockers, Service Request outputs, and user decisions in an instantiation packet
+- **THEN** a skill instructs it to record resolved substitutions, copied material plans, proposed topic edits, explicit deferrals, unresolved blockers, Service Request outputs, user review outcomes, and packet-shaped approval provenance in an instantiation packet
 
 #### Scenario: Profile drafting and review skills exist
-- **WHEN** a Project Operator Session or Operator Agent reviews a Topic Agent Team Profile draft
-- **THEN** skills instruct it to produce reviewable profile bundle material, summarize copied and rewritten template content, summarize role and policy choices, identify launch blockers, include Topic Service Agent support outputs when relevant, and request approval before materialization
+- **WHEN** a Project Operator Session or Operator Agent reviews a Topic Agent Team Profile Bundle draft
+- **THEN** skills instruct it to produce reviewable profile bundle material, summarize the copied material plan, summarize proposed topic edits and rewritten template content, summarize role and policy choices, identify launch blockers, include Topic Service Agent support outputs when relevant, and request bundle-local approval provenance before materialization
 
 #### Scenario: Materialization and launch orchestration skills exist
 - **WHEN** the project operator has approval to proceed
@@ -33,14 +33,14 @@ The repository SHALL include provider-neutral skill instructions for Project Ope
 
 #### Scenario: Topic Service Agent support skills exist
 - **WHEN** a Topic Service Agent receives a Service Request
-- **THEN** skills instruct it to perform only bounded Service Team work such as environment readiness, work-agent setup, Topic Team Specialization support, monitoring, diagnostics, and support Artifact writing
+- **THEN** skills instruct it to perform only bounded Service Team work such as environment readiness, work-agent setup, Topic Team Specialization support, copied material planning, topic edit drafting, monitoring, diagnostics, and support Artifact writing
 
 ### Requirement: Project Operator and Topic Service Skills Stay Bounded
 Project operator and Topic Service Agent skills SHALL describe orchestration and support decisions without granting authority to bypass Isomer validation, Gates, or runtime recording.
 
 #### Scenario: Skills require validation
 - **WHEN** a skill produces a packet, profile, runtime request, handoff, Service Request, support Artifact, or launch request
-- **THEN** the skill requires validation through generic Isomer APIs or CLI before treating the artifact as authoritative
+- **THEN** the skill requires validation through generic Isomer APIs or CLI before treating the artifact as authoritative, including validation for copied material plans and proposed topic edits when present
 
 #### Scenario: Skills preserve domain boundaries
 - **WHEN** a skill handles Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Service Requests, Topic Service Agents, or adapter material

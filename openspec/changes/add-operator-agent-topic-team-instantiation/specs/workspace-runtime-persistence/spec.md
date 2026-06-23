@@ -5,14 +5,14 @@ The system SHALL record the approved instantiation source when creating Agent Te
 
 #### Scenario: Team instance links packet and profile
 - **WHEN** an Agent Team Instance is created from a Topic Agent Team Profile materialized by an approved instantiation packet
-- **THEN** Workspace Runtime records or links the Agent Team Instance to the Topic Agent Team Profile ref, Topic Agent Team Profile Bundle ref, packet ref, approval ref, project operator actor or session ref, Topic Service Agent refs when used, and validation result provenance
+- **THEN** Workspace Runtime records or links the Agent Team Instance to the Topic Agent Team Profile ref, Topic Agent Team Profile Bundle ref, packet ref, bundle-local approval ref, project operator actor or session ref, Topic Service Agent refs when used, and validation result provenance
 
 #### Scenario: Runtime creation rejects unapproved packet
 - **WHEN** a launch-facing Agent Team Instance creation request references an instantiation packet that is missing, invalid, rejected, or unapproved
 - **THEN** Workspace Runtime rejects the create request and leaves existing runtime records unchanged
 
 #### Scenario: Preview profile remains non-launching
-- **WHEN** a Topic Agent Team Profile only has preview provenance and no approved instantiation packet or equivalent explicit approval
+- **WHEN** a Topic Agent Team Profile only has preview provenance and no approved instantiation packet with validated approval provenance
 - **THEN** launch-facing Agent Team Instance creation reports a diagnostic rather than silently treating synthetic preview defaults as authoritative
 
 #### Scenario: Competing team instance for one topic is rejected

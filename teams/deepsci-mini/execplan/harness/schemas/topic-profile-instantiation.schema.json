@@ -10,7 +10,7 @@
     "research_topic_config_ref",
     "topic_workspace_ref",
     "workspace_runtime_ref",
-    "topic_agent_team_profile_id",
+    "topic_agent_team_profile_bundle_ref",
     "coordination_policy_ref",
     "gate_policy_ref",
     "role_bindings"
@@ -36,9 +36,13 @@
       "type": "string",
       "minLength": 1
     },
-    "topic_agent_team_profile_id": {
+    "topic_agent_team_profile_bundle_ref": {
       "type": "string",
       "minLength": 1
+    },
+    "topic_agent_team_profile_id": {
+      "type": "string",
+      "description": "Derived compatibility metadata for the topic-level specialization, not a caller-selected profile id."
     },
     "agent_team_instance_id": {
       "type": "string"

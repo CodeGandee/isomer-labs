@@ -243,6 +243,12 @@ class AgentTeamInstanceRecord:
     blocker_refs: list[str] = field(default_factory=list)
     handoff_ids: list[str] = field(default_factory=list)
     provenance_refs: list[str] = field(default_factory=list)
+    topic_agent_team_profile_bundle_ref: str | None = None
+    instantiation_packet_ref: str | None = None
+    approval_ref: str | None = None
+    project_operator_ref: str | None = None
+    topic_service_agent_refs: list[str] = field(default_factory=list)
+    validation_refs: list[str] = field(default_factory=list)
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -261,6 +267,12 @@ class AgentTeamInstanceRecord:
             "blocker_refs": self.blocker_refs,
             "handoff_ids": self.handoff_ids,
             "provenance_refs": self.provenance_refs,
+            "topic_agent_team_profile_bundle_ref": self.topic_agent_team_profile_bundle_ref,
+            "instantiation_packet_ref": self.instantiation_packet_ref,
+            "approval_ref": self.approval_ref,
+            "project_operator_ref": self.project_operator_ref,
+            "topic_service_agent_refs": self.topic_service_agent_refs,
+            "validation_refs": self.validation_refs,
         }
 
 

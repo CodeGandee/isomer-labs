@@ -43,5 +43,15 @@ name = "workspace_runtime_ref"
 placeholder = "{workspace_runtime_ref}"
 
 [[topic_refs]]
+name = "topic_agent_team_profile_bundle_ref"
+placeholder = "{topic_agent_team_profile_bundle_ref}"
+
+[[topic_refs]]
+name = "topic_agent_team_profile_id"
+placeholder = "{topic_agent_team_profile_id}"
+derived = true
+description = "Derived compatibility metadata, not a user-selected profile id."
+
+[[topic_refs]]
 name = "gate_policy_ref"
 placeholder = "{gate_policy_ref}"

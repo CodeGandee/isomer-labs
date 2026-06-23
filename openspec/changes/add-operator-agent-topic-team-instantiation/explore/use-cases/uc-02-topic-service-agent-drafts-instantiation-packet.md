@@ -6,11 +6,11 @@ As a Project Operator Session, I want a Topic Service Agent to support Topic Tea
 
 ## Scenario
 
-A Project Operator Session has discovered a Research Topic, Topic Workspace, `deepsci-mini` Domain Agent Team Template, and a Topic Service Agent. The Project Operator Session sends a Service Request asking the Topic Service Agent to support Topic Team Specialization by inspecting the template, resolving topic context, reconciling placeholders, and drafting a Topic Team Instantiation Packet. The Topic Service Agent returns packet material plus support Artifacts and diagnostics. The packet is still review material: it is not an approval record, Topic Agent Team Profile, Agent Team Instance, or Houmao launch payload.
+A Project Operator Session has discovered a Research Topic, Topic Workspace, `deepsci-mini` Domain Agent Team Template, and a Topic Service Agent. The Project Operator Session sends a Service Request asking the Topic Service Agent to support Topic Team Specialization by inspecting the template, resolving topic context, reconciling placeholders, planning copied template material, proposing topic edits, and drafting a Topic Team Instantiation Packet. The Topic Service Agent returns packet material plus support Artifacts and diagnostics. The packet is still review material: it is not an approval record, Topic Agent Team Profile, Agent Team Instance, or Houmao launch payload, and it does not directly mutate the template source.
 
 ## Assumptions
 
-- The Topic Service Agent has Isomer Service Team skills for template inspection, topic context resolution, placeholder reconciliation, and support Artifact writing.
+- The Topic Service Agent has Isomer Service Team skills for template inspection, topic context resolution, placeholder reconciliation, copied material planning, topic edit drafting, and support Artifact writing.
 - The Topic Service Agent may be represented by a live Houmao managed agent or by a deterministic fixture in tests.
 - Required placeholders can be resolved or explicitly deferred with launch impact and required action.
 - The Topic Service Agent cannot own Gate decisions, Research Claims, Research Tasks, or task routing.
@@ -22,11 +22,13 @@ A Project Operator Session has discovered a Research Topic, Topic Workspace, `de
 3. The Topic Service Agent inspects the `deepsci-mini` template manifest, placeholder catalog, role binding slots, workflow stages, workspace contract, instantiation schema, and validation diagnostics.
 4. The Topic Service Agent resolves the Effective Topic Context, Research Topic Config, Topic Workspace ref, Workspace Runtime readiness, policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, and Gate policy refs.
 5. The Topic Service Agent maps template placeholders to concrete topic-specific values where the context is sufficient.
-6. The Topic Service Agent records explicit deferrals for unresolved required placeholders, including reason, launch impact, required user or service action, and whether the profile can be saved but not launched.
-7. The Topic Service Agent rejects packet material that contains runtime truth, credentials, command outputs, Evidence Items, Findings, Gates, Decision Records, or rich Artifact contents.
-8. The Topic Service Agent writes support Artifacts that explain the template inspection, topic context resolution, placeholder mapping, and diagnostics.
-9. The Topic Service Agent returns a draft Topic Team Instantiation Packet to the Project Operator Session with provenance refs and Service Request output refs.
-10. The Project Operator Session validates the packet through generic Isomer validators before presenting the draft profile for user review.
+6. The Topic Service Agent drafts a copied material plan for files or directories that should move into `<topic-workspace>/team-profile/`, including profile fragments, prompts, workflow contracts, execplan material, or code-like template material that must be edited for the topic.
+7. The Topic Service Agent proposes topic edits to copied material, such as concrete Research Topic refs, Agent Workspace refs, policy refs, expected Artifacts, role instructions, allowed tools, and topic-specific skill parameters.
+8. The Topic Service Agent records explicit deferrals for unresolved required placeholders, including reason, launch impact, required user or service action, and whether the profile can be saved but not launched.
+9. The Topic Service Agent rejects packet material that contains runtime truth, credentials, command outputs, Evidence Items, Findings, Gates, Decision Records, or rich Artifact contents.
+10. The Topic Service Agent writes support Artifacts that explain the template inspection, topic context resolution, placeholder mapping, copied material plan, proposed topic edits, and diagnostics.
+11. The Topic Service Agent returns a draft Topic Team Instantiation Packet to the Project Operator Session with provenance refs and Service Request output refs.
+12. The Project Operator Session validates the packet through generic Isomer validators before presenting the draft Topic Agent Team Profile Bundle for user review.
 
 ## Mermaid Use Case Diagram
 
@@ -39,8 +41,8 @@ flowchart LR
     TSA[Topic Service<br/>Agent]
     UC1([Inspect Template<br/>Metadata])
     UC2([Resolve Topic<br/>Context])
-    UC3([Reconcile<br/>Placeholders])
-    UC4([Record Deferrals<br/>and Diagnostics])
+    UC3([Reconcile Placeholders<br/>and Topic Edits])
+    UC4([Record Copy Plan,<br/>Deferrals, and Diagnostics])
     UC5([Draft Instantiation<br/>Packet])
   end
 
@@ -78,7 +80,7 @@ sequenceDiagram
   Template-->>Service: Placeholder catalog, role slots, workspace contract
   Service->>Context: Resolve topic refs, runtime readiness, policies, bindings
   Context-->>Service: Effective Topic Context and diagnostics
-  Service->>Service: Map placeholders or record deferrals
+  Service->>Service: Map placeholders,<br/>topic edits, and copy plan
   Service->>Validator: Validate packet draft boundary
   Validator-->>Service: Accept draft or return diagnostics
   Service->>Artifacts: Write inspection and reconciliation support Artifacts
@@ -93,8 +95,9 @@ sequenceDiagram
 - Completed Service Request or support-blocking diagnostic
 - Template inspection support Artifact
 - Effective Topic Context resolution support Artifact
-- Placeholder reconciliation support Artifact
-- Topic Team Instantiation Packet draft with source template ref, Research Topic ref, Topic Workspace ref, Workspace Runtime ref, target Topic Agent Team Profile Bundle path, role bindings, policy refs, expected Artifacts, approval state, deferrals, Project Operator Session provenance, Topic Service Agent provenance, and validation refs
+- Placeholder reconciliation and copied material planning support Artifact
+- Topic edit proposal support Artifact for copied profile, prompt, workflow, execplan, or code-like template material
+- Topic Team Instantiation Packet draft with source template ref, Research Topic ref, Topic Workspace ref, Workspace Runtime ref, target Topic Agent Team Profile Bundle path, copied material plan, proposed topic edits, role bindings, policy refs, expected Artifacts, approval state, approval ref when approved, deferrals, Project Operator Session provenance, Topic Service Agent provenance, and validation refs
 - Validation diagnostics for rejected runtime truth, missing required values, cross-topic refs, or secret-like fields
 
 ## Alternative and Exception Flows
@@ -113,7 +116,7 @@ If the Service Request asks the Topic Service Agent to choose a research directi
 
 ## Pass Criteria
 
-This use case passes when the Topic Service Agent produces a validated Topic Team Instantiation Packet draft for `deepsci-mini`, records support provenance, and leaves user approval, profile bundle materialization, runtime team creation, and research decisions outside the Topic Service Agent's authority.
+This use case passes when the Topic Service Agent produces a validated Topic Team Instantiation Packet draft for `deepsci-mini` with placeholder reconciliation, copied material plan, proposed topic edits, and support provenance, while leaving user approval, profile bundle materialization, runtime team creation, and research decisions outside the Topic Service Agent's authority.
 
 ## Evidence
 

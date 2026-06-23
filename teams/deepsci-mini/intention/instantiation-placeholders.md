@@ -16,7 +16,8 @@ This file names placeholder refs that topic-level material can replace when it s
 ## Team Lifecycle
 
 - `{domain_agent_team_template_ref}`: ref for this reusable template.
-- `{topic_agent_team_profile_id}`: topic-level specialization derived from this template.
+- `{topic_agent_team_profile_bundle_ref}`: fixed `<topic-workspace>/team-profile/` bundle for the Research Topic's one topic-level specialization of this template.
+- `{topic_agent_team_profile_id}`: derived compatibility metadata for the topic-level specialization, not a user-selected profile id.
 - `{agent_team_instance_id}`: concrete runtime team created from the Topic Agent Team Profile.
 - `{coordination_policy_ref}`: collaboration, handoff, peer-read, retry, escalation, and Gate routing policy.
 - `{control_mode}`: Run-level `manual` or `automatic` setting.

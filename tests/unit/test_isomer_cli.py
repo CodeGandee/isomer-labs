@@ -1441,6 +1441,121 @@ class IsomerCliTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, serialized)
 
+    def test_uc01_packet_materializes_profile_bundle_and_runtime_provenance(self) -> None:
+        root = self.copy_uc01_fixture_project("uc01-packet-materialize")
+        packet_path = "fixtures/uc01/topic-team-instantiation-packet.toml"
+
+        status, output = self.run_cli(
+            [
+                "--project",
+                str(root),
+                "team-profiles",
+                "materialize",
+                "--topic",
+                UC01_RESEARCH_TOPIC_ID,
+                "--packet",
+                packet_path,
+                "--write",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["ok"])
+        materialization = data["materialization"]
+        profile = materialization["profile"]
+        expected_profile_id = f"{UC01_RESEARCH_TOPIC_ID}-deepsci-mini"
+        self.assertEqual(expected_profile_id, profile["id"])
+        self.assertEqual("approval:uc01-deterministic-topic-team-profile", profile["approval_ref"])
+        self.assertEqual(
+            "topic-service-agent:uc01-deterministic-service-master",
+            profile["topic_service_agent_refs"][0],
+        )
+        bundle_path = root / "topic-workspaces" / UC01_RESEARCH_TOPIC_ID / "team-profile"
+        self.assertTrue((bundle_path / "profile.toml").is_file())
+        self.assertTrue((bundle_path / "instantiation-packet.toml").is_file())
+        self.assertTrue((bundle_path / "approval.toml").is_file())
+        self.assertTrue((bundle_path / "execplan" / "manifest.toml").is_file())
+        copied_operator_guide = (bundle_path / "execplan" / "docs" / "operator-guide.md").read_text(encoding="utf-8")
+        self.assertIn("expected GB10 UC-01 source-map Artifacts", copied_operator_guide)
+        source_operator_guide = (REPO_ROOT / "teams" / "deepsci-mini" / "execplan" / "docs" / "operator-guide.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("expected UC-01 Artifacts", source_operator_guide)
+
+        manifest_path = root / ".isomer-labs" / "manifest.toml"
+        manifest_path.write_text(
+            manifest_path.read_text(encoding="utf-8")
+            + f"""
+
+[[topic_agent_team_profiles]]
+id = "{expected_profile_id}"
+path = "topic-workspaces/{UC01_RESEARCH_TOPIC_ID}/team-profile/profile.toml"
+domain_agent_team_template_id = "deepsci-mini"
+research_topic_id = "{UC01_RESEARCH_TOPIC_ID}"
+status = "active"
+""",
+            encoding="utf-8",
+        )
+        for command in (
+            ["--project", str(root), "validate", "--json"],
+            ["--project", str(root), "runtime", "init", "--json"],
+            ["--project", str(root), "runtime", "prepare", "--json"],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "--project",
+                str(root),
+                "team-instances",
+                "create",
+                "--topic-agent-team-profile",
+                expected_profile_id,
+                "--id",
+                "ati-uc01-bundle",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        team = data["creation"]["agent_team_instance"]
+        self.assertEqual("ati-uc01-bundle", team["id"])
+        self.assertEqual(f"topic-workspaces/{UC01_RESEARCH_TOPIC_ID}/team-profile", team["topic_agent_team_profile_bundle_ref"])
+        self.assertEqual("approval:uc01-deterministic-topic-team-profile", team["approval_ref"])
+        self.assertEqual(
+            ["topic-service-agent:uc01-deterministic-service-master"],
+            team["topic_service_agent_refs"],
+        )
+
+    def test_uc01_invalid_packet_is_rejected_before_materialization(self) -> None:
+        root = self.copy_uc01_fixture_project("uc01-invalid-packet")
+        status, output = self.run_cli(
+            [
+                "--project",
+                str(root),
+                "team-profiles",
+                "materialize",
+                "--topic",
+                UC01_RESEARCH_TOPIC_ID,
+                "--packet",
+                "fixtures/uc01/invalid-topic-team-instantiation-packet.toml",
+                "--write",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        codes = {diagnostic["code"] for diagnostic in data["diagnostics"]}
+        self.assertIn("ISO010", codes)
+        self.assertIn("ISO009", codes)
+        self.assertIn("ISO096", codes)
+        self.assertIn("ISO019", codes)
+
     def test_profile_manifest_context_specialize_and_validate(self) -> None:
         status, output = self.run_cli(["--project", str(FIXTURE_PROJECT), "validate", "--json"])
         data = json.loads(output)

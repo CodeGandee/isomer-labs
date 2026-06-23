@@ -13,7 +13,7 @@
 | Isomer Layer | Meaning for `deepsci-mini` |
 | --- | --- |
 | Domain Agent Team Template | This reusable package, `{domain_agent_team_template_ref}`, with three default roles, manual-mode routing, Coordination Policy intent, and binding slots. |
-| Topic Agent Team Profile | `{topic_agent_team_profile_id}`, a topic-specific specialization for `{research_topic_id}` with UC-01 constraints, expected Artifacts, policies, and bindings. |
+| Topic Agent Team Profile | A derived topic profile inside `{topic_agent_team_profile_bundle_ref}`, specialized for `{research_topic_id}` with UC-01 constraints, expected Artifacts, policies, and bindings. |
 | Agent Team Instance | `{agent_team_instance_id}`, the runtime team created from the profile with concrete Agent Instances and Agent Workspaces. |
 | Run | `{run_id}`, a bounded execution attempt for `{research_task_id}` recorded through Workspace Runtime. |
 
@@ -28,7 +28,7 @@
 - Topology intention: `tree-loop`.
 - Default Control Mode: manual.
 - Work enters through `{research_topic_id}`, `{research_inquiry_id}`, `{research_task_id}`, and `{control_mode}` resolved from Effective Topic Context.
-- The Project-facing Operator Agent may select this template, specialize it into `{topic_agent_team_profile_id}`, launch `{agent_team_instance_id}`, and record task-routing changes, but `deepsci-mini-lead` remains the root role inside the team.
+- The Project-facing Operator Agent may select this template, specialize it into the selected Research Topic's fixed Topic Agent Team Profile Bundle, launch `{agent_team_instance_id}`, and record task-routing changes, but `deepsci-mini-lead` remains the root role inside the team.
 - Specialists own bounded Research Tasks and return durable handoffs to `deepsci-mini-lead`.
 - The loop finishes when `deepsci-mini-lead` opens a follow-up-inquiry Gate and the Operator Agent records the selected Research Inquiry as a Decision Record.
 
