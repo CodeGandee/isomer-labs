@@ -2,7 +2,7 @@
 
 `isomer-admin-topic-team-specialize` already belongs in the operator skillset because Topic Team Specialization is an operator-facing workflow, not a runtime adapter detail. This redo narrows the change around the skill bundle shape: use the `skill-creator` model for concise skill packaging, use the Imsight style for executable skill structure, and keep Isomer's canonical Topic Team Specialization boundaries intact.
 
-The target workflow still adapts one Domain Agent Team Template for one Research Topic. The skill copies selected template material into the Research Topic's fixed Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, works inside the copied template root such as `<topic-workspace>/team-profile/execplan/` for `deepsci-mini`, and produces human-readable guide and plan artifacts before structured packet/profile validation. Project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, topic profile drafting, review approval, materialization, and launch orchestration live as short local subcommands inside this module skill.
+The target workflow still adapts one Domain Agent Team Template for one Research Topic. The skill copies selected template material into the Research Topic's fixed Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, works inside the copied template root such as `<topic-workspace>/team-profile/execplan/` for `deepsci-mini`, and produces human-readable guide and plan artifacts before structured packet/profile validation. Project awareness, template inspection, topic context resolution, placeholder reconciliation, topic profile drafting, review approval, materialization, and launch orchestration live as short local subcommands inside this module skill.
 
 ## Goals / Non-Goals
 
@@ -41,7 +41,7 @@ Alternative considered: keep pointers to the canonical project docs. That reduce
 
 ### Decision: Use Short Local Subcommands for Former Helper Calls
 
-The module should not call separate operator skills for its normal workflow. Instead, it should expose a `## Subcommands` table and one-level local pages named with short verb-object ids: `resolve-project`, `inspect-template`, `resolve-context`, `route-service`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `launch-team`, and `fast-forward`. This keeps the module self-contained while preserving the conceptual boundaries of each operation.
+The module should not call separate operator skills for its normal workflow. Instead, it should expose a `## Subcommands` table and one-level local pages named with short verb-object ids: `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `launch-team`, and `fast-forward`. This keeps the module self-contained while preserving the conceptual boundaries of each operation.
 
 Alternative considered: keep longer descriptive noun-phrase page names or keep a helper function map that points to standalone operator skills. Longer names are less command-like, and external helper references make the module depend on separate skill invocation.
 
@@ -53,7 +53,7 @@ Alternative considered: make the entrypoint always run the full sequence. That i
 
 ### Decision: Remove Incorporated Standalone Skills
 
-The standalone operator skill folders for project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, topic profile drafting, profile review approval, profile materialization, and team launch orchestration should be removed once their behavior is present as local subcommands. This leaves one canonical operator entrypoint and avoids two active sources of workflow truth.
+The standalone operator skill folders for project awareness, template inspection, topic context resolution, placeholder reconciliation, topic profile drafting, profile review approval, profile materialization, and team launch orchestration should be removed once their behavior is present as local subcommands. Service Request routing is not part of the topic-team-specialize workflow. This leaves one canonical operator entrypoint and avoids two active sources of workflow truth.
 
 Alternative considered: keep the standalone folders as compatibility surfaces. That keeps older prompts working, but it preserves the duplication that the module skill is meant to remove.
 
@@ -93,7 +93,7 @@ Alternative considered: rely only on `pixi run test`. Unit tests are useful, but
 
 1. Update `skillset/operator/isomer-admin-topic-team-specialize/SKILL.md` so it follows the Imsight entrypoint structure, selects local subcommands from a table, supports `fast-forward`, and keeps longer rules in detail sections.
 2. Keep `skillset/operator/isomer-admin-topic-team-specialize/agents/openai.yaml` synchronized with the skill name, short description, and default prompt.
-3. Add local subcommand pages under `skillset/operator/isomer-admin-topic-team-specialize/references/`, give each page a short verb-object filename, and give each page its own near-top numbered `## Workflow` and fallback.
+3. Add local subcommand pages under `skillset/operator/isomer-admin-topic-team-specialize/references/`, give each page a short verb-object filename, and give each page its own near-top numbered `## Workflow` and fallback. Do not include `route-service` in this module workflow.
 4. Remove `skillset/operator/isomer-admin-topic-team-specialize/evals/` and avoid adding auxiliary docs that do not directly support skill execution.
 5. Keep or update `teams/deepsci-mini/execplan/team-specialization-guide.md` as the source guide for the primary supported template.
 6. Remove standalone operator skill folders whose behavior is now represented by local subcommands.

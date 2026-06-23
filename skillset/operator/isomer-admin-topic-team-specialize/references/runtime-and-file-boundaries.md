@@ -18,11 +18,10 @@ Use this local reference when the Topic Team Specialization skill needs placemen
 - Do not treat runtime readiness as profile configuration. Report readiness as validation input or blocker.
 - Use Project Manifest refs for discovery. Keep profile bundle body material inside the Topic Workspace.
 
-## Service Boundaries
+## Existing Support Outputs
 
-- Route environment readiness, dependency repair, diagnostics, copied material reconnaissance, and support Artifact writing through bounded Service Requests when operational support is needed.
-- Keep Service Team outputs as support Artifacts or provenance inputs. Do not make Topic Service Agents research task handlers or Agent Team Instance members by default.
-- Preserve Service Request scope, expected outputs, allowed file surfaces, validation obligations, approval posture, and provenance refs.
+- Treat existing Service Team outputs as support Artifacts or provenance inputs. Do not make support actors research task handlers or Agent Team Instance members by default.
+- Preserve existing support Artifact scope, expected outputs, allowed file surfaces, validation obligations, approval posture, and provenance refs.
 
 ## Launch Boundaries
 

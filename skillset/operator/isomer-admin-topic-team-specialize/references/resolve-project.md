@@ -6,9 +6,9 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the project root from the user-provided path or current working directory, then confirm the Project Manifest and the bundled `references/isomer-domain-language.md` reference.
 2. Read the supplied topic prompt, topic file, or Research Topic ref, then list matching Research Topics and Topic Workspaces.
-3. Inspect Project Manifest defaults, Research Topic Config refs, Domain Agent Team Templates, Topic Agent Team Profile Bundle registrations, Workspace Runtime refs, and known Topic Service Agent surfaces.
+3. Inspect Project Manifest defaults, Research Topic Config refs, Domain Agent Team Templates, Topic Agent Team Profile Bundle registrations, and Workspace Runtime refs.
 4. If the selected Topic Workspace is missing, propose the minimal creation or registration action and keep mutations behind normal Isomer CLI or API surfaces.
-5. Return the selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, profile bundle, runtime, and service-agent refs with blockers for the next subcommand.
+5. Return the selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, profile bundle, and runtime refs with blockers for the next subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project root, topic material, and requested outcome, then execute the plan.
 
@@ -26,8 +26,7 @@ Read as needed:
 
 ## Exit Criteria
 
-- The selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, profile bundle, runtime, and service-agent refs are explicit.
-- Topic Service Agent discovery status is recorded.
+- The selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, profile bundle, and runtime refs are explicit.
 - Any missing workspace, manifest, or topic config blockers are named.
 
 ## Guardrails

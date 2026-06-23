@@ -22,16 +22,16 @@ Read first:
 Read as needed:
 
 - Houmao adapter docs and manifest refs when launch materialization is requested.
-- Topic Service Agent support outputs when launch preparation used service help.
+- Existing launch-preparation support outputs.
 
 ## Exit Criteria
 
 - Runtime records or adapter launch records show the requested state.
-- Project operator and Topic Service Agent provenance refs are preserved.
+- Project operator and support provenance refs are preserved.
 - Any launch blockers are reported before Houmao mutation.
 
 ## Guardrails
 
 - Do not launch from Domain Agent Team Template material alone.
 - Do not launch preview-only Topic Agent Team Profile output.
-- Do not add Project Operator Sessions or Topic Service Agents as research team members unless the profile defines that role.
+- Do not add Project Operator Sessions or support actors as research team members unless the profile defines that role.

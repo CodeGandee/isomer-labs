@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Read the draft profile bundle summary, packet validation report, copied material plan, proposed topic edits, and launch blockers.
-2. Present review points: selected roles, inactive roles, role binding refs, policy refs, expected Artifacts, copied material, service outputs, unresolved placeholders, and provenance refs.
+2. Present review points: selected roles, inactive roles, role binding refs, policy refs, expected Artifacts, copied material, support outputs, unresolved placeholders, and provenance refs.
 3. Capture approval state, approval ref, approval actor or session ref, approval mode, review summary, validation result ref, and timestamp.
 4. Update packet-shaped approval provenance or request repair when approval is withheld.
 5. Return whether materialization may proceed and which validation command must run next.
@@ -21,7 +21,7 @@ Read first:
 
 Read as needed:
 
-- Topic Service Agent support Artifact summaries.
+- Existing support Artifact summaries.
 - Domain Agent Team Template inspection summary when role or copy choices are disputed.
 
 ## Exit Criteria

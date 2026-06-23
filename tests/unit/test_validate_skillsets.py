@@ -65,7 +65,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Subcommands
 
-            Use `references/resolve-project.md`, `references/inspect-template.md`, `references/resolve-context.md`, `references/route-service.md`, `references/map-placeholders.md`, `references/draft-profile.md`, `references/approve-profile.md`, `references/materialize-profile.md`, `references/launch-team.md`, and `references/fast-forward.md`.
+            Use `references/resolve-project.md`, `references/inspect-template.md`, `references/resolve-context.md`, `references/map-placeholders.md`, `references/draft-profile.md`, `references/approve-profile.md`, `references/materialize-profile.md`, `references/launch-team.md`, and `references/fast-forward.md`.
 
             Use `team-specialization-guide.md`, `team-specialization-plan.md`, `Generated Guide`, `{final_report}`, and `<topic-workspace>/team-profile/execplan/`.
             """,
@@ -143,6 +143,28 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("resolve-project.md" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_rejects_route_service_subcommand(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "route-service.md",
+            """
+            # Route Service
+
+            ## Workflow
+
+            1. Route service work.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("unexpected reference page references/route-service.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_rejects_topic_team_evals(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -173,7 +195,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS003", codes(diagnostics))
-        self.assertTrue(any("incorporated into isomer-admin-topic-team-specialize" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("must not be a standalone skill" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_external_topic_team_support_refs(self) -> None:
         root = self.make_root()

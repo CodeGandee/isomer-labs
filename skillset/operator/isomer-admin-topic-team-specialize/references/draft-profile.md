@@ -22,7 +22,7 @@ Read first:
 Read as needed:
 
 - Selected Topic Workspace path and Workspace Runtime readiness when Agent Workspace refs are included.
-- Topic Service Agent support Artifacts for copied material or topic edits.
+- Existing support Artifacts for copied material or topic edits.
 
 ## Exit Criteria
 

@@ -15,7 +15,7 @@ isomer-admin-topic-team-specialize(project_root, topic_ref_or_prompt, domain_tea
 
 Run the workflow from a Project Operator Session or Operator Agent that is already pointed at the Isomer Project root, or that can resolve the project root from the user's prompt or current working directory.
 
-Treat project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, profile drafting, review approval, materialization, and launch orchestration as local subcommands inside this module skill. The user should not have to invoke separate skills just to get copied topic-specialized template material.
+Treat project awareness, template inspection, topic context resolution, placeholder reconciliation, profile drafting, review approval, materialization, and launch orchestration as local subcommands inside this module skill. The user should not have to invoke separate skills just to get copied topic-specialized template material.
 
 Use this workflow for one Research Topic and one Domain Agent Team Template at a time. Topic-level parallelism means separate Research Topics can each have their own dedicated Topic Agent Team Profile Bundle; it does not mean one Research Topic should get multiple competing teams.
 
@@ -36,10 +36,9 @@ Load only the subcommand pages needed for the user's task.
 
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
-| `resolve-project` | Resolve Project, Research Topic, Topic Workspace, template refs, profile refs, runtime refs, and Topic Service Agent refs | [references/resolve-project.md](references/resolve-project.md) |
+| `resolve-project` | Resolve Project, Research Topic, Topic Workspace, template refs, profile refs, and runtime refs | [references/resolve-project.md](references/resolve-project.md) |
 | `inspect-template` | Inspect Domain Agent Team Template manifests, placeholders, roles, Workflow Stages, copyable material, and diagnostics | [references/inspect-template.md](references/inspect-template.md) |
 | `resolve-context` | Resolve Effective Topic Context, Workspace Runtime readiness, policies, bindings, provider refs, and Gate policy refs | [references/resolve-context.md](references/resolve-context.md) |
-| `route-service` | Route bounded Service Requests to Topic Service Agents when operational support is needed | [references/route-service.md](references/route-service.md) |
 | `map-placeholders` | Map template placeholders to topic values, copied material plans, topic edits, deferrals, blockers, and packet-shaped provenance | [references/map-placeholders.md](references/map-placeholders.md) |
 | `draft-profile` | Draft reviewable Topic Agent Team Profile Bundle material from specialization outputs | [references/draft-profile.md](references/draft-profile.md) |
 | `approve-profile` | Review draft profile material and prepare bundle-local approval provenance | [references/approve-profile.md](references/approve-profile.md) |
@@ -100,7 +99,7 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `deferrals`: unresolved items, with launch-blocking status.
 - `packet_profile_inputs`: proposed Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.
 - `validation_status`: commands or validators run, plus any blockers.
-- `next_operator_action`: usually request approval, materialize an approved bundle, dispatch a Service Request, or stop on blockers.
+- `next_operator_action`: usually request approval, materialize an approved bundle, or stop on blockers.
 
 ## Guardrails
 

@@ -61,7 +61,6 @@ TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
     "resolve-project.md",
     "inspect-template.md",
     "resolve-context.md",
-    "route-service.md",
     "map-placeholders.md",
     "draft-profile.md",
     "approve-profile.md",
@@ -83,7 +82,7 @@ TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS = (
     "/home/",
 )
 
-INCORPORATED_OPERATOR_SKILLS = (
+REMOVED_OPERATOR_SKILLS = (
     "isomer-admin-project-aware",
     "isomer-admin-template-inspect",
     "isomer-admin-topic-context-resolve",
@@ -354,16 +353,16 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
         return diagnostics
     if (skill_dir / "evals").exists():
         add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must not contain evals/")
-    for incorporated_skill in INCORPORATED_OPERATOR_SKILLS:
-        incorporated_path = repo_root / "skillset" / "operator" / incorporated_skill
-        if incorporated_path.exists():
+    for removed_skill in REMOVED_OPERATOR_SKILLS:
+        removed_path = repo_root / "skillset" / "operator" / removed_skill
+        if removed_path.exists():
             add(
                 diagnostics,
                 repo_root,
-                incorporated_path,
+                removed_path,
                 1,
                 "OPS003",
-                f"{incorporated_skill} has been incorporated into {TOPIC_TEAM_SPECIALIZATION_SKILL} and must not be a standalone skill",
+                f"{removed_skill} is no longer part of the active operator skillset and must not be a standalone skill",
             )
     lines = read_lines(skill_md)
     text = "\n".join(lines)

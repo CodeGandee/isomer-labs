@@ -21,13 +21,13 @@
 - [x] 3.2 Incorporate project awareness as `references/resolve-project.md`.
 - [x] 3.3 Incorporate template inspection as `references/inspect-template.md`.
 - [x] 3.4 Incorporate topic context resolution as `references/resolve-context.md`.
-- [x] 3.5 Incorporate Service Request routing as `references/route-service.md`.
-- [x] 3.6 Incorporate placeholder reconciliation as `references/map-placeholders.md`.
-- [x] 3.7 Incorporate topic profile drafting as `references/draft-profile.md`.
-- [x] 3.8 Incorporate profile review approval as `references/approve-profile.md`.
-- [x] 3.9 Incorporate profile materialization as `references/materialize-profile.md`.
-- [x] 3.10 Incorporate team launch orchestration as `references/launch-team.md`.
-- [x] 3.11 Incorporate automatic full specialization as `references/fast-forward.md`.
+- [x] 3.5 Incorporate placeholder reconciliation as `references/map-placeholders.md`.
+- [x] 3.6 Incorporate topic profile drafting as `references/draft-profile.md`.
+- [x] 3.7 Incorporate profile review approval as `references/approve-profile.md`.
+- [x] 3.8 Incorporate profile materialization as `references/materialize-profile.md`.
+- [x] 3.9 Incorporate team launch orchestration as `references/launch-team.md`.
+- [x] 3.10 Incorporate automatic full specialization as `references/fast-forward.md`.
+- [x] 3.11 Remove `references/route-service.md` from this module workflow.
 - [x] 3.12 Remove the incorporated standalone operator skill folders.
 
 ## 4. Topic Team Specialization Contract

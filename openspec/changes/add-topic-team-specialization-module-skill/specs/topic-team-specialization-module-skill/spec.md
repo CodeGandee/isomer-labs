@@ -21,11 +21,15 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 
 #### Scenario: Local subcommands exist
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
-- **THEN** it contains local subcommand pages named `resolve-project`, `inspect-template`, `resolve-context`, `route-service`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `launch-team`, and `fast-forward` under `references/`
+- **THEN** it contains local subcommand pages named `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `launch-team`, and `fast-forward` under `references/`
 
 #### Scenario: Subcommand names are short
 - **WHEN** local subcommand pages are inspected
 - **THEN** each subcommand filename uses a short verb-object form such as `do-something.md`
+
+#### Scenario: Service routing subcommand is absent
+- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **THEN** it does not contain `references/route-service.md`
 
 #### Scenario: Required support references are local
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
@@ -66,7 +70,7 @@ The module skill SHALL follow the Imsight skill-entrypoint structure.
 The module skill SHALL incorporate former helper-skill behavior as local subcommands instead of requiring normal workflow calls to separate skills.
 
 #### Scenario: Entrypoint routes to local subcommands
-- **WHEN** `SKILL.md` describes project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, topic profile drafting, profile review approval, profile materialization, or team launch orchestration
+- **WHEN** `SKILL.md` describes project awareness, template inspection, topic context resolution, placeholder reconciliation, topic profile drafting, profile review approval, profile materialization, or team launch orchestration
 - **THEN** it routes the agent to local subcommand pages through a `## Subcommands` table
 
 #### Scenario: Manual mode selects one subcommand
@@ -75,7 +79,7 @@ The module skill SHALL incorporate former helper-skill behavior as local subcomm
 
 #### Scenario: Normal specialization avoids external skill calls
 - **WHEN** the module skill performs its normal Topic Team Specialization workflow
-- **THEN** it uses local subcommands for project awareness, template inspection, topic context resolution, Service Request routing, placeholder reconciliation, and topic profile drafting instead of asking the user to invoke separate operator skills
+- **THEN** it uses local subcommands for project awareness, template inspection, topic context resolution, placeholder reconciliation, and topic profile drafting instead of asking the user to invoke separate operator skills
 
 #### Scenario: Fast-forward performs automatic specialization
 - **WHEN** the user asks to fully specialize, instantiate, adapt end-to-end, or says `fast-forward`
