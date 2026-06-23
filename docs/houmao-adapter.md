@@ -81,6 +81,21 @@ isomer-cli --print-json handoffs normalize <handoff-id> \
 
 `handoffs normalize` records the Operator Agent decision. `accepted` marks the handoff accepted and completes the linked Run. `rejected`, `blocked`, `superseded`, `repair_routed`, and `follow_up` preserve the observations and rationale; `repair_routed` maps the handoff to repair state and should include a corrective Service Request or follow-up ref when available.
 
+## UC-01 Adapter Boundary
+
+The UC-01 manual harness uses the Houmao Execution Adapter boundary or an adapter-simulated equivalent while keeping case-specific code under `tests/manual/uc01_headless_vertical_slice`. Run it with:
+
+```bash
+pixi run python tests/manual/uc01_headless_vertical_slice
+ISOMER_MANUAL_LIVE_HOUMAO=1 pixi run python tests/manual/uc01_headless_vertical_slice --live-houmao
+```
+
+Simulated mode is the default regression path. It produces deterministic dispatch, Signal Observation, normalization, adapter payload, and adapter command records for the pinned Flash Attention 4 on GB10 topic without mutating live Houmao. Live mode requires `ISOMER_MANUAL_LIVE_HOUMAO=1`; otherwise the command reports a skipped live validation before creating runtime or adapter state.
+
+UC-01 generic records stay provider-neutral. Research Inquiries, Research Tasks, Runs, Artifacts, Evidence Items, Findings, Gates, Decision Records, View Manifests, and Provenance Records use Isomer refs and topic-scoped lifecycle metadata. Houmao command outputs, managed-agent ids, mail or gateway details, project overlays, and cleanup observations belong in adapter payload refs, adapter manifests, or adapter-scoped runtime records.
+
+The selected UC-01 route classification can be `uc07-measured-optimization`, `more-scouting`, or `different-flash-attention-4-investigation`. Even when the selected route points toward UC-07, the harness stops after the follow-up Gate, Decision Record, and selected Research Inquiry; it does not create measurement, baseline, optimization, speedup, utilization, correctness-result, automatic replay, or compute-budget Gate records.
+
 ## Backend Resolution
 
 By default, Isomer resolves `houmao-mgr` from `PATH`. You can override it with `ISOMER_HOUMAO_COMMAND`:

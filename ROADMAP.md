@@ -117,12 +117,12 @@ Goal: enable Use Case 1, Explore a New Research Direction, as the first testable
 
 Major steps:
 
-- [ ] Add a UC-01 fixture Project for Research Topic `flash-attention-gb10-peak-performance-optimization`, one Topic Workspace, one `deepsci-mini` Topic Agent Team Profile, initial Research Inquiry `gb10-flash-attention-4-direction-selection`, Research Task `map-gb10-flash-attention-optimization-directions`, and one follow-up-inquiry Gate policy.
-- [ ] Launch or simulate a manual-mode `deepsci-mini` Agent Team Instance that routes bounded scouting and synthesis-review work through the Houmao Execution Adapter.
-- [ ] Record seed-source summaries, Flash Attention implementation notes, GB10 or Blackwell feature notes, claim candidates, Evidence Items, review notes, and inquiry options as Artifacts or provisional research records.
-- [ ] Present a follow-up Research Inquiry Gate through CLI or Operator Agent text output and record the selected inquiry as a Decision Record.
-- [ ] Emit minimal View Manifest records for literature matrix, claim graph, and inquiry comparison even when the first renderer is CLI-only.
-- [ ] Add an integration or manual test script that runs the UC-01 path from Project initialization through the follow-up inquiry Decision Record.
+- [x] Add a UC-01 fixture Project for Research Topic `flash-attention-gb10-peak-performance-optimization`, one Topic Workspace, one `deepsci-mini` Topic Agent Team Profile, initial Research Inquiry `gb10-flash-attention-4-direction-selection`, Research Task `map-gb10-flash-attention-optimization-directions`, and one follow-up-inquiry Gate policy.
+- [x] Launch or simulate a manual-mode `deepsci-mini` Agent Team Instance that routes bounded scouting and synthesis-review work through the Houmao Execution Adapter.
+- [x] Record seed-source summaries, Flash Attention implementation notes, GB10 or Blackwell feature notes, claim candidates, Evidence Items, review notes, and inquiry options as Artifacts or provisional research records.
+- [x] Present a follow-up Research Inquiry Gate through the manual harness or Operator Agent text output and record the selected inquiry as a Decision Record.
+- [x] Emit minimal View Manifest records for literature matrix, claim graph, and inquiry comparison even when the first renderer is CLI-only.
+- [x] Add an integration or manual test harness that runs the UC-01 path from Project initialization through the follow-up inquiry Decision Record (`pixi run python tests/manual/uc01_headless_vertical_slice`).
 
 Exit criteria:
 

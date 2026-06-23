@@ -130,7 +130,11 @@ def _collect_refs(raw: dict[str, Any]) -> dict[str, Any]:
         "policy_refs",
         "artifact_format_defaults",
     )
-    return {key: raw[key] for key in keys if key in raw}
+    refs = {key: raw[key] for key in keys if key in raw}
+    nested_refs = raw.get("refs")
+    if isinstance(nested_refs, dict):
+        refs.update(nested_refs)
+    return refs
 
 
 def _string(value: object) -> str | None:

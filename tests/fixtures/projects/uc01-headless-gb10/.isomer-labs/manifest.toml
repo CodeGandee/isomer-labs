@@ -1,0 +1,32 @@
+schema_version = "isomer-project-manifest.v1"
+
+[defaults]
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+topic_workspace_id = "flash-attention-gb10-peak-performance-optimization"
+domain_agent_team_template_id = "deepsci-mini"
+topic_agent_team_profile_id = "uc-01-gb10-deepsci-mini"
+
+[[research_topics]]
+id = "flash-attention-gb10-peak-performance-optimization"
+config_path = ".isomer-labs/research-topics/flash-attention-gb10-peak-performance-optimization.toml"
+topic_workspace_id = "flash-attention-gb10-peak-performance-optimization"
+status = "active"
+
+[[topic_workspaces]]
+id = "flash-attention-gb10-peak-performance-optimization"
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+path = "topic-workspaces/flash-attention-gb10-peak-performance-optimization"
+status = "active"
+
+[[topic_pixi_environment_bindings]]
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+pixi_environment = "default"
+purpose = "uc01-headless-runtime"
+status = "active"
+
+[[topic_agent_team_profiles]]
+id = "uc-01-gb10-deepsci-mini"
+path = ".isomer-labs/team-profiles/uc-01-gb10-deepsci-mini.toml"
+domain_agent_team_template_id = "deepsci-mini"
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+status = "active"

@@ -16,3 +16,5 @@ tmp/
 .codex/
 .git/
 .agents/skills
+
+.imsight-arts/impl-branches/

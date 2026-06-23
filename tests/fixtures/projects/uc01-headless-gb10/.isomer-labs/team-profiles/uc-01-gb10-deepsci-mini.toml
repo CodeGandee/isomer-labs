@@ -1,0 +1,56 @@
+schema_version = "isomer-topic-agent-team-profile.v1"
+id = "uc-01-gb10-deepsci-mini"
+domain_agent_team_template_id = "deepsci-mini"
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+topic_workspace_id = "flash-attention-gb10-peak-performance-optimization"
+coordination_policy_ref = "coordination-policy:uc01-manual"
+gate_policy_ref = "gate-policy:uc01-follow-up-inquiry"
+default_execution_mode = "manual"
+reviewer_read_access_policy = "promoted-artifacts-only"
+expected_artifacts = [
+  "artifact:uc01:seed-source-summary",
+  "artifact:uc01:flash-attention-implementation-notes",
+  "artifact:uc01:gb10-feature-notes",
+  "artifact:uc01:attention-kernel-bottleneck-notes",
+  "artifact:uc01:shape-family-constraints",
+  "artifact:uc01:correctness-constraints",
+  "artifact:uc01:claim-candidates",
+  "artifact:uc01:review-notes",
+  "artifact:uc01:follow-up-inquiry-options",
+  "artifact:uc01:decision-record",
+]
+constraints = [
+  "use_case:UC-01",
+  "route_classification_required",
+  "no_gb10_measurement_in_milestone_6",
+]
+
+[[role_bindings]]
+role_id = "deepsci-mini-lead"
+active = true
+agent_profile_ref = "uc-01-gb10-deepsci-mini:deepsci-mini-lead:agent-profile"
+capability_binding_ref = "uc-01-gb10-deepsci-mini:deepsci-mini-lead:capability-binding"
+skill_binding_projection_ref = "uc-01-gb10-deepsci-mini:deepsci-mini-lead:skill-binding-projection"
+agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/uc-01-gb10-deepsci-mini/deepsci-mini-lead"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
+optional_skills = ["isomer-rsch-review"]
+
+[[role_bindings]]
+role_id = "deepsci-mini-scout"
+active = true
+agent_profile_ref = "uc-01-gb10-deepsci-mini:deepsci-mini-scout:agent-profile"
+capability_binding_ref = "uc-01-gb10-deepsci-mini:deepsci-mini-scout:capability-binding"
+skill_binding_projection_ref = "uc-01-gb10-deepsci-mini:deepsci-mini-scout:skill-binding-projection"
+agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/uc-01-gb10-deepsci-mini/deepsci-mini-scout"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-scout"]
+optional_skills = ["isomer-rsch-baseline", "isomer-rsch-science", "isomer-rsch-paper-outline"]
+
+[[role_bindings]]
+role_id = "deepsci-mini-synth-reviewer"
+active = true
+agent_profile_ref = "uc-01-gb10-deepsci-mini:deepsci-mini-synth-reviewer:agent-profile"
+capability_binding_ref = "uc-01-gb10-deepsci-mini:deepsci-mini-synth-reviewer:capability-binding"
+skill_binding_projection_ref = "uc-01-gb10-deepsci-mini:deepsci-mini-synth-reviewer:skill-binding-projection"
+agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/uc-01-gb10-deepsci-mini/deepsci-mini-synth-reviewer"
+required_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-analysis", "isomer-rsch-review"]
+optional_skills = ["isomer-rsch-science", "isomer-rsch-paper-plot"]

@@ -54,3 +54,18 @@ description = "Skeptical review Artifact produced by deepsci-mini-synth-reviewer
 [[expected_artifacts]]
 kind = "decision_record"
 description = "Decision Record Artifact or Workspace Runtime record for selected follow-up Research Inquiry."
+
+[[read_write_rules]]
+id = "no-workspace-local-teams"
+description = "A Topic Workspace must not contain a workspace-local teams directory for this template."
+severity = "error"
+
+[[read_write_rules]]
+id = "promote-before-dependency"
+description = "Durable dependencies should be promoted into Artifacts, Evidence Items, Findings, Decision Records, Gates, or Provenance Records before another role relies on them."
+severity = "warning"
+
+[[read_write_rules]]
+id = "peer-write-disallowed"
+description = "Peer writes into another Agent Workspace are validation issues unless the Coordination Policy explicitly assigns repair, migration, or cleanup work."
+severity = "error"

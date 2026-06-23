@@ -1,0 +1,17 @@
+schema_version = "isomer-research-topic-config.v1"
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+topic_statement = "Map Flash Attention 4 optimization directions for DGX Spark GB10 before running measured kernel experiments."
+measurable_objectives = [
+  "Choose one follow-up Research Inquiry that is traceable to recorded Evidence Items.",
+  "Stop before GB10 measurement, baseline benchmark, candidate optimization, automatic replay, or compute-budget Gate work.",
+]
+
+[defaults]
+research_inquiry_id = "gb10-flash-attention-4-direction-selection"
+research_task_id = "map-gb10-flash-attention-optimization-directions"
+
+[refs]
+default_domain_agent_team_template_id = "deepsci-mini"
+default_topic_agent_team_profile_id = "uc-01-gb10-deepsci-mini"
+seed_material_ref = "fixtures/uc01/seed-material.md"
+follow_up_gate_policy_ref = "gate-policy:uc01-follow-up-inquiry"

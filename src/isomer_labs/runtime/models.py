@@ -30,9 +30,11 @@ LIFECYCLE_RECORD_KINDS = (
     "topic_agent_team_profile",
     "artifact",
     "gate",
+    "finding",
     "research_claim",
     "evidence_item",
     "decision_record",
+    "view_manifest",
     "provenance_record",
 )
 LIFECYCLE_STATUSES = (
@@ -50,6 +52,7 @@ LIFECYCLE_STATUSES = (
     "archived",
     "open",
     "resolved",
+    "candidate",
     "supported",
 )
 AGENT_TEAM_INSTANCE_STATUSES = ("planned", "ready", "running", "blocked", "failed", "stale", "stopped", "cancelled", "superseded", "archived")

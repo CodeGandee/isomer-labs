@@ -63,6 +63,25 @@ pixi run isomer-cli --print-json team-profiles specialize \
 
 Add `--write` to persist the profile to the Project Config Directory. The command reports a `registration_suggestion` object that you can add to the Project Manifest.
 
+## UC-01 Headless Exploration
+
+Use this workflow to run the pinned UC-01 fixture from Project discovery through follow-up Research Inquiry selection without a GUI renderer. The fixture topic is `flash-attention-gb10-peak-performance-optimization`; it uses the `deepsci-mini` Topic Agent Team Profile and stops after recording the follow-up Gate and Decision Record.
+
+```bash
+pixi run isomer-cli --project tests/fixtures/projects/uc01-headless-gb10 --print-json validate
+pixi run python tests/manual/uc01_headless_vertical_slice
+```
+
+The manual harness copies the fixture Project to a temporary directory, validates it through the generic CLI, then drives reusable runtime, Topic Agent Team Profile, Agent Team Instance, handoff, normalization, and validation APIs. Its default adapter mode is simulated. It writes the same generic UC-01 record graph expected from live mode: Research Inquiry refs, Research Task refs, Run refs, handoff refs, Artifact refs, Evidence Item refs, Finding refs, a resolved follow-up Gate, a Decision Record, View Manifest refs, Provenance refs, adapter payload refs, and adapter command refs. The selected route classification may point to UC-07-style measured optimization, but UC-01 does not run GB10 measurement, baseline benchmark, candidate optimization, automatic replay, correctness checking, or compute-budget Gate work.
+
+Live Houmao validation is explicit and gated:
+
+```bash
+ISOMER_MANUAL_LIVE_HOUMAO=1 pixi run python tests/manual/uc01_headless_vertical_slice --live-houmao
+```
+
+Without `ISOMER_MANUAL_LIVE_HOUMAO=1`, the harness reports `skipped: true`, `mutated: false` for the live check and does not create Workspace Runtime state or live Houmao state for that live copy.
+
 ## Agent Team Instance Creation
 
 Create a record for a team before launching it. This separates design-time profile work from runtime team state.

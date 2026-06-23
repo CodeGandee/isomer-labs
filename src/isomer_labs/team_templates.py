@@ -25,6 +25,7 @@ from isomer_labs.toml_loader import load_toml
 
 
 BUILT_IN_DEEPSCI_ORG_ID = "deepsci-org"
+BUILT_IN_DEEPSCI_MINI_ID = "deepsci-mini"
 EXPECTED_DEEPSCI_ORG_ROLES = (
     "deepsci-org-master",
     "deepsci-org-framer",
@@ -34,9 +35,15 @@ EXPECTED_DEEPSCI_ORG_ROLES = (
     "deepsci-org-publisher",
     "deepsci-org-reviewer",
 )
+EXPECTED_DEEPSCI_MINI_ROLES = (
+    "deepsci-mini-lead",
+    "deepsci-mini-scout",
+    "deepsci-mini-synth-reviewer",
+)
 SCALABLE_DEEPSCI_ORG_ROLES = {"deepsci-org-experimenter", "deepsci-org-analyzer"}
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _BUILT_IN_DEEPSCI_ORG_SOURCE = _REPO_ROOT / "teams" / "deepsci-org" / "execplan"
+_BUILT_IN_DEEPSCI_MINI_SOURCE = _REPO_ROOT / "teams" / "deepsci-mini" / "execplan"
 
 _BOUNDARY_KEYS = {
     "research_topic_id",
@@ -85,11 +92,22 @@ def built_in_deepsci_org_registration() -> DomainAgentTeamTemplateRegistration:
     )
 
 
+def built_in_deepsci_mini_registration() -> DomainAgentTeamTemplateRegistration:
+    return DomainAgentTeamTemplateRegistration(
+        id=BUILT_IN_DEEPSCI_MINI_ID,
+        source_path_input=str(_BUILT_IN_DEEPSCI_MINI_SOURCE),
+        source_kind="built-in",
+        schema_version=DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION,
+        status="active",
+        source_path=_BUILT_IN_DEEPSCI_MINI_SOURCE,
+    )
+
+
 def discover_domain_agent_team_templates(project: Project | None = None) -> list[DomainAgentTeamTemplateRegistration]:
-    registrations = [built_in_deepsci_org_registration()]
+    registrations = [built_in_deepsci_org_registration(), built_in_deepsci_mini_registration()]
     if project is None:
         return registrations
-    seen = {BUILT_IN_DEEPSCI_ORG_ID}
+    seen = {BUILT_IN_DEEPSCI_ORG_ID, BUILT_IN_DEEPSCI_MINI_ID}
     for registration in project.manifest.domain_agent_team_templates:
         if registration.status == "archived":
             continue
@@ -112,7 +130,8 @@ def find_domain_agent_team_template(
 
 def resolve_template_source_path(project: Project | None, registration: DomainAgentTeamTemplateRegistration) -> Path:
     if registration.source_kind == "built-in" or (
-        registration.id == BUILT_IN_DEEPSCI_ORG_ID and registration.source_path_input is None
+        registration.id in {BUILT_IN_DEEPSCI_ORG_ID, BUILT_IN_DEEPSCI_MINI_ID}
+        and registration.source_path_input is None
     ):
         return canonicalize(registration.source_path)
     if registration.source_path_input is None:
@@ -419,6 +438,17 @@ def _validate_manifest_metadata(
                 message="Built-in deepsci-org template manifest must keep loop_slug deepsci-org.",
             )
         )
+    if registration.id == BUILT_IN_DEEPSCI_MINI_ID and raw.get("loop_slug") != BUILT_IN_DEEPSCI_MINI_ID:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO017",
+                severity="error",
+                concept="Domain Agent Team Template manifest",
+                path=manifest.path,
+                field="loop_slug",
+                message="Built-in deepsci-mini template manifest must keep loop_slug deepsci-mini.",
+            )
+        )
 
 
 def _validate_deepsci_role_contract(
@@ -426,6 +456,40 @@ def _validate_deepsci_role_contract(
     roles: list[AgentRoleDefinition],
     diagnostics: list[Diagnostic],
 ) -> None:
+    if template_id == BUILT_IN_DEEPSCI_MINI_ID:
+        role_ids = [role.id for role in roles]
+        missing = [role_id for role_id in EXPECTED_DEEPSCI_MINI_ROLES if role_id not in role_ids]
+        if missing:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO017",
+                    severity="error",
+                    concept="Domain Agent Team Template role",
+                    field="roles",
+                    message=f"deepsci-mini participant contract is missing role ids: {', '.join(missing)}.",
+                )
+            )
+        for role in roles:
+            if role.id in EXPECTED_DEEPSCI_MINI_ROLES and not role.required:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO017",
+                        severity="error",
+                        concept="Domain Agent Team Template role",
+                        field=f"roles.{role.id}.required",
+                        message="deepsci-mini Agent Roles must stay required at the template layer.",
+                    )
+                )
+            if role.scalable:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO017",
+                        severity="error",
+                        concept="Domain Agent Team Template role",
+                        field=f"roles.{role.id}.scalable",
+                        message="deepsci-mini Agent Roles must stay non-scalable for the compact seed template.",
+                    )
+                )
     if template_id != BUILT_IN_DEEPSCI_ORG_ID:
         return
     role_ids = [role.id for role in roles]
