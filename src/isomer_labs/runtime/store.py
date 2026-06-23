@@ -52,7 +52,7 @@ from isomer_labs.runtime.models import (
     WorkspaceRuntimeMetadata,
     utc_timestamp,
 )
-from isomer_labs.runtime.identifiers import _path_plan_id, _provenance_ref, _slug
+from isomer_labs.runtime.identifiers import _agent_instance_id, _path_plan_id, _provenance_ref, _slug
 from isomer_labs.runtime.readiness import _readiness_diagnostic
 from isomer_labs.runtime.rows import (
     _row_to_adapter_command_run,
@@ -480,7 +480,18 @@ class WorkspaceRuntimeStore:
         try:
             with self.connection:
                 for binding in active_bindings:
-                    agent_id = f"{team_id}-{_slug(binding.role_id)}"
+                    agent_id = _agent_instance_id(team_id, binding.role_id)
+                    if self._agent_instance_id_exists(agent_id):
+                        diagnostics.append(
+                            Diagnostic(
+                                code="ISO041",
+                                severity="error",
+                                concept="Agent Instance Identity",
+                                field="id",
+                                message=f"Generated Agent Instance id already exists: {agent_id}.",
+                            )
+                        )
+                        return None, diagnostics
                     workspace_id = f"agent-workspace-{agent_id}"
                     surface = f"agent_workspace:{agent_id}"
                     workspace_path = context.topic_workspace_path / "agents" / agent_id
@@ -673,6 +684,13 @@ class WorkspaceRuntimeStore:
             adapter_inspection_snapshots=adapter_inspection_snapshots,
             adapter_stop_outcomes=adapter_stop_outcomes,
         )
+
+    def _agent_instance_id_exists(self, agent_id: str) -> bool:
+        row = self.connection.execute(
+            "SELECT 1 FROM agent_instances WHERE id = ?",
+            (agent_id,),
+        ).fetchone()
+        return row is not None
 
     def list_agent_instances(self) -> list[AgentInstanceRecord]:
         return [

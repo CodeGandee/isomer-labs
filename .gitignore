@@ -13,6 +13,13 @@ tmp/
 .env
 
 .claude/
+.claude
 .codex/
+.codex
 .git/
 .agents/skills
+.pixi/
+.pixi
+
+# Isolated implementation worktrees
+.imsight-arts/impl-branches/
