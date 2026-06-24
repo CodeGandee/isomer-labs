@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the target Project root, optional Research Topic id, optional topic statement, and optional generated content root from the user's prompt. See `references/project-concepts.md`.
-2. Check whether `.isomer-labs/manifest.toml` already exists; if it does, stop and report that `isomer-cli project init` refuses to overwrite an existing Project.
+2. Check whether `.isomer-labs/manifest.toml` already exists; if it does, stop and report that `isomer-cli project init` refuses to overwrite an existing Project, then suggest `cleanup-project` with `isomer-cli project cleanup --part bootstrap --dry-run`.
 3. Confirm Houmao bootstrap can use the supported CLI boundary from `references/houmao-bootstrap.md`.
 4. Run `pixi run isomer-cli project init <topic-id> --topic-statement "<topic statement>"` from the Project root, adding `--content-dir <content-dir>` when the user selected a custom generated content root, or use `pixi run isomer-cli project --root <project-root> init <topic-id> --topic-statement "<topic statement>" --content-dir <content-dir>` when operating from another directory with a custom content root.
 5. Report `.isomer-labs/manifest.toml`, `.isomer-labs/research-topics/<topic-id>.toml`, the selected generated content root (`isomer-content/` by default or `<content-dir>/` when supplied), the first Topic Workspace (`isomer-content/topic-ws/<topic-id>/` by default or `<content-dir>/topic-ws/<topic-id>/` when supplied), `.houmao/`, diagnostics, and next operator action.

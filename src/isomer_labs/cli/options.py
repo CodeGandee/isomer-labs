@@ -29,6 +29,12 @@ class CliOptions:
     agent_team_instance_id: str | None = None
     agent_instance_id: str | None = None
     topic_agent_team_profile_id: str | None = None
+    cleanup_parts: tuple[str, ...] = ()
+    cleanup_topics: tuple[str, ...] = ()
+    cleanup_all_topics: bool = False
+    cleanup_purge_content_root: bool = False
+    cleanup_dry_run: bool = False
+    cleanup_yes: bool = False
 
 
 def common_options(command: Any) -> Any:
@@ -66,7 +72,7 @@ def merge_options(
     manifest: str | None = None,
     output_format: str | None = None,
     json_output: bool = False,
-    **values: str | None,
+    **values: Any,
 ) -> CliOptions:
     current = ctx.obj
     root = ctx.find_root().obj

@@ -97,7 +97,7 @@ def initialize_project(
                     severity="error",
                     concept="Project Manifest",
                     path=manifest_path,
-                    message="Project Manifest already exists; Milestone 1 init refuses to overwrite it.",
+                    message="Project Manifest already exists; init refuses to overwrite it. Review removable Project-managed material with `isomer-cli project cleanup --part bootstrap --dry-run` before reinitializing.",
                 )
             ],
         )

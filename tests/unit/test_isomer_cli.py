@@ -405,6 +405,7 @@ class IsomerCliTests(unittest.TestCase):
         help_text = result.output
         for command in (
             "project init",
+            "project cleanup",
             "project doctor",
             "project validate",
             "project topics list",
@@ -781,6 +782,189 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["project", "init"], cwd=root, env=self.fake_houmao_env(root))
         self.assertEqual(1, status)
         self.assertIn("refuses to overwrite", output)
+        self.assertIn("project cleanup --part bootstrap --dry-run", output)
+
+    def test_project_cleanup_dry_run_and_default_non_mutating_plan(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "project-config", "--dry-run", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["ok"])
+        self.assertFalse(data["mutated"])
+        self.assertTrue(data["dry_run"])
+        self.assertEqual(["project-config"], data["selected_parts"])
+        self.assertEqual(root / ".isomer-labs", Path(data["planned_removals"][0]["path"]))
+        self.assertTrue((root / ".isomer-labs" / "manifest.toml").is_file())
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "project-config"], cwd=root)
+        self.assertEqual(0, status, output)
+        self.assertIn("Mode: dry-run", output)
+        self.assertIn("pass --yes", output)
+        self.assertTrue((root / ".isomer-labs" / "manifest.toml").is_file())
+
+    def test_project_cleanup_confirmed_partial_and_bootstrap_cleanup(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "cleanup",
+                "--part",
+                "houmao-overlay",
+                "--part",
+                "content-policy",
+                "--yes",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertFalse((root / ".houmao").exists())
+        self.assertFalse((root / "isomer-content" / "README.md").exists())
+        self.assertFalse((root / "isomer-content" / ".gitignore").exists())
+        self.assertTrue((root / ".isomer-labs" / "manifest.toml").is_file())
+        self.assertTrue((root / "isomer-content" / "topic-ws" / "default").is_dir())
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "bootstrap", "--yes", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertFalse((root / ".isomer-labs").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default").exists())
+
+        status, output = self.run_cli(["project", "init", "next"], cwd=root, env=self.fake_houmao_env(root))
+        self.assertEqual(0, status, output)
+        self.assertTrue((root / ".isomer-labs" / "manifest.toml").is_file())
+
+    def test_project_cleanup_runtime_preserves_topic_source_material(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        runtime_root = root / "isomer-content" / "topic-ws" / "default"
+        write(runtime_root / "team-profile" / "profile.toml", 'id = "source"\n')
+        status, output = self.run_cli(["project", "runtime", "init", "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+        write(runtime_root / "runtime" / "adapters" / "houmao" / "ati-default" / "adapter-link.json", "{}\n")
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "runtime", "--topic", "default", "--yes", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertFalse((runtime_root / "state.sqlite").exists())
+        for directory in ("artifacts", "agents", "tasks", "runs", "views", "logs"):
+            self.assertFalse((runtime_root / directory).exists())
+        self.assertFalse((runtime_root / "runtime" / "adapters" / "houmao").exists())
+        self.assertTrue((runtime_root / "team-profile" / "profile.toml").is_file())
+
+    def test_project_cleanup_topic_workspace_and_content_root_purge(self) -> None:
+        root = self.make_root()
+        self.make_two_topic_project(root)
+        write(root / "topic-workspaces" / "alpha" / "topic-def" / "topic-overview.md", "# Alpha\n")
+        write(root / "topic-workspaces" / "beta" / "topic-def" / "topic-overview.md", "# Beta\n")
+        write(root / "isomer-content" / "README.md", "# Isomer Content\n")
+        write(root / "isomer-content" / ".gitignore", "*\n")
+        write(root / "isomer-content" / "unknown.txt", "operator-owned\n")
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "topic-workspace", "--topic", "beta", "--yes", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue((root / "topic-workspaces" / "alpha" / "topic-def" / "topic-overview.md").is_file())
+        self.assertFalse((root / "topic-workspaces" / "beta").exists())
+        self.assertTrue((root / "isomer-content" / "unknown.txt").is_file())
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "content-root", "--purge-content-root", "--yes", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertFalse((root / "isomer-content").exists())
+
+    def test_project_cleanup_manifest_limited_authority_and_topic_refusal(self) -> None:
+        root = self.make_root()
+        write(root / ".isomer-labs" / "manifest.toml", "not toml = [\n")
+        write(root / ".houmao" / "houmao-config.toml", "schema_version = 1\n")
+        write(root / "isomer-content" / "README.md", "# Isomer Content\n")
+        write(root / "isomer-content" / ".gitignore", "*\n")
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "content-policy", "--dry-run", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(any(diagnostic["severity"] == "warning" for diagnostic in data["diagnostics"]))
+        self.assertEqual(
+            {str(root / "isomer-content" / "README.md"), str(root / "isomer-content" / ".gitignore")},
+            {target["path"] for target in data["planned_removals"]},
+        )
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "runtime", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(any("requires a valid Project Manifest" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+        self.assertTrue((root / ".houmao" / "houmao-config.toml").is_file())
+
+        missing_manifest_root = self.make_root()
+        write(missing_manifest_root / ".houmao" / "houmao-config.toml", "schema_version = 1\n")
+        status, output = self.run_cli(
+            ["project", "--root", str(missing_manifest_root), "cleanup", "--part", "houmao-overlay", "--dry-run", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["dry_run"])
+        self.assertEqual(str(missing_manifest_root / ".houmao"), data["planned_removals"][0]["path"])
+
+    def test_project_cleanup_content_root_requires_purge_and_respects_symlink_entries(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "content-root", "--yes", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertTrue((root / "isomer-content").is_dir())
+        self.assertIn("requires --purge-content-root", data["diagnostics"][0]["message"])
+
+        status, output = self.run_cli(
+            ["project", "cleanup", "--part", "content-policy", "--content-dir", "../outside", "--dry-run", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertTrue(any("outside the Project root" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+
+        status, output = self.run_cli(
+            ["project", "cleanup", "--part", "content-policy", "--content-dir", ".isomer-labs/generated", "--dry-run", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertTrue(any("Project Config Directory" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+
+        outside = self.make_root() / "outside-houmao"
+        write(outside / "keep.txt", "keep\n")
+        shutil.rmtree(root / ".houmao")
+        (root / ".houmao").symlink_to(outside, target_is_directory=True)
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "houmao-overlay", "--yes", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertFalse((root / ".houmao").exists())
+        self.assertTrue((outside / "keep.txt").is_file())
+
+        status, output = self.run_cli(
+            ["project", "cleanup", "--part", "content-root", "--content-dir", ".", "--purge-content-root", "--yes", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertTrue(any("Project root" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
 
     def test_init_uses_explicit_topic_id_consistently(self) -> None:
         root = self.make_root()

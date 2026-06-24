@@ -39,6 +39,7 @@ from isomer_labs.path_utils import display_path
 from isomer_labs.paths import preview_paths
 from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
 from isomer_labs.project import discover_project, find_ancestor_manifest, project_root_for_manifest
+from isomer_labs.project_cleanup import execute_project_cleanup, plan_project_cleanup, render_cleanup_text
 from isomer_labs.rendering import render_key_values
 from isomer_labs.runtime.store import (
     initialize_workspace_runtime,
@@ -70,6 +71,7 @@ COMMAND_SURFACE = """Milestone 1 Isomer Labs Project discovery and path preview 
 \b
 Command surface:
   project init
+  project cleanup
   project doctor
   project validate
   project topics list
@@ -243,6 +245,23 @@ def _cmd_validate(options: CliOptions) -> int:
             topic_id: config.to_json() for topic_id, config in sorted(state.topic_configs.items())
         }
     return _emit("validate", options, payload, diagnostics, _render_validate_text(project is not None, diagnostics))
+
+
+def _cmd_cleanup(options: CliOptions) -> int:
+    plan = plan_project_cleanup(
+        cwd=Path.cwd(),
+        project_selector=_value(options, "project"),
+        manifest_selector=_value(options, "manifest"),
+        parts=tuple(_value(options, "cleanup_parts") or ()),
+        topics=tuple(_value(options, "cleanup_topics") or ()),
+        all_topics=bool(_value(options, "cleanup_all_topics")),
+        content_dir=_value(options, "content_dir"),
+        purge_content_root=bool(_value(options, "cleanup_purge_content_root")),
+        dry_run=bool(_value(options, "cleanup_dry_run")),
+        yes=bool(_value(options, "cleanup_yes")),
+    )
+    execution = execute_project_cleanup(plan)
+    return _emit("cleanup", options, execution.to_json(), list(execution.diagnostics), render_cleanup_text(execution))
 
 
 def _cmd_doctor(options: CliOptions) -> int:

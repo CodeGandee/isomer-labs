@@ -42,6 +42,23 @@ pixi run isomer-cli project init my-topic --content-dir custom-content
 
 `--content-dir <content-dir>` must resolve inside the Project root and must not live inside `.isomer-labs/` or collide with `.houmao/`. When omitted, init uses `isomer-content/`.
 
+### `project cleanup`
+
+Plan or apply cleanup of selected Isomer-managed Project material.
+
+**Side effects:** without `--yes`, none. `--dry-run` always builds the same deterministic plan without deleting files, and omitting both `--dry-run` and `--yes` defaults to dry-run mode. With `--yes`, deletes only targets listed in the validated plan. `project cleanup` does not stop live Houmao agents, inspect gateways, infer unregistered Research Topics from directories, or remove the whole generated content root unless `--part content-root --purge-content-root --yes` is selected.
+
+**Parts:** `project-config` removes `.isomer-labs/`; `houmao-overlay` removes the Project-level `.houmao/` overlay; `content-policy` removes the selected content root's generated `README.md` and `.gitignore`; `topic-workspace` removes selected registered Topic Workspace directories; `runtime` removes `state.sqlite`, runtime-owned directories, and adapter runtime material under selected Topic Workspaces; `bootstrap` combines Project config, Houmao overlay, content policy files, and known init-created Topic Workspace directories; `content-root` removes the selected generated content root only with `--purge-content-root`.
+
+```bash
+pixi run isomer-cli project cleanup --part bootstrap --dry-run
+pixi run isomer-cli project cleanup --part bootstrap --yes
+pixi run isomer-cli --print-json project cleanup --part runtime --topic default --dry-run
+pixi run isomer-cli project cleanup --part content-root --purge-content-root --yes
+```
+
+When a valid Project Manifest exists, cleanup uses it as authority for path defaults, Research Topic registrations, and Topic Workspace registrations. If the manifest is missing or malformed, cleanup is limited to `.isomer-labs/`, `.houmao/`, and the built-in or explicitly selected content root policy files; it will not infer Research Topics from filesystem directories.
+
 ### `project doctor`
 
 Run read-only dependency, Project, and topic diagnostics.

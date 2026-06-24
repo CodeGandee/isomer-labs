@@ -4,30 +4,42 @@
 TBD - created by archiving changes implement-isomer-cli-project-discovery and refactor-isomer-cli-to-click. Update Purpose after archive.
 ## Requirements
 ### Requirement: CLI Entrypoint and Command Surface
-The system SHALL provide an installed `isomer-cli` command with Project discovery, doctor diagnostics, Workspace Runtime management, topic environment readiness preparation, Agent Team Instance record management, template inspection, and Topic Agent Team Profile validation commands.
+The system SHALL provide an installed `isomer-cli` command with a global command surface and a `project` command group for Project discovery, doctor diagnostics, Workspace Runtime management, topic environment readiness preparation, Agent Team Instance record management, template inspection, and Topic Agent Team Profile validation commands.
 
-#### Scenario: CLI exposes project-discovery commands
+#### Scenario: CLI exposes project group
 - **WHEN** a user runs `isomer-cli --help`
-- **THEN** the command help lists `project init`, `project validate`, `project doctor`, `project topics list`, `project workspaces list`, `project context show`, `project paths preview`, `schemas list`, `project runtime init`, `project runtime prepare`, `project runtime inspect`, `project runtime validate`, `project team-instances create`, `project team-instances list`, and `project team-instances show`
+- **THEN** the command help lists `project` and global Project-independent commands such as `schemas`
 
-#### Scenario: CLI exposes template and profile commands
-- **WHEN** a user runs `isomer-cli --help`
-- **THEN** the command help lists `project team-templates` and `project team-profiles` command groups
+#### Scenario: Project group exposes project-discovery commands
+- **WHEN** a user runs `isomer-cli project --help`
+- **THEN** the command help lists `init`, `validate`, `doctor`, `topics list`, `workspaces list`, `context show`, `paths preview`, `runtime init`, `runtime prepare`, `runtime inspect`, `runtime validate`, `team-instances create`, `team-instances list`, and `team-instances show`
+
+#### Scenario: Project group exposes template and profile commands
+- **WHEN** a user runs `isomer-cli project --help`
+- **THEN** the command help lists `team-templates` and `team-profiles` command groups
 
 #### Scenario: Project script is installed through package metadata
 - **WHEN** the package is installed through the repository's editable Pixi PyPI dependency
 - **THEN** the environment can invoke `isomer-cli` as a project script
 
 ### Requirement: Project Initialization
-The system SHALL initialize the smallest valid Isomer-managed Project configuration and the Project-level Houmao overlay without creating Workspace Runtime state or live Houmao agent state.
+The system SHALL initialize the smallest valid Isomer-managed Project configuration, the selected Project-local generated content root, and the Project-level Houmao overlay through `isomer-cli project init` without creating Workspace Runtime state or live Houmao agent state.
 
 #### Scenario: Initialize default project
-- **WHEN** a user runs `isomer-cli project init` in a directory without `.isomer-labs/manifest.toml`
-- **THEN** the system creates `.isomer-labs/manifest.toml`, one registered Research Topic Config for Research Topic id `default`, one project-local Topic Workspace directory at `topic-workspaces/default/`, and a Project-level Houmao overlay at `.houmao/`
+- **WHEN** a user runs `isomer-cli project init` in a directory that is not inside an existing Isomer Project and does not contain `.isomer-labs/manifest.toml`
+- **THEN** the system creates `.isomer-labs/manifest.toml`, one registered Research Topic Config for Research Topic id `default`, one project-local Topic Workspace directory at `isomer-content/topic-ws/default/`, a Project-local generated content root at `isomer-content/`, and a Project-level Houmao overlay at `.houmao/`
 
 #### Scenario: Initialize explicit topic
 - **WHEN** a user runs `isomer-cli project init` with an explicit Research Topic id
-- **THEN** the system uses that id for the Research Topic registration, Research Topic Config path, and default Topic Workspace directory name
+- **THEN** the system uses that id for the Research Topic registration, Research Topic Config path, and default Topic Workspace directory name under the selected generated content root's `topic-ws/` directory
+
+#### Scenario: Initialize accepts custom content directory
+- **WHEN** a user runs `isomer-cli project init --content-dir custom-content` in a directory that is not inside an existing Isomer Project and does not contain `.isomer-labs/manifest.toml`
+- **THEN** the system creates the generated content root at `custom-content/`, writes content-root policy files there, creates the first Topic Workspace under `custom-content/topic-ws/<topic-id>/`, and records Project Manifest path defaults for `isomer_content_root = "custom-content"` and `topic_workspace_base_dir = "custom-content/topic-ws"`
+
+#### Scenario: Initialize rejects nested project
+- **WHEN** a user runs `isomer-cli project init` from inside a directory tree that already has an ancestor `.isomer-labs/manifest.toml`
+- **THEN** the system refuses to create a nested Isomer Project and reports the ancestor Project root
 
 #### Scenario: Initialize creates Houmao project overlay
 - **WHEN** `isomer-cli project init` completes successfully
@@ -43,21 +55,25 @@ The system SHALL initialize the smallest valid Isomer-managed Project configurat
 
 #### Scenario: Houmao bootstrap failure blocks project init
 - **WHEN** a user runs `isomer-cli project init` and the required Houmao command boundary is unavailable or returns a failing result
-- **THEN** the system returns deterministic diagnostics, does not write `.isomer-labs/manifest.toml`, and does not claim that the Isomer Project was initialized
+- **THEN** the system returns deterministic diagnostics, does not write `.isomer-labs/manifest.toml`, does not create the selected generated content root, and does not claim that the Isomer Project was initialized
 
 #### Scenario: Existing project is not overwritten
 - **WHEN** a user runs `isomer-cli project init` in a Project that already has `.isomer-labs/manifest.toml`
 - **THEN** the system refuses to overwrite the existing Project Manifest and does not offer a force-overwrite behavior in Milestone 1
 
 ### Requirement: Project Discovery
-The system SHALL discover the active Project before resolving topic-scoped command behavior.
+The system SHALL discover the active Project before resolving Project-scoped command behavior under `isomer-cli project`.
 
-#### Scenario: Explicit project selector wins
-- **WHEN** a user provides an explicit Project root or Project Manifest selector
+#### Scenario: Explicit root selector wins
+- **WHEN** a user provides `isomer-cli project --root <project-root> <subcmd>`
 - **THEN** the system loads that Project before checking the current directory or environment-derived Project fallbacks
 
+#### Scenario: Explicit manifest selector wins
+- **WHEN** a user provides `isomer-cli project --manifest <manifest-path> <subcmd>`
+- **THEN** the system loads that Project Manifest before checking the current directory or environment-derived Project fallbacks
+
 #### Scenario: Current directory discovers project
-- **WHEN** a user runs `isomer-cli` from inside a directory tree containing an ancestor `.isomer-labs/manifest.toml`
+- **WHEN** a user runs `isomer-cli project <subcmd>` from inside a directory tree containing an ancestor `.isomer-labs/manifest.toml`
 - **THEN** the system resolves that ancestor as the Project root and loads its Project Manifest
 
 #### Scenario: Project environment fallback is used
@@ -66,7 +82,7 @@ The system SHALL discover the active Project before resolving topic-scoped comma
 
 #### Scenario: Missing project is rejected
 - **WHEN** no explicit selector, current-directory discovery, or supported Project environment override resolves a Project Manifest
-- **THEN** the system rejects project-scoped and topic-scoped commands with a validation diagnostic instead of creating implicit Project state
+- **THEN** the system rejects Project-scoped and topic-scoped commands with a validation diagnostic instead of creating implicit Project state
 
 ### Requirement: Manifest and Topic Config Validation
 The system SHALL validate the Project Manifest, registered Research Topic Config files, optional local active context, Domain Agent Team Template refs, and Topic Agent Team Profile refs before command behavior depends on them.
@@ -150,11 +166,15 @@ The system SHALL resolve and display Effective Topic Context for topic-scoped co
 - **THEN** the system includes those refs only after validating that they belong to the selected Research Topic and Topic Workspace or reports that the ref cannot yet be validated without Workspace Runtime support
 
 ### Requirement: Workspace Path Preview
-The system SHALL preview Workspace Path Resolution outputs without creating Workspace Runtime state.
+The system SHALL preview Workspace Path Resolution outputs, including Project generated-content defaults, without creating Workspace Runtime state.
+
+#### Scenario: Path preview shows generated content root
+- **WHEN** a user runs `isomer-cli project paths preview` for a Project with generated-content path defaults
+- **THEN** the output includes the generated content root path and labels whether it came from the Project Manifest or a built-in default
 
 #### Scenario: Path preview shows topic workspace defaults
 - **WHEN** a user runs `isomer-cli project paths preview` for a registered Research Topic without a configured Topic Workspace path
-- **THEN** the output derives the Topic Workspace path as `<project>/topic-workspaces/<topic-id>/` and labels the source as `default`
+- **THEN** the output derives the Topic Workspace path as `<project>/isomer-content/topic-ws/<topic-id>/` and labels the source as `default`
 
 #### Scenario: Path preview applies precedence
 - **WHEN** a path surface has candidates from a supported `ISOMER_*` path override, Project Manifest default, and built-in default
@@ -169,8 +189,8 @@ The system SHALL preview Workspace Path Resolution outputs without creating Work
 - **THEN** the preview rejects the path without applying an external-root allowlist in Milestone 1
 
 #### Scenario: Path preview is side-effect free
-- **WHEN** `isomer-cli project paths preview` resolves Topic Workspace, Workspace Runtime, Artifact, Run, log, View Manifest, or Agent Workspace paths
-- **THEN** the command does not create `state.sqlite`, Run directories, Artifact directories, Agent Workspace directories, or View Manifest directories by default
+- **WHEN** `isomer-cli project paths preview` resolves generated content root, Topic Workspace, Workspace Runtime, Artifact, Run, log, View Manifest, or Agent Workspace paths
+- **THEN** the command does not create `isomer-content/`, `state.sqlite`, Run directories, Artifact directories, Agent Workspace directories, or View Manifest directories by default
 
 ### Requirement: Built-In Schema Listing
 The system SHALL expose the built-in schema and contract names known to the Milestone 1 implementation.
@@ -188,7 +208,7 @@ The system SHALL expose the built-in schema and contract names known to the Mile
 - **THEN** the command does not create schema files under `.isomer-labs/`
 
 ### Requirement: Diagnostics and Output Formats
-The system SHALL produce deterministic diagnostics, structured human-readable text, and machine-readable output for Project discovery, doctor diagnostics, Workspace Runtime management, topic environment readiness preparation, Agent Team Instance record management, template inspection, and Topic Agent Team Profile commands.
+The system SHALL produce deterministic diagnostics, structured human-readable text, and machine-readable output for global commands and for Project-scoped commands under `isomer-cli project`.
 
 #### Scenario: Diagnostics include stable codes
 - **WHEN** validation reports an error
@@ -207,7 +227,7 @@ The system SHALL produce deterministic diagnostics, structured human-readable te
 - **THEN** the response includes an output schema version and is treated as a developer contract rather than a durable public research-record API
 
 ### Requirement: Runtime Command Side-effect Boundaries
-The system SHALL make Workspace Runtime mutations explicit in CLI behavior while preserving the read-only guarantees of inspection and design-time commands.
+The system SHALL make Workspace Runtime mutations explicit under `isomer-cli project runtime` while preserving the read-only guarantees of inspection and design-time commands.
 
 #### Scenario: Runtime init is the runtime creation command
 - **WHEN** a user runs `isomer-cli project runtime init`
@@ -234,22 +254,26 @@ The system SHALL make Workspace Runtime mutations explicit in CLI behavior while
 - **THEN** the command reads Workspace Runtime records without creating Agent Team Instances, Agent Instances, Agent Workspaces, Runs, Houmao launch material, or adapter refs
 
 ### Requirement: Click Command Registration
-The system SHALL implement the `isomer-cli` command surface with modular Click command groups while preserving established Project discovery command behavior.
+The system SHALL implement the `isomer-cli` command surface with a modular Click root group and a nested Project command group while preserving established Project discovery behavior.
 
 #### Scenario: Root command is Click backed
 - **WHEN** the package exposes `isomer-cli` through `isomer_labs.cli:main`
 - **THEN** the command dispatch uses a Click command group rather than an `argparse` parser tree
 
-#### Scenario: Existing commands remain available
+#### Scenario: Root help exposes project group
 - **WHEN** a user runs `isomer-cli --help`
-- **THEN** the command help still lists `project init`, `project validate`, `project topics list`, `project workspaces list`, `project context show`, `project paths preview`, and `schemas list`
+- **THEN** the command help lists `project` and does not present root-level Project command forms as the canonical surface
 
-#### Scenario: Existing command outputs remain compatible
+#### Scenario: Project commands remain available under project
+- **WHEN** a user runs `isomer-cli project --help`
+- **THEN** the command help lists `init`, `validate`, `doctor`, `topics list`, `workspaces list`, `context show`, and `paths preview`
+
+#### Scenario: Existing command outputs remain compatible under project namespace
 - **WHEN** a user runs `project validate`, `project topics list`, `project workspaces list`, `project context show`, `project paths preview`, or `schemas list` with JSON output requested through root-level `--print-json`
 - **THEN** the command emits the same versioned JSON contract shape used by the Milestone 1 project-discovery implementation
 
 #### Scenario: Domain diagnostics remain Isomer diagnostics
-- **WHEN** Project discovery, Project Manifest validation, Research Topic Config validation, Effective Topic Context resolution, or Workspace Path Resolution fails
+- **WHEN** Project discovery, Project Manifest validation, Research Topic Config validation, Effective Topic Context resolution, or Workspace Path Resolution fails under the `project` group
 - **THEN** the command reports stable Isomer diagnostics rather than replacing domain validation failures with Click parser errors
 
 ### Requirement: Profile Write Output Contract
@@ -495,3 +519,124 @@ A named use-case command SHALL require an accepted spec update before it appears
 #### Scenario: Future use-case command is proposed
 - **WHEN** a future milestone wants `isomer-cli uc07` or another named use-case command
 - **THEN** the proposal identifies why the command is reusable product behavior, adds or modifies CLI requirements, and updates command-surface tests before implementation
+
+### Requirement: Project Manifest Path Defaults Validation
+The system SHALL validate Project Manifest path defaults used for generated content and Topic Workspace bases before command behavior depends on them.
+
+#### Scenario: Content path defaults stay project scoped
+- **WHEN** the Project Manifest declares `isomer_content_root` or `topic_workspace_base_dir`
+- **THEN** validation resolves each path relative to the Project root and rejects paths outside the Project root
+
+#### Scenario: Content root stays out of project config
+- **WHEN** the Project Manifest declares `isomer_content_root`
+- **THEN** validation rejects values that resolve inside `.isomer-labs/`
+
+#### Scenario: Explicit topic workspace registrations still win
+- **WHEN** a Project Manifest registers an explicit Topic Workspace path such as `topic-workspaces/<topic-id>` or another project-local path
+- **THEN** validation continues to accept that path when it resolves inside the Project root and does not rewrite it to the new default layout
+
+### Requirement: Project Command Namespace
+The system SHALL expose Project-targeted command behavior under a root-level `project` command group and SHALL treat `isomer-cli project <subcmd>` as the canonical command surface for Project-scoped operations.
+
+#### Scenario: Project group appears at root
+- **WHEN** a user runs `isomer-cli --help`
+- **THEN** the help lists a `project` command group for Project-scoped operations
+
+#### Scenario: Project group lists lifecycle commands
+- **WHEN** a user runs `isomer-cli project --help`
+- **THEN** the help lists Project lifecycle commands including `init`, `validate`, `doctor`, and `cleanup` when cleanup is implemented
+
+#### Scenario: Project group lists nested Project command groups
+- **WHEN** a user runs `isomer-cli project --help`
+- **THEN** the help lists Project-scoped command groups including `topics`, `workspaces`, `context`, `paths`, `runtime`, `team-instances`, `handoffs`, `team-templates`, and `team-profiles`
+
+#### Scenario: Project selector lives on project group
+- **WHEN** a user runs `isomer-cli project --root <project-root> validate`
+- **THEN** the system treats `<project-root>` as the explicit Project root selector for the nested command
+
+#### Scenario: Manifest selector lives on project group
+- **WHEN** a user runs `isomer-cli project --manifest <manifest-path> validate`
+- **THEN** the system treats `<manifest-path>` as the explicit Project Manifest selector for the nested command
+
+#### Scenario: Root print-json still applies
+- **WHEN** a user runs `isomer-cli --print-json project validate`
+- **THEN** the system emits the same versioned deterministic JSON wrapper used by other CLI commands
+
+#### Scenario: Root global commands remain available
+- **WHEN** a user runs `isomer-cli schemas list`
+- **THEN** the system lists built-in schemas without requiring `project` or an active Project
+
+### Requirement: Project Namespace Migration
+The system SHALL make `isomer-cli project ...` canonical for Project-scoped commands and SHALL keep any legacy root-level Project command forms out of new docs and operator guidance.
+
+#### Scenario: Legacy root command help is not canonical
+- **WHEN** root-level Project command aliases are retained for compatibility
+- **THEN** they are hidden from canonical root help or clearly marked as deprecated
+
+#### Scenario: Canonical docs use project namespace
+- **WHEN** CLI docs, workflow docs, troubleshooting docs, or operator skill command examples mention Project-scoped commands
+- **THEN** they use `isomer-cli project ...` command shapes
+
+#### Scenario: Cleanup canonical namespace
+- **WHEN** Project cleanup is implemented
+- **THEN** the canonical command shape is `isomer-cli project cleanup`, not root-level `isomer-cli cleanup`
+
+### Requirement: Project Cleanup CLI Surface
+The system SHALL expose a Project-scoped `isomer-cli project cleanup` command for planning and applying selected Isomer-managed Project cleanup.
+
+#### Scenario: CLI help lists cleanup
+- **WHEN** a user runs `isomer-cli --help`
+- **THEN** the command help lists `project cleanup` with the other Project discovery and lifecycle commands
+
+#### Scenario: Cleanup help lists destructive controls
+- **WHEN** a user runs `isomer-cli project cleanup --help`
+- **THEN** the help lists `--part`, `--dry-run`, `--yes`, topic selection controls, optional content-root selection, and purge opt-in controls
+
+#### Scenario: Cleanup supports JSON output
+- **WHEN** a user runs `isomer-cli --print-json project cleanup --part project-config --dry-run`
+- **THEN** the command emits the standard versioned JSON output wrapper with a cleanup payload and deterministic diagnostics
+
+#### Scenario: Cleanup rejects unknown part
+- **WHEN** a user supplies an unsupported cleanup part
+- **THEN** the command rejects the request through Click validation or an Isomer diagnostic before planning deletion
+
+### Requirement: Project Cleanup Output Contract
+The system SHALL report cleanup plans and cleanup results with deterministic text and machine-readable payloads.
+
+#### Scenario: Dry-run payload is non-mutating
+- **WHEN** cleanup runs with `--dry-run`
+- **THEN** the output includes `mutated = false`, `dry_run = true`, selected parts, planned removals, skipped targets, diagnostics, and the resolved Project root
+
+#### Scenario: Confirmed payload reports mutation
+- **WHEN** cleanup runs with `--yes` and removes at least one planned target
+- **THEN** the output includes `mutated = true`, `dry_run = false`, selected parts, removed targets, skipped targets, diagnostics, and the resolved Project root
+
+#### Scenario: Cleanup diagnostics are stable
+- **WHEN** cleanup refuses a target or cannot remove a planned target
+- **THEN** each diagnostic includes a stable code, severity, file path when known, Isomer concept name, field or target reference when available, and a concise message
+
+### Requirement: Project Cleanup Side-effect Boundaries
+The system SHALL keep cleanup filesystem side effects explicit and SHALL avoid live runtime or service operations.
+
+#### Scenario: Dry-run is side-effect free
+- **WHEN** cleanup runs with `--dry-run`
+- **THEN** it does not create, modify, or delete Project files, Workspace Runtime records, adapter manifests, live Houmao state, mailboxes, gateways, sessions, or launch dossiers
+
+#### Scenario: Houmao overlay cleanup is local only
+- **WHEN** cleanup applies `--part houmao-overlay --yes`
+- **THEN** it may remove the local `.houmao/` overlay but does not stop, launch, inspect, message, or adopt live Houmao managed agents
+
+#### Scenario: Runtime cleanup is filesystem scoped
+- **WHEN** cleanup applies `--part runtime --topic <topic-id> --yes`
+- **THEN** it removes only planned runtime files and directories under the selected Topic Workspace and does not invoke runtime prepare, runtime validate, or adapter live-state commands
+
+### Requirement: Project Initialization Cleanup Separation
+The system SHALL preserve Project initialization overwrite refusal and direct users to explicit cleanup when reinitialization requires removing existing managed material.
+
+#### Scenario: Existing manifest blocks init
+- **WHEN** a user runs `isomer-cli project init` in a Project with `.isomer-labs/manifest.toml`
+- **THEN** init refuses to overwrite the existing Project Manifest, does not create or modify content roots, and does not run cleanup automatically
+
+#### Scenario: Existing manifest diagnostic mentions cleanup path
+- **WHEN** init refuses because the Project Manifest already exists
+- **THEN** the diagnostic or human-readable guidance names `isomer-cli project cleanup --dry-run` as the supported way to preview removal before reinitialization

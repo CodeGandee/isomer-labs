@@ -13,6 +13,17 @@ pixi run isomer-cli project --root <project-root> init <topic-id> --content-dir 
 
 Omit `--content-dir <content-dir>` to use `isomer-content/`. Include it only when the Project should store generated content under a different project-local root; the derived Topic Workspace base is `<content-dir>/topic-ws/`.
 
+Cleanup planning and confirmed cleanup:
+
+```bash
+pixi run isomer-cli --print-json project cleanup --part <part> --dry-run
+pixi run isomer-cli --print-json project cleanup --part <part> --yes
+pixi run isomer-cli --print-json project cleanup --part runtime --topic <topic-id> --dry-run
+pixi run isomer-cli --print-json project cleanup --part content-root --purge-content-root --yes
+```
+
+Prefer dry-run first. Use `--yes` only after plan review. Use `--purge-content-root` only when the user explicitly asks to remove the entire selected generated content root.
+
 Read-only Project checks:
 
 ```bash
