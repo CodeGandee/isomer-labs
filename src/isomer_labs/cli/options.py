@@ -35,6 +35,9 @@ class CliOptions:
     cleanup_purge_content_root: bool = False
     cleanup_dry_run: bool = False
     cleanup_yes: bool = False
+    content_root_to: str | None = None
+    content_root_move_dry_run: bool = False
+    content_root_move_yes: bool = False
 
 
 def common_options(command: Any) -> Any:

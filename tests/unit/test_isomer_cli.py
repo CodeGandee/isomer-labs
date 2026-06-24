@@ -966,6 +966,194 @@ class IsomerCliTests(unittest.TestCase):
         self.assertFalse(data["mutated"])
         self.assertTrue(any("Project root" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
 
+    def test_project_content_root_move_dry_run_and_default_non_mutating_plan(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        write(root / "isomer-content" / "unknown.txt", "operator-owned\n")
+
+        status, output = self.run_cli(["project", "content-root", "move", "--to", "generated", "--dry-run", "--json"], cwd=root)
+        data = json.loads(output)
+
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["ok"])
+        self.assertFalse(data["mutated"])
+        self.assertTrue(data["dry_run"])
+        self.assertEqual(str(root / "isomer-content"), data["old_content_root"])
+        self.assertEqual(str(root / "generated"), data["new_content_root"])
+        self.assertIn("runtime", " ".join(data["warnings"]).lower())
+        self.assertIn(
+            str(root / "isomer-content" / "unknown.txt"),
+            {entry["path"] for entry in data["unmanaged_leftovers"]},
+        )
+        self.assertTrue((root / "isomer-content" / "topic-ws" / "default").is_dir())
+        self.assertFalse((root / "generated").exists())
+        manifest = (root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8")
+        self.assertIn('isomer_content_root = "isomer-content"', manifest)
+
+        status, output = self.run_cli(["project", "content-root", "move", "--to", "generated"], cwd=root)
+        self.assertEqual(0, status, output)
+        self.assertIn("Mode: dry-run", output)
+        self.assertIn("pass --yes", output)
+        self.assertFalse((root / "generated").exists())
+
+    def test_project_content_root_move_confirmed_updates_manifest_and_preserves_leftovers(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        write(root / "isomer-content" / "topic-ws" / "default" / "topic-def" / "topic-overview.md", "# Default\n")
+        write(root / "isomer-content" / "unknown.txt", "operator-owned\n")
+
+        status, output = self.run_cli(["project", "content-root", "move", "--to", "generated", "--yes", "--json"], cwd=root)
+        data = json.loads(output)
+
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertFalse(data["dry_run"])
+        self.assertTrue((root / "generated" / "README.md").is_file())
+        self.assertTrue((root / "generated" / ".gitignore").is_file())
+        self.assertTrue((root / "generated" / "topic-ws" / "default" / "topic-def" / "topic-overview.md").is_file())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default").exists())
+        self.assertTrue((root / "isomer-content" / "unknown.txt").is_file())
+        manifest = (root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8")
+        self.assertIn('isomer_content_root = "generated"', manifest)
+        self.assertIn('topic_workspace_base_dir = "generated/topic-ws"', manifest)
+        self.assertIn('path = "generated/topic-ws/default"', manifest)
+
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+
+    def test_project_content_root_move_refusals_and_external_workspace_preservation(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        self.append_manifest(
+            root,
+            """
+            [[research_topics]]
+            id = "external"
+            config_path = ".isomer-labs/research-topics/external.toml"
+            topic_workspace_id = "external"
+            status = "active"
+
+            [[topic_workspaces]]
+            id = "external"
+            research_topic_id = "external"
+            path = "topic-workspaces/external"
+            status = "active"
+            """,
+        )
+        write(root / ".isomer-labs" / "research-topics" / "external.toml", 'research_topic_id = "external"\n')
+        write(root / "topic-workspaces" / "external" / "note.md", "external\n")
+
+        status, output = self.run_cli(["project", "content-root", "move", "--to", "generated", "--dry-run", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertIn(
+            str(root / "topic-workspaces" / "external"),
+            {entry["path"] for entry in data["skipped_entries"]},
+        )
+        self.assertFalse(any(update["field"] == "topic_workspaces.external.path" for update in data["manifest_updates"]))
+
+        for content_dir, expected_message in (
+            ("../outside", "outside the Project root"),
+            (".isomer-labs/generated", "Project Config Directory"),
+            (".houmao/generated", "Houmao overlay"),
+            (".", "Project root"),
+        ):
+            with self.subTest(content_dir=content_dir):
+                status, output = self.run_cli(
+                    ["project", "content-root", "move", "--to", content_dir, "--yes", "--json"],
+                    cwd=root,
+                )
+                data = json.loads(output)
+                self.assertEqual(1, status)
+                self.assertFalse(data["mutated"])
+                self.assertTrue(any(expected_message in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+
+        (root / "linked-content").symlink_to(root / "isomer-content", target_is_directory=True)
+        status, output = self.run_cli(["project", "content-root", "move", "--to", "linked-content", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(any("symlink" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+
+    def test_project_content_root_move_preserves_runtime_internals(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        runtime_root = root / "isomer-content" / "topic-ws" / "default"
+        status, output = self.run_cli(["project", "runtime", "init", "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+        write(runtime_root / ".pixi" / "prefix.txt", "old-prefix\n")
+        write(runtime_root / "runtime" / "adapters" / "houmao" / "ati-default" / "adapter-runtime-manifest.json", "{}\n")
+        write(runtime_root / "logs" / "run.log", "old log\n")
+        old_db_path = runtime_root / "state.sqlite"
+        with sqlite3.connect(old_db_path) as db:
+            old_paths = {row[0] for row in db.execute("SELECT path FROM path_plans")}
+        self.assertTrue(any(str(runtime_root) in path for path in old_paths))
+
+        status, output = self.run_cli(["project", "content-root", "move", "--to", "generated", "--yes", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue(any("state.sqlite" in warning for warning in data["warnings"]), data["warnings"])
+        new_runtime_root = root / "generated" / "topic-ws" / "default"
+        new_db_path = new_runtime_root / "state.sqlite"
+        self.assertFalse(old_db_path.exists())
+        self.assertTrue(new_db_path.is_file())
+        self.assertTrue((new_runtime_root / ".pixi" / "prefix.txt").is_file())
+        self.assertTrue((new_runtime_root / "runtime" / "adapters" / "houmao" / "ati-default" / "adapter-runtime-manifest.json").is_file())
+        self.assertTrue((new_runtime_root / "logs" / "run.log").is_file())
+        with sqlite3.connect(new_db_path) as db:
+            new_paths = {row[0] for row in db.execute("SELECT path FROM path_plans")}
+        self.assertEqual(old_paths, new_paths)
+        self.assertTrue(any(str(runtime_root) in path for path in new_paths))
+
+    def test_project_content_root_move_help_and_discovery_selectors(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        nested = root / "nested" / "deeper"
+        nested.mkdir(parents=True)
+        runner = CliRunner()
+        for help_args, expected in (
+            (["project", "--help"], "content-root"),
+            (["project", "content-root", "--help"], "move"),
+            (["project", "content-root", "move", "--help"], "--to"),
+        ):
+            result = runner.invoke(cli.app, help_args)
+            self.assertEqual(0, result.exit_code, result.output)
+            self.assertIn(expected, result.output)
+
+        result = runner.invoke(cli.app, ["project", "content-root", "move", "--dry-run"])
+        self.assertNotEqual(0, result.exit_code)
+
+        status, output = self.run_cli(["project", "content-root", "move", "--to", "generated", "--dry-run", "--json"], cwd=nested)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(root), data["project_root"])
+
+        status, output = self.run_cli(
+            ["project", "--root", str(root), "content-root", "move", "--to", "generated", "--dry-run", "--json"],
+            cwd=self.make_root(),
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(root), data["project_root"])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "--manifest",
+                str(root / ".isomer-labs" / "manifest.toml"),
+                "content-root",
+                "move",
+                "--to",
+                "generated",
+                "--dry-run",
+                "--json",
+            ],
+            cwd=self.make_root(),
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(root), data["project_root"])
+
     def test_init_uses_explicit_topic_id_consistently(self) -> None:
         root = self.make_root()
         status, output = self.run_cli(["project", "init", "paper", "--json"], cwd=root, env=self.fake_houmao_env(root))

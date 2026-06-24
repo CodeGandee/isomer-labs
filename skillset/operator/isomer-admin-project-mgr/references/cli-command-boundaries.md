@@ -24,6 +24,16 @@ pixi run isomer-cli --print-json project cleanup --part content-root --purge-con
 
 Prefer dry-run first. Use `--yes` only after plan review. Use `--purge-content-root` only when the user explicitly asks to remove the entire selected generated content root.
 
+Generated content-root relocation:
+
+```bash
+pixi run isomer-cli --print-json project content-root move --to <content-dir> --dry-run
+pixi run isomer-cli --print-json project content-root move --to <content-dir> --yes
+pixi run isomer-cli --print-json project --root <project-root> content-root move --to <content-dir> --dry-run
+```
+
+Prefer dry-run first. Relocation updates Project Manifest paths and moves Isomer-managed content containers only. It preserves unmanaged leftovers and does not rewrite Workspace Runtime records, Pixi environments, installed packages, adapter runtime material, logs, stored path plans, or generated runtime internals. Warn the user to reinstall or reinitialize moved runtimes if needed.
+
 Read-only Project checks:
 
 ```bash

@@ -6,6 +6,7 @@ import click
 
 from isomer_labs.cli.app import (
     _cmd_cleanup,
+    _cmd_content_root_move,
     _cmd_context_show,
     _cmd_init,
     _cmd_paths_preview,
@@ -101,6 +102,41 @@ def register_project_commands(app: click.Group) -> None:
                 cleanup_purge_content_root=purge_content_root,
                 cleanup_dry_run=dry_run,
                 cleanup_yes=yes,
+            )
+        )
+
+
+    @app.group(name="content-root", help="Generated content-root commands.")
+    def content_root_group() -> None:
+        pass
+
+
+    @content_root_group.command(name="move", help="Plan or apply relocation of the Project generated content root.")
+    @_common_options
+    @click.option("--to", "content_root_to", required=True, help="Project-local destination generated content root.")
+    @click.option("--dry-run", is_flag=True, help="Build the relocation plan without moving files or writing the manifest.")
+    @click.option("--yes", is_flag=True, help="Apply the reviewed relocation plan.")
+    @click.pass_context
+    def content_root_move_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        content_root_to: str | None = None,
+        dry_run: bool = False,
+        yes: bool = False,
+    ) -> int:
+        return _cmd_content_root_move(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                content_root_to=content_root_to,
+                content_root_move_dry_run=dry_run,
+                content_root_move_yes=yes,
             )
         )
 

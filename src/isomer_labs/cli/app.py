@@ -40,6 +40,11 @@ from isomer_labs.paths import preview_paths
 from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
 from isomer_labs.project import discover_project, find_ancestor_manifest, project_root_for_manifest
 from isomer_labs.project_cleanup import execute_project_cleanup, plan_project_cleanup, render_cleanup_text
+from isomer_labs.project_content_root import (
+    execute_project_content_root_move,
+    plan_project_content_root_move,
+    render_content_root_move_text,
+)
 from isomer_labs.rendering import render_key_values
 from isomer_labs.runtime.store import (
     initialize_workspace_runtime,
@@ -71,6 +76,7 @@ COMMAND_SURFACE = """Milestone 1 Isomer Labs Project discovery and path preview 
 \b
 Command surface:
   project init
+  project content-root move
   project cleanup
   project doctor
   project validate
@@ -262,6 +268,19 @@ def _cmd_cleanup(options: CliOptions) -> int:
     )
     execution = execute_project_cleanup(plan)
     return _emit("cleanup", options, execution.to_json(), list(execution.diagnostics), render_cleanup_text(execution))
+
+
+def _cmd_content_root_move(options: CliOptions) -> int:
+    plan = plan_project_content_root_move(
+        cwd=Path.cwd(),
+        project_selector=_value(options, "project"),
+        manifest_selector=_value(options, "manifest"),
+        to_content_dir=_value(options, "content_root_to"),
+        dry_run=bool(_value(options, "content_root_move_dry_run")),
+        yes=bool(_value(options, "content_root_move_yes")),
+    )
+    execution = execute_project_content_root_move(plan)
+    return _emit("content-root move", options, execution.to_json(), list(execution.diagnostics), render_content_root_move_text(execution))
 
 
 def _cmd_doctor(options: CliOptions) -> int:
