@@ -8,7 +8,7 @@ When this subcommand is selected, execute the following steps in order.
 2. Run `inspect-template` to understand template metadata, placeholders, role slots, Workflow Stages, workspace contracts, diagnostics, and copyable material.
 3. Run `resolve-context` to gather Effective Topic Context, Workspace Runtime readiness, policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, and Gate policy refs.
 4. Create or confirm `<topic-workspace>/team-profile/`, copy selected Domain Agent Team Template material into it, then use `<topic-workspace>/team-profile/execplan/` as the default copied template root for `deepsci-mini`.
-5. Read `team-specialization-guide.md` in the copied template root, or create it with the generated-guide marker from the entrypoint when no source guide exists.
+5. Read `team-specialization-guide.md` in the copied template root, or create it with the generated-guide fenced block from the entrypoint when no source guide exists.
 6. Create `team-specialization-plan.md` in the copied template root with the required checklist, planned edits, validation plan, and pending `Final Report`.
 7. Run `map-placeholders`, then adapt only copied template material according to the plan.
 8. Fill the `Final Report`, then run `draft-profile` to report Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.

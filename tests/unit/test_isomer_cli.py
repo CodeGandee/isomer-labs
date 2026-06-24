@@ -99,7 +99,7 @@ class IsomerCliTests(unittest.TestCase):
         return normalized
 
     def init_project(self, root: Path, topic_id: str = "default") -> None:
-        status, output = self.run_cli(["--project", str(root), "init", topic_id], cwd=root)
+        status, output = self.run_cli(["--project", str(root), "init", topic_id], cwd=root, env=self.fake_houmao_env(root))
         self.assertEqual(0, status, output)
 
     def copy_fixture_project(self, name: str = "fixture-project") -> Path:
@@ -269,7 +269,11 @@ class IsomerCliTests(unittest.TestCase):
             elif "global" in args and "list" in args:
                 payload = {{"agents": []}}
             elif "project" in args and "init" in args:
-                payload = {{"project": {{"status": "initialized"}}}}
+                project_dir = option("--project-dir", os.getcwd())
+                os.makedirs(os.path.join(project_dir, ".houmao"), exist_ok=True)
+                with open(os.path.join(project_dir, ".houmao", "houmao-config.toml"), "w", encoding="utf-8") as handle:
+                    handle.write("schema_version = 1\\n")
+                payload = {{"project": {{"status": "initialized", "project_dir": project_dir}}}}
             elif "specialist" in args and "create" in args:
                 payload = {{"specialist": {{"name": option("--name")}}}}
             elif "profile" in args and "create" in args:
@@ -734,24 +738,27 @@ class IsomerCliTests(unittest.TestCase):
 
     def test_init_creates_minimal_default_project_and_refuses_overwrite(self) -> None:
         root = self.make_root()
-        status, output = self.run_cli(["init"], cwd=root)
+        status, output = self.run_cli(["init"], cwd=root, env=self.fake_houmao_env(root))
         self.assertEqual(0, status, output)
         self.assertTrue((root / ".isomer-labs" / "manifest.toml").is_file())
         self.assertTrue((root / ".isomer-labs" / "research-topics" / "default.toml").is_file())
         self.assertTrue((root / "topic-workspaces" / "default").is_dir())
+        self.assertTrue((root / ".houmao" / "houmao-config.toml").is_file())
         self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
         self.assertFalse((root / "topic-workspaces" / "default" / "artifacts").exists())
+        self.assertIn("Houmao Project:", output)
         help_result = CliRunner().invoke(cli.app, ["init", "--help"])
         self.assertEqual(0, help_result.exit_code, help_result.output)
         self.assertNotIn("--force", help_result.output)
 
-        status, output = self.run_cli(["init"], cwd=root)
+        status, output = self.run_cli(["init"], cwd=root, env=self.fake_houmao_env(root))
         self.assertEqual(1, status)
         self.assertIn("refuses to overwrite", output)
 
     def test_init_uses_explicit_topic_id_consistently(self) -> None:
         root = self.make_root()
-        status, output = self.run_cli(["init", "paper"], cwd=root)
+        status, output = self.run_cli(["init", "paper", "--json"], cwd=root, env=self.fake_houmao_env(root))
+        data = json.loads(output)
         self.assertEqual(0, status, output)
         manifest = (root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8")
         topic_config = (root / ".isomer-labs" / "research-topics" / "paper.toml").read_text(encoding="utf-8")
@@ -760,6 +767,20 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIn('path = "topic-workspaces/paper"', manifest)
         self.assertIn('research_topic_id = "paper"', topic_config)
         self.assertTrue((root / "topic-workspaces" / "paper").is_dir())
+        self.assertTrue(data["mutated"])
+        self.assertEqual(str(root / ".houmao"), data["houmao_project_dir"])
+        self.assertEqual("succeeded", data["houmao_bootstrap"]["status"])
+
+    def test_init_houmao_failure_does_not_write_project_manifest(self) -> None:
+        root = self.make_root()
+        env = self.fake_houmao_env(root, HOUMAO_FAKE_FAIL_ON="project")
+
+        status, output = self.run_cli(["init"], cwd=root, env=env)
+
+        self.assertEqual(1, status)
+        self.assertIn("ISO072", output)
+        self.assertFalse((root / ".isomer-labs" / "manifest.toml").exists())
+        self.assertFalse((root / "topic-workspaces" / "default").exists())
 
     def test_validate_reports_valid_project_as_versioned_json(self) -> None:
         root = self.make_root()

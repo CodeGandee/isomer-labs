@@ -4,27 +4,31 @@
 Define the reusable Isomer Labs research-paradigm skillset, including portable research-stage skills, shared evidence vocabulary, generic agent mappings, provenance handling, Imsight skill-entrypoint structure, and validation rules that prevent DeepScientist runtime coupling from becoming an Isomer requirement.
 ## Requirements
 ### Requirement: Research Paradigm Skillset Layout
-The project SHALL provide a reusable research-paradigm skillset under `skillset/research-paradigm/` using Codex skill folder layout and the `isomer-rsch-<purpose>` naming convention.
+The project SHALL provide a reusable research-paradigm skillset under `skillset/research-paradigm/` using Codex skill folder layout and the `isomer-rsch-<purpose>` naming convention for research-stage method skills only.
 
 #### Scenario: Core skill folders exist
 - **WHEN** the research-paradigm skillset is inspected
 - **THEN** it contains `isomer-rsch-shared` and core research skill folders for intake, scout, baseline, idea, optimize, experiment, analysis, decision, finalize, write, review, rebuttal, paper-outline, paper-plot, figure-polish, and science
 
 #### Scenario: Skill frontmatter is valid
-- **WHEN** each extracted skill's `SKILL.md` is inspected
+- **WHEN** each extracted research-stage skill's `SKILL.md` is inspected
 - **THEN** the YAML frontmatter contains `name` and `description` fields, and the `name` field matches the `isomer-rsch-<purpose>` folder name
 
 #### Scenario: Skill manifest exists when a skill is packaged independently
-- **WHEN** an extracted skill is packaged as a standalone skill bundle
+- **WHEN** an extracted research-stage skill is packaged as a standalone skill bundle
 - **THEN** it includes an `agents/openai.yaml` manifest with UI-facing metadata
 
 #### Scenario: Standalone skill bundle is self-contained
-- **WHEN** an extracted skill is packaged as a standalone skill bundle
+- **WHEN** an extracted research-stage skill is packaged as a standalone skill bundle
 - **THEN** its `SKILL.md` and directly linked references do not require files outside that skill's directory
 
 #### Scenario: Old active skill names are removed
 - **WHEN** active research-paradigm skill folders and docs are inspected
 - **THEN** they do not use `isomer-labs-research-*` as active skill folder names, frontmatter names, manifests, or role mappings
+
+#### Scenario: Operator admin skills are excluded
+- **WHEN** active research-paradigm skill folders and docs are inspected
+- **THEN** Project Operator Session and Operator Agent orchestration skills are not stored or named as `isomer-rsch-*` skills and instead use the operator admin skillset
 
 ### Requirement: Generic Research Vocabulary
 The extracted skills SHALL describe portable research behavior using established Isomer Labs concepts and without requiring DeepScientist workspace APIs or DeepScientist-specific runtime surfaces.
@@ -278,6 +282,63 @@ The research-paradigm skillset SHALL consume the Workspace Path Resolution contr
 #### Scenario: Validation checks resolved and unresolved surfaces
 - **WHEN** implementation validation runs
 - **THEN** it confirms ordinary workspace path TBDs were removed or mapped to the path resolver, non-path TBDs remain registered, and no skill reference depends on hard-coded DeepScientist paths or local absolute paths
+
+### Requirement: Isomer Project Operator and Topic Service Skills
+The repository SHALL include provider-neutral skill instructions for Project Operator Sessions, Operator Agents, and Topic Service Agents to perform Topic Team Specialization and instantiate topic teams from Domain Agent Team Templates.
+
+#### Scenario: Project awareness skill exists
+- **WHEN** an agent is pointed at an Isomer Project root with a topic prompt, topic file, or existing Research Topic ref
+- **THEN** a skill instructs it to resolve the project root, inspect Project Manifest, read supplied topic material, list Research Topics, locate or create the selected Topic Workspace, discover Domain Agent Team Templates, and discover Topic Service Agents
+
+#### Scenario: Service request routing skill exists
+- **WHEN** a Project Operator Session or Operator Agent needs topic-scoped service help
+- **THEN** a skill instructs it to open a bounded Service Request to a Topic Service Agent with scope, expected output, authorization, dispatch form, and provenance obligations
+
+#### Scenario: Template inspection skill exists
+- **WHEN** the project operator or Topic Service Agent needs to perform Topic Team Specialization
+- **THEN** a skill instructs it to inspect template manifest, placeholder catalog, role bindings, workflow stages, workspace contract, instantiation schema, and validation diagnostics
+
+#### Scenario: Topic context resolution skill exists
+- **WHEN** the project operator or Topic Service Agent needs topic-specific values
+- **THEN** a skill instructs it to resolve Project Manifest, Research Topic Config, Effective Topic Context, Topic Workspace, Workspace Runtime readiness, policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, and Gate policy refs
+
+#### Scenario: Placeholder reconciliation skill exists
+- **WHEN** the project operator or Topic Service Agent maps template placeholders to topic-specific values
+- **THEN** a skill instructs it to record resolved substitutions, copied material plans, proposed topic edits, explicit deferrals, unresolved blockers, Service Request outputs, user review outcomes, and packet-shaped approval provenance in an instantiation packet
+
+#### Scenario: Profile drafting and review skills exist
+- **WHEN** a Project Operator Session or Operator Agent reviews a Topic Agent Team Profile Bundle draft
+- **THEN** skills instruct it to produce reviewable profile bundle material, summarize the copied material plan, summarize proposed topic edits and rewritten template content, summarize role and policy choices, identify launch blockers, include Topic Service Agent support outputs when relevant, and request bundle-local approval provenance before materialization
+
+#### Scenario: Materialization and launch orchestration skills exist
+- **WHEN** the project operator has approval to proceed
+- **THEN** skills instruct it to call generic Isomer validators/materializers, record provenance, and route launch requests through the Houmao adapter without hand-editing runtime state
+
+#### Scenario: Topic Service Agent support skills exist
+- **WHEN** a Topic Service Agent receives a Service Request
+- **THEN** skills instruct it to perform only bounded Service Team work such as environment readiness, work-agent setup, Topic Team Specialization support, copied material planning, topic edit drafting, monitoring, diagnostics, and support Artifact writing
+
+### Requirement: Project Operator and Topic Service Skills Stay Bounded
+Project operator and Topic Service Agent skills SHALL describe orchestration and support decisions without granting authority to bypass Isomer validation, Gates, or runtime recording.
+
+#### Scenario: Skills require validation
+- **WHEN** a skill produces a packet, profile, runtime request, handoff, Service Request, support Artifact, or launch request
+- **THEN** the skill requires validation through generic Isomer APIs or CLI before treating the artifact as authoritative, including validation for copied material plans and proposed topic edits when present
+
+#### Scenario: Skills preserve domain boundaries
+- **WHEN** a skill handles Domain Agent Team Templates, Topic Agent Team Profiles, Agent Team Instances, Service Requests, Topic Service Agents, or adapter material
+- **THEN** it uses the canonical Isomer domain terms and does not collapse template, profile, runtime team, service team, and Houmao managed-agent concepts
+
+### Requirement: Research Paradigm Skillset References Operator Skills by Boundary
+Research-paradigm documentation SHALL distinguish research-stage skills from operator/admin skills instead of presenting Project Operator Session orchestration as research method.
+
+#### Scenario: Research docs point to operator skillset
+- **WHEN** research-paradigm README or role mapping documentation mentions project operation, Topic Team Specialization orchestration, Service Request routing, profile materialization, approval, or team launch
+- **THEN** it points to the `isomer-admin-*` operator skillset rather than listing those capabilities as `isomer-rsch-*` research-stage skills
+
+#### Scenario: Research role mappings avoid admin skills
+- **WHEN** generic research agent role mappings are inspected
+- **THEN** ordinary research roles such as scout, baseline, experiment, analysis, writer, reviewer, or synthesis reviewer do not install `isomer-admin-*` skills unless the role is explicitly an Operator Agent role
 
 ### Requirement: Research Recording Contract Consumption
 The research-paradigm skillset SHALL consume the Research Recording Contracts for durable record and validation surfaces.

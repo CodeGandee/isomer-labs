@@ -29,7 +29,7 @@ pixi run isomer-cli --print-json validate
 pixi run isomer-cli --print-json doctor
 ```
 
-`init` mutates the Project filesystem by creating the Project Config Directory, Project Manifest, a Research Topic Config, and a Topic Workspace directory.
+`init` mutates the Project filesystem by creating the Project-level Houmao overlay, Project Config Directory, Project Manifest, a Research Topic Config, and a Topic Workspace directory. It does not create Workspace Runtime state or live Houmao agents.
 
 ## Runtime Preparation
 

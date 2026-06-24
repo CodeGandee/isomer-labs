@@ -118,3 +118,51 @@ The system SHALL preserve cleanup and recovery state for UC-01 live Houmao runs.
 - **WHEN** UC-01 live mode fails after some launch, handoff, observation, or recording work
 - **THEN** Workspace Runtime preserves adapter command refs, payload refs, handoff refs, lifecycle refs, diagnostics, and recovery guidance without deleting started-agent or research records
 
+### Requirement: Project-Operator Launch Orchestration Boundary
+The Houmao adapter SHALL launch or resolve Agent Team Instances only from approved Isomer profile bundle and runtime material and SHALL NOT perform topic-profile reasoning itself.
+
+#### Scenario: Adapter consumes approved launch inputs
+- **WHEN** a Project Operator Session or Operator Agent requests Houmao launch materialization for an Agent Team Instance
+- **THEN** the adapter consumes the approved Topic Agent Team Profile Bundle, Agent Team Instance runtime record, Agent Instance records, Agent Workspace path plans, packet provenance refs, and Topic Service Agent support refs when present rather than inspecting a Domain Agent Team Template directly
+
+#### Scenario: Adapter rejects template-only launch
+- **WHEN** a launch request provides only a Domain Agent Team Template such as `deepsci-mini` without an approved Topic Agent Team Profile Bundle and Agent Team Instance record
+- **THEN** the adapter rejects the request with an Isomer diagnostic and does not create Houmao launch material or live agents
+
+#### Scenario: Adapter records project operator provenance
+- **WHEN** Houmao launch material, quick launch, inspect-live, stop, or reconciliation is triggered by a Project Operator Session or Operator Agent
+- **THEN** adapter command and payload records include bounded project operator actor or provenance refs without storing project-operator reasoning as adapter internals
+
+### Requirement: Topic Service Agent Houmao Definition
+The system SHALL provide a Houmao-compatible Topic Service Agent definition for topic-scoped Service Team work.
+
+#### Scenario: Topic Service Agent can be launched or resolved
+- **WHEN** a topic needs service support for environment readiness, topic-team instantiation, monitoring, or diagnostics
+- **THEN** the Houmao adapter can launch or resolve a Topic Service Agent with the required Isomer Service Team skills and bounded Project/Topic context refs
+
+#### Scenario: Topic Service Master posture is distinguishable
+- **WHEN** one topic-scoped service actor coordinates multiple Service Requests or subordinate Service Agent Instances
+- **THEN** Houmao definition material can represent a Topic Service Master posture or Agent Profile while preserving Service Team boundaries
+
+#### Scenario: Topic Service Agent launch is separate from research team launch
+- **WHEN** a Topic Service Agent supports launch or resolution of a `deepsci-mini` Agent Team Instance
+- **THEN** adapter records distinguish the Topic Service Agent's managed-agent refs from the managed-agent refs for research team member Agent Instances
+
+### Requirement: Project-Level Houmao Bootstrap
+The system SHALL support Project-level Houmao bootstrap through the same CLI-backed Houmao boundary used by adapter operations, while keeping bootstrap distinct from per-Agent Team Instance launch material and live managed-agent mutation.
+
+#### Scenario: Project bootstrap uses Houmao CLI
+- **WHEN** Isomer initializes a new Project that requires Houmao support
+- **THEN** it invokes `houmao-mgr --print-json project --project-dir <project-root> init` or the equivalent catalog-backed command runner without importing Houmao Python internals
+
+#### Scenario: Project bootstrap records bounded diagnostics
+- **WHEN** the Houmao Project bootstrap command returns invalid JSON, exits nonzero, times out, or cannot be resolved
+- **THEN** Isomer reports deterministic diagnostics through its CLI output contract and does not expose raw tracebacks or unredacted Houmao output
+
+#### Scenario: Project bootstrap is not adapter launch materialization
+- **WHEN** Project-level Houmao bootstrap creates or validates `<project-root>/.houmao/`
+- **THEN** the system does not treat that directory as an Agent Team Instance adapter root, launch-material manifest, adapter-runtime manifest, command payload directory, or live launch record
+
+#### Scenario: Adapter overlay remains per team
+- **WHEN** a later Houmao-backed Agent Team Instance is prepared or launched
+- **THEN** the adapter continues to use Topic Workspace adapter paths for per-team launch material, reconciliation manifests, and runtime payload refs rather than storing those per-team records directly in Project bootstrap state

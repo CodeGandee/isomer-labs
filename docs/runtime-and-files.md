@@ -14,6 +14,8 @@ A Project is a user-owned directory tree. After `isomer-cli init`, the Project C
 
 The Project Config Directory should not contain default cache, temporary files, or schema directories. System-owned schemas are Isomer built-in artifacts queried through `isomer-cli schemas list`.
 
+Successful Project initialization also creates the Project-level Houmao overlay at `.houmao/`. That overlay belongs to Project bootstrap and is separate from per-Agent Team Instance adapter material under a Topic Workspace runtime path.
+
 ## Topic Workspace Files
 
 A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `topic-workspaces/<topic-workspace-id>/`. It is a Pixi workspace by default. The Project Manifest records its Pixi manifest through `topic_standalone_pixi_bindings`; Isomer does not infer the binding by crawling Topic Workspace paths. It owns:
@@ -114,6 +116,7 @@ Payloads are redacted before storage if they contain secret-like fields such as 
 The following are durable records:
 
 - Project Manifest and Research Topic Config files.
+- Project-level Houmao overlay at `.houmao/`.
 - Topic Workspace Pixi manifests and lockfiles.
 - Topic Agent Team Profile Bundles under `<topic-workspace>/team-profile/`.
 - Workspace Runtime `state.sqlite` and its records.
@@ -137,6 +140,7 @@ The following are not durable research state and may be regenerated or lost:
 | Surface | Typical path | Durable? |
 |---|---|---|
 | Project Manifest | `.isomer-labs/manifest.toml` | yes |
+| Project-level Houmao overlay | `.houmao/` | yes |
 | Research Topic Config | `.isomer-labs/research-topics/<id>.toml` | yes |
 | Topic Workspace | `topic-workspaces/<id>/` | yes (directory) |
 | Topic Workspace Pixi manifest | `<topic-workspace>/pixi.toml` or `<topic-workspace>/pyproject.toml` | yes |

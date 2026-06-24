@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-admin-houmao-interop"
+  short_description: "Bridge Isomer Labs and Houmao agent teams"
+  default_prompt: "Use $isomer-admin-houmao-interop to explain, customize, or bridge Houmao-managed agent teams and Isomer Labs project constructs."

@@ -37,7 +37,7 @@
 - [x] 4.1 Explain the module-level operator purpose in plain text instead of using code-like invocation syntax.
 - [x] 4.2 Document that selected Domain Agent Team Template material is copied into `<topic-workspace>/team-profile/` before topic-specific editing.
 - [x] 4.3 Keep the `deepsci-mini` copied template root as `<topic-workspace>/team-profile/execplan/`.
-- [x] 4.4 Require `team-specialization-guide.md` to be read first when present, or generated with the visible generated marker when missing.
+- [x] 4.4 Require `team-specialization-guide.md` to be read first when present, or generated with the visible generated-guide fenced block when missing.
 - [x] 4.5 Require `team-specialization-plan.md` to contain a pre-adaptation checklist and a post-adaptation `Final Report`.
 - [x] 4.6 State guardrails that the skill must not edit Domain Agent Team Template source, create a Topic Workspace `teams/` directory, bypass packet/profile/runtime/adapter validation, or claim launch readiness from copied material alone.
 

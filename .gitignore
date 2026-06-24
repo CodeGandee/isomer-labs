@@ -15,7 +15,7 @@ tmp/
 .claude/
 .claude
 .codex/
-.codex
+.kimi-code/
 .git/
 .agents/skills
 # Isolated implementation worktrees

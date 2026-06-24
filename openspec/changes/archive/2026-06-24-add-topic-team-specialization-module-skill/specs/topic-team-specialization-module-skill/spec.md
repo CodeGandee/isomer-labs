@@ -131,9 +131,9 @@ The module skill SHALL use `team-specialization-guide.md` and `team-specializati
 - **WHEN** copied template material contains `team-specialization-guide.md`
 - **THEN** the module skill reads that guide before inspecting other copied template material for adaptation decisions
 
-#### Scenario: Missing guide is generated with marker
+#### Scenario: Missing guide is generated with fenced block
 - **WHEN** copied template material does not contain `team-specialization-guide.md`
-- **THEN** the module skill creates `team-specialization-guide.md` in the copied template root, synthesizes it from copied material, and includes a clear generated marker stating that no source guide existed
+- **THEN** the module skill creates `team-specialization-guide.md` in the copied template root, synthesizes it from copied material, and includes a clear `generated-guide` fenced block stating that no source guide existed
 
 #### Scenario: Plan exists before adaptation
 - **WHEN** the module skill prepares to adapt copied template material

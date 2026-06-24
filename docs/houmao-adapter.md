@@ -6,6 +6,12 @@ Houmao-specific concepts such as specialist, project profile, native role, recip
 
 The adapter consumes approved Isomer launch inputs: the materialized Topic Agent Team Profile Bundle, Agent Team Instance runtime record, Agent Instance records, Agent Workspace path plans, packet provenance refs, and Topic Service Agent support refs when present. It rejects preview-only profiles and template-only launch attempts because placeholder choice, copied material planning, topic edits, and approval belong to the Project Operator Session and Topic Service Agent layer above the adapter.
 
+## Project Bootstrap Overlay
+
+Fresh Project initialization creates a Project-level Houmao overlay at `<project-root>/.houmao/` through the same CLI-backed Houmao boundary used elsewhere in Isomer. `isomer-cli init` uses this overlay as Project bootstrap state; it does not create Workspace Runtime records, per-Agent Team Instance adapter material, mailboxes, gateways, launch dossiers, sessions, or live managed agents.
+
+This Project-level overlay is separate from the generated adapter runtime overlay under `<topic-workspace>/runtime/adapters/houmao/<agent-team-instance-id>/houmao-project-overlay/`. The first belongs to Project setup. The second belongs to launch material for one Agent Team Instance.
+
 ## Launch Paths
 
 ### Quick launch
@@ -102,7 +108,7 @@ The selected UC-01 route classification can be `uc07-measured-optimization`, `mo
 
 ## Backend Resolution
 
-By default, Isomer resolves `houmao-mgr` from `PATH`. You can override it with `ISOMER_HOUMAO_COMMAND`:
+By default, Isomer resolves `houmao-mgr` from `PATH` for Project bootstrap and adapter operations. You can override it with `ISOMER_HOUMAO_COMMAND`:
 
 ```bash
 ISOMER_HOUMAO_COMMAND="/path/to/houmao-mgr" isomer-cli team-instances launch <id> --adapter houmao

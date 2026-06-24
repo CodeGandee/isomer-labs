@@ -15,7 +15,7 @@ The operator skillset needs a single Topic Team Specialization entrypoint, but t
 - Add `fast-forward` as the automatic mode that executes the full Topic Team Specialization path through draft profile output while preserving approval, materialization, and launch boundaries.
 - Remove the standalone operator skill folders that are now incorporated as local subcommands.
 - Preserve canonical Isomer domain boundaries: Topic Team Specialization adapts copied Domain Agent Team Template material inside the selected Topic Workspace's Topic Agent Team Profile Bundle and ends before Agent Team Instance launch.
-- Keep `team-specialization-guide.md` and `team-specialization-plan.md` as copied-template-root artifacts, including the generated-guide marker and the `Final Report` rule.
+- Keep `team-specialization-guide.md` and `team-specialization-plan.md` as copied-template-root artifacts, including the generated-guide fenced block and the `Final Report` rule.
 - Keep approval, Topic Team Instantiation Packet validation, Topic Agent Team Profile validation, Workspace Runtime recording, and Execution Adapter launch checks outside the module skill.
 
 ## Capabilities

@@ -156,22 +156,32 @@ def app(
 def _cmd_init(options: CliOptions) -> int:
     project_root = Path(_value(options, "project") or os.getcwd())
     topic_id = _value(options, "topic_id_option") or _value(options, "topic_id") or "default"
-    diagnostics = initialize_project(
+    result = initialize_project(
         project_root,
         topic_id=topic_id,
         topic_statement=_value(options, "topic_statement"),
+        env=os.environ,
     )
+    diagnostics = result.diagnostics
+    houmao_bootstrap = result.houmao_bootstrap_result.to_json() if result.houmao_bootstrap_result is not None else None
     payload = {
         "ok": not has_errors(diagnostics),
-        "project_root": str(project_root.resolve(strict=False)),
-        "research_topic_id": topic_id,
+        "mutated": not has_errors(diagnostics),
+        "project_root": str(result.project_root),
+        "research_topic_id": result.research_topic_id,
+        "project_manifest_path": str(result.project_manifest_path),
+        "topic_config_path": str(result.topic_config_path),
+        "topic_workspace_path": str(result.topic_workspace_path),
+        "houmao_project_dir": str(result.houmao_project_dir),
+        "houmao_bootstrap": houmao_bootstrap,
     }
     lines = []
     if not diagnostics:
         lines = [
-            f"Initialized Project: {project_root.resolve(strict=False)}",
-            f"Research Topic: {topic_id}",
-            f"Project Manifest: {project_root.resolve(strict=False) / '.isomer-labs' / 'manifest.toml'}",
+            f"Initialized Project: {result.project_root}",
+            f"Research Topic: {result.research_topic_id}",
+            f"Project Manifest: {result.project_manifest_path}",
+            f"Houmao Project: {result.houmao_project_dir}",
         ]
     return _emit("init", options, payload, diagnostics, lines)
 

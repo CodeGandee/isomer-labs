@@ -69,7 +69,11 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Use `references/help.md`, `references/resolve-project.md`, `references/inspect-template.md`, `references/resolve-context.md`, `references/map-placeholders.md`, `references/draft-profile.md`, `references/approve-profile.md`, `references/materialize-profile.md`, `references/launch-team.md`, `references/fast-forward.md`, and `references/step-by-step.md`.
 
-            Use `team-specialization-guide.md`, `team-specialization-plan.md`, `Generated Guide`, `{final_report}`, and `<topic-workspace>/team-profile/execplan/`.
+            Use `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, and `<topic-workspace>/team-profile/execplan/`.
+
+            ```generated-guide
+            Generated Guide
+            ```
             """,
         )
         write(
@@ -97,6 +101,74 @@ class SkillsetValidatorTests(unittest.TestCase):
         for support_reference_name in validator.TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES:
             write(
                 root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / support_reference_name,
+                f"""
+                # {support_reference_name}
+
+                Local support reference.
+                """,
+            )
+        self.write_project_manager_skill(root)
+
+    def write_project_manager_skill(
+        self,
+        root: Path,
+        *,
+        omit_subcommand: str | None = None,
+        external_ref: bool = False,
+        omit_subcommand_fallback: bool = False,
+    ) -> None:
+        write(
+            root / "skillset" / "operator" / "isomer-admin-project-mgr" / "SKILL.md",
+            """
+            ---
+            name: isomer-admin-project-mgr
+            description: Valid fixture project manager skill.
+            ---
+
+            # Isomer Admin Project Mgr
+
+            ## Workflow
+
+            1. **Default help mode**: If invoked without a prompt, run `help`.
+            2. Select one subcommand and load only the selected subcommand page.
+            3. Preserve `.isomer-labs/`, `.houmao/`, Project-level Houmao overlay, `runtime init`, `runtime prepare`, and `isomer-admin-topic-team-specialize` boundaries.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Subcommands
+
+            Use `references/help.md`, `references/init-project.md`, `references/check-project.md`, `references/list-topics.md`, `references/show-context.md`, `references/init-runtime.md`, `references/prep-runtime.md`, and `references/specialize-team.md`.
+            """,
+        )
+        write(
+            root / "skillset" / "operator" / "isomer-admin-project-mgr" / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-admin-project-mgr"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-admin-project-mgr to validate this fixture."
+            """,
+        )
+        for subcommand_name in validator.PROJECT_MANAGER_SUBCOMMANDS:
+            if subcommand_name == omit_subcommand:
+                continue
+            fallback = "" if omit_subcommand_fallback and subcommand_name == "help.md" else "If the user's task does not map cleanly to these steps, use your native planning tool."
+            external = "Read `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`." if external_ref and subcommand_name == "check-project.md" else ""
+            write(
+                root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / subcommand_name,
+                f"""
+                # {subcommand_name}
+
+                ## Workflow
+
+                1. Run the subcommand fixture step. {external}
+
+                {fallback}
+                """,
+            )
+        for support_reference_name in validator.PROJECT_MANAGER_SUPPORT_REFERENCES:
+            write(
+                root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / support_reference_name,
                 f"""
                 # {support_reference_name}
 
@@ -230,3 +302,47 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS004", codes(diagnostics))
         self.assertTrue(any("contract" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_project_manager_subcommands(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        (root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / "list-topics.md").unlink()
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS005", codes(diagnostics))
+        self.assertTrue(any("list-topics.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_external_project_manager_support_refs(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_project_manager_skill(root, external_ref=True)
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS005", codes(diagnostics))
+        self.assertTrue(any("must keep required support references inside its skill directory" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_project_manager_subcommand_fallback(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_project_manager_skill(root, omit_subcommand_fallback=True)
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS005", codes(diagnostics))
+        self.assertTrue(any("must include a freeform fallback" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_project_manager_evals(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(root / "skillset" / "operator" / "isomer-admin-project-mgr" / "evals" / "evals.json", "{}")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS005", codes(diagnostics))
+        self.assertTrue(any("must not contain evals/" in message for message in messages(diagnostics)), messages(diagnostics))

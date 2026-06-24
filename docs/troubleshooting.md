@@ -18,7 +18,24 @@ pixi run isomer-cli init
 pixi run isomer-cli --print-json validate
 ```
 
-`init` mutates the Project filesystem. If a Project already exists but the command cannot find it, use `--project` to point to the correct root.
+`init` mutates the Project filesystem by creating `.houmao/`, `.isomer-labs/`, the first Research Topic Config, and the first Topic Workspace. If a Project already exists but the command cannot find it, use `--project` to point to the correct root.
+
+## Houmao Project Bootstrap Failure
+
+Symptom: `isomer-cli init` reports Houmao command resolution, invalid JSON, timeout, nonzero exit, or missing `.houmao/` diagnostics and does not write `.isomer-labs/manifest.toml`.
+
+Diagnosis:
+
+```bash
+houmao-mgr --version
+pixi run isomer-cli --print-json doctor
+```
+
+Recovery:
+
+- Set `ISOMER_HOUMAO_COMMAND` to the supported Houmao manager command, add `houmao-mgr` to `PATH`, or expose the local checkout at `extern/orphan/houmao`.
+- Rerun `pixi run isomer-cli init` after the Houmao command boundary works.
+- Do not create `.isomer-labs/` by hand as a workaround; fresh init should create both `.houmao/` and `.isomer-labs/` together.
 
 ## Pixi or Readiness Failures
 

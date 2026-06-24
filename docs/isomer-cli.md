@@ -23,11 +23,11 @@ JSON output uses the `isomer-cli-output.v1` wrapper and includes a `mutated` fla
 
 ### `init`
 
-Initialize the smallest valid Project configuration.
+Initialize the smallest valid Project configuration and Project-level Houmao overlay.
 
-**Side effects:** writes `.isomer-labs/manifest.toml`, `.isomer-labs/research-topics/<topic>.toml`, and `topic-workspaces/<topic>/`. Does not create `state.sqlite`, Workspace Runtime subdirectories, Agent Workspaces, or adapter launch material.
+**Side effects:** runs the supported Houmao Project bootstrap boundary for the selected Project root, creates or validates `.houmao/`, then writes `.isomer-labs/manifest.toml`, `.isomer-labs/research-topics/<topic>.toml`, and `topic-workspaces/<topic>/`. Does not create `state.sqlite`, Workspace Runtime subdirectories, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers.
 
-**Prerequisites:** the target directory must not already be an Isomer-managed Project unless you intend to reinitialize.
+**Prerequisites:** the target directory must not already be an Isomer-managed Project unless you intend to reinitialize. Houmao command resolution must succeed through `houmao-mgr`, `ISOMER_HOUMAO_COMMAND`, or a supported local checkout.
 
 ```bash
 pixi run isomer-cli init
@@ -394,7 +394,7 @@ pixi run isomer-cli --project tests/fixtures/projects/deepsci-profile-use-cases 
 
 | Command | Mutates Project files | Mutates Workspace Runtime | Mutates adapter files | Mutates live Houmao state |
 |---|---|---|---|---|
-| `init` | yes | no | no | no |
+| `init` | yes (`.isomer-labs/`, `.houmao/`, topic workspace) | no | no | no |
 | `doctor` | no | no | no | no |
 | `validate` | no | no | no | no |
 | `topics list` | no | no | no | no |

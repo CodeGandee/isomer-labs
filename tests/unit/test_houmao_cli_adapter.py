@@ -27,6 +27,10 @@ class HoumaoCliAdapterTests(unittest.TestCase):
             catalog.agents_list(project_dir).args,
         )
         self.assertEqual(
+            ["--print-json", "project", "--project-dir", str(project_dir), "init"],
+            catalog.project_init(project_dir).args,
+        )
+        self.assertEqual(
             ["--print-json", "agents", "global", "list", "--state", "all"],
             catalog.global_agents_list().args,
         )

@@ -7,12 +7,13 @@ This guide shows the smallest useful path from an empty directory to a recorded 
 - Python 3.11 or later.
 - Pixi installed and available on `PATH`.
 - The `isomer-labs` package installed in editable mode through Pixi.
+- A resolvable Houmao CLI boundary for Project bootstrap: `houmao-mgr` on `PATH`, `ISOMER_HOUMAO_COMMAND`, or a local checkout that Isomer can find.
 
 Run `pixi install` from the repository root to resolve dependencies and make `isomer-cli` available.
 
 ## Initialize a Project
 
-`isomer-cli init` creates the smallest valid Isomer-managed Project. It writes the Project Config Directory (`.isomer-labs/`), the Project Manifest (`manifest.toml`), a Research Topic Config, and a Topic Workspace directory.
+`isomer-cli init` creates the smallest valid Isomer-managed Project. It initializes the Project-level Houmao overlay (`.houmao/`) through the supported Houmao CLI boundary, then writes the Project Config Directory (`.isomer-labs/`), the Project Manifest (`manifest.toml`), a Research Topic Config, and a Topic Workspace directory.
 
 ```bash
 pixi run isomer-cli init
@@ -24,7 +25,7 @@ By default the command creates a Research Topic named `default` and a Topic Work
 pixi run isomer-cli init my-topic
 ```
 
-This command mutates the Project filesystem. It does not create `state.sqlite`, Workspace Runtime subdirectories, Agent Workspaces, or adapter launch material.
+This command mutates the Project filesystem. It does not create `state.sqlite`, Workspace Runtime subdirectories, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers.
 
 ## Validate the Project
 

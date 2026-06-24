@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-admin-project-mgr"
+  short_description: "Manage Isomer Project setup and checks"
+  default_prompt: "Use $isomer-admin-project-mgr to initialize or check an Isomer Project."

@@ -13,7 +13,7 @@ The target workflow still adapts one Domain Agent Team Template for one Research
 - Format the skill and each subcommand page according to the Imsight style guide: near-top `## Workflow`, numbered steps, concise workflow lines, detail sections for longer rules, and a fallback for freeform tasks.
 - Incorporate former helper-skill behavior as local subcommands so the module no longer calls separate skills for its normal workflow, and include a `help` subcommand for usage information.
 - Split the entrypoint workflow into manual single-subcommand mode, guided `step-by-step` mode, and automatic `fast-forward` mode.
-- Preserve `team-specialization-guide.md`, `team-specialization-plan.md`, generated-guide marking, pre-adaptation checklist, and post-adaptation `Final Report`.
+- Preserve `team-specialization-guide.md`, `team-specialization-plan.md`, generated-guide fenced block marking, pre-adaptation checklist, and post-adaptation `Final Report`.
 - Keep copied material inside the Topic Agent Team Profile Bundle and keep Domain Agent Team Template source material generic.
 - Validate the skill with skill-creator validation and repository skillset validation.
 
@@ -77,7 +77,7 @@ Alternative considered: let the module skill own the full path through launch. T
 
 ### Decision: Keep Guide and Plan in the Copied Template Root
 
-For `deepsci-mini`, the copied template root is `<topic-workspace>/team-profile/execplan/`, so the skill should place `team-specialization-guide.md` and `team-specialization-plan.md` there. If the guide is missing from copied material, the skill should synthesize it from copied template files and include the visible generated marker. The plan should exist before adaptation and gain a `Final Report` after adaptation.
+For `deepsci-mini`, the copied template root is `<topic-workspace>/team-profile/execplan/`, so the skill should place `team-specialization-guide.md` and `team-specialization-plan.md` there. If the guide is missing from copied material, the skill should synthesize it from copied template files and include the visible generated-guide fenced block. The plan should exist before adaptation and gain a `Final Report` after adaptation.
 
 Alternative considered: put guide and plan at `team-profile/` root. That makes them easy to find but separates them from the copied template material they explain.
 
@@ -91,7 +91,7 @@ Alternative considered: rely only on `pixi run test`. Unit tests are useful, but
 
 - The module skill becomes too broad -> Keep approval, materialization, runtime recording, and launch orchestration as explicit boundary subcommands with validation and provenance checks.
 - Removing `evals/` reduces benchmark evidence -> Use focused validation commands and manual smoke checks for this operator skill.
-- Generated guides look authoritative -> Require the exact visible generated marker and include generated-guide status in the final report.
+- Generated guides look authoritative -> Require the exact visible generated-guide fenced block and include generated-guide status in the final report.
 - Plan and packet duplicate information -> Treat `team-specialization-plan.md` as human-readable adaptation rationale and the Topic Team Instantiation Packet as structured validation and provenance input.
 - Imsight formatting drifts over time -> Add validation or tests for near-top workflow, numbered steps, and fallback text in both `SKILL.md` and local subcommand pages.
 

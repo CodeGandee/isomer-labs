@@ -18,6 +18,7 @@ MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/")
 TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-admin-topic-team-specialize"
+PROJECT_MANAGER_SKILL = "isomer-admin-project-mgr"
 
 MIGRATED_OPERATOR_SKILLS = (
     "isomer-rsch-project-aware",
@@ -56,6 +57,7 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "load only its detail page",
     "team-specialization-guide.md",
     "team-specialization-plan.md",
+    "```generated-guide",
     "Generated Guide",
     "Final Report",
     "<topic-workspace>/team-profile/execplan/",
@@ -89,6 +91,49 @@ TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS = (
     "/data/",
     "/home/",
 )
+
+PROJECT_MANAGER_REQUIRED_SKILL_TERMS = (
+    "Default help mode",
+    "invoked without a prompt",
+    "## Subcommands",
+    "references/help.md",
+    "init-project",
+    "check-project",
+    "list-topics",
+    "show-context",
+    "init-runtime",
+    "prep-runtime",
+    "specialize-team",
+    "load only the selected subcommand page",
+    ".isomer-labs/",
+    ".houmao/",
+    "Project-level Houmao overlay",
+    "runtime init",
+    "runtime prepare",
+    "isomer-admin-topic-team-specialize",
+)
+
+PROJECT_MANAGER_SUBCOMMANDS = (
+    "help.md",
+    "init-project.md",
+    "check-project.md",
+    "list-topics.md",
+    "show-context.md",
+    "init-runtime.md",
+    "prep-runtime.md",
+    "specialize-team.md",
+)
+
+PROJECT_MANAGER_NAMING_EXCEPTIONS = {"help"}
+
+PROJECT_MANAGER_SUPPORT_REFERENCES = (
+    "project-concepts.md",
+    "cli-command-boundaries.md",
+    "houmao-bootstrap.md",
+    "runtime-boundaries.md",
+)
+
+PROJECT_MANAGER_FORBIDDEN_SUPPORT_REFS = TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS
 
 REMOVED_OPERATOR_SKILLS = (
     "isomer-admin-project-aware",
@@ -449,6 +494,92 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
     return diagnostics
 
 
+def validate_project_manager_module(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skill_dir = repo_root / "skillset" / "operator" / PROJECT_MANAGER_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "OPS005", f"{PROJECT_MANAGER_SKILL} is required")
+        return diagnostics
+    if (skill_dir / "evals").exists():
+        add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS005", f"{PROJECT_MANAGER_SKILL} must not contain evals/")
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    for term in PROJECT_MANAGER_REQUIRED_SKILL_TERMS:
+        if term not in text:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(lines, "# Isomer"),
+                "OPS005",
+                f"{PROJECT_MANAGER_SKILL} must document '{term}'",
+            )
+    skill_workflow_index = line_index_containing(lines, "## Workflow")
+    if skill_workflow_index is None:
+        add(diagnostics, repo_root, skill_md, 1, "OPS005", f"{PROJECT_MANAGER_SKILL} must include a ## Workflow section")
+    else:
+        if skill_workflow_index > 24:
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS005", f"{PROJECT_MANAGER_SKILL} must place ## Workflow near the top")
+        if not has_numbered_step_after(lines, skill_workflow_index):
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS005", f"{PROJECT_MANAGER_SKILL} workflow must use numbered steps")
+        if "does not map cleanly" not in text:
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS005", f"{PROJECT_MANAGER_SKILL} must include a freeform fallback")
+    references_dir = skill_dir / "references"
+    for support_file_name in PROJECT_MANAGER_SUPPORT_REFERENCES:
+        support_path = references_dir / support_file_name
+        if not support_path.exists():
+            add(diagnostics, repo_root, support_path, 1, "OPS005", f"{PROJECT_MANAGER_SKILL} must include references/{support_file_name}")
+    allowed_reference_names = set(PROJECT_MANAGER_SUBCOMMANDS) | set(PROJECT_MANAGER_SUPPORT_REFERENCES)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_reference_names:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "OPS005",
+                f"{PROJECT_MANAGER_SKILL} has unexpected reference page references/{reference_path.name}",
+            )
+    for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
+        skill_file_lines = read_lines(skill_file)
+        for line_number, line in enumerate(skill_file_lines, start=1):
+            for forbidden_ref in PROJECT_MANAGER_FORBIDDEN_SUPPORT_REFS:
+                if forbidden_ref in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_file,
+                        line_number,
+                        "OPS005",
+                        f"{PROJECT_MANAGER_SKILL} must keep required support references inside its skill directory; found '{forbidden_ref}'",
+                    )
+    for subcommand_file_name in PROJECT_MANAGER_SUBCOMMANDS:
+        subcommand_name = subcommand_file_name.removesuffix(".md")
+        subcommand_path = references_dir / subcommand_file_name
+        if subcommand_name not in PROJECT_MANAGER_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+-[a-z]+$", subcommand_name):
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS005", f"subcommand '{subcommand_name}' must be a short verb-object name or an allowed command")
+        if len(subcommand_name) > 24:
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS005", f"subcommand '{subcommand_name}' must be short")
+        if not subcommand_path.exists():
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS005", f"{PROJECT_MANAGER_SKILL} must include references/{subcommand_file_name}")
+            continue
+        if f"references/{subcommand_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "OPS005", f"{PROJECT_MANAGER_SKILL} must link references/{subcommand_file_name}")
+        subcommand_lines = read_lines(subcommand_path)
+        workflow_index = line_index_containing(subcommand_lines, "## Workflow")
+        if workflow_index is None:
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS005", f"references/{subcommand_file_name} must include a ## Workflow section")
+            continue
+        if workflow_index > 8:
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS005", f"references/{subcommand_file_name} must place ## Workflow near the top")
+        if not has_numbered_step_after(subcommand_lines, workflow_index):
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS005", f"references/{subcommand_file_name} workflow must use numbered steps")
+        if "does not map cleanly" not in "\n".join(subcommand_lines):
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS005", f"references/{subcommand_file_name} must include a freeform fallback")
+    return diagnostics
+
+
 def validate_deepsci_mini_specialization_guide(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     guide = repo_root / "teams" / "deepsci-mini" / "execplan" / "team-specialization-guide.md"
@@ -480,6 +611,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     )
     diagnostics.extend(validate_migrated_operator_refs(repo_root))
     diagnostics.extend(validate_topic_team_specialization_module(repo_root))
+    diagnostics.extend(validate_project_manager_module(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
     return sorted(set(diagnostics))
 
