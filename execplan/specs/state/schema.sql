@@ -32,6 +32,7 @@ INSERT OR IGNORE INTO stage_catalog (stage, ordinal, description, is_builtin, ow
     ('baseline',  20, 'establish/verify a trustworthy comparator + metric', 1, 'scout-ideator'),
     ('idea',      30, 'hypothesis generation + route selection',           1, 'scout-ideator'),
     ('optimize',  35, 'algorithm-first frontier mgmt: rank/promote/fuse candidates', 1, 'orchestrator'),
+    ('bo-review', 36, 'idea-level BO: LLM-reviewer surrogate valuation of candidate research moves (advisory)', 1, 'BO-reviewer'),
     ('experiment',40, 'design, implement, execute a bounded experiment',   1, 'experimenter'),
     ('analysis',  50, 'slice/ablate results, decompose errors',            1, 'analyst'),
     ('decision',  60, 'route judgment from durable evidence',              1, 'orchestrator'),
@@ -465,6 +466,47 @@ CREATE TABLE IF NOT EXISTS research_opportunity (
     created_at     TEXT NOT NULL
 );
 
+-- DeepScientist-inspired idea-level BO: an LLM Reviewer's SURROGATE valuation of one candidate research
+-- move. The reviewer is a configurable independent role (default backend=codex, effort=max; see
+-- agents/bo-reviewer.toml). valuation is a JSON vector (utility,quality,novelty,exploration_value,
+-- uncertainty,feasibility,cost,risk[,expected_metric_direction,expected_effect,confidence]) on a 0-100 scale.
+-- ADVISORY only: a review is NOT proof and NOT a gate. is_stub=1 marks a deterministic OFFLINE stub
+-- (tests/advisory), not a real reviewer call. QUEST-LOCAL ONLY — context_refs cite THIS quest's rows.
+CREATE TABLE IF NOT EXISTS bo_review (
+    review_id        TEXT PRIMARY KEY,
+    quest_id         TEXT NOT NULL REFERENCES quest(quest_id),
+    round_index      INTEGER,
+    candidate_ref    TEXT NOT NULL,                 -- the reviewed candidate's durable ref
+    candidate_kind   TEXT,                          -- opportunity kind / idea / frontier / param (free text)
+    reviewer_backend TEXT,                          -- codex|claude|gemini|local|custom|stub
+    reviewer_model   TEXT,
+    reviewer_effort  TEXT,                           -- low|medium|high|max
+    is_stub          INTEGER NOT NULL DEFAULT 0,    -- 1 = OFFLINE deterministic stub (NOT a real reviewer call)
+    context_refs     TEXT,                           -- JSON quest-local context the reviewer saw
+    valuation        TEXT NOT NULL,                 -- JSON valuation vector (the 8 0-100 dims + descriptors)
+    rationale        TEXT,
+    risks            TEXT,                           -- JSON array of risk/blocker strings
+    created_at       TEXT NOT NULL
+);
+
+-- DeepScientist-inspired idea-level BO: the UCB-like ACQUISITION decision over reviewed candidates —
+-- which candidate to try next and why (and why not the others). ADVISORY only (never blocks a transition
+-- or finalize; never alters idea_select.valid). acquisition_method is documented (e.g. ucb_like_v1); this is
+-- an LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian optimization. QUEST-LOCAL.
+CREATE TABLE IF NOT EXISTS bo_decision (
+    decision_id        TEXT PRIMARY KEY,
+    quest_id           TEXT NOT NULL REFERENCES quest(quest_id),
+    round_index        INTEGER,
+    candidate_refs     TEXT,                         -- JSON: candidate refs considered
+    review_refs        TEXT,                         -- JSON: bo_review review_ids that fed the acquisition
+    selected_candidate_ref TEXT,                     -- the chosen next candidate (NULL if none scored)
+    acquisition_method TEXT NOT NULL,                -- e.g. ucb_like_v1
+    acquisition_config TEXT,                         -- JSON knobs used, e.g. {"beta":0.5}
+    acquisition_scores TEXT,                         -- JSON per-candidate breakdown [{candidate_ref,score,...}]
+    selection_rationale TEXT,
+    created_at         TEXT NOT NULL
+);
+
 -- baseline/metric contract: the typed comparator contract that STRENGTHENS the existing quest.baseline_gate.
 -- The rich content (metric_ids[], validity_threats[]) lives in the contract_ref artifact; the row promotes the
 -- gate-relevant scalars. Acceptability is VALIDATOR-computed: `baseline validate` sets valid=1; the
@@ -672,3 +714,5 @@ CREATE INDEX IF NOT EXISTS idx_reference_quest   ON reference(quest_id, source);
 CREATE INDEX IF NOT EXISTS idx_intake_quest      ON intake_asset(quest_id, trust);
 CREATE INDEX IF NOT EXISTS idx_frontier_quest    ON frontier_entry(quest_id, status, rank);
 CREATE INDEX IF NOT EXISTS idx_finalize_quest    ON finalize_outcome(quest_id, outcome);
+CREATE INDEX IF NOT EXISTS idx_boreview_quest    ON bo_review(quest_id, candidate_ref, created_at);
+CREATE INDEX IF NOT EXISTS idx_bodecision_quest  ON bo_decision(quest_id, created_at);

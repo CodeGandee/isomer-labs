@@ -16,6 +16,7 @@ SUITES = [
     ("validator freshness / stale computed flags", "test_validator_freshness.py"),
     ("typed scope / eval contract", "test_scope_contract.py"),
     ("quest-local discovery ledger", "test_discovery.py"),
+    ("idea-level BO (LLM-reviewer surrogate + UCB-like acquisition)", "test_bo.py"),
 ]
 
 

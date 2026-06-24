@@ -109,6 +109,13 @@ tool        = "claude"
 multi_instance = false
 summary     = "Skeptical audit of the draft; claim↔evidence coverage."
 
+[[role]]
+instance_id = "BO-reviewer"
+role        = "BO-reviewer"
+tool        = "codex"
+multi_instance = false
+summary     = "Independent LLM Reviewer (surrogate evaluator) for the idea-level BO loop. On a bo-review task it scores candidate research moves into bo_review valuations from QUEST-LOCAL evidence only; runs no experiments and writes no paper. Default backend/effort Codex/max via agents/bo-reviewer.toml; owns bo_review.record. Advisory — never blocks a gate."
+
 # ───────────────── Domain stage extensions (none by default) ─────────────────
 # Built-in stages (scope..finalize) are seeded by schema.sql. Add domain stages here; `state init`
 # applies them via INSERT OR IGNORE so they extend the catalog without schema edits. Example:

@@ -58,6 +58,8 @@ RECORD_MAP = {
     "analysis.bridge":         dict(table="analysis_bridge", pk=["bridge_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "quality_gate.waiver":     dict(table="quality_gate_waiver", pk=["waiver_id"], id_from="record_id", mode="insert"),
     "opportunity.record":      dict(table="research_opportunity", pk=["opportunity_id"], id_from="record_id", mode="upsert"),
+    "bo_review.record":        dict(table="bo_review", pk=["review_id"], id_from="record_id", mode="insert"),
+    "bo_decision.record":      dict(table="bo_decision", pk=["decision_id"], id_from="record_id", mode="insert"),
     "operator_event.record":   dict(table="operator_intent_event", pk=["event_id"], id_from="record_id", mode="insert"),
     "quirk.append":            dict(table="quirk", pk=["quirk_id"], id_from="record_id", mode="insert"),
     "knowledge_pack.register": dict(table="knowledge_pack", pk=["pack_id"], id_from="record_id", mode="upsert"),
@@ -202,7 +204,8 @@ _OPERATOR_ONLY_RT = {"gpu.confirm", "quality_gate.waiver"}  # a waiver/finalize-
 _ORCH_ONLY_RT = {"decision.record", "decision.confirm", "finalize.record",
                  "round.open", "round.update", "round.close", "wakeup.arm", "wakeup.attach", "wakeup.resolve",
                  "handoff.open", "handoff.advance", "frontier.record", "operator_event.record",
-                 "quest.create", "quest.update", "knowledge_pack.register"}
+                 "quest.create", "quest.update", "knowledge_pack.register",
+                 "bo_decision.record"}  # UCB-like acquisition decision is orchestrator-internal (advisory)
 _OWNER_RT = {"experiment.upsert": {"experimenter"}, "result.record": {"experimenter"},
              "measurement.record": {"experimenter"}, "experiment_param.record": {"experimenter"},
              "search_space.define": {"scout-ideator"}, "analysis.record": {"analyst"},
@@ -210,7 +213,8 @@ _OWNER_RT = {"experiment.upsert": {"experimenter"}, "result.record": {"experimen
              "reference.record": {"scout-ideator", "writer"},
              "claim.upsert": {"writer", "analyst", "reviewer"},
              "claim_evidence.link": {"writer", "analyst", "reviewer"},
-             "claim_evidence.resolve": {"reviewer", "writer"}}
+             "claim_evidence.resolve": {"reviewer", "writer"},
+             "bo_review.record": {"BO-reviewer", "reviewer"}}  # the surrogate evaluator (BO-reviewer) writes its valuation
 _TIER_B_RT = {"experiment.upsert", "result.record", "measurement.record", "experiment_param.record", "analysis.record"}
 _CMD_ROLES = {"experiment run": {"experimenter", "analyst"}, "result validate": {"orchestrator"},
               "baseline validate": {"orchestrator"}, "scope validate": {"orchestrator"},

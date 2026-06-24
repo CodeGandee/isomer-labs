@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/bo-review",
+  "title": "bo_review record",
+  "description": "An LLM Reviewer's SURROGATE valuation of ONE candidate research move (opportunity/idea/follow-up), for the DeepScientist-inspired idea-level BO loop. The reviewer is a configurable independent role (default backend=codex, effort=max); its output is a structured valuation vector, NOT proof and NOT a gate. record_id = review_id; append-only (insert). QUEST-LOCAL ONLY: context_refs cite rows of THIS quest; there is no cross-quest/global/sibling recall. is_stub=1 marks a deterministic OFFLINE stub valuation (tests/advisory), not a real reviewer call.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "candidate_ref", "valuation"],
+  "properties": {
+    "record_type": { "const": "bo_review.record" },
+    "record_id": { "type": "string", "description": "review_id" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string", "description": "owning quest; REQUIRED — reviews are quest-local" },
+    "round_index": { "type": "integer", "minimum": 0 },
+    "candidate_ref": { "type": "string", "minLength": 1, "description": "the reviewed candidate's durable ref (e.g. an opportunity_id / idea_select select_id / frontier candidate_ref)" },
+    "candidate_kind": { "type": "string", "description": "next_experiment|ablation|robustness|boundary|baseline_repair|new_idea|failure_followup|idea|frontier|param (free text, mirrors the candidate source)" },
+    "reviewer_backend": { "type": "string", "description": "codex|claude|gemini|local|custom|stub — the backend that produced this valuation" },
+    "reviewer_model": { "type": "string" },
+    "reviewer_effort": { "type": "string", "description": "low|medium|high|max" },
+    "is_stub": { "type": "boolean", "default": false, "description": "true = deterministic OFFLINE stub (tests/advisory), NOT a real reviewer backend call" },
+    "context_refs": {
+      "type": "object",
+      "description": "quest-local context the reviewer saw, e.g. {scope_contract, idea_select, finding:[...], result:[...], claim:[...], reference:[...]}; ids must belong to THIS quest (no cross-quest refs)."
+    },
+    "valuation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "structured valuation vector. The 8 score dimensions are 0-100 integers/floats; names are STABLE and documented.",
+      "required": ["utility", "quality", "novelty", "exploration_value", "uncertainty", "feasibility", "cost", "risk"],
+      "properties": {
+        "utility": { "type": "number", "minimum": 0, "maximum": 100, "description": "expected research value / impact toward the objective" },
+        "quality": { "type": "number", "minimum": 0, "maximum": 100, "description": "methodological soundness / evidence strength expected" },
+        "novelty": { "type": "number", "minimum": 0, "maximum": 100, "description": "distinctness from prior work and other candidates" },
+        "exploration_value": { "type": "number", "minimum": 0, "maximum": 100, "description": "information gain / how much it reduces open uncertainty" },
+        "uncertainty": { "type": "number", "minimum": 0, "maximum": 100, "description": "reviewer's uncertainty about the outcome (drives the UCB exploration term)" },
+        "feasibility": { "type": "number", "minimum": 0, "maximum": 100, "description": "how implementable within this quest's repo/compute/protocol" },
+        "cost": { "type": "number", "minimum": 0, "maximum": 100, "description": "effort/compute cost (higher = costlier; penalised)" },
+        "risk": { "type": "number", "minimum": 0, "maximum": 100, "description": "risk of redundancy/failure/over-claim (higher = riskier; penalised)" },
+        "expected_metric_direction": { "type": "string", "description": "improve|regress|neutral|unknown — expected effect on the primary metric (descriptor; not scored)" },
+        "expected_effect": { "type": "number", "minimum": 0, "maximum": 100, "description": "OPTIONAL normalised expected effect magnitude (0-100; default treated as 50 if absent)" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 100, "description": "reviewer's confidence in this valuation" }
+      }
+    },
+    "rationale": { "type": "string", "description": "why these scores, grounded in this quest's evidence" },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "explicit risks / blockers the reviewer flagged"
+    }
+  }
+}

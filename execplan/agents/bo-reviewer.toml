@@ -1,0 +1,39 @@
+# LLM Reviewer + UCB-like acquisition config — the DeepScientist-inspired idea-level BO loop.
+#
+# This configures the independent `BO-reviewer` role (a surrogate evaluator that scores candidate
+# research moves) and the deterministic UCB-like acquisition used by `bo select` / `bo suggest`.
+#
+# NO SECRETS HERE. Provider auth uses the existing per-agent credential conventions (agents/bindings.toml
+# `credential=...`; see docs/credentials.md). This file only names a backend/effort and tuning knobs.
+#
+# The harness never shells out to a provider itself: `bo review --from-json` ingests valuations a launched
+# reviewer agent produced, and `bo review` with no input produces a clearly-labelled deterministic OFFLINE
+# STUB (is_stub=1) for tests/advisory use. Everything is QUEST-LOCAL — the reviewer sees only this quest's
+# rows; there is no cross-quest/global/sibling recall.
+
+[reviewer]
+backend = "codex"      # codex | claude | gemini | local | custom  (default: codex)
+model   = "default"    # backend-specific model id; "default" lets the backend choose
+effort  = "max"        # low | medium | high | max  (default: max)
+temperature = ""        # optional; "" = backend default (only used by backends that expose it)
+max_candidates = 8     # max candidates scored per `bo review` call
+# Advisory-first: a reviewer pass is NOT required before `bo select` / planner actions. Set true only with a
+# carefully justified optional gate — BO review/decision never block finalize and never alter idea_select.valid.
+required_before_select = false
+
+[acquisition]
+method = "ucb_like_v1"  # documented in docs/binding-gates.md + `bo select` output; not full statistical BO
+beta   = 0.5            # UCB-like exploration coefficient (higher => exploration weighed more)
+
+# ── Local / temporary override (does NOT change the product default above) ──
+# When the default backend's credential is unavailable on a machine, override the EFFECTIVE backend without
+# editing this product default. Precedence (low→high):
+#   this file (product default) < agents/bo-reviewer.local.toml [reviewer_override] (machine-local, gitignored)
+#     < DEEPRESEARCH_BO_REVIEWER_{BACKEND,EFFORT,CREDENTIAL} env < CLI --backend/--effort.
+# `bo status` / `bo review` report `backend_source` (product_default | local_override_file | env_override |
+# cli_override) alongside `product_default_backend`/`product_default_effort`, so the active backend is always
+# auditable. Example agents/bo-reviewer.local.toml (NEVER commit it; no secrets — names a credential bundle):
+#   [reviewer_override]
+#   backend_override    = "claude"
+#   effort_override     = "high"
+#   credential_override = "default"

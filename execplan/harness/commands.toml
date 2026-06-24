@@ -720,7 +720,7 @@ summary = "Resolve a task-result methodology_used[].applied_as to the stage's va
 description = "methodology-evidence resolution. Given --quest-id --stage --applied-as, FAILS unless applied_as points at a real, same-quest typed record for that stage that passed its validator (idea_select.valid / baseline_contract acceptable verdict / analysis_bridge.valid / paper_spine.submission_ready / review_verdict.valid). Closes the 'methodology is claimable' hole: free-text methodology usage no longer counts as binding evidence (background-only reading belongs in methodology_consulted)."
 
 [[command]]
-name = "bo suggest"
+name = "bo candidates"
 group = "bo"
 tier = "core"
 domain_pluggable = false
@@ -729,8 +729,47 @@ mutates_state = false
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = []
-summary = "Propose the next point(s) over a declared search_space using observed primary measurements."
-description = "Heuristic search-space refiner (NOT Bayesian optimization). Reads search_space + completed (experiment_param, is_primary measurement) pairs and returns next candidate point(s) honoring the declared objective sense. Skipped entirely when no search_space exists (heuristic refinement used instead). A real search policy (surrogate model / acquisition function) is provided only by installing a refiner adapter — the built-in is a placeholder. The caller records each suggestion as an idea/experiment with experiment_param.proposed_by='bo'. NOTE: the built-in policy is a PLACEHOLDER (returns a 'midpoint-default' suggestion with stub=true and a loud warning; it does NOT read observed results or update on negative findings) — install a bo-refiner adapter (knowledge_pack kind='refiner') for a real search policy. The stub must never be treated as optimization evidence."
+summary = "List the QUEST-LOCAL candidate research moves for LLM-reviewer evaluation (idea-level BO)."
+description = "Read-only gathering step of the DeepScientist-inspired idea-level BO loop. Lists quest-local candidate research moves by source priority: open `research_opportunity` rows, the latest `idea_select` candidate, and quest-local `frontier_entry` candidates; a `search_space` midpoint is offered ONLY as a labelled secondary FALLBACK when no idea-level candidate exists. Each candidate carries a durable candidate_ref, kind, rationale, motivating_refs, attempt_signature, status, unresolved_refs and repeat-failure warnings. QUEST-LOCAL ONLY — cross-quest / missing motivating refs are WARNED and never followed as memory. Advisory; mutates nothing."
+
+[[command]]
+name = "bo review"
+group = "bo"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["bo_review.record"]
+summary = "Record the LLM Reviewer's SURROGATE valuations of candidate research moves (idea-level BO scoring)."
+description = "Scoring step of the idea-level BO loop: records one `bo_review` per candidate with a structured valuation vector (utility/quality/novelty/exploration_value/uncertainty/feasibility/cost/risk on 0-100, plus expected_metric_direction/expected_effect/confidence). The LLM Reviewer is a configurable independent role; the DURABLE product default backend/effort come from agents/bo-reviewer.toml (codex / max). The EFFECTIVE backend is resolved as product default < agents/bo-reviewer.local.toml [reviewer_override] (machine-local, gitignored) < DEEPRESEARCH_BO_REVIEWER_* env < --backend/--effort; the output reports `backend_source` (product_default|local_override_file|env_override|cli_override) + product_default_backend/effort, and persists the actual backend used on each bo_review row (or 'stub' with is_stub=1). The harness does NOT call a provider itself: pass --from-json with valuations a launched reviewer agent produced (recorded as real bo_review rows, is_stub=0), or omit it to record a clearly-labelled OFFLINE deterministic stub (is_stub=1) for tests/advisory. Valuations are validated against the bo_review schema (missing/out-of-range dims rejected). Requires --at to persist. SURROGATE valuation, NOT proof and NOT a gate; QUEST-LOCAL only."
+
+[[command]]
+name = "bo select"
+group = "bo"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["bo_decision.record"]
+summary = "Compute the UCB-like acquisition over reviewed candidates and record a bo_decision (ADVISORY)."
+description = "Acquisition step of the idea-level BO loop. Over the latest `bo_review` valuation per candidate, computes the deterministic, documented UCB-like score `exploitation + beta*exploration - penalty` (exploitation=0.40*utility+0.25*quality+0.20*feasibility+0.15*expected_effect; exploration=mean(exploration_value,novelty,uncertainty); penalty=0.35*risk+0.25*cost plus context penalties for repeat-failure / unresolved / cross-quest refs / missing provenance), selects the argmax, and records a `bo_decision` (selected candidate + per-candidate score breakdown + why others lost). --beta overrides the config exploration coefficient (default 0.5); --at persists the decision. LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian optimization. ADVISORY — never blocks a transition/finalize and never alters idea_select.valid."
+
+[[command]]
+name = "bo suggest"
+group = "bo"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = true
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = ["bo_review.record", "bo_decision.record"]
+summary = "Recommend the next research move (idea-level BO entry point); search_space midpoint only as a fallback."
+description = "High-level entry point of the DeepScientist-inspired idea-level BO loop. When quest-local candidates exist: gathers them, uses existing `bo_review` valuations (or, if none, a clearly-labelled OFFLINE stub pass), computes the UCB-like acquisition, optionally persists a `bo_decision` (with --at), and returns the selected candidate + rationale (mode='idea-level-bo'). When NO idea-level candidate exists but a `search_space` does, returns the labelled `midpoint-default` heuristic (mode='search-space-fallback') — explicitly NOT real BO: it ignores observed results and does not update on negative findings. Otherwise returns a clear no-candidate message (mode='none'). LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian optimization; QUEST-LOCAL; advisory. Stub valuations are never optimization evidence."
 
 [[command]]
 name = "bo status"
@@ -742,8 +781,8 @@ mutates_state = false
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = []
-summary = "Report observed best, evaluated count, and a no-improvement streak (heuristic, NOT Bayesian optimization)."
-description = "Quest-local optimization posture for plateau detection. Returns best_primary, observations, and an HONEST trailing no_improvement_streak computed from the ordered primary measurements (objective_sense=higher_is_better, assumed; see the scope contract's metric_direction). method='heuristic (not Bayesian optimization)' — no model/acquisition function (pairs with the placeholder `bo suggest`)."
+summary = "Report observed best + no-improvement streak AND idea-level BO state (candidates/reviews/latest decision)."
+description = "Quest-local BO posture. Returns best_primary, observations, and an HONEST trailing no_improvement_streak from the ordered primary measurements (objective_sense from the validated scope contract's metric_direction), PLUS the idea-level BO state: n_candidates, n_reviewed_candidates, n_real_reviews/n_stub_reviews, used_real_reviewer, the latest bo_decision (method + selected candidate), and reviewer_config (effective backend/effort + backend_source [product_default|local_override_file|env_override|cli_override] + product_default_backend/effort + credential_override + acquisition_method/beta/required_before_select) so the active reviewer mode is always auditable. method='LLM-reviewer surrogate + UCB-like acquisition (NOT full statistical BO)'. Read-only."
 
 [[command]]
 name = "opportunity list"

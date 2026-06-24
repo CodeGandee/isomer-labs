@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/bo-decision",
+  "title": "bo_decision record",
+  "description": "The UCB-like ACQUISITION decision over reviewed candidates for the DeepScientist-inspired idea-level BO loop: which candidate was selected to try next and why (and why the others were not). record_id = decision_id; append-only (insert). ADVISORY — a bo_decision never blocks a transition or finalize, and never alters idea_select.valid. QUEST-LOCAL ONLY. This is an LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian optimization.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "acquisition_method"],
+  "properties": {
+    "record_type": { "const": "bo_decision.record" },
+    "record_id": { "type": "string", "description": "decision_id" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string", "description": "owning quest; REQUIRED — decisions are quest-local" },
+    "round_index": { "type": "integer", "minimum": 0 },
+    "candidate_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "the candidate refs considered in this decision (quest-local)"
+    },
+    "review_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "the bo_review review_ids whose valuations fed the acquisition"
+    },
+    "selected_candidate_ref": { "type": "string", "description": "the chosen next candidate (null/absent if no candidate scored)" },
+    "acquisition_method": { "type": "string", "description": "e.g. ucb_like_v1 — the documented acquisition rule used" },
+    "acquisition_config": {
+      "type": "object",
+      "description": "the acquisition knobs used, e.g. {beta: 0.5}"
+    },
+    "acquisition_scores": {
+      "type": "array",
+      "description": "per-candidate score breakdown: [{candidate_ref, score, exploitation, exploration, penalty, ...}]",
+      "items": { "type": "object" }
+    },
+    "selection_rationale": { "type": "string", "description": "why the selected candidate beat the others" }
+  }
+}

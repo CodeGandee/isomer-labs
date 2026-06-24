@@ -3,9 +3,10 @@
 ## Purpose
 
 Generated concrete Houmao agent bindings and prompt material for the DeepResearch tree-loop. Binds the
-six participant instances (one root + five specialists) to easy profiles, generated skills, role
-prompts, memo seeds, notifier wiring, and workspace policy. Live profile creation / launch is owned by
-the execution subskills (`prepare-agents`, `launch-agents`), not this stage.
+seven participant instances (one root + six specialists: scout-ideator, experimenter, analyst, writer,
+reviewer, and the independent idea-level BO-reviewer) to easy profiles, generated skills, role prompts,
+memo seeds, notifier wiring, and workspace policy. Live profile creation / launch is owned by the
+execution subskills (`prepare-agents`, `launch-agents`), not this stage.
 
 ## Contents
 

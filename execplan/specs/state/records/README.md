@@ -51,3 +51,5 @@ self-contained validation.
 - `review-verdict.schema.json` — review.verdict (typed reviewer verdict; `valid` set by `review validate`)
 - `quality-gate-waiver.schema.json` — quality_gate.waiver (durable, auditable gate waiver / finalize acknowledgement)
 - `opportunity.schema.json` — opportunity.record (advisory quest-local research-opportunity ledger; not a gate)
+- `bo-review.schema.json` — bo_review.record (LLM-reviewer SURROGATE valuation of one candidate; idea-level BO; advisory, not a gate)
+- `bo-decision.schema.json` — bo_decision.record (UCB-like acquisition decision over reviewed candidates; advisory, not a gate)

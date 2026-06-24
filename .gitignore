@@ -12,3 +12,12 @@ __pycache__/
 runs/*.sqlite
 runs/*.sqlite-wal
 runs/*.sqlite-shm
+
+# Machine-local BO-reviewer override (temporary per-machine backend override; NOT the product default,
+# which stays codex/max in execplan/agents/bo-reviewer.toml). Never commit.
+execplan/agents/bo-reviewer.local.toml
+
+# Machine-local managed-agent tooling overlays (houmao/codex operational skills + local settings,
+# installed by the agent runtime per machine; not DeepResearch product source). Never commit.
+/.claude/
+/.codex/

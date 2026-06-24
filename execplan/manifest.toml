@@ -18,7 +18,7 @@ source_decisions = []
 
 # Stages (stage_catalog): scout-ideator owns intake-audit/scope/baseline/idea; orchestrator owns
 # optimize/decision/finalize (internal); experimenter/analyst own one stage; writer owns outline/write/rebuttal.
-stages = ["intake-audit", "scope", "baseline", "idea", "optimize", "experiment", "analysis", "decision", "outline", "write", "review", "rebuttal", "finalize"]
+stages = ["intake-audit", "scope", "baseline", "idea", "optimize", "bo-review", "experiment", "analysis", "decision", "outline", "write", "review", "rebuttal", "finalize"]
 
 # ───────────────── Specs ─────────────────
 [[artifacts]]
@@ -37,7 +37,7 @@ purpose = "process authority"
 
 [[artifacts]]
 id = "topology"
-description = "tree-loop route contract rooted at the Orchestrator; 5 specialist routes + orchestrator-internal stages + tool edges."
+description = "tree-loop route contract rooted at the Orchestrator; 6 specialist routes (incl. the idea-level BO-reviewer) + orchestrator-internal stages + tool edges."
 path = "specs/collab/topology/topology.toml"
 artifact_kind = "file"
 purpose = "topology contract"
@@ -65,7 +65,7 @@ purpose = "communication renderers"
 
 [[artifacts]]
 id = "state-schema"
-description = "sqlite control-plane schema (36 tables incl. gpu_allocation, stage_catalog seed, the research-quality gate tables, enums, indexes)."
+description = "sqlite control-plane schema (38 tables incl. gpu_allocation, stage_catalog seed, the research-quality gate tables, the idea-level BO tables bo_review/bo_decision, enums, indexes)."
 path = "specs/state/schema.sql"
 artifact_kind = "file"
 purpose = "state schema"
@@ -86,14 +86,14 @@ purpose = "state invariants"
 
 [[artifacts]]
 id = "state-seed"
-description = "Domain-neutral platform seed: quest defaults + 6-role roster templates; no concrete quest."
+description = "Domain-neutral platform seed: quest defaults + 7-role roster templates (6 default-live + the optional codex BO-reviewer); no concrete quest."
 path = "specs/state/seed.toml"
 artifact_kind = "file"
 purpose = "state seed"
 
 [[artifacts]]
 id = "records"
-description = "JSON Schemas for `record apply` payloads (the only state write path); 31 families / 42 record types."
+description = "JSON Schemas for `record apply` payloads (the only state write path); 33 families / 44 record types."
 path = "specs/state/records/"
 artifact_kind = "dir"
 purpose = "record-apply schemas"
@@ -108,7 +108,7 @@ purpose = "workspace contract"
 # ───────────────── Skills ─────────────────
 [[artifacts]]
 id = "skills"
-description = "21 generated skills. (a) 9 loop/control skills: shared-guide, on-task-request (role-aware), on-receipt, on-task-result, on-self-wakeup (Orchestrator-only continuation root), orchestrator-tick, operator-control, mentor, research-contract (setup-time). (b) 12 pack-wrapper skills (one per pack; thin triggers over the deterministic adapters/commands): paper-latex (render report), slides (render slides), figure {plot|nature|polish actions → paper-plot/nature-figure/figure-polish}, manuscript-aux {polish|datastmt actions → nature-polishing/nature-data}, and 8 reference-pack methodology skills (ideation-rubric, research-method, paper-craft, review-craft, rebuttal-craft, intake-rubric, science-scipkg, mentor-standards). Role→skill install map: agents/skill-bindings.toml; skill-caller authority + audit: harness/src/records.py (--via skill:<id>[/<action>]:<role>)."
+description = "22 generated skills. (a) 10 loop/control skills: shared-guide, on-task-request (role-aware), on-receipt, on-task-result, on-self-wakeup (Orchestrator-only continuation root), orchestrator-tick, operator-control, mentor, llm-reviewer (independent surrogate evaluator for the idea-level BO loop; bound to the BO-reviewer role), research-contract (setup-time). (b) 12 pack-wrapper skills (one per pack; thin triggers over the deterministic adapters/commands): paper-latex (render report), slides (render slides), figure {plot|nature|polish actions → paper-plot/nature-figure/figure-polish}, manuscript-aux {polish|datastmt actions → nature-polishing/nature-data}, and 8 reference-pack methodology skills (ideation-rubric, research-method, paper-craft, review-craft, rebuttal-craft, intake-rubric, science-scipkg, mentor-standards). Role→skill install map: agents/skill-bindings.toml; skill-caller authority + audit: harness/src/records.py (--via skill:<id>[/<action>]:<role>)."
 path = "skills/"
 artifact_kind = "dir"
 purpose = "generated skill packages"
@@ -123,7 +123,7 @@ purpose = "built-in optional knowledge packs"
 # ───────────────── Agents ─────────────────
 [[artifacts]]
 id = "agents"
-description = "6 agent bindings (orchestrator + scout-ideator, experimenter x≤8, analyst, writer, reviewer) + role prompts + notifier prompts."
+description = "7 agent bindings (orchestrator + scout-ideator, experimenter x≤8, analyst, writer, reviewer, and the independent idea-level BO-reviewer [tool=codex]) + role prompts + notifier prompts."
 path = "agents/bindings.toml"
 artifact_kind = "file"
 purpose = "generated concrete agent bindings"
@@ -147,6 +147,9 @@ purpose = "generated human support views"
 # Participants summary for quick reference.
 [participants]
 agents = ["orchestrator", "scout-ideator", "experimenter", "analyst", "writer", "reviewer"]
+# BO-reviewer (tool=codex) is the 7th binding/role but is NOT in the default-live roster: it is launched
+# on demand when a codex credential is available, else `bo review` uses the labelled harness stub. Hence
+# total_live_instances_default below stays 6. See bindings.toml + docs/start-runbook.md (optional 7th agent).
 experimenter_fanout_max = 8
 experimenter_fanout_default = 1
 internal_stages = ["decision", "finalize", "optimize"]
@@ -155,4 +158,6 @@ total_live_instances_default = 6
 
 # No reserved/unimplemented stages remain. The rebuttal stage was promoted to a live builtin stage
 # (ordinal 85, owned by the Writer; see specs/state/schema.sql stage_catalog + the `rebuttal` branch of
-# skills/deepresearch-on-task-request). All 13 catalog stages are implemented.
+# skills/deepresearch-on-task-request). The bo-review stage (ordinal 36, owned by the BO-reviewer) is
+# dispatched via the orchestrator-to-BO-reviewer route + the deepresearch-llm-reviewer skill. All 14 catalog
+# stages are implemented.

@@ -72,6 +72,25 @@ overlap), refuted claims (cited or condition match), negative/boundary evidence 
 allowed; the agent should just explain what changed. Quest-local only (a matching attempt in another quest is
 ignored — no cross-quest memory).
 
+**Idea-level BO (advisory, quest-local — NOT a gate).** The `bo` group runs a DeepScientist-inspired
+idea-level optimization loop: the independent **BO-reviewer** role (the LLM Reviewer — a launched tree-loop participant dispatched for the `bo-review` stage; configurable; default backend `codex`,
+effort `max`, in `agents/bo-reviewer.toml`) scores candidate research moves into `bo_review` valuation
+vectors (a SURROGATE valuation, not proof), and a deterministic UCB-like acquisition
+(`score = exploitation + beta*exploration − penalty`) selects the next candidate, recorded as a
+`bo_decision`. This is an **LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian
+optimization**. Both records are **advisory** — they never enter `blocking_gates`, never affect
+`finalize_readiness`, never set `idea_select.valid`, and need no waiver. There is no `DEEPRESEARCH_BO_*`
+bypass env var (none is needed — nothing here blocks). `bo review` validates each valuation against the
+`bo_review` schema (0–100 dims; missing/out-of-range rejected); offline stub valuations (`is_stub=1`) are
+clearly labelled and must never be treated as evidence. Quest-local only — the reviewer sees only this
+quest's rows; cross-quest / missing motivating refs are flagged and never followed.
+The reviewer backend is overridable per machine WITHOUT changing the product default: product default
+(`agents/bo-reviewer.toml`, codex/max) < `agents/bo-reviewer.local.toml` `[reviewer_override]` (gitignored)
+< `DEEPRESEARCH_BO_REVIEWER_*` env < `--backend/--effort`. `bo status`/`bo review` report `backend_source`
+(product_default | local_override_file | env_override | cli_override) alongside the product default and
+persist the actual backend used on each `bo_review` row, so the active reviewer mode is always auditable.
+(These are config/provenance knobs, not gate bypasses — nothing here blocks.)
+
 ## Methodology resolution
 `task-result.methodology_used[].applied_as` is **not free text**: the Orchestrator runs `methodology check
 --quest-id <q> --stage <stage> --applied-as <ref>`, which resolves it to the stage's **validated** typed record

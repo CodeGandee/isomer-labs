@@ -13,7 +13,7 @@ workspace_authority = "specs/workspace/workspace.toml"
 # `relies_on_houmao_skills` field below is informational reliance, NOT a generated requirement.
 state_access = "Agents touch state ONLY via harness commands (state query / record apply); never read runs/state.sqlite directly."
 record_id_convention = "Composite-PK record_ids are PK components joined with ':'. The harness parser is strict (exact component count + order); malformed ids are rejected by `record apply`."
-credential = "All 6 specialists bind credential='default'. Canonical auth = a LONG-LIVED OAuth token tied to the operator's Claude.ai Pro/Max subscription (`claude setup-token` → `credentials claude set --name default --oauth-token <T> --clear-api-key --clear-auth-token --clear-config-dir`). It does not expire on the ~5h interactive-login clock, so the loop runs unattended. HARD RULE: launch agents with ANTHROPIC_BASE_URL/ANTHROPIC_AUTH_TOKEN/ANTHROPIC_API_KEY UNSET — a third-party proxy env in the launch shell shadows the OAuth token (Claude Code prefers ANTHROPIC_AUTH_TOKEN+BASE_URL). After any credential change, relaunch agents FRESH (a bare relaunch reuses the token cached in the agent home). See docs/credentials.md + docs/start-runbook.md Step 1."
+credential = "The 6 claude specialists (orchestrator + scout-ideator/experimenter/analyst/writer/reviewer) bind credential='default'; the independent BO-reviewer runs tool='codex' and needs a codex-capable credential provisioned via houmao-credential-mgr (NO secrets in source). Canonical claude auth = a LONG-LIVED OAuth token tied to the operator's Claude.ai Pro/Max subscription (`claude setup-token` → `credentials claude set --name default --oauth-token <T> --clear-api-key --clear-auth-token --clear-config-dir`). It does not expire on the ~5h interactive-login clock, so the loop runs unattended. HARD RULE: launch agents with ANTHROPIC_BASE_URL/ANTHROPIC_AUTH_TOKEN/ANTHROPIC_API_KEY UNSET — a third-party proxy env in the launch shell shadows the OAuth token (Claude Code prefers ANTHROPIC_AUTH_TOKEN+BASE_URL). After any credential change, relaunch agents FRESH (a bare relaunch reuses the token cached in the agent home). See docs/credentials.md + docs/start-runbook.md Step 1."
 
 # ───────────────── Root ─────────────────
 [[bindings]]
@@ -107,3 +107,24 @@ notifier_prompt = "agents/notifier-prompts/reviewer.md"
 installed_skills = ["deepresearch-on-task-request", "deepresearch-shared-guide"]
 relies_on_houmao_skills = ["houmao-agent-email-comms"]
 workspace = { policy_ref = "workspace.reviewer", work_root = "runs/<quest-id>/workspaces/reviewer", reads = ["runs/<quest-id>/report", "runs/<quest-id>/round-*"], writes = ["runs/<quest-id>/report/review"] }
+
+# ───────────────── Independent LLM Reviewer (idea-level BO surrogate evaluator) ─────────────────
+# Operationally separate from orchestrator/experimenter/analyst/writer/reviewer. Dispatched only for the
+# `bo-review` stage; scores candidate research moves into bo_review valuations from QUEST-LOCAL evidence and
+# replies upstream to the Orchestrator (which then runs `bo select`). Advisory — bo_review/bo_decision never
+# block a gate, never alter idea_select.valid. tool=codex: the reviewer runs Codex at effort=max (default in
+# agents/bo-reviewer.toml; user-overridable via `bo review --backend/--effort`). The backend/effort are passed
+# in the bo-review handoff and persisted on each bo_review row. NO secrets here — provision a codex-capable
+# credential for this role via houmao-credential-mgr (see docs/credentials.md); credential names a store entry.
+[[bindings]]
+participant = "BO-reviewer"
+instances = ["BO-reviewer"]
+tool = "codex"
+credential = "default"
+easy_profile = "deepresearch-BO-reviewer"
+prompt_source = "agents/profiles/BO-reviewer/definition.md"
+memo_seed = "agents/profiles/BO-reviewer/memo-seed.md"
+notifier_prompt = "agents/notifier-prompts/BO-reviewer.md"
+installed_skills = ["deepresearch-on-task-request", "deepresearch-llm-reviewer", "deepresearch-shared-guide"]
+relies_on_houmao_skills = ["houmao-agent-email-comms"]
+workspace = { policy_ref = "workspace.BO-reviewer", work_root = "runs/<quest-id>/workspaces/BO-reviewer", reads = ["runs/<quest-id>/round-*", "runs/<quest-id>/findings", "runs/<quest-id>/objective", "runs/<quest-id>/refs"], writes = ["runs/<quest-id>/workspaces/BO-reviewer"] }

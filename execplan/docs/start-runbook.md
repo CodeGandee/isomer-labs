@@ -44,14 +44,14 @@ M(){ houmao-mgr project --project-dir "$P" "$@"; }
 
 ## Pre-flight 🟢 (read-only gate — must pass before anything below)
 ```bash
-python3 "$HARNESS" selfcheck            # ok=true, 42 record types, 39 invariants, deps ok
+python3 "$HARNESS" selfcheck            # ok=true, 44 record types, 39 invariants, deps ok
 M status                                # overlay healthy
-M skills list   | grep -c deepresearch- # 21 (9 loop/control + 12 pack-wrapper skills; per-role install in agents/skill-bindings.toml)
+M skills list   | grep -c deepresearch- # 22 (10 loop/control + 12 pack-wrapper skills; per-role install in agents/skill-bindings.toml)
 # Skill-install reconcile gate — the catalog must match agents/skill-bindings.toml (source of truth). If the
-# source gained skills without a re-install (e.g. a methodology port), `grep -c` is < 21 and launched agents
+# source gained skills without a re-install (e.g. a methodology port), `grep -c` is < 22 and launched agents
 # silently miss them. Verify, and FIX with the same script (idempotent; drop --check to apply):
 python3 "$P/execplan/ops/reconcile-skills.py" --check   # exit 0 = OK; exit 1 = drift (re-run without --check)
-M profile list  | grep -c deepresearch- # 6
+M profile list  | grep -c deepresearch- # 7 (6 default-live roles + the optional codex BO-reviewer profile)
 M agents list   | grep instances        # instances [] (nothing live yet)
 test ! -f "$P/runs/state.sqlite" && echo "DB absent (expected)"
 # REPO is created PER-QUEST under runs/$QID/repo in Step 4 (not pre-existing). If seeding from a source project,
@@ -95,7 +95,7 @@ credential change, **relaunch agents fresh** (a bare `relaunch` reuses the old t
 
 ## Step 2 — Initialize the platform DB 🟡
 ```bash
-"$HARNESS" state init                   # creates $P/runs/state.sqlite (36 tables, 13 stages)
+"$HARNESS" state init                   # creates $P/runs/state.sqlite (38 tables, 14 stages incl. bo-review)
 ```
 Verify 🟢: `"$HARNESS" state validate`  → `ok:true, checked:39`.
 **Rollback (pre-quest only):** `rm -f "$P/runs/state.sqlite"`
@@ -342,7 +342,15 @@ done
 ```
 Notes: `$HARNESS` is exported on every profile, so the harness resolves regardless of `--workdir`. Gateway auto-attaches per agent (omit `--no-gateway`). **Verify the live auth posture:** `tr '\0' '\n' </proc/$(tmux list-panes -t "$(tmux ls|grep -oE 'HOUMAO-orchestrator-[0-9]+'|head -1)" -F '#{pane_pid}')/environ | grep -i ANTHROPIC` should show **no** `ANTHROPIC_BASE_URL`/`ANTHROPIC_AUTH_TOKEN` (the agent uses the bundle's `CLAUDE_CODE_OAUTH_TOKEN`).
 Verify 🟢: `M agents list` (6 live) ; `houmao-mgr agents single --agent-name orchestrator gateway status`.
-**Rollback / stop:** `for inst in orchestrator scout-ideator experimenter-1 analyst writer reviewer; do M agents stop --name "$inst"; done`
+> **Optional 7th agent — BO-reviewer (codex).** The default loop launches the 6 Claude agents above; the
+> idea-level BO-reviewer (`tool=codex`, profile `deepresearch-BO-reviewer`) is launched **separately and only
+> when a codex-capable credential is provisioned** (it is exempt from the Step 6c Claude `--model`/effort
+> overrides). If it is NOT launched, `deepresearch bo review` falls back to a clearly-labelled deterministic
+> OFFLINE STUB (`is_stub=1`) — BO is advisory and never blocks, so the loop runs correctly without it. To
+> launch it: `houmao-mgr project --project-dir "$P" agents launch --profile deepresearch-BO-reviewer --name
+> BO-reviewer --workdir "$P/runs/$QID/workspaces/BO-reviewer" --mail-transport filesystem --mail-root
+> "$MAILROOT" --gateway-background` (then attach its notifier in Step 6b). With it live, `M agents list` is 7.
+**Rollback / stop:** `for inst in orchestrator scout-ideator experimenter-1 analyst writer reviewer; do M agents stop --name "$inst"; done` (add `BO-reviewer` to the list if it was launched).
 
 ---
 
@@ -447,8 +455,8 @@ git -C "$REPO" branch -D "quest/$QID/exp-1"
 
 **Full overlay teardown** 🟡 (removes skills/specialists/profiles/credentials/mailbox):
 ```bash
-M profile   remove --name deepresearch-<role>      # repeat 6
-M specialist remove --name deepresearch-<role>     # repeat 6
+M profile   remove --name deepresearch-<role>      # repeat 7 (incl. BO-reviewer)
+M specialist remove --name deepresearch-<role>     # repeat 7 (incl. BO-reviewer)
 M skills remove --name deepresearch-<skill>        # repeat 9
 # or, nuclear: rm -rf "$P/.houmao"
 ```

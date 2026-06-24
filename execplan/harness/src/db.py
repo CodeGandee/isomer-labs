@@ -58,6 +58,7 @@ NEW_TABLES = [
      "  motivating_refs TEXT,"
      "  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','addressed','dropped','superseded')),"
      "  proposed_by TEXT NOT NULL DEFAULT 'agent' CHECK (proposed_by IN ('agent','orchestrator','bo','operator')),"
+     "  attempt_signature TEXT,"  # keep in sync with schema.sql; MIGRATIONS ALTER covers pre-branch DBs
      "  created_at TEXT NOT NULL"
      ")"),
     ("quality_gate_waiver",
@@ -71,6 +72,37 @@ NEW_TABLES = [
      "  finalize_ack INTEGER NOT NULL DEFAULT 0,"
      "  expiry TEXT,"
      "  scope TEXT,"
+     "  created_at TEXT NOT NULL"
+     ")"),
+    ("bo_review",
+     "CREATE TABLE IF NOT EXISTS bo_review ("
+     "  review_id TEXT PRIMARY KEY,"
+     "  quest_id TEXT NOT NULL REFERENCES quest(quest_id),"
+     "  round_index INTEGER,"
+     "  candidate_ref TEXT NOT NULL,"
+     "  candidate_kind TEXT,"
+     "  reviewer_backend TEXT,"
+     "  reviewer_model TEXT,"
+     "  reviewer_effort TEXT,"
+     "  is_stub INTEGER NOT NULL DEFAULT 0,"
+     "  context_refs TEXT,"
+     "  valuation TEXT NOT NULL,"
+     "  rationale TEXT,"
+     "  risks TEXT,"
+     "  created_at TEXT NOT NULL"
+     ")"),
+    ("bo_decision",
+     "CREATE TABLE IF NOT EXISTS bo_decision ("
+     "  decision_id TEXT PRIMARY KEY,"
+     "  quest_id TEXT NOT NULL REFERENCES quest(quest_id),"
+     "  round_index INTEGER,"
+     "  candidate_refs TEXT,"
+     "  review_refs TEXT,"
+     "  selected_candidate_ref TEXT,"
+     "  acquisition_method TEXT NOT NULL,"
+     "  acquisition_config TEXT,"
+     "  acquisition_scores TEXT,"
+     "  selection_rationale TEXT,"
      "  created_at TEXT NOT NULL"
      ")"),
 ]

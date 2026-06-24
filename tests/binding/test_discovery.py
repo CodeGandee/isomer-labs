@@ -125,9 +125,9 @@ def main():
                       "VALUES(?,?,?,?,?,?)", (f"m{i}", rid, "acc", val, 1, ts))
         c.commit(); c.close()
         bs = jdata(run(db, ["bo", "status", "--quest-id", "d5"]))
-        check("D5 new: bo status computes the streak + declares heuristic (not BO)",
+        check("D5 new: bo status computes the streak + declares NOT full statistical BO (honest)",
               bs["best_primary"] == 0.7 and bs["observations"] == 3 and bs["no_improvement_streak"] == 1
-              and "not Bayesian" in bs["method"], str(bs))
+              and "NOT full statistical" in bs["method"], str(bs))
 
         # D6: scoping/advisory unchanged — discovery present, gates still advisory, nothing blocks
         print("D6 scoping advisory unchanged:")

@@ -35,7 +35,8 @@
 
 Registries (extensibility):
 
-- `stage_catalog` — the set of research stages. Seeded with the 13 built-in stages; a knowledge pack
+- `stage_catalog` — the set of research stages. Seeded with the 14 built-in stages (incl. `bo-review`,
+  owned by the BO-reviewer); a knowledge pack
   may `INSERT` domain stages (`is_builtin=0`) without schema edits. `round.stage`, `quest.current_stage`,
   `decision.from_stage/to_stage`, and `self_wakeup.next_stage` are soft references into it.
 - `knowledge_pack` — pluggable domain knowledge: extra skills, references, templates, validators,
@@ -113,6 +114,12 @@ see `execplan/docs/binding-gates.md`):
 - `research_opportunity` — **advisory** quest-local discovery ledger ("what to try next and why",
   with optional `attempt_signature` + `motivating_refs`); never a gate, never blocks. Surfaced in the
   `gate status` discovery block + `plan render`. Quest-local only — no cross-quest/shared discovery memory.
+- `bo_review` — **advisory** LLM-reviewer SURROGATE valuation of one candidate research move for the
+  idea-level BO loop (`valuation` vector on 0–100; `is_stub=1` marks an offline stub). Not proof, not a
+  gate. Quest-local only (`context_refs` cite this quest's rows).
+- `bo_decision` — **advisory** UCB-like acquisition decision over reviewed candidates (selected
+  candidate + per-candidate score breakdown). Never blocks, never alters `idea_select.valid`. An
+  LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian optimization.
 
 Continuation + comms ledgers:
 
@@ -187,21 +194,40 @@ Every dispatch between agents (or self) carries `loop_id` (= `quest_id`) + a sta
    incrementing `attempt_count`; at `attempt_count >= max_attempts` it marks `failed` and routes to a
    `decision` instead of looping forever.
 
-### Heuristic search-space refinement (`bo`)
+### DeepScientist-inspired idea-level BO (LLM-reviewer surrogate + UCB-like acquisition)
 
-When a quest declares a `search_space`, idea refinement can be delegated to the deterministic `bo`
-refiner (a heuristic placeholder, not Bayesian optimization) instead of (or alongside) the
-Orchestrator's heuristic selection:
+The `bo` group runs an **idea-level / hypothesis-level** optimization loop: it picks which candidate
+research move to try next. It is an **LLM-reviewer surrogate + UCB-like acquisition**, NOT full
+statistical Bayesian optimization (there is no probabilistic surrogate / posterior). It is QUEST-LOCAL
+and ADVISORY throughout — no BO record blocks a transition or finalize, none enters `blocking_gates` or
+`finalize_readiness`, and none alters `idea_select.valid`.
 
-1. Each evaluated experiment records its point in `experiment_param` and its objective in the
-   `measurement` row flagged `is_primary` (with the objective sense declared in the quest/acceptance).
-2. `bo suggest` reads `search_space` + all completed `(experiment_param, primary measurement)` pairs
-   for the quest and returns the next candidate point(s) via a deterministic placeholder heuristic
-   (midpoint/default sampling — no surrogate model or acquisition function).
-3. The Orchestrator records each suggestion as a new `idea` (+ `experiment` with
-   `experiment_param.proposed_by='bo'`) and dispatches it like any other experiment.
-4. With no `search_space`, the refiner is skipped and the Ideator proposes from `finding_memory` +
-   `analysis` verdicts — the platform stays fully general for non-tunable research.
+1. **Candidates** (`bo candidates`) — gather quest-local candidate moves by source priority: open
+   `research_opportunity` rows, the latest `idea_select` candidate, quest-local `frontier_entry`
+   candidates. Cross-quest / missing motivating refs are flagged and never followed as memory.
+2. **Review** (`bo review`) — the independent **BO-reviewer** role (the LLM Reviewer; a configurable
+   surrogate evaluator launched as its own tree-loop participant, dispatched for the `bo-review` stage;
+   default backend `codex`, effort `max`, in `agents/bo-reviewer.toml`) scores each
+   candidate into a `bo_review` valuation vector (`utility, quality, novelty, exploration_value,
+   uncertainty, feasibility, cost, risk` on 0–100, plus `expected_metric_direction`,
+   `expected_effect`, `confidence`) from this quest's evidence only. The harness does not call a
+   provider itself: a launched reviewer agent's JSON is ingested via `--from-json`, else a
+   clearly-labelled deterministic OFFLINE stub (`is_stub=1`) is recorded for tests/advisory. A review
+   is a surrogate valuation, **not proof**.
+3. **Select** (`bo select`) — the deterministic UCB-like acquisition
+   `score = exploitation + beta*exploration − penalty` ranks the latest valuation per candidate and
+   records a `bo_decision` (selected candidate + per-candidate score breakdown + why others lost).
+   `beta` (default 0.5) is the exploration coefficient.
+4. **Suggest** (`bo suggest`) — high-level entry point: gathers candidates, uses existing/stub reviews,
+   runs the acquisition, and returns the next move. When **no** idea-level candidate exists but a
+   `search_space` does, it falls back to the labelled `midpoint-default` heuristic (explicitly NOT real
+   BO; ignores observed results). With neither, it returns a no-candidate message.
+5. **Status** (`bo status`) — the honest best primary measurement + trailing no-improvement streak,
+   plus candidate/review counts, the latest decision, and whether reviews were a real backend or stub.
+
+The Orchestrator may record a selected candidate as a new `idea`/`experiment` (with
+`experiment_param.proposed_by='bo'` when a `search_space` point is used), or refine ideas directly from
+`finding_memory` + `analysis` verdicts — the platform stays fully general for non-tunable research.
 
 ### Literature / reference ingestion
 

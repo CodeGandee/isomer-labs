@@ -760,53 +760,515 @@ def evidence_validate(ctx, quest_id):
                   warnings=([f"{orphan} orphan claim(s)"] if orphan else [])))
 
 
-# ───────────────── bo (core, lightweight) ─────────────────
+# ───────────────── bo (DeepScientist-inspired idea-level BO: LLM-reviewer surrogate + UCB-like acquisition) ─────
+# HONEST FRAMING: this is NOT full statistical Bayesian optimization (no probabilistic surrogate / posterior).
+# A configurable independent LLM Reviewer (default backend=codex, effort=max; agents/bo-reviewer.toml) scores
+# each candidate research move into a structured valuation vector; a deterministic, documented UCB-like rule
+# selects the next candidate. Everything is QUEST-LOCAL and ADVISORY (never a gate; never alters
+# idea_select.valid; never enters blocking_gates / finalize_readiness). The search_space midpoint remains only
+# a labelled FALLBACK when no idea-level candidate exists.
+_REVIEWER_DEFAULTS = {"backend": "codex", "model": "default", "effort": "max", "temperature": "",
+                      "max_candidates": 8, "required_before_select": False,
+                      "acquisition_method": "ucb_like_v1", "beta": 0.5}
+_VALUATION_KEYS = ("utility", "quality", "novelty", "exploration_value", "uncertainty", "feasibility", "cost", "risk")
+
+
+def _loads(s):
+    try:
+        return json.loads(s) if s else None
+    except Exception:
+        return None
+
+
+def _reviewer_config(overrides=None):
+    """Resolve reviewer + acquisition config with explicit precedence + provenance:
+
+        built-in defaults
+          < agents/bo-reviewer.toml          (DURABLE product default — codex / max; never overwritten here)
+          < agents/bo-reviewer.local.toml [reviewer_override]   (machine-LOCAL, gitignored; not the product)
+          < DEEPRESEARCH_BO_REVIEWER_{BACKEND,EFFORT,CREDENTIAL} env   (ephemeral)
+          < CLI --backend / --effort                            (highest)
+
+    `backend_source` records which layer set the EFFECTIVE backend (built_in | product_default |
+    local_override_file | env_override | cli_override); `product_default_backend`/`product_default_effort`
+    always expose the durable default so callers can report both. NO SECRETS — `credential`/
+    `credential_override` name a credential-store bundle, never a secret."""
+    import os as _os
+    cfg = dict(_REVIEWER_DEFAULTS)
+    cfg["config_source"] = "built-in defaults"
+    cfg["backend_source"] = "built_in"
+    try:
+        import tomllib
+        from paths import BO_REVIEWER_TOML
+        if BO_REVIEWER_TOML.exists():
+            doc = tomllib.load(open(BO_REVIEWER_TOML, "rb"))
+            rv = doc.get("reviewer", {}) or {}
+            for k in ("backend", "model", "effort", "temperature", "max_candidates", "required_before_select"):
+                if k in rv and rv[k] != "":
+                    cfg[k] = rv[k]
+            aq = doc.get("acquisition", {}) or {}
+            if aq.get("method"):
+                cfg["acquisition_method"] = aq["method"]
+            if aq.get("beta") is not None:
+                cfg["beta"] = aq["beta"]
+            cfg["config_source"] = str(BO_REVIEWER_TOML)
+            cfg["backend_source"] = "product_default"
+    except Exception as e:
+        cfg["config_warning"] = f"could not read bo-reviewer.toml ({e}); using built-in defaults"
+    # The DURABLE product default is whatever bo-reviewer.toml declared (codex / max) — captured BEFORE any
+    # local/ephemeral override, so it is always reportable even when the effective backend is overridden.
+    cfg["product_default_backend"] = cfg["backend"]
+    cfg["product_default_effort"] = cfg["effort"]
+    cfg["credential_override"] = None
+    # LOCAL override file (machine-local, gitignored) — a temporary per-machine override that does NOT change
+    # the product default. Use when the default backend's credential is unavailable on this machine.
+    try:
+        import tomllib
+        from paths import BO_REVIEWER_LOCAL_TOML
+        if BO_REVIEWER_LOCAL_TOML.exists():
+            ov = (tomllib.load(open(BO_REVIEWER_LOCAL_TOML, "rb")).get("reviewer_override", {}) or {})
+            if ov.get("backend_override"):
+                cfg["backend"] = ov["backend_override"]; cfg["backend_source"] = "local_override_file"
+            if ov.get("effort_override"):
+                cfg["effort"] = ov["effort_override"]
+            if ov.get("model_override"):
+                cfg["model"] = ov["model_override"]
+            if ov.get("credential_override"):
+                cfg["credential_override"] = ov["credential_override"]
+            cfg["local_override_source"] = str(BO_REVIEWER_LOCAL_TOML)
+    except Exception as e:
+        cfg["local_override_warning"] = f"could not read bo-reviewer.local.toml ({e})"
+    # Ephemeral env override.
+    eb = _os.environ.get("DEEPRESEARCH_BO_REVIEWER_BACKEND")
+    ee = _os.environ.get("DEEPRESEARCH_BO_REVIEWER_EFFORT")
+    ec = _os.environ.get("DEEPRESEARCH_BO_REVIEWER_CREDENTIAL")
+    if eb:
+        cfg["backend"] = eb; cfg["backend_source"] = "env_override"
+    if ee:
+        cfg["effort"] = ee
+    if ec:
+        cfg["credential_override"] = ec
+    # CLI overrides (highest precedence).
+    for k, v in (overrides or {}).items():
+        if v is not None:
+            cfg[k] = v
+            if k in ("backend", "effort"):
+                cfg["backend_source"] = "cli_override"
+    return cfg
+
+
+def _bo_candidates(conn, quest_id, limit=None):
+    """Gather QUEST-LOCAL candidate research moves for reviewer evaluation, by source priority: open
+    research_opportunity rows; the latest idea_select candidate; quest-local frontier_entry candidates; and —
+    only as a SECONDARY FALLBACK when no idea-level candidate exists — a search_space midpoint param point.
+    Each candidate carries a durable ref, kind, rationale, motivating_refs, attempt_signature, status,
+    unresolved_refs (cross-quest/missing — flagged, NEVER followed as memory) and repeat-failure warnings.
+    Returns (candidates, fallback)."""
+    def rows(sql, *a):
+        try:
+            return conn.execute(sql, (quest_id, *a)).fetchall()
+        except sqlite3.OperationalError:
+            return []
+    rfw = {w["ref"]: w["warnings"] for w in _repeat_failure_warnings(conn, quest_id)}
+    cands = []
+    for o in rows("SELECT opportunity_id, kind, rationale, motivating_refs, attempt_signature, status "
+                  "FROM research_opportunity WHERE quest_id=? AND status='open' ORDER BY created_at, opportunity_id"):
+        mr = _loads(o["motivating_refs"])
+        un = _resolve_quest_refs(conn, quest_id, mr if isinstance(mr, dict) else None)
+        cands.append({"candidate_ref": o["opportunity_id"], "candidate_kind": o["kind"], "source": "opportunity",
+                      "rationale": o["rationale"], "motivating_refs": mr, "attempt_signature": _loads(o["attempt_signature"]),
+                      "status": o["status"], "unresolved_refs": un,
+                      "repeat_failure_warnings": rfw.get(o["opportunity_id"], [])})
+    idr = _latest_idea_select_row(conn, quest_id)
+    if idr is not None and idr["select_id"]:
+        cands.append({"candidate_ref": idr["select_id"], "candidate_kind": "idea", "source": "idea_select",
+                      "rationale": "latest idea selection (idea_select)", "motivating_refs": None,
+                      "attempt_signature": None, "status": ("valid" if idr["valid"] else "unvalidated"),
+                      "unresolved_refs": [], "repeat_failure_warnings": rfw.get(idr["select_id"], [])})
+    for f in rows("SELECT entry_id, candidate_kind, candidate_ref, status FROM frontier_entry WHERE quest_id=? "
+                  "AND status IN ('candidate','incumbent') ORDER BY rank, entry_id"):
+        cands.append({"candidate_ref": f["entry_id"], "candidate_kind": "frontier", "source": "frontier",
+                      "rationale": f"frontier {f['candidate_kind']} candidate -> {f['candidate_ref']}",
+                      "motivating_refs": None, "attempt_signature": None, "status": f["status"],
+                      "unresolved_refs": [], "repeat_failure_warnings": []})
+    fallback = None
+    if not cands:
+        dims = rows("SELECT * FROM search_space WHERE quest_id=?")
+        if dims:
+            sug = {}
+            for d in dims:
+                try:
+                    if d["dim_kind"] in ("real", "int") and d["low"] is not None and d["high"] is not None:
+                        mid = (d["low"] + d["high"]) / 2
+                        sug[d["dim_name"]] = int(mid) if d["dim_kind"] == "int" else mid
+                except Exception:
+                    pass
+            fallback = {"candidate_ref": f"{quest_id}:search-space-midpoint", "candidate_kind": "param",
+                        "source": "search_space", "params": sug, "status": "fallback",
+                        "rationale": "midpoint/default over the declared search_space (FALLBACK heuristic — NOT "
+                                     "real BO; ignores observed results and does not update on negative findings)",
+                        "motivating_refs": None, "attempt_signature": None, "unresolved_refs": [],
+                        "repeat_failure_warnings": []}
+    if limit:
+        cands = cands[:int(limit)]
+    return cands, fallback
+
+
+def _ucb_score(valuation, beta, *, has_repeat_warning=False, has_unresolved_ref=False,
+               has_cross_quest_ref=False, missing_provenance=False):
+    """Deterministic, documented UCB-like acquisition score over one reviewer valuation (dims 0-100):
+
+        exploitation = 0.40*utility + 0.25*quality + 0.20*feasibility + 0.15*expected_effect   (expected_effect
+                       defaults to 50 if absent/non-numeric)
+        exploration  = (exploration_value + novelty + uncertainty) / 3
+        penalty      = 0.35*risk + 0.25*cost
+                       + 15 (repeat-failure warning) + 15 (unresolved ref) + 10 (cross-quest ref)
+                       + 10 (missing provenance)
+        score        = exploitation + beta*exploration - penalty
+
+    Higher beta weighs exploration (novelty / info-gain / uncertainty) more. NOT full statistical BO."""
+    v = valuation or {}
+
+    def g(k, default=0.0):
+        try:
+            return float(v.get(k, default))
+        except (TypeError, ValueError):
+            return default
+    ee = g("expected_effect", 50.0)
+    exploitation = 0.40 * g("utility") + 0.25 * g("quality") + 0.20 * g("feasibility") + 0.15 * ee
+    exploration = (g("exploration_value") + g("novelty") + g("uncertainty")) / 3.0
+    ctx = (15.0 if has_repeat_warning else 0.0) + (15.0 if has_unresolved_ref else 0.0) \
+        + (10.0 if has_cross_quest_ref else 0.0) + (10.0 if missing_provenance else 0.0)
+    penalty = 0.35 * g("risk") + 0.25 * g("cost") + ctx
+    return {"score": round(exploitation + beta * exploration - penalty, 4),
+            "exploitation": round(exploitation, 4), "exploration": round(exploration, 4),
+            "beta": beta, "penalty": round(penalty, 4), "context_penalty": round(ctx, 4)}
+
+
+def _stub_valuation(cand):
+    """Deterministic OFFLINE stub valuation (is_stub=1) for tests / advisory use when no real reviewer ran.
+    Derived ONLY from quest-local candidate signals — it is NOT a model and NOT proof; loudly labelled."""
+    kind = (cand.get("candidate_kind") or "").lower()
+    novelty = {"new_idea": 75, "idea": 65, "boundary": 55, "robustness": 45, "ablation": 40,
+               "failure_followup": 50, "next_experiment": 50, "frontier": 55, "baseline_repair": 30,
+               "param": 25}.get(kind, 50)
+    explore = {"new_idea": 70, "boundary": 65, "robustness": 60, "failure_followup": 60}.get(kind, 45)
+    feas = {"param": 80, "baseline_repair": 70, "ablation": 65, "next_experiment": 60}.get(kind, 55)
+    risk = min(40 + (20 if cand.get("repeat_failure_warnings") else 0) + (15 if cand.get("unresolved_refs") else 0), 100)
+    return {"utility": 55, "quality": 55, "novelty": novelty, "exploration_value": explore, "uncertainty": 50,
+            "feasibility": feas, "cost": 40, "risk": risk, "expected_metric_direction": "unknown",
+            "expected_effect": 50, "confidence": 40}
+
+
+def _cand_penalty_flags(cand):
+    un = cand.get("unresolved_refs") or []
+    return {"has_repeat_warning": bool(cand.get("repeat_failure_warnings")),
+            "has_unresolved_ref": bool(un),
+            "has_cross_quest_ref": any(u.get("status") == "cross_quest" for u in un),
+            "missing_provenance": False}
+
+
 @cli.group()
 def bo(): ...
+
+
+@bo.command("candidates")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def bo_candidates(ctx, quest_id):
+    """List the QUEST-LOCAL candidate research moves for reviewer evaluation (open opportunities, the latest idea
+    selection, quest-local frontier entries; a search_space midpoint only as a labelled fallback). Read-only.
+    Cross-quest / missing motivating refs are WARNED and never followed as memory."""
+    conn = _conn(ctx)
+    cands, fallback = _bo_candidates(conn, quest_id, limit=_reviewer_config()["max_candidates"])
+    conn.close()
+    warns = []
+    for c in cands:
+        for u in c.get("unresolved_refs") or []:
+            warns.append(f"candidate {c['candidate_ref']} motivating ref {u['ref_type']}:{u['id']} is {u['status']} "
+                         "(NOT followed as memory)")
+        if c.get("repeat_failure_warnings"):
+            warns.append(f"candidate {c['candidate_ref']}: " + "; ".join(c["repeat_failure_warnings"]))
+    emit(envelope("bo candidates", ok=True, quest_id=quest_id,
+                  data={"candidates": cands, "count": len(cands), "fallback": fallback,
+                        "has_idea_level_candidates": bool(cands)}, warnings=warns))
+
+
+def _bo_write(conn, payload):
+    """records.apply for a BO record; returns (ok, error)."""
+    try:
+        records.apply(conn, payload)
+        return True, None
+    except records.RecordError as e:
+        return False, str(e)
+
+
+@bo.command("review")
+@click.option("--quest-id", required=True)
+@click.option("--candidate-ref", default=None, help="review only this candidate (else all gathered candidates).")
+@click.option("--backend", default=None, help="reviewer backend (default from agents/bo-reviewer.toml: codex).")
+@click.option("--effort", default=None, help="reviewer effort (default from config: max).")
+@click.option("--from-json", "from_json", default=None,
+              help="path to reviewer-produced valuations [{candidate_ref,valuation,rationale,risks,...}]; records "
+                   "them as real bo_review rows (is_stub=0). Without it, an OFFLINE deterministic stub is recorded.")
+@click.option("--at", default=None, help="ISO-8601 timestamp (required to persist bo_review rows).")
+@click.pass_context
+def bo_review(ctx, quest_id, candidate_ref, backend, effort, from_json, at):
+    """Run/record the LLM Reviewer's surrogate valuation of candidate research moves (the idea-level BO scoring
+    step). Default backend/effort come from agents/bo-reviewer.toml (codex / max). The harness does NOT call a
+    provider itself: pass `--from-json` with valuations a launched reviewer agent produced (recorded as real
+    bo_review rows), or omit it to record a clearly-labelled OFFLINE deterministic stub (is_stub=1) for
+    tests/advisory. Valuations are validated against the bo_review schema (0-100 dims; missing/out-of-range
+    rejected). QUEST-LOCAL only; never a gate."""
+    cfg = _reviewer_config({"backend": backend, "effort": effort})
+    conn = _conn(ctx)
+    cands, _fb = _bo_candidates(conn, quest_id, limit=cfg["max_candidates"])
+    if candidate_ref:
+        cands = [c for c in cands if c["candidate_ref"] == candidate_ref]
+    supplied = {}
+    if from_json:
+        for item in (_loads(open(from_json).read()) or []):
+            if isinstance(item, dict) and item.get("candidate_ref"):
+                supplied[item["candidate_ref"]] = item
+    if not cands and not supplied:
+        conn.close()
+        emit(envelope("bo review", ok=True, quest_id=quest_id,
+                      data={"reviewed": 0, "reviewer": cfg, "note": "no quest-local candidates to review"},
+                      warnings=["no candidates — record research_opportunity rows or an idea selection first"]))
+        return
+    if not at:
+        conn.close()
+        emit(envelope("bo review", ok=False, quest_id=quest_id,
+                      diagnostics=["--at <ISO-8601> is required to persist bo_review rows"]))
+        sys.exit(1)
+    reviewed, warns, used_stub = [], [], False
+    targets = cands if cands else [{"candidate_ref": k, "candidate_kind": (v.get("candidate_kind") or ""),
+                                    "unresolved_refs": [], "repeat_failure_warnings": []}
+                                   for k, v in supplied.items()]
+    for c in targets:
+        ref = c["candidate_ref"]
+        item = supplied.get(ref)
+        if item is not None:
+            valuation = item.get("valuation"); rationale = item.get("rationale", ""); risks = item.get("risks", [])
+            rbackend = item.get("reviewer_backend") or cfg["backend"]; is_stub = bool(item.get("is_stub", False))
+            rmodel = item.get("reviewer_model") or cfg["model"]; reffort = item.get("reviewer_effort") or cfg["effort"]
+        else:
+            valuation = _stub_valuation(c); rationale = "OFFLINE stub valuation (no real reviewer backend invoked)"
+            risks = [w for w in (c.get("repeat_failure_warnings") or [])]; is_stub = True; used_stub = True
+            rbackend, rmodel, reffort = "stub", "stub", cfg["effort"]
+        rid = f"{quest_id}:borev:{ref}:{at}"
+        payload = {"record_type": "bo_review.record", "record_id": rid, "at": at, "quest_id": quest_id,
+                   "candidate_ref": ref, "candidate_kind": c.get("candidate_kind") or None,
+                   "reviewer_backend": rbackend, "reviewer_model": rmodel, "reviewer_effort": reffort,
+                   "is_stub": is_stub, "valuation": valuation, "rationale": rationale,
+                   "risks": risks if isinstance(risks, list) else [str(risks)]}
+        if c.get("motivating_refs") or c.get("unresolved_refs"):
+            payload["context_refs"] = {"motivating_refs": c.get("motivating_refs"),
+                                       "unresolved_refs": c.get("unresolved_refs")}
+        ok, err = _bo_write(conn, payload)
+        if ok:
+            reviewed.append({"review_id": rid, "candidate_ref": ref, "is_stub": is_stub})
+        else:
+            warns.append(f"candidate {ref}: {err}")
+    conn.commit(); conn.close()
+    if used_stub:
+        warns.append("OFFLINE STUB reviewer used (is_stub=1): these valuations are a deterministic placeholder, "
+                     "NOT a real LLM-reviewer call. Pass --from-json with a launched reviewer's output for real "
+                     "valuations; never treat stub scores as evidence.")
+    emit(envelope("bo review", ok=True, quest_id=quest_id,
+                  data={"reviewed": len(reviewed), "reviews": reviewed, "used_stub": used_stub, "reviewer": cfg},
+                  warnings=warns))
+
+
+def _latest_reviews(conn, quest_id):
+    """Latest bo_review per candidate_ref for the quest (most recent created_at wins)."""
+    try:
+        rs = conn.execute("SELECT review_id, candidate_ref, candidate_kind, valuation, is_stub, created_at "
+                          "FROM bo_review WHERE quest_id=? ORDER BY created_at, review_id", (quest_id,)).fetchall()
+    except sqlite3.OperationalError:
+        return {}
+    latest = {}
+    for r in rs:
+        latest[r["candidate_ref"]] = r  # ordered ascending -> last wins
+    return latest
+
+
+def _bo_acquire(conn, quest_id, beta):
+    """Compute UCB-like acquisition over the latest bo_review per candidate. Returns (scores_sorted, selected_ref,
+    any_stub, review_refs). scores carry the full term breakdown for auditability."""
+    cands, _fb = _bo_candidates(conn, quest_id, limit=None)
+    flags_by_ref = {c["candidate_ref"]: _cand_penalty_flags(c) for c in cands}
+    latest = _latest_reviews(conn, quest_id)
+    scores, review_refs, any_stub = [], [], False
+    for ref, r in latest.items():
+        val = _loads(r["valuation"]) or {}
+        flags = flags_by_ref.get(ref, {})
+        sc = _ucb_score(val, beta, **{k: flags.get(k, False) for k in
+                                      ("has_repeat_warning", "has_unresolved_ref", "has_cross_quest_ref", "missing_provenance")})
+        any_stub = any_stub or bool(r["is_stub"])
+        review_refs.append(r["review_id"])
+        scores.append({"candidate_ref": ref, "candidate_kind": r["candidate_kind"], "review_id": r["review_id"],
+                       "is_stub": bool(r["is_stub"]), **sc})
+    scores.sort(key=lambda s: (-s["score"], s["candidate_ref"]))
+    selected = scores[0]["candidate_ref"] if scores else None
+    return scores, selected, any_stub, review_refs
+
+
+@bo.command("select")
+@click.option("--quest-id", required=True)
+@click.option("--beta", type=float, default=None, help="UCB exploration coefficient (default from config: 0.5).")
+@click.option("--at", default=None, help="ISO-8601 timestamp (required to persist the bo_decision).")
+@click.pass_context
+def bo_select(ctx, quest_id, beta, at):
+    """Compute the UCB-like ACQUISITION over the latest bo_review valuations and record a bo_decision (which
+    candidate to try next and why; ADVISORY — never blocks). Honest: LLM-reviewer surrogate + UCB-like
+    acquisition, NOT full statistical Bayesian optimization. Run `bo review` first to produce valuations."""
+    cfg = _reviewer_config({"beta": beta})
+    beta = float(cfg["beta"])
+    conn = _conn(ctx)
+    scores, selected, any_stub, review_refs = _bo_acquire(conn, quest_id, beta)
+    if not scores:
+        conn.close()
+        emit(envelope("bo select", ok=True, quest_id=quest_id,
+                      data={"selected_candidate_ref": None, "acquisition_method": cfg["acquisition_method"],
+                            "acquisition_scores": []},
+                      warnings=["no bo_review valuations to select over — run `bo review` first"]))
+        return
+    top = scores[0]
+    rationale = (f"selected {selected} (UCB-like score {top['score']}: exploitation {top['exploitation']} + "
+                 f"beta {beta}*exploration {top['exploration']} - penalty {top['penalty']}); "
+                 + (f"beat {len(scores) - 1} other candidate(s)" if len(scores) > 1 else "only candidate"))
+    data = {"selected_candidate_ref": selected, "acquisition_method": cfg["acquisition_method"],
+            "acquisition_config": {"beta": beta}, "acquisition_scores": scores, "selection_rationale": rationale,
+            "used_stub_reviews": any_stub}
+    warns = (["selection used OFFLINE STUB reviews (is_stub=1) — advisory only, not evidence"] if any_stub else [])
+    if at:
+        did = f"{quest_id}:bodec:{at}"
+        payload = {"record_type": "bo_decision.record", "record_id": did, "at": at, "quest_id": quest_id,
+                   "candidate_refs": [s["candidate_ref"] for s in scores], "review_refs": review_refs,
+                   "selected_candidate_ref": selected, "acquisition_method": cfg["acquisition_method"],
+                   "acquisition_config": {"beta": beta}, "acquisition_scores": scores,
+                   "selection_rationale": rationale}
+        ok, err = _bo_write(conn, payload)
+        conn.commit()
+        if ok:
+            data["decision_id"] = did
+        else:
+            warns.append(f"bo_decision not persisted: {err}")
+    else:
+        warns.append("pass --at <ISO-8601> to persist the bo_decision (returned advisory-only without it)")
+    conn.close()
+    emit(envelope("bo select", ok=True, quest_id=quest_id, data=data, warnings=warns))
 
 
 @bo.command("suggest")
 @click.option("--quest-id", required=True)
 @click.option("--space-id", default=None)
+@click.option("--beta", type=float, default=None, help="UCB exploration coefficient (default from config: 0.5).")
+@click.option("--at", default=None, help="ISO-8601 timestamp (required to persist reviews/decision).")
 @click.pass_context
-def bo_suggest(ctx, quest_id, space_id):
+def bo_suggest(ctx, quest_id, space_id, beta, at):
+    """Recommend the next research move (high-level idea-level BO entry point). When quest-local candidates exist:
+    gather them, use existing bo_review valuations (or, if none, a clearly-labelled OFFLINE stub pass), compute
+    the UCB-like acquisition, optionally persist a bo_decision (with --at), and return the selected candidate +
+    rationale. When NO idea-level candidate exists but a search_space does, fall back to the labelled
+    midpoint/default heuristic (NOT real BO). Otherwise returns a clear no-candidate message."""
+    cfg = _reviewer_config({"beta": beta})
+    beta = float(cfg["beta"])
     conn = _conn(ctx)
-    dims = db.rows(conn, "SELECT * FROM search_space WHERE quest_id=?" + (" AND space_id=?" if space_id else ""),
-                   (quest_id, space_id) if space_id else (quest_id,))
-    nobs = conn.execute("SELECT COUNT(*) FROM experiment_param p JOIN experiment e ON e.experiment_id=p.experiment_id WHERE e.quest_id=?", (quest_id,)).fetchone()[0]
-    conn.close()
-    if not dims:
-        emit(envelope("bo suggest", ok=True, quest_id=quest_id,
-                      data={"suggestion": None, "note": "no search_space; use heuristic idea selection"},
-                      warnings=["no search space defined"]))
+    cands, fallback = _bo_candidates(conn, quest_id, limit=cfg["max_candidates"])
+    if cands:
+        latest = _latest_reviews(conn, quest_id)
+        reviewed_refs = set(latest.keys())
+        warns, used_stub = [], False
+        # Stub-review any unreviewed candidate so suggest is self-contained (only persisted when --at given).
+        missing = [c for c in cands if c["candidate_ref"] not in reviewed_refs]
+        if missing and at:
+            for c in missing:
+                rid = f"{quest_id}:borev:{c['candidate_ref']}:{at}"
+                payload = {"record_type": "bo_review.record", "record_id": rid, "at": at, "quest_id": quest_id,
+                           "candidate_ref": c["candidate_ref"], "candidate_kind": c.get("candidate_kind") or None,
+                           "reviewer_backend": "stub", "reviewer_model": "stub", "reviewer_effort": cfg["effort"],
+                           "is_stub": True, "valuation": _stub_valuation(c),
+                           "rationale": "OFFLINE stub valuation (no real reviewer backend invoked)",
+                           "risks": list(c.get("repeat_failure_warnings") or [])}
+                _bo_write(conn, payload)
+            conn.commit()
+            used_stub = True
+        if missing and not at:
+            used_stub = True  # in-memory stub for the advisory computation below
+        # Acquisition over whatever reviews now exist; if none persisted (no --at), score in-memory.
+        scores, selected, any_stub, review_refs = _bo_acquire(conn, quest_id, beta)
+        if not scores:  # no persisted reviews (no --at): compute in-memory stub scores for an advisory suggestion
+            scores = []
+            for c in cands:
+                flags = _cand_penalty_flags(c)
+                sc = _ucb_score(_stub_valuation(c), beta, **{k: flags.get(k, False) for k in
+                                ("has_repeat_warning", "has_unresolved_ref", "has_cross_quest_ref", "missing_provenance")})
+                scores.append({"candidate_ref": c["candidate_ref"], "candidate_kind": c.get("candidate_kind"),
+                               "is_stub": True, **sc})
+            scores.sort(key=lambda s: (-s["score"], s["candidate_ref"]))
+            selected, any_stub, review_refs = (scores[0]["candidate_ref"] if scores else None), True, []
+        top = scores[0]
+        rationale = (f"selected {selected} via UCB-like acquisition (score {top['score']}: exploitation "
+                     f"{top['exploitation']} + beta {beta}*exploration {top['exploration']} - penalty {top['penalty']})")
+        data = {"mode": "idea-level-bo", "selected_candidate_ref": selected, "acquisition_method": cfg["acquisition_method"],
+                "acquisition_config": {"beta": beta}, "acquisition_scores": scores, "selection_rationale": rationale,
+                "used_stub_reviews": any_stub, "reviewer": cfg, "n_candidates": len(cands)}
+        if at and review_refs:
+            did = f"{quest_id}:bodec:{at}"
+            ok, err = _bo_write(conn, {"record_type": "bo_decision.record", "record_id": did, "at": at,
+                                       "quest_id": quest_id, "candidate_refs": [s["candidate_ref"] for s in scores],
+                                       "review_refs": review_refs, "selected_candidate_ref": selected,
+                                       "acquisition_method": cfg["acquisition_method"], "acquisition_config": {"beta": beta},
+                                       "acquisition_scores": scores, "selection_rationale": rationale})
+            conn.commit()
+            if ok:
+                data["decision_id"] = did
+            else:
+                warns.append(f"bo_decision not persisted: {err}")
+        elif not at:
+            warns.append("advisory-only (no --at): pass --at <ISO-8601> to persist bo_review/bo_decision rows")
+        if any_stub:
+            warns.append("used OFFLINE STUB valuations (is_stub=1) — advisory placeholder, NOT a real reviewer "
+                         "call or optimization evidence; run `bo review --from-json` with a launched reviewer.")
+        conn.close()
+        emit(envelope("bo suggest", ok=True, quest_id=quest_id, data=data, warnings=warns))
         return
-    # Lightweight default proposal: midpoint for real/int dims (a real adapter replaces this).
-    sug = {}
-    for d in dims:
-        if d["dim_kind"] in ("real", "int") and d["low"] is not None and d["high"] is not None:
-            mid = (d["low"] + d["high"]) / 2
-            sug[d["dim_name"]] = int(mid) if d["dim_kind"] == "int" else mid
-    emit(envelope("bo suggest", quest_id=quest_id,
-                  data={"stub": True, "strategy": "midpoint-default", "observations": nobs, "suggestion": sug},
-                  warnings=["PLACEHOLDER refiner: 'midpoint-default' is NOT a real search proposal — it ignores "
-                            f"all {nobs} observed result(s) and does not update on negative findings. Install a "
-                            "bo-refiner adapter (knowledge_pack kind='refiner') for a real policy. Do NOT treat "
-                            "this suggestion as optimization evidence; record it only as an exploratory seed."]))
+    # No idea-level candidate: labelled search_space midpoint FALLBACK (NOT real BO), else no-candidate.
+    nobs = conn.execute("SELECT COUNT(*) FROM experiment_param p JOIN experiment e ON e.experiment_id=p.experiment_id "
+                        "WHERE e.quest_id=?", (quest_id,)).fetchone()[0]
+    conn.close()
+    if fallback is None:
+        emit(envelope("bo suggest", ok=True, quest_id=quest_id,
+                      data={"mode": "none", "suggestion": None,
+                            "note": "no idea-level candidates and no search_space; record research_opportunity "
+                                    "rows / an idea selection, or define a search_space"},
+                      warnings=["no candidates available"]))
+        return
+    emit(envelope("bo suggest", ok=True, quest_id=quest_id,
+                  data={"mode": "search-space-fallback", "stub": True, "strategy": "midpoint-default",
+                        "observations": nobs, "suggestion": fallback["params"]},
+                  warnings=["FALLBACK (NOT real BO): no idea-level candidates exist, so this is the search_space "
+                            f"'midpoint-default' — it ignores all {nobs} observed result(s) and does not update on "
+                            "negative findings. Prefer recording research_opportunity candidates and running "
+                            "`bo review` + `bo select`. Do NOT treat this fallback as optimization evidence."]))
 
 
 @bo.command("status")
 @click.option("--quest-id", required=True)
 @click.pass_context
 def bo_status(ctx, quest_id):
-    """Quest-local optimization posture (NOT Bayesian optimization). Reports the best primary measurement and a
-    HONEST trailing no-improvement streak computed from the ordered primary observations (higher-is-better, the
-    sense the frontier ranks on; see the scope contract's metric_direction). No model/acquisition function."""
+    """Quest-local BO posture. Reports the best primary measurement + an HONEST trailing no-improvement streak
+    (objective sense from the validated scope contract's metric_direction), PLUS the idea-level BO state:
+    candidate count, reviewed-candidate count, the latest bo_decision (method + selected candidate), and whether
+    the latest reviews were a real reviewer backend or the OFFLINE stub. LLM-reviewer surrogate + UCB-like
+    acquisition — NOT full statistical Bayesian optimization."""
     conn = _conn(ctx)
     vals = [r[0] for r in conn.execute(
         "SELECT m.value_num FROM measurement m JOIN result r ON r.result_id=m.result_id "
         "WHERE r.quest_id=? AND m.is_primary=1 AND m.value_num IS NOT NULL "
         "ORDER BY r.created_at, r.result_id", (quest_id,)).fetchall()]
-    # objective sense from the VALIDATED scope/eval contract's metric_direction (default higher-is-better)
     lower = False
     try:
         sc = conn.execute("SELECT contract FROM scope_contract WHERE quest_id=? AND valid=1 "
@@ -816,20 +1278,45 @@ def bo_status(ctx, quest_id):
         sense_src = "scope_contract.metric_direction" if (sc and sc[0]) else "default"
     except Exception:
         sense_src = "default"
-    conn.close()
     better = (lambda v, b: v < b) if lower else (lambda v, b: v > b)
     best = (min(vals) if lower else max(vals)) if vals else None
-    streak, run_best = 0, None  # trailing #observations since the last improvement (no-improvement streak)
+    streak, run_best = 0, None
     for v in vals:
         if run_best is None or better(v, run_best):
             run_best, streak = v, 0
         else:
             streak += 1
+    # idea-level BO state
+    cands, _fb = _bo_candidates(conn, quest_id, limit=None)
+    latest = _latest_reviews(conn, quest_id)
+    real_reviews = sum(1 for r in latest.values() if not r["is_stub"])
+    cfg = _reviewer_config()
+    dec = None
+    try:
+        d = conn.execute("SELECT decision_id, selected_candidate_ref, acquisition_method, created_at FROM bo_decision "
+                         "WHERE quest_id=? ORDER BY created_at DESC, decision_id DESC LIMIT 1", (quest_id,)).fetchone()
+        if d:
+            dec = {"decision_id": d["decision_id"], "selected_candidate_ref": d["selected_candidate_ref"],
+                   "acquisition_method": d["acquisition_method"], "created_at": d["created_at"]}
+    except sqlite3.OperationalError:
+        dec = None
+    conn.close()
     emit(envelope("bo status", quest_id=quest_id,
                   data={"best_primary": best, "observations": len(vals), "no_improvement_streak": streak,
                         "objective_sense": ("lower_is_better" if lower else "higher_is_better"),
                         "objective_sense_source": sense_src,
-                        "method": "heuristic (not Bayesian optimization)"}))
+                        "method": "LLM-reviewer surrogate + UCB-like acquisition (NOT full statistical BO)",
+                        "n_candidates": len(cands), "n_reviewed_candidates": len(latest),
+                        "n_real_reviews": real_reviews, "n_stub_reviews": len(latest) - real_reviews,
+                        "used_real_reviewer": real_reviews > 0 and real_reviews == len(latest),
+                        "latest_decision": dec,
+                        "reviewer_config": {"backend": cfg["backend"], "effort": cfg["effort"],
+                                            "backend_source": cfg["backend_source"],
+                                            "product_default_backend": cfg["product_default_backend"],
+                                            "product_default_effort": cfg["product_default_effort"],
+                                            "credential_override": cfg.get("credential_override"),
+                                            "acquisition_method": cfg["acquisition_method"], "beta": cfg["beta"],
+                                            "required_before_select": cfg["required_before_select"]}}))
 
 
 # ───────────────── lit (core; real arxiv backend with graceful fallback) ─────────────────

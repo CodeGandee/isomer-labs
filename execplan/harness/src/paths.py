@@ -11,6 +11,9 @@ PKG_DIR = Path(__file__).resolve().parents[1]          # .../execplan/harness
 EXECPLAN_DIR = PKG_DIR.parent                          # .../execplan
 LOOP_DIR = EXECPLAN_DIR.parent                         # loop dir (holds runs/)
 SPECS_DIR = EXECPLAN_DIR / "specs"
+AGENTS_DIR = EXECPLAN_DIR / "agents"
+BO_REVIEWER_TOML = AGENTS_DIR / "bo-reviewer.toml"   # LLM-reviewer + UCB-like acquisition config (no secrets)
+BO_REVIEWER_LOCAL_TOML = AGENTS_DIR / "bo-reviewer.local.toml"  # machine-LOCAL override (gitignored; not the product default)
 
 SCHEMA_SQL = SPECS_DIR / "state" / "schema.sql"
 INVARIANTS_TOML = SPECS_DIR / "state" / "invariants.toml"

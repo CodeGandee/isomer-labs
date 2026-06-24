@@ -6,7 +6,7 @@
 
 mode = "tree-loop"
 root = "orchestrator"
-description = "Star/tree rooted at the Orchestrator. Five specialist roles each reply upstream to the Orchestrator via the shared task-request -> receipt -> task-result families. Continuation is the root's own durable self-wakeup, not a peer cycle."
+description = "Star/tree rooted at the Orchestrator. Six specialist roles (scout-ideator, experimenter, analyst, writer, reviewer, and the independent BO-reviewer) each reply upstream to the Orchestrator via the shared task-request -> receipt -> task-result families. Continuation is the root's own durable self-wakeup, not a peer cycle."
 
 # Stable correlation metadata carried by every route's mail (see comms _metadata schema).
 [correlation]
@@ -72,6 +72,17 @@ reply_family = "deepresearch.email.task-result"
 reply_to = "orchestrator"
 stages = ["review"]
 description = "Dispatch skeptical audit of the draft + claim/evidence map."
+
+[[route]]
+id = "orchestrator-to-BO-reviewer"
+from = "orchestrator"
+to = "BO-reviewer"
+request_family = "deepresearch.email.task-request"
+ack_family = "deepresearch.email.receipt"
+reply_family = "deepresearch.email.task-result"
+reply_to = "orchestrator"
+stages = ["bo-review"]
+description = "Dispatch idea-level BO candidate valuation to the independent LLM Reviewer: score quest-local candidate research moves into bo_review valuations; the Orchestrator then runs the UCB-like `bo select`. ADVISORY — the reviews/decision never block a gate and never alter idea_select.valid; QUEST-LOCAL only (no cross-quest recall)."
 
 # ── Continuation edge: root -> self. NOT a normal-result route (exempt from the tree-loop local-close
 # rule); it is the root re-dispatching each round. Durable self-mail, never a live reminder. ──

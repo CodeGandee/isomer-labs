@@ -73,13 +73,19 @@ Harness tools (deterministic; no LLM; the trust boundary):
 - **Git checkpoint**: commit durable artifacts into the quest worktree; manage branches/worktrees.
   Replaces the prior `git.auto_checkpoint`.
 - **Artifact compiler**: render reports/figures (e.g. LaTeX/markdown/plots). *Domain-pluggable.*
-- **Idea refiner (`bo` — heuristic search-space proposer, not Bayesian optimization)**: a
-  deterministic harness command that reads the `search_space` + each experiment's `experiment_param` +
-  the primary `measurement`, and proposes a next point to evaluate via a deterministic placeholder
-  heuristic (midpoint/default sampling — no surrogate model or acquisition function). Used when a quest
-  declares a tunable search space; the proposal is recorded as a new idea/experiment
-  (`experiment_param.proposed_by = 'bo'`). The Orchestrator may instead refine ideas heuristically from
-  findings memory when no search space is defined.
+- **Idea-level BO (`bo` — DeepScientist-inspired LLM-reviewer surrogate + UCB-like acquisition, not full
+  statistical Bayesian optimization)**: chooses which candidate research move to try next. `bo candidates`
+  gathers quest-local candidates (open `research_opportunity` rows, the latest `idea_select`, quest-local
+  `frontier_entry`); the independent **BO-reviewer** role (the LLM Reviewer — launched as its own tree-loop
+  participant, dispatched for the `bo-review` stage; configurable; default backend `codex`, effort `max`,
+  in `agents/bo-reviewer.toml`) scores each into a `bo_review` valuation vector
+  (utility/quality/novelty/exploration_value/uncertainty/feasibility/cost/risk, 0–100); `bo select` runs the
+  deterministic UCB-like acquisition (`exploitation + beta*exploration − penalty`) and records a
+  `bo_decision`. `bo suggest` is the high-level entry point. Everything is quest-local and ADVISORY (never a
+  gate; reviews are a surrogate valuation, not proof). When no idea-level candidate exists but a
+  `search_space` does, `bo suggest` falls back to a clearly-labelled midpoint/default heuristic (not real
+  BO). The Orchestrator may record a selected candidate as a new idea/experiment
+  (`experiment_param.proposed_by = 'bo'`), or refine ideas heuristically from findings memory.
 - **Literature / web search**: a generic harness command for arxiv + web retrieval; fetched sources
   land in the `reference` table (cached under `runs/<quest>/refs/`) and become `claim_evidence` of
   `source_kind = 'reference'`. References are **quest-owned** — each quest fetches and caches its own
@@ -183,8 +189,9 @@ Harness tools (deterministic; no LLM; the trust boundary):
 - **Domain pluggability surface** → RESOLVED: knowledge packs declare a `pack.toml` with `backs`
   (the harness command they serve) + `kind` (compiler/template/reference/…); among enabled packs of one
   (domain, kind) the lowest unique priority is primary (`adapter_priority_unique` invariant).
-- **Single-agent vs role-specialized agents** → RESOLVED: **role-specialized** — six participants
-  (Orchestrator + Scout/Ideator, Experimenter ×≤4, Analyst, Writer, Reviewer), one per binding.
+- **Single-agent vs role-specialized agents** → RESOLVED: **role-specialized** — six default-live participants
+  (Orchestrator + Scout/Ideator, Experimenter ×≤8, Analyst, Writer, Reviewer), one per binding, plus an
+  optional codex-tooled BO-reviewer (idea-level surrogate; stub fallback when not launched).
 - **Concurrency** → RESOLVED: **one active quest at a time**, enforced by the `single_active_quest`
   invariant (quests share one control-plane DB, distinguished by `quest_id`).
 

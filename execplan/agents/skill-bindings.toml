@@ -39,6 +39,13 @@ writer        = ["deepresearch-on-task-request",
 
 reviewer      = ["deepresearch-on-task-request", "deepresearch-review-craft", "deepresearch-figure"]
 
+# Independent LLM Reviewer — the surrogate evaluator for the idea-level BO loop (NOT the paper reviewer, NOT a
+# coder/writer). Scores candidate research moves into bo_review valuations; owns bo_review.record (records.py).
+# Default backend/effort live in agents/bo-reviewer.toml (codex / max). Wired as a launchable managed agent:
+# role roster in specs/state/seed.toml, binding in agents/bindings.toml, dispatch route + bo-review stage in
+# specs/collab/topology/topology.toml. The specialist preset is created by prepare-agents at install/launch.
+BO-reviewer   = ["deepresearch-on-task-request", "deepresearch-llm-reviewer"]
+
 # Setup-time / operator-only (not bound to an in-loop specialist).
 operator      = ["deepresearch-operator-control", "deepresearch-research-contract",
                  "deepresearch-paper-latex", "deepresearch-slides"]
