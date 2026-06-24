@@ -29,6 +29,8 @@ def setup(tmp, qid, rigor="standard"):
               "created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)", (qid, "t", "o", "w", "running", rigor, AT, AT))
     c.execute("INSERT INTO artifact(artifact_id,quest_id,kind,ref,created_at) VALUES(?,?,?,?,?)",
               (qid + ":rc", qid, "research-contract", "c", AT))
+    c.execute("INSERT INTO reference(reference_id,quest_id,source,uri,fetched_at,created_at) "
+              "VALUES('REF1',?,?,?,?,?)", (qid, "manual", "doi:10.0/prior", AT, AT))  # durable closest-prior
     c.commit(); c.close()
     add_valid_scope(db, qid)  # idea selection (bound) requires a validator-confirmed scope/eval contract
     return db
@@ -85,6 +87,10 @@ def good(retained_total=8, slate=("A", "B", "C"), novelty="novel", retained_id="
         "challenge": {"strongest_rejection": "x", "outside_family_alternative": "y", "why_retained_survives": "z"},
         "novelty_risk": {"novelty_label": novelty, "novelty_argument": "arg", "risk_notes": "n",
                          "known_near_neighbors": ["Smith2023: prior method X (differs: our mechanism Y)"]},
+        "prior_comparison": {"closest_prior_refs": ["REF1"], "prior_did": "prior used a heuristic cost model",
+                             "proposed_difference": "we learn it end-to-end", "novelty_type": "mechanistic",
+                             "why_prior_insufficient": "heuristic misses cross-config effects",
+                             "distinguishing_experiment": "compare MAPE on held-out configs"},
         "selection_gate": [gate("A", retained_total, "retain")] + [gate(x, 4) for x in slate if x != "A"],
         "rejected": [{"candidate_id": x, "reason": "weaker mechanism"} for x in slate if x != "A"] or
                     [{"candidate_id": "Z", "reason": "infeasible"}],
@@ -174,6 +180,66 @@ def main():
         record_select(db, "j10b", "j10b:s1", ref)
         rw = run(db, ["idea", "validate", "--quest-id", "j10b"])
         check("J10b new: novelty_waiver allows ungrounded novel", rw.returncode == 0, rw.stdout[:200])
+
+        # ---- Novelty / literature grounding (durable closest-prior references) ----
+        print("N1 novel idea without a closest-prior reference is rejected:")
+        bad = good(); del bad["prior_comparison"]
+        validate_fails(tmp, "n1", bad, "N1 new: novel w/o prior_comparison rejected (missing closest-prior)")
+
+        print("N2 closest-prior reference that doesn't resolve is rejected:")
+        bad = good(); bad["prior_comparison"]["closest_prior_refs"] = ["NOPE"]
+        validate_fails(tmp, "n2", bad, "N2 new: unresolved closest-prior reference rejected")
+
+        print("N3 grounded novelty with a durable reference passes:")
+        db = setup(tmp, "n3")
+        ref = write_json(tmp, "n3.json", good()); record_select(db, "n3", "n3:s1", ref)
+        rv = run(db, ["idea", "validate", "--quest-id", "n3"])
+        check("N3 new: novel + resolvable prior_comparison validates", rv.returncode == 0, rv.stdout[:200])
+
+        print("N4 prior comparison missing a key field is rejected:")
+        bad = good(); del bad["prior_comparison"]["proposed_difference"]
+        validate_fails(tmp, "n4", bad, "N4 new: prior_comparison missing proposed_difference rejected")
+
+        print("N5 publication rigor requires >= 2 resolvable references (or waiver):")
+        db = setup(tmp, "n5", rigor="publication")
+        pub_slate = ("A", "B", "C", "D", "E")  # publication idea_slate_min=5
+        ref = write_json(tmp, "n5a.json", good(slate=pub_slate)); record_select(db, "n5", "n5:s1", ref)
+        rv1 = run(db, ["idea", "validate", "--quest-id", "n5"])  # 1 ref -> fail at publication
+        c = sqlite3.connect(db); c.execute("PRAGMA foreign_keys=OFF")
+        c.execute("INSERT INTO reference(reference_id,quest_id,source,uri,fetched_at,created_at) "
+                  "VALUES('REF2','n5','manual','doi:10.0/prior2',?,?)", (AT, AT)); c.commit(); c.close()
+        g2 = good(slate=pub_slate); g2["prior_comparison"]["closest_prior_refs"] = ["REF1", "REF2"]
+        ref = write_json(tmp, "n5b.json", g2); record_select(db, "n5", "n5:s2", ref)
+        rv2 = run(db, ["idea", "validate", "--quest-id", "n5"])  # 2 refs -> pass
+        check("N5 new: publication needs >=2 refs (1 fails, 2 passes)",
+              rv1.returncode != 0 and "publication rigor requires" in rv1.stdout and rv2.returncode == 0,
+              "one=%s two=%s" % (rv1.stdout[:140], rv2.returncode))
+
+        print("N6 explicit reasoned novelty waiver passes + is visible in gate status:")
+        db = setup(tmp, "n6")
+        w = good(); del w["prior_comparison"]; w["novelty_waiver"] = "greenfield problem; no close prior exists"
+        ref = write_json(tmp, "n6.json", w); record_select(db, "n6", "n6:s1", ref)
+        rv = run(db, ["idea", "validate", "--quest-id", "n6"])
+        g = json.loads(run(db, ["gate", "status", "--quest-id", "n6"]).stdout)["data"]["gates"]["idea_gate"]
+        check("N6 new: novelty waiver validates + gate status notes it",
+              rv.returncode == 0 and g["status"] == "pass" and "waived" in (g["reason"] or ""),
+              "rv=%s gate=%s" % (rv.returncode, g))
+
+        print("N7 scoping/advisory: novelty grounding not enforced:")
+        db = setup(tmp, "n7", rigor="scoping")
+        s = good(); del s["prior_comparison"]
+        ref = write_json(tmp, "n7.json", s); record_select(db, "n7", "n7:s1", ref)
+        rv = run(db, ["idea", "validate", "--quest-id", "n7"])  # scoping -> grounding skipped
+        check("N7 new: scoping novel without prior_comparison still validates", rv.returncode == 0, rv.stdout[:200])
+
+        print("N8 gate status surfaces novelty-grounding reasons:")
+        db = setup(tmp, "n8")
+        bad = good(); del bad["prior_comparison"]
+        ref = write_json(tmp, "n8.json", bad); record_select(db, "n8", "n8:s1", ref)
+        run(db, ["idea", "validate", "--quest-id", "n8"])  # valid=0
+        g = json.loads(run(db, ["gate", "status", "--quest-id", "n8"]).stdout)["data"]["gates"]["idea_gate"]
+        check("N8 new: gate status idea_gate fail mentions the missing closest-prior",
+              g["status"] == "fail" and "closest-prior" in (g["reason"] or ""), str(g))
 
         print("Regime: scoping rigor advisory:")
         db = setup(tmp, "sc", rigor="scoping"); confirm_gpu(db, "sc")

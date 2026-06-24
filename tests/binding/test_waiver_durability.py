@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""regression suite — Phase 3: waiver durability + finalize acknowledgement.
+"""regression suite — durable waiver acknowledgement / finalize acknowledgement.
 
 Env-var gate waivers are visible in `gate status`, but a BOUND quest may not finalize 'complete' while a
 finalize-sensitive gate is env-waived UNLESS a durable `quality_gate.waiver` (finalize_ack=true + reason)

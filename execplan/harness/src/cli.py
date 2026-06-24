@@ -151,7 +151,7 @@ def state_export(ctx, quest_id):
     emit(envelope("state export", quest_id=quest_id, data={"markdown": md}))
 
 
-# ───────────────── plan (DB-rendered living research map; Phases 2/3/6) ─────────────────
+# ───────────────── plan (DB-rendered living research map) ─────────────────
 @cli.group()
 def plan(): ...
 
@@ -169,6 +169,16 @@ def _render_plan_md(conn, quest_id):
     finals = db.rows(conn, "SELECT outcome,reopen_conditions,next_incumbent_ref,created_at FROM finalize_outcome WHERE quest_id=? ORDER BY created_at", (quest_id,))
     rounds = db.rows(conn, "SELECT round_index,stage,status,summary_ref,updated_at FROM round WHERE quest_id=? ORDER BY round_index", (quest_id,))
     artifacts = db.rows(conn, "SELECT kind,ref FROM artifact WHERE quest_id=? AND kind IN ('clarification','research-contract','effort-selection') ORDER BY kind", (quest_id,))
+    def _safe(sql):  # tables that may be absent on an un-reinited DB
+        try:
+            return db.rows(conn, sql, (quest_id,))
+        except sqlite3.OperationalError:
+            return []
+    findings = _safe("SELECT kind,summary FROM finding_memory WHERE quest_id=? ORDER BY created_at DESC LIMIT 8")
+    opps = _safe("SELECT opportunity_id,kind,status,motivating_refs FROM research_opportunity WHERE quest_id=? "
+                 "ORDER BY (status='open') DESC, created_at DESC LIMIT 10")
+    unsupported = _safe("SELECT claim_id,status FROM claim WHERE quest_id=? AND kind='claim' "
+                        "AND status IN ('open','refuted') ORDER BY created_at")
     L = []
     L.append(f"# Plan — {quest_id}  (plan_revision {q['plan_revision']} · stage {q.get('current_stage')} · round {q['round_index']})")
     L.append("\n> Rendered projection of DB state. The DB is canonical; this file is never read back as truth.\n")
@@ -185,6 +195,25 @@ def _render_plan_md(conn, quest_id):
     L.append("Branches: " + (", ".join(f"{b['branch_id']}[{b['status']}]" for b in branches) or "(none)"))
     L.append("Ideas: " + (", ".join(f"{i['idea_id']}[{i['status']}]" for i in ideas) or "(none)"))
     L.append("Frontier: " + (", ".join(f"{f['candidate_ref']}#{f['rank']}[{f['status']}]" for f in frontier) or "(none)"))
+    L.append("\n## Discovery  [LIVING · advisory quest-local, not a gate]")
+    L.append("Findings: " + (", ".join(f"{f['kind']}:{str(f['summary'])[:40]}" for f in findings) or "(none)"))
+    L.append("Open questions / unsupported claims: "
+             + (", ".join(f"{c['claim_id']}[{c['status']}]" for c in unsupported) or "(none)"))
+    def _opp_label(o):
+        try:
+            mr = json.loads(o["motivating_refs"]) if o["motivating_refs"] else None
+        except Exception:
+            mr = None
+        tag = "!unresolved-refs" if _resolve_quest_refs(conn, quest_id, mr if isinstance(mr, dict) else None) else ""
+        return f"{o['opportunity_id']}({o['kind']}){tag}"
+    L.append("Next candidates: "
+             + (", ".join(_opp_label(o) for o in opps if o['status'] == 'open') or "(none)"))
+    L.append("Parked / failed routes: "
+             + (", ".join(f"{b['branch_id']}[{b['status']}]" for b in branches if b['status'] in ('parked', 'abandoned')) or "(none)"))
+    rfw = _repeat_failure_warnings(conn, quest_id)
+    if rfw:
+        for e in rfw:
+            L.append(f"Repeated-failure advisory ({e['source']} {e['ref']}): " + "; ".join(e["warnings"]))
     L.append("\n## Next decision options  [LIVING]")
     open_dec = [d for d in decisions if not d["confirmed"] and d["requires_user_confirm"]]
     if open_dec:
@@ -769,12 +798,38 @@ def bo_suggest(ctx, quest_id, space_id):
 @click.option("--quest-id", required=True)
 @click.pass_context
 def bo_status(ctx, quest_id):
+    """Quest-local optimization posture (NOT Bayesian optimization). Reports the best primary measurement and a
+    HONEST trailing no-improvement streak computed from the ordered primary observations (higher-is-better, the
+    sense the frontier ranks on; see the scope contract's metric_direction). No model/acquisition function."""
     conn = _conn(ctx)
-    best = conn.execute(
-        "SELECT MAX(m.value_num) FROM measurement m JOIN result r ON r.result_id=m.result_id "
-        "WHERE r.quest_id=? AND m.is_primary=1", (quest_id,)).fetchone()[0]
+    vals = [r[0] for r in conn.execute(
+        "SELECT m.value_num FROM measurement m JOIN result r ON r.result_id=m.result_id "
+        "WHERE r.quest_id=? AND m.is_primary=1 AND m.value_num IS NOT NULL "
+        "ORDER BY r.created_at, r.result_id", (quest_id,)).fetchall()]
+    # objective sense from the VALIDATED scope/eval contract's metric_direction (default higher-is-better)
+    lower = False
+    try:
+        sc = conn.execute("SELECT contract FROM scope_contract WHERE quest_id=? AND valid=1 "
+                          "ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+        md = (json.loads(sc[0]).get("metric_direction") if sc and sc[0] else "") or ""
+        lower = any(t in md.lower() for t in ("min", "lower", "decrease", "down", "less"))
+        sense_src = "scope_contract.metric_direction" if (sc and sc[0]) else "default"
+    except Exception:
+        sense_src = "default"
     conn.close()
-    emit(envelope("bo status", quest_id=quest_id, data={"best_primary": best}))
+    better = (lambda v, b: v < b) if lower else (lambda v, b: v > b)
+    best = (min(vals) if lower else max(vals)) if vals else None
+    streak, run_best = 0, None  # trailing #observations since the last improvement (no-improvement streak)
+    for v in vals:
+        if run_best is None or better(v, run_best):
+            run_best, streak = v, 0
+        else:
+            streak += 1
+    emit(envelope("bo status", quest_id=quest_id,
+                  data={"best_primary": best, "observations": len(vals), "no_improvement_streak": streak,
+                        "objective_sense": ("lower_is_better" if lower else "higher_is_better"),
+                        "objective_sense_source": sense_src,
+                        "method": "heuristic (not Bayesian optimization)"}))
 
 
 # ───────────────── lit (core; real arxiv backend with graceful fallback) ─────────────────
@@ -1051,6 +1106,67 @@ def _provenance_waived():
     return os.environ.get("DEEPRESEARCH_PROVENANCE_GATE") in ("0", "false", "no")
 
 
+def _artifact_provenance_waived():
+    """Operator override: waive the publication-rigor artifact-backed-provenance requirement. Visible in
+    gate status active_waivers."""
+    return os.environ.get("DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE") in ("0", "false", "no")
+
+
+def _is_hex(v):
+    s = str(v)
+    return len(s) >= 6 and all(c in "0123456789abcdefABCDEF" for c in s)
+
+
+def _artifact_backed_ok(conn, quest_id, prov):
+    """Second provenance layer: is an executed result's provenance backed by a RESOLVABLE artifact? Returns
+    (ok, reasons). Requires metric_source + at least one log/config/output reference that resolves to an
+    `artifact` row (or the result's own artifact) for the quest; any provided hash must be hex-shaped. Does
+    NOT verify metric-file CONTENTS (re-execution territory)."""
+    prov = prov or {}
+    reasons = []
+    ms = prov.get("metric_source")
+    if not (str(ms).strip() if ms is not None else ""):
+        reasons.append("artifact-backed provenance missing metric_source")
+    refs = []
+    for k in ("log_ref", "config_ref", "metric_source"):
+        v = prov.get(k)
+        if isinstance(v, str) and v.strip():
+            refs.append(v.strip())
+    oa = prov.get("output_artifacts") or []
+    if isinstance(oa, list):
+        refs += [str(x).strip() for x in oa if str(x).strip()]
+    resolved = False
+    for r in refs:
+        try:
+            hit = conn.execute("SELECT 1 FROM artifact WHERE quest_id=? AND (ref=? OR artifact_id=?)",
+                               (quest_id, r, r)).fetchone()
+        except sqlite3.OperationalError:
+            hit = None
+        if hit:
+            resolved = True
+            break
+    if not resolved:
+        reasons.append("artifact reference unresolved: no log/config/output reference resolves to an artifact row")
+    for hk in ("config_hash", "checksum", "artifact_hash"):
+        if prov.get(hk) and not _is_hex(prov.get(hk)):
+            reasons.append(f"provenance.{hk} is not a valid hex checksum")
+    return (not reasons), reasons
+
+
+def _provenance_level(conn, quest_id, route, prov):
+    """VALIDATOR-computed provenance strength. waived/imported/trusted map directly; an executed result is
+    `artifact_backed` when its references resolve to artifacts (else `declared`). `reexecuted` is reserved
+    (only via a trusted/manual route — re-execution is not auto-performed here)."""
+    if route == "waived":
+        return "waived"
+    if route in ("imported", "trusted"):
+        return "external_trusted"
+    if route == "executed":
+        ok_art, _ = _artifact_backed_ok(conn, quest_id, prov or {})
+        return "artifact_backed" if ok_art else "declared"
+    return "declared"
+
+
 def _provenance_verdict(route, prov):
     """Validator for a result's reconstructable-run provenance. Returns (ok, reasons). `prov` is the parsed
     provenance manifest (dict). The author declares `route`; this decides whether it actually holds up.
@@ -1124,7 +1240,7 @@ def result_validate(ctx, result_id, validity):
         else:
             computed = "valid"
     conn.execute("UPDATE result SET validity=? WHERE result_id=?", (computed, result_id))
-    # Provenance (Phase 1): compute the validator-OWNED provenance_ok from the declared route + manifest, so
+    # Provenance: compute the validator-OWNED provenance_ok from the declared route + manifest, so
     # the author cannot self-certify it. Campaign coverage will not count this result's evidence unless ok=1.
     prow = conn.execute("SELECT provenance_route, provenance FROM result WHERE result_id=?", (result_id,)).fetchone()
     try:
@@ -1133,11 +1249,15 @@ def result_validate(ctx, result_id, validity):
         prov = {}
     prov_route = prow["provenance_route"] if prow else None
     prov_ok, prov_reasons = _provenance_verdict(prov_route, prov)
-    conn.execute("UPDATE result SET provenance_ok=? WHERE result_id=?", (1 if prov_ok else 0, result_id))
+    prov_level = _provenance_level(conn, quest_id, prov_route, prov) if prov_ok else "declared"
+    _art_ok, art_reasons = _artifact_backed_ok(conn, quest_id, prov) if prov_route == "executed" else (True, [])
+    conn.execute("UPDATE result SET provenance_ok=?, provenance_level=? WHERE result_id=?",
+                 (1 if prov_ok else 0, prov_level, result_id))
     conn.commit()
     _finish(ctx, conn, "result validate",
             {"result_id": result_id, "validity": computed, "source": "override" if validity else "computed",
              "reasons": reasons, "provenance_ok": prov_ok, "provenance_route": prov_route,
+             "provenance_level": prov_level, "artifact_backed_reasons": art_reasons,
              "provenance_reasons": prov_reasons, "quest_id": quest_id}, quest_id=quest_id)
 
 
@@ -1233,7 +1353,7 @@ def scope_validate(ctx, quest_id):
 
 
 def _baseline_result_provenance(conn, evidence_ref):
-    """A 'reproduced' baseline must cite a baseline result_id that carries validated provenance (Phase-1 flag)."""
+    """A 'reproduced' baseline must cite a baseline result_id that carries validated provenance (validator flag)."""
     if not (evidence_ref or "").strip():
         return False, "reproduced baseline requires evidence_ref pointing to a baseline result_id"
     try:
@@ -1314,7 +1434,7 @@ def baseline_validate(ctx, quest_id):
                       diagnostics=["no baseline.contract recorded (record one first)"]))
         sys.exit(1)
     ok, reasons, route = _baseline_validity(conn, quest_id)
-    fp = records.dep_fingerprint(conn, quest_id, "baseline") if ok else None  # Phase 5: staleness signature
+    fp = records.dep_fingerprint(conn, quest_id, "baseline") if ok else None  # staleness signature
     conn.execute("UPDATE baseline_contract SET valid=?, validated_fingerprint=? WHERE contract_id=?",
                  (1 if ok else 0, fp, row["contract_id"]))
     conn.commit(); conn.close()
@@ -1736,7 +1856,15 @@ _IDEA_CONTENT_SCHEMA = {
                                     "expected_failure_mode": {"type": "string"},
                                     "boundary_condition": {"type": "string"}}},
         "experiment_plan_ref": {"type": "string"},
-        "novelty_waiver": {"type": "string"}
+        "novelty_waiver": {"type": "string"},
+        "prior_comparison": {"type": "object",
+                             "description": "closest_prior_refs[] (resolve to reference rows) + prior_did, "
+                                            "proposed_difference, why_prior_insufficient, distinguishing_experiment, "
+                                            "novelty_type (mechanistic|empirical|dataset_task|efficiency|negative_result)"},
+        "attempt_signature": {"type": "object",
+                              "description": "OPTIONAL coarse signature (idea_key/method_key/dataset/metric/"
+                                             "parameter_key/baseline_id/condition/route/notes) for ADVISORY "
+                                             "quest-local repeated-failure detection. Never affects idea_select.valid."}
     }
 }
 
@@ -1767,6 +1895,54 @@ def _latest_idea_select_row(conn, quest_id):
     return conn.execute(
         "SELECT select_id, select_ref, valid FROM idea_select WHERE quest_id=? "
         "ORDER BY created_at DESC, select_id DESC LIMIT 1", (quest_id,)).fetchone()
+
+
+_NOVELTY_TYPES = {"mechanistic", "empirical", "dataset_task", "efficiency", "negative_result"}
+
+
+def _novelty_grounding(conn, quest_id, content, rigor, bound):
+    """Validator-owned novelty grounding. Returns (ok, reasons). Waivable (novelty_waiver /
+    DEEPRESEARCH_IDEA_NOVELTY_WAIVER). Always: reject `not_differentiated`; a `novel` idea must NAME its closest
+    prior (known_near_neighbors). BOUND escalation for a `novel` idea (or any non-decorative idea at
+    publication rigor): a structured `prior_comparison` whose `closest_prior_refs` resolve to durable
+    `reference` rows (publication needs >= 2) + prior_did / proposed_difference / why_prior_insufficient /
+    distinguishing_experiment + a typed novelty_type. Decorative free-text novelty does not pass alone."""
+    content = content or {}
+    nr = content.get("novelty_risk", {}) or {}
+    novelty = nr.get("novelty_label")
+    if content.get("novelty_waiver") or os.environ.get("DEEPRESEARCH_IDEA_NOVELTY_WAIVER"):
+        return True, []  # explicit, reasoned waiver (surfaced in gate status)
+    reasons = []
+    if novelty == "not_differentiated":
+        return False, ["novelty_label='not_differentiated' (decorative tweak): add real differentiation "
+                       "or an explicit novelty_waiver"]
+    if novelty == "novel" and not (nr.get("known_near_neighbors") or []):
+        reasons.append("novelty_label='novel' but known_near_neighbors is empty: name the closest prior work")
+    pub = records._rigor_order(rigor) >= records._rigor_order("publication")
+    if bound and (novelty == "novel" or pub):
+        pc = content.get("prior_comparison") or {}
+        refs = pc.get("closest_prior_refs") or []
+        if not refs:
+            reasons.append("novel idea missing closest-prior reference (prior_comparison.closest_prior_refs)")
+        resolved = []
+        for rid in refs:
+            try:
+                hit = conn.execute("SELECT 1 FROM reference WHERE reference_id=? AND quest_id=?",
+                                   (str(rid), quest_id)).fetchone()
+            except sqlite3.OperationalError:
+                hit = None
+            if hit:
+                resolved.append(rid)
+            else:
+                reasons.append(f"closest-prior reference {rid!r} unresolved (no durable reference row)")
+        for f in ("prior_did", "proposed_difference", "why_prior_insufficient", "distinguishing_experiment"):
+            if not str(pc.get(f) or "").strip():
+                reasons.append(f"prior comparison missing {f}")
+        if str(pc.get("novelty_type") or "").strip() not in _NOVELTY_TYPES:
+            reasons.append(f"prior_comparison.novelty_type must be one of {sorted(_NOVELTY_TYPES)}")
+        if pub and len(resolved) < 2:
+            reasons.append("publication rigor requires >= 2 resolvable closest-prior references (or a novelty_waiver)")
+    return (not reasons), reasons
 
 
 @idea.command("validate")
@@ -1828,15 +2004,8 @@ def idea_validate(ctx, quest_id, select_ref):
             score = gate_by_id[retained_id]
             if score is not None and score < floors["idea_score_min"]:
                 reasons.append(f"retained score {score} < rigor '{rigor}' floor {floors['idea_score_min']}")
-        if novelty == "not_differentiated" and not (content.get("novelty_waiver")
-                                                    or os.environ.get("DEEPRESEARCH_IDEA_NOVELTY_WAIVER")):
-            reasons.append("novelty_label='not_differentiated' (decorative tweak): add real differentiation "
-                           "or an explicit novelty_waiver")
-        neighbors = (content.get("novelty_risk", {}) or {}).get("known_near_neighbors") or []
-        if novelty == "novel" and not neighbors and not (content.get("novelty_waiver")
-                                                         or os.environ.get("DEEPRESEARCH_IDEA_NOVELTY_WAIVER")):
-            reasons.append("novelty_label='novel' but known_near_neighbors is empty: name the closest prior "
-                           "work the retained idea is differentiated against (or set an explicit novelty_waiver)")
+        n_ok, n_reasons = _novelty_grounding(conn, quest_id, content, rigor, _is_bound(conn, quest_id, rigor))
+        reasons += n_reasons
     # Upstream scope/eval contract: in bound mode, idea selection must proceed from a validator-confirmed,
     # non-stale scope.contract (waivable with DEEPRESEARCH_SCOPE_GATE=0).
     if _is_bound(conn, quest_id, rigor) and not _scope_waived():
@@ -1891,28 +2060,34 @@ def _latest_bridge_row(conn, quest_id):
         "ORDER BY created_at DESC, bridge_id DESC LIMIT 1", (quest_id,)).fetchone()
 
 
-def _evidence_provenance_ok(conn, source_kind, source_ref, waived):
-    """Phase-1 provenance check for one claim_evidence row. reference/external = the trusted-external route;
-    analysis/measurement are not result-direct (out of Phase-1 scope) — all pass. A 'result' source counts
-    only if its result row exists and carries provenance_ok=1 (set by `result validate`), unless provenance
-    enforcement is waived (DEEPRESEARCH_PROVENANCE_GATE=0)."""
+def _evidence_provenance_ok(conn, source_kind, source_ref, waived, pub=False, art_waived=False):
+    """Provenance check for one claim_evidence row. reference/external = the trusted-external route;
+    analysis/measurement are not result-direct — all pass. A 'result' source counts only if its result row
+    carries provenance_ok=1 (set by `result validate`), unless waived (DEEPRESEARCH_PROVENANCE_GATE=0).
+    At PUBLICATION rigor a local (declared-only) result additionally needs artifact-backed provenance
+    (provenance_level != 'declared') unless DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE=0 waives it."""
     if waived:
         return True, ""
     if source_kind in ("reference", "external", "analysis", "measurement"):
         return True, ""
     try:
-        row = conn.execute("SELECT provenance_ok FROM result WHERE result_id=?", (source_ref,)).fetchone()
+        row = conn.execute("SELECT provenance_ok, provenance_level FROM result WHERE result_id=?",
+                           (source_ref,)).fetchone()
     except sqlite3.OperationalError:
         return True, ""  # provenance column absent on an un-migrated DB: grandfather (fail-safe, like other gates)
     if row is None:
         return False, f"result {source_ref!r} not found"
-    if row["provenance_ok"]:
-        return True, ""
-    return (False, f"result {source_ref!r} provenance not validated — run `result validate` "
-                   "(or declare provenance_route imported/trusted/waived on the result)")
+    if not row["provenance_ok"]:
+        return (False, f"result {source_ref!r} provenance not validated — run `result validate` "
+                       "(or declare provenance_route imported/trusted/waived on the result)")
+    if pub and not art_waived and (row["provenance_level"] or "declared") == "declared":
+        return (False, f"result {source_ref!r} provenance is declared only — publication rigor requires "
+                       "artifact-backed provenance (record the run's log/config/output artifacts + re-run "
+                       "`result validate`) or a waiver")
+    return True, ""
 
 
-# Kind-specific PROOF requirements (Phase 4): (required descriptive fields, required result-reference fields).
+# Kind-specific PROOF requirements: (required descriptive fields, required result-reference fields).
 # An evidence_kind not listed here (e.g. qualitative) needs no structural proof. Reference fields must resolve
 # to a result row. Aligned to the evidence_kind enum that campaign coverage reasons over.
 _PROOF_SPEC = {
@@ -1934,7 +2109,7 @@ def _evidence_proof_waived():
 
 
 def _evidence_proof_ok(conn, row, waived):
-    """Phase-4 kind-specific proof check for one supporting claim_evidence row. Returns (ok, reason). A
+    """Kind-specific proof check for one supporting claim_evidence row. Returns (ok, reason). A
     reference/external source must cite an explicit source/citation; a result/analysis source must carry the
     kind's required proof fields, and any result-reference field (e.g. ablation.parent_result) must resolve."""
     if waived:
@@ -1975,12 +2150,15 @@ def _claim_coverage(conn, quest_id, floors):
     """Per-main-claim empirical coverage by evidence_kind under the rigor floor. Returns (ok, reasons, detail).
     Main claims = claim rows of kind='claim' in status open/supported. baseline satisfied if the claim has a
     baseline_comparison evidence OR the quest's baseline_gate is 'waived'. An evidence_kind is counted ONLY
-    when its result has validated provenance (Phase 1) AND it carries valid kind-specific proof (Phase 4);
+    when its result has validated provenance AND it carries valid kind-specific proof;
     an evidence_kind present only on provenance-less / proof-less rows is reported as not-counted (visible
     reason) rather than silently dropped."""
     reasons, detail = [], {}
     prov_waived = _provenance_waived()
     proof_waived = _evidence_proof_waived()
+    _qr = conn.execute("SELECT rigor_level FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    _pub = records._rigor_order((_qr[0] if _qr else None) or "standard") >= records._rigor_order("publication")
+    _art_waived = _artifact_provenance_waived()
     bg = conn.execute("SELECT baseline_gate FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
     baseline_waived = bool(bg) and bg[0] == "waived"
     claims = conn.execute("SELECT claim_id FROM claim WHERE quest_id=? AND kind='claim' "
@@ -1997,9 +2175,9 @@ def _claim_coverage(conn, quest_id, floors):
             "AND relation='supports' AND evidence_kind IS NOT NULL", (cid,)).fetchall()
         kinds, unproven = set(), {}
         for er in erows:
-            ok, why = _evidence_provenance_ok(conn, er["source_kind"], er["source_ref"], prov_waived)
+            ok, why = _evidence_provenance_ok(conn, er["source_kind"], er["source_ref"], prov_waived, _pub, _art_waived)
             if ok:
-                ok, why = _evidence_proof_ok(conn, er, proof_waived)  # Phase 4: kind-specific proof
+                ok, why = _evidence_proof_ok(conn, er, proof_waived)  # kind-specific proof
             if ok:
                 kinds.add(er["evidence_kind"])
             else:
@@ -2062,7 +2240,7 @@ def campaign_validate(ctx, quest_id, bridge_ref):
     valid = not reasons
     coverage = {"valid": valid, "rigor": rigor, "coverage_ok": cov_ok, "per_claim": cov_detail,
                 "reasons": reasons, "floors": {k: floors[k] for k in floors if k.startswith("campaign")}}
-    fp = records.dep_fingerprint(conn, quest_id, "campaign") if valid else None  # Phase 5: staleness signature
+    fp = records.dep_fingerprint(conn, quest_id, "campaign") if valid else None  # staleness signature
     conn.execute("UPDATE analysis_bridge SET valid=?, coverage_json=?, validated_fingerprint=? WHERE bridge_id=?",
                  (1 if valid else 0, json.dumps(coverage), fp, row["bridge_id"]))
     conn.commit(); conn.close()
@@ -2175,7 +2353,7 @@ def review_validate(ctx, quest_id, verdict_ref):
         reasons += _verdict_actionability(content)
     target = _verdict_route_target(content) if content else None
     valid = not reasons
-    fp = records.dep_fingerprint(conn, quest_id, "review") if valid else None  # Phase 5: staleness signature
+    fp = records.dep_fingerprint(conn, quest_id, "review") if valid else None  # staleness signature
     conn.execute("UPDATE review_verdict SET valid=?, route_target=?, validated_fingerprint=? WHERE verdict_id=?",
                  (1 if valid else 0, target, fp, row["verdict_id"]))
     conn.commit(); conn.close()
@@ -2227,6 +2405,267 @@ def review_confirm(ctx, quest_id):
 
 
 # ───────────────── unified gate status + methodology resolution (integration) ─────────────────
+# quest-local ref resolution for opportunity.motivating_refs / finding.links (ADVISORY; no cross-quest refs).
+_REF_TABLES = {  # ref_type -> (table, id_column) resolved with an explicit quest_id column
+    "finding": ("finding_memory", "memory_id"), "result": ("result", "result_id"),
+    "claim": ("claim", "claim_id"), "idea_select": ("idea_select", "select_id"),
+    "experiment": ("experiment", "experiment_id"), "analysis_bridge": ("analysis_bridge", "bridge_id"),
+    "paper_spine": ("paper_spine", "quest_id"), "branch": ("branch", "branch_id"),
+    "artifact": ("artifact", "artifact_id"), "scope_contract": ("scope_contract", "contract_id"),
+    "opportunity": ("research_opportunity", "opportunity_id"),
+}
+_REF_KEY_TYPE = {  # accept both type-name and *_id/_ids key styles
+    "finding": "finding", "findings": "finding", "finding_ids": "finding",
+    "result": "result", "results": "result", "result_ids": "result",
+    "claim": "claim", "claims": "claim", "claim_ids": "claim",
+    "claim_evidence": "claim_evidence", "claim_evidence_ids": "claim_evidence",
+    "idea_select": "idea_select", "idea_select_id": "idea_select",
+    "experiment": "experiment", "experiment_id": "experiment", "experiment_ids": "experiment",
+    "analysis_bridge": "analysis_bridge", "analysis_bridge_id": "analysis_bridge",
+    "paper_spine": "paper_spine", "paper_spine_id": "paper_spine",
+    "branch": "branch", "branch_id": "branch", "branch_ids": "branch",
+    "artifact": "artifact", "artifact_id": "artifact", "artifact_ids": "artifact",
+    "scope_contract": "scope_contract", "scope_contract_id": "scope_contract",
+    "opportunity": "opportunity", "opportunity_ids": "opportunity", "opportunity_id": "opportunity",
+}
+
+
+def _ref_status(conn, quest_id, rtype, rid):
+    """'' if the ref resolves for THIS quest; 'cross_quest' if it exists for another quest; 'missing' otherwise."""
+    try:
+        if rtype == "claim_evidence":  # composite PK, no quest_id column -> resolve via its claim
+            if conn.execute("SELECT 1 FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id "
+                            "WHERE e.claim_id=? AND c.quest_id=? LIMIT 1", (rid, quest_id)).fetchone():
+                return ""
+            return "cross_quest" if conn.execute("SELECT 1 FROM claim_evidence WHERE claim_id=? LIMIT 1",
+                                                 (rid,)).fetchone() else "missing"
+        table, idc = _REF_TABLES[rtype]
+        if conn.execute(f"SELECT 1 FROM {table} WHERE {idc}=? AND quest_id=? LIMIT 1", (rid, quest_id)).fetchone():
+            return ""
+        return "cross_quest" if conn.execute(f"SELECT 1 FROM {table} WHERE {idc}=? LIMIT 1", (rid,)).fetchone() else "missing"
+    except sqlite3.OperationalError:
+        return ""  # table absent on an un-reinited DB: grandfather (advisory, never blocks)
+
+
+def _resolve_quest_refs(conn, quest_id, refs):
+    """ADVISORY quest-local resolution of a refs dict (opportunity.motivating_refs / finding.links). Returns a
+    list of {ref_type, id, status: 'missing'|'cross_quest'} for refs that do NOT resolve to this quest; an
+    empty list means all provided refs resolve (or none were given). NEVER blocks — surfaced as warnings only."""
+    if not isinstance(refs, dict):
+        return []
+    out = []
+    for key, val in refs.items():
+        rtype = _REF_KEY_TYPE.get(key)
+        if rtype is None:
+            continue  # unknown key -> ignore (forward-compatible, advisory)
+        for rid in (val if isinstance(val, list) else [val]):
+            rid = str(rid).strip()
+            if not rid:
+                continue
+            st = _ref_status(conn, quest_id, rtype, rid)
+            if st:
+                out.append({"ref_type": rtype, "id": rid, "status": st})
+    return out
+
+
+_SIG_KEYS = ("idea_key", "method_key", "parameter_key", "condition", "route", "baseline_id")
+
+
+def _sig_overlap(a, b):
+    """Discriminating key shared (case-insensitive, non-empty) by two attempt_signatures, else None."""
+    a, b = a or {}, b or {}
+    for k in _SIG_KEYS:
+        va = str(a.get(k) or "").strip().lower()
+        if va and va == str(b.get(k) or "").strip().lower():
+            return k
+    da, db_ = str(a.get("dataset") or "").strip().lower(), str(a.get("metric") or "").strip().lower()
+    if da and db_ and da == str(b.get("dataset") or "").strip().lower() and db_ == str(b.get("metric") or "").strip().lower():
+        return "dataset+metric"
+    return None
+
+
+def _repeat_failure_warnings(conn, quest_id):
+    """ADVISORY quest-local repeated-failure detector. For each OPEN opportunity (and the latest idea selection)
+    whose attempt_signature / motivating_refs resemble prior FAILED signals of THIS quest — dropped
+    opportunities, refuted claims, negative/boundary evidence, lesson findings — return
+    [{source, ref, warnings:[...]}]. NEVER blocks; quest-local only (no cross-quest attempts considered)."""
+    def rows(sql, *a):
+        try:
+            return conn.execute(sql, (quest_id, *a)).fetchall()
+        except sqlite3.OperationalError:
+            return []
+    dropped = []
+    for r in rows("SELECT opportunity_id, attempt_signature FROM research_opportunity WHERE quest_id=? AND status='dropped'"):
+        try:
+            sig = json.loads(r["attempt_signature"]) if r["attempt_signature"] else {}
+        except Exception:
+            sig = {}
+        dropped.append((r["opportunity_id"], sig))
+    refuted = {r[0]: str(r[1] or "") for r in rows("SELECT claim_id, statement FROM claim WHERE quest_id=? AND status='refuted'")}
+    negtext = [str(r[0]) for r in rows("SELECT e.evidence_proof FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id "
+                                       "WHERE c.quest_id=? AND e.evidence_kind IN ('negative','boundary') AND e.evidence_proof IS NOT NULL")]
+    lessons = [(r[0], str(r[1] or "")) for r in rows("SELECT memory_id, summary FROM finding_memory WHERE quest_id=? AND kind='lesson'")]
+
+    def warnings_for(sig, refs):
+        sig, refs, w = sig or {}, refs or {}, []
+        for oid, dsig in dropped:
+            k = _sig_overlap(sig, dsig)
+            if k:
+                w.append(f"possible repeat of dropped opportunity {oid} (shared {k})")
+        for cid in (refs.get("claim") or refs.get("claim_ids") or []):
+            if str(cid) in refuted:
+                w.append(f"possible repeat of refuted claim {cid}")
+        cond = str(sig.get("condition") or "").strip().lower()
+        if cond:
+            if any(cond in t.lower() for t in negtext):
+                w.append(f"possible repeat of negative/boundary evidence for condition {sig.get('condition')!r}")
+            for cid, stmt in refuted.items():
+                if cond in stmt.lower():
+                    w.append(f"possible repeat of refuted claim {cid} (condition {sig.get('condition')!r})")
+        for key in ("method_key", "idea_key"):
+            kv = str(sig.get(key) or "").strip().lower()
+            if kv:
+                for fid, summ in lessons:
+                    if kv in summ.lower():
+                        w.append(f"similar failed-path lesson exists: {fid}")
+        return sorted(set(w))
+
+    out = []
+    for r in rows("SELECT opportunity_id, attempt_signature, motivating_refs FROM research_opportunity WHERE quest_id=? AND status='open'"):
+        try:
+            sig = json.loads(r["attempt_signature"]) if r["attempt_signature"] else {}
+        except Exception:
+            sig = {}
+        try:
+            refs = json.loads(r["motivating_refs"]) if r["motivating_refs"] else {}
+        except Exception:
+            refs = {}
+        w = warnings_for(sig, refs)
+        if w:
+            out.append({"source": "opportunity", "ref": r["opportunity_id"], "warnings": w})
+    idr = _latest_idea_select_row(conn, quest_id)
+    if idr is not None and idr["select_ref"]:
+        try:
+            content = json.loads(_read_artifact_text(idr["select_ref"]) or "null")
+        except Exception:
+            content = None
+        if isinstance(content, dict) and isinstance(content.get("attempt_signature"), dict):
+            w = warnings_for(content["attempt_signature"], {})
+            if w:
+                out.append({"source": "idea_select", "ref": idr["select_id"], "warnings": w})
+    return out
+
+
+@cli.group()
+def opportunity(): ...
+
+
+@opportunity.command("list")
+@click.option("--quest-id", required=True)
+@click.option("--status", default=None, help="filter by status: open|addressed|dropped|superseded")
+@click.pass_context
+def opportunity_list(ctx, quest_id, status):
+    """List the quest-local research-opportunity ledger (ADVISORY 'what to try next and why'; never a gate).
+    Open opportunities first, then most-recent. Record via `record apply --type opportunity.record`."""
+    conn = _conn(ctx)
+    try:
+        sql = ("SELECT opportunity_id, kind, status, rationale, motivating_refs, proposed_by, round_index, "
+               "created_at FROM research_opportunity WHERE quest_id=?")
+        args = [quest_id]
+        if status:
+            sql += " AND status=?"; args.append(status)
+        sql += " ORDER BY (status='open') DESC, created_at DESC, opportunity_id"
+        rows = []
+        for r in conn.execute(sql, args):
+            try:
+                mr = json.loads(r["motivating_refs"]) if r["motivating_refs"] else None
+            except Exception:
+                mr = r["motivating_refs"]
+            unresolved = _resolve_quest_refs(conn, quest_id, mr if isinstance(mr, dict) else None)
+            rows.append(dict(opportunity_id=r["opportunity_id"], kind=r["kind"], status=r["status"],
+                             rationale=r["rationale"], motivating_refs=mr, proposed_by=r["proposed_by"],
+                             round_index=r["round_index"], created_at=r["created_at"],
+                             unresolved_refs=unresolved))
+    except sqlite3.OperationalError:
+        rows = []
+    conn.close()
+    warns = [f"opportunity {r['opportunity_id']} has unresolved motivating_refs: "
+             + ", ".join(f"{u['ref_type']}:{u['id']}[{u['status']}]" for u in r["unresolved_refs"])
+             for r in rows if r["unresolved_refs"]]
+    emit(envelope("opportunity list", ok=True, quest_id=quest_id,
+                  data={"opportunities": rows, "count": len(rows),
+                        "open": sum(1 for r in rows if r["status"] == "open"),
+                        "with_unresolved_refs": sum(1 for r in rows if r["unresolved_refs"])},
+                  warnings=warns))
+
+
+@opportunity.command("check")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def opportunity_check(ctx, quest_id):
+    """Read-only ADVISORY check: resolve every opportunity's motivating_refs against THIS quest's rows. Reports
+    refs that are missing or belong to another quest (cross_quest). NEVER blocks — purely informational."""
+    conn = _conn(ctx)
+    try:
+        opps = conn.execute("SELECT opportunity_id, motivating_refs FROM research_opportunity WHERE quest_id=? "
+                            "ORDER BY created_at, opportunity_id", (quest_id,)).fetchall()
+    except sqlite3.OperationalError:
+        opps = []
+    report = []
+    for o in opps:
+        try:
+            mr = json.loads(o["motivating_refs"]) if o["motivating_refs"] else None
+        except Exception:
+            mr = None
+        un = _resolve_quest_refs(conn, quest_id, mr if isinstance(mr, dict) else None)
+        if un:
+            report.append({"opportunity_id": o["opportunity_id"], "unresolved_refs": un})
+    repeat = _repeat_failure_warnings(conn, quest_id)
+    conn.close()
+    emit(envelope("opportunity check", ok=True, quest_id=quest_id,
+                  data={"opportunities_checked": len(opps), "unresolved": report, "all_resolved": not report,
+                        "repeated_failure": repeat, "no_repeat_risk": not repeat}))
+
+
+def _discovery(conn, quest_id):
+    """ADVISORY quest-local discovery summary (never blocking). Open opportunities + recommended next actions,
+    plus unsupported/refuted claims, parked/abandoned routes, and a negative/boundary findings count — all
+    derived from existing quest-local rows. Returns a plain dict for gate status."""
+    def rows(sql, *a):
+        try:
+            return conn.execute(sql, (quest_id, *a)).fetchall()
+        except sqlite3.OperationalError:
+            return []
+    opps = rows("SELECT opportunity_id, kind, rationale, motivating_refs FROM research_opportunity WHERE "
+                "quest_id=? AND status='open' ORDER BY created_at DESC, opportunity_id")
+    unresolved_opps = []
+    for o in opps:
+        try:
+            mr = json.loads(o["motivating_refs"]) if ("motivating_refs" in o.keys() and o["motivating_refs"]) else None
+        except Exception:
+            mr = None
+        un = _resolve_quest_refs(conn, quest_id, mr if isinstance(mr, dict) else None)
+        if un:
+            unresolved_opps.append({"opportunity_id": o["opportunity_id"], "unresolved_refs": un})
+    refuted = [r[0] for r in rows("SELECT claim_id FROM claim WHERE quest_id=? AND status='refuted'")]
+    unsupported = [r[0] for r in rows("SELECT claim_id FROM claim WHERE quest_id=? AND kind='claim' "
+                                      "AND status='open'")]
+    parked = [r[0] for r in rows("SELECT branch_id FROM branch WHERE quest_id=? AND status IN ('parked','abandoned')")]
+    neg = (rows("SELECT COUNT(*) FROM analysis WHERE quest_id=? AND verdict='blocks'") or [[0]])[0][0]
+    negev = (rows("SELECT COUNT(*) FROM claim_evidence e JOIN claim c ON c.claim_id=e.claim_id "
+                  "WHERE c.quest_id=? AND e.evidence_kind IN ('negative','boundary')") or [[0]])[0][0]
+    return {
+        "open_opportunities": [dict(opportunity_id=o["opportunity_id"], kind=o["kind"], rationale=o["rationale"]) for o in opps],
+        "recommended_next_actions": [f"{o['kind']}: {str(o['rationale'])[:80]}" for o in opps[:5]],
+        "opportunities_with_unresolved_refs": unresolved_opps,
+        "repeated_failure_warnings": _repeat_failure_warnings(conn, quest_id),
+        "refuted_claims": refuted,
+        "unsupported_claims": unsupported,
+        "parked_routes": parked,
+        "negative_findings": int(neg) + int(negev),
+    }
+
+
 @cli.group()
 def gate(): ...
 
@@ -2300,8 +2739,10 @@ def gate_status(ctx, quest_id):
         return os.environ.get(var) in ("0", "false", "no")
     active_waivers = sorted({v for v in _GATE_WAIVERS.values() if _waived(v)}
                             | {v for v in ("DEEPRESEARCH_AUTHENTICITY_GATE", "DEEPRESEARCH_PROVENANCE_GATE",
-                                           "DEEPRESEARCH_EVIDENCE_PROOF_GATE", "DEEPRESEARCH_FRESHNESS_GATE")
-                               if _waived(v)})
+                                           "DEEPRESEARCH_EVIDENCE_PROOF_GATE", "DEEPRESEARCH_FRESHNESS_GATE",
+                                           "DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE") if _waived(v)}
+                            | ({"DEEPRESEARCH_IDEA_NOVELTY_WAIVER"}  # truthy-to-enable, not =0
+                               if os.environ.get("DEEPRESEARCH_IDEA_NOVELTY_WAIVER") else set()))
 
     def put(name, status, reason="", route=None, ref=None, action=None):
         wv = _GATE_WAIVERS.get(name)
@@ -2327,10 +2768,21 @@ def gate_status(ctx, quest_id):
             "fix the contract + run `scope validate`")
 
     r = _latest_idea_select_row(conn, quest_id)
+    icontent = None
+    if r is not None and r["select_ref"]:
+        try:
+            icontent = json.loads(_read_artifact_text(r["select_ref"]) or "null")
+        except Exception:
+            icontent = None
+    nwaiver = (icontent or {}).get("novelty_waiver") if isinstance(icontent, dict) else None
     if adv: put("idea_gate", "advisory")
     elif r is None: put("idea_gate", "missing", "no idea.select", "idea", None, "record idea.select + idea validate")
-    elif r["valid"]: put("idea_gate", "pass", ref=r["select_id"])
-    else: put("idea_gate", "fail", "idea selection not validated", "idea", r["select_id"], "fix + idea validate")
+    elif r["valid"]:
+        put("idea_gate", "pass", ("novelty grounding waived: " + str(nwaiver)[:80]) if nwaiver else "", ref=r["select_id"])
+    else:
+        _nok, nreasons = _novelty_grounding(conn, quest_id, icontent, rigor, True) if isinstance(icontent, dict) else (False, [])
+        put("idea_gate", "fail", "idea selection not validated" + ("; " + "; ".join(nreasons) if nreasons else ""),
+            "idea", r["select_id"], "fix + idea validate")
 
     bc = conn.execute("SELECT contract_id, valid, validated_fingerprint FROM baseline_contract "
                       "WHERE quest_id=? ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
@@ -2412,7 +2864,7 @@ def gate_status(ctx, quest_id):
                 "`review validate`", "review", rv["verdict_id"], "re-review + re-run `review validate`")
         else: put("review_verdict", "pass", ref=rv["verdict_id"])
 
-    # Durable waiver records + finalize-acknowledgement status (Phase 3). An env-waived finalize-sensitive gate
+    # Durable waiver records + finalize-acknowledgement status. An env-waived finalize-sensitive gate
     # needs a durable quality_gate.waiver(finalize_ack) on a bound quest before finalize is allowed.
     try:
         durable_waivers = [dict(gate=r["gate"], source=r["source"], reason=r["reason"],
@@ -2426,7 +2878,7 @@ def gate_status(ctx, quest_id):
     acked = records.acked_finalize_gates(conn, quest_id)
     finalize_ack_missing = sorted(set(env_waived_sensitive) - acked) if bound else []
 
-    # Validator freshness (Phase 5): which computed flags are stale (dependencies changed after validation).
+    # Validator freshness: which computed flags are stale (dependencies changed after validation).
     # Computed regardless of rigor so staleness is visible even in advisory/scoping mode.
     def _sfp(rw):
         return rw["validated_fingerprint"] if rw is not None else None
@@ -2458,6 +2910,7 @@ def gate_status(ctx, quest_id):
     elif fin: put("finalize_readiness", "fail", "; ".join(fin), None, None, "resolve blocking gates above")
     else: put("finalize_readiness", "pass")
 
+    discovery = _discovery(conn, quest_id)  # ADVISORY quest-local discovery (compute before closing the conn)
     conn.close()
     emit(envelope("gate status", ok=True, quest_id=quest_id,
                   data={"rigor_level": rigor, "bound": bound, "gates": gates,
@@ -2466,6 +2919,7 @@ def gate_status(ctx, quest_id):
                         "finalize_ack_present": sorted(acked),
                         "finalize_ack_missing": finalize_ack_missing,
                         "stale_gates": stale_gates,
+                        "discovery": discovery,
                         "finalize_readiness": gates["finalize_readiness"]["status"],
                         "blocking_gates": [k for k, gv in gates.items() if gv["blocking"]]}))
 
@@ -2649,7 +3103,7 @@ def manuscript_coverage(ctx, quest_id, artifact_ref, spine_ref, at):
     ready = not reasons
     coverage = {"submission_ready": ready, "reasons": reasons,
                 "n_main_claims": len(main_claims), "unmapped_results": unmapped, "at": at}
-    fp = records.dep_fingerprint(conn, quest_id, "manuscript") if ready else None  # Phase 5: staleness signature
+    fp = records.dep_fingerprint(conn, quest_id, "manuscript") if ready else None  # staleness signature
     written = conn.execute(
         "UPDATE paper_spine SET submission_ready=?, coverage_json=?, coverage_at=?, validated_fingerprint=?, "
         "updated_at=COALESCE(?, updated_at) WHERE quest_id=?",

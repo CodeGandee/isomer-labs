@@ -15,6 +15,7 @@ SUITES = [
     ("waiver durability / finalize acknowledgement", "test_waiver_durability.py"),
     ("validator freshness / stale computed flags", "test_validator_freshness.py"),
     ("typed scope / eval contract", "test_scope_contract.py"),
+    ("quest-local discovery ledger", "test_discovery.py"),
 ]
 
 

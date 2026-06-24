@@ -48,6 +48,8 @@ def setup(tmp, qid, rigor="standard"):
               "created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)", (qid, "t", "o", "w", "running", rigor, "pending", AT, AT))
     c.execute("INSERT INTO artifact(artifact_id,quest_id,kind,ref,created_at) VALUES(?,?,?,?,?)",
               (qid + ":rc", qid, "research-contract", "c", AT))
+    c.execute("INSERT INTO reference(reference_id,quest_id,source,uri,fetched_at,created_at) "
+              "VALUES('REF1',?,?,?,?,?)", (qid, "manual", "doi:10.0/prior", AT, AT))  # durable closest-prior
     c.commit(); c.close()
     return db
 
@@ -67,6 +69,9 @@ def good_idea(without=None):
             "challenge": {"strongest_rejection": "x", "outside_family_alternative": "y", "why_retained_survives": "z"},
             "novelty_risk": {"novelty_label": "novel", "novelty_argument": "a", "risk_notes": "n",
                              "known_near_neighbors": ["Doe2024: prior (differs: our mechanism)"]},
+            "prior_comparison": {"closest_prior_refs": ["REF1"], "prior_did": "heuristic", "novelty_type": "mechanistic",
+                                 "proposed_difference": "learned", "why_prior_insufficient": "misses configs",
+                                 "distinguishing_experiment": "held-out MAPE"},
             "selection_gate": [{"candidate_id": "A", "scores": {"novelty": 2, "falsifiability": 2, "feasibility": 2,
                                 "evidence_potential": 1, "fit_to_objective": 1}, "total": 8, "verdict": "retain"},
                                {"candidate_id": "B", "scores": {"novelty": 1, "falsifiability": 1, "feasibility": 1,

@@ -67,8 +67,8 @@ def link(db, cid, kinds, provenance_ok=1, proof=True):
         c.execute("INSERT INTO claim_evidence(claim_id,source_kind,source_ref,relation,evidence_kind,"
                   "evidence_proof,created_at) VALUES(?,?,?,?,?,?,?)", (cid, "result", ref, "supports", ek, ep, AT))
         c.execute("INSERT INTO result(result_id,quest_id,experiment_id,validity,artifact_ref,"
-                  "provenance_route,provenance_ok,created_at) VALUES(?,?,?,?,?,?,?,?)",
-                  (ref, qid, "E1", "valid", "a", "executed", provenance_ok, AT))
+                  "provenance_route,provenance_ok,provenance_level,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                  (ref, qid, "E1", "valid", "a", "executed", provenance_ok, "artifact_backed", AT))
     c.commit(); c.close()
 
 
@@ -79,6 +79,9 @@ def good_idea(tmp, qid):
          "challenge": {"strongest_rejection": "x", "outside_family_alternative": "y", "why_retained_survives": "z"},
          "novelty_risk": {"novelty_label": "novel", "novelty_argument": "a", "risk_notes": "n",
                           "known_near_neighbors": ["Doe2024: closest prior (differs: our mechanism)"]},
+         "prior_comparison": {"closest_prior_refs": ["REF1"], "prior_did": "heuristic model", "novelty_type": "mechanistic",
+                              "proposed_difference": "learned end-to-end", "why_prior_insufficient": "misses configs",
+                              "distinguishing_experiment": "held-out MAPE"},
          "selection_gate": [{"candidate_id": "A", "scores": {"novelty": 2, "falsifiability": 2, "feasibility": 2,
                              "evidence_potential": 1, "fit_to_objective": 1}, "total": 8, "verdict": "retain"},
                             {"candidate_id": "B", "scores": {"novelty": 1, "falsifiability": 1, "feasibility": 1,
@@ -173,6 +176,10 @@ def main():
                   "dataset": "bench", "split": "test", "eval_protocol": "eval.py", "false_progress_signals": "train-split leak",
                   "baseline_route_expectation": "imported", "acceptance_criteria": "MAPE<8%"}})
         run(db, ["scope", "validate", "--quest-id", "f6"])  # idea selection (bound) requires a valid scope contract
+        c = sqlite3.connect(db); c.execute("PRAGMA foreign_keys=OFF")
+        c.execute("INSERT INTO reference(reference_id,quest_id,source,uri,fetched_at,created_at) "
+                  "VALUES('REF1','f6','manual','doi:10.0/prior',?,?)", (AT, AT))  # durable closest-prior for novelty grounding
+        c.commit(); c.close()
         good_idea(tmp, "f6")
         rec(db, {"record_type": "baseline.contract", "record_id": "f6:bc", "at": AT, "quest_id": "f6",
                  "baseline_id": "b", "baseline_name": "BL", "comparison_policy": "higher-is-better",

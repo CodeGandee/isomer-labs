@@ -161,13 +161,13 @@ the current local optimum.
 The goal is not to sound creative. The goal is to produce candidate mechanisms
 that are genuinely different in logic, evidence burden, or timing rationale.
 
-## Integrated ideation workflow: Phase A / B / C
+## Integrated ideation workflow: Diverge / Converge / Refine
 
 Use this end-to-end pattern when the route is not already forced by durable
 evidence. Treat it as a subroutine inside the main workflow, not as a
 replacement for the main workflow order.
 
-### Phase A. Diverge
+### Stage A. Diverge
 
 Goal: create a compact but meaningfully varied slate before judging winners.
 
@@ -189,7 +189,7 @@ During divergence:
 - do kill ideas that are incoherent, outside scope, or impossible in the current
   repo
 
-### Phase B. Converge
+### Stage B. Converge
 
 Goal: reduce the raw slate to a serious frontier that is usually `2-3`
 candidates and at most `5`.
@@ -207,10 +207,10 @@ Apply these filters:
 - novelty or value test: even if not novel, is the line still worth doing for
   transfer, negative-result, or infrastructure value?
 
-If the shortlist is still homogeneous after convergence, return to Phase A with
+If the shortlist is still homogeneous after convergence, return to Stage A with
 different lenses once.
 
-### Phase C. Refine
+### Stage C. Refine
 
 Goal: turn the winning candidate into a stable handoff contract for the
 experiment stage.

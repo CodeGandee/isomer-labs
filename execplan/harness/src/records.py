@@ -57,6 +57,7 @@ RECORD_MAP = {
     "baseline.contract":       dict(table="baseline_contract", pk=["contract_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "analysis.bridge":         dict(table="analysis_bridge", pk=["bridge_id"], id_from="record_id", mode="insert", force={"valid": 0}),
     "quality_gate.waiver":     dict(table="quality_gate_waiver", pk=["waiver_id"], id_from="record_id", mode="insert"),
+    "opportunity.record":      dict(table="research_opportunity", pk=["opportunity_id"], id_from="record_id", mode="upsert"),
     "operator_event.record":   dict(table="operator_intent_event", pk=["event_id"], id_from="record_id", mode="insert"),
     "quirk.append":            dict(table="quirk", pk=["quirk_id"], id_from="record_id", mode="insert"),
     "knowledge_pack.register": dict(table="knowledge_pack", pk=["pack_id"], id_from="record_id", mode="upsert"),
@@ -580,7 +581,7 @@ def _effort_gate(conn, quest_id):
             f"research-contract + GPU gates. Mapping: execplan/docs/claude-effort.md.")
 
 
-# ── Run mode + plan revision (Phases 1, 3) ───────────────────────────────────
+# ── Run mode + plan revision ───────────────────────────────────
 def _autonomy_gate(conn, quest_id):
     """Pre-loop gate: a quest may not START (not_started -> running) until the operator has chosen a
     run mode (quest.autonomy_mode IN ('auto','assistant')). Orthogonal to execution_mode. Resume transitions
@@ -979,7 +980,7 @@ def _finalize_review_gate(conn, quest_id):
     # enforced separately by _finalize_coverage_gate; BOTH are required for a complete finalize.
 
 
-# Finalize-sensitive gates and the env var that waives each (Phase 3). When one of these is env-waived on a
+# Finalize-sensitive gates and the env var that waives each. When one of these is env-waived on a
 # BOUND quest, finalize 'complete' requires a durable quality_gate.waiver acknowledgement for that gate.
 # Shared with cli.py (gate status surfaces the same mapping). 'manuscript_coverage' also covers campaign
 # coverage (no standalone env waiver); the analysis-bridge + provenance waivers cover the campaign path.
@@ -1042,7 +1043,7 @@ def _finalize_waiver_ack_gate(conn, quest_id):
             "finalize_ack=true, reason='…'. Env bypasses must be acknowledged, not silent.")
 
 
-# ── Validator freshness (Phase 5): stale computed-flag detection ────────────────────────────────────────
+# ── Validator freshness: stale computed-flag detection ────────────────────────────────────────
 # Each validator stamps a DEPENDENCY FINGERPRINT (signature of the records it validated over) onto its row;
 # the consuming gates + gate status recompute it and FAIL CLOSED (bound quests) when it no longer matches —
 # i.e. a dependency changed after validation. Timestamp-independent (works with the fixed test clock) and

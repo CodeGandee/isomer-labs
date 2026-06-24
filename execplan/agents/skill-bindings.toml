@@ -1,5 +1,10 @@
 # Authoritative role → installed-skill map (admin/install view).
 #
+# This file is the SOURCE OF TRUTH for which skills each role carries. The committed, idempotent installer
+# `../ops/reconcile-skills.py` reconciles the overlay catalog to this file (registers missing skills + binds
+# per role); run it after editing this file or adding skills under ../skills/, and as a pre-flight gate
+# (`reconcile-skills.py --check`). Do NOT rely on a manual loop-pro pass — that is how skills drift out of sync.
+#
 # Loop-pro installs each listed skill onto that role's launch profile (the INSTALL boundary). The RUNTIME
 # authority boundary is enforced in harness/src/records.py via the `--via skill:<id>:<role>` allowlist, so a
 # skill that slips onto the wrong role is still blocked apply-time. All pack-wrapper skills are Tier A

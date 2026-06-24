@@ -27,13 +27,15 @@ The purpose is to make related-work coverage durable, searchable, and reusable s
 
 List the durable knowledge you checked first:
 
-- quest `papers`
-- quest `ideas`
-- quest `decisions`
-- quest `knowledge`
-- global `papers`
-- global `knowledge`
-- global `templates`
+- this quest's `papers`
+- this quest's `ideas`
+- this quest's `decisions`
+- this quest's `knowledge`
+- shared read-only reference: enabled `knowledge` packs
+- shared read-only reference: `templates`
+
+(Memory is quest-isolated — there are no cross-quest/global papers or findings; the shared tier is
+platform reference material only, never another quest's run memory.)
 
 Record:
 

@@ -44,7 +44,13 @@ mechanism families → 2–3 candidates), apply the **selection gate** (0/1/2 on
 novelty/falsifiability/feasibility/evidence/fit; <7/10 ⇒ don't promote) and write a **pre-idea draft** + an
 **objective contract** (primary objective · trusted proxies · **false-progress signals** · hard constraints)
 before emitting a `selected` idea. Do a real related-work sweep (≥5 usable papers) and label novelty
-`novel | incremental-but-valuable | not-differentiated`.
+`novel | incremental-but-valuable | not-differentiated`. **Ground novelty in durable literature, not free
+text:** a `novel` (or publication-rigor) retained idea MUST carry a typed `prior_comparison` —
+`closest_prior_refs[]` that resolve to durable `reference` rows (`$HARNESS lit … → reference.record`;
+publication needs **≥2**) + `prior_did` · `proposed_difference` · `why_prior_insufficient` ·
+`distinguishing_experiment` · `novelty_type` (mechanistic | empirical | dataset_task | efficiency |
+negative_result). `idea validate` rejects decorative free-text novelty / unresolved priors / missing
+comparison fields; deferral needs an explicit reasoned `novelty_waiver` (scoping/advisory is exempt).
 
 **Typed idea selection (MANDATORY — this is what gates idea → experiment; methodology usage is NOT
 enough).** Write the typed selection to `runs/<q>/idea/select-<round>.json` — `objective_contract_ref`,
@@ -113,6 +119,11 @@ criterion}; `negative`/`boundary` {hypothesis, observed, implication}; `signific
 p-value/interval)}; `efficiency` {resource, metric, baseline}; `error_analysis` {error_category, subset,
 implication}. Result-backed evidence ALSO needs `provenance_ok=1` (run `result validate`); `reference`/
 `external` evidence needs an explicit `source`/`citation` and is never treated as local experimental proof.
+**Declared ≠ artifact-backed:** at PUBLICATION rigor a local result must reach `provenance_level=artifact_backed`
+— record the run's log/config/output as `artifact.record` rows and reference them (`log_ref`/`config_ref`/
+`output_artifacts`) + a `metric_source`, then re-run `result validate`; a declared-only result is not counted
+(use a cited `imported`/`trusted` route for external results, or `DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE=0` to
+waive). Standard rigor still accepts declared provenance.
 Uncounted evidence is reported with a clear reason (e.g. `ablation evidence not counted: missing changed_factor`). **Analysis→paper bridge (MANDATORY — this is what gates
 analysis → write; the Writer must NOT consume raw logs).** Write the typed bridge to
 `runs/<q>/analysis/bridge-<round>.json` — `supported_claims`/`weakened_or_refuted_claims`,
@@ -124,7 +135,15 @@ prose, not log dumps), `claim_to_evidence_map`, `evidence_to_section_recommendat
 coverage floor by `evidence_kind` (per-claim, not a global count). **The analysis cannot advance to an
 outline/write handoff until `campaign validate` passes** (the gate reads the validator flag, not artifact
 existence). This bridge is the writer's input and feeds the paper-spine (claim-evidence map, display plan,
-weak points, follow-ups).
+weak points, follow-ups). **Quest-local discovery (advisory, never a gate):** capture durable lessons —
+including **negative/failed/boundary** outcomes (`kind='lesson'`) — as `finding.add` with optional quest-local
+`links` (result_ids/claim_ids/experiment_id/…), and record next directions as `opportunity.record` citing this
+quest's evidence in `motivating_refs`. Refs are resolved quest-locally (missing / `cross_quest` refs are
+flagged as advisory warnings in `opportunity list`/`gate status`, never blocking); there is **no** cross-quest
+memory. Add an optional `attempt_signature` (method_key/parameter_key/condition/route/…) so the **advisory
+repeated-failure guard** (`opportunity check`, `gate status` discovery, `plan render`) can warn when a proposed
+step resembles a dropped opportunity / refuted claim / negative-boundary evidence / `lesson` finding — repeating
+is ALLOWED (not a gate/waiver, never sets `idea_select.valid=0`), but say what changed.
 
 ## outline (writer)
 

@@ -58,8 +58,13 @@ handoff ids + idempotent `record apply` mean a duplicate fire never double-dispa
    gate may report `status=fail` with a *stale* reason (or appear in `data.stale_gates`) when evidence/results/
    claims/spine/review target changed after the validator last ran — route back to re-run the relevant
    validator (`result`/`baseline`/`campaign`/`manuscript coverage`/`review` validate) before proceeding. When
-   no gate blocks (`finalize_readiness=pass`), proceed to the cursor's next stage. `decision`/`finalize`/`optimize` you do
-   yourself (orchestrator-internal); all other stages dispatch to the owning role. The decision discipline (name ≥2 candidates + mark losers + bottleneck
+   no gate blocks (`finalize_readiness=pass`), proceed to the cursor's next stage. **Quest-local discovery
+   (advisory):** when choosing among ablation / robustness / boundary / baseline-repair / new-idea / write,
+   consult `gate status` `data.discovery` (open opportunities + recommended_next_actions, unsupported/refuted
+   claims, parked routes, negative-findings count) and `$HARNESS opportunity list`; record the next direction
+   (and why, citing this quest's finding/result/claim ids) via `record apply --type opportunity.record`. This
+   layer is ADVISORY — it never blocks — and is strictly quest-local (no cross-quest memory). `decision`/
+   `finalize`/`optimize` you do yourself (orchestrator-internal); all other stages dispatch to the owning role. The decision discipline (name ≥2 candidates + mark losers + bottleneck
    classification + exploration-depth gate), the `optimize` frontier/search discipline, the `experiment` BO
    path, the **GPU gate** (normally already confirmed; route to operator-control only as a safety fallback),
    and the round-open + fan-out + dispatch mechanics are in **`reference/finalize-and-dispatch.md`**.

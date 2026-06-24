@@ -16,7 +16,7 @@ routing but does **not** replace the hard guards — they remain authoritative a
 | Gate | Typed record (table) | Validator command | Hard guard (records.py) — blocks | `gate status` key |
 |---|---|---|---|---|
 | Scope / eval contract | `scope.contract` (`scope_contract`, `valid`) | `scope validate` | idea selection requires it (via `idea validate`, bound) | `scope_contract` |
-| Idea selection | `idea.select` (`idea_select`, `valid`) | `idea validate` | idea→experiment handoff (`_idea_gate`) | `idea_gate` |
+| Idea selection | `idea.select` (`idea_select`, `valid`) | `idea validate` (selection pressure + valid `scope.contract` + durable novelty grounding: `prior_comparison.closest_prior_refs` → `reference` rows, ≥2 at publication) | idea→experiment handoff (`_idea_gate`) | `idea_gate` |
 | Baseline contract | `baseline.contract` (`baseline_contract`, `valid`) | `baseline validate` (route + eval contract + provenance-backed result) | `quest.baseline_gate=passed/waived` (`_baseline_contract_gate`) | `baseline_contract` |
 | Campaign coverage | claim evidence `evidence_kind` + `analysis.bridge` (`analysis_bridge`, `valid`) | `campaign validate` | analysis→outline/write handoff (`_analysis_bridge_gate`) | `campaign_coverage`, `analysis_bridge` |
 | Paper spine / outline | `paper_spine.upsert` (`paper_spine`) | `outline validate` (structural) | (feeds manuscript coverage) | `paper_spine`, `outline_valid` |
@@ -25,6 +25,52 @@ routing but does **not** replace the hard guards — they remain authoritative a
 
 Plus the pre-existing finalize guards (`_finalize_scholarship_gate`, `_finalize_authenticity_gate`,
 `_finalize_completeness_gate`) and the GPU gate (`_gpu_gate`).
+
+## Result provenance strength
+`result validate` computes both `provenance_ok` (the declared run-manifest holds up) and a
+validator-owned `provenance_level` (author cannot self-certify):
+- `declared` — an executed run-manifest only (command/code_revision/metric_source/run_status), nothing resolved;
+- `artifact_backed` — a `log_ref`/`config_ref`/`output_artifacts` reference resolves to an `artifact` row AND
+  `metric_source` is specified (any provided hash is hex-shaped). It does NOT verify metric-file contents;
+- `external_trusted` — the `imported`/`trusted` route (a cited external result);
+- `waived` — the `waived` route (an explicit, reasoned deferral);
+- `reexecuted` — reserved (re-execution is not auto-performed; only via a trusted/manual route).
+
+Campaign coverage counts a result's evidence at **standard** rigor on `provenance_ok=1` (declared is fine —
+unchanged at standard rigor). At **publication** rigor a local result must be `>= artifact_backed` (external_trusted /
+waived also pass); a declared-only result is **not counted** with the reason "provenance is declared only …",
+unless `DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE=0` waives it (surfaced in `gate status` `active_waivers`).
+Re-run `result validate` after the run's log/config/output artifacts change.
+
+## Discovery layer (advisory, quest-local — NOT a gate)
+Separate from the binding gates, `gate status` also carries an **advisory** `data.discovery` block (open
+`research_opportunity` rows + `recommended_next_actions`, refuted/unsupported claims, parked/abandoned routes,
+a negative/boundary findings count). It NEVER blocks a transition or finalize and never appears in
+`blocking_gates`. Agents record "what to try next and why" via `record apply --type opportunity.record`
+(kinds: next_experiment / ablation / robustness / boundary / baseline_repair / new_idea / failure_followup),
+citing this quest's finding/result/claim ids in `motivating_refs`; read it back with `opportunity list` or in
+the `plan render` Discovery section. **Quest-local only — there is no cross-quest/global/shared discovery
+memory.** (`bo status` reports a heuristic no-improvement streak, NOT Bayesian optimization; its
+`objective_sense` is read from the validated scope contract's `metric_direction`.)
+
+`opportunity.motivating_refs` and a finding's optional `links` (scope_contract/idea_select/experiment/
+result/claim/claim_evidence/analysis_bridge/paper_spine/branch/artifact ids) are **resolved quest-locally**:
+`opportunity list` / `opportunity check` / the `gate status` `data.discovery.opportunities_with_unresolved_refs`
+flag any ref that is `missing` or owned by another quest (`cross_quest`), and `plan render` marks it
+`!unresolved-refs`. This is **advisory** — unresolved refs never enter `blocking_gates` and never block a
+transition or finalize. A cross-quest ref is flagged invalid, never followed (no cross-quest memory). Negative
+/failed-path findings use `kind='lesson'`.
+
+**Repeated-failure advisory (quest-local).** An optional `attempt_signature` (idea_key/method_key/dataset/
+metric/parameter_key/baseline_id/condition/route/notes) on `opportunity.record` (and on idea-select content)
+is compared — read-only — against this quest's prior FAILED signals: dropped opportunities (signature
+overlap), refuted claims (cited or condition match), negative/boundary evidence (condition match), and
+`lesson` findings (method/idea-key match). Surfaced via `opportunity check` (`repeated_failure` /
+`no_repeat_risk`), `gate status` `data.discovery.repeated_failure_warnings`, and the `plan render`
+"Repeated-failure advisory" line. **Advisory only** — never enters `blocking_gates`, never affects
+`finalize_readiness`, never sets `idea_select.valid=0`, and needs no waiver. Repeating a failed path is
+allowed; the agent should just explain what changed. Quest-local only (a matching attempt in another quest is
+ignored — no cross-quest memory).
 
 ## Methodology resolution
 `task-result.methodology_used[].applied_as` is **not free text**: the Orchestrator runs `methodology check
@@ -61,9 +107,10 @@ plus `finalize_readiness` and `blocking_gates[]`. The Orchestrator dispatches to
 | `DEEPRESEARCH_COVERAGE_GATE=0` | finalize manuscript-coverage gate |
 | `DEEPRESEARCH_REVIEW_GATE=0` | finalize review-verdict gate |
 | `DEEPRESEARCH_IDEA_SLATE_MIN` / `DEEPRESEARCH_IDEA_SCORE_MIN` | idea-selection floors (per run) |
-| `DEEPRESEARCH_IDEA_NOVELTY_WAIVER=1` | allow `novelty_label='not_differentiated'` |
+| `DEEPRESEARCH_IDEA_NOVELTY_WAIVER=1` | allow `not_differentiated` + waive durable novelty grounding (visible in `active_waivers`) |
 | `DEEPRESEARCH_SCHOLARSHIP_MIN_REFS` / `_MIN_REF_CLAIMS` | scholarship bar |
 | `DEEPRESEARCH_PROVENANCE_GATE=0` | result-provenance enforcement in campaign coverage |
+| `DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE=0` | publication-rigor artifact-backed-provenance requirement |
 | `DEEPRESEARCH_EVIDENCE_PROOF_GATE=0` | evidence-kind proof enforcement in campaign coverage |
 | `DEEPRESEARCH_FRESHNESS_GATE=0` | validator-freshness (stale computed-flag) checks |
 | `DEEPRESEARCH_AUTHENTICITY_GATE=0` | finalize authenticity gate |
@@ -107,7 +154,7 @@ A **bound** quest FAILS CLOSED on a stale flag at the hard transition/finalize (
 `gate status` shows the per-gate stale reason and a top-level `stale_gates[]` list (computed even in
 scoping/advisory mode, where the hard gates stay permissive — staleness is visible but non-blocking). The
 fingerprint is **coarse**: any change to a tracked dependency invalidates the flag. A NULL fingerprint (legacy /
-pre-Phase-5) is treated as not-checked (history-safe). `result.provenance_ok` is fresh-by-construction (a
+legacy / not-fingerprinted) is treated as not-checked (history-safe). `result.provenance_ok` is fresh-by-construction (a
 `result.record` re-upsert force-resets it to 0). Waive all freshness checks with `DEEPRESEARCH_FRESHNESS_GATE=0`
 (surfaced in `active_waivers`). **After changing evidence, results, claims, the paper spine, or the review
 target, re-run the relevant validator** (`result validate` / `baseline validate` / `campaign validate` /

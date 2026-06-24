@@ -20,6 +20,9 @@ MIGRATIONS = [
     ("result", "provenance_route", "ALTER TABLE result ADD COLUMN provenance_route TEXT"),
     ("result", "provenance",       "ALTER TABLE result ADD COLUMN provenance TEXT"),
     ("result", "provenance_ok",    "ALTER TABLE result ADD COLUMN provenance_ok INTEGER NOT NULL DEFAULT 0"),
+    ("result", "provenance_level", "ALTER TABLE result ADD COLUMN provenance_level TEXT"),
+    ("finding_memory", "links", "ALTER TABLE finding_memory ADD COLUMN links TEXT"),
+    ("research_opportunity", "attempt_signature", "ALTER TABLE research_opportunity ADD COLUMN attempt_signature TEXT"),
     ("baseline_contract", "baseline_route", "ALTER TABLE baseline_contract ADD COLUMN baseline_route TEXT"),
     ("baseline_contract", "evidence_ref",   "ALTER TABLE baseline_contract ADD COLUMN evidence_ref TEXT"),
     ("baseline_contract", "valid",          "ALTER TABLE baseline_contract ADD COLUMN valid INTEGER NOT NULL DEFAULT 0"),
@@ -42,6 +45,19 @@ NEW_TABLES = [
      "  contract_ref TEXT,"
      "  valid INTEGER NOT NULL DEFAULT 0,"
      "  validated_fingerprint TEXT,"
+     "  created_at TEXT NOT NULL"
+     ")"),
+    ("research_opportunity",
+     "CREATE TABLE IF NOT EXISTS research_opportunity ("
+     "  opportunity_id TEXT PRIMARY KEY,"
+     "  quest_id TEXT NOT NULL REFERENCES quest(quest_id),"
+     "  round_index INTEGER,"
+     "  kind TEXT NOT NULL CHECK (kind IN ('next_experiment','ablation','robustness','boundary',"
+     "    'baseline_repair','new_idea','failure_followup')),"
+     "  rationale TEXT NOT NULL,"
+     "  motivating_refs TEXT,"
+     "  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','addressed','dropped','superseded')),"
+     "  proposed_by TEXT NOT NULL DEFAULT 'agent' CHECK (proposed_by IN ('agent','orchestrator','bo','operator')),"
      "  created_at TEXT NOT NULL"
      ")"),
     ("quality_gate_waiver",

@@ -15,6 +15,10 @@
     "kind": { "enum": ["idea", "decision", "knowledge", "lesson", "reference"] },
     "summary": { "type": "string" },
     "artifact_ref": { "type": "string" },
-    "grounded_by": { "type": "string", "description": "ref to the measurement/result the lesson is grounded in" }
+    "grounded_by": { "type": "string", "description": "ref to the measurement/result the lesson is grounded in" },
+    "links": {
+      "type": "object",
+      "description": "OPTIONAL quest-local lineage (advisory; all ids must belong to THIS quest — no cross-quest refs): scope_contract_id, idea_select_id, experiment_id, result_ids[], claim_ids[], claim_evidence_ids[], analysis_bridge_id, opportunity_ids[]. Negative/failed-path findings use kind='lesson'."
+    }
   }
 }

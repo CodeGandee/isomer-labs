@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""regression suite — Phase 5: validator freshness / stale computed flags.
+"""regression suite — validator freshness / stale computed flags.
 
 Each validator stamps a dependency FINGERPRINT onto its row; the consuming gates + gate status recompute it
 and FAIL CLOSED (bound quests) when a dependency changed after validation. Scoping/advisory stays permissive
@@ -13,7 +13,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 H = str(ROOT / "execplan" / "harness" / "bin" / "deepresearch")
 AT = "2026-06-18T00:00:00Z"
 FIN = {"DEEPRESEARCH_SCHOLARSHIP_MIN_REFS": "0", "DEEPRESEARCH_SCHOLARSHIP_MIN_REF_CLAIMS": "0",
-       "DEEPRESEARCH_COMPLETENESS_GATE_RIGOR": "none"}  # neutralize non-Phase-5 finalize hygiene gates
+       "DEEPRESEARCH_COMPLETENESS_GATE_RIGOR": "none"}  # neutralize the non-freshness finalize hygiene gates
 PASSED, FAILED = [], []
 
 

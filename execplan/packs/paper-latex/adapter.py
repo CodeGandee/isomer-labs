@@ -4,7 +4,8 @@ Entrypoint: render(...) per ../ADAPTER-CONTRACT.md (compiler kind), backing `ren
 
 Pipeline (degrades gracefully, always records an artifact):
   1. If `pandoc` + a LaTeX engine (xelatex/pdflatex, system or a TinyTeX install) are present:
-     pandoc md -> PDF (XeLaTeX), with a Unicode main font when available, a table of contents,
+     pandoc md -> PDF (XeLaTeX), with a Unicode main font when available, NO table of contents by
+     default (conference-paper style, like the DeepScientist reference; opt in with params toc=True),
      CJK handling (documentclass=ctexart) when the draft contains CJK, and \\cite resolution when a
      `.bib` is provided. Also writes the intermediate standalone `.tex` next to the PDF.
   2. Else if a LaTeX engine but no pandoc: wrap the Markdown in a minimal article `.tex` and compile it.
@@ -13,7 +14,7 @@ Pipeline (degrades gracefully, always records an artifact):
 No hard Python dependency: detection via shutil.which + a TinyTeX probe; compilation via subprocess.
 
 params (all optional): {"title": str, "bib": "<path to .bib>", "engine": "xelatex|pdflatex",
-                        "mainfont": str, "toc": bool}
+                        "mainfont": str, "toc": bool (default False — no table of contents)}
 input_path: the Markdown manuscript draft (the Writer's assembled paper).
 out_path:  target PDF path (a sibling `.tex` is written alongside).
 """
@@ -167,7 +168,9 @@ def render(*, command, input_path, out_path, params, quest_id):
     out_tex = out_pdf.with_suffix(".tex")
     title = params.get("title")
     bib = params.get("bib")
-    toc = params.get("toc", True)
+    # Default OFF: papers follow standard conference-paper style (title -> abstract -> sections, NO
+    # table of contents), matching the DeepScientist reference layout. Opt in per render via params toc=True.
+    toc = params.get("toc", False)
     cjk = _has_cjk(md)
     venue_info = _stage_venue(params.get("venue"), out_pdf.parent)
 

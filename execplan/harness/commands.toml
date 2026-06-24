@@ -152,7 +152,7 @@ idempotent = true
 reads = ["runs/state.sqlite", "runs/<quest-id>/objective/"]
 applies = []
 summary = "List recorded acceptance revisions (acceptance.md@rev-*) and confirmed amend-acceptance decisions."
-description = "Read-only Phase-6 view: the current acceptance_ref, any append-only acceptance.md@rev-* files, and confirmed decision(route='amend-acceptance') rows. Acceptance amendments are operator-confirmed + append-only; the original contract is never overwritten."
+description = "Read-only acceptance-amendment view: the current acceptance_ref, any append-only acceptance.md@rev-* files, and confirmed decision(route='amend-acceptance') rows. Acceptance amendments are operator-confirmed + append-only; the original contract is never overwritten."
 
 [[command]]
 name = "completeness audit"
@@ -652,7 +652,7 @@ idempotent = true
 reads = ["runs/state.sqlite"]
 applies = ["analysis_bridge.valid", "analysis_bridge.coverage_json"]
 summary = "Validate the analysis bridge (paper-facing) AND per-claim campaign coverage by evidence_kind under rigor floors; compute valid."
-description = "analysis->write readiness validator. FAILS unless (a) the latest analysis.bridge passes the typed paper-facing schema (claim->evidence map, paper-facing result paragraphs, limitations, figure/table recs) AND (b) every MAIN claim (kind='claim') meets the rigor coverage floor by evidence_kind ([gate_floors] campaign_required / campaign_baseline / campaign_anyof / campaign_significance_superiority) — claim-level, NOT a global experiment count. Writes the validator-computed valid + coverage_json onto the analysis_bridge row (the analyst cannot self-certify). The analysis->write handoff gate reads valid. An evidence_kind is counted ONLY when its result has validated provenance (Phase 1) AND it carries valid kind-specific proof (Phase 4: e.g. ablation needs changed_factor/controls/delta + a resolvable parent_result; significance needs method+effect; reference/external needs an explicit source) — otherwise it is reported 'not counted' with a clear reason. Waive proof with DEEPRESEARCH_EVIDENCE_PROOF_GATE=0 (visible in gate status; finalize-sensitive)."
+description = "analysis->write readiness validator. FAILS unless (a) the latest analysis.bridge passes the typed paper-facing schema (claim->evidence map, paper-facing result paragraphs, limitations, figure/table recs) AND (b) every MAIN claim (kind='claim') meets the rigor coverage floor by evidence_kind ([gate_floors] campaign_required / campaign_baseline / campaign_anyof / campaign_significance_superiority) — claim-level, NOT a global experiment count. Writes the validator-computed valid + coverage_json onto the analysis_bridge row (the analyst cannot self-certify). The analysis->write handoff gate reads valid. An evidence_kind is counted ONLY when its result has validated provenance AND it carries valid kind-specific proof (e.g. ablation needs changed_factor/controls/delta + a resolvable parent_result; significance needs method+effect; reference/external needs an explicit source) — otherwise it is reported 'not counted' with a clear reason. Waive proof with DEEPRESEARCH_EVIDENCE_PROOF_GATE=0 (visible in gate status; finalize-sensitive)."
 
 [[command]]
 name = "scope validate"
@@ -678,7 +678,7 @@ idempotent = true
 reads = ["runs/state.sqlite"]
 applies = ["baseline_contract.valid"]
 summary = "Validate the latest baseline.contract (route + eval contract + route-specific verification); compute valid."
-description = "Validator-owned baseline-contract gate. FAILS unless the latest baseline.contract declares a baseline_route (reproduced|imported|trusted|waived), carries a primary metric + comparison policy + dataset/split/eval protocol (or an explicit waiver) + an expected-baseline reference, AND satisfies route-specific verification: reproduced -> evidence_ref resolves to a baseline result with validated provenance (Phase 1); imported/trusted -> evidence_ref cites a source/paper/leaderboard; waived -> a non-empty waiver_reason. Writes the validator-computed valid flag onto the baseline_contract row (the author cannot self-certify via verification_verdict). `_baseline_contract_gate` reads valid: baseline_gate=passed needs valid=1 on a real route; baseline_gate=waived needs valid=1 with baseline_route='waived'."
+description = "Validator-owned baseline-contract gate. FAILS unless the latest baseline.contract declares a baseline_route (reproduced|imported|trusted|waived), carries a primary metric + comparison policy + dataset/split/eval protocol (or an explicit waiver) + an expected-baseline reference, AND satisfies route-specific verification: reproduced -> evidence_ref resolves to a baseline result with validated provenance; imported/trusted -> evidence_ref cites a source/paper/leaderboard; waived -> a non-empty waiver_reason. Writes the validator-computed valid flag onto the baseline_contract row (the author cannot self-certify via verification_verdict). `_baseline_contract_gate` reads valid: baseline_gate=passed needs valid=1 on a real route; baseline_gate=waived needs valid=1 with baseline_route='waived'."
 
 [[command]]
 name = "gate status"
@@ -730,7 +730,7 @@ idempotent = true
 reads = ["runs/state.sqlite"]
 applies = []
 summary = "Propose the next point(s) over a declared search_space using observed primary measurements."
-description = "Bayesian-optimization refiner. Reads search_space + completed (experiment_param, is_primary measurement) pairs and returns next candidate point(s) honoring the declared objective sense. Model/acquisition is configurable; skipped entirely when no search_space exists (heuristic refinement used instead). The caller records each suggestion as an idea/experiment with experiment_param.proposed_by='bo'. NOTE: the built-in policy is a PLACEHOLDER (returns a 'midpoint-default' suggestion with stub=true and a loud warning; it does NOT read observed results or update on negative findings) — install a bo-refiner adapter (knowledge_pack kind='refiner') for a real search policy. The stub must never be treated as optimization evidence."
+description = "Heuristic search-space refiner (NOT Bayesian optimization). Reads search_space + completed (experiment_param, is_primary measurement) pairs and returns next candidate point(s) honoring the declared objective sense. Skipped entirely when no search_space exists (heuristic refinement used instead). A real search policy (surrogate model / acquisition function) is provided only by installing a refiner adapter — the built-in is a placeholder. The caller records each suggestion as an idea/experiment with experiment_param.proposed_by='bo'. NOTE: the built-in policy is a PLACEHOLDER (returns a 'midpoint-default' suggestion with stub=true and a loud warning; it does NOT read observed results or update on negative findings) — install a bo-refiner adapter (knowledge_pack kind='refiner') for a real search policy. The stub must never be treated as optimization evidence."
 
 [[command]]
 name = "bo status"
@@ -742,8 +742,34 @@ mutates_state = false
 idempotent = true
 reads = ["runs/state.sqlite"]
 applies = []
-summary = "Report observed best, evaluated count, and convergence posture for the search space."
-description = "Feeds plateau/convergence detection: best primary objective so far, no-improvement streak vs convergence_patience."
+summary = "Report observed best, evaluated count, and a no-improvement streak (heuristic, NOT Bayesian optimization)."
+description = "Quest-local optimization posture for plateau detection. Returns best_primary, observations, and an HONEST trailing no_improvement_streak computed from the ordered primary measurements (objective_sense=higher_is_better, assumed; see the scope contract's metric_direction). method='heuristic (not Bayesian optimization)' — no model/acquisition function (pairs with the placeholder `bo suggest`)."
+
+[[command]]
+name = "opportunity list"
+group = "opportunity"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = false
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = []
+summary = "List the quest-local research-opportunity ledger ('what to try next and why'); ADVISORY, never a gate."
+description = "Read-only view of `research_opportunity` rows (opportunity_id, kind [next_experiment|ablation|robustness|boundary|baseline_repair|new_idea|failure_followup], status, rationale, motivating_refs, proposed_by, round_index, created_at) for a quest, open first then most-recent; optional --status filter. Each row carries an advisory `unresolved_refs` list (refs that are missing or owned by another quest). QUEST-LOCAL ONLY — motivating_refs cite this quest's finding/result/claim ids; there is no cross-quest/global discovery memory. Record an opportunity via the single write path: `record apply --type opportunity.record`. The discovery layer is advisory (it also appears in `gate status` data.discovery + `plan render`); it never blocks a transition or finalize."
+
+[[command]]
+name = "opportunity check"
+group = "opportunity"
+tier = "core"
+domain_pluggable = false
+bin = "bin/deepresearch"
+mutates_state = false
+idempotent = true
+reads = ["runs/state.sqlite"]
+applies = []
+summary = "Resolve every opportunity's motivating_refs against THIS quest's rows (ADVISORY; never blocks)."
+description = "Read-only check: for each `research_opportunity`, resolve `motivating_refs` quest-locally and report refs that are `missing` or owned by another quest (`cross_quest`). Supported ref types: finding/result/claim/claim_evidence/idea_select/experiment/analysis_bridge/paper_spine/branch/artifact/scope_contract/opportunity. ADVISORY ONLY — unresolved refs never enter blocking_gates and never block a transition or finalize; cross-quest refs are flagged invalid and never followed (no cross-quest memory). Returns all_resolved + a per-opportunity unresolved list."
 
 [[command]]
 name = "lit search"
@@ -907,7 +933,7 @@ idempotent = true
 reads = ["runs/state.sqlite"]
 applies = ["runs/state.sqlite"]
 summary = "Apply the domain validity gate to a result (sets result.validity) and compute its provenance_ok."
-description = "Default adapter checks metric completeness vs the objective contract and comparability vs baseline, setting validity valid|invalid|incomparable. Domains override via knowledge_pack(kind='validator') for correctness gates (e.g. allclose, statistical significance). This is the hard gate before a result can back a supported claim or update best_result_ref. ALSO computes the validator-owned provenance_ok flag from the result's declared provenance_route + manifest (executed needs command/code_revision-or-worktree/metric-source/run_status, failure needs failure_mode; imported/trusted need a source/note; waived needs a waiver_reason) — campaign coverage will not count this result's evidence_kind unless provenance_ok=1, or DEEPRESEARCH_PROVENANCE_GATE=0 waives enforcement."
+description = "Default adapter checks metric completeness vs the objective contract and comparability vs baseline, setting validity valid|invalid|incomparable. Domains override via knowledge_pack(kind='validator') for correctness gates (e.g. allclose, statistical significance). This is the hard gate before a result can back a supported claim or update best_result_ref. ALSO computes the validator-owned provenance_ok flag from the result's declared provenance_route + manifest (executed needs command/code_revision-or-worktree/metric-source/run_status, failure needs failure_mode; imported/trusted need a source/note; waived needs a waiver_reason) — campaign coverage will not count this result's evidence_kind unless provenance_ok=1, or DEEPRESEARCH_PROVENANCE_GATE=0 waives enforcement. ALSO computes the validator-owned provenance_level (declared | artifact_backed [a log/config/output reference resolves to an artifact row + metric_source] | external_trusted [imported/trusted] | waived; reexecuted is reserved). At PUBLICATION rigor a local result must be >= artifact_backed to be counted, unless DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE=0 waives it."
 
 [[command]]
 name = "metric validate"

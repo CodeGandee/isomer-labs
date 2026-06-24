@@ -41,7 +41,7 @@ def add_claim(db, qid, cid):
 
 
 def proof_for(ek, cid):
-    """Minimal VALID kind-specific proof (Phase 4) for positive fixtures; ablation's parent_result resolves
+    """Minimal VALID kind-specific proof for positive fixtures; ablation's parent_result resolves
     to the helper-inserted '<cid>-parent' result."""
     return {
         "main_result": {"metric": "acc", "direction": "higher"},
@@ -56,7 +56,7 @@ def proof_for(ek, cid):
     }.get(ek, {})
 
 
-def link(db, cid, kind, evkinds, provenance_ok=1, proof=True):
+def link(db, cid, kind, evkinds, provenance_ok=1, proof=True, provenance_level="artifact_backed"):
     c = sqlite3.connect(db); c.execute("PRAGMA foreign_keys=OFF")
     qid = (c.execute("SELECT quest_id FROM claim WHERE claim_id=?", (cid,)).fetchone() or [None])[0]
     for i, ek in enumerate(evkinds):
@@ -67,10 +67,10 @@ def link(db, cid, kind, evkinds, provenance_ok=1, proof=True):
         ep = json.dumps(p) if proof else None
         c.execute("INSERT INTO claim_evidence(claim_id,source_kind,source_ref,relation,evidence_kind,"
                   "evidence_proof,created_at) VALUES(?,?,?,?,?,?,?)", (cid, kind, ref, "supports", ek, ep, AT))
-        if kind == "result":  # back the evidence with a result; provenance_ok controls whether coverage counts it
+        if kind == "result":  # back the evidence with a result; provenance_ok + level control coverage counting
             c.execute("INSERT INTO result(result_id,quest_id,experiment_id,validity,artifact_ref,"
-                      "provenance_route,provenance_ok,created_at) VALUES(?,?,?,?,?,?,?,?)",
-                      (ref, qid, "E1", "valid", "a", "executed", provenance_ok, AT))
+                      "provenance_route,provenance_ok,provenance_level,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                      (ref, qid, "E1", "valid", "a", "executed", provenance_ok, provenance_level, AT))
     c.commit(); c.close()
 
 
@@ -295,7 +295,7 @@ def main():
         check("J12 new: blocked without waiver, counted with DEEPRESEARCH_PROVENANCE_GATE=0",
               rno.returncode != 0 and rwv.returncode == 0, "no=%s waived=%s" % (rno.returncode, rwv.returncode))
 
-        # ---- Phase 2: baseline validator (validator-owned; author cannot self-certify) ----
+        # ---- baseline validator (validator-owned; author cannot self-certify) ----
         # B1: bare author-asserted verified_match (no route/eval evidence) -> validate fails + gate blocks
         print("B1 author-asserted verified_match without validation evidence:")
         db = setup(tmp, "b1")
@@ -383,7 +383,7 @@ def main():
         rg = set_baseline_gate(db, "b7", "passed")
         check("B7 new: scoping baseline gate advisory (unvalidated 'passed' allowed)", rg.returncode == 0, rg.stdout[:160])
 
-        # ---- Phase 4: evidence-kind proof (a label is not proof) ----
+        # ---- evidence-kind proof (a label is not proof) ----
         def cov_setup(qid, rigor="standard"):
             db = setup(tmp, qid, rigor); add_claim(db, qid, "C1")
             return db
@@ -422,7 +422,7 @@ def main():
         check("E3 new: malformed proof not counted (malformed proof)",
               r.returncode != 0 and "malformed proof" in r.stdout, r.stdout[:260])
 
-        # E4: result-backed evidence STILL requires provenance_ok=1 (Phase 1 preserved under Phase 4)
+        # E4: result-backed evidence STILL requires provenance_ok=1 (provenance preserved under evidence-proof)
         print("E4 proven-kind but provenance-less result still not counted:")
         db = cov_setup("e4")
         link(db, "C1", "result", ["main_result", "baseline_comparison"], proof=True)
@@ -477,6 +477,76 @@ def main():
         check("E8 new: proof-less blocked; DEEPRESEARCH_EVIDENCE_PROOF_GATE=0 counts; gate status shows reason",
               rno.returncode != 0 and rwv.returncode == 0 and "not counted" in (g["reason"] or ""),
               "no=%s waived=%s reason=%s" % (rno.returncode, rwv.returncode, g["reason"]))
+
+        # ---- Artifact-backed / verified provenance (a second provenance-strength layer) ----
+        def art_result(db, qid, rid, prov, artifacts=()):  # record artifact rows + a result, then validate
+            c = sqlite3.connect(db); c.execute("PRAGMA foreign_keys=OFF")
+            for i, ref in enumerate(artifacts):
+                c.execute("INSERT INTO artifact(artifact_id,quest_id,kind,ref,created_at) VALUES(?,?,?,?,?)",
+                          (f"{qid}:art{i}", qid, "log", ref, AT))
+            c.commit(); c.close()
+            rec(db, {"record_type": "result.record", "record_id": rid, "at": AT, "quest_id": qid,
+                     "experiment_id": "E1", "artifact_ref": "x", "provenance_route": "executed", "provenance": prov})
+            return run(db, ["result", "validate", "--result-id", rid])
+
+        EXE = {"command": "python t.py", "code_revision": "abc123", "run_status": "completed"}
+
+        print("A1 artifact-backed: references resolve -> provenance_level=artifact_backed:")
+        db = setup(tmp, "a1"); add_experiment(db, "a1")
+        rv = art_result(db, "a1", "a1:R", {**EXE, "metric_source": "runs/a1/log.txt", "log_ref": "runs/a1/log.txt"},
+                        artifacts=["runs/a1/log.txt"])
+        check("A1 new: resolvable artifact -> artifact_backed",
+              rv.returncode == 0 and jdata(rv)["provenance_level"] == "artifact_backed", rv.stdout[:220])
+
+        print("A2 unresolved artifact reference -> declared (with reason):")
+        db = setup(tmp, "a2"); add_experiment(db, "a2")
+        rv = art_result(db, "a2", "a2:R", {**EXE, "metric_source": "runs/a2/nope.txt", "log_ref": "runs/a2/nope.txt"})
+        check("A2 new: unresolved reference -> declared + 'artifact reference unresolved'",
+              jdata(rv)["provenance_level"] == "declared"
+              and any("unresolved" in r for r in jdata(rv)["artifact_backed_reasons"]), rv.stdout[:220])
+
+        print("A3 missing metric_source -> not artifact_backed:")
+        db = setup(tmp, "a3"); add_experiment(db, "a3")
+        rv = art_result(db, "a3", "a3:R", {**EXE, "log_ref": "runs/a3/log.txt"}, artifacts=["runs/a3/log.txt"])
+        check("A3 new: missing metric_source -> declared + reason",
+              jdata(rv)["provenance_level"] == "declared"
+              and any("metric_source" in r for r in jdata(rv)["artifact_backed_reasons"]), rv.stdout[:220])
+
+        print("A4 publication rejects declared-only unless waived:")
+        db = setup(tmp, "a4", rigor="publication"); add_claim(db, "a4", "C1")
+        link(db, "C1", "result", ["main_result", "baseline_comparison", "ablation", "significance"], provenance_level="declared")
+        record_baseline(db, "a4", "verified_match"); set_baseline_gate(db, "a4", "passed")
+        record_bridge(db, "a4", wj(tmp, "a4.json", good_bridge()))
+        r_no = cov_valid(db, "a4")
+        r_w = cov_valid(db, "a4", {"DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE": "0"})
+        check("A4 new: declared-only blocked at publication; waiver lifts the artifact requirement",
+              r_no.returncode != 0 and "declared only" in r_no.stdout and "declared only" not in r_w.stdout,
+              "no=%s w=%s" % (r_no.stdout[:160], r_w.stdout[:120]))
+
+        print("A5 trusted-external result counts at publication:")
+        db = setup(tmp, "a5", rigor="publication"); add_claim(db, "a5", "C1")
+        link(db, "C1", "result", ["main_result", "baseline_comparison", "ablation", "robustness", "significance"], provenance_level="external_trusted")
+        record_baseline(db, "a5", "verified_match"); set_baseline_gate(db, "a5", "passed")
+        record_bridge(db, "a5", wj(tmp, "a5.json", good_bridge()))
+        r = cov_valid(db, "a5")
+        check("A5 new: external_trusted not blocked by the artifact requirement", "declared only" not in r.stdout and r.returncode == 0, r.stdout[:200])
+
+        print("A6 standard rigor still counts declared provenance:")
+        db = setup(tmp, "a6"); add_claim(db, "a6", "C1")
+        link(db, "C1", "result", ["main_result", "baseline_comparison", "ablation"], provenance_level="declared")
+        record_baseline(db, "a6", "verified_match"); set_baseline_gate(db, "a6", "passed")
+        record_bridge(db, "a6", wj(tmp, "a6.json", good_bridge()))
+        r = cov_valid(db, "a6")
+        check("A6 new: standard rigor counts declared provenance", r.returncode == 0, r.stdout[:200])
+
+        print("A7 gate status surfaces the artifact-provenance reason + waiver:")
+        db = setup(tmp, "a7", rigor="publication"); add_claim(db, "a7", "C1")
+        link(db, "C1", "result", ["main_result", "baseline_comparison", "ablation"], provenance_level="declared")
+        g = jdata(run(db, ["gate", "status", "--quest-id", "a7"]))["gates"]["campaign_coverage"]
+        d = jdata(run(db, ["gate", "status", "--quest-id", "a7"], {"DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE": "0"}))
+        check("A7 new: gate status declared-only reason + waiver visible",
+              "declared only" in (g["reason"] or "") and "DEEPRESEARCH_ARTIFACT_PROVENANCE_GATE" in d["active_waivers"],
+              "reason=%s active=%s" % (g["reason"], d.get("active_waivers")))
 
         print("Regime: scoping rigor advisory:")
         db = setup(tmp, "sc", rigor="scoping"); add_round_write(db, "sc")

@@ -184,7 +184,7 @@ def main():
         rc = run(db, ["manuscript", "coverage", "--quest-id", "j5", "--artifact-ref", man, "--at", AT])
         ready = json.loads(rc.stdout)["data"]["submission_ready"]
         check("J5b coverage computes submission_ready=true on a clean paper", ready, rc.stdout[:300])
-        # the review gate is env-waived here (no review verdict in this suite); Phase 3 requires a durable
+        # the review gate is env-waived here (no review verdict in this suite); the finalize-ack gate requires a durable
         # acknowledgement for the env-waived finalize-sensitive gate before finalize 'complete'.
         run(db, ["record", "apply", "--json", json.dumps(
             {"record_type": "quality_gate.waiver", "record_id": "j5:wv", "at": AT, "quest_id": "j5",

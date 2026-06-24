@@ -45,7 +45,7 @@ You are the orchestrator collecting a specialist's result. One bounded turn. See
    and route deterministically by `route_target`: `reject`/`borderline` → open the next handoff to
    **experiment** (missing_experiments), **analysis** (missing_analysis), or **write** (overclaims /
    unsupported_claims / rewrite_requirements), carrying the verdict's `*_todo[]` as the task brief; do NOT
-   route to finalize. `accept` → the review side permits finalize, but `finalize complete` still requires
+   route to finalize. `accept` → the review side permits finalize, but a `complete` finalize.record still requires
    `manuscript coverage` (`submission_ready=true`) — both gates are enforced at the write path. A `borderline`
    at standard rigor needs an operator `review confirm` before finalize (publication never permits borderline).
 2b. **Methodology-resolution check (Tier-3 gate).** For each `methodology_used[]` item, run

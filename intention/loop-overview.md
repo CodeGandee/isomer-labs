@@ -73,12 +73,13 @@ Harness tools (deterministic; no LLM; the trust boundary):
 - **Git checkpoint**: commit durable artifacts into the quest worktree; manage branches/worktrees.
   Replaces the prior `git.auto_checkpoint`.
 - **Artifact compiler**: render reports/figures (e.g. LaTeX/markdown/plots). *Domain-pluggable.*
-- **Idea refiner (Bayesian optimization)**: a deterministic harness command that reads the
-  `search_space` + each experiment's `experiment_param` + the primary `measurement`, and proposes the
-  next point to evaluate. Used when a quest declares a tunable search space; the proposal is recorded
-  as a new idea/experiment (`experiment_param.proposed_by = 'bo'`). Replaces the prior
-  Bayesian-optimization hypothesis refinement. The Orchestrator may instead refine ideas heuristically
-  from findings memory when no search space is defined.
+- **Idea refiner (`bo` — heuristic search-space proposer, not Bayesian optimization)**: a
+  deterministic harness command that reads the `search_space` + each experiment's `experiment_param` +
+  the primary `measurement`, and proposes a next point to evaluate via a deterministic placeholder
+  heuristic (midpoint/default sampling — no surrogate model or acquisition function). Used when a quest
+  declares a tunable search space; the proposal is recorded as a new idea/experiment
+  (`experiment_param.proposed_by = 'bo'`). The Orchestrator may instead refine ideas heuristically from
+  findings memory when no search space is defined.
 - **Literature / web search**: a generic harness command for arxiv + web retrieval; fetched sources
   land in the `reference` table (cached under `runs/<quest>/refs/`) and become `claim_evidence` of
   `source_kind = 'reference'`. References are **quest-owned** — each quest fetches and caches its own

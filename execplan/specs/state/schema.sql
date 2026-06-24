@@ -219,7 +219,7 @@ CREATE TABLE IF NOT EXISTS result (
     validity       TEXT NOT NULL DEFAULT 'unchecked'
                     CHECK (validity IN ('unchecked','valid','invalid','incomparable')),
     artifact_ref   TEXT NOT NULL,                 -- runs/<quest>/round-<n>/result.json
-    -- Reconstructable-run provenance (Phase 1). provenance_route is author-DECLARED; provenance is the
+    -- Reconstructable-run provenance . provenance_route is author-DECLARED; provenance is the
     -- author-supplied run-manifest JSON (command/config/seed/dataset/split/metric_source/code_revision/
     -- worktree/env/log/output_artifacts/run_status/failure_mode/metric_notes). provenance_ok is the
     -- VALIDATOR-computed flag (set ONLY by `result validate`; the author cannot self-certify). Campaign
@@ -227,6 +227,11 @@ CREATE TABLE IF NOT EXISTS result (
     provenance_route TEXT,                         -- executed|imported|trusted|waived (NULL on legacy rows)
     provenance       TEXT,                         -- run-manifest JSON (route-specific required keys)
     provenance_ok    INTEGER NOT NULL DEFAULT 0,   -- 0/1; set ONLY by `result validate`
+    -- VALIDATOR-computed provenance STRENGTH (set ONLY by `result validate`; author cannot self-certify):
+    -- declared (executed manifest only) | artifact_backed (a log/config/output reference resolves to an
+    -- artifact row + metric_source) | reexecuted (reserved; trusted/manual only) | external_trusted
+    -- (imported/trusted route) | waived. Publication rigor requires >= artifact_backed for local results.
+    provenance_level TEXT,                          -- NULL on legacy rows -> treated as 'declared'
     created_at     TEXT NOT NULL
 );
 
@@ -306,7 +311,7 @@ CREATE TABLE IF NOT EXISTS claim_evidence (
     -- empirical role of this evidence for claim-level campaign coverage. Closed vocab enforced at the
     -- record layer (SQLite cannot ADD a CHECK via ALTER); NULL on pre-rows (history-safe).
     evidence_kind TEXT,                            -- baseline_comparison|main_result|ablation|robustness|negative|efficiency|boundary|qualitative|significance|error_analysis
-    -- Kind-specific PROOF metadata (Phase 4): author-supplied JSON the campaign-coverage validator reads to
+    -- Kind-specific PROOF metadata: author-supplied JSON the campaign-coverage validator reads to
     -- decide whether an evidence_kind actually counts (e.g. ablation needs changed_factor/controls/delta +
     -- a resolvable parent_result; significance needs method+effect). NULL on legacy rows -> unproven for
     -- kinds that require proof. Not authoritative beyond the coverage count.
@@ -359,7 +364,7 @@ CREATE TABLE IF NOT EXISTS paper_spine (
     submission_ready  INTEGER NOT NULL DEFAULT 0,  -- 0/1; set ONLY by `manuscript coverage`
     coverage_json     TEXT,                         -- structured coverage verdict the finalize gate consumes
     coverage_at       TEXT,
-    validated_fingerprint TEXT,                      -- Phase 5: dependency signature at coverage time (staleness)
+    validated_fingerprint TEXT,                      -- dependency signature at coverage time (staleness)
     created_at        TEXT NOT NULL,
     updated_at        TEXT NOT NULL
 );
@@ -380,11 +385,11 @@ CREATE TABLE IF NOT EXISTS review_verdict (
     valid              INTEGER NOT NULL DEFAULT 0,   -- set ONLY by `review validate`
     operator_confirmed INTEGER NOT NULL DEFAULT 0,   -- set by `review confirm` (borderline @ standard)
     route_target       TEXT,                      -- validator-computed: experiment|analysis|write|finalize
-    validated_fingerprint TEXT,                   -- Phase 5: dependency signature at validation time (staleness)
+    validated_fingerprint TEXT,                   -- dependency signature at validation time (staleness)
     created_at         TEXT NOT NULL
 );
 
--- Durable, auditable quality-gate waivers / finalize acknowledgements (Phase 3). An env-var gate waiver is
+-- Durable, auditable quality-gate waivers / finalize acknowledgements. An env-var gate waiver is
 -- visible in `gate status`, but a BOUND quest may not finalize 'complete' while a finalize-sensitive gate is
 -- env-waived unless a durable waiver row with finalize_ack=1 + a reason exists for that gate (the
 -- _finalize_waiver_ack_gate enforces this). reason is REQUIRED. source records how the waiver arose.
@@ -438,6 +443,28 @@ CREATE TABLE IF NOT EXISTS scope_contract (
     created_at           TEXT NOT NULL
 );
 
+-- ADVISORY quest-local discovery ledger: "what to try next and why", grounded in quest-local
+-- evidence (motivating_refs -> finding/result/claim ids of THIS quest). NOT a gate (no validator flag, never
+-- blocks); the orchestrator + gate status surface it to guide the next action. QUEST-LOCAL ONLY — no
+-- cross-quest references, no global/shared memory.
+CREATE TABLE IF NOT EXISTS research_opportunity (
+    opportunity_id TEXT PRIMARY KEY,
+    quest_id       TEXT NOT NULL REFERENCES quest(quest_id),
+    round_index    INTEGER,
+    kind           TEXT NOT NULL CHECK (kind IN ('next_experiment','ablation','robustness','boundary',
+                                                 'baseline_repair','new_idea','failure_followup')),
+    rationale      TEXT NOT NULL,                  -- why this is worth trying, grounded in evidence
+    motivating_refs TEXT,                          -- JSON: quest-local finding/result/claim ids that motivate it
+    attempt_signature TEXT,                         -- OPTIONAL coarse JSON {idea_key,method_key,dataset,metric,
+                                                   -- parameter_key,baseline_id,condition,route,notes} compared
+                                                   -- (advisory, quest-local) against prior failed/dropped signals
+    status         TEXT NOT NULL DEFAULT 'open'
+                    CHECK (status IN ('open','addressed','dropped','superseded')),
+    proposed_by    TEXT NOT NULL DEFAULT 'agent'
+                    CHECK (proposed_by IN ('agent','orchestrator','bo','operator')),
+    created_at     TEXT NOT NULL
+);
+
 -- baseline/metric contract: the typed comparator contract that STRENGTHENS the existing quest.baseline_gate.
 -- The rich content (metric_ids[], validity_threats[]) lives in the contract_ref artifact; the row promotes the
 -- gate-relevant scalars. Acceptability is VALIDATOR-computed: `baseline validate` sets valid=1; the
@@ -459,14 +486,14 @@ CREATE TABLE IF NOT EXISTS baseline_contract (
                            ('verified_match','close_match','trusted_with_caveats','diverged','broken','waived')),
     waiver_reason        TEXT,
     contract_ref         TEXT,                     -- artifact path: metric_ids[] + validity_threats[] rich content
-    -- Validator-owned baseline acceptability (Phase 2). baseline_route is author-DECLARED; evidence_ref is
+    -- Validator-owned baseline acceptability. baseline_route is author-DECLARED; evidence_ref is
     -- route-dependent (reproduced -> a baseline result_id that must carry validated provenance; imported/
     -- trusted -> a citation/source/note). valid is the VALIDATOR-computed flag (set ONLY by `baseline
     -- validate`; the author cannot self-certify via verification_verdict). The baseline gate consumes valid.
     baseline_route       TEXT,                     -- reproduced|imported|trusted|waived (NULL on legacy rows)
     evidence_ref         TEXT,                     -- result_id (reproduced) | source/citation (imported/trusted)
     valid                INTEGER NOT NULL DEFAULT 0, -- 0/1; set ONLY by `baseline validate`
-    validated_fingerprint TEXT,                      -- Phase 5: dependency signature at validation time (staleness)
+    validated_fingerprint TEXT,                      -- dependency signature at validation time (staleness)
     created_at           TEXT NOT NULL
 );
 
@@ -483,7 +510,7 @@ CREATE TABLE IF NOT EXISTS analysis_bridge (
     bridge_ref   TEXT NOT NULL,            -- artifact path to the typed analysis-bridge.json
     valid        INTEGER NOT NULL DEFAULT 0,   -- set ONLY by `campaign validate` (bridge structure AND coverage)
     coverage_json TEXT,                      -- per-claim coverage verdict the gate/report consume
-    validated_fingerprint TEXT,              -- Phase 5: dependency signature at validation time (staleness)
+    validated_fingerprint TEXT,              -- dependency signature at validation time (staleness)
     created_at   TEXT NOT NULL
 );
 
@@ -496,6 +523,10 @@ CREATE TABLE IF NOT EXISTS finding_memory (
     summary       TEXT NOT NULL,
     artifact_ref  TEXT,
     grounded_by   TEXT,                            -- ref to the measurement/result it is grounded in
+    links         TEXT,                            -- OPTIONAL quest-local lineage JSON (scope_contract_id,
+                                                   -- idea_select_id, experiment_id, result_ids[], claim_ids[],
+                                                   -- claim_evidence_ids[], analysis_bridge_id, opportunity_ids[]).
+                                                   -- Advisory; quest-local only (no cross-quest refs).
     created_at    TEXT NOT NULL,
     updated_at    TEXT NOT NULL
 );

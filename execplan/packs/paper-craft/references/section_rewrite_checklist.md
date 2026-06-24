@@ -190,7 +190,7 @@ Check that the paper:
 - points to appendix or code artifacts where appropriate
 - describes artifact availability consistently across abstract, main text, appendix, and reproducibility statements
 - does not present planned, commented, or stale code paths as if they were verified current artifacts
-- includes prescriptive future-facing guidance for follow-up quests on the same problem: which routes are now closed by falsification (and the regime in which they are closed), which knobs were not exhausted, which cross-distribution or scaling axes remain unprobed, and which alternative families would be the highest-value next pass. State each as a directed claim ("a future pass should…", "do not retry X without first…"), not a passive enumeration of open questions, so a sibling quest reading this section during cross-quest recall can lift it directly into idea-stage selection.
+- includes prescriptive future-facing guidance for follow-up quests on the same problem: which routes are now closed by falsification (and the regime in which they are closed), which knobs were not exhausted, which cross-distribution or scaling axes remain unprobed, and which alternative families would be the highest-value next pass. State each as a directed claim ("a future pass should…", "do not retry X without first…"), not a passive enumeration of open questions, so a reader can lift the guidance directly into the design of a follow-up study.
 
 Do not use limitation language performatively. The limitation should calibrate trust, not just check a box.
 

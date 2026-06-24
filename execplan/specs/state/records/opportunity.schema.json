@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepresearch/records/opportunity",
+  "title": "opportunity record",
+  "description": "ADVISORY quest-local discovery ledger entry: 'what to try next and why', grounded in this quest's evidence. record_id = opportunity_id; upsert lets status advance (open -> addressed/dropped/superseded). NOT a gate (no validator flag, never blocks). QUEST-LOCAL ONLY: motivating_refs cite finding/result/claim ids of THIS quest; there is no cross-quest/global/shared discovery memory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record_id", "at", "quest_id", "kind", "rationale"],
+  "properties": {
+    "record_type": { "const": "opportunity.record" },
+    "record_id": { "type": "string", "description": "opportunity_id" },
+    "at": { "type": "string" },
+    "quest_id": { "type": "string", "description": "owning quest; REQUIRED — opportunities are quest-local" },
+    "round_index": { "type": "integer", "minimum": 0 },
+    "kind": { "enum": ["next_experiment", "ablation", "robustness", "boundary", "baseline_repair", "new_idea", "failure_followup"] },
+    "rationale": { "type": "string", "minLength": 1, "description": "why this is worth trying, grounded in evidence" },
+    "motivating_refs": {
+      "type": "object",
+      "description": "quest-local evidence that motivates this opportunity, e.g. {finding:[...], result:[...], claim:[...]}; ids must belong to THIS quest (no cross-quest refs)."
+    },
+    "status": { "enum": ["open", "addressed", "dropped", "superseded"], "default": "open" },
+    "proposed_by": { "enum": ["agent", "orchestrator", "bo", "operator"], "default": "agent" },
+    "attempt_signature": {
+      "type": "object",
+      "description": "OPTIONAL coarse signature for ADVISORY quest-local repeated-failure detection (idea_key, method_key, dataset, metric, parameter_key, baseline_id, condition, route, notes). Compared against dropped opportunities / refuted claims / negative-boundary evidence / lesson findings of THIS quest. Never a validation requirement and never blocks."
+    }
+  }
+}

@@ -44,9 +44,13 @@ M(){ houmao-mgr project --project-dir "$P" "$@"; }
 
 ## Pre-flight 🟢 (read-only gate — must pass before anything below)
 ```bash
-python3 "$HARNESS" selfcheck            # ok=true, 40 record types, 39 invariants, deps ok
+python3 "$HARNESS" selfcheck            # ok=true, 42 record types, 39 invariants, deps ok
 M status                                # overlay healthy
 M skills list   | grep -c deepresearch- # 21 (9 loop/control + 12 pack-wrapper skills; per-role install in agents/skill-bindings.toml)
+# Skill-install reconcile gate — the catalog must match agents/skill-bindings.toml (source of truth). If the
+# source gained skills without a re-install (e.g. a methodology port), `grep -c` is < 21 and launched agents
+# silently miss them. Verify, and FIX with the same script (idempotent; drop --check to apply):
+python3 "$P/execplan/ops/reconcile-skills.py" --check   # exit 0 = OK; exit 1 = drift (re-run without --check)
 M profile list  | grep -c deepresearch- # 6
 M agents list   | grep instances        # instances [] (nothing live yet)
 test ! -f "$P/runs/state.sqlite" && echo "DB absent (expected)"
@@ -91,7 +95,7 @@ credential change, **relaunch agents fresh** (a bare `relaunch` reuses the old t
 
 ## Step 2 — Initialize the platform DB 🟡
 ```bash
-"$HARNESS" state init                   # creates $P/runs/state.sqlite (34 tables, 13 stages)
+"$HARNESS" state init                   # creates $P/runs/state.sqlite (36 tables, 13 stages)
 ```
 Verify 🟢: `"$HARNESS" state validate`  → `ok:true, checked:39`.
 **Rollback (pre-quest only):** `rm -f "$P/runs/state.sqlite"`

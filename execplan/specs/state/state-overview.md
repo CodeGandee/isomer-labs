@@ -98,6 +98,8 @@ Research-quality gate records (each carries a validator-computed flag the author
 binding gates consume the flag, and a `validated_fingerprint` lets the gates detect a stale validation —
 see `execplan/docs/binding-gates.md`):
 
+- `scope_contract` — the typed scope/evaluation contract (objective + eval plan); `valid` set by `scope
+  validate` (idea selection requires a valid one in bound mode).
 - `idea_select` — the idea-selection record; `valid` set by `idea validate` (gates idea→experiment).
 - `baseline_contract` — baseline route (`reproduced|imported|trusted|waived`) + eval contract; `valid`
   set by `baseline validate` (the baseline gate consumes it, not the author's `verification_verdict`).
@@ -108,6 +110,9 @@ see `execplan/docs/binding-gates.md`):
 - `review_verdict` — the typed reviewer verdict; `valid` + `route_target` set by `review validate`.
 - `quality_gate_waiver` — durable, auditable gate waiver / finalize acknowledgement (`reason` required);
   a bound quest cannot finalize while a finalize-sensitive gate is env-waived without one.
+- `research_opportunity` — **advisory** quest-local discovery ledger ("what to try next and why",
+  with optional `attempt_signature` + `motivating_refs`); never a gate, never blocks. Surfaced in the
+  `gate status` discovery block + `plan render`. Quest-local only — no cross-quest/shared discovery memory.
 
 Continuation + comms ledgers:
 
@@ -182,15 +187,17 @@ Every dispatch between agents (or self) carries `loop_id` (= `quest_id`) + a sta
    incrementing `attempt_count`; at `attempt_count >= max_attempts` it marks `failed` and routes to a
    `decision` instead of looping forever.
 
-### Bayesian-optimization refinement
+### Heuristic search-space refinement (`bo`)
 
-When a quest declares a `search_space`, idea refinement can be delegated to the deterministic BO
-refiner instead of (or alongside) the Orchestrator's heuristic selection:
+When a quest declares a `search_space`, idea refinement can be delegated to the deterministic `bo`
+refiner (a heuristic placeholder, not Bayesian optimization) instead of (or alongside) the
+Orchestrator's heuristic selection:
 
 1. Each evaluated experiment records its point in `experiment_param` and its objective in the
    `measurement` row flagged `is_primary` (with the objective sense declared in the quest/acceptance).
 2. `bo suggest` reads `search_space` + all completed `(experiment_param, primary measurement)` pairs
-   for the quest and returns the next candidate point(s).
+   for the quest and returns the next candidate point(s) via a deterministic placeholder heuristic
+   (midpoint/default sampling — no surrogate model or acquisition function).
 3. The Orchestrator records each suggestion as a new `idea` (+ `experiment` with
    `experiment_param.proposed_by='bo'`) and dispatches it like any other experiment.
 4. With no `search_space`, the refiner is skipped and the Ideator proposes from `finding_memory` +
