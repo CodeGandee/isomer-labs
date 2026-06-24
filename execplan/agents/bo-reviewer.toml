@@ -7,9 +7,14 @@
 # `credential=...`; see docs/credentials.md). This file only names a backend/effort and tuning knobs.
 #
 # The harness never shells out to a provider itself: `bo review --from-json` ingests valuations a launched
-# reviewer agent produced, and `bo review` with no input produces a clearly-labelled deterministic OFFLINE
-# STUB (is_stub=1) for tests/advisory use. Everything is QUEST-LOCAL — the reviewer sees only this quest's
-# rows; there is no cross-quest/global/sibling recall.
+# reviewer agent produced. The deterministic OFFLINE STUB (is_stub=1) is EXPLICIT-ONLY — `bo review` /
+# `bo suggest` refuse it unless `--allow-bo-stub` is passed (or DEEPRESEARCH_BO_ALLOW_STUB=1 for CI), so a
+# missing credential never silently degrades to placeholder valuations. Everything is QUEST-LOCAL — the
+# reviewer sees only this quest's rows; there is no cross-quest/global/sibling recall.
+#
+# BO-reviewer is a DEFAULT-LAUNCHED participant. Product default backend/effort below is codex/max. If codex
+# is not provisioned at launch, the operator chooses (start-runbook Step 5b): (A) configure codex, or
+# (B) reuse claude `default`, persisted in agents/bo-reviewer.local.toml [reviewer_override] (see bottom).
 
 [reviewer]
 backend = "codex"      # codex | claude | gemini | local | custom  (default: codex)

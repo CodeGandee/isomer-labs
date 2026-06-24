@@ -968,6 +968,34 @@ def _cand_penalty_flags(cand):
             "missing_provenance": False}
 
 
+def _stub_allowed(cli_flag=False):
+    """The OFFLINE stub (is_stub=1) is NOT a silent fallback when a real reviewer didn't run. It is permitted
+    ONLY by an explicit signal: the `--allow-bo-stub` CLI flag (operator/test choice) or the
+    DEEPRESEARCH_BO_ALLOW_STUB=1 env (non-interactive / CI). Returns (allowed: bool, source: str|None).
+    When neither is set, callers must FAIL with an actionable error rather than record placeholder valuations —
+    the default product behaviour is to launch the BO-reviewer agent (codex/max) or, if codex is unavailable,
+    persist the documented claude fallback (agents/bo-reviewer.local.toml)."""
+    import os as _os
+    if cli_flag:
+        return True, "cli_flag(--allow-bo-stub)"
+    ev = (_os.environ.get("DEEPRESEARCH_BO_ALLOW_STUB") or "").strip().lower()
+    if ev in ("1", "true", "yes", "on"):
+        return True, "env(DEEPRESEARCH_BO_ALLOW_STUB)"
+    return False, None
+
+
+def _stub_blocked_diagnostic(cfg, n_missing):
+    """Actionable error when the offline stub is needed but not permitted (no real reviewer output)."""
+    return (f"{n_missing} candidate(s) have no real reviewer valuation and the OFFLINE stub is NOT permitted by "
+            f"default. Resolve one of: (1) launch the BO-reviewer agent (product default backend "
+            f"{cfg['product_default_backend']}/{cfg['product_default_effort']}) and pass its output via "
+            f"--from-json; (2) if codex is unavailable, configure the claude fallback "
+            f"(agents/bo-reviewer.local.toml [reviewer_override] backend_override=\"claude\" "
+            f"credential_override=\"default\") and launch the BO-reviewer with claude; (3) for explicit "
+            f"test/advisory use only, pass --allow-bo-stub or set DEEPRESEARCH_BO_ALLOW_STUB=1 (CI). The offline "
+            f"stub is a deterministic placeholder, never evidence.")
+
+
 @cli.group()
 def bo(): ...
 
@@ -1010,10 +1038,15 @@ def _bo_write(conn, payload):
 @click.option("--effort", default=None, help="reviewer effort (default from config: max).")
 @click.option("--from-json", "from_json", default=None,
               help="path to reviewer-produced valuations [{candidate_ref,valuation,rationale,risks,...}]; records "
-                   "them as real bo_review rows (is_stub=0). Without it, an OFFLINE deterministic stub is recorded.")
+                   "them as real bo_review rows (is_stub=0). The DEFAULT path: launch the BO-reviewer agent and "
+                   "pass its output here.")
+@click.option("--allow-bo-stub", "allow_bo_stub", is_flag=True, default=False,
+              help="permit the OFFLINE deterministic stub (is_stub=1) for candidates with no --from-json valuation. "
+                   "Explicit test/advisory use ONLY (or set DEEPRESEARCH_BO_ALLOW_STUB=1 in CI). Without it, the "
+                   "stub is REFUSED and the command fails with an actionable error — never a silent downgrade.")
 @click.option("--at", default=None, help="ISO-8601 timestamp (required to persist bo_review rows).")
 @click.pass_context
-def bo_review(ctx, quest_id, candidate_ref, backend, effort, from_json, at):
+def bo_review(ctx, quest_id, candidate_ref, backend, effort, from_json, at, allow_bo_stub):
     """Run/record the LLM Reviewer's surrogate valuation of candidate research moves (the idea-level BO scoring
     step). Default backend/effort come from agents/bo-reviewer.toml (codex / max). The harness does NOT call a
     provider itself: pass `--from-json` with valuations a launched reviewer agent produced (recorded as real
@@ -1045,6 +1078,17 @@ def bo_review(ctx, quest_id, candidate_ref, backend, effort, from_json, at):
     targets = cands if cands else [{"candidate_ref": k, "candidate_kind": (v.get("candidate_kind") or ""),
                                     "unresolved_refs": [], "repeat_failure_warnings": []}
                                    for k, v in supplied.items()]
+    # Offline stub is NOT a silent fallback: if any target has no real (--from-json) valuation it would be
+    # stubbed — refuse unless explicitly allowed (--allow-bo-stub / DEEPRESEARCH_BO_ALLOW_STUB).
+    n_missing = sum(1 for c in targets if supplied.get(c["candidate_ref"]) is None)
+    allowed, allow_src = _stub_allowed(allow_bo_stub)
+    if n_missing and not allowed:
+        conn.close()
+        emit(envelope("bo review", ok=False, quest_id=quest_id,
+                      data={"reviewed": 0, "reviewer": cfg, "would_stub_candidates": n_missing,
+                            "offline_stub_allowed": False},
+                      diagnostics=[_stub_blocked_diagnostic(cfg, n_missing)]))
+        sys.exit(1)
     for c in targets:
         ref = c["candidate_ref"]
         item = supplied.get(ref)
@@ -1072,11 +1116,12 @@ def bo_review(ctx, quest_id, candidate_ref, backend, effort, from_json, at):
             warns.append(f"candidate {ref}: {err}")
     conn.commit(); conn.close()
     if used_stub:
-        warns.append("OFFLINE STUB reviewer used (is_stub=1): these valuations are a deterministic placeholder, "
-                     "NOT a real LLM-reviewer call. Pass --from-json with a launched reviewer's output for real "
-                     "valuations; never treat stub scores as evidence.")
+        warns.append(f"OFFLINE STUB reviewer used (is_stub=1; permitted via {allow_src}): these valuations are a "
+                     "deterministic placeholder, NOT a real LLM-reviewer call. Pass --from-json with a launched "
+                     "reviewer's output for real valuations; never treat stub scores as evidence.")
     emit(envelope("bo review", ok=True, quest_id=quest_id,
-                  data={"reviewed": len(reviewed), "reviews": reviewed, "used_stub": used_stub, "reviewer": cfg},
+                  data={"reviewed": len(reviewed), "reviews": reviewed, "used_stub": used_stub,
+                        "stub_allowed_via": (allow_src if used_stub else None), "reviewer": cfg},
                   warnings=warns))
 
 
@@ -1165,9 +1210,13 @@ def bo_select(ctx, quest_id, beta, at):
 @click.option("--quest-id", required=True)
 @click.option("--space-id", default=None)
 @click.option("--beta", type=float, default=None, help="UCB exploration coefficient (default from config: 0.5).")
+@click.option("--allow-bo-stub", "allow_bo_stub", is_flag=True, default=False,
+              help="permit OFFLINE stub valuations for unreviewed candidates (explicit test/advisory ONLY; or "
+                   "DEEPRESEARCH_BO_ALLOW_STUB=1). Without it, suggest scores only REAL reviews and reports "
+                   "'needs-reviewer' when none exist — never a silent stub.")
 @click.option("--at", default=None, help="ISO-8601 timestamp (required to persist reviews/decision).")
 @click.pass_context
-def bo_suggest(ctx, quest_id, space_id, beta, at):
+def bo_suggest(ctx, quest_id, space_id, beta, at, allow_bo_stub):
     """Recommend the next research move (high-level idea-level BO entry point). When quest-local candidates exist:
     gather them, use existing bo_review valuations (or, if none, a clearly-labelled OFFLINE stub pass), compute
     the UCB-like acquisition, optionally persist a bo_decision (with --at), and return the selected candidate +
@@ -1181,9 +1230,18 @@ def bo_suggest(ctx, quest_id, space_id, beta, at):
         latest = _latest_reviews(conn, quest_id)
         reviewed_refs = set(latest.keys())
         warns, used_stub = [], False
-        # Stub-review any unreviewed candidate so suggest is self-contained (only persisted when --at given).
+        allowed, allow_src = _stub_allowed(allow_bo_stub)
+        # Unreviewed candidates are only stub-scored when the stub is EXPLICITLY allowed; otherwise suggest
+        # scores REAL reviews only and reports 'needs-reviewer' below if none exist (no silent stub).
         missing = [c for c in cands if c["candidate_ref"] not in reviewed_refs]
-        if missing and at:
+        if missing and not allowed and not reviewed_refs:
+            conn.close()
+            emit(envelope("bo suggest", ok=True, quest_id=quest_id,
+                          data={"mode": "needs-reviewer", "selected_candidate_ref": None, "reviewer": cfg,
+                                "n_candidates": len(cands), "n_real_reviews": 0, "offline_stub_allowed": False},
+                          warnings=[_stub_blocked_diagnostic(cfg, len(missing))]))
+            return
+        if missing and allowed and at:
             for c in missing:
                 rid = f"{quest_id}:borev:{c['candidate_ref']}:{at}"
                 payload = {"record_type": "bo_review.record", "record_id": rid, "at": at, "quest_id": quest_id,
@@ -1195,11 +1253,11 @@ def bo_suggest(ctx, quest_id, space_id, beta, at):
                 _bo_write(conn, payload)
             conn.commit()
             used_stub = True
-        if missing and not at:
+        if missing and allowed and not at:
             used_stub = True  # in-memory stub for the advisory computation below
         # Acquisition over whatever reviews now exist; if none persisted (no --at), score in-memory.
         scores, selected, any_stub, review_refs = _bo_acquire(conn, quest_id, beta)
-        if not scores:  # no persisted reviews (no --at): compute in-memory stub scores for an advisory suggestion
+        if not scores and allowed:  # no persisted reviews (no --at): compute in-memory stub scores (stub allowed)
             scores = []
             for c in cands:
                 flags = _cand_penalty_flags(c)
@@ -1209,6 +1267,14 @@ def bo_suggest(ctx, quest_id, space_id, beta, at):
                                "is_stub": True, **sc})
             scores.sort(key=lambda s: (-s["score"], s["candidate_ref"]))
             selected, any_stub, review_refs = (scores[0]["candidate_ref"] if scores else None), True, []
+        if not scores:  # real reviews exist for some candidates but none scored (no --at, stub not allowed)
+            conn.close()
+            emit(envelope("bo suggest", ok=True, quest_id=quest_id,
+                          data={"mode": "needs-reviewer", "selected_candidate_ref": None, "reviewer": cfg,
+                                "n_candidates": len(cands), "offline_stub_allowed": False},
+                          warnings=["pass --at to score persisted real reviews, or --allow-bo-stub for an "
+                                    "advisory stub computation"]))
+            return
         top = scores[0]
         rationale = (f"selected {selected} via UCB-like acquisition (score {top['score']}: exploitation "
                      f"{top['exploitation']} + beta {beta}*exploration {top['exploration']} - penalty {top['penalty']})")
@@ -1301,6 +1367,8 @@ def bo_status(ctx, quest_id):
     except sqlite3.OperationalError:
         dec = None
     conn.close()
+    stub_env_on, _ = _stub_allowed(False)
+    backend_overridden = cfg["backend_source"] not in ("built_in", "product_default")
     emit(envelope("bo status", quest_id=quest_id,
                   data={"best_primary": best, "observations": len(vals), "no_improvement_streak": streak,
                         "objective_sense": ("lower_is_better" if lower else "higher_is_better"),
@@ -1309,12 +1377,22 @@ def bo_status(ctx, quest_id):
                         "n_candidates": len(cands), "n_reviewed_candidates": len(latest),
                         "n_real_reviews": real_reviews, "n_stub_reviews": len(latest) - real_reviews,
                         "used_real_reviewer": real_reviews > 0 and real_reviews == len(latest),
+                        # Honest live-vs-stub posture of the latest reviews: 'real' if every reviewed candidate
+                        # has a real (is_stub=0) review, 'stub' if any is a placeholder, 'none' if unreviewed.
+                        "reviews_posture": ("none" if not latest else
+                                            ("real" if real_reviews == len(latest) else "stub")),
                         "latest_decision": dec,
+                        # The OFFLINE stub is explicit-only — never a silent fallback when creds are missing.
+                        "offline_stub_policy": "explicit-only (--allow-bo-stub or DEEPRESEARCH_BO_ALLOW_STUB=1)",
+                        "offline_stub_env_enabled": stub_env_on,
                         "reviewer_config": {"backend": cfg["backend"], "effort": cfg["effort"],
                                             "backend_source": cfg["backend_source"],
+                                            "backend_is_overridden": backend_overridden,
                                             "product_default_backend": cfg["product_default_backend"],
                                             "product_default_effort": cfg["product_default_effort"],
+                                            "effective_backend": cfg["backend"], "effective_effort": cfg["effort"],
                                             "credential_override": cfg.get("credential_override"),
+                                            "local_override_source": cfg.get("local_override_source"),
                                             "acquisition_method": cfg["acquisition_method"], "beta": cfg["beta"],
                                             "required_before_select": cfg["required_before_select"]}}))
 

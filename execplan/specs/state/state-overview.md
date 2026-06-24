@@ -205,21 +205,24 @@ and ADVISORY throughout — no BO record blocks a transition or finalize, none e
 1. **Candidates** (`bo candidates`) — gather quest-local candidate moves by source priority: open
    `research_opportunity` rows, the latest `idea_select` candidate, quest-local `frontier_entry`
    candidates. Cross-quest / missing motivating refs are flagged and never followed as memory.
-2. **Review** (`bo review`) — the independent **BO-reviewer** role (the LLM Reviewer; a configurable
-   surrogate evaluator launched as its own tree-loop participant, dispatched for the `bo-review` stage;
-   default backend `codex`, effort `max`, in `agents/bo-reviewer.toml`) scores each
+2. **Review** (`bo review`) — the independent **BO-reviewer** role (the LLM Reviewer; a DEFAULT-LAUNCHED
+   tree-loop participant brought up on every quest, dispatched for the `bo-review` stage; product-default
+   backend `codex`, effort `max`, in `agents/bo-reviewer.toml`, with a claude `default` fallback via
+   `agents/bo-reviewer.local.toml` when codex is unprovisioned) scores each
    candidate into a `bo_review` valuation vector (`utility, quality, novelty, exploration_value,
    uncertainty, feasibility, cost, risk` on 0–100, plus `expected_metric_direction`,
    `expected_effect`, `confidence`) from this quest's evidence only. The harness does not call a
-   provider itself: a launched reviewer agent's JSON is ingested via `--from-json`, else a
-   clearly-labelled deterministic OFFLINE stub (`is_stub=1`) is recorded for tests/advisory. A review
-   is a surrogate valuation, **not proof**.
+   provider itself: a launched reviewer agent's JSON is ingested via `--from-json`. The deterministic
+   OFFLINE stub (`is_stub=1`) is EXPLICIT-ONLY — refused unless `--allow-bo-stub` /
+   `DEEPRESEARCH_BO_ALLOW_STUB=1` is set, so a missing credential fails loudly rather than silently
+   stubbing. A review is a surrogate valuation, **not proof**.
 3. **Select** (`bo select`) — the deterministic UCB-like acquisition
    `score = exploitation + beta*exploration − penalty` ranks the latest valuation per candidate and
    records a `bo_decision` (selected candidate + per-candidate score breakdown + why others lost).
    `beta` (default 0.5) is the exploration coefficient.
-4. **Suggest** (`bo suggest`) — high-level entry point: gathers candidates, uses existing/stub reviews,
-   runs the acquisition, and returns the next move. When **no** idea-level candidate exists but a
+4. **Suggest** (`bo suggest`) — high-level entry point: gathers candidates, scores the REAL reviews that
+   exist (stub-scoring unreviewed candidates only under `--allow-bo-stub`; otherwise reports
+   `needs-reviewer`), runs the acquisition, and returns the next move. When **no** idea-level candidate exists but a
    `search_space` does, it falls back to the labelled `midpoint-default` heuristic (explicitly NOT real
    BO; ignores observed results). With neither, it returns a no-candidate message.
 5. **Status** (`bo status`) — the honest best primary measurement + trailing no-improvement streak,

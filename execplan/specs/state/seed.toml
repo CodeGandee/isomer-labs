@@ -114,7 +114,7 @@ instance_id = "BO-reviewer"
 role        = "BO-reviewer"
 tool        = "codex"
 multi_instance = false
-summary     = "Independent LLM Reviewer (surrogate evaluator) for the idea-level BO loop. On a bo-review task it scores candidate research moves into bo_review valuations from QUEST-LOCAL evidence only; runs no experiments and writes no paper. Default backend/effort Codex/max via agents/bo-reviewer.toml; owns bo_review.record. Advisory — never blocks a gate."
+summary     = "Independent LLM Reviewer (surrogate evaluator) for the idea-level BO loop — a DEFAULT-LAUNCHED participant on every quest (not optional). On a bo-review task it scores candidate research moves into bo_review valuations from QUEST-LOCAL evidence only; runs no experiments and writes no paper. Product default backend/effort Codex/max (agents/bo-reviewer.toml); if codex is unprovisioned at launch the operator picks the claude `default` fallback, persisted in agents/bo-reviewer.local.toml (start-runbook Step 5b). Owns bo_review.record. Advisory — never blocks a gate; the offline stub is explicit-only, never a silent fallback."
 
 # ───────────────── Domain stage extensions (none by default) ─────────────────
 # Built-in stages (scope..finalize) are seeded by schema.sql. Add domain stages here; `state init`

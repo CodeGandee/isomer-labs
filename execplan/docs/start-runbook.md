@@ -51,7 +51,7 @@ M skills list   | grep -c deepresearch- # 22 (10 loop/control + 12 pack-wrapper 
 # source gained skills without a re-install (e.g. a methodology port), `grep -c` is < 22 and launched agents
 # silently miss them. Verify, and FIX with the same script (idempotent; drop --check to apply):
 python3 "$P/execplan/ops/reconcile-skills.py" --check   # exit 0 = OK; exit 1 = drift (re-run without --check)
-M profile list  | grep -c deepresearch- # 7 (6 default-live roles + the optional codex BO-reviewer profile)
+M profile list  | grep -c deepresearch- # 7 (ALL default-live, including the BO-reviewer — no longer optional)
 M agents list   | grep instances        # instances [] (nothing live yet)
 test ! -f "$P/runs/state.sqlite" && echo "DB absent (expected)"
 # REPO is created PER-QUEST under runs/$QID/repo in Step 4 (not pre-existing). If seeding from a source project,
@@ -63,6 +63,12 @@ test ! -f "$P/runs/state.sqlite" && echo "DB absent (expected)"
 # via $AGENT_MODEL at Step 6, never pinned on the bundle/profile. Expect no ANTHROPIC_MODEL in the bundle.
 M credentials claude get --name default | grep -iE 'oauth.token|api.key'   # expect a long-lived OAuth token (or api-key)
 env | grep -iE '^ANTHROPIC_(BASE_URL|AUTH_TOKEN)=' && echo "WARNING: proxy env set — will shadow the OAuth token; unset before launch" || echo "no proxy env (good)"
+# BO-reviewer credential posture (it is DEFAULT-LAUNCHED — see Step 5b). Product default is tool=codex/effort=max.
+M credentials codex list | grep -q 'default' && echo "codex default present (BO-reviewer runs on its product default codex)" \
+  || ( test -f "$P/execplan/agents/bo-reviewer.local.toml" \
+       && echo "no codex cred, but claude fallback persisted (bo-reviewer.local.toml) — BO-reviewer runs on claude/default" \
+       || echo "no codex cred AND no claude fallback — Step 5b will ASK the operator (A configure codex / B claude fallback)" )
+"$HARNESS" bo status --quest-id _preflight 2>/dev/null | grep -iE 'product_default_backend|effective_backend|offline_stub_policy' # effective vs product-default backend + stub policy
 ```
 
 ---
@@ -183,13 +189,18 @@ CONTRACT
   "record_id":"'"$QID"':research-contract","at":"'"$(now)"'","quest_id":"'"$QID"'",
   "kind":"research-contract","ref":"runs/'"$QID"'/objective/contract.md"}'
 
-# Register the 6 participant instances (experimenter starts at fanout_default=1)
-for pair in orchestrator:orchestrator scout-ideator:scout-ideator \
-            experimenter-1:experimenter analyst:analyst writer:writer reviewer:reviewer; do
-  inst=${pair%%:*}; role=${pair##*:}
+# Register the 7 participant instances (experimenter starts at fanout_default=1). BO-reviewer is a DEFAULT
+# participant — its `tool` is the EFFECTIVE backend resolved at Step 5b (codex product default, or claude under
+# the persisted fallback); pass that resolved value as $BO_TOOL (default codex; claude when bo-reviewer.local.toml
+# sets backend_override="claude").
+BO_TOOL=$(test -f "$P/execplan/agents/bo-reviewer.local.toml" && grep -qE 'backend_override\s*=\s*"claude"' "$P/execplan/agents/bo-reviewer.local.toml" && echo claude || echo codex)
+for pair in orchestrator:orchestrator:claude scout-ideator:scout-ideator:claude \
+            experimenter-1:experimenter:claude analyst:analyst:claude writer:writer:claude \
+            reviewer:reviewer:claude "BO-reviewer:BO-reviewer:$BO_TOOL"; do
+  inst=${pair%%:*}; rest=${pair#*:}; role=${rest%%:*}; tool=${rest##*:}
   "$HARNESS" record apply --json '{"record_type":"participant.register",
     "record_id":"'"$QID"':'"$inst"'","at":"'"$(now)"'","quest_id":"'"$QID"'",
-    "instance_id":"'"$inst"'","role":"'"$role"'","tool":"claude"}'
+    "instance_id":"'"$inst"'","role":"'"$role"'","tool":"'"$tool"'"}'
 done
 
 # GPU confirmation — PRE-LOOP REQUIREMENT (operator confirms the allowed devices BEFORE the loop starts).
@@ -264,7 +275,7 @@ Verify 🟢: `"$HARNESS" gpu status --quest-id "$QID"` → `confirmed:true`; `"$
 # comparator+metric-contract path (Scout/Ideator writes it at the baseline stage). shared/ is NOT used as a
 # canonical source — it is optional staging/templates only.
 mkdir -p "$P/runs/$QID"/{objective,baseline,round-0,report/review,figures,refs,findings,exports,intake,mail,workspaces}
-for r in orchestrator scout-ideator analyst writer reviewer; do
+for r in orchestrator scout-ideator analyst writer reviewer BO-reviewer; do
   mkdir -p "$P/runs/$QID/workspaces/$r"
 done
 
@@ -294,12 +305,55 @@ rm -rf "$P/runs/$QID"
 ## Step 5 — Initialize + register the mailbox 🟡
 ```bash
 M mailbox init
-for inst in orchestrator scout-ideator experimenter-1 analyst writer reviewer; do
+for inst in orchestrator scout-ideator experimenter-1 analyst writer reviewer BO-reviewer; do
   M mailbox register --address "$inst@houmao.localhost" --principal-id "$inst" --yes
 done
 ```
 Verify 🟢: `M mailbox status` ; `M mailbox accounts`.
 **Rollback:** `M mailbox unregister --address "<inst>@houmao.localhost"` (repeat) ; `M mailbox cleanup`.
+
+---
+
+## Step 5b — MANDATORY BO-reviewer credential resolution 🟡→🛑 (sixth launch gate)
+> **Why this exists.** BO-reviewer is a DEFAULT-LAUNCHED participant (not optional). Its product default is
+> `tool=codex` / `effort=max`. The launch must NEVER silently drop BO-reviewer or let `bo review` fall back to
+> the offline stub when codex is unprovisioned. If neither a codex credential nor a persisted claude fallback
+> exists, the operator MUST choose here, and the choice is persisted so the current and future quests reuse it.
+
+Resolve the BO-reviewer backend deterministically (do NOT fabricate secrets; do NOT auto-copy `/root/.codex`
+keys unless the operator explicitly picks an import flow):
+```bash
+CODEX_CRED=$(M credentials codex list | grep -q 'default' && echo yes || echo no)
+LOCAL_OV="$P/execplan/agents/bo-reviewer.local.toml"
+if [ "$CODEX_CRED" = yes ]; then
+  echo "BO-reviewer → PRODUCT DEFAULT: codex/max (codex 'default' credential present)."   # case 1
+elif [ -f "$LOCAL_OV" ] && grep -qE 'backend_override\s*=\s*"claude"' "$LOCAL_OV"; then
+  echo "BO-reviewer → PERSISTED CLAUDE FALLBACK (bo-reviewer.local.toml). Reusing the recorded choice."  # case 2
+else
+  echo "BO-reviewer → NO codex credential AND no persisted fallback. ASK THE OPERATOR (AskUserQuestion):"  # case 3
+  #   (A) Configure Codex now  → run `M credentials codex login`  (or `M credentials codex add --name default
+  #       --api-key <KEY>`, or — only if the operator explicitly chooses to import — `M credentials codex set
+  #       --name default --auth-json /path/to/auth.json`). Then BO-reviewer launches on codex/max. Re-check.
+  #   (B) Reuse claude `default` → PERSIST the documented local override, then launch BO-reviewer on claude:
+  #       cat > "$LOCAL_OV" <<'OV'
+  #       # MACHINE-LOCAL BO-reviewer override (gitignored). Codex unprovisioned → run BO-reviewer on claude.
+  #       # Durable product default stays codex/max in agents/bo-reviewer.toml. Delete this file to revert.
+  #       [reviewer_override]
+  #       backend_override    = "claude"
+  #       effort_override     = "high"
+  #       credential_override = "default"
+  #       OV
+  #       # and compile the BO-reviewer specialist to claude/default so the LAUNCHED agent uses claude:
+  #       M specialist set --name deepresearch-BO-reviewer --tool claude --credential default   # confirm flags via --help
+fi
+# Record the resolved choice (audit). bo status now reports product-default vs effective backend + stub policy.
+"$HARNESS" bo status --quest-id "$QID" | grep -iE 'product_default_backend|effective_backend|backend_source|offline_stub_policy'
+```
+Outcome — the BO-reviewer backend is now one of {codex product-default, claude persisted-fallback}; `$BO_TOOL`
+(Step 3 register) and the Step 6 launch agree with it. **NEVER** proceed with only 6 agents and **never** rely
+on the offline stub as the normal path (the stub is explicit-only: `--allow-bo-stub` / `DEEPRESEARCH_BO_ALLOW_STUB`).
+**Revert claude→codex later:** provision a codex `default` credential, `rm "$LOCAL_OV"`, recompile the
+specialist to codex (`M specialist set --name deepresearch-BO-reviewer --tool codex`), and relaunch BO-reviewer.
 
 ---
 
@@ -329,7 +383,7 @@ env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY \
   --workdir "$P/runs/$QID/workspaces/orchestrator" \
   --mail-transport filesystem --mail-root "$MAILROOT" --gateway-background
 
-# Specialists (experimenter uses its isolated worktree as workdir; add experimenter-2..N for fanout>1)
+# Claude specialists (experimenter uses its isolated worktree as workdir; add experimenter-2..N for fanout>1)
 for pair in scout-ideator:scout-ideator experimenter:experimenter-1 \
             analyst:analyst writer:writer reviewer:reviewer; do
   prof=deepresearch-${pair%%:*}; inst=${pair##*:}
@@ -339,29 +393,38 @@ for pair in scout-ideator:scout-ideator experimenter:experimenter-1 \
     --workdir "$P/runs/$QID/workspaces/$inst" \
     --mail-transport filesystem --mail-root "$MAILROOT" --gateway-background
 done
+
+# BO-reviewer — DEFAULT-LAUNCHED 7th agent (backend resolved at Step 5b). When running on CODEX (product
+# default) it is EXEMPT from the Claude --model/--reasoning-level overrides. When running on CLAUDE (persisted
+# fallback) it IS a Claude agent and takes $LAUNCH_OVERRIDES like the others.
+if [ "$BO_TOOL" = claude ]; then BO_OVERRIDES="$LAUNCH_OVERRIDES"; else BO_OVERRIDES=""; fi
+env -u ANTHROPIC_BASE_URL -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_API_KEY \
+  houmao-mgr project --project-dir "$P" agents launch --profile deepresearch-BO-reviewer --name BO-reviewer \
+  $BO_OVERRIDES \
+  --workdir "$P/runs/$QID/workspaces/BO-reviewer" \
+  --mail-transport filesystem --mail-root "$MAILROOT" --gateway-background
 ```
 Notes: `$HARNESS` is exported on every profile, so the harness resolves regardless of `--workdir`. Gateway auto-attaches per agent (omit `--no-gateway`). **Verify the live auth posture:** `tr '\0' '\n' </proc/$(tmux list-panes -t "$(tmux ls|grep -oE 'HOUMAO-orchestrator-[0-9]+'|head -1)" -F '#{pane_pid}')/environ | grep -i ANTHROPIC` should show **no** `ANTHROPIC_BASE_URL`/`ANTHROPIC_AUTH_TOKEN` (the agent uses the bundle's `CLAUDE_CODE_OAUTH_TOKEN`).
-Verify 🟢: `M agents list` (6 live) ; `houmao-mgr agents single --agent-name orchestrator gateway status`.
-> **Optional 7th agent — BO-reviewer (codex).** The default loop launches the 6 Claude agents above; the
-> idea-level BO-reviewer (`tool=codex`, profile `deepresearch-BO-reviewer`) is launched **separately and only
-> when a codex-capable credential is provisioned** (it is exempt from the Step 6c Claude `--model`/effort
-> overrides). If it is NOT launched, `deepresearch bo review` falls back to a clearly-labelled deterministic
-> OFFLINE STUB (`is_stub=1`) — BO is advisory and never blocks, so the loop runs correctly without it. To
-> launch it: `houmao-mgr project --project-dir "$P" agents launch --profile deepresearch-BO-reviewer --name
-> BO-reviewer --workdir "$P/runs/$QID/workspaces/BO-reviewer" --mail-transport filesystem --mail-root
-> "$MAILROOT" --gateway-background` (then attach its notifier in Step 6b). With it live, `M agents list` is 7.
-**Rollback / stop:** `for inst in orchestrator scout-ideator experimenter-1 analyst writer reviewer; do M agents stop --name "$inst"; done` (add `BO-reviewer` to the list if it was launched).
+Verify 🟢: `M agents list` (**7 live**) ; `houmao-mgr agents single --agent-name orchestrator gateway status`.
+> **BO-reviewer is a default participant** (launched above) — its backend was resolved at Step 5b (codex
+> product default, or the persisted claude fallback). It is NOT skipped, and `deepresearch bo review` does NOT
+> silently stub (the offline stub is explicit-only: `--allow-bo-stub` / `DEEPRESEARCH_BO_ALLOW_STUB=1`). BO is
+> still advisory — its reviews/decision never block a gate.
+**Rollback / stop:** `for inst in orchestrator scout-ideator experimenter-1 analyst writer reviewer BO-reviewer; do M agents stop --name "$inst"; done`.
 
 ---
 
 ## Step 6b — Attach notifier prompts to each live gateway 🔴 (requires Step 6 up)
 ```bash
-# instance -> notifier file (experimenter-1 uses experimenter.md)
+# instance -> notifier file (experimenter-1 uses experimenter.md; BO-reviewer uses BO-reviewer.md)
 for pair in orchestrator:orchestrator scout-ideator:scout-ideator experimenter-1:experimenter \
-            analyst:analyst writer:writer reviewer:reviewer; do
+            analyst:analyst writer:writer reviewer:reviewer BO-reviewer:BO-reviewer; do
   inst=${pair%%:*}; role=${pair##*:}
+  # The notifier prompt is passed as TEXT (the role file's content), with a polling interval. (The CLI exposes
+  # `--appendix-text` + `--interval-seconds`, not `--appendix-file`; confirm with `gateway mail-notifier enable --help`.)
   houmao-mgr agents single --agent-name "$inst" gateway mail-notifier enable \
-    --appendix-file "$P/execplan/agents/notifier-prompts/$role.md"   # CONFIRM exact flag: `gateway mail-notifier --help`
+    --interval-seconds 60 --mode any_inbox \
+    --appendix-text "$(cat "$P/execplan/agents/notifier-prompts/$role.md")"
 done
 ```
 Verify 🟢: `houmao-mgr agents single --agent-name orchestrator gateway mail-notifier status`.
@@ -386,15 +449,22 @@ Verify 🟢: `houmao-mgr agents single --agent-name orchestrator gateway mail-no
 Capture each live agent's ACTUAL resolved model from its TUI header and present the table to the operator
 for explicit confirmation. The Step 7 trigger is **hard-gated** on this confirmation.
 ```bash
+# The 6 Claude TUI agents must show the intended Claude model. NOTE: BO-reviewer is HEADLESS (posture.headless;
+# prompt_mode unattended) — its tmux pane is a bare shell with NO persistent TUI header, so it cannot be header-
+# captured. Its model is pinned by the LAUNCH FLAG (--model on a codex/claude launch) and resolved when it runs
+# a bounded headless turn; confirm it via `bo status` (effective backend) + the launch command, not the pane.
 for inst in orchestrator scout-ideator experimenter-1 experimenter-2 analyst writer reviewer; do
   S=$(tmux ls 2>/dev/null | grep -oE "HOUMAO-$inst-[0-9]+" | head -1)
   hdr=$(tmux capture-pane -t "$S" -p -S -60 2>/dev/null | grep -iE 'Opus|Sonnet|Haiku|Fable|· Claude' | head -1 | tr -s ' ')
   printf "  %-16s %s\n" "$inst" "${hdr:-<no model header yet — agent still booting>}"
 done
+"$HARNESS" bo status --quest-id "$QID" | grep -iE 'effective_backend|backend_source|product_default_backend'  # BO-reviewer effective backend
 ```
 Outcome — present the per-agent model table and ask the operator (`AskUserQuestion`) to **confirm or abort**:
-- **All agents on the intended model** (e.g. every row shows `Opus 4.8`) → operator confirms → proceed to Step 7.
-- **Any mismatch** (e.g. a row shows `Sonnet 4.6`) → **STOP**. Do NOT send the trigger. Relaunch the affected
+- **All Claude TUI agents on the intended model** (e.g. each shows `Opus 4.8`) AND BO-reviewer (headless)
+  resolving its intended backend per `bo status` (codex/max on the product default, or the launch-pinned Claude
+  model under the persisted fallback) → operator confirms → proceed to Step 7.
+- **Any mismatch** (e.g. a Claude row shows `Sonnet 4.6`) → **STOP**. Do NOT send the trigger. Relaunch the affected
   agents fresh (Step 6) **with `$LAUNCH_OVERRIDES`** (`--model $AGENT_MODEL`) so they resolve the intended
   model — do NOT pin the model on the shared bundle (quest-independence rule; the bundle stays token-only).
   Re-check here. Record the confirmed model set in the quest's `effort.md` (or a `kind='model-confirmation'`
@@ -418,7 +488,7 @@ After this the Orchestrator dispatches `scope` to scout-ideator and arms a `[sel
 "$HARNESS" wakeup list --quest-id "$QID"           # exactly one armed|delivered wakeup, lane main
 "$HARNESS" handoff query --quest-id "$QID" --due   # dispatched handoff(s) to scout-ideator, status sent/acked
 "$HARNESS" control status --quest-id "$QID"        # run_state running, pending handoffs sane
-M agents list                                      # 6 live instances
+M agents list                                      # 7 live instances (incl. BO-reviewer)
 houmao-mgr agents single --agent-name orchestrator gateway status        # gateway up
 houmao-mgr agents single --agent-name orchestrator gateway mail-notifier status  # notifier enabled
 M mailbox messages                                 # task-request delivered to scout-ideator
@@ -437,7 +507,7 @@ Resume: `"$HARNESS" control resume --quest-id "$QID" --at "$(now)"` (add `--reco
 
 **Stop live agents** 🔴:
 ```bash
-for inst in orchestrator scout-ideator experimenter-1 analyst writer reviewer; do
+for inst in orchestrator scout-ideator experimenter-1 analyst writer reviewer BO-reviewer; do
   houmao-mgr agents single --agent-name "$inst" gateway mail-notifier disable
   houmao-mgr agents single --agent-name "$inst" gateway detach
   M agents stop --name "$inst"

@@ -6,7 +6,7 @@
 
 mode = "tree-loop"
 root = "orchestrator"
-description = "Star/tree rooted at the Orchestrator. Six specialist roles (scout-ideator, experimenter, analyst, writer, reviewer, and the independent BO-reviewer) each reply upstream to the Orchestrator via the shared task-request -> receipt -> task-result families. Continuation is the root's own durable self-wakeup, not a peer cycle."
+description = "Star/tree rooted at the Orchestrator. Six specialist roles (scout-ideator, experimenter, analyst, writer, reviewer, and the independent BO-reviewer) each reply upstream to the Orchestrator via the shared task-request -> receipt -> task-result families. ALL six are default-launched (BO-reviewer included; product default tool=codex/effort=max with a claude `default` fallback). Continuation is the root's own durable self-wakeup, not a peer cycle."
 
 # Stable correlation metadata carried by every route's mail (see comms _metadata schema).
 [correlation]

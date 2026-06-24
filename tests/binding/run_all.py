@@ -17,6 +17,7 @@ SUITES = [
     ("typed scope / eval contract", "test_scope_contract.py"),
     ("quest-local discovery ledger", "test_discovery.py"),
     ("idea-level BO (LLM-reviewer surrogate + UCB-like acquisition)", "test_bo.py"),
+    ("default participant roster (BO-reviewer is the default 7th)", "test_roster.py"),
 ]
 
 

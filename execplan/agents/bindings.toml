@@ -13,7 +13,7 @@ workspace_authority = "specs/workspace/workspace.toml"
 # `relies_on_houmao_skills` field below is informational reliance, NOT a generated requirement.
 state_access = "Agents touch state ONLY via harness commands (state query / record apply); never read runs/state.sqlite directly."
 record_id_convention = "Composite-PK record_ids are PK components joined with ':'. The harness parser is strict (exact component count + order); malformed ids are rejected by `record apply`."
-credential = "The 6 claude specialists (orchestrator + scout-ideator/experimenter/analyst/writer/reviewer) bind credential='default'; the independent BO-reviewer runs tool='codex' and needs a codex-capable credential provisioned via houmao-credential-mgr (NO secrets in source). Canonical claude auth = a LONG-LIVED OAuth token tied to the operator's Claude.ai Pro/Max subscription (`claude setup-token` → `credentials claude set --name default --oauth-token <T> --clear-api-key --clear-auth-token --clear-config-dir`). It does not expire on the ~5h interactive-login clock, so the loop runs unattended. HARD RULE: launch agents with ANTHROPIC_BASE_URL/ANTHROPIC_AUTH_TOKEN/ANTHROPIC_API_KEY UNSET — a third-party proxy env in the launch shell shadows the OAuth token (Claude Code prefers ANTHROPIC_AUTH_TOKEN+BASE_URL). After any credential change, relaunch agents FRESH (a bare relaunch reuses the token cached in the agent home). See docs/credentials.md + docs/start-runbook.md Step 1."
+credential = "All 7 participants launch by DEFAULT. The 6 claude specialists (orchestrator + scout-ideator/experimenter/analyst/writer/reviewer) bind credential='default'. The independent BO-reviewer is ALSO default-launched: its PRODUCT DEFAULT is tool='codex'/effort='max' (agents/bo-reviewer.toml), needing a codex-capable credential provisioned via houmao-credential-mgr (NO secrets in source). If no codex credential exists at launch, the operator MUST choose (start-runbook Step 5b) — (A) configure codex now (`credentials codex login`/`add`/`set --auth-json`), or (B) reuse the claude 'default' credential, persisted in agents/bo-reviewer.local.toml [reviewer_override] (backend_override='claude', credential_override='default') so the current and future quests reuse it until changed. The launch NEVER silently drops BO-reviewer and `bo review` NEVER silently uses the offline stub (the stub is explicit-only: --allow-bo-stub / DEEPRESEARCH_BO_ALLOW_STUB). Canonical claude auth = a LONG-LIVED OAuth token tied to the operator's Claude.ai Pro/Max subscription (`claude setup-token` → `credentials claude set --name default --oauth-token <T> --clear-api-key --clear-auth-token --clear-config-dir`). It does not expire on the ~5h interactive-login clock, so the loop runs unattended. HARD RULE: launch agents with ANTHROPIC_BASE_URL/ANTHROPIC_AUTH_TOKEN/ANTHROPIC_API_KEY UNSET — a third-party proxy env in the launch shell shadows the OAuth token (Claude Code prefers ANTHROPIC_AUTH_TOKEN+BASE_URL). After any credential change, relaunch agents FRESH (a bare relaunch reuses the token cached in the agent home). See docs/credentials.md + docs/start-runbook.md Step 1."
 
 # ───────────────── Root ─────────────────
 [[bindings]]
@@ -109,17 +109,21 @@ relies_on_houmao_skills = ["houmao-agent-email-comms"]
 workspace = { policy_ref = "workspace.reviewer", work_root = "runs/<quest-id>/workspaces/reviewer", reads = ["runs/<quest-id>/report", "runs/<quest-id>/round-*"], writes = ["runs/<quest-id>/report/review"] }
 
 # ───────────────── Independent LLM Reviewer (idea-level BO surrogate evaluator) ─────────────────
-# Operationally separate from orchestrator/experimenter/analyst/writer/reviewer. Dispatched only for the
-# `bo-review` stage; scores candidate research moves into bo_review valuations from QUEST-LOCAL evidence and
-# replies upstream to the Orchestrator (which then runs `bo select`). Advisory — bo_review/bo_decision never
-# block a gate, never alter idea_select.valid. tool=codex: the reviewer runs Codex at effort=max (default in
-# agents/bo-reviewer.toml; user-overridable via `bo review --backend/--effort`). The backend/effort are passed
-# in the bo-review handoff and persisted on each bo_review row. NO secrets here — provision a codex-capable
-# credential for this role via houmao-credential-mgr (see docs/credentials.md); credential names a store entry.
+# A DEFAULT-LAUNCHED participant (7th), brought up on every quest like the others — NOT optional. Operationally
+# separate from orchestrator/experimenter/analyst/writer/reviewer. Dispatched for the `bo-review` stage; scores
+# candidate research moves into bo_review valuations from QUEST-LOCAL evidence and replies upstream to the
+# Orchestrator (which then runs `bo select`). Advisory — bo_review/bo_decision never block a gate, never alter
+# idea_select.valid. PRODUCT DEFAULT tool=codex / effort=max (agents/bo-reviewer.toml; user-overridable via
+# `bo review --backend/--effort`); the backend/effort are passed in the bo-review handoff and persisted on each
+# bo_review row. Credential handling (NO secrets here): provision a codex credential via houmao-credential-mgr;
+# if codex is unavailable at launch the operator chooses the claude `default` fallback, persisted in
+# agents/bo-reviewer.local.toml [reviewer_override] (start-runbook Step 5b). The launch never silently drops
+# this role and `bo review` never silently stubs (offline stub is explicit-only). `tool`/`credential` below name
+# the PRODUCT DEFAULT; the launched specialist may be compiled to claude/default under the persisted fallback.
 [[bindings]]
 participant = "BO-reviewer"
 instances = ["BO-reviewer"]
-tool = "codex"
+tool = "codex"          # PRODUCT DEFAULT (effort=max via agents/bo-reviewer.toml); claude/default fallback via bo-reviewer.local.toml
 credential = "default"
 easy_profile = "deepresearch-BO-reviewer"
 prompt_source = "agents/profiles/BO-reviewer/definition.md"

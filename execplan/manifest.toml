@@ -86,7 +86,7 @@ purpose = "state invariants"
 
 [[artifacts]]
 id = "state-seed"
-description = "Domain-neutral platform seed: quest defaults + 7-role roster templates (6 default-live + the optional codex BO-reviewer); no concrete quest."
+description = "Domain-neutral platform seed: quest defaults + 7-role roster templates (all default-live, including the BO-reviewer; product default tool=codex/effort=max with a documented claude fallback); no concrete quest."
 path = "specs/state/seed.toml"
 artifact_kind = "file"
 purpose = "state seed"
@@ -123,7 +123,7 @@ purpose = "built-in optional knowledge packs"
 # ───────────────── Agents ─────────────────
 [[artifacts]]
 id = "agents"
-description = "7 agent bindings (orchestrator + scout-ideator, experimenter x≤8, analyst, writer, reviewer, and the independent idea-level BO-reviewer [tool=codex]) + role prompts + notifier prompts."
+description = "7 agent bindings — ALL default-launched (orchestrator + scout-ideator, experimenter x≤8, analyst, writer, reviewer, and the independent idea-level BO-reviewer [product default tool=codex/effort=max; claude `default` fallback via agents/bo-reviewer.local.toml when codex is unprovisioned]) + role prompts + notifier prompts."
 path = "agents/bindings.toml"
 artifact_kind = "file"
 purpose = "generated concrete agent bindings"
@@ -146,15 +146,19 @@ purpose = "generated human support views"
 
 # Participants summary for quick reference.
 [participants]
-agents = ["orchestrator", "scout-ideator", "experimenter", "analyst", "writer", "reviewer"]
-# BO-reviewer (tool=codex) is the 7th binding/role but is NOT in the default-live roster: it is launched
-# on demand when a codex credential is available, else `bo review` uses the labelled harness stub. Hence
-# total_live_instances_default below stays 6. See bindings.toml + docs/start-runbook.md (optional 7th agent).
+agents = ["orchestrator", "scout-ideator", "experimenter", "analyst", "writer", "reviewer", "BO-reviewer"]
+# BO-reviewer is a DEFAULT-LIVE participant (7th), launched on every quest like the others. Its product
+# default is tool=codex / effort=max (agents/bo-reviewer.toml). If no codex credential is provisioned at
+# launch, the operator MUST choose (start-runbook Step 5b): (A) configure codex now, or (B) reuse the claude
+# `default` credential — persisted in agents/bo-reviewer.local.toml [reviewer_override] so the current and
+# future quests reuse the choice. The launch NEVER silently drops BO-reviewer and `bo review` NEVER silently
+# stubs (the offline stub is explicit-only: --allow-bo-stub / DEEPRESEARCH_BO_ALLOW_STUB). Hence
+# total_live_instances_default is 7. See bindings.toml + docs/start-runbook.md.
 experimenter_fanout_max = 8
 experimenter_fanout_default = 1
 internal_stages = ["decision", "finalize", "optimize"]
 tools = ["state", "experiment-runner", "validator", "manuscript-validator", "bo-refiner", "literature", "findings-store", "git-checkpoint", "artifact-compiler"]
-total_live_instances_default = 6
+total_live_instances_default = 7
 
 # No reserved/unimplemented stages remain. The rebuttal stage was promoted to a live builtin stage
 # (ordinal 85, owned by the Writer; see specs/state/schema.sql stage_catalog + the `rebuttal` branch of

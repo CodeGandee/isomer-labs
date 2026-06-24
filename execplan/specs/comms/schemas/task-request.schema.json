@@ -23,7 +23,7 @@
         "plan_revision": { "type": ["integer", "string"] },
         "round_index": { "type": ["integer", "string"] },
         "from_role": { "const": "orchestrator" },
-        "to_role": { "type": "string", "enum": ["scout-ideator", "experimenter", "analyst", "writer", "reviewer"] }
+        "to_role": { "type": "string", "enum": ["scout-ideator", "experimenter", "analyst", "writer", "reviewer", "BO-reviewer"] }
       }
     },
     "stage": { "type": "string", "description": "stage_catalog stage this task advances" },

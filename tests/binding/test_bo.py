@@ -94,7 +94,7 @@ def main():
         # effective backend, which a local override file / env may legitimately change on a given machine).
         print("B2 product-default reviewer config invariant (codex / max):")
         db = setup(tmp, "b2"); opp(db, "b2", "b2:o1")
-        rv = jdata(run(db, ["bo", "review", "--quest-id", "b2", "--at", AT]))
+        rv = jdata(run(db, ["bo", "review", "--quest-id", "b2", "--at", AT, "--allow-bo-stub"]))
         st = jdata(run(db, ["bo", "status", "--quest-id", "b2"]))
         rc = st["reviewer_config"]
         check("B2: product default backend=codex effort=max (durable); method=ucb_like_v1; required_before_select=false",
@@ -238,7 +238,7 @@ def main():
                  "space_id": "s1", "dim_name": "lr", "dim_kind": "real", "low": 0.0, "high": 1.0})
         sug_fb = jdata(run(db, ["bo", "suggest", "--quest-id", "b12"]))
         opp(db, "b12", "b12:o1", kind="new_idea")
-        sug_idea = jdata(run(db, ["bo", "suggest", "--quest-id", "b12", "--at", AT]))
+        sug_idea = jdata(run(db, ["bo", "suggest", "--quest-id", "b12", "--at", AT, "--allow-bo-stub"]))
         check("B12: search_space-only => labelled fallback; adding a candidate => idea-level-bo mode",
               sug_fb["mode"] == "search-space-fallback" and sug_fb.get("stub") is True
               and sug_idea["mode"] == "idea-level-bo" and sug_idea["selected_candidate_ref"] == "b12:o1",
@@ -247,7 +247,7 @@ def main():
         # B13: bo status reports reviewer/acquisition state honestly (stub vs real, counts, latest decision)
         print("B13 bo status honest reviewer/acquisition state:")
         db = setup(tmp, "b13"); opp(db, "b13", "b13:o1")
-        run(db, ["bo", "review", "--quest-id", "b13", "--at", AT])  # offline stub
+        run(db, ["bo", "review", "--quest-id", "b13", "--at", AT, "--allow-bo-stub"])  # offline stub (explicitly allowed)
         run(db, ["bo", "select", "--quest-id", "b13", "--beta", "0.5", "--at", AT])
         st = jdata(run(db, ["bo", "status", "--quest-id", "b13"]))
         check("B13: status shows stub honesty (used_real_reviewer false, n_stub>0), latest decision, honest method",
@@ -262,7 +262,7 @@ def main():
         gs0 = jdata(run(db, ["gate", "status", "--quest-id", "b14"]))
         fr0 = gs0["finalize_readiness"]
         opp(db, "b14", "b14:o1", kind="new_idea")
-        run(db, ["bo", "review", "--quest-id", "b14", "--at", AT])
+        run(db, ["bo", "review", "--quest-id", "b14", "--at", AT, "--allow-bo-stub"])
         run(db, ["bo", "select", "--quest-id", "b14", "--beta", "0.5", "--at", AT])
         gs1 = jdata(run(db, ["gate", "status", "--quest-id", "b14"]))
         bg = " ".join(gs1["blocking_gates"])
@@ -297,6 +297,61 @@ def main():
         check("B17: BO-reviewer may write bo_review.record; experimenter is denied by skill authority",
               ok_role["reviewed"] == 1 and jdata(bad)["reviewed"] == 0 and "skill authority" in bad_warns,
               "ok=%s bad_warns=%s" % (ok_role["reviewed"], bad_warns[:120]))
+
+        # B18: the OFFLINE stub is NOT a silent fallback — `bo review` without --from-json and without an
+        # explicit allow signal FAILS with an actionable error; passing --allow-bo-stub then records the stub.
+        print("B18 bo review refuses silent stub; --allow-bo-stub permits it:")
+        db = setup(tmp, "b18"); opp(db, "b18", "b18:o1", kind="new_idea")
+        refused = run(db, ["bo", "review", "--quest-id", "b18", "--at", AT])  # no real reviewer, no allow flag
+        rj = json.loads(refused.stdout)
+        diag = " ".join(rj.get("diagnostics", []))
+        allow = jdata(run(db, ["bo", "review", "--quest-id", "b18", "--at", AT, "--allow-bo-stub"]))
+        check("B18: missing real valuation => REFUSED (ok=false, nonzero exit, actionable diag); --allow-bo-stub records stub",
+              refused.returncode != 0 and rj["ok"] is False and "OFFLINE stub is NOT permitted" in diag
+              and allow["reviewed"] == 1 and allow["used_stub"] is True
+              and allow["stub_allowed_via"] == "cli_flag(--allow-bo-stub)",
+              "rc=%s ok=%s diag=%s" % (refused.returncode, rj.get("ok"), diag[:80]))
+
+        # B19: DEEPRESEARCH_BO_ALLOW_STUB=1 (non-interactive / CI) permits the stub without the CLI flag.
+        print("B19 DEEPRESEARCH_BO_ALLOW_STUB env permits the stub (CI mode):")
+        db = setup(tmp, "b19"); opp(db, "b19", "b19:o1")
+        rv = jdata(run(db, ["bo", "review", "--quest-id", "b19", "--at", AT], {"DEEPRESEARCH_BO_ALLOW_STUB": "1"}))
+        check("B19: env-allowed stub recorded (used_stub, stub_allowed_via=env)",
+              rv["reviewed"] == 1 and rv["used_stub"] is True
+              and rv["stub_allowed_via"] == "env(DEEPRESEARCH_BO_ALLOW_STUB)", str(rv.get("stub_allowed_via")))
+
+        # B20: the documented claude-FALLBACK persists in agents/bo-reviewer.local.toml — `bo status` reports the
+        # effective backend=claude (backend_source=local_override_file) while the product default stays codex/max.
+        # (Future quest launches read this same file, so the choice is durable until the operator removes it.)
+        print("B20 claude-fallback local override drives the effective backend (product default unchanged):")
+        local_ov = ROOT / "execplan" / "agents" / "bo-reviewer.local.toml"
+        backup = local_ov.read_text() if local_ov.exists() else None
+        try:
+            local_ov.write_text('[reviewer_override]\nbackend_override = "claude"\n'
+                                'effort_override = "high"\ncredential_override = "default"\n')
+            db = setup(tmp, "b20")
+            rc = jdata(run(db, ["bo", "status", "--quest-id", "b20"]))["reviewer_config"]
+            check("B20: effective backend=claude via local_override_file; product default still codex/max; credential_override=default",
+                  rc["backend"] == "claude" and rc["effective_backend"] == "claude"
+                  and rc["backend_source"] == "local_override_file" and rc["backend_is_overridden"] is True
+                  and rc["product_default_backend"] == "codex" and rc["product_default_effort"] == "max"
+                  and rc["credential_override"] == "default", str(rc))
+        finally:
+            if backup is not None:
+                local_ov.write_text(backup)
+            elif local_ov.exists():
+                local_ov.unlink()
+
+        # B21: `bo suggest` likewise does not silently stub — with candidates but no real reviews and no allow
+        # signal it returns mode='needs-reviewer' (advisory), not a stub-based selection.
+        print("B21 bo suggest reports needs-reviewer instead of silently stubbing:")
+        db = setup(tmp, "b21"); opp(db, "b21", "b21:o1", kind="new_idea")
+        nr = jdata(run(db, ["bo", "suggest", "--quest-id", "b21", "--at", AT]))  # no --allow-bo-stub
+        ys = jdata(run(db, ["bo", "suggest", "--quest-id", "b21", "--at", AT, "--allow-bo-stub"]))
+        check("B21: no allow => mode=needs-reviewer (no selection); --allow-bo-stub => idea-level-bo selection",
+              nr["mode"] == "needs-reviewer" and nr["selected_candidate_ref"] is None
+              and ys["mode"] == "idea-level-bo" and ys["selected_candidate_ref"] == "b21:o1",
+              "nr=%s ys=%s" % (nr["mode"], ys["mode"]))
 
     print("\n%d passed, %d failed" % (len(PASSED), len(FAILED)))
     sys.exit(1 if FAILED else 0)

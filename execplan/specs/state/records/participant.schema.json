@@ -12,7 +12,7 @@
     "at": { "type": "string" },
     "quest_id": { "type": "string" },
     "instance_id": { "type": "string" },
-    "role": { "enum": ["orchestrator", "scout-ideator", "experimenter", "analyst", "writer", "reviewer"] },
+    "role": { "enum": ["orchestrator", "scout-ideator", "experimenter", "analyst", "writer", "reviewer", "BO-reviewer"] },
     "tool": { "enum": ["claude", "codex", "gemini"] },
     "last_seen": { "type": "string" }
   }

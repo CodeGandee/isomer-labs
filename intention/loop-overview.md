@@ -189,9 +189,11 @@ Harness tools (deterministic; no LLM; the trust boundary):
 - **Domain pluggability surface** → RESOLVED: knowledge packs declare a `pack.toml` with `backs`
   (the harness command they serve) + `kind` (compiler/template/reference/…); among enabled packs of one
   (domain, kind) the lowest unique priority is primary (`adapter_priority_unique` invariant).
-- **Single-agent vs role-specialized agents** → RESOLVED: **role-specialized** — six default-live participants
-  (Orchestrator + Scout/Ideator, Experimenter ×≤8, Analyst, Writer, Reviewer), one per binding, plus an
-  optional codex-tooled BO-reviewer (idea-level surrogate; stub fallback when not launched).
+- **Single-agent vs role-specialized agents** → RESOLVED: **role-specialized** — seven default-live participants
+  (Orchestrator + Scout/Ideator, Experimenter ×≤8, Analyst, Writer, Reviewer, and the BO-reviewer), one per
+  binding. The BO-reviewer (idea-level surrogate) is default-launched too; its product default is codex/max,
+  and when codex is unprovisioned the operator picks the claude `default` fallback (persisted in
+  `agents/bo-reviewer.local.toml`) — never a silent skip, and the offline stub is explicit-only.
 - **Concurrency** → RESOLVED: **one active quest at a time**, enforced by the `single_active_quest`
   invariant (quests share one control-plane DB, distinguished by `quest_id`).
 

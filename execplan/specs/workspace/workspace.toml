@@ -128,6 +128,18 @@ launch_cwd = "runs/<quest-id>/workspaces/reviewer"
 reads = ["runs/<quest-id>/report", "runs/<quest-id>/round-*"]
 writes = ["runs/<quest-id>/report/review"]
 
+# Independent BO-reviewer (idea-level surrogate evaluator) — DEFAULT-LAUNCHED 7th participant. Read-only over
+# quest-local evidence; it scores candidates and writes only its own scratch work_root (valuations persist via
+# the harness `bo_review.record`, not files). No worktree (runs no experiments).
+[[agent]]
+id = "BO-reviewer"
+policy_ref = "workspace.BO-reviewer"
+work_root = "runs/<quest-id>/workspaces/BO-reviewer"
+isolation = "shared-main"
+launch_cwd = "runs/<quest-id>/workspaces/BO-reviewer"
+reads = ["runs/<quest-id>/round-*", "runs/<quest-id>/findings", "runs/<quest-id>/objective", "runs/<quest-id>/refs"]
+writes = ["runs/<quest-id>/workspaces/BO-reviewer"]
+
 # ───────────────── Domain extension (knowledge packs add paths later) ─────────────────
 [knowledge_pack_paths]
 # A knowledge_pack (kind runner|validator|compiler|reference|template|metric_vocab) MAY declare additional
