@@ -4,14 +4,21 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Read the user's Research Topic prompt, source material, or topic ref, and decide whether it is specific enough to summarize.
-2. If the Research Topic is absent or unclear, ask the user for enough topic detail before creating any directory or topic overview file.
-3. If no topic workspace directory is supplied, ask the user for the directory and confirm whether it is inside the Project root, outside the Project root, or already present.
-4. Create the selected topic directory and `<topic-dir>/topic-def/` only after the Research Topic and directory are clear.
-5. Write `<topic-dir>/topic-def/topic-overview.md` from the agent's understanding of the Research Topic with the sections in **Topic Overview Template**.
-6. Report the created `topic_overview_path`, provisional status, assumptions, open questions, and the next safe subcommand.
+1. Check **Prerequisite Artifacts**. `init-topic` has no predecessor artifact requirement, so do not refuse to run because earlier flow artifacts are missing.
+2. Read the user's Research Topic prompt, source material, or topic ref, and decide whether it is specific enough to summarize.
+3. If the Research Topic is absent or unclear, ask the user for enough topic detail before creating any directory or topic overview file.
+4. If no topic workspace directory is supplied, ask the user for the directory and confirm whether it is inside the Project root, outside the Project root, or already present.
+5. Create the selected topic directory and `<topic-dir>/topic-def/` only after the Research Topic and directory are clear.
+6. Write `<topic-dir>/topic-def/topic-overview.md` from the agent's understanding of the Research Topic with the sections in **Topic Overview Template**.
+7. Report the created `topic_overview_path`, provisional status, assumptions, open questions, and the next safe subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the topic prompt, selected directory, Project Config boundary, and guardrails in this skill, then execute the plan.
+
+## Prerequisite Artifacts
+
+No predecessor artifacts are required. This is the first procedural step.
+
+If the user is actually asking for a later procedural subcommand and predecessor artifacts are missing, refuse to run that later subcommand and tell the user to run `init-topic` first.
 
 ## Topic Overview Template
 

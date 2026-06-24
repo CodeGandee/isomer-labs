@@ -75,6 +75,12 @@ Alternative considered: hide helper subcommands from help. Rejected because the 
 
 Alternative considered: have `specialize-team` perform setup and finalization automatically. Rejected because it would hide environment mutation and workspace creation inside a design-time specialization command.
 
+### Refuse procedural steps with missing predecessor artifacts
+
+Each procedural subcommand page should name the artifacts expected from earlier steps. Except for `init-topic`, which starts the flow, a procedural subcommand should refuse to run when its predecessor artifacts are missing, tell the user which artifacts are missing, and name the previous subcommand that should create them.
+
+Alternative considered: let later subcommands implicitly backfill earlier artifacts. Rejected because hidden backfill would make manual operation hard to reason about and could mutate topic, setup, approval, or launch material out of order.
+
 ### Treat created topic dirs as provisional unless registered
 
 The subcommand should create the requested directory and overview file, but it should report that the topic is provisional until the Project Manifest and Research Topic Config are updated by a supported Isomer CLI/API path. This keeps the existing authority model intact.

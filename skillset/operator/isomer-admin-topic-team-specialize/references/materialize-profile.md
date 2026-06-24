@@ -4,13 +4,24 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Confirm the selected Research Topic, Topic Workspace, Domain Agent Team Template, packet path or packet inputs, and approval provenance.
-2. Run generic packet and profile-bundle validation before mutation.
-3. Materialize the approved Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, including `profile.toml`, packet, approval, validation, copied template material, and provenance files.
-4. Report the Project Manifest registration ref that should point at the bundle's `profile.toml`.
-5. Validate the Project Manifest and profile bundle after materialization.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+2. Confirm the selected Research Topic, Topic Workspace, Domain Agent Team Template, packet path or packet inputs, and approval provenance.
+3. Run generic packet and profile-bundle validation before mutation.
+4. Materialize the approved Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, including `profile.toml`, packet, approval, validation, copied template material, and provenance files.
+5. Report the Project Manifest registration ref that should point at the bundle's `profile.toml`.
+6. Validate the Project Manifest and profile bundle after materialization.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to identify the missing packet, approval, or workspace input, then execute only validated materialization steps.
+
+## Prerequisite Artifacts
+
+Required predecessor artifacts:
+
+- Approval provenance from `approve-profile`.
+- Approved Topic Team Instantiation Packet or packet/profile input summary.
+- `isomer-topic-summary.md` from `finalize-topic-team`.
+
+If approval provenance is missing, refuse to run, explain that materialization requires explicit approval, and tell the user to run `approve-profile` first.
 
 ## Reference Routing
 

@@ -4,13 +4,24 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Confirm that the selected Topic Agent Team Profile comes from an approved profile bundle or an explicitly supported legacy path.
-2. Validate Workspace Runtime initialization, Topic Environment Readiness, profile provenance, Agent Team Instance creation inputs, and launch blockers.
-3. Create or select the Agent Team Instance through Workspace Runtime APIs, then inspect Agent Instance and Agent Workspace records.
-4. Route launch materialization or quick launch through the Houmao Execution Adapter using approved profile bundle and runtime records.
-5. Record adapter diagnostics, command refs, payload refs, launch refs, and operator provenance without storing adapter reasoning as topic-profile material.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+2. Confirm that the selected Topic Agent Team Profile comes from an approved profile bundle or an explicitly supported legacy path.
+3. Validate Workspace Runtime initialization, Topic Environment Readiness, profile provenance, Agent Team Instance creation inputs, and launch blockers.
+4. Create or select the Agent Team Instance through Workspace Runtime APIs, then inspect Agent Instance and Agent Workspace records.
+5. Route launch materialization or quick launch through the Houmao Execution Adapter using approved profile bundle and runtime records.
+6. Record adapter diagnostics, command refs, payload refs, launch refs, and operator provenance without storing adapter reasoning as topic-profile material.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to separate profile validation, runtime creation, and adapter launch into explicit steps, then execute the safe subset.
+
+## Prerequisite Artifacts
+
+Required predecessor artifacts:
+
+- Materialized Topic Agent Team Profile Bundle from `materialize-profile`.
+- Workspace Runtime readiness or explicit runtime blocker.
+- Agent Team Instance creation inputs and launch blockers.
+
+If the materialized profile bundle is missing, refuse to run, explain that launch requires an approved and materialized Topic Agent Team Profile Bundle, and tell the user to run `materialize-profile` first.
 
 ## Reference Routing
 

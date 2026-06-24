@@ -10,6 +10,7 @@
 - Add a `clarify-topic-team` local subcommand for optional interactive revision of the specialized topic team.
 - Add `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team` local subcommands after `clarify-topic-team`.
 - Group local subcommands into procedural subcommands, helper subcommands, and misc subcommands so the skill presents a clean public API while still exposing fine-grained implementation steps.
+- Make predecessor artifacts explicit inside each procedural subcommand page, and require the subcommand to refuse when required artifacts from previous steps are missing.
 - Route unclear or missing Research Topic input through `clarify-topic` before creating or using topic material.
 - Ask the user for the topic workspace directory when it is not supplied.
 - Create the selected topic directory and `<topic-dir>/topic-def/topic-overview.md` from the agent's understanding of the Research Topic.

@@ -155,6 +155,8 @@ Do not edit the Domain Agent Team Template source while specializing a topic. Th
 
 Do not treat a provisional topic workspace seed as an authoritative Isomer Research Topic or Topic Workspace registration. Stop at the registration boundary or route through supported Isomer CLI/API surfaces instead of hand-editing `.isomer-labs/manifest.toml`.
 
+Do not run a procedural subcommand when required predecessor artifacts are missing. Refuse to run, name the missing artifacts, explain which previous subcommand should create them, and stop before mutation.
+
 Do not hide environment installation, Agent Workspace creation, readiness validation, profile materialization, runtime initialization, or Houmao launch behind earlier topic clarification or specialization commands.
 
 Do not create a directory named `teams` under a Topic Workspace for topic-specific profiles. Store topic-specific copied material inside `<topic-workspace>/team-profile/`, and keep only discovery refs in the Project Manifest.

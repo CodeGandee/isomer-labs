@@ -51,6 +51,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         omit_final_report: bool = False,
         omit_fallback: bool = False,
         omit_skill_term: str | None = None,
+        omit_prerequisite_subcommand: str | None = None,
     ) -> None:
         final_report = "" if omit_final_report else "Final Report"
         fallback = "" if omit_fallback else "If the user's task does not map cleanly to these steps, use your native planning tool."
@@ -108,6 +109,16 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
         for subcommand_name in validator.TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS:
+            prerequisite = ""
+            if (
+                subcommand_name in validator.TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS
+                and subcommand_name != omit_prerequisite_subcommand
+            ):
+                prerequisite = """
+                ## Prerequisite Artifacts
+
+                If any required predecessor artifact is missing, refuse to run and tell the user why.
+                """
             write(
                 root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subcommand_name,
                 f"""
@@ -118,6 +129,8 @@ class SkillsetValidatorTests(unittest.TestCase):
                 1. Run the subcommand fixture step.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                {prerequisite}
                 """,
             )
         for support_reference_name in validator.TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES:
@@ -289,6 +302,16 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("init-topic.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_procedural_subcommand_prerequisites(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root, omit_prerequisite_subcommand="specialize-team.md")
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("specialize-team.md" in message and "predecessor artifacts" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_route_service_subcommand(self) -> None:
         root = self.make_root()

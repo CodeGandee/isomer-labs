@@ -4,13 +4,22 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Read the topic overview, specialization outputs, setup records, Agent Workspace records, validation status, blockers, deferrals, and next action refs.
-2. Create or update `isomer-topic-summary.md` in the Topic Workspace root or selected provisional topic directory.
-3. Include the sections in **Summary Template** and keep blockers visible when validation is incomplete.
-4. Report `isomer_topic_summary_path`, `topic_team_validation_status`, blockers, deferrals, and next operator action.
-5. Stop at the final summary boundary unless the user explicitly asks for `approve-profile`, `materialize-profile`, or `launch-team`.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+2. Read the topic overview, specialization outputs, setup records, Agent Workspace records, validation status, blockers, deferrals, and next action refs.
+3. Create or update `isomer-topic-summary.md` in the Topic Workspace root or selected provisional topic directory.
+4. Include the sections in **Summary Template** and keep blockers visible when validation is incomplete.
+5. Report `isomer_topic_summary_path`, `topic_team_validation_status`, blockers, deferrals, and next operator action.
+6. Stop at the final summary boundary unless the user explicitly asks for `approve-profile`, `materialize-profile`, or `launch-team`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step finalization plan from the topic-team artifacts, setup records, validation outputs, and guardrails, then execute the plan.
+
+## Prerequisite Artifacts
+
+Required predecessor artifact:
+
+- `topic_team_validation_status` from `validate-topic-team`, including ready, ready-with-deferrals, or blocked status.
+
+If validation status is missing, refuse to run, explain that the final summary depends on readiness validation, and tell the user to run `validate-topic-team` first.
 
 ## Summary Template
 

@@ -4,13 +4,24 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Read the draft profile bundle summary, packet validation report, copied material plan, proposed topic edits, and launch blockers.
-2. Present review points: selected roles, inactive roles, role binding refs, policy refs, expected Artifacts, copied material, support outputs, unresolved placeholders, and provenance refs.
-3. Capture approval state, approval ref, approval actor or session ref, approval mode, review summary, validation result ref, and timestamp.
-4. Update packet-shaped approval provenance or request repair when approval is withheld.
-5. Return whether materialization may proceed and which validation command must run next.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+2. Read the draft profile bundle summary, packet validation report, copied material plan, proposed topic edits, launch blockers, and `isomer-topic-summary.md`.
+3. Present review points: selected roles, inactive roles, role binding refs, policy refs, expected Artifacts, copied material, support outputs, unresolved placeholders, and provenance refs.
+4. Capture approval state, approval ref, approval actor or session ref, approval mode, review summary, validation result ref, and timestamp.
+5. Update packet-shaped approval provenance or request repair when approval is withheld.
+6. Return whether materialization may proceed and which validation command must run next.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to review the available packet and draft evidence, then execute the smallest approval-safe path.
+
+## Prerequisite Artifacts
+
+Required predecessor artifacts:
+
+- `isomer-topic-summary.md` from `finalize-topic-team`.
+- Draft profile or packet/profile input summary from `specialize-team`.
+- Packet validation output or explicit validation blocker.
+
+If the final summary or draft profile evidence is missing, refuse to run, explain that approval needs reviewable team material, and tell the user to run `finalize-topic-team` first.
 
 ## Reference Routing
 

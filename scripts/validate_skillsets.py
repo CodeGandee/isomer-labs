@@ -104,6 +104,20 @@ TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
     "step-by-step.md",
 )
 
+TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS = (
+    "init-topic.md",
+    "clarify-topic.md",
+    "specialize-team.md",
+    "clarify-topic-team.md",
+    "setup-topic-env.md",
+    "setup-agent-workspace.md",
+    "validate-topic-team.md",
+    "finalize-topic-team.md",
+    "approve-profile.md",
+    "materialize-profile.md",
+    "launch-team.md",
+)
+
 TOPIC_TEAM_SPECIALIZATION_NAMING_EXCEPTIONS = {"help", "step-by-step"}
 
 TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES = (
@@ -516,8 +530,14 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
             add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS003", f"references/{subcommand_file_name} must place ## Workflow near the top")
         if not has_numbered_step_after(subcommand_lines, workflow_index):
             add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS003", f"references/{subcommand_file_name} workflow must use numbered steps")
-        if "does not map cleanly" not in "\n".join(subcommand_lines):
+        subcommand_text = "\n".join(subcommand_lines)
+        if "does not map cleanly" not in subcommand_text:
             add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS003", f"references/{subcommand_file_name} must include a freeform fallback")
+        if subcommand_file_name in TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS:
+            if "## Prerequisite Artifacts" not in subcommand_text:
+                add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"references/{subcommand_file_name} must document predecessor artifacts")
+            if "refuse to run" not in subcommand_text.lower():
+                add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"references/{subcommand_file_name} must refuse to run when predecessor artifacts are missing")
     return diagnostics
 
 

@@ -72,7 +72,7 @@ The implementation SHALL validate the module skill with skill-creator and reposi
 
 #### Scenario: Operator skillset validation runs
 - **WHEN** `pixi run validate-operator-skills` runs
-- **THEN** it accepts the module skill, detects missing required guide, plan, support-reference, subcommand-group, or subcommand terms including `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`, verifies local subcommand workflow structure and naming, rejects external support refs, and does not require `evals/`
+- **THEN** it accepts the module skill, detects missing required guide, plan, support-reference, subcommand-group, predecessor-artifact, or subcommand terms including `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`, verifies local subcommand workflow structure and naming, rejects external support refs, and does not require `evals/`
 
 #### Scenario: OpenSpec validation runs
 - **WHEN** `openspec validate add-topic-specialize-init-topic-subcommand --strict` runs
@@ -117,6 +117,14 @@ The module skill SHALL present the primary user-facing flow as procedural subcom
 #### Scenario: Flow order is documented
 - **WHEN** help text, workflow text, or operator documentation describes the normal user-facing path
 - **THEN** it presents the order as `init-topic`, optional `clarify-topic`, `specialize-team`, optional `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, then explicit `approve-profile`, `materialize-profile`, or `launch-team` when requested
+
+#### Scenario: Procedural subcommands refuse missing predecessor artifacts
+- **WHEN** a procedural subcommand after `init-topic` is selected and the artifacts expected from its predecessor steps are missing
+- **THEN** the subcommand refuses to run, explains which predecessor artifacts are missing, and tells the user which previous subcommand should create them
+
+#### Scenario: Init topic has no predecessor artifact requirement
+- **WHEN** `init-topic` is selected
+- **THEN** it states that no predecessor artifacts are required because it is the first procedural step
 
 #### Scenario: Clarify topic revises topic overview
 - **WHEN** the user asks to refine, answer open questions, or clarify the Research Topic after `init-topic`

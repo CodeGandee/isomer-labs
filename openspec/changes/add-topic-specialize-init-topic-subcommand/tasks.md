@@ -16,6 +16,7 @@
 - [x] 1.14 Create `references/setup-agent-workspace.md` for per-agent workspace creation and boundary notes.
 - [x] 1.15 Create `references/validate-topic-team.md` for readiness validation before the team starts work.
 - [x] 1.16 Create `references/finalize-topic-team.md` for writing `isomer-topic-summary.md`.
+- [x] 1.17 Add predecessor artifact sections to every procedural subcommand page, with explicit refusal behavior when required artifacts from previous steps are missing.
 
 ## 2. Topic Seed File Behavior
 
@@ -43,8 +44,8 @@
 
 ## 5. Validation and Documentation
 
-- [x] 5.1 Extend `scripts/validate_skillsets.py` so the topic-team specialization module requires all new user-facing subcommands, their local reference pages, required subcommand groups, required topic-overview, team-specialization, setup, validation, and final-summary terms, no `evals/`, no external support refs, and workflow fallback.
-- [x] 5.2 Update `tests/unit/test_validate_skillsets.py` with accepted fixture coverage and negative checks for missing new subcommands, missing subcommand groups, missing fallback, missing topic-overview, setup, validation, final-summary, or team-specialization terms, and forbidden external refs.
+- [x] 5.1 Extend `scripts/validate_skillsets.py` so the topic-team specialization module requires all new user-facing subcommands, their local reference pages, required subcommand groups, predecessor-artifact sections, required topic-overview, team-specialization, setup, validation, and final-summary terms, no `evals/`, no external support refs, and workflow fallback.
+- [x] 5.2 Update `tests/unit/test_validate_skillsets.py` with accepted fixture coverage and negative checks for missing new subcommands, missing subcommand groups, missing predecessor-artifact sections, missing fallback, missing topic-overview, setup, validation, final-summary, or team-specialization terms, and forbidden external refs.
 - [x] 5.3 Update `skillset/operator/README.md` to explain the user-facing flow from `init-topic` through setup, validation, and `finalize-topic-team`.
 - [x] 5.4 Update OpenSpec-facing wording if implementation reveals a narrower topic seed, setup, validation, final-summary, or registration-boundary term.
 
