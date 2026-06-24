@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Determine whether the Research Topic is already registered or whether `init-topic` must create a provisional topic workspace seed first.
+1. Determine whether the user supplied a concrete Research Topic, an explicit registered topic ref with concrete topic material, or enough source material to seed a topic. If no topic substance is supplied, ask for the actual research topic and stop before running `init-topic`.
 2. Run `init-topic` when topic material or the topic workspace directory is missing or provisional setup is requested.
 3. Run `clarify-topic` only when missing or unclear topic details block specialization.
 4. Run `specialize-team` to select or confirm one Domain Agent Team Template and execute the helper specialization path through draft profile output.

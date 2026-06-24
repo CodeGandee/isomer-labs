@@ -38,7 +38,7 @@ init-topic
 
 `fast-forward` runs this path automatically where possible. `step-by-step` runs the same path but asks the user to confirm before each stage.
 
-When `init-topic` receives a clear Research Topic without an explicit output directory, it derives a provisional topic workspace seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`.
+When `init-topic` receives a user-supplied clear concrete Research Topic without an explicit output directory, it derives a provisional topic workspace seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`. A Project Manifest default topic, the id `default`, or a generic `default Research Topic` statement created by `isomer-cli project init` is not enough topic substance by itself; ask the user for the actual research topic before creating files.
 
 ## Subcommands
 

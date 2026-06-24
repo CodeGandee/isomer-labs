@@ -222,8 +222,12 @@ The module skill SHALL provide an `init-topic` subcommand that starts the user-f
 - **WHEN** the user invokes `init-topic` without a Research Topic or with an unclear Research Topic
 - **THEN** the subcommand asks the user for enough topic information before creating any directory or topic overview file
 
+#### Scenario: Generic default topic is not sufficient
+- **WHEN** the user invokes `init-topic` without supplying topic substance and the Project Manifest has a registered default Research Topic or generic `default Research Topic` statement
+- **THEN** the subcommand asks the user for the concrete research topic and does not create or overwrite `topic-overview.md`
+
 #### Scenario: Missing topic directory uses default base for clear topic
-- **WHEN** the Research Topic is clear but no topic workspace directory is supplied
+- **WHEN** the user-supplied Research Topic is clear but no topic workspace directory is supplied
 - **THEN** the subcommand derives a provisional topic seed directory under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`, before creating topic material
 
 #### Scenario: Default base comes from manifest or built-in layout
@@ -335,4 +339,3 @@ The module skill SHALL focus on static Topic Team material and durable setup pre
 #### Scenario: Static validation stops before live operation
 - **WHEN** `validate-topic-team` or `finalize-topic-team` runs
 - **THEN** the skill validates or summarizes topic overview material, copied specialization material, setup evidence, Agent Workspace layout, profile material, blockers, deferrals, and next actions without claiming Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or live launch readiness
-

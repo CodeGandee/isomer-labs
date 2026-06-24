@@ -69,6 +69,8 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "static material readiness",
     "durable setup state",
     "topic-overview.md",
+    "concrete Research Topic",
+    "default Research Topic",
     "provisional topic workspace seed",
     "isomer-content/topic-ws/<topic-slug>/",
     "team-specialization-guide.md",

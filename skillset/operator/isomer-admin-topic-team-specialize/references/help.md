@@ -34,7 +34,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Usage Notes
 
-Use `init-topic` first when the Research Topic is new, missing from the Project Manifest, or needs a topic workspace seed. If the Research Topic is clear and no output directory is supplied, it derives a provisional seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`. It writes `<topic-dir>/topic-def/topic-overview.md` and reports provisional status until registration is handled by supported Isomer CLI/API surfaces.
+Use `init-topic` first when the user supplies a concrete Research Topic that is new, missing from the Project Manifest, or needs a topic workspace seed. If the Research Topic is clear and no output directory is supplied, it derives a provisional seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`. If the user does not supply a topic, or only the Project's generic registered `default` topic is available, ask for the actual research topic and do not create files. When it does proceed, it writes `<topic-dir>/topic-def/topic-overview.md` and reports provisional status until registration is handled by supported Isomer CLI/API surfaces.
 
 Use `specialize-team` after the topic is clear. It selects one Domain Agent Team Template, runs the internal specialization path as needed, adapts copied template material, and reports draft Topic Agent Team Profile Bundle inputs.
 

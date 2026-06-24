@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Explain that `step-by-step` follows the same required static topic-team setup path as `fast-forward`, but pauses before each step for user confirmation.
-2. Prepare a progress tracker with these steps: `init-topic`, `clarify-topic` when needed, `specialize-team`, `clarify-topic-team` when needed, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, and optional later approval or materialization boundaries.
+2. Prepare a progress tracker with these steps: `init-topic`, `clarify-topic` when needed, `specialize-team`, `clarify-topic-team` when needed, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, and optional later approval or materialization boundaries. If the user has not supplied concrete Research Topic substance, ask for it before confirming or running `init-topic`.
 3. Before each step, tell the user what will happen, what inputs or files may be read or changed, and what output should exist after the step.
 4. Ask the user to confirm before running the step. Continue only after explicit confirmation; if the user declines or asks to stop, report progress, blockers, and the next safe step.
 5. Execute exactly one confirmed step, then summarize what changed, what was deferred, and whether the next step is safe.

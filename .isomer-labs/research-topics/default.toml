@@ -1,0 +1,4 @@
+schema_version = "isomer-research-topic-config.v1"
+research_topic_id = "default"
+topic_statement = "default Research Topic"
+measurable_objectives = []

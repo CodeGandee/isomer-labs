@@ -85,7 +85,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Use {subcommand_links}.
 
-            Use static material readiness, durable setup state, `topic-overview.md`, provisional topic workspace seed, `isomer-content/topic-ws/<topic-slug>/`, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, and `isomer-topic-summary.md`.
+            Use static material readiness, durable setup state, `topic-overview.md`, concrete Research Topic, default Research Topic, provisional topic workspace seed, `isomer-content/topic-ws/<topic-slug>/`, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, and `isomer-topic-summary.md`.
 
             Report `selected_domain_team_template_ref`, `topic_environment_status`, `agent_workspace_paths`, `topic_team_validation_status`, and `isomer_topic_summary_path`.
 
