@@ -9,7 +9,7 @@ Install these skills into the agent surface that acts as the Project Operator Se
 | Skill | Purpose |
 | --- | --- |
 | `isomer-admin-project-mgr` | Run the operator Project lifecycle workflow. It exposes short local subcommands such as `help`, `init-project`, `check-project`, `list-topics`, `show-context`, `init-runtime`, `prep-runtime`, and `specialize-team`; it initializes `.isomer-labs/` and the Project-level `.houmao/` overlay through `isomer-cli init`, checks Project health, resolves context, prepares runtime, and hands topic-team adaptation to `isomer-admin-topic-team-specialize`. |
-| `isomer-admin-topic-team-specialize` | Run the module-level Topic Team Specialization workflow. It exposes short local subcommands such as `help`, `resolve-project`, `inspect-template`, `step-by-step`, and `fast-forward`; it copies Domain Agent Team Template material into `<topic-workspace>/team-profile/`, reads or creates `team-specialization-guide.md`, creates `team-specialization-plan.md`, adapts copied material, records a `Final Report`, and reports packet/profile inputs. |
+| `isomer-admin-topic-team-specialize` | Run the module-level Topic Team Specialization workflow. It exposes procedural subcommands from `init-topic` through `finalize-topic-team`, five helper subcommands for lower-level specialization work, and misc commands such as `help`, `step-by-step`, and `fast-forward`; it creates `topic-overview.md`, copies and adapts Domain Agent Team Template material under `<topic-workspace>/team-profile/`, prepares topic environment and Agent Workspace setup, validates readiness, writes `isomer-topic-summary.md`, and keeps approval, materialization, and launch as explicit boundaries. |
 | `isomer-admin-houmao-interop` | Bridge Isomer Labs project constructs and the Houmao agent runtime. It explains how the Houmao agent loop works, lists agent-loop customization points, maps Domain Agent Team Templates such as DeepScientist onto Houmao concepts, and guides runtime inspection. Use it when a topic-team specialization or launch task touches Houmao loop, roles, recipes, presets, specialists, launch dossiers, project overlays, credentials, mailbox, or gateway. |
 
 ## Example: Initialize and Check a Project
@@ -27,12 +27,13 @@ Use this flow when a user asks the operator to create, diagnose, or prepare an I
 
 Use this flow when a user gives a research topic and asks the operator to instantiate a topic-level team from a Domain Agent Team Template such as `deepsci-mini`.
 
-1. The operator can ask `isomer-admin-topic-team-specialize` to fast-forward specialization for a named research topic and Domain Agent Team Template. The skill uses local subcommands to resolve project and topic context, inspect the template, reconcile placeholders, copy template material into `<topic-workspace>/team-profile/`, read or create `team-specialization-guide.md`, create `team-specialization-plan.md`, adapt copied material, record a `Final Report`, and report Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.
+1. The operator can ask `isomer-admin-topic-team-specialize init-topic` to turn a new research topic idea into a provisional topic workspace seed with `<topic-dir>/topic-def/topic-overview.md`. If the topic already exists in the Project Manifest, the skill can use the registered Research Topic and Topic Workspace instead.
 2. If the user wants usage information, call `isomer-admin-topic-team-specialize help`; invoking `isomer-admin-topic-team-specialize` without a prompt defaults to the same help output.
-3. If the user wants guided specialization, call `step-by-step`; it follows the same required path as `fast-forward` but explains each step and waits for user confirmation before continuing.
-4. If the user wants manual specialization, call one subcommand at a time, such as `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, or `draft-profile`.
-5. If the user explicitly approves continuing past specialization, the same skill's local `approve-profile` and `materialize-profile` subcommands handle approval provenance and validated bundle writing.
-6. The operator reports copied material paths, packet/profile inputs, approval or materialization status, validation refs, and blockers.
+3. The normal procedural flow is `init-topic`, optional `clarify-topic`, `specialize-team`, optional `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`. `finalize-topic-team` writes `isomer-topic-summary.md` with the topic team, goal, working logic, environment setup, Agent Workspace layout, validation status, blockers, and next actions.
+4. If the user wants guided specialization, call `step-by-step`; it follows the same required path as `fast-forward` but explains each step and waits for user confirmation before continuing.
+5. If the user wants manual lower-level work, call one helper subcommand at a time, such as `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, or `draft-profile`.
+6. If the user explicitly approves continuing past finalization, the same skill's local `approve-profile`, `materialize-profile`, and `launch-team` subcommands handle approval provenance, validated bundle writing, and launch-facing runtime or adapter work.
+7. The operator reports topic overview path, copied material paths, packet/profile inputs, environment status, Agent Workspace paths, validation refs, summary path, and blockers.
 
 ```mermaid
 sequenceDiagram
@@ -41,10 +42,12 @@ sequenceDiagram
     participant Store as Isomer Project and Topic Workspace
 
     User->>Operator: Request topic team for research topic
-    Operator->>Store: Request fast-forward specialization for topic and template
+    Operator->>Store: init-topic and specialize-team for topic and template
     Store-->>Operator: Project, topic, workspace, template refs
-    Operator->>Store: fast-forward runs local subcommands
-    Store-->>Operator: Copied guide, plan, topic edits, packet/profile inputs
+    Operator->>Store: setup-topic-env and setup-agent-workspace
+    Store-->>Operator: Copied guide, plan, topic edits, setup records, packet/profile inputs
+    Operator->>Store: validate-topic-team and finalize-topic-team
+    Store-->>Operator: isomer-topic-summary.md
     Operator->>User: approve-profile
     User-->>Operator: Approval decision
     Operator->>Store: materialize-profile

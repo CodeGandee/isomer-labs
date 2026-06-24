@@ -4,12 +4,12 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Explain that `step-by-step` follows the same required specialization path as `fast-forward`, but pauses before each step for user confirmation.
-2. Prepare a progress tracker with these steps: `resolve-project`, `inspect-template`, `resolve-context`, copied-template setup, guide handling, plan creation, `map-placeholders` plus copied-material adaptation, `Final Report` plus `draft-profile`, and specialization boundary review.
+1. Explain that `step-by-step` follows the same required topic-team setup path as `fast-forward`, but pauses before each step for user confirmation.
+2. Prepare a progress tracker with these steps: `init-topic`, `clarify-topic` when needed, `specialize-team`, `clarify-topic-team` when needed, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, and optional later approval, materialization, or launch boundaries.
 3. Before each step, tell the user what will happen, what inputs or files may be read or changed, and what output should exist after the step.
 4. Ask the user to confirm before running the step. Continue only after explicit confirmation; if the user declines or asks to stop, report progress, blockers, and the next safe step.
 5. Execute exactly one confirmed step, then summarize what changed, what was deferred, and whether the next step is safe.
-6. Ask the user to confirm before moving to the next step, repeating the confirm-execute-summarize cycle until the specialization path reaches draft profile output.
-7. Stop at specialization output. Run `approve-profile`, `materialize-profile`, or `launch-team` only when the user explicitly asks for that next boundary and required validation or approval inputs are available.
+6. Ask the user to confirm before moving to the next step, repeating the confirm-execute-summarize cycle until `finalize-topic-team` creates or updates `isomer-topic-summary.md`.
+7. Stop at final topic-team summary output. Run `approve-profile`, `materialize-profile`, or `launch-team` only when the user explicitly asks for that next boundary and required validation or approval inputs are available.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a guided confirmation plan from the selected topic, template, subcommands, output contract, and guardrails, then execute one confirmed step at a time.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a guided confirmation plan from the selected topic, template, procedural subcommands, output contract, and guardrails, then execute one confirmed step at a time.

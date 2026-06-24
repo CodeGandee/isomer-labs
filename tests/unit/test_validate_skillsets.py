@@ -44,11 +44,20 @@ class SkillsetValidatorTests(unittest.TestCase):
         write(root / "skillset" / "service" / "README.md", "# Service Skills\n")
         return root
 
-    def write_topic_team_specialization_skill(self, root: Path, *, omit_final_report: bool = False) -> None:
+    def write_topic_team_specialization_skill(
+        self,
+        root: Path,
+        *,
+        omit_final_report: bool = False,
+        omit_fallback: bool = False,
+        omit_skill_term: str | None = None,
+    ) -> None:
         final_report = "" if omit_final_report else "Final Report"
-        write(
-            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "SKILL.md",
-            f"""
+        fallback = "" if omit_fallback else "If the user's task does not map cleanly to these steps, use your native planning tool."
+        subcommand_links = ", ".join(
+            f"`references/{subcommand_name}`" for subcommand_name in validator.TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS
+        )
+        skill_text = f"""
             ---
             name: isomer-admin-topic-team-specialize
             description: Valid fixture skill.
@@ -63,18 +72,31 @@ class SkillsetValidatorTests(unittest.TestCase):
             3. **Guided mode**: Run `step-by-step`.
             4. **Automatic mode**: Run `fast-forward`.
 
-            If the user's task does not map cleanly to these steps, use your native planning tool.
+            {fallback}
 
             ## Subcommands
 
-            Use `references/help.md`, `references/resolve-project.md`, `references/inspect-template.md`, `references/resolve-context.md`, `references/map-placeholders.md`, `references/draft-profile.md`, `references/approve-profile.md`, `references/materialize-profile.md`, `references/launch-team.md`, `references/fast-forward.md`, and `references/step-by-step.md`.
+            Procedural Subcommands: `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, `materialize-profile`, and `launch-team`.
 
-            Use `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, and `<topic-workspace>/team-profile/execplan/`.
+            Helper Subcommands: five lower-level implementation commands: `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile`.
+
+            Misc Subcommands: `help`, `fast-forward`, and `step-by-step`.
+
+            Use {subcommand_links}.
+
+            Use `topic-overview.md`, provisional topic workspace seed, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, and `isomer-topic-summary.md`.
+
+            Report `selected_domain_team_template_ref`, `topic_environment_status`, `agent_workspace_paths`, `topic_team_validation_status`, and `isomer_topic_summary_path`.
 
             ```generated-guide
             Generated Guide
             ```
-            """,
+            """
+        if omit_skill_term is not None:
+            skill_text = skill_text.replace(omit_skill_term, "")
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "SKILL.md",
+            skill_text,
         )
         write(
             root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "agents" / "openai.yaml",
@@ -206,6 +228,46 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("Final Report" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_requires_topic_team_subcommand_groups(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root, omit_skill_term="Procedural Subcommands")
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("Procedural Subcommands" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_team_topic_setup_validation_and_summary_terms(self) -> None:
+        required_terms = (
+            "topic-overview.md",
+            "selected_domain_team_template_ref",
+            "topic_environment_status",
+            "agent_workspace_paths",
+            "topic_team_validation_status",
+            "isomer_topic_summary_path",
+        )
+        for term in required_terms:
+            with self.subTest(term=term):
+                root = self.make_root()
+                self.write_topic_team_specialization_skill(root, omit_skill_term=term)
+                self.write_deepsci_mini_guide(root)
+
+                diagnostics = validator.validate_operator_skillset(root)
+
+                self.assertIn("OPS003", codes(diagnostics))
+                self.assertTrue(any(term in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_team_skill_fallback(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root, omit_fallback=True)
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("must include a freeform fallback" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_requires_topic_team_subcommands(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -216,6 +278,17 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("resolve-project.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_new_topic_team_subcommands(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        (root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "init-topic.md").unlink()
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("init-topic.md" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_route_service_subcommand(self) -> None:
         root = self.make_root()

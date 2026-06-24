@@ -51,20 +51,47 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "Manual mode",
     "Automatic mode",
     "## Subcommands",
+    "Procedural Subcommands",
+    "Helper Subcommands",
+    "Misc Subcommands",
     "references/help.md",
+    "init-topic",
+    "clarify-topic",
+    "specialize-team",
+    "clarify-topic-team",
+    "setup-topic-env",
+    "setup-agent-workspace",
+    "validate-topic-team",
+    "finalize-topic-team",
     "fast-forward",
     "step-by-step",
     "load only its detail page",
+    "topic-overview.md",
+    "provisional topic workspace seed",
     "team-specialization-guide.md",
     "team-specialization-plan.md",
     "```generated-guide",
     "Generated Guide",
     "Final Report",
     "<topic-workspace>/team-profile/execplan/",
+    "isomer-topic-summary.md",
+    "selected_domain_team_template_ref",
+    "topic_environment_status",
+    "agent_workspace_paths",
+    "topic_team_validation_status",
+    "isomer_topic_summary_path",
 )
 
 TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
     "help.md",
+    "init-topic.md",
+    "clarify-topic.md",
+    "specialize-team.md",
+    "clarify-topic-team.md",
+    "setup-topic-env.md",
+    "setup-agent-workspace.md",
+    "validate-topic-team.md",
+    "finalize-topic-team.md",
     "resolve-project.md",
     "inspect-template.md",
     "resolve-context.md",
@@ -471,7 +498,7 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
     for subcommand_file_name in TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS:
         subcommand_name = subcommand_file_name.removesuffix(".md")
         subcommand_path = references_dir / subcommand_file_name
-        if subcommand_name not in TOPIC_TEAM_SPECIALIZATION_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+-[a-z]+$", subcommand_name):
+        if subcommand_name not in TOPIC_TEAM_SPECIALIZATION_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+(?:-[a-z]+)+$", subcommand_name):
             add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"subcommand '{subcommand_name}' must be a short verb-object name or an allowed command")
         if len(subcommand_name) > 24:
             add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"subcommand '{subcommand_name}' must be short")
@@ -557,7 +584,7 @@ def validate_project_manager_module(repo_root: Path) -> list[Diagnostic]:
     for subcommand_file_name in PROJECT_MANAGER_SUBCOMMANDS:
         subcommand_name = subcommand_file_name.removesuffix(".md")
         subcommand_path = references_dir / subcommand_file_name
-        if subcommand_name not in PROJECT_MANAGER_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+-[a-z]+$", subcommand_name):
+        if subcommand_name not in PROJECT_MANAGER_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+(?:-[a-z]+)+$", subcommand_name):
             add(diagnostics, repo_root, subcommand_path, 1, "OPS005", f"subcommand '{subcommand_name}' must be a short verb-object name or an allowed command")
         if len(subcommand_name) > 24:
             add(diagnostics, repo_root, subcommand_path, 1, "OPS005", f"subcommand '{subcommand_name}' must be short")

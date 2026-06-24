@@ -4,14 +4,17 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Run `resolve-project` to select the Project, Research Topic, Topic Workspace, Domain Agent Team Template, profile bundle, and runtime refs.
-2. Run `inspect-template` to understand template metadata, placeholders, role slots, Workflow Stages, workspace contracts, diagnostics, and copyable material.
-3. Run `resolve-context` to gather Effective Topic Context, Workspace Runtime readiness, policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, and Gate policy refs.
-4. Create or confirm `<topic-workspace>/team-profile/`, copy selected Domain Agent Team Template material into it, then use `<topic-workspace>/team-profile/execplan/` as the default copied template root for `deepsci-mini`.
-5. Read `team-specialization-guide.md` in the copied template root, or create it with the generated-guide fenced block from the entrypoint when no source guide exists.
-6. Create `team-specialization-plan.md` in the copied template root with the required checklist, planned edits, validation plan, and pending `Final Report`.
-7. Run `map-placeholders`, then adapt only copied template material according to the plan.
-8. Fill the `Final Report`, then run `draft-profile` to report Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.
-9. Stop at specialization output. Run `approve-profile`, `materialize-profile`, or `launch-team` only when the user explicitly asks for that next boundary and required validation or approval inputs are available.
+1. Determine whether the Research Topic is already registered or whether `init-topic` must create a provisional topic workspace seed first.
+2. Run `init-topic` when topic material or the topic workspace directory is missing or provisional setup is requested.
+3. Run `clarify-topic` only when missing or unclear topic details block specialization.
+4. Run `specialize-team` to select or confirm one Domain Agent Team Template and execute the helper specialization path through draft profile output.
+5. Run `clarify-topic-team` only when specialization outputs contain open questions that block setup or validation.
+6. Run `setup-topic-env`, then run `setup-agent-workspace`.
+7. Run `validate-topic-team`, then run `finalize-topic-team` to create `isomer-topic-summary.md`.
+8. Stop at final topic-team summary output. Run `approve-profile`, `materialize-profile`, or `launch-team` only when the user explicitly asks for that next boundary and required validation or approval inputs are available.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the selected topic, template, subcommands, output contract, and guardrails, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the selected topic, template, procedural subcommands, output contract, and guardrails, then execute the plan.
+
+## Output Contract
+
+Report the topic overview path, selected Domain Agent Team Template, copied material paths, topic environment status, Agent Workspace paths, topic-team validation status, `isomer-topic-summary.md` path, blockers, deferrals, and next operator action.
