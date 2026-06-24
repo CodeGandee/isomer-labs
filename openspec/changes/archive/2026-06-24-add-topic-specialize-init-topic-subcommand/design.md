@@ -11,7 +11,7 @@ The repository currently treats the Project Manifest as the authority for manage
 **Goals:**
 
 - Add a short local `init-topic` subcommand to `isomer-admin-topic-team-specialize`.
-- Add `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, `materialize-profile`, and `launch-team` as user-facing procedural boundaries through topic and team setup.
+- Add `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile` as user-facing procedural boundaries through static topic and team setup.
 - Classify subcommands into procedural, helper, and misc groups so the entrypoint and help page distinguish the public workflow API from finer-grained implementation helpers and shortcuts.
 - Require `init-topic` or `clarify-topic` to clarify the Research Topic when missing or unclear.
 - Require the subcommand to ask for the topic workspace directory when missing.
@@ -28,8 +28,8 @@ The repository currently treats the Project Manifest as the authority for manage
 - Do not add or require a new `isomer-cli topics add` command in this change.
 - Do not hand-edit `.isomer-labs/manifest.toml` or Research Topic Config files from the skill.
 - Do not treat an unregistered topic directory as authoritative Project Manifest state.
-- Do not hide environment setup, per-agent workspace setup, readiness validation, profile materialization, runtime initialization, or Houmao launch behind earlier topic clarification commands.
-- Do not claim live launch readiness from `finalize-topic-team`; launch remains a later explicit boundary.
+- Do not hide environment setup, per-agent workspace setup, readiness validation, or profile materialization behind earlier topic clarification commands.
+- Do not claim live runtime readiness from `finalize-topic-team`; live operation remains outside this skill.
 
 ## Decisions
 
@@ -52,7 +52,7 @@ init-topic
   -> setup-agent-workspace
   -> validate-topic-team
   -> finalize-topic-team
-  -> approve-profile / materialize-profile / launch-team when explicitly requested
+  -> approve-profile / materialize-profile when explicitly requested
 ```
 
 `specialize-team` should be the user-facing command that selects a Domain Agent Team Template and runs the internal specialization path. Existing lower-level pages such as `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile` remain useful for manual operation and for implementing `specialize-team`, `fast-forward`, and `step-by-step`.
@@ -63,11 +63,11 @@ Alternative considered: keep `fast-forward` as the main automatic user-facing co
 
 The skill should divide subcommands into three groups:
 
-- Procedural subcommands are public, single-step workflow commands that represent the user's normal topic-team setup path and explicit lifecycle boundaries: `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, `materialize-profile`, and `launch-team`.
-- Helper subcommands are five finer-grained implementation commands called by procedural subcommands: `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile`. They remain callable for manual operation, but the help text should frame them as lower-level helpers rather than the main user path.
+- Procedural subcommands are public, single-step workflow commands that represent the user's normal static topic-team setup path and explicit profile-material boundaries: `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile`.
+- Helper subcommands are five finer-grained implementation commands called by procedural subcommands: `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile`. They remain callable for manual operation and should stay documented in the skill entrypoint, but the `help` subcommand should not list them because it is the public usage surface. The help output should list public subcommands as a three-column table: `Subcommand`, `Purpose`, and `Produces`.
 - Misc subcommands are public supporting commands or shortcuts that are not single workflow stages: `help`, `fast-forward`, and `step-by-step`.
 
-Alternative considered: hide helper subcommands from help. Rejected because the skill cannot prevent direct user invocation and because advanced operators may need manual access to the lower-level steps.
+Alternative considered: list helper subcommands in help. Rejected because help should present the public API, while the skill entrypoint can still expose private implementation commands to agents and advanced manual callers.
 
 ### Keep setup and validation as explicit stages
 
@@ -79,7 +79,7 @@ Alternative considered: have `specialize-team` perform setup and finalization au
 
 Each procedural subcommand page should name the artifacts expected from earlier steps. Except for `init-topic`, which starts the flow, a procedural subcommand should refuse to run when its predecessor artifacts are missing, tell the user which artifacts are missing, and name the previous subcommand that should create them.
 
-Alternative considered: let later subcommands implicitly backfill earlier artifacts. Rejected because hidden backfill would make manual operation hard to reason about and could mutate topic, setup, approval, or launch material out of order.
+Alternative considered: let later subcommands implicitly backfill earlier artifacts. Rejected because hidden backfill would make manual operation hard to reason about and could mutate topic, setup, approval, or materialization material out of order.
 
 ### Treat created topic dirs as provisional unless registered
 

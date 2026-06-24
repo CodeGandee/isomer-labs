@@ -5,13 +5,13 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Read the topic overview, specialization outputs, setup records, Agent Workspace records, validation status, blockers, deferrals, and next action refs.
+2. Read the topic overview, specialization outputs, durable setup records, Agent Workspace records, validation status, blockers, deferrals, and next action refs.
 3. Create or update `isomer-topic-summary.md` in the Topic Workspace root or selected provisional topic directory.
 4. Include the sections in **Summary Template** and keep blockers visible when validation is incomplete.
 5. Report `isomer_topic_summary_path`, `topic_team_validation_status`, blockers, deferrals, and next operator action.
-6. Stop at the final summary boundary unless the user explicitly asks for `approve-profile`, `materialize-profile`, or `launch-team`.
+6. Stop at the final summary boundary unless the user explicitly asks for `approve-profile` or `materialize-profile`.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step finalization plan from the topic-team artifacts, setup records, validation outputs, and guardrails, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step static finalization plan from the topic-team artifacts, setup records, validation outputs, and guardrails, then execute the plan.
 
 ## Prerequisite Artifacts
 
@@ -49,8 +49,8 @@ Write `isomer-topic-summary.md` with these sections:
 
 ## Guardrails
 
-Do not claim live launch readiness from the summary alone.
+Do not claim live team readiness, Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or launch readiness from the summary.
 
 Do not hide blockers in prose. Put them in `## Blockers and Deferrals`.
 
-Do not include secrets, raw command payloads, or transient adapter state in `isomer-topic-summary.md`.
+Do not include secrets, raw command payloads, live provider state, or transient adapter state in `isomer-topic-summary.md`.

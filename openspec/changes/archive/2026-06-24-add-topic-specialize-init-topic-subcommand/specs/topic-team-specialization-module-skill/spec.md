@@ -21,14 +21,18 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 
 #### Scenario: Local subcommands exist
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
-- **THEN** it contains local subcommand pages named `help`, `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `launch-team`, `fast-forward`, and `step-by-step` under `references/`
+- **THEN** it contains local subcommand pages named `help`, `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `fast-forward`, and `step-by-step` under `references/`
 
 #### Scenario: Subcommands are grouped by contract
-- **WHEN** help text, workflow text, or operator documentation lists local subcommands
-- **THEN** it groups `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, `materialize-profile`, and `launch-team` as procedural subcommands, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile` as helper subcommands, and `help`, `fast-forward`, and `step-by-step` as misc subcommands
+- **WHEN** the skill entrypoint, workflow text, or operator documentation lists local subcommands
+- **THEN** it groups `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile` as procedural subcommands, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile` as helper subcommands, and `help`, `fast-forward`, and `step-by-step` as misc subcommands
+
+#### Scenario: Help lists public subcommands only
+- **WHEN** the user invokes the local `help` subcommand
+- **THEN** the help output lists procedural and misc subcommands in a table with `Subcommand`, `Purpose`, and `Produces` columns, and does not list helper subcommands such as `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, or `draft-profile`
 
 #### Scenario: Helper subcommands remain lower-level
-- **WHEN** helper subcommands are described in help text, workflow text, or operator documentation
+- **WHEN** helper subcommands are described in the skill entrypoint, workflow text, or operator documentation
 - **THEN** the documentation frames the five helper subcommands as finer-grained commands called by procedural subcommands while still allowing direct manual invocation
 
 #### Scenario: Subcommand names are short
@@ -112,11 +116,11 @@ The module skill SHALL provide an `init-topic` subcommand that starts the user-f
 - **THEN** the workflow reports the provisional seed and any registration blockers before proceeding to template adaptation that requires authoritative topic refs
 
 ### Requirement: User-Facing Topic Team Flow
-The module skill SHALL present the primary user-facing flow as procedural subcommands for topic initialization, optional topic clarification, team specialization, optional team clarification, topic environment setup, per-agent workspace setup, readiness validation, final summary, and explicit approval or materialization boundaries.
+The module skill SHALL present the primary user-facing flow as procedural subcommands for topic initialization, optional topic clarification, team specialization, optional team clarification, topic environment setup, per-agent workspace setup, static readiness validation, final summary, and explicit approval or materialization boundaries.
 
 #### Scenario: Flow order is documented
 - **WHEN** help text, workflow text, or operator documentation describes the normal user-facing path
-- **THEN** it presents the order as `init-topic`, optional `clarify-topic`, `specialize-team`, optional `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, then explicit `approve-profile`, `materialize-profile`, or `launch-team` when requested
+- **THEN** it presents the order as `init-topic`, optional `clarify-topic`, `specialize-team`, optional `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, then explicit `approve-profile` or `materialize-profile` when requested
 
 #### Scenario: Procedural subcommands refuse missing predecessor artifacts
 - **WHEN** a procedural subcommand after `init-topic` is selected and the artifacts expected from its predecessor steps are missing
@@ -140,7 +144,7 @@ The module skill SHALL present the primary user-facing flow as procedural subcom
 
 #### Scenario: Clarify topic team revises specialization
 - **WHEN** the user asks to revise the specialized team, adjust roles, change assumptions, or answer open questions about the proposed topic team
-- **THEN** the skill routes to `clarify-topic-team` and updates or reports revisions to the specialization outputs without claiming approval, materialization, or launch
+- **THEN** the skill routes to `clarify-topic-team` and updates or reports revisions to the specialization outputs without claiming approval, materialization, or live operation
 
 #### Scenario: Topic environment setup is explicit
 - **WHEN** the specialized topic team needs a development environment before work can start
@@ -152,7 +156,7 @@ The module skill SHALL present the primary user-facing flow as procedural subcom
 
 #### Scenario: Topic team readiness is validated
 - **WHEN** topic definition, specialization, environment setup, and agent workspace setup are complete or intentionally deferred
-- **THEN** the skill routes to `validate-topic-team` and checks whether the topic team has the topic overview, specialized team material, environment posture, per-agent workspaces, deferrals, and blockers needed for the team to start
+- **THEN** the skill routes to `validate-topic-team` and checks whether the topic team has the topic overview, specialized team material, environment posture, per-agent workspaces, deferrals, and blockers needed for static material readiness
 
 #### Scenario: Final topic summary is written
 - **WHEN** the topic team has been validated or blockers have been explicitly recorded

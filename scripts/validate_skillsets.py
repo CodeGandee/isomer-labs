@@ -66,6 +66,8 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "fast-forward",
     "step-by-step",
     "load only its detail page",
+    "static material readiness",
+    "durable setup state",
     "topic-overview.md",
     "provisional topic workspace seed",
     "team-specialization-guide.md",
@@ -99,7 +101,6 @@ TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
     "draft-profile.md",
     "approve-profile.md",
     "materialize-profile.md",
-    "launch-team.md",
     "fast-forward.md",
     "step-by-step.md",
 )
@@ -115,7 +116,20 @@ TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS = (
     "finalize-topic-team.md",
     "approve-profile.md",
     "materialize-profile.md",
-    "launch-team.md",
+)
+
+TOPIC_TEAM_SPECIALIZATION_HELP_FORBIDDEN_SUBCOMMANDS = (
+    "launch-team",
+    "resolve-project",
+    "inspect-template",
+    "resolve-context",
+    "map-placeholders",
+    "draft-profile",
+)
+
+TOPIC_TEAM_SPECIALIZATION_HELP_TABLE_TERMS = (
+    "| Subcommand | Purpose | Produces |",
+    "| --- | --- | --- |",
 )
 
 TOPIC_TEAM_SPECIALIZATION_NAMING_EXCEPTIONS = {"help", "step-by-step"}
@@ -538,6 +552,30 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
                 add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"references/{subcommand_file_name} must document predecessor artifacts")
             if "refuse to run" not in subcommand_text.lower():
                 add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"references/{subcommand_file_name} must refuse to run when predecessor artifacts are missing")
+    help_path = references_dir / "help.md"
+    if help_path.exists():
+        help_lines = read_lines(help_path)
+        help_text = "\n".join(help_lines)
+        for table_term in TOPIC_TEAM_SPECIALIZATION_HELP_TABLE_TERMS:
+            if table_term not in help_text:
+                add(
+                    diagnostics,
+                    repo_root,
+                    help_path,
+                    first_line_containing(help_lines, "## Public Subcommands"),
+                    "OPS003",
+                    f"references/help.md must print public subcommands as a three-column table including '{table_term}'",
+                )
+        for helper_subcommand in TOPIC_TEAM_SPECIALIZATION_HELP_FORBIDDEN_SUBCOMMANDS:
+            if helper_subcommand in help_text:
+                add(
+                    diagnostics,
+                    repo_root,
+                    help_path,
+                    first_line_containing(help_lines, helper_subcommand),
+                    "OPS003",
+                    f"references/help.md must not list private helper subcommand '{helper_subcommand}'",
+                )
     return diagnostics
 
 

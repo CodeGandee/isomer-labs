@@ -5,10 +5,10 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Read the specialized topic-team shape, expected Agent Roles, draft profile inputs, Topic Workspace path, Workspace Runtime posture, and topic environment status.
-3. Determine the per-agent Agent Workspace directories, ownership notes, allowed file surfaces, and boundary notes needed for the expected Agent Instances.
+2. Read the specialized topic-team shape, expected Agent Roles, draft profile inputs, Topic Workspace path, and topic environment status.
+3. Determine the static per-agent Agent Workspace directories, ownership notes, allowed file surfaces, and boundary notes needed for the expected Agent Roles.
 4. Create or report Agent Workspace directories only after the specialized team shape is clear and the target paths are safe.
-5. Record workspace paths, role ownership, boundary notes, skipped actions, blockers, and validation refs.
+5. Record workspace paths, role ownership, boundary notes, skipped actions, blockers, and validation refs as durable setup material.
 6. Report `agent_workspace_paths`, unresolved workspace blockers, and whether `validate-topic-team` can proceed.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step Agent Workspace setup plan from the specialized team shape, Topic Workspace boundary, and guardrails, then execute the plan.
@@ -26,6 +26,8 @@ If the topic environment setup status is missing, refuse to run, explain that Ag
 
 Use **Topic Workspace** for the topic-level work area and **Agent Workspace** for per-agent work areas.
 
-Do not create Agent Workspaces before team specialization defines expected roles or Agent Instances.
+Do not create Agent Workspaces before team specialization defines expected Agent Roles.
 
-Do not use Agent Workspace setup as a substitute for Workspace Runtime registration when runtime records are required.
+Do not create Agent Instances, start processes, register Workspace Runtime state, or launch agents from this subcommand.
+
+Do not use Agent Workspace setup as a substitute for later runtime registration when runtime records are required by a different workflow.

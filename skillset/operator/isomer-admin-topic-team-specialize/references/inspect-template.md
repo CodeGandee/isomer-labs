@@ -22,7 +22,7 @@ Read first:
 Read as needed:
 
 - `execplan/harness/schemas/topic-profile-instantiation.schema.json` for packet-facing schema expectations.
-- Generated agent profiles only to understand placeholders, not to launch agents directly.
+- Generated agent profiles only to understand placeholders, not to create live agents directly.
 
 ## Exit Criteria
 
@@ -34,4 +34,4 @@ Read as needed:
 
 - Do not edit Domain Agent Team Template source while specializing a topic.
 - Do not convert template placeholders into concrete values inside template material.
-- Do not use Houmao adapter mechanics as a replacement for Topic Team Specialization.
+- Do not use execution adapter mechanics as a replacement for Topic Team Specialization.

@@ -11,7 +11,7 @@ When this subcommand is selected, execute the following steps in order.
 5. Run `clarify-topic-team` only when specialization outputs contain open questions that block setup or validation.
 6. Run `setup-topic-env`, then run `setup-agent-workspace`.
 7. Run `validate-topic-team`, then run `finalize-topic-team` to create `isomer-topic-summary.md`.
-8. Stop at final topic-team summary output. Run `approve-profile`, `materialize-profile`, or `launch-team` only when the user explicitly asks for that next boundary and required validation or approval inputs are available.
+8. Stop at final topic-team summary output. Run `approve-profile` or `materialize-profile` only when the user explicitly asks for that static profile-material boundary and required validation or approval inputs are available.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the selected topic, template, procedural subcommands, output contract, and guardrails, then execute the plan.
 

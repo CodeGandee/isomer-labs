@@ -6,12 +6,12 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
 2. Read the topic overview, specialization outputs, copied template setup notes, and any environment requirements from the selected Domain Agent Team Template or topic material.
-3. Identify required development environment steps, including package installs, local build commands, data preparation, credentials placeholders, and validation commands.
+3. Identify durable development environment preparation steps, including package installs, environment files, local build commands, data preparation, credential placeholders, and validation commands.
 4. Before running mutating setup commands, tell the user what will change when the command is not clearly safe or already requested.
-5. Run or report explicit environment setup steps, then capture commands, changed files, skipped actions, blockers, and validation refs.
+5. Run or report explicit environment setup steps, then capture setup commands, changed files, installed-package evidence, skipped actions, blockers, and validation refs.
 6. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step environment setup plan from the topic material, template requirements, available commands, and guardrails, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step durable environment setup plan from the topic material, template requirements, available commands, and guardrails, then execute the plan.
 
 ## Prerequisite Artifacts
 
@@ -25,8 +25,12 @@ If the specialized topic-team material is missing, refuse to run, explain that e
 
 ## Guardrails
 
+Treat installed packages, environment files, setup commands, validation records, skipped actions, and blockers as durable static preparation for the Topic Team.
+
 Do not hide mutating setup work inside topic clarification or team specialization.
 
-Do not store credentials, API keys, command payloads, or live provider state in topic profile material.
+Do not start live team execution, launch execution adapters, or create runtime service state from this subcommand.
+
+Do not store credentials, API keys, command payloads, live provider state, or adapter state in topic profile material.
 
 Do not claim environment readiness without a validation command, explicit evidence, or a named deferral.

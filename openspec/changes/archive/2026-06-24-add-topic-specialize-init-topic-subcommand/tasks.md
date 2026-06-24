@@ -1,9 +1,9 @@
 ## 1. Skill Entrypoint and Subcommand
 
 - [x] 1.1 Add `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team` to the `isomer-admin-topic-team-specialize` subcommands table with short purposes and local reference links.
-- [x] 1.2 Update the main workflow text so the user-facing flow is `init-topic`, optional `clarify-topic`, `specialize-team`, optional `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, then explicit approval, materialization, or launch boundaries.
-- [x] 1.3 Group subcommands in the entrypoint and help text as procedural subcommands, helper subcommands, and misc subcommands.
-- [x] 1.4 Document procedural subcommands as the public single-step workflow API: `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, `materialize-profile`, and `launch-team`.
+- [x] 1.2 Update the main workflow text so the user-facing flow is `init-topic`, optional `clarify-topic`, `specialize-team`, optional `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, then explicit approval or materialization boundaries.
+- [x] 1.3 Group subcommands in the entrypoint as procedural subcommands, helper subcommands, and misc subcommands, while keeping help output limited to public procedural and misc subcommands.
+- [x] 1.4 Document procedural subcommands as the public single-step workflow API: `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile`.
 - [x] 1.5 Document helper subcommands as five lower-level implementation commands: `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile`.
 - [x] 1.6 Document misc subcommands as public supporting commands or shortcuts: `help`, `fast-forward`, and `step-by-step`.
 - [x] 1.7 Create `references/init-topic.md` with a near-top numbered `## Workflow`, Imsight-style fallback, input clarification rules, output contract, and guardrails.
@@ -31,7 +31,7 @@
 - [x] 3.1 Update `references/resolve-project.md` to call out `init-topic` when no registered Research Topic matches but the user has supplied enough topic material to seed a topic workspace.
 - [x] 3.2 Update `references/fast-forward.md` so automatic specialization follows the same required path as `init-topic` when needed, `specialize-team`, setup, validation, and `finalize-topic-team` through `isomer-topic-summary.md`.
 - [x] 3.3 Update `references/step-by-step.md` so guided specialization pauses between `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team` steps.
-- [x] 3.4 Update `references/help.md` to document the user-facing flow, subcommand groups, required inputs, generated topic overview, provisional status, team specialization output, environment setup, agent workspace setup, validation, final summary, and registration boundary.
+- [x] 3.4 Update `references/help.md` to document the user-facing flow, public subcommands only in a `Subcommand | Purpose | Produces` table, required inputs, generated topic overview, provisional status, team specialization output, environment setup, agent workspace setup, validation, final summary, and registration boundary.
 - [x] 3.5 Update output contracts or guardrails in the skill entrypoint as needed to report `topic_overview_path`, provisional status, `selected_domain_team_template_ref`, topic-team revision status, `topic_environment_status`, `agent_workspace_paths`, `topic_team_validation_status`, `isomer_topic_summary_path`, and next registration or approval action.
 - [x] 3.6 Ensure lower-level manual subcommands remain available for `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile`.
 
@@ -44,8 +44,8 @@
 
 ## 5. Validation and Documentation
 
-- [x] 5.1 Extend `scripts/validate_skillsets.py` so the topic-team specialization module requires all new user-facing subcommands, their local reference pages, required subcommand groups, predecessor-artifact sections, required topic-overview, team-specialization, setup, validation, and final-summary terms, no `evals/`, no external support refs, and workflow fallback.
-- [x] 5.2 Update `tests/unit/test_validate_skillsets.py` with accepted fixture coverage and negative checks for missing new subcommands, missing subcommand groups, missing predecessor-artifact sections, missing fallback, missing topic-overview, setup, validation, final-summary, or team-specialization terms, and forbidden external refs.
+- [x] 5.1 Extend `scripts/validate_skillsets.py` so the topic-team specialization module requires all new user-facing subcommands, their local reference pages, required subcommand groups, predecessor-artifact sections, required topic-overview, team-specialization, setup, validation, and final-summary terms, public-only table-shaped help output, no `evals/`, no external support refs, and workflow fallback.
+- [x] 5.2 Update `tests/unit/test_validate_skillsets.py` with accepted fixture coverage and negative checks for missing new subcommands, missing subcommand groups, missing predecessor-artifact sections, private helper subcommands in help output, missing help table, missing fallback, missing topic-overview, setup, validation, final-summary, or team-specialization terms, and forbidden external refs.
 - [x] 5.3 Update `skillset/operator/README.md` to explain the user-facing flow from `init-topic` through setup, validation, and `finalize-topic-team`.
 - [x] 5.4 Update OpenSpec-facing wording if implementation reveals a narrower topic seed, setup, validation, final-summary, or registration-boundary term.
 

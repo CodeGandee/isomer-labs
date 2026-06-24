@@ -77,7 +77,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Subcommands
 
-            Procedural Subcommands: `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, `materialize-profile`, and `launch-team`.
+            Procedural Subcommands: `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile`.
 
             Helper Subcommands: five lower-level implementation commands: `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile`.
 
@@ -85,7 +85,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Use {subcommand_links}.
 
-            Use `topic-overview.md`, provisional topic workspace seed, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, and `isomer-topic-summary.md`.
+            Use static material readiness, durable setup state, `topic-overview.md`, provisional topic workspace seed, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, and `isomer-topic-summary.md`.
 
             Report `selected_domain_team_template_ref`, `topic_environment_status`, `agent_workspace_paths`, `topic_team_validation_status`, and `isomer_topic_summary_path`.
 
@@ -109,6 +109,36 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
         for subcommand_name in validator.TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS:
+            if subcommand_name == "help.md":
+                write(
+                    root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subcommand_name,
+                    """
+                    # Help
+
+                    ## Workflow
+
+                    1. Print public subcommands as a table.
+
+                    If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                    ## Public Subcommands
+
+                    | Subcommand | Purpose | Produces |
+                    | --- | --- | --- |
+                    | `init-topic` | Start topic setup. | `topic-overview.md`. |
+                    | `clarify-topic` | Clarify topic. | Updated `topic-overview.md`. |
+                    | `specialize-team` | Specialize topic team. | Draft profile inputs. |
+                    | `setup-topic-env` | Prepare topic environment. | `topic_environment_status`. |
+                    | `setup-agent-workspace` | Prepare Agent Workspaces. | `agent_workspace_paths`. |
+                    | `validate-topic-team` | Validate static material. | `topic_team_validation_status`. |
+                    | `finalize-topic-team` | Finalize topic team. | `isomer-topic-summary.md`. |
+                    | `approve-profile` | Approve profile material. | Approval provenance. |
+                    | `materialize-profile` | Materialize profile material. | Static profile bundle. |
+                    | `fast-forward` | Run automatic flow. | Final summary. |
+                    | `step-by-step` | Run guided flow. | Step summaries. |
+                    """,
+                )
+                continue
             prerequisite = ""
             if (
                 subcommand_name in validator.TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS
@@ -313,6 +343,82 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("specialize-team.md" in message and "predecessor artifacts" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_rejects_private_helpers_in_help(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "help.md",
+            """
+            # Help
+
+            ## Workflow
+
+            1. List public commands and `resolve-project`.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("private helper subcommand 'resolve-project'" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_launch_team_in_help(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "help.md",
+            """
+            # Help
+
+            ## Workflow
+
+            1. List public commands and `launch-team`.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Public Subcommands
+
+            | Subcommand | Purpose | Produces |
+            | --- | --- | --- |
+            | `launch-team` | Run live team. | Runtime records. |
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("private helper subcommand 'launch-team'" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_help_subcommand_table(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "help.md",
+            """
+            # Help
+
+            ## Workflow
+
+            1. List public commands.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Public Subcommands
+
+            - `init-topic`
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("three-column table" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_rejects_route_service_subcommand(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -334,6 +440,28 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("unexpected reference page references/route-service.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_launch_team_subcommand(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "launch-team.md",
+            """
+            # Launch Team
+
+            ## Workflow
+
+            1. Launch live team.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("unexpected reference page references/launch-team.md" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_topic_team_evals(self) -> None:
         root = self.make_root()

@@ -1,6 +1,6 @@
 ## Why
 
-`isomer-admin-topic-team-specialize` has local implementation subcommands, but it does not yet present the topic-team setup path in the order users naturally experience it: define the topic, clarify it, specialize a domain-level team, clarify the specialized team, prepare the environment and agent workspaces, validate readiness, then finalize a team summary. Operators need a user-facing flow that starts with topic initialization and ends with a readable topic-team summary before launch-facing work proceeds.
+`isomer-admin-topic-team-specialize` has local implementation subcommands, but it does not yet present the topic-team setup path in the order users naturally experience it: define the topic, clarify it, specialize a domain-level team, clarify the specialized team, prepare the environment and agent workspaces, validate static readiness, then finalize a team summary. Operators need a user-facing flow that starts with topic initialization and ends with readable static Topic Team material before later runtime work proceeds elsewhere.
 
 ## What Changes
 
@@ -10,11 +10,12 @@
 - Add a `clarify-topic-team` local subcommand for optional interactive revision of the specialized topic team.
 - Add `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team` local subcommands after `clarify-topic-team`.
 - Group local subcommands into procedural subcommands, helper subcommands, and misc subcommands so the skill presents a clean public API while still exposing fine-grained implementation steps.
+- Keep the `help` subcommand public-facing by listing only procedural and misc subcommands, not helper subcommands, in a `Subcommand | Purpose | Produces` table.
 - Make predecessor artifacts explicit inside each procedural subcommand page, and require the subcommand to refuse when required artifacts from previous steps are missing.
 - Route unclear or missing Research Topic input through `clarify-topic` before creating or using topic material.
 - Ask the user for the topic workspace directory when it is not supplied.
 - Create the selected topic directory and `<topic-dir>/topic-def/topic-overview.md` from the agent's understanding of the Research Topic.
-- Guide topic-specific development environment setup and per-agent workspace creation without hiding validation or runtime boundaries.
+- Guide topic-specific development environment setup and per-agent workspace creation without hiding validation or later runtime boundaries.
 - Validate that topic definition, specialized team material, environment setup, and agent workspaces are ready enough for the team to start.
 - Create `isomer-topic-summary.md` summarizing the topic team, goals, working logic, environment setup, workspace layout, blockers, and next actions.
 - Mark `init-topic` output as a provisional topic workspace seed unless or until a supported Project Manifest registration path exists.
@@ -26,7 +27,7 @@
 
 ### Modified Capabilities
 
-- `topic-team-specialization-module-skill`: Add `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, `materialize-profile`, and `launch-team` as procedural user-facing Topic Team Specialization steps, classify exactly five helper subcommands as lower-level implementation steps, classify `help`, `fast-forward`, and `step-by-step` as public misc subcommands, and include provisional topic workspace seed behavior, setup readiness, and final topic-team summary output.
+- `topic-team-specialization-module-skill`: Add `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile` as procedural user-facing Topic Team Specialization steps, classify exactly five helper subcommands as lower-level implementation steps, classify `help`, `fast-forward`, and `step-by-step` as public misc subcommands, and include provisional topic workspace seed behavior, static setup readiness, and final topic-team summary output.
 
 ## Impact
 

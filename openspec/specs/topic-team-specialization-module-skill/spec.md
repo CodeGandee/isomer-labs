@@ -2,7 +2,6 @@
 
 ## Purpose
 Define the module-level operator skill for Topic Team Specialization, including local subcommands, copied-template workflow, guide and plan artifacts, and validation boundaries.
-
 ## Requirements
 ### Requirement: Skill Creator Bundle Layout
 The repository SHALL provide a lean operator skill bundle named `isomer-admin-topic-team-specialize` for Topic Team Specialization.
@@ -25,7 +24,19 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 
 #### Scenario: Local subcommands exist
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
-- **THEN** it contains local subcommand pages named `help`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `launch-team`, `fast-forward`, and `step-by-step` under `references/`
+- **THEN** it contains local subcommand pages named `help`, `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `fast-forward`, and `step-by-step` under `references/`
+
+#### Scenario: Subcommands are grouped by contract
+- **WHEN** the skill entrypoint, workflow text, or operator documentation lists local subcommands
+- **THEN** it groups `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile` as procedural subcommands, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile` as helper subcommands, and `help`, `fast-forward`, and `step-by-step` as misc subcommands
+
+#### Scenario: Help lists public subcommands only
+- **WHEN** the user invokes the local `help` subcommand
+- **THEN** the help output lists procedural and misc subcommands in a table with `Subcommand`, `Purpose`, and `Produces` columns, and does not list helper subcommands such as `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, or `draft-profile`
+
+#### Scenario: Helper subcommands remain lower-level
+- **WHEN** helper subcommands are described in the skill entrypoint, workflow text, or operator documentation
+- **THEN** the documentation frames the five helper subcommands as finer-grained commands called by procedural subcommands while still allowing direct manual invocation
 
 #### Scenario: Subcommand names are short
 - **WHEN** local subcommand pages are inspected
@@ -33,7 +44,7 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 
 #### Scenario: Help subcommand prints usage
 - **WHEN** the user invokes the local `help` subcommand
-- **THEN** the skill prints what `isomer-admin-topic-team-specialize` does, how to invoke it, available modes, subcommands, outputs, and guardrails
+- **THEN** the skill prints what `isomer-admin-topic-team-specialize` does, how to invoke it, available modes, public subcommands, outputs, and guardrails
 
 #### Scenario: Empty invocation defaults to help
 - **WHEN** the skill is invoked without a prompt
@@ -41,7 +52,7 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 
 #### Scenario: Step-by-step performs guided specialization
 - **WHEN** the user asks to specialize step by step, proceed interactively, or confirm each stage
-- **THEN** the module skill executes `step-by-step`, follows the same required specialization path as `fast-forward`, explains the current step, and waits for user confirmation before continuing to the next step
+- **THEN** the module skill executes `step-by-step`, follows the same required static-material path as `fast-forward`, explains the current step, and waits for user confirmation before continuing to the next step
 
 #### Scenario: Service routing subcommand is absent
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
@@ -49,11 +60,15 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 
 #### Scenario: Required support references are local
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
-- **THEN** it contains local support references for Isomer domain language and runtime/file boundaries under `references/`
+- **THEN** it contains local support references for Isomer domain language and static/runtime file boundaries under `references/`
 
 #### Scenario: External support refs are absent
 - **WHEN** the `isomer-admin-topic-team-specialize` skill entrypoint and local references are inspected
 - **THEN** they do not reference `.imsight-arts/`, `docs/`, `extern/`, or absolute local support paths for information needed to execute the skill
+
+#### Scenario: Runtime launch subcommand is absent
+- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **THEN** it does not contain `references/launch-team.md`
 
 #### Scenario: Incorporated standalone skills are absent
 - **WHEN** the operator skillset is inspected
@@ -86,7 +101,7 @@ The module skill SHALL follow the Imsight skill-entrypoint structure.
 The module skill SHALL incorporate former helper-skill behavior as local subcommands instead of requiring normal workflow calls to separate skills.
 
 #### Scenario: Entrypoint routes to local subcommands
-- **WHEN** `SKILL.md` describes project awareness, template inspection, topic context resolution, placeholder reconciliation, topic profile drafting, profile review approval, profile materialization, or team launch orchestration
+- **WHEN** `SKILL.md` describes project awareness, template inspection, topic context resolution, placeholder reconciliation, topic profile drafting, profile review approval, or profile materialization
 - **THEN** it routes the agent to local subcommand pages through a `## Subcommands` table
 
 #### Scenario: Manual mode selects one subcommand
@@ -97,24 +112,28 @@ The module skill SHALL incorporate former helper-skill behavior as local subcomm
 - **WHEN** the module skill performs its normal Topic Team Specialization workflow
 - **THEN** it uses local subcommands for project awareness, template inspection, topic context resolution, placeholder reconciliation, and topic profile drafting instead of asking the user to invoke separate operator skills
 
-#### Scenario: Fast-forward performs automatic specialization
-- **WHEN** the user asks to fully specialize, instantiate, adapt end-to-end, or says `fast-forward`
-- **THEN** the module skill executes `fast-forward` to run the full Topic Team Specialization path through draft profile output
+#### Scenario: Fast-forward performs automatic static specialization
+- **WHEN** the user asks to fully specialize, prepare, adapt end-to-end, or says `fast-forward`
+- **THEN** the module skill executes `fast-forward` to run the static Topic Team material path through final topic-team summary output
 
 #### Scenario: Step-by-step confirms before continuing
-- **WHEN** `step-by-step` completes one required specialization step
+- **WHEN** `step-by-step` completes one required static-material step
 - **THEN** it summarizes what happened and waits for user confirmation before executing the next step
 
-#### Scenario: Boundary operations remain explicit
-- **WHEN** approval, materialization, or launch work is requested after specialization
-- **THEN** the module skill uses the local `approve-profile`, `materialize-profile`, or `launch-team` subcommand and preserves all validation and provenance boundaries
+#### Scenario: Static boundary operations remain explicit
+- **WHEN** approval or materialization work is requested after specialization
+- **THEN** the module skill uses the local `approve-profile` or `materialize-profile` subcommand and preserves all static validation and provenance boundaries
+
+#### Scenario: Live launch is not incorporated
+- **WHEN** live team launch, Agent Team Instance creation, Workspace Runtime mutation, or Houmao Execution Adapter operation is requested
+- **THEN** the module skill reports that live operation is outside this skill's scope rather than routing to a local launch subcommand
 
 ### Requirement: Topic Team Specialization Workflow
-The module skill SHALL guide a Project Operator Session or Operator Agent through adapting one Domain Agent Team Template for one Research Topic.
+The module skill SHALL guide a Project Operator Session or Operator Agent through adapting one Domain Agent Team Template for one Research Topic and producing static Topic Team material.
 
 #### Scenario: Module purpose is plain text
 - **WHEN** operator documentation or skill text describes the workflow
-- **THEN** it explains in plain text that the skill adapts one Domain Agent Team Template for one Research Topic by copying template material into the topic workspace and producing reviewable specialization outputs
+- **THEN** it explains in plain text that the skill adapts one Domain Agent Team Template for one Research Topic by copying template material into the topic workspace and producing reviewable static specialization outputs
 
 #### Scenario: Template material is copied before adaptation
 - **WHEN** a Project Operator Session specializes a Domain Agent Team Template for a Research Topic
@@ -127,6 +146,10 @@ The module skill SHALL guide a Project Operator Session or Operator Agent throug
 #### Scenario: Topic Workspace teams directory is not used
 - **WHEN** the module skill stores copied or adapted topic-team material
 - **THEN** it stores that material inside `<topic-workspace>/team-profile/` and does not create a Topic Workspace-local `teams/` directory
+
+#### Scenario: Static setup remains in workflow
+- **WHEN** the workflow prepares the topic environment or Agent Workspace layout
+- **THEN** it treats package installation, environment setup records, created workspace directories, and boundary notes as durable static preparation rather than live team operation
 
 ### Requirement: Specialization Guide and Plan Artifacts
 The module skill SHALL use `team-specialization-guide.md` and `team-specialization-plan.md` inside the copied template root to make Topic Team Specialization auditable.
@@ -159,15 +182,19 @@ The `deepsci-mini` Domain Agent Team Template SHALL include a source `team-speci
 - **THEN** it describes placeholders, assumptions, team workflow, relevant contracts, and an example cooperation flow among lead, scout, and synthesis-reviewer roles
 
 ### Requirement: Packet and Profile Boundaries
-The module skill SHALL produce human-readable specialization artifacts that can feed Topic Team Instantiation Packet and Topic Agent Team Profile Bundle drafting without replacing those structured artifacts.
+The module skill SHALL produce human-readable specialization artifacts that can feed Topic Team Instantiation Packet and Topic Agent Team Profile Bundle drafting without replacing those structured artifacts or live runtime workflows.
 
 #### Scenario: Packet inputs are explicit
 - **WHEN** the module skill completes topic adaptation
-- **THEN** it reports copied material paths, guide path, plan path, adaptation summary, resolved placeholders, deferrals, review points, and validation refs needed to build or update a Topic Team Instantiation Packet
+- **THEN** it reports copied material paths, guide path, plan path, adaptation summary, resolved placeholders, deferrals, review points, setup evidence, Agent Workspace layout refs, and validation refs needed to build or update a Topic Team Instantiation Packet
 
 #### Scenario: Profile materialization remains separate
 - **WHEN** the module skill finishes adaptation
-- **THEN** it does not claim that the Topic Agent Team Profile Bundle is approved, materialized, launchable, or attached to an Agent Team Instance unless existing approval provenance and generic validation have completed through their own boundaries
+- **THEN** it does not claim that the Topic Agent Team Profile Bundle is approved or materialized unless existing approval provenance and generic validation have completed through their own static profile-material boundaries
+
+#### Scenario: Runtime attachment remains out of scope
+- **WHEN** the module skill finishes adaptation, approval, materialization, validation, or finalization
+- **THEN** it does not claim that the topic team is launched, launchable, attached to an Agent Team Instance, registered in Workspace Runtime, or ready for adapter execution
 
 ### Requirement: Skill Validation
 The implementation SHALL validate the module skill with skill-creator and repository validation surfaces.
@@ -178,8 +205,122 @@ The implementation SHALL validate the module skill with skill-creator and reposi
 
 #### Scenario: Operator skillset validation runs
 - **WHEN** `pixi run validate-operator-skills` runs
-- **THEN** it accepts the module skill, detects missing required guide, plan, support-reference, or subcommand terms, verifies local subcommand workflow structure and naming, rejects external support refs, and does not require `evals/`
+- **THEN** it accepts the module skill without `references/launch-team.md`, detects missing required guide, plan, support-reference, subcommand-group, predecessor-artifact, or static-material terms including `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`, verifies local subcommand workflow structure and naming, rejects external support refs, rejects unexpected runtime launch subcommand pages, and does not require `evals/`
+
+#### Scenario: Unit validation covers removed launch subcommand
+- **WHEN** `pixi run python -m unittest tests.unit.test_validate_skillsets` runs
+- **THEN** the tests cover the accepted static-material subcommand set and fail if `launch-team` is required or listed as a public subcommand
 
 #### Scenario: OpenSpec validation runs
-- **WHEN** `openspec validate add-topic-team-specialization-module-skill --strict` runs
+- **WHEN** `openspec validate limit-topic-team-specialize-to-static-materials --strict` runs
 - **THEN** the change artifacts validate without schema or scenario-format errors
+
+### Requirement: Topic Initialization Subcommand
+The module skill SHALL provide an `init-topic` subcommand that starts the user-facing Topic Team Specialization flow by creating provisional topic definition material before team specialization when the Research Topic is new or unclear.
+
+#### Scenario: Missing topic prompts clarification
+- **WHEN** the user invokes `init-topic` without a Research Topic or with an unclear Research Topic
+- **THEN** the subcommand asks the user for enough topic information before creating any directory or topic overview file
+
+#### Scenario: Missing topic directory prompts user
+- **WHEN** the Research Topic is clear but no topic workspace directory is supplied
+- **THEN** the subcommand asks the user for the topic workspace directory before creating topic material
+
+#### Scenario: Topic overview is created
+- **WHEN** the user confirms a Research Topic and topic workspace directory
+- **THEN** the subcommand creates the directory and writes `<topic-dir>/topic-def/topic-overview.md` from the agent's understanding of the Research Topic
+
+#### Scenario: Topic overview has required sections
+- **WHEN** `topic-overview.md` is written
+- **THEN** it includes sections for the Research Topic, agent understanding, scope, initial objectives, assumptions, open questions, and source prompt or source material
+
+#### Scenario: Provisional status is reported
+- **WHEN** `init-topic` creates topic material that is not registered in the Project Manifest
+- **THEN** the subcommand reports that the topic directory is a provisional topic workspace seed and is not yet an authoritative Isomer Research Topic or Topic Workspace registration
+
+#### Scenario: Project config mutation remains bounded
+- **WHEN** `init-topic` needs the new topic to become an authoritative Project Manifest-registered Research Topic
+- **THEN** it stops at the registration boundary or routes through a supported Isomer CLI/API path instead of hand-editing `.isomer-labs/manifest.toml`
+
+#### Scenario: Specialization waits for explicit topic readiness
+- **WHEN** `fast-forward` or `step-by-step` cannot resolve a registered Research Topic but can create a provisional seed through `init-topic`
+- **THEN** the workflow reports the provisional seed and any registration blockers before proceeding to template adaptation that requires authoritative topic refs
+
+### Requirement: User-Facing Topic Team Flow
+The module skill SHALL present the primary user-facing flow as procedural subcommands for topic initialization, optional topic clarification, team specialization, optional team clarification, topic environment setup, per-agent workspace setup, static readiness validation, final summary, and explicit approval or materialization boundaries.
+
+#### Scenario: Flow order is documented
+- **WHEN** help text, workflow text, or operator documentation describes the normal user-facing path
+- **THEN** it presents the order as `init-topic`, optional `clarify-topic`, `specialize-team`, optional `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, then explicit `approve-profile` or `materialize-profile` when requested
+
+#### Scenario: Procedural subcommands refuse missing predecessor artifacts
+- **WHEN** a procedural subcommand after `init-topic` is selected and the artifacts expected from its predecessor steps are missing
+- **THEN** the subcommand refuses to run, explains which predecessor artifacts are missing, and tells the user which previous subcommand should create them
+
+#### Scenario: Init topic has no predecessor artifact requirement
+- **WHEN** `init-topic` is selected
+- **THEN** it states that no predecessor artifacts are required because it is the first procedural step
+
+#### Scenario: Clarify topic revises topic overview
+- **WHEN** the user asks to refine, answer open questions, or clarify the Research Topic after `init-topic`
+- **THEN** the skill routes to `clarify-topic` and updates or reports revisions to `<topic-dir>/topic-def/topic-overview.md` without specializing the team yet
+
+#### Scenario: Specialize team selects domain team
+- **WHEN** the user asks to specialize a team after the topic is clear
+- **THEN** the skill routes to `specialize-team`, asks the user to select or confirm one Domain Agent Team Template, and runs the internal specialization path against the topic material
+
+#### Scenario: Specialize team creates topic team material
+- **WHEN** `specialize-team` completes its specialization work
+- **THEN** it reports the created or updated Topic Agent Team Profile Bundle inputs, copied template material, placeholder resolutions, deferrals, validation refs, and next operator action
+
+#### Scenario: Clarify topic team revises specialization
+- **WHEN** the user asks to revise the specialized team, adjust roles, change assumptions, or answer open questions about the proposed topic team
+- **THEN** the skill routes to `clarify-topic-team` and updates or reports revisions to the specialization outputs without claiming approval, materialization, or live operation
+
+#### Scenario: Topic environment setup is explicit
+- **WHEN** the specialized topic team needs a development environment before work can start
+- **THEN** the skill routes to `setup-topic-env`, runs or reports explicit environment setup steps, and records environment setup status, commands, blockers, and validation refs
+
+#### Scenario: Agent workspace setup is explicit
+- **WHEN** the specialized topic team has expected agent roles or Agent Instances that need workspaces
+- **THEN** the skill routes to `setup-agent-workspace`, creates or reports per-agent workspace directories and boundary notes, and records workspace paths, ownership, blockers, and validation refs
+
+#### Scenario: Topic team readiness is validated
+- **WHEN** topic definition, specialization, environment setup, and agent workspace setup are complete or intentionally deferred
+- **THEN** the skill routes to `validate-topic-team` and checks whether the topic team has the topic overview, specialized team material, environment posture, per-agent workspaces, deferrals, and blockers needed for static material readiness
+
+#### Scenario: Final topic summary is written
+- **WHEN** the topic team has been validated or blockers have been explicitly recorded
+- **THEN** the skill routes to `finalize-topic-team` and creates `isomer-topic-summary.md` with the topic team, goal, working logic, environment setup, agent workspace layout, validation status, blockers, and next actions
+
+#### Scenario: Fast-forward remains execution mode
+- **WHEN** the user asks for `fast-forward`
+- **THEN** the skill treats it as an execution mode that runs the same required path as `init-topic` when needed, optional clarification only when required to unblock, `specialize-team`, setup, validation, and final topic-team summary output
+
+#### Scenario: Step-by-step remains guided execution mode
+- **WHEN** the user asks for `step-by-step`
+- **THEN** the skill treats it as the guided form of the same user-facing path and waits for confirmation between topic initialization, clarification, team specialization, team clarification, setup, validation, and finalization steps
+
+### Requirement: Static Topic Team Material Boundary
+The module skill SHALL focus on static Topic Team material and durable setup preparation, and SHALL exclude live runtime operation.
+
+#### Scenario: Static scope is documented
+- **WHEN** the skill entrypoint, help text, workflow text, or operator documentation describes the module purpose
+- **THEN** it explains that the skill produces or revises static Topic Team material and durable setup state for one Research Topic from one Domain Agent Team Template
+
+#### Scenario: Environment setup remains static preparation
+- **WHEN** `setup-topic-env` is described or executed
+- **THEN** the skill treats installed packages, environment files, setup commands, validation records, skipped actions, and blockers as durable static preparation, and does not start live team execution, launch adapters, store credentials, or record live provider state as profile material
+
+#### Scenario: Agent Workspace setup remains static preparation
+- **WHEN** `setup-agent-workspace` is described or executed
+- **THEN** the skill creates or reports only static Agent Workspace directories, ownership notes, boundary notes, skipped actions, blockers, and validation refs, and does not create Agent Instances, register Workspace Runtime state, or launch agents
+
+#### Scenario: Runtime launch subcommand is absent
+- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **THEN** it does not contain `references/launch-team.md`, does not list `launch-team` as a local subcommand, and does not include live launch as a `fast-forward` or `step-by-step` stage
+
+#### Scenario: Static validation stops before live operation
+- **WHEN** `validate-topic-team` or `finalize-topic-team` runs
+- **THEN** the skill validates or summarizes topic overview material, copied specialization material, setup evidence, Agent Workspace layout, profile material, blockers, deferrals, and next actions without claiming Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or live launch readiness
+

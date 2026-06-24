@@ -15,14 +15,14 @@ Use this local reference when running the Topic Team Specialization skill. It co
 ## Team and Agent Terms
 
 - **Domain Agent Team Template**: A reusable multi-agent template for a research field. It names default Agent Roles, Workflow Stages, Coordination Policy, Capability Binding slots, and template parameters. It does not include a user's concrete topic, credentials, launch choices, or live runtime state.
-- **Topic Team Specialization**: The design-time process that adapts one Domain Agent Team Template for one Research Topic. It produces or revises that topic's Topic Agent Team Profile and Topic Agent Team Profile Bundle, and it ends before Agent Team Instance creation, adapter launch materialization, or live agent launch.
+- **Topic Team Specialization**: The design-time process that adapts one Domain Agent Team Template for one Research Topic. It produces or revises that topic's Topic Agent Team Profile and Topic Agent Team Profile Bundle, and it ends before Agent Team Instance creation, execution adapter materialization, or live agent operation.
 - **Topic Team Instantiation Packet**: A reviewable planning and provenance artifact that records proposed or approved Topic Team Specialization output: source template refs, topic refs, bundle refs, role bindings, policy refs, expected Artifacts, resolved placeholders, copied material choices, proposed topic edits, explicit deferrals, approval provenance, and validation refs.
-- **Topic Agent Team Profile**: The topic-level design-time specialization of one Domain Agent Team Template. It adapts roles, Workflow Stages, constraints, expected Artifacts, bindings, Skill Binding projections, policies, and launch-facing blockers for one Research Topic.
-- **Topic Agent Team Profile Bundle**: The fixed Topic Workspace directory `<topic-workspace>/team-profile/` that stores the authoritative profile material for one Research Topic, including `profile.toml`, the approved packet, copied topic-edited template material, validation outputs, approval provenance, and launch-facing diagnostics.
+- **Topic Agent Team Profile**: The topic-level design-time specialization of one Domain Agent Team Template. It adapts roles, Workflow Stages, constraints, expected Artifacts, bindings, Skill Binding projections, policies, static-material blockers, and later-operation blockers for one Research Topic.
+- **Topic Agent Team Profile Bundle**: The fixed Topic Workspace directory `<topic-workspace>/team-profile/` that stores the authoritative profile material for one Research Topic, including `profile.toml`, the approved packet, copied topic-edited template material, validation outputs, approval provenance, and static diagnostics.
 - **Agent Team Instance**: A concrete runtime team created from the Topic Agent Team Profile. It has launched Agent Instances, runtime refs, Agent Workspaces, and Run participation.
 - **Agent Role**: A named responsibility inside a Domain Agent Team Template, Topic Agent Team Profile, or Agent Team Instance.
 - **Agent Instance**: A concrete runtime actor created from an Agent Profile and assigned to an Agent Role for a Run or team execution context.
-- **Operator Agent**: The durable user-facing Agent Role and Agent Instance that performs Topic Team Specialization, launches Topic Agent Team Profiles into Agent Team Instances, controls or delegates Research Tasks, and records routing decisions.
+- **Operator Agent**: The durable user-facing Agent Role and Agent Instance that performs Topic Team Specialization, controls or delegates Research Tasks, and records routing decisions.
 - **Project Operator Session**: A project-aware operating posture of an agent that has Isomer system skills available and has been pointed at a Project root. It may act as the operator surface before a durable Operator Agent exists.
 
 ## Support and Adapter Terms
@@ -46,7 +46,7 @@ Use this local reference when running the Topic Team Specialization skill. It co
 
 - Use **Topic Workspace** only for the topic-level work area and **Agent Workspace** only for per-agent work areas inside a Topic Workspace.
 - Use **Research Topic** for the root investigation intent, **Research Inquiry** for a line of inquiry, **Research Task** for bounded work, and **Run** for a bounded execution attempt.
-- Use **Topic Team Specialization** for design-time template-to-topic adaptation. Do not call it Agent Team Instance creation, launch, or runtime team creation.
+- Use **Topic Team Specialization** for design-time template-to-topic adaptation. Do not call it Agent Team Instance creation, live operation, or runtime team creation.
 - Use **Topic Agent Team Profile Bundle** for `<topic-workspace>/team-profile/`. Do not create a topic-local team directory outside that bundle.
 - Use **Project Operator Session** or **Operator Agent** for the user-facing operator surface. Do not model direct human operation of team Agent Instances.
 - Treat Houmao specialist, launch dossier, managed-agent, and mailbox concepts as Execution Adapter implementation details unless an accepted Isomer schema explicitly promotes them.

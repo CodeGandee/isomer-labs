@@ -7,7 +7,7 @@ When this subcommand is selected, execute the following steps in order.
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
 2. Confirm the selected Research Topic, Topic Workspace, Domain Agent Team Template, packet path or packet inputs, and approval provenance.
 3. Run generic packet and profile-bundle validation before mutation.
-4. Materialize the approved Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, including `profile.toml`, packet, approval, validation, copied template material, and provenance files.
+4. Materialize the approved static Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, including `profile.toml`, packet, approval, validation, copied template material, and provenance files.
 5. Report the Project Manifest registration ref that should point at the bundle's `profile.toml`.
 6. Validate the Project Manifest and profile bundle after materialization.
 
@@ -40,9 +40,10 @@ Read as needed:
 - The bundle exists at `<topic-workspace>/team-profile/`.
 - Validation output and provenance files are present.
 - The Project Manifest registration guidance is explicit.
+- No Agent Team Instance attachment, Workspace Runtime registration, or execution adapter preflight is claimed.
 
 ## Guardrails
 
 - Do not write outside the selected Topic Workspace.
 - Do not create a second active profile bundle for the same Research Topic.
-- Do not hand-edit runtime state; use Workspace Runtime APIs after profile materialization.
+- Do not attach the profile to an Agent Team Instance, register Workspace Runtime state, or run execution adapter preflight from this subcommand.

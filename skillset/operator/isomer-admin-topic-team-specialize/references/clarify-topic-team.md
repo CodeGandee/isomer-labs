@@ -25,8 +25,8 @@ If any required specialization output is missing, refuse to run, explain which a
 
 ## Guardrails
 
-Do not approve, materialize, or launch the team from this subcommand.
+Do not approve, materialize, or run the team from this subcommand.
 
 Do not change the source Domain Agent Team Template.
 
-Do not hide unresolved launch blockers. Keep deferrals explicit.
+Do not hide unresolved static-material blockers or later-operation blockers. Keep deferrals explicit.
