@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the Project root and any topic, workspace, profile, template, task, run, Agent Team Instance, or Agent Instance selectors from the prompt.
-2. Run `pixi run isomer-cli --print-json context show` with the selected `--project`, `--topic`, `--topic-workspace`, and other selectors.
+2. Run `pixi run isomer-cli --print-json project context show` from the Project root, or use `pixi run isomer-cli --print-json project --root <project-root> context show` when operating from another directory; include the selected `--topic`, `--topic-workspace`, and other selectors.
 3. If context cannot resolve, report the diagnostics and the selector or Project registration needed to proceed.
 4. Return the selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, Topic Agent Team Profile, Workspace Runtime refs, and next operator action.
 

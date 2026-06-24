@@ -70,6 +70,7 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "durable setup state",
     "topic-overview.md",
     "provisional topic workspace seed",
+    "isomer-content/topic-ws/<topic-slug>/",
     "team-specialization-guide.md",
     "team-specialization-plan.md",
     "```generated-guide",
@@ -161,11 +162,33 @@ PROJECT_MANAGER_REQUIRED_SKILL_TERMS = (
     "specialize-team",
     "load only the selected subcommand page",
     ".isomer-labs/",
+    "isomer-content/",
+    "isomer-content/topic-ws/<topic-id>/",
+    "--content-dir <content-dir>",
+    "<content-dir>/topic-ws/<topic-id>/",
     ".houmao/",
     "Project-level Houmao overlay",
-    "runtime init",
-    "runtime prepare",
+    "isomer-cli project init",
+    "isomer-cli project validate",
+    "isomer-cli project doctor",
+    "isomer-cli project runtime init",
+    "isomer-cli project runtime prepare",
     "isomer-admin-topic-team-specialize",
+)
+
+PROJECT_MANAGER_FORBIDDEN_CLI_TERMS = (
+    "isomer-cli init",
+    "isomer-cli validate",
+    "isomer-cli doctor",
+    "isomer-cli topics",
+    "isomer-cli workspaces",
+    "isomer-cli context",
+    "isomer-cli paths",
+    "isomer-cli runtime",
+    "isomer-cli team-",
+    "isomer-cli handoffs",
+    "isomer-cli cleanup",
+    "isomer-cli --project",
 )
 
 PROJECT_MANAGER_SUBCOMMANDS = (
@@ -638,6 +661,16 @@ def validate_project_manager_module(repo_root: Path) -> list[Diagnostic]:
                         line_number,
                         "OPS005",
                         f"{PROJECT_MANAGER_SKILL} must keep required support references inside its skill directory; found '{forbidden_ref}'",
+                    )
+            for forbidden_cli_term in PROJECT_MANAGER_FORBIDDEN_CLI_TERMS:
+                if forbidden_cli_term in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_file,
+                        line_number,
+                        "OPS005",
+                        f"{PROJECT_MANAGER_SKILL} must use 'isomer-cli project ...' command shapes instead of '{forbidden_cli_term}'",
                     )
     for subcommand_file_name in PROJECT_MANAGER_SUBCOMMANDS:
         subcommand_name = subcommand_file_name.removesuffix(".md")

@@ -8,7 +8,7 @@ Install these skills into the agent surface that acts as the Project Operator Se
 
 | Skill | Purpose |
 | --- | --- |
-| `isomer-admin-project-mgr` | Run the operator Project lifecycle workflow. It exposes short local subcommands such as `help`, `init-project`, `check-project`, `list-topics`, `show-context`, `init-runtime`, `prep-runtime`, and `specialize-team`; it initializes `.isomer-labs/` and the Project-level `.houmao/` overlay through `isomer-cli init`, checks Project health, resolves context, prepares runtime, and hands topic-team adaptation to `isomer-admin-topic-team-specialize`. |
+| `isomer-admin-project-mgr` | Run the operator Project lifecycle workflow. It exposes short local subcommands such as `help`, `init-project`, `check-project`, `list-topics`, `show-context`, `init-runtime`, `prep-runtime`, and `specialize-team`; it initializes `.isomer-labs/` and the Project-level `.houmao/` overlay through `isomer-cli project init`, checks Project health, resolves context, prepares runtime, and hands topic-team adaptation to `isomer-admin-topic-team-specialize`. |
 | `isomer-admin-topic-team-specialize` | Run the module-level Topic Team Specialization workflow. It exposes procedural subcommands from `init-topic` through `finalize-topic-team`, five helper subcommands for lower-level specialization work, and misc commands such as `help`, `step-by-step`, and `fast-forward`; it creates `topic-overview.md`, copies and adapts Domain Agent Team Template material under `<topic-workspace>/team-profile/`, prepares topic environment and Agent Workspace setup, validates readiness, writes `isomer-topic-summary.md`, and keeps approval, materialization, and launch as explicit boundaries. |
 | `isomer-admin-houmao-interop` | Bridge Isomer Labs project constructs and the Houmao agent runtime. It explains how the Houmao agent loop works, lists agent-loop customization points, maps Domain Agent Team Templates such as DeepScientist onto Houmao concepts, and guides runtime inspection. Use it when a topic-team specialization or launch task touches Houmao loop, roles, recipes, presets, specialists, launch dossiers, project overlays, credentials, mailbox, or gateway. |
 
@@ -16,7 +16,7 @@ Install these skills into the agent surface that acts as the Project Operator Se
 
 Use this flow when a user asks the operator to create, diagnose, or prepare an Isomer Project before topic-team work.
 
-1. The operator can ask `isomer-admin-project-mgr init-project` to run the supported Project bootstrap path. Successful `isomer-cli init` creates `.isomer-labs/`, the first Research Topic Config, the first Topic Workspace, and the Project-level `.houmao/` overlay.
+1. The operator can ask `isomer-admin-project-mgr init-project` to run the supported Project bootstrap path. Successful `isomer-cli project init` creates `.isomer-labs/`, the first Research Topic Config, the first Topic Workspace, and the Project-level `.houmao/` overlay.
 2. If the user wants usage information, call `isomer-admin-project-mgr help`; invoking `isomer-admin-project-mgr` without a prompt defaults to the same help output.
 3. If the Project already exists, call `check-project` to run read-only Project validation, doctor diagnostics, and Houmao Project status checks.
 4. Use `list-topics` and `show-context` to inspect registered Research Topics, Topic Workspaces, defaults, selected profile refs, and selected template refs.

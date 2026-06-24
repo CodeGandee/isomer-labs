@@ -85,7 +85,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Use {subcommand_links}.
 
-            Use static material readiness, durable setup state, `topic-overview.md`, provisional topic workspace seed, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, and `isomer-topic-summary.md`.
+            Use static material readiness, durable setup state, `topic-overview.md`, provisional topic workspace seed, `isomer-content/topic-ws/<topic-slug>/`, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, and `isomer-topic-summary.md`.
 
             Report `selected_domain_team_template_ref`, `topic_environment_status`, `agent_workspace_paths`, `topic_team_validation_status`, and `isomer_topic_summary_path`.
 
@@ -196,7 +196,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             1. **Default help mode**: If invoked without a prompt, run `help`.
             2. Select one subcommand and load only the selected subcommand page.
-            3. Preserve `.isomer-labs/`, `.houmao/`, Project-level Houmao overlay, `runtime init`, `runtime prepare`, and `isomer-admin-topic-team-specialize` boundaries.
+            3. Preserve `.isomer-labs/`, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, `.houmao/`, Project-level Houmao overlay, `isomer-cli project init`, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, and `isomer-admin-topic-team-specialize` boundaries.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -570,3 +570,26 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS005", codes(diagnostics))
         self.assertTrue(any("must not contain evals/" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_root_project_manager_cli_shapes(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_project_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / "check-project.md",
+            """
+            # Check Project
+
+            ## Workflow
+
+            1. Run `pixi run isomer-cli --project <project-root> validate`.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS005", codes(diagnostics))
+        self.assertTrue(any("isomer-cli project ..." in message for message in messages(diagnostics)), messages(diagnostics))

@@ -5,8 +5,8 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the Project root from the user-provided path or current working directory.
-2. Run `pixi run isomer-cli --print-json validate` from the Project root, or include `--project <project-root>` when needed.
-3. Run `pixi run isomer-cli --print-json doctor` for Project-level diagnostics; include `--topic <topic-id>` when the user asks about one Research Topic.
+2. Run `pixi run isomer-cli --print-json project validate` from the Project root, or use `pixi run isomer-cli --print-json project --root <project-root> validate` when needed.
+3. Run `pixi run isomer-cli --print-json project doctor` for Project-level diagnostics; include `--topic <topic-id>` when the user asks about one Research Topic.
 4. If `.houmao/` exists or Houmao status matters, run the read-only Houmao Project status command from `references/houmao-bootstrap.md`.
 5. Report Project validity, Houmao Project overlay status, diagnostics, and the next operator action.
 

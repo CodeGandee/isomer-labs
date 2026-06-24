@@ -14,7 +14,7 @@ Isomer never infers a Research Topic's Pixi environment from its id, name, or na
 
 ### Repair is explicit
 
-When `isomer-cli doctor`, `runtime prepare`, or `runtime validate` reports a missing dependency, failed readiness check, or environment mismatch, the repair should be explicit. Represent setup or compatibility work as a Service Request rather than hiding it inside a read-only diagnostic command or a runtime preparation step.
+When `isomer-cli project doctor`, `project runtime prepare`, or `project runtime validate` reports a missing dependency, failed readiness check, or environment mismatch, the repair should be explicit. Represent setup or compatibility work as a Service Request rather than hiding it inside a read-only diagnostic command or a runtime preparation step.
 
 ### Houmao is an adapter-specific backend
 
@@ -36,7 +36,7 @@ The platform intentionally does not:
 
 - provide filesystem-grade sandboxing for Agent Workspaces;
 - infer topic-to-environment relationships from names;
-- hide environment repair inside read-only diagnostics or `runtime prepare`;
+- hide environment repair inside read-only diagnostics or `project runtime prepare`;
 - promote Houmao specialists, project profiles, launch dossiers, mailboxes, gateways, or managed-agent ids into core Isomer language;
 - require an external documentation hosting service or publication pipeline;
 - generate the entire CLI reference from Click help, because raw help does not explain side effects, prerequisites, and safe usage.

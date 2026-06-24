@@ -99,7 +99,7 @@ class IsomerCliTests(unittest.TestCase):
         return normalized
 
     def init_project(self, root: Path, topic_id: str = "default") -> None:
-        status, output = self.run_cli(["--project", str(root), "init", topic_id], cwd=root, env=self.fake_houmao_env(root))
+        status, output = self.run_cli(["project", "--root", str(root), "init", topic_id], cwd=root, env=self.fake_houmao_env(root))
         self.assertEqual(0, status, output)
 
     def copy_fixture_project(self, name: str = "fixture-project") -> Path:
@@ -326,9 +326,10 @@ class IsomerCliTests(unittest.TestCase):
         self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
         self.add_topic_pixi_binding(root, "alpha", "alpha-main")
         for command in (
-            ["runtime", "init", "--topic", "alpha", "--json"],
-            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
             [
+                "project",
                 "team-instances",
                 "create",
                 "--topic",
@@ -346,6 +347,7 @@ class IsomerCliTests(unittest.TestCase):
     def launch_alpha_houmao_team(self, root: Path, instance_id: str, env: dict[str, str]) -> None:
         for command in (
             [
+                "project",
                 "team-instances",
                 "launch-material",
                 "prepare",
@@ -357,6 +359,7 @@ class IsomerCliTests(unittest.TestCase):
                 "--json",
             ],
             [
+                "project",
                 "team-instances",
                 "launch",
                 instance_id,
@@ -401,32 +404,32 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIsInstance(cli.build_parser(), click.Group)
         help_text = result.output
         for command in (
-            "init",
-            "doctor",
-            "validate",
-            "topics list",
-            "workspaces list",
-            "context show",
-            "paths preview",
+            "project init",
+            "project doctor",
+            "project validate",
+            "project topics list",
+            "project workspaces list",
+            "project context show",
+            "project paths preview",
             "schemas list",
-            "team-templates",
-            "team-profiles",
-            "handoffs",
-            "handoffs dispatch",
-            "handoffs observe",
-            "handoffs normalize",
+            "project team-templates",
+            "project team-profiles",
+            "project handoffs",
+            "project handoffs dispatch",
+            "project handoffs observe",
+            "project handoffs normalize",
         ):
             self.assertIn(command, help_text)
-        for command in ("uc01", "uc01 run", "uc01 inspect"):
+        for command in ("uc01", "uc01 run", "uc01 inspect", "\n  init", "\n  validate", "\n  doctor"):
             self.assertNotIn(command, help_text)
         pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         self.assertEqual("isomer_labs.cli:main", pyproject["project"]["scripts"]["isomer-cli"])
 
         for help_args in (
-            ["handoffs", "--help"],
-            ["handoffs", "dispatch", "--help"],
-            ["handoffs", "observe", "--help"],
-            ["handoffs", "normalize", "--help"],
+            ["project", "handoffs", "--help"],
+            ["project", "handoffs", "dispatch", "--help"],
+            ["project", "handoffs", "observe", "--help"],
+            ["project", "handoffs", "normalize", "--help"],
         ):
             help_result = runner.invoke(cli.app, help_args)
             self.assertEqual(0, help_result.exit_code, help_result.output)
@@ -434,14 +437,31 @@ class IsomerCliTests(unittest.TestCase):
             self.assertNotIn("--format json", help_result.output)
             self.assertNotIn("--format=json", help_result.output)
         self.assertNotEqual(0, runner.invoke(cli.app, ["uc01", "--help"]).exit_code)
+        for legacy_help_args in (
+            ["init", "--help"],
+            ["validate", "--help"],
+            ["doctor", "--help"],
+            ["topics", "--help"],
+            ["runtime", "--help"],
+            ["team-instances", "--help"],
+            ["handoffs", "--help"],
+        ):
+            self.assertNotEqual(0, runner.invoke(cli.app, legacy_help_args).exit_code)
 
     def test_doctor_help_documents_read_only_common_topic_options(self) -> None:
         runner = CliRunner()
-        result = runner.invoke(cli.app, ["doctor", "--help"])
+        project_result = runner.invoke(cli.app, ["project", "--help"])
+        self.assertEqual(0, project_result.exit_code, project_result.output)
+        self.assertIn("--root", project_result.output)
+        self.assertIn("--manifest", project_result.output)
+        self.assertNotIn("--project", project_result.output)
+
+        result = runner.invoke(cli.app, ["project", "doctor", "--help"])
         self.assertEqual(0, result.exit_code, result.output)
         self.assertIn("Run read-only dependency, Project, and topic diagnostics.", result.output)
-        for option in ("--project", "--manifest", "--topic"):
-            self.assertIn(option, result.output)
+        self.assertIn("--topic", result.output)
+        self.assertNotIn("--project", result.output)
+        self.assertNotIn("--manifest", result.output)
         self.assertNotIn("--json", result.output)
         self.assertNotIn("--format", result.output)
         self.assertNotIn("--fix", result.output)
@@ -457,10 +477,10 @@ class IsomerCliTests(unittest.TestCase):
         self.assertNotIn("--format", help_result.output)
 
         for args in (
-            ["--print-json", "validate"],
-            ["--print-json", "doctor"],
-            ["--print-json", "runtime", "inspect"],
-            ["--print-json", "team-instances", "list"],
+            ["--print-json", "project", "validate"],
+            ["--print-json", "project", "doctor"],
+            ["--print-json", "project", "runtime", "inspect"],
+            ["--print-json", "project", "team-instances", "list"],
         ):
             status, output = self.run_cli(args, cwd=root)
             data = json.loads(output)
@@ -469,7 +489,7 @@ class IsomerCliTests(unittest.TestCase):
 
     def test_default_output_is_structured_text_not_json(self) -> None:
         root = self.make_root()
-        status, output = self.run_cli(["validate"], cwd=root)
+        status, output = self.run_cli(["project", "validate"], cwd=root)
         self.assertEqual(1, status)
         self.assertNotIn("isomer-cli-output.v1", output)
         self.assertIn("ERROR | ISO001", output)
@@ -477,7 +497,7 @@ class IsomerCliTests(unittest.TestCase):
     def test_doctor_dependency_only_reports_missing_and_found_pixi(self) -> None:
         root = self.make_root()
         with patch("isomer_labs.doctor.shutil.which", return_value=None):
-            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("dependency-only", data["mode"])
@@ -488,7 +508,7 @@ class IsomerCliTests(unittest.TestCase):
 
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["ok"])
@@ -510,7 +530,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("topic", data["mode"])
@@ -532,7 +552,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("fail", self.check(data, "project.pixi.manifest")["status"])
@@ -540,7 +560,7 @@ class IsomerCliTests(unittest.TestCase):
         self.add_project_pixi_manifest(root)
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("warn", self.check(data, "project.pixi.lockfile")["status"])
@@ -566,7 +586,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--topic", "alpha", "--json"], cwd=root)
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("pass", self.check(data, "topic.pixi.project-env.1")["status"])
@@ -577,7 +597,7 @@ class IsomerCliTests(unittest.TestCase):
         self.add_project_pixi_manifest(missing_root, environments=("alpha-main",), lockfile=True)
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--topic", "alpha", "--json"], cwd=missing_root)
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=missing_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("fail", self.check(data, "topic.pixi.binding.present")["status"])
@@ -595,7 +615,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--topic", "alpha", "--json"], cwd=absent_env_root)
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=absent_env_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("fail", self.check(data, "topic.pixi.project-env.1")["status"])
@@ -623,7 +643,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--topic", "alpha", "--json"], cwd=root)
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("pass", self.check(data, "topic.pixi.standalone.1")["status"])
@@ -641,7 +661,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--topic", "alpha", "--json"], cwd=missing_root)
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=missing_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("fail", self.check(data, "topic.pixi.standalone.1")["status"])
@@ -663,7 +683,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--topic", "alpha", "--json"], cwd=duplicate_root)
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=duplicate_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO004", {diagnostic["code"] for diagnostic in data["diagnostics"]})
@@ -680,7 +700,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--topic", "alpha", "--json"], cwd=invalid_root)
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=invalid_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO003", {diagnostic["code"] for diagnostic in data["diagnostics"]})
@@ -708,7 +728,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor"], cwd=root)
+            status, output = self.run_cli(["project", "doctor"], cwd=root)
         self.assertEqual(1, status)
         self.assertIn("Doctor mode:", output)
         self.assertIn("Host", output)
@@ -725,67 +745,174 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertFalse(data["mutated"])
         self.assertTrue(all({"id", "scope", "status", "concept", "summary"} <= set(check) for check in data["checks"]))
         self.assertEqual([], data["diagnostics"])
-        self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
-        self.assertFalse((root / "topic-workspaces" / "default" / "artifacts").exists())
-        self.assertFalse((root / "topic-workspaces" / "default" / ".pixi").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "state.sqlite").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "artifacts").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / ".pixi").exists())
         self.assertFalse((root / "pixi.lock").exists())
 
     def test_init_creates_minimal_default_project_and_refuses_overwrite(self) -> None:
         root = self.make_root()
-        status, output = self.run_cli(["init"], cwd=root, env=self.fake_houmao_env(root))
+        status, output = self.run_cli(["project", "init"], cwd=root, env=self.fake_houmao_env(root))
         self.assertEqual(0, status, output)
         self.assertTrue((root / ".isomer-labs" / "manifest.toml").is_file())
         self.assertTrue((root / ".isomer-labs" / "research-topics" / "default.toml").is_file())
-        self.assertTrue((root / "topic-workspaces" / "default").is_dir())
+        self.assertTrue((root / "isomer-content" / "README.md").is_file())
+        self.assertEqual(
+            "*\n!.gitignore\n!/README.md\n",
+            (root / "isomer-content" / ".gitignore").read_text(encoding="utf-8"),
+        )
+        self.assertTrue((root / "isomer-content" / "topic-ws" / "default").is_dir())
         self.assertTrue((root / ".houmao" / "houmao-config.toml").is_file())
-        self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
-        self.assertFalse((root / "topic-workspaces" / "default" / "artifacts").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "state.sqlite").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "artifacts").exists())
+        self.assertIn("Generated Content Root:", output)
+        self.assertIn("Topic Workspace:", output)
         self.assertIn("Houmao Project:", output)
-        help_result = CliRunner().invoke(cli.app, ["init", "--help"])
+        help_result = CliRunner().invoke(cli.app, ["project", "init", "--help"])
         self.assertEqual(0, help_result.exit_code, help_result.output)
         self.assertNotIn("--force", help_result.output)
 
-        status, output = self.run_cli(["init"], cwd=root, env=self.fake_houmao_env(root))
+        status, output = self.run_cli(["project", "init"], cwd=root, env=self.fake_houmao_env(root))
         self.assertEqual(1, status)
         self.assertIn("refuses to overwrite", output)
 
     def test_init_uses_explicit_topic_id_consistently(self) -> None:
         root = self.make_root()
-        status, output = self.run_cli(["init", "paper", "--json"], cwd=root, env=self.fake_houmao_env(root))
+        status, output = self.run_cli(["project", "init", "paper", "--json"], cwd=root, env=self.fake_houmao_env(root))
         data = json.loads(output)
         self.assertEqual(0, status, output)
         manifest = (root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8")
         topic_config = (root / ".isomer-labs" / "research-topics" / "paper.toml").read_text(encoding="utf-8")
         self.assertIn('id = "paper"', manifest)
         self.assertIn('config_path = ".isomer-labs/research-topics/paper.toml"', manifest)
-        self.assertIn('path = "topic-workspaces/paper"', manifest)
+        self.assertIn('isomer_content_root = "isomer-content"', manifest)
+        self.assertIn('topic_workspace_base_dir = "isomer-content/topic-ws"', manifest)
+        self.assertIn('path = "isomer-content/topic-ws/paper"', manifest)
         self.assertIn('research_topic_id = "paper"', topic_config)
-        self.assertTrue((root / "topic-workspaces" / "paper").is_dir())
+        self.assertTrue((root / "isomer-content" / "topic-ws" / "paper").is_dir())
         self.assertTrue(data["mutated"])
+        self.assertEqual(str(root / "isomer-content"), data["content_root_path"])
+        self.assertEqual(str(root / "isomer-content" / "topic-ws" / "paper"), data["topic_workspace_path"])
         self.assertEqual(str(root / ".houmao"), data["houmao_project_dir"])
         self.assertEqual("succeeded", data["houmao_bootstrap"]["status"])
+
+    def test_init_accepts_custom_content_dir_for_default_topic(self) -> None:
+        root = self.make_root()
+
+        status, output = self.run_cli(
+            ["project", "init", "--content-dir", "custom-content", "--json"],
+            cwd=root,
+            env=self.fake_houmao_env(root),
+        )
+
+        data = json.loads(output)
+        manifest = (root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8")
+        self.assertEqual(0, status, output)
+        self.assertTrue((root / "custom-content" / "README.md").is_file())
+        self.assertEqual(
+            "*\n!.gitignore\n!/README.md\n",
+            (root / "custom-content" / ".gitignore").read_text(encoding="utf-8"),
+        )
+        self.assertTrue((root / "custom-content" / "topic-ws" / "default").is_dir())
+        self.assertIn('isomer_content_root = "custom-content"', manifest)
+        self.assertIn('topic_workspace_base_dir = "custom-content/topic-ws"', manifest)
+        self.assertIn('path = "custom-content/topic-ws/default"', manifest)
+        self.assertEqual(str(root / "custom-content"), data["content_root_path"])
+        self.assertEqual(str(root / "custom-content" / "topic-ws" / "default"), data["topic_workspace_path"])
+        self.assertFalse((root / "isomer-content").exists())
+
+    def test_init_accepts_custom_content_dir_for_explicit_topic(self) -> None:
+        root = self.make_root()
+
+        status, output = self.run_cli(
+            ["project", "init", "paper", "--content-dir", "generated/isomer", "--json"],
+            cwd=root,
+            env=self.fake_houmao_env(root),
+        )
+
+        data = json.loads(output)
+        manifest = (root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8")
+        topic_config = (root / ".isomer-labs" / "research-topics" / "paper.toml").read_text(encoding="utf-8")
+        self.assertEqual(0, status, output)
+        self.assertIn('research_topic_id = "paper"', topic_config)
+        self.assertIn('isomer_content_root = "generated/isomer"', manifest)
+        self.assertIn('topic_workspace_base_dir = "generated/isomer/topic-ws"', manifest)
+        self.assertIn('path = "generated/isomer/topic-ws/paper"', manifest)
+        self.assertTrue((root / "generated" / "isomer" / "topic-ws" / "paper").is_dir())
+        self.assertEqual(str(root / "generated" / "isomer"), data["content_root_path"])
+        self.assertEqual(str(root / "generated" / "isomer" / "topic-ws" / "paper"), data["topic_workspace_path"])
+
+    def test_init_rejects_invalid_custom_content_dirs_before_mutation(self) -> None:
+        for content_dir, expected_message in (
+            ("../outside", "outside the Project root"),
+            (".isomer-labs/generated", "Project Config Directory"),
+            (".houmao", "Houmao overlay"),
+        ):
+            with self.subTest(content_dir=content_dir):
+                root = self.make_root()
+
+                status, output = self.run_cli(
+                    ["project", "init", "--content-dir", content_dir, "--json"],
+                    cwd=root,
+                    env=self.fake_houmao_env(root),
+                )
+
+                data = json.loads(output)
+                self.assertEqual(1, status)
+                diagnostics = data["diagnostics"]
+                self.assertIn("ISO005", {diagnostic["code"] for diagnostic in diagnostics})
+                self.assertTrue(any(expected_message in diagnostic["message"] for diagnostic in diagnostics), diagnostics)
+                self.assertFalse((root / ".isomer-labs" / "manifest.toml").exists())
+                self.assertFalse((root / "custom-content").exists())
+                self.assertFalse((root / ".houmao").exists())
+
+    def test_init_custom_content_dir_refuses_existing_project_without_creating_content(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+
+        status, output = self.run_cli(
+            ["project", "init", "--content-dir", "next-content", "--json"],
+            cwd=root,
+            env=self.fake_houmao_env(root),
+        )
+
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("refuses to overwrite", data["diagnostics"][0]["message"])
+        self.assertFalse((root / "next-content").exists())
 
     def test_init_houmao_failure_does_not_write_project_manifest(self) -> None:
         root = self.make_root()
         env = self.fake_houmao_env(root, HOUMAO_FAKE_FAIL_ON="project")
 
-        status, output = self.run_cli(["init"], cwd=root, env=env)
+        status, output = self.run_cli(["project", "init"], cwd=root, env=env)
 
         self.assertEqual(1, status)
         self.assertIn("ISO072", output)
         self.assertFalse((root / ".isomer-labs" / "manifest.toml").exists())
-        self.assertFalse((root / "topic-workspaces" / "default").exists())
+        self.assertFalse((root / "isomer-content").exists())
+
+    def test_init_houmao_failure_does_not_write_custom_content_dir(self) -> None:
+        root = self.make_root()
+        env = self.fake_houmao_env(root, HOUMAO_FAKE_FAIL_ON="project")
+
+        status, output = self.run_cli(["project", "init", "--content-dir", "custom-content"], cwd=root, env=env)
+
+        self.assertEqual(1, status)
+        self.assertIn("ISO072", output)
+        self.assertFalse((root / ".isomer-labs" / "manifest.toml").exists())
+        self.assertFalse((root / "custom-content").exists())
 
     def test_validate_reports_valid_project_as_versioned_json(self) -> None:
         root = self.make_root()
         self.init_project(root)
-        status, output = self.run_cli(["--project", str(root), "validate", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "--root", str(root), "validate", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["ok"])
@@ -793,31 +920,73 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual([], data["diagnostics"])
         self.assertEqual("default", data["manifest"]["defaults"]["research_topic_id"])
 
-    def test_common_options_work_at_root_and_command_level(self) -> None:
+    def test_project_selector_options_work_at_group_and_command_level(self) -> None:
         root = self.make_root()
         self.init_project(root)
 
-        status, output = self.run_cli(["--project", str(root), "validate", "--json"], cwd=root)
-        root_level = json.loads(output)
+        status, output = self.run_cli(["project", "--root", str(root), "validate", "--json"], cwd=root)
+        group_level = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertTrue(root_level["ok"])
+        self.assertTrue(group_level["ok"])
 
-        status, output = self.run_cli(["validate", "--project", str(root), "--json"], cwd=root)
+        status, output = self.run_cli(["project", "validate", "--project", str(root), "--json"], cwd=root)
         command_level = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(command_level["ok"])
-        self.assertEqual(root_level["project"]["root"], command_level["project"]["root"])
+        self.assertEqual(group_level["project"]["root"], command_level["project"]["root"])
+
+    def test_project_subcommands_discover_parent_and_manifest_selector(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        nested = root / "nested" / "deeper"
+        nested.mkdir(parents=True)
+
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=nested)
+        discovered = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(root), discovered["project"]["root"])
+        self.assertEqual("current directory", discovered["project"]["discovery_source"])
+
+        other_root = self.make_root()
+        self.init_project(other_root, topic_id="other")
+        status, output = self.run_cli(
+            ["project", "--manifest", str(root / ".isomer-labs" / "manifest.toml"), "validate", "--json"],
+            cwd=other_root,
+        )
+        explicit = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(root), explicit["project"]["root"])
+        self.assertEqual("explicit Project Manifest selector", explicit["project"]["discovery_source"])
+
+    def test_project_init_refuses_nested_project_root(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        nested = root / "nested-project"
+        nested.mkdir()
+
+        status, output = self.run_cli(
+            ["project", "--root", str(nested), "init", "nested", "--json"],
+            cwd=root,
+            env=self.fake_houmao_env(root),
+        )
+
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertEqual("ISO003", data["diagnostics"][0]["code"])
+        self.assertEqual(str(root), data["ancestor_project_root"])
+        self.assertFalse((nested / ".isomer-labs" / "manifest.toml").exists())
 
     def test_missing_and_malformed_projects_are_rejected(self) -> None:
         missing_root = self.make_root()
-        status, output = self.run_cli(["validate", "--json"], cwd=missing_root)
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=missing_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("ISO001", data["diagnostics"][0]["code"])
 
         malformed_root = self.make_root()
         write(malformed_root / ".isomer-labs" / "manifest.toml", "this is not = valid toml =\n")
-        status, output = self.run_cli(["validate", "--json"], cwd=malformed_root)
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=malformed_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("ISO002", data["diagnostics"][0]["code"])
@@ -864,12 +1033,87 @@ class IsomerCliTests(unittest.TestCase):
             run_status = "done"
             """,
         )
-        status, output = self.run_cli(["validate", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=root)
         data = json.loads(output)
         codes = {diagnostic["code"] for diagnostic in data["diagnostics"]}
         self.assertEqual(1, status)
         self.assertTrue({"ISO004", "ISO005", "ISO007", "ISO009", "ISO010"} <= codes, data["diagnostics"])
         self.assertNotIn(secret_value, output)
+
+    def test_validation_rejects_bad_generated_content_path_defaults(self) -> None:
+        for content_root, expected_message in (
+            ("../outside", "outside the Project root"),
+            (".isomer-labs/generated", "Project Config Directory"),
+        ):
+            with self.subTest(content_root=content_root):
+                root = self.make_root()
+                write(
+                    root / ".isomer-labs" / "manifest.toml",
+                    f"""
+                    schema_version = "isomer-project-manifest.v1"
+
+                    [paths]
+                    isomer_content_root = "{content_root}"
+                    topic_workspace_base_dir = "isomer-content/topic-ws"
+
+                    [[research_topics]]
+                    id = "alpha"
+                    config_path = ".isomer-labs/research-topics/alpha.toml"
+                    topic_workspace_id = "alpha"
+
+                    [[topic_workspaces]]
+                    id = "alpha"
+                    research_topic_id = "alpha"
+                    path = "topic-workspaces/alpha"
+                    """,
+                )
+                write(
+                    root / ".isomer-labs" / "research-topics" / "alpha.toml",
+                    """
+                    schema_version = "isomer-research-topic-config.v1"
+                    research_topic_id = "alpha"
+                    """,
+                )
+
+                status, output = self.run_cli(["project", "validate", "--json"], cwd=root)
+
+                data = json.loads(output)
+                self.assertEqual(1, status)
+                diagnostics = data["diagnostics"]
+                self.assertIn("ISO005", {diagnostic["code"] for diagnostic in diagnostics})
+                self.assertTrue(any(expected_message in diagnostic["message"] for diagnostic in diagnostics), diagnostics)
+
+    def test_validation_rejects_external_topic_workspace_base_default(self) -> None:
+        root = self.make_root()
+        write(
+            root / ".isomer-labs" / "manifest.toml",
+            """
+            schema_version = "isomer-project-manifest.v1"
+
+            [paths]
+            topic_workspace_base_dir = "../outside-topic-ws"
+
+            [[research_topics]]
+            id = "alpha"
+            config_path = ".isomer-labs/research-topics/alpha.toml"
+            """,
+        )
+        write(
+            root / ".isomer-labs" / "research-topics" / "alpha.toml",
+            """
+            schema_version = "isomer-research-topic-config.v1"
+            research_topic_id = "alpha"
+            """,
+        )
+
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=root)
+
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(
+            any(diagnostic["field"] == "paths.topic_workspace_base_dir" for diagnostic in data["diagnostics"]),
+            data["diagnostics"],
+        )
 
     def test_context_selection_precedence_and_conflicts_are_reported(self) -> None:
         root = self.make_root()
@@ -883,7 +1127,7 @@ class IsomerCliTests(unittest.TestCase):
         )
 
         status, output = self.run_cli(
-            ["context", "show", "--topic", "alpha", "--json"],
+            ["project", "context", "show", "--topic", "alpha", "--json"],
             cwd=root,
             env={"ISOMER_RESEARCH_TOPIC_ID": "beta"},
         )
@@ -893,7 +1137,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual("explicit selector", data["context"]["sources"]["research_topic_id"])
 
         status, output = self.run_cli(
-            ["context", "show", "--json"],
+            ["project", "context", "show", "--json"],
             cwd=root / "topic-workspaces" / "beta",
             env={"ISOMER_RESEARCH_TOPIC_ID": "alpha"},
         )
@@ -902,19 +1146,19 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual("beta", data["context"]["research_topic_id"])
         self.assertEqual("current directory", data["context"]["sources"]["research_topic_id"])
 
-        status, output = self.run_cli(["context", "show", "--json"], cwd=root, env={"ISOMER_RESEARCH_TOPIC_ID": "beta"})
+        status, output = self.run_cli(["project", "context", "show", "--json"], cwd=root, env={"ISOMER_RESEARCH_TOPIC_ID": "beta"})
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("beta", data["context"]["research_topic_id"])
         self.assertEqual("environment", data["context"]["sources"]["research_topic_id"])
 
-        status, output = self.run_cli(["context", "show", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "context", "show", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("alpha", data["context"]["research_topic_id"])
         self.assertEqual(".isomer-labs/local.toml", data["context"]["sources"]["research_topic_id"])
 
-        status, output = self.run_cli(["context", "show", "--topic", "alpha", "--topic-workspace", "beta", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "context", "show", "--topic", "alpha", "--topic-workspace", "beta", "--json"], cwd=root)
         data = json.loads(output)
         codes = {diagnostic["code"] for diagnostic in data["diagnostics"]}
         self.assertEqual(1, status)
@@ -923,7 +1167,7 @@ class IsomerCliTests(unittest.TestCase):
     def test_lifecycle_refs_are_bounded_milestone_one_warnings(self) -> None:
         root = self.make_root()
         self.init_project(root)
-        status, output = self.run_cli(["context", "show", "--run", "run-1", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "context", "show", "--run", "run-1", "--json"], cwd=root)
         data = json.loads(output)
         diagnostics = data["diagnostics"]
         self.assertEqual(0, status, output)
@@ -934,28 +1178,65 @@ class IsomerCliTests(unittest.TestCase):
         root = self.make_root()
         self.init_project(root)
         status, output = self.run_cli(
-            ["paths", "preview", "--json"],
+            ["project", "paths", "preview", "--json"],
             cwd=root,
-            env={"ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR": "topic-workspaces/default/custom-artifacts"},
+            env={"ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR": "isomer-content/topic-ws/default/custom-artifacts"},
         )
         data = json.loads(output)
         self.assertEqual(0, status, output)
         paths = {entry["surface"]: entry for entry in data["paths"]}
+        self.assertEqual(str(root / "isomer-content"), paths["isomer_content_root"]["path"])
         self.assertEqual("env", paths["artifacts"]["source"])
         self.assertEqual("ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR", paths["artifacts"]["source_detail"])
         self.assertNotIn("plan", {entry["source"] for entry in data["paths"]})
-        self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
-        self.assertFalse((root / "topic-workspaces" / "default" / "artifacts").exists())
-        self.assertFalse((root / "topic-workspaces" / "default" / "custom-artifacts").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "state.sqlite").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "artifacts").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "custom-artifacts").exists())
 
         status, output = self.run_cli(
-            ["paths", "preview", "--json"],
+            ["project", "paths", "preview", "--json"],
             cwd=root,
             env={"ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR": "../outside"},
         )
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO005", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_paths_preview_derives_topic_workspace_base_from_manifest_content_root(self) -> None:
+        root = self.make_root()
+        write(
+            root / ".isomer-labs" / "manifest.toml",
+            """
+            schema_version = "isomer-project-manifest.v1"
+
+            [defaults]
+            research_topic_id = "alpha"
+
+            [paths]
+            isomer_content_root = "generated/isomer"
+
+            [[research_topics]]
+            id = "alpha"
+            config_path = ".isomer-labs/research-topics/alpha.toml"
+            """,
+        )
+        write(
+            root / ".isomer-labs" / "research-topics" / "alpha.toml",
+            """
+            schema_version = "isomer-research-topic-config.v1"
+            research_topic_id = "alpha"
+            """,
+        )
+
+        status, output = self.run_cli(["project", "paths", "preview", "--json"], cwd=root)
+
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        paths = {entry["surface"]: entry for entry in data["paths"]}
+        self.assertEqual(str(root / "generated" / "isomer"), paths["isomer_content_root"]["path"])
+        self.assertEqual(str(root / "generated" / "isomer" / "topic-ws"), paths["topic_workspace_base"]["path"])
+        self.assertEqual(str(root / "generated" / "isomer" / "topic-ws" / "alpha"), paths["topic_workspace"]["path"])
+        self.assertFalse((root / "generated").exists())
 
     def test_runtime_init_prepare_inspect_validate_and_side_effect_boundaries(self) -> None:
         root = self.make_root()
@@ -965,37 +1246,37 @@ class IsomerCliTests(unittest.TestCase):
 
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertFalse(data["mutated"])
-        self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "state.sqlite").exists())
 
-        status, output = self.run_cli(["runtime", "inspect", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "inspect", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertFalse(data["runtime"]["exists"])
-        self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "state.sqlite").exists())
 
-        status, output = self.run_cli(["runtime", "init", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "init", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["mutated"])
         self.assertTrue(data["runtime"]["created"])
-        runtime_root = root / "topic-workspaces" / "default"
+        runtime_root = root / "isomer-content" / "topic-ws" / "default"
         self.assertTrue((runtime_root / "state.sqlite").is_file())
         for directory in ("artifacts", "agents", "tasks", "runs", "views", "logs"):
             self.assertTrue((runtime_root / directory).is_dir())
         surfaces = {record["surface"] for record in data["runtime"]["path_plans"]}
         self.assertTrue({"workspace_runtime_db", "artifacts", "agents", "tasks", "runs", "views", "logs"} <= surfaces)
 
-        status, output = self.run_cli(["runtime", "init", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "init", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertFalse(data["mutated"])
         self.assertFalse(data["runtime"]["created"])
 
-        status, output = self.run_cli(["runtime", "prepare", "--actor", "operator-agent:test", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "prepare", "--actor", "operator-agent:test", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["mutated"])
@@ -1004,14 +1285,14 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(["default"], readiness["project_pixi_environment_refs"])
         self.assertEqual("operator-agent:test", readiness["actor_ref"])
 
-        status, output = self.run_cli(["runtime", "inspect", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "inspect", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertFalse(data["mutated"])
         self.assertEqual("ready", data["runtime"]["latest_readiness"]["status"])
         self.assertEqual(1, data["runtime"]["counts"]["readiness_records"])
 
-        status, output = self.run_cli(["runtime", "validate", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "validate", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["ok"])
@@ -1025,15 +1306,15 @@ class IsomerCliTests(unittest.TestCase):
         self.add_project_pixi_manifest(root, environments=("analysis",), lockfile=True)
         self.add_topic_pixi_binding(root, "default", "missing-env")
 
-        status, output = self.run_cli(["runtime", "prepare", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "prepare", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO040", {diagnostic["code"] for diagnostic in data["diagnostics"]})
-        self.assertFalse((root / "topic-workspaces" / "default" / "state.sqlite").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "state.sqlite").exists())
 
-        status, output = self.run_cli(["runtime", "init", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "init", "--json"], cwd=root)
         self.assertEqual(0, status, output)
-        status, output = self.run_cli(["runtime", "prepare", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "prepare", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         readiness = data["preparation"]["readiness"]
@@ -1041,7 +1322,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIn("Service Request", readiness["repair_service_request_hint"])
         self.assertIn("ISO043", {diagnostic["code"] for diagnostic in data["diagnostics"]})
 
-        status, output = self.run_cli(["runtime", "inspect", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "inspect", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("failed", data["runtime"]["latest_readiness"]["status"])
@@ -1092,18 +1373,18 @@ class IsomerCliTests(unittest.TestCase):
             """,
         )
 
-        status, output = self.run_cli(["topics", "list", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "topics", "list", "--json"], cwd=root)
         topics = json.loads(output)["topics"]
         self.assertEqual(0, status, output)
         self.assertEqual(["alpha", "beta"], [topic["id"] for topic in topics])
 
-        status, output = self.run_cli(["workspaces", "list", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "workspaces", "list", "--json"], cwd=root)
         workspaces = json.loads(output)["workspaces"]
         self.assertEqual(0, status, output)
         self.assertEqual({"alpha", "beta"}, {workspace["id"] for workspace in workspaces})
         beta = next(workspace for workspace in workspaces if workspace["id"] == "beta")
         self.assertEqual("default", beta["source"])
-        self.assertEqual("topic-workspaces/beta", beta["effective_path"])
+        self.assertEqual("isomer-content/topic-ws/beta", beta["effective_path"])
 
         status, output = self.run_cli(["schemas", "list", "--json"], cwd=root)
         schemas = json.loads(output)["schemas"]
@@ -1303,13 +1584,13 @@ class IsomerCliTests(unittest.TestCase):
         return profile_text[:start] + profile_text[stop:]
 
     def test_team_templates_cli_commands_are_deterministic(self) -> None:
-        status, output = self.run_cli(["team-templates", "list", "--json"])
+        status, output = self.run_cli(["project", "team-templates", "list", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(["deepsci-mini", "deepsci-org"], [template["id"] for template in data["templates"]])
         self.assertTrue(all(template["validation_status"] == "valid" for template in data["templates"]))
 
-        status, output = self.run_cli(["team-templates", "inspect", "deepsci-mini", "--json"])
+        status, output = self.run_cli(["project", "team-templates", "inspect", "deepsci-mini", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(3, len(data["template"]["roles"]))
@@ -1318,42 +1599,42 @@ class IsomerCliTests(unittest.TestCase):
             {role["id"] for role in data["template"]["roles"]},
         )
 
-        status, output = self.run_cli(["team-templates", "inspect", "deepsci-org", "--json"])
+        status, output = self.run_cli(["project", "team-templates", "inspect", "deepsci-org", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(7, len(data["template"]["roles"]))
         self.assertIn("deepsci-org-reviewer", {role["id"] for role in data["template"]["roles"]})
 
-        status, output = self.run_cli(["--project", str(FIXTURE_PROJECT), "team-templates", "list", "--json"])
+        status, output = self.run_cli(["project", "--root", str(FIXTURE_PROJECT), "team-templates", "list", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(["deepsci-mini", "deepsci-org", "fixture-method-team"], [template["id"] for template in data["templates"]])
         self.assertTrue(all(template["validation_status"] == "valid" for template in data["templates"]))
 
         status, output = self.run_cli(
-            ["--project", str(FIXTURE_PROJECT), "team-templates", "validate", "fixture-method-team", "--json"]
+            ["project", "--root", str(FIXTURE_PROJECT), "team-templates", "validate", "fixture-method-team", "--json"]
         )
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["ok"])
         self.assertEqual({"fixture-coordinator", "fixture-researcher"}, {role["id"] for role in data["template"]["roles"]})
 
-        status, output = self.run_cli(["--project", str(FIXTURE_PROJECT), "team-templates", "validate", "deepsci-org", "--json"])
+        status, output = self.run_cli(["project", "--root", str(FIXTURE_PROJECT), "team-templates", "validate", "deepsci-org", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["ok"])
 
-        help_result = CliRunner().invoke(cli.app, ["team-templates", "validate", "--help"])
+        help_result = CliRunner().invoke(cli.app, ["project", "team-templates", "validate", "--help"])
         self.assertEqual(0, help_result.exit_code, help_result.output)
         self.assertNotIn("--no-harness", help_result.output)
 
-        status, output = self.run_cli(["team-templates", "validate", "missing-template", "--json"])
+        status, output = self.run_cli(["project", "team-templates", "validate", "missing-template", "--json"])
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("ISO016", data["diagnostics"][0]["code"])
 
     def test_uc01_fixture_validates_and_rejects_runtime_truth_leakage(self) -> None:
-        status, output = self.run_cli(["--project", str(UC01_FIXTURE_PROJECT), "validate", "--json"])
+        status, output = self.run_cli(["project", "--root", str(UC01_FIXTURE_PROJECT), "validate", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["ok"])
@@ -1376,7 +1657,7 @@ class IsomerCliTests(unittest.TestCase):
             topic_config.read_text(encoding="utf-8") + '\n[leaked_runtime]\ngates = ["gate-should-not-live-here"]\n',
             encoding="utf-8",
         )
-        status, output = self.run_cli(["--project", str(root), "validate", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "--root", str(root), "validate", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertFalse(data["ok"])
@@ -1385,15 +1666,16 @@ class IsomerCliTests(unittest.TestCase):
     def test_uc01_fixture_uses_generic_deepsci_mini_runtime_setup(self) -> None:
         root = self.copy_uc01_fixture_project("uc01-generic-runtime")
         for command in (
-            ["--project", str(root), "runtime", "init", "--json"],
-            ["--project", str(root), "runtime", "prepare", "--json"],
+            ["project", "--root", str(root), "runtime", "init", "--json"],
+            ["project", "--root", str(root), "runtime", "prepare", "--json"],
         ):
             status, output = self.run_cli(command, cwd=root)
             self.assertEqual(0, status, output)
 
         status, output = self.run_cli(
             [
-                "--project",
+                "project",
+                "--root",
                 str(root),
                 "team-instances",
                 "create",
@@ -1414,7 +1696,7 @@ class IsomerCliTests(unittest.TestCase):
             sorted(agent["agent_role_id"] for agent in creation["agent_instances"]),
         )
 
-        status, output = self.run_cli(["--project", str(root), "runtime", "validate", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "--root", str(root), "runtime", "validate", "--json"], cwd=root)
         validated = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(validated["ok"])
@@ -1468,7 +1750,8 @@ class IsomerCliTests(unittest.TestCase):
 
         status, output = self.run_cli(
             [
-                "--project",
+                "project",
+                "--root",
                 str(root),
                 "team-profiles",
                 "materialize",
@@ -1523,16 +1806,17 @@ status = "active"
             encoding="utf-8",
         )
         for command in (
-            ["--project", str(root), "validate", "--json"],
-            ["--project", str(root), "runtime", "init", "--json"],
-            ["--project", str(root), "runtime", "prepare", "--json"],
+            ["project", "--root", str(root), "validate", "--json"],
+            ["project", "--root", str(root), "runtime", "init", "--json"],
+            ["project", "--root", str(root), "runtime", "prepare", "--json"],
         ):
             status, output = self.run_cli(command, cwd=root)
             self.assertEqual(0, status, output)
 
         status, output = self.run_cli(
             [
-                "--project",
+                "project",
+                "--root",
                 str(root),
                 "team-instances",
                 "create",
@@ -1559,7 +1843,8 @@ status = "active"
         root = self.copy_uc01_fixture_project("uc01-invalid-packet")
         status, output = self.run_cli(
             [
-                "--project",
+                "project",
+                "--root",
                 str(root),
                 "team-profiles",
                 "materialize",
@@ -1581,13 +1866,13 @@ status = "active"
         self.assertIn("ISO019", codes)
 
     def test_profile_manifest_context_specialize_and_validate(self) -> None:
-        status, output = self.run_cli(["--project", str(FIXTURE_PROJECT), "validate", "--json"])
+        status, output = self.run_cli(["project", "--root", str(FIXTURE_PROJECT), "validate", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["ok"])
         self.assertEqual(4, len(data["manifest"]["topic_agent_team_profiles"]))
 
-        status, output = self.run_cli(["--project", str(FIXTURE_PROJECT), "context", "show", "--topic", "novel-biomarker", "--json"])
+        status, output = self.run_cli(["project", "--root", str(FIXTURE_PROJECT), "context", "show", "--topic", "novel-biomarker", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("deepsci-org", data["context"]["domain_agent_team_template_id"])
@@ -1599,7 +1884,8 @@ status = "active"
 
         status, output = self.run_cli(
             [
-                "--project",
+                "project",
+                "--root",
                 str(FIXTURE_PROJECT),
                 "team-profiles",
                 "specialize",
@@ -1622,7 +1908,8 @@ status = "active"
         for profile_id in FIXTURE_PROFILE_IDS:
             status, output = self.run_cli(
                 [
-                    "--project",
+                    "project",
+                    "--root",
                     str(FIXTURE_PROJECT),
                     "team-profiles",
                     "validate",
@@ -1643,7 +1930,8 @@ status = "active"
 
         status, output = self.run_cli(
             [
-                "--project",
+                "project",
+                "--root",
                 str(root),
                 "team-profiles",
                 "specialize",
@@ -1667,7 +1955,8 @@ status = "active"
 
         status, output = self.run_cli(
             [
-                "--project",
+                "project",
+                "--root",
                 str(root),
                 "team-profiles",
                 "specialize",
@@ -1704,7 +1993,8 @@ status = "active"
 
         status, output = self.run_cli(
             [
-                "--project",
+                "project",
+                "--root",
                 str(root),
                 "team-profiles",
                 "specialize",
@@ -1727,14 +2017,15 @@ status = "active"
         self.add_topic_pixi_binding(root, "beta", "beta-main")
 
         for command in (
-            ["runtime", "init", "--topic", "alpha", "--json"],
-            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
         ):
             status, output = self.run_cli(command, cwd=root)
             self.assertEqual(0, status, output)
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "create",
                 "--topic",
@@ -1762,6 +2053,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "create",
                 "--topic",
@@ -1778,13 +2070,13 @@ status = "active"
         self.assertEqual(1, status)
         self.assertIn("ISO046", {diagnostic["code"] for diagnostic in data["diagnostics"]})
 
-        status, output = self.run_cli(["team-instances", "list", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "team-instances", "list", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(["ati-alpha-manual"], [item["id"] for item in data["agent_team_instances"]])
 
         status, output = self.run_cli(
-            ["team-instances", "show", "ati-alpha-manual", "--topic", "alpha", "--json"],
+            ["project", "team-instances", "show", "ati-alpha-manual", "--topic", "alpha", "--json"],
             cwd=root,
         )
         data = json.loads(output)
@@ -1794,14 +2086,14 @@ status = "active"
         self.assertEqual(7, len(summary["agent_workspaces"]))
         self.assertGreaterEqual(len(summary["workflow_stage_cursors"]), 7)
 
-        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         first_workspace = root / summary["path_plans"][0]["path"]
         if not first_workspace.is_absolute():
             first_workspace = root / first_workspace
         shutil.rmtree(first_workspace)
-        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO044", {diagnostic["code"] for diagnostic in data["diagnostics"]})
@@ -1815,14 +2107,15 @@ status = "active"
 
         for topic in ("alpha", "beta"):
             for command in (
-                ["runtime", "init", "--topic", topic, "--json"],
-                ["runtime", "prepare", "--topic", topic, "--json"],
+                ["project", "runtime", "init", "--topic", topic, "--json"],
+                ["project", "runtime", "prepare", "--topic", topic, "--json"],
             ):
                 status, output = self.run_cli(command, cwd=root)
                 self.assertEqual(0, status, output)
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "create",
                 "--topic",
@@ -1845,6 +2138,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "create",
                 "--topic",
@@ -1862,7 +2156,7 @@ status = "active"
         second_agent_ids = {agent["id"] for agent in data["creation"]["agent_instances"]}
         self.assertTrue(alpha_agent_ids.isdisjoint(second_agent_ids))
 
-        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
 
@@ -1899,7 +2193,7 @@ status = "active"
                 ),
             )
 
-        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         identity_diagnostics = [
@@ -1922,8 +2216,8 @@ status = "active"
 
         for topic in ("alpha", "beta"):
             for command in (
-                ["runtime", "init", "--topic", topic, "--json"],
-                ["runtime", "prepare", "--topic", topic, "--json"],
+                ["project", "runtime", "init", "--topic", topic, "--json"],
+                ["project", "runtime", "prepare", "--topic", topic, "--json"],
             ):
                 status, output = self.run_cli(command, cwd=root)
                 self.assertEqual(0, status, output)
@@ -1934,6 +2228,7 @@ status = "active"
         with patch("isomer_labs.runtime.store._agent_instance_id", side_effect=forced_id):
             status, output = self.run_cli(
                 [
+                    "project",
                     "team-instances",
                     "create",
                     "--topic",
@@ -1952,6 +2247,7 @@ status = "active"
             before_counts = self.runtime_counts(beta_db)
             status, output = self.run_cli(
                 [
+                    "project",
                     "team-instances",
                     "create",
                     "--topic",
@@ -1977,8 +2273,8 @@ status = "active"
         self.add_topic_pixi_binding(root, "alpha", "alpha-main")
 
         for command in (
-            ["runtime", "init", "--topic", "alpha", "--json"],
-            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
         ):
             status, output = self.run_cli(command, cwd=root)
             self.assertEqual(0, status, output)
@@ -2017,6 +2313,7 @@ status = "active"
         with patch("isomer_labs.runtime.store._agent_instance_id", side_effect=generated_id):
             status, output = self.run_cli(
                 [
+                    "project",
                     "team-instances",
                     "create",
                     "--topic",
@@ -2106,9 +2403,10 @@ status = "active"
         self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
         self.add_topic_pixi_binding(root, "alpha", "alpha-main")
         for command in (
-            ["runtime", "init", "--topic", "alpha", "--json"],
-            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
             [
+                "project",
                 "team-instances",
                 "create",
                 "--topic",
@@ -2125,6 +2423,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "adapter-link",
                 "export",
@@ -2148,7 +2447,7 @@ status = "active"
         self.assertEqual("adapter-link.json", link_path.name)
 
         status, output = self.run_cli(
-            ["team-instances", "inspect-live", "ati-alpha-manual", "--topic", "alpha", "--integrity", "--json"],
+            ["project", "team-instances", "inspect-live", "ati-alpha-manual", "--topic", "alpha", "--integrity", "--json"],
             cwd=root,
             env={},
         )
@@ -2158,7 +2457,7 @@ status = "active"
         self.assertEqual("linked", data["reconciliation"]["state"])
 
         status, output = self.run_cli(
-            ["team-instances", "reconcile", "ati-alpha-manual", "--topic", "alpha", "--actor", "operator-agent:test", "--json"],
+            ["project", "team-instances", "reconcile", "ati-alpha-manual", "--topic", "alpha", "--actor", "operator-agent:test", "--json"],
             cwd=root,
             env={},
         )
@@ -2177,6 +2476,7 @@ status = "active"
         )
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "adopt",
                 "ati-alpha-manual",
@@ -2194,6 +2494,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "adopt",
                 "ati-alpha-manual",
@@ -2210,7 +2511,7 @@ status = "active"
         self.assertEqual(0, status, output)
         self.assertEqual("adopted", data["reconciliation"]["state"])
 
-        status, output = self.run_cli(["team-instances", "show", "ati-alpha-manual", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "team-instances", "show", "ati-alpha-manual", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         summary = data["summary"]
         self.assertGreaterEqual(len(summary["adapter_manifest_refs"]), 2)
@@ -2218,7 +2519,7 @@ status = "active"
         self.assertEqual([], summary["handoffs"])
         self.assertEqual(0, len(summary["agent_team_instance"]["run_ids"]))
 
-        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(2, data["runtime"]["counts"]["adapter_reconciliation_records"])
@@ -2229,9 +2530,10 @@ status = "active"
         self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
         self.add_topic_pixi_binding(root, "alpha", "alpha-main")
         for command in (
-            ["runtime", "init", "--topic", "alpha", "--json"],
-            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
             [
+                "project",
                 "team-instances",
                 "create",
                 "--topic",
@@ -2253,6 +2555,7 @@ status = "active"
         }
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "launch-material",
                 "prepare",
@@ -2281,6 +2584,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "launch",
                 "ati-alpha-cli",
@@ -2303,6 +2607,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "inspect-live",
                 "ati-alpha-cli",
@@ -2323,6 +2628,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "stop",
                 "ati-alpha-cli",
@@ -2340,7 +2646,7 @@ status = "active"
         self.assertTrue(data["mutated"])
         self.assertEqual("stopped", data["stop"]["status"])
 
-        status, output = self.run_cli(["team-instances", "show", "ati-alpha-cli", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "team-instances", "show", "ati-alpha-cli", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         summary = data["summary"]
         self.assertGreaterEqual(len(summary["adapter_materializations"]), 2)
@@ -2355,7 +2661,7 @@ status = "active"
         launch_manifest_refs = set(summary["adapter_launch_attempts"][0]["manifest_ref_ids"])
         self.assertTrue(set(manifest_refs) <= {record_id.rsplit("-", 1)[-1] for record_id in launch_manifest_refs})
 
-        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertGreaterEqual(data["runtime"]["counts"]["adapter_command_runs"], 30)
@@ -2370,6 +2676,7 @@ status = "active"
         status, output = self.run_cli(
             [
                 "--print-json",
+                "project",
                 "handoffs",
                 "dispatch",
                 "--topic",
@@ -2395,7 +2702,7 @@ status = "active"
         self.assertIn("ISO070", codes)
         self.assertIn("ISO077", codes)
 
-        status, output = self.run_cli(["team-instances", "show", instance_id, "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "team-instances", "show", instance_id, "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         summary = data["summary"]
@@ -2414,6 +2721,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "inspect-live",
                 instance_id,
@@ -2431,6 +2739,7 @@ status = "active"
         status, output = self.run_cli(
             [
                 "--print-json",
+                "project",
                 "handoffs",
                 "dispatch",
                 "--topic",
@@ -2482,6 +2791,7 @@ status = "active"
             status, output = self.run_cli(
                 [
                     "--print-json",
+                    "project",
                     "handoffs",
                     "observe",
                     str(handoff_id),
@@ -2518,6 +2828,7 @@ status = "active"
         status, output = self.run_cli(
             [
                 "--print-json",
+                "project",
                 "handoffs",
                 "normalize",
                 str(handoff_id),
@@ -2549,6 +2860,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "handoffs",
                 "dispatch",
                 "--topic",
@@ -2574,6 +2886,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "handoffs",
                 "observe",
                 text_handoff_id,
@@ -2596,6 +2909,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "handoffs",
                 "normalize",
                 text_handoff_id,
@@ -2615,7 +2929,7 @@ status = "active"
         self.assertIn("Handoff normalization status: accepted", output)
         self.assertNotIn("isomer-cli-output.v1", output)
 
-        status, output = self.run_cli(["team-instances", "show", instance_id, "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "team-instances", "show", instance_id, "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         summary = data["summary"]
@@ -2627,7 +2941,7 @@ status = "active"
         for forbidden_field in ("message_id", "event_id", "mailbox_id", "managed_agent_id", "gateway_url"):
             self.assertNotIn(forbidden_field, serialized_summary)
 
-        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertGreaterEqual(data["runtime"]["counts"]["adapter_handoff_dispatch_records"], 2)
@@ -2647,6 +2961,7 @@ status = "active"
             status, output = self.run_cli(
                 [
                     "--print-json",
+                    "project",
                     "handoffs",
                     "dispatch",
                     "--topic",
@@ -2673,6 +2988,7 @@ status = "active"
             status, output = self.run_cli(
                 [
                     "--print-json",
+                    "project",
                     "handoffs",
                     "observe",
                     handoff_id,
@@ -2695,6 +3011,7 @@ status = "active"
         status, output = self.run_cli(
             [
                 "--print-json",
+                "project",
                 "handoffs",
                 "normalize",
                 rejected_handoff_id,
@@ -2721,6 +3038,7 @@ status = "active"
         status, output = self.run_cli(
             [
                 "--print-json",
+                "project",
                 "handoffs",
                 "normalize",
                 repair_handoff_id,
@@ -2749,7 +3067,7 @@ status = "active"
                 ("2000-01-01T00:00:00Z", stale_handoff_id),
             )
 
-        status, output = self.run_cli(["team-instances", "show", instance_id, "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "team-instances", "show", instance_id, "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         handoff_records = {record["id"]: record for record in data["summary"]["handoffs"]}
@@ -2759,7 +3077,7 @@ status = "active"
         self.assertEqual(["service-request:alpha:reject-repair"], normalizations[rejected_handoff_id]["corrective_refs"])
         self.assertEqual(["service-request:alpha:repair-route"], normalizations[repair_handoff_id]["corrective_refs"])
 
-        status, output = self.run_cli(["runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertIn("ISO045", {diagnostic["code"] for diagnostic in data["diagnostics"]})
@@ -2770,9 +3088,10 @@ status = "active"
         self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
         self.add_topic_pixi_binding(root, "alpha", "alpha-main")
         for command in (
-            ["runtime", "init", "--topic", "alpha", "--json"],
-            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
             [
+                "project",
                 "team-instances",
                 "create",
                 "--topic",
@@ -2789,6 +3108,7 @@ status = "active"
 
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "launch",
                 "ati-alpha-no-houmao",
@@ -2813,9 +3133,10 @@ status = "active"
         self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
         self.add_topic_pixi_binding(root, "alpha", "alpha-main")
         for command in (
-            ["runtime", "init", "--topic", "alpha", "--json"],
-            ["runtime", "prepare", "--topic", "alpha", "--json"],
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
             [
+                "project",
                 "team-instances",
                 "create",
                 "--topic",
@@ -2838,6 +3159,7 @@ status = "active"
         }
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "launch",
                 "ati-alpha-partial",
@@ -2855,7 +3177,7 @@ status = "active"
         self.assertEqual("partial", data["launch"]["status"])
         self.assertTrue(Path(data["launch"]["runtime_manifest_path"]).is_file())
 
-        status, output = self.run_cli(["team-instances", "show", "ati-alpha-partial", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "team-instances", "show", "ati-alpha-partial", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         attempts = data["summary"]["adapter_launch_attempts"]
         self.assertEqual(1, len(attempts))
@@ -2872,6 +3194,7 @@ status = "active"
         }
         status, output = self.run_cli(
             [
+                "project",
                 "team-instances",
                 "stop",
                 "ati-alpha-partial",
@@ -2900,9 +3223,10 @@ status = "active"
             ("beta", "uc-02-beta", "ati-beta"),
         ):
             for command in (
-                ["runtime", "init", "--topic", topic, "--json"],
-                ["runtime", "prepare", "--topic", topic, "--json"],
+                ["project", "runtime", "init", "--topic", topic, "--json"],
+                ["project", "runtime", "prepare", "--topic", topic, "--json"],
                 [
+                    "project",
                     "team-instances",
                     "create",
                     "--topic",
@@ -2917,12 +3241,12 @@ status = "active"
                 status, output = self.run_cli(command, cwd=root)
                 self.assertEqual(0, status, output)
 
-        status, output = self.run_cli(["team-instances", "list", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "team-instances", "list", "--topic", "alpha", "--json"], cwd=root)
         alpha = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(["ati-alpha"], [item["id"] for item in alpha["agent_team_instances"]])
 
-        status, output = self.run_cli(["team-instances", "list", "--topic", "beta", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "team-instances", "list", "--topic", "beta", "--json"], cwd=root)
         beta = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(["ati-beta"], [item["id"] for item in beta["agent_team_instances"]])
@@ -2966,7 +3290,7 @@ status = "active"
                 ("isomer-workspace-runtime.v2",),
             )
 
-        status, output = self.run_cli(["runtime", "inspect", "--topic", "alpha", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "runtime", "inspect", "--topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("newer", data["diagnostics"][0]["message"])
@@ -3040,7 +3364,7 @@ status = "active"
         )
         write(root / ".isomer-labs" / "team-profiles" / "dup-beta.toml", self.profile_fixture("dup", "beta", "UC-02"))
 
-        status, output = self.run_cli(["validate", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=root)
         data = json.loads(output)
         codes = {diagnostic["code"] for diagnostic in data["diagnostics"]}
         self.assertEqual(1, status)
@@ -3079,7 +3403,7 @@ status = "active"
         write(root / ".isomer-labs" / "research-topics" / "alpha.toml", 'research_topic_id = "alpha"\n')
         write(root / ".isomer-labs" / "team-profiles" / "dup.toml", self.profile_fixture("dup", "alpha", "UC-01"))
 
-        status, output = self.run_cli(["validate", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO004", {diagnostic["code"] for diagnostic in data["diagnostics"]})
@@ -3125,7 +3449,7 @@ status = "active"
             candidate = root / ".isomer-labs" / "team-profiles" / f"{label}.toml"
             write(candidate, content.replace('id = "uc-01-novel-biomarker"', f'id = "{label}"', 1))
             status, output = self.run_cli(
-                ["--project", str(root), "team-profiles", "validate", str(candidate), "--json"],
+                ["project", "--root", str(root), "team-profiles", "validate", str(candidate), "--json"],
                 cwd=root,
             )
             data = json.loads(output)
@@ -3147,7 +3471,7 @@ status = "active"
         )
         missing_run_contract.unlink()
         status, output = self.run_cli(
-            ["--project", str(missing_root), "team-templates", "validate", "fixture-method-team", "--json"],
+            ["project", "--root", str(missing_root), "team-templates", "validate", "fixture-method-team", "--json"],
             cwd=missing_root,
         )
         data = json.loads(output)
@@ -3179,7 +3503,7 @@ status = "active"
             encoding="utf-8",
         )
         status, output = self.run_cli(
-            ["--project", str(boundary_root), "team-templates", "validate", "fixture-method-team", "--json"],
+            ["project", "--root", str(boundary_root), "team-templates", "validate", "fixture-method-team", "--json"],
             cwd=boundary_root,
         )
         data = json.loads(output)

@@ -90,7 +90,7 @@ The system SHALL let the Project Manifest explicitly record which Project-root P
 
 #### Scenario: One topic can use multiple Pixi environments
 - **WHEN** the Project Manifest contains multiple active `topic_pixi_environment_bindings` entries for the same Research Topic and different Pixi environment names
-- **THEN** Effective Topic Context and `doctor` preserve the explicit set of bound environment refs for later readiness checks and runtime preparation
+- **THEN** Effective Topic Context and `project doctor` preserve the explicit set of bound environment refs for later readiness checks and runtime preparation
 
 #### Scenario: Standalone Pixi isolation bindings use a separate manifest table
 - **WHEN** the Project Manifest declares `[[topic_standalone_pixi_bindings]]`

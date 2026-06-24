@@ -52,11 +52,11 @@ When reporting results, include the fields that apply:
 
 ## Guardrails
 
-Use `isomer-cli init` for fresh Project bootstrap. A successful init creates both `.isomer-labs/` and the Project-level `.houmao/` overlay, but it must not create Workspace Runtime state, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers.
+Use `isomer-cli project init` for fresh Project bootstrap. A successful init creates `.isomer-labs/`, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), the first Topic Workspace under `isomer-content/topic-ws/<topic-id>/` or `<content-dir>/topic-ws/<topic-id>/`, and the Project-level `.houmao/` overlay, but it must not create Workspace Runtime state, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers.
 
-Use read-only commands for checks unless the user explicitly requests initialization or preparation. `validate`, `doctor`, `topics list`, `workspaces list`, `context show`, `paths preview`, and Houmao project status checks must not mutate Project config, Workspace Runtime, or live Houmao agents.
+Use read-only commands for checks unless the user explicitly requests initialization or preparation. `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, `isomer-cli project workspaces list`, `isomer-cli project context show`, `isomer-cli project paths preview`, and Houmao project status checks must not mutate Project config, Workspace Runtime, or live Houmao agents.
 
-Keep Workspace Runtime creation explicit through `runtime init`, and keep launch-facing readiness explicit through `runtime prepare` and `runtime validate --require-ready-readiness`.
+Keep Workspace Runtime creation explicit through `isomer-cli project runtime init`, and keep launch-facing readiness explicit through `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness`.
 
 Do not scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
 

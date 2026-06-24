@@ -67,15 +67,15 @@ The system SHALL map Domain Agent Team Template roles and Workflow Stages into n
 The system SHALL expose deterministic CLI inspection and validation for registered Domain Agent Team Templates.
 
 #### Scenario: Template list command reports registered templates
-- **WHEN** a user runs `isomer-cli team-templates list`
+- **WHEN** a user runs `isomer-cli project team-templates list`
 - **THEN** the output includes each registered Domain Agent Team Template id, source kind, source path when available, and validation status
 
 #### Scenario: Template inspect command reports template structure
-- **WHEN** a user runs `isomer-cli team-templates inspect deepsci-org`
+- **WHEN** a user runs `isomer-cli project team-templates inspect deepsci-org`
 - **THEN** the output includes reusable Agent Roles, Workflow Stages, required and optional skills, template parameters, generated package artifact paths, and source metadata
 
 #### Scenario: Template validate command reports Isomer diagnostics
-- **WHEN** a user runs `isomer-cli team-templates validate deepsci-org`
+- **WHEN** a user runs `isomer-cli project team-templates validate deepsci-org`
 - **THEN** the command reports stable Isomer diagnostics and deterministic JSON output when requested
 
 ### Requirement: Milestone Template Completion Verification
@@ -83,7 +83,7 @@ The system SHALL verify Domain Agent Team Template registration and validation w
 
 #### Scenario: Project-local template fixture validates
 - **WHEN** a Project Manifest registers a minimal project-local Domain Agent Team Template fixture with structurally valid manifest, participant, binding, workspace, state, run, skill, and schema artifacts
-- **THEN** `isomer-cli team-templates validate <template-id>` validates that template without relying on `deepsci-org`-specific role ids
+- **THEN** `isomer-cli project team-templates validate <template-id>` validates that template without relying on `deepsci-org`-specific role ids
 
 #### Scenario: Missing project-local template artifact is rejected
 - **WHEN** a project-local Domain Agent Team Template fixture references a missing manifest, participant contract, role profile, generated skill, harness schema, workspace contract, state contract, or run contract
@@ -98,7 +98,7 @@ The system SHALL keep `deepsci-org` as the seed Domain Agent Team Template while
 
 #### Scenario: Built-in deepsci-org validates through public CLI
 - **WHEN** the Milestone 2 validation suite runs
-- **THEN** it validates `deepsci-org` through `isomer-cli team-templates list`, `isomer-cli team-templates inspect deepsci-org`, and `isomer-cli team-templates validate deepsci-org`
+- **THEN** it validates `deepsci-org` through `isomer-cli project team-templates list`, `isomer-cli project team-templates inspect deepsci-org`, and `isomer-cli project team-templates validate deepsci-org`
 
 #### Scenario: deepsci-org role expectations stay scoped to built-in deepsci-org
 - **WHEN** validation inspects the built-in `deepsci-org` template

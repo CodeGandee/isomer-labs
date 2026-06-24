@@ -8,11 +8,11 @@ The system SHALL provide an installed `isomer-cli` command with Project discover
 
 #### Scenario: CLI exposes project-discovery commands
 - **WHEN** a user runs `isomer-cli --help`
-- **THEN** the command help lists `init`, `validate`, `doctor`, `topics list`, `workspaces list`, `context show`, `paths preview`, `schemas list`, `runtime init`, `runtime prepare`, `runtime inspect`, `runtime validate`, `team-instances create`, `team-instances list`, and `team-instances show`
+- **THEN** the command help lists `project init`, `project validate`, `project doctor`, `project topics list`, `project workspaces list`, `project context show`, `project paths preview`, `schemas list`, `project runtime init`, `project runtime prepare`, `project runtime inspect`, `project runtime validate`, `project team-instances create`, `project team-instances list`, and `project team-instances show`
 
 #### Scenario: CLI exposes template and profile commands
 - **WHEN** a user runs `isomer-cli --help`
-- **THEN** the command help lists `team-templates` and `team-profiles` command groups
+- **THEN** the command help lists `project team-templates` and `project team-profiles` command groups
 
 #### Scenario: Project script is installed through package metadata
 - **WHEN** the package is installed through the repository's editable Pixi PyPI dependency
@@ -22,31 +22,31 @@ The system SHALL provide an installed `isomer-cli` command with Project discover
 The system SHALL initialize the smallest valid Isomer-managed Project configuration and the Project-level Houmao overlay without creating Workspace Runtime state or live Houmao agent state.
 
 #### Scenario: Initialize default project
-- **WHEN** a user runs `isomer-cli init` in a directory without `.isomer-labs/manifest.toml`
+- **WHEN** a user runs `isomer-cli project init` in a directory without `.isomer-labs/manifest.toml`
 - **THEN** the system creates `.isomer-labs/manifest.toml`, one registered Research Topic Config for Research Topic id `default`, one project-local Topic Workspace directory at `topic-workspaces/default/`, and a Project-level Houmao overlay at `.houmao/`
 
 #### Scenario: Initialize explicit topic
-- **WHEN** a user runs `isomer-cli init` with an explicit Research Topic id
+- **WHEN** a user runs `isomer-cli project init` with an explicit Research Topic id
 - **THEN** the system uses that id for the Research Topic registration, Research Topic Config path, and default Topic Workspace directory name
 
 #### Scenario: Initialize creates Houmao project overlay
-- **WHEN** `isomer-cli init` completes successfully
+- **WHEN** `isomer-cli project init` completes successfully
 - **THEN** the system has invoked the supported Houmao CLI project initialization boundary for the Project root and reports the resolved Houmao Project overlay path in deterministic text or JSON output
 
 #### Scenario: Initialize does not create runtime database
-- **WHEN** `isomer-cli init` completes
+- **WHEN** `isomer-cli project init` completes
 - **THEN** the system does not create `state.sqlite` or any Workspace Runtime database
 
 #### Scenario: Initialize does not create runtime or live Houmao launch state
-- **WHEN** `isomer-cli init` completes
+- **WHEN** `isomer-cli project init` completes
 - **THEN** the system does not create Workspace Runtime subdirectories, Agent Workspaces, adapter launch material, Houmao managed agents, mailboxes, gateways, sessions, or launch dossiers
 
 #### Scenario: Houmao bootstrap failure blocks project init
-- **WHEN** a user runs `isomer-cli init` and the required Houmao command boundary is unavailable or returns a failing result
+- **WHEN** a user runs `isomer-cli project init` and the required Houmao command boundary is unavailable or returns a failing result
 - **THEN** the system returns deterministic diagnostics, does not write `.isomer-labs/manifest.toml`, and does not claim that the Isomer Project was initialized
 
 #### Scenario: Existing project is not overwritten
-- **WHEN** a user runs `isomer-cli init` in a Project that already has `.isomer-labs/manifest.toml`
+- **WHEN** a user runs `isomer-cli project init` in a Project that already has `.isomer-labs/manifest.toml`
 - **THEN** the system refuses to overwrite the existing Project Manifest and does not offer a force-overwrite behavior in Milestone 1
 
 ### Requirement: Project Discovery
@@ -72,11 +72,11 @@ The system SHALL discover the active Project before resolving topic-scoped comma
 The system SHALL validate the Project Manifest, registered Research Topic Config files, optional local active context, Domain Agent Team Template refs, and Topic Agent Team Profile refs before command behavior depends on them.
 
 #### Scenario: Manifest registers topics and workspaces
-- **WHEN** `isomer-cli validate` inspects a Project Manifest
+- **WHEN** `isomer-cli project validate` inspects a Project Manifest
 - **THEN** validation confirms that every registered Research Topic has a stable id, schema version or compatible manifest version, Research Topic Config path, and matching Topic Workspace ref or valid built-in Topic Workspace default
 
 #### Scenario: Manifest registers team templates and profiles
-- **WHEN** `isomer-cli validate` inspects a Project Manifest with Domain Agent Team Template or Topic Agent Team Profile refs
+- **WHEN** `isomer-cli project validate` inspects a Project Manifest with Domain Agent Team Template or Topic Agent Team Profile refs
 - **THEN** validation confirms that each template ref has a stable id and project-scoped or built-in source path, and that each profile ref has a stable id, source path, template ref, and Research Topic association
 
 #### Scenario: Duplicate ids are rejected
@@ -111,22 +111,22 @@ The system SHALL validate the Project Manifest, registered Research Topic Config
 The system SHALL list registered Research Topics and Topic Workspaces from the Project Manifest without scanning unregistered directories.
 
 #### Scenario: Topics list uses manifest registrations
-- **WHEN** a user runs `isomer-cli topics list`
+- **WHEN** a user runs `isomer-cli project topics list`
 - **THEN** the output includes only Research Topics registered by the Project Manifest
 
 #### Scenario: Workspace list uses manifest registrations and defaults
-- **WHEN** a user runs `isomer-cli workspaces list`
+- **WHEN** a user runs `isomer-cli project workspaces list`
 - **THEN** the output includes Project Manifest-registered Topic Workspaces and valid built-in default Topic Workspace paths derivable for registered Research Topics
 
 #### Scenario: Unregistered topic config files are ignored
 - **WHEN** `.isomer-labs/research-topics/` contains TOML files that are not registered by the Project Manifest
-- **THEN** `isomer-cli topics list` does not treat those files as managed Research Topics
+- **THEN** `isomer-cli project topics list` does not treat those files as managed Research Topics
 
 ### Requirement: Effective Topic Context Inspection
 The system SHALL resolve and display Effective Topic Context for topic-scoped commands, including selected team template and profile defaults when available.
 
 #### Scenario: Context show includes core refs
-- **WHEN** a user runs `isomer-cli context show` with a resolvable Research Topic
+- **WHEN** a user runs `isomer-cli project context show` with a resolvable Research Topic
 - **THEN** the output includes Project root, Project Config Directory, Project Manifest path, Research Topic id, Research Topic Config path, Topic Workspace id, Topic Workspace path input, schema versions, selected Domain Agent Team Template refs, selected Topic Agent Team Profile refs, and source metadata
 
 #### Scenario: Topic selection precedence is deterministic
@@ -153,7 +153,7 @@ The system SHALL resolve and display Effective Topic Context for topic-scoped co
 The system SHALL preview Workspace Path Resolution outputs without creating Workspace Runtime state.
 
 #### Scenario: Path preview shows topic workspace defaults
-- **WHEN** a user runs `isomer-cli paths preview` for a registered Research Topic without a configured Topic Workspace path
+- **WHEN** a user runs `isomer-cli project paths preview` for a registered Research Topic without a configured Topic Workspace path
 - **THEN** the output derives the Topic Workspace path as `<project>/topic-workspaces/<topic-id>/` and labels the source as `default`
 
 #### Scenario: Path preview applies precedence
@@ -161,7 +161,7 @@ The system SHALL preview Workspace Path Resolution outputs without creating Work
 - **THEN** the preview applies the Milestone 1 precedence of environment, manifest, then default and reports the chosen source
 
 #### Scenario: Recorded plan source is unavailable in Milestone 1
-- **WHEN** `isomer-cli paths preview` runs before Workspace Runtime and recorded workspace plans are implemented
+- **WHEN** `isomer-cli project paths preview` runs before Workspace Runtime and recorded workspace plans are implemented
 - **THEN** the command does not report any resolved path as coming from a recorded plan source
 
 #### Scenario: Path preview validates bounds
@@ -169,7 +169,7 @@ The system SHALL preview Workspace Path Resolution outputs without creating Work
 - **THEN** the preview rejects the path without applying an external-root allowlist in Milestone 1
 
 #### Scenario: Path preview is side-effect free
-- **WHEN** `isomer-cli paths preview` resolves Topic Workspace, Workspace Runtime, Artifact, Run, log, View Manifest, or Agent Workspace paths
+- **WHEN** `isomer-cli project paths preview` resolves Topic Workspace, Workspace Runtime, Artifact, Run, log, View Manifest, or Agent Workspace paths
 - **THEN** the command does not create `state.sqlite`, Run directories, Artifact directories, Agent Workspace directories, or View Manifest directories by default
 
 ### Requirement: Built-In Schema Listing
@@ -199,7 +199,7 @@ The system SHALL produce deterministic diagnostics, structured human-readable te
 - **THEN** diagnostic output identifies the offending field or path without printing the secret value
 
 #### Scenario: JSON output is deterministic
-- **WHEN** a user requests JSON output with root-level `--print-json` for `validate`, `doctor`, `topics list`, `workspaces list`, `context show`, `paths preview`, `schemas list`, `runtime init`, `runtime prepare`, `runtime inspect`, `runtime validate`, `team-instances create`, `team-instances list`, `team-instances show`, `team-templates list`, `team-templates inspect`, `team-templates validate`, `team-profiles specialize`, or `team-profiles validate`
+- **WHEN** a user requests JSON output with root-level `--print-json` for `project validate`, `project doctor`, `project topics list`, `project workspaces list`, `project context show`, `project paths preview`, `schemas list`, `project runtime init`, `project runtime prepare`, `project runtime inspect`, `project runtime validate`, `project team-instances create`, `project team-instances list`, `project team-instances show`, `project team-templates list`, `project team-templates inspect`, `project team-templates validate`, `project team-profiles specialize`, or `project team-profiles validate`
 - **THEN** the command emits deterministic JSON suitable for unit tests and future Operator Agent consumption
 
 #### Scenario: JSON output is versioned but provisional
@@ -210,27 +210,27 @@ The system SHALL produce deterministic diagnostics, structured human-readable te
 The system SHALL make Workspace Runtime mutations explicit in CLI behavior while preserving the read-only guarantees of inspection and design-time commands.
 
 #### Scenario: Runtime init is the runtime creation command
-- **WHEN** a user runs `isomer-cli runtime init`
+- **WHEN** a user runs `isomer-cli project runtime init`
 - **THEN** the command may create or reopen `state.sqlite` and the default Workspace Runtime directories for the selected Topic Workspace
 
 #### Scenario: Runtime prepare is the readiness preparation command
-- **WHEN** a user runs `isomer-cli runtime prepare`
+- **WHEN** a user runs `isomer-cli project runtime prepare`
 - **THEN** the command may record selected topic Pixi environment use, readiness status, readiness diagnostics, and preparation provenance in the selected Workspace Runtime
 
 #### Scenario: Runtime inspect is read-only
-- **WHEN** a user runs `isomer-cli runtime inspect`
+- **WHEN** a user runs `isomer-cli project runtime inspect`
 - **THEN** the command reads Workspace Runtime metadata and selected record counts without creating or mutating runtime state
 
 #### Scenario: Runtime validate is read-only
-- **WHEN** a user runs `isomer-cli runtime validate`
+- **WHEN** a user runs `isomer-cli project runtime validate`
 - **THEN** the command reports Workspace Runtime diagnostics without creating directories, changing statuses, or repairing records
 
 #### Scenario: Team instance create is explicit mutation
-- **WHEN** a user runs `isomer-cli team-instances create`
+- **WHEN** a user runs `isomer-cli project team-instances create`
 - **THEN** the command may create Agent Team Instance, Agent Instance, Agent Workspace, path plan, Workflow Stage Cursor, and Provenance records for the selected Topic Workspace
 
 #### Scenario: Team instance inspection is read-only
-- **WHEN** a user runs `isomer-cli team-instances list` or `isomer-cli team-instances show`
+- **WHEN** a user runs `isomer-cli project team-instances list` or `isomer-cli project team-instances show`
 - **THEN** the command reads Workspace Runtime records without creating Agent Team Instances, Agent Instances, Agent Workspaces, Runs, Houmao launch material, or adapter refs
 
 ### Requirement: Click Command Registration
@@ -242,10 +242,10 @@ The system SHALL implement the `isomer-cli` command surface with modular Click c
 
 #### Scenario: Existing commands remain available
 - **WHEN** a user runs `isomer-cli --help`
-- **THEN** the command help still lists `init`, `validate`, `topics list`, `workspaces list`, `context show`, `paths preview`, and `schemas list`
+- **THEN** the command help still lists `project init`, `project validate`, `project topics list`, `project workspaces list`, `project context show`, `project paths preview`, and `schemas list`
 
 #### Scenario: Existing command outputs remain compatible
-- **WHEN** a user runs `validate`, `topics list`, `workspaces list`, `context show`, `paths preview`, or `schemas list` with JSON output requested through root-level `--print-json`
+- **WHEN** a user runs `project validate`, `project topics list`, `project workspaces list`, `project context show`, `project paths preview`, or `schemas list` with JSON output requested through root-level `--print-json`
 - **THEN** the command emits the same versioned JSON contract shape used by the Milestone 1 project-discovery implementation
 
 #### Scenario: Domain diagnostics remain Isomer diagnostics
@@ -256,11 +256,11 @@ The system SHALL implement the `isomer-cli` command surface with modular Click c
 The system SHALL produce deterministic text and JSON output for Topic Agent Team Profile specialization previews and writes.
 
 #### Scenario: Profile preview reports no written path
-- **WHEN** a user runs `isomer-cli team-profiles specialize` without `--write` and requests JSON
+- **WHEN** a user runs `isomer-cli project team-profiles specialize` without `--write` and requests JSON
 - **THEN** the output includes the candidate profile, validation report, and `written_path` as null
 
 #### Scenario: Profile write reports written path
-- **WHEN** a user runs `isomer-cli team-profiles specialize --write` and requests JSON
+- **WHEN** a user runs `isomer-cli project team-profiles specialize --write` and requests JSON
 - **THEN** the output includes the candidate profile, validation report, non-null `written_path`, and a deterministic `registration_suggestion` object
 
 #### Scenario: Profile write does not mutate manifest
@@ -271,15 +271,15 @@ The system SHALL produce deterministic text and JSON output for Topic Agent Team
 The system SHALL validate milestone fixture Projects through the public CLI surfaces used by normal Projects.
 
 #### Scenario: Fixture Project validate command is deterministic
-- **WHEN** the validation suite runs `isomer-cli --print-json validate` against the Milestone 2 and 3 fixture Project
+- **WHEN** the validation suite runs `isomer-cli --print-json project validate` against the Milestone 2 and 3 fixture Project
 - **THEN** the output has deterministic JSON and reports no diagnostics for the positive fixture
 
 #### Scenario: Fixture template commands are deterministic
-- **WHEN** the validation suite runs `team-templates list`, `team-templates inspect`, and `team-templates validate` against fixture Projects with and without `--print-json`
+- **WHEN** the validation suite runs `project team-templates list`, `project team-templates inspect`, and `project team-templates validate` against fixture Projects with and without `--print-json`
 - **THEN** the output has deterministic text and JSON for built-in and project-local template refs
 
 #### Scenario: Fixture profile commands are deterministic
-- **WHEN** the validation suite runs `team-profiles specialize` and `team-profiles validate` against fixture Projects with and without `--print-json`
+- **WHEN** the validation suite runs `project team-profiles specialize` and `project team-profiles validate` against fixture Projects with and without `--print-json`
 - **THEN** the output has deterministic text and JSON for preview, write, and validation flows
 
 ### Requirement: Milestone Documentation Completion
@@ -294,29 +294,29 @@ The system SHALL document the completed Milestone 2 and 3 command surface and fi
 - **THEN** ROADMAP Milestone 2 and 3 checklist items are marked complete without marking Milestone 4 or Houmao launch work complete
 
 ### Requirement: Houmao adapter launch CLI surface
-The system SHALL expose Houmao adapter launch, prepare-only, inspect-live, and stop behavior through explicit `isomer-cli team-instances` commands with deterministic text and JSON output.
+The system SHALL expose Houmao adapter launch, prepare-only, inspect-live, and stop behavior through explicit `isomer-cli project team-instances` commands with deterministic text and JSON output.
 
 #### Scenario: Help lists adapter launch commands
-- **WHEN** a user runs `isomer-cli team-instances --help`
+- **WHEN** a user runs `isomer-cli project team-instances --help`
 - **THEN** the command help lists `launch`, `launch-material prepare`, `inspect-live`, and `stop` without presenting Houmao-specific command names as core Isomer concepts
 
 #### Scenario: Quick launch command reports mutation
-- **WHEN** a user runs `isomer-cli --print-json team-instances launch <agent-team-instance-id> --adapter houmao`
+- **WHEN** a user runs `isomer-cli --print-json project team-instances launch <agent-team-instance-id> --adapter houmao`
 - **THEN** the command emits deterministic JSON with Project, Research Topic, Topic Workspace, Agent Team Instance, selected Execution Adapter, launch attempt refs, manifest refs, diagnostics, and an explicit mutation summary
 
 #### Scenario: Prepare-only command reports manual guidance
-- **WHEN** a user runs `isomer-cli --print-json team-instances launch-material prepare <agent-team-instance-id> --adapter houmao`
+- **WHEN** a user runs `isomer-cli --print-json project team-instances launch-material prepare <agent-team-instance-id> --adapter houmao`
 - **THEN** the command emits deterministic JSON with generated material refs, manifest refs, validation diagnostics, and bounded manual `houmao-mgr` guidance without launching Houmao-managed agents
 
 ### Requirement: Houmao adapter CLI side-effect boundaries
 The system SHALL make side effects explicit for all Houmao adapter CLI commands.
 
 #### Scenario: Inspect-live is read-only by default
-- **WHEN** a user runs `isomer-cli team-instances inspect-live <agent-team-instance-id> --adapter houmao`
+- **WHEN** a user runs `isomer-cli project team-instances inspect-live <agent-team-instance-id> --adapter houmao`
 - **THEN** the command may read Workspace Runtime, manifests, and live Houmao state, but it does not create Agent Team Instances, launch agents, stop agents, or write adoption state unless a separate explicit recording or reconciliation command is used
 
 #### Scenario: Stop is explicit mutation
-- **WHEN** a user runs `isomer-cli team-instances stop <agent-team-instance-id> --adapter houmao`
+- **WHEN** a user runs `isomer-cli project team-instances stop <agent-team-instance-id> --adapter houmao`
 - **THEN** the command reports that it may mutate live Houmao state and records the stop outcome in Workspace Runtime when the selected runtime schema supports adapter stop records
 
 #### Scenario: Failed preflight has no live mutation
@@ -357,11 +357,11 @@ The system SHALL emit deterministic text and JSON output for Houmao adapter mani
 The system SHALL use root-level `--print-json` as the canonical JSON output switch for `isomer-cli`.
 
 #### Scenario: Root print-json applies to subcommands
-- **WHEN** a user runs `isomer-cli --print-json validate`, `isomer-cli --print-json doctor`, or `isomer-cli --print-json runtime inspect`
+- **WHEN** a user runs `isomer-cli --print-json project validate`, `isomer-cli --print-json project doctor`, or `isomer-cli --print-json project runtime inspect`
 - **THEN** the selected command emits the deterministic `isomer-cli-output.v1` JSON wrapper
 
 #### Scenario: Default output is structured text
-- **WHEN** a user runs `isomer-cli validate`, `isomer-cli doctor`, or another supported command without `--print-json`
+- **WHEN** a user runs `isomer-cli project validate`, `isomer-cli project doctor`, or another supported command without `--print-json`
 - **THEN** the command emits structured human-readable text and does not emit the JSON wrapper
 
 #### Scenario: Help shows global output mode
@@ -376,42 +376,42 @@ The system SHALL expose top-level deterministic CLI commands for manual handoff 
 - **THEN** the command help lists a top-level `handoffs` command group without presenting Houmao-specific command names as core Isomer concepts
 
 #### Scenario: Handoff dispatch command is explicit mutation
-- **WHEN** a user runs `isomer-cli handoffs dispatch` for a launched or adopted Agent Team Instance
+- **WHEN** a user runs `isomer-cli project handoffs dispatch` for a launched or adopted Agent Team Instance
 - **THEN** the command may create or update Run, handoff, adapter dispatch, adapter payload, Signal Observation, Artifact, and Provenance records for the selected Topic Workspace
 
 #### Scenario: Handoff observe command is explicit mutation
-- **WHEN** a user runs `isomer-cli handoffs observe`
+- **WHEN** a user runs `isomer-cli project handoffs observe`
 - **THEN** the command may ingest Houmao mail, gateway, file, or bounded inspection signals as Signal Observations while keeping adapter observations separate from accepted handoff completion
 
 #### Scenario: Handoff normalize command is explicit mutation
-- **WHEN** a user runs `isomer-cli handoffs normalize`
+- **WHEN** a user runs `isomer-cli project handoffs normalize`
 - **THEN** the command may record accepted, rejected, blocked, superseded, repair-routed, or follow-up handoff normalization results with Run, Artifact, and Provenance refs
 
 #### Scenario: Runtime record inspection remains read-only
-- **WHEN** a user runs `runtime inspect`, `runtime validate`, `team-instances list`, `team-instances show`, or future read-only handoff inspection commands
+- **WHEN** a user runs `project runtime inspect`, `project runtime validate`, `project team-instances list`, `project team-instances show`, or future read-only handoff inspection commands
 - **THEN** those commands do not launch Houmao agents, send handoffs, stop agents, normalize results, or mutate adapter records
 
 ### Requirement: Handoff CLI Output
 The system SHALL emit structured human-readable text by default and deterministic root-level `--print-json` output for manual handoff commands.
 
 #### Scenario: Handoff dispatch JSON names runtime and adapter refs
-- **WHEN** a user runs `isomer-cli --print-json handoffs dispatch`
+- **WHEN** a user runs `isomer-cli --print-json project handoffs dispatch`
 - **THEN** the output includes generic Project, Research Topic, Topic Workspace, Agent Team Instance, source Agent Instance, target Agent Instance, handoff, Run, expected output, adapter dispatch, adapter payload, and Provenance refs plus diagnostics
 
 #### Scenario: Handoff observe JSON keeps signals non-authoritative
-- **WHEN** a user runs `isomer-cli --print-json handoffs observe`
+- **WHEN** a user runs `isomer-cli --print-json project handoffs observe`
 - **THEN** the output includes Signal Observation refs, adapter payload refs, candidate status, diagnostics, and a field or diagnostic that indicates the observation did not mark the handoff accepted
 
 #### Scenario: Handoff normalize JSON reports accepted or rejected result
-- **WHEN** a user runs `isomer-cli --print-json handoffs normalize`
+- **WHEN** a user runs `isomer-cli --print-json project handoffs normalize`
 - **THEN** the output includes the handoff ref, normalization status, Run updates, Artifact refs, rejected or repair refs when present, Provenance refs, and diagnostics
 
 #### Scenario: Handoff text output is structured
-- **WHEN** a user runs `isomer-cli handoffs dispatch`, `isomer-cli handoffs observe`, or `isomer-cli handoffs normalize` without `--print-json`
+- **WHEN** a user runs `isomer-cli project handoffs dispatch`, `isomer-cli project handoffs observe`, or `isomer-cli project handoffs normalize` without `--print-json`
 - **THEN** the command emits structured human-readable text that names the selected Project, Research Topic, Topic Workspace, handoff status, relevant runtime refs, and diagnostics without dumping raw Houmao payloads
 
 #### Scenario: Handoff commands do not add local JSON flags
-- **WHEN** a user inspects help for `handoffs dispatch`, `handoffs observe`, or `handoffs normalize`
+- **WHEN** a user inspects help for `project handoffs dispatch`, `project handoffs observe`, or `project handoffs normalize`
 - **THEN** the commands do not advertise command-local `--json`, `--format json`, or `--format=json` flags and rely on root-level `--print-json` for machine-readable output
 
 ### Requirement: UC-01 Headless Manual Harness
@@ -449,7 +449,7 @@ The system SHALL make UC-01 workflow mutation explicit and keep fixture validati
 - **THEN** the harness exits after recording the Gate, Decision Record, selected Research Inquiry, and route classification without running measurement, baseline, or candidate optimization commands
 
 #### Scenario: Fixture validation is read-only
-- **WHEN** the user invokes generic `validate` against the pinned UC-01 fixture Project
+- **WHEN** the user invokes generic `project validate` against the pinned UC-01 fixture Project
 - **THEN** the command reports Project diagnostics without creating runtime records, launching agents, dispatching handoffs, or resolving Gates
 
 ### Requirement: UC-01 Live Gate Reporting
@@ -472,7 +472,7 @@ The public `isomer-cli` command surface SHALL expose reusable platform operation
 
 #### Scenario: Generic commands remain available
 - **WHEN** a manual acceptance harness needs to validate a Project, prepare Workspace Runtime state, create or inspect Agent Team Instance records, dispatch or normalize handoffs, or validate runtime records
-- **THEN** it can use generic command groups such as `validate`, `runtime`, `team-instances`, `handoffs`, `team-templates`, and `team-profiles`
+- **THEN** it can use generic command groups such as `project validate`, `project runtime`, `project team-instances`, `project handoffs`, `project team-templates`, and `project team-profiles`
 
 #### Scenario: Root print-json remains global
 - **WHEN** a manual acceptance harness invokes generic CLI commands for deterministic output

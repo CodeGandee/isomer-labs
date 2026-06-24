@@ -70,7 +70,7 @@ The project manager skill SHALL guide Project lifecycle commands without bypassi
 
 #### Scenario: Init project guides Isomer and Houmao bootstrap
 - **WHEN** the user asks to initialize an Isomer Project
-- **THEN** the skill routes to `init-project`, uses the supported `isomer-cli init` command shape, and reports the resulting `.isomer-labs/` Project config and `.houmao/` Project-level Houmao overlay status
+- **THEN** the skill routes to `init-project`, uses the supported `isomer-cli project init` command shape, and reports the resulting `.isomer-labs/` Project config and `.houmao/` Project-level Houmao overlay status
 
 #### Scenario: Check project remains read-only
 - **WHEN** the user asks to check, diagnose, or validate an existing Project
@@ -78,19 +78,19 @@ The project manager skill SHALL guide Project lifecycle commands without bypassi
 
 #### Scenario: Topic listing uses CLI surfaces
 - **WHEN** the user asks what Research Topics or Topic Workspaces are available
-- **THEN** the skill routes to `list-topics` and uses `isomer-cli topics list` and `isomer-cli workspaces list` rather than scanning unregistered directories as authority
+- **THEN** the skill routes to `list-topics` and uses `isomer-cli project topics list` and `isomer-cli project workspaces list` rather than scanning unregistered directories as authority
 
 #### Scenario: Context inspection uses Effective Topic Context
 - **WHEN** the user asks which Project, Research Topic, Topic Workspace, template, profile, or runtime refs are selected
-- **THEN** the skill routes to `show-context` and uses `isomer-cli context show` or equivalent read-only context resolution surfaces
+- **THEN** the skill routes to `show-context` and uses `isomer-cli project context show` or equivalent read-only context resolution surfaces
 
 #### Scenario: Runtime init stays explicit
 - **WHEN** the user asks to create or open Workspace Runtime state
-- **THEN** the skill routes to `init-runtime` and preserves the explicit `isomer-cli runtime init` boundary for creating `state.sqlite` and runtime directories
+- **THEN** the skill routes to `init-runtime` and preserves the explicit `isomer-cli project runtime init` boundary for creating `state.sqlite` and runtime directories
 
 #### Scenario: Runtime preparation stays explicit
 - **WHEN** the user asks to prepare launch-facing readiness
-- **THEN** the skill routes to `prep-runtime` and preserves the explicit `isomer-cli runtime prepare` and `runtime validate --require-ready-readiness` boundaries
+- **THEN** the skill routes to `prep-runtime` and preserves the explicit `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness` boundaries
 
 #### Scenario: Topic team specialization is handed off
 - **WHEN** the user asks to adapt, instantiate, or specialize a Domain Agent Team Template for a Research Topic

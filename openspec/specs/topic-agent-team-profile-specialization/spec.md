@@ -91,10 +91,10 @@ The system SHALL provide reusable Project fixture files for UC-01, UC-02, UC-03,
 
 #### Scenario: Positive use-case fixture Project validates through CLI
 - **WHEN** the validation suite loads the use-case fixture Project from repository fixture files
-- **THEN** `isomer-cli validate` accepts the Project Manifest, Research Topic Config files, Topic Agent Team Profile registrations, and four use-case profile files
+- **THEN** `isomer-cli project validate` accepts the Project Manifest, Research Topic Config files, Topic Agent Team Profile registrations, and four use-case profile files
 
 #### Scenario: Each use-case profile fixture validates through profile CLI
-- **WHEN** the validation suite runs `isomer-cli team-profiles validate` for UC-01, UC-02, UC-03, and UC-05 profile files
+- **WHEN** the validation suite runs `isomer-cli project team-profiles validate` for UC-01, UC-02, UC-03, and UC-05 profile files
 - **THEN** each profile validates without launching agents or creating Workspace Runtime state
 
 #### Scenario: Two topics share deepsci-org without leaking refs
@@ -105,11 +105,11 @@ The system SHALL provide reusable Project fixture files for UC-01, UC-02, UC-03,
 The system SHALL keep Topic Agent Team Profile specialization side-effect-light and explicit about file writes and Project registration.
 
 #### Scenario: Profile specialization preview remains side-effect free
-- **WHEN** a user runs `isomer-cli team-profiles specialize` without `--write`
+- **WHEN** a user runs `isomer-cli project team-profiles specialize` without `--write`
 - **THEN** the command emits a candidate profile and validation result without writing files, editing the Project Manifest, editing Research Topic Config files, creating Agent Workspaces, or creating Workspace Runtime state
 
 #### Scenario: Profile specialization write creates only profile file
-- **WHEN** a user runs `isomer-cli team-profiles specialize --write`
+- **WHEN** a user runs `isomer-cli project team-profiles specialize --write`
 - **THEN** the command writes the Topic Agent Team Profile file under the Project Config Directory and does not implicitly edit the Project Manifest or Research Topic Config files
 
 #### Scenario: Profile specialization write reports registration guidance
@@ -179,7 +179,7 @@ The system SHALL materialize authoritative Topic Agent Team Profiles as the sele
 - **THEN** `profile.toml` or adjacent bundle metadata records the packet ref, project operator actor or session ref, Topic Service Agent refs when used, bundle-local approval ref, approval mode, source template ref, copied material refs, and validation result
 
 #### Scenario: Synthetic preview is not authoritative
-- **WHEN** `team-profiles specialize` generates a profile without an approved instantiation packet
+- **WHEN** `project team-profiles specialize` generates a profile without an approved instantiation packet
 - **THEN** the output is treated as preview material and does not by itself satisfy launch-facing profile bundle materialization requirements
 
 ### Requirement: Placeholder Reconciliation in Profiles

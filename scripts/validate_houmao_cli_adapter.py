@@ -10,6 +10,10 @@ import subprocess
 import sys
 
 
+def isomer_project_command(project: Path, *args: str) -> list[str]:
+    return ["pixi", "run", "isomer-cli", "project", "--root", str(project), *args]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", required=True, help="Project root to validate.")
@@ -22,14 +26,10 @@ def main() -> int:
 
     project = Path(args.project).expanduser().resolve(strict=False)
     commands = [
-        ["pixi", "run", "isomer-cli", "--project", str(project), "runtime", "init", "--topic", args.topic, "--json"],
-        ["pixi", "run", "isomer-cli", "--project", str(project), "runtime", "prepare", "--topic", args.topic, "--json"],
-        [
-            "pixi",
-            "run",
-            "isomer-cli",
-            "--project",
-            str(project),
+        isomer_project_command(project, "runtime", "init", "--topic", args.topic, "--json"),
+        isomer_project_command(project, "runtime", "prepare", "--topic", args.topic, "--json"),
+        isomer_project_command(
+            project,
             "team-instances",
             "create",
             "--topic",
@@ -39,13 +39,9 @@ def main() -> int:
             "--id",
             args.instance_id,
             "--json",
-        ],
-        [
-            "pixi",
-            "run",
-            "isomer-cli",
-            "--project",
-            str(project),
+        ),
+        isomer_project_command(
+            project,
             "team-instances",
             "launch-material",
             "prepare",
@@ -55,13 +51,9 @@ def main() -> int:
             "--adapter",
             "houmao",
             "--json",
-        ],
-        [
-            "pixi",
-            "run",
-            "isomer-cli",
-            "--project",
-            str(project),
+        ),
+        isomer_project_command(
+            project,
             "team-instances",
             "launch",
             args.instance_id,
@@ -70,13 +62,9 @@ def main() -> int:
             "--adapter",
             "houmao",
             "--json",
-        ],
-        [
-            "pixi",
-            "run",
-            "isomer-cli",
-            "--project",
-            str(project),
+        ),
+        isomer_project_command(
+            project,
             "team-instances",
             "inspect-live",
             args.instance_id,
@@ -85,13 +73,9 @@ def main() -> int:
             "--adapter",
             "houmao",
             "--json",
-        ],
-        [
-            "pixi",
-            "run",
-            "isomer-cli",
-            "--project",
-            str(project),
+        ),
+        isomer_project_command(
+            project,
             "team-instances",
             "stop",
             args.instance_id,
@@ -100,20 +84,16 @@ def main() -> int:
             "--adapter",
             "houmao",
             "--json",
-        ],
-        [
-            "pixi",
-            "run",
-            "isomer-cli",
-            "--project",
-            str(project),
+        ),
+        isomer_project_command(
+            project,
             "team-instances",
             "reconcile",
             args.instance_id,
             "--topic",
             args.topic,
             "--json",
-        ],
+        ),
     ]
 
     if not args.yes_live:

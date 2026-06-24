@@ -38,6 +38,8 @@ init-topic
 
 `fast-forward` runs this path automatically where possible. `step-by-step` runs the same path but asks the user to confirm before each stage.
 
+When `init-topic` receives a clear Research Topic without an explicit output directory, it derives a provisional topic workspace seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`.
+
 ## Subcommands
 
 Load only the subcommand pages needed for the user's task.

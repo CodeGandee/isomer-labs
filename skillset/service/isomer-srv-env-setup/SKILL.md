@@ -34,7 +34,7 @@ Related skills and boundaries:
 
 - Use `houmao-agent-instance` or `houmao-agent-definition` to launch agents after the environment is ready.
 - Use `houmao-project-mgr` for Houmao project overlay lifecycle, not Pixi environment installation.
-- Use `isomer-cli doctor` and `isomer-cli runtime` commands as described in the subcommand pages; do not invent equivalent behavior.
+- Use `isomer-cli project doctor` and `isomer-cli project runtime` commands as described in the subcommand pages; do not invent equivalent behavior.
 
 ## Subcommands
 
@@ -70,5 +70,5 @@ When asking for missing input, separate `Required` values from `Optional` modifi
 - Do not install or mutate Topic Workspace environments without confirming the target Topic Workspace and active Pixi binding.
 - Do not treat Project-root Pixi environments as the default agent execution environment.
 - Do not create per-agent Pixi environments unless a Service Request explicitly authorizes it.
-- Do not skip `isomer-cli doctor` read-only validation before mutating preparation steps.
+- Do not skip `isomer-cli project doctor` read-only validation before mutating preparation steps.
 - Do not silently infer `topic_standalone_pixi_bindings` from directory names; always read the Project Manifest.

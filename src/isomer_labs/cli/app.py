@@ -11,8 +11,9 @@ from typing import Any, Sequence
 import click
 
 from isomer_labs.builtins import list_built_in_schemas
-from isomer_labs.cli.options import CliOptions, common_options as _common_options, value as _value
+from isomer_labs.cli.options import CliOptions, value as _value
 from isomer_labs.cli.output import OutputMode, emit_output, output_format
+from isomer_labs.content_layout import topic_workspace_path as default_topic_workspace_path
 from isomer_labs.context import resolve_effective_topic_context
 from isomer_labs.diagnostics import Diagnostic, has_errors
 from isomer_labs.doctor import build_doctor_report, render_doctor_text
@@ -34,9 +35,10 @@ from isomer_labs.houmao.manifests import (
 from isomer_labs.houmao.adapter import HoumaoAdapterFacade
 from isomer_labs.init_project import initialize_project
 from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, SelectionRequest, TopicAgentTeamProfile
+from isomer_labs.path_utils import display_path
 from isomer_labs.paths import preview_paths
 from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
-from isomer_labs.project import discover_project
+from isomer_labs.project import discover_project, find_ancestor_manifest, project_root_for_manifest
 from isomer_labs.rendering import render_key_values
 from isomer_labs.runtime.store import (
     initialize_workspace_runtime,
@@ -67,37 +69,37 @@ COMMAND_SURFACE = """Milestone 1 Isomer Labs Project discovery and path preview 
 
 \b
 Command surface:
-  init
-  doctor
-  validate
-  topics list
-  workspaces list
-  context show
-  paths preview
+  project init
+  project doctor
+  project validate
+  project topics list
+  project workspaces list
+  project context show
+  project paths preview
+  project runtime init
+  project runtime prepare
+  project runtime inspect
+  project runtime validate
+  project team-instances create
+  project team-instances list
+  project team-instances show
+  project team-instances adapter-link export
+  project team-instances launch-material prepare
+  project team-instances launch
+  project team-instances inspect-live
+  project team-instances stop
+  project team-instances reconcile
+  project team-instances adopt
+  project handoffs dispatch
+  project handoffs observe
+  project handoffs normalize
+  project team-templates list
+  project team-templates inspect
+  project team-templates validate
+  project team-profiles specialize
+  project team-profiles materialize
+  project team-profiles validate
   schemas list
-  runtime init
-  runtime prepare
-  runtime inspect
-  runtime validate
-  team-instances create
-  team-instances list
-  team-instances show
-  team-instances adapter-link export
-  team-instances launch-material prepare
-  team-instances launch
-  team-instances inspect-live
-  team-instances stop
-  team-instances reconcile
-  team-instances adopt
-  handoffs dispatch
-  handoffs observe
-  handoffs normalize
-  team-templates list
-  team-templates inspect
-  team-templates validate
-  team-profiles specialize
-  team-profiles materialize
-  team-profiles validate
 """
 
 
@@ -130,24 +132,38 @@ def build_parser() -> click.Group:
     help=COMMAND_SURFACE,
     invoke_without_command=True,
 )
-@_common_options
 @click.option("--print-json", "print_json", is_flag=True, help="Emit deterministic JSON for the selected command.")
 @click.pass_context
 def app(
     ctx: click.Context,
-    project: str | None = None,
-    manifest: str | None = None,
-    output_format: str | None = None,
-    json_output: bool = False,
     print_json: bool = False,
 ) -> None:
-    output_mode = OutputMode(print_json=print_json or json_output or output_format == "json")
+    output_mode = OutputMode(print_json=print_json)
     ctx.obj = CliOptions(
-        project=project,
-        manifest=manifest,
-        output_format=output_format,
-        json_output=json_output,
         output_mode=output_mode,
+    )
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+
+
+@app.group(name="project", help="Project-scoped commands.")
+@click.option("--root", "project_root", default=None, help="Explicit Project root selector.")
+@click.option("--project", "project_alias", default=None, hidden=True, help="Compatibility alias for --root.")
+@click.option("--manifest", default=None, help="Explicit Project Manifest selector.")
+@click.pass_context
+def project_group(
+    ctx: click.Context,
+    project_root: str | None = None,
+    project_alias: str | None = None,
+    manifest: str | None = None,
+) -> None:
+    root_options = ctx.find_root().obj
+    options = root_options if isinstance(root_options, CliOptions) else CliOptions()
+    selected_root = project_root if project_root is not None else project_alias
+    ctx.obj = replace(
+        options,
+        project=selected_root if selected_root is not None else options.project,
+        manifest=manifest if manifest is not None else options.manifest,
     )
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
@@ -156,10 +172,31 @@ def app(
 def _cmd_init(options: CliOptions) -> int:
     project_root = Path(_value(options, "project") or os.getcwd())
     topic_id = _value(options, "topic_id_option") or _value(options, "topic_id") or "default"
+    nested_project = find_ancestor_manifest(project_root)
+    if nested_project is not None:
+        ancestor_root = project_root_for_manifest(nested_project)
+        if ancestor_root != project_root.resolve(strict=False):
+            diagnostics = [
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Project",
+                    path=nested_project,
+                    message=f"Refusing to initialize a nested Isomer Project inside existing Project root: {ancestor_root}.",
+                )
+            ]
+            payload = {
+                "ok": False,
+                "mutated": False,
+                "project_root": str(project_root.resolve(strict=False)),
+                "ancestor_project_root": str(ancestor_root),
+            }
+            return _emit("project init", options, payload, diagnostics, [])
     result = initialize_project(
         project_root,
         topic_id=topic_id,
         topic_statement=_value(options, "topic_statement"),
+        content_dir=_value(options, "content_dir"),
         env=os.environ,
     )
     diagnostics = result.diagnostics
@@ -171,6 +208,7 @@ def _cmd_init(options: CliOptions) -> int:
         "research_topic_id": result.research_topic_id,
         "project_manifest_path": str(result.project_manifest_path),
         "topic_config_path": str(result.topic_config_path),
+        "content_root_path": str(result.content_root_path),
         "topic_workspace_path": str(result.topic_workspace_path),
         "houmao_project_dir": str(result.houmao_project_dir),
         "houmao_bootstrap": houmao_bootstrap,
@@ -181,6 +219,9 @@ def _cmd_init(options: CliOptions) -> int:
             f"Initialized Project: {result.project_root}",
             f"Research Topic: {result.research_topic_id}",
             f"Project Manifest: {result.project_manifest_path}",
+            f"Research Topic Config: {result.topic_config_path}",
+            f"Generated Content Root: {result.content_root_path}",
+            f"Topic Workspace: {result.topic_workspace_path}",
             f"Houmao Project: {result.houmao_project_dir}",
         ]
     return _emit("init", options, payload, diagnostics, lines)
@@ -270,13 +311,17 @@ def _cmd_workspaces_list(options: CliOptions) -> int:
         seen_workspace_ids: set[str] = set()
         for workspace in project.manifest.topic_workspaces:
             seen_workspace_ids.add(workspace.id)
+            effective_path = workspace.path_input
+            if effective_path is None and workspace.research_topic_id is not None:
+                effective_path = display_path(
+                    default_topic_workspace_path(project.root, workspace.research_topic_id, project.manifest.path_defaults),
+                    project.root,
+                )
             workspaces.append(
                 {
                     **workspace.to_json(),
                     "source": "Project Manifest",
-                    "effective_path": workspace.path_input or (
-                        f"topic-workspaces/{workspace.research_topic_id}" if workspace.research_topic_id else None
-                    ),
+                    "effective_path": effective_path,
                 }
             )
         for topic in project.manifest.research_topics:
@@ -286,15 +331,19 @@ def _cmd_workspaces_list(options: CliOptions) -> int:
                 else any(workspace.get("research_topic_id") == topic.id for workspace in workspaces)
             )
             if not has_registered_workspace:
+                path_input = display_path(
+                    default_topic_workspace_path(project.root, topic.id, project.manifest.path_defaults),
+                    project.root,
+                )
                 workspaces.append(
                     {
                         "id": topic.id,
                         "research_topic_id": topic.id,
-                        "path": f"topic-workspaces/{topic.id}",
+                        "path": path_input,
                         "schema_version": "isomer-topic-workspace.v1",
                         "status": "active",
                         "source": "default",
-                        "effective_path": f"topic-workspaces/{topic.id}",
+                        "effective_path": path_input,
                     }
                 )
     payload = {"workspaces": workspaces}
@@ -1908,7 +1957,10 @@ def _emit(
     diagnostics: list[Diagnostic],
     text_lines: list[str],
 ) -> int:
-    return emit_output(command, options, payload, diagnostics, text_lines)
+    output_command = command
+    if not command.startswith("project ") and command != "schemas list":
+        output_command = f"project {command}"
+    return emit_output(output_command, options, payload, diagnostics, text_lines)
 
 
 def _render_validate_text(project_found: bool, diagnostics: list[Diagnostic]) -> list[str]:
@@ -1924,19 +1976,20 @@ def _output_format(options: CliOptions) -> str:
 def _register_commands() -> None:
     from isomer_labs.cli.commands.doctor import register_doctor_commands
     from isomer_labs.cli.commands.handoffs import register_handoff_commands
-    from isomer_labs.cli.commands.project import register_project_commands
+    from isomer_labs.cli.commands.project import register_project_commands, register_schema_commands
     from isomer_labs.cli.commands.runtime import register_runtime_commands
     from isomer_labs.cli.commands.team_instances import register_team_instance_commands
     from isomer_labs.cli.commands.team_profiles import register_team_profile_commands
     from isomer_labs.cli.commands.team_templates import register_team_template_commands
 
-    register_project_commands(app)
-    register_doctor_commands(app)
-    register_runtime_commands(app)
-    register_team_instance_commands(app)
-    register_handoff_commands(app)
-    register_team_template_commands(app)
-    register_team_profile_commands(app)
+    register_project_commands(project_group)
+    register_doctor_commands(project_group)
+    register_runtime_commands(project_group)
+    register_team_instance_commands(project_group)
+    register_handoff_commands(project_group)
+    register_team_template_commands(project_group)
+    register_team_profile_commands(project_group)
+    register_schema_commands(app)
 
 
 _register_commands()

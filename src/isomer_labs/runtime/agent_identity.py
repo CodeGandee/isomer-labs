@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import sqlite3
 
+from isomer_labs.content_layout import topic_workspace_path as default_topic_workspace_path
 from isomer_labs.models import Project, TopicWorkspaceRegistration
 from isomer_labs.path_utils import is_within, resolve_project_path
 
@@ -105,7 +106,4 @@ def _workspace_path(project: Project, workspace: TopicWorkspaceRegistration) -> 
 
 
 def _default_workspace_path(project: Project, workspace_id: str) -> Path:
-    base = project.manifest.path_defaults.get("topic_workspace_base_dir")
-    if isinstance(base, str) and base:
-        return resolve_project_path(project.root, f"{base}/{workspace_id}")
-    return resolve_project_path(project.root, f"topic-workspaces/{workspace_id}")
+    return default_topic_workspace_path(project.root, workspace_id, project.manifest.path_defaults)

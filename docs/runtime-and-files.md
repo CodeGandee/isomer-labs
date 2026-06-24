@@ -4,7 +4,7 @@ This page describes durable runtime files, generated adapter files, manifests, p
 
 ## Project Files
 
-A Project is a user-owned directory tree. After `isomer-cli init`, the Project Config Directory `.isomer-labs/` contains:
+A Project is a user-owned directory tree. After `isomer-cli project init`, the Project Config Directory `.isomer-labs/` contains:
 
 - `manifest.toml` — the Project Manifest, the discovery authority for Research Topics, Topic Workspaces, Topic Workspace Pixi workspace bindings through `topic_standalone_pixi_bindings`, optional Project-root Pixi environment bindings through `topic_pixi_environment_bindings`, Domain Agent Team Template refs, the single Topic Agent Team Profile Bundle ref for each Research Topic, and project defaults.
 - `research-topics/<topic-id>.toml` — Research Topic Config files with topic defaults and refs. Research Topic Config files do not own Pixi environment bindings or Workspace Runtime state.
@@ -12,13 +12,13 @@ A Project is a user-owned directory tree. After `isomer-cli init`, the Project C
 - `team-instances/<instance-id>.toml` — optional Agent Team Instance refs or configuration.
 - `local.toml` — optional untracked user-local active context.
 
-The Project Config Directory should not contain default cache, temporary files, or schema directories. System-owned schemas are Isomer built-in artifacts queried through `isomer-cli schemas list`.
+The Project Config Directory should not contain default cache, temporary files, generated topic bodies, or schema directories. System-owned schemas are Isomer built-in artifacts queried through `isomer-cli schemas list`.
 
-Successful Project initialization also creates the Project-level Houmao overlay at `.houmao/`. That overlay belongs to Project bootstrap and is separate from per-Agent Team Instance adapter material under a Topic Workspace runtime path.
+Successful Project initialization also creates the Project-level Houmao overlay at `.houmao/` and the selected generated content root, which defaults to `isomer-content/` and can be set during initialization with `--content-dir <content-dir>`. The content root contains `README.md` and `.gitignore` policy files; its generated `.gitignore` ignores generated content by default while keeping those two policy files trackable. The Houmao overlay belongs to Project bootstrap and is separate from per-Agent Team Instance adapter material under a Topic Workspace runtime path.
 
 ## Topic Workspace Files
 
-A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `topic-workspaces/<topic-workspace-id>/`. It is a Pixi workspace by default. The Project Manifest records its Pixi manifest through `topic_standalone_pixi_bindings`; Isomer does not infer the binding by crawling Topic Workspace paths. It owns:
+A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `isomer-content/topic-ws/<topic-workspace-id>/` for fresh Projects or `<content-dir>/topic-ws/<topic-workspace-id>/` when init selected a custom content root. It is a Pixi workspace by default. The Project Manifest records its Pixi manifest through `topic_standalone_pixi_bindings`; Isomer does not infer the binding by crawling Topic Workspace paths. It owns:
 
 - `pixi.toml` or `pyproject.toml` — the Topic Workspace Pixi manifest, declaring the topic-scoped Python version, research dependencies, and optional named environments.
 - `pixi.lock` — the Topic Workspace Pixi lockfile.
@@ -68,9 +68,9 @@ Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 
 ## Path Plans
 
-Path Plan records map a named surface to a concrete filesystem path. Surfaces include `workspace_runtime_db`, `artifacts`, `agents`, `tasks`, `runs`, `views`, `logs`, per-agent surfaces such as `agent_workspace:<agent-instance-id>`, and adapter-specific surfaces such as `adapter_manifest:houmao:<agent-team-instance-id>:<kind>`.
+Path Plan records map a named surface to a concrete filesystem path. Surfaces include `isomer_content_root`, `topic_workspace_base`, `workspace_runtime_db`, `artifacts`, `agents`, `tasks`, `runs`, `views`, `logs`, per-agent surfaces such as `agent_workspace:<agent-instance-id>`, and adapter-specific surfaces such as `adapter_manifest:houmao:<agent-team-instance-id>:<kind>`.
 
-Commands use Path Plan records to locate durable files without recomputing layout from configuration. `isomer-cli paths preview` prints the path plan without creating files.
+Commands use Path Plan records to locate durable files without recomputing layout from configuration. `isomer-cli project paths preview` prints the path plan without creating files.
 
 ## Agent Workspaces
 
@@ -142,7 +142,8 @@ The following are not durable research state and may be regenerated or lost:
 | Project Manifest | `.isomer-labs/manifest.toml` | yes |
 | Project-level Houmao overlay | `.houmao/` | yes |
 | Research Topic Config | `.isomer-labs/research-topics/<id>.toml` | yes |
-| Topic Workspace | `topic-workspaces/<id>/` | yes (directory) |
+| Generated content root | `isomer-content/` or selected `<content-dir>/` | yes for policy files; generated contents ignored by default |
+| Topic Workspace | `isomer-content/topic-ws/<id>/` or `<content-dir>/topic-ws/<id>/` | yes (directory) |
 | Topic Workspace Pixi manifest | `<topic-workspace>/pixi.toml` or `<topic-workspace>/pyproject.toml` | yes |
 | Topic Workspace Pixi lockfile | `<topic-workspace>/pixi.lock` | yes |
 | Topic Workspace Pixi environment | `<topic-workspace>/.pixi/` | no |

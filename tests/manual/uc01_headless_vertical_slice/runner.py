@@ -144,7 +144,7 @@ def run_manual_validation(*, live_houmao: bool = False) -> dict[str, object]:
         shutil.copytree(FIXTURE_PROJECT, root)
         env = _validation_env()
 
-        project_validation = _run_json(root, env, ["--project", str(root), "validate"])
+        project_validation = _run_json(root, env, ["project", "--root", str(root), "validate"])
         _require(
             project_validation["status"] == 0 and project_validation["json"]["ok"],
             "fixture Project validation failed",

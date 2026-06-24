@@ -7,7 +7,7 @@ When this subcommand is selected, execute the following steps in order.
 1. Print a concise description of `isomer-admin-project-mgr`: it initializes and manages an Isomer Project by coordinating Project config, Research Topics, Topic Workspaces, Workspace Runtime preparation, and the Project-level Houmao overlay.
 2. Explain that invoking this skill without a prompt defaults to this `help` output.
 3. List the available subcommands: `help`, `init-project`, `check-project`, `list-topics`, `show-context`, `init-runtime`, `prep-runtime`, and `specialize-team`.
-4. Explain the main outputs: Project root, Project Manifest path, Houmao Project overlay status, topic and workspace refs, Effective Topic Context, runtime status, diagnostics, commands run, and next operator action.
-5. State the key guardrails: `isomer-cli init` bootstraps `.isomer-labs/` and `.houmao/`, checks stay read-only, Workspace Runtime creation is explicit, readiness preparation is explicit, and Topic Team Specialization belongs to `isomer-admin-topic-team-specialize`.
+4. Explain the main outputs: Project root, Project Manifest path, generated content root, Houmao Project overlay status, topic and workspace refs, Effective Topic Context, runtime status, diagnostics, commands run, and next operator action.
+5. State the key guardrails: `isomer-cli project init` bootstraps `.isomer-labs/`, `.houmao/`, and the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), checks stay read-only, Workspace Runtime creation is explicit, readiness preparation is explicit, and Topic Team Specialization belongs to `isomer-admin-topic-team-specialize`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which parts of the skill usage information to print, then execute the plan.

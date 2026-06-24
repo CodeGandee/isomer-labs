@@ -8,7 +8,7 @@ Use `topic-workspace` when:
 
 - a new Topic Workspace needs its Pixi environment installed for the first time;
 - the Topic Workspace Pixi manifest or lockfile changed and the environment must be refreshed;
-- `isomer-cli doctor --topic <topic-id>` reports a missing or stale environment;
+- `isomer-cli project doctor --topic <topic-id>` reports a missing or stale environment;
 - an upstream plan asks to prepare topic environment readiness before launching agents.
 
 This subcommand covers Pixi installation, read-only validation, runtime preparation, and readiness checks. It does not cover Houmao agent launch, mailbox setup, or GUI rendering.
@@ -55,15 +55,15 @@ pixi install
 Run read-only validation before any mutating work.
 
 ```bash
-pixi run isomer-cli --print-json validate
+pixi run isomer-cli --print-json project validate
 ```
 
 ### 3. Run read-only topic diagnostics
 
-`doctor` does not install environments or mutate Workspace Runtime.
+`project doctor` does not install environments or mutate Workspace Runtime.
 
 ```bash
-pixi run isomer-cli --print-json doctor --topic <topic-id>
+pixi run isomer-cli --print-json project doctor --topic <topic-id>
 ```
 
 Inspect the output for:
@@ -82,10 +82,10 @@ Use the manifest path from the active binding.
 pixi install --manifest-path <manifest-path>
 ```
 
-For example, if `manifest_path` is `topic-workspaces/<topic-id>/pixi.toml`:
+For example, if `manifest_path` is `isomer-content/topic-ws/<topic-id>/pixi.toml`:
 
 ```bash
-pixi install --manifest-path topic-workspaces/<topic-id>/pixi.toml
+pixi install --manifest-path isomer-content/topic-ws/<topic-id>/pixi.toml
 ```
 
 ### 5. Initialize Workspace Runtime
@@ -93,28 +93,28 @@ pixi install --manifest-path topic-workspaces/<topic-id>/pixi.toml
 This creates runtime directories such as `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/` under the Topic Workspace.
 
 ```bash
-pixi run isomer-cli --print-json runtime init --topic <topic-id>
+pixi run isomer-cli --print-json project runtime init --topic <topic-id>
 ```
 
 ### 6. Record topic environment readiness
 
-`runtime prepare` checks the active binding and writes a `TopicEnvironmentReadinessRecord`. It does not install dependencies or repair the environment.
+`project runtime prepare` checks the active binding and writes a `TopicEnvironmentReadinessRecord`. It does not install dependencies or repair the environment.
 
 ```bash
-pixi run isomer-cli --print-json runtime prepare --topic <topic-id>
+pixi run isomer-cli --print-json project runtime prepare --topic <topic-id>
 ```
 
 ### 7. Validate readiness before launch-facing work
 
 ```bash
-pixi run isomer-cli --print-json runtime validate --topic <topic-id> --require-ready-readiness
+pixi run isomer-cli --print-json project runtime validate --topic <topic-id> --require-ready-readiness
 ```
 
 If this command reports that readiness is not `ready`, stop and route the repair to a Service Request.
 
 ## Topic Workspace Pixi Manifest
 
-The Topic Workspace Pixi manifest, typically `topic-workspaces/<topic-id>/pixi.toml` or `topic-workspaces/<topic-id>/pyproject.toml`, declares:
+The Topic Workspace Pixi manifest, typically `isomer-content/topic-ws/<topic-id>/pixi.toml` or `isomer-content/topic-ws/<topic-id>/pyproject.toml` for fresh Projects, or `<content-dir>/topic-ws/<topic-id>/pixi.toml` when Project init selected a custom content root, declares:
 
 - the topic-scoped Python version;
 - research dependencies;
@@ -147,7 +147,7 @@ The active binding lives in `.isomer-labs/manifest.toml` under `[[topic_standalo
 ```toml
 [[topic_standalone_pixi_bindings]]
 research_topic_id = "<topic-id>"
-manifest_path = "topic-workspaces/<topic-id>/pixi.toml"
+manifest_path = "isomer-content/topic-ws/<topic-id>/pixi.toml"
 pixi_environment = "default"
 purpose = "agent-execution"
 status = "active"
@@ -157,7 +157,7 @@ Read the Project Manifest to resolve `manifest_path` and `pixi_environment`. Do 
 
 ## Readiness States
 
-`runtime prepare` records one of these statuses in Workspace Runtime:
+`project runtime prepare` records one of these statuses in Workspace Runtime:
 
 - `ready`: manifest, lockfile, and selected environment are present and valid.
 - `failed`: the manifest is missing, the environment is unknown, or the lockfile is absent.
@@ -178,12 +178,12 @@ The Service Request must name the target scope, the task, the expected output, a
 
 ## Guardrails
 
-- Do not run `isomer-cli runtime prepare` before `isomer-cli doctor --topic <topic-id>`.
+- Do not run `isomer-cli project runtime prepare` before `isomer-cli project doctor --topic <topic-id>`.
 - Do not run `pixi install --manifest-path` without confirming the manifest path comes from an active `topic_standalone_pixi_bindings` entry.
 - Do not treat the Project-root Pixi environment as the Topic Workspace execution environment.
 - Do not create per-agent Pixi manifests or `.pixi/` directories unless a Service Request authorizes it.
 - Do not regenerate `pixi.lock` silently; route lockfile changes through a Service Request.
-- Do not proceed to launch-facing work if `runtime validate --require-ready-readiness` fails.
+- Do not proceed to launch-facing work if `isomer-cli project runtime validate --require-ready-readiness` fails.
 
 ## Related Documents
 

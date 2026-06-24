@@ -8,7 +8,7 @@ The adapter consumes approved Isomer launch inputs: the materialized Topic Agent
 
 ## Project Bootstrap Overlay
 
-Fresh Project initialization creates a Project-level Houmao overlay at `<project-root>/.houmao/` through the same CLI-backed Houmao boundary used elsewhere in Isomer. `isomer-cli init` uses this overlay as Project bootstrap state; it does not create Workspace Runtime records, per-Agent Team Instance adapter material, mailboxes, gateways, launch dossiers, sessions, or live managed agents.
+Fresh Project initialization creates a Project-level Houmao overlay at `<project-root>/.houmao/` through the same CLI-backed Houmao boundary used elsewhere in Isomer. `isomer-cli project init` uses this overlay as Project bootstrap state; it does not create Workspace Runtime records, per-Agent Team Instance adapter material, mailboxes, gateways, launch dossiers, sessions, or live managed agents.
 
 This Project-level overlay is separate from the generated adapter runtime overlay under `<topic-workspace>/runtime/adapters/houmao/<agent-team-instance-id>/houmao-project-overlay/`. The first belongs to Project setup. The second belongs to launch material for one Agent Team Instance.
 
@@ -19,7 +19,7 @@ This Project-level overlay is separate from the generated adapter runtime overla
 Use the quick path when Isomer should prepare material and launch the Houmao managed agents in one command:
 
 ```bash
-isomer-cli --print-json team-instances launch <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
+isomer-cli --print-json project team-instances launch <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
 ```
 
 Quick launch runs preflight, writes shared launch material, creates or updates `adapter-link.json` and `launch-material-manifest.json`, launches one Houmao managed agent per Isomer Agent Instance, writes `adapter-runtime-manifest.json`, and records command runs, payload refs, a launch attempt, and reconciliation state in Workspace Runtime.
@@ -29,7 +29,7 @@ Quick launch runs preflight, writes shared launch material, creates or updates `
 Use the manual path when the operator wants to inspect or edit Houmao material before invoking Houmao directly:
 
 ```bash
-isomer-cli --print-json team-instances launch-material prepare <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
+isomer-cli --print-json project team-instances launch-material prepare <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
 ```
 
 Prepare-only writes the same material and manifests but does not launch, stop, message, or inspect Houmao managed agents. The JSON output includes bounded manual guidance for equivalent `houmao-mgr` commands. After direct Houmao work, use `inspect-live`, `reconcile`, or `adopt` so Isomer can compare manifests, file digests, and read-only Houmao observations.
@@ -57,7 +57,7 @@ The adapter records path plans for the adapter root, launch material, per-Agent 
 Handoff commands are a generic Isomer CLI surface backed here by Houmao. Use `--print-json` at the root when scripts need deterministic JSON; without it, the commands print structured human-readable status lines. The handoff commands do not expose command-local `--json` or `--format json` flags.
 
 ```bash
-isomer-cli --print-json handoffs dispatch \
+isomer-cli --print-json project handoffs dispatch \
   --topic <research-topic-id> \
   --agent-team-instance <agent-team-instance-id> \
   --source-agent-instance <source-agent-instance-id> \
@@ -67,19 +67,19 @@ isomer-cli --print-json handoffs dispatch \
   --expected-output artifact:<topic>:handoff-result
 ```
 
-`handoffs dispatch` requires a ready Workspace Runtime and a launched, adopted, or linked Houmao adapter context. It creates or reuses the selected Run, writes a durable dispatch payload, invokes the Houmao mail dispatch command, records an `HandoffRecord`, and links adapter command and payload refs. Houmao message ids, gateway event ids, mailbox details, managed-agent ids, and command payload internals stay inside adapter payload JSON or adapter-specific records.
+`project handoffs dispatch` requires a ready Workspace Runtime and a launched, adopted, or linked Houmao adapter context. It creates or reuses the selected Run, writes a durable dispatch payload, invokes the Houmao mail dispatch command, records an `HandoffRecord`, and links adapter command and payload refs. Houmao message ids, gateway event ids, mailbox details, managed-agent ids, and command payload internals stay inside adapter payload JSON or adapter-specific records.
 
 ```bash
-isomer-cli --print-json handoffs observe <handoff-id> --topic <research-topic-id> --source mail
-isomer-cli --print-json handoffs observe <handoff-id> --topic <research-topic-id> --source gateway
-isomer-cli --print-json handoffs observe <handoff-id> --topic <research-topic-id> --source file --payload-json handoff-observation.json
-isomer-cli --print-json handoffs observe <handoff-id> --topic <research-topic-id> --source inspection
+isomer-cli --print-json project handoffs observe <handoff-id> --topic <research-topic-id> --source mail
+isomer-cli --print-json project handoffs observe <handoff-id> --topic <research-topic-id> --source gateway
+isomer-cli --print-json project handoffs observe <handoff-id> --topic <research-topic-id> --source file --payload-json handoff-observation.json
+isomer-cli --print-json project handoffs observe <handoff-id> --topic <research-topic-id> --source inspection
 ```
 
-`handoffs observe` records a Signal Observation. A Signal Observation is not completion authority: it can move a handoff into candidate state, but it does not complete the Run, promote a returned claim into an Evidence Item, or accept an Artifact. The Operator Agent must normalize the result.
+`project handoffs observe` records a Signal Observation. A Signal Observation is not completion authority: it can move a handoff into candidate state, but it does not complete the Run, promote a returned claim into an Evidence Item, or accept an Artifact. The Operator Agent must normalize the result.
 
 ```bash
-isomer-cli --print-json handoffs normalize <handoff-id> \
+isomer-cli --print-json project handoffs normalize <handoff-id> \
   --topic <research-topic-id> \
   --status accepted \
   --signal-observation <signal-observation-id> \
@@ -87,7 +87,7 @@ isomer-cli --print-json handoffs normalize <handoff-id> \
   --rationale "Operator accepted the candidate result."
 ```
 
-`handoffs normalize` records the Operator Agent decision. `accepted` marks the handoff accepted and completes the linked Run. `rejected`, `blocked`, `superseded`, `repair_routed`, and `follow_up` preserve the observations and rationale; `repair_routed` maps the handoff to repair state and should include a corrective Service Request or follow-up ref when available.
+`project handoffs normalize` records the Operator Agent decision. `accepted` marks the handoff accepted and completes the linked Run. `rejected`, `blocked`, `superseded`, `repair_routed`, and `follow_up` preserve the observations and rationale; `repair_routed` maps the handoff to repair state and should include a corrective Service Request or follow-up ref when available.
 
 ## UC-01 Adapter Boundary
 
@@ -111,7 +111,7 @@ The selected UC-01 route classification can be `uc07-measured-optimization`, `mo
 By default, Isomer resolves `houmao-mgr` from `PATH` for Project bootstrap and adapter operations. You can override it with `ISOMER_HOUMAO_COMMAND`:
 
 ```bash
-ISOMER_HOUMAO_COMMAND="/path/to/houmao-mgr" isomer-cli team-instances launch <id> --adapter houmao
+ISOMER_HOUMAO_COMMAND="/path/to/houmao-mgr" isomer-cli project team-instances launch <id> --adapter houmao
 ```
 
 If `houmao-mgr` is not on `PATH`, Isomer looks for a Pixi-backed checkout at `extern/orphan/houmao`, `ISOMER_HOUMAO_CHECKOUT`, or `~/workspace/code/houmao`.
@@ -119,8 +119,8 @@ If `houmao-mgr` is not on `PATH`, Isomer looks for a Pixi-backed checkout at `ex
 Before live mutation, use read-only checks:
 
 ```bash
-isomer-cli --print-json doctor --topic <research-topic-id>
-isomer-cli --print-json runtime validate --topic <research-topic-id> --require-ready-readiness
+isomer-cli --print-json project doctor --topic <research-topic-id>
+isomer-cli --print-json project runtime validate --topic <research-topic-id> --require-ready-readiness
 houmao-mgr --version
 ```
 
@@ -130,7 +130,7 @@ The expected local checkout is `extern/orphan/houmao`, usually a symlink to `~/w
 
 ### `adapter-link.json`
 
-Created by `team-instances adapter-link export` or by launch/prepare commands. It stores project refs, the Agent Team Instance id, the Research Topic's Topic Agent Team Profile ref, the Domain Agent Team Template id, agent bindings, and the Houmao project overlay directory.
+Created by `project team-instances adapter-link export` or by launch/prepare commands. It stores project refs, the Agent Team Instance id, the Research Topic's Topic Agent Team Profile ref, the Domain Agent Team Template id, agent bindings, and the Houmao project overlay directory.
 
 ### `launch-material-manifest.json`
 
@@ -158,26 +158,26 @@ The adapter can report these reconciliation states:
 `inspect-live --adapter houmao` runs read-only Houmao CLI inspection and records a bounded adapter inspection snapshot. It does not launch or stop agents.
 
 ```bash
-isomer-cli --print-json team-instances inspect-live <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
+isomer-cli --print-json project team-instances inspect-live <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
 ```
 
 `stop --adapter houmao` is an explicit live mutation. It targets known mapped Houmao agent names from manifests or launch attempts and records a stopped, partial, failed, or stale outcome.
 
 ```bash
-isomer-cli --print-json team-instances stop <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
+isomer-cli --print-json project team-instances stop <agent-team-instance-id> --adapter houmao --topic <research-topic-id>
 ```
 
 ## Troubleshooting
 
 - Missing Houmao checkout or command: set `ISOMER_HOUMAO_COMMAND`, add `houmao-mgr` to `PATH`, or expose the local checkout at `extern/orphan/houmao`.
-- Failed preflight: run `isomer-cli runtime validate --require-ready-readiness --topic <topic>` and verify the selected Agent Team Instance exists.
+- Failed preflight: run `isomer-cli project runtime validate --require-ready-readiness --topic <topic>` and verify the selected Agent Team Instance exists.
 - Failed handoff dispatch: verify the Agent Team Instance has a launched, adopted, or linked Houmao adapter context and that source and target Agent Instance ids belong to that team.
-- Stale handoff: run `handoffs observe` again if a fresh adapter signal exists, or record `handoffs normalize --status rejected`, `--status blocked`, or `--status repair_routed` with rationale.
+- Stale handoff: run `isomer-cli project handoffs observe` again if a fresh adapter signal exists, or record `isomer-cli project handoffs normalize --status rejected`, `--status blocked`, or `--status repair_routed` with rationale.
 - Rejected or repair-routed result: keep the Signal Observation ids attached to the normalization and include corrective Service Request or follow-up refs with `--corrective-ref`.
 - Invalid CLI JSON: inspect the adapter command payload under `runtime/adapters/houmao/<id>/command-payloads/`; the normal CLI output is redacted and bounded.
-- Direct edit drift: run `isomer-cli team-instances inspect-live <id> --integrity --topic <topic>` or `reconcile` to compare current file digests with `launch-material-manifest.json`.
+- Direct edit drift: run `isomer-cli project team-instances inspect-live <id> --integrity --topic <topic>` or `isomer-cli project team-instances reconcile <id> --topic <topic>` to compare current file digests with `launch-material-manifest.json`.
 - Partial launch: run `inspect-live --adapter houmao` to discover known live refs, then run `stop --adapter houmao` if cleanup is needed.
-- Partial stop: use `inspect-live --adapter houmao` again and review `runtime validate` warnings before retrying stop.
+- Partial stop: use `inspect-live --adapter houmao` again and review `project runtime validate` warnings before retrying stop.
 
 ## Manual Validation
 

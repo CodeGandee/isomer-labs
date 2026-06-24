@@ -4,7 +4,7 @@ This page describes the current Isomer Labs architecture: Project discovery, Eff
 
 ## Project Discovery
 
-`isomer-cli` discovers a Project by walking up from the current working directory until it finds a `.isomer-labs/` Project Config Directory. You can override the Project root with `--project <path>` and the Project Manifest with `--manifest <path>`, but normal operation relies on the discovered `.isomer-labs/manifest.toml`.
+`isomer-cli` discovers a Project by walking up from the current working directory until it finds a `.isomer-labs/` Project Config Directory. You can override the Project root with `isomer-cli project --root <path> ...` and the Project Manifest with `isomer-cli project --manifest <path> ...`, but normal operation relies on the discovered `.isomer-labs/manifest.toml`.
 
 The Project Manifest is the authority for:
 
@@ -13,6 +13,7 @@ The Project Manifest is the authority for:
 - Explicit Research Topic to Pixi environment bindings through repeated `topic_pixi_environment_bindings` entries.
 - Optional standalone topic Pixi isolation bindings through repeated `topic_standalone_pixi_bindings` entries.
 - Project defaults such as the default Research Topic id and default Topic Workspace id.
+- Path defaults such as the generated content root and default Topic Workspace base.
 - Domain Agent Team Template refs, Topic Agent Team Profile refs, and Agent Team Instance refs.
 
 Isomer never infers topic-to-environment relationships from Research Topic ids, Pixi environment names, or naming conventions such as `<topic-slug>-<env-purpose>`. Every binding must be explicit.
@@ -35,9 +36,9 @@ Effective Topic Context is process-local input. It is not a lifecycle object, no
 
 Workspace Path Resolution turns Effective Topic Context and a requested path surface into concrete filesystem paths. It is side-effect-free: it computes paths without creating directories, writing runtime records, or launching agents.
 
-Path surfaces include the Workspace Runtime database (`state.sqlite`), runtime directories (`artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, `logs/`), adapter manifest directories, command payloads, inspection snapshots, Agent Workspace directories, and adapter-generated material.
+Path surfaces include the Project generated content root (`isomer-content/` by default or the `--content-dir <content-dir>` root selected during initialization), the Topic Workspace base (`isomer-content/topic-ws/` by default or `<content-dir>/topic-ws/` for a custom content root), the Workspace Runtime database (`state.sqlite`), runtime directories (`artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, `logs/`), adapter manifest directories, command payloads, inspection snapshots, Agent Workspace directories, and adapter-generated material.
 
-`isomer-cli paths preview` prints the computed path plan for a topic without creating files. Use it to verify that the Project Manifest and Research Topic Config resolve to the directories you expect before running commands that mutate state.
+`isomer-cli project paths preview` prints the computed path plan for a topic without creating files. Use it to verify that the Project Manifest and Research Topic Config resolve to the directories you expect before running commands that mutate state.
 
 ## Workspace Runtime
 
@@ -52,11 +53,11 @@ Workspace Runtime is the persistent substrate inside a Topic Workspace. It owns:
 - Validation Issue records;
 - adapter manifest refs, reconciliation records, payload refs, command run records, materialization records, launch attempt records, inspection snapshots, and stop outcome records.
 
-`isomer-cli runtime init` creates or reopens the Workspace Runtime. Reopening a current-schema runtime is idempotent. Unsupported older or newer runtime schemas produce diagnostics and do not create runtime directories or rewrite owner refs.
+`isomer-cli project runtime init` creates or reopens the Workspace Runtime. Reopening a current-schema runtime is idempotent. Unsupported older or newer runtime schemas produce diagnostics and do not create runtime directories or rewrite owner refs.
 
-`isomer-cli runtime prepare` records Topic Environment Readiness by checking explicit Project Manifest bindings. Successful checks record `ready`; failed checks record `failed`; missing required topic binding intent records `blocked`. Repair remains explicit and should be represented as a Service Request rather than hidden inside `runtime prepare`.
+`isomer-cli project runtime prepare` records Topic Environment Readiness by checking explicit Project Manifest bindings. Successful checks record `ready`; failed checks record `failed`; missing required topic binding intent records `blocked`. Repair remains explicit and should be represented as a Service Request rather than hidden inside `project runtime prepare`.
 
-`isomer-cli runtime inspect` and `isomer-cli runtime validate` are read-only. They report metadata, record counts, readiness summaries, path-plan mismatches, broken refs, missing Agent Workspace directories, stale handoffs, unresolved Gates, unsupported Research Claims, stale Provenance Records, schema mismatches, and cross-topic leakage without repairing records or creating files.
+`isomer-cli project runtime inspect` and `isomer-cli project runtime validate` are read-only. They report metadata, record counts, readiness summaries, path-plan mismatches, broken refs, missing Agent Workspace directories, stale handoffs, unresolved Gates, unsupported Research Claims, stale Provenance Records, schema mismatches, and cross-topic leakage without repairing records or creating files.
 
 ## From Template to Profile to Instance
 
@@ -66,7 +67,7 @@ A **Domain Agent Team Template** is a reusable research-field method. It names d
 
 A **Topic Agent Team Profile** specializes one Domain Agent Team Template for a user's Research Topic. It adapts roles and Workflow Stages to the topic context, records constraints and expected Artifacts, and can carry Capability Binding refs, Skill Binding Projections, allowed Research Operation Extension Points, and policy refs. It is a design-time artifact, not a running team.
 
-An **Agent Team Instance** is a concrete runtime team created from a Topic Agent Team Profile. It contains launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. `isomer-cli team-instances create` writes the Agent Team Instance record, Agent Instance records, Agent Workspace records, path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories. It does not launch backend agents or write adapter-specific launch material.
+An **Agent Team Instance** is a concrete runtime team created from a Topic Agent Team Profile. It contains launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. `isomer-cli project team-instances create` writes the Agent Team Instance record, Agent Instance records, Agent Workspace records, path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories. It does not launch backend agents or write adapter-specific launch material.
 
 Topic-level Parallel Execution Scope means multiple Research Topics run concurrently, each researched by its own dedicated Agent Team Instance. It does not mean one Research Topic is handled by multiple competing teams. Task-level Parallel Execution Scope distributes one Research Task across multiple Agent Instances inside the selected topic team. Research Inquiry is not a Parallel Execution Scope.
 

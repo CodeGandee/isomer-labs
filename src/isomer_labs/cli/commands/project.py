@@ -26,6 +26,7 @@ def register_project_commands(app: click.Group) -> None:
     @click.argument("topic_id", required=False)
     @click.option("--topic-id", "topic_id_option", help="Research Topic id to initialize.")
     @click.option("--topic-statement", help="Short inline Research Topic statement.")
+    @click.option("--content-dir", help="Project-local generated content root to create during init.")
     @click.pass_context
     def init_command(
         ctx: click.Context,
@@ -36,6 +37,7 @@ def register_project_commands(app: click.Group) -> None:
         topic_id: str | None = None,
         topic_id_option: str | None = None,
         topic_statement: str | None = None,
+        content_dir: str | None = None,
     ) -> int:
         return _cmd_init(
             _merge_options(
@@ -47,6 +49,7 @@ def register_project_commands(app: click.Group) -> None:
                 topic_id=topic_id,
                 topic_id_option=topic_id_option,
                 topic_statement=topic_statement,
+                content_dir=content_dir,
             )
         )
 
@@ -208,29 +211,19 @@ def register_project_commands(app: click.Group) -> None:
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             )
         )
-
-
+def register_schema_commands(app: click.Group) -> None:
     @app.group(name="schemas", help="Built-in schema commands.")
     def schemas_group() -> None:
         pass
 
 
     @schemas_group.command(name="list", help="List Isomer built-in schemas and contracts.")
-    @_common_options
     @click.pass_context
     def schemas_list_command(
         ctx: click.Context,
-        project: str | None = None,
-        manifest: str | None = None,
-        output_format: str | None = None,
-        json_output: bool = False,
     ) -> int:
         return _cmd_schemas_list(
             _merge_options(
                 ctx,
-                project=project,
-                manifest=manifest,
-                output_format=output_format,
-                json_output=json_output,
             )
         )

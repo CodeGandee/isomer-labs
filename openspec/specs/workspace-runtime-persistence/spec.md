@@ -23,7 +23,7 @@ The system SHALL create and reopen a Workspace Runtime for a selected Topic Work
 - **THEN** mutating commands fail with a schema-version diagnostic and do not alter runtime records or directories
 
 #### Scenario: Runtime is not created by read-only commands
-- **WHEN** a user runs `doctor`, `validate`, `context show`, `paths preview`, `team-templates`, or Topic Agent Team Profile validation commands
+- **WHEN** a user runs `project doctor`, `project validate`, `project context show`, `project paths preview`, `project team-templates`, or `project team-profiles validate`
 - **THEN** the system does not create `state.sqlite` or Workspace Runtime directories
 
 ### Requirement: Workspace Runtime Record Store
@@ -46,10 +46,10 @@ The system SHALL store durable runtime records for lifecycle, readiness, team in
 - **THEN** previously created runtime records are recoverable with the same ids, refs, statuses, and path-plan links
 
 ### Requirement: Topic Environment Readiness Preparation
-The system SHALL prepare and record selected Research Topic Pixi environment readiness through explicit `runtime prepare` commands before Houmao launch material depends on it.
+The system SHALL prepare and record selected Research Topic Pixi environment readiness through explicit `project runtime prepare` commands before Houmao launch material depends on it.
 
 #### Scenario: Runtime prepare requires initialized runtime
-- **WHEN** a user runs `isomer-cli runtime prepare` for a selected Research Topic and Topic Workspace
+- **WHEN** a user runs `isomer-cli project runtime prepare` for a selected Research Topic and Topic Workspace
 - **THEN** the system requires an initialized current-schema Workspace Runtime before recording readiness state
 
 #### Scenario: Runtime prepare consumes explicit bindings
@@ -70,7 +70,7 @@ The system SHALL prepare and record selected Research Topic Pixi environment rea
 
 #### Scenario: Runtime prepare keeps repair explicit
 - **WHEN** readiness preparation discovers missing dependencies, incompatible environments, or setup work that mutates Project, Topic Workspace, dependency, runtime, or environment state beyond bounded preparation
-- **THEN** the system reports the issue and directs repair through a Service Request instead of hiding repair work inside `runtime prepare`
+- **THEN** the system reports the issue and directs repair through a Service Request instead of hiding repair work inside `project runtime prepare`
 
 #### Scenario: Readiness is topic scoped
 - **WHEN** a readiness record is written
@@ -108,22 +108,22 @@ The system SHALL expose deterministic CLI and Python APIs for Workspace Runtime 
 
 #### Scenario: Runtime commands are available
 - **WHEN** a user runs `isomer-cli --help`
-- **THEN** the command surface includes `runtime init`, `runtime prepare`, `runtime inspect`, `runtime validate`, `team-instances create`, `team-instances list`, and `team-instances show`
+- **THEN** the command surface includes `project runtime init`, `project runtime prepare`, `project runtime inspect`, `project runtime validate`, `project team-instances create`, `project team-instances list`, and `project team-instances show`
 
 #### Scenario: Runtime init emits deterministic JSON
-- **WHEN** a user runs `isomer-cli --print-json runtime init`
+- **WHEN** a user runs `isomer-cli --print-json project runtime init`
 - **THEN** the response uses the existing `isomer-cli-output.v1` wrapper and includes `ok`, Project ref, Research Topic ref, Topic Workspace ref, runtime schema version, runtime path, created-or-opened status, and diagnostics
 
 #### Scenario: Runtime prepare emits deterministic JSON
-- **WHEN** a user runs `isomer-cli --print-json runtime prepare`
+- **WHEN** a user runs `isomer-cli --print-json project runtime prepare`
 - **THEN** the response uses the existing `isomer-cli-output.v1` wrapper and includes `ok`, Project ref, Research Topic ref, Topic Workspace ref, runtime schema version, readiness records, readiness status, preparation status, and diagnostics
 
 #### Scenario: Team instance list is topic scoped
-- **WHEN** a user runs `isomer-cli team-instances list`
+- **WHEN** a user runs `isomer-cli project team-instances list`
 - **THEN** the command lists only Agent Team Instance records from the selected Topic Workspace unless a later accepted contract adds a Project-wide listing mode
 
 #### Scenario: Team instance show reports related records
-- **WHEN** a user runs `isomer-cli team-instances show <agent-team-instance-id>`
+- **WHEN** a user runs `isomer-cli project team-instances show <agent-team-instance-id>`
 - **THEN** the command reports the Agent Team Instance record, Agent Instance refs, Agent Workspace refs, active Run refs when known, Workflow Stage Cursor refs, status, blocker refs, and diagnostics
 
 ### Requirement: Workspace Runtime Validation
@@ -336,7 +336,7 @@ The system SHALL generate Agent Instance ids that are globally unique within the
 - **THEN** the system rejects the request with a validation diagnostic and leaves existing records unchanged
 
 #### Scenario: Runtime validation reports duplicate Agent Instance ids
-- **WHEN** `runtime validate` scans Agent Instance records and finds two records with the same id
+- **WHEN** `project runtime validate` scans Agent Instance records and finds two records with the same id
 - **THEN** the system reports a workspace issue identifying the duplicate id and both records
 
 #### Scenario: Agent Workspace path uses the globally unique Agent Instance id

@@ -5,12 +5,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Mapping
 
+from isomer_labs.content_layout import (
+    content_root_path as default_content_root_path,
+    topic_workspace_base_path as default_topic_workspace_base_path,
+)
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext, ResolvedPathEntry
 from isomer_labs.path_utils import is_within, resolve_project_path
 
 
 PATH_ENV_VARS = {
+    "isomer_content_root": "ISOMER_CONTENT_ROOT_DIR",
     "topic_workspace_base": "ISOMER_TOPIC_WORKSPACE_BASE_DIR",
     "topic_workspace": "ISOMER_CURRENT_TOPIC_WORKSPACE_DIR",
     "workspace_runtime_db": "ISOMER_TOPIC_WORKSPACE_RUNTIME_DB",
@@ -26,6 +31,7 @@ PATH_ENV_VARS = {
     "agent_logs": "ISOMER_AGENT_WORKSPACE_LOGS_DIR",
 }
 MANIFEST_PATH_KEYS = {
+    "isomer_content_root": ("isomer_content_root",),
     "topic_workspace_base": ("topic_workspace_base_dir",),
     "topic_workspace": ("current_topic_workspace_dir", "topic_workspace_dir"),
     "workspace_runtime_db": ("topic_workspace_runtime_db", "state_sqlite"),
@@ -56,6 +62,13 @@ def preview_paths(
 ) -> tuple[list[ResolvedPathEntry], list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
     project_root = context.project.root
+    content_root = _select_path(
+        context,
+        env,
+        "isomer_content_root",
+        default=default_content_root_path(project_root, context.project.manifest.path_defaults),
+    )
+    topic_workspace_base_source = "Project Manifest" if _manifest_value(context, "isomer_content_root") is not None else "default"
     topic_workspace_path = _select_path(
         context,
         env,
@@ -63,16 +76,19 @@ def preview_paths(
         default=context.topic_workspace_path,
         manifest_value=context.topic_workspace_path_input,
         manifest_source="Project Manifest" if context.topic_workspace_path_input is not None else None,
+        default_source=context.sources.get("topic_workspace_path", "default"),
     )
     entries = [
         ResolvedPathEntry("project_root", project_root, context.project.discovery_source),
         ResolvedPathEntry("project_config_directory", context.project.config_dir, context.project.discovery_source),
         ResolvedPathEntry("project_manifest", context.project.manifest_path, context.project.discovery_source),
+        content_root,
         _select_path(
             context,
             env,
             "topic_workspace_base",
-            default=project_root / "topic-workspaces",
+            default=default_topic_workspace_base_path(project_root, context.project.manifest.path_defaults),
+            default_source=topic_workspace_base_source,
         ),
         topic_workspace_path,
         _select_path(
@@ -138,6 +154,17 @@ def preview_paths(
                 )
             )
             continue
+        if entry.surface == "isomer_content_root" and is_within(path, context.project.config_dir):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO005",
+                    severity="error",
+                    concept="Workspace Path Resolution",
+                    field=entry.surface,
+                    message="Project generated content root must not live inside the Project Config Directory.",
+                )
+            )
+            continue
         canonical_entries.append(
             ResolvedPathEntry(
                 surface=entry.surface,
@@ -157,6 +184,7 @@ def _select_path(
     default: Path,
     manifest_value: str | None = None,
     manifest_source: str | None = None,
+    default_source: str = "default",
 ) -> ResolvedPathEntry:
     env_var = PATH_ENV_VARS.get(surface)
     if env_var is not None and env.get(env_var):
@@ -173,7 +201,7 @@ def _select_path(
             path=resolve_project_path(context.project.root, manifest_candidate),
             source=manifest_source or "manifest",
         )
-    return ResolvedPathEntry(surface=surface, path=default, source="default")
+    return ResolvedPathEntry(surface=surface, path=default, source=default_source)
 
 
 def _manifest_value(context: EffectiveTopicContext, surface: str) -> str | None:

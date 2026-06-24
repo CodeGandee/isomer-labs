@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from pathlib import Path
 
+from isomer_labs.content_layout import topic_workspace_path as default_topic_workspace_path
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import Project, ProjectState, ResearchTopicConfig, TemplateValidationReport
 from isomer_labs.path_utils import is_within, resolve_project_path
@@ -73,6 +74,7 @@ RUNTIME_TRUTH_KEYS = {
 def build_project_state(project: Project) -> ProjectState:
     diagnostics: list[Diagnostic] = []
     diagnostics.extend(scan_for_forbidden_fields(project.manifest.raw, "Project Manifest", project.manifest_path))
+    diagnostics.extend(_validate_path_defaults(project))
     diagnostics.extend(_duplicate_id_diagnostics(project))
     diagnostics.extend(_validate_workspace_registrations(project))
     diagnostics.extend(_validate_environment_bindings(project))
@@ -255,6 +257,51 @@ def _validate_workspace_registrations(project: Project) -> list[Diagnostic]:
                         message="Research Topic registration references a Topic Workspace assigned to a different Research Topic.",
                     )
                 )
+    return diagnostics
+
+
+def _validate_path_defaults(project: Project) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for key in ("isomer_content_root", "topic_workspace_base_dir"):
+        if key not in project.manifest.path_defaults:
+            continue
+        value = project.manifest.path_defaults[key]
+        field = f"paths.{key}"
+        if not isinstance(value, str) or not value:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Project Manifest path default",
+                    path=project.manifest_path,
+                    field=field,
+                    message="Project Manifest path default must be a non-empty string.",
+                )
+            )
+            continue
+        resolved = resolve_project_path(project.root, value)
+        if not is_within(resolved, project.root):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO005",
+                    severity="error",
+                    concept="Project Manifest path default",
+                    path=project.manifest_path,
+                    field=field,
+                    message="Project Manifest path default resolves outside the Project root.",
+                )
+            )
+        if key == "isomer_content_root" and is_within(resolved, project.config_dir):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO005",
+                    severity="error",
+                    concept="Project generated content root",
+                    path=project.manifest_path,
+                    field=field,
+                    message="Project generated content root must not live inside the Project Config Directory.",
+                )
+            )
     return diagnostics
 
 
@@ -599,7 +646,7 @@ def _topic_profile_bundle_path(project: Project, topic_id: str) -> Path | None:
             workspace = matching[0]
     if workspace is not None and workspace.path_input is not None:
         return resolve_project_path(project.root, workspace.path_input) / "team-profile" / "profile.toml"
-    return resolve_project_path(project.root, f"topic-workspaces/{topic_id}") / "team-profile" / "profile.toml"
+    return default_topic_workspace_path(project.root, topic_id, project.manifest.path_defaults) / "team-profile" / "profile.toml"
 
 
 def _topic_workspace_paths(project: Project) -> list[Path]:
@@ -608,9 +655,9 @@ def _topic_workspace_paths(project: Project) -> list[Path]:
         if workspace.path_input is not None:
             paths.append(resolve_project_path(project.root, workspace.path_input))
         elif workspace.research_topic_id is not None:
-            paths.append(resolve_project_path(project.root, f"topic-workspaces/{workspace.research_topic_id}"))
+            paths.append(default_topic_workspace_path(project.root, workspace.research_topic_id, project.manifest.path_defaults))
     for topic in project.manifest.research_topics:
-        paths.append(resolve_project_path(project.root, f"topic-workspaces/{topic.id}"))
+        paths.append(default_topic_workspace_path(project.root, topic.id, project.manifest.path_defaults))
     return paths
 
 

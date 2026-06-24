@@ -31,7 +31,7 @@ def discover_project(
     if project_selector is not None:
         return _load_project_from_project_selector(canonicalize(Path(project_selector)), "explicit Project selector")
 
-    discovered = _find_ancestor_manifest(canonicalize(cwd))
+    discovered = find_ancestor_manifest(canonicalize(cwd))
     if discovered is not None:
         return _load_project_from_manifest_path(discovered, "current directory")
 
@@ -95,7 +95,7 @@ def _load_project_from_manifest_path(manifest_path: Path, source: str) -> tuple[
     return project, diagnostics
 
 
-def _find_ancestor_manifest(cwd: Path) -> Path | None:
+def find_ancestor_manifest(cwd: Path) -> Path | None:
     current = cwd
     if current.is_file():
         current = current.parent

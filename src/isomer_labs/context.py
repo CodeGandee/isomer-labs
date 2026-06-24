@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping
 
+from isomer_labs.content_layout import topic_workspace_path as default_topic_workspace_path
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import (
     EffectiveTopicContext,
@@ -211,13 +212,11 @@ def resolve_topic_workspace(
 
     path_input = workspace.path_input if workspace is not None else None
     if path_input is None:
-        base = _manifest_path_default(project, "topic_workspace_base_dir")
-        if base is None:
-            workspace_path = resolve_project_path(project.root, f"topic-workspaces/{topic.id}")
-            source = "default"
-        else:
-            workspace_path = resolve_project_path(project.root, f"{base}/{topic.id}")
+        workspace_path = default_topic_workspace_path(project.root, topic.id, project.manifest.path_defaults)
+        if _manifest_path_default(project, "topic_workspace_base_dir") is not None or _manifest_path_default(project, "isomer_content_root") is not None:
             source = "Project Manifest"
+        else:
+            source = "default"
     else:
         workspace_path = resolve_project_path(project.root, path_input)
         if source == "default":

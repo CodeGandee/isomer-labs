@@ -626,11 +626,12 @@ def _validate_agent_workspace_topic(
     workspace_ref: str,
     diagnostics: list[Diagnostic],
 ) -> None:
-    prefix = "topic-workspaces/"
-    if not workspace_ref.startswith(prefix):
-        return
-    parts = workspace_ref.split("/")
-    if len(parts) > 1 and parts[1] != profile.research_topic_id:
+    match workspace_ref.split("/"):
+        case ["isomer-content", "topic-ws", topic_id, *_] | ["topic-workspaces", topic_id, *_]:
+            pass
+        case _:
+            return
+    if topic_id != profile.research_topic_id:
         diagnostics.append(
             Diagnostic(
                 code="ISO019",

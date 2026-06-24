@@ -20,6 +20,7 @@ class CliOptions:
     topic_id: str | None = None
     topic_id_option: str | None = None
     topic_statement: str | None = None
+    content_dir: str | None = None
     research_topic_id: str | None = None
     topic_workspace_id: str | None = None
     research_inquiry_id: str | None = None
@@ -31,8 +32,8 @@ class CliOptions:
 
 
 def common_options(command: Any) -> Any:
-    command = click.option("--manifest", default=None, help="Explicit Project Manifest selector.")(command)
-    command = click.option("--project", default=None, help="Explicit Project root selector.")(command)
+    command = click.option("--manifest", default=None, hidden=True, help="Explicit Project Manifest selector.")(command)
+    command = click.option("--project", default=None, hidden=True, help="Explicit Project root selector.")(command)
     return command
 
 
@@ -67,8 +68,15 @@ def merge_options(
     json_output: bool = False,
     **values: str | None,
 ) -> CliOptions:
+    current = ctx.obj
     root = ctx.find_root().obj
-    root_options = root if isinstance(root, CliOptions) else CliOptions()
+    root_options = (
+        current
+        if isinstance(current, CliOptions)
+        else root
+        if isinstance(root, CliOptions)
+        else CliOptions()
+    )
     print_json = root_options.output_mode.print_json or json_output or output_format == "json"
     return replace(
         root_options,
