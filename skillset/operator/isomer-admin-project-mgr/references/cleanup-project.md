@@ -14,9 +14,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cleanup Parts
 
-- `bootstrap`: Project config, Project-level Houmao overlay, generated content-root policy files, and known init-created Topic Workspace directories.
+- `bootstrap`: Project config, Isomer-managed Houmao overlay, generated content-root policy files, and known init-created Topic Workspace directories.
 - `project-config`: `.isomer-labs/`.
-- `houmao-overlay`: Project-level `.houmao/`.
+- `houmao-overlay`: Isomer-managed `.isomer-labs/.houmao/`; root `.houmao/` is external and preserved.
 - `content-policy`: selected content root `README.md` and `.gitignore`.
 - `topic-workspace`: selected registered Topic Workspace directories.
 - `runtime`: `state.sqlite`, runtime-owned directories, and adapter runtime material under selected Topic Workspaces.
@@ -28,5 +28,5 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Do not use `--yes` for destructive cleanup without user confirmation.
 - Do not use `--purge-content-root` unless the user explicitly requests whole generated content root removal.
 - Do not infer Research Topics or Topic Workspaces from unregistered directories when the Project Manifest is missing or malformed.
-- Do not stop live Houmao agents, inspect gateways, delete external worktrees, or treat Project cleanup as live Houmao cleanup.
+- Do not stop live Houmao agents, inspect gateways, delete external worktrees, remove root `.houmao/`, or treat Project cleanup as live Houmao cleanup.
 - Preserve unknown files by default.

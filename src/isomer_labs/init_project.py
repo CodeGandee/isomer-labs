@@ -19,6 +19,11 @@ from isomer_labs.diagnostics import Diagnostic, has_errors
 from isomer_labs.houmao.adapter import HoumaoCommandCatalog, HoumaoCommandResult, HoumaoCommandRunner
 from isomer_labs.path_utils import is_within
 from isomer_labs.project import config_dir_for_root, manifest_path_for_root
+from isomer_labs.project import (
+    houmao_overlay_dir_for_root,
+    houmao_project_dir_for_root,
+    root_houmao_overlay_dir_for_root,
+)
 
 
 TOPIC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
@@ -33,6 +38,7 @@ class ProjectInitializationResult:
     content_root_path: Path
     topic_workspace_path: Path
     houmao_project_dir: Path
+    houmao_overlay_dir: Path
     houmao_bootstrap_result: HoumaoCommandResult | None
     diagnostics: list[Diagnostic]
 
@@ -58,7 +64,9 @@ def initialize_project(
     path_defaults = content_path_defaults_for_init(root, content_dir)
     content_root = default_content_root_path(root, path_defaults)
     topic_workspace_path = default_topic_workspace_path(root, topic_id, path_defaults)
-    houmao_project_dir = root / ".houmao"
+    houmao_project_dir = houmao_project_dir_for_root(root)
+    houmao_overlay_dir = houmao_overlay_dir_for_root(root)
+    root_houmao_overlay_dir = root_houmao_overlay_dir_for_root(root)
 
     if TOPIC_ID_PATTERN.fullmatch(topic_id) is None:
         return ProjectInitializationResult(
@@ -69,6 +77,7 @@ def initialize_project(
             content_root_path=content_root,
             topic_workspace_path=topic_workspace_path,
             houmao_project_dir=houmao_project_dir,
+            houmao_overlay_dir=houmao_overlay_dir,
             houmao_bootstrap_result=None,
             diagnostics=[
                 Diagnostic(
@@ -90,6 +99,7 @@ def initialize_project(
             content_root_path=content_root,
             topic_workspace_path=topic_workspace_path,
             houmao_project_dir=houmao_project_dir,
+            houmao_overlay_dir=houmao_overlay_dir,
             houmao_bootstrap_result=None,
             diagnostics=[
                 Diagnostic(
@@ -103,7 +113,7 @@ def initialize_project(
         )
 
     diagnostics.extend(
-        _validate_content_root(root, content_root, topic_workspace_path.parent, config_dir, houmao_project_dir)
+        _validate_content_root(root, content_root, topic_workspace_path.parent, config_dir, root_houmao_overlay_dir)
     )
     if has_errors(diagnostics):
         return ProjectInitializationResult(
@@ -114,20 +124,22 @@ def initialize_project(
             content_root_path=content_root,
             topic_workspace_path=topic_workspace_path,
             houmao_project_dir=houmao_project_dir,
+            houmao_overlay_dir=houmao_overlay_dir,
             houmao_bootstrap_result=None,
             diagnostics=diagnostics,
         )
 
+    config_dir.mkdir(parents=True, exist_ok=True)
     houmao_result = bootstrap_houmao_project(root, env=env)
     diagnostics.extend(houmao_result.diagnostics)
-    if houmao_result.succeeded and not houmao_project_dir.exists():
+    if houmao_result.succeeded and not houmao_overlay_dir.exists():
         diagnostics.append(
             Diagnostic(
                 code="ISO003",
                 severity="error",
                 concept="Houmao Project",
-                path=houmao_project_dir,
-                message="Houmao Project bootstrap completed without creating the Project-level .houmao overlay.",
+                path=houmao_overlay_dir,
+                message="Houmao Project bootstrap completed without creating the Isomer-managed .isomer-labs/.houmao overlay.",
             )
         )
     if has_errors(diagnostics):
@@ -139,6 +151,7 @@ def initialize_project(
             content_root_path=content_root,
             topic_workspace_path=topic_workspace_path,
             houmao_project_dir=houmao_project_dir,
+            houmao_overlay_dir=houmao_overlay_dir,
             houmao_bootstrap_result=houmao_result,
             diagnostics=diagnostics,
         )
@@ -161,6 +174,7 @@ def initialize_project(
         content_root_path=content_root,
         topic_workspace_path=topic_workspace_path,
         houmao_project_dir=houmao_project_dir,
+        houmao_overlay_dir=houmao_overlay_dir,
         houmao_bootstrap_result=houmao_result,
         diagnostics=diagnostics,
     )
@@ -169,7 +183,7 @@ def initialize_project(
 def bootstrap_houmao_project(project_root: Path, *, env: Mapping[str, str] | None = None) -> HoumaoCommandResult:
     root = project_root.resolve(strict=False)
     runner = HoumaoCommandRunner(root, env=env)
-    return runner.run(HoumaoCommandCatalog().project_init(root))
+    return runner.run(HoumaoCommandCatalog().project_init(houmao_project_dir_for_root(root)))
 
 
 def _validate_content_root(
@@ -177,7 +191,7 @@ def _validate_content_root(
     content_root: Path,
     topic_workspace_base: Path,
     config_dir: Path,
-    houmao_project_dir: Path,
+    root_houmao_overlay_dir: Path,
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     if not is_within(content_root, project_root):
@@ -202,7 +216,7 @@ def _validate_content_root(
                 message="Project generated content root must not live inside the Project Config Directory.",
             )
         )
-    if is_within(content_root, houmao_project_dir) or is_within(topic_workspace_base, houmao_project_dir):
+    if is_within(content_root, root_houmao_overlay_dir) or is_within(topic_workspace_base, root_houmao_overlay_dir):
         diagnostics.append(
             Diagnostic(
                 code="ISO005",
@@ -210,7 +224,7 @@ def _validate_content_root(
                 concept="Project generated content root",
                 path=content_root,
                 field="content_dir",
-                message="Project generated content root must not collide with the Project-level Houmao overlay.",
+                message="Project generated content root must not collide with root .houmao external Houmao state.",
             )
         )
     return diagnostics

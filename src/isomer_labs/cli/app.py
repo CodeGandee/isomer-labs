@@ -38,7 +38,12 @@ from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, Sel
 from isomer_labs.path_utils import display_path
 from isomer_labs.paths import preview_paths
 from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
-from isomer_labs.project import discover_project, find_ancestor_manifest, project_root_for_manifest
+from isomer_labs.project import (
+    discover_project,
+    find_ancestor_manifest,
+    houmao_project_dir_for_root,
+    project_root_for_manifest,
+)
 from isomer_labs.project_cleanup import execute_project_cleanup, plan_project_cleanup, render_cleanup_text
 from isomer_labs.project_content_root import (
     execute_project_content_root_move,
@@ -219,6 +224,7 @@ def _cmd_init(options: CliOptions) -> int:
         "content_root_path": str(result.content_root_path),
         "topic_workspace_path": str(result.topic_workspace_path),
         "houmao_project_dir": str(result.houmao_project_dir),
+        "houmao_overlay_dir": str(result.houmao_overlay_dir),
         "houmao_bootstrap": houmao_bootstrap,
     }
     lines = []
@@ -230,7 +236,8 @@ def _cmd_init(options: CliOptions) -> int:
             f"Research Topic Config: {result.topic_config_path}",
             f"Generated Content Root: {result.content_root_path}",
             f"Topic Workspace: {result.topic_workspace_path}",
-            f"Houmao Project: {result.houmao_project_dir}",
+            f"Houmao Project Directory: {result.houmao_project_dir}",
+            f"Houmao Overlay: {result.houmao_overlay_dir}",
         ]
     return _emit("init", options, payload, diagnostics, lines)
 
@@ -1641,6 +1648,8 @@ def _load_or_collect_live_state(
         houmao_payload = link_manifest.get("houmao")
         if isinstance(houmao_payload, dict) and isinstance(houmao_payload.get("project_dir"), str):
             project_dir = Path(str(houmao_payload["project_dir"])).expanduser().resolve(strict=False)
+    if project_dir is None:
+        project_dir = houmao_project_dir_for_root(context.project.root)
     return collect_houmao_read_only_state(houmao_project_dir=project_dir)
 
 

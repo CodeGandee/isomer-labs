@@ -769,12 +769,14 @@ class IsomerCliTests(unittest.TestCase):
             (root / "isomer-content" / ".gitignore").read_text(encoding="utf-8"),
         )
         self.assertTrue((root / "isomer-content" / "topic-ws" / "default").is_dir())
-        self.assertTrue((root / ".houmao" / "houmao-config.toml").is_file())
+        self.assertTrue((root / ".isomer-labs" / ".houmao" / "houmao-config.toml").is_file())
+        self.assertFalse((root / ".houmao").exists())
         self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "state.sqlite").exists())
         self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "artifacts").exists())
         self.assertIn("Generated Content Root:", output)
         self.assertIn("Topic Workspace:", output)
-        self.assertIn("Houmao Project:", output)
+        self.assertIn("Houmao Project Directory:", output)
+        self.assertIn("Houmao Overlay:", output)
         help_result = CliRunner().invoke(cli.app, ["project", "init", "--help"])
         self.assertEqual(0, help_result.exit_code, help_result.output)
         self.assertNotIn("--force", help_result.output)
@@ -783,6 +785,22 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertIn("refuses to overwrite", output)
         self.assertIn("project cleanup --part bootstrap --dry-run", output)
+
+    def test_init_and_cleanup_preserve_external_root_houmao_overlay(self) -> None:
+        root = self.make_root()
+        write(root / ".houmao" / "external.toml", "user_owned = true\n")
+
+        status, output = self.run_cli(["project", "init"], cwd=root, env=self.fake_houmao_env(root))
+        self.assertEqual(0, status, output)
+        self.assertTrue((root / ".houmao" / "external.toml").is_file())
+        self.assertTrue((root / ".isomer-labs" / ".houmao" / "houmao-config.toml").is_file())
+
+        status, output = self.run_cli(["project", "cleanup", "--part", "houmao-overlay", "--yes", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertFalse((root / ".isomer-labs" / ".houmao").exists())
+        self.assertTrue((root / ".houmao" / "external.toml").is_file())
 
     def test_project_cleanup_dry_run_and_default_non_mutating_plan(self) -> None:
         root = self.make_root()
@@ -824,7 +842,7 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["mutated"])
-        self.assertFalse((root / ".houmao").exists())
+        self.assertFalse((root / ".isomer-labs" / ".houmao").exists())
         self.assertFalse((root / "isomer-content" / "README.md").exists())
         self.assertFalse((root / "isomer-content" / ".gitignore").exists())
         self.assertTrue((root / ".isomer-labs" / "manifest.toml").is_file())
@@ -887,6 +905,7 @@ class IsomerCliTests(unittest.TestCase):
         root = self.make_root()
         write(root / ".isomer-labs" / "manifest.toml", "not toml = [\n")
         write(root / ".houmao" / "houmao-config.toml", "schema_version = 1\n")
+        write(root / ".isomer-labs" / ".houmao" / "houmao-config.toml", "schema_version = 1\n")
         write(root / "isomer-content" / "README.md", "# Isomer Content\n")
         write(root / "isomer-content" / ".gitignore", "*\n")
 
@@ -904,9 +923,11 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertTrue(any("requires a valid Project Manifest" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
         self.assertTrue((root / ".houmao" / "houmao-config.toml").is_file())
+        self.assertTrue((root / ".isomer-labs" / ".houmao" / "houmao-config.toml").is_file())
 
         missing_manifest_root = self.make_root()
         write(missing_manifest_root / ".houmao" / "houmao-config.toml", "schema_version = 1\n")
+        write(missing_manifest_root / ".isomer-labs" / ".houmao" / "houmao-config.toml", "schema_version = 1\n")
         status, output = self.run_cli(
             ["project", "--root", str(missing_manifest_root), "cleanup", "--part", "houmao-overlay", "--dry-run", "--json"],
             cwd=root,
@@ -914,7 +935,8 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["dry_run"])
-        self.assertEqual(str(missing_manifest_root / ".houmao"), data["planned_removals"][0]["path"])
+        self.assertEqual(str(missing_manifest_root / ".isomer-labs" / ".houmao"), data["planned_removals"][0]["path"])
+        self.assertTrue((missing_manifest_root / ".houmao" / "houmao-config.toml").is_file())
 
     def test_project_cleanup_content_root_requires_purge_and_respects_symlink_entries(self) -> None:
         root = self.make_root()
@@ -947,14 +969,14 @@ class IsomerCliTests(unittest.TestCase):
 
         outside = self.make_root() / "outside-houmao"
         write(outside / "keep.txt", "keep\n")
-        shutil.rmtree(root / ".houmao")
-        (root / ".houmao").symlink_to(outside, target_is_directory=True)
+        shutil.rmtree(root / ".isomer-labs" / ".houmao")
+        (root / ".isomer-labs" / ".houmao").symlink_to(outside, target_is_directory=True)
 
         status, output = self.run_cli(["project", "cleanup", "--part", "houmao-overlay", "--yes", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["mutated"])
-        self.assertFalse((root / ".houmao").exists())
+        self.assertFalse((root / ".isomer-labs" / ".houmao").exists())
         self.assertTrue((outside / "keep.txt").is_file())
 
         status, output = self.run_cli(
@@ -1055,7 +1077,7 @@ class IsomerCliTests(unittest.TestCase):
         for content_dir, expected_message in (
             ("../outside", "outside the Project root"),
             (".isomer-labs/generated", "Project Config Directory"),
-            (".houmao/generated", "Houmao overlay"),
+            (".houmao/generated", "external Houmao state"),
             (".", "Project root"),
         ):
             with self.subTest(content_dir=content_dir):
@@ -1171,7 +1193,8 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(data["mutated"])
         self.assertEqual(str(root / "isomer-content"), data["content_root_path"])
         self.assertEqual(str(root / "isomer-content" / "topic-ws" / "paper"), data["topic_workspace_path"])
-        self.assertEqual(str(root / ".houmao"), data["houmao_project_dir"])
+        self.assertEqual(str(root / ".isomer-labs"), data["houmao_project_dir"])
+        self.assertEqual(str(root / ".isomer-labs" / ".houmao"), data["houmao_overlay_dir"])
         self.assertEqual("succeeded", data["houmao_bootstrap"]["status"])
 
     def test_init_accepts_custom_content_dir_for_default_topic(self) -> None:
@@ -1224,7 +1247,7 @@ class IsomerCliTests(unittest.TestCase):
         for content_dir, expected_message in (
             ("../outside", "outside the Project root"),
             (".isomer-labs/generated", "Project Config Directory"),
-            (".houmao", "Houmao overlay"),
+            (".houmao", "external Houmao state"),
         ):
             with self.subTest(content_dir=content_dir):
                 root = self.make_root()
@@ -1243,6 +1266,7 @@ class IsomerCliTests(unittest.TestCase):
                 self.assertFalse((root / ".isomer-labs" / "manifest.toml").exists())
                 self.assertFalse((root / "custom-content").exists())
                 self.assertFalse((root / ".houmao").exists())
+                self.assertFalse((root / ".isomer-labs" / ".houmao").exists())
 
     def test_init_custom_content_dir_refuses_existing_project_without_creating_content(self) -> None:
         root = self.make_root()
@@ -2724,10 +2748,11 @@ status = "active"
             topic_agent_team_profile_id="uc-01-alpha",
             domain_agent_team_template_id="deepsci-org",
             agent_bindings=[],
-            houmao_project_dir=root / ".houmao",
+            houmao_project_dir=None,
             actor_ref="operator-agent:test",
             created_at="2026-06-22T00:00:00Z",
         )
+        self.assertEqual(str(root / ".isomer-labs"), link_manifest["houmao"]["project_dir"])
         link_path = root / "adapter-link.json"
         digest = write_json_manifest(link_path, link_manifest, expected_kind=ManifestKind.ADAPTER_LINK.value)
         loaded = load_json_manifest(link_path, expected_kind=ManifestKind.ADAPTER_LINK.value)

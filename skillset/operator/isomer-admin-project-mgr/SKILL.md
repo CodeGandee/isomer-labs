@@ -1,11 +1,11 @@
 ---
 name: isomer-admin-project-mgr
-description: Initialize, inspect, validate, clean up, move generated content, and prepare an Isomer Project from a Project Operator Session. Use this skill when the user asks to create or fix `.isomer-labs/`, initialize or clean up the Project-level Houmao overlay, move the generated content root, check Project health, list Research Topics or Topic Workspaces, inspect Effective Topic Context, initialize or prepare Workspace Runtime, or get ready to hand off to topic-team specialization.
+description: Initialize, inspect, validate, clean up, move generated content, and prepare an Isomer Project from a Project Operator Session. Use this skill when the user asks to create or fix `.isomer-labs/`, initialize or clean up the Isomer-managed Houmao overlay, move the generated content root, check Project health, list Research Topics or Topic Workspaces, inspect Effective Topic Context, initialize or prepare Workspace Runtime, or get ready to hand off to topic-team specialization.
 ---
 
 # Isomer Admin Project Mgr
 
-Use this as the operator workflow for Isomer Project lifecycle management. It helps an operator create, check, clean up, and move generated content for the Isomer Project config, Project-level Houmao overlay, Research Topic and Topic Workspace registrations, Effective Topic Context, and explicit Workspace Runtime readiness steps before topic-team specialization or launch work.
+Use this as the operator workflow for Isomer Project lifecycle management. It helps an operator create, check, clean up, and move generated content for the Isomer Project config, Isomer-managed Houmao overlay, Research Topic and Topic Workspace registrations, Effective Topic Context, and explicit Workspace Runtime readiness steps before topic-team specialization or launch work.
 
 ## Workflow
 
@@ -27,7 +27,7 @@ Load only the subcommand pages needed for the user's task.
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
 | `help` | Print what this skill does, how to invoke it, available subcommands, outputs, and guardrails | [references/help.md](references/help.md) |
-| `init-project` | Initialize an Isomer Project and Project-level Houmao overlay | [references/init-project.md](references/init-project.md) |
+| `init-project` | Initialize an Isomer Project and Isomer-managed Houmao overlay | [references/init-project.md](references/init-project.md) |
 | `cleanup-project` | Plan or apply cleanup of selected Isomer-managed Project material | [references/cleanup-project.md](references/cleanup-project.md) |
 | `move-content` | Plan or apply relocation of the Project generated content root | [references/move-content.md](references/move-content.md) |
 | `check-project` | Validate and diagnose an existing Project without mutating runtime or live Houmao state | [references/check-project.md](references/check-project.md) |
@@ -43,7 +43,8 @@ When reporting results, include the fields that apply:
 
 - `project_root`: resolved Project root.
 - `project_manifest_path`: `.isomer-labs/manifest.toml` when present or planned.
-- `houmao_project_dir`: Project-level `.houmao/` overlay path and status.
+- `houmao_project_dir`: Isomer-managed Houmao Project directory, normally `.isomer-labs/`.
+- `houmao_overlay_dir`: Isomer-managed Houmao overlay path, normally `.isomer-labs/.houmao/`.
 - `research_topic_refs`: selected or listed Research Topic ids.
 - `topic_workspace_refs`: selected or listed Topic Workspace ids and paths.
 - `effective_topic_context`: selected topic, workspace, profile, template, and runtime refs when resolved.
@@ -56,7 +57,7 @@ When reporting results, include the fields that apply:
 
 ## Guardrails
 
-Use `isomer-cli project init` for fresh Project bootstrap. A successful init creates `.isomer-labs/`, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), the first Topic Workspace under `isomer-content/topic-ws/<topic-id>/` or `<content-dir>/topic-ws/<topic-id>/`, and the Project-level `.houmao/` overlay, but it must not create Workspace Runtime state, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers.
+Use `isomer-cli project init` for fresh Project bootstrap. A successful init creates `.isomer-labs/`, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), the first Topic Workspace under `isomer-content/topic-ws/<topic-id>/` or `<content-dir>/topic-ws/<topic-id>/`, and the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`, but it must not create Workspace Runtime state, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers. Root `.houmao/` is external user-owned Houmao state if present, not Isomer-managed Project bootstrap state.
 
 Use `isomer-cli project cleanup --part <part> --dry-run` before destructive cleanup, and use `isomer-cli project cleanup --part <part> --yes` only after the user has reviewed the plan. Preserve unknown files by default; whole content-root removal requires `--purge-content-root`.
 
@@ -72,7 +73,7 @@ Do not duplicate Topic Team Specialization. When the user asks to adapt or insta
 
 ## Local References
 
-- [references/project-concepts.md](references/project-concepts.md): Project, Research Topic, Topic Workspace, and Project-level Houmao overlay concepts.
+- [references/project-concepts.md](references/project-concepts.md): Project, Research Topic, Topic Workspace, and Isomer-managed Houmao overlay concepts.
 - [references/cli-command-boundaries.md](references/cli-command-boundaries.md): supported Isomer CLI command shapes and mutation boundaries.
 - [references/cleanup-project.md](references/cleanup-project.md): cleanup planning, confirmation, parts, and safety boundaries.
 - [references/move-content.md](references/move-content.md): generated content-root relocation planning, confirmation, manifest updates, and runtime warnings.

@@ -8,4 +8,4 @@ A Research Topic is the root investigation intent. Its Research Topic Config nor
 
 A Topic Workspace is the durable research workspace for one Research Topic. The default path created by `isomer-cli project init <topic-id>` is `isomer-content/topic-ws/<topic-id>/`; when init uses `--content-dir <content-dir>`, the path is `<content-dir>/topic-ws/<topic-id>/`.
 
-The Project-level Houmao overlay is `.houmao/` under the Project root. It supports Houmao-backed agent-team construction and management for the Project, but it is not a Workspace Runtime database or per-Agent Team Instance launch-material directory.
+The Isomer-managed Houmao Project directory is `.isomer-labs/`, passed to Houmao as `--project-dir`. The Isomer-managed Houmao overlay is `.isomer-labs/.houmao/`. It supports Houmao-backed agent-team construction and management for the Project, but it is not a Workspace Runtime database or per-Agent Team Instance launch-material directory. Root `.houmao/` is external user-owned Houmao state if present and must not be treated as Isomer-managed material.

@@ -16,8 +16,10 @@ from isomer_labs.path_utils import canonicalize, display_path, is_within
 from isomer_labs.project import (
     config_dir_for_root,
     find_ancestor_manifest,
+    houmao_overlay_dir_for_root,
     manifest_path_for_root,
     project_root_for_manifest,
+    root_houmao_overlay_dir_for_root,
 )
 from isomer_labs.runtime.models import RUNTIME_DIRECTORIES
 from isomer_labs.toml_loader import load_toml
@@ -201,7 +203,7 @@ def plan_project_cleanup(
     if "project-config" in expanded_parts:
         targets.append(_target("project-config", config_dir_for_root(root), root=root))
     if "houmao-overlay" in expanded_parts:
-        targets.append(_target("houmao-overlay", root / ".houmao", root=root))
+        targets.append(_target("houmao-overlay", houmao_overlay_dir_for_root(root), root=root))
     if "content-policy" in expanded_parts:
         targets.extend(_target("content-policy", content_root / file_name, root=root) for file_name in CONTENT_POLICY_FILES)
     if "topic-workspace" in expanded_parts:
@@ -242,7 +244,7 @@ def execute_project_cleanup(plan: CleanupPlan) -> CleanupExecution:
             mutated=False,
         )
 
-    for target in plan.targets:
+    for target in _deepest_first(plan.targets):
         if not target.exists:
             skipped.append(target)
             continue
@@ -521,13 +523,14 @@ def _content_root_target(content_root: Path, root: Path, purge_content_root: boo
             status="refused",
             reason="content-root cleanup requires --purge-content-root.",
         )
-    if content_root == root or content_root in {config_dir_for_root(root), root / ".houmao"}:
+    reserved_dirs = {config_dir_for_root(root), houmao_overlay_dir_for_root(root), root_houmao_overlay_dir_for_root(root)}
+    if content_root == root or content_root in reserved_dirs:
         return _target(
             "content-root",
             content_root,
             root=root,
             status="refused",
-            reason="refusing to remove the Project root, Project Config Directory, or Houmao overlay as a content root.",
+            reason="refusing to remove the Project root, Project Config Directory, or Houmao state directory as a content root.",
         )
     return _target("content-root", content_root, root=root)
 
@@ -636,9 +639,10 @@ def _unsafe_reason(path: Path, root: Path, target: CleanupTarget) -> str | None:
     if not is_within(path, canonical_root):
         return "Cleanup target resolves outside the Project root."
     if target.part in {"content-policy", "content-root"} and (
-        is_within(path, config_dir_for_root(canonical_root)) or is_within(path, canonical_root / ".houmao")
+        is_within(path, config_dir_for_root(canonical_root))
+        or is_within(path, root_houmao_overlay_dir_for_root(canonical_root))
     ):
-        return "Cleanup content targets must not resolve inside the Project Config Directory or Project-level Houmao overlay."
+        return "Cleanup content targets must not resolve inside the Project Config Directory or a Houmao state directory."
     return None
 
 
@@ -662,3 +666,7 @@ def _dedupe_targets(targets: list[CleanupTarget]) -> list[CleanupTarget]:
         seen.add(target.path)
         result.append(target)
     return result
+
+
+def _deepest_first(targets: tuple[CleanupTarget, ...]) -> tuple[CleanupTarget, ...]:
+    return tuple(sorted(targets, key=lambda target: len(target.path.parts), reverse=True))

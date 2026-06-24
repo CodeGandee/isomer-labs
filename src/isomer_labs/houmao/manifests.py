@@ -13,6 +13,7 @@ import subprocess
 from typing import Iterable, Mapping
 
 from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.project import houmao_project_dir_for_root
 from isomer_labs.runtime.models import utc_timestamp
 
 
@@ -285,7 +286,7 @@ def build_adapter_link_manifest(
             "domain_agent_team_template_id": domain_agent_team_template_id,
         },
         "houmao": {
-            "project_dir": str((houmao_project_dir or project_root / ".houmao").resolve(strict=False)),
+            "project_dir": str((houmao_project_dir or houmao_project_dir_for_root(project_root)).resolve(strict=False)),
         },
         "agent_bindings": [binding.to_json() for binding in agent_bindings],
         "provenance_refs": [

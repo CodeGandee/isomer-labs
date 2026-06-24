@@ -23,6 +23,7 @@ from isomer_labs.project import (
     find_ancestor_manifest,
     manifest_path_for_root,
     project_root_for_manifest,
+    root_houmao_overlay_dir_for_root,
 )
 from isomer_labs.runtime.models import RUNTIME_DIRECTORIES
 from isomer_labs.toml_loader import load_toml
@@ -527,7 +528,7 @@ def _path_safety_diagnostics(
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     config_dir = config_dir_for_root(root)
-    houmao_dir = root / ".houmao"
+    root_houmao_dir = root_houmao_overlay_dir_for_root(root)
     if old_root == new_root:
         diagnostics.append(
             Diagnostic(
@@ -570,14 +571,24 @@ def _path_safety_diagnostics(
                 message="Destination content root must not be the Project root.",
             )
         )
-    if is_within(new_root, config_dir) or is_within(new_root, houmao_dir):
+    if is_within(new_root, config_dir):
         diagnostics.append(
             Diagnostic(
                 code="ISO005",
                 severity="error",
                 concept=PROJECT_CONTENT_RELOCATION_CONCEPT,
                 path=new_root,
-                message="Destination content root must not live inside the Project Config Directory or Project-level Houmao overlay.",
+                message="Destination content root must not live inside the Project Config Directory.",
+            )
+        )
+    if is_within(new_root, root_houmao_dir):
+        diagnostics.append(
+            Diagnostic(
+                code="ISO005",
+                severity="error",
+                concept=PROJECT_CONTENT_RELOCATION_CONCEPT,
+                path=new_root,
+                message="Destination content root must not collide with root .houmao external Houmao state.",
             )
         )
     if new_root.exists() and not new_root.is_dir():

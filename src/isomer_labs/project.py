@@ -14,6 +14,7 @@ from isomer_labs.toml_loader import load_toml
 
 PROJECT_CONFIG_DIR_NAME = ".isomer-labs"
 PROJECT_MANIFEST_NAME = "manifest.toml"
+HOUMAO_OVERLAY_DIR_NAME = ".houmao"
 
 
 def discover_project(
@@ -64,6 +65,18 @@ def manifest_path_for_root(project_root: Path) -> Path:
 
 def config_dir_for_root(project_root: Path) -> Path:
     return canonicalize(project_root / PROJECT_CONFIG_DIR_NAME)
+
+
+def houmao_project_dir_for_root(project_root: Path) -> Path:
+    return config_dir_for_root(project_root)
+
+
+def houmao_overlay_dir_for_root(project_root: Path) -> Path:
+    return houmao_project_dir_for_root(project_root) / HOUMAO_OVERLAY_DIR_NAME
+
+
+def root_houmao_overlay_dir_for_root(project_root: Path) -> Path:
+    return canonicalize(project_root) / HOUMAO_OVERLAY_DIR_NAME
 
 
 def project_root_for_manifest(manifest_path: Path) -> Path:

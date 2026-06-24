@@ -9,6 +9,7 @@ from isomer_labs.content_layout import topic_workspace_path as default_topic_wor
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import Project, ProjectState, ResearchTopicConfig, TemplateValidationReport
 from isomer_labs.path_utils import is_within, resolve_project_path
+from isomer_labs.project import root_houmao_overlay_dir_for_root
 from isomer_labs.team_profiles import parse_topic_agent_team_profile, validate_topic_agent_team_profile
 from isomer_labs.team_templates import (
     BUILT_IN_DEEPSCI_MINI_ID,
@@ -300,6 +301,17 @@ def _validate_path_defaults(project: Project) -> list[Diagnostic]:
                     path=project.manifest_path,
                     field=field,
                     message="Project generated content root must not live inside the Project Config Directory.",
+                )
+            )
+        if key == "isomer_content_root" and is_within(resolved, root_houmao_overlay_dir_for_root(project.root)):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO005",
+                    severity="error",
+                    concept="Project generated content root",
+                    path=project.manifest_path,
+                    field=field,
+                    message="Project generated content root must not collide with root .houmao external Houmao state.",
                 )
             )
     return diagnostics

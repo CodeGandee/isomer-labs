@@ -12,6 +12,7 @@ from isomer_labs.content_layout import (
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext, ResolvedPathEntry
 from isomer_labs.path_utils import is_within, resolve_project_path
+from isomer_labs.project import root_houmao_overlay_dir_for_root
 
 
 PATH_ENV_VARS = {
@@ -162,6 +163,17 @@ def preview_paths(
                     concept="Workspace Path Resolution",
                     field=entry.surface,
                     message="Project generated content root must not live inside the Project Config Directory.",
+                )
+            )
+            continue
+        if entry.surface == "isomer_content_root" and is_within(path, root_houmao_overlay_dir_for_root(project_root)):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO005",
+                    severity="error",
+                    concept="Workspace Path Resolution",
+                    field=entry.surface,
+                    message="Project generated content root must not collide with root .houmao external Houmao state.",
                 )
             )
             continue
