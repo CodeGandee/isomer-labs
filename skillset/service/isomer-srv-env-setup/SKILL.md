@@ -1,74 +1,79 @@
 ---
 name: isomer-srv-env-setup
-description: Set up Pixi environments for a given Isomer Labs purpose. Routes to subcommand pages that teach the agent how to install, validate, and prepare topic-scoped or service-scoped Pixi environments.
-license: MIT
+description: Use when an Isomer Labs agent needs to install, validate, prepare, or repair Pixi environments for Topic Workspaces, Service Requests, Agent Workspaces, or topic-scoped execution; relevant signals include topic_standalone_pixi_bindings, isomer-cli project doctor, runtime prepare, missing pixi.lock, stale readiness, or missing TopicEnvironmentReadinessRecord.
 ---
 
 # Isomer Service Environment Setup
 
-Use this skill when you need to set up or repair a Pixi environment for an Isomer Labs purpose. The skill routes to subcommand pages; each page teaches one environment setup workflow. Do not run unrelated Pixi commands from this skill.
+Set up and validate Isomer Labs Pixi environments without launching agents or inventing runtime behavior. This skill is a router: keep the entrypoint lean, then load the one reference workflow that matches the requested environment scope.
 
-## Activation
+## Workflow
 
-- Use this skill when the user asks to set up a Pixi environment for a topic workspace, service request, agent workspace, or other Isomer Labs purpose.
-- If the operation is unclear, default to `topic-workspace`.
-- If the user invokes explicit help intent, answer from `## Help` before choosing a subcommand.
+When this skill is invoked, execute the following steps in order.
+
+1. **Handle help intent**. If the user asks for help, usage, or available functionality, answer from **Help** and stop unless they also ask for a concrete setup task.
+2. **Select one workflow** from **Reference Workflows**. If the prompt does not name a workflow, use `topic-workspace`.
+3. **Resolve required inputs** from the prompt, current repository, and Project Manifest. See **Required Inputs**.
+4. **Load the selected reference file** and execute its `## Workflow`.
+5. **Report results** using **Output Contract**.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the reference workflows, required inputs, and guardrails in this skill, then execute the plan.
+
+## Reference Workflows
+
+| Workflow | Load When | Reference |
+| --- | --- | --- |
+| `topic-workspace` | Install, validate, or prepare the shared Pixi environment for one Topic Workspace. | [references/topic-workspace.md](references/topic-workspace.md) |
+
+Load exactly one reference workflow per turn. Do not read or execute unrelated environment workflows.
+
+## Required Inputs
+
+Recover these before asking the user:
+
+| Input | Required When | Resolution |
+| --- | --- | --- |
+| workflow | Always | Use the prompt value, or default to `topic-workspace`. |
+| Project root | Always | Use the provided path or resolve from the current working directory. |
+| `topic-id` | `topic-workspace` | Read from the prompt or Project Manifest context. |
+| `manifest_path` | When a topic Pixi binding exists | Read from the active `topic_standalone_pixi_bindings` entry. |
+| `pixi_environment` | When a topic Pixi binding exists | Read from the active binding; default to `default` only when the binding omits it. |
+
+When asking for missing input, separate `Required` values from `Optional` modifiers. If no optional inputs apply, say `Optional: none for this step.`
 
 ## Help
 
-When the user asks `$isomer-srv-env-setup help`, `help for isomer-srv-env-setup`, `usage for isomer-srv-env-setup`, `available functionality for isomer-srv-env-setup`, or what this skill can do, answer from this section before choosing a subcommand, inspecting state, or asking missing-input questions. This is read-only help: do not run commands, mutate files, or alter environment state during help. If the user asks a concrete task such as "help me set up the topic workspace Pixi env for topic X", route to the matching subcommand instead of stopping at generic help.
+`isomer-srv-env-setup` prepares Isomer Labs Pixi environments for service-safe topic work. The available workflow is:
 
-Purpose: teach agents how to set up Pixi environments for Isomer Labs purposes.
+| Workflow | Purpose |
+| --- | --- |
+| `topic-workspace` | Prepare the shared Topic Workspace Pixi environment, record readiness, and validate it before launch-facing work. |
 
-Available subcommands:
-
-- `topic-workspace`: set up the Pixi environment for a topic-level agent team workspace.
-
-Common starting prompts:
+Example prompts:
 
 - `$isomer-srv-env-setup help`
 - `$isomer-srv-env-setup topic-workspace <topic-id>`
 - `$isomer-srv-env-setup topic-workspace for <topic-id>`
 
-Related skills and boundaries:
+## Output Contract
 
-- Use `houmao-agent-instance` or `houmao-agent-definition` to launch agents after the environment is ready.
-- Use `houmao-project-mgr` for Houmao project overlay lifecycle, not Pixi environment installation.
-- Use `isomer-cli project doctor` and `isomer-cli project runtime` commands as described in the subcommand pages; do not invent equivalent behavior.
+Report:
 
-## Subcommands
-
-| Subcommand | Page | Use when |
-| --- | --- | --- |
-| `topic-workspace` | [subcommands/topic-workspace.md](subcommands/topic-workspace.md) | You need to install, validate, or prepare the Pixi environment for a Topic Workspace. |
-
-Load exactly one subcommand page per turn. Read only the page that matches the user's request.
-
-## Required Inputs
-
-Recover these from the prompt, current repo, and Project Manifest before asking questions:
-
-| Input | Required when |
-| --- | --- |
-| subcommand | Not safely inferred; default to `topic-workspace` when unclear. |
-| `topic-id` | `topic-workspace` subcommand. |
-| Project root | Resolve from the current working directory or a provided path. |
-| `manifest_path` | Optional; read from `topic_standalone_pixi_bindings` in the Project Manifest when present. |
-| `pixi_environment` | Optional; read from the active binding when present; otherwise use `default`. |
-
-When asking for missing input, separate `Required` values from `Optional` modifiers. If no optional inputs apply, say `Optional: none for this step.`
-
-## Routing
-
-1. Identify the subcommand from the prompt. If it is missing or ambiguous, default to `topic-workspace`.
-2. Load the matching subcommand page from the table above.
-3. Follow that page's steps in order.
-4. Report the result of the last command and any readiness status.
+- `workflow`: selected workflow name.
+- `project_root`: resolved Isomer Project root.
+- `research_topic_id`: selected topic when relevant.
+- `manifest_path`: Pixi manifest path when relevant.
+- `pixi_environment`: selected Pixi environment when relevant.
+- `commands_run`: commands executed, in order.
+- `readiness_status`: ready, failed, blocked, stale, superseded, or not checked.
+- `blockers`: missing inputs, failed preconditions, command failures, or repair requirements.
+- `next_action`: safe follow-up, repair route, or stop condition.
 
 ## Guardrails
 
-- Do not install or mutate Topic Workspace environments without confirming the target Topic Workspace and active Pixi binding.
-- Do not treat Project-root Pixi environments as the default agent execution environment.
+- Do not install or mutate a Topic Workspace environment until the target Topic Workspace and active Pixi binding are confirmed from the Project Manifest.
+- Do not treat the Project-root Pixi environment as the default agent execution environment.
 - Do not create per-agent Pixi environments unless a Service Request explicitly authorizes it.
 - Do not skip `isomer-cli project doctor` read-only validation before mutating preparation steps.
-- Do not silently infer `topic_standalone_pixi_bindings` from directory names; always read the Project Manifest.
+- Do not infer `topic_standalone_pixi_bindings` from directory names; always read the Project Manifest.
+- Do not launch Houmao agents, create Agent Instances, mutate unrelated Workspace Runtime records, or perform GUI work from this skill.

@@ -1,48 +1,62 @@
-# Topic Workspace Pixi Environment Setup
+# Topic Workspace Pixi Environment
 
-Use this subcommand to set up the Pixi environment for a topic-level agent team workspace. The Topic Workspace Pixi environment is the shared default Python environment for all Agent Workspaces under one Research Topic.
+Use this workflow to set up the shared Pixi environment for one Topic Workspace. The Topic Workspace Pixi environment is the default Python environment for all Agent Workspaces under one Research Topic unless an explicit Service Request authorizes a narrower environment.
 
-## When to Use
+## Contents
 
-Use `topic-workspace` when:
+- [Workflow](#workflow)
+- [Required Inputs](#required-inputs)
+- [Preconditions](#preconditions)
+- [Setup Commands](#setup-commands)
+- [Topic Workspace Pixi Manifest](#topic-workspace-pixi-manifest)
+- [Project Manifest Binding](#project-manifest-binding)
+- [Readiness States](#readiness-states)
+- [Repair and Divergence](#repair-and-divergence)
+- [Guardrails](#guardrails)
 
-- a new Topic Workspace needs its Pixi environment installed for the first time;
-- the Topic Workspace Pixi manifest or lockfile changed and the environment must be refreshed;
-- `isomer-cli project doctor --topic <topic-id>` reports a missing or stale environment;
-- an upstream plan asks to prepare topic environment readiness before launching agents.
+## Workflow
 
-This subcommand covers Pixi installation, read-only validation, runtime preparation, and readiness checks. It does not cover Houmao agent launch, mailbox setup, or GUI rendering.
+When this reference workflow is selected, execute the following steps in order.
+
+1. **Resolve inputs** from the prompt, current repository, and Project Manifest. See **Required Inputs**.
+2. **Check preconditions** before running setup commands. See **Preconditions**.
+3. **Run setup commands** from the Project root in the order defined by **Setup Commands**.
+4. **Inspect readiness** using **Readiness States** and **Repair and Divergence**.
+5. **Report the result** using the parent skill's output contract.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the required inputs, preconditions, setup commands, and guardrails in this reference, then execute the plan.
 
 ## Required Inputs
 
-Recover these from the prompt, current repo, and Project Manifest before asking questions:
+Recover these before asking the user:
 
-| Input | Required when |
-| --- | --- |
-| `topic-id` | Always. |
-| Project root | Resolve from the current working directory or a provided path. |
-| `manifest_path` | Optional; read from the active `topic_standalone_pixi_bindings` entry for the topic. |
-| `pixi_environment` | Optional; read from the active binding; default to `default` if absent. |
+| Input | Required When | Resolution |
+| --- | --- | --- |
+| `topic-id` | Always | Read from the prompt or Project Manifest context. |
+| Project root | Always | Use the provided path or resolve from the current working directory. |
+| `manifest_path` | Always for setup | Read from the active `topic_standalone_pixi_bindings` entry for the topic. |
+| `pixi_environment` | Always for setup | Read from the active binding; use `default` only when the binding omits it. |
 
 When asking for missing input, separate `Required` values from `Optional` modifiers. If no optional inputs apply, say `Optional: none for this step.`
 
-## Pre-conditions
+## Preconditions
 
 Before running setup commands:
 
 1. Confirm the current working directory is inside the Isomer Project root.
-2. Confirm the Project Manifest exists at `.isomer-labs/manifest.toml`.
+2. Confirm `.isomer-labs/manifest.toml` exists.
 3. Confirm the Research Topic is declared in the Project Manifest.
 4. Confirm the Topic Workspace is declared under `topic_workspaces` in the Project Manifest.
-5. Confirm the active `topic_standalone_pixi_bindings` entry for the topic exists and points to a manifest inside the Project root.
+5. Confirm the active `topic_standalone_pixi_bindings` entry for the topic exists.
+6. Confirm the active binding's `manifest_path` points inside the Project root.
 
-If any pre-condition fails, stop and report the failure. Do not guess paths or bindings.
+If any precondition fails, stop and report the failure. Do not guess paths or bindings.
 
-## Setup Steps
+## Setup Commands
 
-Run these steps from the Project root in order.
+Run these commands from the Project root in order.
 
-### 1. Install Project-level Pixi dependencies
+### 1. Install Project-Level Pixi Dependencies
 
 The Project-level Pixi environment supplies Isomer platform tools such as `isomer-cli`.
 
@@ -52,13 +66,13 @@ pixi install
 
 ### 2. Validate the Project Manifest
 
-Run read-only validation before any mutating work.
+Run read-only validation before mutating topic environment state.
 
 ```bash
 pixi run isomer-cli --print-json project validate
 ```
 
-### 3. Run read-only topic diagnostics
+### 3. Run Read-Only Topic Diagnostics
 
 `project doctor` does not install environments or mutate Workspace Runtime.
 
@@ -74,7 +88,7 @@ Inspect the output for:
 - a missing `pixi.lock`;
 - `requires-pixi` version mismatches.
 
-### 4. Install the Topic Workspace Pixi environment
+### 4. Install the Topic Workspace Pixi Environment
 
 Use the manifest path from the active binding.
 
@@ -82,7 +96,7 @@ Use the manifest path from the active binding.
 pixi install --manifest-path <manifest-path>
 ```
 
-For example, if `manifest_path` is `isomer-content/topic-ws/<topic-id>/pixi.toml`:
+Example:
 
 ```bash
 pixi install --manifest-path isomer-content/topic-ws/<topic-id>/pixi.toml
@@ -96,7 +110,7 @@ This creates runtime directories such as `artifacts/`, `agents/`, `tasks/`, `run
 pixi run isomer-cli --print-json project runtime init --topic <topic-id>
 ```
 
-### 6. Record topic environment readiness
+### 6. Record Topic Environment Readiness
 
 `project runtime prepare` checks the active binding and writes a `TopicEnvironmentReadinessRecord`. It does not install dependencies or repair the environment.
 
@@ -104,23 +118,25 @@ pixi run isomer-cli --print-json project runtime init --topic <topic-id>
 pixi run isomer-cli --print-json project runtime prepare --topic <topic-id>
 ```
 
-### 7. Validate readiness before launch-facing work
+### 7. Validate Readiness Before Launch-Facing Work
 
 ```bash
 pixi run isomer-cli --print-json project runtime validate --topic <topic-id> --require-ready-readiness
 ```
 
-If this command reports that readiness is not `ready`, stop and route the repair to a Service Request.
+If this command reports that readiness is not `ready`, stop and route the repair through a Service Request.
 
 ## Topic Workspace Pixi Manifest
 
-The Topic Workspace Pixi manifest, typically `isomer-content/topic-ws/<topic-id>/pixi.toml` or `isomer-content/topic-ws/<topic-id>/pyproject.toml` for fresh Projects, or `<content-dir>/topic-ws/<topic-id>/pixi.toml` when Project init selected a custom content root, declares:
+The Topic Workspace Pixi manifest is usually one of:
 
-- the topic-scoped Python version;
-- research dependencies;
-- optional named environments for task-specific dependency sets.
+- `isomer-content/topic-ws/<topic-id>/pixi.toml`;
+- `isomer-content/topic-ws/<topic-id>/pyproject.toml` for fresh Projects;
+- `<content-dir>/topic-ws/<topic-id>/pixi.toml` when Project init selected a custom content root.
 
-A minimal example in `pyproject.toml` form:
+It declares the topic-scoped Python version, research dependencies, and optional named environments for task-specific dependency sets.
+
+Minimal `pyproject.toml` form:
 
 ```toml
 [project]
@@ -174,7 +190,7 @@ Any mutating environment work beyond `pixi install` is a Service Request:
 - adding a new named environment to the Topic Workspace manifest;
 - creating a divergent environment for a specific Agent Workspace.
 
-The Service Request must name the target scope, the task, the expected output, and the completion observation rules. The Service Agent Instance records support Artifacts and Provenance Records.
+The Service Request must name the target scope, task, expected output, and completion observation rules. The Service Agent Instance records support Artifacts and Provenance Records.
 
 ## Guardrails
 
@@ -184,11 +200,3 @@ The Service Request must name the target scope, the task, the expected output, a
 - Do not create per-agent Pixi manifests or `.pixi/` directories unless a Service Request authorizes it.
 - Do not regenerate `pixi.lock` silently; route lockfile changes through a Service Request.
 - Do not proceed to launch-facing work if `isomer-cli project runtime validate --require-ready-readiness` fails.
-
-## Related Documents
-
-- `docs/runtime-and-files.md`: durable runtime files, Topic Workspace files, and Workspace Runtime records.
-- `.imsight-arts/project-explore/design-choice/design-topic-workspace-pixi-workspace-standard.md`: accepted Topic Workspace Pixi workspace standard.
-- `.imsight-arts/project-explore/adrs/0025-project-manifest-owns-topic-pixi-env-bindings.md`: Project Manifest owns bindings.
-- `.imsight-arts/project-explore/adrs/0026-standalone-pixi-isolation-uses-separate-bindings.md`: standalone binding table.
-- `.imsight-arts/project-explore/adrs/0027-topic-workspaces-are-default-pixi-workspaces.md`: Topic Workspaces are default Pixi workspaces.
