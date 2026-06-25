@@ -31,7 +31,7 @@ Load only the subcommand pages needed for the user's task.
 | `cleanup-project` | Plan or apply cleanup of selected Isomer-managed Project material | [references/cleanup-project.md](references/cleanup-project.md) |
 | `move-content` | Plan or apply relocation of the Project generated content root | [references/move-content.md](references/move-content.md) |
 | `check-project` | Validate and diagnose an existing Project without mutating runtime or live Houmao state | [references/check-project.md](references/check-project.md) |
-| `list-topics` | List registered Research Topics and Topic Workspaces through Isomer CLI surfaces | [references/list-topics.md](references/list-topics.md) |
+| `list-topics` | List and inspect registered Research Topics and Topic Workspaces through Isomer CLI surfaces | [references/list-topics.md](references/list-topics.md) |
 | `show-context` | Show Effective Topic Context and selected refs for topic-scoped work | [references/show-context.md](references/show-context.md) |
 | `init-runtime` | Initialize or reopen Workspace Runtime for a selected Research Topic | [references/init-runtime.md](references/init-runtime.md) |
 | `prep-runtime` | Prepare and validate launch-facing Topic Environment Readiness | [references/prep-runtime.md](references/prep-runtime.md) |
@@ -57,7 +57,9 @@ When reporting results, include the fields that apply:
 
 ## Guardrails
 
-Use `isomer-cli project init` for fresh Project bootstrap. A successful init creates `.isomer-labs/`, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), the first Topic Workspace under `isomer-content/topic-ws/<topic-id>/` or `<content-dir>/topic-ws/<topic-id>/`, and the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`, but it must not create Workspace Runtime state, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers. Root `.houmao/` is external user-owned Houmao state if present, not Isomer-managed Project bootstrap state.
+Use `isomer-cli project init` for fresh Project bootstrap. A successful init creates `.isomer-labs/`, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), generated content-root policy files, and the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`, but it must not create a Research Topic, Topic Workspace, Workspace Runtime state, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers. Root `.houmao/` is external user-owned Houmao state if present, not Isomer-managed Project bootstrap state.
+
+Use `isomer-cli project topics create <topic-id> --statement "<research topic>"` as the authoritative Research Topic creation path. It normally creates `isomer-content/topic-ws/<topic-id>/`; when init selected `--content-dir <content-dir>`, it normally creates `<content-dir>/topic-ws/<topic-id>/`. Use `project topics show`, `project topics update`, and plan-first `project topics delete <topic-id> --dry-run` before `project topics delete <topic-id> --yes` for topic lifecycle changes.
 
 Use `isomer-cli project cleanup --part <part> --dry-run` before destructive cleanup, and use `isomer-cli project cleanup --part <part> --yes` only after the user has reviewed the plan. Preserve unknown files by default; whole content-root removal requires `--purge-content-root`.
 

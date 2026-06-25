@@ -51,6 +51,17 @@ from isomer_labs.project_content_root import (
     render_content_root_move_text,
 )
 from isomer_labs.rendering import render_key_values
+from isomer_labs.research_topics import (
+    create_research_topic,
+    delete_research_topic,
+    plan_delete_research_topic,
+    render_topic_create_text,
+    render_topic_delete_text,
+    render_topic_show_text,
+    render_topic_update_text,
+    show_research_topic,
+    update_research_topic,
+)
 from isomer_labs.runtime.store import (
     initialize_workspace_runtime,
     open_workspace_runtime,
@@ -86,6 +97,10 @@ Command surface:
   project doctor
   project validate
   project topics list
+  project topics show
+  project topics create
+  project topics update
+  project topics delete
   project workspaces list
   project context show
   project paths preview
@@ -184,7 +199,24 @@ def project_group(
 
 def _cmd_init(options: CliOptions) -> int:
     project_root = Path(_value(options, "project") or os.getcwd())
-    topic_id = _value(options, "topic_id_option") or _value(options, "topic_id") or "default"
+    legacy_topic_id = _value(options, "topic_id_option") or _value(options, "topic_id")
+    legacy_topic_statement = _value(options, "topic_statement")
+    if legacy_topic_id is not None or legacy_topic_statement is not None:
+        diagnostics = [
+            Diagnostic(
+                code="ISO003",
+                severity="error",
+                concept="Project initialization",
+                field="topic_id",
+                message="Project init does not create Research Topics. Create one explicitly with `isomer-cli project topics create <topic-id> --statement \"<research topic>\"`.",
+            )
+        ]
+        payload = {
+            "ok": False,
+            "mutated": False,
+            "project_root": str(project_root.resolve(strict=False)),
+        }
+        return _emit("init", options, payload, diagnostics, [])
     nested_project = find_ancestor_manifest(project_root)
     if nested_project is not None:
         ancestor_root = project_root_for_manifest(nested_project)
@@ -207,8 +239,6 @@ def _cmd_init(options: CliOptions) -> int:
             return _emit("project init", options, payload, diagnostics, [])
     result = initialize_project(
         project_root,
-        topic_id=topic_id,
-        topic_statement=_value(options, "topic_statement"),
         content_dir=_value(options, "content_dir"),
         env=os.environ,
     )
@@ -218,11 +248,9 @@ def _cmd_init(options: CliOptions) -> int:
         "ok": not has_errors(diagnostics),
         "mutated": not has_errors(diagnostics),
         "project_root": str(result.project_root),
-        "research_topic_id": result.research_topic_id,
         "project_manifest_path": str(result.project_manifest_path),
-        "topic_config_path": str(result.topic_config_path),
         "content_root_path": str(result.content_root_path),
-        "topic_workspace_path": str(result.topic_workspace_path),
+        "topic_workspace_base_path": str(result.topic_workspace_base_path),
         "houmao_project_dir": str(result.houmao_project_dir),
         "houmao_overlay_dir": str(result.houmao_overlay_dir),
         "houmao_bootstrap": houmao_bootstrap,
@@ -231,13 +259,12 @@ def _cmd_init(options: CliOptions) -> int:
     if not diagnostics:
         lines = [
             f"Initialized Project: {result.project_root}",
-            f"Research Topic: {result.research_topic_id}",
             f"Project Manifest: {result.project_manifest_path}",
-            f"Research Topic Config: {result.topic_config_path}",
             f"Generated Content Root: {result.content_root_path}",
-            f"Topic Workspace: {result.topic_workspace_path}",
+            f"Topic Workspace Base: {result.topic_workspace_base_path}",
             f"Houmao Project Directory: {result.houmao_project_dir}",
             f"Houmao Overlay: {result.houmao_overlay_dir}",
+            "Research Topics: none registered; create one with `isomer-cli project topics create <topic-id> --statement \"<research topic>\"`.",
         ]
     return _emit("init", options, payload, diagnostics, lines)
 
@@ -345,6 +372,83 @@ def _cmd_topics_list(options: CliOptions) -> int:
         for topic in topics
     )
     return _emit("topics list", options, payload, diagnostics, lines)
+
+
+def _cmd_topics_show(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None:
+        payload = {"ok": False, "mutated": False, "topic": None}
+        return _emit("topics show", options, payload, diagnostics, [])
+    state = build_project_state(project)
+    diagnostics.extend(state.diagnostics)
+    topic_id = _value(options, "topic_id")
+    result = show_research_topic(state, topic_id)
+    diagnostics.extend(result.diagnostics)
+    return _emit("topics show", options, result.to_json(), diagnostics, render_topic_show_text(result))
+
+
+def _cmd_topics_create(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None:
+        payload = {"ok": False, "mutated": False}
+        return _emit("topics create", options, payload, diagnostics, [])
+    state = build_project_state(project)
+    diagnostics.extend(state.diagnostics)
+    if has_errors(diagnostics):
+        payload = {"ok": False, "mutated": False}
+        return _emit("topics create", options, payload, diagnostics, [])
+    result = create_research_topic(
+        project,
+        topic_id=_value(options, "topic_id"),
+        statement=_value(options, "topic_statement"),
+        workspace_dir=_value(options, "topic_workspace_dir"),
+        set_default=bool(_value(options, "topic_set_default")),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit("topics create", options, result.to_json(), diagnostics, render_topic_create_text(result))
+
+
+def _cmd_topics_update(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None:
+        payload = {"ok": False, "mutated": False}
+        return _emit("topics update", options, payload, diagnostics, [])
+    state = build_project_state(project)
+    diagnostics.extend(state.diagnostics)
+    if has_errors(diagnostics):
+        payload = {"ok": False, "mutated": False}
+        return _emit("topics update", options, payload, diagnostics, [])
+    result = update_research_topic(
+        state,
+        topic_id=_value(options, "topic_id"),
+        statement=_value(options, "topic_statement"),
+        status=_value(options, "topic_status"),
+        set_default=bool(_value(options, "topic_set_default")),
+        new_id=_value(options, "topic_new_id"),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit("topics update", options, result.to_json(), diagnostics, render_topic_update_text(result))
+
+
+def _cmd_topics_delete(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None:
+        payload = {"ok": False, "mutated": False}
+        return _emit("topics delete", options, payload, diagnostics, [])
+    state = build_project_state(project)
+    diagnostics.extend(state.diagnostics)
+    if has_errors(diagnostics):
+        payload = {"ok": False, "mutated": False}
+        return _emit("topics delete", options, payload, diagnostics, [])
+    plan = plan_delete_research_topic(
+        state,
+        topic_id=_value(options, "topic_id"),
+        dry_run=bool(_value(options, "topic_delete_dry_run")),
+        yes=bool(_value(options, "topic_delete_yes")),
+    )
+    result = delete_research_topic(plan, project)
+    diagnostics.extend(result.diagnostics)
+    return _emit("topics delete", options, result.to_json(), diagnostics, render_topic_delete_text(result))
 
 
 def _cmd_workspaces_list(options: CliOptions) -> int:

@@ -55,12 +55,18 @@ def resolve_effective_topic_context(
     diagnostics.extend(candidate_diagnostics)
     selected = next((candidate for candidate in candidates if candidate.research_topic_id is not None), None)
     if selected is None:
+        message = "No Research Topic could be selected from explicit selectors, current directory, environment, local active context, or Project Manifest defaults."
+        if not state.project.manifest.research_topics:
+            message = (
+                "Project Manifest registers no Research Topics. Create one with "
+                '`isomer-cli project topics create <topic-id> --statement "<research topic>"` before running topic-scoped commands.'
+            )
         diagnostics.append(
             Diagnostic(
                 code="ISO013",
                 severity="error",
                 concept="Effective Topic Context",
-                message="No Research Topic could be selected from explicit selectors, current directory, environment, local active context, or Project Manifest defaults.",
+                message=message,
             )
         )
         return None, diagnostics

@@ -8,7 +8,7 @@ The adapter consumes approved Isomer launch inputs: the materialized Topic Agent
 
 ## Project Bootstrap Overlay
 
-Fresh Project initialization creates a Project-level Houmao overlay at `<project-root>/.houmao/` through the same CLI-backed Houmao boundary used elsewhere in Isomer. `isomer-cli project init` uses this overlay as Project bootstrap state; it does not create Workspace Runtime records, per-Agent Team Instance adapter material, mailboxes, gateways, launch dossiers, sessions, or live managed agents.
+Fresh Project initialization creates an Isomer-managed Project-level Houmao overlay at `<project-root>/.isomer-labs/.houmao/` through the same CLI-backed Houmao boundary used elsewhere in Isomer. `isomer-cli project init` uses this overlay as Project bootstrap state; it does not create Workspace Runtime records, per-Agent Team Instance adapter material, mailboxes, gateways, launch dossiers, sessions, or live managed agents.
 
 This Project-level overlay is separate from the generated adapter runtime overlay under `<topic-workspace>/runtime/adapters/houmao/<agent-team-instance-id>/houmao-project-overlay/`. The first belongs to Project setup. The second belongs to launch material for one Agent Team Instance.
 

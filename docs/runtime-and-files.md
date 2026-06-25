@@ -4,7 +4,7 @@ This page describes durable runtime files, generated adapter files, manifests, p
 
 ## Project Files
 
-A Project is a user-owned directory tree. After `isomer-cli project init`, the Project Config Directory `.isomer-labs/` contains:
+A Project is a user-owned directory tree. After `isomer-cli project init`, the Project Config Directory `.isomer-labs/` contains Project bootstrap state; after explicit topic creation it also contains Research Topic registrations and config files. Common entries include:
 
 - `manifest.toml` — the Project Manifest, the discovery authority for Research Topics, Topic Workspaces, Topic Workspace Pixi workspace bindings through `topic_standalone_pixi_bindings`, optional Project-root Pixi environment bindings through `topic_pixi_environment_bindings`, Domain Agent Team Template refs, the single Topic Agent Team Profile Bundle ref for each Research Topic, and project defaults.
 - `research-topics/<topic-id>.toml` — Research Topic Config files with topic defaults and refs. Research Topic Config files do not own Pixi environment bindings or Workspace Runtime state.
@@ -14,7 +14,7 @@ A Project is a user-owned directory tree. After `isomer-cli project init`, the P
 
 The Project Config Directory should not contain default cache, temporary files, generated topic bodies, or schema directories. System-owned schemas are Isomer built-in artifacts queried through `isomer-cli schemas list`.
 
-Successful Project initialization also creates the Project-level Houmao overlay at `.houmao/` and the selected generated content root, which defaults to `isomer-content/` and can be set during initialization with `--content-dir <content-dir>`. The content root contains `README.md` and `.gitignore` policy files; its generated `.gitignore` ignores generated content by default while keeping those two policy files trackable. The Houmao overlay belongs to Project bootstrap and is separate from per-Agent Team Instance adapter material under a Topic Workspace runtime path.
+Successful Project initialization also creates the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/` and the selected generated content root, which defaults to `isomer-content/` and can be set during initialization with `--content-dir <content-dir>`. The content root contains `README.md` and `.gitignore` policy files; its generated `.gitignore` ignores generated content by default while keeping those two policy files trackable. The Houmao overlay belongs to Project bootstrap and is separate from per-Agent Team Instance adapter material under a Topic Workspace runtime path.
 
 ## Topic Workspace Files
 
@@ -116,7 +116,7 @@ Payloads are redacted before storage if they contain secret-like fields such as 
 The following are durable records:
 
 - Project Manifest and Research Topic Config files.
-- Project-level Houmao overlay at `.houmao/`.
+- Project-level Houmao overlay at `.isomer-labs/.houmao/`.
 - Topic Workspace Pixi manifests and lockfiles.
 - Topic Agent Team Profile Bundles under `<topic-workspace>/team-profile/`.
 - Workspace Runtime `state.sqlite` and its records.
@@ -140,7 +140,7 @@ The following are not durable research state and may be regenerated or lost:
 | Surface | Typical path | Durable? |
 |---|---|---|
 | Project Manifest | `.isomer-labs/manifest.toml` | yes |
-| Project-level Houmao overlay | `.houmao/` | yes |
+| Project-level Houmao overlay | `.isomer-labs/.houmao/` | yes |
 | Research Topic Config | `.isomer-labs/research-topics/<id>.toml` | yes |
 | Generated content root | `isomer-content/` or selected `<content-dir>/` | yes for policy files; generated contents ignored by default |
 | Topic Workspace | `isomer-content/topic-ws/<id>/` or `<content-dir>/topic-ws/<id>/` | yes (directory) |

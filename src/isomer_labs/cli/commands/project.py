@@ -11,7 +11,11 @@ from isomer_labs.cli.app import (
     _cmd_init,
     _cmd_paths_preview,
     _cmd_schemas_list,
+    _cmd_topics_create,
+    _cmd_topics_delete,
     _cmd_topics_list,
+    _cmd_topics_show,
+    _cmd_topics_update,
     _cmd_validate,
     _cmd_workspaces_list,
 )
@@ -24,11 +28,14 @@ from isomer_labs.project_cleanup import CLEANUP_PARTS
 
 
 def register_project_commands(app: click.Group) -> None:
-    @app.command(name="init", help="Initialize the smallest valid Project configuration.")
+    @app.command(
+        name="init",
+        help="Initialize the smallest valid Project configuration.",
+        context_settings={"allow_extra_args": True},
+    )
     @_common_options
-    @click.argument("topic_id", required=False)
-    @click.option("--topic-id", "topic_id_option", help="Research Topic id to initialize.")
-    @click.option("--topic-statement", help="Short inline Research Topic statement.")
+    @click.option("--topic-id", "topic_id_option", hidden=True, help="Deprecated. Use project topics create.")
+    @click.option("--topic-statement", hidden=True, help="Deprecated. Use project topics create.")
     @click.option("--content-dir", help="Project-local generated content root to create during init.")
     @click.pass_context
     def init_command(
@@ -37,11 +44,11 @@ def register_project_commands(app: click.Group) -> None:
         manifest: str | None = None,
         output_format: str | None = None,
         json_output: bool = False,
-        topic_id: str | None = None,
         topic_id_option: str | None = None,
         topic_statement: str | None = None,
         content_dir: str | None = None,
     ) -> int:
+        topic_id = ctx.args[0] if ctx.args else None
         return _cmd_init(
             _merge_options(
                 ctx,
@@ -184,6 +191,128 @@ def register_project_commands(app: click.Group) -> None:
                 manifest=manifest,
                 output_format=output_format,
                 json_output=json_output,
+            )
+        )
+
+    @topics_group.command(name="show", help="Show one registered Research Topic.")
+    @_common_options
+    @click.argument("topic_id")
+    @click.pass_context
+    def topics_show_command(
+        ctx: click.Context,
+        topic_id: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_topics_show(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                topic_id=topic_id,
+            )
+        )
+
+
+    @topics_group.command(name="create", help="Create and register a Research Topic.")
+    @_common_options
+    @click.argument("topic_id")
+    @click.option("--statement", "topic_statement", help="Concrete Research Topic statement.")
+    @click.option("--workspace-dir", "topic_workspace_dir", help="Project-local Topic Workspace path.")
+    @click.option("--set-default", "topic_set_default", is_flag=True, help="Set Project defaults to this topic.")
+    @click.pass_context
+    def topics_create_command(
+        ctx: click.Context,
+        topic_id: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        topic_statement: str | None = None,
+        topic_workspace_dir: str | None = None,
+        topic_set_default: bool = False,
+    ) -> int:
+        return _cmd_topics_create(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                topic_id=topic_id,
+                topic_statement=topic_statement,
+                topic_workspace_dir=topic_workspace_dir,
+                topic_set_default=topic_set_default,
+            )
+        )
+
+
+    @topics_group.command(name="update", help="Update bounded Research Topic metadata.")
+    @_common_options
+    @click.argument("topic_id")
+    @click.option("--statement", "topic_statement", help="Concrete Research Topic statement.")
+    @click.option("--status", "topic_status", help="Research Topic status. Must be active or archived.")
+    @click.option("--set-default", "topic_set_default", is_flag=True, help="Set Project defaults to this topic.")
+    @click.option("--new-id", "topic_new_id", hidden=True, help="Unsupported. Topic rename is not available.")
+    @click.pass_context
+    def topics_update_command(
+        ctx: click.Context,
+        topic_id: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        topic_statement: str | None = None,
+        topic_status: str | None = None,
+        topic_set_default: bool = False,
+        topic_new_id: str | None = None,
+    ) -> int:
+        return _cmd_topics_update(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                topic_id=topic_id,
+                topic_statement=topic_statement,
+                topic_status=topic_status,
+                topic_set_default=topic_set_default,
+                topic_new_id=topic_new_id,
+            )
+        )
+
+
+    @topics_group.command(name="delete", help="Plan or apply Research Topic deletion.")
+    @_common_options
+    @click.argument("topic_id")
+    @click.option("--dry-run", "topic_delete_dry_run", is_flag=True, help="Build the deletion plan without modifying files.")
+    @click.option("--yes", "topic_delete_yes", is_flag=True, help="Apply the reviewed deletion plan.")
+    @click.pass_context
+    def topics_delete_command(
+        ctx: click.Context,
+        topic_id: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        topic_delete_dry_run: bool = False,
+        topic_delete_yes: bool = False,
+    ) -> int:
+        return _cmd_topics_delete(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                topic_id=topic_id,
+                topic_delete_dry_run=topic_delete_dry_run,
+                topic_delete_yes=topic_delete_yes,
             )
         )
 

@@ -18,11 +18,11 @@ pixi run isomer-cli project init
 pixi run isomer-cli --print-json project validate
 ```
 
-`project init` mutates the Project filesystem by creating `.houmao/`, `.isomer-labs/`, the first Research Topic Config, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), and the first Topic Workspace under `isomer-content/topic-ws/<topic-id>/` or `<content-dir>/topic-ws/<topic-id>/`. If a Project already exists but the command cannot find it, use `project --root <path>` to point to the correct root.
+`project init` mutates the Project filesystem by creating `.isomer-labs/`, the Isomer-managed Houmao overlay under `.isomer-labs/.houmao/`, and the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied). It does not create a Research Topic Config or Topic Workspace; use `project topics create <topic-id> --statement "<research topic>"` for that. If a Project already exists but the command cannot find it, use `project --root <path>` to point to the correct root.
 
 ## Houmao Project Bootstrap Failure
 
-Symptom: `isomer-cli project init` reports Houmao command resolution, invalid JSON, timeout, nonzero exit, or missing `.houmao/` diagnostics and does not write `.isomer-labs/manifest.toml`.
+Symptom: `isomer-cli project init` reports Houmao command resolution, invalid JSON, timeout, nonzero exit, or missing `.isomer-labs/.houmao/` diagnostics and does not write `.isomer-labs/manifest.toml`.
 
 Diagnosis:
 
@@ -35,7 +35,7 @@ Recovery:
 
 - Set `ISOMER_HOUMAO_COMMAND` to the supported Houmao manager command, add `houmao-mgr` to `PATH`, or expose the local checkout at `extern/orphan/houmao`.
 - Rerun `pixi run isomer-cli project init` after the Houmao command boundary works.
-- Do not create `.isomer-labs/` by hand as a workaround; fresh init should create `.houmao/`, `.isomer-labs/`, and the selected generated content root together.
+- Do not create `.isomer-labs/` by hand as a workaround; fresh init should create `.isomer-labs/`, `.isomer-labs/.houmao/`, and the selected generated content root together.
 
 ## Pixi or Readiness Failures
 
@@ -44,8 +44,8 @@ Symptom: `project doctor` or `project runtime prepare` reports missing Pixi, mis
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project doctor --topic default
-pixi run isomer-cli --print-json project runtime validate --topic default --require-ready-readiness
+pixi run isomer-cli --print-json project doctor --topic my-topic
+pixi run isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
 ```
 
 Recovery:
@@ -64,7 +64,7 @@ Recovery: add explicit bindings. For example:
 
 ```toml
 [[topic_pixi_environment_bindings]]
-research_topic_id = "default"
+research_topic_id = "my-topic"
 pixi_environment = "default"
 purpose = "runtime"
 ```
@@ -76,7 +76,7 @@ Symptom: `project runtime init` reports an unsupported schema version.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project runtime inspect --topic default
+pixi run isomer-cli --print-json project runtime inspect --topic my-topic
 ```
 
 Recovery:
@@ -91,8 +91,8 @@ Symptom: `project runtime validate` reports missing Agent Workspace directories.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances show <id> --topic default
-pixi run isomer-cli --print-json project paths preview --topic default
+pixi run isomer-cli --print-json project team-instances show <id> --topic my-topic
+pixi run isomer-cli --print-json project paths preview --topic my-topic
 ```
 
 Recovery:
@@ -121,8 +121,8 @@ Symptom: `inspect-live --integrity` or `reconcile` reports material drift.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic default --adapter houmao --integrity
-pixi run isomer-cli --print-json project team-instances reconcile <id> --topic default
+pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao --integrity
+pixi run isomer-cli --print-json project team-instances reconcile <id> --topic my-topic
 ```
 
 Recovery:
@@ -137,8 +137,8 @@ Symptom: `project team-instances launch` returned a partial or failed status, bu
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic default --adapter houmao
-pixi run isomer-cli --print-json project runtime validate --topic default
+pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao
+pixi run isomer-cli --print-json project runtime validate --topic my-topic
 ```
 
 Recovery:
@@ -154,8 +154,8 @@ Symptom: `project team-instances stop` returned partial or failed, and some agen
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic default --adapter houmao
-pixi run isomer-cli --print-json project runtime validate --topic default
+pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao
+pixi run isomer-cli --print-json project runtime validate --topic my-topic
 ```
 
 Recovery:
@@ -171,9 +171,9 @@ Symptom: `project handoffs dispatch` returns `ISO070`, `ISO077`, or another adap
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project runtime validate --topic default --require-ready-readiness
-pixi run isomer-cli --print-json project team-instances show <id> --topic default
-pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic default --adapter houmao
+pixi run isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
+pixi run isomer-cli --print-json project team-instances show <id> --topic my-topic
+pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao
 ```
 
 Recovery:
@@ -193,7 +193,7 @@ Recovery:
 
 ```bash
 pixi run isomer-cli --print-json project handoffs normalize <handoff-id> \
-  --topic default \
+  --topic my-topic \
   --status accepted \
   --signal-observation <signal-observation-id> \
   --output-artifact artifact:default:accepted-result
@@ -228,8 +228,8 @@ Symptom: `project runtime validate` reports `ISO045` for a handoff.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances show <id> --topic default
-pixi run isomer-cli --print-json project runtime validate --topic default
+pixi run isomer-cli --print-json project team-instances show <id> --topic my-topic
+pixi run isomer-cli --print-json project runtime validate --topic my-topic
 ```
 
 Recovery:
@@ -250,8 +250,8 @@ Diagnosis:
 Recovery:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances reconcile <id> --topic default --adapter houmao
-pixi run isomer-cli --print-json project team-instances adopt <id> --topic default --adapter houmao --yes
+pixi run isomer-cli --print-json project team-instances reconcile <id> --topic my-topic --adapter houmao
+pixi run isomer-cli --print-json project team-instances adopt <id> --topic my-topic --adapter houmao --yes
 ```
 
 `adopt` records an explicit decision to associate externally launched state with the Agent Team Instance. It requires `--yes`.

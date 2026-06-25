@@ -39,18 +39,6 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
     artifact_format_profiles = _registration_ids(raw.get("artifact_format_profiles"))
     artifact_extensions = _registration_ids(raw.get("artifact_extensions"))
 
-    if not topics:
-        diagnostics.append(
-            Diagnostic(
-                code="ISO003",
-                severity="error",
-                concept="Project Manifest",
-                path=path,
-                field="research_topics",
-                message="Project Manifest must register at least one Research Topic.",
-            )
-        )
-
     manifest = ProjectManifest(
         schema_version=schema_version,
         source_path=path,

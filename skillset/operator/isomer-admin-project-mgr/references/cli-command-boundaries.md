@@ -5,13 +5,28 @@ Use root-level `--print-json` when deterministic output is needed.
 Fresh Project bootstrap:
 
 ```bash
-pixi run isomer-cli project init <topic-id> --topic-statement "<topic statement>"
-pixi run isomer-cli project --root <project-root> init <topic-id> --topic-statement "<topic statement>"
-pixi run isomer-cli project init <topic-id> --content-dir <content-dir> --topic-statement "<topic statement>"
-pixi run isomer-cli project --root <project-root> init <topic-id> --content-dir <content-dir> --topic-statement "<topic statement>"
+pixi run isomer-cli project init
+pixi run isomer-cli project --root <project-root> init
+pixi run isomer-cli project init --content-dir <content-dir>
+pixi run isomer-cli project --root <project-root> init --content-dir <content-dir>
 ```
 
-Omit `--content-dir <content-dir>` to use `isomer-content/`. Include it only when the Project should store generated content under a different project-local root; the derived Topic Workspace base is `<content-dir>/topic-ws/`.
+Omit `--content-dir <content-dir>` to use `isomer-content/`. Include it only when the Project should store generated content under a different project-local root; the derived Topic Workspace base for later topic creation is `<content-dir>/topic-ws/`.
+
+Research Topic lifecycle:
+
+```bash
+pixi run isomer-cli --print-json project topics create <topic-id> --statement "<research topic>"
+pixi run isomer-cli --print-json project topics create <topic-id> --statement "<research topic>" --workspace-dir <dir> --set-default
+pixi run isomer-cli --print-json project topics show <topic-id>
+pixi run isomer-cli --print-json project topics update <topic-id> --statement "<research topic>"
+pixi run isomer-cli --print-json project topics update <topic-id> --status active
+pixi run isomer-cli --print-json project topics update <topic-id> --set-default
+pixi run isomer-cli --print-json project topics delete <topic-id> --dry-run
+pixi run isomer-cli --print-json project topics delete <topic-id> --yes
+```
+
+Use `topics delete --dry-run` first and apply `--yes` only after the user reviews the plan. Topic deletion preserves the Topic Workspace directory; use cleanup surfaces later if the user explicitly wants filesystem removal.
 
 Cleanup planning and confirmed cleanup:
 

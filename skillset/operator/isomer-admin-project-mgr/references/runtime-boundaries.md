@@ -1,6 +1,8 @@
 # Runtime Boundaries
 
-`isomer-cli project init` creates Project config, the first Research Topic Config, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), the first Topic Workspace directory under `isomer-content/topic-ws/<topic-id>/` or `<content-dir>/topic-ws/<topic-id>/`, and the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`. It must not create Workspace Runtime state.
+`isomer-cli project init` creates Project config, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), generated content-root policy files, and the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`. It must not create a Research Topic Config, Topic Workspace directory, or Workspace Runtime state.
+
+`isomer-cli project topics create <topic-id> --statement "<research topic>"` is the explicit command that creates Research Topic Config, Project Manifest topic/workspace registrations, and the selected Topic Workspace directory. It must not create Workspace Runtime state.
 
 `isomer-cli project runtime init` is the explicit command that creates or reopens `state.sqlite` and default runtime directories for the selected Topic Workspace.
 

@@ -20,6 +20,12 @@ class CliOptions:
     topic_id: str | None = None
     topic_id_option: str | None = None
     topic_statement: str | None = None
+    topic_workspace_dir: str | None = None
+    topic_status: str | None = None
+    topic_set_default: bool = False
+    topic_new_id: str | None = None
+    topic_delete_dry_run: bool = False
+    topic_delete_yes: bool = False
     content_dir: str | None = None
     research_topic_id: str | None = None
     topic_workspace_id: str | None = None

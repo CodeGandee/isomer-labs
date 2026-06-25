@@ -13,25 +13,28 @@ Run `pixi install` from the repository root to resolve dependencies and make `is
 
 ## Initialize a Project
 
-`isomer-cli project init` creates the smallest valid Isomer-managed Project. It initializes the Project-level Houmao overlay (`.houmao/`) through the supported Houmao CLI boundary, then writes the Project Config Directory (`.isomer-labs/`), the Project Manifest (`manifest.toml`), a Research Topic Config, the selected generated content root (`isomer-content/` by default), and a Topic Workspace directory.
+`isomer-cli project init` creates the smallest valid Isomer-managed Project. It initializes the Isomer-managed Houmao overlay under `.isomer-labs/.houmao/` through the supported Houmao CLI boundary, then writes the Project Config Directory (`.isomer-labs/`), the Project Manifest (`manifest.toml`), and the selected generated content root (`isomer-content/` by default). It does not create a Research Topic or Topic Workspace.
 
 ```bash
 pixi run isomer-cli project init
 ```
 
-By default the command creates a Research Topic named `default` and a Topic Workspace named `default` under `isomer-content/topic-ws/default/`. You can name the topic explicitly:
+Create a Research Topic explicitly after Project initialization:
 
 ```bash
-pixi run isomer-cli project init my-topic
+pixi run isomer-cli project topics create my-topic --statement "Investigate the concrete research question." --set-default
 ```
 
-You can choose a different project-local generated content root at initialization time. In that case, the Topic Workspace base is derived from the selected root:
+This writes `.isomer-labs/research-topics/my-topic.toml`, registers the Research Topic and Topic Workspace in `.isomer-labs/manifest.toml`, and creates `isomer-content/topic-ws/my-topic/`.
+
+You can choose a different project-local generated content root at initialization time. In that case, later topic creation derives its default Topic Workspace base from the selected root:
 
 ```bash
-pixi run isomer-cli project init my-topic --content-dir custom-content
+pixi run isomer-cli project init --content-dir custom-content
+pixi run isomer-cli project topics create my-topic --statement "Investigate the concrete research question."
 ```
 
-This creates the Topic Workspace under `custom-content/topic-ws/my-topic/` and records `custom-content` plus `custom-content/topic-ws` in `.isomer-labs/manifest.toml`.
+This records `custom-content` plus `custom-content/topic-ws` in `.isomer-labs/manifest.toml`; the `topics create` command creates the Topic Workspace under `custom-content/topic-ws/my-topic/`.
 
 This command mutates the Project filesystem. It does not create `state.sqlite`, Workspace Runtime subdirectories, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers.
 
@@ -56,8 +59,8 @@ pixi run isomer-cli --print-json project doctor
 Before creating runtime state, resolve the Effective Topic Context and preview filesystem paths.
 
 ```bash
-pixi run isomer-cli --print-json project context show --topic default
-pixi run isomer-cli project paths preview --topic default
+pixi run isomer-cli --print-json project context show --topic my-topic
+pixi run isomer-cli project paths preview --topic my-topic
 ```
 
 Both commands are read-only. `project context show` displays the resolved Project, Research Topic, Topic Workspace, and selected refs for a topic-scoped command. `project paths preview` prints the generated content root and path plan without creating directories.
@@ -67,13 +70,13 @@ Both commands are read-only. `project context show` displays the resolved Projec
 `isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It creates `state.sqlite`, records schema metadata, and creates the default runtime directories (`artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, `logs/`).
 
 ```bash
-pixi run isomer-cli --print-json project runtime init --topic default
+pixi run isomer-cli --print-json project runtime init --topic my-topic
 ```
 
 `isomer-cli project runtime prepare` records Topic Environment Readiness. It checks only explicit Project Manifest bindings (`topic_pixi_environment_bindings` and `topic_standalone_pixi_bindings`) and records `ready`, `failed`, or `blocked` status. It does not install Pixi environments implicitly.
 
 ```bash
-pixi run isomer-cli --print-json project runtime prepare --topic default
+pixi run isomer-cli --print-json project runtime prepare --topic my-topic
 ```
 
 If readiness is `failed` or `blocked`, repair is explicit. Treat environment setup or compatibility work as a Service Request rather than hiding it inside `project runtime prepare`.
@@ -81,7 +84,7 @@ If readiness is `failed` or `blocked`, repair is explicit. Treat environment set
 ## Validate Readiness
 
 ```bash
-pixi run isomer-cli --print-json project runtime validate --topic default --require-ready-readiness
+pixi run isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
 ```
 
 This command is read-only and reports launch-facing errors when readiness is not `ready`.
@@ -92,15 +95,15 @@ An Agent Team Instance is a concrete runtime team created from a Topic Agent Tea
 
 ```bash
 pixi run isomer-cli --print-json project team-instances create \
-  --topic default \
-  --id ati-default-deepsci
+  --topic my-topic \
+  --id ati-my-topic-deepsci
 ```
 
 You can list and inspect the record:
 
 ```bash
-pixi run isomer-cli project team-instances list --topic default
-pixi run isomer-cli --print-json project team-instances show ati-default-deepsci --topic default
+pixi run isomer-cli project team-instances list --topic my-topic
+pixi run isomer-cli --print-json project team-instances show ati-my-topic-deepsci --topic my-topic
 ```
 
 At this point the Project has a durable Agent Team Instance record but no live agents. To launch through the Houmao adapter, see [Houmao Adapter](houmao-adapter.md) and [Workflows](workflows.md).

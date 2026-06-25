@@ -16,7 +16,7 @@ Install these skills into the agent surface that acts as the Project Operator Se
 
 Use this flow when a user asks the operator to create, diagnose, or prepare an Isomer Project before topic-team work.
 
-1. The operator can ask `isomer-admin-project-mgr init-project` to run the supported Project bootstrap path. Successful `isomer-cli project init` creates `.isomer-labs/`, the first Research Topic Config, the first Topic Workspace, and the Isomer-managed `.isomer-labs/.houmao/` overlay. Root `.houmao/` is external user-owned Houmao state if present.
+1. The operator can ask `isomer-admin-project-mgr init-project` to run the supported Project bootstrap path. Successful `isomer-cli project init` creates `.isomer-labs/`, the selected generated content root, and the Isomer-managed `.isomer-labs/.houmao/` overlay. Root `.houmao/` is external user-owned Houmao state if present. Research Topics and Topic Workspaces are created later through `isomer-cli project topics create`.
 2. If the user wants usage information, call `isomer-admin-project-mgr help`; invoking `isomer-admin-project-mgr` without a prompt defaults to the same help output.
 3. If the Project already exists, call `check-project` to run read-only Project validation, doctor diagnostics, and Houmao Project status checks.
 4. Use `list-topics` and `show-context` to inspect registered Research Topics, Topic Workspaces, defaults, selected profile refs, and selected template refs.

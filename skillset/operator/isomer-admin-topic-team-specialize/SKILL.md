@@ -38,7 +38,7 @@ init-topic
 
 `fast-forward` runs this path automatically where possible. `step-by-step` runs the same path but asks the user to confirm before each stage.
 
-When `init-topic` receives a user-supplied clear concrete Research Topic without an explicit output directory, it derives a provisional topic workspace seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`. A Project Manifest default topic, the id `default`, or a generic `default Research Topic` statement created by `isomer-cli project init` is not enough topic substance by itself; ask the user for the actual research topic before creating files.
+When `init-topic` receives a user-supplied clear concrete Research Topic without an explicit output directory, it derives a provisional topic workspace seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`. A Project Manifest default topic, the id `default`, a literal `default Research Topic`, or any other generic placeholder statement is not enough topic substance by itself; ask the user for the actual research topic before creating files.
 
 ## Subcommands
 
@@ -154,7 +154,7 @@ When reporting results, include these fields in structured prose or JSON, depend
 
 Do not edit the Domain Agent Team Template source while specializing a topic. The source template remains topic-neutral.
 
-Do not treat a provisional topic workspace seed as an authoritative Isomer Research Topic or Topic Workspace registration. Stop at the registration boundary or route through supported Isomer CLI/API surfaces instead of hand-editing `.isomer-labs/manifest.toml`.
+Do not treat a provisional topic workspace seed as an authoritative Isomer Research Topic or Topic Workspace registration. Stop at the registration boundary or route through `isomer-cli project topics create <topic-id> --statement "<research topic>"` and related supported Isomer CLI/API surfaces instead of hand-editing `.isomer-labs/manifest.toml`.
 
 Do not run a procedural subcommand when required predecessor artifacts are missing. Refuse to run, name the missing artifacts, explain which previous subcommand should create them, and stop before mutation.
 

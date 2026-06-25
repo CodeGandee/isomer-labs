@@ -11,8 +11,8 @@ pixi run isomer-cli --print-json project validate
 pixi run isomer-cli --print-json project doctor
 pixi run isomer-cli project topics list
 pixi run isomer-cli project workspaces list
-pixi run isomer-cli --print-json project context show --topic default
-pixi run isomer-cli project paths preview --topic default
+pixi run isomer-cli --print-json project context show --topic my-topic
+pixi run isomer-cli project paths preview --topic my-topic
 pixi run isomer-cli schemas list
 ```
 
@@ -25,14 +25,16 @@ Use this workflow when you start from an empty directory or want a new Isomer-ma
 ```bash
 pixi install
 pixi run isomer-cli project init
+pixi run isomer-cli project topics create my-topic --statement "Investigate the concrete research question." --set-default
 pixi run isomer-cli --print-json project validate
 pixi run isomer-cli --print-json project doctor
 ```
 
-`project init` mutates the Project filesystem by creating the Project-level Houmao overlay, Project Config Directory, Project Manifest, a Research Topic Config, the selected generated content root, and a Topic Workspace directory under `isomer-content/topic-ws/<topic-id>/` by default or `<content-dir>/topic-ws/<topic-id>/` when the command includes `--content-dir <content-dir>`. It does not create Workspace Runtime state or live Houmao agents.
+`project init` mutates the Project filesystem by creating the Isomer-managed Houmao overlay, Project Config Directory, Project Manifest, and selected generated content root. `project topics create` mutates the Project Manifest and Research Topic Configs, and creates the Topic Workspace directory under `isomer-content/topic-ws/<topic-id>/` by default or `<content-dir>/topic-ws/<topic-id>/` after custom content-root init. Neither command creates Workspace Runtime state or live Houmao agents.
 
 ```bash
-pixi run isomer-cli project init my-topic --content-dir custom-content
+pixi run isomer-cli project init --content-dir custom-content
+pixi run isomer-cli project topics create my-topic --statement "Investigate the concrete research question."
 ```
 
 ## Runtime Preparation
@@ -40,9 +42,9 @@ pixi run isomer-cli project init my-topic --content-dir custom-content
 After initialization, create and prepare the Workspace Runtime before creating Agent Team Instances.
 
 ```bash
-pixi run isomer-cli --print-json project runtime init --topic default
-pixi run isomer-cli --print-json project runtime prepare --topic default
-pixi run isomer-cli --print-json project runtime validate --topic default --require-ready-readiness
+pixi run isomer-cli --print-json project runtime init --topic my-topic
+pixi run isomer-cli --print-json project runtime prepare --topic my-topic
+pixi run isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
 ```
 
 `project runtime init` creates `state.sqlite` and runtime directories. `project runtime prepare` records Topic Environment Readiness. If readiness is not `ready`, treat repair as a Service Request rather than rerunning `project runtime prepare`.
@@ -55,14 +57,14 @@ Before launching a team, validate the Domain Agent Team Template and the Topic A
 pixi run isomer-cli project team-templates list
 pixi run isomer-cli --print-json project team-templates inspect deepsci-org
 pixi run isomer-cli project team-templates validate deepsci-org
-pixi run isomer-cli project team-profiles validate isomer-content/topic-ws/default/team-profile/profile.toml
+pixi run isomer-cli project team-profiles validate isomer-content/topic-ws/my-topic/team-profile/profile.toml
 ```
 
 To preview Topic Team Specialization without writing it:
 
 ```bash
 pixi run isomer-cli --print-json project team-profiles specialize \
-  --topic default --use-case UC-01
+  --topic my-topic --use-case UC-01
 ```
 
 Authoritative Topic Team Specialization records a Topic Team Instantiation Packet, persists the profile as the Research Topic's one Topic Agent Team Profile Bundle under the owning Topic Workspace, and records only the Project Manifest ref in Project Config. Preview commands may still report a `registration_suggestion` object for compatibility, but launch-facing profile identity is derived from the Research Topic and fixed `team-profile/` bundle path.
@@ -98,25 +100,25 @@ Create a record for a team before launching it. This separates design-time profi
 
 ```bash
 pixi run isomer-cli --print-json project team-instances create \
-  --topic default \
-  --id ati-default-deepsci
+  --topic my-topic \
+  --id ati-my-topic-deepsci
 
-pixi run isomer-cli project team-instances list --topic default
-pixi run isomer-cli --print-json project team-instances show ati-default-deepsci --topic default
+pixi run isomer-cli project team-instances list --topic my-topic
+pixi run isomer-cli --print-json project team-instances show ati-my-topic-deepsci --topic my-topic
 ```
 
-This creates Agent Instance records, Agent Workspace records, and directories under `isomer-content/topic-ws/default/agents/`. It does not launch Houmao agents.
+This creates Agent Instance records, Agent Workspace records, and directories under `isomer-content/topic-ws/my-topic/agents/`. It does not launch Houmao agents.
 
 ## Prepare-only Houmao Materialization
 
 Use this workflow when you want to inspect or edit Houmao launch material before invoking Houmao directly.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances launch-material prepare ati-default-deepsci \
-  --topic default --adapter houmao
+pixi run isomer-cli --print-json project team-instances launch-material prepare ati-my-topic-deepsci \
+  --topic my-topic --adapter houmao
 ```
 
-This writes `adapter-link.json` and `launch-material-manifest.json` under `isomer-content/topic-ws/default/runtime/adapters/houmao/ati-default-deepsci/` and records materialization state. It does not launch agents. The JSON output includes bounded manual guidance for equivalent `houmao-mgr` commands.
+This writes `adapter-link.json` and `launch-material-manifest.json` under `isomer-content/topic-ws/my-topic/runtime/adapters/houmao/ati-my-topic-deepsci/` and records materialization state. It does not launch agents. The JSON output includes bounded manual guidance for equivalent `houmao-mgr` commands.
 
 After direct Houmao work, use `inspect-live`, `reconcile`, or `adopt` so Isomer can compare manifests, file digests, and read-only Houmao observations.
 
@@ -125,9 +127,9 @@ After direct Houmao work, use `inspect-live`, `reconcile`, or `adopt` so Isomer 
 Use this workflow when Isomer should prepare material and launch the Houmao managed agents in one command.
 
 ```bash
-pixi run isomer-cli --print-json project runtime validate --topic default --require-ready-readiness
-pixi run isomer-cli --print-json project team-instances launch ati-default-deepsci \
-  --topic default --adapter houmao
+pixi run isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
+pixi run isomer-cli --print-json project team-instances launch ati-my-topic-deepsci \
+  --topic my-topic --adapter houmao
 ```
 
 Quick launch runs preflight, writes shared launch material, creates or updates adapter manifests, launches one Houmao managed agent per Isomer Agent Instance, writes `adapter-runtime-manifest.json`, and records command runs, payload refs, a launch attempt, and reconciliation state. This mutates live Houmao state.
@@ -137,8 +139,8 @@ Quick launch runs preflight, writes shared launch material, creates or updates a
 After launch, inspect the adapter and Houmao state without mutation.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances inspect-live ati-default-deepsci \
-  --topic default --adapter houmao --integrity
+pixi run isomer-cli --print-json project team-instances inspect-live ati-my-topic-deepsci \
+  --topic my-topic --adapter houmao --integrity
 ```
 
 `inspect-live` records a bounded inspection snapshot in Workspace Runtime but does not launch or stop agents.
@@ -149,10 +151,10 @@ After quick launch, adoption, or another linked Houmao context, dispatch one bou
 
 ```bash
 pixi run isomer-cli --print-json project handoffs dispatch \
-  --topic default \
-  --agent-team-instance ati-default-deepsci \
-  --source-agent-instance ati-default-deepsci-deepsci-org-master \
-  --target-agent-instance ati-default-deepsci-deepsci-org-experimenter \
+  --topic my-topic \
+  --agent-team-instance ati-my-topic-deepsci \
+  --source-agent-instance ati-my-topic-deepsci-deepsci-org-master \
+  --target-agent-instance ati-my-topic-deepsci-deepsci-org-experimenter \
   --run run-default-first-handoff \
   --message "Draft the first experiment execution plan." \
   --expected-output artifact:default:first-handoff
@@ -161,17 +163,17 @@ pixi run isomer-cli --print-json project handoffs dispatch \
 Observe adapter output as a Signal Observation. Mail and gateway observations invoke Houmao; file and inspection observations are useful for replay, recovery, and bounded manual validation.
 
 ```bash
-pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic default --source mail
-pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic default --source gateway
-pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic default --source file --payload-json handoff-observation.json
-pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic default --source inspection
+pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source mail
+pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source gateway
+pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source file --payload-json handoff-observation.json
+pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source inspection
 ```
 
 Normalize only after the Operator Agent has reviewed the candidate result. Observations alone do not complete Runs or promote returned claims into Evidence Items.
 
 ```bash
 pixi run isomer-cli --print-json project handoffs normalize <handoff-id> \
-  --topic default \
+  --topic my-topic \
   --status accepted \
   --signal-observation <signal-observation-id> \
   --output-artifact artifact:default:first-handoff \
@@ -185,8 +187,8 @@ For failed results, use `--status rejected`, `--status blocked`, `--status super
 Stopping a Houmao-backed Agent Team Instance is an explicit live mutation.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances stop ati-default-deepsci \
-  --topic default --adapter houmao
+pixi run isomer-cli --print-json project team-instances stop ati-my-topic-deepsci \
+  --topic my-topic --adapter houmao
 ```
 
 `stop` targets known mapped Houmao agent names from manifests or launch attempts and records a stopped, partial, failed, or stale outcome.
@@ -196,8 +198,8 @@ pixi run isomer-cli --print-json project team-instances stop ati-default-deepsci
 Use reconciliation when you suspect manifest drift, after direct Houmao edits, or after an externally launched team needs to be represented in Workspace Runtime.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances reconcile ati-default-deepsci \
-  --topic default
+pixi run isomer-cli --print-json project team-instances reconcile ati-my-topic-deepsci \
+  --topic my-topic
 ```
 
 `reconcile` records adapter reconciliation diagnostics and writes `adapter-runtime-manifest.json`. It does not start, stop, or message Houmao-managed agents.
@@ -207,8 +209,8 @@ pixi run isomer-cli --print-json project team-instances reconcile ati-default-de
 Use adoption when you launched Houmao agents outside Isomer and want Workspace Runtime to record the association.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances adopt ati-default-deepsci \
-  --topic default --yes
+pixi run isomer-cli --print-json project team-instances adopt ati-my-topic-deepsci \
+  --topic my-topic --yes
 ```
 
 `adopt` records an explicit decision to associate externally launched Houmao runtime state with the selected Agent Team Instance. It requires `--yes`.
