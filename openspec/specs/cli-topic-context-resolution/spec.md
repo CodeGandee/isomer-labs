@@ -2,7 +2,6 @@
 
 ## Purpose
 Define how `isomer-cli` discovers a Project, resolves topic-specific command context, loads Research Topic Config TOML, exposes Effective Topic Context to path resolution and future execution surfaces, and keeps topic-specific artifact customization declarative and optional.
-
 ## Requirements
 ### Requirement: Project Discovery for CLI Commands
 The system SHALL make `isomer-cli` discover the active Project from an explicit project selector, the current working directory, or a supported Project environment override before it resolves topic-scoped command behavior.
@@ -152,7 +151,7 @@ The system SHALL resolve an Effective Topic Context before `isomer-cli` performs
 - **THEN** the record identifies whether it came from an explicit selector, current directory, supported environment variable, `.isomer-labs/local.toml`, Project Manifest default, Research Topic Config, Topic Agent Team Profile, Domain Agent Team Template, built-in default, Workspace Runtime record, or explicit command context
 
 ### Requirement: Topic Selection Precedence
-The system SHALL select the Research Topic for topic-scoped commands through deterministic precedence.
+The system SHALL select the Research Topic for topic-scoped commands through deterministic precedence and SHALL treat a Project with no registered Research Topics as a valid Project that cannot satisfy topic-scoped selection.
 
 #### Scenario: Explicit selectors have highest precedence
 - **WHEN** the user provides explicit selectors such as `--topic`, `--topic-workspace`, `--task`, or `--run`
@@ -181,6 +180,10 @@ The system SHALL select the Research Topic for topic-scoped commands through det
 #### Scenario: Manifest default is final fallback
 - **WHEN** no higher-precedence source selects a Research Topic and the Project Manifest defines a default Research Topic
 - **THEN** the system selects the Project Manifest default Research Topic
+
+#### Scenario: Empty project has no topic fallback
+- **WHEN** no higher-precedence source selects a Research Topic and the Project Manifest registers no Research Topics
+- **THEN** topic-scoped selection fails with a deterministic diagnostic that tells the user to create a Research Topic with `isomer-cli project topics create`
 
 #### Scenario: Ambiguous selection is rejected
 - **WHEN** selectors, environment values, active context, or manifest refs imply conflicting Research Topics, Topic Workspaces, Research Tasks, Runs, Agent Team Instances, or Agent Instances
@@ -259,12 +262,20 @@ The system SHALL allow Research Topic Config and more-specific output specs to s
 The system SHALL distinguish project-scoped, topic-scoped, run-scoped, and extension-backed `isomer-cli` command behavior in the first implementation.
 
 #### Scenario: Project-scoped command families do not require topic
-- **WHEN** a command validates or inspects the Project Manifest, lists registered Research Topics, lists Topic Workspaces, inspects built-in schemas, or checks project-level config without selecting one Research Topic
+- **WHEN** a command validates or inspects the Project Manifest, lists registered Research Topics, lists Topic Workspaces, inspects built-in schemas, creates a Research Topic, shows a Research Topic registration, deletes a Research Topic with a dry-run plan, or checks project-level config without selecting one Research Topic
 - **THEN** the command may run with Project context only and does not require Effective Topic Context
+
+#### Scenario: Project-scoped commands work in empty project
+- **WHEN** a Project Manifest has no registered Research Topics
+- **THEN** Project-scoped commands that do not select one Research Topic can still validate, inspect, list, and mutate Project-level topic registration state according to their command contracts
 
 #### Scenario: Topic-scoped command families require topic context
 - **WHEN** a command shows or validates Effective Topic Context, creates or inspects Research Inquiries, Research Tasks, Artifacts, Gates, Topic Agent Team Profiles, Agent Team Instance topic-participation records, topic-scoped views, or topic-specific path previews
 - **THEN** the command resolves and validates Effective Topic Context before performing the action
+
+#### Scenario: Topic-scoped command reports empty project
+- **WHEN** a topic-scoped command runs in a Project with no registered Research Topics and no explicit valid topic context
+- **THEN** the command returns a deterministic diagnostic that no Research Topic is registered and does not create placeholder topic material
 
 #### Scenario: Run-scoped command families require run consistency
 - **WHEN** a command inspects, resumes, cancels, records, or exports a Run

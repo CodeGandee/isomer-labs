@@ -216,11 +216,15 @@ The implementation SHALL validate the module skill with skill-creator and reposi
 - **THEN** the change artifacts validate without schema or scenario-format errors
 
 ### Requirement: Topic Initialization Subcommand
-The module skill SHALL provide an `init-topic` subcommand that starts the user-facing Topic Team Specialization flow by creating provisional topic definition material before team specialization when the Research Topic is new or unclear.
+The module skill SHALL provide an `init-topic` subcommand that starts the user-facing Topic Team Specialization flow by creating provisional topic definition material before team specialization when the Research Topic is new or unclear, while routing authoritative Project registration through topic CRUD commands.
 
 #### Scenario: Missing topic prompts clarification
 - **WHEN** the user invokes `init-topic` without a Research Topic or with an unclear Research Topic
 - **THEN** the subcommand asks the user for enough topic information before creating any directory or topic overview file
+
+#### Scenario: Empty project topic registry is not topic substance
+- **WHEN** the user invokes `init-topic` without supplying topic substance and the Project Manifest has no registered Research Topics
+- **THEN** the subcommand asks the user for the concrete research topic and does not create or overwrite `topic-overview.md`
 
 #### Scenario: Generic default topic is not sufficient
 - **WHEN** the user invokes `init-topic` without supplying topic substance and the Project Manifest has a registered default Research Topic or generic `default Research Topic` statement
@@ -254,13 +258,13 @@ The module skill SHALL provide an `init-topic` subcommand that starts the user-f
 - **WHEN** `init-topic` creates topic material that is not registered in the Project Manifest
 - **THEN** the subcommand reports that the topic directory is a provisional topic workspace seed and is not yet an authoritative Isomer Research Topic or Topic Workspace registration
 
-#### Scenario: Project config mutation remains bounded
+#### Scenario: Project config mutation routes through topic CRUD
 - **WHEN** `init-topic` needs the new topic to become an authoritative Project Manifest-registered Research Topic
-- **THEN** it stops at the registration boundary or routes through a supported Isomer CLI/API path instead of hand-editing `.isomer-labs/manifest.toml`
+- **THEN** it routes through `isomer-cli project topics create <topic-id> --statement "<research topic>"` or reports that the user must run that command, instead of hand-editing `.isomer-labs/manifest.toml` or using `isomer-cli project init`
 
 #### Scenario: Specialization waits for explicit topic readiness
 - **WHEN** `fast-forward` or `step-by-step` cannot resolve a registered Research Topic but can create a provisional seed through `init-topic`
-- **THEN** the workflow reports the provisional seed and any registration blockers before proceeding to template adaptation that requires authoritative topic refs
+- **THEN** the workflow reports the provisional seed and any `isomer-cli project topics create` registration blockers before proceeding to template adaptation that requires authoritative topic refs
 
 ### Requirement: User-Facing Topic Team Flow
 The module skill SHALL present the primary user-facing flow as procedural subcommands for topic initialization, optional topic clarification, team specialization, optional team clarification, topic environment setup, per-agent workspace setup, static readiness validation, final summary, and explicit approval or materialization boundaries.
@@ -339,3 +343,34 @@ The module skill SHALL focus on static Topic Team material and durable setup pre
 #### Scenario: Static validation stops before live operation
 - **WHEN** `validate-topic-team` or `finalize-topic-team` runs
 - **THEN** the skill validates or summarizes topic overview material, copied specialization material, setup evidence, Agent Workspace layout, profile material, blockers, deferrals, and next actions without claiming Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or live launch readiness
+
+### Requirement: Clarification Option Loop
+The module skill SHALL make `clarify-topic` and `clarify-topic-team` use a bounded option-asking clarification loop that updates static topic-team artifacts directly instead of creating separate user-decision records.
+
+#### Scenario: Topic clarification scans and asks focused questions
+- **WHEN** the `clarify-topic` subcommand runs after its predecessor artifacts exist
+- **THEN** it performs a coverage and clarity scan of `<topic-dir>/topic-def/topic-overview.md`, identifies unresolved questions that materially affect topic scope, objectives, assumptions, open questions, or template selection, and asks at most one focused clarification question at a time
+
+#### Scenario: Team clarification scans and asks focused questions
+- **WHEN** the `clarify-topic-team` subcommand runs after its predecessor artifacts exist
+- **THEN** it performs a coverage and clarity scan of the topic overview, copied template material, `team-specialization-guide.md`, `team-specialization-plan.md`, `Final Report`, placeholder resolutions, deferrals, and draft packet/profile inputs, then asks at most one focused clarification question at a time about role, workflow, policy, binding, copied-material, setup, validation, or blocker ambiguity
+
+#### Scenario: Clarification question format is structured
+- **WHEN** either `clarify-topic` or `clarify-topic-team` asks a clarification question
+- **THEN** the question includes a motivation, a concrete example when useful, a proposed answer or option with rationale, the downstream implication of accepting it, and either two to five mutually exclusive options with a custom short-answer path or a short-answer prompt with a proposed answer
+
+#### Scenario: Clarification answers update topic material directly
+- **WHEN** the user answers a `clarify-topic` question clearly or accepts the proposed answer
+- **THEN** the subcommand validates the answer, updates `<topic-dir>/topic-def/topic-overview.md` directly, removes or revises resolved open questions and obsolete assumptions, and reports remaining open questions and readiness for `specialize-team`
+
+#### Scenario: Clarification answers update team material directly
+- **WHEN** the user answers a `clarify-topic-team` question clearly or accepts the proposed answer
+- **THEN** the subcommand validates the answer, updates the relevant copied topic-team material, specialization plan, `Final Report`, placeholder resolutions, deferrals, or draft packet/profile inputs directly, and reports changed paths, remaining blockers, and readiness for setup or validation
+
+#### Scenario: Clarification loop does not create decision logs
+- **WHEN** either `clarify-topic` or `clarify-topic-team` integrates an accepted user answer
+- **THEN** it does not create an ADR, decision log, user-decision record, or separate clarification transcript as the durable source of truth for that answer
+
+#### Scenario: Clarification loop stops predictably
+- **WHEN** all critical ambiguities are resolved, the user signals completion, or five clarification questions have been asked in the current clarification session
+- **THEN** the subcommand stops asking questions and reports remaining open questions, deferrals, blockers, changed artifacts, and the next safe operator action

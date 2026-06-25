@@ -46,7 +46,7 @@ The system SHALL support partial cleanup by named part so users can remove selec
 
 #### Scenario: Houmao overlay part
 - **WHEN** cleanup selects `--part houmao-overlay`
-- **THEN** the plan targets the Project-level Houmao overlay `.houmao/` and does not stop live Houmao agents or clean external Houmao state
+- **THEN** the plan targets the Isomer-managed Project-level Houmao overlay `.isomer-labs/.houmao/`, preserves root `.houmao/`, and does not stop live Houmao agents or clean external Houmao state
 
 #### Scenario: Content policy part
 - **WHEN** cleanup selects `--part content-policy`
@@ -62,7 +62,7 @@ The system SHALL support partial cleanup by named part so users can remove selec
 
 #### Scenario: Bootstrap part
 - **WHEN** cleanup selects `--part bootstrap`
-- **THEN** the plan includes Project config, the Project-level Houmao overlay, generated content-root policy files, and known init-created Topic Workspace directories while preserving unknown files by default
+- **THEN** the plan includes Project config, the Isomer-managed Project-level Houmao overlay under `.isomer-labs/.houmao/`, generated content-root policy files, and known init-created Topic Workspace directories while preserving unknown files and root `.houmao/` by default
 
 ### Requirement: Cleanup Authority and Path Safety
 The system SHALL resolve cleanup targets from the strongest available Project authority and SHALL refuse unsafe filesystem targets.
@@ -73,11 +73,11 @@ The system SHALL resolve cleanup targets from the strongest available Project au
 
 #### Scenario: Malformed manifest limits authority
 - **WHEN** `.isomer-labs/manifest.toml` exists but cannot be parsed
-- **THEN** cleanup may target `.isomer-labs/`, `.houmao/`, and the built-in or explicitly supplied content root, but it does not infer Research Topics from unregistered directories
+- **THEN** cleanup may target `.isomer-labs/`, `.isomer-labs/.houmao/`, and the built-in or explicitly supplied content root, but it does not infer Research Topics from unregistered directories and does not target root `.houmao/`
 
 #### Scenario: Missing manifest supports explicit bootstrap cleanup
 - **WHEN** no Project Manifest exists and the user supplies an explicit Project root or runs from the intended root
-- **THEN** cleanup may plan removal for `.isomer-labs/`, `.houmao/`, and the built-in or explicitly supplied content root while reporting that manifest authority is unavailable
+- **THEN** cleanup may plan removal for `.isomer-labs/`, `.isomer-labs/.houmao/`, and the built-in or explicitly supplied content root while reporting that manifest authority is unavailable and preserving root `.houmao/`
 
 #### Scenario: External paths are refused
 - **WHEN** a planned cleanup target resolves outside the Project root
@@ -104,7 +104,7 @@ The system SHALL preserve unknown files under the selected generated content roo
 
 #### Scenario: Confirmed purge removes selected root
 - **WHEN** a user runs `isomer-cli project cleanup --part content-root --purge-content-root --yes`
-- **THEN** cleanup removes the selected generated content root only after validating that the root is project-local, is not `.isomer-labs/`, is not `.houmao/`, and is not the Project root
+- **THEN** cleanup removes the selected generated content root only after validating that the root is project-local, is not `.isomer-labs/`, is not `.isomer-labs/.houmao/`, is not root `.houmao/`, and is not the Project root
 
 ### Requirement: Reinitialization After Cleanup
 The system SHALL support a safe reinitialization workflow by keeping `project init` overwrite refusal separate from explicit cleanup.

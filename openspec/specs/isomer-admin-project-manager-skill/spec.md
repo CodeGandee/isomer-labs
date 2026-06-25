@@ -62,18 +62,18 @@ The project manager skill SHALL explain its purpose and usage when invoked for h
 
 #### Scenario: Purpose is plain text
 - **WHEN** operator documentation or skill text describes the workflow
-- **THEN** it explains in plain text that the skill initializes and manages an Isomer Project by coordinating Project config, Research Topics, Topic Workspaces, Workspace Runtime preparation, and the Project-level Houmao overlay
+- **THEN** it explains in plain text that the skill initializes and manages an Isomer Project by coordinating Project config, Research Topics, Topic Workspaces, Workspace Runtime preparation, and the Isomer-managed Project-level Houmao overlay under `.isomer-labs/`
 
 ### Requirement: Project Lifecycle Subcommands
 The project manager skill SHALL guide Project lifecycle commands without bypassing Isomer CLI validation or Houmao CLI boundaries.
 
 #### Scenario: Init project guides Isomer and Houmao bootstrap
 - **WHEN** the user asks to initialize an Isomer Project
-- **THEN** the skill routes to `init-project`, uses the supported `isomer-cli project init` command shape, and reports the resulting `.isomer-labs/` Project config and `.houmao/` Project-level Houmao overlay status
+- **THEN** the skill routes to `init-project`, uses the supported `isomer-cli project init` command shape, and reports the resulting `.isomer-labs/` Project config and `.isomer-labs/.houmao/` Isomer-managed Houmao overlay status
 
 #### Scenario: Check project remains read-only
 - **WHEN** the user asks to check, diagnose, or validate an existing Project
-- **THEN** the skill routes to `check-project`, uses read-only `isomer-cli project validate`, `isomer-cli project doctor`, and related diagnostics commands, and includes Houmao project status checks without launching, stopping, or messaging managed agents
+- **THEN** the skill routes to `check-project`, uses read-only `isomer-cli project validate`, `isomer-cli project doctor`, and related diagnostics commands, and includes Isomer-managed Houmao project status checks without launching, stopping, or messaging managed agents
 
 #### Scenario: Topic listing uses CLI surfaces
 - **WHEN** the user asks what Research Topics or Topic Workspaces are available
@@ -126,15 +126,16 @@ The implementation SHALL validate the project manager skill with skill-creator a
 - **THEN** the change artifacts validate without schema or scenario-format errors
 
 ### Requirement: Project Manager Generated Content Layout Guidance
-The project manager skill SHALL describe and report the default `isomer-content/` layout created by Project initialization.
+The project manager skill SHALL describe and report the default `isomer-content/` layout created by Project initialization without claiming that Project initialization creates a Research Topic or Topic Workspace.
 
 #### Scenario: Init project reports content root
 - **WHEN** the user asks to initialize an Isomer Project
-- **THEN** the `init-project` subcommand reports `.isomer-labs/manifest.toml`, `.isomer-labs/research-topics/<topic-id>.toml`, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `.houmao/`, diagnostics, and next operator action
+- **THEN** the `init-project` subcommand reports `.isomer-labs/manifest.toml`, `isomer-content/`, generated content-root policy files, `.isomer-labs/.houmao/`, diagnostics, and next operator action
+- **AND** it does not report `.isomer-labs/research-topics/<topic-id>.toml` or `isomer-content/topic-ws/<topic-id>/` as Project init outputs
 
-#### Scenario: Project concepts use new default workspace path
-- **WHEN** project-manager references explain the default Topic Workspace path created by `isomer-cli project init <topic-id>`
-- **THEN** they name `isomer-content/topic-ws/<topic-id>/` instead of `topic-workspaces/<topic-id>/`
+#### Scenario: Project concepts separate topic workspace creation
+- **WHEN** project-manager references explain the default Topic Workspace path
+- **THEN** they say Topic Workspaces are created by explicit topic creation such as `isomer-cli project topics create <topic-id> --statement "<research topic>"`, which normally derives `isomer-content/topic-ws/<topic-id>/`
 
 #### Scenario: Content root policy is explained
 - **WHEN** project-manager help or initialization guidance describes `isomer-content/`
@@ -145,7 +146,7 @@ The project manager skill SHALL describe and report the default `isomer-content/
 - **THEN** it keeps `.isomer-labs/` as the Project Config Directory and `isomer-content/` as the default generated-content root
 
 ### Requirement: Project Manager Custom Content Directory Guidance
-The project manager skill SHALL describe and use the optional Project initialization content directory selector when the user wants generated Isomer content outside the default `isomer-content/` root.
+The project manager skill SHALL describe and use the optional Project initialization content directory selector when the user wants generated Isomer content outside the default `isomer-content/` root, without creating a Topic Workspace during Project initialization.
 
 #### Scenario: Init project accepts content directory request
 - **WHEN** the user asks to initialize an Isomer Project with a custom generated content directory
@@ -153,11 +154,12 @@ The project manager skill SHALL describe and use the optional Project initializa
 
 #### Scenario: Init project reports custom content root
 - **WHEN** Project initialization succeeds with a custom content directory
-- **THEN** the `init-project` subcommand reports the selected generated content root, its generated `README.md` and `.gitignore` policy files, the derived `<content-dir>/topic-ws/<topic-id>/` Topic Workspace path, `.isomer-labs/manifest.toml`, `.isomer-labs/research-topics/<topic-id>.toml`, `.houmao/`, diagnostics, and next operator action
+- **THEN** the `init-project` subcommand reports the selected generated content root, its generated `README.md` and `.gitignore` policy files, `.isomer-labs/manifest.toml`, `.isomer-labs/.houmao/`, diagnostics, and next operator action
+- **AND** it does not report a derived `<content-dir>/topic-ws/<topic-id>/` Topic Workspace path as a Project init output
 
 #### Scenario: Help explains content directory option
 - **WHEN** project-manager help or CLI boundary guidance describes fresh Project initialization
-- **THEN** it explains that omitting `--content-dir` uses `isomer-content/`, while supplying `--content-dir <content-dir>` chooses a project-local generated content root and derives the default Topic Workspace base as `<content-dir>/topic-ws`
+- **THEN** it explains that omitting `--content-dir` uses `isomer-content/`, while supplying `--content-dir <content-dir>` chooses a project-local generated content root and records the default Topic Workspace base as `<content-dir>/topic-ws` for later topic creation
 
 #### Scenario: Guardrails preserve project-local content
 - **WHEN** project-manager guidance describes content directory choices
@@ -227,3 +229,56 @@ The project manager skill SHALL expose a short local cleanup subcommand for Proj
 #### Scenario: CLI boundary reference includes cleanup
 - **WHEN** project-manager CLI boundary guidance is inspected
 - **THEN** it includes `isomer-cli project cleanup --part <part> --dry-run` and the confirmed `isomer-cli project cleanup --part <part> --yes` command shape
+
+### Requirement: Project Manager Content Root Relocation Guidance
+The project manager skill SHALL guide generated content-root relocation through the supported Project CLI command and preserve the runtime repair boundary.
+
+#### Scenario: Relocation request routes to content-root move guidance
+- **WHEN** the user asks how to move, rename, or change the Project generated content root after initialization
+- **THEN** the project-manager skill routes the request to content-root relocation guidance and uses `isomer-cli project content-root move --to <content-dir>` instead of instructing the operator to hand-edit the Project Manifest
+
+#### Scenario: Guidance starts with dry-run
+- **WHEN** the project-manager skill prepares a content-root relocation command
+- **THEN** it first runs or recommends `isomer-cli project content-root move --to <content-dir> --dry-run` before any confirmed move
+
+#### Scenario: Guidance explains confirmation
+- **WHEN** the project-manager skill describes applying content-root relocation
+- **THEN** it explains that actual filesystem and manifest mutation requires `--yes`, and that omitting `--yes` is non-mutating
+
+#### Scenario: Guidance warns about runtime breakage
+- **WHEN** content-root relocation may move Topic Workspaces with runtime material or Pixi environments
+- **THEN** the skill warns that existing Workspace Runtime records, Pixi environments, installed packages, adapter runtime material, logs, and stored path plans may contain old paths and may require reinstall or reinitialization
+
+#### Scenario: Guidance preserves unknown content
+- **WHEN** the old content root contains unknown entries
+- **THEN** the skill explains that relocation preserves unmanaged leftovers and does not rename the whole content root as an opaque directory
+
+### Requirement: Project Manager Content Root Relocation Subcommand
+The project manager skill SHALL expose a short local subcommand for generated content-root relocation workflows.
+
+#### Scenario: Move content subcommand exists
+- **WHEN** the `isomer-admin-project-mgr` skill folder is inspected
+- **THEN** it contains a local subcommand page named `move-content` under `references/`
+
+#### Scenario: Help lists move content
+- **WHEN** project-manager help lists available subcommands
+- **THEN** it includes `move-content` with a concise purpose and expected relocation outputs
+
+#### Scenario: CLI boundary reference includes content-root move
+- **WHEN** project-manager CLI boundary guidance is inspected
+- **THEN** it includes `isomer-cli project content-root move --to <content-dir> --dry-run` and the confirmed `isomer-cli project content-root move --to <content-dir> --yes` command shape
+
+### Requirement: Project Manager Topic CRUD Guidance
+The project manager skill SHALL describe Research Topic creation, inspection, update, and deletion through the supported `isomer-cli project topics` command surface.
+
+#### Scenario: Help lists topic CRUD boundary
+- **WHEN** project-manager help describes topic lifecycle operations
+- **THEN** it names `isomer-cli project topics create`, `show`, `update`, `delete --dry-run`, and `delete --yes` as the authoritative Project Manifest mutation surfaces for Research Topics
+
+#### Scenario: Init project points to topic creation
+- **WHEN** `init-project` completes successfully
+- **THEN** the skill reports that the Project has no Research Topic until the user runs `isomer-cli project topics create` or the topic-team specialization flow routes through that command
+
+#### Scenario: Delete guidance is plan-first
+- **WHEN** the user asks the project-manager skill to remove a Research Topic
+- **THEN** the skill starts with `isomer-cli project topics delete <topic-id> --dry-run` and uses `--yes` only after the user reviews the plan

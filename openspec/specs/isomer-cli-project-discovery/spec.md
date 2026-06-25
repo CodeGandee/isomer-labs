@@ -23,19 +23,35 @@ The system SHALL provide an installed `isomer-cli` command with a global command
 - **THEN** the environment can invoke `isomer-cli` as a project script
 
 ### Requirement: Project Initialization
-The system SHALL initialize the smallest valid Isomer-managed Project configuration, the selected Project-local generated content root, and the Project-level Houmao overlay through `isomer-cli project init` without creating Workspace Runtime state or live Houmao agent state.
+The system SHALL initialize the smallest valid Isomer-managed Project configuration, the selected Project-local generated content root, and the Isomer-managed Project-level Houmao overlay under the Project Config Directory through `isomer-cli project init` without creating Research Topic registrations, Topic Workspace registrations, Workspace Runtime state, or live Houmao agent state.
 
-#### Scenario: Initialize default project
+#### Scenario: Initialize empty project registry
 - **WHEN** a user runs `isomer-cli project init` in a directory that is not inside an existing Isomer Project and does not contain `.isomer-labs/manifest.toml`
-- **THEN** the system creates `.isomer-labs/manifest.toml`, one registered Research Topic Config for Research Topic id `default`, one project-local Topic Workspace directory at `isomer-content/topic-ws/default/`, a Project-local generated content root at `isomer-content/`, and a Project-level Houmao overlay at `.houmao/`
+- **THEN** the system creates `.isomer-labs/manifest.toml`, a Project-local generated content root at `isomer-content/`, generated content-root policy files, and an Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`
+- **AND** the system does not create a Research Topic Config, a Research Topic registration, a Topic Workspace registration, or a Topic Workspace directory
 
-#### Scenario: Initialize explicit topic
-- **WHEN** a user runs `isomer-cli project init` with an explicit Research Topic id
-- **THEN** the system uses that id for the Research Topic registration, Research Topic Config path, and default Topic Workspace directory name under the selected generated content root's `topic-ws/` directory
+#### Scenario: Initialize rejects topic argument
+- **WHEN** a user runs `isomer-cli project init <topic-id>`
+- **THEN** the system rejects the command with a deterministic diagnostic that Research Topics must be created through `isomer-cli project topics create`
+- **AND** the system does not create or modify Project files
+
+#### Scenario: Initialize rejects topic options
+- **WHEN** a user runs `isomer-cli project init --topic-id <topic-id>` or `isomer-cli project init --topic-statement "<research topic>"`
+- **THEN** the system rejects the command with a deterministic diagnostic that Research Topics must be created through `isomer-cli project topics create`
+- **AND** the system does not create or modify Project files
 
 #### Scenario: Initialize accepts custom content directory
 - **WHEN** a user runs `isomer-cli project init --content-dir custom-content` in a directory that is not inside an existing Isomer Project and does not contain `.isomer-labs/manifest.toml`
-- **THEN** the system creates the generated content root at `custom-content/`, writes content-root policy files there, creates the first Topic Workspace under `custom-content/topic-ws/<topic-id>/`, and records Project Manifest path defaults for `isomer_content_root = "custom-content"` and `topic_workspace_base_dir = "custom-content/topic-ws"`
+- **THEN** the system creates the generated content root at `custom-content/`, writes content-root policy files there, and records Project Manifest path defaults for `isomer_content_root = "custom-content"` and `topic_workspace_base_dir = "custom-content/topic-ws"`
+- **AND** the system does not create `custom-content/topic-ws/<topic-id>/` or any other Topic Workspace directory
+
+#### Scenario: Initialize writes no topic defaults
+- **WHEN** `isomer-cli project init` writes the Project Manifest
+- **THEN** the manifest contains no `[defaults].research_topic_id`, no `[defaults].topic_workspace_id`, no `[[research_topics]]`, and no `[[topic_workspaces]]`
+
+#### Scenario: Empty project manifest is valid
+- **WHEN** Project validation reads a fresh Project Manifest created by `isomer-cli project init`
+- **THEN** it treats the empty Research Topic registry as valid for Project-scoped commands
 
 #### Scenario: Initialize rejects nested project
 - **WHEN** a user runs `isomer-cli project init` from inside a directory tree that already has an ancestor `.isomer-labs/manifest.toml`
@@ -43,7 +59,11 @@ The system SHALL initialize the smallest valid Isomer-managed Project configurat
 
 #### Scenario: Initialize creates Houmao project overlay
 - **WHEN** `isomer-cli project init` completes successfully
-- **THEN** the system has invoked the supported Houmao CLI project initialization boundary for the Project root and reports the resolved Houmao Project overlay path in deterministic text or JSON output
+- **THEN** the system has invoked the supported Houmao CLI project initialization boundary with `<project-root>/.isomer-labs/` as the Houmao project directory and reports the resolved Isomer-managed Houmao project directory and `.isomer-labs/.houmao/` overlay path in deterministic text or JSON output
+
+#### Scenario: Existing root Houmao overlay is ignored
+- **WHEN** a user runs `isomer-cli project init` in a Project root that already contains `.houmao/` but does not contain `.isomer-labs/manifest.toml`
+- **THEN** the system treats root `.houmao/` as external user-owned Houmao state, leaves it unmodified, and creates or validates the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`
 
 #### Scenario: Initialize does not create runtime database
 - **WHEN** `isomer-cli project init` completes
@@ -624,7 +644,7 @@ The system SHALL keep cleanup filesystem side effects explicit and SHALL avoid l
 
 #### Scenario: Houmao overlay cleanup is local only
 - **WHEN** cleanup applies `--part houmao-overlay --yes`
-- **THEN** it may remove the local `.houmao/` overlay but does not stop, launch, inspect, message, or adopt live Houmao managed agents
+- **THEN** it may remove the local Isomer-managed `.isomer-labs/.houmao/` overlay, preserves root `.houmao/`, and does not stop, launch, inspect, message, or adopt live Houmao managed agents
 
 #### Scenario: Runtime cleanup is filesystem scoped
 - **WHEN** cleanup applies `--part runtime --topic <topic-id> --yes`
@@ -640,3 +660,56 @@ The system SHALL preserve Project initialization overwrite refusal and direct us
 #### Scenario: Existing manifest diagnostic mentions cleanup path
 - **WHEN** init refuses because the Project Manifest already exists
 - **THEN** the diagnostic or human-readable guidance names `isomer-cli project cleanup --dry-run` as the supported way to preview removal before reinitialization
+
+### Requirement: Project Content Root Relocation CLI Surface
+The system SHALL expose content-root relocation through a Project-scoped command surface.
+
+#### Scenario: Project help lists content-root group
+- **WHEN** a user runs `isomer-cli project --help`
+- **THEN** the help lists a `content-root` command group for generated content-root operations
+
+#### Scenario: Content-root help lists move command
+- **WHEN** a user runs `isomer-cli project content-root --help`
+- **THEN** the help lists a `move` command for relocating the Project generated content root
+
+#### Scenario: Move help lists required controls
+- **WHEN** a user runs `isomer-cli project content-root move --help`
+- **THEN** the help lists `--to <content-dir>`, `--dry-run`, and `--yes`
+
+#### Scenario: Canonical move command shape
+- **WHEN** docs, help, diagnostics, or operator guidance mention content-root relocation
+- **THEN** they use `isomer-cli project content-root move --to <content-dir>` as the canonical command shape
+
+### Requirement: Project Content Root Relocation CLI Output
+The system SHALL expose relocation plans and results through standard CLI text and JSON output conventions.
+
+#### Scenario: Dry-run supports JSON output
+- **WHEN** a user runs `isomer-cli --print-json project content-root move --to custom-content --dry-run`
+- **THEN** the command emits the standard versioned JSON output wrapper with a relocation payload and deterministic diagnostics
+
+#### Scenario: Confirmed move supports JSON output
+- **WHEN** a user runs `isomer-cli --print-json project content-root move --to custom-content --yes`
+- **THEN** the command emits the standard versioned JSON output wrapper with applied relocation results and deterministic diagnostics
+
+#### Scenario: Missing destination is rejected
+- **WHEN** a user runs `isomer-cli project content-root move --dry-run` without `--to`
+- **THEN** Click validation or an Isomer diagnostic rejects the request before planning mutation
+
+#### Scenario: Missing confirmation is non-mutating
+- **WHEN** a user runs `isomer-cli project content-root move --to custom-content` without `--yes`
+- **THEN** the command behaves as a non-mutating plan, reports `dry_run = true`, and explains that applying the move requires `--yes`
+
+### Requirement: Project Content Root Relocation Discovery
+The system SHALL resolve the target Project for content-root relocation using the canonical Project discovery rules.
+
+#### Scenario: Ancestor discovery locates Project
+- **WHEN** a user runs `isomer-cli project content-root move --to custom-content --dry-run` from a directory below a Project root
+- **THEN** the command walks parent directories to find `.isomer-labs/manifest.toml` and plans relocation for that Project
+
+#### Scenario: Root selector applies to relocation
+- **WHEN** a user runs `isomer-cli project --root <project-root> content-root move --to custom-content --dry-run`
+- **THEN** the command plans relocation for the selected Project root
+
+#### Scenario: Manifest selector applies to relocation
+- **WHEN** a user runs `isomer-cli project --manifest <manifest-path> content-root move --to custom-content --dry-run`
+- **THEN** the command plans relocation for the Project described by that manifest
