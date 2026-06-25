@@ -58,7 +58,7 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 ## Agent Workspace and Collaboration
 
-**Agent Workspace**: a per-agent work area inside a Topic Workspace assigned to one globally unique Agent Instance for owned scratch files, local runtime state, logs, and Agent Artifacts. It uses the parent Topic Workspace Pixi environment by default and remains an advisory ownership boundary: Isomer records expected access, but does not provide filesystem-grade access control.
+**Agent Workspace**: a per-agent work area inside a Topic Workspace assigned to one globally unique Agent Instance for owned scratch files, local runtime state, logs, and Agent Artifacts. Runtime uses `<topic-workspace>/agents/<agent-instance-id>/` by default, or an approved `agent_workspace_ref` under the selected Topic Workspace when profile or packet material names one. It uses the parent Topic Workspace Pixi environment by default and remains an advisory ownership boundary: Isomer records expected access, but does not provide filesystem-grade access control.
 
 **Agent Runtime**: the durable execution state and support files scoped to one Agent Workspace, such as prompt records, tool-call traces, temporary run notes, local logs, and recovery files for that agent.
 

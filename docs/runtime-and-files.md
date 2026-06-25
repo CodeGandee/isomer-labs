@@ -74,7 +74,7 @@ Commands use Path Plan records to locate durable files without recomputing layou
 
 ## Agent Workspaces
 
-Agent Workspaces live under `<topic-workspace>/agents/<agent-instance-id>/`. Each Agent Workspace belongs to one globally unique Agent Instance. This flat layout remains the default when multiple Research Topics run in parallel with different dedicated teams; Agent Team Instance membership, Run participation, Agent Role assignment, and task participation belong in Workspace Runtime records, not in the Agent Workspace directory hierarchy.
+Agent Workspaces live under `<topic-workspace>/agents/<agent-instance-id>/` by default. When an approved Topic Agent Team Profile or Topic Team Instantiation Packet carries an `agent_workspace_ref` under the selected Topic Workspace, Agent Team Instance creation records the Agent Workspace path plan from that ref instead, for example `<topic-workspace>/agents/alice`. Each Agent Workspace still belongs to one globally unique Agent Instance; the friendly path segment such as `alice` does not become the Agent Instance id. Agent Team Instance membership, Run participation, Agent Role assignment, and task participation belong in Workspace Runtime records, not in the Agent Workspace directory hierarchy.
 
 Agent Workspaces inherit the selected Topic Workspace Pixi environment by default. They do not contain their own `pixi.toml`, `pyproject.toml`, `pixi.lock`, or `.pixi/` directory unless an explicit Service Request creates a divergent environment and records support Artifacts and Provenance Records.
 
@@ -150,7 +150,7 @@ The following are not durable research state and may be regenerated or lost:
 | Topic Agent Team Profile Bundle | `<topic-workspace>/team-profile/` | yes |
 | Workspace Runtime DB | `<topic-workspace>/state.sqlite` | yes |
 | Runtime directories | `<topic-workspace>/{artifacts,agents,tasks,runs,views,logs}/` | yes |
-| Agent Workspace | `<topic-workspace>/agents/<agent-instance-id>/` | yes |
+| Agent Workspace | `<topic-workspace>/agents/<agent-instance-id>/` by default, or an approved `agent_workspace_ref` under the selected Topic Workspace | yes |
 | Adapter root | `<topic-workspace>/runtime/adapters/houmao/<ati-id>/` | yes |
 | Adapter manifests | `<adapter-root>/{adapter-link,launch-material-manifest,adapter-runtime-manifest}.json` | yes |
 | Command payloads | `<adapter-root>/command-payloads/` | yes |

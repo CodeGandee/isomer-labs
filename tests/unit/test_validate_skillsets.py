@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import sys
 import tempfile
 import textwrap
@@ -173,6 +174,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 """,
             )
         self.write_project_manager_skill(root)
+        self.write_topic_workspace_manager_skill(root)
 
     def write_project_manager_skill(
         self,
@@ -238,6 +240,105 @@ class SkillsetValidatorTests(unittest.TestCase):
                 # {support_reference_name}
 
                 Local support reference.
+                """,
+            )
+
+    def write_topic_workspace_manager_skill(
+        self,
+        root: Path,
+        *,
+        omit_subcommand: str | None = None,
+        omit_skill_term: str | None = None,
+        omit_subcommand_fallback: bool = False,
+    ) -> None:
+        skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr"
+        if skill_dir.exists():
+            shutil.rmtree(skill_dir)
+        subcommand_links = ", ".join(
+            f"`references/{subcommand_name}`" for subcommand_name in validator.TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS
+        )
+        skill_text = f"""
+            ---
+            name: isomer-admin-topic-workspace-mgr
+            description: Valid fixture topic workspace manager skill.
+            ---
+
+            # Isomer Admin Topic Workspace Mgr
+
+            Prepare `<topic-workspace-dir>/repos/topic-main`, `<topic-workspace-dir>/agents/<agent-key>`, `per-agent/<agent-key>/main`, and `per-agent/<agent-key>/<branch-name>` while preserving `agent_workspace_ref`, Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
+
+            ## Workflow
+
+            1. **Default subcommand**: Run `topic-workspace`.
+            2. Select one subcommand and load only its detail page.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Subcommands
+
+            Procedural Subcommands: `resolve-workspace`, `ensure-main-repo`, `plan-agents`, `create-worktrees`, `write-boundaries`, `create-agent-branch`, `validate-worktrees`, and `summarize`.
+
+            Helper Subcommands: `resolve-workspace`, `ensure-main-repo`, `plan-agents`, `create-worktrees`, and `validate-worktrees`.
+
+            Misc Subcommands: `help` and `topic-workspace`.
+
+            Use {subcommand_links}.
+            """
+        if omit_skill_term is not None:
+            skill_text = skill_text.replace(omit_skill_term, "")
+        write(root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "SKILL.md", skill_text)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-admin-topic-workspace-mgr"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-admin-topic-workspace-mgr to validate this fixture."
+            """,
+        )
+        for subcommand_name in validator.TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS:
+            if subcommand_name == omit_subcommand:
+                continue
+            if subcommand_name == "help.md":
+                write(
+                    root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "references" / subcommand_name,
+                    """
+                    # Help
+
+                    ## Workflow
+
+                    1. Print the public subcommands and blocker guidance.
+
+                    If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                    ## Public Subcommands
+
+                    | Subcommand | Purpose | Produces |
+                    | --- | --- | --- |
+                    | `resolve-workspace` | Resolve Project context. | Topic Workspace paths. |
+                    | `ensure-main-repo` | Prepare repo. | Repo readiness. |
+                    | `plan-agents` | Plan agents. | Agent Workspace refs. |
+                    | `create-worktrees` | Create worktrees. | Worktree readiness. |
+                    | `write-boundaries` | Write boundaries. | Boundary paths. |
+                    | `create-agent-branch` | Create branch. | Branch result. |
+                    | `validate-worktrees` | Validate worktrees. | Validation status. |
+                    | `summarize` | Summarize results. | Next operator action. |
+                    | `topic-workspace` | Run full flow. | Full setup result. |
+                    | `help` | Print usage. | Help output. |
+                    """,
+                )
+                continue
+            fallback = "" if omit_subcommand_fallback and subcommand_name == "plan-agents.md" else "If the user's task does not map cleanly to these steps, use your native planning tool."
+            write(
+                root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "references" / subcommand_name,
+                f"""
+                # {subcommand_name}
+
+                ## Workflow
+
+                1. Run the fixture step and report any blocker.
+
+                {fallback}
                 """,
             )
 
@@ -593,3 +694,36 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS005", codes(diagnostics))
         self.assertTrue(any("isomer-cli project ..." in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_workspace_manager(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        shutil.rmtree(root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("isomer-admin-topic-workspace-mgr is required" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_workspace_subcommands(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_workspace_manager_skill(root, omit_subcommand="create-worktrees.md")
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("create-worktrees.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_workspace_guardrail_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_workspace_manager_skill(root, omit_skill_term="Workspace Runtime")
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("Workspace Runtime" in message for message in messages(diagnostics)), messages(diagnostics))

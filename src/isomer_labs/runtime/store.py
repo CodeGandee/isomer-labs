@@ -89,6 +89,7 @@ from isomer_labs.runtime.transactions import (
     _table_names,
     run_runtime_transaction as _run_runtime_transaction,
 )
+from isomer_labs.workspace_refs import resolve_agent_workspace_ref, validate_agent_workspace_ref_scope
 
 
 @dataclass(frozen=True)
@@ -527,6 +528,21 @@ class WorkspaceRuntimeStore:
                 [(binding.role_id, agent_id) for binding, agent_id in generated_ids],
             )
         )
+        for binding in active_bindings:
+            if binding.agent_workspace_ref is None:
+                continue
+            diagnostics.extend(
+                validate_agent_workspace_ref_scope(
+                    project=context.project,
+                    research_topic_id=context.research_topic.id,
+                    topic_workspace_id=context.topic_workspace_id,
+                    topic_workspace_path=context.topic_workspace_path,
+                    workspace_ref=binding.agent_workspace_ref,
+                    source_path=profile.source_path,
+                    field=f"role_bindings.{binding.role_id}.agent_workspace_ref",
+                    concept="Agent Workspace path plan",
+                )
+            )
         if has_errors(diagnostics):
             return None, diagnostics
 
@@ -535,13 +551,27 @@ class WorkspaceRuntimeStore:
                 for binding, agent_id in generated_ids:
                     workspace_id = f"agent-workspace-{agent_id}"
                     surface = f"agent_workspace:{agent_id}"
-                    workspace_path = context.topic_workspace_path / "agents" / agent_id
+                    path_source = "default"
+                    source_detail = None
+                    if binding.agent_workspace_ref is None:
+                        workspace_path = context.topic_workspace_path / "agents" / agent_id
+                    else:
+                        workspace_path = resolve_agent_workspace_ref(
+                            context.project,
+                            binding.agent_workspace_ref,
+                        ).path
+                        path_source = (
+                            "topic_team_instantiation_packet.agent_workspace_ref"
+                            if profile.instantiation_packet_ref is not None
+                            else "topic_agent_team_profile.agent_workspace_ref"
+                        )
+                        source_detail = f"role_bindings.{binding.role_id}.agent_workspace_ref={binding.agent_workspace_ref}"
                     path_plan = self.record_path_plan(
                         topic_workspace_id=context.topic_workspace_id,
                         surface=surface,
                         path=workspace_path,
-                        source="default",
-                        source_detail=None,
+                        source=path_source,
+                        source_detail=source_detail,
                         created_at=now,
                     )
                     workspace_path.mkdir(parents=True, exist_ok=True)

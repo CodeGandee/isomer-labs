@@ -19,6 +19,7 @@ CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/")
 TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-admin-topic-team-specialize"
 PROJECT_MANAGER_SKILL = "isomer-admin-project-mgr"
+TOPIC_WORKSPACE_MANAGER_SKILL = "isomer-admin-topic-workspace-mgr"
 
 MIGRATED_OPERATOR_SKILLS = (
     "isomer-rsch-project-aware",
@@ -225,6 +226,64 @@ PROJECT_MANAGER_SUPPORT_REFERENCES = (
 )
 
 PROJECT_MANAGER_FORBIDDEN_SUPPORT_REFS = TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS
+
+TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
+    "topic-workspace",
+    "Default subcommand",
+    "## Subcommands",
+    "Procedural Subcommands",
+    "Helper Subcommands",
+    "Misc Subcommands",
+    "references/topic-workspace.md",
+    "resolve-workspace",
+    "ensure-main-repo",
+    "plan-agents",
+    "create-worktrees",
+    "write-boundaries",
+    "create-agent-branch",
+    "validate-worktrees",
+    "summarize",
+    "help",
+    "<topic-workspace-dir>/repos/topic-main",
+    "<topic-workspace-dir>/agents/<agent-key>",
+    "per-agent/<agent-key>/main",
+    "per-agent/<agent-key>/<branch-name>",
+    "agent_workspace_ref",
+    "Agent Instance",
+    "Workspace Runtime",
+    "Houmao",
+    "Execution Adapter",
+    "Workspace Boundary",
+    "Peer Read Access",
+    "blockers",
+    "next_operator_action",
+)
+
+TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS = (
+    "resolve-workspace.md",
+    "ensure-main-repo.md",
+    "plan-agents.md",
+    "create-worktrees.md",
+    "write-boundaries.md",
+    "create-agent-branch.md",
+    "validate-worktrees.md",
+    "summarize.md",
+    "help.md",
+    "topic-workspace.md",
+)
+
+TOPIC_WORKSPACE_MANAGER_HELP_TABLE_TERMS = (
+    "| Subcommand | Purpose | Produces |",
+    "| --- | --- | --- |",
+)
+
+TOPIC_WORKSPACE_MANAGER_NAMING_EXCEPTIONS = {"help", "summarize", "topic-workspace"}
+
+TOPIC_WORKSPACE_MANAGER_REFERENCE_REQUIRED_TERMS = (
+    "blocker",
+)
+
+TOPIC_WORKSPACE_MANAGER_FORBIDDEN_SUPPORT_REFS = TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS
 
 REMOVED_OPERATOR_SKILLS = (
     "isomer-admin-project-aware",
@@ -711,6 +770,106 @@ def validate_project_manager_module(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skill_dir = repo_root / "skillset" / "operator" / TOPIC_WORKSPACE_MANAGER_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} is required")
+        return diagnostics
+    if (skill_dir / "evals").exists():
+        add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must not contain evals/")
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    for term in TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS:
+        if term not in text:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(lines, "# Isomer"),
+                "OPS006",
+                f"{TOPIC_WORKSPACE_MANAGER_SKILL} must document '{term}'",
+            )
+    skill_workflow_index = line_index_containing(lines, "## Workflow")
+    if skill_workflow_index is None:
+        add(diagnostics, repo_root, skill_md, 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must include a ## Workflow section")
+    else:
+        if skill_workflow_index > 24:
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must place ## Workflow near the top")
+        if not has_numbered_step_after(lines, skill_workflow_index):
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} workflow must use numbered steps")
+        if "does not map cleanly" not in text:
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must include a freeform fallback")
+    references_dir = skill_dir / "references"
+    allowed_reference_names = set(TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_reference_names:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "OPS006",
+                f"{TOPIC_WORKSPACE_MANAGER_SKILL} has unexpected reference page references/{reference_path.name}",
+            )
+    for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
+        skill_file_lines = read_lines(skill_file)
+        for line_number, line in enumerate(skill_file_lines, start=1):
+            for forbidden_ref in TOPIC_WORKSPACE_MANAGER_FORBIDDEN_SUPPORT_REFS:
+                if forbidden_ref in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_file,
+                        line_number,
+                        "OPS006",
+                        f"{TOPIC_WORKSPACE_MANAGER_SKILL} must keep required support references inside its skill directory; found '{forbidden_ref}'",
+                    )
+    for subcommand_file_name in TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS:
+        subcommand_name = subcommand_file_name.removesuffix(".md")
+        subcommand_path = references_dir / subcommand_file_name
+        if subcommand_name not in TOPIC_WORKSPACE_MANAGER_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+(?:-[a-z]+)+$", subcommand_name):
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"subcommand '{subcommand_name}' must be a short verb-object name or an allowed command")
+        if len(subcommand_name) > 24:
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"subcommand '{subcommand_name}' must be short")
+        if not subcommand_path.exists():
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must include references/{subcommand_file_name}")
+            continue
+        if f"references/{subcommand_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must link references/{subcommand_file_name}")
+        subcommand_lines = read_lines(subcommand_path)
+        workflow_index = line_index_containing(subcommand_lines, "## Workflow")
+        if workflow_index is None:
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"references/{subcommand_file_name} must include a ## Workflow section")
+            continue
+        if workflow_index > 8:
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS006", f"references/{subcommand_file_name} must place ## Workflow near the top")
+        if not has_numbered_step_after(subcommand_lines, workflow_index):
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS006", f"references/{subcommand_file_name} workflow must use numbered steps")
+        subcommand_text = "\n".join(subcommand_lines)
+        if "does not map cleanly" not in subcommand_text:
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS006", f"references/{subcommand_file_name} must include a freeform fallback")
+        for required_term in TOPIC_WORKSPACE_MANAGER_REFERENCE_REQUIRED_TERMS:
+            if required_term not in subcommand_text:
+                add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"references/{subcommand_file_name} must document '{required_term}'")
+    help_path = references_dir / "help.md"
+    if help_path.exists():
+        help_lines = read_lines(help_path)
+        help_text = "\n".join(help_lines)
+        for table_term in TOPIC_WORKSPACE_MANAGER_HELP_TABLE_TERMS:
+            if table_term not in help_text:
+                add(
+                    diagnostics,
+                    repo_root,
+                    help_path,
+                    first_line_containing(help_lines, "## Public Subcommands"),
+                    "OPS006",
+                    f"references/help.md must print public subcommands as a three-column table including '{table_term}'",
+                )
+    return diagnostics
+
+
 def validate_deepsci_mini_specialization_guide(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     guide = repo_root / "teams" / "deepsci-mini" / "execplan" / "team-specialization-guide.md"
@@ -743,6 +902,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_migrated_operator_refs(repo_root))
     diagnostics.extend(validate_topic_team_specialization_module(repo_root))
     diagnostics.extend(validate_project_manager_module(repo_root))
+    diagnostics.extend(validate_topic_workspace_manager_module(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
     return sorted(set(diagnostics))
 

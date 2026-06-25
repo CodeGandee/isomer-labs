@@ -225,7 +225,7 @@ pixi run isomer-cli --print-json project runtime validate --topic my-topic --req
 
 Create an Agent Team Instance record.
 
-**Side effects:** writes Agent Team Instance record, Agent Instance records, Agent Workspace records, Agent Workspace path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories under `<topic-workspace>/agents/<agent-instance-id>/`. Does not launch Houmao agents, create mailboxes, write launch dossiers, or store adapter-specific launch refs.
+**Side effects:** writes Agent Team Instance record, Agent Instance records, Agent Workspace records, Agent Workspace path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories. The default path is `<topic-workspace>/agents/<agent-instance-id>/`; when an active role binding has an approved `agent_workspace_ref` under the selected Topic Workspace, the path plan uses that ref instead. Does not launch Houmao agents, create mailboxes, write launch dossiers, or store adapter-specific launch refs.
 
 **Prerequisites:** Workspace Runtime must be initialized, the Research Topic's single Topic Agent Team Profile Bundle must be materialized, and readiness should be `ready` for launch-facing work.
 

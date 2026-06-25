@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from isomer_labs.context import resolve_topic_workspace
 from isomer_labs.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import DomainAgentTeamTemplate, EffectiveTopicContext, Project
 from isomer_labs.path_utils import canonicalize, is_within, resolve_project_path
@@ -18,6 +19,7 @@ from isomer_labs.topic_team_instantiation import (
     scan_packet_for_forbidden_fields,
     topic_profile_bundle_path,
 )
+from isomer_labs.workspace_refs import validate_agent_workspace_ref_scope
 
 
 def validate_topic_team_instantiation_packet(
@@ -162,6 +164,21 @@ def _validate_project_scope(
     other_topic_ids = sorted(topic.id for topic in project.manifest.research_topics if topic.id != packet.research_topic_id)
     if other_topic_ids:
         _validate_topic_local_refs(packet, other_topic_ids, diagnostics)
+    topic = project.manifest.first_topic(packet.research_topic_id)
+    if topic is None:
+        return
+    _, workspace_path, _, workspace_diagnostics = resolve_topic_workspace(project, topic, packet.topic_workspace_ref)
+    diagnostics.extend(workspace_diagnostics)
+    if workspace_path is None:
+        return
+    _validate_agent_workspace_refs(
+        packet,
+        project=project,
+        research_topic_id=packet.research_topic_id,
+        topic_workspace_id=packet.topic_workspace_ref,
+        topic_workspace_path=workspace_path,
+        diagnostics=diagnostics,
+    )
 
 
 def _validate_template(
@@ -467,6 +484,32 @@ def _validate_topic_local_refs(
                     message=f"Packet ref encodes another Research Topic id: {leaked_topic}.",
                 )
             )
+
+
+def _validate_agent_workspace_refs(
+    packet: TopicTeamInstantiationPacket,
+    *,
+    project: Project,
+    research_topic_id: str,
+    topic_workspace_id: str,
+    topic_workspace_path: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    for binding in packet.role_bindings:
+        if not binding.active or binding.agent_workspace_ref is None:
+            continue
+        diagnostics.extend(
+            validate_agent_workspace_ref_scope(
+                project=project,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                topic_workspace_path=topic_workspace_path,
+                workspace_ref=binding.agent_workspace_ref,
+                source_path=packet.source_path,
+                field=f"role_bindings.{binding.role_id}.agent_workspace_ref",
+                concept="Topic Team Instantiation Packet isolation",
+            )
+        )
 
 
 def _launch_blocker_refs(packet: TopicTeamInstantiationPacket) -> list[str]:

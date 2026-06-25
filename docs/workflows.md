@@ -107,7 +107,7 @@ pixi run isomer-cli project team-instances list --topic my-topic
 pixi run isomer-cli --print-json project team-instances show ati-my-topic-deepsci --topic my-topic
 ```
 
-This creates Agent Instance records, Agent Workspace records, and directories under `isomer-content/topic-ws/my-topic/agents/`. It does not launch Houmao agents.
+This creates Agent Instance records, Agent Workspace records, and directories under `isomer-content/topic-ws/my-topic/agents/` by default. If the selected profile or packet includes approved `agent_workspace_ref` values under the selected Topic Workspace, the runtime records those paths instead. It does not launch Houmao agents.
 
 ## Prepare-only Houmao Materialization
 

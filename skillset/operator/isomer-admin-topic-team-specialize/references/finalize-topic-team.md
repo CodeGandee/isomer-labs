@@ -5,9 +5,9 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Read the topic overview, specialization outputs, durable setup records, Agent Workspace records, validation status, blockers, deferrals, and next action refs.
+2. Read the topic overview, specialization outputs, durable setup records, Agent Workspace records, delegated Git-backed workspace manager evidence, validation status, blockers, deferrals, and next action refs.
 3. Create or update `isomer-topic-summary.md` in the Topic Workspace root or selected provisional topic directory.
-4. Include the sections in **Summary Template** and keep blockers visible when validation is incomplete.
+4. Include the sections in **Summary Template** and keep blockers visible when validation is incomplete, including missing delegated `isomer-admin-topic-workspace-mgr` evidence when Git-backed Agent Workspace worktrees were requested.
 5. Report `isomer_topic_summary_path`, `topic_team_validation_status`, blockers, deferrals, and next operator action.
 6. Stop at the final summary boundary unless the user explicitly asks for `approve-profile` or `materialize-profile`.
 

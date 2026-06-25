@@ -22,6 +22,7 @@ from isomer_labs.profile_bundle_validation import (
     validate_profile_provenance,
     validate_unresolved_placeholders,
 )
+from isomer_labs.workspace_refs import validate_profile_agent_workspace_refs
 
 
 _PROFILE_RUNTIME_KEYS = {
@@ -421,32 +422,32 @@ def _validate_topic_local_refs(
     if project is None:
         return
     other_topic_ids = sorted(topic.id for topic in project.manifest.research_topics if topic.id != profile.research_topic_id)
-    if not other_topic_ids:
-        return
-    for field_name, value in (
-        ("coordination_policy_ref", profile.coordination_policy_ref),
-        ("gate_policy_ref", profile.gate_policy_ref),
-        ("scheduler_policy_ref", profile.scheduler_policy_ref),
-        ("baseline_waiver_policy_ref", profile.baseline_waiver_policy_ref),
-        ("literature_provider_ref", profile.literature_provider_ref),
-        ("automatic_mode_policy_ref", profile.automatic_mode_policy_ref),
-    ):
-        _validate_topic_ref_value(profile, field_name, value, other_topic_ids, diagnostics)
-    for index, artifact_ref in enumerate(profile.expected_artifacts):
-        _validate_topic_ref_value(profile, f"expected_artifacts[{index}]", artifact_ref, other_topic_ids, diagnostics)
-    for binding in profile.role_bindings:
+    if other_topic_ids:
         for field_name, value in (
-            ("agent_profile_ref", binding.agent_profile_ref),
-            ("capability_binding_ref", binding.capability_binding_ref),
-            ("skill_binding_projection_ref", binding.skill_binding_projection_ref),
+            ("coordination_policy_ref", profile.coordination_policy_ref),
+            ("gate_policy_ref", profile.gate_policy_ref),
+            ("scheduler_policy_ref", profile.scheduler_policy_ref),
+            ("baseline_waiver_policy_ref", profile.baseline_waiver_policy_ref),
+            ("literature_provider_ref", profile.literature_provider_ref),
+            ("automatic_mode_policy_ref", profile.automatic_mode_policy_ref),
         ):
-            _validate_topic_ref_value(
-                profile,
-                f"role_bindings.{binding.role_id}.{field_name}",
-                value,
-                other_topic_ids,
-                diagnostics,
-            )
+            _validate_topic_ref_value(profile, field_name, value, other_topic_ids, diagnostics)
+        for index, artifact_ref in enumerate(profile.expected_artifacts):
+            _validate_topic_ref_value(profile, f"expected_artifacts[{index}]", artifact_ref, other_topic_ids, diagnostics)
+        for binding in profile.role_bindings:
+            for field_name, value in (
+                ("agent_profile_ref", binding.agent_profile_ref),
+                ("capability_binding_ref", binding.capability_binding_ref),
+                ("skill_binding_projection_ref", binding.skill_binding_projection_ref),
+            ):
+                _validate_topic_ref_value(
+                    profile,
+                    f"role_bindings.{binding.role_id}.{field_name}",
+                    value,
+                    other_topic_ids,
+                    diagnostics,
+                )
+    diagnostics.extend(validate_profile_agent_workspace_refs(profile, project))
 
 
 def _validate_roles(
@@ -510,8 +511,6 @@ def _validate_roles(
                         message=f"Active Agent Role binding is missing required skill refs: {', '.join(missing_skills)}.",
                     )
                 )
-            if binding.agent_workspace_ref is not None:
-                _validate_agent_workspace_topic(profile, role.id, binding.agent_workspace_ref, diagnostics)
     for role_id in sorted(set(profile_bindings) - set(template_roles)):
         diagnostics.append(
             Diagnostic(
@@ -616,30 +615,6 @@ def _validate_policy_posture(profile: TopicAgentTeamProfile, diagnostics: list[D
                 path=profile.source_path,
                 field="gate_policy_ref",
                 message="Topic Agent Team Profile must name a Gate Policy ref.",
-            )
-        )
-
-
-def _validate_agent_workspace_topic(
-    profile: TopicAgentTeamProfile,
-    role_id: str,
-    workspace_ref: str,
-    diagnostics: list[Diagnostic],
-) -> None:
-    match workspace_ref.split("/"):
-        case ["isomer-content", "topic-ws", topic_id, *_] | ["topic-workspaces", topic_id, *_]:
-            pass
-        case _:
-            return
-    if topic_id != profile.research_topic_id:
-        diagnostics.append(
-            Diagnostic(
-                code="ISO019",
-                severity="error",
-                concept="Topic Agent Team Profile isolation",
-                path=profile.source_path,
-                field=f"role_bindings.{role_id}.agent_workspace_ref",
-                message="Agent Workspace ref points at another Research Topic's Topic Workspace.",
             )
         )
 

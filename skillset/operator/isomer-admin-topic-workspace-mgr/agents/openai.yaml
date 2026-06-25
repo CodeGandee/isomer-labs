@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-admin-topic-workspace-mgr"
+  short_description: "Prepare Git-backed Topic Workspaces."
+  default_prompt: "Use $isomer-admin-topic-workspace-mgr to prepare a Git-backed Topic Workspace."

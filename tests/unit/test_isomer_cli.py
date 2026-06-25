@@ -2095,6 +2095,7 @@ class IsomerCliTests(unittest.TestCase):
         missing_fanout: bool = False,
         policy_topic_id: str | None = None,
         artifact_topic_id: str | None = None,
+        agent_workspace_refs: dict[str, str] | None = None,
     ) -> str:
         policy_topic = policy_topic_id or topic_id
         artifact_topic = artifact_topic_id or topic_id
@@ -2114,6 +2115,9 @@ class IsomerCliTests(unittest.TestCase):
         ]
         role_blocks = []
         for role_id, required, optional in roles:
+            workspace_ref_line = ""
+            if agent_workspace_refs is not None and role_id in agent_workspace_refs:
+                workspace_ref_line = f'agent_workspace_ref = "{agent_workspace_refs[role_id]}"\n'
             role_blocks.append(
                 f"""
                 [[role_bindings]]
@@ -2122,6 +2126,7 @@ class IsomerCliTests(unittest.TestCase):
                 agent_profile_ref = "{profile_id}:{role_id}:agent-profile"
                 capability_binding_ref = "{profile_id}:{role_id}:capability-binding"
                 skill_binding_projection_ref = "{profile_id}:{role_id}:skill-binding-projection"
+                {workspace_ref_line}
                 required_skills = {json.dumps(required)}
                 optional_skills = {json.dumps(optional)}
                 """
@@ -2430,6 +2435,13 @@ status = "active"
             ["topic-service-agent:uc01-deterministic-service-master"],
             team["topic_service_agent_refs"],
         )
+        packet_ref_plans = [
+            plan
+            for plan in data["creation"]["path_plans"]
+            if plan["source"] == "topic_team_instantiation_packet.agent_workspace_ref"
+        ]
+        self.assertEqual(3, len(packet_ref_plans))
+        self.assertTrue(all("agent_workspace_ref" in plan["source_detail"] for plan in packet_ref_plans))
 
     def test_uc01_invalid_packet_is_rejected_before_materialization(self) -> None:
         root = self.copy_uc01_fixture_project("uc01-invalid-packet")
@@ -2456,6 +2468,63 @@ status = "active"
         self.assertIn("ISO009", codes)
         self.assertIn("ISO096", codes)
         self.assertIn("ISO019", codes)
+
+    def test_uc01_packet_rejects_cross_topic_agent_workspace_ref(self) -> None:
+        root = self.copy_uc01_fixture_project("uc01-cross-topic-workspace-ref")
+        self.append_manifest(
+            root,
+            """
+            [[research_topics]]
+            id = "other-topic"
+            config_path = ".isomer-labs/research-topics/other-topic.toml"
+            topic_workspace_id = "other-topic"
+
+            [[topic_workspaces]]
+            id = "other-topic"
+            research_topic_id = "other-topic"
+            path = "topic-workspaces/other-topic"
+            """,
+        )
+        write(
+            root / ".isomer-labs" / "research-topics" / "other-topic.toml",
+            """
+            research_topic_id = "other-topic"
+            topic_statement = "Other topic."
+            """,
+        )
+        (root / "topic-workspaces" / "other-topic").mkdir(parents=True)
+        packet_path = root / "fixtures" / "uc01" / "topic-team-instantiation-packet.toml"
+        packet_path.write_text(
+            packet_path.read_text(encoding="utf-8").replace(
+                f"topic-workspaces/{UC01_RESEARCH_TOPIC_ID}/agent-workspaces/topic-team/deepsci-mini-lead",
+                "topic-workspaces/other-topic/agents/alice",
+            ),
+            encoding="utf-8",
+        )
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "--root",
+                str(root),
+                "team-profiles",
+                "materialize",
+                "--topic",
+                UC01_RESEARCH_TOPIC_ID,
+                "--packet",
+                "fixtures/uc01/topic-team-instantiation-packet.toml",
+                "--write",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO019", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+        self.assertIn(
+            "role_bindings.deepsci-mini-lead.agent_workspace_ref",
+            {diagnostic.get("field") for diagnostic in data["diagnostics"]},
+        )
 
     def test_profile_manifest_context_specialize_and_validate(self) -> None:
         status, output = self.run_cli(["project", "--root", str(FIXTURE_PROJECT), "validate", "--json"])
@@ -2638,6 +2707,7 @@ status = "active"
         self.assertEqual("uc-01-alpha", team["topic_agent_team_profile_id"])
         self.assertEqual(7, len(creation["agent_instances"]))
         self.assertEqual(7, len(creation["agent_workspaces"]))
+        self.assertTrue(all(plan["source"] == "default" for plan in creation["path_plans"]))
         self.assertEqual(0, len(team["run_ids"]))
         self.assertNotIn("houmao", output.lower())
         self.assertTrue((root / "topic-workspaces" / "alpha" / "agents").is_dir())
@@ -2689,6 +2759,111 @@ status = "active"
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO044", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_team_instance_creation_uses_agent_workspace_ref_path_plan_without_identity_alias(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        write(
+            root / ".isomer-labs" / "team-profiles" / "uc-01-alpha.toml",
+            self.profile_fixture(
+                "uc-01-alpha",
+                "alpha",
+                "UC-01",
+                agent_workspace_refs={
+                    "deepsci-org-master": "topic-workspaces/alpha/agents/alice",
+                },
+            ),
+        )
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        for command in (
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-ref",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        creation = data["creation"]
+        agent_by_role = {agent["agent_role_id"]: agent for agent in creation["agent_instances"]}
+        master_id = agent_by_role["deepsci-org-master"]["id"]
+        self.assertNotEqual("alice", master_id)
+        master_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == f"agent_workspace:{master_id}")
+        self.assertEqual(str((root / "topic-workspaces" / "alpha" / "agents" / "alice").resolve()), master_plan["path"])
+        self.assertEqual("topic_agent_team_profile.agent_workspace_ref", master_plan["source"])
+        self.assertIn("role_bindings.deepsci-org-master.agent_workspace_ref", master_plan["source_detail"])
+        self.assertTrue((root / "topic-workspaces" / "alpha" / "agents" / "alice").is_dir())
+
+        fallback_agent_id = agent_by_role["deepsci-org-framer"]["id"]
+        fallback_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == f"agent_workspace:{fallback_agent_id}")
+        self.assertEqual("default", fallback_plan["source"])
+        self.assertTrue(fallback_plan["path"].endswith(f"topic-workspaces/alpha/agents/{fallback_agent_id}"))
+
+    def test_team_instance_creation_rejects_unsafe_agent_workspace_ref_without_mutation(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        for command in (
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+        write(
+            root / ".isomer-labs" / "team-profiles" / "uc-01-alpha.toml",
+            self.profile_fixture(
+                "uc-01-alpha",
+                "alpha",
+                "UC-01",
+                agent_workspace_refs={
+                    "deepsci-org-master": "topic-workspaces/beta/agents/alice",
+                },
+            ),
+        )
+        runtime_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        before_counts = self.runtime_counts(runtime_path)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-unsafe-ref",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertIn("ISO019", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+        self.assertIn(
+            "role_bindings.deepsci-org-master.agent_workspace_ref",
+            {diagnostic.get("field") for diagnostic in data["diagnostics"]},
+        )
+        self.assertEqual(before_counts, self.runtime_counts(runtime_path))
 
     def test_agent_instance_ids_are_globally_unique_and_validated(self) -> None:
         root = self.make_root()
@@ -3963,6 +4138,47 @@ status = "active"
         self.assertEqual(1, status)
         self.assertTrue({"ISO004", "ISO009", "ISO010", "ISO019", "ISO020"} <= codes, data["diagnostics"])
         self.assertNotIn("SHOULD_NOT_LEAK", output)
+
+    def test_profile_validation_accepts_topic_workspace_agent_refs_and_rejects_cross_topic_refs(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        valid_profile = root / ".isomer-labs" / "team-profiles" / "valid-workspace-ref.toml"
+        write(
+            valid_profile,
+            self.profile_fixture(
+                "valid-workspace-ref",
+                "alpha",
+                "UC-01",
+                agent_workspace_refs={
+                    "deepsci-org-master": "topic-workspaces/alpha/agents/alice",
+                },
+            ),
+        )
+
+        status, output = self.run_cli(["project", "team-profiles", "validate", str(valid_profile), "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+
+        cross_topic_profile = root / ".isomer-labs" / "team-profiles" / "cross-topic-workspace-ref.toml"
+        write(
+            cross_topic_profile,
+            self.profile_fixture(
+                "cross-topic-workspace-ref",
+                "alpha",
+                "UC-01",
+                agent_workspace_refs={
+                    "deepsci-org-master": "topic-workspaces/beta/agents/alice",
+                },
+            ),
+        )
+
+        status, output = self.run_cli(["project", "team-profiles", "validate", str(cross_topic_profile), "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO019", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+        self.assertIn(
+            "role_bindings.deepsci-org-master.agent_workspace_ref",
+            {diagnostic.get("field") for diagnostic in data["diagnostics"]},
+        )
 
     def test_archived_duplicate_profile_ids_are_rejected(self) -> None:
         root = self.make_root()
