@@ -8,9 +8,9 @@ This page documents the assumptions Isomer Labs currently makes, the non-goals t
 
 Agent Workspace and Workspace Boundary semantics declare intended write ownership and Peer Read Access rules, but they do not provide filesystem-grade isolation. An agent with system tools may still inspect or modify files outside its declared boundary. Durable cross-agent dependencies should be recorded through handoffs, promoted Artifacts, Evidence Items, or Provenance Records rather than relying on boundary enforcement.
 
-### Topic-to-environment bindings are explicit
+### Topic-to-environment bindings do not come from names
 
-Isomer never infers a Research Topic's Pixi environment from its id, name, or naming convention. Every binding must appear as a repeated `topic_pixi_environment_bindings` or `topic_standalone_pixi_bindings` entry in the Project Manifest. Commands that need environment readiness check only these explicit bindings.
+Isomer never infers a Research Topic's Pixi environment from its id, name, or naming convention. Project-root Pixi environment bindings must appear as repeated `topic_pixi_environment_bindings` entries in the Project Manifest. Topic Workspace Pixi bindings may appear as repeated `topic_standalone_pixi_bindings` entries with `manifest_path_or_dir`, and when no explicit standalone binding exists, commands use the registered Topic Workspace directory as the default target and ask Pixi to resolve it.
 
 ### Repair is explicit
 

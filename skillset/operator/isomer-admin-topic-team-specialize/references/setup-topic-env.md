@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Require `ensure-topic-registration` evidence. Refuse before service delegation if the Research Topic or Topic Workspace is not Project Manifest-backed, if `topic_registration_status` is blocked, or if the `topic_standalone_pixi_bindings` entry or equivalent Topic Workspace Pixi binding required by `isomer-srv-env-setup` is missing.
+2. Require `ensure-topic-registration` evidence. Refuse before service delegation if the Research Topic or Topic Workspace is not Project Manifest-backed, if `topic_registration_status` is blocked, or if Pixi cannot resolve either an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or the implicit registered Topic Workspace directory default required by `isomer-srv-env-setup`.
 3. Resolve the selected Research Topic and Topic Workspace from registration evidence, Project Manifest evidence, and specialization outputs. Refuse to run if the Topic Workspace is missing or provisional without authoritative registration.
 4. Read the topic overview, specialization outputs, copied template setup notes, draft packet/profile inputs, and any environment requirements from topic material.
 5. Ensure the source gate exists at `<topic-workspace>/user-intent/src/env-gate.md`. If it exists, use it as the handoff contract. If it is missing and the prompt or topic material gives a clear runnable target, create or update a concise `env-gate.md` that states what must run after setup. If the runnable target is unclear, ask the user for the target and stop before service delegation.
@@ -21,13 +21,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 Required predecessor artifacts from `specialize-team` or `clarify-topic-team`:
 
 - `<topic-dir>/topic-def/topic-overview.md`.
-- Registration assurance from `ensure-topic-registration`, including Project Manifest-backed `registered_research_topic_ref`, `registered_topic_workspace_ref`, `topic_registration_status: registered`, and active or explicitly blocked environment binding evidence.
+- Registration assurance from `ensure-topic-registration`, including Project Manifest-backed `registered_research_topic_ref`, `registered_topic_workspace_ref`, `topic_registration_status: registered`, and explicit, implicit-default, or blocked environment binding evidence.
 - `<topic-workspace>/team-profile/execplan/team-specialization-plan.md` with `Final Report` content or explicit pending items.
 - Draft profile or packet/profile input summary from `draft-profile`.
 
 If the specialized topic-team material is missing, refuse to run, explain that environment setup depends on the specialized team shape and requirements, and tell the user to run `specialize-team` first.
 
-If registration evidence is missing, refuse to run, explain that service setup needs manifest-backed Research Topic and Topic Workspace refs, and tell the user to run `ensure-topic-registration` first. If the Topic Workspace Pixi binding is missing, report that blocker and do not call `isomer-srv-env-setup`.
+If registration evidence is missing, refuse to run, explain that service setup needs manifest-backed Research Topic and Topic Workspace refs, and tell the user to run `ensure-topic-registration` first. If Pixi cannot resolve the effective Topic Workspace Pixi binding target, report that blocker and do not call `isomer-srv-env-setup`.
 
 ## Source Gate Handoff
 

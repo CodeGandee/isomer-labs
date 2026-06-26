@@ -1861,6 +1861,13 @@ def prepare_topic_environment_readiness(
     standalone_bindings = context.project.manifest.active_topic_standalone_pixi_bindings(
         context.research_topic.id
     )
+    resolved_standalone_binding = topic_payload.get("resolved_standalone_pixi_binding") if topic_payload is not None else None
+    resolved_standalone_manifest_ref = (
+        resolved_standalone_binding.get("resolved_manifest_path")
+        if isinstance(resolved_standalone_binding, dict)
+        and isinstance(resolved_standalone_binding.get("resolved_manifest_path"), str)
+        else None
+    )
     if any(check.id == "topic.pixi.binding.present" for check in failed_checks):
         status = "blocked"
     elif failed_checks or pixi_diagnostics or topic_diagnostics:
@@ -1876,9 +1883,11 @@ def prepare_topic_environment_readiness(
         project_pixi_environment_refs=[
             binding.pixi_environment for binding in project_bindings
         ],
-        standalone_pixi_manifest_refs=[
-            binding.manifest_path_input for binding in standalone_bindings
-        ],
+        standalone_pixi_manifest_refs=(
+            [resolved_standalone_manifest_ref]
+            if resolved_standalone_manifest_ref is not None
+            else [binding.manifest_path_or_dir_input for binding in standalone_bindings]
+        ),
         diagnostics=[diagnostic.to_json() for diagnostic in readiness_diagnostics],
         checked_at=checked_at,
         actor_ref=actor_ref,

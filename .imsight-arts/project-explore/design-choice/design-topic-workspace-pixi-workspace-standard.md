@@ -73,25 +73,25 @@ The `default` environment is the shared Agent Workspace environment unless a bin
 
 ## Project Manifest Binding
 
-The Project Manifest records each Topic Workspace Pixi workspace through `[[topic_standalone_pixi_bindings]]`:
+The Project Manifest may record an explicit Topic Workspace Pixi workspace target through `[[topic_standalone_pixi_bindings]]`. If no active explicit entry exists for the Research Topic, the effective target is the registered Topic Workspace directory and the binding source is `implicit-default`.
 
 ```toml
 [[topic_standalone_pixi_bindings]]
 research_topic_id = "flash-attention-gb10"
-manifest_path = "topic-workspaces/flash-attention-gb10/pixi.toml"
+manifest_path_or_dir = "topic-workspaces/flash-attention-gb10/pixi.toml"
 pixi_environment = "default"
 purpose = "agent-execution"
 status = "active"
 
 [[topic_standalone_pixi_bindings]]
 research_topic_id = "flash-attention-gb10"
-manifest_path = "topic-workspaces/flash-attention-gb10/pixi.toml"
+manifest_path_or_dir = "topic-workspaces/flash-attention-gb10"
 pixi_environment = "measure"
 purpose = "measurement-tasks"
 status = "active"
 ```
 
-The `manifest_path` is relative to the Project root. Isomer validates that the manifest exists, is inside the Project root, and declares the selected environment. Isomer does not infer a Topic Workspace Pixi manifest from the Topic Workspace path.
+The `manifest_path_or_dir` value is relative to the Project root. It may name a manifest file or a directory. Isomer passes the target to Pixi with `pixi info --json --manifest-path <target>`, then accepts the result only when Pixi's resolved manifest and selected environment prefix are confined to the registered Topic Workspace.
 
 ## Project-root Pixi Environment
 
@@ -144,8 +144,9 @@ Agents launched under the Topic Workspace use the Topic Workspace Pixi environme
 `isomer-cli doctor --topic <topic-id>` performs read-only checks:
 
 - The Topic Workspace exists and is registered in the Project Manifest.
-- The Topic Workspace Pixi manifest referenced by `topic_standalone_pixi_bindings` exists and is inside the Project root.
-- The selected `pixi_environment` is declared in the manifest.
+- The explicit `manifest_path_or_dir` target or implicit registered Topic Workspace directory target resolves through Pixi.
+- Pixi's resolved manifest path is inside the registered Topic Workspace.
+- The selected `pixi_environment`, fixed to `default` for implicit defaults, is reported by Pixi with an environment prefix under `<topic-workspace>/.pixi/`.
 - A matching `pixi.lock` is present.
 - `requires-pixi` constraints, if declared, are satisfied by the host Pixi executable.
 
@@ -155,9 +156,9 @@ Agents launched under the Topic Workspace use the Topic Workspace Pixi environme
 
 `isomer-cli runtime prepare --topic <topic-id>` records a `TopicEnvironmentReadinessRecord`:
 
-- It resolves the active `topic_standalone_pixi_bindings` for the Research Topic.
-- It records `ready` when the manifest, lockfile, and selected environment are present and valid.
-- It records `failed` or `blocked` when the manifest is missing, the environment is unknown, or the lockfile is absent.
+- It resolves the effective Topic Workspace Pixi binding target for the Research Topic.
+- It records `ready` when Pixi resolves the manifest, lockfile, and selected environment as present, valid, and confined.
+- It records `failed` or `blocked` when Pixi is missing, the target is unresolvable, the environment is unknown, confinement fails, or the lockfile is absent.
 - It sets `repair_service_request_hint` when repair is needed.
 - It records provenance linking the check to the acting Project Operator Session or Operator Agent.
 
@@ -176,7 +177,7 @@ The Service Request names the target Topic Workspace or Agent Workspace, the tas
 
 ## Migration from Project-root Environments
 
-Existing Research Topics that used `[[topic_pixi_environment_bindings]]` to Project-root environments may keep those bindings for platform topics. Research topics that need a topic-isolated Python environment should migrate to `[[topic_standalone_pixi_bindings]]` pointing to a Topic Workspace Pixi manifest. The migration itself is recorded as a Service Request or Project-level change with Provenance Records.
+Existing Research Topics that used `[[topic_pixi_environment_bindings]]` to Project-root environments may keep those bindings for platform topics. Research topics that use the Topic Workspace root as their Pixi workspace can rely on the implicit default. Topics that need a non-root Pixi target should migrate to `[[topic_standalone_pixi_bindings]]` with `manifest_path_or_dir`. The migration itself is recorded as a Service Request or Project-level change with Provenance Records.
 
 ## What This Standard Does Not Cover
 

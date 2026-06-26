@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
 | Source gate summary | Require the extracted source gate summary from `read-gate`, including runnable target, desired commands, success criteria, repo hints, dependency hints, and blockers. Refuse to run if it is missing, and tell the user to run `read-gate` first. |
 | `repos_root` | Use `<topic-workspace-dir>/repos/`; create it only when this step needs to materialize or inspect required repos. |
 | Explicit repo source | Optional. Use a URL, local path, package source, or repo name from the prompt or source gate only when the expected repo path is missing. |

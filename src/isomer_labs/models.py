@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from isomer_labs.diagnostics import Diagnostic
 
@@ -387,7 +387,7 @@ class TopicPixiEnvironmentBinding:
 @dataclass(frozen=True)
 class TopicStandalonePixiBinding:
     research_topic_id: str
-    manifest_path_input: str
+    manifest_path_or_dir_input: str
     pixi_environment: str | None
     purpose: str | None
     status: str
@@ -396,10 +396,60 @@ class TopicStandalonePixiBinding:
     def to_json(self) -> dict[str, object]:
         return {
             "research_topic_id": self.research_topic_id,
-            "manifest_path": self.manifest_path_input,
+            "manifest_path_or_dir": self.manifest_path_or_dir_input,
             "pixi_environment": self.pixi_environment,
             "purpose": self.purpose,
             "status": self.status,
+        }
+
+
+TopicStandalonePixiBindingSource = Literal["explicit", "implicit-default"]
+
+
+@dataclass(frozen=True)
+class TopicStandalonePixiBindingTarget:
+    research_topic_id: str
+    target_path_input: str
+    pixi_environment: str
+    source: TopicStandalonePixiBindingSource
+    source_path: Path | None = None
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "research_topic_id": self.research_topic_id,
+            "target_path": self.target_path_input,
+            "pixi_environment": self.pixi_environment,
+            "source": self.source,
+        }
+        if self.source_path is not None:
+            data["source_path"] = str(self.source_path)
+        return data
+
+
+TopicStandalonePixiTargetKind = Literal["file", "directory", "missing", "unknown"]
+
+
+@dataclass(frozen=True)
+class ResolvedTopicStandalonePixiBinding:
+    research_topic_id: str
+    source: TopicStandalonePixiBindingSource
+    target_path: Path
+    target_path_input: str
+    target_kind: TopicStandalonePixiTargetKind
+    resolved_manifest_path: Path
+    pixi_environment: str
+    environment_prefix: Path
+
+    def to_json(self, project_root: Path | None = None) -> dict[str, object]:
+        return {
+            "research_topic_id": self.research_topic_id,
+            "source": self.source,
+            "target_path": _display_model_path(self.target_path, project_root),
+            "target_path_input": self.target_path_input,
+            "target_kind": self.target_kind,
+            "resolved_manifest_path": _display_model_path(self.resolved_manifest_path, project_root),
+            "pixi_environment": self.pixi_environment,
+            "environment_prefix": _display_model_path(self.environment_prefix, project_root),
         }
 
 
@@ -438,6 +488,31 @@ class ProjectManifest:
             for binding in self.topic_standalone_pixi_bindings
             if binding.research_topic_id == topic_id and binding.status == "active"
         ]
+
+    def effective_topic_standalone_pixi_binding_target(
+        self,
+        topic_id: str,
+        *,
+        topic_workspace_path: Path,
+        project_root: Path,
+    ) -> TopicStandalonePixiBindingTarget:
+        explicit = self.active_topic_standalone_pixi_bindings(topic_id)
+        if explicit:
+            binding = explicit[0]
+            return TopicStandalonePixiBindingTarget(
+                research_topic_id=topic_id,
+                target_path_input=binding.manifest_path_or_dir_input,
+                pixi_environment=binding.pixi_environment or "default",
+                source="explicit",
+                source_path=binding.source_path,
+            )
+        return TopicStandalonePixiBindingTarget(
+            research_topic_id=topic_id,
+            target_path_input=_display_model_path(topic_workspace_path, project_root),
+            pixi_environment="default",
+            source="implicit-default",
+            source_path=self.source_path,
+        )
 
     def first_domain_agent_team_template(self, template_id: str) -> DomainAgentTeamTemplateRegistration | None:
         return next((template for template in self.domain_agent_team_templates if template.id == template_id), None)
@@ -669,3 +744,13 @@ class BuiltInSchema:
             "schema_version": self.schema_version,
             "description": self.description,
         }
+
+
+def _display_model_path(path: Path, root: Path | None) -> str:
+    canonical = path.expanduser().resolve(strict=False)
+    if root is None:
+        return str(canonical)
+    try:
+        return str(canonical.relative_to(root.expanduser().resolve(strict=False)))
+    except ValueError:
+        return str(canonical)

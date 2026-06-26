@@ -9,8 +9,13 @@ import subprocess
 from typing import Any, Literal
 
 from isomer_labs.diagnostics import Diagnostic, has_errors
-from isomer_labs.models import EffectiveTopicContext, Project
-from isomer_labs.path_utils import display_path, is_within, resolve_project_path
+from isomer_labs.models import EffectiveTopicContext, Project, ResolvedTopicStandalonePixiBinding
+from isomer_labs.path_utils import display_path, is_within
+from isomer_labs.topic_pixi import (
+    PIXI_INSTALL_GUIDANCE,
+    TopicStandalonePixiBindingResolutionFailure,
+    resolve_topic_standalone_pixi_binding,
+)
 from isomer_labs.toml_loader import load_toml
 
 
@@ -172,7 +177,11 @@ def build_doctor_report(
             )
             mode = "project"
         else:
-            topic_payload, topic_checks, topic_diagnostics = inspect_topic_pixi(context, project_pixi_info)
+            topic_payload, topic_checks, topic_diagnostics = inspect_topic_pixi(
+                context,
+                project_pixi_info,
+                pixi_executable=pixi.executable_path,
+            )
             checks.extend(topic_checks)
             diagnostics.extend(topic_diagnostics)
             mode = "topic"
@@ -403,6 +412,8 @@ def inspect_project_pixi(
 def inspect_topic_pixi(
     context: EffectiveTopicContext,
     project_pixi_info: PixiManifestInfo | None,
+    *,
+    pixi_executable: str | None = None,
 ) -> tuple[dict[str, object], list[DoctorCheck], list[Diagnostic]]:
     checks: list[DoctorCheck] = [
         DoctorCheck(
@@ -419,21 +430,8 @@ def inspect_topic_pixi(
     topic_id = context.research_topic.id
     project_bindings = project.manifest.active_topic_pixi_environment_bindings(topic_id)
     standalone_bindings = project.manifest.active_topic_standalone_pixi_bindings(topic_id)
-
-    if not project_bindings and not standalone_bindings:
-        checks.append(
-            DoctorCheck(
-                id="topic.pixi.binding.present",
-                scope="topic",
-                status="fail",
-                concept="Topic Pixi environment binding",
-                summary=(
-                    "Selected Research Topic has no active Project Manifest Pixi binding; "
-                    "no environment was inferred from topic or environment names."
-                ),
-                source_path=display_path(project.manifest_path, project.root),
-            )
-        )
+    resolved_standalone_binding = None
+    standalone_binding_payloads: list[dict[str, object]] = [binding.to_json() for binding in standalone_bindings]
 
     for index, binding in enumerate(project_bindings):
         check_id = f"topic.pixi.project-env.{index + 1}"
@@ -480,15 +478,33 @@ def inspect_topic_pixi(
                 )
             )
 
-    for index, standalone_binding in enumerate(standalone_bindings):
-        checks.extend(_standalone_binding_checks(context, standalone_binding.to_json(), index + 1))
+    if standalone_bindings or not project_bindings:
+        resolved_standalone_binding, failure = resolve_topic_standalone_pixi_binding(
+            context,
+            pixi_executable=pixi_executable,
+        )
+        check_id = "topic.pixi.standalone.1" if standalone_bindings else "topic.pixi.standalone.default"
+        if resolved_standalone_binding is not None:
+            checks.append(_standalone_binding_success_check(context, resolved_standalone_binding, check_id))
+            if not standalone_bindings:
+                standalone_binding_payloads.append(resolved_standalone_binding.to_json(project.root))
+        elif failure is not None:
+            if not project_bindings and not standalone_bindings and failure.kind == "unresolvable-target":
+                checks.append(_missing_topic_binding_check(context, failure))
+            else:
+                checks.append(_standalone_binding_failure_check(context, failure, check_id))
+                diagnostic = _standalone_binding_failure_diagnostic(context, failure, check_id)
+                if diagnostic is not None:
+                    diagnostics.append(diagnostic)
 
     topic_payload: dict[str, object] = {
         "research_topic_id": topic_id,
         "context": context.to_json(),
         "project_pixi_environment_bindings": [binding.to_json() for binding in project_bindings],
-        "standalone_pixi_bindings": [binding.to_json() for binding in standalone_bindings],
+        "standalone_pixi_bindings": standalone_binding_payloads,
     }
+    if resolved_standalone_binding is not None:
+        topic_payload["resolved_standalone_pixi_binding"] = resolved_standalone_binding.to_json(project.root)
     return topic_payload, checks, diagnostics
 
 
@@ -650,98 +666,110 @@ def _requires_pixi_check(
     )
 
 
-def _standalone_binding_checks(
+def _standalone_binding_success_check(
     context: EffectiveTopicContext,
-    binding: dict[str, object],
-    index: int,
-) -> list[DoctorCheck]:
+    binding: ResolvedTopicStandalonePixiBinding,
+    check_id: str,
+) -> DoctorCheck:
     project = context.project
-    manifest_path_value = binding.get("manifest_path")
-    env_value = binding.get("pixi_environment")
-    manifest_path_input = manifest_path_value if isinstance(manifest_path_value, str) else ""
-    pixi_environment = env_value if isinstance(env_value, str) and env_value else None
-    check_id = f"topic.pixi.standalone.{index}"
-    standalone_path = resolve_project_path(project.root, manifest_path_input)
-    if not is_within(standalone_path, project.root):
-        return [
-            DoctorCheck(
-                id=check_id,
-                scope="topic",
-                status="fail",
-                concept="Standalone Pixi isolation",
-                summary="Standalone Pixi manifest path resolves outside the Project root.",
-                source_path=manifest_path_input,
-                details=binding,
-            )
-        ]
-    if not standalone_path.exists():
-        return [
-            DoctorCheck(
-                id=check_id,
-                scope="topic",
-                status="fail",
-                concept="Standalone Pixi isolation",
-                summary="Standalone Pixi manifest does not exist.",
-                source_path=display_path(standalone_path, project.root),
-                details=binding,
-            )
-        ]
-
-    standalone_info, diagnostics = load_pixi_manifest(
-        standalone_path,
-        project_root=project.root,
-        require_pyproject_pixi=standalone_path.name == "pyproject.toml",
+    details = binding.to_json(project.root)
+    source = details.get("source")
+    return DoctorCheck(
+        id=check_id,
+        scope="topic",
+        status="pass",
+        concept="Topic Workspace Pixi binding",
+        summary=(
+            "Topic Workspace Pixi binding resolved through Pixi "
+            f"with source {source} and environment {details['pixi_environment']}."
+        ),
+        source_path=str(details["resolved_manifest_path"]),
+        details=details,
     )
-    if diagnostics or standalone_info is None:
-        return [
-            DoctorCheck(
-                id=check_id,
-                scope="topic",
-                status="fail",
-                concept="Standalone Pixi isolation",
-                summary="Standalone Pixi manifest exists but could not be parsed as Pixi configuration.",
-                source_path=display_path(standalone_path, project.root),
-                details=binding,
-            )
-        ]
-    if pixi_environment is None:
-        return [
-            DoctorCheck(
-                id=check_id,
-                scope="topic",
-                status="pass",
-                concept="Standalone Pixi isolation",
-                summary="Standalone Pixi manifest exists for the selected Research Topic.",
-                source_path=display_path(standalone_path, project.root),
-                details=binding,
-            )
-        ]
-    if pixi_environment in standalone_info.environments:
-        return [
-            DoctorCheck(
-                id=check_id,
-                scope="topic",
-                status="pass",
-                concept="Standalone Pixi isolation",
-                summary=f"Standalone Pixi environment binding is declared: {pixi_environment}.",
-                source_path=display_path(standalone_path, project.root),
-                details=binding,
-            )
-        ]
-    return [
-        DoctorCheck(
-            id=check_id,
-            scope="topic",
-            status="fail",
-            concept="Standalone Pixi isolation",
-            summary=(
-                f"Standalone Pixi binding names environment {pixi_environment}, "
-                "but that environment is not declared in the standalone manifest."
-            ),
-            source_path=display_path(standalone_path, project.root),
-            details=binding,
+
+
+def _standalone_binding_failure_check(
+    context: EffectiveTopicContext,
+    failure: TopicStandalonePixiBindingResolutionFailure,
+    check_id: str,
+) -> DoctorCheck:
+    return DoctorCheck(
+        id=check_id,
+        scope="topic",
+        status="fail",
+        concept=_standalone_binding_failure_concept(failure),
+        summary=_standalone_binding_failure_summary(context, failure),
+        source_path=display_path(failure.target_path, context.project.root),
+        details=failure.to_json(context.project.root),
+    )
+
+
+def _missing_topic_binding_check(
+    context: EffectiveTopicContext,
+    failure: TopicStandalonePixiBindingResolutionFailure,
+) -> DoctorCheck:
+    return DoctorCheck(
+        id="topic.pixi.binding.present",
+        scope="topic",
+        status="fail",
+        concept="Topic Pixi environment binding",
+        summary=(
+            "Selected Research Topic has no active Project-root Pixi binding or explicit Topic Workspace Pixi binding, "
+            f"and Pixi could not resolve the implicit Topic Workspace directory target {display_path(failure.target_path, context.project.root)}."
+        ),
+        source_path=display_path(context.project.manifest_path, context.project.root),
+        details=failure.to_json(context.project.root),
+    )
+
+
+def _standalone_binding_failure_diagnostic(
+    context: EffectiveTopicContext,
+    failure: TopicStandalonePixiBindingResolutionFailure,
+    check_id: str,
+) -> Diagnostic | None:
+    if failure.kind == "unresolvable-target":
+        return None
+    if failure.kind == "confinement":
+        return Diagnostic(
+            code="ISO005",
+            severity="error",
+            concept="Topic Workspace Pixi binding",
+            path=context.project.manifest_path,
+            field=check_id,
+            message=_standalone_binding_failure_summary(context, failure),
         )
-    ]
+    return Diagnostic(
+        code="ISO031",
+        severity="error",
+        concept="Topic Workspace Pixi binding",
+        path=context.project.manifest_path,
+        field=check_id,
+        message=(
+            f"{_standalone_binding_failure_summary(context, failure)} "
+            f"Online install: {PIXI_INSTALL_GUIDANCE['online']} "
+            f"Offline install: {PIXI_INSTALL_GUIDANCE['offline']}"
+        ),
+    )
+
+
+def _standalone_binding_failure_concept(failure: TopicStandalonePixiBindingResolutionFailure) -> str:
+    if failure.kind == "pixi-tooling":
+        return "Pixi tooling"
+    if failure.kind == "confinement":
+        return "Topic Workspace Pixi confinement"
+    return "Topic Workspace Pixi binding"
+
+
+def _standalone_binding_failure_summary(
+    context: EffectiveTopicContext,
+    failure: TopicStandalonePixiBindingResolutionFailure,
+) -> str:
+    target = display_path(failure.target_path, context.project.root)
+    if failure.kind == "pixi-tooling":
+        return f"Pixi tooling failed while resolving Topic Workspace Pixi binding target {target}: {failure.message}"
+    if failure.kind == "confinement":
+        return f"Topic Workspace Pixi binding target {target} failed confinement: {failure.message}"
+    return f"Pixi could not resolve Topic Workspace Pixi binding target {target}: {failure.message}"
 
 
 def _parse_pixi_info(

@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
 | Derived gate | Require `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` from `derive-gate`. Refuse to run if it is missing, and tell the user to run `derive-gate` first. |
 | Dependency plan, enclosure strategy, and Pixi install commands | Read from the derived gate's `## Dependency Plan` and `## Pixi Install Commands` sections, including the selected Python version, version evidence, starter Python dependencies, enclosure classification, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, or missing enclosure strategy for a required dependency or runtime need. |
 | Package-source override | Optional. Use only when the prompt or derived gate explicitly names a package source override; otherwise follow the PyPI-first Python and NVIDIA-channel policies in this page. |
@@ -21,7 +21,7 @@ When this subcommand is selected, execute the following steps in order.
 2. **Read `isomer-env-gate.md`** and stop with blockers when its `## Blockers` section contains unresolved install blockers.
 3. **Check enclosure classification** from the derived gate's `## Dependency Plan`. Every required dependency or runtime need must be classified as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked. If any required item is unclassified, stop and report a blocker asking to update `isomer-env-gate.md` before mutation.
 4. **Resolve the selected Python version** from the derived gate. If the derived gate does not already contain a usable selection, apply **Python Version Policy** before mutating the Pixi manifest and update the derived gate with the selected version and evidence.
-5. **Ensure the Topic Workspace Pixi manifest exists** at `manifest_path`. If the active binding expects `<topic-workspace-dir>/pixi.toml` and it is missing, create a minimal Pixi manifest for the Topic Workspace with the selected Python version and appropriate channels before adding target dependencies.
+5. **Confirm the resolved Topic Workspace Pixi manifest exists** at `manifest_path`. Do not create a missing manifest in this subcommand; `resolve-workspace` must have already used Pixi to resolve an explicit file target, explicit directory target, or the implicit Topic Workspace directory default.
 6. **Ensure Topic Workspace VCS ignores** by creating or updating `<topic-workspace-dir>/.gitignore` with `.pixi/`, `tmp/`, and `.git/`. Add `.isomer-user-env/` only when topic-local fallback is used. Do not add `extern/orphan` ignore entries from this skill.
 7. **Keep Python available** as the Topic Workspace root glue and orchestration language, even when the runnable target uses another language.
 8. **Install Pixi-managed starter Python dependencies** through PyPI when missing or not already satisfied: `pixi add --manifest-path <manifest_path> --pypi scipy mdutils ruff mkdocs-material mypy attrs omegaconf imageio matplotlib jsonschema jinja2`.
@@ -37,22 +37,6 @@ When this subcommand is selected, execute the following steps in order.
 18. **Report the install result** using the parent skill's output fields.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `isomer-env-gate.md`, dependency policy, Pixi help, parent guardrails, and user request, then execute the plan.
-
-## Minimal Pixi Manifest
-
-Use this shape only when the active binding expects a missing `pixi.toml` in the selected Topic Workspace:
-
-```toml
-[workspace]
-name = "<research_topic_id>"
-channels = ["conda-forge"]
-platforms = ["linux-64"]
-
-[dependencies]
-python = "<selected-python-minor>.*"
-```
-
-Adjust platforms when the current host or Project Manifest requires a different platform. Add `nvidia` with `--prepend` when NVIDIA packages are needed.
 
 ## Python Version Policy
 
@@ -133,7 +117,7 @@ Explicit external runtime wiring is allowed only inside recorded Pixi-run comman
 Report `blocked` when:
 
 - the derived gate is missing;
-- `manifest_path` is not resolved from the active binding;
+- `manifest_path` is not resolved from the effective Topic Workspace Pixi binding;
 - the selected Python version is missing from the derived gate and cannot be recovered or selected by policy;
 - Python version conflicts cannot be adapted within the service-safe environment setup boundary;
 - a starter Python dependency cannot be resolved or installed;

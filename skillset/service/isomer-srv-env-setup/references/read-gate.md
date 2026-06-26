@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
 | `env_gate_path` | Use `<topic-workspace-dir>/user-intent/src/env-gate.md`. If it is missing or unreadable, report a blocker asking the user to create or repair that file. |
 | Optional modifiers | None for this step. |
 
@@ -16,7 +16,7 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require workspace context** from `resolve-workspace`: `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path`, and `pixi_environment`.
+1. **Require workspace context** from `resolve-workspace`: `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment`.
 2. **Resolve the source gate path** as `<topic-workspace-dir>/user-intent/src/env-gate.md`.
 3. **Read the source gate**. If it is missing or unreadable, stop and report a blocker asking the user to create or repair that file.
 4. **Extract setup intent**: source intent, runnable target, desired command or commands, expected outputs, success criteria, repo hints, dependency hints, native tool requirements, and any out-of-scope requests.

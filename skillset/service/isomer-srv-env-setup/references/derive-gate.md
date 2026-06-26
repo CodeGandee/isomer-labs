@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
 | Source gate summary | Require the extracted source gate summary from `read-gate`. Refuse to run if it is missing, and tell the user to run `read-gate` first. |
 | Repo context | Require repo context from `ensure-repos` when the source gate needs independent repos. If repos are required and context is missing, refuse to run and tell the user to run `ensure-repos` first. |
 | `derived_gate_path` | Use `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`; create the parent directory when writing the gate. |

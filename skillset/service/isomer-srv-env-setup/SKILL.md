@@ -97,7 +97,8 @@ Report:
 - `project_root`: resolved Isomer Project root.
 - `research_topic_id`: selected Research Topic.
 - `topic_workspace_dir`: Project Manifest-declared Topic Workspace directory.
-- `manifest_path`: active Topic Workspace Pixi manifest path.
+- `manifest_path_or_dir`: explicit binding target when present, otherwise the registered Topic Workspace directory default.
+- `manifest_path`: Pixi-resolved Topic Workspace Pixi manifest path.
 - `pixi_environment`: selected Pixi environment.
 - `env_gate_path`: source gate path when relevant.
 - `derived_gate_path`: generated gate path when relevant.
@@ -116,13 +117,13 @@ Report:
 
 ## Guardrails
 
-- Do not install or mutate a Topic Workspace environment until the selected Topic Workspace and active `topic_standalone_pixi_bindings` entry are confirmed from the Project Manifest.
+- Do not install or mutate a Topic Workspace environment until the selected Topic Workspace and effective Topic Workspace Pixi binding are confirmed. Accept an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` file or directory target, or the implicit registered Topic Workspace directory default when Pixi resolves it as a confined Topic Workspace Pixi workspace.
 - Direct setup mutation is allowed for the selected Topic Workspace Pixi environment after confirmation; do not require a separate Service Request for dependency, lockfile, install, or gate-command mutation in this workflow.
 - Do not treat the Project-root Pixi environment as the Topic Workspace execution environment.
 - Do not create or mutate per-agent Pixi environments unless a user task explicitly names an Agent Workspace-specific environment.
 - Do not place required independent repos in the Project root, Agent Workspace, `.pixi/`, or another ad hoc location; use `<topic-workspace-dir>/repos/<repo-name>`.
 - Do not modify an existing `<topic-workspace-dir>/repos/<repo-name>` during `ensure-repos`; inspect it as read-only evidence and report blockers if it is unsuitable.
-- Do not infer `topic_standalone_pixi_bindings` from directory names; always read the Project Manifest.
+- Do not infer a binding from directory names or Research Topic ids. Use the Project Manifest for explicit bindings and the registered Topic Workspace directory only as the defined implicit default target.
 - Do not choose repos, dependencies, Pixi install commands, setup commands, or verification commands before reading `user-intent/src/env-gate.md`.
 - Apply the enclosure ladder before dependency mutation or verification: Pixi-managed install first, Pixi-mediated external runtime wiring second, topic-local user-space fallback under `<topic-workspace-dir>/.isomer-user-env/` third, and blockers for privileged or machine-global mutation.
 - When running Topic Workspace setup, inspection, or verification commands inside the prepared environment, use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>` instead of relying on the ambient shell environment. Explicitly sourced scripts and exported runtime paths are allowed only when recorded in `isomer-env-gate.md` and the execution log.

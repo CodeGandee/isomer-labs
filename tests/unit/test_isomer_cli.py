@@ -239,18 +239,80 @@ class IsomerCliTests(unittest.TestCase):
         path: str | None = "/usr/bin/pixi",
         version_returncode: int = 0,
         requires_returncode: int = 0,
+        info_returncode: int = 0,
+        info_stdout: str | None = None,
+        info_stderr: str = "",
     ):
         def fake_run(args: list[str], **_: object) -> subprocess.CompletedProcess[str]:
             if args[1:] == ["--version"]:
                 return subprocess.CompletedProcess(args, version_returncode, stdout="pixi 0.99.0\n", stderr="")
             if args[1:4] == ["workspace", "requires-pixi", "verify"]:
                 return subprocess.CompletedProcess(args, requires_returncode, stdout="", stderr="")
+            if args[1:4] == ["info", "--json", "--manifest-path"]:
+                stdout = info_stdout
+                if stdout is None:
+                    stdout = self.fake_pixi_info_stdout(Path(args[4]))
+                return subprocess.CompletedProcess(args, info_returncode, stdout=stdout, stderr=info_stderr)
             return subprocess.CompletedProcess(args, 2, stdout="", stderr="unexpected command")
 
         return (
-            patch("isomer_labs.doctor.shutil.which", return_value=path),
-            patch("isomer_labs.doctor.subprocess.run", side_effect=fake_run),
+            patch("shutil.which", return_value=path),
+            patch("subprocess.run", side_effect=fake_run),
         )
+
+    def fake_pixi_info_stdout(self, target: Path) -> str:
+        manifest_path = self.fake_pixi_manifest_for_target(target)
+        if manifest_path is None:
+            return json.dumps(
+                {
+                    "project_info": None,
+                    "environments_info": [],
+                }
+            )
+        environment_names = self.fake_pixi_environment_names(manifest_path)
+        return json.dumps(
+            {
+                "project_info": {
+                    "name": manifest_path.parent.name,
+                    "manifest_path": str(manifest_path),
+                },
+                "environments_info": [
+                    {
+                        "name": environment_name,
+                        "prefix": str(manifest_path.parent / ".pixi" / "envs" / environment_name),
+                    }
+                    for environment_name in environment_names
+                ],
+            }
+        )
+
+    def fake_pixi_manifest_for_target(self, target: Path) -> Path | None:
+        if target.is_file():
+            return target
+        if not target.is_dir():
+            return None
+        pixi_toml = target / "pixi.toml"
+        if pixi_toml.is_file():
+            return pixi_toml
+        pyproject = target / "pyproject.toml"
+        if pyproject.is_file():
+            return pyproject
+        return None
+
+    def fake_pixi_environment_names(self, manifest_path: Path) -> list[str]:
+        environment_names = {"default"}
+        try:
+            raw = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, tomllib.TOMLDecodeError):
+            return sorted(environment_names)
+        pixi_config = raw
+        if manifest_path.name == "pyproject.toml":
+            tool = raw.get("tool")
+            pixi_config = tool.get("pixi") if isinstance(tool, dict) and isinstance(tool.get("pixi"), dict) else {}
+        environments = pixi_config.get("environments") if isinstance(pixi_config, dict) else None
+        if isinstance(environments, dict):
+            environment_names.update(str(name) for name in environments)
+        return sorted(environment_names)
 
     def fake_houmao_command(self, root: Path) -> str:
         script = root / "fake-houmao-mgr.py"
@@ -646,7 +708,7 @@ class IsomerCliTests(unittest.TestCase):
             """
             [[topic_standalone_pixi_bindings]]
             research_topic_id = "alpha"
-            manifest_path = "topic-workspaces/alpha/pixi.toml"
+            manifest_path_or_dir = "topic-workspaces/alpha/pixi.toml"
             pixi_environment = "default"
             """,
         )
@@ -673,7 +735,7 @@ class IsomerCliTests(unittest.TestCase):
             """
             [[topic_standalone_pixi_bindings]]
             research_topic_id = "alpha"
-            manifest_path = "topic-workspaces/alpha/missing-pixi.toml"
+            manifest_path_or_dir = "topic-workspaces/alpha/missing-pixi.toml"
             """,
         )
         which_patch, run_patch = self.patch_pixi()
@@ -721,6 +783,145 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO003", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_doctor_standalone_directory_and_implicit_default_resolution(self) -> None:
+        root = self.make_root()
+        self.make_two_topic_project(root)
+        self.add_project_pixi_manifest(root, lockfile=True)
+        self.append_manifest(
+            root,
+            """
+            [[topic_standalone_pixi_bindings]]
+            research_topic_id = "alpha"
+            manifest_path_or_dir = "topic-workspaces/alpha"
+            pixi_environment = "default"
+            """,
+        )
+        write(
+            root / "topic-workspaces" / "alpha" / "pixi.toml",
+            """
+            [workspace]
+            channels = ["conda-forge"]
+            platforms = ["linux-64"]
+            """,
+        )
+
+        which_patch, run_patch = self.patch_pixi()
+        with which_patch, run_patch:
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        check = self.check(data, "topic.pixi.standalone.1")
+        self.assertEqual("pass", check["status"])
+        self.assertEqual("directory", check["details"]["target_kind"])
+        self.assertEqual("topic-workspaces/alpha/pixi.toml", check["details"]["resolved_manifest_path"])
+        self.assertEqual("explicit", check["details"]["source"])
+
+        implicit_root = self.make_root()
+        self.make_two_topic_project(implicit_root)
+        self.add_project_pixi_manifest(implicit_root, lockfile=True)
+        write(
+            implicit_root / "topic-workspaces" / "alpha" / "pixi.toml",
+            """
+            [workspace]
+            channels = ["conda-forge"]
+            platforms = ["linux-64"]
+            """,
+        )
+
+        which_patch, run_patch = self.patch_pixi()
+        with which_patch, run_patch:
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=implicit_root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        check = self.check(data, "topic.pixi.standalone.default")
+        self.assertEqual("pass", check["status"])
+        self.assertEqual("implicit-default", check["details"]["source"])
+        self.assertEqual("default", check["details"]["pixi_environment"])
+        self.assertEqual("topic-workspaces/alpha", check["details"]["target_path"])
+
+    def test_doctor_standalone_pixi_tooling_and_confinement_failures(self) -> None:
+        root = self.make_root()
+        self.make_two_topic_project(root)
+        self.add_project_pixi_manifest(root, lockfile=True)
+        write(
+            root / "topic-workspaces" / "alpha" / "pixi.toml",
+            """
+            [workspace]
+            channels = ["conda-forge"]
+            platforms = ["linux-64"]
+            """,
+        )
+
+        which_patch, run_patch = self.patch_pixi(info_stdout="{not-json")
+        with which_patch, run_patch:
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        check = self.check(data, "topic.pixi.standalone.default")
+        self.assertEqual("fail", check["status"])
+        self.assertEqual("Pixi tooling", check["concept"])
+        self.assertIn("install_guidance", check["details"])
+        self.assertIn("ISO031", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        confined_root = self.make_root()
+        self.make_two_topic_project(confined_root)
+        self.add_project_pixi_manifest(confined_root, lockfile=True)
+        write(
+            confined_root / "topic-workspaces" / "alpha" / "pixi.toml",
+            """
+            [workspace]
+            channels = ["conda-forge"]
+            platforms = ["linux-64"]
+            """,
+        )
+        escaping_payload = json.dumps(
+            {
+                "project_info": {
+                    "name": "project-root",
+                    "manifest_path": str(confined_root / "pyproject.toml"),
+                },
+                "environments_info": [
+                    {
+                        "name": "default",
+                        "prefix": str(confined_root / ".pixi" / "envs" / "default"),
+                    }
+                ],
+            }
+        )
+        which_patch, run_patch = self.patch_pixi(info_stdout=escaping_payload)
+        with which_patch, run_patch:
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=confined_root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        check = self.check(data, "topic.pixi.standalone.default")
+        self.assertEqual("fail", check["status"])
+        self.assertEqual("Topic Workspace Pixi confinement", check["concept"])
+        self.assertIn("ISO005", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_manifest_rejects_superseded_standalone_pixi_target_fields(self) -> None:
+        root = self.make_root()
+        self.make_two_topic_project(root)
+        self.add_project_pixi_manifest(root, lockfile=True)
+        self.append_manifest(
+            root,
+            """
+            [[topic_standalone_pixi_bindings]]
+            research_topic_id = "alpha"
+            manifest_path = "topic-workspaces/alpha/pixi.toml"
+            """,
+        )
+
+        which_patch, run_patch = self.patch_pixi()
+        with which_patch, run_patch:
+            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO003", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+        self.assertTrue(
+            any("manifest_path_or_dir" in diagnostic["message"] for diagnostic in data["diagnostics"]),
+            data["diagnostics"],
+        )
 
     def test_doctor_text_json_shape_secret_redaction_and_side_effects(self) -> None:
         root = self.make_root()

@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
 | Derived gate | Require `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` from `derive-gate`. Refuse to run if it is missing, and tell the user to run `derive-gate` first. |
 | Installed dependencies | Require an `install-deps` result unless the prompt explicitly asks to verify an existing environment. In either case, check Pixi files before running verification commands. |
 | Verification commands, expected results, and enclosure records | Read from the derived gate's `## Verification Commands`, `## Expected Results`, and enclosure records in `## Dependency Plan` and `## Execution Log`. Refuse to claim readiness if commands, expectations, runtime wiring, or fallback records are missing or ambiguous. |
@@ -20,7 +20,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**: workspace context from `resolve-workspace`, `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`, and installed dependencies from `install-deps`.
 2. **Read `isomer-env-gate.md`** and extract `## Verification Commands`, `## Expected Results`, `## Blockers`, any `## Inferred Source Warnings`, and enclosure records for Pixi-managed dependencies, external runtime wiring, and topic-local fallbacks.
-3. **Check Pixi files**. Confirm `<topic-workspace-dir>/pixi.toml`, `<topic-workspace-dir>/pixi.lock`, and `<topic-workspace-dir>/.pixi/` exist before reporting readiness.
+3. **Check Pixi files**. Confirm the resolved `manifest_path`, the Topic Workspace `pixi.lock`, and `<topic-workspace-dir>/.pixi/` exist before reporting readiness. The resolved manifest may be `pixi.toml` or Pixi-enabled `pyproject.toml`.
 4. **Confirm verification commands are replayable**. Each command must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`. When a command needs external runtime wiring, the derived gate must record the exact variables, paths, sourced scripts, or activation commands before the command runs.
 5. **Run verification commands through Pixi**. Run from the Topic Workspace root unless the derived gate specifies a repo-specific working directory. Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.
 6. **Compare results to expected outputs** from `isomer-env-gate.md`.

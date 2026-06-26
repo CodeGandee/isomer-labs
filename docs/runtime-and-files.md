@@ -18,7 +18,7 @@ Successful Project initialization also creates the Isomer-managed Houmao overlay
 
 ## Topic Workspace Files
 
-A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `isomer-content/topic-ws/<topic-workspace-id>/` for fresh Projects or `<content-dir>/topic-ws/<topic-workspace-id>/` when init selected a custom content root. It is a Pixi workspace by default. The Project Manifest records its Pixi manifest through `topic_standalone_pixi_bindings`; Isomer does not infer the binding by crawling Topic Workspace paths. It owns:
+A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `isomer-content/topic-ws/<topic-workspace-id>/` for fresh Projects or `<content-dir>/topic-ws/<topic-workspace-id>/` when init selected a custom content root. It is a Pixi workspace by default. An explicit `topic_standalone_pixi_bindings` entry may set `manifest_path_or_dir` to a manifest file or directory; when no explicit entry exists, Isomer passes the registered Topic Workspace directory to Pixi as the implicit default target. Isomer does not crawl Topic Workspace paths or infer bindings from names. It owns:
 
 - `pixi.toml` or `pyproject.toml` — the Topic Workspace Pixi manifest, declaring the topic-scoped Python version, research dependencies, and optional named environments.
 - `pixi.lock` — the Topic Workspace Pixi lockfile.

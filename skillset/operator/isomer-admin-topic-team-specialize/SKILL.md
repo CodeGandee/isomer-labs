@@ -138,8 +138,8 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `registration_command_evidence`: supported Isomer CLI/API command evidence used to create or verify registration, or `not needed` when no mutation was required.
 - `registered_research_topic_ref`: the Project Manifest-backed Research Topic ref when registration is verified.
 - `registered_topic_workspace_ref`: the Project Manifest-backed Topic Workspace ref when registration is verified.
-- `environment_binding_status`: active, missing, blocked, or not checked for the `topic_standalone_pixi_bindings` or equivalent Topic Workspace Pixi binding needed by `isomer-srv-env-setup`.
-- `environment_binding_ref`: the active binding ref, manifest path, and Pixi environment when available.
+- `environment_binding_status`: active, implicit-default, blocked, or not checked for the explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or implicit Topic Workspace directory default needed by `isomer-srv-env-setup`.
+- `environment_binding_ref`: the binding source, `manifest_path_or_dir`, Pixi-resolved manifest path, and Pixi environment when available.
 - `registration_blockers`: missing topic statement, unsafe path, colliding workspace, unsupported config mutation, missing environment binding, or other blockers from `ensure-topic-registration`.
 - `selected_domain_team_template_ref`: the selected Domain Agent Team Template.
 - `domain_team_template_ref`: the source Domain Agent Team Template when specialization has begun.
@@ -167,7 +167,7 @@ Do not edit the Domain Agent Team Template source while specializing a topic. Th
 
 Do not treat a provisional topic workspace seed as an authoritative Isomer Research Topic or Topic Workspace registration. Stop at the registration boundary or route through `ensure-topic-registration`, which may use `isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>` and related supported Isomer CLI/API surfaces instead of hand-editing `.isomer-labs/manifest.toml` or Research Topic Config files.
 
-Do not call `isomer-srv-env-setup` from a provisional Topic Workspace or from an unbound registered topic. Require `ensure-topic-registration` evidence first. If the active `topic_standalone_pixi_bindings` entry or equivalent Topic Workspace Pixi binding required by `isomer-srv-env-setup` is missing and no supported Isomer CLI/API surface can create it, report the missing binding as a blocker instead of editing Project Config by hand.
+Do not call `isomer-srv-env-setup` from a provisional Topic Workspace or from a registered topic whose effective Topic Workspace Pixi binding cannot be resolved. Require `ensure-topic-registration` evidence first. Accept an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or the implicit registered Topic Workspace directory default when Pixi resolves it as confined to the Topic Workspace; otherwise report the Pixi binding blocker instead of editing Project Config by hand.
 
 Do not run a procedural subcommand when required predecessor artifacts are missing. Refuse to run, name the missing artifacts, explain which previous subcommand should create them, and stop before mutation.
 

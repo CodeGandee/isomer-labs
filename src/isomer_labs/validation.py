@@ -326,7 +326,12 @@ def _validate_environment_bindings(project: Project) -> list[Diagnostic]:
         if binding.status == "active"
     )
     standalone_binding_keys = Counter(
-        (binding.research_topic_id, binding.manifest_path_input, binding.pixi_environment or "", binding.purpose or "")
+        (
+            binding.research_topic_id,
+            binding.manifest_path_or_dir_input,
+            binding.pixi_environment or "",
+            binding.purpose or "",
+        )
         for binding in project.manifest.topic_standalone_pixi_bindings
         if binding.status == "active"
     )
@@ -360,16 +365,16 @@ def _validate_environment_bindings(project: Project) -> list[Diagnostic]:
                     message="Topic standalone Pixi binding references an unregistered Research Topic.",
                 )
             )
-        resolved_manifest_path = resolve_project_path(project.root, standalone_binding.manifest_path_input)
-        if not is_within(resolved_manifest_path, project.root):
+        resolved_target_path = resolve_project_path(project.root, standalone_binding.manifest_path_or_dir_input)
+        if not is_within(resolved_target_path, project.root):
             diagnostics.append(
                 Diagnostic(
                     code="ISO005",
                     severity="error",
                     concept="Topic standalone Pixi binding",
                     path=project.manifest_path,
-                    field=f"topic_standalone_pixi_bindings.{standalone_binding.research_topic_id}.manifest_path",
-                    message="Standalone Pixi manifest path resolves outside the Project root.",
+                    field=f"topic_standalone_pixi_bindings.{standalone_binding.research_topic_id}.manifest_path_or_dir",
+                    message="Standalone Pixi binding target resolves outside the Project root.",
                 )
             )
 
@@ -390,7 +395,7 @@ def _validate_environment_bindings(project: Project) -> list[Diagnostic]:
             )
         )
 
-    for research_topic_id, manifest_path_input, pixi_environment, purpose in sorted(
+    for research_topic_id, target_path_input, pixi_environment, purpose in sorted(
         key for key, count in standalone_binding_keys.items() if count > 1
     ):
         diagnostics.append(
@@ -402,7 +407,7 @@ def _validate_environment_bindings(project: Project) -> list[Diagnostic]:
                 field="topic_standalone_pixi_bindings",
                 message=(
                     "Duplicate active Topic standalone Pixi binding is registered: "
-                    f"{research_topic_id}/{manifest_path_input}/{pixi_environment or 'default'}/{purpose or 'default'}."
+                    f"{research_topic_id}/{target_path_input}/{pixi_environment or 'default'}/{purpose or 'default'}."
                 ),
             )
         )

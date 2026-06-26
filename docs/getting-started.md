@@ -73,7 +73,7 @@ Both commands are read-only. `project context show` displays the resolved Projec
 pixi run isomer-cli --print-json project runtime init --topic my-topic
 ```
 
-`isomer-cli project runtime prepare` records Topic Environment Readiness. It checks only explicit Project Manifest bindings (`topic_pixi_environment_bindings` and `topic_standalone_pixi_bindings`) and records `ready`, `failed`, or `blocked` status. It does not install Pixi environments implicitly.
+`isomer-cli project runtime prepare` records Topic Environment Readiness. It checks explicit Project Manifest bindings and, when no explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target exists, asks Pixi to resolve the registered Topic Workspace directory as the implicit default with environment `default`. It records `ready`, `failed`, or `blocked` status. It does not install Pixi environments implicitly.
 
 ```bash
 pixi run isomer-cli --print-json project runtime prepare --topic my-topic

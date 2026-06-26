@@ -11,12 +11,12 @@ The Project Manifest is the authority for:
 - Research Topic ids and their Research Topic Config paths.
 - Topic Workspace ids and their filesystem paths.
 - Explicit Research Topic to Pixi environment bindings through repeated `topic_pixi_environment_bindings` entries.
-- Optional standalone topic Pixi isolation bindings through repeated `topic_standalone_pixi_bindings` entries.
+- Explicit Topic Workspace Pixi binding targets through repeated `topic_standalone_pixi_bindings` entries with `manifest_path_or_dir`, plus the implicit Topic Workspace directory default when no explicit standalone target exists.
 - Project defaults such as the default Research Topic id and default Topic Workspace id.
 - Path defaults such as the generated content root and default Topic Workspace base.
 - Domain Agent Team Template refs, Topic Agent Team Profile refs, and Agent Team Instance refs.
 
-Isomer never infers topic-to-environment relationships from Research Topic ids, Pixi environment names, or naming conventions such as `<topic-slug>-<env-purpose>`. Every binding must be explicit.
+Isomer never infers topic-to-environment relationships from Research Topic ids, Pixi environment names, or naming conventions such as `<topic-slug>-<env-purpose>`. Project-root bindings must be explicit. Topic Workspace bindings either use an explicit `manifest_path_or_dir` target or the registered Topic Workspace directory default, which Pixi resolves with `pixi info --json --manifest-path <target>`.
 
 ## Effective Topic Context
 
@@ -55,7 +55,7 @@ Workspace Runtime is the persistent substrate inside a Topic Workspace. It owns:
 
 `isomer-cli project runtime init` creates or reopens the Workspace Runtime. Reopening a current-schema runtime is idempotent. Unsupported older or newer runtime schemas produce diagnostics and do not create runtime directories or rewrite owner refs.
 
-`isomer-cli project runtime prepare` records Topic Environment Readiness by checking explicit Project Manifest bindings. Successful checks record `ready`; failed checks record `failed`; missing required topic binding intent records `blocked`. Repair remains explicit and should be represented as a Service Request rather than hidden inside `project runtime prepare`.
+`isomer-cli project runtime prepare` records Topic Environment Readiness by checking explicit Project Manifest bindings and the implicit Topic Workspace directory default when no explicit standalone binding exists. Successful checks record `ready`; failed checks record `failed`; missing required topic binding intent records `blocked`. Repair remains explicit and should be represented as a Service Request rather than hidden inside `project runtime prepare`.
 
 `isomer-cli project runtime inspect` and `isomer-cli project runtime validate` are read-only. They report metadata, record counts, readiness summaries, path-plan mismatches, broken refs, missing Agent Workspace directories, stale handoffs, unresolved Gates, unsupported Research Claims, stale Provenance Records, schema mismatches, and cross-topic leakage without repairing records or creating files.
 

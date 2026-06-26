@@ -62,7 +62,7 @@ When a valid Project Manifest exists, cleanup uses it as authority for path defa
 
 Run read-only dependency, Project, and topic diagnostics.
 
-**Side effects:** none. Checks host Pixi availability, Project-level Pixi configuration, optional `requires-pixi`, `pixi.lock` presence, and selected Research Topic environment bindings. Does not install Pixi environments, create lockfiles, create Topic Workspace runtime state, create Agent Workspaces, or edit Project config.
+**Side effects:** none. Checks host Pixi availability, Project-level Pixi configuration, optional `requires-pixi`, `pixi.lock` presence, Project-root topic Pixi bindings, and Topic Workspace Pixi binding targets. If no explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target exists, it checks the registered Topic Workspace directory as the implicit default target with Pixi environment `default`. Does not install Pixi environments, create lockfiles, create Topic Workspace runtime state, create Agent Workspaces, or edit Project config.
 
 ```bash
 pixi run isomer-cli --print-json project doctor
@@ -192,7 +192,7 @@ pixi run isomer-cli --print-json project runtime init --topic my-topic
 
 Record selected topic environment readiness.
 
-**Side effects:** writes or updates a `TopicEnvironmentReadinessRecord` in Workspace Runtime. Checks only explicit Project Manifest `topic_pixi_environment_bindings` and `topic_standalone_pixi_bindings`. Does not install Pixi environments or perform hidden repair.
+**Side effects:** writes or updates a `TopicEnvironmentReadinessRecord` in Workspace Runtime. Checks explicit Project Manifest `topic_pixi_environment_bindings`, explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` targets, or the implicit registered Topic Workspace directory default when no explicit standalone target exists. Pixi must be installed and on `PATH`; online installation can use `curl -fsSL https://pixi.sh/install.sh | sh`, while offline hosts should receive a pre-downloaded `pixi` executable on `PATH`. Does not install Pixi environments or perform hidden repair.
 
 ```bash
 pixi run isomer-cli --print-json project runtime prepare --topic my-topic

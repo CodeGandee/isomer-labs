@@ -11,8 +11,8 @@ When this subcommand is selected, execute the following steps in order.
 5. If registration is missing, check path safety before mutation. The candidate Topic Workspace directory must be project-scoped, must not be the Project Config directory, the Isomer-managed Houmao overlay, or another reserved project area, and must not collide with a different registered Topic Workspace or unrelated project-owned path. If any collision or unsafe path is found, stop with a blocker naming the conflicting path.
 6. When the topic statement and workspace path are clear and registration is missing, create the authoritative registration only through a supported Isomer CLI/API surface, normally `isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>`. Capture the exact command or API evidence in `registration_command_evidence`.
 7. Re-read the Project Manifest after creation. If the Research Topic or Topic Workspace still is not registered, stop with a blocker that names the missing ref and the command or API surface that failed or is unavailable.
-8. Verify the active `topic_standalone_pixi_bindings` entry or equivalent Topic Workspace Pixi binding required by `isomer-srv-env-setup`. The accepted binding should connect the registered Research Topic to the selected Topic Workspace Pixi manifest, normally `<topic-workspace>/pixi.toml`, and name the Pixi environment to use.
-9. If the required environment binding is missing and a supported Isomer CLI/API surface exists to create it, route through that surface and re-check. If the only apparent fix is hand-editing `.isomer-labs/manifest.toml` or Research Topic Config files, stop with `topic_registration_status: blocked`, report `environment_binding_status: missing`, and name the expected manifest path and missing supported surface.
+8. Verify the effective Topic Workspace Pixi binding accepted by `isomer-srv-env-setup`. Accepted forms are an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` file target, an explicit directory target, or the implicit registered Topic Workspace directory default when Pixi resolves it as a confined Topic Workspace Pixi workspace with environment `default`.
+9. If Pixi cannot resolve the explicit or implicit binding target, stop with `topic_registration_status: blocked`, report `environment_binding_status: blocked`, and name the target, binding source, and Pixi or confinement failure. Do not hand-edit `.isomer-labs/manifest.toml` from this skill.
 10. Report registration status, registered refs, command evidence, environment binding status, blockers, and the next safe subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded registration-assurance plan from the topic overview, Project Manifest, supported Isomer CLI/API surfaces, path safety rules, and downstream setup requirements, then execute only supported registration or verification steps.
@@ -36,8 +36,8 @@ Verify and report:
 - `registered_topic_workspace_ref`: the Project Manifest-backed Topic Workspace ref when present.
 - `topic_registration_status`: `registered`, `provisional`, `blocked`, or `not checked`.
 - `registration_command_evidence`: the supported command or API evidence used, or `not needed`.
-- `environment_binding_status`: `active`, `missing`, `blocked`, or `not checked`.
-- `environment_binding_ref`: the active binding ref, `manifest_path`, and `pixi_environment` when present.
+- `environment_binding_status`: `active`, `implicit-default`, `blocked`, or `not checked`.
+- `environment_binding_ref`: the binding source, `manifest_path_or_dir`, Pixi-resolved `manifest_path`, and `pixi_environment` when present.
 - `registration_blockers`: blockers that prevent authoritative registration or downstream service delegation.
 
 ## Supported Registration Surface
@@ -52,16 +52,17 @@ Use the effective Project root context expected by `isomer-cli project ...`. Aft
 
 ## Binding Gate
 
-`setup-topic-env` depends on `isomer-srv-env-setup`, and that service must receive a manifest-backed Research Topic and Topic Workspace. Before reporting success for this subcommand, check whether the Project Manifest has an active `topic_standalone_pixi_bindings` entry or equivalent Topic Workspace Pixi binding accepted by `isomer-srv-env-setup`.
+`setup-topic-env` depends on `isomer-srv-env-setup`, and that service must receive a manifest-backed Research Topic and Topic Workspace. Before reporting success for this subcommand, check whether the Project Manifest has an active `topic_standalone_pixi_bindings.manifest_path_or_dir` entry or whether Pixi resolves the registered Topic Workspace directory as the implicit default binding accepted by `isomer-srv-env-setup`.
 
-If the binding is missing, report a blocker like this:
+If Pixi cannot resolve the effective target, report a blocker like this:
 
 ```text
 topic_registration_status: blocked
-environment_binding_status: missing
-expected_topic_workspace_pixi_manifest: <topic-workspace>/pixi.toml
-blocker: No supported Isomer CLI/API surface is available to create the required Topic Workspace Pixi binding.
-next_operator_action: add the supported binding surface or run the appropriate project-management command when it exists; do not hand-edit Project Config from this skill.
+environment_binding_status: blocked
+manifest_path_or_dir: <topic-workspace>
+binding_source: implicit-default
+blocker: Pixi could not resolve the registered Topic Workspace directory as a confined Topic Workspace Pixi binding.
+next_operator_action: run the environment setup or project-management command that creates a valid Topic Workspace Pixi manifest, or add an explicit manifest_path_or_dir binding through a supported surface when the target is not the Topic Workspace root.
 ```
 
 ## Guardrails

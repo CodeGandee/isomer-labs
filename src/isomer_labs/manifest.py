@@ -193,13 +193,33 @@ def _parse_topic_standalone_pixi_bindings(
     for index, item in enumerate(_table_items(raw.get("topic_standalone_pixi_bindings"))):
         field = f"topic_standalone_pixi_bindings[{index}]"
         research_topic_id = _first_string(item, ("research_topic_id", "topic_id"))
-        manifest_path = _first_string(item, ("manifest_path", "path", "pixi_manifest_path"))
+        superseded_target_fields = [
+            name
+            for name in ("manifest_path", "path", "pixi_manifest_path")
+            if isinstance(item.get(name), str) and item.get(name)
+        ]
+        if superseded_target_fields:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Topic standalone Pixi binding",
+                    path=path,
+                    field=field,
+                    message=(
+                        "Topic standalone Pixi binding uses superseded target field(s) "
+                        f"{', '.join(superseded_target_fields)}; use manifest_path_or_dir instead."
+                    ),
+                )
+            )
+            continue
+        manifest_path_or_dir = _first_string(item, ("manifest_path_or_dir",))
         status = _status_string(item, path, field, "Topic standalone Pixi binding", diagnostics)
         missing: list[str] = []
         if research_topic_id is None:
             missing.append("research_topic_id")
-        if manifest_path is None:
-            missing.append("manifest_path")
+        if manifest_path_or_dir is None:
+            missing.append("manifest_path_or_dir")
         if missing:
             diagnostics.append(
                 Diagnostic(
@@ -215,11 +235,11 @@ def _parse_topic_standalone_pixi_bindings(
         if status is None:
             continue
         assert research_topic_id is not None
-        assert manifest_path is not None
+        assert manifest_path_or_dir is not None
         bindings.append(
             TopicStandalonePixiBinding(
                 research_topic_id=research_topic_id,
-                manifest_path_input=manifest_path,
+                manifest_path_or_dir_input=manifest_path_or_dir,
                 pixi_environment=_first_string(item, ("pixi_environment", "environment", "pixi_env")),
                 purpose=_first_string(item, ("purpose",)),
                 status=status,

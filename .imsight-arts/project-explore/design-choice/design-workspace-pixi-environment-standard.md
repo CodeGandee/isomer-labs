@@ -6,7 +6,7 @@ This design-choice record defined how Isomer Labs Topic Workspaces and Agent Wor
 
 superseded by [Topic Workspace Pixi Workspace Standard](design-topic-workspace-pixi-workspace-standard.md)
 
-> ADR 0027 changed the default from Project-root Pixi environments to Topic Workspace Pixi workspaces. Use the superseding document for current guidance.
+> ADR 0027 changed the default from Project-root Pixi environments to Topic Workspace Pixi workspaces. Use the superseding document for current guidance. Current explicit Topic Workspace Pixi bindings use `manifest_path_or_dir`; the registered Topic Workspace directory is the implicit default when no explicit standalone binding exists.
 
 ## Scope
 
@@ -22,7 +22,7 @@ It does not change Houmao launch mechanics, adapter payload formats, or GUI Back
 ## Principles
 
 1. **Project-level Pixi manifest is the environment authority.** The Project root holds the canonical Pixi configuration in `pyproject.toml` or `pixi.toml`. Research Topics do not bring their own Pixi manifests unless the Project Manifest explicitly opts them into standalone isolation.
-2. **Bindings are explicit and never inferred.** The Project Manifest declares `[[topic_pixi_environment_bindings]]` and `[[topic_standalone_pixi_bindings]]` tables. Isomer never derive a Research Topic's environment from topic names, environment names, or directory conventions.
+2. **Bindings are not inferred from names.** The Project Manifest declares explicit `[[topic_pixi_environment_bindings]]` and `[[topic_standalone_pixi_bindings]]` tables. Current Topic Workspace Pixi behavior also defines the registered Topic Workspace directory as the implicit default target when no explicit standalone binding exists. Isomer never derives a Research Topic's environment from topic names, environment names, or directory conventions.
 3. **Topic Workspaces select environments; Agent Workspaces inherit them.** An Agent Workspace uses the Topic Workspace's selected Project-root or standalone Pixi environment by default. Per-agent environment divergence is an explicit operational decision recorded as a Service Request, not a hidden adapter default.
 4. **`doctor` is read-only.** Host, Project, and topic Pixi diagnostics report status without installing environments, creating lockfiles, or mutating Workspace Runtime.
 5. **Readiness preparation is a distinct mutating step.** `isomer-cli runtime prepare` records a `TopicEnvironmentReadinessRecord` after checking explicit bindings. It does not perform hidden repair or compatibility work.
@@ -35,12 +35,12 @@ It does not change Houmao launch mechanics, adapter payload formats, or GUI Back
 A Topic Workspace uses the Pixi environment that the Project Manifest binds to its Research Topic.
 
 - Default form: one active `[[topic_pixi_environment_bindings]]` entry with `research_topic_id` and `pixi_environment`.
-- Optional stronger isolation: one active `[[topic_standalone_pixi_bindings]]` entry with `research_topic_id` and Project-root-relative `manifest_path`.
+- Optional stronger isolation in the historical design, now the explicit Topic Workspace Pixi target form: one active `[[topic_standalone_pixi_bindings]]` entry with `research_topic_id` and Project-root-relative `manifest_path_or_dir`.
 - A Research Topic may have multiple bindings for different purposes, distinguished by `purpose` and `status`. The runtime preparation step records which binding is selected for execution.
 
 ### Readiness recording
 
-After Project-level Pixi dependencies are installed, `isomer-cli runtime prepare --topic <topic>` checks only explicit bindings and writes or updates a `TopicEnvironmentReadinessRecord` in Workspace Runtime.
+After Project-level Pixi dependencies are installed, `isomer-cli runtime prepare --topic <topic>` checks explicit bindings and, under current ADR 0027 semantics, the implicit Topic Workspace directory default when no explicit standalone binding exists. It writes or updates a `TopicEnvironmentReadinessRecord` in Workspace Runtime.
 
 The record stores:
 
@@ -132,7 +132,7 @@ status = "active"
 ```toml
 [[topic_standalone_pixi_bindings]]
 research_topic_id = "legacy-torch"
-manifest_path = "topic-workspaces/legacy-torch/pixi.toml"
+manifest_path_or_dir = "topic-workspaces/legacy-torch/pixi.toml"
 pixi_environment = "default"
 purpose = "isolated-legacy-deps"
 status = "active"

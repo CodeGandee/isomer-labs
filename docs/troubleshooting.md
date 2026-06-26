@@ -51,22 +51,28 @@ pixi run isomer-cli --print-json project runtime validate --topic my-topic --req
 Recovery:
 
 - Run `pixi install` to resolve the default environment.
-- Add explicit `topic_pixi_environment_bindings` or `topic_standalone_pixi_bindings` entries to the Project Manifest.
+- If the registered Topic Workspace already has a Pixi manifest at its root, rerun diagnostics after Pixi is available on `PATH`; Isomer can use the Topic Workspace directory as the implicit default binding target.
+- Add explicit `topic_pixi_environment_bindings` or `topic_standalone_pixi_bindings` entries only when the topic should use a Project-root environment or a non-default Topic Workspace Pixi target.
 - Treat environment setup or compatibility work as a Service Request rather than hiding it inside a read-only diagnostic.
 
 ## Invalid Topic Bindings
 
 Symptom: `project runtime prepare` records `blocked` for a Research Topic.
 
-Diagnosis: inspect the Project Manifest for `topic_pixi_environment_bindings` and `topic_standalone_pixi_bindings`. Isomer never infers a topic's environment from its id or name.
+Diagnosis: inspect the Project Manifest for `topic_pixi_environment_bindings` and `topic_standalone_pixi_bindings`, then run `project doctor --topic <topic-id>` to see whether Pixi can resolve the registered Topic Workspace directory as the implicit default target. Isomer never infers a topic's environment from its id or name.
 
-Recovery: add explicit bindings. For example:
+Recovery: keep the implicit default when the Topic Workspace root is the Pixi workspace, or add an explicit binding when the target is different. For example:
 
 ```toml
 [[topic_pixi_environment_bindings]]
 research_topic_id = "my-topic"
 pixi_environment = "default"
 purpose = "runtime"
+
+[[topic_standalone_pixi_bindings]]
+research_topic_id = "my-topic"
+manifest_path_or_dir = "isomer-content/topic-ws/my-topic"
+pixi_environment = "default"
 ```
 
 ## Workspace Runtime Schema Issues

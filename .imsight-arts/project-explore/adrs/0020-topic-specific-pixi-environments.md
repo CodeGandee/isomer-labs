@@ -1,6 +1,6 @@
 # Topic-specific Pixi Environments
 
-Isomer Labs will treat Pixi as a required Project dependency and will use the Project-level Pixi manifest as the default environment authority. Research Topics use Pixi environments through explicit Project Manifest bindings to one or more environments declared at the Project root; environment names can follow human conventions such as `<topic-slug>-<env-purpose>`, but Isomer must not infer topic binding from names. A Topic Workspace may optionally use standalone isolated Pixi setup when the Project explicitly records that stronger isolation through `topic_standalone_pixi_bindings`. This keeps environment policy visible at the Project level, avoids making every Topic Workspace a nested Pixi workspace by default, and preserves an isolation escape hatch for topics with incompatible dependency or platform needs.
+This superseded ADR previously made the Project-level Pixi manifest the default environment authority. ADR 0027 replaces that default with Topic Workspace Pixi workspaces: Project-root Pixi environment bindings remain explicit through `topic_pixi_environment_bindings`, explicit Topic Workspace Pixi targets use `topic_standalone_pixi_bindings.manifest_path_or_dir`, and absent explicit standalone bindings default to the registered Topic Workspace directory. Environment names can follow human conventions such as `<topic-slug>-<env-purpose>`, but Isomer must not infer topic binding from names.
 
 ## Status
 
