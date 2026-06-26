@@ -7,6 +7,7 @@ The core correction is that the `setup-for-topic-workspace` workflow should trea
 ```text
 <topic-workspace-dir>/
   .pixi/
+  .gitignore
   pixi.toml
   pixi.lock
   repos/
@@ -18,7 +19,7 @@ The core correction is that the `setup-for-topic-workspace` workflow should trea
       isomer-env-gate.md
 ```
 
-The skill should be modular like a single command with many subcommands. The top-level `SKILL.md` should remain a lean router with a grouped `Subcommands` section and should route to exactly one subcommand reference page. Each executable reference page should have its own numbered `## Workflow` near the top and a freeform fallback, following the structural pattern used by the `imsight-agent-skill-handling format` subcommand.
+The skill should be modular like a single command with many subcommands. The top-level `SKILL.md` should remain a lean router with a grouped `Subcommands` section and should route to exactly one subcommand reference page. Each executable reference page should have its own `## Required Inputs` section, numbered `## Workflow` near the top, and freeform fallback, following the structural pattern used by the `imsight-agent-skill-handling format` subcommand. The parent router should not keep a central required-inputs table for executable setup behavior; the selected page should be self-contained enough for direct invocation.
 
 Complex skills should divide subcommands into three parts: procedural subcommands, helper subcommands, and misc subcommands.
 
@@ -72,7 +73,7 @@ The intended execution order is:
 2. Determine whether the target requires independent repos, then find existing repos or download, infer, search for, or materialize missing repos under `<topic-workspace-dir>/repos/<repo-name>`.
 3. Inspect the source gate and the required repos to infer dependencies needed for the gate to pass, including language runtimes, package managers, libraries, tools, editable repo installs, and command-line programs.
 4. Generate `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` with the inferred dependencies, Pixi install commands, and the desired command or commands that prove the target runs.
-5. Use Pixi from the Topic Workspace root to install the inferred packages and tools.
+5. Use Pixi from the Topic Workspace root to install the starter Python dependencies, inferred packages, and tools.
 6. Run the desired command through Pixi, then declare readiness only when the user-specified target is runnable or blockers are explicit.
 
 The user-facing setup invocation itself authorizes direct, service-safe mutation of the selected Topic Workspace Pixi environment. The workflow should not require a separate Service Request before adding dependencies, updating `pixi.toml`, refreshing `pixi.lock`, installing packages, or running the desired gate command. This direct mutation authority is still limited to the selected Project Manifest-declared Topic Workspace and does not extend to agent launch, unrelated Workspace Runtime mutation, GUI operation, research decisions, Project-root dependency mutation, or Agent Workspace-specific environments.
@@ -81,12 +82,19 @@ When `src/env-gate.md` is vague, the generated `derived/isomer-env-gate.md` shou
 
 Dependency inference should choose package sources according to these defaults:
 
-1. Prefer PyPI for Python packages unless Conda is clearly required for the gate to pass.
-2. Use Pixi/Conda packages for non-Python tools, command-line programs, binary or system-level runtime dependencies, Python dependencies unavailable or unsuitable on PyPI, or setup instructions that cannot be satisfied through PyPI.
-3. Prefer the `nvidia` Pixi channel over `conda-forge` for NVIDIA tools and runtime packages.
-4. Record the selected package source for each inferred dependency in `isomer-env-gate.md`; when a Python dependency uses Pixi/Conda instead of PyPI, record the reason.
+1. Include starter Python dependencies through PyPI unless an existing compatible constraint already provides them: `scipy`, `mdutils`, `ruff`, `mkdocs-material`, `mypy`, `attrs`, `omegaconf`, `imageio`, `matplotlib`, `jsonschema`, and `jinja2`.
+2. Prefer PyPI for Python packages unless Conda is clearly required for the gate to pass.
+3. Use Pixi/Conda packages for non-Python tools, command-line programs, binary or system-level runtime dependencies, Python dependencies unavailable or unsuitable on PyPI, or setup instructions that cannot be satisfied through PyPI.
+4. Prefer the `nvidia` Pixi channel over `conda-forge` for NVIDIA tools and runtime packages.
+5. Record the selected package source for each inferred dependency in `isomer-env-gate.md`; when a Python dependency uses Pixi/Conda instead of PyPI, record the reason.
 
 The Topic Workspace root environment should always include Python as the glue and orchestration language. This is true even when the user-specified runnable target is C++, TypeScript, CUDA, Rust, shell, or another language. The dependency plan should add the native language toolchain, package manager, and runtime needed by the gate, but Python remains available for setup scripts, repo inspection, command orchestration, and result normalization.
+
+Python version selection should first recover evidence from the prompt, `env-gate.md`, the derived gate, and inspected repos, including `requires-python`, `python_requires`, requirement markers, `.python-version`, runtime files, CI files, Dockerfiles, lockfiles, and README setup notes. If no version can be recovered, the workflow should choose the previous stable Python minor release relative to the latest stable Python release at execution time; it should not hard-code a specific fallback version in the skill. When several sources conflict, the workflow should choose the highest Python minor version mentioned or required by those sources, then adapt requirements to that version through environment-level dependency choices, compatibility shims, or setup-command changes. It should not mutate existing repo source files merely to force compatibility. If adaptation cannot be done within the service-safe environment setup boundary, it should report a blocker that names the conflicting sources and attempted target version.
+
+The setup workflow should ensure `<topic-workspace-dir>/.gitignore` contains `.pixi/`, `tmp/`, and `.git/` while preserving unrelated entries. It should not add an `extern/orphan` ignore rule from this service skill.
+
+Runtime commands that execute inside the prepared Topic Workspace environment should use the explicit Pixi command style: `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`. Dependency mutation commands may use `pixi add --manifest-path <manifest_path> ...` and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`. The skill should not rely on activated shells or ambient Python environments.
 
 `isomer-env-gate.md` should use a fixed Markdown section template so humans and later agents can find the same fields consistently without a separate parser:
 
@@ -124,6 +132,7 @@ Further command-level details may still be refined in later artifacts.
 
 - Leave a design placeholder so later artifacts can refine the concrete correction plan.
 - Capture the command-style modular skill structure with short kebab-case subcommands, procedural/helper/misc grouping, and one-level reference pages.
+- Capture that required inputs live inside executable subcommand pages rather than a central parent table.
 - Capture the intended Topic Workspace Pixi layout.
 - Capture the `user-intent/src/env-gate.md` verification gate.
 - Capture generated `user-intent/derived/isomer-env-gate.md` as the operational readiness gate.
@@ -132,6 +141,10 @@ Further command-level details may still be refined in later artifacts.
 - Capture that repo sources may be agent-inferred or discovered, but such repos must be warning-labeled in `isomer-env-gate.md` and the final skill output.
 - Capture package-source preferences: PyPI-first for Python packages, Pixi/Conda only when needed, and `nvidia` channel preferred for NVIDIA packages.
 - Capture Python as the always-present Topic Workspace glue and orchestration language, independent of the target programming language.
+- Capture Python version selection: recover from available context, default to the previous stable minor release when unspecified, and adapt conflicting requirements to the highest required version when possible.
+- Capture starter Python dependencies: `scipy`, `mdutils`, `ruff`, `mkdocs-material`, `mypy`, `attrs`, `omegaconf`, `imageio`, `matplotlib`, `jsonschema`, and `jinja2`.
+- Capture Topic Workspace VCS ignores: `.pixi/`, `tmp/`, and `.git/`, without adding an `extern/orphan` rule from this skill.
+- Capture explicit Pixi command style for Topic Workspace runtime commands.
 - Capture the workflow order from workspace resolution, to source gate, to repo materialization, to dependency inference, to derived gate, to Pixi installation, to Pixi verification commands.
 - Capture `setup-for-topic-workspace` as the public full setup command with `fast-forward`/`auto` and `step-by-step`/`manual` modes.
 - Capture compact step-by-step option tables with a recommendation line outside the table before each workflow step.
@@ -154,12 +167,17 @@ Further command-level details may still be refined in later artifacts.
 - State that `setup-for-topic-workspace` has `fast-forward`/`auto` and `step-by-step`/`manual` execution modes selected from the prompt.
 - State that `fast-forward` mode executes the ordered setup steps directly, while `step-by-step` mode pauses before each step, presents a compact option table, states the recommended option outside the table, and waits for the user to choose before continuing.
 - State that every executable subcommand reference page should have a numbered `## Workflow` near the top and a freeform fallback.
+- State that every executable subcommand reference page should have its own `## Required Inputs` section, and that the parent `SKILL.md` should route to the selected page instead of maintaining a central required-inputs table for executable setup behavior.
 - State that the skill should validate or produce `<topic-workspace-dir>/pixi.toml`, `<topic-workspace-dir>/pixi.lock`, and `<topic-workspace-dir>/.pixi/` for the selected Topic Workspace.
 - State that independent repos required by the task live under `<topic-workspace-dir>/repos/<repo-name>`, where existing repos are inspected read-only and missing repos are downloaded, inferred, discovered, or reported as blockers.
 - State that the skill should read `<topic-workspace-dir>/user-intent/src/env-gate.md` and use it to determine what post-setup commands or checks must pass before reporting readiness.
 - State that the skill should write `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` with concrete required-to-succeed dependencies, Pixi install commands, repo requirements, desired run commands, and verification checks derived from the source gate and available repo contents, especially when the source gate is vague.
 - State that dependency inference should prefer PyPI for Python packages by default, use Pixi/Conda packages only when needed for the gate, and prefer the `nvidia` channel for NVIDIA tools.
 - State that Topic Workspace setup should always keep Python available as the root orchestration layer while still installing the native tools required by non-Python targets.
+- State that Python version selection should recover evidence from prompt, gate, and repo metadata; default to the previous stable minor release when unspecified; and choose the highest required version when sources conflict, adapting requirements where service-safe.
+- State that starter Python dependencies should be installed through PyPI when missing or not already satisfied.
+- State that `<topic-workspace-dir>/.gitignore` should include `.pixi/`, `tmp/`, and `.git/`, and should not gain an `extern/orphan` ignore entry from this skill.
+- State that setup and verification commands should run through `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`.
 - State that `isomer-env-gate.md` should use the fixed Markdown section template and include every section even when the content is `None.`.
 - State that old guidance requiring a separate Service Request for dependency repair or lockfile mutation should be replaced for this skill path by direct service-safe mutation of the selected Topic Workspace.
 - Keep the skill's standard structure: lean `SKILL.md`, local references for detailed workflows, and validation through the service skill and skill-creator validators.

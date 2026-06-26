@@ -1,6 +1,6 @@
 ---
 name: isomer-srv-env-setup
-description: Use when an Isomer Labs agent needs gate-driven Pixi environment setup for a Topic Workspace, including env-gate.md, isomer-env-gate.md, topic_standalone_pixi_bindings, topic repos, PyPI/Pixi dependency inference, NVIDIA channel preference, or readiness checks.
+description: Use when an Isomer Labs agent needs gate-driven Pixi environment setup for a Topic Workspace, including env-gate.md, isomer-env-gate.md, topic_standalone_pixi_bindings, topic repos, Python version selection, starter Python dependencies, Topic Workspace VCS ignores, PyPI/Pixi dependency inference, NVIDIA channel preference, Pixi command style, or readiness checks.
 ---
 
 # Isomer Service Environment Setup
@@ -15,11 +15,11 @@ When this skill is invoked, execute the following steps in order.
 
 1. **Handle help intent**. If the invocation has no prompt, or if the user asks for help, usage, or available functionality, answer from **Help** and stop unless they also ask for a concrete setup task.
 2. **Select one subcommand** from the **Subcommands** tables. Prefer procedural or misc subcommands; use a helper subcommand only if one is added later and the user explicitly asks for it. If the prompt describes a concrete Topic Workspace setup task but does not name a subcommand, use `setup-for-topic-workspace`.
-3. **Resolve required inputs** from the prompt, current repository, and Project Manifest when the selected subcommand needs them. See **Required Inputs**.
-4. **Load the selected reference file** and execute its `## Workflow`.
+3. **Load the selected reference file**.
+4. **Resolve that page's required inputs** from its `## Required Inputs` section, then execute its `## Workflow`.
 5. **Report results** using **Output Contract**.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the subcommands, required inputs, output contract, and guardrails in this skill, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the subcommands, selected reference page, output contract, and guardrails in this skill, then execute the plan.
 
 ## Subcommands
 
@@ -53,23 +53,7 @@ Misc subcommands are public support commands and shortcuts.
 
 Load exactly one reference page for the selected subcommand. The `setup-for-topic-workspace` reference may then load the procedural subcommand references it orchestrates.
 
-## Required Inputs
-
-Recover these before asking the user:
-
-| Input | Required When | Resolution |
-| --- | --- | --- |
-| `subcommand` | Always | Use the prompt value; use `help` when the invocation has no prompt; use `setup-for-topic-workspace` when the prompt describes a concrete Topic Workspace setup task but does not name a subcommand. |
-| `setup_mode` | `setup-for-topic-workspace` | Use `fast-forward` for `fast-forward`, `fast-foward`, `auto`, `automatic`, or direct-execution wording; use `step-by-step` for `step-by-step`, `manual`, `interactive`, or confirmation wording; default to `fast-forward` for concrete setup tasks unless the prompt asks to inspect, decide, or proceed carefully. |
-| Project root | Any setup subcommand | Use the provided path or resolve from the current working directory. |
-| `research_topic_id` | Any setup subcommand | Read from the prompt or Project Manifest context. Ask only when several topics remain plausible. |
-| `topic_workspace_dir` | Any setup subcommand after `resolve-workspace` | Read from the Project Manifest-declared Topic Workspace for the selected Research Topic. |
-| `manifest_path` | Any Pixi mutation or verification | Read from the active `topic_standalone_pixi_bindings` entry. |
-| `pixi_environment` | Any Pixi mutation or verification | Read from the active binding; use `default` only when the binding omits it. |
-| `env_gate_path` | `read-gate` and later | Use `<topic-workspace-dir>/user-intent/src/env-gate.md`. |
-| `derived_gate_path` | `derive-gate` and later | Use `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`. |
-
-When asking for missing input, separate `Required` values from `Optional` modifiers. If no optional inputs apply, say `Optional: none for this step.`
+Each executable reference page owns its `## Required Inputs` contract. Use the selected page as the self-contained input guide for direct calls.
 
 ## Help
 
@@ -83,7 +67,7 @@ Procedural subcommands:
 | `read-gate` | Read the source gate and extract the runnable target, repo hints, commands, and success criteria. | Source gate summary and readiness blockers. |
 | `ensure-repos` | Find existing required repos or materialize missing repos under `<topic-workspace-dir>/repos/<repo-name>`. | Repo inventory and inspection notes; acquired topic repos and inferred-source warnings only for missing repos. |
 | `derive-gate` | Write the fixed-section `isomer-env-gate.md` operational gate. | `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`. |
-| `install-deps` | Install inferred dependencies with Pixi, using PyPI-first Python package rules and NVIDIA channel preference. | Updated Topic Workspace Pixi environment files and dependency plan. |
+| `install-deps` | Install inferred dependencies with Pixi, using Python version selection, starter Python dependencies, PyPI-first package rules, Topic Workspace VCS ignores, and NVIDIA channel preference. | Updated Topic Workspace Pixi environment files, `.gitignore`, and dependency plan. |
 | `verify-gate` | Run the desired command through Pixi and report readiness. | Gate execution results, readiness status, and blockers. |
 
 Misc subcommands:
@@ -117,9 +101,9 @@ Report:
 - `derived_gate_path`: generated gate path when relevant.
 - `repos`: required repo names, paths, sources, and whether any source was inferred.
 - `inferred_source_warnings`: warnings for repos acquired from inferred or discovered sources.
-- `dependency_plan`: package sources, Pixi/PyPI choices, channels, editable installs, native tools, and Python glue baseline.
+- `dependency_plan`: selected Python version, version evidence, starter Python dependencies, package sources, Pixi/PyPI choices, channels, editable installs, native tools, and Python glue baseline.
 - `commands_run`: commands executed, in order.
-- `changed_files`: environment files changed, especially `pixi.toml`, `pixi.lock`, `.pixi/`, and `isomer-env-gate.md`.
+- `changed_files`: environment files changed, especially `pixi.toml`, `pixi.lock`, `.pixi/`, `.gitignore`, and `isomer-env-gate.md`.
 - `readiness_status`: ready, failed, blocked, or not checked.
 - `blockers`: missing inputs, failed preconditions, command failures, out-of-scope requests, or repair requirements.
 - `next_action`: safe follow-up, repair route, or stop condition.
@@ -134,5 +118,6 @@ Report:
 - Do not modify an existing `<topic-workspace-dir>/repos/<repo-name>` during `ensure-repos`; inspect it as read-only evidence and report blockers if it is unsuitable.
 - Do not infer `topic_standalone_pixi_bindings` from directory names; always read the Project Manifest.
 - Do not choose repos, dependencies, Pixi install commands, setup commands, or verification commands before reading `user-intent/src/env-gate.md`.
+- When running Topic Workspace setup, inspection, or verification commands inside the prepared environment, use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>` instead of relying on the ambient shell environment.
 - Do not hide inferred repo sources; warning-label them in `isomer-env-gate.md` and final output.
 - Do not launch Houmao agents, create Agent Instances, mutate unrelated Workspace Runtime records, perform GUI work, or make research decisions from this skill.

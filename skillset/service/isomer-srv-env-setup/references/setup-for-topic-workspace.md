@@ -2,6 +2,22 @@
 
 Use this subcommand to run the full gate-driven setup flow for one Topic Workspace.
 
+## Required Inputs
+
+Recover these before asking the user:
+
+| Input | Resolution |
+| --- | --- |
+| `subcommand` | Use this page when the prompt names `setup-for-topic-workspace`, or when the prompt describes concrete Topic Workspace setup without naming another subcommand. |
+| `setup_mode` | Use `fast-forward` for `fast-forward`, `fast-foward`, `auto`, `automatic`, or equivalent direct-execution wording. Use `step-by-step` for `step-by-step`, `manual`, `interactive`, confirmation, or equivalent user-controlled wording. Default to `fast-forward` for concrete setup tasks unless the prompt asks to inspect, decide, or proceed carefully. |
+| Project root | Use the provided path or current working directory; it must resolve to an Isomer Project root containing `.isomer-labs/manifest.toml`. |
+| Research Topic or Topic Workspace selector | Read a Research Topic id, Topic Workspace ref, or Topic Workspace path from the prompt or Project Manifest context. Ask only when several topics remain plausible. |
+| `topic_workspace_dir`, `manifest_path`, `pixi_environment` | Resolve through `resolve-workspace` before any later step mutates or verifies Pixi state. |
+| `env_gate_path` | Use `<topic-workspace-dir>/user-intent/src/env-gate.md`; `read-gate` must confirm it exists before readiness can be claimed. |
+| `derived_gate_path` | Use `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`; `derive-gate` must create or update it before install or verification. |
+
+When asking for missing input, separate `Required` values from `Optional` modifiers. If no optional inputs apply, say `Optional: none for this setup run.`
+
 ## Workflow
 
 When this subcommand is selected, execute the following steps in order.
@@ -60,6 +76,7 @@ Successful setup leaves the selected Topic Workspace with:
 ```text
 <topic-workspace-dir>/
   .pixi/
+  .gitignore
   pixi.toml
   pixi.lock
   repos/
@@ -72,6 +89,8 @@ Successful setup leaves the selected Topic Workspace with:
 ```
 
 Readiness means the desired command from `isomer-env-gate.md` runs successfully through the Topic Workspace Pixi environment. It does not merely mean that Pixi files exist.
+
+The Topic Workspace `.gitignore` should contain `.pixi/`, `tmp/`, and `.git/`, and should not add an `extern/orphan` ignore rule from this skill.
 
 ## Guardrails
 

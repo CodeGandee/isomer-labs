@@ -2,6 +2,16 @@
 
 Use this subcommand to read the user-authored source gate and extract what must be runnable after setup.
 
+## Required Inputs
+
+Recover these before asking the user:
+
+| Input | Resolution |
+| --- | --- |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
+| `env_gate_path` | Use `<topic-workspace-dir>/user-intent/src/env-gate.md`. If it is missing or unreadable, report a blocker asking the user to create or repair that file. |
+| Optional modifiers | None for this step. |
+
 ## Workflow
 
 When this subcommand is selected, execute the following steps in order.

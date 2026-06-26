@@ -5,11 +5,12 @@
 - [x] 1.3 Make `help` the default when no prompt is given and `setup-for-topic-workspace` the default for concrete setup tasks that do not name a subcommand.
 - [x] 1.4 Create or revise one-level reference pages for executable subcommands, including `references/setup-for-topic-workspace.md`, `references/resolve-workspace.md`, `references/read-gate.md`, `references/ensure-repos.md`, `references/derive-gate.md`, `references/install-deps.md`, and `references/verify-gate.md`.
 - [x] 1.5 Ensure every executable subcommand reference page has a numbered `## Workflow` near the top and a freeform fallback.
-- [x] 1.6 Update the parent skill help, required inputs, output contract, and guardrails so they mention gate-driven Topic Workspace setup without expanding into agent launch or unrelated runtime management.
+- [x] 1.6 Update the parent skill help, output contract, and guardrails so they mention gate-driven Topic Workspace setup without expanding into agent launch or unrelated runtime management.
 - [x] 1.7 Confirm the parent skill does not tell agents to treat the Project root or an Agent Workspace as the Topic Workspace Pixi root.
 - [x] 1.8 Remove or revise wording that requires a separate Service Request before direct Topic Workspace Pixi dependency, lockfile, or install mutation during this skill workflow.
 - [x] 1.9 Divide subcommands into procedural, helper, and misc groups for complex-skill readability.
 - [x] 1.10 Teach `setup-for-topic-workspace` to select `fast-forward`/`auto` or `step-by-step`/`manual` mode from the prompt, accepting `fast-foward` as an alias for `fast-forward`.
+- [x] 1.11 Move required-input contracts from the parent router into each executable subcommand reference page so direct calls are self-contained.
 
 ## 2. Topic Workspace Workflow
 
@@ -42,6 +43,10 @@
 - [x] 4.7 Teach the workflow to run the desired command through Pixi and treat that command result as the final gate outcome.
 - [x] 4.8 Require blockers to name any dependency that cannot be inferred or installed, why it is needed, and what information or manual action is required.
 - [x] 4.9 Require the workflow to report changed environment files, commands run, readiness status, and blockers after direct setup mutation.
+- [x] 4.10 Teach the workflow to select a Python version from prompt, gate, and repo context; default to the previous stable minor release when unspecified; and adapt conflicting requirements to the highest required version where service-safe.
+- [x] 4.11 Teach the workflow to install starter Python dependencies through PyPI when missing or not already satisfied.
+- [x] 4.12 Teach the workflow to maintain Topic Workspace VCS ignores for `.pixi/`, `tmp/`, and `.git/` without adding `extern/orphan`.
+- [x] 4.13 Teach setup and verification commands to use explicit `pixi run --manifest-path <manifest_path> --environment <pixi_environment>` command style.
 
 ## 5. Validation
 

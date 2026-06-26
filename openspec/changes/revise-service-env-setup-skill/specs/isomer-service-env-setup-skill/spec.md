@@ -49,7 +49,11 @@ The service environment setup skill SHALL be structured as a single command-styl
 
 #### Scenario: Executable subcommand pages follow the style format
 - **WHEN** a reference page acts as an executable subcommand page
-- **THEN** it has a `## Workflow` section near the top
+- **THEN** it has a `## Required Inputs` section before its `## Workflow`
+- **AND** the `## Required Inputs` section names the prompt inputs, predecessor artifacts, default paths, and refusal conditions needed by that subcommand
+- **AND** direct callers can resolve that subcommand's inputs from that page without reading a central parent required-inputs table
+- **AND** the top-level `SKILL.md` does not keep a central `## Required Inputs` table for executable setup behavior
+- **AND** it has a `## Workflow` section near the top
 - **AND** the workflow is written as numbered steps
 - **AND** the workflow ends with a freeform fallback for tasks that do not map cleanly to the default steps
 
@@ -66,6 +70,14 @@ The service environment setup skill SHALL define Topic Workspace environment set
 - **THEN** `<topic-workspace-dir>/pixi.toml` exists
 - **AND** `<topic-workspace-dir>/pixi.lock` exists
 - **AND** `<topic-workspace-dir>/.pixi/` exists
+
+#### Scenario: Topic Workspace VCS ignores are created
+- **WHEN** Topic Workspace environment setup mutates the selected Topic Workspace
+- **THEN** `<topic-workspace-dir>/.gitignore` contains `.pixi/`
+- **AND** it contains `tmp/`
+- **AND** it contains `.git/`
+- **AND** the skill preserves unrelated existing ignore entries
+- **AND** the skill does not add an `extern/orphan` ignore rule from this service skill
 
 #### Scenario: Setup result is validated before readiness is reported
 - **WHEN** the skill reports a Topic Workspace environment as ready
@@ -174,6 +186,12 @@ The service environment setup skill SHALL instruct the agent to infer the depend
 - **THEN** the skill instructs the agent to prefer a PyPI dependency over a Pixi/Conda package
 - **AND** the selected package source is recorded in `isomer-env-gate.md`
 
+#### Scenario: Starter Python dependencies are included
+- **WHEN** the skill prepares a Topic Workspace root environment
+- **THEN** it includes starter Python dependencies `scipy`, `mdutils`, `ruff`, `mkdocs-material`, `mypy`, `attrs`, `omegaconf`, `imageio`, `matplotlib`, `jsonschema`, and `jinja2` through PyPI unless existing compatible constraints already provide them
+- **AND** the starter dependencies and install command are recorded in `isomer-env-gate.md`
+- **AND** inability to install a starter dependency is reported as a blocker
+
 #### Scenario: Pixi or Conda packages are used when needed
 - **WHEN** a dependency is a non-Python tool, command-line program, binary or system-level runtime dependency, Python package unavailable or unsuitable on PyPI, or setup requirement that cannot satisfy the gate through PyPI
 - **THEN** the skill instructs the agent to use Pixi/Conda dependency mechanisms for that dependency
@@ -190,6 +208,25 @@ The service environment setup skill SHALL instruct the agent to infer the depend
 - **AND** this remains true when the user-specified runnable target uses C++, TypeScript, CUDA, Rust, shell, or another non-Python language
 - **AND** the Python baseline is recorded in `isomer-env-gate.md`
 
+#### Scenario: Python version is recovered before fallback
+- **WHEN** the skill selects the Topic Workspace Python runtime version
+- **THEN** it first checks the prompt, `env-gate.md`, derived gate content, and inspected repo evidence for Python version constraints
+- **AND** repo evidence includes Python metadata, requirement markers, runtime files, CI files, Dockerfiles, lockfiles, and setup notes when present
+- **AND** the selected version and evidence are recorded in `isomer-env-gate.md`
+
+#### Scenario: Unspecified Python version defaults to previous stable minor
+- **WHEN** no Python version can be recovered from prompt, gate, or repo context
+- **THEN** the skill instructs the agent to select the previous stable Python minor release relative to the latest stable Python release at execution time
+- **AND** the skill does not hard-code a specific fallback Python version
+- **AND** the selected fallback version is recorded in `isomer-env-gate.md`
+
+#### Scenario: Conflicting Python version sources choose the highest target
+- **WHEN** multiple prompt, gate, or repo sources provide conflicting Python version constraints
+- **THEN** the skill instructs the agent to choose the highest Python minor version mentioned or required by those sources as the target
+- **AND** it adapts environment-level requirements toward that target through compatible package releases, service-safe constraint changes, compatibility shims, or setup-command changes
+- **AND** it does not mutate existing repo source files merely to force compatibility
+- **AND** if service-safe adaptation is impossible, it reports a blocker naming the conflicting sources and attempted target version
+
 #### Scenario: Native target tooling is still installed
 - **WHEN** the user-specified runnable target requires a non-Python language, toolchain, package manager, runtime, or command-line tool
 - **THEN** the skill instructs the agent to install and verify those native dependencies in addition to the Python glue baseline
@@ -203,6 +240,8 @@ The service environment setup skill SHALL instruct the agent to infer the depend
 #### Scenario: Desired command runs through Pixi
 - **WHEN** Pixi dependency installation has completed
 - **THEN** the skill instructs the agent to run the desired command or commands through the Topic Workspace Pixi environment
+- **AND** the command form is `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`
+- **AND** the skill does not rely on activated shells or ambient Python environments
 - **AND** the command results determine whether `env-gate.md` has passed
 
 #### Scenario: Dependency blockers are explicit
@@ -234,6 +273,7 @@ The service environment setup skill SHALL allow direct service-safe mutation of 
 #### Scenario: Mutation output remains auditable in the response
 - **WHEN** direct setup mutation changes files or runs commands
 - **THEN** the skill reports changed environment files, commands run, readiness status, and blockers through the parent skill output contract
+- **AND** changed environment files include `.gitignore` when the VCS ignore rules are added or refreshed
 - **AND** it does not hide dependency or lockfile changes behind generic readiness language
 
 ### Requirement: Setup Workflow Ordering

@@ -2,6 +2,16 @@
 
 Use this subcommand to resolve the Project root, Research Topic, Topic Workspace, active Topic Workspace Pixi binding, and setup preconditions.
 
+## Required Inputs
+
+Recover these before asking the user:
+
+| Input | Resolution |
+| --- | --- |
+| Project root | Use the provided path or current working directory; confirm `.isomer-labs/manifest.toml` exists. |
+| Research Topic or Topic Workspace selector | Read a `research_topic_id`, Topic Workspace ref, or Topic Workspace path from the prompt or Project Manifest context. If several topics remain plausible, ask the user which one to use. |
+| Optional modifiers | None for this step. |
+
 ## Workflow
 
 When this subcommand is selected, execute the following steps in order.
