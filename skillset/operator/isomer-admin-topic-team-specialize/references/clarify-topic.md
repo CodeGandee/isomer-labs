@@ -11,7 +11,7 @@ When this subcommand is selected, execute the following steps in order.
 5. Execute the **Sequential Clarification Loop**, asking exactly one focused question at a time.
 6. After each accepted answer, update `<topic-dir>/topic-def/topic-overview.md` directly through **Direct Topic Overview Integration**.
 7. Stop when the topic is actionable, the user signals completion, or five clarification questions have been asked.
-8. Report the revised topic understanding, changed `topic-overview.md` path, remaining open questions, provisional registration status, and whether `specialize-team` can proceed.
+8. Report the revised topic understanding, changed `topic-overview.md` path, remaining open questions, provisional registration status, and whether `ensure-topic-registration` can proceed.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step clarification plan from the topic overview, user answers, and Project Config boundary, then execute the plan.
 
@@ -29,7 +29,7 @@ Before asking the user anything, inspect `topic-overview.md` and classify each c
 | Template Selection Signals | Does the topic imply a needed Domain Agent Team Template, domain level, capability, or workflow style? |
 | Source Material | Does the source prompt or supplied material contain unresolved conflicts or unsupported claims? |
 
-Add a candidate clarification question for each **Partial** or **Missing** category only when the answer would materially change `topic-overview.md` or determine whether `specialize-team` can proceed. Exclude questions already answered by the file, trivial style preferences, and implementation details that belong to later subcommands.
+Add a candidate clarification question for each **Partial** or **Missing** category only when the answer would materially change `topic-overview.md` or determine whether `ensure-topic-registration` and later `specialize-team` can proceed. Exclude questions already answered by the file, trivial style preferences, and implementation details that belong to later subcommands.
 
 If more than five candidate questions remain, rank them by impact and uncertainty, then ask only the top five in the current clarification session. Keep lower-priority ambiguity in `## Open Questions` rather than hiding it.
 
@@ -39,7 +39,7 @@ Ask exactly one question at a time. Use a multiple-choice question when there ar
 
 For every question, include:
 
-- **Motivation**: why this answer matters for topic scope, objectives, assumptions, open questions, template selection, or readiness for `specialize-team`.
+- **Motivation**: why this answer matters for topic scope, objectives, assumptions, open questions, template selection, registration readiness, or readiness for `specialize-team`.
 - **Example**: a concrete example when it helps the user see how different answers change the topic overview.
 - **Proposed**: the agent's recommended option or short answer, with brief rationale.
 - **Implication**: what will change in `topic-overview.md` if the user accepts the proposed answer.
@@ -85,7 +85,7 @@ If `topic-overview.md` does not exist, refuse to run, explain that there is no t
 
 ## Guardrails
 
-Do not specialize the team from this subcommand. Stop after topic clarification and route to `specialize-team` when the topic is ready.
+Do not specialize the team from this subcommand. Stop after topic clarification and route to `ensure-topic-registration` when the topic is ready but not registered, then to `specialize-team` after registration blockers are resolved.
 
 Do not create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised `topic-overview.md`.
 

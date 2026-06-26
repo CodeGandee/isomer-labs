@@ -78,7 +78,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Subcommands
 
-            Procedural Subcommands: `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile`.
+            Procedural Subcommands: `init-topic`, `clarify-topic`, `ensure-topic-registration`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile`.
 
             Helper Subcommands: five lower-level implementation commands: `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile`.
 
@@ -128,6 +128,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                     | --- | --- | --- |
                     | `init-topic` | Start topic setup. | `topic-overview.md`. |
                     | `clarify-topic` | Clarify topic. | Updated `topic-overview.md`. |
+                    | `ensure-topic-registration` | Ensure Project registration. | Registered topic refs. |
                     | `specialize-team` | Specialize topic team. | Draft profile inputs. |
                     | `setup-topic-env` | Prepare topic environment. | `topic_environment_status`. |
                     | `setup-agent-workspace` | Prepare Agent Workspaces. | `agent_workspace_paths`. |

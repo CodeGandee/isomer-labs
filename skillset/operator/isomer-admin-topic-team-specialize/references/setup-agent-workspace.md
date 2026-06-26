@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Read the specialized topic-team shape, expected Agent Roles, draft profile inputs, Topic Workspace path, and topic environment status.
+2. Read the specialized topic-team shape, expected Agent Roles, draft profile inputs, registration evidence, registered Topic Workspace path, and topic environment status.
 3. Determine whether the requested Agent Workspace layout is plain static directories or the Git-backed layout with `<topic-workspace-dir>/repos/topic-main` and per-agent worktrees.
 4. If Git-backed worktrees are requested, delegate the concrete setup to `isomer-admin-topic-workspace-mgr topic-workspace` or the needed subcommand and record its `agent_workspace_ref`, branch, boundary, validation, blocker, and next-action output as durable setup evidence.
 5. For non-Git static setup, determine per-agent Agent Workspace directories, ownership notes, allowed file surfaces, and boundary notes needed for the expected Agent Roles.
@@ -20,9 +20,12 @@ If the user's task does not map cleanly to these steps, use your native planning
 Required predecessor artifacts:
 
 - Specialized topic-team shape and draft profile or packet/profile input summary from `specialize-team`.
+- Registration assurance from `ensure-topic-registration`, including Project Manifest-backed Research Topic and Topic Workspace refs or an explicit registration blocker.
 - `topic_environment_status` or explicit environment setup blocker from `setup-topic-env`.
 
 If the topic environment setup status is missing, refuse to run, explain that Agent Workspace setup depends on the topic environment posture, and tell the user to run `setup-topic-env` first.
+
+If registration evidence is missing or only names a provisional topic workspace seed, refuse to run, explain that Agent Workspace setup needs authoritative Topic Workspace refs, and tell the user to run `ensure-topic-registration` first.
 
 ## Guardrails
 

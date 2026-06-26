@@ -1,0 +1,77 @@
+# Ensure Topic Registration
+
+## Workflow
+
+When this subcommand is selected, execute the following steps in order.
+
+1. Check **Prerequisite Artifacts**. If neither a concrete registered Research Topic ref nor `<topic-dir>/topic-def/topic-overview.md` from `init-topic` or `clarify-topic` is available, refuse to run, explain that there is no topic material to register, and tell the user to run `init-topic` first.
+2. Resolve the Project root, Project Manifest, selected Research Topic id or candidate topic slug, candidate Topic Workspace directory, and topic overview. Do not infer a topic from directory names, the current directory, a Project Manifest default, the registered id `default`, or a generic placeholder statement.
+3. Recover the concrete Research Topic statement from user input, `topic-overview.md`, or an already registered Research Topic Config. If the statement is missing, generic, or unclear, stop with a blocker asking the user for the concrete research topic before any Project Config mutation.
+4. Idempotently verify existing Project Manifest-backed registrations. If the selected Research Topic and Topic Workspace are already registered and point to the intended topic material, report `topic_registration_status: registered`, carry forward the registered refs, and record that no mutation was needed.
+5. If registration is missing, check path safety before mutation. The candidate Topic Workspace directory must be project-scoped, must not be the Project Config directory, the Isomer-managed Houmao overlay, or another reserved project area, and must not collide with a different registered Topic Workspace or unrelated project-owned path. If any collision or unsafe path is found, stop with a blocker naming the conflicting path.
+6. When the topic statement and workspace path are clear and registration is missing, create the authoritative registration only through a supported Isomer CLI/API surface, normally `isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>`. Capture the exact command or API evidence in `registration_command_evidence`.
+7. Re-read the Project Manifest after creation. If the Research Topic or Topic Workspace still is not registered, stop with a blocker that names the missing ref and the command or API surface that failed or is unavailable.
+8. Verify the active `topic_standalone_pixi_bindings` entry or equivalent Topic Workspace Pixi binding required by `isomer-srv-env-setup`. The accepted binding should connect the registered Research Topic to the selected Topic Workspace Pixi manifest, normally `<topic-workspace>/pixi.toml`, and name the Pixi environment to use.
+9. If the required environment binding is missing and a supported Isomer CLI/API surface exists to create it, route through that surface and re-check. If the only apparent fix is hand-editing `.isomer-labs/manifest.toml` or Research Topic Config files, stop with `topic_registration_status: blocked`, report `environment_binding_status: missing`, and name the expected manifest path and missing supported surface.
+10. Report registration status, registered refs, command evidence, environment binding status, blockers, and the next safe subcommand.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded registration-assurance plan from the topic overview, Project Manifest, supported Isomer CLI/API surfaces, path safety rules, and downstream setup requirements, then execute only supported registration or verification steps.
+
+## Prerequisite Artifacts
+
+Required predecessor artifact or input:
+
+- `<topic-dir>/topic-def/topic-overview.md` from `init-topic`, optionally revised by `clarify-topic`; or
+- An explicit registered Research Topic ref whose registered config contains a concrete Research Topic statement.
+
+If topic material is missing, refuse to run, explain that registration assurance needs a concrete topic statement and candidate Topic Workspace, and tell the user to run `init-topic` first. If the topic overview exists but does not contain a concrete topic statement, refuse to mutate Project Config and route to `clarify-topic`.
+
+## Verification Targets
+
+Verify and report:
+
+- `research_topic_ref`: the requested or derived Research Topic id.
+- `topic_workspace_ref`: the candidate or registered Topic Workspace.
+- `registered_research_topic_ref`: the Project Manifest-backed Research Topic ref when present.
+- `registered_topic_workspace_ref`: the Project Manifest-backed Topic Workspace ref when present.
+- `topic_registration_status`: `registered`, `provisional`, `blocked`, or `not checked`.
+- `registration_command_evidence`: the supported command or API evidence used, or `not needed`.
+- `environment_binding_status`: `active`, `missing`, `blocked`, or `not checked`.
+- `environment_binding_ref`: the active binding ref, `manifest_path`, and `pixi_environment` when present.
+- `registration_blockers`: blockers that prevent authoritative registration or downstream service delegation.
+
+## Supported Registration Surface
+
+Use this command shape when a clear provisional topic seed should become authoritative Project state:
+
+```bash
+isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>
+```
+
+Use the effective Project root context expected by `isomer-cli project ...`. After the command succeeds, re-read the Project Manifest rather than trusting command output alone.
+
+## Binding Gate
+
+`setup-topic-env` depends on `isomer-srv-env-setup`, and that service must receive a manifest-backed Research Topic and Topic Workspace. Before reporting success for this subcommand, check whether the Project Manifest has an active `topic_standalone_pixi_bindings` entry or equivalent Topic Workspace Pixi binding accepted by `isomer-srv-env-setup`.
+
+If the binding is missing, report a blocker like this:
+
+```text
+topic_registration_status: blocked
+environment_binding_status: missing
+expected_topic_workspace_pixi_manifest: <topic-workspace>/pixi.toml
+blocker: No supported Isomer CLI/API surface is available to create the required Topic Workspace Pixi binding.
+next_operator_action: add the supported binding surface or run the appropriate project-management command when it exists; do not hand-edit Project Config from this skill.
+```
+
+## Guardrails
+
+Do not hand-edit `.isomer-labs/manifest.toml` or Research Topic Config files.
+
+Do not create a duplicate Research Topic or Topic Workspace when an existing Project Manifest-backed registration already matches the selected topic.
+
+Do not register a topic from vague text, generic default topic statements, directory names, or unrelated workspace names.
+
+Do not treat a provisional topic workspace seed as authoritative registration until the Project Manifest proves the Research Topic and Topic Workspace refs.
+
+Do not call `isomer-srv-env-setup` from this subcommand. Only verify or report the Topic Workspace Pixi binding that service setup needs.

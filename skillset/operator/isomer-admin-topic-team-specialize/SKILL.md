@@ -1,11 +1,11 @@
 ---
 name: isomer-admin-topic-team-specialize
-description: "Initialize and specialize Isomer Research Topics into static topic-team material. Use when an operator needs topic-team setup for one Research Topic: help, init-topic, clarify-topic, specialize-team, clarify-topic-team, setup-topic-env through isomer-srv-env-setup, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
+description: "Initialize and specialize Isomer Research Topics into static topic-team material. Use when an operator needs topic-team setup for one Research Topic: help, init-topic, clarify-topic, ensure-topic-registration, specialize-team, clarify-topic-team, setup-topic-env through isomer-srv-env-setup, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
 ---
 
 # Isomer Admin Topic Team Specialize
 
-Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, prepare topic definition material, adapt one Domain Agent Team Template into copied topic-specific material, route topic environment setup through `isomer-srv-env-setup`, prepare Agent Workspaces as durable setup state, validate static material readiness, and write a final topic-team summary. When Git-backed Agent Workspace worktrees under `repos/topic-main` are requested, delegate that concrete workspace topology to `isomer-admin-topic-workspace-mgr`. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
+Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, prepare topic definition material, ensure authoritative Research Topic and Topic Workspace registration through supported Isomer surfaces, adapt one Domain Agent Team Template into copied topic-specific material, route topic environment setup through `isomer-srv-env-setup`, prepare Agent Workspaces as durable setup state, validate static material readiness, and write a final topic-team summary. When Git-backed Agent Workspace worktrees under `repos/topic-main` are requested, delegate that concrete workspace topology to `isomer-admin-topic-workspace-mgr`. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
 
 ## Workflow
 
@@ -27,6 +27,7 @@ The normal procedural flow is:
 ```text
 init-topic
   -> clarify-topic (optional)
+  -> ensure-topic-registration
   -> specialize-team
   -> clarify-topic-team (optional)
   -> setup-topic-env
@@ -38,7 +39,7 @@ init-topic
 
 `fast-forward` runs this path automatically where possible. `step-by-step` runs the same path but asks the user to confirm before each stage.
 
-When `init-topic` receives a user-supplied clear concrete Research Topic without an explicit output directory, it derives a provisional topic workspace seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`. A Project Manifest default topic, the id `default`, a literal `default Research Topic`, or any other generic placeholder statement is not enough topic substance by itself; ask the user for the actual research topic before creating files.
+When `init-topic` receives a user-supplied clear concrete Research Topic without an explicit output directory, it derives a provisional topic workspace seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`. A Project Manifest default topic, the id `default`, a literal `default Research Topic`, or any other generic placeholder statement is not enough topic substance by itself; ask the user for the actual research topic before creating files. Before specialization or setup proceeds from a provisional seed, run `ensure-topic-registration` to verify or create Project Manifest-backed Research Topic and Topic Workspace refs, verify the Topic Workspace Pixi binding required by environment setup, and report blockers.
 
 ## Subcommands
 
@@ -52,6 +53,7 @@ Procedural subcommands are the public single-step workflow API.
 | --- | --- | --- |
 | `init-topic` | Create a provisional topic workspace seed and `topic-overview.md` for a new or unclear Research Topic | [references/init-topic.md](references/init-topic.md) |
 | `clarify-topic` | Refine the Research Topic and update topic overview open questions before team specialization | [references/clarify-topic.md](references/clarify-topic.md) |
+| `ensure-topic-registration` | Verify or create authoritative Project Manifest-backed Research Topic and Topic Workspace registration before registration-dependent work | [references/ensure-topic-registration.md](references/ensure-topic-registration.md) |
 | `specialize-team` | Select a Domain Agent Team Template and run the topic-team specialization path | [references/specialize-team.md](references/specialize-team.md) |
 | `clarify-topic-team` | Revise specialized topic-team outputs before setup, approval, or materialization | [references/clarify-topic-team.md](references/clarify-topic-team.md) |
 | `setup-topic-env` | Prepare the env-gate handoff, delegate Topic Workspace environment setup to `isomer-srv-env-setup`, and record service setup evidence | [references/setup-topic-env.md](references/setup-topic-env.md) |
@@ -133,6 +135,12 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `topic_workspace_ref`: the resolved Topic Workspace or provisional topic workspace seed.
 - `topic_overview_path`: the `<topic-dir>/topic-def/topic-overview.md` path when topic material was created or revised.
 - `topic_registration_status`: registered, provisional, blocked, or not checked.
+- `registration_command_evidence`: supported Isomer CLI/API command evidence used to create or verify registration, or `not needed` when no mutation was required.
+- `registered_research_topic_ref`: the Project Manifest-backed Research Topic ref when registration is verified.
+- `registered_topic_workspace_ref`: the Project Manifest-backed Topic Workspace ref when registration is verified.
+- `environment_binding_status`: active, missing, blocked, or not checked for the `topic_standalone_pixi_bindings` or equivalent Topic Workspace Pixi binding needed by `isomer-srv-env-setup`.
+- `environment_binding_ref`: the active binding ref, manifest path, and Pixi environment when available.
+- `registration_blockers`: missing topic statement, unsafe path, colliding workspace, unsupported config mutation, missing environment binding, or other blockers from `ensure-topic-registration`.
 - `selected_domain_team_template_ref`: the selected Domain Agent Team Template.
 - `domain_team_template_ref`: the source Domain Agent Team Template when specialization has begun.
 - `copied_template_root`: usually `<topic-workspace>/team-profile/execplan/` for `deepsci-mini`.
@@ -151,13 +159,15 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `deferrals`: unresolved items, with static-material or later-operation impact.
 - `packet_profile_inputs`: proposed Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.
 - `validation_status`: commands or validators run, plus any blockers.
-- `next_operator_action`: usually clarify topic, specialize team, setup environment, validate, finalize, request approval, materialize an approved bundle, hand off to a later runtime workflow, or stop on blockers.
+- `next_operator_action`: usually clarify topic, ensure topic registration, specialize team, setup environment, validate, finalize, request approval, materialize an approved bundle, hand off to a later runtime workflow, or stop on blockers.
 
 ## Guardrails
 
 Do not edit the Domain Agent Team Template source while specializing a topic. The source template remains topic-neutral.
 
-Do not treat a provisional topic workspace seed as an authoritative Isomer Research Topic or Topic Workspace registration. Stop at the registration boundary or route through `isomer-cli project topics create <topic-id> --statement "<research topic>"` and related supported Isomer CLI/API surfaces instead of hand-editing `.isomer-labs/manifest.toml`.
+Do not treat a provisional topic workspace seed as an authoritative Isomer Research Topic or Topic Workspace registration. Stop at the registration boundary or route through `ensure-topic-registration`, which may use `isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>` and related supported Isomer CLI/API surfaces instead of hand-editing `.isomer-labs/manifest.toml` or Research Topic Config files.
+
+Do not call `isomer-srv-env-setup` from a provisional Topic Workspace or from an unbound registered topic. Require `ensure-topic-registration` evidence first. If the active `topic_standalone_pixi_bindings` entry or equivalent Topic Workspace Pixi binding required by `isomer-srv-env-setup` is missing and no supported Isomer CLI/API surface can create it, report the missing binding as a blocker instead of editing Project Config by hand.
 
 Do not run a procedural subcommand when required predecessor artifacts are missing. Refuse to run, name the missing artifacts, explain which previous subcommand should create them, and stop before mutation.
 

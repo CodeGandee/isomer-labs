@@ -58,6 +58,7 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "references/help.md",
     "init-topic",
     "clarify-topic",
+    "ensure-topic-registration",
     "specialize-team",
     "clarify-topic-team",
     "setup-topic-env",
@@ -92,6 +93,7 @@ TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
     "help.md",
     "init-topic.md",
     "clarify-topic.md",
+    "ensure-topic-registration.md",
     "specialize-team.md",
     "clarify-topic-team.md",
     "setup-topic-env.md",
@@ -112,6 +114,7 @@ TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
 TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS = (
     "init-topic.md",
     "clarify-topic.md",
+    "ensure-topic-registration.md",
     "specialize-team.md",
     "clarify-topic-team.md",
     "setup-topic-env.md",
@@ -137,6 +140,7 @@ TOPIC_TEAM_SPECIALIZATION_HELP_TABLE_TERMS = (
 )
 
 TOPIC_TEAM_SPECIALIZATION_NAMING_EXCEPTIONS = {"help", "step-by-step"}
+TOPIC_TEAM_SPECIALIZATION_LENGTH_EXCEPTIONS = {"ensure-topic-registration"}
 
 TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES = (
     "isomer-domain-language.md",
@@ -623,7 +627,7 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
         subcommand_path = references_dir / subcommand_file_name
         if subcommand_name not in TOPIC_TEAM_SPECIALIZATION_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+(?:-[a-z]+)+$", subcommand_name):
             add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"subcommand '{subcommand_name}' must be a short verb-object name or an allowed command")
-        if len(subcommand_name) > 24:
+        if len(subcommand_name) > 24 and subcommand_name not in TOPIC_TEAM_SPECIALIZATION_LENGTH_EXCEPTIONS:
             add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"subcommand '{subcommand_name}' must be short")
         if not subcommand_path.exists():
             add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include references/{subcommand_file_name}")

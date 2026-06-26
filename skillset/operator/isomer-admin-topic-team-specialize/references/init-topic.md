@@ -13,7 +13,7 @@ When this subcommand is selected, execute the following steps in order.
 7. If the derived or supplied directory is outside the Project root, already exists, collides with registered Project material, or is otherwise ambiguous, stop and ask the user to confirm that directory or provide another one before creating files.
 8. Create the selected topic directory and `<topic-dir>/topic-def/` only after the Research Topic and directory are clear.
 9. Write `<topic-dir>/topic-def/topic-overview.md` from the agent's understanding of the Research Topic with the sections in **Topic Overview Template**.
-10. Report the created `topic_overview_path`, provisional status, assumptions, open questions, and the next safe subcommand.
+10. Report the created `topic_overview_path`, provisional status, assumptions, open questions, and the next safe subcommand. When the created topic material is not already manifest-backed, name `ensure-topic-registration` as the next registration action before specialization or setup.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the topic prompt, selected directory, Project Config boundary, and guardrails in this skill, then execute the plan.
 
@@ -54,12 +54,12 @@ Report:
 - `topic_overview_path`: `<topic-dir>/topic-def/topic-overview.md`.
 - `topic_registration_status`: registered, provisional, blocked, or not checked.
 - `open_questions`: questions that should go to `clarify-topic`.
-- `next_operator_action`: usually `clarify-topic` or `specialize-team`.
+- `next_operator_action`: usually `clarify-topic` or `ensure-topic-registration`.
 
 ## Guardrails
 
 Do not create files until the user has supplied a concrete Research Topic and the topic workspace directory is clear. A clear user-supplied Research Topic without an explicit directory may use the derived `isomer-content/topic-ws/<topic-slug>/` default; missing topics, generic default topic registrations, unclear topics, collisions, and unsafe paths still require user confirmation.
 
-Do not hand-edit `.isomer-labs/manifest.toml` or Research Topic Config files. If the topic must become authoritative Project Manifest state, route through `isomer-cli project topics create <topic-id> --statement "<research topic>"` or another supported Isomer CLI/API path when available and otherwise report a blocker.
+Do not hand-edit `.isomer-labs/manifest.toml` or Research Topic Config files. If the topic must become authoritative Project Manifest state, route to `ensure-topic-registration`, which may use `isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>` or another supported Isomer CLI/API path when available and otherwise report a blocker.
 
 Do not claim the created directory is a registered Research Topic or Topic Workspace unless the Project Manifest already proves that registration.
