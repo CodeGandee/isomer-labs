@@ -5,22 +5,25 @@ The service environment setup skill SHALL be structured as a single command-styl
 
 #### Scenario: Entrypoint routes by subcommand
 - **WHEN** an agent invokes `isomer-srv-env-setup`
-- **THEN** the top-level `SKILL.md` instructs the agent to select one subcommand from a `Subcommands` table
+- **THEN** the top-level `SKILL.md` instructs the agent to select one subcommand from a grouped `Subcommands` section
 - **AND** the top-level workflow loads the selected subcommand's reference page and executes that page's `## Workflow`
 - **AND** if no subcommand is given, the skill defaults to `topic-workspace`
 
-#### Scenario: Public subcommands are available
-- **WHEN** the skill lists public subcommands
-- **THEN** it includes `help`, `topic-workspace`, `resolve-workspace`, `read-gate`, `get-repos`, `derive-gate`, `install-deps`, and `verify-gate`
+#### Scenario: Subcommands are grouped for complex skill use
+- **WHEN** the skill lists subcommands
+- **THEN** it divides them into Procedural Subcommands, Helper Subcommands, and Misc Subcommands
+- **AND** Procedural Subcommands include `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate`
+- **AND** Misc Subcommands include `help` and `topic-workspace`
+- **AND** Helper Subcommands may explicitly state that no helper subcommands are currently exposed
 - **AND** each subcommand name is short kebab-case
 
 #### Scenario: Topic workspace orchestrates the full workflow
 - **WHEN** the `topic-workspace` subcommand runs
-- **THEN** it orchestrates `resolve-workspace`, `read-gate`, `get-repos`, `derive-gate`, `install-deps`, and `verify-gate` in order
+- **THEN** it orchestrates `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate` in order
 - **AND** it reports the combined result through the parent skill output contract
 
 #### Scenario: Step subcommands are directly callable
-- **WHEN** a user or agent invokes `resolve-workspace`, `read-gate`, `get-repos`, `derive-gate`, `install-deps`, or `verify-gate` directly
+- **WHEN** a user or agent invokes `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, or `verify-gate` directly
 - **THEN** the skill executes only that subcommand's workflow
 - **AND** it refuses or blocks when predecessor artifacts required by that subcommand are missing
 
@@ -97,7 +100,7 @@ The service environment setup skill SHALL use `<topic-workspace-dir>/repos/<repo
 
 #### Scenario: Required repos are rooted under the Topic Workspace
 - **WHEN** the gate or task requires an independent repository
-- **THEN** the skill instructs the agent to place, find, download, or materialize that repository under `<topic-workspace-dir>/repos/<repo-name>`
+- **THEN** the skill instructs the agent to find an existing repository or place a missing repository under `<topic-workspace-dir>/repos/<repo-name>`
 - **AND** the skill does not place task repositories in the Project root, Agent Workspace, `.pixi/`, or another ad hoc location
 
 #### Scenario: Derived gate records repo requirements
@@ -111,7 +114,7 @@ The service environment setup skill SHALL use `<topic-workspace-dir>/repos/<repo
 - **WHEN** a required repository is missing from `<topic-workspace-dir>/repos/<repo-name>`
 - **AND** the gate or task provides enough source information to acquire it through service-safe operations
 - **THEN** the skill instructs the agent to download or materialize the repository under `<topic-workspace-dir>/repos/<repo-name>`
-- **AND** the skill verifies the repository at that expected path before reporting readiness
+- **AND** the skill records evidence from the repository at that expected path before reporting readiness
 
 #### Scenario: Missing repo source may be inferred
 - **WHEN** a required repository is missing from `<topic-workspace-dir>/repos/<repo-name>`
@@ -198,7 +201,14 @@ The service environment setup skill SHALL allow direct service-safe mutation of 
 
 #### Scenario: Direct mutation remains scoped
 - **WHEN** the skill performs direct setup mutation
-- **THEN** the mutation scope is limited to the selected Topic Workspace Pixi environment and required repos under `<topic-workspace-dir>/repos/<repo-name>`
+- **THEN** the mutation scope is limited to the selected Topic Workspace Pixi environment and missing required repos under `<topic-workspace-dir>/repos/<repo-name>`
+
+#### Scenario: Existing topic repos are not mutated by ensure-repos
+- **GIVEN** a required repo path already exists under `<topic-workspace-dir>/repos/<repo-name>`
+- **WHEN** `ensure-repos` runs
+- **THEN** it inspects the existing repo as read-only evidence
+- **AND** it does not run `git pull`, switch branches, copy files into the repo, delete files from the repo, install packages into the repo, regenerate files in the repo, or otherwise mutate the repo
+- **AND** if the existing repo is unsuitable for the gate, it reports a blocker instead of repairing the repo without explicit user authorization
 - **AND** the skill does not mutate the Project-root Pixi environment, an Agent Workspace-specific environment, unrelated Workspace Runtime records, agent launch material, GUI state, or research decision artifacts
 
 #### Scenario: Mutation output remains auditable in the response

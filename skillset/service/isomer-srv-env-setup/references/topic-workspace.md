@@ -8,7 +8,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. **Resolve the Topic Workspace**. Load [resolve-workspace.md](resolve-workspace.md), execute its `## Workflow`, and carry forward its workspace context.
 2. **Read the source gate**. Load [read-gate.md](read-gate.md), execute its `## Workflow`, and carry forward the source gate summary.
-3. **Get required repos**. Load [get-repos.md](get-repos.md), execute its `## Workflow`, and carry forward repo paths, source warnings, and repo inspection notes.
+3. **Ensure required repos**. Load [ensure-repos.md](ensure-repos.md), execute its `## Workflow`, and carry forward repo paths, source warnings, and repo inspection notes.
 4. **Derive the operational gate**. Load [derive-gate.md](derive-gate.md), execute its `## Workflow`, and carry forward `derived_gate_path`.
 5. **Install dependencies**. Load [install-deps.md](install-deps.md), execute its `## Workflow`, and carry forward commands run and changed files.
 6. **Verify the gate**. Load [verify-gate.md](verify-gate.md), execute its `## Workflow`, and use its result as the final readiness status.
@@ -40,4 +40,5 @@ Readiness means the desired command from `isomer-env-gate.md` runs successfully 
 
 - Run the subcommands in the order listed in **Workflow**; do not skip directly to dependency installation.
 - Stop and report a blocker when any step reports a missing predecessor artifact.
-- Keep all direct mutation scoped to the selected Topic Workspace Pixi environment and required repos under `repos/<repo-name>`.
+- Keep all direct mutation scoped to the selected Topic Workspace Pixi environment and missing required repos under `repos/<repo-name>`.
+- Do not mutate an existing repo during `ensure-repos`; later setup or verification steps may only run commands against existing repos when the derived gate explicitly requires those commands.

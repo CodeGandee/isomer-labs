@@ -18,31 +18,40 @@ The core correction is that the `topic-workspace` workflow should treat the Topi
       isomer-env-gate.md
 ```
 
-The skill should be modular like a single command with many subcommands. The top-level `SKILL.md` should remain a lean router with a `Subcommands` table and should route to exactly one subcommand reference page. Each executable reference page should have its own numbered `## Workflow` near the top and a freeform fallback, following the structural pattern used by the `imsight-agent-skill-handling format` subcommand.
+The skill should be modular like a single command with many subcommands. The top-level `SKILL.md` should remain a lean router with a grouped `Subcommands` section and should route to exactly one subcommand reference page. Each executable reference page should have its own numbered `## Workflow` near the top and a freeform fallback, following the structural pattern used by the `imsight-agent-skill-handling format` subcommand.
 
-The public subcommands should be:
+Complex skills should divide subcommands into three parts: procedural subcommands, helper subcommands, and misc subcommands.
+
+Procedural subcommands are the public single-step workflow API:
+
+| Subcommand | Purpose |
+| --- | --- |
+| `resolve-workspace` | Resolve Project root, Research Topic, Topic Workspace, Pixi binding, and preconditions. |
+| `read-gate` | Read `user-intent/src/env-gate.md` and identify the runnable target. |
+| `ensure-repos` | Find existing repos or acquire missing required repos under `repos/<repo-name>`. |
+| `derive-gate` | Generate or update `user-intent/derived/isomer-env-gate.md`. |
+| `install-deps` | Infer package sources and install dependencies through the Topic Workspace Pixi environment. |
+| `verify-gate` | Run the desired command through Pixi and report readiness. |
+
+Helper subcommands are lower-level commands called by procedural subcommands. This skill does not currently expose helper subcommands; future helpers should be listed separately and kept out of public help unless promoted.
+
+Misc subcommands are public support commands and shortcuts:
 
 | Subcommand | Purpose |
 | --- | --- |
 | `help` | Explain the skill and list public subcommands. |
 | `topic-workspace` | Run the full gate-driven Topic Workspace setup workflow; default when no subcommand is given. |
-| `resolve-workspace` | Resolve Project root, Research Topic, Topic Workspace, Pixi binding, and preconditions. |
-| `read-gate` | Read `user-intent/src/env-gate.md` and identify the runnable target. |
-| `get-repos` | Find, infer, download, or verify required repos under `repos/<repo-name>`. |
-| `derive-gate` | Generate or update `user-intent/derived/isomer-env-gate.md`. |
-| `install-deps` | Infer package sources and install dependencies through the Topic Workspace Pixi environment. |
-| `verify-gate` | Run the desired command through Pixi and report readiness. |
 
-`topic-workspace` should be the orchestrating full path. It should execute `resolve-workspace`, `read-gate`, `get-repos`, `derive-gate`, `install-deps`, and `verify-gate` in order. The step subcommands should also be directly callable for manual or partial setup.
+`topic-workspace` should be the orchestrating full path. It should execute `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate` in order. The procedural step subcommands should also be directly callable for manual or partial setup.
 
-Independent repositories needed by the task should live under `<topic-workspace-dir>/repos/<repo-name>`. If the gate or task requires runnable code, the setup workflow should find the repo there, download or materialize it when the source is known, infer or search for a likely source when the source is missing, or report a blocker when acquisition remains too ambiguous. The workflow should not scatter task repos into the Project root, Agent Workspace, `.pixi/`, or another ad hoc location.
+Independent repositories needed by the task should live under `<topic-workspace-dir>/repos/<repo-name>`. If the gate or task requires runnable code, the setup workflow should find the repo there, download or materialize it when the required repo is missing and the source is known, infer or search for a likely source when the missing repo source is unknown, or report a blocker when acquisition remains too ambiguous. When the expected repo path already exists, `ensure-repos` should inspect it as read-only evidence and should not pull, checkout, copy into, delete from, install into, regenerate inside, or otherwise mutate it. The workflow should not scatter task repos into the Project root, Agent Workspace, `.pixi/`, or another ad hoc location.
 
 The skill should read `<topic-workspace-dir>/user-intent/src/env-gate.md` before declaring setup complete. That file is user-authored intent material: it names what must be able to run after the environment is prepared. The setup workflow should then generate `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` as an agent-normalized gate. The derived gate translates the source gate and the available repository contents into concrete required-to-succeed dependencies, Pixi install commands, Pixi run commands, scripts, imports, tools, repository requirements, expected repository paths, and success criteria that the setup workflow can verify.
 
 The intended execution order is:
 
 1. Read `<topic-workspace-dir>/user-intent/src/env-gate.md` and identify the user-specified runnable target.
-2. Determine whether the target requires independent repos, then find, download, infer, search for, or materialize those repos under `<topic-workspace-dir>/repos/<repo-name>`.
+2. Determine whether the target requires independent repos, then find existing repos or download, infer, search for, or materialize missing repos under `<topic-workspace-dir>/repos/<repo-name>`.
 3. Inspect the source gate and the required repos to infer dependencies needed for the gate to pass, including language runtimes, package managers, libraries, tools, editable repo installs, and command-line programs.
 4. Generate `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` with the inferred dependencies, Pixi install commands, and the desired command or commands that prove the target runs.
 5. Use Pixi from the Topic Workspace root to install the inferred packages and tools.
@@ -96,7 +105,7 @@ Further command-level details may still be refined in later artifacts.
 **Goals:**
 
 - Leave a design placeholder so later artifacts can refine the concrete correction plan.
-- Capture the command-style modular skill structure with short kebab-case subcommands and one-level reference pages.
+- Capture the command-style modular skill structure with short kebab-case subcommands, procedural/helper/misc grouping, and one-level reference pages.
 - Capture the intended Topic Workspace Pixi layout.
 - Capture the `user-intent/src/env-gate.md` verification gate.
 - Capture generated `user-intent/derived/isomer-env-gate.md` as the operational readiness gate.
@@ -119,11 +128,12 @@ Further command-level details may still be refined in later artifacts.
 ## Decisions
 
 - Treat this change as a skill-instruction refinement centered on Topic Workspace Pixi materialization.
-- State that `SKILL.md` should become a lean command router with a `Subcommands` table and linked reference workflows.
-- State that `topic-workspace` is the default full setup subcommand, while `resolve-workspace`, `read-gate`, `get-repos`, `derive-gate`, `install-deps`, and `verify-gate` are directly callable step subcommands.
+- State that `SKILL.md` should become a lean command router with a grouped `Subcommands` section and linked reference workflows.
+- State that procedural subcommands are directly callable single-step workflow actions, helper subcommands are lower-level implementation commands, and misc subcommands hold support commands and shortcuts.
+- State that `topic-workspace` is the default full setup shortcut, while `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate` are directly callable procedural step subcommands.
 - State that every executable subcommand reference page should have a numbered `## Workflow` near the top and a freeform fallback.
 - State that the skill should validate or produce `<topic-workspace-dir>/pixi.toml`, `<topic-workspace-dir>/pixi.lock`, and `<topic-workspace-dir>/.pixi/` for the selected Topic Workspace.
-- State that independent repos required by the task live under `<topic-workspace-dir>/repos/<repo-name>`, where they are found, downloaded, inferred, discovered, or reported as blockers.
+- State that independent repos required by the task live under `<topic-workspace-dir>/repos/<repo-name>`, where existing repos are inspected read-only and missing repos are downloaded, inferred, discovered, or reported as blockers.
 - State that the skill should read `<topic-workspace-dir>/user-intent/src/env-gate.md` and use it to determine what post-setup commands or checks must pass before reporting readiness.
 - State that the skill should write `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` with concrete required-to-succeed dependencies, Pixi install commands, repo requirements, desired run commands, and verification checks derived from the source gate and available repo contents, especially when the source gate is vague.
 - State that dependency inference should prefer PyPI for Python packages by default, use Pixi/Conda packages only when needed for the gate, and prefer the `nvidia` channel for NVIDIA tools.

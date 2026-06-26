@@ -6,7 +6,7 @@ Use this subcommand to generate the operational environment gate from the source
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: workspace context from `resolve-workspace`, source gate summary from `read-gate`, and repo context from `get-repos` when the source gate needs repos.
+1. **Require predecessor artifacts**: workspace context from `resolve-workspace`, source gate summary from `read-gate`, and repo context from `ensure-repos` when the source gate needs repos.
 2. **Resolve the derived gate path** as `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` and create its parent directory when needed.
 3. **Translate user intent into operations**. Convert the source gate and repo evidence into concrete repo requirements, dependency plan, Pixi install commands, verification commands, expected results, and blockers.
 4. **Apply dependency policy**. Include Python as the Topic Workspace glue language, prefer PyPI for Python packages unless Pixi/Conda is required for the gate, use Pixi/Conda for native tools and binary/runtime dependencies, and prefer the `nvidia` channel for NVIDIA tools.

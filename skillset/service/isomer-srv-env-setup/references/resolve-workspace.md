@@ -32,4 +32,4 @@ Carry these values to later subcommands:
 
 - Do not infer the active binding from directory names.
 - Do not treat the Project-root Pixi environment as the Topic Workspace environment.
-- Do not proceed to `read-gate`, `get-repos`, `derive-gate`, `install-deps`, or `verify-gate` when any resolved context value is missing.
+- Do not proceed to `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, or `verify-gate` when any resolved context value is missing.

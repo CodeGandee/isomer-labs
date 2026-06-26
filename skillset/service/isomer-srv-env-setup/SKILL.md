@@ -14,7 +14,7 @@ Set up and validate the shared Topic Workspace Pixi environment for a user-speci
 When this skill is invoked, execute the following steps in order.
 
 1. **Handle help intent**. If the user asks for help, usage, or available functionality, answer from **Help** and stop unless they also ask for a concrete setup task.
-2. **Select one subcommand** from **Subcommands**. If the prompt does not name a subcommand, use `topic-workspace`.
+2. **Select one subcommand** from the **Subcommands** tables. Prefer procedural or misc subcommands; use a helper subcommand only if one is added later and the user explicitly asks for it. If the prompt does not name a subcommand, use `topic-workspace`.
 3. **Resolve required inputs** from the prompt, current repository, and Project Manifest when the selected subcommand needs them. See **Required Inputs**.
 4. **Load the selected reference file** and execute its `## Workflow`.
 5. **Report results** using **Output Contract**.
@@ -23,18 +23,35 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Subcommands
 
+Load only the subcommand pages needed for the user's task. Complex skills divide subcommands into three parts: procedural, helper, and misc.
+
+### Procedural Subcommands
+
+Procedural subcommands are the public single-step workflow API. Call them directly for manual or partial setup.
+
 | Subcommand | Use For | Reference |
 | --- | --- | --- |
-| `help` | Explain this skill and list public subcommands. | This entrypoint |
-| `topic-workspace` | Run the full gate-driven Topic Workspace setup workflow. This is the default subcommand. | [references/topic-workspace.md](references/topic-workspace.md) |
 | `resolve-workspace` | Resolve Project root, Research Topic, Topic Workspace, active Pixi binding, and setup preconditions. | [references/resolve-workspace.md](references/resolve-workspace.md) |
 | `read-gate` | Read `user-intent/src/env-gate.md` and identify the runnable target. | [references/read-gate.md](references/read-gate.md) |
-| `get-repos` | Find, infer, download, or verify required repos under `repos/<repo-name>`. | [references/get-repos.md](references/get-repos.md) |
+| `ensure-repos` | Find existing repos or acquire missing required repos under `repos/<repo-name>`. | [references/ensure-repos.md](references/ensure-repos.md) |
 | `derive-gate` | Generate or update `user-intent/derived/isomer-env-gate.md`. | [references/derive-gate.md](references/derive-gate.md) |
 | `install-deps` | Infer package sources and install dependencies through the Topic Workspace Pixi environment. | [references/install-deps.md](references/install-deps.md) |
 | `verify-gate` | Run the desired command through Pixi and report readiness. | [references/verify-gate.md](references/verify-gate.md) |
 
-Load exactly one reference page for the selected subcommand. The `topic-workspace` reference may then load the step subcommand references it orchestrates.
+### Helper Subcommands
+
+Helper subcommands are lower-level commands called by procedural subcommands. This skill currently exposes no helper subcommands. If future helpers are added, list them here and keep them out of **Help** unless they become public workflow steps.
+
+### Misc Subcommands
+
+Misc subcommands are public support commands and shortcuts.
+
+| Subcommand | Use For | Reference |
+| --- | --- | --- |
+| `help` | Explain this skill and list public subcommands. | This entrypoint |
+| `topic-workspace` | Run the full gate-driven Topic Workspace setup workflow. This is the default subcommand. | [references/topic-workspace.md](references/topic-workspace.md) |
+
+Load exactly one reference page for the selected subcommand. The `topic-workspace` reference may then load the procedural subcommand references it orchestrates.
 
 ## Required Inputs
 
@@ -55,17 +72,25 @@ When asking for missing input, separate `Required` values from `Optional` modifi
 
 ## Help
 
-`isomer-srv-env-setup` prepares a Topic Workspace Pixi environment so the user-specified target in `user-intent/src/env-gate.md` can run. The public subcommands are:
+`isomer-srv-env-setup` prepares a Topic Workspace Pixi environment so the user-specified target in `user-intent/src/env-gate.md` can run. Public subcommands are grouped below.
 
-| Subcommand | Purpose |
-| --- | --- |
-| `topic-workspace` | Run the full setup flow: resolve workspace, read the gate, get repos, derive the operational gate, install dependencies, and verify readiness. |
-| `resolve-workspace` | Resolve the Project root, Research Topic, Topic Workspace, Pixi manifest, and selected Pixi environment. |
-| `read-gate` | Read the source gate and extract the runnable target, repo hints, commands, and success criteria. |
-| `get-repos` | Materialize required repos under `<topic-workspace-dir>/repos/<repo-name>`. |
-| `derive-gate` | Write the fixed-section `isomer-env-gate.md` operational gate. |
-| `install-deps` | Install inferred dependencies with Pixi, using PyPI-first Python package rules and NVIDIA channel preference. |
-| `verify-gate` | Run the desired command through Pixi and report readiness. |
+Procedural subcommands:
+
+| Subcommand | Purpose | Produces |
+| --- | --- | --- |
+| `resolve-workspace` | Resolve the Project root, Research Topic, Topic Workspace, Pixi manifest, and selected Pixi environment. | Resolved setup refs and blockers; no environment mutation. |
+| `read-gate` | Read the source gate and extract the runnable target, repo hints, commands, and success criteria. | Source gate summary and readiness blockers. |
+| `ensure-repos` | Find existing required repos or materialize missing repos under `<topic-workspace-dir>/repos/<repo-name>`. | Repo inventory and inspection notes; acquired topic repos and inferred-source warnings only for missing repos. |
+| `derive-gate` | Write the fixed-section `isomer-env-gate.md` operational gate. | `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`. |
+| `install-deps` | Install inferred dependencies with Pixi, using PyPI-first Python package rules and NVIDIA channel preference. | Updated Topic Workspace Pixi environment files and dependency plan. |
+| `verify-gate` | Run the desired command through Pixi and report readiness. | Gate execution results, readiness status, and blockers. |
+
+Misc subcommands:
+
+| Subcommand | Purpose | Produces |
+| --- | --- | --- |
+| `topic-workspace` | Run the full setup flow: resolve workspace, read the gate, ensure repos, derive the operational gate, install dependencies, and verify readiness. | Combined setup report, repo state, derived gate, Pixi environment files, and readiness status. |
+| `help` | Print what this skill does and how to use it. | Usage table and examples. |
 
 Example prompts:
 
@@ -102,6 +127,7 @@ Report:
 - Do not treat the Project-root Pixi environment as the Topic Workspace execution environment.
 - Do not create or mutate per-agent Pixi environments unless a user task explicitly names an Agent Workspace-specific environment.
 - Do not place required independent repos in the Project root, Agent Workspace, `.pixi/`, or another ad hoc location; use `<topic-workspace-dir>/repos/<repo-name>`.
+- Do not modify an existing `<topic-workspace-dir>/repos/<repo-name>` during `ensure-repos`; inspect it as read-only evidence and report blockers if it is unsuitable.
 - Do not infer `topic_standalone_pixi_bindings` from directory names; always read the Project Manifest.
 - Do not choose repos, dependencies, Pixi install commands, setup commands, or verification commands before reading `user-intent/src/env-gate.md`.
 - Do not hide inferred repo sources; warning-label them in `isomer-env-gate.md` and final output.

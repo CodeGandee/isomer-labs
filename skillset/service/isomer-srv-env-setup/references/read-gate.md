@@ -26,4 +26,4 @@ Report `blocked` when:
 
 ## Output Notes
 
-The extracted source gate summary should be carried to `get-repos` and `derive-gate`. Preserve uncertainty instead of pretending a vague source gate is precise.
+The extracted source gate summary should be carried to `ensure-repos` and `derive-gate`. Preserve uncertainty instead of pretending a vague source gate is precise.
