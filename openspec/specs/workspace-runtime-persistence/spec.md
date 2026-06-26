@@ -91,9 +91,13 @@ The system SHALL instantiate Agent Team Instance records from validated Topic Ag
 - **WHEN** the selected Topic Agent Team Profile has active Agent Role bindings
 - **THEN** the system creates Agent Instance records and Agent Workspace records for those active role bindings under the same Agent Team Instance
 
-#### Scenario: Agent workspaces are materialized from path plans
-- **WHEN** Agent Instance records require Agent Workspaces
-- **THEN** the system resolves and records Agent Workspace path plans before creating the Agent Workspace directories and Agent Workspace records
+#### Scenario: Approved workspace refs create path plans
+- **WHEN** an active Agent Role binding has a validated `agent_workspace_ref` under the selected Topic Workspace
+- **THEN** Agent Team Instance creation records the Agent Workspace path plan from that ref before creating the Agent Workspace directory and Agent Workspace record
+
+#### Scenario: Agent workspaces fall back to generated paths
+- **WHEN** an active Agent Role binding does not have an approved `agent_workspace_ref`
+- **THEN** the system resolves and records the default Agent Workspace path under `<topic-workspace>/agents/<agent-instance-id>` before creating the Agent Workspace directory and Agent Workspace record
 
 #### Scenario: Duplicate team instance id is rejected
 - **WHEN** a create request names an Agent Team Instance id that already exists in the selected Workspace Runtime
@@ -339,9 +343,13 @@ The system SHALL generate Agent Instance ids that are globally unique within the
 - **WHEN** `project runtime validate` scans Agent Instance records and finds two records with the same id
 - **THEN** the system reports a workspace issue identifying the duplicate id and both records
 
-#### Scenario: Agent Workspace path uses the globally unique Agent Instance id
-- **WHEN** the system creates an Agent Workspace path plan for an Agent Instance
-- **THEN** the path plan derives the Agent Workspace directory from the globally unique Agent Instance id as `<topic-workspace>/agents/<agent-instance-id>/`
+#### Scenario: Default Agent Workspace path uses the globally unique Agent Instance id
+- **WHEN** the system creates an Agent Workspace path plan for an Agent Instance and no approved `agent_workspace_ref` exists for the active role binding
+- **THEN** the path plan derives the Agent Workspace directory from the globally unique Agent Instance id as `<topic-workspace>/agents/<agent-instance-id>`
+
+#### Scenario: Approved Agent Workspace ref does not change Agent Instance id
+- **WHEN** the system creates an Agent Workspace path plan from `agent_workspace_ref = "<topic-workspace>/agents/alice"`
+- **THEN** the Agent Instance id remains globally unique and does not need to equal `alice`
 
 ### Requirement: Agent Team Instance Instantiation Provenance
 The system SHALL record the approved instantiation source when creating Agent Team Instance runtime records.
