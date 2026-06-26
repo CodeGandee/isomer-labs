@@ -7,20 +7,40 @@ The service environment setup skill SHALL be structured as a single command-styl
 - **WHEN** an agent invokes `isomer-srv-env-setup`
 - **THEN** the top-level `SKILL.md` instructs the agent to select one subcommand from a grouped `Subcommands` section
 - **AND** the top-level workflow loads the selected subcommand's reference page and executes that page's `## Workflow`
-- **AND** if no subcommand is given, the skill defaults to `topic-workspace`
+- **AND** if no prompt is given, the skill defaults to `help`
+- **AND** if a concrete setup task is given without a subcommand, the skill defaults to `setup-for-topic-workspace`
 
 #### Scenario: Subcommands are grouped for complex skill use
 - **WHEN** the skill lists subcommands
 - **THEN** it divides them into Procedural Subcommands, Helper Subcommands, and Misc Subcommands
 - **AND** Procedural Subcommands include `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate`
-- **AND** Misc Subcommands include `help` and `topic-workspace`
+- **AND** Misc Subcommands include `help` and `setup-for-topic-workspace`
 - **AND** Helper Subcommands may explicitly state that no helper subcommands are currently exposed
 - **AND** each subcommand name is short kebab-case
 
-#### Scenario: Topic workspace orchestrates the full workflow
-- **WHEN** the `topic-workspace` subcommand runs
+#### Scenario: Topic workspace setup orchestrates the full workflow
+- **WHEN** the `setup-for-topic-workspace` subcommand runs
 - **THEN** it orchestrates `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate` in order
 - **AND** it reports the combined result through the parent skill output contract
+
+#### Scenario: Setup mode is selected from prompt
+- **WHEN** the `setup-for-topic-workspace` subcommand is invoked
+- **THEN** the skill selects `fast-forward` mode when the prompt asks for `fast-forward`, `fast-foward`, `auto`, `automatic`, or equivalent direct execution
+- **AND** the skill selects `step-by-step` mode when the prompt asks for `step-by-step`, `manual`, `interactive`, confirmation, or equivalent user-controlled execution
+- **AND** if the prompt gives a concrete setup task but no mode, the skill defaults to `fast-forward` mode unless the prompt asks to inspect, decide, or proceed carefully
+
+#### Scenario: Fast-forward mode runs the ordered setup chain
+- **WHEN** `setup-for-topic-workspace` runs in `fast-forward` mode
+- **THEN** it executes `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate` in order without pausing for optional user consent
+- **AND** it still stops for blockers, missing required inputs, unsafe ambiguity, or out-of-scope requests
+
+#### Scenario: Step-by-step mode asks consent before each step
+- **WHEN** `setup-for-topic-workspace` runs in `step-by-step` mode
+- **THEN** before each required workflow step it explains what is about to happen and why
+- **AND** it presents choices in a table with columns for `Option`, `Explain`, and `Pros and Cons`
+- **AND** it states the recommended option outside the table with the option name, reason, and why that option is recommended
+- **AND** it waits for the user to choose an option before executing that step
+- **AND** after executing the chosen action, it reports the result before offering the next step
 
 #### Scenario: Step subcommands are directly callable
 - **WHEN** a user or agent invokes `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, or `verify-gate` directly

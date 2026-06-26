@@ -7,6 +7,9 @@ The `isomer-srv-env-setup` skill needs refinement because the current instructio
 - Revise `skillset/service/isomer-srv-env-setup` to correct known errors.
 - Restructure the skill as one command-style skill with many short kebab-case subcommands, following the `imsight-agent-skill-handling format` pattern: a lean `SKILL.md` router, a grouped `Subcommands` section, and linked reference pages with numbered `## Workflow` sections.
 - Add clearer operational detail for the supported Topic Workspace environment setup workflow.
+- Replace the full-flow shortcut with `setup-for-topic-workspace`, a public setup subcommand that runs all required setup steps for a given Topic Workspace.
+- Split `setup-for-topic-workspace` into two execution modes: `fast-forward`/`auto` for direct execution and `step-by-step`/`manual` for interactive execution with user consent before each step.
+- Require manual mode to pause before each workflow step, explain what is about to happen, present options in a compact table with columns for option, explanation, and pros/cons, then state the recommended option outside the table with its reason before waiting for the user to choose.
 - Make the intended setup result explicit: given a Project Manifest-declared Topic Workspace, environment setup leaves the Topic Workspace directory with `.pixi/`, `pixi.toml`, and `pixi.lock` directly under `<topic-workspace-dir>/`.
 - Require the skill to read `<topic-workspace-dir>/user-intent/src/env-gate.md`, which describes what must be able to run after setup and serves as the verification gate for readiness.
 - Require independent repositories needed by the gate or task to reside under `<topic-workspace-dir>/repos/<repo-name>`, downloading or materializing them there when enough source information is available.

@@ -2,7 +2,7 @@
 
 `skillset/service/isomer-srv-env-setup` is the service skill that guides Pixi environment setup for Isomer Labs topic work. The canonical domain language defines a Topic Workspace as a Project Manifest-declared project-local directory for one Research Topic, and says it owns the topic's Workspace Runtime, Pixi manifest, and Pixi environment.
 
-The core correction is that the `topic-workspace` workflow should treat the Topic Workspace directory itself as the standalone Pixi workspace. After successful environment setup, the expected filesystem result is:
+The core correction is that the `setup-for-topic-workspace` workflow should treat the Topic Workspace directory itself as the standalone Pixi workspace. After successful environment setup, the expected filesystem result is:
 
 ```text
 <topic-workspace-dir>/
@@ -40,9 +40,27 @@ Misc subcommands are public support commands and shortcuts:
 | Subcommand | Purpose |
 | --- | --- |
 | `help` | Explain the skill and list public subcommands. |
-| `topic-workspace` | Run the full gate-driven Topic Workspace setup workflow; default when no subcommand is given. |
+| `setup-for-topic-workspace` | Run the full gate-driven Topic Workspace setup workflow for a given Topic Workspace; default for concrete setup tasks that do not name a subcommand. |
 
-`topic-workspace` should be the orchestrating full path. It should execute `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate` in order. The procedural step subcommands should also be directly callable for manual or partial setup.
+`setup-for-topic-workspace` should be the orchestrating full path. It should execute `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate` in order. The procedural step subcommands should also be directly callable for manual or partial setup.
+
+`setup-for-topic-workspace` should choose one execution mode from the prompt:
+
+| Mode | Prompt aliases | Behavior |
+| --- | --- | --- |
+| `fast-forward` | `auto`, `automatic`, `fast-foward`, `just do it`, `fully setup` | Run the required steps in order without pausing except for blockers, missing required inputs, or unsafe ambiguity. |
+| `step-by-step` | `manual`, `interactive`, `ask me`, `confirm before each step` | Stop before each required step, explain what will happen, present user choices, state the recommendation outside the table, wait for consent, then run only the chosen action before moving to the next step. |
+
+If the invocation has no prompt, the skill should default to `help`. If the prompt asks for concrete Topic Workspace setup but does not choose a mode, `setup-for-topic-workspace` should default to `fast-forward` unless the prompt asks to inspect, decide, or proceed carefully.
+
+Manual mode should use a compact option table before each step:
+
+| Option | Explain | Pros and Cons |
+| --- | --- | --- |
+| A | Proceed with the next step. | Pros: keeps setup moving and preserves the documented order. Cons: may reveal blockers that require user repair. |
+| B | Stop before this step. | Pros: safest when the next action is uncertain. Cons: leaves setup incomplete. |
+
+The recommendation should be written outside the table in this shape: `Recommended: A - Proceed with the next step. This is recommended because the workflow needs this artifact or action before later setup can be correct.` When there are meaningful alternatives for a step, such as choosing a repo source, package source, or repair route, the table should list those alternatives instead of only `A` and `B`. The agent should describe the recommended option plainly, then ask the user to pick one option before continuing.
 
 Independent repositories needed by the task should live under `<topic-workspace-dir>/repos/<repo-name>`. If the gate or task requires runnable code, the setup workflow should find the repo there, download or materialize it when the required repo is missing and the source is known, infer or search for a likely source when the missing repo source is unknown, or report a blocker when acquisition remains too ambiguous. When the expected repo path already exists, `ensure-repos` should inspect it as read-only evidence and should not pull, checkout, copy into, delete from, install into, regenerate inside, or otherwise mutate it. The workflow should not scatter task repos into the Project root, Agent Workspace, `.pixi/`, or another ad hoc location.
 
@@ -114,7 +132,9 @@ Further command-level details may still be refined in later artifacts.
 - Capture that repo sources may be agent-inferred or discovered, but such repos must be warning-labeled in `isomer-env-gate.md` and the final skill output.
 - Capture package-source preferences: PyPI-first for Python packages, Pixi/Conda only when needed, and `nvidia` channel preferred for NVIDIA packages.
 - Capture Python as the always-present Topic Workspace glue and orchestration language, independent of the target programming language.
-- Capture the workflow order from source gate, to repo materialization, to dependency inference, to derived gate, to Pixi installation, to Pixi verification commands.
+- Capture the workflow order from workspace resolution, to source gate, to repo materialization, to dependency inference, to derived gate, to Pixi installation, to Pixi verification commands.
+- Capture `setup-for-topic-workspace` as the public full setup command with `fast-forward`/`auto` and `step-by-step`/`manual` modes.
+- Capture compact step-by-step option tables with a recommendation line outside the table before each workflow step.
 - Preserve the service-safe scope of `isomer-srv-env-setup`.
 - Capture that direct Topic Workspace Pixi mutation is allowed during this skill invocation and does not require a separate Service Request.
 - Keep future implementation focused on skill instructions and validation coverage.
@@ -130,7 +150,9 @@ Further command-level details may still be refined in later artifacts.
 - Treat this change as a skill-instruction refinement centered on Topic Workspace Pixi materialization.
 - State that `SKILL.md` should become a lean command router with a grouped `Subcommands` section and linked reference workflows.
 - State that procedural subcommands are directly callable single-step workflow actions, helper subcommands are lower-level implementation commands, and misc subcommands hold support commands and shortcuts.
-- State that `topic-workspace` is the default full setup shortcut, while `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate` are directly callable procedural step subcommands.
+- State that `setup-for-topic-workspace` is the default full setup shortcut for concrete setup tasks that do not name a subcommand, while `resolve-workspace`, `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, and `verify-gate` are directly callable procedural step subcommands.
+- State that `setup-for-topic-workspace` has `fast-forward`/`auto` and `step-by-step`/`manual` execution modes selected from the prompt.
+- State that `fast-forward` mode executes the ordered setup steps directly, while `step-by-step` mode pauses before each step, presents a compact option table, states the recommended option outside the table, and waits for the user to choose before continuing.
 - State that every executable subcommand reference page should have a numbered `## Workflow` near the top and a freeform fallback.
 - State that the skill should validate or produce `<topic-workspace-dir>/pixi.toml`, `<topic-workspace-dir>/pixi.lock`, and `<topic-workspace-dir>/.pixi/` for the selected Topic Workspace.
 - State that independent repos required by the task live under `<topic-workspace-dir>/repos/<repo-name>`, where existing repos are inspected read-only and missing repos are downloaded, inferred, discovered, or reported as blockers.

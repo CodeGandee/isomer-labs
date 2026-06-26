@@ -13,8 +13,8 @@ Set up and validate the shared Topic Workspace Pixi environment for a user-speci
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Handle help intent**. If the user asks for help, usage, or available functionality, answer from **Help** and stop unless they also ask for a concrete setup task.
-2. **Select one subcommand** from the **Subcommands** tables. Prefer procedural or misc subcommands; use a helper subcommand only if one is added later and the user explicitly asks for it. If the prompt does not name a subcommand, use `topic-workspace`.
+1. **Handle help intent**. If the invocation has no prompt, or if the user asks for help, usage, or available functionality, answer from **Help** and stop unless they also ask for a concrete setup task.
+2. **Select one subcommand** from the **Subcommands** tables. Prefer procedural or misc subcommands; use a helper subcommand only if one is added later and the user explicitly asks for it. If the prompt describes a concrete Topic Workspace setup task but does not name a subcommand, use `setup-for-topic-workspace`.
 3. **Resolve required inputs** from the prompt, current repository, and Project Manifest when the selected subcommand needs them. See **Required Inputs**.
 4. **Load the selected reference file** and execute its `## Workflow`.
 5. **Report results** using **Output Contract**.
@@ -49,9 +49,9 @@ Misc subcommands are public support commands and shortcuts.
 | Subcommand | Use For | Reference |
 | --- | --- | --- |
 | `help` | Explain this skill and list public subcommands. | This entrypoint |
-| `topic-workspace` | Run the full gate-driven Topic Workspace setup workflow. This is the default subcommand. | [references/topic-workspace.md](references/topic-workspace.md) |
+| `setup-for-topic-workspace` | Run the full gate-driven Topic Workspace setup workflow. This is the default for concrete setup tasks that do not name a subcommand. | [references/setup-for-topic-workspace.md](references/setup-for-topic-workspace.md) |
 
-Load exactly one reference page for the selected subcommand. The `topic-workspace` reference may then load the procedural subcommand references it orchestrates.
+Load exactly one reference page for the selected subcommand. The `setup-for-topic-workspace` reference may then load the procedural subcommand references it orchestrates.
 
 ## Required Inputs
 
@@ -59,7 +59,8 @@ Recover these before asking the user:
 
 | Input | Required When | Resolution |
 | --- | --- | --- |
-| `subcommand` | Always | Use the prompt value, or default to `topic-workspace`. |
+| `subcommand` | Always | Use the prompt value; use `help` when the invocation has no prompt; use `setup-for-topic-workspace` when the prompt describes a concrete Topic Workspace setup task but does not name a subcommand. |
+| `setup_mode` | `setup-for-topic-workspace` | Use `fast-forward` for `fast-forward`, `fast-foward`, `auto`, `automatic`, or direct-execution wording; use `step-by-step` for `step-by-step`, `manual`, `interactive`, or confirmation wording; default to `fast-forward` for concrete setup tasks unless the prompt asks to inspect, decide, or proceed carefully. |
 | Project root | Any setup subcommand | Use the provided path or resolve from the current working directory. |
 | `research_topic_id` | Any setup subcommand | Read from the prompt or Project Manifest context. Ask only when several topics remain plausible. |
 | `topic_workspace_dir` | Any setup subcommand after `resolve-workspace` | Read from the Project Manifest-declared Topic Workspace for the selected Research Topic. |
@@ -89,13 +90,15 @@ Misc subcommands:
 
 | Subcommand | Purpose | Produces |
 | --- | --- | --- |
-| `topic-workspace` | Run the full setup flow: resolve workspace, read the gate, ensure repos, derive the operational gate, install dependencies, and verify readiness. | Combined setup report, repo state, derived gate, Pixi environment files, and readiness status. |
+| `setup-for-topic-workspace` | Run the full setup flow in `fast-forward`/`auto` or `step-by-step`/`manual` mode. | Combined setup report, selected mode, repo state, derived gate, Pixi environment files, and readiness status. |
 | `help` | Print what this skill does and how to use it. | Usage table and examples. |
 
 Example prompts:
 
 - `$isomer-srv-env-setup help`
-- `$isomer-srv-env-setup topic-workspace <topic-id>`
+- `$isomer-srv-env-setup`
+- `$isomer-srv-env-setup setup-for-topic-workspace <topic-id> auto`
+- `$isomer-srv-env-setup setup-for-topic-workspace <topic-id> manual`
 - `$isomer-srv-env-setup read-gate for <topic-id>`
 - `$isomer-srv-env-setup verify-gate for <topic-id>`
 
@@ -104,6 +107,7 @@ Example prompts:
 Report:
 
 - `subcommand`: selected subcommand.
+- `mode`: selected `setup-for-topic-workspace` mode when relevant.
 - `project_root`: resolved Isomer Project root.
 - `research_topic_id`: selected Research Topic.
 - `topic_workspace_dir`: Project Manifest-declared Topic Workspace directory.

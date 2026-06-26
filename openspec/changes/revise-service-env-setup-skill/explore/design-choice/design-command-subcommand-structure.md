@@ -24,7 +24,9 @@ Helper subcommands are lower-level commands called by procedural subcommands. Th
 Misc subcommands are public support commands and shortcuts:
 
 - `help`: explain the skill and list public subcommands.
-- `topic-workspace`: run the full gate-driven Topic Workspace setup workflow; this remains the default when no subcommand is given.
+- `setup-for-topic-workspace`: run the full gate-driven Topic Workspace setup workflow; this is the default for concrete setup tasks that do not name a subcommand.
+
+`setup-for-topic-workspace` should select `fast-forward`/`auto` or `step-by-step`/`manual` from the prompt. Fast-forward mode runs the full ordered workflow directly. Step-by-step mode pauses before each step, presents user choices in a compact `Option | Explain | Pros and Cons` table, states the recommended option outside the table with its reason, waits for consent, and then executes one chosen action before continuing.
 
 ## Formatting Rules
 
@@ -32,4 +34,4 @@ Each executable subcommand page should have a `## Workflow` section near the top
 
 ## Implementation Impact
 
-Implementation should create or revise one-level reference pages such as `references/topic-workspace.md`, `references/resolve-workspace.md`, `references/read-gate.md`, `references/ensure-repos.md`, `references/derive-gate.md`, `references/install-deps.md`, and `references/verify-gate.md`. The entrypoint should present those pages in procedural/helper/misc groups. The existing `topic-workspace` workflow should become the orchestrating full path that calls the procedural subcommands in order.
+Implementation should create or revise one-level reference pages such as `references/setup-for-topic-workspace.md`, `references/resolve-workspace.md`, `references/read-gate.md`, `references/ensure-repos.md`, `references/derive-gate.md`, `references/install-deps.md`, and `references/verify-gate.md`. The entrypoint should present those pages in procedural/helper/misc groups. The existing full setup workflow should become the `setup-for-topic-workspace` path that calls the procedural subcommands in order and switches behavior by execution mode.
