@@ -9,7 +9,7 @@ When this subcommand is selected, execute the following steps in order.
 3. Run `clarify-topic` only when missing or unclear topic details block specialization.
 4. Run `specialize-team` to select or confirm one Domain Agent Team Template and execute the helper specialization path through draft profile output.
 5. Run `clarify-topic-team` only when specialization outputs contain open questions that block setup or validation.
-6. Run `setup-topic-env`, then run `setup-agent-workspace`.
+6. Run `setup-topic-env`, which delegates heavy Topic Workspace setup to `$isomer-srv-env-setup setup-for-topic-workspace <research_topic_id> auto`, then run `setup-agent-workspace`.
 7. Run `validate-topic-team`, then run `finalize-topic-team` to create `isomer-topic-summary.md`.
 8. Stop at final topic-team summary output. Run `approve-profile` or `materialize-profile` only when the user explicitly asks for that static profile-material boundary and required validation or approval inputs are available.
 

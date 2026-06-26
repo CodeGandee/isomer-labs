@@ -1,13 +1,15 @@
 ---
 name: isomer-srv-env-setup
-description: Use when an Isomer Labs agent needs gate-driven Pixi environment setup for a Topic Workspace, including env-gate.md, isomer-env-gate.md, topic_standalone_pixi_bindings, topic repos, Python version selection, starter Python dependencies, Topic Workspace VCS ignores, PyPI/Pixi dependency inference, NVIDIA channel preference, Pixi command style, or readiness checks.
+description: Use when an Isomer Labs agent needs gate-driven enclosed Pixi environment setup for a Topic Workspace, including env-gate.md, isomer-env-gate.md, topic_standalone_pixi_bindings, topic repos, Python version selection, starter Python dependencies, Topic Workspace VCS ignores, PyPI/Pixi dependency inference, NVIDIA channel preference, Pixi command style, explicit external runtime wiring, topic-local user-space fallback, no-sudo blockers, or readiness checks.
 ---
 
 # Isomer Service Environment Setup
 
 ## Overview
 
-Set up and validate the shared Topic Workspace Pixi environment for a user-specified runnable target. This skill is a command-style router: keep the entrypoint lean, choose one subcommand, then load that subcommand's reference page.
+Set up and validate the shared Topic Workspace Pixi environment for a user-specified runnable target. Keep setup enclosed and auditable: use Pixi-managed dependencies first, use explicit Pixi-run runtime wiring only when Pixi cannot fully provide a runtime piece, use topic-local user-space fallback only as a secondary option, and block privileged or machine-global mutation.
+
+This skill is a command-style router: keep the entrypoint lean, choose one subcommand, then load that subcommand's reference page.
 
 ## Workflow
 
@@ -57,7 +59,7 @@ Each executable reference page owns its `## Required Inputs` contract. Use the s
 
 ## Help
 
-`isomer-srv-env-setup` prepares a Topic Workspace Pixi environment so the user-specified target in `user-intent/src/env-gate.md` can run. Public subcommands are grouped below.
+`isomer-srv-env-setup` prepares a Topic Workspace Pixi environment so the user-specified target in `user-intent/src/env-gate.md` can run. It preserves environment enclosure by preferring Pixi-managed dependencies, recording any external runtime wiring that must be routed through Pixi-run commands, limiting fallback installs to topic-local user space, and refusing sudo or machine-global mutation. Public subcommands are grouped below.
 
 Procedural subcommands:
 
@@ -66,15 +68,15 @@ Procedural subcommands:
 | `resolve-workspace` | Resolve the Project root, Research Topic, Topic Workspace, Pixi manifest, and selected Pixi environment. | Resolved setup refs and blockers; no environment mutation. |
 | `read-gate` | Read the source gate and extract the runnable target, repo hints, commands, and success criteria. | Source gate summary and readiness blockers. |
 | `ensure-repos` | Find existing required repos or materialize missing repos under `<topic-workspace-dir>/repos/<repo-name>`. | Repo inventory and inspection notes; acquired topic repos and inferred-source warnings only for missing repos. |
-| `derive-gate` | Write the fixed-section `isomer-env-gate.md` operational gate. | `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`. |
-| `install-deps` | Install inferred dependencies with Pixi, using Python version selection, starter Python dependencies, PyPI-first package rules, Topic Workspace VCS ignores, and NVIDIA channel preference. | Updated Topic Workspace Pixi environment files, `.gitignore`, and dependency plan. |
-| `verify-gate` | Run the desired command through Pixi and report readiness. | Gate execution results, readiness status, and blockers. |
+| `derive-gate` | Write the fixed-section `isomer-env-gate.md` operational gate, including the enclosure strategy for each dependency or runtime need. | `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`. |
+| `install-deps` | Install inferred dependencies with Pixi first, record explicit external runtime wiring when needed, and use topic-local fallback only when Pixi cannot satisfy the gate. | Updated Topic Workspace Pixi environment files, `.gitignore`, dependency plan, enclosure records, and blockers. |
+| `verify-gate` | Run the desired command through recorded Pixi-scoped commands and report readiness. | Gate execution results, readiness status, enclosure warnings, and blockers. |
 
 Misc subcommands:
 
 | Subcommand | Purpose | Produces |
 | --- | --- | --- |
-| `setup-for-topic-workspace` | Run the full setup flow in `fast-forward`/`auto` or `step-by-step`/`manual` mode. | Combined setup report, selected mode, repo state, derived gate, Pixi environment files, and readiness status. |
+| `setup-for-topic-workspace` | Run the full setup flow in `fast-forward`/`auto` or `step-by-step`/`manual` mode. | Combined setup report, selected mode, repo state, derived gate, Pixi environment files, enclosure strategy, and readiness status. |
 | `help` | Print what this skill does and how to use it. | Usage table and examples. |
 
 Example prompts:
@@ -101,9 +103,13 @@ Report:
 - `derived_gate_path`: generated gate path when relevant.
 - `repos`: required repo names, paths, sources, and whether any source was inferred.
 - `inferred_source_warnings`: warnings for repos acquired from inferred or discovered sources.
-- `dependency_plan`: selected Python version, version evidence, starter Python dependencies, package sources, Pixi/PyPI choices, channels, editable installs, native tools, and Python glue baseline.
+- `dependency_plan`: selected Python version, version evidence, starter Python dependencies, package sources, Pixi/PyPI choices, channels, editable installs, native tools, Python glue baseline, and enclosure strategy.
+- `environment_enclosure`: dependency and runtime classification as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked.
+- `external_runtime_wiring`: any PATH, library path, compiler path, package-config path, CUDA variable, sourced script, or external runtime path used through Pixi-run commands.
+- `topic_local_fallbacks`: any fallback installs under `<topic-workspace-dir>/.isomer-user-env/`, including commands, installed paths, changed files, and portability warnings.
+- `enclosure_warnings`: warnings for external runtime wiring, topic-local fallbacks, host-specific paths, relocation risk, or missing enclosure records.
 - `commands_run`: commands executed, in order.
-- `changed_files`: environment files changed, especially `pixi.toml`, `pixi.lock`, `.pixi/`, `.gitignore`, and `isomer-env-gate.md`.
+- `changed_files`: environment files changed, especially `pixi.toml`, `pixi.lock`, `.pixi/`, `.gitignore`, `.isomer-user-env/` when used, and `isomer-env-gate.md`.
 - `readiness_status`: ready, failed, blocked, or not checked.
 - `blockers`: missing inputs, failed preconditions, command failures, out-of-scope requests, or repair requirements.
 - `next_action`: safe follow-up, repair route, or stop condition.
@@ -118,6 +124,8 @@ Report:
 - Do not modify an existing `<topic-workspace-dir>/repos/<repo-name>` during `ensure-repos`; inspect it as read-only evidence and report blockers if it is unsuitable.
 - Do not infer `topic_standalone_pixi_bindings` from directory names; always read the Project Manifest.
 - Do not choose repos, dependencies, Pixi install commands, setup commands, or verification commands before reading `user-intent/src/env-gate.md`.
-- When running Topic Workspace setup, inspection, or verification commands inside the prepared environment, use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>` instead of relying on the ambient shell environment.
+- Apply the enclosure ladder before dependency mutation or verification: Pixi-managed install first, Pixi-mediated external runtime wiring second, topic-local user-space fallback under `<topic-workspace-dir>/.isomer-user-env/` third, and blockers for privileged or machine-global mutation.
+- When running Topic Workspace setup, inspection, or verification commands inside the prepared environment, use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>` instead of relying on the ambient shell environment. Explicitly sourced scripts and exported runtime paths are allowed only when recorded in `isomer-env-gate.md` and the execution log.
+- Do not run `sudo`, mutate system package managers, edit global shell profiles, install global Python or Node packages, change `/etc`, run `ldconfig`, install daemons, change kernel drivers, or perform other privileged or machine-global setup from this skill. Report those needs as blockers or external prerequisites.
 - Do not hide inferred repo sources; warning-label them in `isomer-env-gate.md` and final output.
 - Do not launch Houmao agents, create Agent Instances, mutate unrelated Workspace Runtime records, perform GUI work, or make research decisions from this skill.

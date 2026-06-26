@@ -1,4 +1,4 @@
 interface:
   display_name: "isomer-admin-topic-team-specialize"
   short_description: "Initialize and specialize topic teams"
-  default_prompt: "Use $isomer-admin-topic-team-specialize to initialize a Research Topic, specialize a Domain Agent Team Template, prepare durable topic environment and Agent Workspace setup, validate static topic-team material readiness, and write the topic-team summary."
+  default_prompt: "Use $isomer-admin-topic-team-specialize to initialize a Research Topic, specialize a Domain Agent Team Template, route topic environment setup through $isomer-srv-env-setup, prepare Agent Workspace setup, validate static topic-team material readiness, and write the topic-team summary."

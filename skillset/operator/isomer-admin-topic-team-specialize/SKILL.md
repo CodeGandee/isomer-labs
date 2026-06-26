@@ -1,11 +1,11 @@
 ---
 name: isomer-admin-topic-team-specialize
-description: "Initialize and specialize Isomer Research Topics into static topic-team material. Use when an operator needs topic-team setup for one Research Topic: help, init-topic, clarify-topic, specialize-team, clarify-topic-team, setup-topic-env, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
+description: "Initialize and specialize Isomer Research Topics into static topic-team material. Use when an operator needs topic-team setup for one Research Topic: help, init-topic, clarify-topic, specialize-team, clarify-topic-team, setup-topic-env through isomer-srv-env-setup, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
 ---
 
 # Isomer Admin Topic Team Specialize
 
-Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, prepare topic definition material, adapt one Domain Agent Team Template into copied topic-specific material, prepare the topic environment and Agent Workspaces as durable setup state, validate static material readiness, and write a final topic-team summary. When Git-backed Agent Workspace worktrees under `repos/topic-main` are requested, delegate that concrete workspace topology to `isomer-admin-topic-workspace-mgr`. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
+Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, prepare topic definition material, adapt one Domain Agent Team Template into copied topic-specific material, route topic environment setup through `isomer-srv-env-setup`, prepare Agent Workspaces as durable setup state, validate static material readiness, and write a final topic-team summary. When Git-backed Agent Workspace worktrees under `repos/topic-main` are requested, delegate that concrete workspace topology to `isomer-admin-topic-workspace-mgr`. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
 
 ## Workflow
 
@@ -54,7 +54,7 @@ Procedural subcommands are the public single-step workflow API.
 | `clarify-topic` | Refine the Research Topic and update topic overview open questions before team specialization | [references/clarify-topic.md](references/clarify-topic.md) |
 | `specialize-team` | Select a Domain Agent Team Template and run the topic-team specialization path | [references/specialize-team.md](references/specialize-team.md) |
 | `clarify-topic-team` | Revise specialized topic-team outputs before setup, approval, or materialization | [references/clarify-topic-team.md](references/clarify-topic-team.md) |
-| `setup-topic-env` | Install or prepare the topic development environment with explicit setup records | [references/setup-topic-env.md](references/setup-topic-env.md) |
+| `setup-topic-env` | Prepare the env-gate handoff, delegate Topic Workspace environment setup to `isomer-srv-env-setup`, and record service setup evidence | [references/setup-topic-env.md](references/setup-topic-env.md) |
 | `setup-agent-workspace` | Create or report per-agent Agent Workspace directories and boundaries, delegating Git-backed `repos/topic-main` worktree setup to `isomer-admin-topic-workspace-mgr` when requested | [references/setup-agent-workspace.md](references/setup-agent-workspace.md) |
 | `validate-topic-team` | Check topic definition, specialized team material, environment posture, Agent Workspaces, deferrals, and blockers | [references/validate-topic-team.md](references/validate-topic-team.md) |
 | `finalize-topic-team` | Write `isomer-topic-summary.md` with the topic team, goal, working logic, setup, validation, blockers, and next actions | [references/finalize-topic-team.md](references/finalize-topic-team.md) |
@@ -141,7 +141,10 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `changed_copied_material_paths`: copied-root files edited for the topic.
 - `placeholder_resolutions`: concrete topic values for template placeholders.
 - `topic_team_revision_status`: unchanged, revised, blocked, or not requested.
-- `topic_environment_status`: ready, changed, deferred, blocked, or not checked.
+- `topic_environment_status`: ready, changed, deferred, blocked, or not checked, mapped from `isomer-srv-env-setup` readiness output when environment setup runs.
+- `env_gate_path`: `<topic-workspace>/user-intent/src/env-gate.md` when `setup-topic-env` prepares or uses the source gate.
+- `derived_gate_path`: `<topic-workspace>/user-intent/derived/isomer-env-gate.md` when `isomer-srv-env-setup` derives the operational gate.
+- `topic_environment_service_output`: summarized `isomer-srv-env-setup` output, including service subcommand, mode, readiness status, commands run, changed files, and blockers when present.
 - `agent_workspace_paths`: per-agent Agent Workspace paths or blockers, including delegated Git-backed worktree paths and `agent_workspace_ref` evidence when `isomer-admin-topic-workspace-mgr` was used.
 - `topic_team_validation_status`: ready, ready-with-deferrals, blocked, or not checked for static material readiness.
 - `isomer_topic_summary_path`: the `isomer-topic-summary.md` path when finalization runs.
@@ -159,6 +162,8 @@ Do not treat a provisional topic workspace seed as an authoritative Isomer Resea
 Do not run a procedural subcommand when required predecessor artifacts are missing. Refuse to run, name the missing artifacts, explain which previous subcommand should create them, and stop before mutation.
 
 Do not hide environment installation, Agent Workspace creation, static-material validation, profile approval, or profile materialization behind earlier topic clarification or specialization commands.
+
+Do not perform dependency inference, repo acquisition, Pixi installation, package repair, or environment verification directly inside `setup-topic-env`. Prepare the operator handoff and route heavy Topic Workspace environment setup through `isomer-srv-env-setup`.
 
 Do not create a directory named `teams` under a Topic Workspace for topic-specific profiles. Store topic-specific copied material inside `<topic-workspace>/team-profile/`, and keep only discovery refs in the Project Manifest.
 
