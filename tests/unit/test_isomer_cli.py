@@ -1978,6 +1978,14 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         paths = {entry["surface"]: entry for entry in data["paths"]}
         self.assertEqual(str(root / "isomer-content"), paths["isomer_content_root"]["path"])
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "repos" / "topic-main" / "isomer-managed"),
+            paths["topic_main_isomer_managed"]["path"],
+        )
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "repos" / "topic-main" / "isomer-managed" / "tracked" / "artifacts"),
+            paths["topic_main_tracked_artifacts"]["path"],
+        )
         self.assertEqual("env", paths["records_artifacts"]["source"])
         self.assertEqual("ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR", paths["records_artifacts"]["source_detail"])
         self.assertNotIn("plan", {entry["source"] for entry in data["paths"]})
@@ -1993,6 +2001,40 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO005", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        status, output = self.run_cli(
+            ["project", "paths", "preview", "--json"],
+            cwd=root,
+            env={
+                "ISOMER_AGENT_WORKSPACE_DIR": "isomer-content/topic-ws/default/agents/alice",
+                "ISOMER_AGENT_WORKSPACE_RUNTIME_DIR": "isomer-content/topic-ws/default/agents/alice/custom-runtime",
+            },
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        paths = {entry["surface"]: entry for entry in data["paths"]}
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "agents" / "alice" / "isomer-managed"),
+            paths["agent_isomer_managed"]["path"],
+        )
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "agents" / "alice" / "isomer-managed" / "agent-owned"),
+            paths["agent_owned"]["path"],
+        )
+        self.assertEqual("env", paths["agent_runtime"]["source"])
+        self.assertEqual("ISOMER_AGENT_WORKSPACE_RUNTIME_DIR", paths["agent_runtime"]["source_detail"])
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "agents" / "alice" / "isomer-managed" / "agent-owned" / "public"),
+            paths["agent_public_share"]["path"],
+        )
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "agents" / "alice" / "isomer-managed" / "topic-owned" / "readonly"),
+            paths["agent_topic_readonly"]["path"],
+        )
+        self.assertTrue(
+            any("compatibility override for `isomer-managed/agent-owned/*`" in diagnostic["message"] for diagnostic in data["diagnostics"]),
+            data["diagnostics"],
+        )
 
     def test_paths_preview_derives_topic_workspace_base_from_manifest_content_root(self) -> None:
         root = self.make_root()
@@ -2057,10 +2099,38 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(data["runtime"]["created"])
         runtime_root = root / "isomer-content" / "topic-ws" / "default"
         self.assertTrue((runtime_root / "state.sqlite").is_file())
-        for directory in ("repos", "repos/topic-main", "agents", "records", "records/artifacts", "records/tasks", "records/runs", "records/views", "records/logs", "runtime"):
+        for directory in (
+            "repos",
+            "repos/topic-main",
+            "repos/topic-main/isomer-managed",
+            "agents",
+            "records",
+            "records/artifacts",
+            "records/tasks",
+            "records/runs",
+            "records/views",
+            "records/logs",
+            "runtime",
+        ):
             self.assertTrue((runtime_root / directory).is_dir())
         surfaces = {record["surface"] for record in data["runtime"]["path_plans"]}
-        self.assertTrue({"workspace_runtime_db", "repos", "topic_main_repo", "agents", "records", "records_artifacts", "records_tasks", "records_runs", "records_views", "records_logs", "runtime"} <= surfaces)
+        self.assertTrue(
+            {
+                "workspace_runtime_db",
+                "repos",
+                "topic_main_repo",
+                "topic_main_isomer_managed",
+                "agents",
+                "records",
+                "records_artifacts",
+                "records_tasks",
+                "records_runs",
+                "records_views",
+                "records_logs",
+                "runtime",
+            }
+            <= surfaces
+        )
 
         status, output = self.run_cli(["project", "runtime", "init", "--json"], cwd=root)
         data = json.loads(output)
@@ -2643,10 +2713,16 @@ status = "active"
         packet_name_plans = [
             plan
             for plan in data["creation"]["path_plans"]
-            if plan["source"] == "topic_team_instantiation_packet.agent_name"
+            if plan["source"] == "topic_team_instantiation_packet.agent_name" and plan["surface"].startswith("agent_workspace:")
         ]
         self.assertEqual(3, len(packet_name_plans))
         self.assertTrue(all("agent_name" in plan["source_detail"] for plan in packet_name_plans))
+        packet_isomer_plans = [
+            plan
+            for plan in data["creation"]["path_plans"]
+            if plan["source"] == "topic_team_instantiation_packet.agent_name" and plan["surface"].startswith("agent_isomer_managed:")
+        ]
+        self.assertEqual(3, len(packet_isomer_plans))
 
     def test_uc01_invalid_packet_is_rejected_before_materialization(self) -> None:
         root = self.copy_uc01_fixture_project("uc01-invalid-packet")
@@ -2913,9 +2989,20 @@ status = "active"
         self.assertEqual(7, len(creation["agent_instances"]))
         self.assertEqual(7, len(creation["agent_workspaces"]))
         self.assertTrue(all(plan["source"] == "topic_agent_team_profile.agent_name" for plan in creation["path_plans"]))
+        master_workspace = next(workspace for workspace in creation["agent_workspaces"] if workspace["agent_name"] == "deepsci-org-master")
+        self.assertIn("isomer_managed_path_plan_id", master_workspace)
+        self.assertTrue(master_workspace["support_root_path"].endswith("agents/deepsci-org-master/isomer-managed"))
+        self.assertEqual([f"{master_workspace['id']}:workspace-boundary"], master_workspace["boundary_refs"])
+        self.assertIn("links_root", master_workspace["generated_link_summary"])
+        master_isomer_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == "agent_isomer_managed:deepsci-org-master")
+        self.assertEqual(master_workspace["isomer_managed_path_plan_id"], master_isomer_plan["id"])
         self.assertEqual(0, len(team["run_ids"]))
         self.assertNotIn("houmao", output.lower())
         self.assertTrue((root / "topic-workspaces" / "alpha" / "agents").is_dir())
+        self.assertTrue((root / "topic-workspaces" / "alpha" / "agents" / "deepsci-org-master" / "isomer-managed" / "agent-owned" / "public").is_dir())
+        self.assertTrue((root / "topic-workspaces" / "alpha" / "agents" / "deepsci-org-master" / "isomer-managed" / "topic-owned" / "readonly").is_dir())
+        self.assertTrue((root / "topic-workspaces" / "alpha" / "agents" / "deepsci-org-master" / "isomer-managed" / "links").is_dir())
+        self.assertFalse((root / "topic-workspaces" / "alpha" / "agents" / "deepsci-org-master" / ".isomer-agent").exists())
         self.assertFalse((root / "topic-workspaces" / "alpha" / "launch-dossiers").exists())
 
         status, output = self.run_cli(
@@ -2965,6 +3052,74 @@ status = "active"
         self.assertEqual(1, status)
         self.assertIn("ISO044", {diagnostic["code"] for diagnostic in data["diagnostics"]})
 
+    def test_runtime_validate_reports_isomer_managed_layout_diagnostics(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+
+        for command in (
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
+            [
+                "project",
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-diagnostics",
+                "--json",
+            ],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        workspace = root / "topic-workspaces" / "alpha" / "agents" / "deepsci-org-master"
+        (workspace / ".isomer-agent" / "runtime").mkdir(parents=True)
+        shutil.rmtree(workspace / "isomer-managed" / "agent-owned" / "public")
+        unsafe_target = root / "outside-link-target"
+        unsafe_target.mkdir()
+        (workspace / "isomer-managed" / "links" / "unsafe").symlink_to(unsafe_target, target_is_directory=True)
+        unpromoted_artifact = workspace / "isomer-managed" / "agent-owned" / "artifacts" / "draft.txt"
+        write(unpromoted_artifact, "draft\n")
+        runtime_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(runtime_path) as db:
+            db.execute(
+                """
+                INSERT INTO lifecycle_records (
+                    id, record_kind, research_topic_id, topic_workspace_id, status,
+                    created_at, updated_at, lifecycle_refs_json, transition_metadata_json,
+                    content_path, provenance_refs_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "artifact:unpromoted",
+                    "artifact",
+                    "alpha",
+                    "alpha",
+                    "candidate",
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-01T00:00:00Z",
+                    "{}",
+                    "{}",
+                    str(unpromoted_artifact),
+                    "[]",
+                ),
+            )
+
+        status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
+
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        messages = [diagnostic["message"] for diagnostic in data["diagnostics"]]
+        self.assertTrue(any("legacy `.isomer-agent/`" in message for message in messages), messages)
+        self.assertTrue(any("missing a standard `isomer-managed/` support subpath" in message for message in messages), messages)
+        self.assertTrue(any("target points outside the selected Topic Workspace" in message for message in messages), messages)
+        self.assertTrue(any("depends on untracked `isomer-managed/agent-owned/`" in message for message in messages), messages)
+
     def test_team_instance_creation_uses_agent_name_path_plan_without_identity_alias(self) -> None:
         root = self.make_root()
         self.make_deepsci_profile_project(root)
@@ -3013,6 +3168,8 @@ status = "active"
         self.assertEqual(str((root / "topic-workspaces" / "alpha" / "agents" / "alice").resolve()), master_plan["path"])
         self.assertEqual("topic_agent_team_profile.agent_name", master_plan["source"])
         self.assertIn("role_bindings.deepsci-org-master.agent_name=alice", master_plan["source_detail"])
+        master_isomer_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == "agent_isomer_managed:alice")
+        self.assertEqual(str((root / "topic-workspaces" / "alpha" / "agents" / "alice" / "isomer-managed").resolve()), master_isomer_plan["path"])
         self.assertTrue((root / "topic-workspaces" / "alpha" / "agents" / "alice").is_dir())
 
         fallback_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == "agent_workspace:deepsci-org-framer")

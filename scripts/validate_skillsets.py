@@ -87,6 +87,7 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "agent_workspace_paths",
     "topic_team_validation_status",
     "isomer_topic_summary_path",
+    "isomer-managed/",
 )
 
 TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
@@ -256,7 +257,11 @@ TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
     "agent_name",
     "agent_branch",
     "agent_workspace_ref",
-    ".isomer-agent/",
+    "isomer-managed/",
+    "tracked/",
+    "agent-owned/",
+    "topic-owned/",
+    "links/",
     "records/*",
     "Agent Instance",
     "Workspace Runtime",
@@ -296,6 +301,7 @@ TOPIC_WORKSPACE_MANAGER_FORBIDDEN_PUBLIC_TERMS = (
     "agent-key",
     "agent key",
     "<agent-key>",
+    ".isomer-agent/",
 )
 
 TOPIC_WORKSPACE_MANAGER_FORBIDDEN_SUPPORT_REFS = TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS

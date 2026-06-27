@@ -9,11 +9,13 @@ from typing import Mapping
 from isomer_labs.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.paths import preview_paths
+from isomer_labs.runtime.agent_identity import (
+    validate_global_agent_instance_id_uniqueness as _validate_global_agent_instance_id_uniqueness,
+)
 from isomer_labs.runtime.store import open_workspace_runtime
 from isomer_labs.runtime.validation_checks import (
     _validate_adapter_records,
     _validate_agent_team_instances,
-    _validate_global_agent_instance_id_uniqueness,
     _validate_handoffs,
     _validate_lifecycle_records,
     _validate_lifecycle_transitions,
@@ -93,7 +95,7 @@ def validate_workspace_runtime(
     diagnostics.extend(_validate_readiness(context, store, require_ready=require_ready_readiness))
     diagnostics.extend(_validate_lifecycle_records(context, store))
     diagnostics.extend(_validate_agent_team_instances(context, store))
-    diagnostics.extend(_validate_global_agent_instance_id_uniqueness(context, store))
+    diagnostics.extend(_validate_global_agent_instance_id_uniqueness(context, store.db_path))
     diagnostics.extend(_validate_adapter_records(context, store))
     diagnostics.extend(_validate_handoffs(context, store))
     diagnostics.extend(_validate_lifecycle_transitions(store))

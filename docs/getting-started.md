@@ -67,7 +67,7 @@ Both commands are read-only. `project context show` displays the resolved Projec
 
 ## Initialize and Prepare Workspace Runtime
 
-`isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It creates `state.sqlite`, records schema metadata, and creates the standard runtime layout: `repos/`, `repos/topic-main/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`.
+`isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It creates `state.sqlite`, records schema metadata, and creates the standard runtime layout: `repos/`, `repos/topic-main/`, `repos/topic-main/isomer-managed/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`. It does not create per-agent untracked `isomer-managed/agent-owned/`, `isomer-managed/topic-owned/`, or `isomer-managed/links/` paths before Agent Workspace setup.
 
 ```bash
 pixi run isomer-cli --print-json project runtime init --topic my-topic
@@ -91,7 +91,7 @@ This command is read-only and reports launch-facing errors when readiness is not
 
 ## Create an Agent Team Instance Record
 
-An Agent Team Instance is a concrete runtime team created from a Topic Agent Team Profile. The `project team-instances create` command writes Agent Instance records, Agent Workspace records, path plans, initial Workflow Stage Cursor records, and provenance refs, and it materializes Agent Workspace directories. It does not launch Houmao agents or write adapter-specific launch material.
+An Agent Team Instance is a concrete runtime team created from a Topic Agent Team Profile. The `project team-instances create` command writes Agent Instance records, Agent Workspace records, Agent Workspace path plans, `isomer-managed/` support path plans, initial Workflow Stage Cursor records, and provenance refs, and it materializes Agent Workspace directories. It does not launch Houmao agents or write adapter-specific launch material.
 
 ```bash
 pixi run isomer-cli --print-json project team-instances create \

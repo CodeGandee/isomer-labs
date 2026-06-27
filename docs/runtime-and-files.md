@@ -31,7 +31,7 @@ Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 - `TopicEnvironmentReadinessRecord` — readiness status, Topic Workspace Pixi manifest refs, selected Pixi environment refs, optional Project-root Pixi environment refs for platform or shared tooling use, diagnostics, checked timestamp, actor ref, and optional repair Service Request hint.
 - `AgentTeamInstanceRecord` — id, Research Topic id, Topic Workspace id, Topic Agent Team Profile ref, Domain Agent Team Template id, status, agent instance ids, agent workspace ids, run ids, workflow stage cursor ids, blocker refs, handoff ids, and provenance refs.
 - `AgentInstanceRecord` — id, Agent Team Instance id, Agent Role id, Research Topic id, Topic Workspace id, Agent Profile ref, status, and provenance refs.
-- `AgentWorkspaceRecord` — id, globally unique Agent Instance id, topic-local Agent Name when known, Topic Workspace id, flat Agent Workspace Path Plan id, status, and provenance refs.
+- `AgentWorkspaceRecord` — id, globally unique Agent Instance id, topic-local Agent Name when known, Topic Workspace id, flat Agent Workspace Path Plan id, `isomer-managed/` path plan id, expected repository ref, branch namespace, current branch when known, boundary refs, generated-link summary, status, and provenance refs.
 - `RuntimeLifecycleRecord` — generic lifecycle records for Research Topic, Research Inquiry, Research Task, Run, Workflow Stage Cursor, Topic Workspace, Topic Agent Team Profile, Artifact, Gate, Research Claim, Evidence Item, Decision Record, and Provenance Record.
 - `HandoffRecord` — source actor, target actor, status, Research Task id, Run id, Agent Team Instance id, Completion Watcher Contract refs, expected output refs, staleness rules, and provenance refs.
 - `ValidationIssueRecord` — severity, code, concept, message, record ref, and provenance refs.
@@ -49,13 +49,13 @@ Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 
 ## Path Plans
 
-Path Plan records map a named surface to a concrete filesystem path. Surfaces include `isomer_content_root`, `topic_workspace_base`, `workspace_runtime_db`, `repos`, `topic_main_repo`, `agents`, `records`, `records_artifacts`, `records_tasks`, `records_runs`, `records_views`, `records_logs`, `runtime`, per-agent surfaces such as `agent_workspace:<agent-name>`, and adapter-specific surfaces such as `adapter_manifest:houmao:<agent-team-instance-id>:<kind>`. Legacy `artifacts`, `tasks`, `runs`, `views`, and `logs` surface names should be treated as compatibility aliases for owner-preserved `records/*` surfaces rather than worker-visible root directories.
+Path Plan records map a named surface to a concrete filesystem path. Surfaces include `isomer_content_root`, `topic_workspace_base`, `workspace_runtime_db`, `repos`, `topic_main_repo`, `topic_main_isomer_managed`, `topic_main_tracked`, `topic_main_tracked_shared`, `topic_main_tracked_artifacts`, `topic_main_tracked_tasks`, `topic_main_tracked_runs`, `topic_main_tracked_views`, `topic_main_tracked_tools`, `topic_main_tracked_boundaries`, `topic_main_tracked_manifests`, `agents`, `records`, `records_artifacts`, `records_tasks`, `records_runs`, `records_views`, `records_logs`, `runtime`, per-agent surfaces such as `agent_workspace:<agent-name>` and `agent_isomer_managed:<agent-name>`, agent support surfaces such as `agent_owned`, `agent_runtime`, `agent_artifacts`, `agent_scratch`, `agent_logs`, `agent_public_share`, `agent_inbox`, `agent_topic_readonly`, `agent_topic_writable`, and `agent_links`, and adapter-specific surfaces such as `adapter_manifest:houmao:<agent-team-instance-id>:<kind>`. Legacy `artifacts`, `tasks`, `runs`, `views`, and `logs` surface names should be treated as compatibility aliases for owner-preserved `records/*` surfaces rather than worker-visible root directories.
 
 Commands use Path Plan records to locate durable files without recomputing layout from configuration. `isomer-cli project paths preview` prints the path plan without creating files.
 
 ## Agent Workspaces
 
-Agent Workspace structure, agent-owned Git worktrees, per-agent branch namespaces, launch cwd behavior, symlinked shared directories, topic-owned Pixi task channels, environment inheritance, and Workspace Boundary meanings are standardized in [Topic Workspace Definition](topic-workspace-definition.md). Runtime records should create Agent Workspace path plans under `<topic-workspace>/agents/<agent-name>` while preserving Agent Instance ids and adapter refs as runtime records.
+Agent Workspace structure, agent-owned Git worktrees, per-agent branch namespaces, launch cwd behavior, `isomer-managed/` tracked material, agent-owned untracked material, topic-owned projections, generated links, topic-owned Pixi task channels, environment inheritance, and Workspace Boundary meanings are standardized in [Topic Workspace Definition](topic-workspace-definition.md). Runtime records should create Agent Workspace path plans under `<topic-workspace>/agents/<agent-name>` and `isomer-managed/` support path plans under `<topic-workspace>/agents/<agent-name>/isomer-managed/` while preserving Agent Instance ids and adapter refs as runtime records.
 
 ## Adapter Material and Manifests
 
@@ -104,6 +104,7 @@ The following are not durable research state and may be regenerated or lost:
 - Process-local Effective Topic Context.
 - Topic Workspace `.pixi/` environment directories.
 - Uncommitted scratch files inside Agent Workspaces that have not been recorded as Artifacts or Provenance Records.
+- Untracked `isomer-managed/agent-owned/`, `isomer-managed/topic-owned/`, and `isomer-managed/links/` material unless an Artifact locator, path plan, or Provenance Record explicitly promotes it to durable state.
 
 ## Summary
 
@@ -119,11 +120,17 @@ The following are not durable research state and may be regenerated or lost:
 | Topic Workspace Pixi environment | `<topic-workspace>/.pixi/` | no |
 | Topic Agent Team Profile Bundle | `<topic-workspace>/team-profile/` | yes |
 | Topic Main Repository | `<topic-workspace>/repos/topic-main/` | policy-dependent topic support surface |
+| Topic Main Isomer-managed namespace | `<topic-workspace>/repos/topic-main/isomer-managed/` | yes for path plan; tracked subpaths are Git policy surfaces |
+| Isomer-managed tracked material | `<topic-workspace>/repos/topic-main/isomer-managed/tracked/` | yes when committed or recorded |
 | Workspace Runtime DB | `<topic-workspace>/state.sqlite` | yes |
 | Owner-preserved records | `<topic-workspace>/records/{artifacts,tasks,runs,views,logs}/` | yes |
 | Runtime support root | `<topic-workspace>/runtime/` | yes |
 | Agent Workspace | `<topic-workspace>/agents/<agent-name>/` | yes after runtime path-plan creation |
 | Agent Workspace worktree | `<topic-workspace>/agents/<agent-name>/` as a worktree of `repos/topic-main` on `per-agent/<agent-name>/...` | policy-dependent Git state plus durable runtime path plan |
+| Agent Isomer-managed namespace | `<topic-workspace>/agents/<agent-name>/isomer-managed/` | yes for path plan; untracked subpaths require promotion for durable research dependency |
+| Agent-owned public share | `<topic-workspace>/agents/<agent-name>/isomer-managed/agent-owned/public/` | no unless promoted or recorded |
+| Topic-owned projection | `<topic-workspace>/agents/<agent-name>/isomer-managed/topic-owned/{readonly,writable}/` | no unless promoted or recorded |
+| Generated links | `<topic-workspace>/agents/<agent-name>/isomer-managed/links/` | no, advisory |
 | Adapter root | `<topic-workspace>/runtime/adapters/houmao/<ati-id>/` | yes |
 | Adapter manifests | `<adapter-root>/{adapter-link,launch-material-manifest,adapter-runtime-manifest}.json` | yes |
 | Command payloads | `<adapter-root>/command-payloads/` | yes |

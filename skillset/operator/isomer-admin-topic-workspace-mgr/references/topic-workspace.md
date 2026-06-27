@@ -5,11 +5,11 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Run the `resolve-workspace` workflow to select Project, Research Topic, Topic Workspace, and relevant packet/profile material through Project Manifest-backed context.
-2. Run the `ensure-main-repo` workflow for `<topic-workspace-dir>/repos/topic-main`, creating it only when the operator requested creation and the target path is safe.
+2. Run the `ensure-main-repo` workflow for `<topic-workspace-dir>/repos/topic-main` and its `isomer-managed/` namespace, creating it only when the operator requested creation and the target path is safe.
 3. Run the `plan-agents` workflow to normalize agent names, map active role bindings, plan `<topic-workspace-dir>/agents/<agent-name>`, plan `per-agent/<agent-name>/main`, and propose or validate derived compatibility `agent_workspace_ref` values when older material needs them.
 4. Run the `create-worktrees` workflow for safe planned entries and stop individual entries on blockers instead of overwriting existing paths.
-5. Run the `write-boundaries` workflow for topic-level and per-agent advisory Workspace Boundary and Peer Read Access notes.
-6. Run the `validate-worktrees` workflow to check Git topology, branch namespace, duplicate checkout state, and packet/profile refs.
+5. Run the `write-boundaries` workflow for topic-level and per-agent advisory Workspace Boundary, Peer Read Access, owner/reader split, and generated-link notes.
+6. Run the `validate-worktrees` workflow to check Git topology, branch namespace, duplicate checkout state, `isomer-managed/` layout, generated links, and packet/profile refs.
 7. Run the `summarize` workflow and report the output contract with blockers and next operator action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to split the request into the closest subcommands, run read-only stages first, and ask for explicit mutation only when needed.
@@ -18,4 +18,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 The full flow prepares static Git-backed Agent Workspace paths. It does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, or run Execution Adapters.
 
-Runtime Agent Team Instance creation later consumes validated `agent_name`, branch, and Agent Workspace path plans and records Agent Workspace path plans. Missing plans are launch-facing blockers; runtime must not silently fall back to `<topic-workspace>/agents/<agent-instance-id>`.
+Runtime Agent Team Instance creation later consumes validated `agent_name`, branch, Agent Workspace path plans, and `isomer-managed/` support path plans. Missing plans are launch-facing blockers; runtime must not silently fall back to `<topic-workspace>/agents/<agent-instance-id>`.

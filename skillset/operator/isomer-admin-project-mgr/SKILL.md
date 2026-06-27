@@ -69,7 +69,7 @@ Use read-only commands for checks unless the user explicitly requests initializa
 
 Keep Workspace Runtime creation explicit through `isomer-cli project runtime init`, and keep launch-facing readiness explicit through `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness`. When explaining runtime initialization, distinguish worker-facing `repos/topic-main` and `agents/<agent-name>` from owner-preserved `records/*`, runtime-internal `runtime/*`, and `state.sqlite`.
 
-Hand off per-agent worktree setup, owner branch checks, `.isomer-agent/` support dirs, and Topic Workspace visibility diagnostics to `isomer-admin-topic-workspace-mgr`.
+Hand off per-agent worktree setup, owner branch checks, `isomer-managed/` support paths, generated links, and Topic Workspace visibility diagnostics to `isomer-admin-topic-workspace-mgr`.
 
 Do not scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
 

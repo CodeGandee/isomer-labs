@@ -37,6 +37,14 @@ STALE_ISOMER_JSON_PATTERNS = [
     re.compile(r"\bisomer-cli\b[^\n]*\s--format(?:=|\s+)json\b"),
     re.compile(r"^\s*--json\s*$"),
 ]
+LEGACY_WORKSPACE_PATTERNS = [
+    ("legacy support root", re.compile(r"\.isomer-agent/")),
+    (
+        "legacy top-level topic-main collaboration path",
+        re.compile(r"\brepos/topic-main/(?:shared|artifacts|tasks|runs|views|logs|tools)\b"),
+    ),
+]
+MIGRATION_NOTE_TERMS = ("legacy", "migration", "migrate", "diagnostic", "compatibility")
 
 
 def get_repo_root() -> Path:
@@ -150,6 +158,26 @@ def check_stale_isomer_cli_json_examples(repo_root: Path) -> list[str]:
     return issues
 
 
+def check_legacy_workspace_paths(repo_root: Path) -> list[str]:
+    issues: list[str] = []
+    paths = [repo_root / "README.md", *sorted((repo_root / "docs").glob("*.md"))]
+    for path in paths:
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        migration_context = False
+        for line_number, line in enumerate(content.splitlines(), start=1):
+            if line.startswith("## "):
+                migration_context = any(term in line.lower() for term in MIGRATION_NOTE_TERMS)
+            is_migration_note = migration_context or any(term in line.lower() for term in MIGRATION_NOTE_TERMS)
+            for label, pattern in LEGACY_WORKSPACE_PATTERNS:
+                if pattern.search(line) and not is_migration_note:
+                    issues.append(
+                        f"{path.relative_to(repo_root)}:{line_number}: stale workspace layout language uses {label}; use isomer-managed/ or explicit migration diagnostics"
+                    )
+    return issues
+
+
 def validate_docs(repo_root: Path) -> list[str]:
     issues: list[str] = []
     issues.extend(check_required_pages(repo_root))
@@ -160,6 +188,7 @@ def validate_docs(repo_root: Path) -> list[str]:
     else:
         issues.extend(check_cli_coverage(repo_root, commands))
     issues.extend(check_stale_isomer_cli_json_examples(repo_root))
+    issues.extend(check_legacy_workspace_paths(repo_root))
     issues.extend(check_forbidden_terms(repo_root))
     return issues
 

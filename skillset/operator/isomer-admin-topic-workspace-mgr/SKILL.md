@@ -5,7 +5,7 @@ description: "Prepare, validate, and summarize a Git-backed Topic Workspace layo
 
 # Isomer Admin Topic Workspace Mgr
 
-Use this command-style operator skill when a Project Operator Session needs to prepare one Topic Workspace for topic-local collaboration through `<topic-workspace-dir>/repos/topic-main` and per-agent Git worktrees under `<topic-workspace-dir>/agents/<agent-name>`. It prepares static filesystem and Git topology, plans topic-local `agent_name` values, derives compatibility `agent_workspace_ref` values when older material needs them, writes advisory Workspace Boundary notes, and reports blockers; it does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or replace `isomer-srv-topic-env-setup`.
+Use this command-style operator skill when a Project Operator Session needs to prepare one Topic Workspace for topic-local collaboration through `<topic-workspace-dir>/repos/topic-main`, its `isomer-managed/` worker-facing namespace, and per-agent Git worktrees under `<topic-workspace-dir>/agents/<agent-name>`. It prepares static filesystem and Git topology, plans topic-local `agent_name` values, derives compatibility `agent_workspace_ref` values when older material needs them, writes advisory Workspace Boundary notes, and reports blockers; it does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or replace `isomer-srv-topic-env-setup`.
 
 ## Workflow
 
@@ -60,6 +60,7 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `research_topic_ref`: selected Research Topic id or explicit blocker.
 - `topic_workspace_ref`: selected Topic Workspace id and path.
 - `topic_main_repo_path`: `<topic-workspace-dir>/repos/topic-main`.
+- `isomer_managed_path_status`: readiness for `isomer-managed/.gitignore`, `tracked/`, `agent-owned/`, `topic-owned/`, and `links/`.
 - `agent_workspace_paths`: role id, agent name, planned Agent Workspace path, and readiness for each active role binding.
 - `agent_workspace_refs`: derived compatibility packet or profile `agent_workspace_ref` values that were validated, proposed, or changed when older material needs them.
 - `branch_plan`: default `per-agent/<agent-name>/main` branch, owner branch `topic-owner/main`, and future branch namespace for each agent name.
@@ -78,7 +79,7 @@ Keep `agent-name` separate from Agent Instance id. The agent name owns a path an
 
 Use `topic-owner/main` for the owner-managed checkout, `per-agent/<agent-name>/main` for the default per-agent branch, and `per-agent/<agent-name>/<branch-name>` for future branches. Reject empty segments, `..`, leading or trailing slash, `.lock` endings, cross-agent prefixes, and duplicate branch checkout in another worktree.
 
-Keep worker-visible collaboration material inside `repos/topic-main` or agent worktrees. Treat root `records/*` as owner-preserved records, root `runtime/*` as runtime support material, and `.isomer-agent/` as ignored agent-local support inside a worktree.
+Keep worker-visible Isomer material under `repos/topic-main/isomer-managed/` or the same namespace inside each agent worktree. Treat `isomer-managed/tracked/` as the Git-shared regime, `isomer-managed/agent-owned/` as ignored material owned by the current worktree, `isomer-managed/topic-owned/` as ignored topic-owned projections, and `isomer-managed/links/` as ignored generated conveniences. Treat root `records/*` as owner-preserved records and root `runtime/*` as runtime support material.
 
 Report blockers instead of silently repairing unsafe existing paths, non-Git repositories, branch conflicts, dirty or ambiguous repo state, missing base branches, or packet/profile refs outside the selected Topic Workspace.
 

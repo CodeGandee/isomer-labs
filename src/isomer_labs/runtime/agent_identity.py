@@ -7,7 +7,8 @@ from pathlib import Path
 import sqlite3
 
 from isomer_labs.content_layout import topic_workspace_path as default_topic_workspace_path
-from isomer_labs.models import Project, TopicWorkspaceRegistration
+from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.models import EffectiveTopicContext, Project, TopicWorkspaceRegistration
 from isomer_labs.path_utils import is_within, resolve_project_path
 
 
@@ -64,6 +65,43 @@ def project_agent_instance_id_locations(
             locations.setdefault(location.agent_id, []).append(location)
 
     return locations, issues
+
+
+def validate_global_agent_instance_id_uniqueness(
+    context: EffectiveTopicContext,
+    db_path: Path,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    id_locations, scan_issues = project_agent_instance_id_locations(context.project)
+    for scan_db_path, message in scan_issues:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO040",
+                severity="warning",
+                concept="Agent Instance Identity",
+                path=scan_db_path,
+                message=f"Could not read Agent Instance ids for duplicate scan: {message}.",
+            )
+        )
+
+    for agent_id, locations in id_locations.items():
+        if len(locations) > 1:
+            records = ", ".join(location.record_ref() for location in locations)
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO041",
+                    severity="error",
+                    concept="Agent Instance Identity",
+                    path=db_path,
+                    field=agent_id,
+                    message=(
+                        f"Agent Instance id {agent_id} appears in multiple Project runtime records: "
+                        f"{records}."
+                    ),
+                )
+            )
+
+    return diagnostics
 
 
 def project_runtime_db_paths(project: Project) -> list[Path]:

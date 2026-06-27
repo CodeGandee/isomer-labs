@@ -10,11 +10,16 @@ from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.paths import preview_paths
 from isomer_labs.runtime.adapter_handoff_validation import validate_adapter_handoff_records
-from isomer_labs.runtime.agent_identity import project_agent_instance_id_locations
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
 from isomer_labs.runtime.validation_utils import (
     missing_ref_diagnostics as _missing_ref_diagnostics,
     owner_diagnostics as _owner_diagnostics,
+)
+from isomer_labs.runtime.workspace_layout_validation import (
+    is_unpromoted_isomer_managed_dependency as _is_unpromoted_isomer_managed_dependency,
+    missing_isomer_managed_support_paths as _missing_isomer_managed_support_paths,
+    unsafe_generated_link_diagnostics as _unsafe_generated_link_diagnostics,
+    workspace_isomer_managed_path as _workspace_isomer_managed_path,
 )
 from isomer_labs.workspace_refs import validate_agent_name_value
 
@@ -173,6 +178,21 @@ def _validate_lifecycle_records(
                     path=Path(record.content_path),
                     field=record.id,
                     message="Artifact record points to a missing file.",
+                )
+            )
+        if record.content_path is not None and _is_unpromoted_isomer_managed_dependency(Path(record.content_path)):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO045",
+                    severity="warning",
+                    concept="Workspace Runtime unpromoted dependency",
+                    path=Path(record.content_path),
+                    field=record.id,
+                    message=(
+                        "Runtime record depends on untracked `isomer-managed/agent-owned/` or "
+                        "`isomer-managed/topic-owned/` material; promote it to tracked Isomer material, "
+                        "owner-preserved records, or a Provenance Record before treating it as durable."
+                    ),
                 )
             )
         if record.record_kind == "gate" and record.status in {"open", "pending", "unresolved", "blocked"}:
@@ -340,43 +360,49 @@ def _validate_agent_team_instances(
                         message="Agent Workspace path plan does not match its topic-local agent name.",
                     )
                 )
-    return diagnostics
-
-
-def _validate_global_agent_instance_id_uniqueness(
-    context: EffectiveTopicContext,
-    store: WorkspaceRuntimeStore,
-) -> list[Diagnostic]:
-    diagnostics: list[Diagnostic] = []
-    id_locations, scan_issues = project_agent_instance_id_locations(context.project)
-    for db_path, message in scan_issues:
-        diagnostics.append(
-            Diagnostic(
-                code="ISO040",
-                severity="warning",
-                concept="Agent Instance Identity",
-                path=db_path,
-                message=f"Could not read Agent Instance ids for duplicate scan: {message}.",
-            )
-        )
-
-    for agent_id, locations in id_locations.items():
-        if len(locations) > 1:
-            records = ", ".join(location.record_ref() for location in locations)
-            diagnostics.append(
-                Diagnostic(
-                    code="ISO041",
-                    severity="error",
-                    concept="Agent Instance Identity",
-                    path=store.db_path,
-                    field=agent_id,
-                    message=(
-                        f"Agent Instance id {agent_id} appears in multiple Project runtime records: "
-                        f"{records}."
-                    ),
+            workspace_path = Path(plan.path)
+            legacy_support_root = workspace_path / ".isomer-agent"
+            if legacy_support_root.exists() or (
+                workspace.support_root_path is not None and ".isomer-agent" in Path(workspace.support_root_path).parts
+            ):
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO044",
+                        severity="warning",
+                        concept="Agent Workspace",
+                        path=legacy_support_root,
+                        field=workspace.id,
+                        message=(
+                            "Agent Workspace references legacy `.isomer-agent/` support material; "
+                            "standard support boundaries now use `isomer-managed/`."
+                        ),
+                    )
                 )
-            )
-
+            isomer_managed_path = _workspace_isomer_managed_path(workspace, path_plans, workspace_path)
+            if not isomer_managed_path.exists():
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO044",
+                        severity="error",
+                        concept="Agent Workspace",
+                        path=isomer_managed_path,
+                        field=workspace.id,
+                        message="Agent Workspace is missing its `isomer-managed/` support path.",
+                    )
+                )
+            else:
+                for missing_subpath in _missing_isomer_managed_support_paths(isomer_managed_path):
+                    diagnostics.append(
+                        Diagnostic(
+                            code="ISO044",
+                            severity="warning",
+                            concept="Agent Workspace",
+                            path=missing_subpath,
+                            field=workspace.id,
+                            message="Agent Workspace is missing a standard `isomer-managed/` support subpath.",
+                        )
+                    )
+                diagnostics.extend(_unsafe_generated_link_diagnostics(context, workspace, isomer_managed_path))
     return diagnostics
 
 

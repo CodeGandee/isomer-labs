@@ -86,7 +86,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Use {subcommand_links}.
 
-            Use static material readiness, durable setup state, `topic-overview.md`, concrete Research Topic, default Research Topic, provisional topic workspace seed, `isomer-content/topic-ws/<topic-slug>/`, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, and `isomer-topic-summary.md`.
+            Use static material readiness, durable setup state, `topic-overview.md`, concrete Research Topic, default Research Topic, provisional topic workspace seed, `isomer-content/topic-ws/<topic-slug>/`, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, `isomer-managed/`, and `isomer-topic-summary.md`.
 
             Report `selected_domain_team_template_ref`, `topic_environment_status`, `agent_workspace_paths`, `topic_team_validation_status`, and `isomer_topic_summary_path`.
 
@@ -266,7 +266,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Workspace Mgr
 
-            Prepare `<topic-workspace-dir>/repos/topic-main`, `<topic-workspace-dir>/agents/<agent-name>`, `topic-owner/main`, `per-agent/<agent-name>/main`, `.isomer-agent/`, `records/*`, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
+            Prepare `<topic-workspace-dir>/repos/topic-main`, `<topic-workspace-dir>/repos/topic-main/isomer-managed/`, `<topic-workspace-dir>/agents/<agent-name>`, `topic-owner/main`, `per-agent/<agent-name>/main`, `isomer-managed/`, `tracked/`, `agent-owned/`, `topic-owned/`, `links/`, `records/*`, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
 
             ## Workflow
 
@@ -476,6 +476,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             "topic_environment_status",
             "agent_workspace_paths",
             "topic_team_validation_status",
+            "isomer-managed/",
             "isomer_topic_summary_path",
         )
         for term in required_terms:
@@ -815,6 +816,17 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("Workspace Runtime" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_requires_topic_workspace_isomer_managed_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_workspace_manager_skill(root, omit_skill_term="isomer-managed/")
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("isomer-managed/" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_rejects_topic_workspace_agent_key_wording(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -827,6 +839,19 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("agent-name public wording" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_topic_workspace_legacy_support_root_wording(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_workspace_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "SKILL.md"
+        skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nUse `.isomer-agent/` for current support.\n", encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any(".isomer-agent/" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_accepts_topic_env_setup_contract(self) -> None:
         root = self.make_root()

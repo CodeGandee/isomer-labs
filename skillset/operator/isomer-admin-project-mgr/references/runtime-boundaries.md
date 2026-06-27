@@ -12,4 +12,4 @@
 
 Agent Team Instance creation, Houmao launch materialization, live launch, inspection, handoff, and stop operations are later explicit commands. Do not run them from Project initialization or read-only Project checks.
 
-Per-agent worktree preparation belongs to `isomer-admin-topic-workspace-mgr`. Project manager guidance should hand off worktree setup, owner branch checks, `.isomer-agent/` support dirs, and visibility diagnostics instead of duplicating Git worktree instructions.
+Per-agent worktree preparation belongs to `isomer-admin-topic-workspace-mgr`. Project manager guidance should hand off worktree setup, owner branch checks, `isomer-managed/` support paths, generated links, and visibility diagnostics instead of duplicating Git worktree instructions.

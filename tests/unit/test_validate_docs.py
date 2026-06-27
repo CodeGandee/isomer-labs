@@ -9,6 +9,7 @@ from scripts.validate_docs import (
     REQUIRED_PAGES,
     check_cli_coverage,
     check_forbidden_terms,
+    check_legacy_workspace_paths,
     check_readme_links,
     check_required_pages,
     check_stale_isomer_cli_json_examples,
@@ -108,6 +109,27 @@ class ValidateDocsTests(unittest.TestCase):
             (root / "README.md").write_text("houmao-mgr --print-json system-skills list\n", encoding="utf-8")
             (root / "docs" / "houmao.md").write_text("pixi run isomer-cli --print-json validate\n", encoding="utf-8")
             self.assertEqual([], check_stale_isomer_cli_json_examples(root))
+
+    def test_legacy_workspace_paths_are_reported_outside_migration_notes(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "README.md").write_text("Current layout uses .isomer-agent/ for support.\n", encoding="utf-8")
+            (root / "docs" / "topic.md").write_text("Use repos/topic-main/artifacts for worker outputs.\n", encoding="utf-8")
+            issues = check_legacy_workspace_paths(root)
+            self.assertEqual(2, len(issues))
+            self.assertTrue(all("isomer-managed/" in issue for issue in issues))
+
+    def test_legacy_workspace_paths_are_allowed_in_migration_notes(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "README.md").write_text("## Legacy Layout Migration\n\nOld .isomer-agent/ paths are migration diagnostics.\n", encoding="utf-8")
+            (root / "docs" / "topic.md").write_text(
+                "Legacy repos/topic-main/artifacts paths must be reported as migration diagnostics.\n",
+                encoding="utf-8",
+            )
+            self.assertEqual([], check_legacy_workspace_paths(root))
 
 
 if __name__ == "__main__":

@@ -563,7 +563,7 @@ class WorkspaceRuntimeStore:
                     elif profile.instantiation_packet_ref is not None:
                         path_source = "topic_team_instantiation_packet.agent_name"
                     source_detail = f"{plan.source_detail}; branch={plan.branch}"
-                    path_plan = self.record_path_plan(
+                    workspace_path_plan = self.record_path_plan(
                         topic_workspace_id=context.topic_workspace_id,
                         surface=surface,
                         path=workspace_path,
@@ -571,9 +571,21 @@ class WorkspaceRuntimeStore:
                         source_detail=source_detail,
                         created_at=now,
                     )
+                    isomer_managed_path = workspace_path / "isomer-managed"
+                    isomer_managed_path_plan = self.record_path_plan(
+                        topic_workspace_id=context.topic_workspace_id,
+                        surface=f"agent_isomer_managed:{plan.agent_name}",
+                        path=isomer_managed_path,
+                        source=path_source,
+                        source_detail=source_detail,
+                        created_at=now,
+                    )
                     workspace_path.mkdir(parents=True, exist_ok=True)
-                    for support_dir in ("runtime", "artifacts", "scratch", "logs", "links"):
-                        (workspace_path / ".isomer-agent" / support_dir).mkdir(parents=True, exist_ok=True)
+                    for support_dir in ("runtime", "artifacts", "scratch", "logs", "public", "inbox"):
+                        (isomer_managed_path / "agent-owned" / support_dir).mkdir(parents=True, exist_ok=True)
+                    for support_dir in ("readonly", "writable"):
+                        (isomer_managed_path / "topic-owned" / support_dir).mkdir(parents=True, exist_ok=True)
+                    (isomer_managed_path / "links").mkdir(parents=True, exist_ok=True)
                     agent_record = AgentInstanceRecord(
                         id=agent_id,
                         agent_team_instance_id=team_id,
@@ -590,12 +602,15 @@ class WorkspaceRuntimeStore:
                         id=workspace_id,
                         agent_instance_id=agent_id,
                         topic_workspace_id=context.topic_workspace_id,
-                        path_plan_id=path_plan.id,
+                        path_plan_id=workspace_path_plan.id,
                         agent_name=plan.agent_name,
                         expected_repo_ref="topic_main_repo",
                         expected_branch_namespace=f"per-agent/{plan.agent_name}/",
                         current_branch=plan.branch,
-                        support_root_path=str(workspace_path / ".isomer-agent"),
+                        isomer_managed_path_plan_id=isomer_managed_path_plan.id,
+                        support_root_path=str(isomer_managed_path),
+                        boundary_refs=[f"{workspace_id}:workspace-boundary"],
+                        generated_link_summary={"links_root": str(isomer_managed_path / "links"), "links": []},
                         status="ready",
                         created_at=now,
                         updated_at=now,
@@ -605,7 +620,7 @@ class WorkspaceRuntimeStore:
                     self._insert_agent_workspace(workspace_record)
                     agent_instances.append(agent_record)
                     agent_workspaces.append(workspace_record)
-                    path_plans.append(path_plan)
+                    path_plans.extend([workspace_path_plan, isomer_managed_path_plan])
                     agent_instance_ids.append(agent_id)
                     agent_workspace_ids.append(workspace_id)
 
@@ -718,7 +733,12 @@ class WorkspaceRuntimeStore:
                 (team_id,),
             )
         ]
-        path_plan_ids = [workspace.path_plan_id for workspace in agent_workspaces]
+        path_plan_ids = [
+            path_plan_id
+            for workspace in agent_workspaces
+            for path_plan_id in (workspace.path_plan_id, workspace.isomer_managed_path_plan_id)
+            if path_plan_id is not None
+        ]
         path_plans = self._path_plans_by_ids(path_plan_ids)
         workflow_stage_cursors = [
             record
@@ -1677,10 +1697,11 @@ class WorkspaceRuntimeStore:
             INSERT INTO agent_workspaces
                 (
                     id, agent_instance_id, topic_workspace_id, path_plan_id, agent_name,
-                    expected_repo_ref, expected_branch_namespace, current_branch, support_root_path,
-                    status, created_at, updated_at, provenance_refs_json
+                    expected_repo_ref, expected_branch_namespace, current_branch,
+                    isomer_managed_path_plan_id, support_root_path, boundary_refs_json,
+                    generated_link_summary_json, status, created_at, updated_at, provenance_refs_json
                 )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 record.id,
@@ -1691,7 +1712,10 @@ class WorkspaceRuntimeStore:
                 record.expected_repo_ref,
                 record.expected_branch_namespace,
                 record.current_branch,
+                record.isomer_managed_path_plan_id,
                 record.support_root_path,
+                _dumps(record.boundary_refs),
+                _dumps(record.generated_link_summary),
                 record.status,
                 record.created_at,
                 record.updated_at,

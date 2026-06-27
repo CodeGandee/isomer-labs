@@ -21,6 +21,8 @@ PATH_ENV_VARS = {
     "topic_workspace": "ISOMER_CURRENT_TOPIC_WORKSPACE_DIR",
     "workspace_runtime_db": "ISOMER_TOPIC_WORKSPACE_RUNTIME_DB",
     "topic_main_repo": "ISOMER_TOPIC_MAIN_REPO_DIR",
+    "topic_main_isomer_managed": "ISOMER_TOPIC_MAIN_ISOMER_MANAGED_DIR",
+    "topic_main_tracked": "ISOMER_TOPIC_MAIN_TRACKED_DIR",
     "records": "ISOMER_TOPIC_WORKSPACE_RECORDS_DIR",
     "records_artifacts": "ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR",
     "records_tasks": "ISOMER_TOPIC_WORKSPACE_TASKS_DIR",
@@ -29,10 +31,14 @@ PATH_ENV_VARS = {
     "records_logs": "ISOMER_TOPIC_WORKSPACE_LOGS_DIR",
     "runtime": "ISOMER_TOPIC_WORKSPACE_RUNTIME_DIR",
     "agent_workspace": "ISOMER_AGENT_WORKSPACE_DIR",
+    "agent_isomer_managed": "ISOMER_AGENT_ISOMER_MANAGED_DIR",
+    "agent_owned": "ISOMER_AGENT_OWNED_DIR",
     "agent_runtime": "ISOMER_AGENT_WORKSPACE_RUNTIME_DIR",
     "agent_artifacts": "ISOMER_AGENT_WORKSPACE_ARTIFACTS_DIR",
     "agent_scratch": "ISOMER_AGENT_WORKSPACE_SCRATCH_DIR",
     "agent_logs": "ISOMER_AGENT_WORKSPACE_LOGS_DIR",
+    "agent_topic_owned": "ISOMER_AGENT_TOPIC_OWNED_DIR",
+    "agent_links": "ISOMER_AGENT_LINKS_DIR",
 }
 MANIFEST_PATH_KEYS = {
     "isomer_content_root": ("isomer_content_root",),
@@ -69,6 +75,24 @@ LEGACY_RECORD_ENV_SURFACES = frozenset(
         "records_logs",
     }
 )
+LEGACY_AGENT_ENV_SURFACES = frozenset(
+    {
+        "agent_runtime",
+        "agent_artifacts",
+        "agent_scratch",
+        "agent_logs",
+    }
+)
+TOPIC_MAIN_TRACKED_DIRS = (
+    "shared",
+    "artifacts",
+    "tasks",
+    "runs",
+    "views",
+    "tools",
+    "boundaries",
+    "manifests",
+)
 
 
 def preview_paths(
@@ -94,6 +118,19 @@ def preview_paths(
         manifest_source="Project Manifest" if context.topic_workspace_path_input is not None else None,
         default_source=context.sources.get("topic_workspace_path", "default"),
     )
+    topic_main_repo = _select_path(context, env, "topic_main_repo", default=topic_workspace_path.path / "repos" / "topic-main")
+    topic_main_isomer_managed = _select_path(
+        context,
+        env,
+        "topic_main_isomer_managed",
+        default=topic_main_repo.path / "isomer-managed",
+    )
+    topic_main_tracked = _select_path(
+        context,
+        env,
+        "topic_main_tracked",
+        default=topic_main_isomer_managed.path / "tracked",
+    )
     entries = [
         ResolvedPathEntry("project_root", project_root, context.project.discovery_source),
         ResolvedPathEntry("project_config_directory", context.project.config_dir, context.project.discovery_source),
@@ -114,7 +151,18 @@ def preview_paths(
             default=topic_workspace_path.path / "state.sqlite",
         ),
         ResolvedPathEntry("repos", topic_workspace_path.path / "repos", "default"),
-        _select_path(context, env, "topic_main_repo", default=topic_workspace_path.path / "repos" / "topic-main"),
+        topic_main_repo,
+        topic_main_isomer_managed,
+        topic_main_tracked,
+        *(
+            ResolvedPathEntry(
+                f"topic_main_tracked_{tracked_dir}",
+                topic_main_tracked.path / tracked_dir,
+                topic_main_tracked.source,
+                topic_main_tracked.source_detail,
+            )
+            for tracked_dir in TOPIC_MAIN_TRACKED_DIRS
+        ),
         ResolvedPathEntry("agents", topic_workspace_path.path / "agents", "default"),
         _select_path(context, env, "records", default=topic_workspace_path.path / "records"),
         _select_path(context, env, "records_artifacts", default=topic_workspace_path.path / "records" / "artifacts"),
@@ -145,28 +193,73 @@ def preview_paths(
             diagnostics.append(
                 Diagnostic(
                     code="ISO005",
-                    severity="warning",
+                    severity="error",
                     concept="Workspace Path Resolution",
                     field="agent_name",
-                    message="Agent Workspace preview is missing topic-local agent_name and is using the Agent Instance id only as a compatibility fallback.",
+                    message=(
+                        "Agent Workspace preview is missing a topic-local agent_name; "
+                        "provide an approved Agent Workspace plan instead of deriving a path from Agent Instance id."
+                    ),
                 )
             )
+            agent_segment = "agent-name-required"
+        else:
+            agent_segment = agent_name or agent_id or "agent-name"
         agent_root = _select_path(
             context,
             env,
             "agent_workspace",
-            default=topic_workspace_path.path / "agents" / (agent_name or agent_id or "agent-instance"),
+            default=topic_workspace_path.path / "agents" / agent_segment,
         )
-        agent_support_root = agent_root.path / ".isomer-agent"
+        agent_isomer_managed = _select_path(
+            context,
+            env,
+            "agent_isomer_managed",
+            default=agent_root.path / "isomer-managed",
+        )
+        agent_owned = _select_path(
+            context,
+            env,
+            "agent_owned",
+            default=agent_isomer_managed.path / "agent-owned",
+        )
+        agent_topic_owned = _select_path(
+            context,
+            env,
+            "agent_topic_owned",
+            default=agent_isomer_managed.path / "topic-owned",
+        )
+        agent_links = _select_path(
+            context,
+            env,
+            "agent_links",
+            default=agent_isomer_managed.path / "links",
+        )
         entries.extend(
             [
                 agent_root,
-                ResolvedPathEntry("agent_support", agent_support_root, "default"),
-                _select_path(context, env, "agent_runtime", default=agent_support_root / "runtime"),
-                _select_path(context, env, "agent_artifacts", default=agent_support_root / "artifacts"),
-                _select_path(context, env, "agent_scratch", default=agent_support_root / "scratch"),
-                _select_path(context, env, "agent_logs", default=agent_support_root / "logs"),
-                ResolvedPathEntry("agent_links", agent_support_root / "links", "default"),
+                agent_isomer_managed,
+                agent_owned,
+                _select_path(context, env, "agent_runtime", default=agent_owned.path / "runtime"),
+                _select_path(context, env, "agent_artifacts", default=agent_owned.path / "artifacts"),
+                _select_path(context, env, "agent_scratch", default=agent_owned.path / "scratch"),
+                _select_path(context, env, "agent_logs", default=agent_owned.path / "logs"),
+                ResolvedPathEntry("agent_public_share", agent_owned.path / "public", agent_owned.source, agent_owned.source_detail),
+                ResolvedPathEntry("agent_inbox", agent_owned.path / "inbox", agent_owned.source, agent_owned.source_detail),
+                agent_topic_owned,
+                ResolvedPathEntry(
+                    "agent_topic_readonly",
+                    agent_topic_owned.path / "readonly",
+                    agent_topic_owned.source,
+                    agent_topic_owned.source_detail,
+                ),
+                ResolvedPathEntry(
+                    "agent_topic_writable",
+                    agent_topic_owned.path / "writable",
+                    agent_topic_owned.source,
+                    agent_topic_owned.source_detail,
+                ),
+                agent_links,
             ]
         )
 
@@ -187,6 +280,19 @@ def preview_paths(
                     message=(
                         "Legacy Topic Workspace path environment variable was used as an owner-preserved "
                         "`records/*` compatibility override."
+                    ),
+                )
+            )
+        if entry.surface in LEGACY_AGENT_ENV_SURFACES and entry.source == "env":
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO005",
+                    severity="warning",
+                    concept="Workspace Path Resolution",
+                    field=entry.surface,
+                    message=(
+                        "Legacy Agent Workspace support environment variable was used as a compatibility "
+                        "override for `isomer-managed/agent-owned/*`."
                     ),
                 )
             )
@@ -272,4 +378,14 @@ def _manifest_value(context: EffectiveTopicContext, surface: str) -> str | None:
 
 
 def _agent_surfaces() -> tuple[str, ...]:
-    return ("agent_workspace", "agent_runtime", "agent_artifacts", "agent_scratch", "agent_logs")
+    return (
+        "agent_workspace",
+        "agent_isomer_managed",
+        "agent_owned",
+        "agent_runtime",
+        "agent_artifacts",
+        "agent_scratch",
+        "agent_logs",
+        "agent_topic_owned",
+        "agent_links",
+    )

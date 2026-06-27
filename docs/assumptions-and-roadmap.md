@@ -6,7 +6,7 @@ This page documents the assumptions Isomer Labs currently makes, the non-goals t
 
 ### Filesystem and workspace boundaries are advisory
 
-Agent Workspace and Workspace Boundary semantics declare intended write ownership and Peer Read Access rules, but they do not provide filesystem-grade isolation. An agent with system tools may still inspect or modify files outside its declared boundary. Durable cross-agent dependencies should be recorded through handoffs, promoted Artifacts, Evidence Items, or Provenance Records rather than relying on boundary enforcement.
+Agent Workspace, Workspace Boundary, Peer Read Access, the `isomer-managed/` owner/reader split, and generated-link semantics declare intended write ownership and read access rules, but they do not provide filesystem-grade isolation. An agent with system tools may still inspect or modify files outside its declared boundary. Durable cross-agent dependencies should be recorded through handoffs, promoted Artifacts, Evidence Items, or Provenance Records rather than relying on boundary enforcement.
 
 ### Topic-to-environment bindings do not come from names
 
@@ -55,6 +55,7 @@ The platform intentionally does not:
 - Topic Environment Readiness recording.
 - Read-only Workspace Runtime inspection and validation.
 - Agent Team Instance record creation with Agent Instance records, Agent Workspace records, and directory materialization.
+- Isomer-managed Agent Workspace support paths under `isomer-managed/`, including tracked material, agent-owned support, topic-owned projections, and generated-link diagnostics.
 - Houmao adapter quick launch, prepare-only materialization, inspect-live, stop, reconcile, and adopt.
 - Houmao adapter JSON manifests (`adapter-link.json`, `launch-material-manifest.json`, `adapter-runtime-manifest.json`), command payload recording, manifest digest tracking, and material drift detection.
 - Manual handoff dispatch, Signal Observation ingestion, and Operator Agent handoff normalization for the Houmao Execution Adapter.

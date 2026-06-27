@@ -153,7 +153,10 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             expected_repo_ref TEXT,
             expected_branch_namespace TEXT,
             current_branch TEXT,
+            isomer_managed_path_plan_id TEXT,
             support_root_path TEXT,
+            boundary_refs_json TEXT NOT NULL DEFAULT '[]',
+            generated_link_summary_json TEXT NOT NULL DEFAULT '{}',
             status TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
@@ -429,7 +432,10 @@ def _ensure_agent_workspace_metadata_columns(connection: sqlite3.Connection) -> 
         "expected_repo_ref": "TEXT",
         "expected_branch_namespace": "TEXT",
         "current_branch": "TEXT",
+        "isomer_managed_path_plan_id": "TEXT",
         "support_root_path": "TEXT",
+        "boundary_refs_json": "TEXT NOT NULL DEFAULT '[]'",
+        "generated_link_summary_json": "TEXT NOT NULL DEFAULT '{}'",
     }
     for column, declaration in additions.items():
         if column not in columns:

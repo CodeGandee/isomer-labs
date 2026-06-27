@@ -47,6 +47,7 @@ The docs validation script checks selected docs for known stale or forbidden pro
 - `quest` and `quest workspace` — Isomer uses **Research Topic** and **Topic Workspace**.
 - `research goal` as a separate level — Isomer uses **Research Topic** and **Measurable Objective**.
 - `state of the art` and similar clichés.
+- legacy workspace layout guidance such as `.isomer-agent/` or top-level `repos/topic-main/{shared,artifacts,tasks,runs,views,logs,tools}` outside explicit migration diagnostics — Isomer uses `isomer-managed/`.
 
 If the script reports a likely violation, review the context. The check does not replace human review; it only flags common mistakes.
 
@@ -62,6 +63,7 @@ The validation script checks:
 - `README.md` links to the docs;
 - `docs/isomer-cli.md` includes current public command names;
 - selected docs do not introduce known stale terms.
+- selected docs do not present legacy worker-facing workspace paths as current layout.
 
 Fix reported issues before committing doc changes.
 
