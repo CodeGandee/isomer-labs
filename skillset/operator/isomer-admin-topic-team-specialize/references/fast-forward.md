@@ -11,9 +11,10 @@ When this subcommand is selected, execute the following steps in order.
 5. Run `setup-topic-env` before specialization when an existing `env-gate.md` is available or the user supplied a clear runnable target; it delegates heavy Topic Workspace setup to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> auto`.
 6. Run `specialize-team` to select or confirm one Domain Agent Team Template and execute the helper specialization path through draft profile output.
 7. Run `clarify-topic-team` only when specialization outputs contain open questions that block setup or validation.
-8. Run or rerun `setup-topic-env` when specialization adds or changes runnable environment requirements, then run `setup-agent-workspace`.
-9. Run `validate-topic-team`, then run `finalize-topic-team` to create `isomer-topic-summary.md`.
-10. Stop at final topic-team summary output. Run `approve-profile` or `materialize-profile` only when the user explicitly asks for that static profile-material boundary and required validation or approval inputs are available.
+8. Run or rerun `setup-topic-env` when specialization adds or changes runnable environment requirements. This step prepares or reuses `<topic-workspace>/user-intent/src/env-gate.md` and delegates heavy setup to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> auto`.
+9. Run `setup-agent-workspace` after topic env readiness and specialization evidence exist. This step delegates Git-backed topology to `isomer-admin-topic-workspace-mgr` when needed, prepares `<topic-workspace>/user-intent/src/agent-env-gate.md` from the task when per-Agent Workspace cwd proof is requested and the user has not supplied it, then delegates readiness proof to `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>`.
+10. Run `validate-topic-team`, then run `finalize-topic-team` to create `isomer-topic-summary.md`.
+11. Stop at final topic-team summary output. Run `approve-profile` or `materialize-profile` only when the user explicitly asks for that static profile-material boundary and required validation or approval inputs are available.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the selected topic, template, procedural subcommands, output contract, and guardrails, then execute the plan.
 

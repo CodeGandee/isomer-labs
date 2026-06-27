@@ -154,7 +154,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             extra_terms = ""
             if subcommand_name == "setup-agent-workspace.md":
                 extra_terms = """
-                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support paths, `semantic_paths`, `local_tmp_path_status`, semantic labels, path sources, and reject default-looking directories without semantic labels and path sources.
+                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support paths, `semantic_paths`, `local_tmp_path_status`, semantic labels, path sources, `user-intent/src/agent-env-gate.md`, `user-intent/derived/isomer-agent-env-gate.md`, and `isomer-srv-agent-env-setup`. generate the source gate from a clear task and reject default-looking directories without semantic labels and path sources.
                 """
             elif subcommand_name == "validate-topic-team.md":
                 extra_terms = """

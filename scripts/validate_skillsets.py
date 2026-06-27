@@ -112,6 +112,10 @@ TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS = {
         "local_tmp_path_status",
         "agent.tmp",
         "path sources",
+        "user-intent/src/agent-env-gate.md",
+        "user-intent/derived/isomer-agent-env-gate.md",
+        "isomer-srv-agent-env-setup",
+        "generate",
         "default-looking directories without semantic labels and path sources",
     ),
     "validate-topic-team.md": (
