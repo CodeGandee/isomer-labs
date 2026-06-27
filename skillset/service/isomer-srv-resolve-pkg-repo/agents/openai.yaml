@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-srv-resolve-pkg-repo"
+  short_description: "Resolve reachable package repositories and channels"
+  default_prompt: "Use $isomer-srv-resolve-pkg-repo to choose reachable repositories or channels for package managers such as pixi, uv, conda, pip, npm, or bun before installing dependencies."
