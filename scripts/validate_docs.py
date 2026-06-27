@@ -9,6 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from isomer_labs.cli.examples import COMMAND_EXAMPLES
+
 
 REQUIRED_PAGES = [
     "docs/index.md",
@@ -175,6 +177,19 @@ def check_stale_isomer_cli_json_examples(repo_root: Path) -> list[str]:
     return issues
 
 
+def check_cli_error_example_registry(repo_root: Path) -> list[str]:
+    cli_doc = repo_root / "docs" / "isomer-cli.md"
+    if not cli_doc.is_file():
+        return ["docs/isomer-cli.md is missing"]
+    content = cli_doc.read_text(encoding="utf-8")
+    issues: list[str] = []
+    for command, examples in sorted(COMMAND_EXAMPLES.items()):
+        for example in examples:
+            if example not in content:
+                issues.append(f"docs/isomer-cli.md missing CLI error example for `{command}`: {example}")
+    return issues
+
+
 def check_legacy_workspace_paths(repo_root: Path) -> list[str]:
     issues: list[str] = []
     paths = [repo_root / "README.md", *sorted((repo_root / "docs").glob("*.md"))]
@@ -253,6 +268,7 @@ def validate_docs(repo_root: Path) -> list[str]:
     else:
         issues.extend(check_cli_coverage(repo_root, commands))
     issues.extend(check_stale_isomer_cli_json_examples(repo_root))
+    issues.extend(check_cli_error_example_registry(repo_root))
     issues.extend(check_legacy_workspace_paths(repo_root))
     issues.extend(check_semantic_path_documentation(repo_root))
     issues.extend(check_forbidden_terms(repo_root))

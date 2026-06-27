@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 from scripts.validate_docs import (
     FORBIDDEN_TERMS,
     REQUIRED_PAGES,
+    check_cli_error_example_registry,
     check_cli_coverage,
     check_forbidden_terms,
     check_legacy_workspace_paths,
@@ -15,6 +16,7 @@ from scripts.validate_docs import (
     check_semantic_path_documentation,
     check_stale_isomer_cli_json_examples,
 )
+from isomer_labs.cli.examples import COMMAND_EXAMPLES
 
 
 class ValidateDocsTests(unittest.TestCase):
@@ -110,6 +112,19 @@ class ValidateDocsTests(unittest.TestCase):
             (root / "README.md").write_text("houmao-mgr --print-json system-skills list\n", encoding="utf-8")
             (root / "docs" / "houmao.md").write_text("pixi run isomer-cli --print-json validate\n", encoding="utf-8")
             self.assertEqual([], check_stale_isomer_cli_json_examples(root))
+
+    def test_cli_error_example_registry_requires_documented_examples(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docs = root / "docs"
+            docs.mkdir()
+            all_examples = list(dict.fromkeys(example for examples in COMMAND_EXAMPLES.values() for example in examples))
+            (docs / "isomer-cli.md").write_text("\n".join(all_examples[1:]), encoding="utf-8")
+            issues = check_cli_error_example_registry(root)
+            self.assertTrue(any(all_examples[0] in issue for issue in issues), issues)
+
+            (docs / "isomer-cli.md").write_text("\n".join(all_examples), encoding="utf-8")
+            self.assertEqual([], check_cli_error_example_registry(root))
 
     def test_legacy_workspace_paths_are_reported_outside_migration_notes(self) -> None:
         with TemporaryDirectory() as tmp:

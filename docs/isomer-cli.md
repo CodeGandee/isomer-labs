@@ -7,6 +7,7 @@
 The root command exposes:
 
 - `--print-json` — emit deterministic JSON for the selected command.
+- `--debug` — include traceback details for unexpected internal CLI errors.
 - `-h, --help` — show help for the command.
 
 The `project` command group exposes:
@@ -20,7 +21,15 @@ Many topic-scoped commands also accept lifecycle selectors such as `--topic`, `-
 
 ## Output Posture
 
-JSON output uses the `isomer-cli-output.v1` wrapper and includes a `mutated` flag when the command mutates Project files, Workspace Runtime records, adapter manifests, or live Houmao state. Use root-level `--print-json` for every command that needs deterministic JSON. Without `--print-json`, commands print structured human-readable text. Command-local `--json`, `--format json`, and `--format=json` are not public command shapes.
+JSON output uses the `isomer-cli-output.v1` wrapper and includes a `mutated` flag when the command mutates Project files, Workspace Runtime records, adapter manifests, or live Houmao state. Use root-level `--print-json` for every command that needs deterministic JSON, including failure output. Without `--print-json`, commands print structured human-readable text. Command-local `--json`, `--format json`, and `--format=json` are not public command shapes.
+
+## Failure Output
+
+`isomer-cli` normalizes invocation errors, domain validation failures, keyboard interruptions, and unexpected internal exceptions into Isomer diagnostics. A wrong-format invocation reports what was wrong, the expected command shape when Click can provide it, and one to three examples for the nearest public command path. For example, `isomer-cli project paths get` without a semantic label reports the missing `SEMANTIC_LABEL`, usage for `project paths get`, and valid `project paths get` examples.
+
+With root-level `--print-json`, normalized failures still use the `isomer-cli-output.v1` wrapper and include `ok: false`, diagnostics, and mutation certainty. Invocation failures that happen before a command handler runs report `mutated: false`. Unexpected internal exceptions report `mutation_state: "unknown"` when Isomer cannot prove whether a mutating command had already changed files.
+
+Normal failure output does not include Python tracebacks. Use root-level `--debug` or `ISOMER_CLI_DEBUG=1` only when a human needs traceback details for an unexpected internal error; JSON debug details are isolated under a `debug` field so agents can ignore them safely.
 
 ## Command Groups
 

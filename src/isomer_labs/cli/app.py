@@ -11,6 +11,13 @@ from typing import Any, Sequence
 import click
 
 from isomer_labs.builtins import list_built_in_schemas
+from isomer_labs.cli.errors import (
+    emit_click_exception,
+    emit_keyboard_interrupt,
+    emit_unexpected_exception,
+    normalize_raw_args,
+    raw_debug_enabled,
+)
 from isomer_labs.cli.options import CliOptions, value as _value
 from isomer_labs.cli.output import OutputMode, emit_output, output_format
 from isomer_labs.content_layout import topic_workspace_path as default_topic_workspace_path
@@ -160,17 +167,26 @@ Command surface:
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the Click-backed CLI and return a process status code."""
 
+    raw_args = normalize_raw_args(argv)
+    debug = raw_debug_enabled(raw_args)
     try:
         result = app.main(
-            args=list(argv) if argv is not None else None,
+            args=raw_args,
             prog_name="isomer-cli",
             standalone_mode=False,
         )
     except click.exceptions.Exit as exc:
         return int(exc.exit_code)
+    except click.UsageError as exc:
+        return emit_click_exception(exc, raw_args, debug=debug)
     except click.ClickException as exc:
-        exc.show()
-        return int(exc.exit_code)
+        return emit_click_exception(exc, raw_args, debug=debug)
+    except click.Abort:
+        return emit_keyboard_interrupt(raw_args, debug=debug)
+    except KeyboardInterrupt:
+        return emit_keyboard_interrupt(raw_args, debug=debug)
+    except Exception as exc:
+        return emit_unexpected_exception(exc, raw_args, debug=debug)
     if result is None:
         return 0
     return int(result)
@@ -187,14 +203,17 @@ def build_parser() -> click.Group:
     invoke_without_command=True,
 )
 @click.option("--print-json", "print_json", is_flag=True, help="Emit deterministic JSON for the selected command.")
+@click.option("--debug", "debug", is_flag=True, help="Include debug details for unexpected CLI errors.")
 @click.pass_context
 def app(
     ctx: click.Context,
     print_json: bool = False,
+    debug: bool = False,
 ) -> None:
     output_mode = OutputMode(print_json=print_json)
     ctx.obj = CliOptions(
         output_mode=output_mode,
+        debug=debug,
     )
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())

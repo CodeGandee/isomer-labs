@@ -17,6 +17,7 @@ class CliOptions:
     output_format: str | None = None
     json_output: bool = False
     output_mode: OutputMode = OutputMode()
+    debug: bool = False
     topic_id: str | None = None
     topic_id_option: str | None = None
     topic_statement: str | None = None

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import io
 import json
 import os
 import shutil
@@ -73,6 +74,25 @@ class IsomerCliTests(unittest.TestCase):
         if result.exception is not None:
             raise result.exception
         return int(result.return_value or 0), result.output
+
+    def run_main(
+        self,
+        args: list[str],
+        *,
+        cwd: Path | None = None,
+        env: dict[str, str] | None = None,
+    ) -> tuple[int, str, str]:
+        root = cwd or self.make_root()
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with (
+            contextlib.chdir(root),
+            patch.dict(os.environ, env or {}, clear=True),
+            contextlib.redirect_stdout(stdout),
+            contextlib.redirect_stderr(stderr),
+        ):
+            status = cli.main(args)
+        return status, stdout.getvalue(), stderr.getvalue()
 
     def normalize_cli_args(self, args: list[str]) -> list[str]:
         normalized: list[str] = []
@@ -568,6 +588,121 @@ class IsomerCliTests(unittest.TestCase):
             data = json.loads(output)
             self.assertIn(status, (0, 1))
             self.assertEqual("isomer-cli-output.v1", data["output_schema_version"])
+
+    def test_main_normalizes_text_invocation_errors(self) -> None:
+        cases = (
+            (["project", "paths", "get"], "Missing argument 'SEMANTIC_LABEL'.", "project paths get"),
+            (["project", "paths", "gte"], "No such command 'gte'", "project paths"),
+            (
+                ["project", "paths", "get", "topic.records.artifacts", "--bogus"],
+                "No such option '--bogus'.",
+                "project paths get",
+            ),
+        )
+        for args, message, example_fragment in cases:
+            with self.subTest(args=args):
+                status, stdout, stderr = self.run_main(args)
+                self.assertNotEqual(0, status)
+                self.assertEqual("", stderr)
+                self.assertIn("ERROR | ISOCLI001 | CLI invocation", stdout)
+                self.assertIn(message, stdout)
+                self.assertIn("Usage:", stdout)
+                self.assertIn("Examples:", stdout)
+                self.assertIn(example_fragment, stdout)
+                self.assertNotIn("Traceback (most recent call last)", stdout)
+
+    def test_main_invocation_errors_include_bounded_examples(self) -> None:
+        status, output, _ = self.run_main(["--print-json", "project", "paths", "get"])
+        data = json.loads(output)
+        self.assertEqual(2, status)
+        diagnostic = data["diagnostics"][0]
+        self.assertEqual("project paths get", data["command"])
+        self.assertEqual("ISOCLI001", diagnostic["code"])
+        self.assertEqual("isomer-cli project paths get [OPTIONS] SEMANTIC_LABEL", diagnostic["usage"])
+        self.assertIn("hint", diagnostic)
+        self.assertGreaterEqual(len(diagnostic["examples"]), 1)
+        self.assertLessEqual(len(diagnostic["examples"]), 3)
+        self.assertTrue(all("project paths get" in example for example in diagnostic["examples"]))
+
+    def test_main_malformed_invocations_honor_print_json(self) -> None:
+        for args in (
+            ["--print-json", "project", "paths", "get"],
+            ["--print-json", "project", "unknown-command"],
+        ):
+            with self.subTest(args=args):
+                status, output, stderr = self.run_main(args)
+                data = json.loads(output)
+                self.assertEqual(2, status)
+                self.assertEqual("", stderr)
+                self.assertEqual("isomer-cli-output.v1", data["output_schema_version"])
+                self.assertFalse(data["ok"])
+                self.assertFalse(data["mutated"])
+                self.assertEqual("ISOCLI001", data["diagnostics"][0]["code"])
+
+    def test_main_unexpected_exception_suppresses_traceback_by_default(self) -> None:
+        from isomer_labs.cli.commands import project as project_commands
+
+        with patch.object(project_commands, "_cmd_schemas_list", side_effect=RuntimeError("boom")):
+            status, stdout, stderr = self.run_main(["schemas", "list"])
+        self.assertEqual(1, status)
+        self.assertEqual("", stderr)
+        self.assertIn("ERROR | ISOCLI500 | CLI internal error", stdout)
+        self.assertIn("Mutation state: unknown", stdout)
+        self.assertNotIn("Traceback (most recent call last)", stdout)
+        self.assertNotIn("RuntimeError: boom", stdout)
+
+    def test_main_debug_mode_exposes_traceback(self) -> None:
+        from isomer_labs.cli.commands import project as project_commands
+
+        with patch.object(project_commands, "_cmd_schemas_list", side_effect=RuntimeError("boom")):
+            status, stdout, _ = self.run_main(["--debug", "schemas", "list"])
+        self.assertEqual(1, status)
+        self.assertIn("ERROR | ISOCLI500 | CLI internal error", stdout)
+        self.assertIn("Debug traceback:", stdout)
+        self.assertIn("Traceback (most recent call last)", stdout)
+        self.assertIn("RuntimeError: boom", stdout)
+
+    def test_main_debug_json_isolates_traceback_details(self) -> None:
+        from isomer_labs.cli.commands import project as project_commands
+
+        with patch.object(project_commands, "_cmd_schemas_list", side_effect=RuntimeError("boom")):
+            status, output, _ = self.run_main(
+                ["--print-json", "schemas", "list"],
+                env={"ISOMER_CLI_DEBUG": "1"},
+            )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("isomer-cli-output.v1", data["output_schema_version"])
+        self.assertEqual("unknown", data["mutation_state"])
+        self.assertEqual("RuntimeError", data["debug"]["exception_type"])
+        self.assertTrue(any("RuntimeError: boom" in line for line in data["debug"]["traceback"]))
+        self.assertNotIn("RuntimeError: boom", data["diagnostics"][0]["message"])
+
+    def test_main_keyboard_interrupt_is_normalized(self) -> None:
+        from isomer_labs.cli.commands import project as project_commands
+
+        with patch.object(project_commands, "_cmd_schemas_list", side_effect=KeyboardInterrupt):
+            status, stdout, stderr = self.run_main(["schemas", "list"])
+        self.assertEqual(130, status)
+        self.assertEqual("", stderr.strip())
+        self.assertIn("ERROR | ISOCLI130 | CLI invocation", stdout)
+        self.assertNotIn("Traceback (most recent call last)", stdout)
+
+    def test_domain_diagnostics_without_remediation_fields_remain_compatible(self) -> None:
+        status, output, _ = self.run_main(["--print-json", "project", "validate"])
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("isomer-cli-output.v1", data["output_schema_version"])
+        diagnostic = data["diagnostics"][0]
+        self.assertNotIn("hint", diagnostic)
+        self.assertNotIn("usage", diagnostic)
+        self.assertNotIn("examples", diagnostic)
+
+        status, output, _ = self.run_main(["project", "validate"])
+        self.assertEqual(1, status)
+        self.assertNotIn("Hint:", output)
+        self.assertNotIn("Usage:", output)
+        self.assertNotIn("Examples:", output)
 
     def test_default_output_is_structured_text_not_json(self) -> None:
         root = self.make_root()

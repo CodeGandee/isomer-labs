@@ -21,6 +21,9 @@ class Diagnostic:
     path: Path | None = None
     field: str | None = None
     line: int | None = None
+    hint: str | None = None
+    usage: str | None = None
+    examples: tuple[str, ...] = ()
 
     @property
     def is_error(self) -> bool:
@@ -33,7 +36,15 @@ class Diagnostic:
         if self.field is not None:
             parts.append(self.field)
         location = " | ".join(parts)
-        return f"{location}: {self.message}"
+        lines = [f"{location}: {self.message}"]
+        if self.hint is not None:
+            lines.append(f"  Hint: {self.hint}")
+        if self.usage is not None:
+            lines.append(f"  Usage: {self.usage}")
+        if self.examples:
+            lines.append("  Examples:")
+            lines.extend(f"    {example}" for example in self.examples)
+        return "\n".join(lines)
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
@@ -48,6 +59,12 @@ class Diagnostic:
             data["field"] = self.field
         if self.line is not None:
             data["line"] = self.line
+        if self.hint is not None:
+            data["hint"] = self.hint
+        if self.usage is not None:
+            data["usage"] = self.usage
+        if self.examples:
+            data["examples"] = list(self.examples)
         return data
 
 
