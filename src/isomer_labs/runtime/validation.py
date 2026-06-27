@@ -19,9 +19,11 @@ from isomer_labs.runtime.validation_checks import (
     _validate_handoffs,
     _validate_lifecycle_records,
     _validate_lifecycle_transitions,
+    _validate_local_tmp_surfaces,
     _validate_metadata,
     _validate_path_plans,
     _validate_readiness,
+    _resolved_tmp_surfaces,
 )
 from isomer_labs.runtime.workspace_visibility import validate_topic_workspace_visibility_layout
 
@@ -92,15 +94,19 @@ def validate_workspace_runtime(
     if store is None:
         return inspection, diagnostics
 
+    tmp_surfaces, tmp_surface_diagnostics = _resolved_tmp_surfaces(context, store, env)
+    tmp_surfaces_tuple = tuple(tmp_surfaces)
+    diagnostics.extend(tmp_surface_diagnostics)
     diagnostics.extend(_validate_metadata(context, store))
     diagnostics.extend(_validate_path_plans(context, store, env))
+    diagnostics.extend(_validate_local_tmp_surfaces(context, store, env, tmp_surfaces=tmp_surfaces_tuple))
     diagnostics.extend(validate_topic_workspace_visibility_layout(context, env=env))
-    diagnostics.extend(_validate_readiness(context, store, require_ready=require_ready_readiness))
-    diagnostics.extend(_validate_lifecycle_records(context, store))
+    diagnostics.extend(_validate_readiness(context, store, require_ready=require_ready_readiness, tmp_surfaces=tmp_surfaces_tuple))
+    diagnostics.extend(_validate_lifecycle_records(context, store, tmp_surfaces_tuple))
     diagnostics.extend(_validate_agent_team_instances(context, store))
     diagnostics.extend(_validate_global_agent_instance_id_uniqueness(context, store.db_path))
-    diagnostics.extend(_validate_adapter_records(context, store))
-    diagnostics.extend(_validate_handoffs(context, store))
+    diagnostics.extend(_validate_adapter_records(context, store, tmp_surfaces_tuple))
+    diagnostics.extend(_validate_handoffs(context, store, tmp_surfaces_tuple))
     diagnostics.extend(_validate_lifecycle_transitions(store))
     store.close()
     return inspection, diagnostics

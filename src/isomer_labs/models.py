@@ -725,6 +725,10 @@ class ResolvedPathEntry:
     semantic_label: str | None = None
     scope_ref: str | None = None
     compatibility_surface: str | None = None
+    owner: str | None = None
+    durability: str | None = None
+    sharing: str | None = None
+    path_kind: str | None = None
     path_exists: bool | None = None
 
     def to_json(self) -> dict[str, object]:
@@ -741,6 +745,14 @@ class ResolvedPathEntry:
             data["scope_ref"] = self.scope_ref
         if self.compatibility_surface is not None:
             data["compatibility_surface"] = self.compatibility_surface
+        if self.owner is not None:
+            data["owner"] = self.owner
+        if self.durability is not None:
+            data["durability"] = self.durability
+        if self.sharing is not None:
+            data["sharing"] = self.sharing
+        if self.path_kind is not None:
+            data["path_kind"] = self.path_kind
         if self.path_exists is not None:
             data["exists"] = self.path_exists
         return data

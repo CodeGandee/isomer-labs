@@ -331,7 +331,9 @@ Use `isomer-cli project paths get <semantic-label>` for one path answer and `iso
 
 For Agent Workspaces, Agent Team Instance creation records an Agent Workspace Path Plan for `agent.workspace` and support path plans for labels such as `agent.isomer_managed`, `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links`. An agent running inside its own Agent Workspace can query agent-scoped labels without passing an Agent Name because cwd-derived Effective Agent Context can identify the owning workspace. Cross-agent queries still require an explicit Agent Name or Agent Instance selector. Cwd inference is a convenience for path resolution, not filesystem-grade identity or access control.
 
-The planned local `tmp/` surfaces should be introduced as semantic labels such as `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`. Their default bindings may use `tmp/` directories, but the contract is label-based: local, ignored, disposable, not shared, and not durable evidence unless explicitly promoted.
+Implemented Local Tmp Surface labels are `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`. Under `isomer-default.v1`, `topic.tmp` resolves to `<topic-workspace>/tmp/`, `topic.main_repo.tmp` resolves to `<resolved topic.main_repo>/tmp/`, and `agent.tmp` resolves to `<resolved agent.workspace>/tmp/`. These labels are local, ignored, disposable, not shared, and not durable evidence unless explicitly promoted to another accepted semantic surface.
+
+Local Tmp Surfaces are different from `agent.scratch`: scratch is agent-owned draft material that can become an intentional input to promotion, while tmp is sweepable posture for transient files. Tmp material is not Peer Read Access, generated-link target material, owner-preserved records, Workspace Runtime evidence, Provenance Records, Evidence Items, Decision Records, or Git-tracked Isomer material.
 
 ## Durability
 

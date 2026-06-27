@@ -1989,6 +1989,17 @@ class IsomerCliTests(unittest.TestCase):
             str(root / "isomer-content" / "topic-ws" / "default" / "repos" / "topic-main" / "isomer-managed" / "tracked" / "artifacts"),
             paths["topic_main_tracked_artifacts"]["path"],
         )
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "tmp"),
+            paths["topic_tmp"]["path"],
+        )
+        self.assertEqual("topic.tmp", paths["topic_tmp"]["semantic_label"])
+        self.assertEqual("disposable", paths["topic_tmp"]["durability"])
+        self.assertEqual("private", paths["topic_tmp"]["sharing"])
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "repos" / "topic-main" / "tmp"),
+            paths["topic_main_tmp"]["path"],
+        )
         self.assertEqual("env", paths["records_artifacts"]["source"])
         self.assertEqual("ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR", paths["records_artifacts"]["source_detail"])
         self.assertNotIn("plan", {entry["source"] for entry in data["paths"]})
@@ -2020,6 +2031,12 @@ class IsomerCliTests(unittest.TestCase):
             str(root / "isomer-content" / "topic-ws" / "default" / "agents" / "alice" / "isomer-managed"),
             paths["agent_isomer_managed"]["path"],
         )
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "agents" / "alice" / "tmp"),
+            paths["agent_tmp"]["path"],
+        )
+        self.assertEqual("agent.tmp", paths["agent_tmp"]["semantic_label"])
+        self.assertEqual("disposable", paths["agent_tmp"]["durability"])
         self.assertEqual(
             str(root / "isomer-content" / "topic-ws" / "default" / "agents" / "alice" / "isomer-managed" / "agent-owned"),
             paths["agent_owned"]["path"],
@@ -2056,6 +2073,14 @@ class IsomerCliTests(unittest.TestCase):
         self.assertFalse(manifest_path.exists())
         self.assertFalse(records_artifacts.exists())
 
+        status, output = self.run_cli(["project", "paths", "get", "topic_tmp", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("topic.tmp", data["path"]["semantic_label"])
+        self.assertEqual("topic_tmp", data["path"]["compatibility_surface"])
+        self.assertEqual("disposable", data["path"]["durability"])
+        self.assertEqual("private", data["path"]["sharing"])
+
         status, output = self.run_cli(["project", "paths", "list", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
@@ -2088,6 +2113,17 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIn('label = "topic.records.artifacts"', manifest_path.read_text(encoding="utf-8"))
 
         status, output = self.run_cli(
+            ["project", "paths", "materialize-default", "--label", "topic.tmp", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue((topic_workspace / "tmp").is_dir())
+        self.assertFalse((topic_workspace / "tmp" / ".gitkeep").exists())
+        self.assertIn("tmp/\n", (topic_workspace / ".gitignore").read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
             ["project", "paths", "materialize-default", "--agent", "alice", "--label", "agent.private_artifacts", "--json"],
             cwd=root,
         )
@@ -2096,6 +2132,16 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(data["mutated"])
         self.assertTrue((topic_workspace / "agents" / "alice" / "isomer-managed" / "agent-owned" / "artifacts").is_dir())
         self.assertIn('label = "agent.private_artifacts"', manifest_path.read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
+            ["project", "paths", "materialize-default", "--agent", "alice", "--label", "agent.tmp", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue((topic_workspace / "agents" / "alice" / "tmp").is_dir())
+        self.assertIn("tmp/\n", (topic_workspace / "repos" / "topic-main" / ".gitignore").read_text(encoding="utf-8"))
 
     def test_topic_workspace_manifest_custom_bindings_and_diagnostics(self) -> None:
         root = self.make_root()
@@ -2119,10 +2165,26 @@ class IsomerCliTests(unittest.TestCase):
             status = "active"
 
             [[bindings]]
+            label = "topic.main_repo.tmp"
+            path_template = "custom-main/local-tmp"
+            owner = "topic"
+            durability = "disposable"
+            sharing = "private"
+            status = "active"
+
+            [[bindings]]
             label = "agent.workspace"
             path_template = "worktrees/{agent_name}"
             owner = "agent"
             durability = "durable"
+            sharing = "private"
+            status = "active"
+
+            [[bindings]]
+            label = "agent.tmp"
+            path_template = "worktrees/{agent_name}/local-tmp"
+            owner = "agent"
+            durability = "disposable"
             sharing = "private"
             status = "active"
             """,
@@ -2133,6 +2195,13 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         self.assertEqual("topic_workspace_manifest", data["path"]["source"])
         self.assertEqual(str(topic_workspace / "custom-main"), data["path"]["path"])
+
+        status, output = self.run_cli(["project", "paths", "get", "topic.main_repo.tmp", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("topic_workspace_manifest", data["path"]["source"])
+        self.assertEqual(str(topic_workspace / "custom-main" / "local-tmp"), data["path"]["path"])
+        self.assertEqual("topic_main_tmp", data["path"]["compatibility_surface"])
 
         status, output = self.run_cli(
             ["project", "paths", "get", "agent.private_artifacts", "--agent", "alice", "--json"],
@@ -2146,6 +2215,16 @@ class IsomerCliTests(unittest.TestCase):
             data["path"]["path"],
         )
         self.assertEqual("alice", data["path"]["agent_name"])
+
+        status, output = self.run_cli(
+            ["project", "paths", "get", "agent.tmp", "--agent", "alice", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("topic_workspace_manifest", data["path"]["source"])
+        self.assertEqual(str(topic_workspace / "worktrees" / "alice" / "local-tmp"), data["path"]["path"])
+        self.assertEqual("agent_tmp:alice", data["path"]["compatibility_surface"])
 
         write(
             manifest_path,
@@ -3487,6 +3566,14 @@ status = "active"
         (workspace / "isomer-managed" / "links" / "unsafe").symlink_to(unsafe_target, target_is_directory=True)
         unpromoted_artifact = workspace / "isomer-managed" / "agent-owned" / "artifacts" / "draft.txt"
         write(unpromoted_artifact, "draft\n")
+        topic_tmp_artifact = root / "topic-workspaces" / "alpha" / "tmp" / "draft.txt"
+        write(topic_tmp_artifact, "tmp draft\n")
+        topic_main = root / "topic-workspaces" / "alpha" / "repos" / "topic-main"
+        subprocess.run(["git", "init"], cwd=topic_main, check=True, capture_output=True, text=True)
+        tracked_tmp = topic_main / "tmp" / "tracked.txt"
+        write(tracked_tmp, "tracked tmp\n")
+        subprocess.run(["git", "-C", str(topic_main), "add", "-f", "tmp/tracked.txt"], check=True, capture_output=True, text=True)
+        (topic_main / ".gitignore").unlink(missing_ok=True)
         runtime_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
         with sqlite3.connect(runtime_path) as db:
             db.execute(
@@ -3511,6 +3598,28 @@ status = "active"
                     "[]",
                 ),
             )
+            db.execute(
+                """
+                INSERT INTO lifecycle_records (
+                    id, record_kind, research_topic_id, topic_workspace_id, status,
+                    created_at, updated_at, lifecycle_refs_json, transition_metadata_json,
+                    content_path, provenance_refs_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "artifact:tmp",
+                    "artifact",
+                    "alpha",
+                    "alpha",
+                    "candidate",
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-01T00:00:00Z",
+                    "{}",
+                    "{}",
+                    str(topic_tmp_artifact),
+                    "[]",
+                ),
+            )
 
         status, output = self.run_cli(["project", "runtime", "validate", "--topic", "alpha", "--json"], cwd=root)
 
@@ -3521,6 +3630,9 @@ status = "active"
         self.assertTrue(any("missing a standard `isomer-managed/` support subpath" in message for message in messages), messages)
         self.assertTrue(any("target points outside the selected Topic Workspace" in message for message in messages), messages)
         self.assertTrue(any("depends on untracked `isomer-managed/agent-owned/`" in message for message in messages), messages)
+        self.assertTrue(any("ignore policy is missing" in message for message in messages), messages)
+        self.assertTrue(any("Git tracks content under a Local Tmp Surface" in message for message in messages), messages)
+        self.assertTrue(any("depends on Local Tmp Surface `topic.tmp`" in message for message in messages), messages)
 
     def test_team_instance_creation_uses_agent_name_path_plan_without_identity_alias(self) -> None:
         root = self.make_root()

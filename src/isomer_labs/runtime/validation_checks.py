@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+import subprocess
 from typing import Mapping
 
 from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.local_tmp_surfaces import TmpSurfaceIgnorePolicy, tmp_surface_ignore_policy
 from isomer_labs.models import EffectiveTopicContext
+from isomer_labs.path_utils import is_within
 from isomer_labs.paths import preview_paths, resolve_semantic_path
 from isomer_labs.runtime.adapter_handoff_validation import validate_adapter_handoff_records
+from isomer_labs.runtime.models import AgentWorkspaceRecord, PathPlanRecord
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
 from isomer_labs.runtime.validation_utils import (
     missing_ref_diagnostics as _missing_ref_diagnostics,
@@ -21,7 +26,19 @@ from isomer_labs.runtime.workspace_layout_validation import (
     unsafe_generated_link_diagnostics as _unsafe_generated_link_diagnostics,
     workspace_isomer_managed_path as _workspace_isomer_managed_path,
 )
+from isomer_labs.topic_workspace_manifest import (
+    EffectiveAgentContext,
+    resolve_semantic_binding,
+)
 from isomer_labs.workspace_refs import validate_agent_name_value
+
+
+@dataclass(frozen=True)
+class _ResolvedTmpSurface:
+    label: str
+    path: Path
+    policy: TmpSurfaceIgnorePolicy
+    agent_name: str | None = None
 
 
 def _validate_metadata(
@@ -130,6 +147,193 @@ def _validate_path_plans(
     return diagnostics
 
 
+def _validate_local_tmp_surfaces(
+    context: EffectiveTopicContext,
+    store: WorkspaceRuntimeStore,
+    env: Mapping[str, str],
+    tmp_surfaces: tuple[_ResolvedTmpSurface, ...] | None = None,
+) -> list[Diagnostic]:
+    if tmp_surfaces is None:
+        resolved_tmp_surfaces, diagnostics = _resolved_tmp_surfaces(context, store, env)
+    else:
+        resolved_tmp_surfaces = list(tmp_surfaces)
+        diagnostics = []
+    for surface in resolved_tmp_surfaces:
+        if not surface.path.exists():
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO044",
+                    severity="warning",
+                    concept="Local Tmp Surface",
+                    path=surface.path,
+                    field=surface.label,
+                    message="Local Tmp Surface directory is missing; setup can recreate this disposable path.",
+                )
+            )
+        diagnostics.extend(_tmp_ignore_policy_diagnostics(surface))
+        diagnostics.extend(_tracked_tmp_content_diagnostics(surface))
+    return diagnostics
+
+
+def _resolved_tmp_surfaces(
+    context: EffectiveTopicContext,
+    store: WorkspaceRuntimeStore,
+    env: Mapping[str, str],
+) -> tuple[list[_ResolvedTmpSurface], list[Diagnostic]]:
+    diagnostics: list[Diagnostic] = []
+    surfaces: list[_ResolvedTmpSurface] = []
+    for label in ("topic.tmp", "topic.main_repo.tmp"):
+        result, result_diagnostics = resolve_semantic_path(
+            context,
+            label,
+            env=env,
+            cwd=context.topic_workspace_path,
+            use_path_plan=False,
+        )
+        diagnostics.extend(result_diagnostics)
+        if result is None:
+            continue
+        policy, policy_diagnostics = tmp_surface_ignore_policy(context, label, result.path, env=env)
+        diagnostics.extend(policy_diagnostics)
+        if policy is not None:
+            surfaces.append(_ResolvedTmpSurface(label=label, path=result.path, policy=policy))
+
+    path_plans = {record.id: record for record in store.list_path_plans()}
+    for workspace in store.list_agent_workspaces():
+        if workspace.agent_name is None:
+            continue
+        workspace_path = _workspace_path_for_agent_tmp(workspace, path_plans)
+        agent_context = EffectiveAgentContext(
+            agent_name=workspace.agent_name,
+            agent_workspace_path=workspace_path,
+            source="runtime-validation",
+            agent_instance_id=workspace.agent_instance_id,
+        )
+        result, result_diagnostics = resolve_semantic_binding(
+            context,
+            "agent.tmp",
+            env=env,
+            agent_context=agent_context,
+        )
+        diagnostics.extend(result_diagnostics)
+        if result is None:
+            continue
+        policy, policy_diagnostics = tmp_surface_ignore_policy(
+            context,
+            "agent.tmp",
+            result.path,
+            env=env,
+            agent_context=agent_context,
+        )
+        diagnostics.extend(policy_diagnostics)
+        if policy is not None:
+            surfaces.append(_ResolvedTmpSurface(label="agent.tmp", path=result.path, policy=policy, agent_name=workspace.agent_name))
+    return surfaces, diagnostics
+
+
+def _workspace_path_for_agent_tmp(
+    workspace: AgentWorkspaceRecord,
+    path_plans: Mapping[str, PathPlanRecord],
+) -> Path:
+    plan = path_plans.get(workspace.path_plan_id)
+    if plan is not None:
+        return Path(plan.path)
+    return Path(workspace.agent_name or "agent-name-required")
+
+
+def _tmp_ignore_policy_diagnostics(surface: _ResolvedTmpSurface) -> list[Diagnostic]:
+    if not surface.policy.gitignore_path.exists():
+        return [
+            Diagnostic(
+                code="ISO044",
+                severity="error",
+                concept="Local Tmp Surface",
+                path=surface.policy.gitignore_path,
+                field=surface.label,
+                message="Local Tmp Surface ignore policy is missing.",
+            )
+        ]
+    entries = {
+        line.strip()
+        for line in surface.policy.gitignore_path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    if surface.policy.entry in entries:
+        return []
+    return [
+        Diagnostic(
+            code="ISO044",
+            severity="error",
+            concept="Local Tmp Surface",
+            path=surface.policy.gitignore_path,
+            field=surface.label,
+            message=f"Local Tmp Surface ignore policy does not include `{surface.policy.entry}`.",
+        )
+    ]
+
+
+def _tracked_tmp_content_diagnostics(surface: _ResolvedTmpSurface) -> list[Diagnostic]:
+    tracked_paths = _tracked_paths_under(surface.policy.relative_root, surface.path)
+    return [
+        Diagnostic(
+            code="ISO044",
+            severity="error",
+            concept="Local Tmp Surface",
+            path=path,
+            field=surface.label,
+            message="Git tracks content under a Local Tmp Surface; tmp material must stay ignored unless promoted elsewhere.",
+        )
+        for path in tracked_paths
+    ]
+
+
+def _tracked_paths_under(worktree_root: Path, tmp_path: Path) -> list[Path]:
+    git_metadata = worktree_root / ".git"
+    if not git_metadata.exists():
+        return []
+    try:
+        relative = tmp_path.resolve(strict=False).relative_to(worktree_root.resolve(strict=False))
+    except ValueError:
+        return []
+    result = subprocess.run(
+        ["git", "-C", str(worktree_root), "ls-files", "--", relative.as_posix()],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return []
+    return [worktree_root / line for line in result.stdout.splitlines() if line]
+
+
+def _tmp_dependency_diagnostic(
+    context: EffectiveTopicContext,
+    tmp_surfaces: tuple[_ResolvedTmpSurface, ...],
+    path: Path,
+    *,
+    concept: str,
+    field: str,
+) -> Diagnostic | None:
+    candidate = path.expanduser()
+    if not candidate.is_absolute():
+        candidate = context.project.root / candidate
+    candidate = candidate.resolve(strict=False)
+    for surface in tmp_surfaces:
+        if is_within(candidate, surface.path):
+            return Diagnostic(
+                code="ISO045",
+                severity="warning",
+                concept=concept,
+                path=candidate,
+                field=field,
+                message=(
+                    f"Runtime record depends on Local Tmp Surface `{surface.label}`; "
+                    "promote the material to a durable semantic surface before treating it as evidence."
+                ),
+            )
+    return None
+
+
 def _agent_name_from_scope_ref(scope_ref: str | None) -> str | None:
     if scope_ref is None:
         return None
@@ -143,6 +347,7 @@ def _validate_readiness(
     store: WorkspaceRuntimeStore,
     *,
     require_ready: bool,
+    tmp_surfaces: tuple[_ResolvedTmpSurface, ...],
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     readiness_records = store.list_readiness_records()
@@ -169,6 +374,16 @@ def _validate_readiness(
                     message="Readiness record references another Topic Workspace.",
                 )
             )
+        for ref in (*record.project_pixi_environment_refs, *record.standalone_pixi_manifest_refs):
+            diagnostic = _tmp_dependency_diagnostic(
+                context,
+                tmp_surfaces,
+                Path(ref),
+                concept="Topic Environment Readiness",
+                field=record.id,
+            )
+            if diagnostic is not None:
+                diagnostics.append(diagnostic)
     latest = store.latest_readiness()
     if latest is None:
         diagnostics.append(
@@ -197,6 +412,7 @@ def _validate_readiness(
 def _validate_lifecycle_records(
     context: EffectiveTopicContext,
     store: WorkspaceRuntimeStore,
+    tmp_surfaces: tuple[_ResolvedTmpSurface, ...],
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     record_ids: dict[str, set[str]] = {}
@@ -231,6 +447,16 @@ def _validate_lifecycle_records(
                     ),
                 )
             )
+        if record.content_path is not None:
+            diagnostic = _tmp_dependency_diagnostic(
+                context,
+                tmp_surfaces,
+                Path(record.content_path),
+                concept=record.record_kind.replace("_", " ").title(),
+                field=record.id,
+            )
+            if diagnostic is not None:
+                diagnostics.append(diagnostic)
         if record.record_kind == "gate" and record.status in {"open", "pending", "unresolved", "blocked"}:
             diagnostics.append(
                 Diagnostic(
@@ -445,6 +671,7 @@ def _validate_agent_team_instances(
 def _validate_handoffs(
     context: EffectiveTopicContext,
     store: WorkspaceRuntimeStore,
+    tmp_surfaces: tuple[_ResolvedTmpSurface, ...],
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     lifecycle_by_kind: dict[str, set[str]] = {}
@@ -501,12 +728,23 @@ def _validate_handoffs(
                         ),
                     )
                 )
+        for output_ref in handoff.expected_output_refs:
+            diagnostic = _tmp_dependency_diagnostic(
+                context,
+                tmp_surfaces,
+                Path(output_ref),
+                concept="Handoff",
+                field=handoff.id,
+            )
+            if diagnostic is not None:
+                diagnostics.append(diagnostic)
     return diagnostics
 
 
 def _validate_adapter_records(
     context: EffectiveTopicContext,
     store: WorkspaceRuntimeStore,
+    tmp_surfaces: tuple[_ResolvedTmpSurface, ...],
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     teams = {record.id for record in store.list_agent_team_instances()}
@@ -552,6 +790,15 @@ def _validate_adapter_records(
                 )
             )
         manifest_path = Path(manifest_ref.manifest_path)
+        diagnostic = _tmp_dependency_diagnostic(
+            context,
+            tmp_surfaces,
+            manifest_path,
+            concept="Execution Adapter manifest ref",
+            field=manifest_ref.id,
+        )
+        if diagnostic is not None:
+            diagnostics.append(diagnostic)
         if not manifest_path.exists():
             diagnostics.append(
                 Diagnostic(
@@ -628,6 +875,15 @@ def _validate_adapter_records(
                 )
             )
         payload_path = Path(payload_ref.payload_path)
+        diagnostic = _tmp_dependency_diagnostic(
+            context,
+            tmp_surfaces,
+            payload_path,
+            concept="Execution Adapter payload ref",
+            field=payload_ref.id,
+        )
+        if diagnostic is not None:
+            diagnostics.append(diagnostic)
         if not payload_path.exists():
             diagnostics.append(
                 Diagnostic(

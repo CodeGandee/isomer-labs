@@ -89,10 +89,13 @@ from isomer_labs.runtime.transactions import (
     _table_names,
     run_runtime_transaction as _run_runtime_transaction,
 )
+from isomer_labs.local_tmp_surfaces import ensure_tmp_surface_ignore_policy
 from isomer_labs.workspace_refs import AgentWorkspacePlan, resolve_role_binding_agent_workspace_plan
 from isomer_labs.topic_workspace_manifest import (
+    EffectiveAgentContext,
     SemanticPathResult,
     compatibility_surface_for_label,
+    resolve_semantic_binding,
     semantic_label_for_surface,
 )
 
@@ -124,6 +127,49 @@ def _agent_path_plan_source_detail(plan: AgentWorkspacePlan, result: SemanticPat
     if result.source_detail is not None:
         parts.append(f"semantic_source_detail={result.source_detail}")
     return "; ".join(parts)
+
+
+def _prepare_runtime_local_tmp_surfaces(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+) -> tuple[list[Path], list[Diagnostic]]:
+    directories: list[Path] = []
+    diagnostics: list[Diagnostic] = []
+    for label in ("topic.tmp", "topic.main_repo.tmp"):
+        result, result_diagnostics = resolve_semantic_path(
+            context,
+            label,
+            env=env,
+            cwd=context.topic_workspace_path,
+            use_path_plan=False,
+        )
+        diagnostics.extend(result_diagnostics)
+        if result is None:
+            continue
+        result.path.mkdir(parents=True, exist_ok=True)
+        directories.append(result.path)
+        diagnostics.extend(ensure_tmp_surface_ignore_policy(context, label, result.path, env=env))
+    return directories, diagnostics
+
+
+def _prepare_agent_local_tmp_surface(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    agent_name: str,
+    agent_workspace_path: Path,
+    tmp_path: Path,
+) -> list[Diagnostic]:
+    agent_context = EffectiveAgentContext(
+        agent_name=agent_name,
+        agent_workspace_path=agent_workspace_path,
+        source="runtime-agent-workspace-setup",
+    )
+    diagnostics: list[Diagnostic] = []
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    diagnostics.extend(ensure_tmp_surface_ignore_policy(context, "agent.tmp", tmp_path, env=env, agent_context=agent_context))
+    return diagnostics
 
 
 @dataclass(frozen=True)
@@ -584,6 +630,7 @@ class WorkspaceRuntimeStore:
         )
         workspace_plans = {}
         semantic_agent_paths: dict[str, dict[str, SemanticPathResult]] = {}
+        semantic_agent_tmp_paths: dict[str, SemanticPathResult] = {}
         for binding in active_bindings:
             plan, plan_diagnostics = resolve_role_binding_agent_workspace_plan(
                 project=context.project,
@@ -611,6 +658,20 @@ class WorkspaceRuntimeStore:
                     diagnostics.extend(result_diagnostics)
                     if result is not None:
                         label_results[label] = result
+                agent_context = EffectiveAgentContext(
+                    agent_name=plan.agent_name,
+                    agent_workspace_path=label_results["agent.workspace"].path,
+                    source="topic-team-instantiation-packet",
+                )
+                tmp_result, tmp_diagnostics = resolve_semantic_binding(
+                    context,
+                    "agent.tmp",
+                    env=env,
+                    agent_context=agent_context,
+                )
+                diagnostics.extend(tmp_diagnostics)
+                if tmp_result is not None:
+                    semantic_agent_tmp_paths[binding.role_id] = tmp_result
                 semantic_agent_paths[binding.role_id] = label_results
         if has_errors(diagnostics):
             return None, diagnostics
@@ -675,6 +736,17 @@ class WorkspaceRuntimeStore:
                     workspace_path.mkdir(parents=True, exist_ok=True)
                     for result in resolved_paths.values():
                         result.path.mkdir(parents=True, exist_ok=True)
+                    tmp_result = semantic_agent_tmp_paths.get(binding.role_id)
+                    if tmp_result is not None:
+                        diagnostics.extend(
+                            _prepare_agent_local_tmp_surface(
+                                context,
+                                env=env,
+                                agent_name=plan.agent_name,
+                                agent_workspace_path=workspace_path,
+                                tmp_path=tmp_result.path,
+                            )
+                        )
                     agent_record = AgentInstanceRecord(
                         id=agent_id,
                         agent_team_instance_id=team_id,
@@ -1841,6 +1913,9 @@ def initialize_workspace_runtime(
         if store is None:
             return None, diagnostics
         directories = _ensure_runtime_directories(context, entry_by_surface)
+        tmp_directories, tmp_diagnostics = _prepare_runtime_local_tmp_surfaces(context, env=env)
+        directories.extend(tmp_directories)
+        diagnostics.extend(tmp_diagnostics)
         path_plans = store.list_path_plans()
         result = RuntimeInitializationResult(
             runtime_path=db_path,
@@ -1853,6 +1928,11 @@ def initialize_workspace_runtime(
         return result, diagnostics
 
     directories = _ensure_runtime_directories(context, entry_by_surface)
+    tmp_directories, tmp_diagnostics = _prepare_runtime_local_tmp_surfaces(context, env=env)
+    directories.extend(tmp_directories)
+    diagnostics.extend(tmp_diagnostics)
+    if has_errors(diagnostics):
+        return None, diagnostics
     db_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(db_path)
     store = WorkspaceRuntimeStore(db_path, connection)

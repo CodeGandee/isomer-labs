@@ -556,19 +556,12 @@ The Topic Team Specialization module skill SHALL teach prepared agents to query 
 - **THEN** it states that cwd inference is a convenience for path resolution and not filesystem-grade identity or access control
 
 ### Requirement: Static Readiness Checks Semantic Bindings
-The Topic Team Specialization module skill SHALL validate static readiness against semantic workspace bindings when Agent Workspace setup is in scope.
+The Topic Team Specialization skill SHALL validate static setup using semantic path evidence before reporting the topic team as ready.
 
-#### Scenario: Missing required label blocks readiness
-- **WHEN** the specialized team requires Agent Workspace setup and a required semantic label cannot be resolved
-- **THEN** `validate-topic-team` reports an Agent Workspace setup blocker
-
-#### Scenario: Manifest diagnostics remain visible
-- **WHEN** Topic Workspace Manifest validation reports duplicate labels, unsafe paths, or unresolved agent templates
-- **THEN** `validate-topic-team` includes those diagnostics in static readiness output
-
-#### Scenario: Runtime readiness is not implied
-- **WHEN** semantic workspace setup evidence is valid
-- **THEN** the skill still does not claim Agent Team Instance creation, Workspace Runtime mutation, adapter preflight, or live launch readiness
+#### Scenario: Tmp posture is required only as local setup evidence
+- **WHEN** Git-backed Agent Workspaces were requested
+- **THEN** `validate-topic-team` requires delegated tmp posture evidence from the workspace setup flow
+- **AND** it does not treat tmp contents as static material readiness
 
 ### Requirement: Topic Team Specialization Uses Agent Env Service Evidence
 The Topic Team Specialization module skill SHALL consume `isomer-srv-agent-env-setup` output as durable static setup evidence when Agent Workspace environment readiness is in scope.
@@ -604,4 +597,20 @@ The Topic Team Specialization module skill SHALL include service-produced agent 
 #### Scenario: Runtime boundary remains explicit
 - **WHEN** the final summary includes ready Agent Workspace env setup
 - **THEN** it states that Agent Team Instance creation, Workspace Runtime records, Houmao launch, and Execution Adapter readiness remain separate downstream steps
+
+### Requirement: Topic Team Specialization Preserves Tmp Boundary
+The Topic Team Specialization skill SHALL require delegated Git-backed workspace setup evidence to preserve the local tmp-label non-sharing contract.
+
+#### Scenario: Setup evidence includes tmp contract
+- **WHEN** `setup-agent-workspace` records delegated topic workspace manager evidence for Git-backed worktrees
+- **THEN** the evidence includes whether `topic.main_repo.tmp` and `agent.tmp` surfaces are ignored and local-only
+- **AND** it reports blockers when delegated setup found tracked tmp contents or missing ignore policy
+
+#### Scenario: Validation rejects tmp as readiness evidence
+- **WHEN** `validate-topic-team` inspects Agent Workspace setup evidence
+- **THEN** it does not accept files under resolved tmp labels as durable readiness evidence, profile material, handoff material, generated-link material, or Peer Read Access
+
+#### Scenario: Final summary separates tmp from sharing
+- **WHEN** `finalize-topic-team` summarizes Agent Workspace layout
+- **THEN** it distinguishes ignored local tmp labels from Git-tracked material, agent-owned public shares, topic-owned projections, generated links, and owner-preserved records
 

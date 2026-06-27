@@ -419,45 +419,22 @@ Workspace Runtime SHALL persist selected semantic path resolutions before durabl
 ### Requirement: Runtime Initialization Uses Semantic Surfaces
 Workspace Runtime initialization SHALL create only the runtime-owned directories required by semantic resolution for the selected Topic Workspace.
 
-#### Scenario: Runtime directories come from semantic labels
-- **WHEN** runtime initialization needs Workspace Runtime database, records, runtime support, repository root, or Agent Workspace root paths
-- **THEN** it resolves those paths through semantic labels before creating owned directories or path plans
+#### Scenario: Runtime init may prepare topic tmp posture without durable dependency
+- **WHEN** runtime initialization or an explicit materialization flow owns Topic Workspace local setup
+- **THEN** it may create or validate resolved `topic.tmp` and the owning Topic Workspace root ignore rule
+- **AND** it does not record tmp contents as durable runtime evidence
 
-#### Scenario: Minimal runtime initialization label set is command scoped
-- **WHEN** runtime initialization runs without repository setup, profile materialization, or Agent Team Instance creation
-- **THEN** it requires only `topic.runtime.db`, `topic.runtime`, `topic.records`, and the specific `topic.records.*` labels for record classes it initializes
-- **AND** it does not require `topic.main_repo`, `topic.team_profile_bundle`, `topic.agents_root`, or `agent.workspace` unless the selected command path creates or depends on those surfaces
-
-#### Scenario: Optional unused surfaces are not created
-- **WHEN** the Topic Workspace Manifest omits optional semantic labels that runtime initialization does not need
-- **THEN** runtime initialization does not create those optional directories merely because they exist in the default layout profile
-
-#### Scenario: Unsafe manifest binding blocks mutation
-- **WHEN** a required semantic label resolves to an unsafe path
-- **THEN** runtime initialization reports a blocker and does not create Workspace Runtime records or directories that depend on that path
-
-#### Scenario: Missing manifest may still initialize default runtime
-- **WHEN** the Topic Workspace Manifest is missing and default-layout semantic labels can satisfy runtime initialization
-- **THEN** runtime initialization may use the built-in default profile and record default-profile path-plan sources
+#### Scenario: Optional tmp surfaces are not required for minimal runtime init
+- **WHEN** runtime initialization runs without repository setup, profile materialization, environment setup, or Agent Workspace setup
+- **THEN** it does not require `topic.tmp`, `topic.main_repo.tmp`, or `agent.tmp` merely because those labels exist in the default layout profile
 
 ### Requirement: Agent Workspace Runtime Records Use Semantic Bindings
 Agent Workspace runtime records SHALL use semantic `agent.workspace` resolution rather than hard-coded path assembly as the primary planning contract.
 
-#### Scenario: Agent workspace path plan uses semantic label
-- **WHEN** Agent Team Instance creation creates an Agent Workspace record for Agent Name `alice`
-- **THEN** it resolves `agent.workspace` for `alice` before creating the Agent Workspace path plan and Agent Workspace record
-
-#### Scenario: Agent support paths use semantic labels
-- **WHEN** Agent Team Instance creation records support paths for the Agent Workspace
-- **THEN** it resolves labels such as `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links` when those surfaces are required
-
-#### Scenario: Agent Instance id remains independent
-- **WHEN** `agent.workspace` resolves from Agent Name `alice`
-- **THEN** the created Agent Instance id remains globally unique and does not need to equal `alice`
-
-#### Scenario: Missing required agent label blocks creation
-- **WHEN** Agent Team Instance creation requires an agent-scoped label that cannot be resolved for the selected Agent Name
-- **THEN** creation fails with a validation diagnostic before writing dependent runtime records
+#### Scenario: Agent Workspace setup may prepare agent tmp posture
+- **WHEN** Agent Team Instance creation or delegated Agent Workspace setup prepares an Agent Workspace for topic-local Agent Name `alice`
+- **THEN** it may create or validate resolved `agent.tmp` and the Topic Main Repository ignore rule that keeps tmp material untracked
+- **AND** it does not store files under `agent.tmp` as durable Agent Workspace evidence
 
 ### Requirement: Manifest Drift Validation
 Workspace Runtime validation SHALL report drift between stored path plans and current semantic resolution without rewriting historical runtime records.
@@ -507,3 +484,20 @@ The system SHALL persist enough metadata to validate `isomer-managed/` workspace
 #### Scenario: Legacy support refs remain visible
 - **WHEN** an existing runtime record references `.isomer-agent/` support paths
 - **THEN** validation reports a legacy support-path diagnostic and keeps the historical ref visible instead of rewriting it silently
+
+### Requirement: Runtime Validation Handles Local Tmp Surfaces
+Workspace Runtime validation SHALL recognize resolved standard tmp-label paths as disposable local material and reject durable dependencies on them.
+
+#### Scenario: Runtime validation reports durable tmp dependencies
+- **WHEN** Workspace Runtime validation finds a runtime record, handoff, Artifact locator, Provenance Record, Evidence Item, Decision Record, profile output, or readiness record that depends on a resolved tmp path
+- **THEN** it reports a non-durable temporary path diagnostic
+- **AND** it does not treat the referring record as ready until the material is promoted to an approved durable surface
+
+#### Scenario: Runtime validation reports tracked tmp contents
+- **WHEN** Workspace Runtime validation finds tracked files under a resolved tmp path
+- **THEN** it reports that tmp material must stay ignored and disposable unless the content is moved to an approved durable surface
+
+#### Scenario: Runtime validation does not delete tmp
+- **WHEN** Workspace Runtime validation finds files under a standard tmp path
+- **THEN** it does not delete, move, archive, or promote those files automatically
+

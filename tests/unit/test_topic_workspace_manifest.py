@@ -113,10 +113,16 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertIn('schema_version = "isomer-topic-workspace-manifest.v1"', rendered)
         self.assertIn('label = "topic.records.artifacts"', rendered)
         self.assertEqual("topic.records.artifacts", compatibility_aliases()["records_artifacts"])
+        self.assertEqual("topic.tmp", compatibility_aliases()["topic_tmp"])
+        self.assertEqual("topic.main_repo.tmp", compatibility_aliases()["topic_main_tmp"])
+        self.assertEqual("agent.tmp", compatibility_aliases()["agent_tmp"])
         private_surface = catalog()["agent.private_artifacts"]
         self.assertEqual("agent", private_surface.owner)
         self.assertEqual("private", private_surface.sharing)
         self.assertEqual("agent", private_surface.required_context)
+        tmp_surface = catalog()["topic.main_repo.tmp"]
+        self.assertEqual("disposable", tmp_surface.durability)
+        self.assertEqual("private", tmp_surface.sharing)
 
     def test_manifest_validation_reports_schema_duplicate_and_unsafe_paths(self) -> None:
         context = self.make_context()
@@ -151,6 +157,30 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertIn("ISO060", codes)
         self.assertIn("ISO005", codes)
         self.assertTrue(any("Duplicate active semantic surface binding" in diagnostic.message for diagnostic in diagnostics))
+
+    def test_tmp_surface_bindings_must_stay_inside_owning_surface(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.main_repo.tmp"
+            path_template = "tmp/main"
+            owner = "topic"
+            durability = "disposable"
+            sharing = "private"
+            status = "active"
+            """,
+        )
+
+        _, diagnostics = load_topic_workspace_manifest(context)
+
+        self.assertTrue(any("topic.main_repo.tmp" == diagnostic.field for diagnostic in diagnostics), diagnostics)
+        self.assertTrue(any("must stay inside `topic.main_repo`" in diagnostic.message for diagnostic in diagnostics), diagnostics)
 
 
 if __name__ == "__main__":

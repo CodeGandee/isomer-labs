@@ -61,36 +61,12 @@ The service environment setup skill SHALL be structured as a single command-styl
 - **AND** the workflow ends with a freeform fallback for tasks that do not map cleanly to the default steps
 
 ### Requirement: Topic Workspace Pixi Layout
-The service environment setup skill SHALL define Topic Workspace environment setup as materializing a standalone Pixi workspace directly under the selected Topic Workspace directory.
+The service skill SHALL prepare the selected Topic Workspace Pixi layout and baseline VCS ignores needed for topic-scoped environment setup.
 
-#### Scenario: Topic Workspace is the environment root
-- **WHEN** an agent uses `isomer-srv-topic-env-setup` for a Topic Workspace environment
-- **THEN** the skill instructs the agent to resolve the Project Manifest-declared Topic Workspace directory as the environment root
-- **AND** the skill does not treat the Project root, a Topic Agent Team Profile Bundle, or an Agent Workspace as the Topic Workspace Pixi environment root
-
-#### Scenario: Successful setup leaves Pixi files in the Topic Workspace
-- **WHEN** Topic Workspace environment setup completes successfully
-- **THEN** `<topic-workspace-dir>/pixi.toml` exists
-- **AND** `<topic-workspace-dir>/pixi.lock` exists
-- **AND** `<topic-workspace-dir>/.pixi/` exists
-
-#### Scenario: Topic Workspace VCS ignores are created
+#### Scenario: Topic Workspace VCS ignores preserve topic tmp posture
 - **WHEN** Topic Workspace environment setup mutates the selected Topic Workspace
-- **THEN** `<topic-workspace-dir>/.gitignore` contains `.pixi/`
-- **AND** it contains `tmp/`
-- **AND** it contains `.git/`
-- **AND** the skill preserves unrelated existing ignore entries
-- **AND** the skill does not add an `extern/orphan` ignore rule from this service skill
-
-#### Scenario: Setup result is validated before readiness is reported
-- **WHEN** the skill reports a Topic Workspace environment as ready
-- **THEN** it has checked for `<topic-workspace-dir>/pixi.toml`, `<topic-workspace-dir>/pixi.lock`, and `<topic-workspace-dir>/.pixi/`
-- **AND** it reports blockers instead of readiness when any of those paths is missing
-
-#### Scenario: Manifest binding remains authoritative
-- **WHEN** the skill resolves Topic Workspace Pixi paths
-- **THEN** it uses the Project Manifest and active `topic_standalone_pixi_bindings` entry or supported implicit Topic Workspace default binding to identify the selected Topic Workspace and expected Pixi manifest
-- **AND** it refuses to infer the binding solely from directory names
+- **THEN** the owning Topic Workspace `.gitignore` ignores the default `topic.tmp` path
+- **AND** it still preserves unrelated existing ignore entries
 
 ### Requirement: Environment Gate Verification
 The service environment setup skill SHALL read `<topic-workspace-dir>/user-intent/src/env-gate.md`, generate `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`, and use the derived gate as the operational verification gate for Topic Workspace environment readiness.
@@ -329,23 +305,17 @@ The service environment setup skill SHALL treat Topic Workspace development envi
 - **AND** it does not require proof that a multi-agent team can be launched or coordinated
 
 ### Requirement: Service Setup Resolves Semantic Topic Surfaces
-The service environment setup skill SHALL resolve setup paths through semantic Topic Workspace surfaces instead of assuming the default directory structure is authoritative.
+The service environment setup skill SHALL resolve semantic Topic Workspace surfaces before setup and report their labels, sources, and blockers.
 
-#### Scenario: Topic Workspace root remains manifest-backed
-- **WHEN** the service resolves the selected setup target
-- **THEN** it uses Project Manifest-backed Topic Workspace selection before resolving topic-owned semantic labels inside that workspace
+#### Scenario: Service setup reports topic tmp label when available
+- **WHEN** `topic.tmp` is available through Workspace Path Resolution
+- **THEN** the service output includes `topic.tmp` as local ignored disposable setup posture
+- **AND** it does not treat files under `topic.tmp` as durable changed files, readiness evidence, dependency plan inputs, verification logs, or blockers unless the content has been promoted to an approved durable path
 
-#### Scenario: Pixi manifest path is semantic
-- **WHEN** the service needs the Topic Workspace Pixi manifest or Topic Workspace environment root
-- **THEN** it resolves the corresponding semantic label or default-profile binding and reports the path source
-
-#### Scenario: User intent gate path is semantic
-- **WHEN** the service reads or writes environment gate material
-- **THEN** it resolves the source and derived gate locations through semantic labels or default-profile bindings rather than assembling only hard-coded paths
-
-#### Scenario: Required repository path is semantic
-- **WHEN** the service needs a Topic Workspace repository location for setup
-- **THEN** it resolves the repository root through the topic repository semantic surface and reports custom manifest-backed paths when present
+#### Scenario: Temporary setup files stay local
+- **WHEN** environment setup needs disposable intermediate files
+- **THEN** the skill uses resolved `topic.tmp` or another explicitly temporary path
+- **AND** it reports that the material is local, ignored, disposable, not shared, and not durable evidence
 
 ### Requirement: Service Setup Preserves Custom Topic Layouts
 The service environment setup skill SHALL accept safe manifest-backed Topic Workspace layout bindings that differ from the default layout.
@@ -363,19 +333,11 @@ The service environment setup skill SHALL accept safe manifest-backed Topic Work
 - **THEN** the service reports a blocker and does not mutate setup files at that path
 
 ### Requirement: Service Output Reports Semantic Evidence
-The service environment setup skill SHALL report semantic labels and path sources in setup evidence.
+The service environment setup skill SHALL report semantic path evidence in its output.
 
-#### Scenario: Setup evidence includes labels
-- **WHEN** setup completes, defers, or blocks
-- **THEN** the service output includes the semantic labels, resolved paths, path sources, changed files, commands run, readiness status, and blockers relevant to the setup
-
-#### Scenario: Default paths are identified as defaults
-- **WHEN** a setup path comes from `isomer-default.v1`
-- **THEN** the output identifies the default profile source instead of implying the path was user-authored
-
-#### Scenario: Custom paths are not blockers by themselves
-- **WHEN** a setup path differs from the default layout but satisfies the required semantic label and safety checks
-- **THEN** the service does not report the path difference as a blocker
+#### Scenario: Tmp is not durable service evidence
+- **WHEN** the service reports changed files, setup commands, verification results, enclosure warnings, or next actions
+- **THEN** files under resolved tmp labels are omitted from durable evidence unless they have been promoted to an approved durable path
 
 ### Requirement: Agent Workspace Environment Targets Require Explicit Scope
 The service environment setup skill SHALL avoid implicit Agent Workspace setup unless the requested setup target includes explicit or inferred Effective Agent Context.

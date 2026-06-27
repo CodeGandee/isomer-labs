@@ -154,15 +154,15 @@ class SkillsetValidatorTests(unittest.TestCase):
             extra_terms = ""
             if subcommand_name == "setup-agent-workspace.md":
                 extra_terms = """
-                Require `topic.main_repo`, `agent.workspace`, required `agent.*` support paths, `semantic_paths`, semantic labels, path sources, and reject default-looking directories without semantic labels and path sources.
+                Require `topic.main_repo`, `agent.workspace`, `agent.tmp`, required `agent.*` support paths, `semantic_paths`, `local_tmp_path_status`, semantic labels, path sources, and reject default-looking directories without semantic labels and path sources.
                 """
             elif subcommand_name == "validate-topic-team.md":
                 extra_terms = """
-                Require `topic.main_repo`, `agent.workspace`, required `agent.*` support labels, `semantic_paths`, path sources, and reject hard-coded default-only paths without semantic labels.
+                Require `topic.main_repo`, `agent.workspace`, `agent.tmp`, required `agent.*` support labels, `semantic_paths`, `local_tmp_path_status`, path sources, and reject hard-coded default-only paths without semantic labels.
                 """
             elif subcommand_name == "finalize-topic-team.md":
                 extra_terms = """
-                Report semantic labels first with `topic.main_repo`, `agent.workspace`, path sources, `isomer-default.v1`, and reject hard-coded default-only paths without semantic label evidence.
+                Report semantic labels first with `topic.main_repo`, `topic.main_repo.tmp`, `agent.workspace`, `agent.tmp`, path sources, `isomer-default.v1`, and reject hard-coded default-only paths without semantic label evidence.
                 """
             write(
                 root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subcommand_name,
@@ -280,7 +280,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Workspace Mgr
 
-            Prepare semantic workspace labels through Topic Workspace Manifest bindings and `isomer-default.v1`, including `topic.main_repo`, `topic.main_repo.isomer_managed`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `semantic_paths`, `topic-owner/main`, `per-agent/<agent-name>/main`, `isomer-managed/`, `tracked/`, `agent-owned/`, `topic-owned/`, `links/`, `topic.records.*`, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
+            Prepare semantic workspace labels through Topic Workspace Manifest bindings and `isomer-default.v1`, including `topic.main_repo`, `topic.main_repo.tmp`, `topic.main_repo.isomer_managed`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `semantic_paths`, `local_tmp_path_status`, `topic-owner/main`, `per-agent/<agent-name>/main`, `isomer-managed/`, `tracked/`, `agent-owned/`, `topic-owned/`, `links/`, `topic.records.*`, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
 
             ## Workflow
 
@@ -346,13 +346,13 @@ class SkillsetValidatorTests(unittest.TestCase):
             fallback = "" if omit_subcommand_fallback and subcommand_name == "plan-agents.md" else "If the user's task does not map cleanly to these steps, use your native planning tool."
             extra_terms = {
                 "resolve-workspace.md": "Use `isomer-cli project paths get`, `semantic_paths`, `topic.main_repo`, and `agent.workspace` before mutation.",
-                "ensure-main-repo.md": "Use `topic.main_repo`, `topic.main_repo.isomer_managed`, and `isomer-default.v1` examples only after semantic resolution.",
+                "ensure-main-repo.md": "Use `topic.main_repo`, `topic.main_repo.tmp`, `topic.main_repo.isomer_managed`, and `isomer-default.v1` examples only after semantic resolution.",
                 "plan-agents.md": "Resolve `agent.workspace` through Workspace Path Resolution and report path sources.",
-                "create-worktrees.md": "Create worktrees at `agent.workspace` from `topic.main_repo`, with path sources and semantic support paths.",
+                "create-worktrees.md": "Create worktrees at `agent.workspace` from `topic.main_repo`, with `agent.tmp`, path sources, and semantic support paths.",
                 "write-boundaries.md": "Write boundary notes for `topic.main_repo`, `agent.workspace`, each path source, and self-query guidance without passing Agent Name.",
-                "validate-worktrees.md": "Validate semantic label bindings and reject hard-coded default-only evidence.",
-                "summarize.md": "Report `semantic_paths`, cwd-friendly guidance, and self-query guidance without passing Agent Name.",
-                "topic-workspace.md": "Runtime later consumes `agent.workspace` path plans. Missing semantic label evidence is a blocker.",
+                "validate-worktrees.md": "Validate semantic label bindings, `topic.main_repo.tmp`, `agent.tmp`, tracked tmp contents, and reject hard-coded default-only evidence.",
+                "summarize.md": "Report `semantic_paths`, `local_tmp_path_status`, `agent.tmp`, cwd-friendly guidance, and self-query guidance without passing Agent Name.",
+                "topic-workspace.md": "Prepare `topic.main_repo.tmp` and `agent.tmp`. Runtime later consumes `agent.workspace` path plans. Missing semantic label evidence is a blocker.",
             }.get(subcommand_name, "")
             write(
                 root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "references" / subcommand_name,
@@ -435,7 +435,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.main_repo`, `topic.records`, `topic.runtime`, and each path source.",
             "ensure-topic-repos.md": "Use the resolved topic repository root from `semantic_paths`; report semantic label and path source. Do not place task repos outside the resolved root.",
             "read-env-gate.md": "Interpret the runnable target as what one agent or operator must run.",
-            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.main_repo`, and `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence.",
+            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.main_repo`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence.",
             "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:

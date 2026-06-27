@@ -93,7 +93,7 @@ Readiness means the desired command from `isomer-env-gate.md` runs successfully 
 
 If the caller needs every Agent Workspace cwd verified, route that downstream work to `isomer-srv-agent-env-setup`. That service consumes the ready Topic Workspace Pixi binding, `user-intent/src/agent-env-gate.md`, Topic Main Repository topology, authoritative Agent Names, and resolved `agent.workspace` paths, then writes `user-intent/derived/isomer-agent-env-gate.md`.
 
-The Topic Workspace `.gitignore` may include a default `tmp/` entry only as part of the downstream `topic.tmp` label posture. `tmp/` material is local, ignored, disposable, not shared, and not durable evidence unless another accepted contract promotes it. Add `.pixi/` and `.git/`, add `.isomer-user-env/` only when topic-local fallback is used, and do not add an `extern/orphan` ignore rule from this skill.
+The Topic Workspace `.gitignore` may include a default `tmp/` entry as the `isomer-default.v1` binding for the resolved `topic.tmp` label. Report `topic.tmp` when Workspace Path Resolution can resolve it, and preserve the literal `tmp/` ignore entry for default Topic Workspace posture. `tmp/` material is local, ignored, disposable, not shared, and not durable evidence unless another accepted contract promotes it. Add `.pixi/` and `.git/`, add `.isomer-user-env/` only when topic-local fallback is used, and do not add an `extern/orphan` ignore rule from this skill.
 
 ## Guardrails
 

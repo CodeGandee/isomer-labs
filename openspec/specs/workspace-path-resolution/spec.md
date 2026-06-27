@@ -388,36 +388,17 @@ The CLI SHALL expose direct read-only semantic path query behavior in addition t
 ### Requirement: Compatibility Surface Mapping
 Workspace Path Resolution SHALL preserve compatibility for existing internal path surface ids while presenting semantic labels as the public contract.
 
-#### Scenario: Existing surface id remains accepted
-- **WHEN** existing code requests a compatibility surface such as `topic_main_repo`, `records_artifacts`, or `agent_workspace:<agent-name>`
-- **THEN** the resolver maps that surface to the corresponding semantic label when possible and preserves existing behavior
-
-#### Scenario: Semantic label appears in new output
-- **WHEN** new CLI or API output reports a resolved path
-- **THEN** the output includes the semantic label even when an internal compatibility surface id was used to locate an existing path plan
-
-#### Scenario: Compatibility aliases do not create new semantics
-- **WHEN** a compatibility surface and a semantic label map to the same path class
-- **THEN** validation treats them as aliases for one semantic surface rather than two independent durability contracts
+#### Scenario: Tmp compatibility ids map to semantic labels
+- **WHEN** code requests compatibility ids such as `topic_tmp`, `topic_main_tmp`, or `agent_tmp`
+- **THEN** the resolver maps those ids to `topic.tmp`, `topic.main_repo.tmp`, or `agent.tmp`
+- **AND** it preserves disposable, non-shared classification in the returned path evidence
 
 ### Requirement: Manifest-backed Path Safety
 Workspace Path Resolution SHALL apply the same canonicalization and safety checks to manifest-backed semantic paths as it applies to default and environment-derived paths.
 
-#### Scenario: Manifest path is canonicalized
-- **WHEN** a path is selected from the Topic Workspace Manifest
-- **THEN** the resolver canonicalizes the path before returning it
-
-#### Scenario: Unsafe manifest path is rejected
-- **WHEN** a manifest-backed semantic path points outside the Project root, inside `.isomer-labs/`, or into another Topic Workspace without an accepted policy
-- **THEN** the resolver reports a validation diagnostic and does not return the path as usable for dependent work
-
-#### Scenario: External roots are deferred
-- **WHEN** a manifest-backed semantic path points outside the Project root
-- **THEN** the resolver rejects it until a later accepted external-root policy explicitly permits that surface
-
-#### Scenario: Missing path can still be previewed
-- **WHEN** a safe manifest-backed path does not yet exist on disk
-- **THEN** read-only path query output may report the planned path and missing status without creating it
+#### Scenario: Unsafe tmp binding is rejected
+- **WHEN** a manifest-backed tmp label resolves outside the Project root, inside `.isomer-labs/`, or into another Topic Workspace without an accepted policy
+- **THEN** the resolver reports a validation diagnostic and does not return the tmp path as usable for dependent setup
 
 ### Requirement: Isomer-Managed Path Surfaces
 The system SHALL expose named path surfaces for the standard `isomer-managed/` layout so commands, skills, and adapters do not assemble those paths ad hoc.
@@ -433,3 +414,29 @@ The system SHALL expose named path surfaces for the standard `isomer-managed/` l
 #### Scenario: Legacy support surface is not canonical
 - **WHEN** a caller asks for an `.isomer-agent/` surface by old name
 - **THEN** the resolver reports legacy compatibility diagnostics and returns the corresponding `isomer-managed/agent-owned/` or `isomer-managed/links/` surface when compatibility mode allows it
+
+### Requirement: Local Tmp Path Labels
+Workspace Path Resolution SHALL resolve standard local tmp labels through the Topic Workspace Manifest/default-profile path model without treating them as durable runtime dependency approval.
+
+#### Scenario: Topic Workspace tmp is previewed
+- **WHEN** Workspace Path Resolution previews paths for a selected Topic Workspace
+- **THEN** the output includes `topic.tmp`
+- **AND** under `isomer-default.v1` it resolves to `<topic-workspace>/tmp/`
+- **AND** the output classifies the surface as disposable and non-shared
+
+#### Scenario: Topic Main Repository tmp is previewed
+- **WHEN** Workspace Path Resolution previews paths for the selected Topic Workspace's Topic Main Repository
+- **THEN** the output includes `topic.main_repo.tmp`
+- **AND** under `isomer-default.v1` it resolves under the resolved `topic.main_repo` path
+- **AND** the output classifies the surface as disposable and non-shared
+
+#### Scenario: Agent Workspace tmp is previewed
+- **WHEN** Workspace Path Resolution previews paths for topic-local Agent Name `alice`
+- **THEN** the output includes `agent.tmp`
+- **AND** under `isomer-default.v1` it resolves under the resolved `agent.workspace` path
+- **AND** the output classifies the surface as disposable and non-shared
+
+#### Scenario: Tmp preview is not durable dependency approval
+- **WHEN** a tmp label or path appears in Workspace Path Resolution output
+- **THEN** downstream runtime records, handoffs, Evidence Items, Decision Records, Provenance Records, profile material, and readiness reports still must not depend on that path as durable state, evidence, handoff material, or Peer Read Access
+

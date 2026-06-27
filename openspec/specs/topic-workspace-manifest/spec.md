@@ -28,59 +28,33 @@ The system SHALL support a topic-owned Topic Workspace Manifest that declares se
 - **THEN** the system does not treat the directory as an Isomer-managed Topic Workspace
 
 ### Requirement: Semantic Surface Binding Schema
-The Topic Workspace Manifest SHALL bind stable semantic surface labels to concrete paths or path templates.
+The Topic Workspace Manifest SHALL bind stable semantic surface labels to concrete paths or path templates, including disposable local tmp labels.
 
-#### Scenario: Topic-scoped surface binding is declared
-- **WHEN** the manifest declares a topic-scoped surface such as `topic.main_repo`, `topic.records.artifacts`, or `topic.runtime.db`
-- **THEN** the binding includes a project- or topic-relative path, owner classification, durability classification, sharing classification, and status
+#### Scenario: Topic tmp surface binding is declared
+- **WHEN** the manifest declares topic-scoped disposable surfaces such as `topic.tmp` or `topic.main_repo.tmp`
+- **THEN** each binding includes a project- or topic-relative path, owner classification, disposable durability classification, private or local sharing classification, and status
 
-#### Scenario: Agent-scoped surface binding is declared
-- **WHEN** the manifest declares an agent-scoped surface such as `agent.workspace`, `agent.private_artifacts`, or `agent.scratch`
+#### Scenario: Agent tmp surface binding is declared
+- **WHEN** the manifest declares the agent-scoped disposable surface `agent.tmp`
 - **THEN** the binding uses a path template that can be resolved with an Effective Agent Context
 - **AND** validation rejects the binding when the template cannot be resolved for a concrete Agent Name
 
-#### Scenario: Agent workspace template syntax is bounded
-- **WHEN** the manifest binds `agent.workspace` with a template intended for cwd-derived agent inference
-- **THEN** the template uses one `{agent_name}` path segment placeholder and no arbitrary expression language
-
-#### Scenario: Semantic labels are unique
-- **WHEN** the manifest declares two active bindings for the same semantic label and scope
-- **THEN** validation reports a duplicate binding diagnostic instead of choosing one silently
-
-#### Scenario: Optional labels may be absent
-- **WHEN** a command does not require an optional semantic label and the manifest does not bind it
-- **THEN** validation does not require that surface to exist
-
-#### Scenario: Required labels are command scoped
-- **WHEN** a command requires a semantic label to run
-- **THEN** validation reports a missing binding only for the required label and command scope
-
 ### Requirement: Built-in Default Layout Profile
-The system SHALL provide an `isomer-default.v1` layout profile that maps standard semantic labels to the current default Topic Workspace and Agent Workspace paths.
+The system SHALL provide an `isomer-default.v1` layout profile that maps standard semantic labels, including local tmp labels, to the current default Topic Workspace and Agent Workspace paths.
 
-#### Scenario: Default topic labels are available
+#### Scenario: Default topic tmp labels are available
 - **WHEN** a Topic Workspace uses the default layout profile
-- **THEN** the system can resolve `topic.workspace`, `topic.runtime.db`, `topic.runtime`, `topic.records`, `topic.records.artifacts`, `topic.records.tasks`, `topic.records.runs`, `topic.records.views`, `topic.records.logs`, `topic.team_profile_bundle`, `topic.main_repo`, `topic.main_repo.isomer_managed`, and `topic.agents_root`
+- **THEN** the system can resolve `topic.tmp` to `<topic-workspace>/tmp/`
+- **AND** it can resolve `topic.main_repo.tmp` to `<topic-workspace>/repos/topic-main/tmp/`
 
-#### Scenario: Default agent labels are available
+#### Scenario: Default agent tmp label is available
 - **WHEN** an Effective Agent Context supplies Agent Name `alice` under the default layout profile
-- **THEN** the system can resolve `agent.workspace` to `<topic-workspace>/agents/alice` and can resolve standard agent-owned support labels such as `agent.isomer_managed`, `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.logs`, `agent.public_share`, `agent.inbox`, `agent.topic_readonly`, `agent.topic_writable`, and `agent.links` under that Agent Workspace
+- **THEN** the system can resolve `agent.tmp` to `<topic-workspace>/agents/alice/tmp/`
 
-#### Scenario: Default materialization is explicit
-- **WHEN** a user asks to create the default semantic directories for a Topic Workspace
-- **THEN** the system writes or updates the Topic Workspace Manifest and creates only the selected default-layout surfaces it owns
-
-#### Scenario: Standard default materialization is topic-scoped
-- **WHEN** a user runs default materialization without selecting individual labels or an Agent Name
-- **THEN** the system materializes the standard topic-owned default labels needed for Topic Workspace readiness and does not create per-agent directories
-
-#### Scenario: Agent default materialization needs agent context
-- **WHEN** a user asks default materialization to create `agent.*` labels
-- **THEN** the command requires an explicit Agent Name or Agent Instance selector before creating agent-scoped paths
-
-#### Scenario: Read-only queries do not materialize
-- **WHEN** a user lists, previews, or resolves semantic labels without a materialization command
-- **THEN** the system does not create the Topic Workspace Manifest, directories, Workspace Runtime records, Agent Workspaces, or Git worktrees
+#### Scenario: Standard default materialization includes only selected tmp labels
+- **WHEN** a user asks to materialize default semantic directories
+- **THEN** the system creates tmp directories only when the selected label set or setup workflow owns those labels
+- **AND** read-only queries still do not create tmp directories
 
 ### Requirement: Semantic Binding Path Validation
 The system SHALL validate manifest-backed paths against Project, Topic Workspace, Agent Workspace, and Project Config Directory boundaries before using them.
@@ -106,23 +80,16 @@ The system SHALL validate manifest-backed paths against Project, Topic Workspace
 - **THEN** validation may accept the binding without moving, deleting, renaming, or reinitializing that directory
 
 ### Requirement: Semantic Surface Classification
-Each semantic surface binding SHALL declare enough classification for commands and validation to preserve ownership, durability, and sharing semantics when paths differ from the default layout.
+Each semantic surface binding SHALL declare enough classification for commands and validation to preserve ownership, durability, sharing, and disposable semantics when paths differ from the default layout.
 
-#### Scenario: Private agent surface is not shared
-- **WHEN** the manifest binds `agent.private_artifacts`, `agent.scratch`, `agent.runtime`, or another agent-private label
-- **THEN** the binding classification marks the surface as agent-owned and not a peer write surface
+#### Scenario: Tmp surfaces are disposable and non-shared
+- **WHEN** the manifest or default profile binds `topic.tmp`, `topic.main_repo.tmp`, or `agent.tmp`
+- **THEN** the binding classification marks the surface as disposable
+- **AND** it marks the surface as local/private rather than shared, peer-readable, topic-owned projection, or durable record material
 
-#### Scenario: Public share is explicitly classified
-- **WHEN** the manifest binds `agent.public_share`
-- **THEN** the binding classification marks the surface as agent-owned material that Peer Read Access may expose according to Workspace Boundary policy
-
-#### Scenario: Durable records are topic-owned
-- **WHEN** the manifest binds `topic.records.artifacts`, `topic.records.runs`, `topic.records.tasks`, or related record labels
-- **THEN** the binding classification marks the surface as topic-owned durable material
-
-#### Scenario: Git-backed surfaces keep repository semantics
-- **WHEN** the manifest binds `topic.main_repo` or `agent.workspace` to Git-backed paths
-- **THEN** the binding classification records the expected repository or worktree semantics without treating Git state as Workspace Runtime state
+#### Scenario: Tmp classification blocks durable dependency reuse
+- **WHEN** a downstream workflow attempts to use a tmp-labeled path as durable state, profile material, evidence, handoff material, or Provenance Record input
+- **THEN** validation can use the surface classification to report the dependency as invalid until the material is promoted
 
 ### Requirement: Manifest Validation Output
 The system SHALL report deterministic diagnostics for Topic Workspace Manifest issues without silently repairing user-authored bindings.

@@ -127,8 +127,11 @@ The following are not durable research state and may be regenerated or lost:
 | Workspace Runtime DB | `<topic-workspace>/state.sqlite` | yes |
 | Owner-preserved records | `<topic-workspace>/records/{artifacts,tasks,runs,views,logs}/` | yes |
 | Runtime support root | `<topic-workspace>/runtime/` | yes |
+| Topic Local Tmp Surface `topic.tmp` | `<topic-workspace>/tmp/` by default | no; local, ignored, disposable, not durable evidence |
+| Topic Main Local Tmp Surface `topic.main_repo.tmp` | `<resolved topic.main_repo>/tmp/` by default | no; local, ignored, disposable, not durable evidence |
 | Agent Workspace | `<topic-workspace>/agents/<agent-name>/` | yes after runtime path-plan creation |
 | Agent Workspace worktree | `<topic-workspace>/agents/<agent-name>/` as a worktree of `repos/topic-main` on `per-agent/<agent-name>/...` | policy-dependent Git state plus durable runtime path plan |
+| Agent Local Tmp Surface `agent.tmp` | `<resolved agent.workspace>/tmp/` by default | no; local, ignored, disposable, not durable evidence |
 | Agent Isomer-managed namespace | `<topic-workspace>/agents/<agent-name>/isomer-managed/` | yes for path plan; untracked subpaths require promotion for durable research dependency |
 | Agent-owned public share | `<topic-workspace>/agents/<agent-name>/isomer-managed/agent-owned/public/` | no unless promoted or recorded |
 | Topic-owned projection | `<topic-workspace>/agents/<agent-name>/isomer-managed/topic-owned/{readonly,writable}/` | no unless promoted or recorded |

@@ -234,36 +234,17 @@ The topic workspace manager skill SHALL validate Git-backed workspace topology a
 ### Requirement: Summary Uses Semantic Labels
 The topic workspace manager skill SHALL summarize the workspace contract by semantic label first and default path second.
 
-#### Scenario: Summary is label-first
-- **WHEN** `summarize` runs
-- **THEN** it reports semantic labels such as `topic.main_repo`, `agent.workspace`, `agent.private_artifacts`, and `agent.public_share` before showing concrete paths
-
-#### Scenario: Default path is identified as default
-- **WHEN** a path comes from `isomer-default.v1`
-- **THEN** the summary identifies it as the default layout rather than presenting it as the only valid path
+#### Scenario: Summary names tmp labels as local-only
+- **WHEN** `summarize` reports tmp posture
+- **THEN** it names semantic labels such as `topic.main_repo.tmp` and `agent.tmp`
+- **AND** it identifies their default paths only as `isomer-default.v1` bindings
 
 ### Requirement: Isomer-Managed Sharing Preparation
-The topic workspace manager skill SHALL prepare and validate the standard `isomer-managed/` sharing layout for the topic owner checkout and each Agent Workspace worktree.
+The topic workspace manager skill SHALL prepare and validate the standard `isomer-managed/` sharing layout for the topic owner checkout and each Agent Workspace worktree while keeping tmp surfaces outside sharing.
 
-#### Scenario: Tracked Isomer layout is prepared
-- **WHEN** `ensure-main-repo` or `create-worktrees` prepares the Topic Main Repository layout
-- **THEN** it creates or validates `isomer-managed/.gitignore` and `isomer-managed/tracked/{shared,artifacts,tasks,runs,views,tools,boundaries,manifests}/` without creating top-level Isomer collaboration directories in `topic-main`
-
-#### Scenario: Agent-owned untracked layout is prepared
-- **WHEN** `create-worktrees` prepares an Agent Workspace for agent name `alice`
-- **THEN** it creates or validates `isomer-managed/agent-owned/{runtime,scratch,logs,artifacts,public,inbox}/` as ignored agent-owned material
-
-#### Scenario: Topic-owned projection layout is prepared
-- **WHEN** topic-owned non-Git material is configured for worker visibility
-- **THEN** the skill creates or validates `isomer-managed/topic-owned/readonly/`, `isomer-managed/topic-owned/writable/`, and corresponding boundary policy before reporting the projection as ready
-
-#### Scenario: Peer links are generated only when requested or configured
-- **WHEN** the operator requests peer-readable convenience links or the workspace plan declares them
-- **THEN** the skill creates links under `isomer-managed/links/peers/` to peer `isomer-managed/agent-owned/public/` paths and reports each link target
-
-#### Scenario: Link creation is safe
-- **WHEN** a requested generated link would point outside the selected Topic Workspace or into a forbidden owner-preserved root without an explicit projection policy
-- **THEN** the skill reports a blocker and does not create the link
+#### Scenario: Tmp is separate from isomer-managed sharing
+- **WHEN** `ensure-main-repo` or `create-worktrees` prepares `isomer-managed/` layout
+- **THEN** it keeps `topic.main_repo.tmp` and `agent.tmp` outside tracked Isomer material, agent-owned public shares, topic-owned projections, and generated links
 
 ### Requirement: Isomer-Managed Conflict Diagnostics
 The topic workspace manager skill SHALL report risky tracked Isomer material and untracked share ownership problems without trying to resolve them automatically.
@@ -310,3 +291,26 @@ The topic workspace manager skill SHALL distinguish static workspace topology re
 #### Scenario: Service blockers remain visible
 - **WHEN** the service reports an unsafe path, missing topic env readiness, failing cwd gate command, or nonmatching worktree
 - **THEN** the topic workspace manager reports that blocker without silently repairing it
+
+### Requirement: Topic Workspace Manager Prepares Local Tmp Surfaces
+The topic workspace manager skill SHALL prepare and validate local tmp labels for the resolved Topic Main Repository owner checkout and each Agent Workspace worktree.
+
+#### Scenario: Ensure main repo prepares tmp ignore
+- **WHEN** `ensure-main-repo` creates or validates resolved `topic.main_repo`
+- **THEN** it prepares or validates resolved `topic.main_repo.tmp`
+- **AND** it prepares or validates a root `.gitignore` rule that ignores tmp material
+
+#### Scenario: Create worktrees prepares agent tmp
+- **WHEN** `create-worktrees` prepares resolved `agent.workspace` for Agent Name `alice`
+- **THEN** it prepares or validates resolved `agent.tmp` as an ignored local disposable directory
+- **AND** it does not add tracked placeholder files under `agent.tmp`
+
+#### Scenario: Validate worktrees checks tmp contract
+- **WHEN** `validate-worktrees` checks prepared Git-backed workspace topology
+- **THEN** it reports missing or ineffective tmp-label ignore policy, tracked tmp contents, or guidance that treats tmp material as shared or durable material
+
+#### Scenario: Summaries do not present tmp as shared
+- **WHEN** the topic workspace manager summarizes prepared Agent Workspaces
+- **THEN** it may list `topic.main_repo.tmp` and `agent.tmp` as local disposable surfaces
+- **AND** it does not include them in Peer Read Access, generated links, handoff paths, readiness evidence, or durable boundary material
+

@@ -32,9 +32,9 @@ Workspace Runtime, adapter manifests, command payloads, and research Artifacts a
 
 Topic-internal paths are resolved through semantic workspace surface labels and the Topic Workspace Manifest, not by assuming fixed directory names. The built-in `isomer-default.v1` layout remains the default profile for fresh topics and explicit materialization. Read-only commands such as `project paths get`, `project paths list`, and `project paths preview` must not create manifests, directories, repositories, or runtime records.
 
-### Local tmp surfaces are downstream labels
+### Local tmp surfaces are semantic labels
 
-Planned local `tmp/` surfaces should be introduced as labels such as `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`. Their default bindings may be `tmp/` directories, but their semantics remain local, ignored, disposable, not shared, and not durable evidence unless promoted or recorded by another accepted contract.
+Local `tmp/` surfaces are implemented as semantic labels: `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`. Under `isomer-default.v1`, they bind to `<topic-workspace>/tmp/`, `<resolved topic.main_repo>/tmp/`, and `<resolved agent.workspace>/tmp/`. They remain local, ignored, disposable, not shared, and not durable evidence unless promoted or recorded by another accepted contract.
 
 ## Non-goals
 

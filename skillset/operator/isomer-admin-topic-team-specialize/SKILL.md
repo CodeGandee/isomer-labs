@@ -156,10 +156,11 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `topic_environment_service_output`: summarized `isomer-srv-topic-env-setup` output, including service subcommand, mode, readiness status, commands run, changed files, and blockers when present.
 - `source_agent_env_gate_path`: `<topic-workspace>/user-intent/src/agent-env-gate.md` when agent env setup consumes the source gate.
 - `agent_env_gate_path`: `<topic-workspace>/user-intent/derived/isomer-agent-env-gate.md` when `isomer-srv-agent-env-setup` derives the per-agent operational gate.
-- `agent_environment_service_output`: summarized `isomer-srv-agent-env-setup` output, including service subcommand, Topic Main Repository path, Agent Names, resolved `agent.workspace` paths, branch plan, worktree status by agent, readiness by agent, overall readiness, commands run, changed files, blockers, and next action.
-- `semantic_paths`: delegated resolved labels, paths, path sources, and blockers for Topic Main Repository, Agent Workspace, and worker-facing support labels when workspace setup runs.
+- `agent_environment_service_output`: summarized `isomer-srv-agent-env-setup` output, including service subcommand, Topic Main Repository path, Agent Names, resolved `agent.workspace` paths, branch plan, worktree status by agent, tmp ignore posture, readiness by agent, overall readiness, commands run, changed files, blockers, and next action.
+- `semantic_paths`: delegated resolved labels, paths, path sources, and blockers for Topic Main Repository, Agent Workspace, local tmp labels, and worker-facing support labels when workspace setup runs.
 - `agent_workspace_paths`: per-agent resolved `agent.workspace` paths or blockers, including delegated Git-backed worktree paths, semantic labels, path sources, and `agent_workspace_ref` evidence when `isomer-admin-topic-workspace-mgr` was used.
 - `isomer_managed_path_status`: delegated `isomer-managed/` tracked, agent-owned, topic-owned, and generated-link regime evidence when Git-backed Agent Workspaces are requested.
+- `local_tmp_path_status`: delegated `topic.main_repo.tmp` and `agent.tmp` local ignored disposable posture when Git-backed Agent Workspaces are requested; tmp contents are not durable readiness evidence.
 - `topic_team_validation_status`: ready, ready-with-deferrals, blocked, or not checked for static material readiness.
 - `isomer_topic_summary_path`: the `isomer-topic-summary.md` path when finalization runs.
 - `deferrals`: unresolved items, with static-material or later-operation impact.

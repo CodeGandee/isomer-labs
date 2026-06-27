@@ -213,9 +213,15 @@ def check_semantic_path_documentation(repo_root: Path) -> list[str]:
                     )
         if "tmp/" in content:
             lowered = content.lower()
-            if not (("topic.tmp" in content or "agent.tmp" in content) and "disposable" in lowered and "not durable" in lowered):
+            if not (
+                "topic.tmp" in content
+                and "topic.main_repo.tmp" in content
+                and "agent.tmp" in content
+                and "disposable" in lowered
+                and "not durable" in lowered
+            ):
                 issues.append(
-                    f"{path.relative_to(repo_root)}: tmp/ wording must describe downstream semantic labels and local, ignored, disposable, not durable semantics"
+                    f"{path.relative_to(repo_root)}: tmp/ wording must describe semantic labels and local, ignored, disposable, not durable semantics"
                 )
     return issues
 

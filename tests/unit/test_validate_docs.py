@@ -168,7 +168,7 @@ class ValidateDocsTests(unittest.TestCase):
             docs = root / "docs"
             docs.mkdir()
             (root / "README.md").write_text(
-                "Future tmp/ surfaces use topic.tmp and agent.tmp; they are local, ignored, disposable, and not durable evidence.\n",
+                "Implemented tmp/ surfaces use topic.tmp, topic.main_repo.tmp, and agent.tmp; they are local, ignored, disposable, and not durable evidence.\n",
                 encoding="utf-8",
             )
             (docs / "isomer-cli.md").write_text(

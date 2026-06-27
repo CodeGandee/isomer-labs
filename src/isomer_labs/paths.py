@@ -37,7 +37,9 @@ PATH_ENV_VARS = {
     "topic_workspace_base": "ISOMER_TOPIC_WORKSPACE_BASE_DIR",
     "topic_workspace": "ISOMER_CURRENT_TOPIC_WORKSPACE_DIR",
     "workspace_runtime_db": "ISOMER_TOPIC_WORKSPACE_RUNTIME_DB",
+    "topic_tmp": "ISOMER_TOPIC_WORKSPACE_TMP_DIR",
     "topic_main_repo": "ISOMER_TOPIC_MAIN_REPO_DIR",
+    "topic_main_tmp": "ISOMER_TOPIC_MAIN_TMP_DIR",
     "topic_main_isomer_managed": "ISOMER_TOPIC_MAIN_ISOMER_MANAGED_DIR",
     "topic_main_tracked": "ISOMER_TOPIC_MAIN_TRACKED_DIR",
     "records": "ISOMER_TOPIC_WORKSPACE_RECORDS_DIR",
@@ -48,6 +50,7 @@ PATH_ENV_VARS = {
     "records_logs": "ISOMER_TOPIC_WORKSPACE_LOGS_DIR",
     "runtime": "ISOMER_TOPIC_WORKSPACE_RUNTIME_DIR",
     "agent_workspace": "ISOMER_AGENT_WORKSPACE_DIR",
+    "agent_tmp": "ISOMER_AGENT_WORKSPACE_TMP_DIR",
     "agent_isomer_managed": "ISOMER_AGENT_ISOMER_MANAGED_DIR",
     "agent_owned": "ISOMER_AGENT_OWNED_DIR",
     "agent_runtime": "ISOMER_AGENT_WORKSPACE_RUNTIME_DIR",
@@ -93,7 +96,9 @@ LEGACY_AGENT_ENV_SURFACES = frozenset(
 )
 TOPIC_LABELS = (
     "topic.runtime.db",
+    "topic.tmp",
     "topic.main_repo",
+    "topic.main_repo.tmp",
     "topic.main_repo.isomer_managed",
     "topic.main_repo.tracked",
     "topic.main_repo.tracked.shared",
@@ -115,6 +120,7 @@ TOPIC_LABELS = (
 )
 AGENT_LABELS = (
     "agent.workspace",
+    "agent.tmp",
     "agent.isomer_managed",
     "agent.owned",
     "agent.runtime",
@@ -221,6 +227,10 @@ def preview_paths(
                 semantic_label=entry.semantic_label,
                 scope_ref=entry.scope_ref,
                 compatibility_surface=entry.compatibility_surface,
+                owner=entry.owner,
+                durability=entry.durability,
+                sharing=entry.sharing,
+                path_kind=entry.path_kind,
                 path_exists=path.exists(),
             )
         )
@@ -463,6 +473,10 @@ def _entry_from_result(result: SemanticPathResult) -> ResolvedPathEntry:
         semantic_label=result.label,
         scope_ref=result.scope_ref,
         compatibility_surface=result.compatibility_surface,
+        owner=result.catalog.owner,
+        durability=result.catalog.durability,
+        sharing=result.catalog.sharing,
+        path_kind=result.catalog.path_kind,
         path_exists=result.exists,
     )
 
@@ -476,6 +490,7 @@ def _with_semantic(entry: ResolvedPathEntry, label: str, scope_ref: str) -> Reso
         semantic_label=label,
         scope_ref=scope_ref,
         compatibility_surface=entry.surface,
+        path_kind="directory",
         path_exists=entry.path.exists(),
     )
 
