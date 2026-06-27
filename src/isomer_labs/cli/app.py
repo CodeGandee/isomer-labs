@@ -36,7 +36,7 @@ from isomer_labs.houmao.adapter import HoumaoAdapterFacade
 from isomer_labs.init_project import initialize_project
 from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, SelectionRequest, TopicAgentTeamProfile
 from isomer_labs.path_utils import display_path
-from isomer_labs.paths import preview_paths
+from isomer_labs.paths import list_semantic_paths, materialize_default_paths, preview_paths, resolve_effective_agent_context, resolve_semantic_path
 from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
 from isomer_labs.project import (
     discover_project,
@@ -103,6 +103,9 @@ Command surface:
   project topics delete
   project workspaces list
   project context show
+  project paths get
+  project paths list
+  project paths materialize-default
   project paths preview
   project runtime init
   project runtime prepare
@@ -506,10 +509,22 @@ def _cmd_workspaces_list(options: CliOptions) -> int:
 
 def _cmd_context_show(options: CliOptions) -> int:
     context, diagnostics = _context_for_options(options)
+    agent_context = None
     payload = {"context": context.to_json() if context is not None else None}
     if context is None:
         lines = []
     else:
+        agent_context, agent_diagnostics = resolve_effective_agent_context(
+            context,
+            env=os.environ,
+            cwd=Path.cwd(),
+            explicit_agent_name=_value(options, "agent_name"),
+            explicit_agent_instance_id=_value(options, "agent_instance_id"),
+            missing_is_error=False,
+        )
+        diagnostics.extend(agent_diagnostics)
+        if agent_context is not None:
+            payload["effective_agent_context"] = agent_context.to_json()
         lines = render_key_values(
             [
                 ("Project", context.project.root),
@@ -523,9 +538,91 @@ def _cmd_context_show(options: CliOptions) -> int:
                 ("Topic Workspace", context.topic_workspace_id),
                 ("Topic Workspace Path", context.topic_workspace_path),
                 ("Research Topic Source", context.sources["research_topic_id"]),
+                ("Agent Name", agent_context.agent_name if agent_context is not None else "none"),
             ]
         )
     return _emit("context show", options, payload, diagnostics, lines)
+
+
+def _cmd_paths_get(options: CliOptions, semantic_label: str) -> int:
+    context, diagnostics = _context_for_options(options)
+    result = None
+    if context is not None:
+        result, path_diagnostics = resolve_semantic_path(
+            context,
+            semantic_label,
+            env=os.environ,
+            cwd=Path.cwd(),
+            agent_name=_value(options, "agent_name"),
+            agent_instance_id=_value(options, "agent_instance_id"),
+        )
+        diagnostics.extend(path_diagnostics)
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": False,
+        "path": result.to_json() if result is not None else None,
+    }
+    lines = []
+    if result is not None:
+        lines = [
+            f"{result.label}: {result.path}",
+            f"Source: {result.source}",
+        ]
+        if result.agent_name is not None:
+            lines.append(f"Agent Name: {result.agent_name}")
+    return _emit("paths get", options, payload, diagnostics, lines)
+
+
+def _cmd_paths_list(options: CliOptions) -> int:
+    context, diagnostics = _context_for_options(options)
+    paths: list[dict[str, object]] = []
+    if context is not None:
+        paths, path_diagnostics = list_semantic_paths(
+            context,
+            env=os.environ,
+            cwd=Path.cwd(),
+            agent_name=_value(options, "agent_name"),
+            agent_instance_id=_value(options, "agent_instance_id"),
+        )
+        diagnostics.extend(path_diagnostics)
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": False,
+        "paths": paths,
+    }
+    lines = ["Semantic Workspace Paths"]
+    for item in paths:
+        status = "resolved" if item.get("resolved") else "unresolved"
+        path = f" -> {item['path']}" if item.get("path") else ""
+        lines.append(f"- {item['semantic_label']}: {status}{path}")
+    return _emit("paths list", options, payload, diagnostics, lines)
+
+
+def _cmd_paths_materialize_default(
+    options: CliOptions,
+    *,
+    labels: tuple[str, ...],
+) -> int:
+    context, diagnostics = _context_for_options(options)
+    result = None
+    if context is not None:
+        result, path_diagnostics = materialize_default_paths(
+            context,
+            labels=labels,
+            agent_name=_value(options, "agent_name"),
+        )
+        diagnostics.extend(path_diagnostics)
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": result is not None and not has_errors(diagnostics),
+        "materialization": result,
+    }
+    lines = ["Default semantic paths materialized."]
+    if result is not None:
+        created_paths = result.get("created_paths")
+        if isinstance(created_paths, list):
+            lines.extend(f"- {path}" for path in created_paths)
+    return _emit("paths materialize-default", options, payload, diagnostics, lines if result is not None else [])
 
 
 def _cmd_paths_preview(options: CliOptions) -> int:
@@ -537,7 +634,10 @@ def _cmd_paths_preview(options: CliOptions) -> int:
         diagnostics.extend(path_diagnostics)
         entries = [entry.to_json() for entry in resolved]
         text_lines = ["Workspace Paths"]
-        text_lines.extend(f"- {entry.surface}: {entry.path} ({entry.source})" for entry in resolved)
+        text_lines.extend(
+            f"- {entry.semantic_label or entry.surface}: {entry.path} ({entry.source})"
+            for entry in resolved
+        )
     payload = {"paths": entries}
     return _emit("paths preview", options, payload, diagnostics, text_lines)
 
@@ -868,6 +968,7 @@ def _cmd_team_instances_create(options: CliOptions, *, instance_id: str | None) 
                     profile,
                     template,
                     requested_id=instance_id or _value(options, "agent_team_instance_id"),
+                    env=os.environ,
                 )
                 diagnostics.extend(create_diagnostics)
                 store.close()

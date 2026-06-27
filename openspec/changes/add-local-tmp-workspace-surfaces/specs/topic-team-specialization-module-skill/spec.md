@@ -1,0 +1,16 @@
+## ADDED Requirements
+
+### Requirement: Topic Team Specialization Preserves Tmp Boundary
+The Topic Team Specialization skill SHALL require delegated Git-backed workspace setup evidence to preserve the local tmp-label non-sharing contract.
+
+#### Scenario: Setup evidence includes tmp contract
+- **WHEN** `setup-agent-workspace` records delegated topic workspace manager evidence for Git-backed worktrees
+- **THEN** the evidence includes whether `topic.main_repo.tmp` and `agent.tmp` surfaces are ignored and local-only
+
+#### Scenario: Validation rejects tmp as readiness evidence
+- **WHEN** `validate-topic-team` inspects Agent Workspace setup evidence
+- **THEN** it does not accept files under resolved tmp labels as durable readiness evidence, profile material, handoff material, or Peer Read Access
+
+#### Scenario: Final summary separates tmp from sharing
+- **WHEN** `finalize-topic-team` summarizes Agent Workspace layout
+- **THEN** it distinguishes ignored local tmp labels from Git-tracked material, agent-owned public shares, topic-owned projections, generated links, and owner-preserved records

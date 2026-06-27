@@ -9,6 +9,9 @@ from isomer_labs.cli.app import (
     _cmd_content_root_move,
     _cmd_context_show,
     _cmd_init,
+    _cmd_paths_get,
+    _cmd_paths_list,
+    _cmd_paths_materialize_default,
     _cmd_paths_preview,
     _cmd_schemas_list,
     _cmd_topics_create,
@@ -351,6 +354,7 @@ def register_project_commands(app: click.Group) -> None:
     @context_group.command(name="show", help="Show resolved Effective Topic Context.")
     @_common_options
     @_topic_selection_options
+    @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-context display.")
     @click.pass_context
     def context_show_command(
         ctx: click.Context,
@@ -365,6 +369,7 @@ def register_project_commands(app: click.Group) -> None:
         run_id: str | None = None,
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
+        agent_name: str | None = None,
         topic_agent_team_profile_id: str | None = None,
     ) -> int:
         return _cmd_context_show(
@@ -381,6 +386,7 @@ def register_project_commands(app: click.Group) -> None:
                 run_id=run_id,
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             )
         )
@@ -426,6 +432,135 @@ def register_project_commands(app: click.Group) -> None:
                 agent_instance_id=agent_instance_id,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             )
+        )
+
+
+    @paths_group.command(name="get", help="Resolve one semantic workspace path without creating files.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.argument("semantic_label")
+    @click.pass_context
+    def paths_get_command(
+        ctx: click.Context,
+        semantic_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_paths_get(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            semantic_label,
+        )
+
+
+    @paths_group.command(name="list", help="List semantic workspace labels and resolution status.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.pass_context
+    def paths_list_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_paths_list(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
+
+
+    @paths_group.command(name="materialize-default", help="Create selected default semantic directories.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.option("--label", "labels", multiple=True, help="Semantic label to materialize. Repeat to select multiple labels.")
+    @click.pass_context
+    def paths_materialize_default_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        labels: tuple[str, ...] = (),
+    ) -> int:
+        return _cmd_paths_materialize_default(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            labels=labels,
         )
 def register_schema_commands(app: click.Group) -> None:
     @app.group(name="schemas", help="Built-in schema commands.")

@@ -25,7 +25,7 @@ Create a Research Topic explicitly after Project initialization:
 pixi run isomer-cli project topics create my-topic --statement "Investigate the concrete research question." --set-default
 ```
 
-This writes `.isomer-labs/research-topics/my-topic.toml`, registers the Research Topic and Topic Workspace in `.isomer-labs/manifest.toml`, and creates `isomer-content/topic-ws/my-topic/`.
+This writes `.isomer-labs/research-topics/my-topic.toml`, registers the Research Topic and Topic Workspace in `.isomer-labs/manifest.toml`, and creates the default Topic Workspace directory `isomer-content/topic-ws/my-topic/`.
 
 You can choose a different project-local generated content root at initialization time. In that case, later topic creation derives its default Topic Workspace base from the selected root:
 
@@ -56,18 +56,28 @@ pixi run isomer-cli --print-json project doctor
 
 ## Inspect Context and Paths
 
-Before creating runtime state, resolve the Effective Topic Context and preview filesystem paths.
+Before creating runtime state, resolve the Effective Topic Context and query semantic workspace paths.
 
 ```bash
 pixi run isomer-cli --print-json project context show --topic my-topic
+pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
+pixi run isomer-cli --print-json project paths list --topic my-topic
 pixi run isomer-cli project paths preview --topic my-topic
 ```
 
-Both commands are read-only. `project context show` displays the resolved Project, Research Topic, Topic Workspace, and selected refs for a topic-scoped command. `project paths preview` prints the generated content root and path plan without creating directories.
+These commands are read-only. `project context show` displays the resolved Project, Research Topic, Topic Workspace, and selected refs for a topic-scoped command. `project paths get` answers one semantic label, `project paths list` shows known labels and resolution status, and `project paths preview` prints the broader path plan without creating directories or a Topic Workspace Manifest.
+
+If you want the standard semantic directories, materialize them explicitly:
+
+```bash
+pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --label topic.records.artifacts
+```
+
+This command is mutating: it writes or updates `<topic-workspace>/topic-workspace.toml` and creates only the selected default-layout directories.
 
 ## Initialize and Prepare Workspace Runtime
 
-`isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It creates `state.sqlite`, records schema metadata, and creates the standard runtime layout: `repos/`, `repos/topic-main/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`.
+`isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It resolves required semantic labels such as `topic.runtime.db`, `topic.records.artifacts`, and `topic.runtime`, records path plans, and creates those runtime-owned paths. It does not create per-agent `agent.*` paths before Agent Workspace setup.
 
 ```bash
 pixi run isomer-cli --print-json project runtime init --topic my-topic
@@ -91,7 +101,7 @@ This command is read-only and reports launch-facing errors when readiness is not
 
 ## Create an Agent Team Instance Record
 
-An Agent Team Instance is a concrete runtime team created from a Topic Agent Team Profile. The `project team-instances create` command writes Agent Instance records, Agent Workspace records, path plans, initial Workflow Stage Cursor records, and provenance refs, and it materializes Agent Workspace directories. It does not launch Houmao agents or write adapter-specific launch material.
+An Agent Team Instance is a concrete runtime team created from a Topic Agent Team Profile. The `project team-instances create` command writes Agent Instance records, Agent Workspace records, Agent Workspace path plans, `isomer-managed/` support path plans, initial Workflow Stage Cursor records, and provenance refs, and it materializes Agent Workspace directories. It does not launch Houmao agents or write adapter-specific launch material.
 
 ```bash
 pixi run isomer-cli --print-json project team-instances create \

@@ -19,6 +19,7 @@ WORKSPACE_RUNTIME_SCHEMA_VERSION = "isomer-workspace-runtime.v1"
 RUNTIME_DIRECTORIES = (
     "repos",
     "topic_main_repo",
+    "topic_main_isomer_managed",
     "agents",
     "records",
     "records_artifacts",
@@ -67,8 +68,20 @@ LIFECYCLE_STATUSES = (
     "supported",
 )
 AGENT_TEAM_INSTANCE_STATUSES = ("planned", "ready", "running", "blocked", "failed", "stale", "stopped", "cancelled", "superseded", "archived")
-AGENT_INSTANCE_STATUSES = ("planned", "ready", "running", "blocked", "failed", "stale", "stopped", "archived")
-AGENT_WORKSPACE_STATUSES = ("ready", "missing", "stale", "archived")
+AGENT_INSTANCE_STATUSES = (
+    "planned",
+    "active",
+    "paused",
+    "blocked",
+    "completed",
+    "stopped",
+    "failed",
+    "archived",
+    "ready",
+    "running",
+    "stale",
+)
+AGENT_WORKSPACE_STATUSES = ("planned", "ready", "active", "missing", "stale", "archived", "invalid")
 HANDOFF_STATUSES = (
     "draft",
     "sent",
@@ -157,6 +170,9 @@ class PathPlanRecord:
     source: str
     source_detail: str | None
     created_at: str
+    semantic_label: str | None = None
+    scope_ref: str | None = None
+    compatibility_surface: str | None = None
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
@@ -169,6 +185,12 @@ class PathPlanRecord:
         }
         if self.source_detail is not None:
             data["source_detail"] = self.source_detail
+        if self.semantic_label is not None:
+            data["semantic_label"] = self.semantic_label
+        if self.scope_ref is not None:
+            data["scope_ref"] = self.scope_ref
+        if self.compatibility_surface is not None:
+            data["compatibility_surface"] = self.compatibility_surface
         return data
 
 
@@ -330,7 +352,10 @@ class AgentWorkspaceRecord:
     expected_repo_ref: str | None = None
     expected_branch_namespace: str | None = None
     current_branch: str | None = None
+    isomer_managed_path_plan_id: str | None = None
     support_root_path: str | None = None
+    boundary_refs: list[str] = field(default_factory=list)
+    generated_link_summary: dict[str, object] = field(default_factory=dict)
     provenance_refs: list[str] = field(default_factory=list)
 
     def to_json(self) -> dict[str, object]:
@@ -349,10 +374,15 @@ class AgentWorkspaceRecord:
             ("expected_repo_ref", self.expected_repo_ref),
             ("expected_branch_namespace", self.expected_branch_namespace),
             ("current_branch", self.current_branch),
+            ("isomer_managed_path_plan_id", self.isomer_managed_path_plan_id),
             ("support_root_path", self.support_root_path),
         ):
             if value is not None:
                 data[key] = value
+        if self.boundary_refs:
+            data["boundary_refs"] = self.boundary_refs
+        if self.generated_link_summary:
+            data["generated_link_summary"] = self.generated_link_summary
         return data
 
 

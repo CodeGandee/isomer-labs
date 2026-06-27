@@ -9,8 +9,10 @@ from scripts.validate_docs import (
     REQUIRED_PAGES,
     check_cli_coverage,
     check_forbidden_terms,
+    check_legacy_workspace_paths,
     check_readme_links,
     check_required_pages,
+    check_semantic_path_documentation,
     check_stale_isomer_cli_json_examples,
 )
 
@@ -108,6 +110,76 @@ class ValidateDocsTests(unittest.TestCase):
             (root / "README.md").write_text("houmao-mgr --print-json system-skills list\n", encoding="utf-8")
             (root / "docs" / "houmao.md").write_text("pixi run isomer-cli --print-json validate\n", encoding="utf-8")
             self.assertEqual([], check_stale_isomer_cli_json_examples(root))
+
+    def test_legacy_workspace_paths_are_reported_outside_migration_notes(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "README.md").write_text("Current layout uses .isomer-agent/ for support.\n", encoding="utf-8")
+            (root / "docs" / "topic.md").write_text("Use repos/topic-main/artifacts for worker outputs.\n", encoding="utf-8")
+            issues = check_legacy_workspace_paths(root)
+            self.assertEqual(2, len(issues))
+            self.assertTrue(all("isomer-managed/" in issue for issue in issues))
+
+    def test_legacy_workspace_paths_are_allowed_in_migration_notes(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "README.md").write_text("## Legacy Layout Migration\n\nOld .isomer-agent/ paths are migration diagnostics.\n", encoding="utf-8")
+            (root / "docs" / "topic.md").write_text(
+                "Legacy repos/topic-main/artifacts paths must be reported as migration diagnostics.\n",
+                encoding="utf-8",
+            )
+            self.assertEqual([], check_legacy_workspace_paths(root))
+
+    def test_semantic_path_documentation_requires_commands_and_manifest_terms(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docs = root / "docs"
+            docs.mkdir()
+            (root / "README.md").write_text("No tmp wording here.\n", encoding="utf-8")
+            (docs / "isomer-cli.md").write_text("project paths get\nproject paths list\n", encoding="utf-8")
+            (docs / "topic-workspace-definition.md").write_text("Topic Workspace paths only.\n", encoding="utf-8")
+            issues = check_semantic_path_documentation(root)
+            self.assertTrue(any("project paths materialize-default" in issue for issue in issues), issues)
+            self.assertTrue(any("topic-workspace.toml" in issue for issue in issues), issues)
+
+    def test_semantic_path_documentation_flags_fixed_path_only_and_tmp_wording(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docs = root / "docs"
+            docs.mkdir()
+            (root / "README.md").write_text("tmp/ exists here.\n", encoding="utf-8")
+            (docs / "isomer-cli.md").write_text(
+                "project paths get\nproject paths list\nproject paths materialize-default\n",
+                encoding="utf-8",
+            )
+            (docs / "topic-workspace-definition.md").write_text(
+                "topic-workspace.toml and isomer-default.v1 are documented.\nAgent Workspace must use agents/<agent-name>.\n",
+                encoding="utf-8",
+            )
+            issues = check_semantic_path_documentation(root)
+            self.assertTrue(any("fixed-path-only" in issue for issue in issues), issues)
+            self.assertTrue(any("tmp/ wording" in issue for issue in issues), issues)
+
+    def test_semantic_path_documentation_passes_label_first_wording(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docs = root / "docs"
+            docs.mkdir()
+            (root / "README.md").write_text(
+                "Future tmp/ surfaces use topic.tmp and agent.tmp; they are local, ignored, disposable, and not durable evidence.\n",
+                encoding="utf-8",
+            )
+            (docs / "isomer-cli.md").write_text(
+                "project paths get\nproject paths list\nproject paths materialize-default\n",
+                encoding="utf-8",
+            )
+            (docs / "topic-workspace-definition.md").write_text(
+                "topic-workspace.toml and isomer-default.v1 are documented. Agent Workspace defaults to agents/<agent-name> through agent.workspace.\n",
+                encoding="utf-8",
+            )
+            self.assertEqual([], check_semantic_path_documentation(root))
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ from isomer_labs.models import (
     EffectiveTopicContext,
     TopicAgentTeamProfile,
 )
-from isomer_labs.paths import preview_paths
+from isomer_labs.paths import preview_paths, resolve_semantic_path
 from isomer_labs.runtime.agent_identity import project_agent_instance_id_locations
 from isomer_labs.runtime.models import (
     ADAPTER_MANIFEST_KINDS,
@@ -89,7 +89,41 @@ from isomer_labs.runtime.transactions import (
     _table_names,
     run_runtime_transaction as _run_runtime_transaction,
 )
-from isomer_labs.workspace_refs import resolve_role_binding_agent_workspace_plan
+from isomer_labs.workspace_refs import AgentWorkspacePlan, resolve_role_binding_agent_workspace_plan
+from isomer_labs.topic_workspace_manifest import (
+    SemanticPathResult,
+    compatibility_surface_for_label,
+    semantic_label_for_surface,
+)
+
+
+AGENT_TEAM_INSTANCE_PATH_LABELS = (
+    "agent.workspace",
+    "agent.isomer_managed",
+    "agent.owned",
+    "agent.runtime",
+    "agent.private_artifacts",
+    "agent.scratch",
+    "agent.logs",
+    "agent.public_share",
+    "agent.inbox",
+    "agent.topic_owned",
+    "agent.topic_readonly",
+    "agent.topic_writable",
+    "agent.links",
+)
+
+
+def _agent_path_plan_source_detail(plan: AgentWorkspacePlan, result: SemanticPathResult) -> str:
+    parts = [
+        plan.source_detail,
+        f"branch={plan.branch}",
+        f"semantic_label={result.label}",
+        f"semantic_source={result.source}",
+    ]
+    if result.source_detail is not None:
+        parts.append(f"semantic_source_detail={result.source_detail}")
+    return "; ".join(parts)
 
 
 @dataclass(frozen=True)
@@ -221,9 +255,19 @@ class WorkspaceRuntimeStore:
         path: Path,
         source: str,
         source_detail: str | None,
+        semantic_label: str | None = None,
+        scope_ref: str | None = None,
+        compatibility_surface: str | None = None,
         created_at: str | None = None,
     ) -> PathPlanRecord:
         timestamp = created_at or utc_timestamp()
+        selected_semantic_label = semantic_label or semantic_label_for_surface(surface)
+        selected_compatibility_surface = compatibility_surface or surface
+        selected_scope_ref = scope_ref
+        if selected_scope_ref is None and selected_semantic_label is not None:
+            selected_scope_ref = f"topic_workspace:{topic_workspace_id}"
+            if surface.startswith("agent_") and ":" in surface:
+                selected_scope_ref = f"agent_name:{surface.split(':', 1)[1]}"
         record = PathPlanRecord(
             id=_path_plan_id(topic_workspace_id, surface),
             topic_workspace_id=topic_workspace_id,
@@ -232,12 +276,18 @@ class WorkspaceRuntimeStore:
             source=source,
             source_detail=source_detail,
             created_at=timestamp,
+            semantic_label=selected_semantic_label,
+            scope_ref=selected_scope_ref,
+            compatibility_surface=selected_compatibility_surface,
         )
         self.connection.execute(
             """
             INSERT OR IGNORE INTO path_plans
-                (id, topic_workspace_id, surface, path, source, source_detail, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                (
+                    id, topic_workspace_id, surface, path, source, source_detail,
+                    semantic_label, scope_ref, compatibility_surface, created_at
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 record.id,
@@ -246,6 +296,9 @@ class WorkspaceRuntimeStore:
                 record.path,
                 record.source,
                 record.source_detail,
+                record.semantic_label,
+                record.scope_ref,
+                record.compatibility_surface,
                 record.created_at,
             ),
         )
@@ -427,6 +480,7 @@ class WorkspaceRuntimeStore:
         template: DomainAgentTeamTemplate,
         *,
         requested_id: str | None,
+        env: Mapping[str, str],
     ) -> tuple[AgentTeamInstanceCreationResult | None, list[Diagnostic]]:
         diagnostics: list[Diagnostic] = []
         readiness = self.latest_readiness()
@@ -529,6 +583,7 @@ class WorkspaceRuntimeStore:
             )
         )
         workspace_plans = {}
+        semantic_agent_paths: dict[str, dict[str, SemanticPathResult]] = {}
         for binding in active_bindings:
             plan, plan_diagnostics = resolve_role_binding_agent_workspace_plan(
                 project=context.project,
@@ -543,6 +598,20 @@ class WorkspaceRuntimeStore:
             diagnostics.extend(plan_diagnostics)
             if plan is not None:
                 workspace_plans[binding.role_id] = plan
+                label_results: dict[str, SemanticPathResult] = {}
+                for label in AGENT_TEAM_INSTANCE_PATH_LABELS:
+                    result, result_diagnostics = resolve_semantic_path(
+                        context,
+                        label,
+                        env=env,
+                        cwd=context.topic_workspace_path,
+                        agent_name=plan.agent_name,
+                        use_path_plan=False,
+                    )
+                    diagnostics.extend(result_diagnostics)
+                    if result is not None:
+                        label_results[label] = result
+                semantic_agent_paths[binding.role_id] = label_results
         if has_errors(diagnostics):
             return None, diagnostics
 
@@ -551,8 +620,11 @@ class WorkspaceRuntimeStore:
                 for binding, agent_id in generated_ids:
                     workspace_id = f"agent-workspace-{agent_id}"
                     plan = workspace_plans[binding.role_id]
+                    resolved_paths = semantic_agent_paths[binding.role_id]
+                    workspace_result = resolved_paths["agent.workspace"]
+                    isomer_managed_result = resolved_paths["agent.isomer_managed"]
                     surface = f"agent_workspace:{plan.agent_name}"
-                    workspace_path = plan.path
+                    workspace_path = workspace_result.path
                     path_source = plan.source
                     if plan.source == "compat.agent_workspace_ref":
                         path_source = (
@@ -562,18 +634,47 @@ class WorkspaceRuntimeStore:
                         )
                     elif profile.instantiation_packet_ref is not None:
                         path_source = "topic_team_instantiation_packet.agent_name"
-                    source_detail = f"{plan.source_detail}; branch={plan.branch}"
-                    path_plan = self.record_path_plan(
+                    workspace_path_plan = self.record_path_plan(
                         topic_workspace_id=context.topic_workspace_id,
                         surface=surface,
                         path=workspace_path,
                         source=path_source,
-                        source_detail=source_detail,
+                        source_detail=_agent_path_plan_source_detail(plan, workspace_result),
+                        semantic_label="agent.workspace",
+                        scope_ref=f"agent_name:{plan.agent_name}",
+                        compatibility_surface=surface,
                         created_at=now,
                     )
+                    isomer_managed_path = isomer_managed_result.path
+                    isomer_managed_path_plan = self.record_path_plan(
+                        topic_workspace_id=context.topic_workspace_id,
+                        surface=f"agent_isomer_managed:{plan.agent_name}",
+                        path=isomer_managed_path,
+                        source=path_source,
+                        source_detail=_agent_path_plan_source_detail(plan, isomer_managed_result),
+                        semantic_label="agent.isomer_managed",
+                        scope_ref=f"agent_name:{plan.agent_name}",
+                        compatibility_surface=f"agent_isomer_managed:{plan.agent_name}",
+                        created_at=now,
+                    )
+                    support_path_plans = [
+                        self.record_path_plan(
+                            topic_workspace_id=context.topic_workspace_id,
+                            surface=compatibility_surface_for_label(label, agent_name=plan.agent_name) or label,
+                            path=result.path,
+                            source=path_source,
+                            source_detail=_agent_path_plan_source_detail(plan, result),
+                            semantic_label=label,
+                            scope_ref=f"agent_name:{plan.agent_name}",
+                            compatibility_surface=compatibility_surface_for_label(label, agent_name=plan.agent_name),
+                            created_at=now,
+                        )
+                        for label, result in resolved_paths.items()
+                        if label not in {"agent.workspace", "agent.isomer_managed"}
+                    ]
                     workspace_path.mkdir(parents=True, exist_ok=True)
-                    for support_dir in ("runtime", "artifacts", "scratch", "logs", "links"):
-                        (workspace_path / ".isomer-agent" / support_dir).mkdir(parents=True, exist_ok=True)
+                    for result in resolved_paths.values():
+                        result.path.mkdir(parents=True, exist_ok=True)
                     agent_record = AgentInstanceRecord(
                         id=agent_id,
                         agent_team_instance_id=team_id,
@@ -590,12 +691,15 @@ class WorkspaceRuntimeStore:
                         id=workspace_id,
                         agent_instance_id=agent_id,
                         topic_workspace_id=context.topic_workspace_id,
-                        path_plan_id=path_plan.id,
+                        path_plan_id=workspace_path_plan.id,
                         agent_name=plan.agent_name,
                         expected_repo_ref="topic_main_repo",
                         expected_branch_namespace=f"per-agent/{plan.agent_name}/",
                         current_branch=plan.branch,
-                        support_root_path=str(workspace_path / ".isomer-agent"),
+                        isomer_managed_path_plan_id=isomer_managed_path_plan.id,
+                        support_root_path=str(isomer_managed_path),
+                        boundary_refs=[f"{workspace_id}:workspace-boundary"],
+                        generated_link_summary={"links_root": str(resolved_paths["agent.links"].path), "links": []},
                         status="ready",
                         created_at=now,
                         updated_at=now,
@@ -605,7 +709,7 @@ class WorkspaceRuntimeStore:
                     self._insert_agent_workspace(workspace_record)
                     agent_instances.append(agent_record)
                     agent_workspaces.append(workspace_record)
-                    path_plans.append(path_plan)
+                    path_plans.extend([workspace_path_plan, isomer_managed_path_plan, *support_path_plans])
                     agent_instance_ids.append(agent_id)
                     agent_workspace_ids.append(workspace_id)
 
@@ -718,7 +822,12 @@ class WorkspaceRuntimeStore:
                 (team_id,),
             )
         ]
-        path_plan_ids = [workspace.path_plan_id for workspace in agent_workspaces]
+        path_plan_ids = [
+            path_plan_id
+            for workspace in agent_workspaces
+            for path_plan_id in (workspace.path_plan_id, workspace.isomer_managed_path_plan_id)
+            if path_plan_id is not None
+        ]
         path_plans = self._path_plans_by_ids(path_plan_ids)
         workflow_stage_cursors = [
             record
@@ -1677,10 +1786,11 @@ class WorkspaceRuntimeStore:
             INSERT INTO agent_workspaces
                 (
                     id, agent_instance_id, topic_workspace_id, path_plan_id, agent_name,
-                    expected_repo_ref, expected_branch_namespace, current_branch, support_root_path,
-                    status, created_at, updated_at, provenance_refs_json
+                    expected_repo_ref, expected_branch_namespace, current_branch,
+                    isomer_managed_path_plan_id, support_root_path, boundary_refs_json,
+                    generated_link_summary_json, status, created_at, updated_at, provenance_refs_json
                 )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 record.id,
@@ -1691,7 +1801,10 @@ class WorkspaceRuntimeStore:
                 record.expected_repo_ref,
                 record.expected_branch_namespace,
                 record.current_branch,
+                record.isomer_managed_path_plan_id,
                 record.support_root_path,
+                _dumps(record.boundary_refs),
+                _dumps(record.generated_link_summary),
                 record.status,
                 record.created_at,
                 record.updated_at,
@@ -1768,6 +1881,9 @@ def initialize_workspace_runtime(
                     path=entry.path,
                     source=entry.source,
                     source_detail=entry.source_detail,
+                    semantic_label=entry.semantic_label,
+                    scope_ref=entry.scope_ref,
+                    compatibility_surface=entry.compatibility_surface,
                     created_at=now,
                 )
     except sqlite3.Error as exc:

@@ -33,6 +33,7 @@ from isomer_labs.runtime.serialization import (
 
 
 def _row_to_path_plan(row: sqlite3.Row) -> PathPlanRecord:
+    keys = set(row.keys())
     return PathPlanRecord(
         id=row["id"],
         topic_workspace_id=row["topic_workspace_id"],
@@ -41,6 +42,9 @@ def _row_to_path_plan(row: sqlite3.Row) -> PathPlanRecord:
         source=row["source"],
         source_detail=row["source_detail"],
         created_at=row["created_at"],
+        semantic_label=row["semantic_label"] if "semantic_label" in keys else None,
+        scope_ref=row["scope_ref"] if "scope_ref" in keys else None,
+        compatibility_surface=row["compatibility_surface"] if "compatibility_surface" in keys else None,
     )
 
 
@@ -134,7 +138,12 @@ def _row_to_agent_workspace(row: sqlite3.Row) -> AgentWorkspaceRecord:
         expected_repo_ref=row["expected_repo_ref"] if "expected_repo_ref" in keys else None,
         expected_branch_namespace=row["expected_branch_namespace"] if "expected_branch_namespace" in keys else None,
         current_branch=row["current_branch"] if "current_branch" in keys else None,
+        isomer_managed_path_plan_id=row["isomer_managed_path_plan_id"] if "isomer_managed_path_plan_id" in keys else None,
         support_root_path=row["support_root_path"] if "support_root_path" in keys else None,
+        boundary_refs=_loads_list(row["boundary_refs_json"]) if "boundary_refs_json" in keys else [],
+        generated_link_summary=(
+            _loads_object_dict(row["generated_link_summary_json"]) if "generated_link_summary_json" in keys else {}
+        ),
         provenance_refs=_loads_list(row["provenance_refs_json"]),
     )
 

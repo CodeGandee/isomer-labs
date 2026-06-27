@@ -106,6 +106,24 @@ Recovery:
 - If the Agent Team Instance exists but directories are missing, the Workspace Runtime record may be inconsistent. Re-create the Agent Team Instance or restore the directory from backup.
 - If the Agent Team Instance was never created, run `project team-instances create`.
 
+## Missing or Stale Isomer-managed Support
+
+Symptom: `project runtime validate` reports a missing `isomer-managed/` support path, unsafe generated links, unpromoted dependencies on untracked share material, or a legacy `.isomer-agent/` support-path diagnostic.
+
+Diagnosis:
+
+```bash
+pixi run isomer-cli --print-json project runtime validate --topic my-topic
+pixi run isomer-cli --print-json project team-instances show <id> --topic my-topic
+```
+
+Recovery:
+
+- Treat legacy `.isomer-agent/` and old top-level Topic Main Repository collaboration paths as migration diagnostics, not as instructions to delete files.
+- Restore or prepare the current `isomer-managed/` layout through explicit operator workflow before launch-facing work depends on it.
+- Promote files under `isomer-managed/agent-owned/` or `isomer-managed/topic-owned/` into tracked Isomer material, owner-preserved records, or Provenance Records before using them as durable evidence.
+- Inspect generated `isomer-managed/links/` targets and remove or replace unsafe links only after the operator confirms the intended target.
+
 ## Invalid CLI JSON
 
 Symptom: a command returns non-zero and JSON output is incomplete or redacted.
@@ -224,7 +242,7 @@ Recovery:
 - Failed adapter mode: use the default simulated mode for deterministic validation. Live mode requires `ISOMER_MANUAL_LIVE_HOUMAO=1`; without it, the harness must report `skipped: true` and `mutated: false`.
 - Open follow-up Gate: inspect `gate-uc01-follow-up-inquiry` in the harness summary and rerun the harness only if the graph is incomplete. A completed rerun is restart-safe and returns `mutated: false`.
 - Unsupported claim support: keep claim candidates as Finding records unless accepted Evidence Item links support a Research Claim under the recording contracts.
-- Missing Artifact files: inspect `topic-workspaces/flash-attention-gb10-peak-performance-optimization/records/artifacts/uc01/` for owner-preserved records or `repos/topic-main/artifacts/uc01/` for worker-published material, restore the missing file, and rerun `project runtime validate`.
+- Missing Artifact files: inspect `topic-workspaces/flash-attention-gb10-peak-performance-optimization/records/artifacts/uc01/` for owner-preserved records or `repos/topic-main/isomer-managed/tracked/artifacts/uc01/` for worker-published material, restore the missing file, and rerun `project runtime validate`.
 - Incomplete Provenance refs: compare the harness `uc01_summary` output against `project runtime validate` diagnostics and repair through a corrective run or explicit provenance record rather than editing lifecycle rows by hand.
 
 ## Stale Handoff

@@ -84,10 +84,51 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "isomer-topic-summary.md",
     "selected_domain_team_template_ref",
     "topic_environment_status",
+    "semantic label evidence",
+    "topic.main_repo",
+    "agent.workspace",
+    "required `agent.*` support paths",
     "agent_workspace_paths",
+    "semantic_paths",
+    "semantic labels",
+    "path sources",
     "topic_team_validation_status",
     "isomer_topic_summary_path",
+    "isomer-managed/",
 )
+
+TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS = {
+    "help.md": (
+        "semantic path evidence",
+        "semantic_paths",
+        "topic.main_repo",
+        "agent.workspace",
+    ),
+    "setup-agent-workspace.md": (
+        "topic.main_repo",
+        "agent.workspace",
+        "required `agent.*` support paths",
+        "semantic_paths",
+        "path sources",
+        "default-looking directories without semantic labels and path sources",
+    ),
+    "validate-topic-team.md": (
+        "topic.main_repo",
+        "agent.workspace",
+        "required `agent.*` support labels",
+        "semantic_paths",
+        "path sources",
+        "hard-coded default-only paths without semantic labels",
+    ),
+    "finalize-topic-team.md": (
+        "semantic labels first",
+        "topic.main_repo",
+        "agent.workspace",
+        "path sources",
+        "isomer-default.v1",
+        "hard-coded default-only paths without semantic label",
+    ),
+}
 
 TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
     "help.md",
@@ -248,16 +289,29 @@ TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
     "validate-worktrees",
     "summarize",
     "help",
-    "<topic-workspace-dir>/repos/topic-main",
-    "<topic-workspace-dir>/agents/<agent-name>",
+    "semantic workspace labels",
+    "Topic Workspace Manifest",
+    "isomer-default.v1",
+    "topic.main_repo",
+    "topic.main_repo.isomer_managed",
+    "topic.agents_root",
+    "agent.workspace",
+    "agent.private_artifacts",
+    "agent.public_share",
+    "agent.links",
+    "semantic_paths",
     "topic-owner/main",
     "per-agent/<agent-name>/main",
     "per-agent/<agent-name>/<branch-name>",
     "agent_name",
     "agent_branch",
     "agent_workspace_ref",
-    ".isomer-agent/",
-    "records/*",
+    "isomer-managed/",
+    "tracked/",
+    "agent-owned/",
+    "topic-owned/",
+    "links/",
+    "topic.records.*",
     "Agent Instance",
     "Workspace Runtime",
     "Houmao",
@@ -292,10 +346,55 @@ TOPIC_WORKSPACE_MANAGER_REFERENCE_REQUIRED_TERMS = (
     "blocker",
 )
 
+TOPIC_WORKSPACE_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
+    "resolve-workspace.md": (
+        "isomer-cli project paths get",
+        "semantic_paths",
+        "topic.main_repo",
+        "agent.workspace",
+    ),
+    "ensure-main-repo.md": (
+        "topic.main_repo",
+        "topic.main_repo.isomer_managed",
+        "isomer-default.v1",
+    ),
+    "plan-agents.md": (
+        "agent.workspace",
+        "Workspace Path Resolution",
+        "path sources",
+    ),
+    "create-worktrees.md": (
+        "agent.workspace",
+        "topic.main_repo",
+        "path sources",
+        "semantic support paths",
+    ),
+    "write-boundaries.md": (
+        "topic.main_repo",
+        "agent.workspace",
+        "path source",
+        "without passing Agent Name",
+    ),
+    "validate-worktrees.md": (
+        "semantic label bindings",
+        "hard-coded default-only evidence",
+    ),
+    "summarize.md": (
+        "semantic_paths",
+        "cwd-friendly guidance",
+        "without passing Agent Name",
+    ),
+    "topic-workspace.md": (
+        "`agent.workspace` path plans",
+        "Missing semantic label evidence",
+    ),
+}
+
 TOPIC_WORKSPACE_MANAGER_FORBIDDEN_PUBLIC_TERMS = (
     "agent-key",
     "agent key",
     "<agent-key>",
+    ".isomer-agent/",
 )
 
 TOPIC_WORKSPACE_MANAGER_FORBIDDEN_SUPPORT_REFS = TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS
@@ -319,7 +418,36 @@ TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "pixi install --manifest-path <manifest_path> --environment <pixi_environment>",
     ".isomer-user-env/",
     "sudo",
+    "semantic_paths",
+    "topic.workspace",
+    "topic.main_repo",
+    "topic.records",
+    "topic.runtime",
+    "agent-scoped target",
+    "resolve the appropriate topic repository label",
 )
+
+TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
+    "resolve-topic-workspace.md": (
+        "semantic_paths",
+        "topic.main_repo",
+        "topic.records",
+        "topic.runtime",
+        "path source",
+    ),
+    "ensure-topic-repos.md": (
+        "semantic_paths",
+        "resolved topic repository root",
+        "semantic label and path source",
+        "Do not place task repos",
+    ),
+    "setup-topic-env.md": (
+        "semantic_paths",
+        "topic.main_repo",
+        "topic.tmp",
+        "local, ignored, disposable, not shared, and not durable evidence",
+    ),
+}
 
 TOPIC_ENV_SETUP_SUBCOMMANDS = (
     "resolve-topic-workspace.md",
@@ -711,6 +839,9 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
                 add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"references/{subcommand_file_name} must document predecessor artifacts")
             if "refuse to run" not in subcommand_text.lower():
                 add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"references/{subcommand_file_name} must refuse to run when predecessor artifacts are missing")
+        for required_term in TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
+            if required_term not in subcommand_text:
+                add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"references/{subcommand_file_name} must document '{required_term}'")
     help_path = references_dir / "help.md"
     if help_path.exists():
         help_lines = read_lines(help_path)
@@ -927,6 +1058,9 @@ def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]
         for required_term in TOPIC_WORKSPACE_MANAGER_REFERENCE_REQUIRED_TERMS:
             if required_term not in subcommand_text:
                 add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"references/{subcommand_file_name} must document '{required_term}'")
+        for required_term in TOPIC_WORKSPACE_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
+            if required_term not in subcommand_text:
+                add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"references/{subcommand_file_name} must document '{required_term}'")
     help_path = references_dir / "help.md"
     if help_path.exists():
         help_lines = read_lines(help_path)
@@ -1026,6 +1160,11 @@ def validate_topic_env_setup_service(repo_root: Path) -> list[Diagnostic]:
             continue
         if f"references/{subcommand_file_name}" not in text:
             add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "SVS002", f"{TOPIC_ENV_SETUP_SERVICE_SKILL} must link references/{subcommand_file_name}")
+        subcommand_lines = read_lines(subcommand_path)
+        subcommand_text = "\n".join(subcommand_lines)
+        for required_term in TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
+            if required_term not in subcommand_text:
+                add(diagnostics, repo_root, subcommand_path, 1, "SVS002", f"references/{subcommand_file_name} must document '{required_term}'")
     for file_name, term in zip(
         ("resolve-topic-workspace.md", "resolve-topic-workspace.md", "read-env-gate.md", "setup-topic-env.md", "verify-env-gate.md"),
         TOPIC_ENV_SETUP_INDEPENDENCE_TERMS,

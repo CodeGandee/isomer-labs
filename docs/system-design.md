@@ -36,9 +36,9 @@ Effective Topic Context is process-local input. It is not a lifecycle object, no
 
 Workspace Path Resolution turns Effective Topic Context and a requested path surface into concrete filesystem paths. It is side-effect-free: it computes paths without creating directories, writing runtime records, or launching agents.
 
-Path surfaces include the Project generated content root (`isomer-content/` by default or the `--content-dir <content-dir>` root selected during initialization), the Topic Workspace base (`isomer-content/topic-ws/` by default or `<content-dir>/topic-ws/` for a custom content root), the Workspace Runtime database (`state.sqlite`), `repos/topic-main`, `agents/<agent-name>` worktrees, owner-preserved `records/*` directories, root `runtime/` support material, adapter manifest directories, command payloads, inspection snapshots, Agent Workspace support directories, and adapter-generated material.
+Path surfaces include the Project generated content root (`isomer-content/` by default or the `--content-dir <content-dir>` root selected during initialization), the Topic Workspace base (`isomer-content/topic-ws/` by default or `<content-dir>/topic-ws/` for a custom content root), the Workspace Runtime database (`state.sqlite`), `repos/topic-main`, `repos/topic-main/isomer-managed/`, `repos/topic-main/isomer-managed/tracked/*`, `agents/<agent-name>` worktrees, per-agent `isomer-managed/` support paths, owner-preserved `records/*` directories, root `runtime/` support material, adapter manifest directories, command payloads, inspection snapshots, and adapter-generated material.
 
-The canonical Topic Workspace and Agent Workspace directory structure, including `repos/topic-main`, `agents/<agent-name>` worktrees, per-agent branch namespaces, symlinked shared directories, topic-owned Pixi task channels, and launch cwd expectations, is defined in [Topic Workspace Definition](topic-workspace-definition.md).
+The canonical Topic Workspace and Agent Workspace directory structure, including `repos/topic-main`, `repos/topic-main/isomer-managed/`, `agents/<agent-name>` worktrees, per-agent branch namespaces, tracked Isomer material, agent-owned untracked shares, topic-owned projections, generated links, topic-owned Pixi task channels, and launch cwd expectations, is defined in [Topic Workspace Definition](topic-workspace-definition.md).
 
 `isomer-cli project paths preview` prints the computed path plan for a topic without creating files. Use it to verify that the Project Manifest and Research Topic Config resolve to the directories you expect before running commands that mutate state.
 
@@ -55,11 +55,11 @@ Workspace Runtime is the persistent substrate inside a Topic Workspace. It owns:
 - Validation Issue records;
 - adapter manifest refs, reconciliation records, payload refs, command run records, materialization records, launch attempt records, inspection snapshots, and stop outcome records.
 
-`isomer-cli project runtime init` creates or reopens the Workspace Runtime. Reopening a current-schema runtime is idempotent. Unsupported older or newer runtime schemas produce diagnostics and do not create runtime directories or rewrite owner refs.
+`isomer-cli project runtime init` creates or reopens the Workspace Runtime. Reopening a current-schema runtime is idempotent. Runtime initialization records the Topic Main Repository and `repos/topic-main/isomer-managed/` path plans, but it does not create per-agent untracked share directories before Agent Workspace setup. Unsupported older or newer runtime schemas produce diagnostics and do not create runtime directories or rewrite owner refs.
 
 `isomer-cli project runtime prepare` records Topic Environment Readiness by checking explicit Project Manifest bindings and the implicit Topic Workspace directory default when no explicit standalone binding exists. Successful checks record `ready`; failed checks record `failed`; missing required topic binding intent records `blocked`. Repair remains explicit and should be represented as a Service Request rather than hidden inside `project runtime prepare`.
 
-`isomer-cli project runtime inspect` and `isomer-cli project runtime validate` are read-only. They report metadata, record counts, readiness summaries, path-plan mismatches, broken refs, missing Agent Workspace directories, stale handoffs, unresolved Gates, unsupported Research Claims, stale Provenance Records, schema mismatches, and cross-topic leakage without repairing records or creating files.
+`isomer-cli project runtime inspect` and `isomer-cli project runtime validate` are read-only. They report metadata, record counts, readiness summaries, path-plan mismatches, broken refs, missing Agent Workspace directories, missing `isomer-managed/` support paths, stale legacy support refs, unsafe generated links, unpromoted dependencies on untracked shares, stale handoffs, unresolved Gates, unsupported Research Claims, stale Provenance Records, schema mismatches, and cross-topic leakage without repairing records or creating files.
 
 ## From Template to Profile to Instance
 
@@ -69,7 +69,7 @@ A **Domain Agent Team Template** is a reusable research-field method. It names d
 
 A **Topic Agent Team Profile** specializes one Domain Agent Team Template for a user's Research Topic. It adapts roles and Workflow Stages to the topic context, records constraints and expected Artifacts, and can carry Capability Binding refs, Skill Binding Projections, allowed Research Operation Extension Points, and policy refs. It is a design-time artifact, not a running team.
 
-An **Agent Team Instance** is a concrete runtime team created from a Topic Agent Team Profile. It contains launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. `isomer-cli project team-instances create` writes the Agent Team Instance record, Agent Instance records, Agent Workspace records, path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories. It does not launch backend agents or write adapter-specific launch material.
+An **Agent Team Instance** is a concrete runtime team created from a Topic Agent Team Profile. It contains launched Agent Instances, runtime refs, Agent Workspaces, and Run participation. `isomer-cli project team-instances create` writes the Agent Team Instance record, Agent Instance records, Agent Workspace records, Agent Workspace path plans, `isomer-managed/` support path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories. It does not launch backend agents or write adapter-specific launch material.
 
 Topic-level Parallel Execution Scope means multiple Research Topics run concurrently, each researched by its own dedicated Agent Team Instance. It does not mean one Research Topic is handled by multiple competing teams. Task-level Parallel Execution Scope distributes one Research Task across multiple Agent Instances inside the selected topic team. Research Inquiry is not a Parallel Execution Scope.
 
@@ -102,7 +102,7 @@ Execution Adapters must not change Isomer's core domain language. Houmao's speci
 | Topic Workspace | Research Topic | filesystem work area |
 | Workspace Runtime | Topic Workspace | durable runtime substrate |
 | Agent Workspace | Agent Instance | per-agent work area inside Topic Workspace |
-| Agent Runtime | Agent Workspace | local execution state and support files |
+| Agent Runtime | Agent Workspace under `isomer-managed/agent-owned/runtime/` | local execution state and support files |
 | Agent Team Instance record | Workspace Runtime | runtime identity, refs, status |
 | Agent Instance record | Workspace Runtime | runtime actor identity |
 | Research Inquiry, Research Task, Run | Workspace Runtime | lifecycle records |

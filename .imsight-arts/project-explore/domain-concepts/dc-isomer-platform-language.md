@@ -23,8 +23,20 @@ A Project Manifest-registered TOML file for one Research Topic. It stores topic-
 _Avoid_: Runtime config, topic database, workspace state, command log, credential file
 
 **Topic Workspace**:
-A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Topic Main Repository, Agent Workspaces, owner-preserved records under `records/*`, runtime support material under `runtime/`, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, and logs. Worker-visible collaboration normally happens through `repos/topic-main` and per-agent worktrees under `agents/<agent-name>`, while root `records/*`, root `runtime/`, and `state.sqlite` are topic-owner or runtime surfaces. It references the selected Agent Team Instance lineage used for the topic, but it does not contain a workspace-local `teams/` directory.
+A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Topic Main Repository, Agent Workspaces, owner-preserved records under `records/*`, runtime support material under `runtime/`, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, and logs. Its internal path contract is semantic: labels such as `topic.main_repo`, `topic.records.artifacts`, `topic.runtime.db`, `agent.workspace`, and `agent.private_artifacts` resolve to concrete paths through Workspace Path Resolution. Worker-visible collaboration normally happens through the semantic Topic Main Repository and Agent Workspaces, while root `records/*`, root `runtime/`, and `state.sqlite` are topic-owner or runtime surfaces. It references the selected Agent Team Instance lineage used for the topic, but it does not contain a workspace-local `teams/` directory.
 _Avoid_: Isomer Workspace, quest, quest workspace, run directory, task workspace, system workspace
+
+**Topic Workspace Manifest**:
+The topic-owned `topic-workspace.toml` file at the Topic Workspace root. It binds semantic workspace surface labels to concrete paths or bounded Agent Workspace templates for one selected Topic Workspace. It is not Project Config Directory state, not a Project Manifest override, and not Workspace Runtime state.
+_Avoid_: Project Manifest path registry, runtime database, hidden workspace config
+
+**Semantic Workspace Surface Label**:
+A stable dotted label for a workspace path surface, such as `topic.main_repo`, `topic.records.artifacts`, `topic.runtime.db`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, or `agent.scratch`. Semantic labels are the user-facing path contract; compatibility surface ids such as `records_artifacts` or `agent_workspace:<agent-name>` may remain for older path plans and migration output.
+_Avoid_: hard-coded path, directory name as contract, arbitrary surface string
+
+**Default Layout Profile**:
+The built-in `isomer-default.v1` mapping from semantic workspace surface labels to the standard Topic Workspace and Agent Workspace directories, such as `repos/topic-main`, `records/artifacts`, `runtime`, and `agents/<agent-name>`. It is a fallback and explicit materialization profile, not the only valid layout.
+_Avoid_: mandatory directory structure, fixed path contract, implicit migration
 
 **Workspace Runtime**:
 The persistent runtime substrate inside a Topic Workspace. It includes `state.sqlite`, schema version, path plans, refs, validation state, owner-preserved record roots, runtime support roots, and support files that let Research Inquiries, Research Tasks, Runs, Artifacts, handoffs, Gates, and View Manifests be recorded, resumed, inspected, and validated. Workspace Runtime is not worker-facing collaboration material.
@@ -33,6 +45,10 @@ _Avoid_: Run, execution episode, quest state, hidden runtime, project config
 **Effective Topic Context**:
 The resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations consume for a topic-scoped command. It includes validated Project, Research Topic, Research Topic Config, Topic Workspace, Project Manifest topic Pixi environment bindings and Topic Workspace Pixi workspace bindings when relevant, optional lifecycle refs, the Topic Agent Team Profile default, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
 _Avoid_: Active workspace, runtime database, lifecycle state, durable context blob
+
+**Effective Agent Context**:
+The resolved process-local agent identity used by agent-scoped commands and semantic path queries. It includes Agent Name, optional Agent Instance id, Agent Workspace path, and source metadata from explicit selectors, supported environment context, cwd-derived Agent Workspace matching, or recorded runtime context. It is a convenience for path resolution and is not filesystem-grade identity or access control.
+_Avoid_: access token, OS user, security principal, durable Agent Instance record
 
 ### Workspace Taxonomy
 
@@ -69,12 +85,13 @@ Project
       Workspace Runtime
       Topic Agent Team Profile Bundle
       Topic Main Repository, repos/topic-main
+        Isomer-managed worker namespace, isomer-managed/
       Research Inquiry graph
         Research Task(s)
       Owner-preserved records, records/*
       Runtime support material, runtime/*
       Agent Workspace(s), agents/<agent-name> worktrees created for Agent Instances during team execution
-        Agent Runtime, usually under .isomer-agent/
+        Agent Runtime, under isomer-managed/agent-owned/runtime/
         Workspace Boundary
 ```
 
@@ -245,23 +262,23 @@ _Avoid_: Owning workspace, task type, unmanaged worker
 ### Agent Workspace and Collaboration
 
 **Agent Workspace**:
-A per-agent work area inside a Topic Workspace assigned to one Agent Instance for owned scratch files, local runtime state, logs, Agent Artifacts, and the worker agent's normal launch cwd. The standard path is `<topic-workspace>/agents/<agent-name>`, and that directory is a Git worktree of the Topic Main Repository checked out to an agent-owned branch such as `per-agent/<agent-name>/main`. It is an advisory ownership boundary: Isomer records and documents expected access, but does not provide filesystem-grade access control.
+A per-agent work area inside a Topic Workspace assigned to one Agent Instance for owned scratch files, local runtime state, logs, Agent Artifacts, and the worker agent's normal launch cwd. Its semantic label is `agent.workspace`; under `isomer-default.v1` that label resolves to `<topic-workspace>/agents/<agent-name>`, and the directory is a Git worktree of the Topic Main Repository checked out to an agent-owned branch such as `per-agent/<agent-name>/main`. It is an advisory ownership boundary: Isomer records and documents expected access, but does not provide filesystem-grade access control.
 _Avoid_: Private sandbox, secure workspace, role directory as a generic term
 
 **Topic Main Repository**:
-The shared normal, non-bare Git repository at `<topic-workspace>/repos/topic-main`. It is the primary worker-visible collaboration surface for code-bearing topic work and acts as the Git anchor for per-agent Agent Workspace worktrees. It is not a Topic Workspace, not an Agent Workspace, and not Workspace Runtime state.
+The shared normal, non-bare Git repository at `<topic-workspace>/repos/topic-main`. It is the primary worker-visible collaboration surface for code-bearing topic work and acts as the Git anchor for per-agent Agent Workspace worktrees. Its standard Isomer-specific worker namespace is `isomer-managed/`, split into Git-tracked Isomer material, untracked agent-owned material, untracked topic-owned projections, and generated links. It is not a Topic Workspace, not an Agent Workspace, and not Workspace Runtime state.
 _Avoid_: Workspace Runtime, Agent Workspace, teams directory, root shared directory
 
 **Agent Name**:
-A topic-local, path-safe name such as `alice`, `scout-a`, or `experimenter-gpu` used to name an Agent Workspace path, launch cwd, and Git branch namespace. Agent Names are not global Agent Instance ids. Workspace Runtime may record both the globally unique Agent Instance id and the topic-local Agent Name.
+A topic-local, path-safe name such as `alice`, `scout-a`, or `experimenter-gpu` used to resolve agent-scoped semantic labels, launch cwd, and Git branch namespace. Agent Names are not global Agent Instance ids. Workspace Runtime may record both the globally unique Agent Instance id and the topic-local Agent Name.
 _Avoid_: Agent Instance id, role id, provider-specific managed-agent id, agent-key
 
 **Agent Workspace Worktree**:
-A Git worktree rooted at `<topic-workspace>/agents/<agent-name>` and attached to the Topic Main Repository. The default branch is `per-agent/<agent-name>/main`; future branches for that agent stay under `per-agent/<agent-name>/`.
+A Git worktree rooted at the resolved `agent.workspace` path and attached to the Topic Main Repository. Under `isomer-default.v1`, that path is `<topic-workspace>/agents/<agent-name>`. The default branch is `per-agent/<agent-name>/main`; future branches for that agent stay under `per-agent/<agent-name>/`.
 _Avoid_: Plain directory, task workspace, secure sandbox
 
 **Topic Workspace Records Root**:
-The root `records/` directory inside a Topic Workspace. It stores owner-preserved Artifacts, task records, Run records, View Manifests, logs, snapshots, and normalized outputs that are not normal worker input. Worker-visible copies or summaries belong in `repos/topic-main` only after explicit publication.
+The root `records/` directory inside a Topic Workspace. It stores owner-preserved Artifacts, task records, Run records, View Manifests, logs, snapshots, and normalized outputs that are not normal worker input. Worker-visible copies or summaries belong in `repos/topic-main/isomer-managed/` only after explicit publication or projection.
 _Avoid_: Worker shared directory, cache, Agent Workspace
 
 **Topic Workspace Runtime Support Root**:
@@ -269,11 +286,11 @@ The root `runtime/` directory inside a Topic Workspace. It stores runtime and ad
 _Avoid_: Topic Main Repository, Agent Workspace, cache unless a later contract marks a file disposable
 
 **Worker Visibility Boundary**:
-The advisory distinction between worker-facing surfaces and topic-owner or runtime surfaces. Worker agents normally operate inside `agents/<agent-name>` and exchange information through Git branches, approved `.isomer-agent/links/` symlinks into `repos/topic-main`, or topic-owned Pixi tasks. They should not treat root `records/`, root `runtime/`, `state.sqlite`, or Project Config material as ordinary input.
+The advisory distinction between worker-facing surfaces and topic-owner or runtime surfaces. Worker agents normally operate inside `agents/<agent-name>` and exchange information through Git branches, `isomer-managed/tracked/` material, owner-approved `isomer-managed/agent-owned/public/` shares, policy-controlled `isomer-managed/topic-owned/` projections, generated `isomer-managed/links/`, or topic-owned Pixi tasks. They should not treat root `records/`, root `runtime/`, `state.sqlite`, or Project Config material as ordinary input.
 _Avoid_: Filesystem sandbox, security boundary, hidden permission wall
 
 **Agent Runtime**:
-The durable execution state and support files scoped to one Agent Workspace, such as prompt records, tool-call traces, temporary run notes, local logs, and recovery files for that agent. In the standard worktree layout, agent-local support files live under an ignored `.isomer-agent/` area unless a later accepted contract defines another location. Agent Runtime is subordinate to Workspace Runtime and should not be described as isolated from the operating system.
+The durable execution state and support files scoped to one Agent Workspace, such as prompt records, tool-call traces, temporary run notes, local logs, and recovery files for that agent. In the standard worktree layout, agent-local support files live under ignored `isomer-managed/agent-owned/` paths, with Agent Runtime specifically under `isomer-managed/agent-owned/runtime/`. Agent Runtime is subordinate to Workspace Runtime and should not be described as isolated from the operating system.
 _Avoid_: OS sandbox, hidden agent state, separate workspace runtime
 
 **Agent Artifact**:
@@ -281,11 +298,11 @@ An Artifact produced, curated, or owned by a specific agent inside its Agent Wor
 _Avoid_: Private output, scratch blob, team artifact when ownership matters
 
 **Workspace Boundary**:
-An advisory boundary that declares which parts of an Agent Workspace an agent owns and which parts peers may inspect. Boundaries can be documented in README files or declared in manifests, but Isomer does not rely on them for hard filesystem protection.
+An advisory boundary that declares which parts of an Agent Workspace an agent owns, which `isomer-managed/` tracked, agent-owned, topic-owned, and generated-link surfaces peers may inspect, and which write policies apply. Boundaries can be documented in README files or declared in manifests, but Isomer does not rely on them for hard filesystem protection.
 _Avoid_: Security boundary, access-control boundary, permission wall
 
 **Peer Read Access**:
-The advisory ability for one team agent to inspect another agent's declared readable files or Agent Artifacts without taking ownership of them. Peer Read Access supports collaboration and review, but durable dependencies should still be recorded through handoffs, promoted Artifacts, Evidence Items, or Provenance Records.
+The advisory ability for one team agent to inspect another agent's declared readable files, Agent Artifacts, `isomer-managed/agent-owned/public/` material, topic-owned projections, or generated links without taking ownership of them. Peer Read Access supports collaboration and review, but durable dependencies should still be recorded through handoffs, promoted Artifacts, Evidence Items, or Provenance Records.
 _Avoid_: Write sharing, filesystem permission, unrestricted shared workspace
 
 ### Artifacts, Evidence, and Decisions
@@ -627,9 +644,9 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 
 - Use **Agent Workspace** for per-agent work areas inside a Topic Workspace. Do not call it a secure sandbox.
 - Use topic-local **Agent Names** for default Agent Workspace paths under `<topic-workspace>/agents/<agent-name>/`; do not use globally unique **Agent Instance** ids, role ids, or provider-specific managed-agent ids as the normal directory convention.
-- Use **Topic Main Repository** for `<topic-workspace>/repos/topic-main`, and keep worker-visible collaboration material there or inside its per-agent worktrees.
+- Use **Topic Main Repository** for `<topic-workspace>/repos/topic-main`, and keep Isomer-specific worker-visible collaboration material under `isomer-managed/` inside that repository or inside its per-agent worktrees.
 - Use **Topic Workspace Records Root** for root `records/*` owner-preserved material, and use **Topic Workspace Runtime Support Root** for root `runtime/*` runtime or adapter support material. Do not teach root `shared/`, `artifacts/`, `tasks/`, `runs/`, `views/`, or `logs/` as normal worker-visible Topic Workspace directories.
-- Use **Worker Visibility Boundary** when explaining that worker agents normally stay in `agents/<agent-name>` and communicate through Git branches, approved `.isomer-agent/links/` symlinks into `repos/topic-main`, or topic-owned Pixi tasks. Do not describe it as filesystem-grade isolation.
+- Use **Worker Visibility Boundary** when explaining that worker agents normally stay in `agents/<agent-name>` and communicate through Git branches, `isomer-managed/` tracked material, owner-approved untracked shares, topic-owned projections, generated links, or topic-owned Pixi tasks. Do not describe it as filesystem-grade isolation.
 - Store the deeply specialized **Topic Agent Team Profile** as one **Topic Agent Team Profile Bundle** under `<topic-workspace>/team-profile/`, with `profile.toml` and copied topic-edited template material. Do not overwrite the source **Domain Agent Team Template** during Topic Team Specialization.
 - Do not put `teams/` under a **Topic Workspace**. Use the fixed `team-profile/` directory for the topic-level profile bundle. **Domain Agent Team Templates** remain project-level or built-in references; the Project Manifest keeps the **Topic Agent Team Profile Bundle** ref, and the workspace records Topic Agent Team Profile identity, Agent Team Instance identity, and task-handler identity through Workspace Runtime or provenance Artifacts.
 - Use **Domain Agent Team Template**, **Topic Team Specialization**, **Topic Team Instantiation Packet**, **Topic Agent Team Profile**, **Agent Team Instance**, **Project Operator Session**, **Operator Agent**, **Agent Role**, **Agent Profile**, **Capability Binding**, **Skill Binding Projection**, **Research Operation Extension Point**, **Execution Adapter Command Request**, **Coordination Policy**, **Scheduler Policy**, **Gate Policy**, **Agent Instance**, **Workflow Stage**, and **Execution Adapter** as the generic multi-agent core.

@@ -37,7 +37,7 @@ Procedural subcommands are the public single-step workflow API. Call them direct
 | --- | --- | --- |
 | `resolve-topic-workspace` | Resolve Project root, Research Topic, Topic Workspace, active Pixi binding, and setup preconditions. | [references/resolve-topic-workspace.md](references/resolve-topic-workspace.md) |
 | `read-env-gate` | Read `user-intent/src/env-gate.md` and identify the runnable target. | [references/read-env-gate.md](references/read-env-gate.md) |
-| `ensure-topic-repos` | Find existing repos or acquire missing required repos under `repos/<repo-name>`. | [references/ensure-topic-repos.md](references/ensure-topic-repos.md) |
+| `ensure-topic-repos` | Find existing repos or acquire missing required repos under the resolved topic repository root. | [references/ensure-topic-repos.md](references/ensure-topic-repos.md) |
 | `derive-env-gate` | Generate or update `user-intent/derived/isomer-env-gate.md`. | [references/derive-env-gate.md](references/derive-env-gate.md) |
 | `install-topic-deps` | Infer package sources and install dependencies through the Topic Workspace Pixi environment. | [references/install-topic-deps.md](references/install-topic-deps.md) |
 | `verify-env-gate` | Run the desired command through Pixi and report readiness. | [references/verify-env-gate.md](references/verify-env-gate.md) |
@@ -69,7 +69,7 @@ Procedural subcommands:
 | --- | --- | --- |
 | `resolve-topic-workspace` | Resolve the Project root, Research Topic, Topic Workspace, Pixi manifest, and selected Pixi environment. | Resolved setup refs and blockers; no environment mutation. |
 | `read-env-gate` | Read the source gate and extract the runnable target, repo hints, commands, and success criteria. | Source gate summary and readiness blockers. |
-| `ensure-topic-repos` | Find existing required repos or materialize missing repos under `<topic-workspace-dir>/repos/<repo-name>`. | Repo inventory and inspection notes; acquired topic repos and inferred-source warnings only for missing repos. |
+| `ensure-topic-repos` | Find existing required repos or materialize missing repos under the resolved topic repository root. | Repo inventory and inspection notes; acquired topic repos and inferred-source warnings only for missing repos. |
 | `derive-env-gate` | Write the fixed-section `isomer-env-gate.md` operational gate, including the enclosure strategy for each dependency or runtime need. | `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`. |
 | `install-topic-deps` | Install inferred dependencies with Pixi first, record explicit external runtime wiring when needed, and use topic-local fallback only when Pixi cannot satisfy the gate. | Updated Topic Workspace Pixi environment files, `.gitignore`, dependency plan, enclosure records, and blockers. |
 | `verify-env-gate` | Run the desired command through recorded Pixi-scoped commands and report readiness. | Gate execution results, readiness status, enclosure warnings, and blockers. |
@@ -99,6 +99,7 @@ Report:
 - `project_root`: resolved Isomer Project root.
 - `research_topic_id`: selected Research Topic.
 - `topic_workspace_dir`: Project Manifest-declared Topic Workspace directory.
+- `semantic_paths`: resolved labels, paths, sources, and blockers for setup surfaces such as `topic.workspace`, `topic.main_repo`, `topic.records`, `topic.runtime`, and any agent-scoped target when explicitly requested.
 - `manifest_path_or_dir`: explicit binding target when present, otherwise the registered Topic Workspace directory default.
 - `manifest_path`: Pixi-resolved Topic Workspace Pixi manifest path.
 - `pixi_environment`: selected Pixi environment.
@@ -124,7 +125,7 @@ Report:
 - Do not treat the Project-root Pixi environment as the Topic Workspace execution environment.
 - Do not require or inspect Topic Agent Team Profile material, `<topic-workspace-dir>/team-profile/`, Topic Team Instantiation Packets, Agent Team Instances, Agent Instances, Agent Workspace plans, roles, or agent count as prerequisites for Topic Workspace environment setup. If read-only diagnostics mention them, report them only as unrelated downstream context unless they also break Topic Workspace discovery, Pixi binding resolution, source gate reading, dependency setup, repo checks, or Pixi-scoped verification.
 - Do not create or mutate per-agent Pixi environments unless a user task explicitly names an Agent Workspace-specific environment.
-- Do not place required independent repos in the Project root, Agent Workspace, `.pixi/`, or another ad hoc location; use `<topic-workspace-dir>/repos/<repo-name>`.
+- Do not place required independent repos in the Project root, Agent Workspace, `.pixi/`, or another ad hoc location; resolve the appropriate topic repository label and use that path.
 - Do not modify an existing `<topic-workspace-dir>/repos/<repo-name>` during `ensure-topic-repos`; inspect it as read-only evidence and report blockers if it is unsuitable.
 - Do not infer a binding from directory names or Research Topic ids. Use the Project Manifest for explicit bindings and the registered Topic Workspace directory only as the defined implicit default target.
 - Do not choose repos, dependencies, Pixi install commands, setup commands, or verification commands before reading `user-intent/src/env-gate.md`.

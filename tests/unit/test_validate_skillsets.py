@@ -86,9 +86,9 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Use {subcommand_links}.
 
-            Use static material readiness, durable setup state, `topic-overview.md`, concrete Research Topic, default Research Topic, provisional topic workspace seed, `isomer-content/topic-ws/<topic-slug>/`, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, and `isomer-topic-summary.md`.
+            Use static material readiness, durable setup state, `topic-overview.md`, concrete Research Topic, default Research Topic, provisional topic workspace seed, `isomer-content/topic-ws/<topic-slug>/`, `team-specialization-guide.md`, `team-specialization-plan.md`, `{final_report}`, `<topic-workspace>/team-profile/execplan/`, `isomer-managed/`, and `isomer-topic-summary.md`.
 
-            Report `selected_domain_team_template_ref`, `topic_environment_status`, `agent_workspace_paths`, `topic_team_validation_status`, and `isomer_topic_summary_path`.
+            Require semantic label evidence for `topic.main_repo`, `agent.workspace`, and required `agent.*` support paths. Report `selected_domain_team_template_ref`, `topic_environment_status`, `agent_workspace_paths`, `semantic_paths`, semantic labels, path sources, `topic_team_validation_status`, and `isomer_topic_summary_path`.
 
             ```generated-guide
             Generated Guide
@@ -118,7 +118,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                     ## Workflow
 
-                    1. Print public subcommands as a table.
+                    1. Print public subcommands as a table with semantic path evidence.
 
                     If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -131,7 +131,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                     | `ensure-topic-registration` | Ensure Project registration. | Registered topic refs. |
                     | `specialize-team` | Specialize topic team. | Draft profile inputs. |
                     | `setup-topic-env` | Prepare topic environment. | `topic_environment_status`. |
-                    | `setup-agent-workspace` | Prepare Agent Workspaces. | `agent_workspace_paths`. |
+                    | `setup-agent-workspace` | Prepare Agent Workspaces. | `semantic_paths`, `topic.main_repo`, `agent.workspace`, `agent_workspace_paths`. |
                     | `validate-topic-team` | Validate static material. | `topic_team_validation_status`. |
                     | `finalize-topic-team` | Finalize topic team. | `isomer-topic-summary.md`. |
                     | `approve-profile` | Approve profile material. | Approval provenance. |
@@ -151,6 +151,19 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If any required predecessor artifact is missing, refuse to run and tell the user why.
                 """
+            extra_terms = ""
+            if subcommand_name == "setup-agent-workspace.md":
+                extra_terms = """
+                Require `topic.main_repo`, `agent.workspace`, required `agent.*` support paths, `semantic_paths`, semantic labels, path sources, and reject default-looking directories without semantic labels and path sources.
+                """
+            elif subcommand_name == "validate-topic-team.md":
+                extra_terms = """
+                Require `topic.main_repo`, `agent.workspace`, required `agent.*` support labels, `semantic_paths`, path sources, and reject hard-coded default-only paths without semantic labels.
+                """
+            elif subcommand_name == "finalize-topic-team.md":
+                extra_terms = """
+                Report semantic labels first with `topic.main_repo`, `agent.workspace`, path sources, `isomer-default.v1`, and reject hard-coded default-only paths without semantic label evidence.
+                """
             write(
                 root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subcommand_name,
                 f"""
@@ -163,6 +176,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
                 {prerequisite}
+                {extra_terms}
                 """,
             )
         for support_reference_name in validator.TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES:
@@ -266,7 +280,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Workspace Mgr
 
-            Prepare `<topic-workspace-dir>/repos/topic-main`, `<topic-workspace-dir>/agents/<agent-name>`, `topic-owner/main`, `per-agent/<agent-name>/main`, `.isomer-agent/`, `records/*`, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
+            Prepare semantic workspace labels through Topic Workspace Manifest bindings and `isomer-default.v1`, including `topic.main_repo`, `topic.main_repo.isomer_managed`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `semantic_paths`, `topic-owner/main`, `per-agent/<agent-name>/main`, `isomer-managed/`, `tracked/`, `agent-owned/`, `topic-owned/`, `links/`, `topic.records.*`, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
 
             ## Workflow
 
@@ -316,7 +330,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                     | Subcommand | Purpose | Produces |
                     | --- | --- | --- |
-                    | `resolve-workspace` | Resolve Project context. | Topic Workspace paths. |
+                    | `resolve-workspace` | Resolve Project context. | `semantic_paths`, `topic.main_repo`, `agent.workspace`. |
                     | `ensure-main-repo` | Prepare repo. | Repo readiness. |
                     | `plan-agents` | Plan agents. | Agent name plans. |
                     | `create-worktrees` | Create worktrees. | Worktree readiness. |
@@ -330,6 +344,16 @@ class SkillsetValidatorTests(unittest.TestCase):
                 )
                 continue
             fallback = "" if omit_subcommand_fallback and subcommand_name == "plan-agents.md" else "If the user's task does not map cleanly to these steps, use your native planning tool."
+            extra_terms = {
+                "resolve-workspace.md": "Use `isomer-cli project paths get`, `semantic_paths`, `topic.main_repo`, and `agent.workspace` before mutation.",
+                "ensure-main-repo.md": "Use `topic.main_repo`, `topic.main_repo.isomer_managed`, and `isomer-default.v1` examples only after semantic resolution.",
+                "plan-agents.md": "Resolve `agent.workspace` through Workspace Path Resolution and report path sources.",
+                "create-worktrees.md": "Create worktrees at `agent.workspace` from `topic.main_repo`, with path sources and semantic support paths.",
+                "write-boundaries.md": "Write boundary notes for `topic.main_repo`, `agent.workspace`, each path source, and self-query guidance without passing Agent Name.",
+                "validate-worktrees.md": "Validate semantic label bindings and reject hard-coded default-only evidence.",
+                "summarize.md": "Report `semantic_paths`, cwd-friendly guidance, and self-query guidance without passing Agent Name.",
+                "topic-workspace.md": "Runtime later consumes `agent.workspace` path plans. Missing semantic label evidence is a blocker.",
+            }.get(subcommand_name, "")
             write(
                 root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "references" / subcommand_name,
                 f"""
@@ -340,6 +364,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 1. Run the fixture step and report any blocker.
 
                 {fallback}
+                {extra_terms}
                 """,
             )
 
@@ -392,6 +417,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Commands include `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, `pixi add --manifest-path <manifest_path>`, and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
             Use `.isomer-user-env/` only as fallback and block sudo.
+            Report `semantic_paths` for `topic.workspace`, `topic.main_repo`, `topic.records`, `topic.runtime`, and any agent-scoped target; resolve the appropriate topic repository label before creating repos.
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -406,9 +432,10 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
         reference_terms = {
-            "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup.",
+            "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.main_repo`, `topic.records`, `topic.runtime`, and each path source.",
+            "ensure-topic-repos.md": "Use the resolved topic repository root from `semantic_paths`; report semantic label and path source. Do not place task repos outside the resolved root.",
             "read-env-gate.md": "Interpret the runnable target as what one agent or operator must run.",
-            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain.",
+            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.main_repo`, and `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence.",
             "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
@@ -474,8 +501,16 @@ class SkillsetValidatorTests(unittest.TestCase):
             "topic-overview.md",
             "selected_domain_team_template_ref",
             "topic_environment_status",
+            "semantic label evidence",
+            "topic.main_repo",
+            "agent.workspace",
+            "required `agent.*` support paths",
             "agent_workspace_paths",
+            "semantic_paths",
+            "semantic labels",
+            "path sources",
             "topic_team_validation_status",
+            "isomer-managed/",
             "isomer_topic_summary_path",
         )
         for term in required_terms:
@@ -488,6 +523,18 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 self.assertIn("OPS003", codes(diagnostics))
                 self.assertTrue(any(term in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_team_semantic_reference_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        path = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "validate-topic-team.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("hard-coded default-only paths without semantic labels", ""), encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("hard-coded default-only paths without semantic labels" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_topic_team_skill_fallback(self) -> None:
         root = self.make_root()
@@ -815,6 +862,41 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("Workspace Runtime" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_requires_topic_workspace_semantic_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_workspace_manager_skill(root, omit_skill_term="semantic workspace labels")
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("semantic workspace labels" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_workspace_semantic_reference_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_workspace_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        path = root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "references" / "validate-worktrees.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("hard-coded default-only evidence", ""), encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("hard-coded default-only evidence" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_workspace_isomer_managed_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_workspace_manager_skill(root, omit_skill_term="isomer-managed/")
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("isomer-managed/" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_rejects_topic_workspace_agent_key_wording(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -827,6 +909,19 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("agent-name public wording" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_topic_workspace_legacy_support_root_wording(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_workspace_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "SKILL.md"
+        skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nUse `.isomer-agent/` for current support.\n", encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any(".isomer-agent/" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_accepts_topic_env_setup_contract(self) -> None:
         root = self.make_root()
@@ -863,3 +958,21 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("SVS002", codes(diagnostics))
         self.assertTrue(any("team-independent environment setup" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_semantic_path_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_skill_term="semantic_paths")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("semantic_paths" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_tmp_label_posture_reference_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="topic.tmp")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("topic.tmp" in message for message in messages(diagnostics)), messages(diagnostics))
