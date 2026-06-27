@@ -603,7 +603,7 @@ The Topic Team Specialization skill SHALL require delegated Git-backed workspace
 
 #### Scenario: Setup evidence includes tmp contract
 - **WHEN** `setup-agent-workspace` records delegated topic workspace manager evidence for Git-backed worktrees
-- **THEN** the evidence includes whether `topic.main_repo.tmp` and `agent.tmp` surfaces are ignored and local-only
+- **THEN** the evidence includes whether `topic.repos.main.tmp` and `agent.tmp` surfaces are ignored and local-only
 - **AND** it reports blockers when delegated setup found tracked tmp contents or missing ignore policy
 
 #### Scenario: Validation rejects tmp as readiness evidence

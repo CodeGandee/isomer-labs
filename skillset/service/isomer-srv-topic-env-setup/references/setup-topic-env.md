@@ -12,7 +12,7 @@ Recover these before asking the user:
 | `setup_mode` | Use `fast-forward` for `fast-forward`, `fast-foward`, `auto`, `automatic`, or equivalent direct-execution wording. Use `step-by-step` for `step-by-step`, `manual`, `interactive`, confirmation, or equivalent user-controlled wording. Default to `fast-forward` for concrete setup tasks unless the prompt asks to inspect, decide, or proceed carefully. |
 | Project root | Use the provided path or current working directory; it must resolve to an Isomer Project root containing `.isomer-labs/manifest.toml`. |
 | Research Topic or Topic Workspace selector | Read a Research Topic id, Topic Workspace ref, or Topic Workspace path from the prompt or Project Manifest context. Ask only when several topics remain plausible. |
-| `topic_workspace_dir`, `semantic_paths`, `manifest_path_or_dir`, `manifest_path`, `pixi_environment` | Resolve through `resolve-topic-workspace` before any later step mutates or verifies Pixi state. `semantic_paths` must include setup labels such as `topic.main_repo`, `topic.records`, and `topic.runtime`; `manifest_path_or_dir` may be an explicit file target, an explicit directory target, or the implicit Topic Workspace directory default; `manifest_path` is Pixi's resolved manifest path. |
+| `topic_workspace_dir`, `semantic_paths`, `manifest_path_or_dir`, `manifest_path`, `pixi_environment` | Resolve through `resolve-topic-workspace` before any later step mutates or verifies Pixi state. `semantic_paths` must include setup labels such as `topic.repos.main`, `topic.records`, and `topic.runtime`; `manifest_path_or_dir` may be an explicit file target, an explicit directory target, or the implicit Topic Workspace directory default; `manifest_path` is Pixi's resolved manifest path. |
 | `env_gate_path` | Use `<topic-workspace-dir>/user-intent/src/env-gate.md`; `read-env-gate` must confirm it exists before readiness can be claimed. |
 | `derived_gate_path` | Use `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`; `derive-env-gate` must create or update it before install or verification. |
 
@@ -80,7 +80,7 @@ Successful setup leaves the selected Topic Workspace with:
   pixi.toml
   pixi.lock
   .isomer-user-env/   # only when topic-local fallback is needed
-  repos/                 # default `topic.main_repo` parent for independent setup repos
+  repos/                 # default `topic.repos.main` parent for independent setup repos
     <repo-name>/
   user-intent/
     src/

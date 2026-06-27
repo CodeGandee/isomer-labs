@@ -426,7 +426,7 @@ Workspace Runtime initialization SHALL create only the runtime-owned directories
 
 #### Scenario: Optional tmp surfaces are not required for minimal runtime init
 - **WHEN** runtime initialization runs without repository setup, profile materialization, environment setup, or Agent Workspace setup
-- **THEN** it does not require `topic.tmp`, `topic.main_repo.tmp`, or `agent.tmp` merely because those labels exist in the default layout profile
+- **THEN** it does not require `topic.tmp`, `topic.repos.main.tmp`, or `agent.tmp` merely because those labels exist in the default layout profile
 
 ### Requirement: Agent Workspace Runtime Records Use Semantic Bindings
 Agent Workspace runtime records SHALL use semantic `agent.workspace` resolution rather than hard-coded path assembly as the primary planning contract.

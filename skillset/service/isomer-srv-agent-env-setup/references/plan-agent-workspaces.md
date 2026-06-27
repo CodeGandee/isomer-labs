@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Agent env context | Require selected Project, Research Topic, Topic Workspace, `topic.main_repo`, `topic.agents_root`, and path source evidence from `resolve-agent-env-context`. |
+| Agent env context | Require selected Project, Research Topic, Topic Workspace, `topic.repos.main`, `topic.agents_root`, and path source evidence from `resolve-agent-env-context`. |
 | Topic-team material | Read the Topic Team Instantiation Packet or Topic Agent Team Profile material derived from that packet. These are the authority for Agent Names. |
 | Source agent gate summary | Use `read-agent-env-gate` output when agent plan constraints exist. |
 | Explicit operator map | Optional. Treat only as corroborating evidence when it matches authoritative topic-team material. |

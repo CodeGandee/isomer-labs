@@ -129,7 +129,7 @@ The documentation SHALL explain that semantic surface labels are the workspace p
 
 #### Scenario: Semantic labels are documented
 - **WHEN** docs describe Topic Workspace and Agent Workspace paths
-- **THEN** they name semantic labels such as `topic.main_repo`, `topic.records.artifacts`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch`
+- **THEN** they name semantic labels such as `topic.repos.main`, `topic.records.artifacts`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch`
 
 #### Scenario: Default layout is described as a profile
 - **WHEN** docs show `repos/topic-main`, `records/*`, `runtime/*`, or `agents/<agent-name>`
@@ -182,7 +182,7 @@ The documentation verification path SHALL detect stale wording that treats defau
 
 #### Scenario: Docs validation rejects durable tmp wording
 - **WHEN** docs validation scans documentation that mentions `tmp/`
-- **THEN** it allows the wording only when the same document names semantic labels such as `topic.tmp`, `topic.main_repo.tmp`, or `agent.tmp`
+- **THEN** it allows the wording only when the same document names semantic labels such as `topic.tmp`, `topic.repos.main.tmp`, or `agent.tmp`
 - **AND** the document states that tmp material is local, ignored, disposable, not shared, and not durable evidence
 
 #### Scenario: Docs validation rejects fixed tmp path authority
@@ -194,11 +194,11 @@ The documentation SHALL frame local `tmp/` surfaces as semantic labels that inhe
 
 #### Scenario: Topic Workspace definition lists implemented tmp labels
 - **WHEN** a reader opens the Topic Workspace definition after this change is implemented
-- **THEN** it lists `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp` as Local Tmp Surface labels with local disposable meanings
+- **THEN** it lists `topic.tmp`, `topic.repos.main.tmp`, and `agent.tmp` as Local Tmp Surface labels with local disposable meanings
 - **AND** default directories are described only as `isomer-default.v1` bindings
 
 #### Scenario: Documentation no longer calls implemented labels planned
-- **WHEN** documentation describes `topic.tmp`, `topic.main_repo.tmp`, or `agent.tmp` after the semantic surface catalog supports them
+- **WHEN** documentation describes `topic.tmp`, `topic.repos.main.tmp`, or `agent.tmp` after the semantic surface catalog supports them
 - **THEN** it describes them as implemented standard labels rather than planned or future labels
 
 #### Scenario: Documentation distinguishes tmp from sharing

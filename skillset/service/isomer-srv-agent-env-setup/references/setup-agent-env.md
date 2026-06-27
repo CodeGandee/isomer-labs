@@ -49,7 +49,7 @@ Successful setup leaves the selected Topic Workspace with:
   .pixi/
   pixi.lock
   repos/
-    topic-main/                 # default binding for semantic label topic.main_repo
+    topic-main/                 # default binding for semantic label topic.repos.main
   agents/
     <agent-name>/               # default binding for semantic label agent.workspace
   user-intent/

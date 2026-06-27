@@ -31,7 +31,7 @@ The system SHALL support a topic-owned Topic Workspace Manifest that declares se
 The Topic Workspace Manifest SHALL bind stable semantic surface labels to concrete paths or path templates, including disposable local tmp labels.
 
 #### Scenario: Topic tmp surface binding is declared
-- **WHEN** the manifest declares topic-scoped disposable surfaces such as `topic.tmp` or `topic.main_repo.tmp`
+- **WHEN** the manifest declares topic-scoped disposable surfaces such as `topic.tmp` or `topic.repos.main.tmp`
 - **THEN** each binding includes a project- or topic-relative path, owner classification, disposable durability classification, private or local sharing classification, and status
 
 #### Scenario: Agent tmp surface binding is declared
@@ -45,7 +45,7 @@ The system SHALL provide an `isomer-default.v1` layout profile that maps standar
 #### Scenario: Default topic tmp labels are available
 - **WHEN** a Topic Workspace uses the default layout profile
 - **THEN** the system can resolve `topic.tmp` to `<topic-workspace>/tmp/`
-- **AND** it can resolve `topic.main_repo.tmp` to `<topic-workspace>/repos/topic-main/tmp/`
+- **AND** it can resolve `topic.repos.main.tmp` to `<topic-workspace>/repos/topic-main/tmp/`
 
 #### Scenario: Default agent tmp label is available
 - **WHEN** an Effective Agent Context supplies Agent Name `alice` under the default layout profile
@@ -83,7 +83,7 @@ The system SHALL validate manifest-backed paths against Project, Topic Workspace
 Each semantic surface binding SHALL declare enough classification for commands and validation to preserve ownership, durability, sharing, and disposable semantics when paths differ from the default layout.
 
 #### Scenario: Tmp surfaces are disposable and non-shared
-- **WHEN** the manifest or default profile binds `topic.tmp`, `topic.main_repo.tmp`, or `agent.tmp`
+- **WHEN** the manifest or default profile binds `topic.tmp`, `topic.repos.main.tmp`, or `agent.tmp`
 - **THEN** the binding classification marks the surface as disposable
 - **AND** it marks the surface as local/private rather than shared, peer-readable, topic-owned projection, or durable record material
 

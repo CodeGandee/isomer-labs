@@ -12,9 +12,11 @@ from isomer_labs.content_layout import (
     topic_workspace_path as default_topic_workspace_path,
 )
 from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.local_tmp_surfaces import ensure_tmp_surface_ignore_policy
 from isomer_labs.models import EffectiveTopicContext, ResolvedPathEntry
 from isomer_labs.path_utils import canonicalize, is_within, resolve_project_path
 from isomer_labs.project import root_houmao_overlay_dir_for_root
+from isomer_labs.semantic_surfaces import SemanticSurface, storage_profile_by_id
 from isomer_labs.topic_workspace_manifest import (
     DEFAULT_PROFILE_SOURCE,
     PATH_PLAN_SOURCE,
@@ -24,11 +26,13 @@ from isomer_labs.topic_workspace_manifest import (
     compatibility_aliases,
     compatibility_surface_for_label,
     default_path_for_label,
+    effective_catalog,
     load_topic_workspace_manifest,
     match_agent_name_from_template,
     materialize_default_manifest,
     resolve_binding_path,
     resolve_semantic_binding,
+    surface_for_label,
 )
 
 
@@ -97,18 +101,18 @@ LEGACY_AGENT_ENV_SURFACES = frozenset(
 TOPIC_LABELS = (
     "topic.runtime.db",
     "topic.tmp",
-    "topic.main_repo",
-    "topic.main_repo.tmp",
-    "topic.main_repo.isomer_managed",
-    "topic.main_repo.tracked",
-    "topic.main_repo.tracked.shared",
-    "topic.main_repo.tracked.artifacts",
-    "topic.main_repo.tracked.tasks",
-    "topic.main_repo.tracked.runs",
-    "topic.main_repo.tracked.views",
-    "topic.main_repo.tracked.tools",
-    "topic.main_repo.tracked.boundaries",
-    "topic.main_repo.tracked.manifests",
+    "topic.repos.main",
+    "topic.repos.main.tmp",
+    "topic.repos.main.isomer_managed",
+    "topic.repos.main.tracked",
+    "topic.repos.main.tracked.shared",
+    "topic.repos.main.tracked.artifacts",
+    "topic.repos.main.tracked.tasks",
+    "topic.repos.main.tracked.runs",
+    "topic.repos.main.tracked.views",
+    "topic.repos.main.tracked.tools",
+    "topic.repos.main.tracked.boundaries",
+    "topic.repos.main.tracked.manifests",
     "topic.agents_root",
     "topic.records",
     "topic.records.artifacts",
@@ -227,6 +231,8 @@ def preview_paths(
                 semantic_label=entry.semantic_label,
                 scope_ref=entry.scope_ref,
                 compatibility_surface=entry.compatibility_surface,
+                storage_profile=entry.storage_profile,
+                storage_profile_traits=entry.storage_profile_traits,
                 owner=entry.owner,
                 durability=entry.durability,
                 sharing=entry.sharing,
@@ -249,7 +255,8 @@ def resolve_semantic_path(
 ) -> tuple[SemanticPathResult | None, list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
     label = _normalize_label(label_or_surface)
-    surface = catalog().get(label)
+    surface, surface_diagnostics = surface_for_label(context, label)
+    diagnostics.extend(surface_diagnostics)
     if surface is None:
         diagnostics.append(
             Diagnostic(
@@ -305,8 +312,10 @@ def list_semantic_paths(
         missing_is_error=False,
     )
     diagnostics.extend(agent_diagnostics)
+    surfaces, catalog_diagnostics = effective_catalog(context)
+    diagnostics.extend(catalog_diagnostics)
     rows: list[dict[str, object]] = []
-    for surface in sorted(catalog().values(), key=lambda item: item.label):
+    for surface in sorted(surfaces.values(), key=lambda item: item.label):
         if surface.scope == "agent" and agent_context is None:
             rows.append(
                 {
@@ -358,6 +367,133 @@ def materialize_default_paths(
     return {
         "manifest": manifest.to_json(),
         "created_paths": [str(path.resolve(strict=False)) for path in created],
+    }, diagnostics
+
+
+def default_semantic_path(
+    context: EffectiveTopicContext,
+    label_or_surface: str,
+    *,
+    agent_name: str | None = None,
+) -> tuple[dict[str, object] | None, list[Diagnostic]]:
+    label = _normalize_label(label_or_surface)
+    surface = catalog().get(label)
+    diagnostics: list[Diagnostic] = []
+    if surface is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Workspace Path Resolution",
+                field=label_or_surface,
+                message="Only built-in reserved semantic labels have default-layout paths.",
+            )
+        )
+        return None, diagnostics
+    if surface.scope == "agent" and agent_name is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Effective Agent Context",
+                field=label,
+                message="Default path query for agent-scoped labels requires an Agent Name selector.",
+            )
+        )
+        return None, diagnostics
+    path = default_path_for_label(context, label, agent_name=agent_name)
+    profile = storage_profile_by_id(surface.storage_profile)
+    return (
+        {
+            "semantic_label": label,
+            "path": str(path.resolve(strict=False)),
+            "source": DEFAULT_PROFILE_SOURCE,
+            "source_detail": DEFAULT_PROFILE_SOURCE,
+            "storage_profile": surface.storage_profile,
+            "storage_profile_traits": profile.to_json() if profile is not None else None,
+            "path_kind": surface.path_kind,
+            "exists": path.exists(),
+        },
+        diagnostics,
+    )
+
+
+def materialize_semantic_path(
+    context: EffectiveTopicContext,
+    label_or_surface: str,
+    *,
+    env: Mapping[str, str],
+    cwd: Path,
+    agent_name: str | None = None,
+    agent_instance_id: str | None = None,
+) -> tuple[dict[str, object] | None, list[Diagnostic]]:
+    result, diagnostics = resolve_semantic_path(
+        context,
+        label_or_surface,
+        env=env,
+        cwd=cwd,
+        agent_name=agent_name,
+        agent_instance_id=agent_instance_id,
+        use_path_plan=False,
+    )
+    if result is None or any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, diagnostics
+    created: list[Path] = []
+    if result.catalog.path_kind == "file":
+        result.path.parent.mkdir(parents=True, exist_ok=True)
+        created.append(result.path.parent)
+    else:
+        result.path.mkdir(parents=True, exist_ok=True)
+        created.append(result.path)
+    if result.label in ("topic.tmp", "topic.repos.main.tmp", "agent.tmp"):
+        diagnostics.extend(_ensure_materialized_tmp_policy(context, result, env=env))
+    return {
+        "path": result.to_json(),
+        "created_paths": [str(path.resolve(strict=False)) for path in created],
+    }, diagnostics
+
+
+def explain_semantic_path(
+    context: EffectiveTopicContext,
+    label_or_surface: str,
+    *,
+    env: Mapping[str, str],
+    cwd: Path,
+    agent_name: str | None = None,
+    agent_instance_id: str | None = None,
+) -> tuple[dict[str, object] | None, list[Diagnostic]]:
+    recorded, recorded_diagnostics = resolve_semantic_path(
+        context,
+        label_or_surface,
+        env=env,
+        cwd=cwd,
+        agent_name=agent_name,
+        agent_instance_id=agent_instance_id,
+        use_path_plan=True,
+    )
+    configured, configured_diagnostics = resolve_semantic_path(
+        context,
+        label_or_surface,
+        env=env,
+        cwd=cwd,
+        agent_name=agent_name,
+        agent_instance_id=agent_instance_id,
+        use_path_plan=False,
+    )
+    diagnostics = [*recorded_diagnostics, *configured_diagnostics]
+    if recorded is None and configured is None:
+        return None, diagnostics
+    selected = recorded or configured
+    candidates: list[dict[str, object]] = []
+    if recorded is not None:
+        candidates.append({"mode": "recorded", **recorded.to_json()})
+    if configured is not None:
+        candidates.append({"mode": "configured", **configured.to_json()})
+    return {
+        "semantic_label": selected.label if selected is not None else _normalize_label(label_or_surface),
+        "selected_mode": "recorded" if recorded is not None and recorded.source == PATH_PLAN_SOURCE else "configured",
+        "selected": selected.to_json() if selected is not None else None,
+        "candidates": candidates,
     }, diagnostics
 
 
@@ -464,7 +600,25 @@ def _entry_for_label(
     return _entry_from_result(result), diagnostics
 
 
+def _ensure_materialized_tmp_policy(
+    context: EffectiveTopicContext,
+    result: SemanticPathResult,
+    *,
+    env: Mapping[str, str],
+) -> list[Diagnostic]:
+    agent_context = None
+    if result.agent_name is not None:
+        agent_context = EffectiveAgentContext(
+            agent_name=result.agent_name,
+            agent_workspace_path=result.path.parent if result.label == "agent.tmp" else result.path,
+            source=result.agent_context_source or "materialize",
+            agent_instance_id=result.agent_instance_id,
+        )
+    return ensure_tmp_surface_ignore_policy(context, result.label, result.path, env=env, agent_context=agent_context)
+
+
 def _entry_from_result(result: SemanticPathResult) -> ResolvedPathEntry:
+    profile = storage_profile_by_id(result.catalog.storage_profile)
     return ResolvedPathEntry(
         surface=result.catalog.compatibility_surface,
         path=result.path,
@@ -473,6 +627,8 @@ def _entry_from_result(result: SemanticPathResult) -> ResolvedPathEntry:
         semantic_label=result.label,
         scope_ref=result.scope_ref,
         compatibility_surface=result.compatibility_surface,
+        storage_profile=result.catalog.storage_profile,
+        storage_profile_traits=profile.to_json() if profile is not None else None,
         owner=result.catalog.owner,
         durability=result.catalog.durability,
         sharing=result.catalog.sharing,
@@ -503,10 +659,10 @@ def _runtime_db_lookup_path(context: EffectiveTopicContext, *, env: Mapping[str,
 
 
 def _topic_main_lookup_path(context: EffectiveTopicContext, *, env: Mapping[str, str]) -> Path:
-    result, _ = resolve_semantic_binding(context, "topic.main_repo", env=env, agent_context=None)
+    result, _ = resolve_semantic_binding(context, "topic.repos.main", env=env, agent_context=None)
     if result is not None:
         return result.path
-    return default_path_for_label(context, "topic.main_repo", agent_name=None)
+    return default_path_for_label(context, "topic.repos.main", agent_name=None)
 
 
 def _path_plan_result(
@@ -519,7 +675,9 @@ def _path_plan_result(
     runtime_db = _runtime_db_lookup_path(context, env=env)
     if not runtime_db.exists():
         return None
-    surface = catalog()[label]
+    surface, _ = surface_for_label(context, label)
+    if surface is None:
+        return None
     scope_ref = f"topic_workspace:{context.topic_workspace_id}"
     agent_name = None
     agent_instance_id = None
@@ -569,20 +727,19 @@ def _semantic_result_from_plan(
     context: EffectiveTopicContext,
     row: sqlite3.Row,
     label: str,
-    surface: object,
+    surface: SemanticSurface,
     scope_ref: str,
     agent_name: str | None,
     agent_instance_id: str | None,
     agent_source: str | None,
 ) -> SemanticPathResult:
-    semantic_surface = catalog()[label]
     compatibility_surface = row["surface"]
     return SemanticPathResult(
         label=label,
         path=Path(row["path"]).resolve(strict=False),
         source=PATH_PLAN_SOURCE,
         source_detail=row["id"],
-        catalog=semantic_surface,
+        catalog=surface,
         scope_ref=row["scope_ref"] if _row_has_key(row, "scope_ref") and row["scope_ref"] else scope_ref,
         compatibility_surface=compatibility_surface,
         exists=Path(row["path"]).exists(),

@@ -3,6 +3,35 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
+
+
+@dataclass(frozen=True)
+class StorageProfile:
+    id: str
+    context: str
+    kind: str
+    lifecycle: str
+    visibility: str
+    safety_policy: str
+    owner: str
+    path_kind: str = "directory"
+    git_semantics: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "context": self.context,
+            "kind": self.kind,
+            "lifecycle": self.lifecycle,
+            "visibility": self.visibility,
+            "safety_policy": self.safety_policy,
+            "owner": self.owner,
+            "path_kind": self.path_kind,
+        }
+        if self.git_semantics is not None:
+            data["git_semantics"] = self.git_semantics
+        return data
 
 
 @dataclass(frozen=True)
@@ -15,11 +44,16 @@ class SemanticSurface:
     required_context: str | None
     compatibility_surface: str
     default_template: str
+    storage_profile: str
     path_kind: str = "directory"
     command_required: tuple[str, ...] = ()
     git_semantics: str | None = None
+    label_source: str = "builtin"
+    grouped_family: str | None = None
+    allow_user_binding: bool = True
 
     def to_json(self) -> dict[str, object]:
+        storage_profile = storage_profile_by_id(self.storage_profile)
         data: dict[str, object] = {
             "label": self.label,
             "scope": self.scope,
@@ -28,17 +62,59 @@ class SemanticSurface:
             "sharing": self.sharing,
             "compatibility_surface": self.compatibility_surface,
             "default_template": self.default_template,
+            "storage_profile": self.storage_profile,
             "path_kind": self.path_kind,
             "command_required": list(self.command_required),
+            "label_source": self.label_source,
         }
+        if storage_profile is not None:
+            data["storage_profile_traits"] = storage_profile.to_json()
         if self.required_context is not None:
             data["required_context"] = self.required_context
         if self.git_semantics is not None:
             data["git_semantics"] = self.git_semantics
+        if self.grouped_family is not None:
+            data["grouped_family"] = self.grouped_family
         return data
 
 
-LOCAL_TMP_SURFACE_LABELS = ("topic.tmp", "topic.main_repo.tmp", "agent.tmp")
+STORAGE_PROFILES = (
+    StorageProfile("project_durable_dir", "project", "directory", "durable", "project", "project_local", "project"),
+    StorageProfile("topic_workspace_root", "topic", "directory", "durable", "topic", "topic_workspace_local", "topic"),
+    StorageProfile("topic_runtime_file", "topic", "file", "durable", "private", "topic_workspace_local", "runtime", path_kind="file"),
+    StorageProfile("topic_runtime_dir", "topic", "directory", "durable", "private", "topic_workspace_local", "runtime"),
+    StorageProfile("topic_records_dir", "topic", "directory", "durable", "topic", "topic_workspace_local", "topic"),
+    StorageProfile("topic_durable_dir", "topic", "directory", "durable", "topic", "topic_workspace_local", "topic"),
+    StorageProfile("topic_private_dir", "topic", "directory", "durable", "private", "topic_workspace_local", "topic"),
+    StorageProfile("topic_disposable_dir", "topic", "directory", "disposable", "private", "topic_workspace_local", "topic"),
+    StorageProfile("topic_repo", "topic", "repository", "durable", "topic", "topic_workspace_local", "topic", git_semantics="repository"),
+    StorageProfile("topic_repo_disposable_dir", "topic", "directory", "disposable", "private", "topic_repo_local", "topic"),
+    StorageProfile("topic_repo_tracked_dir", "topic", "directory", "durable", "shared", "topic_repo_local", "topic"),
+    StorageProfile("agent_worktree", "agent", "repository", "durable", "private", "agent_workspace_local", "agent", git_semantics="worktree"),
+    StorageProfile("agent_durable_dir", "agent", "directory", "durable", "private", "agent_workspace_local", "agent"),
+    StorageProfile("agent_disposable_dir", "agent", "directory", "disposable", "private", "agent_workspace_local", "agent"),
+    StorageProfile("agent_peer_read_dir", "agent", "directory", "durable", "peer_read", "agent_workspace_local", "agent"),
+    StorageProfile("agent_topic_dir", "agent", "directory", "durable", "topic", "agent_workspace_local", "topic"),
+    StorageProfile("agent_topic_read_dir", "agent", "directory", "durable", "topic_read", "agent_workspace_local", "topic"),
+    StorageProfile("agent_topic_write_dir", "agent", "directory", "durable", "topic_write", "agent_workspace_local", "topic"),
+    StorageProfile("agent_advisory_dir", "agent", "directory", "advisory", "private", "agent_workspace_local", "agent"),
+)
+
+LOCAL_TMP_SURFACE_LABELS = ("topic.tmp", "topic.repos.main.tmp", "agent.tmp")
+
+RESERVED_LABEL_ROOTS = frozenset(("project", "topic", "agent", "custom"))
+ISOMER_RESERVED_LABEL_ROOTS = frozenset(("project", "topic", "agent"))
+CUSTOM_LABEL_ROOT = "custom"
+GROUPED_TOPIC_REPO_PREFIX = "topic.repos."
+_LABEL_SEGMENT_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+
+
+def storage_profiles() -> dict[str, StorageProfile]:
+    return {profile.id: profile for profile in STORAGE_PROFILES}
+
+
+def storage_profile_by_id(profile_id: str) -> StorageProfile | None:
+    return storage_profiles().get(profile_id)
 
 
 def catalog() -> dict[str, SemanticSurface]:
@@ -59,6 +135,9 @@ def semantic_label_for_surface(surface: str) -> str | None:
 def compatibility_surface_for_label(label: str, *, agent_name: str | None = None) -> str | None:
     surface = catalog().get(label)
     if surface is None:
+        if is_grouped_topic_repo_label(label):
+            surface_name = label.replace(".", "_")
+            return surface_name if agent_name is None else f"{surface_name}:{agent_name}"
         return None
     if surface.scope == "agent" and agent_name:
         return f"{surface.compatibility_surface}:{agent_name}"
@@ -68,71 +147,77 @@ def compatibility_surface_for_label(label: str, *, agent_name: str | None = None
 def _surface(
     label: str,
     scope: str,
-    owner: str,
-    durability: str,
-    sharing: str,
     compatibility_surface: str,
     default_template: str,
+    storage_profile: str,
     *,
     required_context: str | None = None,
-    path_kind: str = "directory",
     command_required: tuple[str, ...] = (),
-    git_semantics: str | None = None,
+    label_source: str = "builtin",
+    grouped_family: str | None = None,
+    allow_user_binding: bool = True,
 ) -> SemanticSurface:
+    profile = storage_profile_by_id(storage_profile)
+    if profile is None:
+        raise ValueError(f"Unknown storage profile: {storage_profile}")
     return SemanticSurface(
         label=label,
         scope=scope,
-        owner=owner,
-        durability=durability,
-        sharing=sharing,
+        owner=profile.owner,
+        durability=profile.lifecycle,
+        sharing=profile.visibility,
         required_context=required_context,
         compatibility_surface=compatibility_surface,
         default_template=default_template,
-        path_kind=path_kind,
+        storage_profile=storage_profile,
+        path_kind=profile.path_kind,
         command_required=command_required,
-        git_semantics=git_semantics,
+        git_semantics=profile.git_semantics,
+        label_source=label_source,
+        grouped_family=grouped_family,
+        allow_user_binding=allow_user_binding,
     )
 
 
 SEMANTIC_SURFACES = (
-    _surface("topic.workspace", "topic", "topic", "durable", "topic", "topic_workspace", "."),
-    _surface("topic.runtime.db", "topic", "runtime", "durable", "private", "workspace_runtime_db", "state.sqlite", path_kind="file", command_required=("runtime.init",)),
-    _surface("topic.runtime", "topic", "runtime", "durable", "private", "runtime", "runtime", command_required=("runtime.init",)),
-    _surface("topic.records", "topic", "topic", "durable", "topic", "records", "records", command_required=("runtime.init",)),
-    _surface("topic.records.artifacts", "topic", "topic", "durable", "topic", "records_artifacts", "records/artifacts", command_required=("runtime.init",)),
-    _surface("topic.records.tasks", "topic", "topic", "durable", "topic", "records_tasks", "records/tasks", command_required=("runtime.init",)),
-    _surface("topic.records.runs", "topic", "topic", "durable", "topic", "records_runs", "records/runs", command_required=("runtime.init",)),
-    _surface("topic.records.views", "topic", "topic", "durable", "topic", "records_views", "records/views", command_required=("runtime.init",)),
-    _surface("topic.records.logs", "topic", "topic", "durable", "topic", "records_logs", "records/logs", command_required=("runtime.init",)),
-    _surface("topic.team_profile_bundle", "topic", "topic", "durable", "topic", "topic_team_profile_bundle", "team-profile"),
-    _surface("topic.tmp", "topic", "topic", "disposable", "private", "topic_tmp", "tmp"),
-    _surface("topic.main_repo", "topic", "topic", "git", "topic", "topic_main_repo", "repos/topic-main", git_semantics="repository"),
-    _surface("topic.main_repo.tmp", "topic", "topic", "disposable", "private", "topic_main_tmp", "repos/topic-main/tmp"),
-    _surface("topic.main_repo.isomer_managed", "topic", "topic", "durable", "topic", "topic_main_isomer_managed", "repos/topic-main/isomer-managed"),
-    _surface("topic.main_repo.tracked", "topic", "topic", "durable", "shared", "topic_main_tracked", "repos/topic-main/isomer-managed/tracked"),
-    _surface("topic.main_repo.tracked.shared", "topic", "topic", "durable", "shared", "topic_main_tracked_shared", "repos/topic-main/isomer-managed/tracked/shared"),
-    _surface("topic.main_repo.tracked.artifacts", "topic", "topic", "durable", "shared", "topic_main_tracked_artifacts", "repos/topic-main/isomer-managed/tracked/artifacts"),
-    _surface("topic.main_repo.tracked.tasks", "topic", "topic", "durable", "shared", "topic_main_tracked_tasks", "repos/topic-main/isomer-managed/tracked/tasks"),
-    _surface("topic.main_repo.tracked.runs", "topic", "topic", "durable", "shared", "topic_main_tracked_runs", "repos/topic-main/isomer-managed/tracked/runs"),
-    _surface("topic.main_repo.tracked.views", "topic", "topic", "durable", "shared", "topic_main_tracked_views", "repos/topic-main/isomer-managed/tracked/views"),
-    _surface("topic.main_repo.tracked.tools", "topic", "topic", "durable", "shared", "topic_main_tracked_tools", "repos/topic-main/isomer-managed/tracked/tools"),
-    _surface("topic.main_repo.tracked.boundaries", "topic", "topic", "durable", "shared", "topic_main_tracked_boundaries", "repos/topic-main/isomer-managed/tracked/boundaries"),
-    _surface("topic.main_repo.tracked.manifests", "topic", "topic", "durable", "shared", "topic_main_tracked_manifests", "repos/topic-main/isomer-managed/tracked/manifests"),
-    _surface("topic.agents_root", "topic", "topic", "durable", "private", "agents", "agents"),
-    _surface("agent.workspace", "agent", "agent", "durable", "private", "agent_workspace", "agents/{agent_name}", required_context="agent", git_semantics="worktree"),
-    _surface("agent.tmp", "agent", "agent", "disposable", "private", "agent_tmp", "agents/{agent_name}/tmp", required_context="agent"),
-    _surface("agent.isomer_managed", "agent", "agent", "durable", "private", "agent_isomer_managed", "agents/{agent_name}/isomer-managed", required_context="agent"),
-    _surface("agent.owned", "agent", "agent", "durable", "private", "agent_owned", "agents/{agent_name}/isomer-managed/agent-owned", required_context="agent"),
-    _surface("agent.runtime", "agent", "agent", "durable", "private", "agent_runtime", "agents/{agent_name}/isomer-managed/agent-owned/runtime", required_context="agent"),
-    _surface("agent.private_artifacts", "agent", "agent", "durable", "private", "agent_artifacts", "agents/{agent_name}/isomer-managed/agent-owned/artifacts", required_context="agent"),
-    _surface("agent.scratch", "agent", "agent", "disposable", "private", "agent_scratch", "agents/{agent_name}/isomer-managed/agent-owned/scratch", required_context="agent"),
-    _surface("agent.logs", "agent", "agent", "durable", "private", "agent_logs", "agents/{agent_name}/isomer-managed/agent-owned/logs", required_context="agent"),
-    _surface("agent.public_share", "agent", "agent", "durable", "peer_read", "agent_public_share", "agents/{agent_name}/isomer-managed/agent-owned/public", required_context="agent"),
-    _surface("agent.inbox", "agent", "agent", "durable", "private", "agent_inbox", "agents/{agent_name}/isomer-managed/agent-owned/inbox", required_context="agent"),
-    _surface("agent.topic_owned", "agent", "topic", "durable", "topic", "agent_topic_owned", "agents/{agent_name}/isomer-managed/topic-owned", required_context="agent"),
-    _surface("agent.topic_readonly", "agent", "topic", "durable", "topic_read", "agent_topic_readonly", "agents/{agent_name}/isomer-managed/topic-owned/readonly", required_context="agent"),
-    _surface("agent.topic_writable", "agent", "topic", "durable", "topic_write", "agent_topic_writable", "agents/{agent_name}/isomer-managed/topic-owned/writable", required_context="agent"),
-    _surface("agent.links", "agent", "agent", "advisory", "private", "agent_links", "agents/{agent_name}/isomer-managed/links", required_context="agent"),
+    _surface("topic.workspace", "topic", "topic_workspace", ".", "topic_workspace_root"),
+    _surface("topic.runtime.db", "topic", "workspace_runtime_db", "state.sqlite", "topic_runtime_file", command_required=("runtime.init",)),
+    _surface("topic.runtime", "topic", "runtime", "runtime", "topic_runtime_dir", command_required=("runtime.init",)),
+    _surface("topic.records", "topic", "records", "records", "topic_records_dir", command_required=("runtime.init",)),
+    _surface("topic.records.artifacts", "topic", "records_artifacts", "records/artifacts", "topic_records_dir", command_required=("runtime.init",)),
+    _surface("topic.records.tasks", "topic", "records_tasks", "records/tasks", "topic_records_dir", command_required=("runtime.init",)),
+    _surface("topic.records.runs", "topic", "records_runs", "records/runs", "topic_records_dir", command_required=("runtime.init",)),
+    _surface("topic.records.views", "topic", "records_views", "records/views", "topic_records_dir", command_required=("runtime.init",)),
+    _surface("topic.records.logs", "topic", "records_logs", "records/logs", "topic_records_dir", command_required=("runtime.init",)),
+    _surface("topic.team_profile_bundle", "topic", "topic_team_profile_bundle", "team-profile", "topic_durable_dir"),
+    _surface("topic.tmp", "topic", "topic_tmp", "tmp", "topic_disposable_dir"),
+    _surface("topic.repos.main", "topic", "topic_main_repo", "repos/topic-main", "topic_repo", grouped_family="topic.repos"),
+    _surface("topic.repos.main.tmp", "topic", "topic_main_tmp", "repos/topic-main/tmp", "topic_repo_disposable_dir"),
+    _surface("topic.repos.main.isomer_managed", "topic", "topic_main_isomer_managed", "repos/topic-main/isomer-managed", "topic_durable_dir"),
+    _surface("topic.repos.main.tracked", "topic", "topic_main_tracked", "repos/topic-main/isomer-managed/tracked", "topic_repo_tracked_dir"),
+    _surface("topic.repos.main.tracked.shared", "topic", "topic_main_tracked_shared", "repos/topic-main/isomer-managed/tracked/shared", "topic_repo_tracked_dir"),
+    _surface("topic.repos.main.tracked.artifacts", "topic", "topic_main_tracked_artifacts", "repos/topic-main/isomer-managed/tracked/artifacts", "topic_repo_tracked_dir"),
+    _surface("topic.repos.main.tracked.tasks", "topic", "topic_main_tracked_tasks", "repos/topic-main/isomer-managed/tracked/tasks", "topic_repo_tracked_dir"),
+    _surface("topic.repos.main.tracked.runs", "topic", "topic_main_tracked_runs", "repos/topic-main/isomer-managed/tracked/runs", "topic_repo_tracked_dir"),
+    _surface("topic.repos.main.tracked.views", "topic", "topic_main_tracked_views", "repos/topic-main/isomer-managed/tracked/views", "topic_repo_tracked_dir"),
+    _surface("topic.repos.main.tracked.tools", "topic", "topic_main_tracked_tools", "repos/topic-main/isomer-managed/tracked/tools", "topic_repo_tracked_dir"),
+    _surface("topic.repos.main.tracked.boundaries", "topic", "topic_main_tracked_boundaries", "repos/topic-main/isomer-managed/tracked/boundaries", "topic_repo_tracked_dir"),
+    _surface("topic.repos.main.tracked.manifests", "topic", "topic_main_tracked_manifests", "repos/topic-main/isomer-managed/tracked/manifests", "topic_repo_tracked_dir"),
+    _surface("topic.agents_root", "topic", "agents", "agents", "topic_private_dir"),
+    _surface("agent.workspace", "agent", "agent_workspace", "agents/{agent_name}", "agent_worktree", required_context="agent"),
+    _surface("agent.tmp", "agent", "agent_tmp", "agents/{agent_name}/tmp", "agent_disposable_dir", required_context="agent"),
+    _surface("agent.isomer_managed", "agent", "agent_isomer_managed", "agents/{agent_name}/isomer-managed", "agent_durable_dir", required_context="agent"),
+    _surface("agent.owned", "agent", "agent_owned", "agents/{agent_name}/isomer-managed/agent-owned", "agent_durable_dir", required_context="agent"),
+    _surface("agent.runtime", "agent", "agent_runtime", "agents/{agent_name}/isomer-managed/agent-owned/runtime", "agent_durable_dir", required_context="agent"),
+    _surface("agent.private_artifacts", "agent", "agent_artifacts", "agents/{agent_name}/isomer-managed/agent-owned/artifacts", "agent_durable_dir", required_context="agent"),
+    _surface("agent.scratch", "agent", "agent_scratch", "agents/{agent_name}/isomer-managed/agent-owned/scratch", "agent_disposable_dir", required_context="agent"),
+    _surface("agent.logs", "agent", "agent_logs", "agents/{agent_name}/isomer-managed/agent-owned/logs", "agent_durable_dir", required_context="agent"),
+    _surface("agent.public_share", "agent", "agent_public_share", "agents/{agent_name}/isomer-managed/agent-owned/public", "agent_peer_read_dir", required_context="agent"),
+    _surface("agent.inbox", "agent", "agent_inbox", "agents/{agent_name}/isomer-managed/agent-owned/inbox", "agent_durable_dir", required_context="agent"),
+    _surface("agent.topic_owned", "agent", "agent_topic_owned", "agents/{agent_name}/isomer-managed/topic-owned", "agent_topic_dir", required_context="agent"),
+    _surface("agent.topic_readonly", "agent", "agent_topic_readonly", "agents/{agent_name}/isomer-managed/topic-owned/readonly", "agent_topic_read_dir", required_context="agent"),
+    _surface("agent.topic_writable", "agent", "agent_topic_writable", "agents/{agent_name}/isomer-managed/topic-owned/writable", "agent_topic_write_dir", required_context="agent"),
+    _surface("agent.links", "agent", "agent_links", "agents/{agent_name}/isomer-managed/links", "agent_advisory_dir", required_context="agent"),
 )
 
 
@@ -144,9 +229,9 @@ STANDARD_TOPIC_MATERIALIZATION_LABELS = (
     "topic.records.runs",
     "topic.records.views",
     "topic.records.logs",
-    "topic.main_repo",
+    "topic.repos.main",
     "topic.tmp",
-    "topic.main_repo.isomer_managed",
+    "topic.repos.main.isomer_managed",
     "topic.agents_root",
     "topic.team_profile_bundle",
 )
@@ -155,9 +240,9 @@ STANDARD_TOPIC_MATERIALIZATION_LABELS = (
 PATH_ENV_VARS_BY_LABEL = {
     "topic.runtime.db": "ISOMER_TOPIC_WORKSPACE_RUNTIME_DB",
     "topic.tmp": "ISOMER_TOPIC_WORKSPACE_TMP_DIR",
-    "topic.main_repo": "ISOMER_TOPIC_MAIN_REPO_DIR",
-    "topic.main_repo.tmp": "ISOMER_TOPIC_MAIN_TMP_DIR",
-    "topic.main_repo.isomer_managed": "ISOMER_TOPIC_MAIN_ISOMER_MANAGED_DIR",
+    "topic.repos.main": "ISOMER_TOPIC_MAIN_REPO_DIR",
+    "topic.repos.main.tmp": "ISOMER_TOPIC_MAIN_TMP_DIR",
+    "topic.repos.main.isomer_managed": "ISOMER_TOPIC_MAIN_ISOMER_MANAGED_DIR",
     "topic.records": "ISOMER_TOPIC_WORKSPACE_RECORDS_DIR",
     "topic.records.artifacts": "ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR",
     "topic.records.tasks": "ISOMER_TOPIC_WORKSPACE_TASKS_DIR",
@@ -176,3 +261,65 @@ PATH_ENV_VARS_BY_LABEL = {
     "agent.topic_owned": "ISOMER_AGENT_TOPIC_OWNED_DIR",
     "agent.links": "ISOMER_AGENT_LINKS_DIR",
 }
+
+
+def generated_env_var_for_label(label: str) -> str:
+    return "ISOMER_PATH__" + "__".join(segment.upper() for segment in label.split("."))
+
+
+def label_root(label: str) -> str:
+    return label.split(".", 1)[0]
+
+
+def label_segments_are_valid(label: str) -> bool:
+    return all(_LABEL_SEGMENT_RE.match(segment) for segment in label.split("."))
+
+
+def is_custom_label(label: str) -> bool:
+    return label.startswith("custom.") and label_segments_are_valid(label)
+
+
+def is_grouped_topic_repo_label(label: str) -> bool:
+    if not label.startswith(GROUPED_TOPIC_REPO_PREFIX):
+        return False
+    suffix = label[len(GROUPED_TOPIC_REPO_PREFIX) :]
+    return bool(suffix) and all(_LABEL_SEGMENT_RE.match(segment) for segment in suffix.split("."))
+
+
+def dynamic_surface_for_label(label: str, storage_profile: str) -> SemanticSurface | None:
+    profile = storage_profile_by_id(storage_profile)
+    if profile is None:
+        return None
+    if is_custom_label(label):
+        compatibility_surface = label.replace(".", "_")
+        return SemanticSurface(
+            label=label,
+            scope=profile.context,
+            owner=profile.owner,
+            durability=profile.lifecycle,
+            sharing=profile.visibility,
+            required_context="agent" if profile.context == "agent" else None,
+            compatibility_surface=compatibility_surface,
+            default_template="",
+            storage_profile=storage_profile,
+            path_kind=profile.path_kind,
+            git_semantics=profile.git_semantics,
+            label_source="manifest",
+        )
+    if is_grouped_topic_repo_label(label) and storage_profile == "topic_repo":
+        return SemanticSurface(
+            label=label,
+            scope="topic",
+            owner=profile.owner,
+            durability=profile.lifecycle,
+            sharing=profile.visibility,
+            required_context=None,
+            compatibility_surface=label.replace(".", "_"),
+            default_template="",
+            storage_profile=storage_profile,
+            path_kind=profile.path_kind,
+            git_semantics=profile.git_semantics,
+            label_source="manifest",
+            grouped_family="topic.repos",
+        )
+    return None

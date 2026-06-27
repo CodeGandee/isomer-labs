@@ -173,6 +173,8 @@ class PathPlanRecord:
     semantic_label: str | None = None
     scope_ref: str | None = None
     compatibility_surface: str | None = None
+    storage_profile: str | None = None
+    storage_profile_traits: dict[str, object] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
@@ -191,6 +193,10 @@ class PathPlanRecord:
             data["scope_ref"] = self.scope_ref
         if self.compatibility_surface is not None:
             data["compatibility_surface"] = self.compatibility_surface
+        if self.storage_profile is not None:
+            data["storage_profile"] = self.storage_profile
+        if self.storage_profile_traits:
+            data["storage_profile_traits"] = self.storage_profile_traits
         return data
 
 

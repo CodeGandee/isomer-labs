@@ -30,11 +30,11 @@ Workspace Runtime, adapter manifests, command payloads, and research Artifacts a
 
 ### Workspace path contracts are semantic labels
 
-Topic-internal paths are resolved through semantic workspace surface labels and the Topic Workspace Manifest, not by assuming fixed directory names. The built-in `isomer-default.v1` layout remains the default profile for fresh topics and explicit materialization. Read-only commands such as `project paths get`, `project paths list`, and `project paths preview` must not create manifests, directories, repositories, or runtime records.
+Topic-internal paths are resolved through semantic workspace surface labels and the Topic Workspace Manifest, not by assuming fixed directory names. The built-in `isomer-default.v1` layout remains the default profile for fresh topics and explicit materialization. Read-only commands such as `project paths get`, `project paths list`, `project paths preview`, `project paths default`, and `project paths explain` must not create manifests, directories, repositories, or runtime records. Manifest bindings use `label`, `path`, and explicit `storage_profile`; user-defined labels live under `custom.*`, while additional topic repositories may use grouped `topic.repos.*` labels.
 
 ### Local tmp surfaces are semantic labels
 
-Local `tmp/` surfaces are implemented as semantic labels: `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`. Under `isomer-default.v1`, they bind to `<topic-workspace>/tmp/`, `<resolved topic.main_repo>/tmp/`, and `<resolved agent.workspace>/tmp/`. They remain local, ignored, disposable, not shared, and not durable evidence unless promoted or recorded by another accepted contract.
+Local `tmp/` surfaces are implemented as semantic labels: `topic.tmp`, `topic.repos.main.tmp`, and `agent.tmp`. Under `isomer-default.v1`, they bind to `<topic-workspace>/tmp/`, `<resolved topic.repos.main>/tmp/`, and `<resolved agent.workspace>/tmp/`. They remain local, ignored, disposable, not shared, and not durable evidence unless promoted or recorded by another accepted contract.
 
 ## Non-goals
 
@@ -63,7 +63,7 @@ The platform intentionally does not:
 - Topic Environment Readiness recording.
 - Read-only Workspace Runtime inspection and validation.
 - Agent Team Instance record creation with Agent Instance records, Agent Workspace records, and directory materialization.
-- Topic Workspace Manifest-backed semantic path resolution through `project paths get`, `project paths list`, `project paths preview`, and explicit `project paths materialize-default`.
+- Topic Workspace Manifest-backed semantic path resolution through `project paths get`, `project paths list`, `project paths preview`, `project paths default`, `project paths explain`, explicit `project paths materialize-default`, configured-target `project paths materialize`, binding lifecycle commands, generated `ISOMER_PATH__...` variables, and `project repos create`.
 - Isomer-managed Agent Workspace support paths under `isomer-managed/`, including tracked material, agent-owned support, topic-owned projections, and generated-link diagnostics.
 - Houmao adapter quick launch, prepare-only materialization, inspect-live, stop, reconcile, and adopt.
 - Houmao adapter JSON manifests (`adapter-link.json`, `launch-material-manifest.json`, `adapter-runtime-manifest.json`), command payload recording, manifest digest tracking, and material drift detection.

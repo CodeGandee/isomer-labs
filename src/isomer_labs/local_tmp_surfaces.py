@@ -51,7 +51,7 @@ def tmp_surface_ignore_policy(
             TmpSurfaceIgnorePolicy(label, context.topic_workspace_path / ".gitignore", tmp_path, context.topic_workspace_path, entry),
             diagnostics,
         )
-    if label == "topic.main_repo.tmp":
+    if label == "topic.repos.main.tmp":
         topic_main, topic_main_diagnostics = _resolve_topic_main(context, env)
         diagnostics.extend(topic_main_diagnostics)
         if topic_main is None or any(diagnostic.is_error for diagnostic in diagnostics):
@@ -109,11 +109,11 @@ def _tmp_surface_boundary_diagnostics(
         if not is_within(path, context.topic_workspace_path):
             diagnostics.append(_tmp_boundary_diagnostic(label, "Local Tmp Surface must stay inside the selected Topic Workspace."))
         return diagnostics
-    if label == "topic.main_repo.tmp":
+    if label == "topic.repos.main.tmp":
         topic_main, topic_main_diagnostics = _resolve_topic_main(context, env)
         diagnostics.extend(topic_main_diagnostics)
         if topic_main is not None and not is_within(path, topic_main):
-            diagnostics.append(_tmp_boundary_diagnostic(label, "`topic.main_repo.tmp` must stay inside `topic.main_repo`."))
+            diagnostics.append(_tmp_boundary_diagnostic(label, "`topic.repos.main.tmp` must stay inside `topic.repos.main`."))
         return diagnostics
     if label == "agent.tmp" and agent_context is not None and not is_within(path, agent_context.agent_workspace_path):
         diagnostics.append(_tmp_boundary_diagnostic(label, "`agent.tmp` must stay inside the resolved `agent.workspace`."))
@@ -123,7 +123,7 @@ def _tmp_surface_boundary_diagnostics(
 def _resolve_topic_main(context: EffectiveTopicContext, env: Mapping[str, str]) -> tuple[Path | None, list[Diagnostic]]:
     from isomer_labs.topic_workspace_manifest import resolve_semantic_binding
 
-    result, diagnostics = resolve_semantic_binding(context, "topic.main_repo", env=env, agent_context=None)
+    result, diagnostics = resolve_semantic_binding(context, "topic.repos.main", env=env, agent_context=None)
     return (result.path if result is not None else None), diagnostics
 
 

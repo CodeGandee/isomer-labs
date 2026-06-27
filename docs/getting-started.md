@@ -75,6 +75,15 @@ pixi run isomer-cli --print-json project paths materialize-default --topic my-to
 
 This command is mutating: it writes or updates `<topic-workspace>/topic-workspace.toml` and creates only the selected default-layout directories.
 
+To add another topic repository under the semantic storage contract, register it instead of editing the manifest by hand:
+
+```bash
+pixi run isomer-cli --print-json project repos create inner_group.some_repo_name --topic my-topic
+pixi run isomer-cli --print-json project paths get topic.repos.inner_group.some_repo_name --topic my-topic
+```
+
+The helper creates `repos/inner_group/some_repo_name` by default, records `label = "topic.repos.inner_group.some_repo_name"`, `path = "repos/inner_group/some_repo_name"`, and `storage_profile = "topic_repo"`, and leaves later path lookup to Workspace Path Resolution.
+
 ## Initialize and Prepare Workspace Runtime
 
 `isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It resolves required semantic labels such as `topic.runtime.db`, `topic.records.artifacts`, and `topic.runtime`, records path plans, and creates those runtime-owned paths. It does not create per-agent `agent.*` paths before Agent Workspace setup.

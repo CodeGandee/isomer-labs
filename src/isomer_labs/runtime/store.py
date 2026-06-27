@@ -95,9 +95,11 @@ from isomer_labs.topic_workspace_manifest import (
     EffectiveAgentContext,
     SemanticPathResult,
     compatibility_surface_for_label,
+    catalog,
     resolve_semantic_binding,
     semantic_label_for_surface,
 )
+from isomer_labs.semantic_surfaces import storage_profile_by_id
 
 
 AGENT_TEAM_INSTANCE_PATH_LABELS = (
@@ -129,6 +131,11 @@ def _agent_path_plan_source_detail(plan: AgentWorkspacePlan, result: SemanticPat
     return "; ".join(parts)
 
 
+def _storage_profile_traits_for_result(result: SemanticPathResult) -> dict[str, object]:
+    traits = result.to_json().get("storage_profile_traits", {})
+    return traits if isinstance(traits, dict) else {}
+
+
 def _prepare_runtime_local_tmp_surfaces(
     context: EffectiveTopicContext,
     *,
@@ -136,7 +143,7 @@ def _prepare_runtime_local_tmp_surfaces(
 ) -> tuple[list[Path], list[Diagnostic]]:
     directories: list[Path] = []
     diagnostics: list[Diagnostic] = []
-    for label in ("topic.tmp", "topic.main_repo.tmp"):
+    for label in ("topic.tmp", "topic.repos.main.tmp"):
         result, result_diagnostics = resolve_semantic_path(
             context,
             label,
@@ -304,11 +311,21 @@ class WorkspaceRuntimeStore:
         semantic_label: str | None = None,
         scope_ref: str | None = None,
         compatibility_surface: str | None = None,
+        storage_profile: str | None = None,
+        storage_profile_traits: dict[str, object] | None = None,
         created_at: str | None = None,
     ) -> PathPlanRecord:
         timestamp = created_at or utc_timestamp()
         selected_semantic_label = semantic_label or semantic_label_for_surface(surface)
         selected_compatibility_surface = compatibility_surface or surface
+        selected_storage_profile = storage_profile
+        selected_storage_profile_traits = storage_profile_traits or {}
+        if selected_storage_profile is None and selected_semantic_label is not None:
+            semantic_surface = catalog().get(selected_semantic_label)
+            if semantic_surface is not None:
+                selected_storage_profile = semantic_surface.storage_profile
+                profile = storage_profile_by_id(semantic_surface.storage_profile)
+                selected_storage_profile_traits = profile.to_json() if profile is not None else {}
         selected_scope_ref = scope_ref
         if selected_scope_ref is None and selected_semantic_label is not None:
             selected_scope_ref = f"topic_workspace:{topic_workspace_id}"
@@ -325,15 +342,18 @@ class WorkspaceRuntimeStore:
             semantic_label=selected_semantic_label,
             scope_ref=selected_scope_ref,
             compatibility_surface=selected_compatibility_surface,
+            storage_profile=selected_storage_profile,
+            storage_profile_traits=selected_storage_profile_traits,
         )
         self.connection.execute(
             """
             INSERT OR IGNORE INTO path_plans
                 (
                     id, topic_workspace_id, surface, path, source, source_detail,
-                    semantic_label, scope_ref, compatibility_surface, created_at
+                    semantic_label, scope_ref, compatibility_surface, storage_profile,
+                    storage_profile_traits_json, created_at
                 )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 record.id,
@@ -345,6 +365,8 @@ class WorkspaceRuntimeStore:
                 record.semantic_label,
                 record.scope_ref,
                 record.compatibility_surface,
+                record.storage_profile,
+                _dumps(record.storage_profile_traits),
                 record.created_at,
             ),
         )
@@ -704,6 +726,8 @@ class WorkspaceRuntimeStore:
                         semantic_label="agent.workspace",
                         scope_ref=f"agent_name:{plan.agent_name}",
                         compatibility_surface=surface,
+                        storage_profile=workspace_result.catalog.storage_profile,
+                        storage_profile_traits=_storage_profile_traits_for_result(workspace_result),
                         created_at=now,
                     )
                     isomer_managed_path = isomer_managed_result.path
@@ -716,6 +740,8 @@ class WorkspaceRuntimeStore:
                         semantic_label="agent.isomer_managed",
                         scope_ref=f"agent_name:{plan.agent_name}",
                         compatibility_surface=f"agent_isomer_managed:{plan.agent_name}",
+                        storage_profile=isomer_managed_result.catalog.storage_profile,
+                        storage_profile_traits=_storage_profile_traits_for_result(isomer_managed_result),
                         created_at=now,
                     )
                     support_path_plans = [
@@ -728,6 +754,8 @@ class WorkspaceRuntimeStore:
                             semantic_label=label,
                             scope_ref=f"agent_name:{plan.agent_name}",
                             compatibility_surface=compatibility_surface_for_label(label, agent_name=plan.agent_name),
+                            storage_profile=result.catalog.storage_profile,
+                            storage_profile_traits=_storage_profile_traits_for_result(result),
                             created_at=now,
                         )
                         for label, result in resolved_paths.items()
@@ -1964,6 +1992,8 @@ def initialize_workspace_runtime(
                     semantic_label=entry.semantic_label,
                     scope_ref=entry.scope_ref,
                     compatibility_surface=entry.compatibility_surface,
+                    storage_profile=entry.storage_profile,
+                    storage_profile_traits=entry.storage_profile_traits,
                     created_at=now,
                 )
     except sqlite3.Error as exc:

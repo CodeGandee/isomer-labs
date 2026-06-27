@@ -324,7 +324,7 @@ Workspace Path Resolution SHALL preserve the existing Agent Workspace subpath se
 Workspace Path Resolution SHALL resolve public semantic surface labels to concrete paths for the selected Effective Topic Context.
 
 #### Scenario: Semantic label resolves to path
-- **WHEN** a caller requests a semantic label such as `topic.main_repo`, `topic.records.artifacts`, `agent.workspace`, or `agent.private_artifacts`
+- **WHEN** a caller requests a semantic label such as `topic.repos.main`, `topic.records.artifacts`, `agent.workspace`, or `agent.private_artifacts`
 - **THEN** the resolver returns the resolved path, semantic label, source, source detail, and diagnostics
 
 #### Scenario: Unknown label is rejected
@@ -390,7 +390,7 @@ Workspace Path Resolution SHALL preserve compatibility for existing internal pat
 
 #### Scenario: Tmp compatibility ids map to semantic labels
 - **WHEN** code requests compatibility ids such as `topic_tmp`, `topic_main_tmp`, or `agent_tmp`
-- **THEN** the resolver maps those ids to `topic.tmp`, `topic.main_repo.tmp`, or `agent.tmp`
+- **THEN** the resolver maps those ids to `topic.tmp`, `topic.repos.main.tmp`, or `agent.tmp`
 - **AND** it preserves disposable, non-shared classification in the returned path evidence
 
 ### Requirement: Manifest-backed Path Safety
@@ -426,8 +426,8 @@ Workspace Path Resolution SHALL resolve standard local tmp labels through the To
 
 #### Scenario: Topic Main Repository tmp is previewed
 - **WHEN** Workspace Path Resolution previews paths for the selected Topic Workspace's Topic Main Repository
-- **THEN** the output includes `topic.main_repo.tmp`
-- **AND** under `isomer-default.v1` it resolves under the resolved `topic.main_repo` path
+- **THEN** the output includes `topic.repos.main.tmp`
+- **AND** under `isomer-default.v1` it resolves under the resolved `topic.repos.main` path
 - **AND** the output classifies the surface as disposable and non-shared
 
 #### Scenario: Agent Workspace tmp is previewed

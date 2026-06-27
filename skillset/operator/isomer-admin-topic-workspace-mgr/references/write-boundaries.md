@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Require selected Topic Workspace context and a worktree plan or validation result.
-2. Write or update topic-level boundary material that names `topic.main_repo`, `topic.main_repo.isomer_managed`, resolved paths, path sources, branch namespace rules, and integration expectations.
+2. Write or update topic-level boundary material that names `topic.repos.main`, `topic.repos.main.isomer_managed`, resolved paths, path sources, branch namespace rules, and integration expectations.
 3. Write or update per-agent Agent Workspace boundary material under each prepared resolved `agent.workspace` path when the path is ready or explicitly planned.
 4. State write ownership for the owning agent name, required `agent.*` support labels, approved `agent.public_share` Peer Read Access, topic-owned projection policies, generated `agent.links` targets, and Peer Read Access expectations for other topic-local agents.
 5. State that Workspace Boundaries and Peer Read Access are advisory collaboration contracts, not filesystem-grade security isolation.

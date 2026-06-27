@@ -4,7 +4,7 @@
 TBD - created by archiving change add-local-tmp-workspace-surfaces. Update Purpose after archive.
 ## Requirements
 ### Requirement: Standard Local Tmp Labels
-The system SHALL define `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp` as standard local disposable semantic surfaces.
+The system SHALL define `topic.tmp`, `topic.repos.main.tmp`, and `agent.tmp` as standard local disposable semantic surfaces.
 
 #### Scenario: Topic Workspace tmp label exists as local disposable material
 - **WHEN** a Topic Workspace layout is described, resolved, or prepared
@@ -13,8 +13,8 @@ The system SHALL define `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp` as s
 
 #### Scenario: Topic Main Repository tmp label exists as local disposable material
 - **WHEN** the Topic Main Repository layout is described, resolved, or prepared
-- **THEN** `topic.main_repo.tmp` is the standard disposable label for the owner checkout of the resolved Topic Main Repository
-- **AND** under `isomer-default.v1` it binds to `<resolved topic.main_repo>/tmp/`
+- **THEN** `topic.repos.main.tmp` is the standard disposable label for the owner checkout of the resolved Topic Main Repository
+- **AND** under `isomer-default.v1` it binds to `<resolved topic.repos.main>/tmp/`
 
 #### Scenario: Agent Workspace tmp label exists as local disposable material
 - **WHEN** an Agent Workspace for topic-local Agent Name `alice` is described, resolved, or prepared
@@ -29,11 +29,11 @@ The system SHALL require each resolved standard tmp label to be ignored by the n
 - **THEN** it contains an entry that ignores the resolved default `topic.tmp` path
 
 #### Scenario: Topic Main Repository root ignores tmp
-- **WHEN** the Topic Main Repository root `.gitignore` is prepared or validated for `topic.main_repo.tmp`
-- **THEN** it contains an entry that ignores the resolved default `topic.main_repo.tmp` path
+- **WHEN** the Topic Main Repository root `.gitignore` is prepared or validated for `topic.repos.main.tmp`
+- **THEN** it contains an entry that ignores the resolved default `topic.repos.main.tmp` path
 
 #### Scenario: Agent Workspace inherits topic-main tmp ignore
-- **WHEN** an Agent Workspace is a Git worktree of the resolved `topic.main_repo`
+- **WHEN** an Agent Workspace is a Git worktree of the resolved `topic.repos.main`
 - **THEN** its resolved `agent.tmp` path is ignored by the Topic Main Repository `.gitignore` rule for `tmp/`
 
 #### Scenario: Tmp directories stay untracked

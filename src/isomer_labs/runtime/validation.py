@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping
 
@@ -13,6 +13,7 @@ from isomer_labs.runtime.agent_identity import (
     validate_global_agent_instance_id_uniqueness as _validate_global_agent_instance_id_uniqueness,
 )
 from isomer_labs.runtime.store import open_workspace_runtime
+from isomer_labs.runtime.semantic_file_locator import runtime_semantic_file_locators
 from isomer_labs.runtime.validation_checks import (
     _validate_adapter_records,
     _validate_agent_team_instances,
@@ -37,6 +38,7 @@ class RuntimeInspection:
     latest_readiness: dict[str, object] | None
     agent_team_instances: list[dict[str, object]]
     path_plans: list[dict[str, object]]
+    semantic_file_locators: list[dict[str, object]] = field(default_factory=list)
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -47,6 +49,7 @@ class RuntimeInspection:
             "latest_readiness": self.latest_readiness,
             "agent_team_instances": self.agent_team_instances,
             "path_plans": self.path_plans,
+            "semantic_file_locators": self.semantic_file_locators,
         }
 
 
@@ -64,6 +67,13 @@ def inspect_workspace_runtime(
     if store is None:
         return RuntimeInspection(False, runtime_path, None, {}, None, [], []), diagnostics
     latest_readiness = store.latest_readiness()
+    path_plans = store.list_path_plans()
+    semantic_file_locators = runtime_semantic_file_locators(
+        path_plans=path_plans,
+        lifecycle_records=store.list_lifecycle_records(),
+        adapter_manifest_refs=store.list_adapter_manifest_refs(),
+        adapter_payload_refs=store.list_adapter_payload_refs(),
+    )
     inspection = RuntimeInspection(
         exists=True,
         runtime_path=store.db_path,
@@ -73,7 +83,8 @@ def inspect_workspace_runtime(
         agent_team_instances=[
             record.to_json() for record in store.list_agent_team_instances()
         ],
-        path_plans=[record.to_json() for record in store.list_path_plans()],
+        path_plans=[record.to_json() for record in path_plans],
+        semantic_file_locators=[locator.to_json() for locator in semantic_file_locators],
     )
     store.close()
     return inspection, diagnostics

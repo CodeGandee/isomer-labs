@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Agent env context | Require resolved Topic Workspace, `topic.main_repo`, `topic.agents_root`, requester, and confirmation source. |
+| Agent env context | Require resolved Topic Workspace, `topic.repos.main`, `topic.agents_root`, requester, and confirmation source. |
 | Agent plan | Require `plan-agent-workspaces` output with authoritative Agent Names, resolved `agent.workspace`, support labels, path sources, and branch plan. |
 | Topic Main Repository state | Require `ensure-topic-main-repository` output with a normal non-bare repository and owner branch posture. |
 | Derived agent env gate | Require `user-intent/derived/isomer-agent-env-gate.md` so worktree status can be recorded. |
@@ -19,9 +19,9 @@ Recover these before asking the user:
 When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**: resolved context, authoritative agent plan, usable Topic Main Repository state, derived agent env gate, and mutation confirmation.
-2. **Inspect Git worktree metadata** for the resolved `topic.main_repo` before creating any worktree.
+2. **Inspect Git worktree metadata** for the resolved `topic.repos.main` before creating any worktree.
 3. **For each targeted authoritative Agent Name**, validate the expected branch `per-agent/<agent-name>/main` and resolved `agent.workspace` path.
-4. **Report existing matching worktrees as ready** when the resolved `agent.workspace` path already exists as a worktree of `topic.main_repo` on the expected branch.
+4. **Report existing matching worktrees as ready** when the resolved `agent.workspace` path already exists as a worktree of `topic.repos.main` on the expected branch.
 5. **Block existing nonmatching paths**. Do not overwrite, delete, move, clean, reset, or reinitialize an existing path that is not the expected worktree.
 6. **Reject duplicate branch checkout** when `per-agent/<agent-name>/main` is already checked out in another worktree of the Topic Main Repository.
 7. **Create missing safe worktrees** only for authoritative Agent Names and safe resolved paths. Use the Topic Main Repository as the Git anchor and the resolved `agent.workspace` path as the Agent Workspace path.

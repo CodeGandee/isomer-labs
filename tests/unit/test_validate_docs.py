@@ -168,15 +168,15 @@ class ValidateDocsTests(unittest.TestCase):
             docs = root / "docs"
             docs.mkdir()
             (root / "README.md").write_text(
-                "Implemented tmp/ surfaces use topic.tmp, topic.main_repo.tmp, and agent.tmp; they are local, ignored, disposable, and not durable evidence.\n",
+                "Implemented tmp/ surfaces use topic.tmp, topic.repos.main.tmp, and agent.tmp; they are local, ignored, disposable, and not durable evidence.\n",
                 encoding="utf-8",
             )
             (docs / "isomer-cli.md").write_text(
-                "project paths get\nproject paths list\nproject paths materialize-default\n",
+                "project paths default\nproject paths explain\nproject paths get\nproject paths list\nproject paths materialize\nproject paths materialize-default\nproject paths register\nproject paths reset\nproject paths unregister\nproject paths update\nproject repos create\n--storage-profile\nISOMER_PATH__TOPIC__REPOS__MAIN\nISOMER_PATH__CUSTOM__DATASETS__RAW\n--configured\n",
                 encoding="utf-8",
             )
             (docs / "topic-workspace-definition.md").write_text(
-                "topic-workspace.toml and isomer-default.v1 are documented. Agent Workspace defaults to agents/<agent-name> through agent.workspace.\n",
+                "topic-workspace.toml and isomer-default.v1 are documented. Bindings use label, path, and storage_profile. User labels use custom.* and repository groups use topic.repos.<group...>.<repo-name>. Agent Workspace defaults to agents/<agent-name> through agent.workspace.\n",
                 encoding="utf-8",
             )
             self.assertEqual([], check_semantic_path_documentation(root))

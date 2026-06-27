@@ -115,7 +115,7 @@ The service skill SHALL resolve every setup path through semantic workspace labe
 #### Scenario: Topic labels are resolved first
 - **WHEN** `resolve-agent-env-context` runs
 - **THEN** it resolves Project, Research Topic, and Topic Workspace through Project Manifest-backed context
-- **AND** it resolves `topic.main_repo`, `topic.main_repo.isomer_managed`, `topic.agents_root`, `topic.records`, and `topic.runtime` with path sources and diagnostics
+- **AND** it resolves `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `topic.records`, and `topic.runtime` with path sources and diagnostics
 
 #### Scenario: Agent labels are resolved for each planned agent
 - **WHEN** the service has an Agent Name plan
@@ -127,7 +127,7 @@ The service skill SHALL resolve every setup path through semantic workspace labe
 - **THEN** the service output identifies the default profile source instead of presenting the concrete path as the workspace contract
 
 #### Scenario: Custom safe bindings are accepted
-- **WHEN** a Topic Workspace Manifest binds `topic.main_repo` or `agent.workspace` to a safe project-local path that differs from the default layout
+- **WHEN** a Topic Workspace Manifest binds `topic.repos.main` or `agent.workspace` to a safe project-local path that differs from the default layout
 - **THEN** the service uses that binding for setup and validation
 - **AND** the path difference is not itself a blocker
 
@@ -165,19 +165,19 @@ The service skill SHALL plan Agent Workspaces from authoritative topic-team mate
 The service skill SHALL create or reuse one shared Topic Main Repository, configure it for the derived agent env gate, and prepare per-agent Agent Workspace worktrees using semantic labels and deterministic branch namespaces.
 
 #### Scenario: Topic Main Repository is normal and non-bare
-- **WHEN** `ensure-topic-main-repository` prepares the resolved `topic.main_repo`
+- **WHEN** `ensure-topic-main-repository` prepares the resolved `topic.repos.main`
 - **THEN** the target is a normal non-bare Git repository
 - **AND** the owner-managed branch is `topic-owner/main`
 - **AND** unsafe existing non-Git, bare, corrupt, or ambiguous paths are reported as blockers without destructive repair
 
 #### Scenario: Missing or empty Topic Main Repository is initialized
-- **WHEN** the resolved `topic.main_repo` path is missing, empty, or an empty normal Git repository
+- **WHEN** the resolved `topic.repos.main` path is missing, empty, or an empty normal Git repository
 - **THEN** the service creates or initializes a normal non-bare Git repository at that path
 - **AND** it creates `topic-owner/main`
 - **AND** it creates a minimal baseline commit before creating per-agent worktrees
 
 #### Scenario: Existing safe Topic Main Repository is reused
-- **WHEN** the resolved `topic.main_repo` path is an existing normal non-bare Git repository with safe reusable history
+- **WHEN** the resolved `topic.repos.main` path is an existing normal non-bare Git repository with safe reusable history
 - **THEN** the service reuses that repository without rewriting, cleaning, resetting, deleting, moving, or recloning it
 - **AND** it creates or validates `topic-owner/main` from the accepted current base when the owner branch is missing
 - **AND** it reports a blocker when the accepted base is ambiguous
@@ -190,7 +190,7 @@ The service skill SHALL create or reuse one shared Topic Main Repository, config
 
 #### Scenario: Agent worktree uses Topic Main Repository
 - **WHEN** `create-agent-worktrees` prepares Agent Name `alice`
-- **THEN** it creates or validates the resolved `agent.workspace` path as a Git worktree of the resolved `topic.main_repo`
+- **THEN** it creates or validates the resolved `agent.workspace` path as a Git worktree of the resolved `topic.repos.main`
 - **AND** the default branch is `per-agent/alice/main`
 
 #### Scenario: Existing matching worktree is ready
@@ -213,7 +213,7 @@ The service skill SHALL prepare or validate required agent support surfaces and 
 - **THEN** the service creates or validates required support paths for `agent.isomer_managed`, `agent.runtime`, `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, `agent.inbox`, `agent.topic_readonly`, `agent.topic_writable`, and `agent.links`
 
 #### Scenario: Tmp surfaces remain disposable
-- **WHEN** `topic.main_repo.tmp` or `agent.tmp` labels are available
+- **WHEN** `topic.repos.main.tmp` or `agent.tmp` labels are available
 - **THEN** the service treats them as local ignored disposable surfaces
 - **AND** it does not include tmp paths in durable readiness evidence except as ignored local path posture
 
@@ -316,7 +316,7 @@ The implementation SHALL validate the service skill through repository skillset 
 
 #### Scenario: Unit validation covers required terms
 - **WHEN** unit validation for skillsets runs
-- **THEN** it fails if the service skill omits `user-intent/src/agent-env-gate.md`, `isomer-agent-env-gate.md`, `topic.main_repo`, `agent.workspace`, `pixi run --manifest-path`, per-agent cwd verification, or the no-runtime-mutation boundary
+- **THEN** it fails if the service skill omits `user-intent/src/agent-env-gate.md`, `isomer-agent-env-gate.md`, `topic.repos.main`, `agent.workspace`, `pixi run --manifest-path`, per-agent cwd verification, or the no-runtime-mutation boundary
 
 #### Scenario: OpenSpec validation passes
 - **WHEN** `openspec validate add-agent-env-setup-service-skill --strict` runs

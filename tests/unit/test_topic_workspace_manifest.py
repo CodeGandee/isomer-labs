@@ -81,7 +81,7 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertFalse(manifest.exists)
         self.assertEqual(TOPIC_WORKSPACE_MANIFEST_SCHEMA_VERSION, manifest.schema_version)
         self.assertEqual(DEFAULT_LAYOUT_PROFILE, manifest.layout_profile)
-        result, result_diagnostics = resolve_semantic_binding(context, "topic.main_repo", env={})
+        result, result_diagnostics = resolve_semantic_binding(context, "topic.repos.main", env={})
         self.assertEqual([], result_diagnostics)
         self.assertIsNotNone(result)
         self.assertEqual(context.topic_workspace_path / "repos" / "topic-main", result.path)
@@ -98,10 +98,8 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
                 "bindings": [
                     {
                         "label": "topic.records.artifacts",
-                        "path_template": "durable-artifacts",
-                        "owner": "topic",
-                        "durability": "durable",
-                        "sharing": "topic",
+                        "path": "durable-artifacts",
+                        "storage_profile": "topic_records_dir",
                     }
                 ],
             },
@@ -114,13 +112,13 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertIn('label = "topic.records.artifacts"', rendered)
         self.assertEqual("topic.records.artifacts", compatibility_aliases()["records_artifacts"])
         self.assertEqual("topic.tmp", compatibility_aliases()["topic_tmp"])
-        self.assertEqual("topic.main_repo.tmp", compatibility_aliases()["topic_main_tmp"])
+        self.assertEqual("topic.repos.main.tmp", compatibility_aliases()["topic_main_tmp"])
         self.assertEqual("agent.tmp", compatibility_aliases()["agent_tmp"])
         private_surface = catalog()["agent.private_artifacts"]
         self.assertEqual("agent", private_surface.owner)
         self.assertEqual("private", private_surface.sharing)
         self.assertEqual("agent", private_surface.required_context)
-        tmp_surface = catalog()["topic.main_repo.tmp"]
+        tmp_surface = catalog()["topic.repos.main.tmp"]
         self.assertEqual("disposable", tmp_surface.durability)
         self.assertEqual("private", tmp_surface.sharing)
 
@@ -134,19 +132,15 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
             topic_workspace_id = "default"
 
             [[bindings]]
-            label = "topic.main_repo"
-            path_template = "{(context.project.root.parent / 'outside').as_posix()}"
-            owner = "topic"
-            durability = "git"
-            sharing = "topic"
+            label = "topic.repos.main"
+            path = "{(context.project.root.parent / 'outside').as_posix()}"
+            storage_profile = "topic_repo"
             status = "active"
 
             [[bindings]]
-            label = "topic.main_repo"
-            path_template = "another-main"
-            owner = "topic"
-            durability = "git"
-            sharing = "topic"
+            label = "topic.repos.main"
+            path = "another-main"
+            storage_profile = "topic_repo"
             status = "active"
             """,
         )
@@ -168,19 +162,17 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
             topic_workspace_id = "default"
 
             [[bindings]]
-            label = "topic.main_repo.tmp"
-            path_template = "tmp/main"
-            owner = "topic"
-            durability = "disposable"
-            sharing = "private"
+            label = "topic.repos.main.tmp"
+            path = "tmp/main"
+            storage_profile = "topic_repo_disposable_dir"
             status = "active"
             """,
         )
 
         _, diagnostics = load_topic_workspace_manifest(context)
 
-        self.assertTrue(any("topic.main_repo.tmp" == diagnostic.field for diagnostic in diagnostics), diagnostics)
-        self.assertTrue(any("must stay inside `topic.main_repo`" in diagnostic.message for diagnostic in diagnostics), diagnostics)
+        self.assertTrue(any("topic.repos.main.tmp" == diagnostic.field for diagnostic in diagnostics), diagnostics)
+        self.assertTrue(any("must stay inside `topic.repos.main`" in diagnostic.message for diagnostic in diagnostics), diagnostics)
 
 
 if __name__ == "__main__":

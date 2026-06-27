@@ -65,11 +65,11 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Topic Pixi Binding` should record `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and binding source.
 
-`## Topic Main Repository Configuration` should record non-destructive configuration requirements for the Topic Main Repository resolved by `topic.main_repo`.
+`## Topic Main Repository Configuration` should record non-destructive configuration requirements for the Topic Main Repository resolved by `topic.repos.main`.
 
 `## Agent Plan` should list authoritative Agent Names, source role ids, branch plan, selected-agent partial scope when present, and any corroborating operator map evidence.
 
-`## Semantic Paths` should list `topic.main_repo`, `topic.main_repo.isomer_managed`, `topic.agents_root`, `agent.workspace`, required agent support labels, path sources, and blockers.
+`## Semantic Paths` should list `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `agent.workspace`, required agent support labels, path sources, and blockers.
 
 `## Worktree Plan` should list expected `per-agent/<agent-name>/main` branches and resolved `agent.workspace` worktree paths.
 

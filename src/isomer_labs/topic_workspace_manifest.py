@@ -11,14 +11,24 @@ from isomer_labs.local_tmp_surfaces import ensure_tmp_surface_ignore_policy
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.path_utils import canonicalize, is_within, resolve_project_path
 from isomer_labs.semantic_surfaces import (
+    CUSTOM_LABEL_ROOT,
+    GROUPED_TOPIC_REPO_PREFIX,
+    ISOMER_RESERVED_LABEL_ROOTS,
     LOCAL_TMP_SURFACE_LABELS,
     PATH_ENV_VARS_BY_LABEL,
+    RESERVED_LABEL_ROOTS,
     STANDARD_TOPIC_MATERIALIZATION_LABELS,
     SemanticSurface,
     catalog,
     compatibility_aliases as compatibility_aliases,
     compatibility_surface_for_label,
+    dynamic_surface_for_label,
+    generated_env_var_for_label,
+    is_custom_label,
+    is_grouped_topic_repo_label,
+    label_root,
     semantic_label_for_surface as semantic_label_for_surface,
+    storage_profile_by_id,
 )
 from isomer_labs.toml_loader import load_toml
 
@@ -36,23 +46,26 @@ PATH_PLAN_SOURCE = "path_plan"
 class TopicWorkspaceBinding:
     label: str
     path_template: str
-    owner: str
-    durability: str
-    sharing: str
+    storage_profile: str
     status: str = "active"
     source_detail: str | None = None
+    unsupported_fields: tuple[str, ...] = ()
 
     def to_json(self) -> dict[str, object]:
+        profile = storage_profile_by_id(self.storage_profile)
         data: dict[str, object] = {
             "label": self.label,
+            "path": self.path_template,
             "path_template": self.path_template,
-            "owner": self.owner,
-            "durability": self.durability,
-            "sharing": self.sharing,
+            "storage_profile": self.storage_profile,
             "status": self.status,
         }
+        if profile is not None:
+            data["storage_profile_traits"] = profile.to_json()
         if self.source_detail is not None:
             data["source_detail"] = self.source_detail
+        if self.unsupported_fields:
+            data["unsupported_fields"] = list(self.unsupported_fields)
         return data
 
 
@@ -106,12 +119,16 @@ class SemanticPathResult:
             "scope": self.catalog.scope,
             "scope_ref": self.scope_ref,
             "compatibility_surface": self.compatibility_surface,
+            "storage_profile": self.catalog.storage_profile,
             "owner": self.catalog.owner,
             "durability": self.catalog.durability,
             "sharing": self.catalog.sharing,
             "path_kind": self.catalog.path_kind,
             "exists": self.exists,
         }
+        profile = storage_profile_by_id(self.catalog.storage_profile)
+        if profile is not None:
+            data["storage_profile_traits"] = profile.to_json()
         if self.source_detail is not None:
             data["source_detail"] = self.source_detail
         if self.agent_name is not None:
@@ -194,15 +211,20 @@ def parse_topic_workspace_manifest(path: Path, raw: Mapping[str, Any]) -> TopicW
             if label is None or path_template is None:
                 continue
             surface = catalog().get(label)
+            storage_profile = _string(item.get("storage_profile")) or (surface.storage_profile if surface is not None else "")
+            unsupported_fields = tuple(
+                field
+                for field in ("required_context", "owner", "durability", "sharing", "path_kind", "lifecycle", "visibility", "safety_policy", "git_semantics")
+                if field in item
+            )
             bindings.append(
                 TopicWorkspaceBinding(
                     label=label,
                     path_template=path_template,
-                    owner=_string(item.get("owner")) or (surface.owner if surface is not None else "custom"),
-                    durability=_string(item.get("durability")) or (surface.durability if surface is not None else "unknown"),
-                    sharing=_string(item.get("sharing")) or (surface.sharing if surface is not None else "unknown"),
+                    storage_profile=storage_profile,
                     status=_string(item.get("status")) or "active",
                     source_detail=f"{path.name}:{table_name}[{index}]",
+                    unsupported_fields=unsupported_fields,
                 )
             )
     return TopicWorkspaceManifest(
@@ -258,7 +280,34 @@ def validate_topic_workspace_manifest(
         )
     seen: set[str] = set()
     for binding in manifest.active_bindings():
-        surface = catalog().get(binding.label)
+        if binding.unsupported_fields:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO060",
+                    severity="error",
+                    concept="Topic Workspace Manifest",
+                    path=manifest.path,
+                    field=binding.label,
+                    message=(
+                        "Semantic bindings only support label, path, storage_profile, and status; "
+                        f"unsupported fields: {', '.join(binding.unsupported_fields)}."
+                    ),
+                )
+            )
+        profile = storage_profile_by_id(binding.storage_profile)
+        if profile is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO060",
+                    severity="error",
+                    concept="Topic Workspace Manifest",
+                    path=manifest.path,
+                    field=binding.label,
+                    message="Semantic binding requires a valid storage_profile.",
+                )
+            )
+            continue
+        surface = surface_for_binding(binding)
         if surface is None:
             diagnostics.append(
                 Diagnostic(
@@ -267,7 +316,20 @@ def validate_topic_workspace_manifest(
                     concept="Topic Workspace Manifest",
                     path=manifest.path,
                     field=binding.label,
-                    message="Unknown semantic surface label.",
+                    message=_unknown_or_reserved_label_message(binding.label),
+                )
+            )
+            continue
+        compatibility_issue = _storage_profile_compatibility_issue(binding.label, surface, binding.storage_profile)
+        if compatibility_issue is not None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO060",
+                    severity="error",
+                    concept="Topic Workspace Manifest",
+                    path=manifest.path,
+                    field=binding.label,
+                    message=compatibility_issue,
                 )
             )
             continue
@@ -285,11 +347,78 @@ def validate_topic_workspace_manifest(
         seen.add(binding.label)
         if binding.label == "agent.workspace":
             diagnostics.extend(_validate_agent_workspace_template(binding, manifest.path))
-        if surface.scope == "topic":
+        if surface.scope in {"topic", "project"}:
             path = resolve_binding_path(context, binding, agent_name=None)
-            diagnostics.extend(_path_safety_diagnostics(context, path, binding.label, manifest.path, scope="topic"))
+            diagnostics.extend(_path_safety_diagnostics(context, path, binding.label, manifest.path, scope=surface.scope))
             diagnostics.extend(_manifest_tmp_surface_boundary_diagnostics(context, manifest, binding.label, path))
+        if surface.scope == "agent" and binding.label != "agent.workspace":
+            diagnostics.extend(_validate_agent_workspace_template(binding, manifest.path))
     return diagnostics
+
+
+def effective_catalog(context: EffectiveTopicContext) -> tuple[dict[str, SemanticSurface], list[Diagnostic]]:
+    manifest, diagnostics = load_topic_workspace_manifest(context)
+    surfaces = catalog()
+    for binding in manifest.active_bindings():
+        surface = surface_for_binding(binding)
+        if surface is not None:
+            surfaces[binding.label] = surface
+    return surfaces, diagnostics
+
+
+def surface_for_label(context: EffectiveTopicContext, label: str) -> tuple[SemanticSurface | None, list[Diagnostic]]:
+    surface = catalog().get(label)
+    if surface is not None:
+        return surface, []
+    manifest, diagnostics = load_topic_workspace_manifest(context)
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, diagnostics
+    binding = manifest.binding_for(label)
+    if binding is None:
+        return None, diagnostics
+    return surface_for_binding(binding), diagnostics
+
+
+def surface_for_binding(binding: TopicWorkspaceBinding) -> SemanticSurface | None:
+    surface = catalog().get(binding.label)
+    if surface is not None:
+        return surface
+    return dynamic_surface_for_label(binding.label, binding.storage_profile)
+
+
+def _unknown_or_reserved_label_message(label: str) -> str:
+    if not label or "." not in label:
+        return "Semantic label must use a reserved dotted root."
+    root = label_root(label)
+    if root not in RESERVED_LABEL_ROOTS:
+        return "Unknown semantic label root."
+    if root == CUSTOM_LABEL_ROOT:
+        return "Custom semantic labels must be declared under `custom.*` with valid dotted segments."
+    if root in ISOMER_RESERVED_LABEL_ROOTS:
+        if label.startswith(GROUPED_TOPIC_REPO_PREFIX):
+            return "Grouped topic repository labels must use valid path-safe segments and storage_profile = \"topic_repo\"."
+        return "Unknown or reserved Isomer-owned semantic label."
+    return "Unknown semantic surface label."
+
+
+def _storage_profile_compatibility_issue(label: str, surface: SemanticSurface, storage_profile: str) -> str | None:
+    profile = storage_profile_by_id(storage_profile)
+    if profile is None:
+        return "Semantic binding requires a valid storage_profile."
+    builtin = catalog().get(label)
+    if builtin is not None:
+        if storage_profile != builtin.storage_profile:
+            return f"Built-in label `{label}` requires storage_profile = \"{builtin.storage_profile}\"."
+        return None
+    if is_custom_label(label):
+        if profile.context not in {"project", "topic", "agent"}:
+            return f"Custom label `{label}` uses unsupported storage_profile context `{profile.context}`."
+        return None
+    if is_grouped_topic_repo_label(label):
+        if storage_profile != "topic_repo":
+            return "Grouped topic repository labels require storage_profile = \"topic_repo\"."
+        return None
+    return "Unknown or reserved semantic label."
 
 
 def resolve_semantic_binding(
@@ -300,7 +429,12 @@ def resolve_semantic_binding(
     agent_context: EffectiveAgentContext | None = None,
 ) -> tuple[SemanticPathResult | None, list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
-    surface = catalog().get(label)
+    manifest, manifest_diagnostics = load_topic_workspace_manifest(context)
+    diagnostics.extend(manifest_diagnostics)
+    if any(d.is_error for d in diagnostics):
+        return None, diagnostics
+    binding = manifest.binding_for(label)
+    surface = catalog().get(label) or (surface_for_binding(binding) if binding is not None else None)
     if surface is None:
         diagnostics.append(
             Diagnostic(
@@ -308,7 +442,7 @@ def resolve_semantic_binding(
                 severity="error",
                 concept="Workspace Path Resolution",
                 field=label,
-                message="Unknown semantic surface label.",
+                message=_unknown_or_reserved_label_message(label),
             )
         )
         return None, diagnostics
@@ -323,25 +457,42 @@ def resolve_semantic_binding(
             )
         )
         return None, diagnostics
-    env_var = PATH_ENV_VARS_BY_LABEL.get(label)
-    if env_var is not None and env.get(env_var):
-        path = resolve_project_path(context.project.root, env[env_var])
-        result = _result(context, surface, path, "env", env_var, agent_context)
+    generated_env_var = generated_env_var_for_label(label)
+    compatibility_env_var = PATH_ENV_VARS_BY_LABEL.get(label)
+    generated_value = env.get(generated_env_var)
+    compatibility_value = env.get(compatibility_env_var) if compatibility_env_var is not None else None
+    if generated_value and compatibility_value:
+        generated_path = resolve_project_path(context.project.root, generated_value)
+        compatibility_path = resolve_project_path(context.project.root, compatibility_value)
+        if generated_path != compatibility_path:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO061",
+                    severity="error",
+                    concept="Workspace Path Resolution",
+                    field=label,
+                    message=(
+                        f"Generated semantic env var `{generated_env_var}` conflicts with "
+                        f"compatibility env var `{compatibility_env_var}`."
+                    ),
+                )
+            )
+            return None, diagnostics
+    selected_env_var = generated_env_var if generated_value else compatibility_env_var
+    selected_env_value = generated_value or compatibility_value
+    if selected_env_var is not None and selected_env_value:
+        path = resolve_project_path(context.project.root, selected_env_value)
+        result = _result(context, surface, path, "env", selected_env_var, agent_context)
         diagnostics.extend(_path_safety_diagnostics(context, result.path, label, None, scope=surface.scope))
         diagnostics.extend(_tmp_surface_boundary_diagnostics(context, label, result.path, env=env, agent_context=agent_context))
         return result if not any(d.is_error for d in diagnostics) else None, diagnostics
-    manifest, manifest_diagnostics = load_topic_workspace_manifest(context)
-    diagnostics.extend(manifest_diagnostics)
-    if any(d.is_error for d in diagnostics):
-        return None, diagnostics
-    binding = manifest.binding_for(label)
     if binding is not None:
         path = resolve_binding_path(context, binding, agent_name=agent_context.agent_name if agent_context is not None else None)
         result = _result(context, surface, path, MANIFEST_SOURCE, binding.source_detail or str(manifest.path), agent_context)
         diagnostics.extend(_path_safety_diagnostics(context, result.path, label, manifest.path, scope=surface.scope))
         diagnostics.extend(_tmp_surface_boundary_diagnostics(context, label, result.path, env=env, agent_context=agent_context))
         return result if not any(d.is_error for d in diagnostics) else None, diagnostics
-    path = _default_path_for_result(context, surface, label, agent_context)
+    path = _default_path_for_result(context, surface, label, env=env, agent_context=agent_context)
     result = _result(context, surface, path, DEFAULT_PROFILE_SOURCE, DEFAULT_LAYOUT_PROFILE, agent_context)
     diagnostics.extend(_path_safety_diagnostics(context, result.path, label, None, scope=surface.scope))
     diagnostics.extend(_tmp_surface_boundary_diagnostics(context, label, result.path, env=env, agent_context=agent_context))
@@ -367,8 +518,21 @@ def _default_path_for_result(
     context: EffectiveTopicContext,
     surface: SemanticSurface,
     label: str,
+    *,
+    env: Mapping[str, str],
     agent_context: EffectiveAgentContext | None,
 ) -> Path:
+    if label.startswith("topic.repos.main.") and label != "topic.repos.main":
+        default_parent = default_path_for_label(context, "topic.repos.main", agent_name=None)
+        default_path = default_path_for_label(context, label, agent_name=None)
+        try:
+            suffix = default_path.relative_to(default_parent)
+        except ValueError:
+            return default_path
+        parent_result, _ = resolve_semantic_binding(context, "topic.repos.main", env=env, agent_context=None)
+        if parent_result is None:
+            return default_path
+        return (parent_result.path / suffix).resolve(strict=False)
     if surface.scope != "agent" or agent_context is None or label == "agent.workspace":
         return default_path_for_label(context, label, agent_name=agent_context.agent_name if agent_context is not None else None)
     default_workspace = default_path_for_label(context, "agent.workspace", agent_name=agent_context.agent_name)
@@ -424,9 +588,7 @@ def materialize_default_manifest(
             existing[label] = TopicWorkspaceBinding(
                 label=label,
                 path_template=surface.default_template,
-                owner=surface.owner,
-                durability=surface.durability,
-                sharing=surface.sharing,
+                storage_profile=surface.storage_profile,
                 status="active",
                 source_detail=f"{TOPIC_WORKSPACE_MANIFEST_FILENAME}:materialize-default",
             )
@@ -468,6 +630,166 @@ def materialize_default_manifest(
     return next_manifest, created, diagnostics
 
 
+def register_manifest_binding(
+    context: EffectiveTopicContext,
+    *,
+    label: str,
+    path_template: str,
+    storage_profile: str,
+    create: bool = False,
+    replace_existing: bool = False,
+) -> tuple[TopicWorkspaceManifest | None, list[Path], list[Diagnostic]]:
+    manifest, diagnostics = load_topic_workspace_manifest(context)
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, [], diagnostics
+    existing = manifest.binding_for(label)
+    if existing is not None and not replace_existing:
+        diagnostics.append(_binding_lifecycle_diagnostic(label, "Binding already exists; pass an explicit replacement option to update it."))
+        return None, [], diagnostics
+    bindings = [binding for binding in manifest.bindings if binding.label != label]
+    bindings.append(
+        TopicWorkspaceBinding(
+            label=label,
+            path_template=path_template,
+            storage_profile=storage_profile,
+            status="active",
+            source_detail=f"{TOPIC_WORKSPACE_MANIFEST_FILENAME}:register",
+        )
+    )
+    next_manifest = _manifest_with_bindings(context, manifest, bindings)
+    diagnostics.extend(validate_topic_workspace_manifest(context, next_manifest))
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, [], diagnostics
+    created = _create_binding_target(context, next_manifest.binding_for(label), agent_name=None) if create else []
+    _write_topic_workspace_manifest(next_manifest)
+    return next_manifest, created, diagnostics
+
+
+def update_manifest_binding(
+    context: EffectiveTopicContext,
+    *,
+    label: str,
+    path_template: str | None = None,
+    storage_profile: str | None = None,
+    create: bool = False,
+) -> tuple[TopicWorkspaceManifest | None, list[Path], list[Diagnostic]]:
+    manifest, diagnostics = load_topic_workspace_manifest(context)
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, [], diagnostics
+    existing = manifest.binding_for(label)
+    if existing is None:
+        diagnostics.append(_binding_lifecycle_diagnostic(label, "Binding does not exist; register it before updating it."))
+        return None, [], diagnostics
+    next_binding = TopicWorkspaceBinding(
+        label=existing.label,
+        path_template=path_template or existing.path_template,
+        storage_profile=storage_profile or existing.storage_profile,
+        status=existing.status,
+        source_detail=f"{TOPIC_WORKSPACE_MANIFEST_FILENAME}:update",
+    )
+    bindings = [binding for binding in manifest.bindings if binding.label != label]
+    bindings.append(next_binding)
+    next_manifest = _manifest_with_bindings(context, manifest, bindings)
+    diagnostics.extend(validate_topic_workspace_manifest(context, next_manifest))
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, [], diagnostics
+    created = _create_binding_target(context, next_binding, agent_name=None) if create else []
+    _write_topic_workspace_manifest(next_manifest)
+    return next_manifest, created, diagnostics
+
+
+def unregister_manifest_binding(
+    context: EffectiveTopicContext,
+    *,
+    label: str,
+) -> tuple[TopicWorkspaceManifest | None, list[Diagnostic]]:
+    if label in catalog():
+        return None, [_binding_lifecycle_diagnostic(label, "Built-in labels cannot be unregistered; reset a user-authored override instead.")]
+    manifest, diagnostics = load_topic_workspace_manifest(context)
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, diagnostics
+    if manifest.binding_for(label) is None:
+        diagnostics.append(_binding_lifecycle_diagnostic(label, "Binding does not exist."))
+        return None, diagnostics
+    next_manifest = _manifest_with_bindings(context, manifest, [binding for binding in manifest.bindings if binding.label != label])
+    diagnostics.extend(validate_topic_workspace_manifest(context, next_manifest))
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, diagnostics
+    _write_topic_workspace_manifest(next_manifest)
+    return next_manifest, diagnostics
+
+
+def reset_manifest_binding(
+    context: EffectiveTopicContext,
+    *,
+    label: str,
+) -> tuple[TopicWorkspaceManifest | None, list[Diagnostic]]:
+    if label not in catalog():
+        return None, [_binding_lifecycle_diagnostic(label, "Only built-in labels can be reset; unregister dynamic labels instead.")]
+    manifest, diagnostics = load_topic_workspace_manifest(context)
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, diagnostics
+    if manifest.binding_for(label) is None:
+        diagnostics.append(_binding_lifecycle_diagnostic(label, "Built-in label has no manifest override to reset."))
+        return None, diagnostics
+    next_manifest = _manifest_with_bindings(context, manifest, [binding for binding in manifest.bindings if binding.label != label])
+    diagnostics.extend(validate_topic_workspace_manifest(context, next_manifest))
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, diagnostics
+    _write_topic_workspace_manifest(next_manifest)
+    return next_manifest, diagnostics
+
+
+def _manifest_with_bindings(
+    context: EffectiveTopicContext,
+    manifest: TopicWorkspaceManifest,
+    bindings: list[TopicWorkspaceBinding],
+) -> TopicWorkspaceManifest:
+    return replace(
+        manifest,
+        schema_version=TOPIC_WORKSPACE_MANIFEST_SCHEMA_VERSION,
+        research_topic_id=context.research_topic.id,
+        topic_workspace_id=context.topic_workspace_id,
+        layout_profile=DEFAULT_LAYOUT_PROFILE,
+        bindings=tuple(sorted(bindings, key=lambda item: item.label)),
+        exists=True,
+    )
+
+
+def _write_topic_workspace_manifest(manifest: TopicWorkspaceManifest) -> None:
+    manifest.path.parent.mkdir(parents=True, exist_ok=True)
+    manifest.path.write_text(render_topic_workspace_manifest(manifest), encoding="utf-8")
+
+
+def _create_binding_target(
+    context: EffectiveTopicContext,
+    binding: TopicWorkspaceBinding | None,
+    *,
+    agent_name: str | None,
+) -> list[Path]:
+    if binding is None:
+        return []
+    surface = surface_for_binding(binding)
+    if surface is None:
+        return []
+    path = resolve_binding_path(context, binding, agent_name=agent_name)
+    if surface.path_kind == "file":
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return [path.parent]
+    path.mkdir(parents=True, exist_ok=True)
+    return [path]
+
+
+def _binding_lifecycle_diagnostic(label: str, message: str) -> Diagnostic:
+    return Diagnostic(
+        code="ISO060",
+        severity="error",
+        concept="Topic Workspace Manifest",
+        field=label,
+        message=message,
+    )
+
+
 def render_topic_workspace_manifest(manifest: TopicWorkspaceManifest) -> str:
     lines = [
         f"schema_version = {_toml_string(manifest.schema_version)}",
@@ -481,10 +803,8 @@ def render_topic_workspace_manifest(manifest: TopicWorkspaceManifest) -> str:
             [
                 "[[bindings]]",
                 f"label = {_toml_string(binding.label)}",
-                f"path_template = {_toml_string(binding.path_template)}",
-                f"owner = {_toml_string(binding.owner)}",
-                f"durability = {_toml_string(binding.durability)}",
-                f"sharing = {_toml_string(binding.sharing)}",
+                f"path = {_toml_string(binding.path_template)}",
+                f"storage_profile = {_toml_string(binding.storage_profile)}",
                 f"status = {_toml_string(binding.status)}",
                 "",
             ]
@@ -640,15 +960,15 @@ def _manifest_tmp_surface_boundary_diagnostics(
     diagnostics: list[Diagnostic] = []
     if label == "topic.tmp" and not is_within(path, context.topic_workspace_path):
         diagnostics.append(_tmp_boundary_diagnostic(manifest.path, label, "Local Tmp Surface must stay inside the selected Topic Workspace."))
-    if label == "topic.main_repo.tmp":
-        topic_main_binding = manifest.binding_for("topic.main_repo")
+    if label == "topic.repos.main.tmp":
+        topic_main_binding = manifest.binding_for("topic.repos.main")
         topic_main_path = (
             resolve_binding_path(context, topic_main_binding, agent_name=None)
             if topic_main_binding is not None
-            else default_path_for_label(context, "topic.main_repo", agent_name=None)
+            else default_path_for_label(context, "topic.repos.main", agent_name=None)
         )
         if not is_within(path, topic_main_path):
-            diagnostics.append(_tmp_boundary_diagnostic(manifest.path, label, "`topic.main_repo.tmp` must stay inside `topic.main_repo`."))
+            diagnostics.append(_tmp_boundary_diagnostic(manifest.path, label, "`topic.repos.main.tmp` must stay inside `topic.repos.main`."))
     return diagnostics
 
 
@@ -667,11 +987,11 @@ def _tmp_surface_boundary_diagnostics(
         if not is_within(path, context.topic_workspace_path):
             diagnostics.append(_tmp_boundary_diagnostic(None, label, "Local Tmp Surface must stay inside the selected Topic Workspace."))
         return diagnostics
-    if label == "topic.main_repo.tmp":
-        topic_main, topic_main_diagnostics = resolve_semantic_binding(context, "topic.main_repo", env=env, agent_context=None)
+    if label == "topic.repos.main.tmp":
+        topic_main, topic_main_diagnostics = resolve_semantic_binding(context, "topic.repos.main", env=env, agent_context=None)
         diagnostics.extend(topic_main_diagnostics)
         if topic_main is not None and not is_within(path, topic_main.path):
-            diagnostics.append(_tmp_boundary_diagnostic(None, label, "`topic.main_repo.tmp` must stay inside `topic.main_repo`."))
+            diagnostics.append(_tmp_boundary_diagnostic(None, label, "`topic.repos.main.tmp` must stay inside `topic.repos.main`."))
         return diagnostics
     if label == "agent.tmp":
         if agent_context is None:

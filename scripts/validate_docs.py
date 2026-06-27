@@ -46,9 +46,17 @@ LEGACY_WORKSPACE_PATTERNS = [
 ]
 MIGRATION_NOTE_TERMS = ("legacy", "migration", "migrate", "diagnostic", "compatibility")
 SEMANTIC_PATH_COMMANDS = (
+    "project paths default",
+    "project paths explain",
     "project paths get",
     "project paths list",
+    "project paths materialize",
     "project paths materialize-default",
+    "project paths register",
+    "project paths reset",
+    "project paths unregister",
+    "project paths update",
+    "project repos create",
 )
 FIXED_PATH_ONLY_PATTERNS = [
     ("fixed agent workspace path", re.compile(r"\b(always|must|only)\b[^\n]*(?:agents/<agent-name>|<topic-workspace>/agents)", re.IGNORECASE)),
@@ -201,6 +209,15 @@ def check_semantic_path_documentation(repo_root: Path) -> list[str]:
         content = topic_doc.read_text(encoding="utf-8")
         if "topic-workspace.toml" not in content or "isomer-default.v1" not in content:
             issues.append("docs/topic-workspace-definition.md must document Topic Workspace Manifest, topic-workspace.toml, and isomer-default.v1")
+        for term in ("storage_profile", "custom.*", "topic.repos.<group...>.<repo-name>", "label", "path"):
+            if term not in content:
+                issues.append(f"docs/topic-workspace-definition.md missing storage contract term: {term}")
+    cli_doc = docs_dir / "isomer-cli.md"
+    if cli_doc.is_file():
+        content = cli_doc.read_text(encoding="utf-8")
+        for term in ("--storage-profile", "ISOMER_PATH__TOPIC__REPOS__MAIN", "ISOMER_PATH__CUSTOM__DATASETS__RAW", "--configured"):
+            if term not in content:
+                issues.append(f"docs/isomer-cli.md missing semantic storage CLI term: {term}")
     for path in [repo_root / "README.md", *sorted(docs_dir.glob("*.md"))]:
         if not path.is_file():
             continue
@@ -215,7 +232,7 @@ def check_semantic_path_documentation(repo_root: Path) -> list[str]:
             lowered = content.lower()
             if not (
                 "topic.tmp" in content
-                and "topic.main_repo.tmp" in content
+                and "topic.repos.main.tmp" in content
                 and "agent.tmp" in content
                 and "disposable" in lowered
                 and "not durable" in lowered

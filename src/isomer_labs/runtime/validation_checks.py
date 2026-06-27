@@ -6,13 +6,14 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 import subprocess
-from typing import Mapping
+from typing import Iterable, Mapping
 
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.local_tmp_surfaces import TmpSurfaceIgnorePolicy, tmp_surface_ignore_policy
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.path_utils import is_within
+from isomer_labs.path_utils import canonicalize, is_within
 from isomer_labs.paths import preview_paths, resolve_semantic_path
+from isomer_labs.runtime.semantic_file_locator import locate_semantic_file
 from isomer_labs.runtime.adapter_handoff_validation import validate_adapter_handoff_records
 from isomer_labs.runtime.models import AgentWorkspaceRecord, PathPlanRecord
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
@@ -182,7 +183,7 @@ def _resolved_tmp_surfaces(
 ) -> tuple[list[_ResolvedTmpSurface], list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
     surfaces: list[_ResolvedTmpSurface] = []
-    for label in ("topic.tmp", "topic.main_repo.tmp"):
+    for label in ("topic.tmp", "topic.repos.main.tmp"):
         result, result_diagnostics = resolve_semantic_path(
             context,
             label,
@@ -334,6 +335,43 @@ def _tmp_dependency_diagnostic(
     return None
 
 
+def _missing_semantic_file_evidence_diagnostic(
+    context: EffectiveTopicContext,
+    path_plans: Iterable[PathPlanRecord],
+    path: Path,
+    *,
+    concept: str,
+    field: str,
+    path_field: str,
+) -> Diagnostic | None:
+    candidate = path.expanduser()
+    if not candidate.is_absolute():
+        candidate = context.project.root / candidate
+    candidate = canonicalize(candidate)
+    if not is_within(candidate, context.project.root):
+        return None
+    locator = locate_semantic_file(
+        candidate,
+        path_plans,
+        record_kind=concept,
+        record_id=field,
+        path_field=path_field,
+    )
+    if locator is not None:
+        return None
+    return Diagnostic(
+        code="ISO045",
+        severity="warning",
+        concept=concept,
+        path=candidate,
+        field=field,
+        message=(
+            "Project-local file ref has no semantic file locator evidence; "
+            "preserving the historical path for compatibility."
+        ),
+    )
+
+
 def _agent_name_from_scope_ref(scope_ref: str | None) -> str | None:
     if scope_ref is None:
         return None
@@ -417,6 +455,7 @@ def _validate_lifecycle_records(
     diagnostics: list[Diagnostic] = []
     record_ids: dict[str, set[str]] = {}
     records = store.list_lifecycle_records()
+    path_plans = store.list_path_plans()
     for record in records:
         record_ids.setdefault(record.record_kind, set()).add(record.id)
     for record in records:
@@ -448,6 +487,16 @@ def _validate_lifecycle_records(
                 )
             )
         if record.content_path is not None:
+            missing_evidence = _missing_semantic_file_evidence_diagnostic(
+                context,
+                path_plans,
+                Path(record.content_path),
+                concept=record.record_kind.replace("_", " ").title(),
+                field=record.id,
+                path_field="content_path",
+            )
+            if missing_evidence is not None:
+                diagnostics.append(missing_evidence)
             diagnostic = _tmp_dependency_diagnostic(
                 context,
                 tmp_surfaces,
@@ -790,6 +839,17 @@ def _validate_adapter_records(
                 )
             )
         manifest_path = Path(manifest_ref.manifest_path)
+        if manifest_ref.path_plan_id is None:
+            missing_evidence = _missing_semantic_file_evidence_diagnostic(
+                context,
+                path_plans.values(),
+                manifest_path,
+                concept="Execution Adapter manifest ref",
+                field=manifest_ref.id,
+                path_field="manifest_path",
+            )
+            if missing_evidence is not None:
+                diagnostics.append(missing_evidence)
         diagnostic = _tmp_dependency_diagnostic(
             context,
             tmp_surfaces,
@@ -875,6 +935,17 @@ def _validate_adapter_records(
                 )
             )
         payload_path = Path(payload_ref.payload_path)
+        if payload_ref.path_plan_id is None:
+            missing_evidence = _missing_semantic_file_evidence_diagnostic(
+                context,
+                path_plans.values(),
+                payload_path,
+                concept="Execution Adapter payload ref",
+                field=payload_ref.id,
+                path_field="payload_path",
+            )
+            if missing_evidence is not None:
+                diagnostics.append(missing_evidence)
         diagnostic = _tmp_dependency_diagnostic(
             context,
             tmp_surfaces,

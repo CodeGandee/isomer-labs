@@ -101,7 +101,7 @@ Report:
 - `project_root`: resolved Isomer Project root.
 - `research_topic_id`: selected Research Topic.
 - `topic_workspace_dir`: Project Manifest-declared Topic Workspace directory.
-- `semantic_paths`: resolved labels, paths, sources, and blockers for setup surfaces such as `topic.workspace`, `topic.main_repo`, `topic.records`, `topic.runtime`, and any agent-scoped target when explicitly requested.
+- `semantic_paths`: resolved labels, paths, sources, and blockers for setup surfaces such as `topic.workspace`, `topic.repos.main`, `topic.records`, `topic.runtime`, and any agent-scoped target when explicitly requested.
 - `manifest_path_or_dir`: explicit binding target when present, otherwise the registered Topic Workspace directory default.
 - `manifest_path`: Pixi-resolved Topic Workspace Pixi manifest path.
 - `pixi_environment`: selected Pixi environment.
@@ -125,6 +125,7 @@ Report:
 - Do not install or mutate a Topic Workspace environment until the selected Topic Workspace and effective Topic Workspace Pixi binding are confirmed. Accept an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` file or directory target, or the implicit registered Topic Workspace directory default when Pixi resolves it as a confined Topic Workspace Pixi workspace.
 - Direct setup mutation is allowed for the selected Topic Workspace Pixi environment after confirmation; do not require a separate Service Request for dependency, lockfile, install, or gate-command mutation in this workflow.
 - Do not treat the Project-root Pixi environment as the Topic Workspace execution environment.
+- Resolve topic repository paths through semantic labels before acquiring code. Additional durable repos should be registered as `topic.repos.*` with explicit `storage_profile` through `project repos create` or `project paths register`; do not rely on default-looking directories alone.
 - Do not require or inspect Topic Agent Team Profile material, `<topic-workspace-dir>/team-profile/`, Topic Team Instantiation Packets, Agent Team Instances, Agent Instances, Agent Workspace plans, roles, or agent count as prerequisites for Topic Workspace environment setup. If read-only diagnostics mention them, report them only as unrelated downstream context unless they also break Topic Workspace discovery, Pixi binding resolution, source gate reading, dependency setup, repo checks, or Pixi-scoped verification.
 - Do not read `user-intent/src/agent-env-gate.md`, create `user-intent/derived/isomer-agent-env-gate.md`, create Agent Workspace worktrees, mutate Topic Main Repository collaboration topology, verify commands from every `agent.workspace` cwd, or claim per-agent environment readiness from topic-root verification. Route that work to `isomer-srv-agent-env-setup`.
 - Do not create or mutate per-agent Pixi environments unless a user task explicitly names an Agent Workspace-specific environment.

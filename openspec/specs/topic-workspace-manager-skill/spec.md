@@ -175,7 +175,7 @@ The topic workspace manager skill SHALL plan and report Topic Workspace Git layo
 - **THEN** it reports semantic labels for Topic Main Repository, Agent Workspace root, Isomer-managed support namespace, records root, and runtime support root along with their resolved paths and sources
 
 #### Scenario: Existing custom binding is honored
-- **WHEN** the Topic Workspace Manifest binds `topic.main_repo` or `agent.workspace` to safe project-local paths that differ from the default layout
+- **WHEN** the Topic Workspace Manifest binds `topic.repos.main` or `agent.workspace` to safe project-local paths that differ from the default layout
 - **THEN** the skill uses those bindings for planning and validation instead of assuming the default paths
 
 #### Scenario: Missing manifest uses default profile for planning
@@ -187,7 +187,7 @@ The topic workspace manager skill SHALL materialize default semantic workspace d
 
 #### Scenario: Default main repo is explicitly created
 - **WHEN** the operator asks the skill to create default Topic Main Repository material
-- **THEN** the skill creates or validates the `topic.main_repo` default binding and directory through the Topic Workspace Manifest contract
+- **THEN** the skill creates or validates the `topic.repos.main` default binding and directory through the Topic Workspace Manifest contract
 
 #### Scenario: Default agent worktrees are explicitly created
 - **WHEN** the operator asks the skill to create Agent Workspace worktrees at default locations
@@ -236,7 +236,7 @@ The topic workspace manager skill SHALL summarize the workspace contract by sema
 
 #### Scenario: Summary names tmp labels as local-only
 - **WHEN** `summarize` reports tmp posture
-- **THEN** it names semantic labels such as `topic.main_repo.tmp` and `agent.tmp`
+- **THEN** it names semantic labels such as `topic.repos.main.tmp` and `agent.tmp`
 - **AND** it identifies their default paths only as `isomer-default.v1` bindings
 
 ### Requirement: Isomer-Managed Sharing Preparation
@@ -244,7 +244,7 @@ The topic workspace manager skill SHALL prepare and validate the standard `isome
 
 #### Scenario: Tmp is separate from isomer-managed sharing
 - **WHEN** `ensure-main-repo` or `create-worktrees` prepares `isomer-managed/` layout
-- **THEN** it keeps `topic.main_repo.tmp` and `agent.tmp` outside tracked Isomer material, agent-owned public shares, topic-owned projections, and generated links
+- **THEN** it keeps `topic.repos.main.tmp` and `agent.tmp` outside tracked Isomer material, agent-owned public shares, topic-owned projections, and generated links
 
 ### Requirement: Isomer-Managed Conflict Diagnostics
 The topic workspace manager skill SHALL report risky tracked Isomer material and untracked share ownership problems without trying to resolve them automatically.
@@ -296,8 +296,8 @@ The topic workspace manager skill SHALL distinguish static workspace topology re
 The topic workspace manager skill SHALL prepare and validate local tmp labels for the resolved Topic Main Repository owner checkout and each Agent Workspace worktree.
 
 #### Scenario: Ensure main repo prepares tmp ignore
-- **WHEN** `ensure-main-repo` creates or validates resolved `topic.main_repo`
-- **THEN** it prepares or validates resolved `topic.main_repo.tmp`
+- **WHEN** `ensure-main-repo` creates or validates resolved `topic.repos.main`
+- **THEN** it prepares or validates resolved `topic.repos.main.tmp`
 - **AND** it prepares or validates a root `.gitignore` rule that ignores tmp material
 
 #### Scenario: Create worktrees prepares agent tmp
@@ -311,6 +311,6 @@ The topic workspace manager skill SHALL prepare and validate local tmp labels fo
 
 #### Scenario: Summaries do not present tmp as shared
 - **WHEN** the topic workspace manager summarizes prepared Agent Workspaces
-- **THEN** it may list `topic.main_repo.tmp` and `agent.tmp` as local disposable surfaces
+- **THEN** it may list `topic.repos.main.tmp` and `agent.tmp` as local disposable surfaces
 - **AND** it does not include them in Peer Read Access, generated links, handoff paths, readiness evidence, or durable boundary material
 

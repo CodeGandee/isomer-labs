@@ -8,11 +8,19 @@ from isomer_labs.cli.app import (
     _cmd_cleanup,
     _cmd_content_root_move,
     _cmd_context_show,
+    _cmd_paths_default,
+    _cmd_paths_explain,
     _cmd_init,
     _cmd_paths_get,
     _cmd_paths_list,
+    _cmd_paths_materialize,
     _cmd_paths_materialize_default,
     _cmd_paths_preview,
+    _cmd_paths_register,
+    _cmd_paths_reset,
+    _cmd_paths_unregister,
+    _cmd_paths_update,
+    _cmd_repos_create,
     _cmd_schemas_list,
     _cmd_topics_create,
     _cmd_topics_delete,
@@ -439,6 +447,7 @@ def register_project_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.option("--configured", is_flag=True, help="Ignore stored Path Plans and use current configuration.")
     @click.argument("semantic_label")
     @click.pass_context
     def paths_get_command(
@@ -457,8 +466,96 @@ def register_project_commands(app: click.Group) -> None:
         agent_instance_id: str | None = None,
         agent_name: str | None = None,
         topic_agent_team_profile_id: str | None = None,
+        configured: bool = False,
     ) -> int:
         return _cmd_paths_get(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+                paths_configured=configured,
+            ),
+            semantic_label,
+        )
+
+    @paths_group.command(name="default", help="Show the default-layout path for a built-in semantic label.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.argument("semantic_label")
+    @click.pass_context
+    def paths_default_command(
+        ctx: click.Context,
+        semantic_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_paths_default(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            semantic_label,
+        )
+
+    @paths_group.command(name="explain", help="Explain candidate sources for one semantic workspace path.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.argument("semantic_label")
+    @click.pass_context
+    def paths_explain_command(
+        ctx: click.Context,
+        semantic_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_paths_explain(
             _merge_options(
                 ctx,
                 project=project,
@@ -561,6 +658,285 @@ def register_project_commands(app: click.Group) -> None:
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             ),
             labels=labels,
+        )
+
+    @paths_group.command(name="materialize", help="Create the currently configured target for a semantic label.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.argument("semantic_label")
+    @click.pass_context
+    def paths_materialize_command(
+        ctx: click.Context,
+        semantic_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_paths_materialize(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            semantic_label,
+        )
+
+    @paths_group.command(name="register", help="Register a semantic path binding in the Topic Workspace Manifest.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("semantic_label")
+    @click.option("--path", "path_value", required=True, help="Project-local path or accepted template for the binding.")
+    @click.option("--storage-profile", "storage_profile", required=True, help="Accepted storage_profile id.")
+    @click.option("--create", is_flag=True, help="Create the target path after validation.")
+    @click.option("--replace", "replace_existing", is_flag=True, help="Replace an existing binding explicitly.")
+    @click.pass_context
+    def paths_register_command(
+        ctx: click.Context,
+        semantic_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        path_value: str | None = None,
+        storage_profile: str | None = None,
+        create: bool = False,
+        replace_existing: bool = False,
+    ) -> int:
+        return _cmd_paths_register(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            semantic_label,
+            path=path_value or "",
+            storage_profile=storage_profile or "",
+            create=create,
+            replace_existing=replace_existing,
+        )
+
+    @paths_group.command(name="update", help="Update an existing semantic path binding.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("semantic_label")
+    @click.option("--path", "path_value", default=None, help="Replacement path or accepted template.")
+    @click.option("--storage-profile", "storage_profile", default=None, help="Replacement accepted storage_profile id.")
+    @click.option("--create", is_flag=True, help="Create the target path after validation.")
+    @click.pass_context
+    def paths_update_command(
+        ctx: click.Context,
+        semantic_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        path_value: str | None = None,
+        storage_profile: str | None = None,
+        create: bool = False,
+    ) -> int:
+        return _cmd_paths_update(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            semantic_label,
+            path=path_value,
+            storage_profile=storage_profile,
+            create=create,
+        )
+
+    @paths_group.command(name="unregister", help="Remove a dynamic semantic path binding without deleting files.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("semantic_label")
+    @click.pass_context
+    def paths_unregister_command(
+        ctx: click.Context,
+        semantic_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_paths_unregister(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            semantic_label,
+        )
+
+    @paths_group.command(name="reset", help="Remove a built-in label override without deleting files.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("semantic_label")
+    @click.pass_context
+    def paths_reset_command(
+        ctx: click.Context,
+        semantic_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_paths_reset(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            semantic_label,
+        )
+
+
+    @app.group(name="repos", help="Topic repository semantic path commands.")
+    def repos_group() -> None:
+        pass
+
+
+    @repos_group.command(name="create", help="Register and create a topic repository path.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("repo_label")
+    @click.option("--path", "path_value", default=None, help="Project-local repository path.")
+    @click.option("--no-create", "no_create", is_flag=True, help="Only register the binding; do not create the target path.")
+    @click.option("--replace", "replace_existing", is_flag=True, help="Replace an existing binding explicitly.")
+    @click.pass_context
+    def repos_create_command(
+        ctx: click.Context,
+        repo_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        path_value: str | None = None,
+        no_create: bool = False,
+        replace_existing: bool = False,
+    ) -> int:
+        return _cmd_repos_create(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            repo_label,
+            path=path_value,
+            create=not no_create,
+            replace_existing=replace_existing,
         )
 def register_schema_commands(app: click.Group) -> None:
     @app.group(name="schemas", help="Built-in schema commands.")

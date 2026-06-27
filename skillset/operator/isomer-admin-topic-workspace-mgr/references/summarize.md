@@ -5,9 +5,9 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Read the latest resolve, repo, agent plan, worktree, boundary, branch, and validation results available in the operator context.
-2. Summarize the resolved `topic.main_repo` path, source, readiness, and blockers before showing any default path.
+2. Summarize the resolved `topic.repos.main` path, source, readiness, and blockers before showing any default path.
 3. Summarize each agent name, role id, resolved `agent.workspace` path, path source, current branch, expected branch namespace, required `agent.*` support label status, `agent.tmp` local ignored disposable posture, and derived compatibility `agent_workspace_ref` when present.
-4. Summarize `topic.main_repo.tmp` and `agent.tmp` separately from shared material, including ignore policy and tracked-content diagnostics.
+4. Summarize `topic.repos.main.tmp` and `agent.tmp` separately from shared material, including ignore policy and tracked-content diagnostics.
 5. Summarize boundary material paths and whether Workspace Boundary, Peer Read Access, owner/reader split, and generated-link notes are present and advisory.
 6. When `isomer-srv-agent-env-setup` evidence is available, summarize `source_agent_env_gate_path`, `agent_env_gate_path`, readiness by agent, overall readiness, command evidence, blockers, and next action under a separate agent environment readiness heading.
 7. Summarize validation status, blockers, skipped actions, generated links, profile or packet edits, and refs that remain to be updated.

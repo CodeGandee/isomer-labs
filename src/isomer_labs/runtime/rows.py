@@ -45,6 +45,8 @@ def _row_to_path_plan(row: sqlite3.Row) -> PathPlanRecord:
         semantic_label=row["semantic_label"] if "semantic_label" in keys else None,
         scope_ref=row["scope_ref"] if "scope_ref" in keys else None,
         compatibility_surface=row["compatibility_surface"] if "compatibility_surface" in keys else None,
+        storage_profile=row["storage_profile"] if "storage_profile" in keys else None,
+        storage_profile_traits=_loads_object_dict(row["storage_profile_traits_json"]) if "storage_profile_traits_json" in keys else {},
     )
 
 

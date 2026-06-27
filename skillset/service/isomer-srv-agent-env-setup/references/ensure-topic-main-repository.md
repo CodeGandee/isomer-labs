@@ -1,6 +1,6 @@
 # Ensure Topic Main Repository
 
-Use this subcommand to create, reuse, configure, or validate the Topic Main Repository resolved by `topic.main_repo` for Agent Workspace worktrees.
+Use this subcommand to create, reuse, configure, or validate the Topic Main Repository resolved by `topic.repos.main` for Agent Workspace worktrees.
 
 ## Required Inputs
 
@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Agent env context | Require `topic.main_repo`, `topic.main_repo.isomer_managed`, path sources, requester, and confirmation source from `resolve-agent-env-context`. |
+| Agent env context | Require `topic.repos.main`, `topic.repos.main.isomer_managed`, path sources, requester, and confirmation source from `resolve-agent-env-context`. |
 | Derived agent env gate | Require `<topic-workspace-dir>/user-intent/derived/isomer-agent-env-gate.md` from `derive-agent-env-gate`. |
 | Mutation confirmation | Require direct Project Operator Session mutation confirmation or Service Request authorization before creating or changing files. |
 | Optional modifiers | None for this step. |
@@ -18,11 +18,11 @@ Recover these before asking the user:
 When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**: resolved context and derived agent env gate. Refuse to run if semantic path evidence or mutation confirmation is missing.
-2. **Inspect the resolved `topic.main_repo` path**. The target must be a normal non-bare Git repository, a missing safe path, an empty safe directory, or an empty normal Git repository.
+2. **Inspect the resolved `topic.repos.main` path**. The target must be a normal non-bare Git repository, a missing safe path, an empty safe directory, or an empty normal Git repository.
 3. **Initialize safe missing or empty targets** only when mutation is confirmed. Create or initialize a normal non-bare Topic Main Repository at the resolved path, create owner branch `topic-owner/main`, and create a minimal baseline commit before per-agent worktrees are created.
 4. **Reuse existing safe repositories** without rewriting, cleaning, resetting, deleting, moving, recloning, pulling, or silently repairing them. If `topic-owner/main` is missing, create or validate it from the accepted current base only when that base is unambiguous.
 5. **Apply non-destructive Topic Main Repository configuration** required by `user-intent/derived/isomer-agent-env-gate.md`. Record changed files, commands run, semantic path evidence, and blockers in service output and the derived gate execution log.
-6. **Prepare or validate the resolved `topic.main_repo.isomer_managed` namespace** and tracked sublabels when required, without creating legacy top-level collaboration directories.
+6. **Prepare or validate the resolved `topic.repos.main.isomer_managed` namespace** and tracked sublabels when required, without creating legacy top-level collaboration directories.
 7. **Report Topic Main Repository state**: path, label source, Git state, owner branch, changed files, commands run, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to separate read-only repository inspection from confirmed mutation, then execute only the safe portion.

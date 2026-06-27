@@ -34,13 +34,13 @@ Effective Topic Context is process-local input. It is not a lifecycle object, no
 
 ## Workspace Path Resolution
 
-Workspace Path Resolution turns Effective Topic Context and a requested path surface into concrete filesystem paths. It is side-effect-free: it computes paths without creating directories, writing runtime records, or launching agents.
+Workspace Path Resolution turns Effective Topic Context and a requested semantic label into concrete filesystem paths. Its read modes are side-effect-free: they compute paths without creating directories, writing runtime records, or launching agents.
 
-Path surfaces include the Project generated content root (`isomer-content/` by default or the `--content-dir <content-dir>` root selected during initialization), the Topic Workspace base (`isomer-content/topic-ws/` by default or `<content-dir>/topic-ws/` for a custom content root), the Workspace Runtime database (`state.sqlite`), `repos/topic-main`, `repos/topic-main/isomer-managed/`, `repos/topic-main/isomer-managed/tracked/*`, `agents/<agent-name>` worktrees, per-agent `isomer-managed/` support paths, owner-preserved `records/*` directories, root `runtime/` support material, adapter manifest directories, command payloads, inspection snapshots, and adapter-generated material.
+Path surfaces include reserved labels such as `topic.workspace`, `topic.runtime.db`, `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.repos.main.tracked.*`, `topic.agents_root`, `topic.records.*`, `topic.runtime`, `topic.tmp`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, and `agent.tmp`. User-defined storage lives under `custom.*`, while additional topic repositories may use grouped `topic.repos.*` labels. Topic Workspace Manifest bindings use `label`, `path`, and explicit `storage_profile`; `storage_profile` supplies the context, lifecycle, visibility, safety, and Git semantics that a path string cannot safely imply.
 
-The canonical Topic Workspace and Agent Workspace directory structure, including `repos/topic-main`, `repos/topic-main/isomer-managed/`, `agents/<agent-name>` worktrees, per-agent branch namespaces, tracked Isomer material, agent-owned untracked shares, topic-owned projections, generated links, topic-owned Pixi task channels, and launch cwd expectations, is defined in [Topic Workspace Definition](topic-workspace-definition.md).
+The canonical `isomer-default.v1` Topic Workspace and Agent Workspace layout, including default paths such as `repos/topic-main`, `repos/topic-main/isomer-managed/`, `agents/<agent-name>` worktrees, per-agent branch namespaces, tracked Isomer material, agent-owned untracked shares, topic-owned projections, generated links, topic-owned Pixi task channels, and launch cwd expectations, is defined in [Topic Workspace Definition](topic-workspace-definition.md).
 
-`isomer-cli project paths preview` prints the computed path plan for a topic without creating files. Use it to verify that the Project Manifest and Research Topic Config resolve to the directories you expect before running commands that mutate state.
+`isomer-cli project paths preview` prints the computed path plan for a topic without creating files. `project paths get`, `project paths list`, `project paths default`, and `project paths explain` are also read-only. Mutating storage commands are explicit: `project paths materialize-default`, `project paths materialize`, `project paths register`, `project paths update`, `project paths unregister`, `project paths reset`, and `project repos create`.
 
 ## Workspace Runtime
 
@@ -112,7 +112,7 @@ Execution Adapters must not change Isomer's core domain language. Houmao's speci
 
 ## Roadmap Boundaries
 
-The current Milestone 1-5 CLI focuses on Project discovery, Project Manifest validation, Effective Topic Context inspection, side-effect-free Workspace Path Resolution previews, Domain Agent Team Template and Topic Agent Team Profile checks, Workspace Runtime records for topic environment readiness, pre-launch Agent Team Instance state, and Houmao-backed launch paths.
+The current Milestone 1-5 CLI focuses on Project discovery, Project Manifest validation, Effective Topic Context inspection, semantic Workspace Path Resolution, Domain Agent Team Template and Topic Agent Team Profile checks, Workspace Runtime records for topic environment readiness, pre-launch Agent Team Instance state, and Houmao-backed launch paths.
 
 The following features exist in the domain language and roadmap but are not described here as implemented behavior:
 

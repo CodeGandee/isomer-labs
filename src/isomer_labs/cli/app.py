@@ -36,7 +36,22 @@ from isomer_labs.houmao.adapter import HoumaoAdapterFacade
 from isomer_labs.init_project import initialize_project
 from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, SelectionRequest, TopicAgentTeamProfile
 from isomer_labs.path_utils import display_path
-from isomer_labs.paths import list_semantic_paths, materialize_default_paths, preview_paths, resolve_effective_agent_context, resolve_semantic_path
+from isomer_labs.paths import (
+    default_semantic_path,
+    explain_semantic_path,
+    list_semantic_paths,
+    materialize_default_paths,
+    materialize_semantic_path,
+    preview_paths,
+    resolve_effective_agent_context,
+    resolve_semantic_path,
+)
+from isomer_labs.topic_workspace_manifest import (
+    register_manifest_binding,
+    reset_manifest_binding,
+    unregister_manifest_binding,
+    update_manifest_binding,
+)
 from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
 from isomer_labs.project import (
     discover_project,
@@ -103,10 +118,18 @@ Command surface:
   project topics delete
   project workspaces list
   project context show
+  project repos create
+  project paths default
+  project paths explain
   project paths get
   project paths list
+  project paths materialize
   project paths materialize-default
   project paths preview
+  project paths register
+  project paths reset
+  project paths unregister
+  project paths update
   project runtime init
   project runtime prepare
   project runtime inspect
@@ -545,7 +568,7 @@ def _cmd_context_show(options: CliOptions) -> int:
 
 
 def _cmd_paths_get(options: CliOptions, semantic_label: str) -> int:
-    context, diagnostics = _context_for_options(options)
+    context, diagnostics = _context_for_path_options(options, semantic_label)
     result = None
     if context is not None:
         result, path_diagnostics = resolve_semantic_path(
@@ -555,6 +578,7 @@ def _cmd_paths_get(options: CliOptions, semantic_label: str) -> int:
             cwd=Path.cwd(),
             agent_name=_value(options, "agent_name"),
             agent_instance_id=_value(options, "agent_instance_id"),
+            use_path_plan=not bool(_value(options, "paths_configured")),
         )
         diagnostics.extend(path_diagnostics)
     payload = {
@@ -573,8 +597,61 @@ def _cmd_paths_get(options: CliOptions, semantic_label: str) -> int:
     return _emit("paths get", options, payload, diagnostics, lines)
 
 
+def _cmd_paths_default(options: CliOptions, semantic_label: str) -> int:
+    context, diagnostics = _context_for_path_options(options, semantic_label)
+    result = None
+    if context is not None:
+        result, path_diagnostics = default_semantic_path(
+            context,
+            semantic_label,
+            agent_name=_value(options, "agent_name"),
+        )
+        diagnostics.extend(path_diagnostics)
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": False,
+        "path": result,
+    }
+    lines = []
+    if result is not None:
+        lines = [
+            f"{result['semantic_label']}: {result['path']}",
+            f"Source: {result['source']}",
+        ]
+    return _emit("paths default", options, payload, diagnostics, lines)
+
+
+def _cmd_paths_explain(options: CliOptions, semantic_label: str) -> int:
+    context, diagnostics = _context_for_path_options(options, semantic_label)
+    explanation = None
+    if context is not None:
+        explanation, path_diagnostics = explain_semantic_path(
+            context,
+            semantic_label,
+            env=os.environ,
+            cwd=Path.cwd(),
+            agent_name=_value(options, "agent_name"),
+            agent_instance_id=_value(options, "agent_instance_id"),
+        )
+        diagnostics.extend(path_diagnostics)
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": False,
+        "explanation": explanation,
+    }
+    lines = []
+    if explanation is not None:
+        lines = [f"{explanation['semantic_label']}: {explanation['selected_mode']}"]
+        candidates = explanation.get("candidates", [])
+        if isinstance(candidates, list):
+            for candidate in candidates:
+                if isinstance(candidate, dict):
+                    lines.append(f"- {candidate.get('mode')}: {candidate.get('path')} ({candidate.get('source')})")
+    return _emit("paths explain", options, payload, diagnostics, lines)
+
+
 def _cmd_paths_list(options: CliOptions) -> int:
-    context, diagnostics = _context_for_options(options)
+    context, diagnostics = _context_for_path_options(options)
     paths: list[dict[str, object]] = []
     if context is not None:
         paths, path_diagnostics = list_semantic_paths(
@@ -603,7 +680,7 @@ def _cmd_paths_materialize_default(
     *,
     labels: tuple[str, ...],
 ) -> int:
-    context, diagnostics = _context_for_options(options)
+    context, diagnostics = _context_for_path_options(options)
     result = None
     if context is not None:
         result, path_diagnostics = materialize_default_paths(
@@ -625,8 +702,157 @@ def _cmd_paths_materialize_default(
     return _emit("paths materialize-default", options, payload, diagnostics, lines if result is not None else [])
 
 
+def _cmd_paths_materialize(options: CliOptions, semantic_label: str) -> int:
+    context, diagnostics = _context_for_path_options(options, semantic_label)
+    result = None
+    if context is not None:
+        result, path_diagnostics = materialize_semantic_path(
+            context,
+            semantic_label,
+            env=os.environ,
+            cwd=Path.cwd(),
+            agent_name=_value(options, "agent_name"),
+            agent_instance_id=_value(options, "agent_instance_id"),
+        )
+        diagnostics.extend(path_diagnostics)
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": result is not None and not has_errors(diagnostics),
+        "materialization": result,
+    }
+    lines = ["Semantic path materialized."]
+    if result is not None:
+        created_paths = result.get("created_paths")
+        if isinstance(created_paths, list):
+            lines.extend(f"- {path}" for path in created_paths)
+    return _emit("paths materialize", options, payload, diagnostics, lines if result is not None else [])
+
+
+def _cmd_paths_register(
+    options: CliOptions,
+    semantic_label: str,
+    *,
+    path: str,
+    storage_profile: str,
+    create: bool,
+    replace_existing: bool,
+) -> int:
+    context, diagnostics = _context_for_path_options(options, semantic_label)
+    result = None
+    created: list[str] = []
+    if context is not None:
+        manifest, created_paths, binding_diagnostics = register_manifest_binding(
+            context,
+            label=semantic_label,
+            path_template=path,
+            storage_profile=storage_profile,
+            create=create,
+            replace_existing=replace_existing,
+        )
+        diagnostics.extend(binding_diagnostics)
+        if manifest is not None:
+            result = manifest.to_json()
+            created = [str(item.resolve(strict=False)) for item in created_paths]
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": result is not None and not has_errors(diagnostics),
+        "manifest": result,
+        "created_paths": created,
+    }
+    lines = [f"Registered semantic path binding: {semantic_label}"] if result is not None else []
+    return _emit("paths register", options, payload, diagnostics, lines)
+
+
+def _cmd_paths_update(
+    options: CliOptions,
+    semantic_label: str,
+    *,
+    path: str | None,
+    storage_profile: str | None,
+    create: bool,
+) -> int:
+    context, diagnostics = _context_for_path_options(options, semantic_label)
+    result = None
+    created: list[str] = []
+    if context is not None:
+        manifest, created_paths, binding_diagnostics = update_manifest_binding(
+            context,
+            label=semantic_label,
+            path_template=path,
+            storage_profile=storage_profile,
+            create=create,
+        )
+        diagnostics.extend(binding_diagnostics)
+        if manifest is not None:
+            result = manifest.to_json()
+            created = [str(item.resolve(strict=False)) for item in created_paths]
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": result is not None and not has_errors(diagnostics),
+        "manifest": result,
+        "created_paths": created,
+    }
+    lines = [f"Updated semantic path binding: {semantic_label}"] if result is not None else []
+    return _emit("paths update", options, payload, diagnostics, lines)
+
+
+def _cmd_paths_unregister(options: CliOptions, semantic_label: str) -> int:
+    context, diagnostics = _context_for_path_options(options, semantic_label)
+    result = None
+    if context is not None:
+        manifest, binding_diagnostics = unregister_manifest_binding(context, label=semantic_label)
+        diagnostics.extend(binding_diagnostics)
+        if manifest is not None:
+            result = manifest.to_json()
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": result is not None and not has_errors(diagnostics),
+        "manifest": result,
+    }
+    lines = [f"Unregistered semantic path binding: {semantic_label}"] if result is not None else []
+    return _emit("paths unregister", options, payload, diagnostics, lines)
+
+
+def _cmd_paths_reset(options: CliOptions, semantic_label: str) -> int:
+    context, diagnostics = _context_for_path_options(options, semantic_label)
+    result = None
+    if context is not None:
+        manifest, binding_diagnostics = reset_manifest_binding(context, label=semantic_label)
+        diagnostics.extend(binding_diagnostics)
+        if manifest is not None:
+            result = manifest.to_json()
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": result is not None and not has_errors(diagnostics),
+        "manifest": result,
+    }
+    lines = [f"Reset semantic path binding: {semantic_label}"] if result is not None else []
+    return _emit("paths reset", options, payload, diagnostics, lines)
+
+
+def _cmd_repos_create(
+    options: CliOptions,
+    repo_label: str,
+    *,
+    path: str | None,
+    create: bool,
+    replace_existing: bool,
+) -> int:
+    semantic_label = repo_label if repo_label.startswith("topic.repos.") else f"topic.repos.{repo_label}"
+    repo_suffix = semantic_label.removeprefix("topic.repos.")
+    default_path = "repos/" + "/".join(repo_suffix.split("."))
+    return _cmd_paths_register(
+        options,
+        semantic_label,
+        path=path or default_path,
+        storage_profile="topic_repo",
+        create=create,
+        replace_existing=replace_existing,
+    )
+
+
 def _cmd_paths_preview(options: CliOptions) -> int:
-    context, diagnostics = _context_for_options(options)
+    context, diagnostics = _context_for_path_options(options)
     entries: list[dict[str, object]] = []
     text_lines: list[str] = []
     if context is not None:
@@ -2064,6 +2290,46 @@ def _context_for_options(options: CliOptions) -> tuple[EffectiveTopicContext | N
     )
     diagnostics.extend(context_diagnostics)
     return context, diagnostics
+
+
+_IMPLICIT_TOPIC_SELECTION_SOURCES = {
+    "Project Manifest default",
+    "single Project Manifest registration",
+}
+
+
+def _context_for_path_options(
+    options: CliOptions,
+    semantic_label: str | None = None,
+) -> tuple[EffectiveTopicContext | None, list[Diagnostic]]:
+    context, diagnostics = _context_for_options(options)
+    if context is None:
+        return None, diagnostics
+    if not _path_label_requires_selected_topic(semantic_label):
+        return context, diagnostics
+    source = context.sources.get("research_topic_id")
+    if source not in _IMPLICIT_TOPIC_SELECTION_SOURCES:
+        return context, diagnostics
+    diagnostics.append(
+        Diagnostic(
+            code="ISO013",
+            severity="error",
+            concept="Workspace Path Resolution",
+            field=semantic_label or "semantic_label",
+            message=(
+                "Semantic storage labels that require a Topic context need an explicit "
+                "`--topic` or `--topic-workspace` selector unless the command is run inside "
+                "the selected Topic Workspace."
+            ),
+        )
+    )
+    return None, diagnostics
+
+
+def _path_label_requires_selected_topic(semantic_label: str | None) -> bool:
+    if semantic_label is None:
+        return True
+    return semantic_label.startswith(("topic.", "agent.", "custom."))
 
 
 def _selection_request_from_options(options: CliOptions) -> SelectionRequest:

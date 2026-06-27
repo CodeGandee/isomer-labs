@@ -725,6 +725,8 @@ class ResolvedPathEntry:
     semantic_label: str | None = None
     scope_ref: str | None = None
     compatibility_surface: str | None = None
+    storage_profile: str | None = None
+    storage_profile_traits: dict[str, object] | None = None
     owner: str | None = None
     durability: str | None = None
     sharing: str | None = None
@@ -745,6 +747,10 @@ class ResolvedPathEntry:
             data["scope_ref"] = self.scope_ref
         if self.compatibility_surface is not None:
             data["compatibility_surface"] = self.compatibility_surface
+        if self.storage_profile is not None:
+            data["storage_profile"] = self.storage_profile
+        if self.storage_profile_traits is not None:
+            data["storage_profile_traits"] = self.storage_profile_traits
         if self.owner is not None:
             data["owner"] = self.owner
         if self.durability is not None:

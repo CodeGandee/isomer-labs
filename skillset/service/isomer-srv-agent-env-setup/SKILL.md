@@ -9,7 +9,7 @@ description: Use when an Isomer Labs agent needs service-safe Agent Workspace en
 
 Set up and validate Agent Workspace cwd readiness for a registered Research Topic. This service is downstream of `isomer-srv-topic-env-setup`: it consumes Topic Workspace Pixi readiness, `user-intent/derived/isomer-env-gate.md`, and the resolved Topic Workspace Pixi manifest and environment. It does not install dependencies by default and it does not create per-agent Pixi manifests, per-agent lockfiles, or per-agent `.pixi/` directories.
 
-Agent env setup reads `user-intent/src/agent-env-gate.md`, derives `user-intent/derived/isomer-agent-env-gate.md`, prepares the shared Topic Main Repository resolved by `topic.main_repo`, creates or validates per-agent `agent.workspace` worktrees for authoritative Agent Names, and verifies the derived gate from each Agent Workspace cwd with `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
+Agent env setup reads `user-intent/src/agent-env-gate.md`, derives `user-intent/derived/isomer-agent-env-gate.md`, prepares the shared Topic Main Repository resolved by `topic.repos.main`, creates or validates per-agent `agent.workspace` worktrees for authoritative Agent Names, and verifies the derived gate from each Agent Workspace cwd with `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
 
 This skill is a command-style router: keep the entrypoint lean, choose one subcommand, then load that subcommand's reference page. The full `setup-agent-env` flow verifies every authoritative planned Agent Name before reporting overall readiness. Direct verification can target one authoritative Agent Name only as selected-agent partial readiness evidence.
 
@@ -40,7 +40,7 @@ Procedural subcommands are the public single-step workflow API. Call them direct
 | `read-agent-env-gate` | Read `user-intent/src/agent-env-gate.md` and extract Agent Workspace cwd readiness requirements. | [references/read-agent-env-gate.md](references/read-agent-env-gate.md) |
 | `plan-agent-workspaces` | Read authoritative Agent Names from Topic Team Instantiation Packet or derived Topic Agent Team Profile material and resolve agent labels. | [references/plan-agent-workspaces.md](references/plan-agent-workspaces.md) |
 | `derive-agent-env-gate` | Generate or update `user-intent/derived/isomer-agent-env-gate.md`. | [references/derive-agent-env-gate.md](references/derive-agent-env-gate.md) |
-| `ensure-topic-main-repository` | Create, reuse, or validate the Topic Main Repository resolved by `topic.main_repo`. | [references/ensure-topic-main-repository.md](references/ensure-topic-main-repository.md) |
+| `ensure-topic-main-repository` | Create, reuse, or validate the Topic Main Repository resolved by `topic.repos.main`. | [references/ensure-topic-main-repository.md](references/ensure-topic-main-repository.md) |
 | `create-agent-worktrees` | Create or validate per-agent Agent Workspace worktrees and required support labels. | [references/create-agent-worktrees.md](references/create-agent-worktrees.md) |
 | `verify-agent-env-gate` | Verify the derived agent env gate from Agent Workspace cwd values, with optional selected-agent partial reruns. | [references/verify-agent-env-gate.md](references/verify-agent-env-gate.md) |
 
@@ -104,11 +104,11 @@ Report:
 - `service_request_refs`: optional Service Request refs when available.
 - `support_artifact_refs`: optional support Artifact refs when available.
 - `provenance_refs`: optional Provenance refs when available.
-- `semantic_paths`: resolved labels, paths, sources, readiness, and blockers for `topic.main_repo`, `topic.main_repo.isomer_managed`, `topic.agents_root`, `topic.records`, `topic.runtime`, `agent.workspace`, and required agent support labels.
+- `semantic_paths`: resolved labels, paths, sources, readiness, and blockers for `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `topic.records`, `topic.runtime`, `agent.workspace`, and required agent support labels.
 - `topic_environment_status`: ready, missing, stale, blocked, failed, or not checked.
 - `source_agent_env_gate_path`: `<topic-workspace-dir>/user-intent/src/agent-env-gate.md`.
 - `agent_env_gate_path`: `<topic-workspace-dir>/user-intent/derived/isomer-agent-env-gate.md`.
-- `topic_main_repository`: resolved `topic.main_repo` path, label source, Git state, owner branch, changed files, and blockers.
+- `topic_main_repository`: resolved `topic.repos.main` path, label source, Git state, owner branch, changed files, and blockers.
 - `agent_workspace_paths`: Agent Name, role id, resolved `agent.workspace`, source, branch, worktree status, and blockers.
 - `branch_plan`: owner branch `topic-owner/main`, default `per-agent/<agent-name>/main` branches, and any future branch namespace notes.
 - `worktree_status_by_agent`: ready, created, blocked, failed, or not checked for each authoritative Agent Name.
@@ -128,7 +128,7 @@ Report:
 - Do not infer Agent Names from directories, branches, provider ids, or ad hoc maps. Use the Topic Team Instantiation Packet or Topic Agent Team Profile material derived from that packet as the Agent Name authority. A matching explicit operator-provided map is only corroborating evidence; a disagreement is an `agent-plan-conflict` blocker.
 - Do not overwrite, delete, clean, reset, reinitialize, reclone, rewrite history, or silently repair existing repositories or Agent Workspace paths.
 - Resolve semantic labels before filesystem mutation. Default paths may appear only as examples from `isomer-default.v1`; semantic labels and path sources remain the contract.
-- Keep the resolved `topic.main_repo` path as a normal non-bare Topic Main Repository and each resolved `agent.workspace` path as a worktree of that repository on `per-agent/<agent-name>/main`.
-- Treat `topic.main_repo.tmp` and `agent.tmp` as local ignored disposable surfaces when available. Do not use tmp contents as durable readiness evidence.
+- Keep the resolved `topic.repos.main` path as a normal non-bare Topic Main Repository and each resolved `agent.workspace` path as a worktree of that repository on `per-agent/<agent-name>/main`.
+- Treat `topic.repos.main.tmp` and `agent.tmp` as local ignored disposable surfaces when available. Do not use tmp contents as durable readiness evidence.
 - Direct Project Operator Session invocation is allowed after selected Project, Research Topic, Topic Workspace, topic env predecessor evidence, authoritative Agent Name plan, and mutation scope are confirmed. Record optional Service Request, support Artifact, and Provenance refs when available.
 - Selected-agent direct verification is partial evidence. It must not report `overall_readiness_status` as ready unless the complete planned Agent Name matrix has passed.

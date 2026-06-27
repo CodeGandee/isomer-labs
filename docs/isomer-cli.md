@@ -187,11 +187,34 @@ Resolve one semantic workspace surface label for the selected Topic Workspace.
 
 **Side effects:** none. This command does not create `topic-workspace.toml`, directories, Workspace Runtime records, Git repositories, branches, or worktrees.
 
-Use dotted semantic labels such as `topic.main_repo`, `topic.records.artifacts`, `topic.runtime.db`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch`. Agent-scoped labels need an Agent Name or Agent Instance selector unless the current working directory is already inside the selected agent's Agent Workspace.
+Use dotted semantic labels such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch`. Add `--configured` when you need the current manifest or environment answer instead of a historical Path Plan. Agent-scoped labels need an Agent Name or Agent Instance selector unless the current working directory is already inside the selected agent's Agent Workspace.
 
 ```bash
 pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
+pixi run isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured
 pixi run isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent alice
+```
+
+### `project paths default`
+
+Show the built-in default-layout path for one reserved semantic label without Path Plan, environment, or manifest override precedence.
+
+**Side effects:** none. This command is only for Isomer-defined labels with default paths, such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `topic.tmp`, and supported `agent.*` labels.
+
+```bash
+pixi run isomer-cli --print-json project paths default topic.repos.main --topic my-topic
+pixi run isomer-cli --print-json project paths default agent.workspace --topic my-topic --agent alice
+```
+
+### `project paths explain`
+
+Explain candidate sources for one semantic label, including the selected source, source detail, diagnostics, and why the selected source wins.
+
+**Side effects:** none.
+
+```bash
+pixi run isomer-cli --print-json project paths explain topic.repos.main --topic my-topic
+pixi run isomer-cli --print-json project paths explain custom.datasets.raw --topic my-topic
 ```
 
 ### `project paths list`
@@ -205,6 +228,49 @@ pixi run isomer-cli project paths list --topic my-topic
 pixi run isomer-cli --print-json project paths list --topic my-topic --agent alice
 ```
 
+### `project paths register`
+
+Register a semantic binding in the Topic Workspace Manifest. Active binding fields are intentionally compact: `label`, `path`, and `storage_profile`. Isomer does not infer `storage_profile` from the path because the same directory shape can have different ownership, durability, and safety semantics.
+
+Use `custom.*` for user-defined labels. Use grouped reserved repository labels under `topic.repos.*`, such as `topic.repos.inner_group.some_repo_name`, when the binding describes another topic repository. Reserved roots such as `project`, `topic`, and `agent` are Isomer-owned except for accepted grouped families.
+
+**Side effects:** writes `<topic-workspace>/topic-workspace.toml`; with `--create`, creates the validated target path. It does not create Workspace Runtime records or rewrite historical Path Plans.
+
+```bash
+pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
+pixi run isomer-cli --print-json project paths register topic.repos.inner_group.some_repo_name --topic my-topic --path repos/inner_group/some_repo_name --storage-profile topic_repo --create
+```
+
+### `project paths update`
+
+Update an existing manifest binding's `path`, `storage_profile`, or both after the same validation used by registration.
+
+**Side effects:** writes `<topic-workspace>/topic-workspace.toml`; with `--create`, creates the new target path. It preserves previous filesystem targets and historical Path Plans.
+
+```bash
+pixi run isomer-cli --print-json project paths update custom.datasets.raw --topic my-topic --path data/raw-v2 --create
+```
+
+### `project paths unregister`
+
+Remove a dynamic `custom.*` or grouped reserved binding from the Topic Workspace Manifest.
+
+**Side effects:** writes `<topic-workspace>/topic-workspace.toml`. It does not delete the target directory or historical Path Plans. Built-in labels cannot be unregistered; use `project paths reset` to remove a built-in override.
+
+```bash
+pixi run isomer-cli --print-json project paths unregister custom.datasets.raw --topic my-topic
+```
+
+### `project paths reset`
+
+Remove a manifest override for a built-in reserved label and fall back to the default catalog behavior.
+
+**Side effects:** writes `<topic-workspace>/topic-workspace.toml`. It does not delete the previous target directory or historical Path Plans.
+
+```bash
+pixi run isomer-cli --print-json project paths reset topic.repos.main --topic my-topic
+```
+
 ### `project paths materialize-default`
 
 Write or update the Topic Workspace Manifest and create selected default-layout paths from `isomer-default.v1`.
@@ -214,6 +280,28 @@ Write or update the Topic Workspace Manifest and create selected default-layout 
 ```bash
 pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --label topic.records.artifacts
 pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --agent alice --label agent.private_artifacts
+```
+
+### `project paths materialize`
+
+Create the currently configured target for an existing semantic label according to its `storage_profile`, ignoring stored Path Plans but honoring current environment and manifest configuration.
+
+**Side effects:** creates the configured directory or file parent as required by the label's `storage_profile`. It does not alter the manifest and does not delete previous targets.
+
+```bash
+pixi run isomer-cli --print-json project paths materialize custom.datasets.raw --topic my-topic
+pixi run isomer-cli --print-json project paths materialize topic.repos.main --topic my-topic
+```
+
+### `project repos create`
+
+Register and create a topic repository binding without writing the manifest by hand. A bare name such as `inner_group.some_repo_name` becomes `topic.repos.inner_group.some_repo_name`; the command uses `storage_profile = "topic_repo"`.
+
+**Side effects:** writes `<topic-workspace>/topic-workspace.toml` and, unless `--no-create` is set, creates the repository target directory. It does not initialize Git by itself.
+
+```bash
+pixi run isomer-cli --print-json project repos create inner_group.some_repo_name --topic my-topic
+pixi run isomer-cli --print-json project repos create topic.repos.tools.benchmarks --topic my-topic --path repos/tools/benchmarks --replace
 ```
 
 ### `schemas list`
@@ -274,7 +362,7 @@ pixi run isomer-cli --print-json project runtime validate --topic my-topic --req
 
 Create an Agent Team Instance record.
 
-**Side effects:** writes Agent Team Instance record, Agent Instance records, Agent Workspace records, semantic path plans for `agent.workspace` and support labels such as `agent.isomer_managed`, `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links`, initial Workflow Stage Cursor records, and provenance refs, and materializes the resolved Agent Workspace directories. Each Agent Workspace is expected to be the agent's launch cwd and, for Git-backed topics, a worktree of `topic.main_repo` on an agent-owned branch. Does not launch Houmao agents, create mailboxes, write launch dossiers, or store adapter-specific launch refs.
+**Side effects:** writes Agent Team Instance record, Agent Instance records, Agent Workspace records, semantic path plans for `agent.workspace` and support labels such as `agent.isomer_managed`, `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links`, initial Workflow Stage Cursor records, and provenance refs, and materializes the resolved Agent Workspace directories. Each Agent Workspace is expected to be the agent's launch cwd and, for Git-backed topics, a worktree of `topic.repos.main` on an agent-owned branch. Does not launch Houmao agents, create mailboxes, write launch dossiers, or store adapter-specific launch refs.
 
 **Prerequisites:** Workspace Runtime must be initialized, the Research Topic's single Topic Agent Team Profile Bundle must be materialized, and readiness should be `ready` for launch-facing work.
 
@@ -522,9 +610,17 @@ pixi run isomer-cli project --root tests/fixtures/projects/deepsci-profile-use-c
 | `project workspaces list` | no | no | no | no |
 | `project context show` | no | no | no | no |
 | `project paths preview` | no | no | no | no |
+| `project paths default` | no | no | no | no |
+| `project paths explain` | no | no | no | no |
 | `project paths get` | no | no | no | no |
 | `project paths list` | no | no | no | no |
 | `project paths materialize-default` | yes (`topic-workspace.toml`, selected default dirs) | no | no | no |
+| `project paths materialize` | yes (configured target dirs or file parents) | no | no | no |
+| `project paths register` | yes (`topic-workspace.toml`, optional target dirs) | no | no | no |
+| `project paths update` | yes (`topic-workspace.toml`, optional target dirs) | no | no | no |
+| `project paths unregister` | yes (`topic-workspace.toml` only) | no | no | no |
+| `project paths reset` | yes (`topic-workspace.toml` only) | no | no | no |
+| `project repos create` | yes (`topic-workspace.toml`, optional repository target dir) | no | no | no |
 | `schemas list` | no | no | no | no |
 | `project runtime init` | yes (dirs, sqlite) | yes | no | no |
 | `project runtime prepare` | no | yes | no | no |
@@ -555,6 +651,7 @@ pixi run isomer-cli project --root tests/fixtures/projects/deepsci-profile-use-c
 - `ISOMER_HOUMAO_COMMAND` — override the `houmao-mgr` executable path used by the Houmao adapter.
 - `ISOMER_HOUMAO_CHECKOUT` — override the local Houmao checkout path used when `houmao-mgr` is not on `PATH`.
 - `ISOMER_AGENT_NAME`, `ISOMER_AGENT_INSTANCE_ID`, and `ISOMER_AGENT_WORKSPACE_DIR` — optional agent-context inputs for agent-scoped semantic path queries. Explicit CLI selectors win over environment context.
+- `ISOMER_PATH__TOPIC__REPOS__MAIN`, `ISOMER_PATH__CUSTOM__DATASETS__RAW`, and other generated `ISOMER_PATH__...` variables — semantic path overrides derived from dotted labels. A generated variable for `custom.*` applies only after that custom label exists in the effective catalog.
 - `ISOMER_TOPIC_WORKSPACE_RUNTIME_DB`, `ISOMER_TOPIC_WORKSPACE_RECORDS_DIR`, `ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR`, and related `ISOMER_TOPIC_WORKSPACE_*` path variables — compatibility path overrides used by Workspace Path Resolution before manifest/default bindings. Prefer semantic labels in new docs and scripts.
 
 If `houmao-mgr` is not on `PATH`, the adapter falls back to `extern/orphan/houmao`, then `ISOMER_HOUMAO_CHECKOUT`, then `~/workspace/code/houmao`.

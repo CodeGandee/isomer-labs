@@ -45,6 +45,7 @@ class CliOptions:
     content_root_to: str | None = None
     content_root_move_dry_run: bool = False
     content_root_move_yes: bool = False
+    paths_configured: bool = False
 
 
 def common_options(command: Any) -> Any:

@@ -20,16 +20,16 @@ Successful Project initialization also creates the Isomer-managed Houmao overlay
 
 A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `isomer-content/topic-ws/<topic-workspace-id>/` for fresh Projects or `<content-dir>/topic-ws/<topic-workspace-id>/` when init selected a custom content root. It is a Pixi workspace by default, and its semantic label contract and `isomer-default.v1` default layout are standardized in [Topic Workspace Definition](topic-workspace-definition.md).
 
-Runtime-facing pages should refer to Topic Workspace surfaces by semantic label, such as `topic.runtime.db`, `topic.team_profile_bundle`, `topic.main_repo`, `agent.workspace`, `topic.records.runs`, or adapter material labels when accepted. Commands should record path plans for durable surfaces before downstream work depends on them.
+Runtime-facing pages should refer to Topic Workspace surfaces by semantic label, such as `topic.runtime.db`, `topic.team_profile_bundle`, `topic.repos.main`, `agent.workspace`, `topic.records.runs`, or adapter material labels when accepted. Commands should record path plans for durable surfaces before downstream work depends on them.
 
-The Topic Workspace Manifest lives at `<topic-workspace>/topic-workspace.toml`. It is topic-owned configuration for semantic bindings and is not Project Config Directory state. If it is missing, read-only path resolution may synthesize bindings from `isomer-default.v1` without creating files.
+The Topic Workspace Manifest lives at `<topic-workspace>/topic-workspace.toml`. It is topic-owned configuration for semantic bindings and is not Project Config Directory state. Active bindings use `label`, `path`, and `storage_profile`; Isomer derives context, lifecycle, visibility, safety policy, and Git semantics from the storage profile. If the manifest is missing, read-only path resolution may synthesize bindings from `isomer-default.v1` without creating files.
 
 ## Workspace Runtime Records
 
 Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 
 - `WorkspaceRuntimeMetadata` — schema version, Project root, Project Manifest path, Research Topic id, Topic Workspace id, Topic Workspace path, timestamps, and provenance refs.
-- `PathPlanRecord` — id, Topic Workspace id, compatibility surface id, semantic label, scope ref, path, source, source detail, and created timestamp.
+- `PathPlanRecord` — id, Topic Workspace id, compatibility surface id, semantic label, scope ref, path, source, source detail, `storage_profile`, storage-profile trait snapshot, and created timestamp.
 - `TopicEnvironmentReadinessRecord` — readiness status, Topic Workspace Pixi manifest refs, selected Pixi environment refs, optional Project-root Pixi environment refs for platform or shared tooling use, diagnostics, checked timestamp, actor ref, and optional repair Service Request hint.
 - `AgentTeamInstanceRecord` — id, Research Topic id, Topic Workspace id, Topic Agent Team Profile ref, Domain Agent Team Template id, status, agent instance ids, agent workspace ids, run ids, workflow stage cursor ids, blocker refs, handoff ids, and provenance refs.
 - `AgentInstanceRecord` — id, Agent Team Instance id, Agent Role id, Research Topic id, Topic Workspace id, Agent Profile ref, status, and provenance refs.
@@ -51,9 +51,9 @@ Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 
 ## Path Plans
 
-Path Plan records map a semantic label and scope to a concrete filesystem path. Public labels include `topic.runtime.db`, `topic.records`, `topic.records.artifacts`, `topic.records.tasks`, `topic.records.runs`, `topic.records.views`, `topic.records.logs`, `topic.main_repo`, `topic.agents_root`, `agent.workspace`, `agent.isomer_managed`, `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links`. Compatibility surfaces such as `workspace_runtime_db`, `records_artifacts`, `agent_workspace:<agent-name>`, and `agent_isomer_managed:<agent-name>` remain stored for older callers and migration output.
+Path Plan records map a semantic label and scope to a concrete filesystem path. Public labels include `topic.runtime.db`, `topic.records`, `topic.records.artifacts`, `topic.records.tasks`, `topic.records.runs`, `topic.records.views`, `topic.records.logs`, `topic.repos.main`, `topic.agents_root`, `agent.workspace`, `agent.isomer_managed`, `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links`. Compatibility surfaces such as `workspace_runtime_db`, `records_artifacts`, `agent_workspace:<agent-name>`, and `agent_isomer_managed:<agent-name>` remain stored for older callers and migration output.
 
-Commands use Path Plan records to locate durable files without recomputing layout from the latest manifest. When a Topic Workspace Manifest changes after runtime records depend on older paths, validation reports drift and preserves historical path plans. `isomer-cli project paths get`, `project paths list`, and `project paths preview` are read-only. `project paths materialize-default` is the explicit mutating command for selected default bindings and directories.
+Commands use Path Plan records to locate durable files without recomputing layout from the latest manifest. When a Topic Workspace Manifest changes after runtime records depend on older paths, validation reports drift and preserves historical path plans. `isomer-cli project paths get`, `project paths list`, `project paths preview`, `project paths default`, and `project paths explain` are read-only. `project paths materialize-default` writes selected default bindings and directories, `project paths materialize` creates the currently configured target for an existing label, and `project paths register`, `project paths update`, `project paths unregister`, `project paths reset`, and `project repos create` mutate only the manifest and optional target directories. Unregistering or resetting a binding does not delete filesystem targets and does not rewrite historical Path Plans.
 
 ## Agent Workspaces
 
@@ -128,7 +128,7 @@ The following are not durable research state and may be regenerated or lost:
 | Owner-preserved records | `<topic-workspace>/records/{artifacts,tasks,runs,views,logs}/` | yes |
 | Runtime support root | `<topic-workspace>/runtime/` | yes |
 | Topic Local Tmp Surface `topic.tmp` | `<topic-workspace>/tmp/` by default | no; local, ignored, disposable, not durable evidence |
-| Topic Main Local Tmp Surface `topic.main_repo.tmp` | `<resolved topic.main_repo>/tmp/` by default | no; local, ignored, disposable, not durable evidence |
+| Topic Main Local Tmp Surface `topic.repos.main.tmp` | `<resolved topic.repos.main>/tmp/` by default | no; local, ignored, disposable, not durable evidence |
 | Agent Workspace | `<topic-workspace>/agents/<agent-name>/` | yes after runtime path-plan creation |
 | Agent Workspace worktree | `<topic-workspace>/agents/<agent-name>/` as a worktree of `repos/topic-main` on `per-agent/<agent-name>/...` | policy-dependent Git state plus durable runtime path plan |
 | Agent Local Tmp Surface `agent.tmp` | `<resolved agent.workspace>/tmp/` by default | no; local, ignored, disposable, not durable evidence |

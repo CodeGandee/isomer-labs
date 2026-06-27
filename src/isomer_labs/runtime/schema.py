@@ -66,6 +66,8 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             semantic_label TEXT,
             scope_ref TEXT,
             compatibility_surface TEXT,
+            storage_profile TEXT,
+            storage_profile_traits_json TEXT NOT NULL DEFAULT '{}',
             created_at TEXT NOT NULL,
             UNIQUE(topic_workspace_id, surface)
         );
@@ -417,6 +419,8 @@ def _ensure_path_plan_semantic_columns(connection: sqlite3.Connection) -> None:
         "semantic_label": "TEXT",
         "scope_ref": "TEXT",
         "compatibility_surface": "TEXT",
+        "storage_profile": "TEXT",
+        "storage_profile_traits_json": "TEXT NOT NULL DEFAULT '{}'",
     }
     for column, declaration in additions.items():
         if column not in columns:

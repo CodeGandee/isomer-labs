@@ -21,13 +21,29 @@ Isomer must not infer managed Topic Workspaces by scanning directories. A direct
 
 ## Topic Workspace Manifest and Semantic Labels
 
-Each Topic Workspace may contain a topic-owned Topic Workspace Manifest at `<topic-workspace>/topic-workspace.toml`. The manifest binds semantic workspace surface labels such as `topic.main_repo`, `topic.records.artifacts`, `topic.runtime.db`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch` to concrete paths or agent path templates inside the selected Topic Workspace.
+Each Topic Workspace may contain a topic-owned Topic Workspace Manifest at `<topic-workspace>/topic-workspace.toml`. The manifest binds semantic workspace surface labels such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch` to concrete paths or agent path templates inside the selected Topic Workspace.
 
 The Project Manifest remains the outer discovery authority for Research Topics and Topic Workspaces. It does not carry a per-topic manifest path override. The Topic Workspace Manifest is topic-owned configuration and must not be stored inside `.isomer-labs/`.
 
 A missing Topic Workspace Manifest is valid for read-only resolution. In that case, Workspace Path Resolution synthesizes effective bindings from `isomer-default.v1` without creating files. Materializing default paths is explicit: use `isomer-cli project paths materialize-default` to write or update `topic-workspace.toml` and create selected default-owned directories.
 
 Semantic labels are the public contract. Existing snake-case surfaces such as `records_artifacts`, `topic_main_repo`, and `agent_workspace:<agent-name>` remain compatibility identifiers for path plans and older callers.
+
+Reserved roots such as `project`, `topic`, and `agent` are Isomer-owned. The Topic Main Repository label is `topic.repos.main`, and additional topic repositories may be registered under the grouped reserved family `topic.repos.<group...>.<repo-name>`, for example `topic.repos.inner_group.some_repo_name`. User-defined labels must live under `custom.*`, for example `custom.datasets.raw`.
+
+Active manifest bindings use only three authoring fields: `label`, `path`, and `storage_profile`. `storage_profile` is explicit because a path string cannot reliably imply ownership, lifecycle, visibility, safety policy, or Git semantics. Built-in labels have Isomer-defined storage profiles; custom labels and grouped repository labels must declare one when registered.
+
+```toml
+[[bindings]]
+label = "custom.datasets.raw"
+path = "data/raw"
+storage_profile = "topic_records_dir"
+
+[[bindings]]
+label = "topic.repos.inner_group.some_repo_name"
+path = "repos/inner_group/some_repo_name"
+storage_profile = "topic_repo"
+```
 
 ## Standard Layout
 
@@ -325,13 +341,17 @@ If validation detects peer writes without an explicit repair, migration, cleanup
 
 ## Path Resolution
 
-Commands should resolve Topic Workspace and Agent Workspace paths through Workspace Path Resolution rather than assembling paths ad hoc. The resolver uses recorded path plans first, then supported `ISOMER_*` environment variables exported by an Execution Adapter, then Topic Workspace Manifest bindings, then Project Manifest defaults where applicable, then `isomer-default.v1`.
+Commands should resolve Topic Workspace and Agent Workspace paths through Workspace Path Resolution rather than assembling paths ad hoc. The resolver uses recorded Path Plans first, then supported `ISOMER_PATH__...` semantic environment variables and compatibility `ISOMER_*` variables exported by an Execution Adapter, then Topic Workspace Manifest bindings, then Project Manifest defaults where applicable, then `isomer-default.v1`. A generated environment variable for `custom.*` applies only after the label exists in the effective catalog.
 
-Use `isomer-cli project paths get <semantic-label>` for one path answer and `isomer-cli project paths list` to inspect known labels. These commands and `project paths preview` are read-only. Use `project paths materialize-default` only when you intend to write or update `topic-workspace.toml` and create selected default directories.
+Use `isomer-cli project paths get <semantic-label>` for one path answer and `isomer-cli project paths list` to inspect known labels. These commands and `project paths preview` are read-only. Add `--configured` to `project paths get` when you need the current manifest or environment answer instead of a stored Path Plan. Use `project paths default <semantic-label>` to ask for the default-layout path of a built-in reserved label without override precedence, and use `project paths explain <semantic-label>` to inspect candidate sources and the selected source.
+
+Use `project paths materialize-default` only when you intend to write or update `topic-workspace.toml` and create selected default directories. Use `project paths materialize <semantic-label>` to create the currently configured target for an existing label according to its `storage_profile` while ignoring stored Path Plans. Use `project paths register`, `project paths update`, `project paths unregister`, and `project paths reset` for manifest binding lifecycle operations instead of editing the manifest by hand. `unregister` removes dynamic `custom.*` and grouped repository slots; `reset` removes a built-in override. Neither command deletes filesystem targets or rewrites historical Path Plans.
+
+To register a new repository under `repos/<custom-repo>`, prefer `isomer-cli project repos create <repo-label> --topic <topic-id>`. A bare label such as `inner_group.some_repo_name` registers `topic.repos.inner_group.some_repo_name`, uses `storage_profile = "topic_repo"`, creates `repos/inner_group/some_repo_name` by default, and makes the path queryable through `isomer-cli project paths get topic.repos.inner_group.some_repo_name --topic <topic-id>`.
 
 For Agent Workspaces, Agent Team Instance creation records an Agent Workspace Path Plan for `agent.workspace` and support path plans for labels such as `agent.isomer_managed`, `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links`. An agent running inside its own Agent Workspace can query agent-scoped labels without passing an Agent Name because cwd-derived Effective Agent Context can identify the owning workspace. Cross-agent queries still require an explicit Agent Name or Agent Instance selector. Cwd inference is a convenience for path resolution, not filesystem-grade identity or access control.
 
-Implemented Local Tmp Surface labels are `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`. Under `isomer-default.v1`, `topic.tmp` resolves to `<topic-workspace>/tmp/`, `topic.main_repo.tmp` resolves to `<resolved topic.main_repo>/tmp/`, and `agent.tmp` resolves to `<resolved agent.workspace>/tmp/`. These labels are local, ignored, disposable, not shared, and not durable evidence unless explicitly promoted to another accepted semantic surface.
+Implemented Local Tmp Surface labels are `topic.tmp`, `topic.repos.main.tmp`, and `agent.tmp`. Under `isomer-default.v1`, `topic.tmp` resolves to `<topic-workspace>/tmp/`, `topic.repos.main.tmp` resolves to `<resolved topic.repos.main>/tmp/`, and `agent.tmp` resolves to `<resolved agent.workspace>/tmp/`. These labels are local, ignored, disposable, not shared, and not durable evidence unless explicitly promoted to another accepted semantic surface.
 
 Local Tmp Surfaces are different from `agent.scratch`: scratch is agent-owned draft material that can become an intentional input to promotion, while tmp is sweepable posture for transient files. Tmp material is not Peer Read Access, generated-link target material, owner-preserved records, Workspace Runtime evidence, Provenance Records, Evidence Items, Decision Records, or Git-tracked Isomer material.
 
