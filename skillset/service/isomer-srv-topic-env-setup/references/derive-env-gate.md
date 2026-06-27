@@ -70,6 +70,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Verification Commands` should list the exact Pixi commands that prove the runnable target works. If a command needs external runtime wiring, include the recorded environment variables, sourced scripts, or runtime paths inside the Pixi-run command rather than relying on ambient shell state.
 
+When the source intent mentions later Agent Workspace use, preserve any cwd assumptions explicitly. Commands that only prove topic-root readiness remain topic-scoped; downstream per-agent verification must be derived later by `isomer-srv-agent-env-setup` into `user-intent/derived/isomer-agent-env-gate.md`.
+
 `## Expected Results` should state pass/fail criteria and expected outputs.
 
 `## Blockers` should list missing repos, missing dependencies, ambiguous commands, unavailable packages, unsupported live-agent actions, privileged or machine-global setup requirements, unclassified dependencies, or other reasons readiness cannot be claimed. When repo docs or the source gate ask for `sudo`, system package manager mutation, global shell profile edits, global Python or Node installs, `/etc` changes, `ldconfig`, daemons, kernel driver changes, or similar host mutation, record that request as a blocker or external prerequisite rather than an executable setup command.

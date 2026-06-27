@@ -1,6 +1,6 @@
 # Verify Env Gate
 
-Use this subcommand to run the desired command through Pixi and decide Topic Workspace environment readiness for a single agent or operator working in the selected Topic Workspace.
+Use this subcommand to run the desired command through Pixi and decide Topic Workspace environment readiness for a single agent or operator working in the selected Topic Workspace. This is topic-scoped verification; per-Agent Workspace cwd verification belongs to `isomer-srv-agent-env-setup`.
 
 ## Required Inputs
 
@@ -41,6 +41,7 @@ When `ready` depends on Pixi-mediated external runtime wiring or `.isomer-user-e
 ## Guardrails
 
 - Do not claim readiness merely because `pixi install` succeeded.
+- Do not claim per-agent cwd readiness from a topic-root command. If every `agent.workspace` cwd must prove the gate, route to `isomer-srv-agent-env-setup verify-agent-env-gate` after this topic env check is ready.
 - Do not claim readiness from ambient shell success. If a command only passes because of an already activated environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script, report `blocked` or `failed` and name the missing enclosure record.
 - Do not require or verify `team-profile/`, Topic Agent Team Profile material, Agent Team Instance records, roles, or agent count before reporting environment readiness.
 - Do not run live agent launch, Agent Instance creation, Topic Agent Team Profile materialization, GUI operation, or research decision commands as environment verification.

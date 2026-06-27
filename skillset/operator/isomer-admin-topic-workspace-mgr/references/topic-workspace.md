@@ -10,12 +10,15 @@ When this subcommand is selected, execute the following steps in order.
 4. Run the `create-worktrees` workflow for safe planned entries and stop individual entries on blockers instead of overwriting existing paths.
 5. Run the `write-boundaries` workflow for topic-level and per-agent advisory Workspace Boundary, Peer Read Access, owner/reader split, and generated-link notes.
 6. Run the `validate-worktrees` workflow to check Git topology, branch namespace, duplicate checkout state, `isomer-managed/` layout, generated links, and packet/profile refs.
-7. Run the `summarize` workflow and report the output contract with blockers and next operator action.
+7. If the user asked for per-Agent Workspace environment readiness, route the request to `isomer-srv-agent-env-setup setup-agent-env` after the Git topology is validated; otherwise report that agent environment verification is not checked.
+8. Run the `summarize` workflow and report the output contract with blockers and next operator action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to split the request into the closest subcommands, run read-only stages first, and ask for explicit mutation only when needed.
 
 ## Full Flow Boundary
 
-The full flow prepares static Git-backed Agent Workspace paths. It does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, or run Execution Adapters.
+The full flow prepares static Git-backed Agent Workspace paths. It does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or prove that every Agent Workspace cwd can run a gate command.
+
+Per-Agent Workspace cwd readiness belongs to `isomer-srv-agent-env-setup`. That service consumes this skill's `topic.main_repo`, `agent.workspace`, branch plan, and support-path evidence, then verifies `user-intent/derived/isomer-agent-env-gate.md` from every authoritative Agent Workspace cwd. A selected-agent rerun from that service is partial evidence only and does not make the whole topic team ready.
 
 Runtime Agent Team Instance creation later consumes validated `agent_name`, branch, `agent.workspace` path plans, and `agent.*` support path plans. Missing semantic label evidence is a launch-facing blocker; runtime must not silently fall back to `<topic-workspace>/agents/<agent-instance-id>`.

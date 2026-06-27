@@ -467,6 +467,81 @@ class SkillsetValidatorTests(unittest.TestCase):
                 """,
             )
 
+    def write_agent_env_setup_service(
+        self,
+        root: Path,
+        *,
+        omit_skill_term: str | None = None,
+        omit_reference_term: str | None = None,
+        omit_subcommand: str | None = None,
+    ) -> None:
+        skill_dir = root / "skillset" / "service" / "isomer-srv-agent-env-setup"
+        subcommand_links = ", ".join(
+            f"`references/{subcommand_name}`" for subcommand_name in validator.AGENT_ENV_SETUP_SUBCOMMANDS
+        )
+        skill_text = f"""
+            ---
+            name: isomer-srv-agent-env-setup
+            description: Valid fixture agent env setup service.
+            ---
+
+            # Isomer Service Agent Environment Setup
+
+            ## Workflow
+
+            1. Select one subcommand and report blockers.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Subcommands
+
+            Procedural Subcommands: `resolve-agent-env-context`, `require-topic-env-ready`, `read-agent-env-gate`, `plan-agent-workspaces`, `derive-agent-env-gate`, `ensure-topic-main-repository`, `create-agent-worktrees`, and `verify-agent-env-gate`.
+
+            Misc Subcommands: `setup-agent-env` and `help`.
+
+            Use {subcommand_links}.
+
+            This fixture reads `user-intent/src/agent-env-gate.md`, writes `user-intent/derived/isomer-agent-env-gate.md`, prepares the Topic Main Repository at `topic.main_repo`, uses authoritative Agent Names, resolves `agent.workspace`, runs `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, records selected-agent partial evidence, Service Request refs, Provenance refs, and `overall_readiness_status`.
+
+            Do not create per-agent Pixi manifests. Do not install or mutate Topic Workspace dependencies. Do not create Agent Instances or mutate Workspace Runtime records.
+            """
+        if omit_skill_term is not None:
+            skill_text = skill_text.replace(omit_skill_term, "")
+        write(skill_dir / "SKILL.md", skill_text)
+        write(
+            skill_dir / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-srv-agent-env-setup"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-srv-agent-env-setup to validate this fixture."
+            """,
+        )
+        for subcommand_name in validator.AGENT_ENV_SETUP_SUBCOMMANDS:
+            if subcommand_name == omit_subcommand:
+                continue
+            terms = "\n".join(validator.AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS.get(subcommand_name, ()))
+            if omit_reference_term is not None:
+                terms = terms.replace(omit_reference_term, "")
+            write(
+                skill_dir / "references" / subcommand_name,
+                f"""
+                # {subcommand_name}
+
+                ## Required Inputs
+
+                Fixture inputs.
+
+                ## Workflow
+
+                1. Run the service fixture step.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                {terms}
+                """,
+            )
+
     def test_operator_validator_accepts_topic_team_specialization_contract(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -926,6 +1001,7 @@ class SkillsetValidatorTests(unittest.TestCase):
     def test_service_validator_accepts_topic_env_setup_contract(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
 
         diagnostics = validator.validate_service_skillset(root)
 
@@ -934,6 +1010,7 @@ class SkillsetValidatorTests(unittest.TestCase):
     def test_service_validator_rejects_legacy_env_setup_folder(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root, include_legacy_folder=True)
+        self.write_agent_env_setup_service(root)
 
         diagnostics = validator.validate_service_skillset(root)
 
@@ -943,6 +1020,7 @@ class SkillsetValidatorTests(unittest.TestCase):
     def test_service_validator_requires_topic_env_setup_subcommands(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
         (root / "skillset" / "service" / "isomer-srv-topic-env-setup" / "references" / "setup-topic-env.md").unlink()
 
         diagnostics = validator.validate_service_skillset(root)
@@ -953,6 +1031,7 @@ class SkillsetValidatorTests(unittest.TestCase):
     def test_service_validator_requires_team_independent_env_setup_terms(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root, omit_reference_term="Do not require `team-profile/`")
+        self.write_agent_env_setup_service(root)
 
         diagnostics = validator.validate_service_skillset(root)
 
@@ -962,6 +1041,7 @@ class SkillsetValidatorTests(unittest.TestCase):
     def test_service_validator_requires_semantic_path_terms(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root, omit_skill_term="semantic_paths")
+        self.write_agent_env_setup_service(root)
 
         diagnostics = validator.validate_service_skillset(root)
 
@@ -971,8 +1051,88 @@ class SkillsetValidatorTests(unittest.TestCase):
     def test_service_validator_requires_tmp_label_posture_reference_terms(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root, omit_reference_term="topic.tmp")
+        self.write_agent_env_setup_service(root)
 
         diagnostics = validator.validate_service_skillset(root)
 
         self.assertIn("SVS002", codes(diagnostics))
         self.assertTrue(any("topic.tmp" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_accepts_agent_env_setup_contract(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_service_validator_requires_agent_env_setup_subcommands(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root, omit_subcommand="verify-agent-env-gate.md")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS003", codes(diagnostics))
+        self.assertTrue(any("verify-agent-env-gate.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_agent_env_gate_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root, omit_skill_term="user-intent/src/agent-env-gate.md")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS003", codes(diagnostics))
+        self.assertTrue(any("user-intent/src/agent-env-gate.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_agent_env_derived_gate_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root, omit_skill_term="user-intent/derived/isomer-agent-env-gate.md")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS003", codes(diagnostics))
+        self.assertTrue(any("user-intent/derived/isomer-agent-env-gate.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_agent_env_semantic_path_terms(self) -> None:
+        for term in ("topic.main_repo", "agent.workspace"):
+            with self.subTest(term=term):
+                root = self.make_root()
+                self.write_topic_env_setup_service(root)
+                self.write_agent_env_setup_service(root, omit_skill_term=term)
+
+                diagnostics = validator.validate_service_skillset(root)
+
+                self.assertIn("SVS003", codes(diagnostics))
+                self.assertTrue(any(term in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_agent_env_pixi_and_cwd_terms(self) -> None:
+        for term in (
+            "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
+            "Agent Workspace cwd",
+        ):
+            with self.subTest(term=term):
+                root = self.make_root()
+                self.write_topic_env_setup_service(root)
+                if term.startswith("pixi run"):
+                    self.write_agent_env_setup_service(root, omit_skill_term=term)
+                else:
+                    self.write_agent_env_setup_service(root, omit_reference_term=term)
+
+                diagnostics = validator.validate_service_skillset(root)
+
+                self.assertIn("SVS003", codes(diagnostics))
+                self.assertTrue(any(term in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_agent_env_no_runtime_mutation_guardrail(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root, omit_skill_term="mutate Workspace Runtime records")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS003", codes(diagnostics))
+        self.assertTrue(any("mutate Workspace Runtime records" in message for message in messages(diagnostics)), messages(diagnostics))

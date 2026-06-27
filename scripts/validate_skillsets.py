@@ -477,6 +477,146 @@ TOPIC_ENV_SETUP_INDEPENDENCE_TERMS = (
     "Do not require or verify `team-profile/`",
 )
 
+AGENT_ENV_SETUP_SERVICE_SKILL = "isomer-srv-agent-env-setup"
+
+AGENT_ENV_SETUP_REQUIRED_SKILL_TERMS = (
+    "setup-agent-env",
+    "resolve-agent-env-context",
+    "require-topic-env-ready",
+    "read-agent-env-gate",
+    "plan-agent-workspaces",
+    "derive-agent-env-gate",
+    "ensure-topic-main-repository",
+    "create-agent-worktrees",
+    "verify-agent-env-gate",
+    "user-intent/src/agent-env-gate.md",
+    "user-intent/derived/isomer-agent-env-gate.md",
+    "Topic Main Repository",
+    "topic.main_repo",
+    "authoritative Agent Names",
+    "agent.workspace",
+    "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
+    "selected-agent partial",
+    "Service Request",
+    "Provenance refs",
+    "overall_readiness_status",
+    "Do not create per-agent Pixi manifests",
+    "Do not install or mutate Topic Workspace dependencies",
+    "mutate Workspace Runtime records",
+)
+
+AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
+    "resolve-agent-env-context.md": (
+        "topic.main_repo",
+        "topic.main_repo.isomer_managed",
+        "topic.agents_root",
+        "topic.records",
+        "topic.runtime",
+        "requester",
+        "confirmation_source",
+        "Service Request refs",
+        "Provenance refs",
+    ),
+    "require-topic-env-ready.md": (
+        "user-intent/derived/isomer-env-gate.md",
+        "pixi.lock",
+        ".pixi/",
+        "not Agent Workspace cwd readiness",
+        "isomer-srv-topic-env-setup",
+    ),
+    "read-agent-env-gate.md": (
+        "user-intent/src/agent-env-gate.md",
+        "required command set",
+        "expected results",
+        "success criteria",
+        "Topic Main Repository configuration requirements",
+        "cwd assumptions",
+        "Workspace Runtime mutation",
+    ),
+    "plan-agent-workspaces.md": (
+        "Topic Team Instantiation Packet",
+        "Topic Agent Team Profile material",
+        "authority for Agent Names",
+        "corroborating evidence",
+        "agent-plan-conflict",
+        "agent.workspace",
+        "agent.private_artifacts",
+        "agent.public_share",
+    ),
+    "derive-agent-env-gate.md": (
+        "## Source Agent Gate",
+        "## Topic Env Gate",
+        "## Topic Pixi Binding",
+        "## Topic Main Repository Configuration",
+        "## Agent Plan",
+        "## Semantic Paths",
+        "## Worktree Plan",
+        "## Verification Matrix",
+        "## Expected Results",
+        "## Blockers",
+        "## Execution Log",
+        "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
+        "gate-cwd-incompatible",
+    ),
+    "ensure-topic-main-repository.md": (
+        "normal non-bare",
+        "topic-owner/main",
+        "minimal baseline commit",
+        "destructive repair needs",
+        "topic.main_repo.isomer_managed",
+    ),
+    "create-agent-worktrees.md": (
+        "per-agent/<agent-name>/main",
+        "worktree",
+        "agent.workspace",
+        "agent.private_artifacts",
+        "agent.public_share",
+        "cwd-friendly self-query guidance",
+        "Do not claim Agent Workspace environment readiness until",
+    ),
+    "verify-agent-env-gate.md": (
+        "selected-agent partial readiness evidence",
+        "without passing Agent Name",
+        "overall_readiness_status",
+        "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
+        "Agent Workspace cwd",
+    ),
+    "setup-agent-env.md": (
+        "resolve-agent-env-context",
+        "require-topic-env-ready",
+        "read-agent-env-gate",
+        "plan-agent-workspaces",
+        "derive-agent-env-gate",
+        "ensure-topic-main-repository",
+        "create-agent-worktrees",
+        "verify-agent-env-gate",
+        "repos/",
+        "topic-main/",
+        "agents/",
+        "<agent-name>/",
+    ),
+    "help.md": (
+        "| Subcommand | Purpose | Produces |",
+        "no per-agent Pixi environments",
+        "no dependency mutation by default",
+        "no Workspace Runtime mutation",
+        "no Execution Adapter operation",
+    ),
+}
+
+AGENT_ENV_SETUP_SUBCOMMANDS = (
+    "resolve-agent-env-context.md",
+    "require-topic-env-ready.md",
+    "read-agent-env-gate.md",
+    "plan-agent-workspaces.md",
+    "derive-agent-env-gate.md",
+    "ensure-topic-main-repository.md",
+    "create-agent-worktrees.md",
+    "verify-agent-env-gate.md",
+    "setup-agent-env.md",
+    "help.md",
+)
+
 REMOVED_OPERATOR_SKILLS = (
     "isomer-admin-project-aware",
     "isomer-admin-template-inspect",
@@ -1186,6 +1326,52 @@ def validate_topic_env_setup_service(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_agent_env_setup_service(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skill_dir = repo_root / "skillset" / "service" / AGENT_ENV_SETUP_SERVICE_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "SVS003", f"{AGENT_ENV_SETUP_SERVICE_SKILL} is required")
+        return diagnostics
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    for term in AGENT_ENV_SETUP_REQUIRED_SKILL_TERMS:
+        if term not in text:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(lines, "# Isomer"),
+                "SVS003",
+                f"{AGENT_ENV_SETUP_SERVICE_SKILL} must document '{term}'",
+            )
+    references_dir = skill_dir / "references"
+    allowed_reference_names = set(AGENT_ENV_SETUP_SUBCOMMANDS)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_reference_names:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "SVS003",
+                f"{AGENT_ENV_SETUP_SERVICE_SKILL} has unexpected reference page references/{reference_path.name}",
+            )
+    for subcommand_file_name in AGENT_ENV_SETUP_SUBCOMMANDS:
+        subcommand_path = references_dir / subcommand_file_name
+        if not subcommand_path.exists():
+            add(diagnostics, repo_root, subcommand_path, 1, "SVS003", f"{AGENT_ENV_SETUP_SERVICE_SKILL} must include references/{subcommand_file_name}")
+            continue
+        if f"references/{subcommand_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "SVS003", f"{AGENT_ENV_SETUP_SERVICE_SKILL} must link references/{subcommand_file_name}")
+        subcommand_lines = read_lines(subcommand_path)
+        subcommand_text = "\n".join(subcommand_lines)
+        for required_term in AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
+            if required_term not in subcommand_text:
+                add(diagnostics, repo_root, subcommand_path, 1, "SVS003", f"references/{subcommand_file_name} must document '{required_term}'")
+    return diagnostics
+
+
 def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics = validate_simple_skill_layout(
         repo_root / "skillset" / "service",
@@ -1194,6 +1380,7 @@ def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
         code="SVS001",
         manifest_required=False,
     )
+    diagnostics.extend(validate_agent_env_setup_service(repo_root))
     diagnostics.extend(validate_topic_env_setup_service(repo_root))
     return sorted(set(diagnostics))
 

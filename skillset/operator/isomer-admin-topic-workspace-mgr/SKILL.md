@@ -5,7 +5,7 @@ description: "Prepare, validate, and summarize a Git-backed Topic Workspace layo
 
 # Isomer Admin Topic Workspace Mgr
 
-Use this command-style operator skill when a Project Operator Session needs to prepare one Topic Workspace for topic-local collaboration through semantic workspace labels such as `topic.main_repo`, `topic.main_repo.isomer_managed`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.links`. The `isomer-default.v1` layout binds those labels to paths such as `<topic-workspace-dir>/repos/topic-main` and `<topic-workspace-dir>/agents/<agent-name>`, but safe Topic Workspace Manifest bindings may differ. This skill prepares static filesystem and Git topology, plans topic-local `agent_name` values, derives compatibility `agent_workspace_ref` values when older material needs them, writes advisory Workspace Boundary notes, and reports blockers; it does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or replace `isomer-srv-topic-env-setup`.
+Use this command-style operator skill when a Project Operator Session needs to prepare one Topic Workspace for topic-local collaboration through semantic workspace labels such as `topic.main_repo`, `topic.main_repo.isomer_managed`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.links`. The `isomer-default.v1` layout binds those labels to paths such as `<topic-workspace-dir>/repos/topic-main` and `<topic-workspace-dir>/agents/<agent-name>`, but safe Topic Workspace Manifest bindings may differ. This skill prepares static filesystem and Git topology, plans topic-local `agent_name` values, derives compatibility `agent_workspace_ref` values when older material needs them, writes advisory Workspace Boundary notes, and reports blockers. It routes per-Agent Workspace environment readiness, `agent-env-gate.md`, and per-agent cwd verification requests to `isomer-srv-agent-env-setup`; it does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or replace `isomer-srv-topic-env-setup`.
 
 ## Workflow
 
@@ -67,6 +67,7 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `branch_plan`: default `per-agent/<agent-name>/main` branch, owner branch `topic-owner/main`, and future branch namespace for each agent name.
 - `boundary_material_paths`: topic-level and per-agent Workspace Boundary docs written or validated.
 - `validation_status`: ready, ready-with-deferrals, blocked, or not checked.
+- `agent_environment_service_output`: optional summarized `isomer-srv-agent-env-setup` evidence when a caller already requested per-Agent Workspace cwd verification, including `source_agent_env_gate_path`, `agent_env_gate_path`, readiness by agent, overall readiness, commands run, blockers, and next action.
 - `blockers`: unsafe repo state, unsafe path, normalized key collision, duplicate branch checkout, cross-topic ref, missing input, or unapproved mutation.
 - `next_operator_action`: usually rerun a specific subcommand, update packet/profile material, run `isomer-admin-topic-team-specialize validate-topic-team`, create an Agent Team Instance through runtime workflow, or stop on blockers.
 

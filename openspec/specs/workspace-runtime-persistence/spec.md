@@ -8,7 +8,11 @@ The system SHALL create and reopen a Workspace Runtime for a selected Topic Work
 
 #### Scenario: Runtime init creates state and directories
 - **WHEN** a user runs the explicit Workspace Runtime initialization command for a valid Research Topic and Topic Workspace
-- **THEN** the system creates `state.sqlite` plus `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/` directories under the Topic Workspace
+- **THEN** the system creates `state.sqlite`, `repos/`, `agents/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/` directories under the Topic Workspace
+
+#### Scenario: Runtime init does not create per-agent untracked shares
+- **WHEN** Workspace Runtime is initialized before Agent Workspaces are prepared
+- **THEN** the system does not create `isomer-managed/agent-owned/`, `isomer-managed/topic-owned/`, or `isomer-managed/links/` inside any Agent Workspace
 
 #### Scenario: Runtime init records schema metadata
 - **WHEN** the Workspace Runtime is initialized
@@ -92,12 +96,12 @@ The system SHALL instantiate Agent Team Instance records from validated Topic Ag
 - **THEN** the system creates Agent Instance records and Agent Workspace records for those active role bindings under the same Agent Team Instance
 
 #### Scenario: Approved workspace refs create path plans
-- **WHEN** an active Agent Role binding has a validated `agent_workspace_ref` under the selected Topic Workspace
-- **THEN** Agent Team Instance creation records the Agent Workspace path plan from that ref before creating the Agent Workspace directory and Agent Workspace record
+- **WHEN** an active Agent Role binding has a validated `agent_name`, expected branch namespace, and `agent_workspace_ref` under the selected Topic Workspace
+- **THEN** Agent Team Instance creation records the Agent Workspace path plan and `isomer-managed/` support path plan from those refs before creating the Agent Workspace directory and Agent Workspace record
 
-#### Scenario: Agent workspaces fall back to generated paths
-- **WHEN** an active Agent Role binding does not have an approved `agent_workspace_ref`
-- **THEN** the system resolves and records the default Agent Workspace path under `<topic-workspace>/agents/<agent-instance-id>` before creating the Agent Workspace directory and Agent Workspace record
+#### Scenario: Agent workspaces require planning identity
+- **WHEN** an active Agent Role binding does not have an approved `agent_workspace_ref` or validated topic-local `agent_name`
+- **THEN** the system reports a missing Agent Workspace planning diagnostic instead of silently creating `<topic-workspace>/agents/<agent-instance-id>`
 
 #### Scenario: Duplicate team instance id is rejected
 - **WHEN** a create request names an Agent Team Instance id that already exists in the selected Workspace Runtime
@@ -144,6 +148,10 @@ The system SHALL validate Workspace Runtime records and report durable workspace
 #### Scenario: Missing Agent Workspace is reported
 - **WHEN** an Agent Workspace record points to a project-local directory that no longer exists
 - **THEN** runtime validation reports the missing Agent Workspace without deleting the record
+
+#### Scenario: Missing Isomer-managed support path is reported
+- **WHEN** an Agent Workspace record points to a standard worker worktree but the recorded `isomer-managed/` support path is missing
+- **THEN** runtime validation reports the missing Isomer-managed support path without creating it silently
 
 #### Scenario: Invalid lifecycle transition is reported
 - **WHEN** a runtime lifecycle transition lacks actor, timestamp, previous status, next status, or rationale
@@ -343,12 +351,12 @@ The system SHALL generate Agent Instance ids that are globally unique within the
 - **WHEN** `project runtime validate` scans Agent Instance records and finds two records with the same id
 - **THEN** the system reports a workspace issue identifying the duplicate id and both records
 
-#### Scenario: Default Agent Workspace path uses the globally unique Agent Instance id
-- **WHEN** the system creates an Agent Workspace path plan for an Agent Instance and no approved `agent_workspace_ref` exists for the active role binding
-- **THEN** the path plan derives the Agent Workspace directory from the globally unique Agent Instance id as `<topic-workspace>/agents/<agent-instance-id>`
+#### Scenario: Default Agent Workspace path does not use Agent Instance id
+- **WHEN** the system creates an Agent Workspace path plan for an Agent Instance
+- **THEN** the path plan derives the Agent Workspace directory from the validated topic-local agent name as `<topic-workspace>/agents/<agent-name>` rather than from the globally unique Agent Instance id
 
-#### Scenario: Approved Agent Workspace ref does not change Agent Instance id
-- **WHEN** the system creates an Agent Workspace path plan from `agent_workspace_ref = "<topic-workspace>/agents/alice"`
+#### Scenario: Agent Workspace path does not change Agent Instance id
+- **WHEN** the system creates an Agent Workspace path plan for `agent_name = "alice"`
 - **THEN** the Agent Instance id remains globally unique and does not need to equal `alice`
 
 ### Requirement: Agent Team Instance Instantiation Provenance
@@ -384,3 +392,118 @@ The system SHALL represent project operator provenance and Topic Service Agent p
 #### Scenario: Operators and service agents are not team members by default
 - **WHEN** an Agent Team Instance is created from a Topic Agent Team Profile
 - **THEN** Workspace Runtime does not add the Project Operator Session, Operator Agent, or Topic Service Agent as a member Agent Instance unless the profile explicitly defines a corresponding operator role inside that research team
+
+### Requirement: Manifest-sourced Runtime Path Plans
+Workspace Runtime SHALL persist selected semantic path resolutions before durable runtime records depend on manifest-backed paths.
+
+#### Scenario: Runtime init records semantic path sources
+- **WHEN** Workspace Runtime initialization creates path plans for the selected Topic Workspace
+- **THEN** each new semantic path plan records `semantic_label`, `scope_ref`, canonical path, source, source detail, and any compatibility surface id used by Workspace Path Resolution
+
+#### Scenario: Manifest source is preserved
+- **WHEN** a path plan is selected from the Topic Workspace Manifest
+- **THEN** the stored path plan identifies the source as Topic Workspace Manifest-backed, records the semantic label in `semantic_label`, records the selected topic or agent scope in `scope_ref`, and records the manifest path in source detail
+
+#### Scenario: Default profile source is preserved
+- **WHEN** a path plan is selected from the built-in `isomer-default.v1` layout profile
+- **THEN** the stored path plan identifies the source as default-profile-backed rather than pretending it came from an authored manifest
+
+#### Scenario: Semantic identity is not encoded only in source detail
+- **WHEN** a new path plan is created from a semantic label
+- **THEN** validation and inspection can read the semantic label and scope from first-class fields without parsing source detail
+
+#### Scenario: Existing path plan precedence is preserved
+- **WHEN** a runtime record already references a stored path plan
+- **THEN** later path resolution for that record uses the stored path plan before current manifest or default-profile bindings
+
+### Requirement: Runtime Initialization Uses Semantic Surfaces
+Workspace Runtime initialization SHALL create only the runtime-owned directories required by semantic resolution for the selected Topic Workspace.
+
+#### Scenario: Runtime directories come from semantic labels
+- **WHEN** runtime initialization needs Workspace Runtime database, records, runtime support, repository root, or Agent Workspace root paths
+- **THEN** it resolves those paths through semantic labels before creating owned directories or path plans
+
+#### Scenario: Minimal runtime initialization label set is command scoped
+- **WHEN** runtime initialization runs without repository setup, profile materialization, or Agent Team Instance creation
+- **THEN** it requires only `topic.runtime.db`, `topic.runtime`, `topic.records`, and the specific `topic.records.*` labels for record classes it initializes
+- **AND** it does not require `topic.main_repo`, `topic.team_profile_bundle`, `topic.agents_root`, or `agent.workspace` unless the selected command path creates or depends on those surfaces
+
+#### Scenario: Optional unused surfaces are not created
+- **WHEN** the Topic Workspace Manifest omits optional semantic labels that runtime initialization does not need
+- **THEN** runtime initialization does not create those optional directories merely because they exist in the default layout profile
+
+#### Scenario: Unsafe manifest binding blocks mutation
+- **WHEN** a required semantic label resolves to an unsafe path
+- **THEN** runtime initialization reports a blocker and does not create Workspace Runtime records or directories that depend on that path
+
+#### Scenario: Missing manifest may still initialize default runtime
+- **WHEN** the Topic Workspace Manifest is missing and default-layout semantic labels can satisfy runtime initialization
+- **THEN** runtime initialization may use the built-in default profile and record default-profile path-plan sources
+
+### Requirement: Agent Workspace Runtime Records Use Semantic Bindings
+Agent Workspace runtime records SHALL use semantic `agent.workspace` resolution rather than hard-coded path assembly as the primary planning contract.
+
+#### Scenario: Agent workspace path plan uses semantic label
+- **WHEN** Agent Team Instance creation creates an Agent Workspace record for Agent Name `alice`
+- **THEN** it resolves `agent.workspace` for `alice` before creating the Agent Workspace path plan and Agent Workspace record
+
+#### Scenario: Agent support paths use semantic labels
+- **WHEN** Agent Team Instance creation records support paths for the Agent Workspace
+- **THEN** it resolves labels such as `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links` when those surfaces are required
+
+#### Scenario: Agent Instance id remains independent
+- **WHEN** `agent.workspace` resolves from Agent Name `alice`
+- **THEN** the created Agent Instance id remains globally unique and does not need to equal `alice`
+
+#### Scenario: Missing required agent label blocks creation
+- **WHEN** Agent Team Instance creation requires an agent-scoped label that cannot be resolved for the selected Agent Name
+- **THEN** creation fails with a validation diagnostic before writing dependent runtime records
+
+### Requirement: Manifest Drift Validation
+Workspace Runtime validation SHALL report drift between stored path plans and current semantic resolution without rewriting historical runtime records.
+
+#### Scenario: Manifest change differs from stored path plan
+- **WHEN** a stored path plan for a semantic label points to a different path than the current Topic Workspace Manifest binding resolves
+- **THEN** validation reports a path-plan drift diagnostic and preserves the stored path plan
+
+#### Scenario: Missing current binding is diagnostic
+- **WHEN** a stored path plan references a semantic label that no longer resolves from the current manifest or default profile
+- **THEN** validation reports that the historical path plan remains but the current binding is missing
+
+#### Scenario: Drift does not delete files
+- **WHEN** validation detects semantic path drift
+- **THEN** it does not move, delete, archive, or rewrite files or runtime rows automatically
+
+#### Scenario: Rebinding needs explicit action
+- **WHEN** an operator wants a durable record to depend on a new semantic binding
+- **THEN** the system requires an explicit migration, repair, or new runtime action rather than silently rebinding existing records
+
+### Requirement: Runtime Inspection Reports Semantic Paths
+Runtime inspection SHALL expose semantic path metadata for stored path plans when available.
+
+#### Scenario: Inspect includes semantic labels
+- **WHEN** a user inspects Workspace Runtime path plans
+- **THEN** the output includes semantic labels, compatibility surface ids when present, canonical paths, sources, source detail, and drift diagnostics when validation has computed them
+
+#### Scenario: Compatibility-only plans remain readable
+- **WHEN** an older path plan has only a compatibility surface id and no semantic label metadata
+- **THEN** runtime inspection still reports the path plan and maps it to a semantic label when a known alias exists
+
+### Requirement: Isomer-Managed Runtime Metadata
+The system SHALL persist enough metadata to validate `isomer-managed/` workspace boundaries without treating untracked large or temporary shares as durable research records by default.
+
+#### Scenario: Agent Workspace record stores boundary refs
+- **WHEN** an Agent Workspace record is created for a standard worktree
+- **THEN** it stores or links the topic-local agent name, Agent Workspace path plan, `isomer-managed/` path plan, expected branch namespace, boundary material refs, and generated-link summary when known
+
+#### Scenario: Untracked share dependencies require promotion
+- **WHEN** a runtime record, handoff, Artifact, Finding, or Evidence Item depends on a file under `isomer-managed/agent-owned/` or `isomer-managed/topic-owned/`
+- **THEN** Workspace Runtime records a diagnostic unless the dependency is promoted into a durable record, tracked Isomer material, or explicit Provenance Record
+
+#### Scenario: Owner reader violations are recorded as diagnostics
+- **WHEN** validation detects peer writes into an agent-owned public share without boundary permission
+- **THEN** Workspace Runtime records or reports an owner/reader diagnostic linked to the affected Agent Workspace refs
+
+#### Scenario: Legacy support refs remain visible
+- **WHEN** an existing runtime record references `.isomer-agent/` support paths
+- **THEN** validation reports a legacy support-path diagnostic and keeps the historical ref visible instead of rewriting it silently

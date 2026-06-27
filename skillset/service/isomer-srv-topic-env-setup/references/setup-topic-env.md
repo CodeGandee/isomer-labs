@@ -89,7 +89,9 @@ Successful setup leaves the selected Topic Workspace with:
       isomer-env-gate.md
 ```
 
-Readiness means the desired command from `isomer-env-gate.md` runs successfully through recorded Pixi-scoped commands for a single agent or operator working in the selected Topic Workspace. It does not merely mean that Pixi files exist, it does not mean a command passed because the ambient shell already had a global tool, activated environment, PATH entry, library path, or sourced script, and it does not mean a Topic Agent Team Profile or live Agent Team Instance is ready.
+Readiness means the desired command from `isomer-env-gate.md` runs successfully through recorded Pixi-scoped commands for a single agent or operator working in the selected Topic Workspace. It does not merely mean that Pixi files exist, it does not mean a command passed because the ambient shell already had a global tool, activated environment, PATH entry, library path, or sourced script, and it does not mean a Topic Agent Team Profile, per-Agent Workspace cwd, or live Agent Team Instance is ready.
+
+If the caller needs every Agent Workspace cwd verified, route that downstream work to `isomer-srv-agent-env-setup`. That service consumes the ready Topic Workspace Pixi binding, `user-intent/src/agent-env-gate.md`, Topic Main Repository topology, authoritative Agent Names, and resolved `agent.workspace` paths, then writes `user-intent/derived/isomer-agent-env-gate.md`.
 
 The Topic Workspace `.gitignore` may include a default `tmp/` entry only as part of the downstream `topic.tmp` label posture. `tmp/` material is local, ignored, disposable, not shared, and not durable evidence unless another accepted contract promotes it. Add `.pixi/` and `.git/`, add `.isomer-user-env/` only when topic-local fallback is used, and do not add an `extern/orphan` ignore rule from this skill.
 
@@ -101,3 +103,4 @@ The Topic Workspace `.gitignore` may include a default `tmp/` entry only as part
 - Keep all direct mutation scoped to the selected Topic Workspace Pixi environment and missing required repos under the resolved topic repository root.
 - Carry enclosure strategy, external runtime wiring, topic-local fallback warnings, and enclosure blockers from `derive-env-gate`, `install-topic-deps`, and `verify-env-gate` into the combined result.
 - Do not mutate an existing repo during `ensure-topic-repos`; later setup or verification steps may only run commands against existing repos when the derived gate explicitly requires those commands.
+- Do not read `user-intent/src/agent-env-gate.md`, write `user-intent/derived/isomer-agent-env-gate.md`, create Agent Workspace worktrees, or claim per-agent cwd readiness from this topic-scoped flow.

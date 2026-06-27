@@ -26,23 +26,32 @@ It does not forbid Project-root Pixi environments, but those are reserved for Is
 
 ## Topic Workspace Layout
 
-A Topic Workspace with id `<topic-id>` and default path `topic-workspaces/<topic-id>/` contains:
+A Topic Workspace with id `<topic-id>` and default path `topic-workspaces/<topic-id>/` resolves its path surfaces through the Topic Workspace Manifest or the built-in `isomer-default.v1` Default Layout Profile. The following tree is the default profile, not the only valid layout:
 
 ```
 topic-workspaces/<topic-id>/
+  topic-workspace.toml          # Topic Workspace Manifest for semantic path bindings
   pixi.toml                    # Topic Workspace Pixi manifest
   pixi.lock                    # Resolved dependency lockfile
   .pixi/                       # Pixi environment directory
-  state.sqlite                 # Workspace Runtime database
-  artifacts/                   # Workspace-level research Artifacts
-  agents/                      # Agent Workspace directories
-  tasks/                       # Research Task support files
-  runs/                        # Run support files
-  views/                       # View Manifest support files
-  logs/                        # Workspace-level logs
+  state.sqlite                 # topic.runtime.db default binding
+  tmp/                         # topic.tmp, gitignored local disposable work
+  repos/
+    topic-main/                # topic.main_repo default binding
+      tmp/                     # topic.main_repo.tmp, gitignored local disposable work
+  agents/
+    <agent-name>/              # agent.workspace default binding
+      tmp/                     # agent.tmp, gitignored local disposable work
+  records/
+    artifacts/                 # topic.records.artifacts default binding
+    tasks/                     # topic.records.tasks default binding
+    runs/                      # topic.records.runs default binding
+    views/                     # topic.records.views default binding
+    logs/                      # topic.records.logs default binding
+  runtime/                     # topic.runtime default binding
 ```
 
-The manifest may be `pyproject.toml` instead of `pixi.toml` when the Topic Workspace also needs Python package metadata. The lockfile must accompany the manifest.
+The Pixi manifest may be `pyproject.toml` instead of `pixi.toml` when the Topic Workspace also needs Python package metadata. The lockfile must accompany the manifest. Each `tmp/` surface is ignored, local, disposable, and not shared; durable material must move through the resolved records, repository, or agent-owned publication surfaces.
 
 ## Manifest Content
 
@@ -99,7 +108,7 @@ The Project root may keep its own Pixi manifest for Isomer platform tooling. It 
 
 ## Agent Workspace Inheritance
 
-Agent Workspaces live under `<topic-workspace>/agents/<agent-name>/`. Each Agent Workspace is a Git worktree for a topic-local Agent Name, inherits the selected Topic Workspace Pixi environment by default, and does not contain its own Pixi manifest, lockfile, or `.pixi/` directory.
+Agent Workspaces are resolved through the `agent.workspace` semantic label. Under `isomer-default.v1`, that label binds to `<topic-workspace>/agents/<agent-name>/`. Each Agent Workspace is a Git worktree for a topic-local Agent Name, inherits the selected Topic Workspace Pixi environment by default, and does not contain its own Pixi manifest, lockfile, or `.pixi/` directory.
 
 If an Agent Workspace needs a divergent environment, the Operator Agent or Project Operator Session opens a Service Request. The Service Agent Instance may create an isolated environment only after the Service Request is recorded, and it must record support Artifacts and Provenance Records.
 

@@ -6,7 +6,7 @@ This design-choice record defined how Isomer Labs Topic Workspaces and Agent Wor
 
 superseded by [Topic Workspace Pixi Workspace Standard](design-topic-workspace-pixi-workspace-standard.md)
 
-> ADR 0027 changed the default from Project-root Pixi environments to Topic Workspace Pixi workspaces. Use the superseding document for current guidance. Current explicit Topic Workspace Pixi bindings use `manifest_path_or_dir`; the registered Topic Workspace directory is the implicit default when no explicit standalone binding exists.
+> ADR 0027 changed the default from Project-root Pixi environments to Topic Workspace Pixi workspaces. Use the superseding document for current guidance. Current explicit Topic Workspace Pixi bindings use `manifest_path_or_dir`; the registered Topic Workspace directory is the implicit default when no explicit standalone binding exists. Current workspace path guidance also uses Topic Workspace Manifest semantic labels and the `isomer-default.v1` Default Layout Profile rather than directory names as the contract.
 
 ## Scope
 
@@ -55,8 +55,8 @@ The record stores:
 ### Directory and path rules
 
 - The Topic Workspace path is declared in the Project Manifest under `topic_workspaces`.
-- Workspace Runtime lives at `<topic-workspace>/state.sqlite`.
-- Runtime initialization creates the standard visibility layout: `repos/`, `repos/topic-main/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`.
+- Workspace Runtime database resolution uses semantic label `topic.runtime.db`; under `isomer-default.v1` it binds to `<topic-workspace>/state.sqlite`.
+- Runtime initialization materializes semantic path bindings from the Topic Workspace Manifest or `isomer-default.v1`, whose default bindings include `topic.main_repo`, `topic.agents_root`, `topic.records.*`, `topic.runtime.*`, `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`.
 - The Topic Workspace itself is not a Pixi workspace unless standalone isolation is active.
 
 ## Agent Workspace Standard
@@ -67,7 +67,7 @@ An Agent Workspace inherits the Topic Workspace's selected Pixi environment by d
 
 ### Default path
 
-Agent Workspaces live under `<topic-workspace>/agents/<agent-name>/`. This flat layout uses topic-local Agent Names and avoids nesting under Agent Team Instance ids or role names.
+Agent Workspace path resolution uses semantic label `agent.workspace`; under `isomer-default.v1` it binds to `<topic-workspace>/agents/<agent-name>/`. This flat default layout uses topic-local Agent Names and avoids nesting under Agent Team Instance ids or role names.
 
 ### Per-agent divergence
 

@@ -8,7 +8,7 @@ When this subcommand is selected, execute the following steps in order.
 2. Explain that invoking the skill without a prompt defaults to `topic-workspace`, while explicit help prints this usage surface.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
 4. Name the required inputs: Project Manifest context, Research Topic, Topic Workspace, optional packet/profile material, and any requested agent-name mapping.
-5. State the output contract: semantic paths with labels and sources, topic repo path, `isomer-managed/` regime status, records root, runtime root, agent workspace paths, branch plan, derived compatibility `agent_workspace_ref` values, boundary docs, generated links, validation status, blockers, and next operator action.
+5. State the output contract: semantic paths with labels and sources, topic repo path, `isomer-managed/` regime status, records root, runtime root, agent workspace paths, branch plan, derived compatibility `agent_workspace_ref` values, boundary docs, generated links, optional `isomer-srv-agent-env-setup` evidence when already available, validation status, blockers, and next operator action.
 6. State the key guardrails: no directory-scanning selection, no silent Git repair, no cross-topic refs, no Agent Instance creation, no Workspace Runtime mutation, no Houmao launch, and no Execution Adapter operation.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which usage details to print, then execute the plan.
@@ -33,3 +33,5 @@ If the user's task does not map cleanly to these steps, use your native planning
 This skill complements `isomer-admin-topic-team-specialize`: specialization defines topic-team material and static setup evidence, while this skill prepares the Git-backed Topic Workspace worktree layout used by `setup-agent-workspace` when requested.
 
 This skill also stays separate from `isomer-srv-topic-env-setup`, which owns gate-driven topic environment setup and independent repository acquisition for environment checks.
+
+This skill stays separate from `isomer-srv-agent-env-setup`, which owns `user-intent/src/agent-env-gate.md`, `user-intent/derived/isomer-agent-env-gate.md`, Topic Main Repository environment configuration, per-Agent Workspace cwd verification, readiness by Agent Name, and partial selected-agent repair evidence. Route requests for per-agent environment readiness to that service after Git topology evidence exists.

@@ -14,7 +14,7 @@ Milestone 4 needs enough Workspace Runtime to create, reopen, inspect, and valid
 - A Research Topic may still bind to a Project-root Pixi environment through `[[topic_pixi_environment_bindings]]` for platform or shared tooling topics. Topic-to-environment relationships are not inferred from names.
 - Project Manifest stores Research Topic to Project-root Pixi environment bindings with `research_topic_id`, `pixi_environment`, optional `purpose`, and optional `status`, and stores explicit Topic Workspace Pixi bindings separately with `research_topic_id`, `manifest_path_or_dir`, optional `pixi_environment`, optional `purpose`, and optional `status`. Research Topic Config does not own Pixi environment bindings. Workspace Runtime stores the resolved environment use, readiness status, and provenance after preparation.
 - Milestone 4 prepares and records topic environment readiness before real Houmao launch, but live Houmao launch refs, mailbox refs, gateway refs, managed-agent ids, and handoff traffic remain Milestone 5 concerns.
-- Agent Instance ids are globally unique runtime identity. The default Agent Workspace path is `<topic-workspace>/agents/<agent-name>/`, where `agent_name` is topic-local planning language and the worktree is bound to a per-agent branch namespace.
+- Agent Instance ids are globally unique runtime identity. The default `agent.workspace` binding is `<topic-workspace>/agents/<agent-name>/` under `isomer-default.v1`, where `agent_name` is topic-local planning language and the worktree is bound to a per-agent branch namespace.
 - `isomer-cli doctor` is read-only. A later preparation command performs Pixi install/readiness work, creates Workspace Runtime readiness records, and records provenance.
 
 ## Implications for Milestone 4
@@ -50,4 +50,4 @@ Milestone 4 needs enough Workspace Runtime to create, reopen, inspect, and valid
 
 ## Known Implementation Drift
 
-- Earlier design-time Topic Agent Team Profile material emitted placeholder-style `agent-workspaces/<profile>/<role>` refs. Current profile and packet material should plan `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values under `<topic-workspace>/agents/<agent-name>/`.
+- Earlier design-time Topic Agent Team Profile material emitted placeholder-style `agent-workspaces/<profile>/<role>` refs. Current profile and packet material should plan `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values through semantic label `agent.workspace`; under `isomer-default.v1`, that label binds to `<topic-workspace>/agents/<agent-name>/`.

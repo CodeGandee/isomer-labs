@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-srv-agent-env-setup"
+  short_description: "Prepare Agent Workspace cwd readiness."
+  default_prompt: "Use $isomer-srv-agent-env-setup to prepare Git-backed Agent Workspace cwd readiness from a Topic Workspace Pixi environment."

@@ -46,7 +46,7 @@ The system SHALL allow Workspace Path Resolution to consume a validated Effectiv
 - **THEN** path resolution fails with a validation error instead of choosing a path from an ambiguous or mismatched context
 
 ### Requirement: Default Workspace Layout
-The system SHALL provide built-in project-local defaults for the Project generated-content root, Topic Workspaces, Workspace Runtime files, Run records, Artifacts, View Manifests, logs, and Agent Workspaces.
+The system SHALL provide built-in project-local defaults for the Project generated-content root, Topic Workspaces, Workspace Runtime files, Topic Main repositories, Isomer-managed worker-facing paths, owner-preserved records, runtime internals, and Agent Workspace worktrees.
 
 #### Scenario: Default generated content root is visible
 - **WHEN** a Project has no configured generated content root
@@ -62,38 +62,62 @@ The system SHALL provide built-in project-local defaults for the Project generat
 
 #### Scenario: Workspace runtime defaults exist
 - **WHEN** a Topic Workspace is resolved from built-in defaults
-- **THEN** the Topic Workspace contains default paths for `state.sqlite`, `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/`
+- **THEN** the Topic Workspace contains default paths for `state.sqlite`, `repos/`, `repos/topic-main/`, `repos/topic-main/isomer-managed/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`
+
+#### Scenario: Isomer-managed tracked defaults exist
+- **WHEN** a Topic Main Repository is resolved from built-in defaults
+- **THEN** the resolver derives tracked Isomer paths under `<topic-workspace>/repos/topic-main/isomer-managed/tracked/` for `shared/`, `artifacts/`, `tasks/`, `runs/`, `views/`, `tools/`, `boundaries/`, and `manifests/`
 
 #### Scenario: Task support directory defaults exist
 - **WHEN** a Research Task has no recorded or configured task support directory
-- **THEN** the resolver derives the task support directory under `<topic-workspace>/tasks/<task-id>/`
+- **THEN** the resolver derives the owner-preserved task support directory under `<topic-workspace>/records/tasks/<task-id>/`
 
 #### Scenario: Run layout defaults exist
 - **WHEN** a Run has no recorded or configured run directory
-- **THEN** the resolver derives the Run directory under `<topic-workspace>/runs/<run-id>/` with subpaths for `prompts/`, `tool-calls/`, `logs/`, and `outputs/`
+- **THEN** the resolver derives the owner-preserved Run directory under `<topic-workspace>/records/runs/<run-id>/` with subpaths for `prompts/`, `tool-calls/`, `logs/`, and `outputs/`
 
 #### Scenario: Agent workspace layout defaults exist
-- **WHEN** an Agent Instance needs an Agent Workspace and no recorded or configured Agent Workspace path exists
-- **THEN** the resolver derives the Agent Workspace under `<topic-workspace>/agents/<agent-instance-id>/` with subpaths for `runtime/`, `artifacts/`, `scratch/`, and `logs/`
+- **WHEN** an Agent Instance needs an Agent Workspace and the launch context supplies a validated topic-local agent name
+- **THEN** the resolver derives the Agent Workspace under `<topic-workspace>/agents/<agent-name>/` with Isomer-managed support paths under `<topic-workspace>/agents/<agent-name>/isomer-managed/`
+
+#### Scenario: Agent workspace id fallback is not silent
+- **WHEN** an Agent Instance needs an Agent Workspace and no recorded workspace plan or validated topic-local agent name exists
+- **THEN** the resolver reports a missing Agent Workspace planning diagnostic instead of silently deriving `<topic-workspace>/agents/<agent-instance-id>/`
+
+#### Scenario: Agent-owned support defaults exist
+- **WHEN** an Agent Workspace path is resolved
+- **THEN** the resolver derives `isomer-managed/agent-owned/runtime/`, `isomer-managed/agent-owned/artifacts/`, `isomer-managed/agent-owned/scratch/`, `isomer-managed/agent-owned/logs/`, `isomer-managed/agent-owned/public/`, and `isomer-managed/agent-owned/inbox/` beneath that Agent Workspace
+
+#### Scenario: Topic-owned projection defaults exist
+- **WHEN** an Agent Workspace path is resolved
+- **THEN** the resolver derives `isomer-managed/topic-owned/readonly/`, `isomer-managed/topic-owned/writable/`, and `isomer-managed/links/` beneath that Agent Workspace
 
 #### Scenario: Artifact class defaults exist
 - **WHEN** a skill requests a semantic Artifact class path and no recorded or configured path exists for that class
-- **THEN** the resolver derives the class path under the Topic Workspace artifact root using stable class directories for intake, baselines, experiments, analysis, figures, paper, decisions, evidence, findings, and handoffs
+- **THEN** the resolver derives the class path under the Topic Workspace artifact record root using stable class directories for intake, baselines, experiments, analysis, figures, paper, decisions, evidence, findings, and handoffs
 
 ### Requirement: Supported Environment Overrides
-The system SHALL support a bounded set of `ISOMER_*` environment variables for launch-time path overrides.
+The system SHALL support a bounded set of `ISOMER_*` environment variables for launch-time path overrides and SHALL distinguish owner-preserved record surfaces from worker-visible Isomer-managed surfaces.
 
 #### Scenario: Project and topic workspace roots can be overridden
 - **WHEN** an Execution Adapter exports `ISOMER_PROJECT_ROOT`, `ISOMER_PROJECT_CONFIG_DIR`, `ISOMER_TOPIC_WORKSPACE_BASE_DIR`, `ISOMER_CURRENT_TOPIC_WORKSPACE_DIR`, or `ISOMER_TOPIC_WORKSPACE_RUNTIME_DB`
 - **THEN** the resolver treats those values as candidate overrides for the current process according to resolution precedence
 
-#### Scenario: Topic workspace subdirectories can be overridden
-- **WHEN** an Execution Adapter exports `ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR`, `ISOMER_TOPIC_WORKSPACE_TASKS_DIR`, `ISOMER_TOPIC_WORKSPACE_RUNS_DIR`, `ISOMER_TOPIC_WORKSPACE_VIEWS_DIR`, or `ISOMER_TOPIC_WORKSPACE_LOGS_DIR`
-- **THEN** the resolver treats those values as candidate Topic Workspace subdirectory overrides according to resolution precedence
+#### Scenario: Topic repository and Isomer-managed roots can be overridden
+- **WHEN** an Execution Adapter exports `ISOMER_TOPIC_MAIN_REPO_DIR`, `ISOMER_TOPIC_MAIN_ISOMER_MANAGED_DIR`, or `ISOMER_TOPIC_MAIN_TRACKED_DIR`
+- **THEN** the resolver treats those values as candidate overrides for `repos/topic-main`, `repos/topic-main/isomer-managed`, or `repos/topic-main/isomer-managed/tracked` according to resolution precedence
 
-#### Scenario: Agent workspace subdirectories can be overridden
-- **WHEN** an Execution Adapter exports `ISOMER_AGENT_WORKSPACE_DIR`, `ISOMER_AGENT_WORKSPACE_RUNTIME_DIR`, `ISOMER_AGENT_WORKSPACE_ARTIFACTS_DIR`, `ISOMER_AGENT_WORKSPACE_SCRATCH_DIR`, or `ISOMER_AGENT_WORKSPACE_LOGS_DIR`
-- **THEN** the resolver treats those values as candidate Agent Workspace overrides according to resolution precedence
+#### Scenario: Topic workspace owner record subdirectories can be overridden
+- **WHEN** an Execution Adapter exports `ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR`, `ISOMER_TOPIC_WORKSPACE_TASKS_DIR`, `ISOMER_TOPIC_WORKSPACE_RUNS_DIR`, `ISOMER_TOPIC_WORKSPACE_VIEWS_DIR`, or `ISOMER_TOPIC_WORKSPACE_LOGS_DIR`
+- **THEN** the resolver treats those values as compatibility candidate overrides for owner-preserved `records/artifacts`, `records/tasks`, `records/runs`, `records/views`, and `records/logs` and records source detail that the legacy variable name was used
+
+#### Scenario: Agent workspace and Isomer-managed root can be overridden
+- **WHEN** an Execution Adapter exports `ISOMER_AGENT_WORKSPACE_DIR`, `ISOMER_AGENT_ISOMER_MANAGED_DIR`, `ISOMER_AGENT_OWNED_DIR`, `ISOMER_AGENT_TOPIC_OWNED_DIR`, or `ISOMER_AGENT_LINKS_DIR`
+- **THEN** the resolver treats those values as candidate Agent Workspace, agent-owned, topic-owned projection, or generated-link overrides according to resolution precedence
+
+#### Scenario: Legacy agent support variables map to agent-owned support
+- **WHEN** an Execution Adapter exports `ISOMER_AGENT_WORKSPACE_RUNTIME_DIR`, `ISOMER_AGENT_WORKSPACE_ARTIFACTS_DIR`, `ISOMER_AGENT_WORKSPACE_SCRATCH_DIR`, or `ISOMER_AGENT_WORKSPACE_LOGS_DIR`
+- **THEN** the resolver treats those values as compatibility candidate overrides for `isomer-managed/agent-owned/runtime`, `isomer-managed/agent-owned/artifacts`, `isomer-managed/agent-owned/scratch`, or `isomer-managed/agent-owned/logs` and records source detail that the legacy variable name was used
 
 #### Scenario: Unknown variables are ignored
 - **WHEN** an environment variable is not part of the supported path override set
@@ -123,11 +147,11 @@ The system SHALL persist selected Workspace Path Resolution outputs as Workspace
 
 #### Scenario: Runtime init records topic workspace paths
 - **WHEN** Workspace Runtime is initialized
-- **THEN** the system records path plans for `state.sqlite`, `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/` with canonical paths and resolution sources
+- **THEN** the system records path plans for `state.sqlite`, `repos/`, `repos/topic-main/`, `repos/topic-main/isomer-managed/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/` with canonical paths and resolution sources
 
 #### Scenario: Agent workspace creation records path plan first
 - **WHEN** an Agent Workspace is created for an Agent Instance
-- **THEN** the system records the Agent Workspace path plan before creating the directory or Agent Workspace lifecycle record
+- **THEN** the system records the Agent Workspace path plan, topic-local agent name, expected branch namespace, and `isomer-managed/` support path plan before creating the directory or Agent Workspace lifecycle record
 
 #### Scenario: Run path creation records path plan first
 - **WHEN** a Run record or Run support directory is created
@@ -295,3 +319,117 @@ Workspace Path Resolution SHALL preserve the existing Agent Workspace subpath se
 #### Scenario: Worktree path is not a separate Topic Workspace
 - **WHEN** an Agent Workspace root resolves to a Git worktree under `<topic-workspace-dir>/agents/<agent-key>`
 - **THEN** Workspace Path Resolution still treats it as an Agent Workspace inside the selected Topic Workspace, not as a Project or Topic Workspace
+
+### Requirement: Semantic Path Resolution
+Workspace Path Resolution SHALL resolve public semantic surface labels to concrete paths for the selected Effective Topic Context.
+
+#### Scenario: Semantic label resolves to path
+- **WHEN** a caller requests a semantic label such as `topic.main_repo`, `topic.records.artifacts`, `agent.workspace`, or `agent.private_artifacts`
+- **THEN** the resolver returns the resolved path, semantic label, source, source detail, and diagnostics
+
+#### Scenario: Unknown label is rejected
+- **WHEN** a caller requests a semantic label that is not in the built-in catalog and not accepted by the Topic Workspace Manifest
+- **THEN** the resolver reports an unknown semantic label diagnostic
+
+#### Scenario: Agent label requires agent context
+- **WHEN** a caller requests an agent-scoped semantic label without explicit, environment-derived, cwd-derived, or recorded Effective Agent Context
+- **THEN** path resolution fails with a diagnostic that says the label requires an Agent Name or Agent Instance selector
+
+#### Scenario: Topic label does not require agent context
+- **WHEN** a caller requests a topic-scoped semantic label
+- **THEN** the resolver does not require Agent Name or Agent Instance context
+
+### Requirement: Semantic Resolution Precedence
+Workspace Path Resolution SHALL apply deterministic precedence when resolving semantic labels.
+
+#### Scenario: Recorded path plan wins
+- **WHEN** a durable runtime record already has a PathPlanRecord for the requested semantic label and scope
+- **THEN** the resolver uses the stored path plan before checking environment overrides, the Topic Workspace Manifest, Project Manifest defaults, or built-in defaults
+
+#### Scenario: Environment context overrides manifest binding
+- **WHEN** no applicable recorded path plan exists and a supported `ISOMER_*` environment override applies to the requested semantic label
+- **THEN** the resolver uses the environment override before checking the Topic Workspace Manifest
+
+#### Scenario: Topic Workspace Manifest overrides default profile
+- **WHEN** no recorded path plan or supported environment override applies and the Topic Workspace Manifest binds the requested semantic label
+- **THEN** the resolver uses the manifest binding before checking built-in default layout profile bindings
+
+#### Scenario: Default profile is fallback
+- **WHEN** no recorded path plan, supported environment override, or Topic Workspace Manifest binding applies
+- **THEN** the resolver uses the built-in `isomer-default.v1` binding when the requested label is part of that profile
+
+#### Scenario: Source is reported consistently
+- **WHEN** a semantic label resolves
+- **THEN** the result reports whether the selected path came from `path_plan`, `env`, `topic_workspace_manifest`, `project_manifest`, or `default_profile`
+
+### Requirement: Semantic Path Query CLI
+The CLI SHALL expose direct read-only semantic path query behavior in addition to broad path previews.
+
+#### Scenario: Single semantic label is queried
+- **WHEN** a user runs `isomer-cli project paths get <semantic-label>` for a selected Topic Workspace
+- **THEN** the command returns one resolved semantic path result or diagnostics without creating files
+
+#### Scenario: Resolve is not a second public command
+- **WHEN** a user needs one semantic path answer
+- **THEN** the documented public command is `isomer-cli project paths get <semantic-label>` rather than a parallel `project paths resolve` command
+
+#### Scenario: Semantic labels are listed
+- **WHEN** a user runs `isomer-cli project paths list` for a selected Topic Workspace
+- **THEN** the command lists known semantic labels, scope, required context, resolved status, and source when available
+
+#### Scenario: Preview remains read-only
+- **WHEN** a user runs `isomer-cli project paths preview`
+- **THEN** the command may include semantic labels and compatibility surface ids but still does not create files, directories, manifests, or Workspace Runtime records
+
+#### Scenario: Explicit materialization command is separate
+- **WHEN** a user wants to create default semantic directories
+- **THEN** the user must run an explicit materialization command rather than relying on `paths get`, `paths list`, or `paths preview`
+
+### Requirement: Compatibility Surface Mapping
+Workspace Path Resolution SHALL preserve compatibility for existing internal path surface ids while presenting semantic labels as the public contract.
+
+#### Scenario: Existing surface id remains accepted
+- **WHEN** existing code requests a compatibility surface such as `topic_main_repo`, `records_artifacts`, or `agent_workspace:<agent-name>`
+- **THEN** the resolver maps that surface to the corresponding semantic label when possible and preserves existing behavior
+
+#### Scenario: Semantic label appears in new output
+- **WHEN** new CLI or API output reports a resolved path
+- **THEN** the output includes the semantic label even when an internal compatibility surface id was used to locate an existing path plan
+
+#### Scenario: Compatibility aliases do not create new semantics
+- **WHEN** a compatibility surface and a semantic label map to the same path class
+- **THEN** validation treats them as aliases for one semantic surface rather than two independent durability contracts
+
+### Requirement: Manifest-backed Path Safety
+Workspace Path Resolution SHALL apply the same canonicalization and safety checks to manifest-backed semantic paths as it applies to default and environment-derived paths.
+
+#### Scenario: Manifest path is canonicalized
+- **WHEN** a path is selected from the Topic Workspace Manifest
+- **THEN** the resolver canonicalizes the path before returning it
+
+#### Scenario: Unsafe manifest path is rejected
+- **WHEN** a manifest-backed semantic path points outside the Project root, inside `.isomer-labs/`, or into another Topic Workspace without an accepted policy
+- **THEN** the resolver reports a validation diagnostic and does not return the path as usable for dependent work
+
+#### Scenario: External roots are deferred
+- **WHEN** a manifest-backed semantic path points outside the Project root
+- **THEN** the resolver rejects it until a later accepted external-root policy explicitly permits that surface
+
+#### Scenario: Missing path can still be previewed
+- **WHEN** a safe manifest-backed path does not yet exist on disk
+- **THEN** read-only path query output may report the planned path and missing status without creating it
+
+### Requirement: Isomer-Managed Path Surfaces
+The system SHALL expose named path surfaces for the standard `isomer-managed/` layout so commands, skills, and adapters do not assemble those paths ad hoc.
+
+#### Scenario: Topic-main Isomer-managed surfaces are named
+- **WHEN** path preview or runtime path planning returns Topic Main Repository surfaces
+- **THEN** the result includes named surfaces for `topic_main_repo`, `topic_main_isomer_managed`, `topic_main_tracked`, `topic_main_tracked_shared`, `topic_main_tracked_artifacts`, `topic_main_tracked_tasks`, `topic_main_tracked_runs`, `topic_main_tracked_views`, `topic_main_tracked_tools`, `topic_main_tracked_boundaries`, and `topic_main_tracked_manifests`
+
+#### Scenario: Agent Isomer-managed surfaces are named
+- **WHEN** path preview or runtime path planning returns Agent Workspace surfaces
+- **THEN** the result includes named surfaces for `agent_isomer_managed`, `agent_owned`, `agent_runtime`, `agent_artifacts`, `agent_scratch`, `agent_logs`, `agent_public_share`, `agent_inbox`, `agent_topic_readonly`, `agent_topic_writable`, and `agent_links`
+
+#### Scenario: Legacy support surface is not canonical
+- **WHEN** a caller asks for an `.isomer-agent/` surface by old name
+- **THEN** the resolver reports legacy compatibility diagnostics and returns the corresponding `isomer-managed/agent-owned/` or `isomer-managed/links/` surface when compatibility mode allows it

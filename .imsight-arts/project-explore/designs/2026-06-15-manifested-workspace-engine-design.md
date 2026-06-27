@@ -95,57 +95,59 @@ System-owned schemas and other Isomer built-in artifacts are not stored under `.
 
 ### Workspace Runtime
 
-Each Topic Workspace stores one Workspace Runtime plus Artifacts. The Workspace Runtime is the persistent substrate that holds compact control-plane state, schema version, runtime directories, refs, and validation state across many Runs. A workspace should have a stable root path and a small internal layout, for example:
+Each Topic Workspace stores one Workspace Runtime plus path-bound owner records and worker surfaces. The Workspace Runtime is the persistent substrate that holds compact control-plane state, schema version, semantic path bindings, refs, and validation state across many Runs. A workspace should have a stable root path, while concrete internal paths resolve through the Topic Workspace Manifest or the `isomer-default.v1` Default Layout Profile. The default profile is:
 
 ```text
 <topic-workspace>/
+  topic-workspace.toml
   state.sqlite
-  artifacts/
+  repos/
+    topic-main/
+      tmp/
   agents/
-  tasks/
-  views/
-  runs/
-  logs/
+    <agent-name>/
+      tmp/
+  records/
+    artifacts/
+    tasks/
+    views/
+    runs/
+    logs/
+  runtime/
+  tmp/
 ```
 
-The exact layout can evolve, but the split must stay clear: SQLite stores compact control-plane facts and references; files store rich content. `runs/` stores per-Run records for bounded execution episodes; it is part of the Workspace Runtime, not a separate workspace-level lifecycle object.
+The exact layout can evolve, but the split must stay clear: SQLite stores compact control-plane facts and references; files store rich content in resolved records, repository, or agent-owned surfaces. The resolved `topic.records.runs` surface stores per-Run records for bounded execution episodes; it is part of the Workspace Runtime, not a separate workspace-level lifecycle object. `tmp/` surfaces are always ignored, local, disposable, and not shared until selected content is explicitly promoted.
 
 ### Workspace Path Resolver
 
-All Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, and Agent Workspace paths should resolve through one Workspace Path Resolver. Research skills should request semantic targets such as Topic Workspace, task support directory, run log, analysis output Artifact, paper draft Artifact, figure Artifact, Agent Runtime state, or Agent Workspace scratch; they should not assemble paths directly or emit ordinary path TBD placeholders for surfaces covered by this resolver.
+All Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, and Agent Workspace paths should resolve through one Workspace Path Resolver. Research skills should request semantic surface labels or semantic targets such as Topic Workspace, task support directory, run log, analysis output Artifact, paper draft Artifact, figure Artifact, Agent Runtime state, or Agent Workspace scratch; they should not assemble paths directly or emit ordinary path TBD placeholders for surfaces covered by this resolver.
 
 When an Effective Topic Context is available, Workspace Path Resolution consumes the validated Project, Research Topic, Topic Workspace, Research Task, Run, Agent Team Instance, and Agent Instance refs from that context. The resolver still applies its normal path precedence and does not perform independent Research Topic selection.
 
 Resolution precedence is deterministic:
 
 1. Recorded workspace plan for the Research Task, Run, handoff, Agent Team Instance, or Agent Instance.
-2. Supported `ISOMER_*` environment variables exported by the Execution Adapter for the current process.
-3. Project Manifest defaults.
-4. Built-in defaults.
+2. Topic Workspace Manifest bindings.
+3. Supported `ISOMER_*` environment variables exported by the Execution Adapter for the current process.
+4. Project Manifest defaults.
+5. Built-in `isomer-default.v1` defaults.
 
-The built-in Topic Workspace base directory is `<project>/topic-workspaces/`. A Topic Workspace without a recorded or configured path defaults to `<project>/topic-workspaces/<topic-id>/`. Within that Topic Workspace, default support paths are `state.sqlite`, `repos/`, `repos/topic-main/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`. Owner-preserved task and run support directories default under `records/tasks/<task-id>/` and `records/runs/<run-id>/`; Agent Workspaces default to `agents/<agent-name>/`.
+The built-in Topic Workspace base directory is `<project>/topic-workspaces/`. A Topic Workspace without a recorded or configured path defaults to `<project>/topic-workspaces/<topic-id>/`. Within that Topic Workspace, the path contract is semantic labels recorded in the Topic Workspace Manifest or supplied by `isomer-default.v1`; default bindings include `topic.runtime.db`, `topic.main_repo`, `topic.agents_root`, `topic.records.*`, `topic.runtime.*`, `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`. Owner-preserved task and run support directories default under `records/tasks/<task-id>/` and `records/runs/<run-id>/`; Agent Workspaces default through `agent.workspace` to `agents/<agent-name>/`.
 
-Execution Adapters may export this bounded environment override set:
+Execution Adapters may export this bounded bootstrap context:
 
 ```text
 ISOMER_PROJECT_ROOT
 ISOMER_PROJECT_CONFIG_DIR
 ISOMER_TOPIC_WORKSPACE_BASE_DIR
 ISOMER_CURRENT_TOPIC_WORKSPACE_DIR
-ISOMER_TOPIC_WORKSPACE_RUNTIME_DB
-ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR
-ISOMER_TOPIC_WORKSPACE_TASKS_DIR
-ISOMER_TOPIC_WORKSPACE_RUNS_DIR
-ISOMER_TOPIC_WORKSPACE_VIEWS_DIR
-ISOMER_TOPIC_WORKSPACE_LOGS_DIR
-ISOMER_AGENT_WORKSPACE_DIR
-ISOMER_AGENT_WORKSPACE_RUNTIME_DIR
-ISOMER_AGENT_WORKSPACE_ARTIFACTS_DIR
-ISOMER_AGENT_WORKSPACE_SCRATCH_DIR
-ISOMER_AGENT_WORKSPACE_LOGS_DIR
+ISOMER_TOPIC_WORKSPACE_MANIFEST
+ISOMER_EFFECTIVE_AGENT_NAME
+ISOMER_CURRENT_AGENT_WORKSPACE_DIR
 ```
 
-`BASE` names the directory containing many Topic Workspaces. `CURRENT` names the process-bound Topic Workspace. Topic Workspace subdirectory variables include `TOPIC_WORKSPACE` so they cannot be confused with Agent Workspace subdirectories. The resolver should derive semantic Artifact class paths under `ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR`, such as `intake/`, `baselines/`, `experiments/<run-id>/`, `analysis/<campaign-id>/`, `figures/<figure-set-id>/`, `paper/<paper-id-or-default>/`, `decisions/`, `evidence/`, `findings/`, and `handoffs/`, unless a recorded workspace plan overrides them.
+`BASE` names the directory containing many Topic Workspaces. `CURRENT` names the process-bound Topic Workspace. Adapter-provided variables are bootstrap hints, not durable path truth; the resolver should translate requested labels such as `topic.runtime.db`, `topic.records.artifacts`, `topic.records.runs`, `topic.main_repo`, `topic.tmp`, `agent.workspace`, and `agent.tmp` through the active path plan. Compatibility variables from older adapters may still be accepted when they can be mapped to semantic labels.
 
 Every resolved path must be canonicalized before use. Paths should remain inside the Project by default; a path outside the Project root is invalid unless the recorded workspace plan or Project Manifest explicitly permits that external root. The resolver must record the effective path set and each value's source, such as `plan`, `env`, `manifest`, or `default`, in Workspace Runtime or a Provenance Record before downstream research work depends on it.
 
@@ -163,18 +165,22 @@ An Agent Workspace is a per-agent work area inside a Topic Workspace. For each t
 
 An Agent Workspace should have an advisory Workspace Boundary. The boundary can be expressed by a `README.md`, a small manifest, or both. It declares the owning agent, intended writable paths, and paths that peer agents may read. This boundary is a collaboration contract, not a security boundary. An agent with system tools may still modify peer files, so Isomer should validate and record behavior instead of assuming hard isolation.
 
-One possible layout is:
+Under the current default profile, the launch-facing Agent Workspace layout is:
 
 ```text
 <topic-workspace>/
   agents/
-    <agent-instance-id>/
+    <agent-name>/
       README.md
       boundary.toml
-      runtime/
-      artifacts/
-      scratch/
-      logs/
+      tmp/
+      isomer-managed/
+        agent-owned/
+          runtime/
+          artifacts/
+          scratch/
+          public/
+          logs/
 ```
 
 Agents should treat peer Agent Workspaces as read-only unless a workflow explicitly assigns a repair or migration task. If a peer read becomes part of durable reasoning, the engine should record the dependency through a handoff, promoted Artifact, Evidence Item, or Provenance Record.

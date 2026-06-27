@@ -438,15 +438,19 @@ The module skill SHALL focus on static Topic Team material and durable setup pre
 - **THEN** the skill validates or summarizes topic overview material, copied specialization material, setup evidence, Agent Workspace layout, profile material, blockers, deferrals, and next actions without claiming Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or live launch readiness
 
 ### Requirement: Git-Backed Agent Workspace Delegation
-The Topic Team Specialization module skill SHALL delegate Git-backed Agent Workspace repository and worktree preparation to `isomer-admin-topic-workspace-mgr` when a specialized topic team needs the `repos/topic-main` layout.
+The Topic Team Specialization module skill SHALL delegate Git-backed Agent Workspace repository, worktree, and `isomer-managed/` preparation to `isomer-admin-topic-workspace-mgr` when a specialized topic team needs the `repos/topic-main` layout.
 
 #### Scenario: Setup agent workspace delegates Git worktree setup
-- **WHEN** `setup-agent-workspace` determines that the selected topic team needs Git-backed Agent Workspaces under `<topic-workspace-dir>/agents/<agent-key>`
+- **WHEN** `setup-agent-workspace` determines that the selected topic team needs Git-backed Agent Workspaces under `<topic-workspace-dir>/agents/<agent-name>`
 - **THEN** it routes or instructs the operator to use `isomer-admin-topic-workspace-mgr` rather than creating the worktrees itself
+
+#### Scenario: Setup agent workspace delegates Isomer-managed setup
+- **WHEN** `setup-agent-workspace` determines that per-agent worker-facing support paths, peer-readable large artifact paths, generated links, or boundary material are needed
+- **THEN** it routes or instructs the operator to use `isomer-admin-topic-workspace-mgr` for `isomer-managed/` preparation rather than creating `.isomer-agent/` or top-level `topic-main` collaboration directories itself
 
 #### Scenario: Static setup records delegated workspace refs
 - **WHEN** delegated Git-backed workspace setup has completed
-- **THEN** `setup-agent-workspace`, `validate-topic-team`, or `finalize-topic-team` may report the returned Agent Workspace paths, branch names, boundary docs, validation refs, blockers, and next actions as static setup evidence
+- **THEN** `setup-agent-workspace`, `validate-topic-team`, or `finalize-topic-team` may report the returned Agent Workspace paths, branch names, `isomer-managed/` paths, boundary docs, validation refs, blockers, and next actions as static setup evidence
 
 #### Scenario: Delegation preserves static boundary
 - **WHEN** Topic Team Specialization delegates Git-backed workspace setup
@@ -455,6 +459,10 @@ The Topic Team Specialization module skill SHALL delegate Git-backed Agent Works
 #### Scenario: Missing delegated setup blocks static readiness
 - **WHEN** the specialized topic team requires Git-backed Agent Workspaces and no successful topic workspace manager output exists
 - **THEN** `validate-topic-team` reports an Agent Workspace setup blocker rather than claiming static material readiness
+
+#### Scenario: Legacy support setup is not accepted as new readiness
+- **WHEN** the only available workspace setup evidence names `.isomer-agent/` or top-level `repos/topic-main/{shared,artifacts,tasks,runs,views,logs,tools}` as the current standard layout
+- **THEN** `validate-topic-team` reports stale workspace setup evidence and asks for `isomer-admin-topic-workspace-mgr` validation of the `isomer-managed/` layout
 
 ### Requirement: Clarification Option Loop
 The module skill SHALL make `clarify-topic` and `clarify-topic-team` use a bounded option-asking clarification loop that updates static topic-team artifacts directly instead of creating separate user-decision records.
@@ -486,4 +494,114 @@ The module skill SHALL make `clarify-topic` and `clarify-topic-team` use a bound
 #### Scenario: Clarification loop stops predictably
 - **WHEN** all critical ambiguities are resolved, the user signals completion, or five clarification questions have been asked in the current clarification session
 - **THEN** the subcommand stops asking questions and reports remaining open questions, deferrals, blockers, changed artifacts, and the next safe operator action
+
+### Requirement: Topic Team Workspace Evidence Language
+The Topic Team Specialization module skill SHALL use topic-local agent names and worker visibility terms when reporting Agent Workspace setup evidence.
+
+#### Scenario: Setup output uses agent names
+- **WHEN** `setup-agent-workspace` reports prepared workspaces
+- **THEN** it reports `agent_names`, `agent_workspace_paths`, `branch_plan`, `topic_main_repo`, `records_root`, and blockers instead of using `agent-key` as the user-facing term
+
+#### Scenario: Setup output names worker visibility boundary
+- **WHEN** `finalize-topic-team` summarizes static setup evidence
+- **THEN** it distinguishes worker-visible material under `repos/topic-main` from owner-preserved records under `records/*` and runtime internals under `runtime/`
+
+### Requirement: Topic Team Specialization Uses Semantic Workspace Surfaces
+The Topic Team Specialization module skill SHALL consume and report workspace setup through semantic labels instead of treating default directory paths as the contract.
+
+#### Scenario: Setup agent workspace requests semantic setup
+- **WHEN** `setup-agent-workspace` determines that a specialized topic team needs Git-backed Agent Workspaces
+- **THEN** it delegates to `isomer-admin-topic-workspace-mgr` with semantic surface expectations for Topic Main Repository and Agent Workspace preparation
+
+#### Scenario: Delegated output records labels
+- **WHEN** delegated Agent Workspace setup completes
+- **THEN** `setup-agent-workspace` records the returned semantic labels, resolved paths, sources, Agent Names, branch namespaces, boundary material, validation refs, blockers, and next actions as static setup evidence
+
+#### Scenario: Custom layout evidence is accepted
+- **WHEN** delegated setup evidence shows safe manifest-backed paths that differ from `repos/topic-main` or `agents/<agent-name>`
+- **THEN** the skill accepts the evidence when the semantic labels, ownership, and validation status are correct
+
+#### Scenario: Hard-coded default-only evidence is insufficient
+- **WHEN** setup evidence only says that default-looking directories exist without semantic label or manifest-backed validation
+- **THEN** the skill reports the evidence as incomplete for static readiness
+
+### Requirement: Topic Team Summaries Are Semantic Label First
+The Topic Team Specialization module skill SHALL write summaries that name semantic workspace surfaces before concrete default paths.
+
+#### Scenario: Final summary reports semantic layout
+- **WHEN** `finalize-topic-team` writes or updates `isomer-topic-summary.md`
+- **THEN** the Agent Workspace layout section reports semantic labels, Agent Names, resolved paths, path sources, Git branch plans, and validation status
+
+#### Scenario: Default layout is described as default profile
+- **WHEN** a summarized path comes from the built-in default layout
+- **THEN** the summary identifies it as `isomer-default.v1` rather than implying that fixed paths are the workspace contract
+
+#### Scenario: Custom layout remains understandable
+- **WHEN** a summarized path differs from the default layout
+- **THEN** the summary explains which semantic label the path satisfies and does not treat the path difference as a blocker by itself
+
+### Requirement: Cwd-friendly Agent Guidance
+The Topic Team Specialization module skill SHALL teach prepared agents to query their own Agent Workspace surfaces by semantic label from cwd.
+
+#### Scenario: Boundary notes include self queries
+- **WHEN** the skill records or summarizes Agent Workspace boundary material
+- **THEN** it includes guidance that an agent running inside its own Agent Workspace can query agent-scoped labels without passing Agent Name
+
+#### Scenario: Cross-agent queries remain explicit
+- **WHEN** the skill describes peer inspection or integration behavior
+- **THEN** it states that querying another agent's surface still requires an explicit Agent Name, Agent Instance, handoff, Artifact, or boundary-approved share
+
+#### Scenario: Cwd inference is not security
+- **WHEN** the skill describes cwd-derived agent context
+- **THEN** it states that cwd inference is a convenience for path resolution and not filesystem-grade identity or access control
+
+### Requirement: Static Readiness Checks Semantic Bindings
+The Topic Team Specialization module skill SHALL validate static readiness against semantic workspace bindings when Agent Workspace setup is in scope.
+
+#### Scenario: Missing required label blocks readiness
+- **WHEN** the specialized team requires Agent Workspace setup and a required semantic label cannot be resolved
+- **THEN** `validate-topic-team` reports an Agent Workspace setup blocker
+
+#### Scenario: Manifest diagnostics remain visible
+- **WHEN** Topic Workspace Manifest validation reports duplicate labels, unsafe paths, or unresolved agent templates
+- **THEN** `validate-topic-team` includes those diagnostics in static readiness output
+
+#### Scenario: Runtime readiness is not implied
+- **WHEN** semantic workspace setup evidence is valid
+- **THEN** the skill still does not claim Agent Team Instance creation, Workspace Runtime mutation, adapter preflight, or live launch readiness
+
+### Requirement: Topic Team Specialization Uses Agent Env Service Evidence
+The Topic Team Specialization module skill SHALL consume `isomer-srv-agent-env-setup` output as durable static setup evidence when Agent Workspace environment readiness is in scope.
+
+#### Scenario: Setup agent workspace delegates env readiness
+- **WHEN** `setup-agent-workspace` determines that a specialized topic team needs Git-backed Agent Workspaces and per-agent cwd env verification
+- **THEN** it delegates that concrete setup to `isomer-srv-agent-env-setup setup-agent-env` or records an explicit blocker explaining why service delegation cannot run
+
+#### Scenario: Setup records service evidence
+- **WHEN** agent env setup service output is available
+- **THEN** `setup-agent-workspace` records semantic paths, Agent Names, branch plans, worktree status by agent, source agent env gate path, derived agent env gate path, readiness by agent, commands run, blockers, and next actions as static setup evidence
+
+#### Scenario: Service evidence can satisfy static readiness
+- **WHEN** service output reports overall Agent Workspace env readiness as `ready`
+- **THEN** `validate-topic-team` may treat Agent Workspace setup and agent-cwd environment posture as ready for static material validation
+- **AND** it still does not claim runtime launch readiness
+
+#### Scenario: Missing service evidence blocks readiness when required
+- **WHEN** the specialized team requires Agent Workspace env readiness and no service output or explicit deferral exists
+- **THEN** `validate-topic-team` reports an Agent Workspace environment setup blocker
+
+### Requirement: Final Topic Summary Reports Agent Env Matrix
+The Topic Team Specialization module skill SHALL include service-produced agent environment evidence in final topic summaries.
+
+#### Scenario: Final summary includes gate path
+- **WHEN** `finalize-topic-team` writes or updates `isomer-topic-summary.md`
+- **THEN** the Agent Workspace layout or environment section includes `user-intent/src/agent-env-gate.md` and `user-intent/derived/isomer-agent-env-gate.md` when those files exist
+
+#### Scenario: Final summary reports per-agent readiness
+- **WHEN** service output contains readiness by agent
+- **THEN** the final summary lists each Agent Name, resolved `agent.workspace`, branch, env readiness status, and blocker when present
+
+#### Scenario: Runtime boundary remains explicit
+- **WHEN** the final summary includes ready Agent Workspace env setup
+- **THEN** it states that Agent Team Instance creation, Workspace Runtime records, Houmao launch, and Execution Adapter readiness remain separate downstream steps
 

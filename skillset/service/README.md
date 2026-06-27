@@ -4,6 +4,7 @@ This subtree contains Service Team skills for bounded operational support. Servi
 
 | Skill | Purpose |
 | --- | --- |
+| `isomer-srv-agent-env-setup` | Prepare Git-backed Agent Workspace cwd readiness from a ready Topic Workspace Pixi environment and `agent-env-gate.md`. |
 | `isomer-srv-topic-env-setup` | Prepare or check topic-scoped environment setup for supported service work. |
 | `isomer-srv-topic-service-agent-support` | Guide Topic Service Agents through bounded support for Topic Team Specialization, environment readiness, work-agent setup, monitoring, diagnostics, and support Artifacts. |
 
