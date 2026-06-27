@@ -63,6 +63,9 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             path TEXT NOT NULL,
             source TEXT NOT NULL,
             source_detail TEXT,
+            semantic_label TEXT,
+            scope_ref TEXT,
+            compatibility_surface TEXT,
             created_at TEXT NOT NULL,
             UNIQUE(topic_workspace_id, surface)
         );
@@ -400,8 +403,24 @@ def _create_schema(connection: sqlite3.Connection) -> None:
         );
         """
     )
+    _ensure_path_plan_semantic_columns(connection)
     _ensure_agent_team_instance_provenance_columns(connection)
     _ensure_agent_workspace_metadata_columns(connection)
+
+
+def _ensure_path_plan_semantic_columns(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] if isinstance(row, sqlite3.Row) else row[1]
+        for row in connection.execute("PRAGMA table_info(path_plans)")
+    }
+    additions = {
+        "semantic_label": "TEXT",
+        "scope_ref": "TEXT",
+        "compatibility_surface": "TEXT",
+    }
+    for column, declaration in additions.items():
+        if column not in columns:
+            connection.execute(f"ALTER TABLE path_plans ADD COLUMN {column} {declaration}")
 
 
 def _ensure_agent_team_instance_provenance_columns(connection: sqlite3.Connection) -> None:

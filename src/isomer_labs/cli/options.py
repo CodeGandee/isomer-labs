@@ -34,6 +34,7 @@ class CliOptions:
     run_id: str | None = None
     agent_team_instance_id: str | None = None
     agent_instance_id: str | None = None
+    agent_name: str | None = None
     topic_agent_team_profile_id: str | None = None
     cleanup_parts: tuple[str, ...] = ()
     cleanup_topics: tuple[str, ...] = ()

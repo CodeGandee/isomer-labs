@@ -45,6 +45,15 @@ LEGACY_WORKSPACE_PATTERNS = [
     ),
 ]
 MIGRATION_NOTE_TERMS = ("legacy", "migration", "migrate", "diagnostic", "compatibility")
+SEMANTIC_PATH_COMMANDS = (
+    "project paths get",
+    "project paths list",
+    "project paths materialize-default",
+)
+FIXED_PATH_ONLY_PATTERNS = [
+    ("fixed agent workspace path", re.compile(r"\b(always|must|only)\b[^\n]*(?:agents/<agent-name>|<topic-workspace>/agents)", re.IGNORECASE)),
+    ("fixed topic main path", re.compile(r"\b(always|must|only)\b[^\n]*repos/topic-main", re.IGNORECASE)),
+]
 
 
 def get_repo_root() -> Path:
@@ -178,6 +187,39 @@ def check_legacy_workspace_paths(repo_root: Path) -> list[str]:
     return issues
 
 
+def check_semantic_path_documentation(repo_root: Path) -> list[str]:
+    issues: list[str] = []
+    docs_dir = repo_root / "docs"
+    cli_doc = docs_dir / "isomer-cli.md"
+    if cli_doc.is_file():
+        content = cli_doc.read_text(encoding="utf-8")
+        for command in SEMANTIC_PATH_COMMANDS:
+            if command not in content:
+                issues.append(f"docs/isomer-cli.md missing semantic path command coverage: {command}")
+    topic_doc = docs_dir / "topic-workspace-definition.md"
+    if topic_doc.is_file():
+        content = topic_doc.read_text(encoding="utf-8")
+        if "topic-workspace.toml" not in content or "isomer-default.v1" not in content:
+            issues.append("docs/topic-workspace-definition.md must document Topic Workspace Manifest, topic-workspace.toml, and isomer-default.v1")
+    for path in [repo_root / "README.md", *sorted(docs_dir.glob("*.md"))]:
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        for line_number, line in enumerate(content.splitlines(), start=1):
+            for label, pattern in FIXED_PATH_ONLY_PATTERNS:
+                if pattern.search(line) and "default" not in line.lower() and "isomer-default.v1" not in line:
+                    issues.append(
+                        f"{path.relative_to(repo_root)}:{line_number}: stale fixed-path-only wording uses {label}; name the semantic label and default binding"
+                    )
+        if "tmp/" in content:
+            lowered = content.lower()
+            if not (("topic.tmp" in content or "agent.tmp" in content) and "disposable" in lowered and "not durable" in lowered):
+                issues.append(
+                    f"{path.relative_to(repo_root)}: tmp/ wording must describe downstream semantic labels and local, ignored, disposable, not durable semantics"
+                )
+    return issues
+
+
 def validate_docs(repo_root: Path) -> list[str]:
     issues: list[str] = []
     issues.extend(check_required_pages(repo_root))
@@ -189,6 +231,7 @@ def validate_docs(repo_root: Path) -> list[str]:
         issues.extend(check_cli_coverage(repo_root, commands))
     issues.extend(check_stale_isomer_cli_json_examples(repo_root))
     issues.extend(check_legacy_workspace_paths(repo_root))
+    issues.extend(check_semantic_path_documentation(repo_root))
     issues.extend(check_forbidden_terms(repo_root))
     return issues
 

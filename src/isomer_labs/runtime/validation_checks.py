@@ -8,7 +8,7 @@ from typing import Mapping
 
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.paths import preview_paths
+from isomer_labs.paths import preview_paths, resolve_semantic_path
 from isomer_labs.runtime.adapter_handoff_validation import validate_adapter_handoff_records
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
 from isomer_labs.runtime.validation_utils import (
@@ -76,8 +76,36 @@ def _validate_path_plans(
                     message="Path plan belongs to another Topic Workspace.",
                 )
             )
-        current = current_by_surface.get(plan.surface)
-        if current is not None and str(current.path) != plan.path:
+        current_path: Path | None = None
+        if plan.semantic_label is not None:
+            agent_name = _agent_name_from_scope_ref(plan.scope_ref)
+            semantic_current, semantic_diagnostics = resolve_semantic_path(
+                context,
+                plan.semantic_label,
+                env=env,
+                cwd=context.topic_workspace_path,
+                agent_name=agent_name,
+                use_path_plan=False,
+            )
+            diagnostics.extend(semantic_diagnostics)
+            if semantic_current is not None:
+                current_path = semantic_current.path
+            else:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO042",
+                        severity="warning",
+                        concept="Workspace Runtime path plan",
+                        path=store.db_path,
+                        field=plan.semantic_label,
+                        message="Historical path plan remains, but the current semantic binding is missing.",
+                    )
+                )
+        if current_path is None:
+            current = current_by_surface.get(plan.surface)
+            if current is not None:
+                current_path = current.path
+        if current_path is not None and str(current_path) != plan.path:
             diagnostics.append(
                 Diagnostic(
                     code="ISO042",
@@ -100,6 +128,14 @@ def _validate_path_plans(
                 )
             )
     return diagnostics
+
+
+def _agent_name_from_scope_ref(scope_ref: str | None) -> str | None:
+    if scope_ref is None:
+        return None
+    if scope_ref.startswith("agent_name:"):
+        return scope_ref.split(":", 1)[1]
+    return None
 
 
 def _validate_readiness(

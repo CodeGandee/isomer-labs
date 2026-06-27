@@ -170,6 +170,9 @@ class PathPlanRecord:
     source: str
     source_detail: str | None
     created_at: str
+    semantic_label: str | None = None
+    scope_ref: str | None = None
+    compatibility_surface: str | None = None
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
@@ -182,6 +185,12 @@ class PathPlanRecord:
         }
         if self.source_detail is not None:
             data["source_detail"] = self.source_detail
+        if self.semantic_label is not None:
+            data["semantic_label"] = self.semantic_label
+        if self.scope_ref is not None:
+            data["scope_ref"] = self.scope_ref
+        if self.compatibility_surface is not None:
+            data["compatibility_surface"] = self.compatibility_surface
         return data
 
 

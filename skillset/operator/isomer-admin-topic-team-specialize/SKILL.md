@@ -5,7 +5,7 @@ description: "Initialize and specialize Isomer Research Topics into static topic
 
 # Isomer Admin Topic Team Specialize
 
-Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, prepare topic definition material, ensure authoritative Research Topic and Topic Workspace registration through supported Isomer surfaces, optionally route independent Topic Workspace environment setup through `isomer-srv-topic-env-setup` once a runnable gate exists, adapt one Domain Agent Team Template into copied topic-specific material, prepare Agent Workspaces as durable setup state, validate static material readiness, and write a final topic-team summary. When Git-backed Agent Workspace worktrees under `repos/topic-main` or worker-facing `isomer-managed/` support paths are requested, delegate that concrete workspace topology to `isomer-admin-topic-workspace-mgr`. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
+Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, prepare topic definition material, ensure authoritative Research Topic and Topic Workspace registration through supported Isomer surfaces, optionally route independent Topic Workspace environment setup through `isomer-srv-topic-env-setup` once a runnable gate exists, adapt one Domain Agent Team Template into copied topic-specific material, prepare Agent Workspaces as durable setup state, validate static material readiness, and write a final topic-team summary. When Git-backed Agent Workspace worktrees or worker-facing support paths are requested, delegate that concrete workspace topology to `isomer-admin-topic-workspace-mgr` and require semantic label evidence for `topic.main_repo`, `agent.workspace`, and required `agent.*` support paths. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
 
 ## Workflow
 
@@ -154,7 +154,8 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `env_gate_path`: `<topic-workspace>/user-intent/src/env-gate.md` when `setup-topic-env` prepares or uses the source gate.
 - `derived_gate_path`: `<topic-workspace>/user-intent/derived/isomer-env-gate.md` when `isomer-srv-topic-env-setup` derives the operational gate.
 - `topic_environment_service_output`: summarized `isomer-srv-topic-env-setup` output, including service subcommand, mode, readiness status, commands run, changed files, and blockers when present.
-- `agent_workspace_paths`: per-agent Agent Workspace paths or blockers, including delegated Git-backed worktree paths and `agent_workspace_ref` evidence when `isomer-admin-topic-workspace-mgr` was used.
+- `semantic_paths`: delegated resolved labels, paths, path sources, and blockers for Topic Main Repository, Agent Workspace, and worker-facing support labels when workspace setup runs.
+- `agent_workspace_paths`: per-agent resolved `agent.workspace` paths or blockers, including delegated Git-backed worktree paths, semantic labels, path sources, and `agent_workspace_ref` evidence when `isomer-admin-topic-workspace-mgr` was used.
 - `isomer_managed_path_status`: delegated `isomer-managed/` tracked, agent-owned, topic-owned, and generated-link regime evidence when Git-backed Agent Workspaces are requested.
 - `topic_team_validation_status`: ready, ready-with-deferrals, blocked, or not checked for static material readiness.
 - `isomer_topic_summary_path`: the `isomer-topic-summary.md` path when finalization runs.

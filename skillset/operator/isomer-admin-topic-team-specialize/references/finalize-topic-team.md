@@ -52,9 +52,11 @@ Write `isomer-topic-summary.md` with these sections:
 ## Next Actions
 ```
 
-In `## Topic Registration`, summarize `topic_registration_status`, `registered_research_topic_ref`, `registered_topic_workspace_ref`, `registration_command_evidence`, `environment_binding_status`, and registration blockers. In `## Environment Setup`, summarize `topic_environment_status`, `env_gate_path`, `derived_gate_path`, service readiness status, setup commands, changed files, and blockers from `isomer-srv-topic-env-setup` when available. In `## Agent Workspace Layout`, distinguish worker-visible `repos/topic-main`, `repos/topic-main/isomer-managed/`, `agents/<agent-name>` worktrees, tracked material, agent-owned shares, topic-owned projections, and generated links from owner-preserved `records/*` and runtime-internal `runtime/*`.
+In `## Topic Registration`, summarize `topic_registration_status`, `registered_research_topic_ref`, `registered_topic_workspace_ref`, `registration_command_evidence`, `environment_binding_status`, and registration blockers. In `## Environment Setup`, summarize `topic_environment_status`, `env_gate_path`, `derived_gate_path`, service readiness status, setup commands, changed files, and blockers from `isomer-srv-topic-env-setup` when available. In `## Agent Workspace Layout`, report semantic labels first, including `topic.main_repo`, `topic.main_repo.isomer_managed`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.links`, then show concrete paths, path sources, Agent Names, branch plans, validation status, and blockers. Identify default paths as `isomer-default.v1` rather than implying fixed-path authority, and distinguish worker-visible surfaces from owner-preserved `topic.records.*` and runtime-internal `topic.runtime`.
 
-Do not summarize stale workspace setup evidence as ready when it names legacy support roots or top-level Topic Main Repository collaboration directories as the current standard layout.
+Include cwd-friendly guidance: an agent running inside its own Agent Workspace can query its own agent-scoped labels without passing Agent Name; cross-agent queries require explicit Agent Name, Agent Instance, handoff, Artifact, or boundary-approved share context. State that cwd inference is a path-resolution convenience, not filesystem-grade identity or access control.
+
+Do not summarize stale workspace setup evidence as ready when it names legacy support roots, top-level Topic Main Repository collaboration directories, or hard-coded default-only paths without semantic label and path-source evidence.
 
 ## Guardrails
 

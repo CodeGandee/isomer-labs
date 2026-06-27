@@ -14,11 +14,19 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 **Research Topic**: the root research problem or investigation intent that initiates work and Topic Team Specialization.
 
-**Topic Workspace**: a project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Topic Main Repository, Agent Workspaces, owner-preserved records under `records/*`, runtime support material under `runtime/`, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, and logs. Worker-visible Isomer support material inside the Topic Main Repository lives under `isomer-managed/`. Its standard directory structure is defined in [Topic Workspace Definition](topic-workspace-definition.md).
+**Topic Workspace**: a project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Topic Main Repository, Agent Workspaces, owner-preserved records under `records/*`, runtime support material under `runtime/`, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, and logs. Its path contract is expressed through semantic workspace surface labels; the default directory structure is the `isomer-default.v1` layout profile documented in [Topic Workspace Definition](topic-workspace-definition.md).
+
+**Topic Workspace Manifest**: the topic-owned `topic-workspace.toml` file at the root of a Topic Workspace. It binds semantic workspace surface labels to concrete paths or bounded agent templates for that Topic Workspace. It is not Project Config Directory state and is not a replacement for Workspace Runtime records.
+
+**Semantic Workspace Surface Label**: a stable dotted label such as `topic.main_repo`, `topic.records.artifacts`, `topic.runtime.db`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, or `agent.scratch`. Users, agents, skills, and adapters query labels through Workspace Path Resolution instead of relying on fixed directory names.
+
+**Default Layout Profile**: the built-in `isomer-default.v1` mapping from semantic labels to the standard paths shown in Topic Workspace documentation, such as `repos/topic-main`, `records/artifacts`, `runtime`, and `agents/<agent-name>`. It is a fallback and materialization profile, not the only valid Topic Workspace shape.
 
 **Workspace Runtime**: the persistent runtime substrate inside a Topic Workspace. It includes `state.sqlite`, schema version, runtime directories, refs, validation state, and support files that let Research Inquiries, Research Tasks, Runs, Artifacts, handoffs, Gates, and View Manifests be recorded, resumed, inspected, and validated.
 
 **Effective Topic Context**: the resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations consume for a topic-scoped command. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
+
+**Effective Agent Context**: the resolved process-local agent identity used for agent-scoped semantic path queries. It may come from an explicit Agent Name or Agent Instance selector, supported environment context, or cwd-derived Agent Workspace matching. It is a path-resolution convenience, not filesystem-grade identity or access control.
 
 ## Research Lifecycle
 
@@ -58,11 +66,11 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 ## Agent Workspace and Collaboration
 
-**Agent Workspace**: a per-agent work area inside a Topic Workspace for owned scratch files, local runtime state, logs, Agent Artifacts, peer-readable public shares, topic-owned projections, generated links, and the agent's normal launch cwd. The standard path is `<topic-workspace>/agents/<agent-name>`, and that directory is a Git worktree of the Topic Main Repository checked out to an agent-owned branch. Isomer-specific worker-facing support paths live under `isomer-managed/`. It uses the parent Topic Workspace Pixi environment by default and remains an advisory ownership boundary: Isomer records expected access, but does not provide filesystem-grade access control.
+**Agent Workspace**: a per-agent work area inside a Topic Workspace for owned scratch files, local runtime state, logs, Agent Artifacts, peer-readable public shares, topic-owned projections, generated links, and the agent's normal launch cwd. The semantic label is `agent.workspace`; under `isomer-default.v1` it binds to `<topic-workspace>/agents/<agent-name>`, and that directory is a Git worktree of the Topic Main Repository checked out to an agent-owned branch. Isomer-specific worker-facing support paths live under labels such as `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links`. It uses the parent Topic Workspace Pixi environment by default and remains an advisory ownership boundary: Isomer records expected access, but does not provide filesystem-grade access control.
 
 **Topic Main Repository**: the shared normal, non-bare Git repository at `<topic-workspace>/repos/topic-main` for code-bearing topic work. It is the primary cross-agent information channel through per-agent worktrees and branches. Its standard Isomer-specific worker namespace is `isomer-managed/`, split into tracked, agent-owned, topic-owned, and generated-link regimes. It is a topic-level support surface, not a Topic Workspace, Agent Workspace, or Workspace Runtime.
 
-**Agent Name**: a topic-local, path-safe name such as `alice` or `experimenter-gpu` used to name the per-agent Agent Workspace path, launch cwd, and Git branch namespace. Workspace Runtime may still record Agent Instance ids and adapter refs, but the filesystem convention is always `agents/<agent-name>`.
+**Agent Name**: a topic-local, path-safe name such as `alice` or `experimenter-gpu` used to resolve agent-scoped labels, launch cwd, and Git branch namespace. Workspace Runtime may still record Agent Instance ids and adapter refs.
 
 **Agent Workspace Worktree**: a Git worktree rooted under `<topic-workspace>/agents/<agent-name>` and checked out to an agent-owned branch such as `per-agent/<agent-name>/main`.
 

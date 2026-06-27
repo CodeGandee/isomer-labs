@@ -233,6 +233,9 @@ class IsomerCliTests(unittest.TestCase):
         current = manifest_path.read_text(encoding="utf-8")
         manifest_path.write_text(current + "\n" + textwrap.dedent(content).lstrip(), encoding="utf-8")
 
+    def default_topic_workspace(self, root: Path, topic_id: str = "default") -> Path:
+        return root / "isomer-content" / "topic-ws" / topic_id
+
     def patch_pixi(
         self,
         *,
@@ -2036,6 +2039,249 @@ class IsomerCliTests(unittest.TestCase):
             data["diagnostics"],
         )
 
+    def test_semantic_paths_get_list_and_materialize_default_side_effects(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        manifest_path = topic_workspace / "topic-workspace.toml"
+        records_artifacts = topic_workspace / "records" / "artifacts"
+
+        status, output = self.run_cli(["project", "paths", "get", "records_artifacts", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual("topic.records.artifacts", data["path"]["semantic_label"])
+        self.assertEqual("records_artifacts", data["path"]["compatibility_surface"])
+        self.assertEqual(str(records_artifacts), data["path"]["path"])
+        self.assertFalse(manifest_path.exists())
+        self.assertFalse(records_artifacts.exists())
+
+        status, output = self.run_cli(["project", "paths", "list", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        listed = {item["semantic_label"]: item for item in data["paths"]}
+        self.assertTrue(listed["topic.records.artifacts"]["resolved"])
+        self.assertFalse(listed["agent.private_artifacts"]["resolved"])
+        self.assertFalse(manifest_path.exists())
+        self.assertFalse(records_artifacts.exists())
+
+        status, output = self.run_cli(
+            ["project", "paths", "materialize-default", "--label", "agent.private_artifacts", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertIn("ISO061", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+        self.assertFalse(manifest_path.exists())
+
+        status, output = self.run_cli(
+            ["project", "paths", "materialize-default", "--label", "topic.records.artifacts", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue(manifest_path.is_file())
+        self.assertTrue(records_artifacts.is_dir())
+        self.assertIn('label = "topic.records.artifacts"', manifest_path.read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
+            ["project", "paths", "materialize-default", "--agent", "alice", "--label", "agent.private_artifacts", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue((topic_workspace / "agents" / "alice" / "isomer-managed" / "agent-owned" / "artifacts").is_dir())
+        self.assertIn('label = "agent.private_artifacts"', manifest_path.read_text(encoding="utf-8"))
+
+    def test_topic_workspace_manifest_custom_bindings_and_diagnostics(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        manifest_path = topic_workspace / "topic-workspace.toml"
+        write(
+            manifest_path,
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+            layout_profile = "isomer-default.v1"
+
+            [[bindings]]
+            label = "topic.main_repo"
+            path_template = "custom-main"
+            owner = "topic"
+            durability = "git"
+            sharing = "topic"
+            status = "active"
+
+            [[bindings]]
+            label = "agent.workspace"
+            path_template = "worktrees/{agent_name}"
+            owner = "agent"
+            durability = "durable"
+            sharing = "private"
+            status = "active"
+            """,
+        )
+
+        status, output = self.run_cli(["project", "paths", "get", "topic.main_repo", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("topic_workspace_manifest", data["path"]["source"])
+        self.assertEqual(str(topic_workspace / "custom-main"), data["path"]["path"])
+
+        status, output = self.run_cli(
+            ["project", "paths", "get", "agent.private_artifacts", "--agent", "alice", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("default_profile", data["path"]["source"])
+        self.assertEqual(
+            str(topic_workspace / "worktrees" / "alice" / "isomer-managed" / "agent-owned" / "artifacts"),
+            data["path"]["path"],
+        )
+        self.assertEqual("alice", data["path"]["agent_name"])
+
+        write(
+            manifest_path,
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.main_repo"
+            path_template = "custom-main"
+            owner = "topic"
+            durability = "git"
+            sharing = "topic"
+            status = "active"
+
+            [[bindings]]
+            label = "topic.main_repo"
+            path_template = "another-main"
+            owner = "topic"
+            durability = "git"
+            sharing = "topic"
+            status = "active"
+            """,
+        )
+        status, output = self.run_cli(["project", "paths", "get", "topic.main_repo", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO060", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        write(
+            manifest_path,
+            f"""
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.main_repo"
+            path_template = "{(root.parent / 'outside').as_posix()}"
+            owner = "topic"
+            durability = "git"
+            sharing = "topic"
+            status = "active"
+            """,
+        )
+        status, output = self.run_cli(["project", "paths", "get", "topic.main_repo", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO005", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_cwd_derived_agent_context_and_selector_conflicts(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        alice_cwd = topic_workspace / "agents" / "alice" / "nested"
+        alice_cwd.mkdir(parents=True)
+
+        status, output = self.run_cli(["project", "paths", "get", "agent.private_artifacts", "--json"], cwd=alice_cwd)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("alice", data["path"]["agent_name"])
+        self.assertEqual("cwd", data["path"]["agent_context_source"])
+        self.assertEqual(
+            str(topic_workspace / "agents" / "alice" / "isomer-managed" / "agent-owned" / "artifacts"),
+            data["path"]["path"],
+        )
+
+        status, output = self.run_cli(["project", "context", "show", "--json"], cwd=alice_cwd)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("alice", data["effective_agent_context"]["agent_name"])
+        self.assertEqual("cwd", data["effective_agent_context"]["source"])
+
+        topic_main_cwd = topic_workspace / "repos" / "topic-main" / "src"
+        topic_main_cwd.mkdir(parents=True)
+        status, output = self.run_cli(["project", "paths", "get", "agent.private_artifacts", "--json"], cwd=topic_main_cwd)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO061", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        bob_cwd = topic_workspace / "agents" / "bob"
+        bob_cwd.mkdir(parents=True)
+        status, output = self.run_cli(
+            ["project", "paths", "get", "agent.workspace", "--json"],
+            cwd=bob_cwd,
+            env={"ISOMER_AGENT_NAME": "alice"},
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(any("conflicts" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+
+        status, output = self.run_cli(["project", "paths", "get", "agent.workspace", "--agent", "alice", "--json"], cwd=bob_cwd)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("alice", data["path"]["agent_name"])
+        self.assertEqual("explicit selector", data["path"]["agent_context_source"])
+
+        write(
+            topic_workspace / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "agent.workspace"
+            path_template = "worktrees/{agent_name}/nested/{agent_name}"
+            owner = "agent"
+            durability = "durable"
+            sharing = "private"
+            status = "active"
+            """,
+        )
+        carol_cwd = topic_workspace / "agents" / "carol"
+        carol_cwd.mkdir(parents=True)
+        status, output = self.run_cli(["project", "paths", "get", "agent.workspace", "--json"], cwd=carol_cwd)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(
+            any("exactly one {agent_name}" in diagnostic["message"] for diagnostic in data["diagnostics"]),
+            data["diagnostics"],
+        )
+
+        two_topic_root = self.make_root()
+        self.make_two_topic_project(two_topic_root)
+        beta_cwd = two_topic_root / "topic-workspaces" / "beta" / "agents" / "bob"
+        beta_cwd.mkdir(parents=True)
+        status, output = self.run_cli(["project", "paths", "get", "agent.workspace", "--topic", "alpha", "--json"], cwd=beta_cwd)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(
+            any("another Research Topic" in diagnostic["message"] for diagnostic in data["diagnostics"]),
+            data["diagnostics"],
+        )
+
     def test_paths_preview_derives_topic_workspace_base_from_manifest_content_root(self) -> None:
         root = self.make_root()
         write(
@@ -2162,6 +2408,96 @@ class IsomerCliTests(unittest.TestCase):
         self.assertFalse((runtime_root / ".pixi").exists())
         self.assertFalse(any("houmao" in path.name for path in runtime_root.rglob("*")))
 
+    def test_runtime_path_plans_include_semantics_and_manifest_drift_is_diagnostic(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+
+        status, output = self.run_cli(["project", "runtime", "init", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        plans = {plan["semantic_label"]: plan for plan in data["runtime"]["path_plans"] if "semantic_label" in plan}
+        self.assertEqual("default_profile", plans["topic.runtime.db"]["source"])
+        self.assertEqual("topic_workspace:default", plans["topic.records.artifacts"]["scope_ref"])
+        self.assertEqual("records_artifacts", plans["topic.records.artifacts"]["compatibility_surface"])
+        original_artifact_path = plans["topic.records.artifacts"]["path"]
+
+        status, output = self.run_cli(["project", "runtime", "inspect", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        inspected_plans = {plan["semantic_label"]: plan for plan in data["runtime"]["path_plans"] if "semantic_label" in plan}
+        self.assertEqual(original_artifact_path, inspected_plans["topic.records.artifacts"]["path"])
+
+        write(
+            topic_workspace / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.records.artifacts"
+            path_template = "records/v2-artifacts"
+            owner = "topic"
+            durability = "durable"
+            sharing = "topic"
+            status = "active"
+            """,
+        )
+        status, output = self.run_cli(["project", "runtime", "validate", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(
+            any("Stored path plan differs from current Workspace Path Resolution output." == diagnostic["message"] for diagnostic in data["diagnostics"]),
+            data["diagnostics"],
+        )
+        status, output = self.run_cli(["project", "runtime", "inspect", "--json"], cwd=root)
+        data = json.loads(output)
+        inspected_plans = {plan["semantic_label"]: plan for plan in data["runtime"]["path_plans"] if "semantic_label" in plan}
+        self.assertEqual(original_artifact_path, inspected_plans["topic.records.artifacts"]["path"])
+
+    def test_runtime_path_plan_lookup_uses_manifest_runtime_db_binding(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        write(
+            topic_workspace / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.runtime.db"
+            path_template = "runtime/custom-state.sqlite"
+            owner = "runtime"
+            durability = "durable"
+            sharing = "runtime"
+            status = "active"
+            """,
+        )
+
+        status, output = self.run_cli(["project", "runtime", "init", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        custom_db = topic_workspace / "runtime" / "custom-state.sqlite"
+        self.assertTrue(custom_db.is_file())
+        self.assertFalse((topic_workspace / "state.sqlite").exists())
+        plans = {plan["semantic_label"]: plan for plan in data["runtime"]["path_plans"] if "semantic_label" in plan}
+        self.assertEqual(str(custom_db), plans["topic.runtime.db"]["path"])
+        self.assertEqual("topic_workspace_manifest", plans["topic.runtime.db"]["source"])
+
+        status, output = self.run_cli(["project", "runtime", "inspect", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        inspected_plans = {plan["semantic_label"]: plan for plan in data["runtime"]["path_plans"] if "semantic_label" in plan}
+        self.assertEqual(str(custom_db), inspected_plans["topic.runtime.db"]["path"])
+
+        status, output = self.run_cli(["project", "paths", "get", "topic.records.artifacts", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("path_plan", data["path"]["source"])
+
     def test_runtime_prepare_requires_initialized_runtime_and_records_repair_boundary(self) -> None:
         root = self.make_root()
         self.init_project(root)
@@ -2188,6 +2524,72 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("failed", data["runtime"]["latest_readiness"]["status"])
+
+    def test_agent_team_instance_creation_uses_manifest_agent_workspace_template(self) -> None:
+        root = self.make_root()
+        self.make_deepsci_profile_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main",), lockfile=True)
+        self.add_topic_pixi_binding(root, "alpha", "alpha-main")
+        write(
+            root / "topic-workspaces" / "alpha" / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "alpha"
+            topic_workspace_id = "alpha"
+
+            [[bindings]]
+            label = "agent.workspace"
+            path_template = "worktrees/{agent_name}"
+            owner = "agent"
+            durability = "durable"
+            sharing = "private"
+            status = "active"
+            """,
+        )
+        for command in (
+            ["project", "runtime", "init", "--topic", "alpha", "--json"],
+            ["project", "runtime", "prepare", "--topic", "alpha", "--json"],
+        ):
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "team-instances",
+                "create",
+                "--topic",
+                "alpha",
+                "--topic-agent-team-profile",
+                "uc-01-alpha",
+                "--id",
+                "ati-alpha-custom-worktrees",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        creation = data["creation"]
+        master_workspace = next(workspace for workspace in creation["agent_workspaces"] if workspace["agent_name"] == "deepsci-org-master")
+        self.assertTrue(master_workspace["support_root_path"].endswith("topic-workspaces/alpha/worktrees/deepsci-org-master/isomer-managed"))
+        master_workspace_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == "agent_workspace:deepsci-org-master")
+        self.assertEqual(
+            str((root / "topic-workspaces" / "alpha" / "worktrees" / "deepsci-org-master").resolve()),
+            master_workspace_plan["path"],
+        )
+        self.assertEqual("agent.workspace", master_workspace_plan["semantic_label"])
+        self.assertIn("semantic_source=topic_workspace_manifest", master_workspace_plan["source_detail"])
+        self.assertTrue((root / "topic-workspaces" / "alpha" / "worktrees" / "deepsci-org-master" / "isomer-managed" / "links").is_dir())
+
+        status, output = self.run_cli(
+            ["project", "paths", "get", "agent.workspace", "--topic", "alpha", "--agent", "deepsci-org-master", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("path_plan", data["path"]["source"])
+        self.assertEqual(master_workspace_plan["path"], data["path"]["path"])
 
     def test_topics_workspaces_and_schemas_list_use_declared_sources(self) -> None:
         root = self.make_root()

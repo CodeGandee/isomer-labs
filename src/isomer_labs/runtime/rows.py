@@ -33,6 +33,7 @@ from isomer_labs.runtime.serialization import (
 
 
 def _row_to_path_plan(row: sqlite3.Row) -> PathPlanRecord:
+    keys = set(row.keys())
     return PathPlanRecord(
         id=row["id"],
         topic_workspace_id=row["topic_workspace_id"],
@@ -41,6 +42,9 @@ def _row_to_path_plan(row: sqlite3.Row) -> PathPlanRecord:
         source=row["source"],
         source_detail=row["source_detail"],
         created_at=row["created_at"],
+        semantic_label=row["semantic_label"] if "semantic_label" in keys else None,
+        scope_ref=row["scope_ref"] if "scope_ref" in keys else None,
+        compatibility_surface=row["compatibility_surface"] if "compatibility_surface" in keys else None,
     )
 
 

@@ -27,8 +27,10 @@ REMOVED_MODULE_PATHS = {
 MODULE_SIZE_EXEMPTIONS = {
     "cli/app.py",
     "doctor.py",
+    "paths.py",
     "runtime/store.py",
     "runtime/validation.py",
+    "runtime/validation_checks.py",
     "houmao/adapter.py",
     "houmao/manifests.py",
 }

@@ -1,6 +1,6 @@
 # Topic Workspace Definition
 
-This page defines the standard Topic Workspace and Agent Workspace filesystem structure. It is the canonical documentation page for directory meanings, expected ownership, per-agent Git worktrees, launch working directories, and topic-owned collaboration channels.
+This page defines the Topic Workspace path contract by semantic workspace surface labels first and by the standard filesystem layout second. The default directories shown here are the built-in `isomer-default.v1` layout profile, not the only valid structure.
 
 ## Scope
 
@@ -19,9 +19,19 @@ Fresh Projects usually place Topic Workspaces under `isomer-content/topic-ws/<to
 
 Isomer must not infer managed Topic Workspaces by scanning directories. A directory becomes a Topic Workspace only when the Project Manifest declares it.
 
+## Topic Workspace Manifest and Semantic Labels
+
+Each Topic Workspace may contain a topic-owned Topic Workspace Manifest at `<topic-workspace>/topic-workspace.toml`. The manifest binds semantic workspace surface labels such as `topic.main_repo`, `topic.records.artifacts`, `topic.runtime.db`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch` to concrete paths or agent path templates inside the selected Topic Workspace.
+
+The Project Manifest remains the outer discovery authority for Research Topics and Topic Workspaces. It does not carry a per-topic manifest path override. The Topic Workspace Manifest is topic-owned configuration and must not be stored inside `.isomer-labs/`.
+
+A missing Topic Workspace Manifest is valid for read-only resolution. In that case, Workspace Path Resolution synthesizes effective bindings from `isomer-default.v1` without creating files. Materializing default paths is explicit: use `isomer-cli project paths materialize-default` to write or update `topic-workspace.toml` and create selected default-owned directories.
+
+Semantic labels are the public contract. Existing snake-case surfaces such as `records_artifacts`, `topic_main_repo`, and `agent_workspace:<agent-name>` remain compatibility identifiers for path plans and older callers.
+
 ## Standard Layout
 
-The standard Topic Workspace layout is:
+The `isomer-default.v1` Topic Workspace layout is:
 
 ```text
 <topic-workspace>/                         # Project Manifest-declared root for one Research Topic
@@ -171,7 +181,7 @@ The Topic Workspace must not contain a workspace-local `teams/` directory. Domai
 
 ## Agent Workspace Roots
 
-An Agent Workspace is a per-agent work area inside a Topic Workspace. The standard Agent Workspace path is:
+An Agent Workspace is a per-agent work area inside a Topic Workspace. The `isomer-default.v1` Agent Workspace binding is:
 
 ```text
 <topic-workspace>/agents/<agent-name>
@@ -183,9 +193,9 @@ The cwd convention is not filesystem-grade isolation. An agent with broad system
 
 ## Agent Name
 
-An Agent name is a topic-local, path-safe name used to identify the per-agent worktree path, launch cwd, and Git branch namespace. Examples include `alice`, `scout-a`, and `experimenter-gpu`.
+An Agent name is a topic-local, path-safe name used to resolve `agent.*` labels, launch cwd, and Git branch namespace. Examples include `alice`, `scout-a`, and `experimenter-gpu`.
 
-An Agent name is not a substitute for every runtime ref. Workspace Runtime may still record Agent Instance ids, Agent Role ids, Agent Profile refs, Agent Team Instance ids, and adapter refs. The filesystem convention is simpler: the per-agent working directory is always `agents/<agent-name>`.
+An Agent name is not a substitute for every runtime ref. Workspace Runtime may still record Agent Instance ids, Agent Role ids, Agent Profile refs, Agent Team Instance ids, and adapter refs. The default filesystem convention maps `agent.workspace` to `agents/<agent-name>`, but a Topic Workspace Manifest may bind that label to another safe project-local template such as `worktrees/{agent_name}`.
 
 Agent names should be normalized to safe lowercase path segments. Empty segments, `..`, leading or trailing slash, path separators, normalized collisions, and unsafe Git ref suffixes such as `.lock` are blockers.
 
@@ -260,20 +270,42 @@ The standard Agent Workspace support layout inside each worktree is:
       topic/
 ```
 
-| Path | Meaning | Notes |
-|---|---|---|
-| `README.md` | Human-readable Workspace Boundary note | Declares ownership, expected writes, Peer Read Access, branch expectations, and safe integration notes. |
-| `boundary.toml` | Machine-readable Workspace Boundary declaration | Optional until a later accepted schema makes it required. |
-| `isomer-managed/tracked/` | Git-tracked Isomer material | Small Isomer-specific coordination material intended for normal branch exchange. |
-| `isomer-managed/agent-owned/runtime/` | Agent Runtime state | Prompt records, tool traces, recovery files, and agent-local execution support. |
-| `isomer-managed/agent-owned/artifacts/` | Agent Artifacts | Files produced, curated, or owned by the agent before promotion to topic records or Git-shared outputs. |
-| `isomer-managed/agent-owned/scratch/` | Local scratch | Drafts and temporary work that are not durable research state unless promoted or referenced. |
-| `isomer-managed/agent-owned/logs/` | Agent-local logs | Diagnostics and local logs for the agent. |
-| `isomer-managed/agent-owned/public/` | Peer-readable owner share | Large or temporary files that peer agents may inspect before Git commit or promotion; peer writes are diagnostics unless boundary policy grants them. |
-| `isomer-managed/agent-owned/inbox/` | Policy-controlled peer write area | Optional write surface that must name allowed writers, file naming, cleanup, and promotion policy in boundary material. |
-| `isomer-managed/topic-owned/readonly/` | Read-only topic projection | Worker-visible projection of topic-owned non-Git material for reads only. |
-| `isomer-managed/topic-owned/writable/` | Writable topic projection | Worker-visible projection for shared writes only when boundary policy grants it; structured updates should prefer topic-owned Pixi tasks. |
-| `isomer-managed/links/` | Generated links | Optional advisory links to peer public shares or topic projections, not hard access-control boundaries. |
+- `README.md`
+  - Meaning: human-readable Workspace Boundary note.
+  - Notes: Declares ownership, expected writes, Peer Read Access, branch expectations, and safe integration notes.
+- `boundary.toml`
+  - Meaning: machine-readable Workspace Boundary declaration.
+  - Notes: Optional until a later accepted schema makes it required.
+- `isomer-managed/tracked/`
+  - Meaning: Git-tracked Isomer material.
+  - Notes: Small Isomer-specific coordination material intended for normal branch exchange.
+- `isomer-managed/agent-owned/runtime/`
+  - Meaning: Agent Runtime state.
+  - Notes: Prompt records, tool traces, recovery files, and agent-local execution support.
+- `isomer-managed/agent-owned/artifacts/`
+  - Meaning: Agent Artifacts.
+  - Notes: Files produced, curated, or owned by the agent before promotion to topic records or Git-shared outputs.
+- `isomer-managed/agent-owned/scratch/`
+  - Meaning: local scratch.
+  - Notes: Drafts and temporary work that are not durable research state unless promoted or referenced.
+- `isomer-managed/agent-owned/logs/`
+  - Meaning: agent-local logs.
+  - Notes: Diagnostics and local logs for the agent.
+- `isomer-managed/agent-owned/public/`
+  - Meaning: peer-readable owner share.
+  - Notes: Large or temporary files that peer agents may inspect before Git commit or promotion; peer writes are diagnostics unless boundary policy grants them.
+- `isomer-managed/agent-owned/inbox/`
+  - Meaning: policy-controlled peer write area.
+  - Notes: Optional write surface that must name allowed writers, file naming, cleanup, and promotion policy in boundary material.
+- `isomer-managed/topic-owned/readonly/`
+  - Meaning: read-only topic projection.
+  - Notes: Worker-visible projection of topic-owned non-Git material for reads only.
+- `isomer-managed/topic-owned/writable/`
+  - Meaning: writable topic projection.
+  - Notes: Worker-visible projection for shared writes only when boundary policy grants it; structured updates should prefer topic-owned Pixi tasks.
+- `isomer-managed/links/`
+  - Meaning: generated links.
+  - Notes: Optional advisory links to peer public shares or topic projections, not hard access-control boundaries.
 
 Projects should decide through boundary material and repository policy which support paths are tracked, ignored, symlinked, or promoted. Scratch files and generated logs should not be treated as durable research state merely because they live under a worktree.
 
@@ -293,9 +325,13 @@ If validation detects peer writes without an explicit repair, migration, cleanup
 
 ## Path Resolution
 
-Commands should resolve Topic Workspace and Agent Workspace paths through Workspace Path Resolution rather than assembling paths ad hoc. The resolver uses recorded workspace plans first, then supported `ISOMER_*` environment variables exported by an Execution Adapter, then Project Manifest defaults, then built-in defaults.
+Commands should resolve Topic Workspace and Agent Workspace paths through Workspace Path Resolution rather than assembling paths ad hoc. The resolver uses recorded path plans first, then supported `ISOMER_*` environment variables exported by an Execution Adapter, then Topic Workspace Manifest bindings, then Project Manifest defaults where applicable, then `isomer-default.v1`.
 
-For Agent Workspaces, Agent Team Instance creation should record an Agent Workspace Path Plan for `<topic-workspace>/agents/<agent-name>` and launch the agent with that path as cwd.
+Use `isomer-cli project paths get <semantic-label>` for one path answer and `isomer-cli project paths list` to inspect known labels. These commands and `project paths preview` are read-only. Use `project paths materialize-default` only when you intend to write or update `topic-workspace.toml` and create selected default directories.
+
+For Agent Workspaces, Agent Team Instance creation records an Agent Workspace Path Plan for `agent.workspace` and support path plans for labels such as `agent.isomer_managed`, `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links`. An agent running inside its own Agent Workspace can query agent-scoped labels without passing an Agent Name because cwd-derived Effective Agent Context can identify the owning workspace. Cross-agent queries still require an explicit Agent Name or Agent Instance selector. Cwd inference is a convenience for path resolution, not filesystem-grade identity or access control.
+
+The planned local `tmp/` surfaces should be introduced as semantic labels such as `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`. Their default bindings may use `tmp/` directories, but the contract is label-based: local, ignored, disposable, not shared, and not durable evidence unless explicitly promoted.
 
 ## Durability
 

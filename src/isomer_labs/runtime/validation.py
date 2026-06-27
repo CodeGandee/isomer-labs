@@ -34,6 +34,7 @@ class RuntimeInspection:
     counts: dict[str, int]
     latest_readiness: dict[str, object] | None
     agent_team_instances: list[dict[str, object]]
+    path_plans: list[dict[str, object]]
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -43,6 +44,7 @@ class RuntimeInspection:
             "counts": self.counts,
             "latest_readiness": self.latest_readiness,
             "agent_team_instances": self.agent_team_instances,
+            "path_plans": self.path_plans,
         }
 
 
@@ -58,7 +60,7 @@ def inspect_workspace_runtime(
     store, open_diagnostics = open_workspace_runtime(context, env=env, read_only=True)
     diagnostics.extend(open_diagnostics)
     if store is None:
-        return RuntimeInspection(False, runtime_path, None, {}, None, []), diagnostics
+        return RuntimeInspection(False, runtime_path, None, {}, None, [], []), diagnostics
     latest_readiness = store.latest_readiness()
     inspection = RuntimeInspection(
         exists=True,
@@ -69,6 +71,7 @@ def inspect_workspace_runtime(
         agent_team_instances=[
             record.to_json() for record in store.list_agent_team_instances()
         ],
+        path_plans=[record.to_json() for record in store.list_path_plans()],
     )
     store.close()
     return inspection, diagnostics

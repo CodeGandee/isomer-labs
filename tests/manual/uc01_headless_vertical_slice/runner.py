@@ -595,6 +595,7 @@ def _write_uc01_records(
             profile,
             template,
             requested_id=existing_team_id,
+            env=os.environ,
         )
         if create_diagnostics:
             raise ValueError("; ".join(diagnostic.message for diagnostic in create_diagnostics))

@@ -28,6 +28,14 @@ The current implementation exposes behavior primarily through `isomer-cli`. The 
 
 Workspace Runtime, adapter manifests, command payloads, and research Artifacts are stored as files inside the Project tree. There is no external database or remote service required for normal operation.
 
+### Workspace path contracts are semantic labels
+
+Topic-internal paths are resolved through semantic workspace surface labels and the Topic Workspace Manifest, not by assuming fixed directory names. The built-in `isomer-default.v1` layout remains the default profile for fresh topics and explicit materialization. Read-only commands such as `project paths get`, `project paths list`, and `project paths preview` must not create manifests, directories, repositories, or runtime records.
+
+### Local tmp surfaces are downstream labels
+
+Planned local `tmp/` surfaces should be introduced as labels such as `topic.tmp`, `topic.main_repo.tmp`, and `agent.tmp`. Their default bindings may be `tmp/` directories, but their semantics remain local, ignored, disposable, not shared, and not durable evidence unless promoted or recorded by another accepted contract.
+
 ## Non-goals
 
 The documentation rewrite does not change runtime CLI behavior, Workspace Runtime schema behavior, or Houmao adapter behavior.
@@ -55,6 +63,7 @@ The platform intentionally does not:
 - Topic Environment Readiness recording.
 - Read-only Workspace Runtime inspection and validation.
 - Agent Team Instance record creation with Agent Instance records, Agent Workspace records, and directory materialization.
+- Topic Workspace Manifest-backed semantic path resolution through `project paths get`, `project paths list`, `project paths preview`, and explicit `project paths materialize-default`.
 - Isomer-managed Agent Workspace support paths under `isomer-managed/`, including tracked material, agent-owned support, topic-owned projections, and generated-link diagnostics.
 - Houmao adapter quick launch, prepare-only materialization, inspect-live, stop, reconcile, and adopt.
 - Houmao adapter JSON manifests (`adapter-link.json`, `launch-material-manifest.json`, `adapter-runtime-manifest.json`), command payload recording, manifest digest tracking, and material drift detection.

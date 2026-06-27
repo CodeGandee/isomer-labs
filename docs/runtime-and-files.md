@@ -18,16 +18,18 @@ Successful Project initialization also creates the Isomer-managed Houmao overlay
 
 ## Topic Workspace Structure Reference
 
-A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `isomer-content/topic-ws/<topic-workspace-id>/` for fresh Projects or `<content-dir>/topic-ws/<topic-workspace-id>/` when init selected a custom content root. It is a Pixi workspace by default, and its structure is standardized in [Topic Workspace Definition](topic-workspace-definition.md).
+A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `isomer-content/topic-ws/<topic-workspace-id>/` for fresh Projects or `<content-dir>/topic-ws/<topic-workspace-id>/` when init selected a custom content root. It is a Pixi workspace by default, and its semantic label contract and `isomer-default.v1` default layout are standardized in [Topic Workspace Definition](topic-workspace-definition.md).
 
-Runtime-facing pages should refer to Topic Workspace surfaces by semantic name, such as Workspace Runtime database, Topic Agent Team Profile Bundle, Topic Main Repository, Agent Workspace root, owner-preserved Run record directory, or adapter material root. Commands should record path plans for durable surfaces before downstream work depends on them.
+Runtime-facing pages should refer to Topic Workspace surfaces by semantic label, such as `topic.runtime.db`, `topic.team_profile_bundle`, `topic.main_repo`, `agent.workspace`, `topic.records.runs`, or adapter material labels when accepted. Commands should record path plans for durable surfaces before downstream work depends on them.
+
+The Topic Workspace Manifest lives at `<topic-workspace>/topic-workspace.toml`. It is topic-owned configuration for semantic bindings and is not Project Config Directory state. If it is missing, read-only path resolution may synthesize bindings from `isomer-default.v1` without creating files.
 
 ## Workspace Runtime Records
 
 Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 
 - `WorkspaceRuntimeMetadata` — schema version, Project root, Project Manifest path, Research Topic id, Topic Workspace id, Topic Workspace path, timestamps, and provenance refs.
-- `PathPlanRecord` — id, Topic Workspace id, surface, path, source, source detail, and created timestamp.
+- `PathPlanRecord` — id, Topic Workspace id, compatibility surface id, semantic label, scope ref, path, source, source detail, and created timestamp.
 - `TopicEnvironmentReadinessRecord` — readiness status, Topic Workspace Pixi manifest refs, selected Pixi environment refs, optional Project-root Pixi environment refs for platform or shared tooling use, diagnostics, checked timestamp, actor ref, and optional repair Service Request hint.
 - `AgentTeamInstanceRecord` — id, Research Topic id, Topic Workspace id, Topic Agent Team Profile ref, Domain Agent Team Template id, status, agent instance ids, agent workspace ids, run ids, workflow stage cursor ids, blocker refs, handoff ids, and provenance refs.
 - `AgentInstanceRecord` — id, Agent Team Instance id, Agent Role id, Research Topic id, Topic Workspace id, Agent Profile ref, status, and provenance refs.
@@ -49,13 +51,13 @@ Workspace Runtime stores records in `state.sqlite`. Major record kinds include:
 
 ## Path Plans
 
-Path Plan records map a named surface to a concrete filesystem path. Surfaces include `isomer_content_root`, `topic_workspace_base`, `workspace_runtime_db`, `repos`, `topic_main_repo`, `topic_main_isomer_managed`, `topic_main_tracked`, `topic_main_tracked_shared`, `topic_main_tracked_artifacts`, `topic_main_tracked_tasks`, `topic_main_tracked_runs`, `topic_main_tracked_views`, `topic_main_tracked_tools`, `topic_main_tracked_boundaries`, `topic_main_tracked_manifests`, `agents`, `records`, `records_artifacts`, `records_tasks`, `records_runs`, `records_views`, `records_logs`, `runtime`, per-agent surfaces such as `agent_workspace:<agent-name>` and `agent_isomer_managed:<agent-name>`, agent support surfaces such as `agent_owned`, `agent_runtime`, `agent_artifacts`, `agent_scratch`, `agent_logs`, `agent_public_share`, `agent_inbox`, `agent_topic_readonly`, `agent_topic_writable`, and `agent_links`, and adapter-specific surfaces such as `adapter_manifest:houmao:<agent-team-instance-id>:<kind>`. Legacy `artifacts`, `tasks`, `runs`, `views`, and `logs` surface names should be treated as compatibility aliases for owner-preserved `records/*` surfaces rather than worker-visible root directories.
+Path Plan records map a semantic label and scope to a concrete filesystem path. Public labels include `topic.runtime.db`, `topic.records`, `topic.records.artifacts`, `topic.records.tasks`, `topic.records.runs`, `topic.records.views`, `topic.records.logs`, `topic.main_repo`, `topic.agents_root`, `agent.workspace`, `agent.isomer_managed`, `agent.private_artifacts`, `agent.runtime`, `agent.scratch`, `agent.public_share`, and `agent.links`. Compatibility surfaces such as `workspace_runtime_db`, `records_artifacts`, `agent_workspace:<agent-name>`, and `agent_isomer_managed:<agent-name>` remain stored for older callers and migration output.
 
-Commands use Path Plan records to locate durable files without recomputing layout from configuration. `isomer-cli project paths preview` prints the path plan without creating files.
+Commands use Path Plan records to locate durable files without recomputing layout from the latest manifest. When a Topic Workspace Manifest changes after runtime records depend on older paths, validation reports drift and preserves historical path plans. `isomer-cli project paths get`, `project paths list`, and `project paths preview` are read-only. `project paths materialize-default` is the explicit mutating command for selected default bindings and directories.
 
 ## Agent Workspaces
 
-Agent Workspace structure, agent-owned Git worktrees, per-agent branch namespaces, launch cwd behavior, `isomer-managed/` tracked material, agent-owned untracked material, topic-owned projections, generated links, topic-owned Pixi task channels, environment inheritance, and Workspace Boundary meanings are standardized in [Topic Workspace Definition](topic-workspace-definition.md). Runtime records should create Agent Workspace path plans under `<topic-workspace>/agents/<agent-name>` and `isomer-managed/` support path plans under `<topic-workspace>/agents/<agent-name>/isomer-managed/` while preserving Agent Instance ids and adapter refs as runtime records.
+Agent Workspace structure, agent-owned Git worktrees, per-agent branch namespaces, launch cwd behavior, `isomer-managed/` tracked material, agent-owned untracked material, topic-owned projections, generated links, topic-owned Pixi task channels, environment inheritance, and Workspace Boundary meanings are standardized in [Topic Workspace Definition](topic-workspace-definition.md). Runtime records create Agent Workspace path plans by resolving `agent.workspace` and support labels such as `agent.private_artifacts`, `agent.runtime`, and `agent.links`; under `isomer-default.v1` those paths live under `<topic-workspace>/agents/<agent-name>/`, but safe manifest bindings may use another project-local template.
 
 ## Adapter Material and Manifests
 
