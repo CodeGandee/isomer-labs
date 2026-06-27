@@ -16,7 +16,18 @@ from isomer_labs.runtime.adapter_handoffs import (
 
 
 WORKSPACE_RUNTIME_SCHEMA_VERSION = "isomer-workspace-runtime.v1"
-RUNTIME_DIRECTORIES = ("artifacts", "agents", "tasks", "runs", "views", "logs")
+RUNTIME_DIRECTORIES = (
+    "repos",
+    "topic_main_repo",
+    "agents",
+    "records",
+    "records_artifacts",
+    "records_tasks",
+    "records_runs",
+    "records_views",
+    "records_logs",
+    "runtime",
+)
 RUNTIME_PATH_SURFACES = ("workspace_runtime_db", *RUNTIME_DIRECTORIES)
 
 READINESS_STATUSES = ("ready", "failed", "blocked", "stale", "superseded")
@@ -315,10 +326,15 @@ class AgentWorkspaceRecord:
     status: str
     created_at: str
     updated_at: str
+    agent_name: str | None = None
+    expected_repo_ref: str | None = None
+    expected_branch_namespace: str | None = None
+    current_branch: str | None = None
+    support_root_path: str | None = None
     provenance_refs: list[str] = field(default_factory=list)
 
     def to_json(self) -> dict[str, object]:
-        return {
+        data: dict[str, object] = {
             "id": self.id,
             "agent_instance_id": self.agent_instance_id,
             "topic_workspace_id": self.topic_workspace_id,
@@ -328,6 +344,16 @@ class AgentWorkspaceRecord:
             "updated_at": self.updated_at,
             "provenance_refs": self.provenance_refs,
         }
+        for key, value in (
+            ("agent_name", self.agent_name),
+            ("expected_repo_ref", self.expected_repo_ref),
+            ("expected_branch_namespace", self.expected_branch_namespace),
+            ("current_branch", self.current_branch),
+            ("support_root_path", self.support_root_path),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
 
 
 @dataclass(frozen=True)

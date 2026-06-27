@@ -19,7 +19,9 @@ active = true
 agent_profile_ref = "agent-profile:novel-biomarker:master"
 capability_binding_ref = "capability-binding:novel-biomarker:master"
 skill_binding_projection_ref = "skill-projection:novel-biomarker:master"
-agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-master"
+agent_name = "deepsci-org-master"
+agent_branch = "per-agent/deepsci-org-master/main"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-master"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
 optional_skills = ["isomer-rsch-review"]
 
@@ -29,7 +31,9 @@ active = true
 agent_profile_ref = "agent-profile:novel-biomarker:framer"
 capability_binding_ref = "capability-binding:novel-biomarker:framer"
 skill_binding_projection_ref = "skill-projection:novel-biomarker:framer"
-agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-framer"
+agent_name = "deepsci-org-framer"
+agent_branch = "per-agent/deepsci-org-framer/main"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-framer"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]
 optional_skills = ["isomer-rsch-science"]
 
@@ -39,7 +43,9 @@ active = true
 agent_profile_ref = "agent-profile:novel-biomarker:designer"
 capability_binding_ref = "capability-binding:novel-biomarker:designer"
 skill_binding_projection_ref = "skill-projection:novel-biomarker:designer"
-agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-designer"
+agent_name = "deepsci-org-designer"
+agent_branch = "per-agent/deepsci-org-designer/main"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-designer"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"]
 optional_skills = ["isomer-rsch-scout"]
 
@@ -49,7 +55,9 @@ active = true
 agent_profile_ref = "agent-profile:novel-biomarker:experimenter"
 capability_binding_ref = "capability-binding:novel-biomarker:experimenter"
 skill_binding_projection_ref = "skill-projection:novel-biomarker:experimenter"
-agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-experimenter"
+agent_name = "deepsci-org-experimenter"
+agent_branch = "per-agent/deepsci-org-experimenter/main"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-experimenter"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"]
 optional_skills = ["isomer-rsch-analysis"]
 
@@ -59,7 +67,9 @@ active = true
 agent_profile_ref = "agent-profile:novel-biomarker:analyzer"
 capability_binding_ref = "capability-binding:novel-biomarker:analyzer"
 skill_binding_projection_ref = "skill-projection:novel-biomarker:analyzer"
-agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-analyzer"
+agent_name = "deepsci-org-analyzer"
+agent_branch = "per-agent/deepsci-org-analyzer/main"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-analyzer"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"]
 optional_skills = ["isomer-rsch-paper-plot"]
 
@@ -69,7 +79,9 @@ active = true
 agent_profile_ref = "agent-profile:novel-biomarker:publisher"
 capability_binding_ref = "capability-binding:novel-biomarker:publisher"
 skill_binding_projection_ref = "skill-projection:novel-biomarker:publisher"
-agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-publisher"
+agent_name = "deepsci-org-publisher"
+agent_branch = "per-agent/deepsci-org-publisher/main"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-publisher"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
 optional_skills = ["nature-polishing"]
 
@@ -79,7 +91,9 @@ active = true
 agent_profile_ref = "agent-profile:novel-biomarker:reviewer"
 capability_binding_ref = "capability-binding:novel-biomarker:reviewer"
 skill_binding_projection_ref = "skill-projection:novel-biomarker:reviewer"
-agent_workspace_ref = "topic-workspaces/novel-biomarker/agent-workspaces/uc-01-novel-biomarker/deepsci-org-reviewer"
+agent_name = "deepsci-org-reviewer"
+agent_branch = "per-agent/deepsci-org-reviewer/main"
+agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-reviewer"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"]
 optional_skills = ["isomer-rsch-scout"]
 

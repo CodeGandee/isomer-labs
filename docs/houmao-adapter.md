@@ -52,6 +52,10 @@ Generated files live under `runtime/adapters/houmao/<agent-team-instance-id>/` i
 
 The adapter records path plans for the adapter root, launch material, per-Agent Instance material, command payloads, logs, inspection snapshots, stop outcomes, handoff payloads, handoff observations, handoff normalizations, and the generated Houmao project overlay. These files are durable runtime records, not cache.
 
+When the adapter prepares or launches a Houmao managed agent, it uses the recorded topic-local `agent_name` as the Houmao launch name and uses the recorded Agent Workspace path plan as `--workdir`. Missing `agent_name` or Agent Workspace path-plan metadata is a launch-facing error, not a fallback to the Topic Workspace root.
+
+Adapter-generated payloads, logs, snapshots, and reconciliation files are not worker-visible by default. If an operator wants an adapter output to become shared collaboration material, they must publish a curated copy through `repos/topic-main` or preserve it under `records/*` with explicit provenance.
+
 ## Manual Handoff Round
 
 Handoff commands are a generic Isomer CLI surface backed here by Houmao. Use `--print-json` at the root when scripts need deterministic JSON; without it, the commands print structured human-readable status lines. The handoff commands do not expose command-local `--json` or `--format json` flags.

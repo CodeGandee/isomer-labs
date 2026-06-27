@@ -149,6 +149,11 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             agent_instance_id TEXT NOT NULL,
             topic_workspace_id TEXT NOT NULL,
             path_plan_id TEXT NOT NULL,
+            agent_name TEXT,
+            expected_repo_ref TEXT,
+            expected_branch_namespace TEXT,
+            current_branch TEXT,
+            support_root_path TEXT,
             status TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
@@ -393,6 +398,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
         """
     )
     _ensure_agent_team_instance_provenance_columns(connection)
+    _ensure_agent_workspace_metadata_columns(connection)
 
 
 def _ensure_agent_team_instance_provenance_columns(connection: sqlite3.Connection) -> None:
@@ -411,6 +417,23 @@ def _ensure_agent_team_instance_provenance_columns(connection: sqlite3.Connectio
     for column, declaration in additions.items():
         if column not in columns:
             connection.execute(f"ALTER TABLE agent_team_instances ADD COLUMN {column} {declaration}")
+
+
+def _ensure_agent_workspace_metadata_columns(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] if isinstance(row, sqlite3.Row) else row[1]
+        for row in connection.execute("PRAGMA table_info(agent_workspaces)")
+    }
+    additions = {
+        "agent_name": "TEXT",
+        "expected_repo_ref": "TEXT",
+        "expected_branch_namespace": "TEXT",
+        "current_branch": "TEXT",
+        "support_root_path": "TEXT",
+    }
+    for column, declaration in additions.items():
+        if column not in columns:
+            connection.execute(f"ALTER TABLE agent_workspaces ADD COLUMN {column} {declaration}")
 
 
 def _write_metadata(connection: sqlite3.Connection, metadata: WorkspaceRuntimeMetadata) -> None:

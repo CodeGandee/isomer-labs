@@ -123,7 +123,7 @@ Resolution precedence is deterministic:
 3. Project Manifest defaults.
 4. Built-in defaults.
 
-The built-in Topic Workspace base directory is `<project>/topic-workspaces/`. A Topic Workspace without a recorded or configured path defaults to `<project>/topic-workspaces/<topic-id>/`. Within that Topic Workspace, default support paths are `state.sqlite`, `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/`. Task support directories default to `tasks/<task-id>/`; Run directories default to `runs/<run-id>/`; Agent Workspaces default to `agents/<agent-instance-id>/`.
+The built-in Topic Workspace base directory is `<project>/topic-workspaces/`. A Topic Workspace without a recorded or configured path defaults to `<project>/topic-workspaces/<topic-id>/`. Within that Topic Workspace, default support paths are `state.sqlite`, `repos/`, `repos/topic-main/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`. Owner-preserved task and run support directories default under `records/tasks/<task-id>/` and `records/runs/<run-id>/`; Agent Workspaces default to `agents/<agent-name>/`.
 
 Execution Adapters may export this bounded environment override set:
 

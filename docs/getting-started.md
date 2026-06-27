@@ -67,7 +67,7 @@ Both commands are read-only. `project context show` displays the resolved Projec
 
 ## Initialize and Prepare Workspace Runtime
 
-`isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It creates `state.sqlite`, records schema metadata, and creates the default runtime directories (`artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, `logs/`).
+`isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It creates `state.sqlite`, records schema metadata, and creates the standard runtime layout: `repos/`, `repos/topic-main/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`.
 
 ```bash
 pixi run isomer-cli --print-json project runtime init --topic my-topic

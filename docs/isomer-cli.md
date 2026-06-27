@@ -41,6 +41,20 @@ pixi run isomer-cli project init --content-dir custom-content
 
 `--content-dir <content-dir>` must resolve inside the Project root and must not live inside `.isomer-labs/` or collide with root `.houmao/`. When omitted, init uses `isomer-content/`. Create Research Topics with `project topics create`, not `project init`.
 
+### `project content-root move`
+
+Plan or apply relocation of the Project generated content root.
+
+**Side effects:** without `--yes`, none. `--dry-run` always builds the relocation plan without moving files or rewriting the Project Manifest, and omitting both `--dry-run` and `--yes` defaults to dry-run mode. With `--yes`, moves only Isomer-managed content-root policy files and registered Topic Workspace directories that are safe to move, updates Project Manifest path defaults and Topic Workspace paths, preserves unmanaged leftovers, and reports skipped or blocked entries. It does not rewrite runtime-internal paths inside moved Topic Workspaces.
+
+**Options:** `--to <content-dir>` selects the new project-local generated content root. The destination must resolve inside the Project root, must not live inside `.isomer-labs/`, and must not collide with protected Project or Houmao paths.
+
+```bash
+pixi run isomer-cli project content-root move --to generated --dry-run
+pixi run isomer-cli --print-json project content-root move --to generated --dry-run
+pixi run isomer-cli --print-json project content-root move --to generated --yes
+```
+
 ### `project cleanup`
 
 Plan or apply cleanup of selected Isomer-managed Project material.
@@ -182,7 +196,7 @@ pixi run isomer-cli --print-json schemas list
 
 Initialize or reopen the selected Workspace Runtime.
 
-**Side effects:** creates or reopens `<topic-workspace>/state.sqlite`, stores schema metadata, records owner Research Topic and Topic Workspace refs, persists path plans for `state.sqlite`, `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, and `logs/`, and creates those default runtime directories. Reopening a current-schema runtime is idempotent. Unsupported older or newer schemas produce diagnostics and do not create directories or rewrite owner refs.
+**Side effects:** creates or reopens `<topic-workspace>/state.sqlite`, stores schema metadata, records owner Research Topic and Topic Workspace refs, persists path plans for `state.sqlite`, `repos/`, `repos/topic-main/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`, and creates those default runtime directories. Reopening a current-schema runtime is idempotent. Unsupported older or newer schemas produce diagnostics and do not create directories or rewrite owner refs.
 
 ```bash
 pixi run isomer-cli --print-json project runtime init --topic my-topic
@@ -225,7 +239,7 @@ pixi run isomer-cli --print-json project runtime validate --topic my-topic --req
 
 Create an Agent Team Instance record.
 
-**Side effects:** writes Agent Team Instance record, Agent Instance records, Agent Workspace records, Agent Workspace path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories. The default path is `<topic-workspace>/agents/<agent-instance-id>/`; when an active role binding has an approved `agent_workspace_ref` under the selected Topic Workspace, the path plan uses that ref instead. Does not launch Houmao agents, create mailboxes, write launch dossiers, or store adapter-specific launch refs.
+**Side effects:** writes Agent Team Instance record, Agent Instance records, Agent Workspace records, Agent Workspace path plans, initial Workflow Stage Cursor records, and provenance refs, and materializes Agent Workspace directories under `<topic-workspace>/agents/<agent-name>/`. Each Agent Workspace is expected to be the agent's launch cwd and, for Git-backed topics, a worktree of `repos/topic-main` on an agent-owned branch. Does not launch Houmao agents, create mailboxes, write launch dossiers, or store adapter-specific launch refs.
 
 **Prerequisites:** Workspace Runtime must be initialized, the Research Topic's single Topic Agent Team Profile Bundle must be materialized, and readiness should be `ready` for launch-facing work.
 

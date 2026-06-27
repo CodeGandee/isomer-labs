@@ -99,7 +99,7 @@ The Project root may keep its own Pixi manifest for Isomer platform tooling. It 
 
 ## Agent Workspace Inheritance
 
-Agent Workspaces live under `<topic-workspace>/agents/<agent-instance-id>/`. Each Agent Workspace inherits the selected Topic Workspace Pixi environment by default. The Agent Workspace directory does not contain its own Pixi manifest, lockfile, or `.pixi/` directory.
+Agent Workspaces live under `<topic-workspace>/agents/<agent-name>/`. Each Agent Workspace is a Git worktree for a topic-local Agent Name, inherits the selected Topic Workspace Pixi environment by default, and does not contain its own Pixi manifest, lockfile, or `.pixi/` directory.
 
 If an Agent Workspace needs a divergent environment, the Operator Agent or Project Operator Session opens a Service Request. The Service Agent Instance may create an isolated environment only after the Service Request is recorded, and it must record support Artifacts and Provenance Records.
 
@@ -190,7 +190,7 @@ Existing Research Topics that used `[[topic_pixi_environment_bindings]]` to Proj
 
 - ADR 0020: Topic-specific Pixi Environments (superseded by ADR 0027)
 - ADR 0022: Milestone 4 Prepares Topic Environment Readiness
-- ADR 0023: Global Agent Instance ids and Flat Agent Workspaces
+- ADR 0023: Topic-local Agent Names and Flat Agent Worktrees
 - ADR 0024: Doctor is Read-only
 - ADR 0025: Project Manifest Owns Topic Pixi Environment Bindings
 - ADR 0026: Standalone Pixi Isolation Uses Separate Manifest Bindings

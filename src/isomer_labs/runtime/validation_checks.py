@@ -16,6 +16,7 @@ from isomer_labs.runtime.validation_utils import (
     missing_ref_diagnostics as _missing_ref_diagnostics,
     owner_diagnostics as _owner_diagnostics,
 )
+from isomer_labs.workspace_refs import validate_agent_name_value
 
 
 def _validate_metadata(
@@ -295,6 +296,14 @@ def _validate_agent_team_instances(
                     message="Agent Workspace belongs to another Topic Workspace.",
                 )
             )
+        diagnostics.extend(
+            validate_agent_name_value(
+                agent_name=workspace.agent_name,
+                source_path=store.db_path,
+                field=f"{workspace.id}.agent_name",
+                concept="Agent Workspace",
+            )
+        )
         plan = path_plans.get(workspace.path_plan_id)
         if plan is None:
             diagnostics.append(
@@ -318,6 +327,19 @@ def _validate_agent_team_instances(
                     message="Agent Workspace directory is missing.",
                 )
             )
+        elif workspace.agent_name is not None:
+            expected_path = context.topic_workspace_path / "agents" / workspace.agent_name
+            if Path(plan.path).resolve(strict=False) != expected_path.resolve(strict=False):
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO044",
+                        severity="error",
+                        concept="Agent Workspace",
+                        path=Path(plan.path),
+                        field=workspace.id,
+                        message="Agent Workspace path plan does not match its topic-local agent name.",
+                    )
+                )
     return diagnostics
 
 

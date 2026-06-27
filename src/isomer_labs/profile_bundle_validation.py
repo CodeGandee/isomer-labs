@@ -157,6 +157,8 @@ def _profile_string_values(profile: TopicAgentTeamProfile) -> list[tuple[str, st
             ("agent_profile_ref", binding.agent_profile_ref),
             ("capability_binding_ref", binding.capability_binding_ref),
             ("skill_binding_projection_ref", binding.skill_binding_projection_ref),
+            ("agent_name", binding.agent_name),
+            ("agent_branch", binding.agent_branch),
             ("agent_workspace_ref", binding.agent_workspace_ref),
         ):
             if value is not None:

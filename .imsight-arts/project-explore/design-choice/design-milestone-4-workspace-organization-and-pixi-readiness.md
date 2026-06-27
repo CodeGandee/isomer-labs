@@ -14,7 +14,7 @@ Milestone 4 needs enough Workspace Runtime to create, reopen, inspect, and valid
 - A Research Topic may still bind to a Project-root Pixi environment through `[[topic_pixi_environment_bindings]]` for platform or shared tooling topics. Topic-to-environment relationships are not inferred from names.
 - Project Manifest stores Research Topic to Project-root Pixi environment bindings with `research_topic_id`, `pixi_environment`, optional `purpose`, and optional `status`, and stores explicit Topic Workspace Pixi bindings separately with `research_topic_id`, `manifest_path_or_dir`, optional `pixi_environment`, optional `purpose`, and optional `status`. Research Topic Config does not own Pixi environment bindings. Workspace Runtime stores the resolved environment use, readiness status, and provenance after preparation.
 - Milestone 4 prepares and records topic environment readiness before real Houmao launch, but live Houmao launch refs, mailbox refs, gateway refs, managed-agent ids, and handoff traffic remain Milestone 5 concerns.
-- Agent Instance ids are globally unique by design. The default Agent Workspace path is `<topic-workspace>/agents/<agent-instance-id>/`.
+- Agent Instance ids are globally unique runtime identity. The default Agent Workspace path is `<topic-workspace>/agents/<agent-name>/`, where `agent_name` is topic-local planning language and the worktree is bound to a per-agent branch namespace.
 - `isomer-cli doctor` is read-only. A later preparation command performs Pixi install/readiness work, creates Workspace Runtime readiness records, and records provenance.
 
 ## Implications for Milestone 4
@@ -37,7 +37,7 @@ Milestone 4 needs enough Workspace Runtime to create, reopen, inspect, and valid
 - ADR 0020: Topic-specific Pixi Environments (superseded by ADR 0027)
 - ADR 0021: Topic Config Owns Environment Intent (superseded by ADR 0025)
 - ADR 0022: Milestone 4 Prepares Topic Environment Readiness
-- ADR 0023: Global Agent Instance ids and Flat Agent Workspaces
+- ADR 0023: Topic-local Agent Names and Flat Agent Worktrees
 - ADR 0024: Doctor is Read-only
 - ADR 0025: Project Manifest Owns Topic Pixi Environment Bindings
 - ADR 0026: Standalone Pixi Isolation Uses Separate Manifest Bindings
@@ -50,4 +50,4 @@ Milestone 4 needs enough Workspace Runtime to create, reopen, inspect, and valid
 
 ## Known Implementation Drift
 
-- The current design-time Topic Agent Team Profile generator emits placeholder-style `agent-workspaces/<profile>/<role>` refs. Milestone 4 should reconcile those design-time placeholders with the accepted concrete runtime default `<topic-workspace>/agents/<agent-instance-id>/` when Agent Instance ids and Workspace Runtime records are created.
+- Earlier design-time Topic Agent Team Profile material emitted placeholder-style `agent-workspaces/<profile>/<role>` refs. Current profile and packet material should plan `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values under `<topic-workspace>/agents/<agent-name>/`.

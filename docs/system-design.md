@@ -36,7 +36,9 @@ Effective Topic Context is process-local input. It is not a lifecycle object, no
 
 Workspace Path Resolution turns Effective Topic Context and a requested path surface into concrete filesystem paths. It is side-effect-free: it computes paths without creating directories, writing runtime records, or launching agents.
 
-Path surfaces include the Project generated content root (`isomer-content/` by default or the `--content-dir <content-dir>` root selected during initialization), the Topic Workspace base (`isomer-content/topic-ws/` by default or `<content-dir>/topic-ws/` for a custom content root), the Workspace Runtime database (`state.sqlite`), runtime directories (`artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, `logs/`), adapter manifest directories, command payloads, inspection snapshots, Agent Workspace directories, and adapter-generated material.
+Path surfaces include the Project generated content root (`isomer-content/` by default or the `--content-dir <content-dir>` root selected during initialization), the Topic Workspace base (`isomer-content/topic-ws/` by default or `<content-dir>/topic-ws/` for a custom content root), the Workspace Runtime database (`state.sqlite`), `repos/topic-main`, `agents/<agent-name>` worktrees, owner-preserved `records/*` directories, root `runtime/` support material, adapter manifest directories, command payloads, inspection snapshots, Agent Workspace support directories, and adapter-generated material.
+
+The canonical Topic Workspace and Agent Workspace directory structure, including `repos/topic-main`, `agents/<agent-name>` worktrees, per-agent branch namespaces, symlinked shared directories, topic-owned Pixi task channels, and launch cwd expectations, is defined in [Topic Workspace Definition](topic-workspace-definition.md).
 
 `isomer-cli project paths preview` prints the computed path plan for a topic without creating files. Use it to verify that the Project Manifest and Research Topic Config resolve to the directories you expect before running commands that mutate state.
 

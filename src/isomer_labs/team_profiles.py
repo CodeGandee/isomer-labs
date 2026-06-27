@@ -168,6 +168,8 @@ def specialize_topic_agent_team_profile(
                     role.id,
                     f"{final_profile_id}:{role.id}:skill-binding-projection",
                 ),
+                agent_name=role.id,
+                agent_branch=f"per-agent/{role.id}/main",
                 agent_workspace_ref=None,
                 required_skills=list(role.required_skills),
                 optional_skills=list(role.optional_skills),
@@ -315,6 +317,8 @@ def profile_to_toml(profile: TopicAgentTeamProfile) -> str:
             ("agent_profile_ref", binding.agent_profile_ref),
             ("capability_binding_ref", binding.capability_binding_ref),
             ("skill_binding_projection_ref", binding.skill_binding_projection_ref),
+            ("agent_name", binding.agent_name),
+            ("agent_branch", binding.agent_branch),
             ("agent_workspace_ref", binding.agent_workspace_ref),
         ):
             if value is not None:
@@ -351,6 +355,8 @@ def _parse_role_bindings(value: object) -> list[RoleBinding]:
             agent_profile_ref=_string(item.get("agent_profile_ref")),
             capability_binding_ref=_string(item.get("capability_binding_ref")),
             skill_binding_projection_ref=_string(item.get("skill_binding_projection_ref")),
+            agent_name=_string(item.get("agent_name")),
+            agent_branch=_string(item.get("agent_branch") or item.get("branch")),
             agent_workspace_ref=_string(item.get("agent_workspace_ref")),
             required_skills=_string_list(item.get("required_skills")),
             optional_skills=_string_list(item.get("optional_skills")),

@@ -121,6 +121,7 @@ def _row_to_agent_instance(row: sqlite3.Row) -> AgentInstanceRecord:
 
 
 def _row_to_agent_workspace(row: sqlite3.Row) -> AgentWorkspaceRecord:
+    keys = set(row.keys())
     return AgentWorkspaceRecord(
         id=row["id"],
         agent_instance_id=row["agent_instance_id"],
@@ -129,6 +130,11 @@ def _row_to_agent_workspace(row: sqlite3.Row) -> AgentWorkspaceRecord:
         status=row["status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+        agent_name=row["agent_name"] if "agent_name" in keys else None,
+        expected_repo_ref=row["expected_repo_ref"] if "expected_repo_ref" in keys else None,
+        expected_branch_namespace=row["expected_branch_namespace"] if "expected_branch_namespace" in keys else None,
+        current_branch=row["current_branch"] if "current_branch" in keys else None,
+        support_root_path=row["support_root_path"] if "support_root_path" in keys else None,
         provenance_refs=_loads_list(row["provenance_refs_json"]),
     )
 

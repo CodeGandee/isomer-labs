@@ -19,7 +19,7 @@ from isomer_labs.topic_team_instantiation import (
     scan_packet_for_forbidden_fields,
     topic_profile_bundle_path,
 )
-from isomer_labs.workspace_refs import validate_agent_workspace_ref_scope
+from isomer_labs.workspace_refs import resolve_role_binding_agent_workspace_plan
 
 
 def validate_topic_team_instantiation_packet(
@@ -496,20 +496,19 @@ def _validate_agent_workspace_refs(
     diagnostics: list[Diagnostic],
 ) -> None:
     for binding in packet.role_bindings:
-        if not binding.active or binding.agent_workspace_ref is None:
+        if not binding.active:
             continue
-        diagnostics.extend(
-            validate_agent_workspace_ref_scope(
-                project=project,
-                research_topic_id=research_topic_id,
-                topic_workspace_id=topic_workspace_id,
-                topic_workspace_path=topic_workspace_path,
-                workspace_ref=binding.agent_workspace_ref,
-                source_path=packet.source_path,
-                field=f"role_bindings.{binding.role_id}.agent_workspace_ref",
-                concept="Topic Team Instantiation Packet isolation",
-            )
+        _, plan_diagnostics = resolve_role_binding_agent_workspace_plan(
+            project=project,
+            research_topic_id=research_topic_id,
+            topic_workspace_id=topic_workspace_id,
+            topic_workspace_path=topic_workspace_path,
+            binding=binding,
+            source_path=packet.source_path,
+            field_prefix=f"role_bindings.{binding.role_id}",
+            concept="Topic Team Instantiation Packet isolation",
         )
+        diagnostics.extend(plan_diagnostics)
 
 
 def _launch_blocker_refs(packet: TopicTeamInstantiationPacket) -> list[str]:

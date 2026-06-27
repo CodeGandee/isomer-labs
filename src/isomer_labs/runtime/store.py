@@ -89,7 +89,7 @@ from isomer_labs.runtime.transactions import (
     _table_names,
     run_runtime_transaction as _run_runtime_transaction,
 )
-from isomer_labs.workspace_refs import resolve_agent_workspace_ref, validate_agent_workspace_ref_scope
+from isomer_labs.workspace_refs import resolve_role_binding_agent_workspace_plan
 
 
 @dataclass(frozen=True)
@@ -528,21 +528,21 @@ class WorkspaceRuntimeStore:
                 [(binding.role_id, agent_id) for binding, agent_id in generated_ids],
             )
         )
+        workspace_plans = {}
         for binding in active_bindings:
-            if binding.agent_workspace_ref is None:
-                continue
-            diagnostics.extend(
-                validate_agent_workspace_ref_scope(
-                    project=context.project,
-                    research_topic_id=context.research_topic.id,
-                    topic_workspace_id=context.topic_workspace_id,
-                    topic_workspace_path=context.topic_workspace_path,
-                    workspace_ref=binding.agent_workspace_ref,
-                    source_path=profile.source_path,
-                    field=f"role_bindings.{binding.role_id}.agent_workspace_ref",
-                    concept="Agent Workspace path plan",
-                )
+            plan, plan_diagnostics = resolve_role_binding_agent_workspace_plan(
+                project=context.project,
+                research_topic_id=context.research_topic.id,
+                topic_workspace_id=context.topic_workspace_id,
+                topic_workspace_path=context.topic_workspace_path,
+                binding=binding,
+                source_path=profile.source_path,
+                field_prefix=f"role_bindings.{binding.role_id}",
+                concept="Agent Workspace path plan",
             )
+            diagnostics.extend(plan_diagnostics)
+            if plan is not None:
+                workspace_plans[binding.role_id] = plan
         if has_errors(diagnostics):
             return None, diagnostics
 
@@ -550,22 +550,19 @@ class WorkspaceRuntimeStore:
             with self.connection:
                 for binding, agent_id in generated_ids:
                     workspace_id = f"agent-workspace-{agent_id}"
-                    surface = f"agent_workspace:{agent_id}"
-                    path_source = "default"
-                    source_detail = None
-                    if binding.agent_workspace_ref is None:
-                        workspace_path = context.topic_workspace_path / "agents" / agent_id
-                    else:
-                        workspace_path = resolve_agent_workspace_ref(
-                            context.project,
-                            binding.agent_workspace_ref,
-                        ).path
+                    plan = workspace_plans[binding.role_id]
+                    surface = f"agent_workspace:{plan.agent_name}"
+                    workspace_path = plan.path
+                    path_source = plan.source
+                    if plan.source == "compat.agent_workspace_ref":
                         path_source = (
                             "topic_team_instantiation_packet.agent_workspace_ref"
                             if profile.instantiation_packet_ref is not None
                             else "topic_agent_team_profile.agent_workspace_ref"
                         )
-                        source_detail = f"role_bindings.{binding.role_id}.agent_workspace_ref={binding.agent_workspace_ref}"
+                    elif profile.instantiation_packet_ref is not None:
+                        path_source = "topic_team_instantiation_packet.agent_name"
+                    source_detail = f"{plan.source_detail}; branch={plan.branch}"
                     path_plan = self.record_path_plan(
                         topic_workspace_id=context.topic_workspace_id,
                         surface=surface,
@@ -575,6 +572,8 @@ class WorkspaceRuntimeStore:
                         created_at=now,
                     )
                     workspace_path.mkdir(parents=True, exist_ok=True)
+                    for support_dir in ("runtime", "artifacts", "scratch", "logs", "links"):
+                        (workspace_path / ".isomer-agent" / support_dir).mkdir(parents=True, exist_ok=True)
                     agent_record = AgentInstanceRecord(
                         id=agent_id,
                         agent_team_instance_id=team_id,
@@ -592,6 +591,11 @@ class WorkspaceRuntimeStore:
                         agent_instance_id=agent_id,
                         topic_workspace_id=context.topic_workspace_id,
                         path_plan_id=path_plan.id,
+                        agent_name=plan.agent_name,
+                        expected_repo_ref="topic_main_repo",
+                        expected_branch_namespace=f"per-agent/{plan.agent_name}/",
+                        current_branch=plan.branch,
+                        support_root_path=str(workspace_path / ".isomer-agent"),
                         status="ready",
                         created_at=now,
                         updated_at=now,
@@ -1672,16 +1676,22 @@ class WorkspaceRuntimeStore:
             """
             INSERT INTO agent_workspaces
                 (
-                    id, agent_instance_id, topic_workspace_id, path_plan_id, status,
-                    created_at, updated_at, provenance_refs_json
+                    id, agent_instance_id, topic_workspace_id, path_plan_id, agent_name,
+                    expected_repo_ref, expected_branch_namespace, current_branch, support_root_path,
+                    status, created_at, updated_at, provenance_refs_json
                 )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 record.id,
                 record.agent_instance_id,
                 record.topic_workspace_id,
                 record.path_plan_id,
+                record.agent_name,
+                record.expected_repo_ref,
+                record.expected_branch_namespace,
+                record.current_branch,
+                record.support_root_path,
                 record.status,
                 record.created_at,
                 record.updated_at,

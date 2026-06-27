@@ -1135,9 +1135,8 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         self.assertTrue(data["mutated"])
         self.assertFalse((runtime_root / "state.sqlite").exists())
-        for directory in ("artifacts", "agents", "tasks", "runs", "views", "logs"):
+        for directory in ("repos", "agents", "records", "runtime"):
             self.assertFalse((runtime_root / directory).exists())
-        self.assertFalse((runtime_root / "runtime" / "adapters" / "houmao").exists())
         self.assertTrue((runtime_root / "team-profile" / "profile.toml").is_file())
 
     def test_project_cleanup_topic_workspace_and_content_root_purge(self) -> None:
@@ -1979,11 +1978,11 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         paths = {entry["surface"]: entry for entry in data["paths"]}
         self.assertEqual(str(root / "isomer-content"), paths["isomer_content_root"]["path"])
-        self.assertEqual("env", paths["artifacts"]["source"])
-        self.assertEqual("ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR", paths["artifacts"]["source_detail"])
+        self.assertEqual("env", paths["records_artifacts"]["source"])
+        self.assertEqual("ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR", paths["records_artifacts"]["source_detail"])
         self.assertNotIn("plan", {entry["source"] for entry in data["paths"]})
         self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "state.sqlite").exists())
-        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "artifacts").exists())
+        self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "records" / "artifacts").exists())
         self.assertFalse((root / "isomer-content" / "topic-ws" / "default" / "custom-artifacts").exists())
 
         status, output = self.run_cli(
@@ -2058,10 +2057,10 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(data["runtime"]["created"])
         runtime_root = root / "isomer-content" / "topic-ws" / "default"
         self.assertTrue((runtime_root / "state.sqlite").is_file())
-        for directory in ("artifacts", "agents", "tasks", "runs", "views", "logs"):
+        for directory in ("repos", "repos/topic-main", "agents", "records", "records/artifacts", "records/tasks", "records/runs", "records/views", "records/logs", "runtime"):
             self.assertTrue((runtime_root / directory).is_dir())
         surfaces = {record["surface"] for record in data["runtime"]["path_plans"]}
-        self.assertTrue({"workspace_runtime_db", "artifacts", "agents", "tasks", "runs", "views", "logs"} <= surfaces)
+        self.assertTrue({"workspace_runtime_db", "repos", "topic_main_repo", "agents", "records", "records_artifacts", "records_tasks", "records_runs", "records_views", "records_logs", "runtime"} <= surfaces)
 
         status, output = self.run_cli(["project", "runtime", "init", "--json"], cwd=root)
         data = json.loads(output)
@@ -2317,8 +2316,11 @@ class IsomerCliTests(unittest.TestCase):
         role_blocks = []
         for role_id, required, optional in roles:
             workspace_ref_line = ""
+            agent_name = role_id
             if agent_workspace_refs is not None and role_id in agent_workspace_refs:
-                workspace_ref_line = f'agent_workspace_ref = "{agent_workspace_refs[role_id]}"\n'
+                workspace_ref = agent_workspace_refs[role_id]
+                agent_name = workspace_ref.rstrip("/").rsplit("/", 1)[-1]
+                workspace_ref_line = f'agent_workspace_ref = "{workspace_ref}"\n'
             role_blocks.append(
                 f"""
                 [[role_bindings]]
@@ -2327,6 +2329,8 @@ class IsomerCliTests(unittest.TestCase):
                 agent_profile_ref = "{profile_id}:{role_id}:agent-profile"
                 capability_binding_ref = "{profile_id}:{role_id}:capability-binding"
                 skill_binding_projection_ref = "{profile_id}:{role_id}:skill-binding-projection"
+                agent_name = "{agent_name}"
+                agent_branch = "per-agent/{agent_name}/main"
                 {workspace_ref_line}
                 required_skills = {json.dumps(required)}
                 optional_skills = {json.dumps(optional)}
@@ -2636,13 +2640,13 @@ status = "active"
             ["topic-service-agent:uc01-deterministic-service-master"],
             team["topic_service_agent_refs"],
         )
-        packet_ref_plans = [
+        packet_name_plans = [
             plan
             for plan in data["creation"]["path_plans"]
-            if plan["source"] == "topic_team_instantiation_packet.agent_workspace_ref"
+            if plan["source"] == "topic_team_instantiation_packet.agent_name"
         ]
-        self.assertEqual(3, len(packet_ref_plans))
-        self.assertTrue(all("agent_workspace_ref" in plan["source_detail"] for plan in packet_ref_plans))
+        self.assertEqual(3, len(packet_name_plans))
+        self.assertTrue(all("agent_name" in plan["source_detail"] for plan in packet_name_plans))
 
     def test_uc01_invalid_packet_is_rejected_before_materialization(self) -> None:
         root = self.copy_uc01_fixture_project("uc01-invalid-packet")
@@ -2697,7 +2701,7 @@ status = "active"
         packet_path = root / "fixtures" / "uc01" / "topic-team-instantiation-packet.toml"
         packet_path.write_text(
             packet_path.read_text(encoding="utf-8").replace(
-                f"topic-workspaces/{UC01_RESEARCH_TOPIC_ID}/agent-workspaces/topic-team/deepsci-mini-lead",
+                f"topic-workspaces/{UC01_RESEARCH_TOPIC_ID}/agents/deepsci-mini-lead",
                 "topic-workspaces/other-topic/agents/alice",
             ),
             encoding="utf-8",
@@ -2908,7 +2912,7 @@ status = "active"
         self.assertEqual("uc-01-alpha", team["topic_agent_team_profile_id"])
         self.assertEqual(7, len(creation["agent_instances"]))
         self.assertEqual(7, len(creation["agent_workspaces"]))
-        self.assertTrue(all(plan["source"] == "default" for plan in creation["path_plans"]))
+        self.assertTrue(all(plan["source"] == "topic_agent_team_profile.agent_name" for plan in creation["path_plans"]))
         self.assertEqual(0, len(team["run_ids"]))
         self.assertNotIn("houmao", output.lower())
         self.assertTrue((root / "topic-workspaces" / "alpha" / "agents").is_dir())
@@ -2961,7 +2965,7 @@ status = "active"
         self.assertEqual(1, status)
         self.assertIn("ISO044", {diagnostic["code"] for diagnostic in data["diagnostics"]})
 
-    def test_team_instance_creation_uses_agent_workspace_ref_path_plan_without_identity_alias(self) -> None:
+    def test_team_instance_creation_uses_agent_name_path_plan_without_identity_alias(self) -> None:
         root = self.make_root()
         self.make_deepsci_profile_project(root)
         write(
@@ -3005,16 +3009,15 @@ status = "active"
         agent_by_role = {agent["agent_role_id"]: agent for agent in creation["agent_instances"]}
         master_id = agent_by_role["deepsci-org-master"]["id"]
         self.assertNotEqual("alice", master_id)
-        master_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == f"agent_workspace:{master_id}")
+        master_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == "agent_workspace:alice")
         self.assertEqual(str((root / "topic-workspaces" / "alpha" / "agents" / "alice").resolve()), master_plan["path"])
-        self.assertEqual("topic_agent_team_profile.agent_workspace_ref", master_plan["source"])
-        self.assertIn("role_bindings.deepsci-org-master.agent_workspace_ref", master_plan["source_detail"])
+        self.assertEqual("topic_agent_team_profile.agent_name", master_plan["source"])
+        self.assertIn("role_bindings.deepsci-org-master.agent_name=alice", master_plan["source_detail"])
         self.assertTrue((root / "topic-workspaces" / "alpha" / "agents" / "alice").is_dir())
 
-        fallback_agent_id = agent_by_role["deepsci-org-framer"]["id"]
-        fallback_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == f"agent_workspace:{fallback_agent_id}")
-        self.assertEqual("default", fallback_plan["source"])
-        self.assertTrue(fallback_plan["path"].endswith(f"topic-workspaces/alpha/agents/{fallback_agent_id}"))
+        fallback_plan = next(plan for plan in creation["path_plans"] if plan["surface"] == "agent_workspace:deepsci-org-framer")
+        self.assertEqual("topic_agent_team_profile.agent_name", fallback_plan["source"])
+        self.assertTrue(fallback_plan["path"].endswith("topic-workspaces/alpha/agents/deepsci-org-framer"))
 
     def test_team_instance_creation_rejects_unsafe_agent_workspace_ref_without_mutation(self) -> None:
         root = self.make_root()

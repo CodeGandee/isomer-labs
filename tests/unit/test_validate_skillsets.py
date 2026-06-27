@@ -266,7 +266,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Workspace Mgr
 
-            Prepare `<topic-workspace-dir>/repos/topic-main`, `<topic-workspace-dir>/agents/<agent-key>`, `per-agent/<agent-key>/main`, and `per-agent/<agent-key>/<branch-name>` while preserving `agent_workspace_ref`, Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
+            Prepare `<topic-workspace-dir>/repos/topic-main`, `<topic-workspace-dir>/agents/<agent-name>`, `topic-owner/main`, `per-agent/<agent-name>/main`, `.isomer-agent/`, `records/*`, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
 
             ## Workflow
 
@@ -318,7 +318,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                     | --- | --- | --- |
                     | `resolve-workspace` | Resolve Project context. | Topic Workspace paths. |
                     | `ensure-main-repo` | Prepare repo. | Repo readiness. |
-                    | `plan-agents` | Plan agents. | Agent Workspace refs. |
+                    | `plan-agents` | Plan agents. | Agent name plans. |
                     | `create-worktrees` | Create worktrees. | Worktree readiness. |
                     | `write-boundaries` | Write boundaries. | Boundary paths. |
                     | `create-agent-branch` | Create branch. | Branch result. |
@@ -814,6 +814,19 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("Workspace Runtime" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_topic_workspace_agent_key_wording(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_workspace_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "SKILL.md"
+        skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nUse `<agent-key>` for public examples.\n", encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("agent-name public wording" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_accepts_topic_env_setup_contract(self) -> None:
         root = self.make_root()

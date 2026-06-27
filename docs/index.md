@@ -8,6 +8,7 @@ The canonical Isomer domain language lives in `.imsight-arts/project-explore/dom
 
 - [Getting Started](getting-started.md) — initialize a Project, validate it, prepare a Topic Workspace, and create an Agent Team Instance record.
 - [Concepts](concepts.md) — a concise guide to Project, Topic Workspace, Workspace Runtime, Agent Team Instance, and other canonical terms.
+- [Topic Workspace Definition](topic-workspace-definition.md) — the standard Topic Workspace and Agent Workspace directory structure.
 - [System Design](system-design.md) — how Project discovery, Effective Topic Context, Workspace Path Resolution, Workspace Runtime, and team execution fit together.
 
 ## Operating Isomer
@@ -19,7 +20,7 @@ The canonical Isomer domain language lives in `.imsight-arts/project-explore/dom
 
 ## Files, Assumptions, and Maintenance
 
-- [Runtime and Files](runtime-and-files.md) — Project files, Topic Workspace files, Workspace Runtime records, adapter manifests, payload refs, and durable-versus-cache classification.
+- [Runtime and Files](runtime-and-files.md) — Project files, Workspace Runtime records, adapter manifests, payload refs, and durable-versus-cache classification.
 - [Assumptions and Roadmap](assumptions-and-roadmap.md) — current assumptions, non-goals, advisory workspace boundaries, milestone status, and planned features.
 - [Contributing to Docs](contributing-docs.md) — style expectations, canonical language checks, CLI coverage checks, and how to keep docs current.
 
@@ -32,11 +33,12 @@ These pages are plain Markdown files in `docs/`. Relative links connect them; no
 | `index.md` | Home and navigation map | documentation set |
 | `getting-started.md` | Smallest useful operator path | Project, Research Topic, Topic Workspace, Agent Team Instance |
 | `concepts.md` | Canonical concept summary | domain language, execution layers, state ownership |
+| `topic-workspace-definition.md` | Topic and agent workspace structure standard | Topic Workspace, Agent Workspace, Agent Name, Topic Main Repository |
 | `system-design.md` | Architecture and boundaries | discovery, context, path resolution, runtime, adapter boundary |
 | `isomer-cli.md` | Command reference | commands, side effects, JSON output, examples |
 | `workflows.md` | Task-oriented operating guides | inspection, init, prepare, launch, stop, reconcile, adopt |
 | `houmao-adapter.md` | Adapter-specific behavior | manifests, quick launch, prepare-only, inspect-live, stop |
-| `runtime-and-files.md` | File layout and durability | Project files, runtime records, manifests, payload refs |
+| `runtime-and-files.md` | Runtime files and durability | Project files, runtime records, manifests, payload refs |
 | `assumptions-and-roadmap.md` | Assumptions and non-goals | boundaries, security, roadmap status |
 | `troubleshooting.md` | Diagnostics and recovery | common failures, repair paths |
 | `contributing-docs.md` | Documentation maintenance | style, validation, CLI coverage |

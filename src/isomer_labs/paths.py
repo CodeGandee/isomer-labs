@@ -20,11 +20,14 @@ PATH_ENV_VARS = {
     "topic_workspace_base": "ISOMER_TOPIC_WORKSPACE_BASE_DIR",
     "topic_workspace": "ISOMER_CURRENT_TOPIC_WORKSPACE_DIR",
     "workspace_runtime_db": "ISOMER_TOPIC_WORKSPACE_RUNTIME_DB",
-    "artifacts": "ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR",
-    "tasks": "ISOMER_TOPIC_WORKSPACE_TASKS_DIR",
-    "runs": "ISOMER_TOPIC_WORKSPACE_RUNS_DIR",
-    "views": "ISOMER_TOPIC_WORKSPACE_VIEWS_DIR",
-    "logs": "ISOMER_TOPIC_WORKSPACE_LOGS_DIR",
+    "topic_main_repo": "ISOMER_TOPIC_MAIN_REPO_DIR",
+    "records": "ISOMER_TOPIC_WORKSPACE_RECORDS_DIR",
+    "records_artifacts": "ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR",
+    "records_tasks": "ISOMER_TOPIC_WORKSPACE_TASKS_DIR",
+    "records_runs": "ISOMER_TOPIC_WORKSPACE_RUNS_DIR",
+    "records_views": "ISOMER_TOPIC_WORKSPACE_VIEWS_DIR",
+    "records_logs": "ISOMER_TOPIC_WORKSPACE_LOGS_DIR",
+    "runtime": "ISOMER_TOPIC_WORKSPACE_RUNTIME_DIR",
     "agent_workspace": "ISOMER_AGENT_WORKSPACE_DIR",
     "agent_runtime": "ISOMER_AGENT_WORKSPACE_RUNTIME_DIR",
     "agent_artifacts": "ISOMER_AGENT_WORKSPACE_ARTIFACTS_DIR",
@@ -36,11 +39,14 @@ MANIFEST_PATH_KEYS = {
     "topic_workspace_base": ("topic_workspace_base_dir",),
     "topic_workspace": ("current_topic_workspace_dir", "topic_workspace_dir"),
     "workspace_runtime_db": ("topic_workspace_runtime_db", "state_sqlite"),
-    "artifacts": ("topic_workspace_artifacts_dir", "artifacts_dir"),
-    "tasks": ("topic_workspace_tasks_dir", "tasks_dir"),
-    "runs": ("topic_workspace_runs_dir", "runs_dir"),
-    "views": ("topic_workspace_views_dir", "views_dir"),
-    "logs": ("topic_workspace_logs_dir", "logs_dir"),
+    "topic_main_repo": ("topic_main_repo_dir",),
+    "records": ("topic_workspace_records_dir", "records_dir"),
+    "records_artifacts": ("topic_workspace_artifacts_dir", "artifacts_dir"),
+    "records_tasks": ("topic_workspace_tasks_dir", "tasks_dir"),
+    "records_runs": ("topic_workspace_runs_dir", "runs_dir"),
+    "records_views": ("topic_workspace_views_dir", "views_dir"),
+    "records_logs": ("topic_workspace_logs_dir", "logs_dir"),
+    "runtime": ("topic_workspace_runtime_dir", "runtime_dir"),
 }
 ARTIFACT_CLASS_DIRS = (
     "intake",
@@ -53,6 +59,15 @@ ARTIFACT_CLASS_DIRS = (
     "evidence",
     "findings",
     "handoffs",
+)
+LEGACY_RECORD_ENV_SURFACES = frozenset(
+    {
+        "records_artifacts",
+        "records_tasks",
+        "records_runs",
+        "records_views",
+        "records_logs",
+    }
 )
 
 
@@ -98,17 +113,21 @@ def preview_paths(
             "workspace_runtime_db",
             default=topic_workspace_path.path / "state.sqlite",
         ),
-        _select_path(context, env, "artifacts", default=topic_workspace_path.path / "artifacts"),
+        ResolvedPathEntry("repos", topic_workspace_path.path / "repos", "default"),
+        _select_path(context, env, "topic_main_repo", default=topic_workspace_path.path / "repos" / "topic-main"),
         ResolvedPathEntry("agents", topic_workspace_path.path / "agents", "default"),
-        _select_path(context, env, "tasks", default=topic_workspace_path.path / "tasks"),
-        _select_path(context, env, "runs", default=topic_workspace_path.path / "runs"),
-        _select_path(context, env, "views", default=topic_workspace_path.path / "views"),
-        _select_path(context, env, "logs", default=topic_workspace_path.path / "logs"),
+        _select_path(context, env, "records", default=topic_workspace_path.path / "records"),
+        _select_path(context, env, "records_artifacts", default=topic_workspace_path.path / "records" / "artifacts"),
+        _select_path(context, env, "records_tasks", default=topic_workspace_path.path / "records" / "tasks"),
+        _select_path(context, env, "records_runs", default=topic_workspace_path.path / "records" / "runs"),
+        _select_path(context, env, "records_views", default=topic_workspace_path.path / "records" / "views"),
+        _select_path(context, env, "records_logs", default=topic_workspace_path.path / "records" / "logs"),
+        _select_path(context, env, "runtime", default=topic_workspace_path.path / "runtime"),
     ]
 
     run_id = context.lifecycle_refs.get("run_id")
     if run_id is not None:
-        run_root = next(entry.path for entry in entries if entry.surface == "runs") / run_id
+        run_root = next(entry.path for entry in entries if entry.surface == "records_runs") / run_id
         entries.extend(
             [
                 ResolvedPathEntry("run", run_root, "default"),
@@ -120,30 +139,57 @@ def preview_paths(
         )
 
     agent_id = context.lifecycle_refs.get("agent_instance_id")
+    agent_name = context.lifecycle_refs.get("agent_name")
     if agent_id is not None or any(env.get(PATH_ENV_VARS[surface]) for surface in _agent_surfaces()):
+        if agent_id is not None and agent_name is None and env.get(PATH_ENV_VARS["agent_workspace"]) is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO005",
+                    severity="warning",
+                    concept="Workspace Path Resolution",
+                    field="agent_name",
+                    message="Agent Workspace preview is missing topic-local agent_name and is using the Agent Instance id only as a compatibility fallback.",
+                )
+            )
         agent_root = _select_path(
             context,
             env,
             "agent_workspace",
-            default=topic_workspace_path.path / "agents" / (agent_id or "agent-instance"),
+            default=topic_workspace_path.path / "agents" / (agent_name or agent_id or "agent-instance"),
         )
+        agent_support_root = agent_root.path / ".isomer-agent"
         entries.extend(
             [
                 agent_root,
-                _select_path(context, env, "agent_runtime", default=agent_root.path / "runtime"),
-                _select_path(context, env, "agent_artifacts", default=agent_root.path / "artifacts"),
-                _select_path(context, env, "agent_scratch", default=agent_root.path / "scratch"),
-                _select_path(context, env, "agent_logs", default=agent_root.path / "logs"),
+                ResolvedPathEntry("agent_support", agent_support_root, "default"),
+                _select_path(context, env, "agent_runtime", default=agent_support_root / "runtime"),
+                _select_path(context, env, "agent_artifacts", default=agent_support_root / "artifacts"),
+                _select_path(context, env, "agent_scratch", default=agent_support_root / "scratch"),
+                _select_path(context, env, "agent_logs", default=agent_support_root / "logs"),
+                ResolvedPathEntry("agent_links", agent_support_root / "links", "default"),
             ]
         )
 
-    artifact_root = next(entry.path for entry in entries if entry.surface == "artifacts")
+    artifact_root = next(entry.path for entry in entries if entry.surface == "records_artifacts")
     for artifact_class in ARTIFACT_CLASS_DIRS:
         entries.append(ResolvedPathEntry(f"artifact_{artifact_class}", artifact_root / artifact_class, "default"))
 
     canonical_entries: list[ResolvedPathEntry] = []
     for entry in entries:
         path = entry.path.resolve(strict=False)
+        if entry.surface in LEGACY_RECORD_ENV_SURFACES and entry.source == "env":
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO005",
+                    severity="warning",
+                    concept="Workspace Path Resolution",
+                    field=entry.surface,
+                    message=(
+                        "Legacy Topic Workspace path environment variable was used as an owner-preserved "
+                        "`records/*` compatibility override."
+                    ),
+                )
+            )
         if not is_within(path, project_root):
             diagnostics.append(
                 Diagnostic(

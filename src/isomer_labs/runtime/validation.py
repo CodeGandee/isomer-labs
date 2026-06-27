@@ -21,6 +21,7 @@ from isomer_labs.runtime.validation_checks import (
     _validate_path_plans,
     _validate_readiness,
 )
+from isomer_labs.runtime.workspace_visibility import validate_topic_workspace_visibility_layout
 
 
 @dataclass(frozen=True)
@@ -88,6 +89,7 @@ def validate_workspace_runtime(
 
     diagnostics.extend(_validate_metadata(context, store))
     diagnostics.extend(_validate_path_plans(context, store, env))
+    diagnostics.extend(validate_topic_workspace_visibility_layout(context, env=env))
     diagnostics.extend(_validate_readiness(context, store, require_ready=require_ready_readiness))
     diagnostics.extend(_validate_lifecycle_records(context, store))
     diagnostics.extend(_validate_agent_team_instances(context, store))

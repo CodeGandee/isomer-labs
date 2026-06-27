@@ -6,9 +6,10 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Require selected Topic Workspace context and expected agent plan or packet/profile material.
 2. Validate that `<topic-workspace-dir>/repos/topic-main` exists as the usable shared non-bare topic repository.
-3. Validate each expected `<topic-workspace-dir>/agents/<agent-key>` path as a worktree of `topic-main` on `per-agent/<agent-key>/main` unless a specific future branch is in scope.
-4. Check Git worktree metadata for duplicate branch checkout and branches outside the owning `per-agent/<agent-key>/` namespace.
-5. Check active role binding `agent_workspace_ref` values in packet or profile material and reject refs outside the selected Topic Workspace or inside another Research Topic's Topic Workspace.
+3. Validate each expected `<topic-workspace-dir>/agents/<agent-name>` path as a worktree of `topic-main` on `per-agent/<agent-name>/main` unless a specific future branch is in scope.
+4. Check Git worktree metadata for duplicate branch checkout and branches outside the owning `per-agent/<agent-name>/` namespace.
+5. Check active role binding `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values in packet or profile material and reject refs outside the selected Topic Workspace or inside another Research Topic's Topic Workspace.
+6. Check `records/*`, root `runtime/`, and per-worktree `.isomer-agent/` support dirs, and report legacy root `shared/`, `artifacts/`, `tasks/`, `runs/`, `views/`, or `logs/` directories without deleting or moving files.
 6. Check that boundary material names write ownership, Peer Read Access, branch rules, and advisory boundary status when it is expected.
 7. Report validation status, ready entries, blockers, deferrals, and next operator action without creating Agent Instances, Workspace Runtime records, Houmao agents, or Execution Adapter material.
 

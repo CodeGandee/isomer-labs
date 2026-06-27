@@ -56,7 +56,7 @@ The record stores:
 
 - The Topic Workspace path is declared in the Project Manifest under `topic_workspaces`.
 - Workspace Runtime lives at `<topic-workspace>/state.sqlite`.
-- Runtime directories are created by `runtime init`: `artifacts/`, `agents/`, `tasks/`, `runs/`, `views/`, `logs/`.
+- Runtime initialization creates the standard visibility layout: `repos/`, `repos/topic-main/`, `agents/`, `records/`, `records/artifacts/`, `records/tasks/`, `records/runs/`, `records/views/`, `records/logs/`, and `runtime/`.
 - The Topic Workspace itself is not a Pixi workspace unless standalone isolation is active.
 
 ## Agent Workspace Standard
@@ -67,7 +67,7 @@ An Agent Workspace inherits the Topic Workspace's selected Pixi environment by d
 
 ### Default path
 
-Agent Workspaces live under `<topic-workspace>/agents/<agent-instance-id>/`. This flat layout uses globally unique Agent Instance ids and avoids nesting under Agent Team Instance ids or role names.
+Agent Workspaces live under `<topic-workspace>/agents/<agent-name>/`. This flat layout uses topic-local Agent Names and avoids nesting under Agent Team Instance ids or role names.
 
 ### Per-agent divergence
 
@@ -156,7 +156,7 @@ status = "active"
 
 - ADR 0020: Topic-specific Pixi Environments
 - ADR 0022: Milestone 4 Prepares Topic Environment Readiness
-- ADR 0023: Global Agent Instance ids and Flat Agent Workspaces
+- ADR 0023: Topic-local Agent Names and Flat Agent Worktrees
 - ADR 0024: Doctor is Read-only
 - ADR 0025: Project Manifest Owns Topic Pixi Environment Bindings
 - ADR 0026: Standalone Pixi Isolation Uses Separate Manifest Bindings

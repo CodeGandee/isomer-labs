@@ -456,6 +456,7 @@ class HoumaoAdapterPaths:
 class HoumaoMaterializedAgent:
     agent_instance_id: str
     agent_role_id: str
+    agent_name: str
     houmao_profile: str
     houmao_agent_name: str
     workdir: Path
@@ -468,6 +469,7 @@ class HoumaoMaterializedAgent:
         return {
             "agent_instance_id": self.agent_instance_id,
             "agent_role_id": self.agent_role_id,
+            "agent_name": self.agent_name,
             "houmao_profile": self.houmao_profile,
             "houmao_agent_name": self.houmao_agent_name,
             "workdir": str(self.workdir),
@@ -763,15 +765,32 @@ class HoumaoAdapterFacade:
         for agent in summary.agent_instances:
             role_binding = profile_by_role.get(agent.agent_role_id)
             workspace = workspace_by_agent.get(agent.id)
-            workdir = context.topic_workspace_path
-            if workspace is not None:
-                plan = path_plan_by_id.get(workspace.path_plan_id)
-                if plan is not None:
-                    workdir = Path(plan.path)
+            if workspace is None or workspace.agent_name is None:
+                diagnostics.append(
+                    _adapter_diagnostic(
+                        "ISO041",
+                        "error",
+                        "Houmao launch requires a recorded topic-local Agent Workspace plan with agent_name.",
+                        field=f"agent_instances.{agent.id}.agent_name",
+                    )
+                )
+                continue
+            plan = path_plan_by_id.get(workspace.path_plan_id)
+            if plan is None:
+                diagnostics.append(
+                    _adapter_diagnostic(
+                        "ISO041",
+                        "error",
+                        "Houmao launch requires a persisted Agent Workspace path plan.",
+                        field=f"agent_instances.{agent.id}.agent_workspace",
+                    )
+                )
+                continue
+            workdir = Path(plan.path)
             agent_root = paths.agent_material_roots[agent.id]
             agent_root.mkdir(parents=True, exist_ok=True)
             houmao_profile = _houmao_profile_name(agent_team_instance_id, agent.agent_role_id)
-            houmao_agent_name = _houmao_agent_name(agent.id)
+            houmao_agent_name = workspace.agent_name
             system_prompt_path = agent_root / "system-prompt.md"
             specialist_payload_path = agent_root / "specialist.json"
             profile_payload_path = agent_root / "profile.json"
@@ -819,6 +838,7 @@ class HoumaoAdapterFacade:
                 HoumaoMaterializedAgent(
                     agent_instance_id=agent.id,
                     agent_role_id=agent.agent_role_id,
+                    agent_name=workspace.agent_name,
                     houmao_profile=houmao_profile,
                     houmao_agent_name=houmao_agent_name,
                     workdir=workdir,
@@ -844,6 +864,9 @@ class HoumaoAdapterFacade:
                         kind=kind,
                     )
                 )
+
+        if has_errors(diagnostics):
+            return _failed_materialization(paths, diagnostics)
 
         link_manifest = build_adapter_link_manifest(
             project_root=context.project.root,

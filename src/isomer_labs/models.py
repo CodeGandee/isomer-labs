@@ -195,6 +195,8 @@ class RoleBinding:
     agent_profile_ref: str | None = None
     capability_binding_ref: str | None = None
     skill_binding_projection_ref: str | None = None
+    agent_name: str | None = None
+    agent_branch: str | None = None
     agent_workspace_ref: str | None = None
     required_skills: list[str] = field(default_factory=list)
     optional_skills: list[str] = field(default_factory=list)
@@ -206,6 +208,8 @@ class RoleBinding:
             "agent_profile_ref": self.agent_profile_ref,
             "capability_binding_ref": self.capability_binding_ref,
             "skill_binding_projection_ref": self.skill_binding_projection_ref,
+            "agent_name": self.agent_name,
+            "agent_branch": self.agent_branch,
             "agent_workspace_ref": self.agent_workspace_ref,
             "required_skills": self.required_skills,
             "optional_skills": self.optional_skills,

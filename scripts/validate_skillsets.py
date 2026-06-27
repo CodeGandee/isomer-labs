@@ -249,10 +249,15 @@ TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
     "summarize",
     "help",
     "<topic-workspace-dir>/repos/topic-main",
-    "<topic-workspace-dir>/agents/<agent-key>",
-    "per-agent/<agent-key>/main",
-    "per-agent/<agent-key>/<branch-name>",
+    "<topic-workspace-dir>/agents/<agent-name>",
+    "topic-owner/main",
+    "per-agent/<agent-name>/main",
+    "per-agent/<agent-name>/<branch-name>",
+    "agent_name",
+    "agent_branch",
     "agent_workspace_ref",
+    ".isomer-agent/",
+    "records/*",
     "Agent Instance",
     "Workspace Runtime",
     "Houmao",
@@ -285,6 +290,12 @@ TOPIC_WORKSPACE_MANAGER_NAMING_EXCEPTIONS = {"help", "summarize", "topic-workspa
 
 TOPIC_WORKSPACE_MANAGER_REFERENCE_REQUIRED_TERMS = (
     "blocker",
+)
+
+TOPIC_WORKSPACE_MANAGER_FORBIDDEN_PUBLIC_TERMS = (
+    "agent-key",
+    "agent key",
+    "<agent-key>",
 )
 
 TOPIC_WORKSPACE_MANAGER_FORBIDDEN_SUPPORT_REFS = TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS
@@ -869,6 +880,16 @@ def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]
     for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
         skill_file_lines = read_lines(skill_file)
         for line_number, line in enumerate(skill_file_lines, start=1):
+            for forbidden_term in TOPIC_WORKSPACE_MANAGER_FORBIDDEN_PUBLIC_TERMS:
+                if forbidden_term in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_file,
+                        line_number,
+                        "OPS006",
+                        f"{TOPIC_WORKSPACE_MANAGER_SKILL} must use agent-name public wording instead of stale '{forbidden_term}'",
+                    )
             for forbidden_ref in TOPIC_WORKSPACE_MANAGER_FORBIDDEN_SUPPORT_REFS:
                 if forbidden_ref in line:
                     add(

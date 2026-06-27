@@ -2,7 +2,7 @@ schema_version = "isomer-topic-team-instantiation-packet.v1"
 source_template_ref = "deepsci-mini"
 research_topic_id = "flash-attention-gb10-peak-performance-optimization"
 topic_workspace_ref = "flash-attention-gb10-peak-performance-optimization"
-workspace_runtime_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/.isomer-runtime/state.sqlite"
+workspace_runtime_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/state.sqlite"
 target_profile_bundle_path = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/team-profile"
 control_mode = "manual"
 project_operator_ref = "project-operator-session:uc01-deterministic"
@@ -35,7 +35,9 @@ active = true
 agent_profile_ref = "uc01-topic-team:deepsci-mini-lead:agent-profile"
 capability_binding_ref = "uc01-topic-team:deepsci-mini-lead:capability-binding"
 skill_binding_projection_ref = "uc01-topic-team:deepsci-mini-lead:skill-binding-projection"
-agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-lead"
+agent_name = "deepsci-mini-lead"
+agent_branch = "per-agent/deepsci-mini-lead/main"
+agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agents/deepsci-mini-lead"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
 optional_skills = ["isomer-rsch-review"]
 
@@ -45,7 +47,9 @@ active = true
 agent_profile_ref = "uc01-topic-team:deepsci-mini-scout:agent-profile"
 capability_binding_ref = "uc01-topic-team:deepsci-mini-scout:capability-binding"
 skill_binding_projection_ref = "uc01-topic-team:deepsci-mini-scout:skill-binding-projection"
-agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-scout"
+agent_name = "deepsci-mini-scout"
+agent_branch = "per-agent/deepsci-mini-scout/main"
+agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agents/deepsci-mini-scout"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-scout"]
 optional_skills = ["isomer-rsch-baseline", "isomer-rsch-science", "isomer-rsch-paper-outline"]
 
@@ -55,7 +59,9 @@ active = true
 agent_profile_ref = "uc01-topic-team:deepsci-mini-synth-reviewer:agent-profile"
 capability_binding_ref = "uc01-topic-team:deepsci-mini-synth-reviewer:capability-binding"
 skill_binding_projection_ref = "uc01-topic-team:deepsci-mini-synth-reviewer:skill-binding-projection"
-agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-synth-reviewer"
+agent_name = "deepsci-mini-synth-reviewer"
+agent_branch = "per-agent/deepsci-mini-synth-reviewer/main"
+agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agents/deepsci-mini-synth-reviewer"
 required_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-analysis", "isomer-rsch-review"]
 optional_skills = ["isomer-rsch-science", "isomer-rsch-paper-plot"]
 
@@ -88,7 +94,7 @@ required = true
 
 [[placeholder_resolutions]]
 name = "workspace_runtime_ref"
-value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/.isomer-runtime/state.sqlite"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/state.sqlite"
 required = true
 
 [[placeholder_resolutions]]
@@ -123,7 +129,17 @@ required = true
 
 [[placeholder_resolutions]]
 name = "deepsci-mini-lead.agent_workspace_ref"
-value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-lead"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agents/deepsci-mini-lead"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-lead.agent_name"
+value = "deepsci-mini-lead"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-lead.agent_branch"
+value = "per-agent/deepsci-mini-lead/main"
 required = true
 
 [[placeholder_resolutions]]
@@ -143,7 +159,17 @@ required = true
 
 [[placeholder_resolutions]]
 name = "deepsci-mini-scout.agent_workspace_ref"
-value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-scout"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agents/deepsci-mini-scout"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-scout.agent_name"
+value = "deepsci-mini-scout"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-scout.agent_branch"
+value = "per-agent/deepsci-mini-scout/main"
 required = true
 
 [[placeholder_resolutions]]
@@ -163,7 +189,17 @@ required = true
 
 [[placeholder_resolutions]]
 name = "deepsci-mini-synth-reviewer.agent_workspace_ref"
-value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agent-workspaces/topic-team/deepsci-mini-synth-reviewer"
+value = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agents/deepsci-mini-synth-reviewer"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-synth-reviewer.agent_name"
+value = "deepsci-mini-synth-reviewer"
+required = true
+
+[[placeholder_resolutions]]
+name = "deepsci-mini-synth-reviewer.agent_branch"
+value = "per-agent/deepsci-mini-synth-reviewer/main"
 required = true
 
 [approval]

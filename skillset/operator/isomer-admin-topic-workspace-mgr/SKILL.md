@@ -5,7 +5,7 @@ description: "Prepare, validate, and summarize a Git-backed Topic Workspace layo
 
 # Isomer Admin Topic Workspace Mgr
 
-Use this command-style operator skill when a Project Operator Session needs to prepare one Topic Workspace for topic-local collaboration through `<topic-workspace-dir>/repos/topic-main` and per-agent Git worktrees under `<topic-workspace-dir>/agents/<agent-key>`. It prepares static filesystem and Git topology, plans or validates `agent_workspace_ref` values, writes advisory Workspace Boundary notes, and reports blockers; it does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or replace `isomer-srv-topic-env-setup`.
+Use this command-style operator skill when a Project Operator Session needs to prepare one Topic Workspace for topic-local collaboration through `<topic-workspace-dir>/repos/topic-main` and per-agent Git worktrees under `<topic-workspace-dir>/agents/<agent-name>`. It prepares static filesystem and Git topology, plans topic-local `agent_name` values, derives compatibility `agent_workspace_ref` values when older material needs them, writes advisory Workspace Boundary notes, and reports blockers; it does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or replace `isomer-srv-topic-env-setup`.
 
 ## Workflow
 
@@ -22,8 +22,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 - A selected Project root or Project Manifest context.
 - A selected Research Topic and selected Topic Workspace resolved through Isomer context, not directory scanning.
-- A role binding source when planning agents: Topic Team Instantiation Packet, Topic Agent Team Profile material, or an explicit operator-provided role-to-agent-key map.
-- Operator intent for mutation before creating `repos/topic-main`, adding worktrees, writing Workspace Boundary material, or editing packet/profile `agent_workspace_ref` fields.
+- A role binding source when planning agents: Topic Team Instantiation Packet, Topic Agent Team Profile material, or an explicit operator-provided role-to-agent-name map.
+- Operator intent for mutation before creating `repos/topic-main`, adding worktrees, writing Workspace Boundary material, or editing packet/profile `agent_name`, `agent_branch`, or compatibility `agent_workspace_ref` fields.
 
 ## Subcommands
 
@@ -35,10 +35,10 @@ Load only the selected reference page before executing a subcommand.
 | --- | --- | --- |
 | `resolve-workspace` | Resolve Project, Research Topic, Topic Workspace, and existing workspace material through Project Manifest-backed context | [references/resolve-workspace.md](references/resolve-workspace.md) |
 | `ensure-main-repo` | Create or validate `<topic-workspace-dir>/repos/topic-main` as the shared non-bare topic repository | [references/ensure-main-repo.md](references/ensure-main-repo.md) |
-| `plan-agents` | Normalize agent keys, map active role bindings, and plan `agent_workspace_ref` and branch names | [references/plan-agents.md](references/plan-agents.md) |
-| `create-worktrees` | Create or validate per-agent worktrees under `<topic-workspace-dir>/agents/<agent-key>` | [references/create-worktrees.md](references/create-worktrees.md) |
+| `plan-agents` | Normalize agent names, map active role bindings, and plan worktree paths, branches, and derived compatibility refs | [references/plan-agents.md](references/plan-agents.md) |
+| `create-worktrees` | Create or validate per-agent worktrees under `<topic-workspace-dir>/agents/<agent-name>` | [references/create-worktrees.md](references/create-worktrees.md) |
 | `write-boundaries` | Write advisory Workspace Boundary and Peer Read Access notes for the topic repo and Agent Workspaces | [references/write-boundaries.md](references/write-boundaries.md) |
-| `create-agent-branch` | Create a future per-agent branch under `per-agent/<agent-key>/<branch-name>` | [references/create-agent-branch.md](references/create-agent-branch.md) |
+| `create-agent-branch` | Create a future per-agent branch under `per-agent/<agent-name>/<branch-name>` | [references/create-agent-branch.md](references/create-agent-branch.md) |
 | `validate-worktrees` | Validate Git topology, branch namespace, duplicate checkout state, and packet/profile workspace refs | [references/validate-worktrees.md](references/validate-worktrees.md) |
 | `summarize` | Report prepared layout, refs, validation status, blockers, and next operator action | [references/summarize.md](references/summarize.md) |
 
@@ -60,9 +60,9 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `research_topic_ref`: selected Research Topic id or explicit blocker.
 - `topic_workspace_ref`: selected Topic Workspace id and path.
 - `topic_main_repo_path`: `<topic-workspace-dir>/repos/topic-main`.
-- `agent_workspace_paths`: role id, agent key, planned Agent Workspace path, and readiness for each active role binding.
-- `agent_workspace_refs`: packet or profile `agent_workspace_ref` values that were validated, proposed, or changed.
-- `branch_plan`: default `per-agent/<agent-key>/main` branch and future branch namespace for each agent key.
+- `agent_workspace_paths`: role id, agent name, planned Agent Workspace path, and readiness for each active role binding.
+- `agent_workspace_refs`: derived compatibility packet or profile `agent_workspace_ref` values that were validated, proposed, or changed when older material needs them.
+- `branch_plan`: default `per-agent/<agent-name>/main` branch, owner branch `topic-owner/main`, and future branch namespace for each agent name.
 - `boundary_material_paths`: topic-level and per-agent Workspace Boundary docs written or validated.
 - `validation_status`: ready, ready-with-deferrals, blocked, or not checked.
 - `blockers`: unsafe repo state, unsafe path, normalized key collision, duplicate branch checkout, cross-topic ref, missing input, or unapproved mutation.
@@ -72,16 +72,18 @@ When reporting results, include these fields in structured prose or JSON, depend
 
 Resolve Project, Research Topic, and Topic Workspace through Project Manifest-backed Isomer context. Do not infer the selected Topic Workspace by scanning sibling directories.
 
-Keep `<topic-workspace-dir>/repos/topic-main` as a normal non-bare Git repository and `<topic-workspace-dir>/agents/<agent-key>` as an Agent Workspace worktree of that repository.
+Keep `<topic-workspace-dir>/repos/topic-main` as a normal non-bare Git repository and `<topic-workspace-dir>/agents/<agent-name>` as an Agent Workspace worktree of that repository.
 
-Keep `agent-key` separate from Agent Instance id. The agent key owns a path and branch namespace; Workspace Runtime later creates globally unique Agent Instance ids.
+Keep `agent-name` separate from Agent Instance id. The agent name owns a path and branch namespace; Workspace Runtime later creates globally unique Agent Instance ids.
 
-Use `per-agent/<agent-key>/main` for the default per-agent branch and `per-agent/<agent-key>/<branch-name>` for future branches. Reject empty segments, `..`, leading or trailing slash, `.lock` endings, cross-agent prefixes, and duplicate branch checkout in another worktree.
+Use `topic-owner/main` for the owner-managed checkout, `per-agent/<agent-name>/main` for the default per-agent branch, and `per-agent/<agent-name>/<branch-name>` for future branches. Reject empty segments, `..`, leading or trailing slash, `.lock` endings, cross-agent prefixes, and duplicate branch checkout in another worktree.
+
+Keep worker-visible collaboration material inside `repos/topic-main` or agent worktrees. Treat root `records/*` as owner-preserved records, root `runtime/*` as runtime support material, and `.isomer-agent/` as ignored agent-local support inside a worktree.
 
 Report blockers instead of silently repairing unsafe existing paths, non-Git repositories, branch conflicts, dirty or ambiguous repo state, missing base branches, or packet/profile refs outside the selected Topic Workspace.
 
 Do not delete, replace, pull, reset, reinitialize, or overwrite existing repositories or Agent Workspace paths without explicit user instruction.
 
-Do not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or claim runtime readiness from this skill. Static worktree setup becomes runtime truth only when later Workspace Runtime creation consumes a validated `agent_workspace_ref`.
+Do not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or claim runtime readiness from this skill. Static worktree setup becomes runtime truth only when later Workspace Runtime creation consumes validated `agent_name`, branch, and Agent Workspace path plans.
 
 Workspace Boundaries and Peer Read Access are advisory collaboration contracts, not filesystem-grade security isolation.

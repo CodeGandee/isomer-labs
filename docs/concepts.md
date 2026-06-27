@@ -14,7 +14,7 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 **Research Topic**: the root research problem or investigation intent that initiates work and Topic Team Specialization.
 
-**Topic Workspace**: a project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs.
+**Topic Workspace**: a project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, Agent Workspaces, and logs. Its standard directory structure is defined in [Topic Workspace Definition](topic-workspace-definition.md).
 
 **Workspace Runtime**: the persistent runtime substrate inside a Topic Workspace. It includes `state.sqlite`, schema version, runtime directories, refs, validation state, and support files that let Research Inquiries, Research Tasks, Runs, Artifacts, handoffs, Gates, and View Manifests be recorded, resumed, inspected, and validated.
 
@@ -58,7 +58,17 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 ## Agent Workspace and Collaboration
 
-**Agent Workspace**: a per-agent work area inside a Topic Workspace assigned to one globally unique Agent Instance for owned scratch files, local runtime state, logs, and Agent Artifacts. Runtime uses `<topic-workspace>/agents/<agent-instance-id>/` by default, or an approved `agent_workspace_ref` under the selected Topic Workspace when profile or packet material names one. It uses the parent Topic Workspace Pixi environment by default and remains an advisory ownership boundary: Isomer records expected access, but does not provide filesystem-grade access control.
+**Agent Workspace**: a per-agent work area inside a Topic Workspace for owned scratch files, local runtime state, logs, Agent Artifacts, and the agent's normal launch cwd. The standard path is `<topic-workspace>/agents/<agent-name>`, and that directory is a Git worktree of the Topic Main Repository checked out to an agent-owned branch. It uses the parent Topic Workspace Pixi environment by default and remains an advisory ownership boundary: Isomer records expected access, but does not provide filesystem-grade access control.
+
+**Topic Main Repository**: the shared normal, non-bare Git repository at `<topic-workspace>/repos/topic-main` for code-bearing topic work. It is the primary cross-agent information channel through per-agent worktrees and branches. It is a topic-level support surface, not a Topic Workspace, Agent Workspace, or Workspace Runtime.
+
+**Agent Name**: a topic-local, path-safe name such as `alice` or `experimenter-gpu` used to name the per-agent Agent Workspace path, launch cwd, and Git branch namespace. Workspace Runtime may still record Agent Instance ids and adapter refs, but the filesystem convention is always `agents/<agent-name>`.
+
+**Agent Workspace Worktree**: a Git worktree rooted under `<topic-workspace>/agents/<agent-name>` and checked out to an agent-owned branch such as `per-agent/<agent-name>/main`.
+
+**Topic-owned shared directories**: optional directories under `<topic-workspace>/repos/topic-main/` that can be symlinked into per-agent worktrees under `.isomer-agent/links/` as a secondary cross-agent channel.
+
+**Topic-owned Pixi tasks**: Pixi tasks declared by the Topic Workspace that expose topic-owned tools, scripts, or APIs for explicit shared operations. They are the preferred principled interface when agents need to publish, query, validate, or exchange shared information beyond Git branch integration.
 
 **Agent Runtime**: the durable execution state and support files scoped to one Agent Workspace, such as prompt records, tool-call traces, temporary run notes, local logs, and recovery files for that agent.
 

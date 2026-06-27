@@ -360,6 +360,8 @@ def packet_to_toml(packet: TopicTeamInstantiationPacket) -> str:
             ("agent_profile_ref", binding.agent_profile_ref),
             ("capability_binding_ref", binding.capability_binding_ref),
             ("skill_binding_projection_ref", binding.skill_binding_projection_ref),
+            ("agent_name", binding.agent_name),
+            ("agent_branch", binding.agent_branch),
             ("agent_workspace_ref", binding.agent_workspace_ref),
         ):
             if value is not None:
@@ -428,6 +430,8 @@ def _parse_role_bindings(value: object) -> list[RoleBinding]:
                 agent_profile_ref=_string(item.get("agent_profile_ref")),
                 capability_binding_ref=_string(item.get("capability_binding_ref")),
                 skill_binding_projection_ref=_string(item.get("skill_binding_projection_ref") or item.get("skill_projection_ref")),
+                agent_name=_string(item.get("agent_name")),
+                agent_branch=_string(item.get("agent_branch") or item.get("branch")),
                 agent_workspace_ref=_string(item.get("agent_workspace_ref")),
                 required_skills=_string_list(item.get("required_skills")),
                 optional_skills=_string_list(item.get("optional_skills")),
@@ -539,6 +543,8 @@ def _string_values_for_placeholder_scan(packet: TopicTeamInstantiationPacket) ->
             ("agent_profile_ref", binding.agent_profile_ref),
             ("capability_binding_ref", binding.capability_binding_ref),
             ("skill_binding_projection_ref", binding.skill_binding_projection_ref),
+            ("agent_name", binding.agent_name),
+            ("agent_branch", binding.agent_branch),
             ("agent_workspace_ref", binding.agent_workspace_ref),
         ):
             if value is not None:

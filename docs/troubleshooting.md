@@ -224,7 +224,7 @@ Recovery:
 - Failed adapter mode: use the default simulated mode for deterministic validation. Live mode requires `ISOMER_MANUAL_LIVE_HOUMAO=1`; without it, the harness must report `skipped: true` and `mutated: false`.
 - Open follow-up Gate: inspect `gate-uc01-follow-up-inquiry` in the harness summary and rerun the harness only if the graph is incomplete. A completed rerun is restart-safe and returns `mutated: false`.
 - Unsupported claim support: keep claim candidates as Finding records unless accepted Evidence Item links support a Research Claim under the recording contracts.
-- Missing Artifact files: inspect `topic-workspaces/flash-attention-gb10-peak-performance-optimization/artifacts/uc01/`, restore the missing file, and rerun `project runtime validate`.
+- Missing Artifact files: inspect `topic-workspaces/flash-attention-gb10-peak-performance-optimization/records/artifacts/uc01/` for owner-preserved records or `repos/topic-main/artifacts/uc01/` for worker-published material, restore the missing file, and rerun `project runtime validate`.
 - Incomplete Provenance refs: compare the harness `uc01_summary` output against `project runtime validate` diagnostics and repair through a corrective run or explicit provenance record rather than editing lifecycle rows by hand.
 
 ## Stale Handoff

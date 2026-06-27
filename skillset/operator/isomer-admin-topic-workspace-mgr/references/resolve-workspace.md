@@ -8,7 +8,7 @@ When this subcommand is selected, execute the following steps in order.
 2. Resolve the selected Research Topic and Topic Workspace through Project Manifest-backed context, including explicit topic or workspace selectors if the user supplied them.
 3. Confirm that the Topic Workspace belongs to the selected Research Topic and resolves inside the Project root.
 4. Compute the expected shared repository path `<topic-workspace-dir>/repos/topic-main` and Agent Workspace root `<topic-workspace-dir>/agents/`.
-5. Report existing packet or profile material that can provide active role bindings and `agent_workspace_ref` values.
+5. Report existing packet or profile material that can provide active role bindings, `agent_name` plans, branch plans, and derived compatibility `agent_workspace_ref` values.
 6. Stop with a blocker if the Project, Research Topic, or Topic Workspace cannot be selected unambiguously.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to resolve the smallest safe Isomer context first, then report what remains unknown.

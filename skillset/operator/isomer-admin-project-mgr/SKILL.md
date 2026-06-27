@@ -67,7 +67,9 @@ Use `isomer-cli project content-root move --to <content-dir> --dry-run` before m
 
 Use read-only commands for checks unless the user explicitly requests initialization or preparation. `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, `isomer-cli project workspaces list`, `isomer-cli project context show`, `isomer-cli project paths preview`, and Houmao project status checks must not mutate Project config, Workspace Runtime, or live Houmao agents.
 
-Keep Workspace Runtime creation explicit through `isomer-cli project runtime init`, and keep launch-facing readiness explicit through `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness`.
+Keep Workspace Runtime creation explicit through `isomer-cli project runtime init`, and keep launch-facing readiness explicit through `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness`. When explaining runtime initialization, distinguish worker-facing `repos/topic-main` and `agents/<agent-name>` from owner-preserved `records/*`, runtime-internal `runtime/*`, and `state.sqlite`.
+
+Hand off per-agent worktree setup, owner branch checks, `.isomer-agent/` support dirs, and Topic Workspace visibility diagnostics to `isomer-admin-topic-workspace-mgr`.
 
 Do not scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
 
