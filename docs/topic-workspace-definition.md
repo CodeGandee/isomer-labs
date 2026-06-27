@@ -80,34 +80,84 @@ Not every directory must exist before the workflow that owns it runs. Mutating c
 
 ## Directory Meanings
 
-| Path | Meaning | Notes |
-|---|---|---|
-| `pixi.toml` or `pyproject.toml` | Topic Workspace Pixi manifest | Declares topic-scoped Python, research dependencies, and optional named environments. |
-| `pixi.lock` | Topic Workspace Pixi lockfile | Durable lockfile for the topic environment. |
-| `.pixi/` | Pixi-managed environment directory | Generated and rebuildable. It is not durable research state. |
-| `state.sqlite` | Workspace Runtime database | Stores compact runtime records, refs, lifecycle state, validation state, readiness records, and path plans. |
-| `team-profile/` | Topic Agent Team Profile Bundle | Stores the Research Topic's one authoritative topic-specialized profile bundle. It is design-time material, not a running team. |
-| `team-profile/profile.toml` | Topic Agent Team Profile | The authoritative profile file inside the bundle. |
-| `team-profile/instantiation-packet.toml` | Topic Team Instantiation Packet | Optional reviewable planning and provenance material used before or during bundle materialization. |
-| `team-profile/approval.toml` | Bundle-local approval provenance | Optional approval metadata, actor or session ref, review summary, and validation result. |
-| `team-profile/execplan/` | Copied and topic-edited template material | May include `team-specialization-guide.md`, `team-specialization-plan.md`, or other launch-facing static planning material. |
-| `team-profile/validation/` | Profile validation outputs | Validation outputs for profile and packet material. |
-| `team-profile/provenance/` | Profile provenance refs | Provenance material for specialization and materialization. |
-| `repos/topic-main/` | Topic Main Repository | Shared normal, non-bare Git repository for worker-visible code-bearing topic work. It is not a workspace. |
-| `repos/topic-main/isomer-managed/` | Isomer-managed worker namespace | The only standard Isomer-specific worker-facing namespace inside `topic-main`. |
-| `repos/topic-main/isomer-managed/.gitignore` | Namespace ignore policy | Ignores `agent-owned/`, `topic-owned/`, and `links/` while keeping `.gitignore` and `tracked/` eligible for Git tracking. |
-| `repos/topic-main/isomer-managed/tracked/` | Git-tracked Isomer material | Small coordination files, task notes, tool wrappers, boundary material, manifests, indexes, and small artifacts intentionally shared through Git. |
-| `repos/topic-main/isomer-managed/tracked/{shared,artifacts,tasks,runs,views,tools,boundaries,manifests}/` | Tracked collaboration surfaces | Standard subdirectories for Isomer-injected material that should follow normal Git branch exchange. |
-| `repos/topic-main/isomer-managed/agent-owned/` | Current worktree owner area | Ignored material owned by the current agent worktree, including runtime, scratch, logs, unpromoted artifacts, public share, and policy-controlled inbox. |
-| `repos/topic-main/isomer-managed/topic-owned/` | Topic-owned projections | Ignored worker-visible projections of topic-owned non-Git material, split into `readonly/` and `writable/` policy surfaces. |
-| `repos/topic-main/isomer-managed/links/` | Generated convenience links | Ignored advisory links to peer public shares or topic-owned projections; links are not durable path truth or isolation. |
-| `agents/` | Agent Workspace root | Contains one Git worktree per agent, named as `<agent-name>`. |
-| `records/artifacts/` | Owner-preserved research Artifacts | Durable topic-level files such as notes, reports, data summaries, figures, decisions, evidence material, and normalized handoff outputs. |
-| `records/tasks/` | Owner-preserved Research Task records | Stores task support material outside canonical runtime rows when a task needs durable file-backed context. |
-| `records/runs/` | Owner-preserved Run records | Stores per-Run prompts, summaries, command support, outputs, and other file-backed execution material. |
-| `records/views/` | Owner-preserved View Manifest support files | Stores generated View Manifests and GUI view material. |
-| `records/logs/` | Owner-preserved logs | Stores topic-level diagnostics and logs that are durable records but not normal worker input. |
-| `runtime/adapters/houmao/<agent-team-instance-id>/` | Houmao adapter material | Stores adapter manifests, command payloads, launch material, snapshots, stop outcomes, handoff payloads, observations, and normalizations. |
+- `pixi.toml` or `pyproject.toml`
+  - Meaning: Topic Workspace Pixi manifest.
+  - Notes: Declares topic-scoped Python, research dependencies, and optional named environments.
+- `pixi.lock`
+  - Meaning: Topic Workspace Pixi lockfile.
+  - Notes: Durable lockfile for the topic environment.
+- `.pixi/`
+  - Meaning: Pixi-managed environment directory.
+  - Notes: Generated and rebuildable. It is not durable research state.
+- `state.sqlite`
+  - Meaning: Workspace Runtime database.
+  - Notes: Stores compact runtime records, refs, lifecycle state, validation state, readiness records, and path plans.
+- `team-profile/`
+  - Meaning: Topic Agent Team Profile Bundle.
+  - Notes: Stores the Research Topic's one authoritative topic-specialized profile bundle. It is design-time material, not a running team.
+- `team-profile/profile.toml`
+  - Meaning: Topic Agent Team Profile.
+  - Notes: The authoritative profile file inside the bundle.
+- `team-profile/instantiation-packet.toml`
+  - Meaning: Topic Team Instantiation Packet.
+  - Notes: Optional reviewable planning and provenance material used before or during bundle materialization.
+- `team-profile/approval.toml`
+  - Meaning: Bundle-local approval provenance.
+  - Notes: Optional approval metadata, actor or session ref, review summary, and validation result.
+- `team-profile/execplan/`
+  - Meaning: Copied and topic-edited template material.
+  - Notes: May include `team-specialization-guide.md`, `team-specialization-plan.md`, or other launch-facing static planning material.
+- `team-profile/validation/`
+  - Meaning: Profile validation outputs.
+  - Notes: Validation outputs for profile and packet material.
+- `team-profile/provenance/`
+  - Meaning: Profile provenance refs.
+  - Notes: Provenance material for specialization and materialization.
+- `repos/topic-main/`
+  - Meaning: Topic Main Repository.
+  - Notes: Shared normal, non-bare Git repository for worker-visible code-bearing topic work. It is not a workspace.
+- `repos/topic-main/isomer-managed/`
+  - Meaning: Isomer-managed worker namespace.
+  - Notes: The only standard Isomer-specific worker-facing namespace inside `topic-main`.
+- `repos/topic-main/isomer-managed/.gitignore`
+  - Meaning: Namespace ignore policy.
+  - Notes: Ignores `agent-owned/`, `topic-owned/`, and `links/` while keeping `.gitignore` and `tracked/` eligible for Git tracking.
+- `repos/topic-main/isomer-managed/tracked/`
+  - Meaning: Git-tracked Isomer material.
+  - Notes: Small coordination files, task notes, tool wrappers, boundary material, manifests, indexes, and small artifacts intentionally shared through Git.
+- `repos/topic-main/isomer-managed/tracked/{shared,artifacts,tasks,runs,views,tools,boundaries,manifests}/`
+  - Meaning: Tracked collaboration surfaces.
+  - Notes: Standard subdirectories for Isomer-injected material that should follow normal Git branch exchange.
+- `repos/topic-main/isomer-managed/agent-owned/`
+  - Meaning: Current worktree owner area.
+  - Notes: Ignored material owned by the current agent worktree, including runtime, scratch, logs, unpromoted artifacts, public share, and policy-controlled inbox.
+- `repos/topic-main/isomer-managed/topic-owned/`
+  - Meaning: Topic-owned projections.
+  - Notes: Ignored worker-visible projections of topic-owned non-Git material, split into `readonly/` and `writable/` policy surfaces.
+- `repos/topic-main/isomer-managed/links/`
+  - Meaning: Generated convenience links.
+  - Notes: Ignored advisory links to peer public shares or topic-owned projections; links are not durable path truth or isolation.
+- `agents/`
+  - Meaning: Agent Workspace root.
+  - Notes: Contains one Git worktree per agent, named as `<agent-name>`.
+- `records/artifacts/`
+  - Meaning: Owner-preserved research Artifacts.
+  - Notes: Durable topic-level files such as notes, reports, data summaries, figures, decisions, evidence material, and normalized handoff outputs.
+- `records/tasks/`
+  - Meaning: Owner-preserved Research Task records.
+  - Notes: Stores task support material outside canonical runtime rows when a task needs durable file-backed context.
+- `records/runs/`
+  - Meaning: Owner-preserved Run records.
+  - Notes: Stores per-Run prompts, summaries, command support, outputs, and other file-backed execution material.
+- `records/views/`
+  - Meaning: Owner-preserved View Manifest support files.
+  - Notes: Stores generated View Manifests and GUI view material.
+- `records/logs/`
+  - Meaning: Owner-preserved logs.
+  - Notes: Stores topic-level diagnostics and logs that are durable records but not normal worker input.
+- `runtime/adapters/houmao/<agent-team-instance-id>/`
+  - Meaning: Houmao adapter material.
+  - Notes: Stores adapter manifests, command payloads, launch material, snapshots, stop outcomes, handoff payloads, observations, and normalizations.
 
 The Topic Workspace must not contain a workspace-local `teams/` directory. Domain Agent Team Templates live as built-in or Project Config references. The one topic-specialized profile bundle lives under `team-profile/`, and runtime Agent Team Instance state lives in Workspace Runtime records plus adapter material.
 
