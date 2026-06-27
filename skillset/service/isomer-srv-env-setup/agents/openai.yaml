@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-srv-env-setup"
-  short_description: "Prepare enclosed Isomer Pixi environments"
-  default_prompt: "Use $isomer-srv-env-setup to prepare an enclosed Topic Workspace Pixi environment."

@@ -5,50 +5,48 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Require `ensure-topic-registration` evidence. Refuse before service delegation if the Research Topic or Topic Workspace is not Project Manifest-backed, if `topic_registration_status` is blocked, or if Pixi cannot resolve either an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or the implicit registered Topic Workspace directory default required by `isomer-srv-env-setup`.
-3. Resolve the selected Research Topic and Topic Workspace from registration evidence, Project Manifest evidence, and specialization outputs. Refuse to run if the Topic Workspace is missing or provisional without authoritative registration.
-4. Read the topic overview, specialization outputs, copied template setup notes, draft packet/profile inputs, and any environment requirements from topic material.
+2. Require `ensure-topic-registration` evidence. Refuse before service delegation if the Research Topic or Topic Workspace is not Project Manifest-backed, if `topic_registration_status` is blocked, or if Pixi cannot resolve either an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or the implicit registered Topic Workspace directory default required by `isomer-srv-topic-env-setup`.
+3. Resolve the selected Research Topic and Topic Workspace from registration evidence, Project Manifest evidence, and any topic or specialization outputs that exist. Refuse to run if the Topic Workspace is missing or provisional without authoritative registration.
+4. Read the topic overview, existing source gate, prompt-supplied runnable target, specialization outputs when present, copied template setup notes when present, draft packet/profile inputs when present, and any environment requirements from topic material. Do not require specialization outputs solely to prepare the Topic Workspace environment.
 5. Ensure the source gate exists at `<topic-workspace>/user-intent/src/env-gate.md`. If it exists, use it as the handoff contract. If it is missing and the prompt or topic material gives a clear runnable target, create or update a concise `env-gate.md` that states what must run after setup. If the runnable target is unclear, ask the user for the target and stop before service delegation.
 6. Select the service setup mode. Use `auto` for `fast-forward`, direct setup, or concrete setup requests. Use `manual` when the caller is `step-by-step`, asks for confirmation, or wants to inspect choices before each service step.
-7. Delegate heavy environment setup to `$isomer-srv-env-setup setup-for-topic-workspace <research_topic_id> <auto|manual>`, passing the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `env_gate_path`, and relevant topic/setup notes as context. Let `isomer-srv-env-setup` handle source-gate reading, repo materialization, derived gate generation, dependency inference, Pixi mutation, and verification.
+7. Delegate heavy environment setup to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`, passing the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `env_gate_path`, and relevant topic/setup notes as context. Let `isomer-srv-topic-env-setup` handle source-gate reading, repo materialization, derived gate generation, dependency inference, Pixi mutation, and verification.
 8. Map the service output using **Service Output Mapping**. Record `env_gate_path`, `derived_gate_path`, service readiness status, commands run, changed files, repo warnings, blockers, and validation refs as durable setup evidence.
 9. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a service-delegation plan from the topic material, template requirements, available `env-gate.md` intent, `isomer-srv-env-setup` output contract, and guardrails, then execute only the operator-safe handoff and reporting portions.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a service-delegation plan from the topic material, template requirements, available `env-gate.md` intent, `isomer-srv-topic-env-setup` output contract, and guardrails, then execute only the operator-safe handoff and reporting portions.
 
 ## Prerequisite Artifacts
 
-Required predecessor artifacts from `specialize-team` or `clarify-topic-team`:
+Required predecessor artifacts or inputs:
 
-- `<topic-dir>/topic-def/topic-overview.md`.
 - Registration assurance from `ensure-topic-registration`, including Project Manifest-backed `registered_research_topic_ref`, `registered_topic_workspace_ref`, `topic_registration_status: registered`, and explicit, implicit-default, or blocked environment binding evidence.
-- `<topic-workspace>/team-profile/execplan/team-specialization-plan.md` with `Final Report` content or explicit pending items.
-- Draft profile or packet/profile input summary from `draft-profile`.
+- A usable `<topic-workspace>/user-intent/src/env-gate.md`, or a clear runnable target from the prompt, topic overview, or existing topic-team material that can be written to that source gate.
 
-If the specialized topic-team material is missing, refuse to run, explain that environment setup depends on the specialized team shape and requirements, and tell the user to run `specialize-team` first.
+Specialized topic-team material, `<topic-workspace>/team-profile/`, Topic Agent Team Profile material, draft profile inputs, Agent Team Instance records, roles, and agent count are optional context for this subcommand. Do not refuse solely because they are absent. If the requested runnable target explicitly depends on files produced by specialization and those files are missing, report that specific missing runnable-target input instead of treating team-profile material as a general prerequisite.
 
-If registration evidence is missing, refuse to run, explain that service setup needs manifest-backed Research Topic and Topic Workspace refs, and tell the user to run `ensure-topic-registration` first. If Pixi cannot resolve the effective Topic Workspace Pixi binding target, report that blocker and do not call `isomer-srv-env-setup`.
+If registration evidence is missing, refuse to run, explain that service setup needs manifest-backed Research Topic and Topic Workspace refs, and tell the user to run `ensure-topic-registration` first. If Pixi cannot resolve the effective Topic Workspace Pixi binding target, report that blocker and do not call `isomer-srv-topic-env-setup`.
 
 ## Source Gate Handoff
 
-`env-gate.md` is the boundary between operator specialization and service environment setup. It should describe the user-specified runnable target, success criteria, important repos or data expectations, and any setup notes copied from the specialized team material.
+`env-gate.md` is the boundary between the operator workflow and service environment setup. It should describe the user-specified runnable target, success criteria, important repos or data expectations, and any setup notes from the prompt, topic material, or specialized team material when that material already exists.
 
-Do not invent runnable requirements from vague topic text. If the source gate is missing and no clear runnable target exists, ask the user what should be able to run after environment setup and stop before calling `isomer-srv-env-setup`.
+Do not invent runnable requirements from vague topic text. If the source gate is missing and no clear runnable target exists, ask the user what should be able to run after environment setup and stop before calling `isomer-srv-topic-env-setup`.
 
 ## Service Delegation
 
-Use `isomer-srv-env-setup` for the heavy setup path:
+Use `isomer-srv-topic-env-setup` for the heavy setup path:
 
 ```text
-$isomer-srv-env-setup setup-for-topic-workspace <research_topic_id> auto
-$isomer-srv-env-setup setup-for-topic-workspace <research_topic_id> manual
+$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> auto
+$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> manual
 ```
 
 Use `auto` when this subcommand is reached from `fast-forward` or a direct concrete setup request. Use `manual` when reached from `step-by-step` or when the user asks for confirmation before service setup decisions.
 
 ## Service Output Mapping
 
-| `isomer-srv-env-setup` Output | Operator Output |
+| `isomer-srv-topic-env-setup` Output | Operator Output |
 | --- | --- |
 | `readiness_status: ready` | `topic_environment_status: ready` |
 | `readiness_status: blocked` | `topic_environment_status: blocked` |
@@ -63,14 +61,14 @@ Use `auto` when this subcommand is reached from `fast-forward` or a direct concr
 
 ## Guardrails
 
-Treat installed packages, environment files, setup commands, validation records, skipped actions, and blockers as durable static preparation for the Topic Team.
+Treat installed packages, environment files, setup commands, validation records, skipped actions, and blockers as durable Topic Workspace preparation. Topic Team material may consume this evidence later, but it is not a prerequisite for this subcommand.
 
 Do not hide mutating setup work inside topic clarification or team specialization.
 
-Do not infer packages, choose repo sources, install dependencies, repair Pixi files, or run verification commands directly from this operator subcommand. Delegate that work to `isomer-srv-env-setup` and record its output.
+Do not infer packages, choose repo sources, install dependencies, repair Pixi files, or run verification commands directly from this operator subcommand. Delegate that work to `isomer-srv-topic-env-setup` and record its output.
 
 Do not start live team execution, launch execution adapters, or create runtime service state from this subcommand.
 
 Do not store credentials, API keys, command payloads, live provider state, or adapter state in topic profile material.
 
-Do not claim environment readiness unless `isomer-srv-env-setup` reports readiness, or unless readiness is explicitly deferred or blocked with named evidence.
+Do not claim environment readiness unless `isomer-srv-topic-env-setup` reports readiness, or unless readiness is explicitly deferred or blocked with named evidence.

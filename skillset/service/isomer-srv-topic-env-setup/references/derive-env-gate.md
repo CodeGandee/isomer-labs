@@ -1,4 +1,4 @@
-# Derive Gate
+# Derive Env Gate
 
 Use this subcommand to generate the operational environment gate from the source gate and repo evidence.
 
@@ -8,9 +8,9 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
-| Source gate summary | Require the extracted source gate summary from `read-gate`. Refuse to run if it is missing, and tell the user to run `read-gate` first. |
-| Repo context | Require repo context from `ensure-repos` when the source gate needs independent repos. If repos are required and context is missing, refuse to run and tell the user to run `ensure-repos` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
+| Source gate summary | Require the extracted source gate summary from `read-env-gate`. Refuse to run if it is missing, and tell the user to run `read-env-gate` first. |
+| Repo context | Require repo context from `ensure-topic-repos` when the source gate needs independent repos. If repos are required and context is missing, refuse to run and tell the user to run `ensure-topic-repos` first. |
 | `derived_gate_path` | Use `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`; create the parent directory when writing the gate. |
 | Optional modifiers | None for this step. |
 
@@ -18,7 +18,7 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: workspace context from `resolve-workspace`, source gate summary from `read-gate`, and repo context from `ensure-repos` when the source gate needs repos.
+1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace`, source gate summary from `read-env-gate`, and repo context from `ensure-topic-repos` when the source gate needs repos.
 2. **Resolve the derived gate path** as `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` and create its parent directory when needed.
 3. **Translate user intent into operations**. Convert the source gate and repo evidence into concrete repo requirements, dependency plan, enclosure strategy, Pixi install commands, verification commands, expected results, and blockers.
 4. **Apply dependency and enclosure policy**. Include Python as the Topic Workspace glue language, select a Python version with **Python Version Policy**, include the starter Python dependencies from **Starter Python Dependencies**, prefer PyPI for Python packages unless Pixi/Conda is required for the gate, use Pixi/Conda for native tools and binary/runtime dependencies, prefer the `nvidia` channel for NVIDIA tools, and classify every dependency or runtime need with **Environment Enclosure Strategy**.
@@ -74,7 +74,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Blockers` should list missing repos, missing dependencies, ambiguous commands, unavailable packages, unsupported live-agent actions, privileged or machine-global setup requirements, unclassified dependencies, or other reasons readiness cannot be claimed. When repo docs or the source gate ask for `sudo`, system package manager mutation, global shell profile edits, global Python or Node installs, `/etc` changes, `ldconfig`, daemons, kernel driver changes, or similar host mutation, record that request as a blocker or external prerequisite rather than an executable setup command.
 
-`## Execution Log` should be initialized as `Not run yet.` before `install-deps` or `verify-gate`, then updated by those subcommands when they run commands. The log should preserve enclosure evidence: Pixi-managed commands, external runtime wiring, topic-local fallback commands, changed files, and blockers.
+`## Execution Log` should be initialized as `Not run yet.` before `install-topic-deps` or `verify-env-gate`, then updated by those subcommands when they run commands. The log should preserve enclosure evidence: Pixi-managed commands, external runtime wiring, topic-local fallback commands, changed files, and blockers.
 
 ## Python Version Policy
 

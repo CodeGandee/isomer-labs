@@ -32,4 +32,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 This skill complements `isomer-admin-topic-team-specialize`: specialization defines topic-team material and static setup evidence, while this skill prepares the Git-backed Topic Workspace worktree layout used by `setup-agent-workspace` when requested.
 
-This skill also stays separate from `isomer-srv-env-setup`, which owns gate-driven topic environment setup and independent repository acquisition for environment checks.
+This skill also stays separate from `isomer-srv-topic-env-setup`, which owns gate-driven topic environment setup and independent repository acquisition for environment checks.

@@ -1,8 +1,5 @@
-# isomer-service-env-setup-enclosure Specification
+## MODIFIED Requirements
 
-## Purpose
-Define the environment enclosure policy for Topic Workspace environment setup.
-## Requirements
 ### Requirement: Environment Enclosure Policy
 The service environment setup skill SHALL define environment enclosure as Pixi-first, auditable Topic Workspace setup that avoids privileged or machine-global host mutation.
 
@@ -18,33 +15,6 @@ The service environment setup skill SHALL define environment enclosure as Pixi-f
 - **WHEN** the skill reports dependency setup results
 - **THEN** the output contract includes enough information to identify Pixi-managed installs, external runtime wiring, topic-local user-space fallback installs, and blockers
 - **AND** the output does not hide non-Pixi runtime dependencies behind generic readiness wording
-
-### Requirement: Dependency Enclosure Ladder
-The service environment setup skill SHALL classify each dependency or runtime need through a fixed enclosure ladder before installation or verification.
-
-#### Scenario: Pixi-managed dependency is preferred
-- **WHEN** a dependency required by `env-gate.md` can be satisfied by PyPI through Pixi or by Pixi/Conda packages
-- **THEN** the skill instructs the agent to install it through the selected Topic Workspace Pixi manifest
-- **AND** the command uses `pixi add --manifest-path <manifest_path>` or `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`
-- **AND** the dependency and selected source are recorded in `isomer-env-gate.md`
-
-#### Scenario: External runtime wiring is explicit
-- **WHEN** a gate requires an external DLL, SO, SDK, compiler, CUDA runtime, package-config path, activation script, or similar runtime piece that cannot reasonably be installed through Pixi
-- **THEN** the skill instructs the agent to route that runtime piece through an explicit Pixi-run command environment
-- **AND** the derived gate records the external path, sourced script, environment variable, or activation command
-- **AND** the derived gate records why Pixi-managed installation was not used
-
-#### Scenario: Topic-local fallback is secondary
-- **WHEN** Pixi-managed installation and Pixi-mediated external runtime wiring cannot satisfy the gate
-- **THEN** the skill MAY instruct the agent to use a topic-local user-space fallback under `<topic-workspace-dir>/.isomer-user-env/`
-- **AND** the fallback path is added to the Topic Workspace `.gitignore` when used
-- **AND** the fallback command, installed path, and reason for fallback are recorded in `isomer-env-gate.md`
-- **AND** the final output reports the fallback as a lower-portability dependency
-
-#### Scenario: Privileged or global mutation blocks setup
-- **WHEN** a dependency or setup instruction requires sudo, system package manager mutation, global shell profile edits, global Python package installation, global Node package installation, `/etc` changes, `ldconfig`, daemon installation, kernel driver changes, or another privileged or machine-global action
-- **THEN** the skill reports a blocker instead of running that action
-- **AND** the blocker names the required action, why it is outside the service-safe boundary, and what user action or external preparation is needed
 
 ### Requirement: Derived Gate Records Enclosure Strategy
 The service environment setup skill SHALL require `derive-env-gate` to record the enclosure strategy that later dependency installation and verification must follow.
@@ -111,4 +81,3 @@ The service environment setup skill SHALL require `verify-env-gate` to judge rea
 - **AND** the setup uses external runtime wiring or topic-local user-space fallback
 - **THEN** the final output reports the relevant paths, scripts, variables, or fallback prefix
 - **AND** the final output warns that those pieces may need repair or reinstall if the Topic Workspace moves or the host runtime changes
-

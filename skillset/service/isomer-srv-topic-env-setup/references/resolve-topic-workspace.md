@@ -1,6 +1,6 @@
-# Resolve Workspace
+# Resolve Topic Workspace
 
-Use this subcommand to resolve the Project root, Research Topic, Topic Workspace, active Topic Workspace Pixi binding, and setup preconditions.
+Use this subcommand to resolve the Project root, Research Topic, Topic Workspace, active Topic Workspace Pixi binding, and environment setup preconditions. This subcommand resolves Topic Workspace environment context only; it does not require Topic Agent Team Profile material, Agent Team Instance records, roles, or agent count.
 
 ## Required Inputs
 
@@ -22,7 +22,7 @@ When this subcommand is selected, execute the following steps in order.
 4. **Resolve the effective Topic Workspace Pixi binding target** for the selected Research Topic. Use an active `topic_standalone_pixi_bindings.manifest_path_or_dir` entry when present; otherwise use the registered Topic Workspace directory as the implicit default target. Explicit targets may be manifest files or directories. Record the target, binding source, and `pixi_environment`; use `default` when the explicit binding omits `pixi_environment` and always use `default` for the implicit default.
 5. **Ask Pixi to resolve the target** with `pixi info --json --manifest-path <manifest_path_or_dir>`. Record Pixi's resolved manifest path and selected environment prefix. If Pixi is missing, report a Pixi tooling blocker with online install guidance and offline executable-provisioning guidance instead of treating the topic as unbound.
 6. **Confirm path boundaries**. The Topic Workspace and binding target must be inside the Project root. Pixi's resolved manifest path and selected environment prefix must be confined to the selected Topic Workspace, with the prefix under `<topic-workspace>/.pixi/`.
-7. **Run read-only project validation when available** before direct setup mutation, such as `pixi run isomer-cli --print-json project validate` and `pixi run isomer-cli --print-json project doctor --topic <research_topic_id>`.
+7. **Run read-only project validation when available** before direct setup mutation, such as `pixi run isomer-cli --print-json project validate` and `pixi run isomer-cli --print-json project doctor --topic <research_topic_id>`. Classify diagnostics by environment relevance: diagnostics about missing `team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instances, Agent Workspaces, roles, role counts, or launch readiness are non-blocking for this subcommand unless they also prevent Topic Workspace discovery, Pixi binding resolution, source gate reading, dependency setup, repo checks, or Pixi-scoped verification.
 8. **Report workspace context** using the parent skill's output fields and stop with blockers for missing Project Manifest, unknown topic, missing Topic Workspace, Pixi tooling failure, unresolvable target, or invalid paths.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the parent guardrails, Project Manifest evidence, and user request, then execute the plan.
@@ -45,8 +45,9 @@ Carry these values to later subcommands:
 
 - Do not infer the active binding from directory names or Research Topic ids.
 - Do not block solely because the Project Manifest lacks an explicit `topic_standalone_pixi_bindings` entry when Pixi resolves the registered Topic Workspace directory as a confined Pixi workspace.
+- Do not block solely because `<topic-workspace>/team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instance records, Agent Workspace plans, roles, or agent count are absent.
 - Do not treat the Project-root Pixi environment as the Topic Workspace environment.
-- Do not proceed to `read-gate`, `ensure-repos`, `derive-gate`, `install-deps`, or `verify-gate` when any resolved context value is missing.
+- Do not proceed to `read-env-gate`, `ensure-topic-repos`, `derive-env-gate`, `install-topic-deps`, or `verify-env-gate` when any resolved context value is missing.
 
 ## Examples
 

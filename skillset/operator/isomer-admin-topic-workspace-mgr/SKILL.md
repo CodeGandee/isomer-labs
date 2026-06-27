@@ -5,7 +5,7 @@ description: "Prepare, validate, and summarize a Git-backed Topic Workspace layo
 
 # Isomer Admin Topic Workspace Mgr
 
-Use this command-style operator skill when a Project Operator Session needs to prepare one Topic Workspace for topic-local collaboration through `<topic-workspace-dir>/repos/topic-main` and per-agent Git worktrees under `<topic-workspace-dir>/agents/<agent-key>`. It prepares static filesystem and Git topology, plans or validates `agent_workspace_ref` values, writes advisory Workspace Boundary notes, and reports blockers; it does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or replace `isomer-srv-env-setup`.
+Use this command-style operator skill when a Project Operator Session needs to prepare one Topic Workspace for topic-local collaboration through `<topic-workspace-dir>/repos/topic-main` and per-agent Git worktrees under `<topic-workspace-dir>/agents/<agent-key>`. It prepares static filesystem and Git topology, plans or validates `agent_workspace_ref` values, writes advisory Workspace Boundary notes, and reports blockers; it does not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or replace `isomer-srv-topic-env-setup`.
 
 ## Workflow
 

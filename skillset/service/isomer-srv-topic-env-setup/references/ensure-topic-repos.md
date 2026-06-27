@@ -1,4 +1,4 @@
-# Ensure Repos
+# Ensure Topic Repos
 
 Use this subcommand to ensure independent repos required by the source gate exist under the Topic Workspace.
 
@@ -8,8 +8,8 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-workspace` first. |
-| Source gate summary | Require the extracted source gate summary from `read-gate`, including runnable target, desired commands, success criteria, repo hints, dependency hints, and blockers. Refuse to run if it is missing, and tell the user to run `read-gate` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
+| Source gate summary | Require the extracted source gate summary from `read-env-gate`, including runnable target, desired commands, success criteria, repo hints, dependency hints, and blockers. Refuse to run if it is missing, and tell the user to run `read-env-gate` first. |
 | `repos_root` | Use `<topic-workspace-dir>/repos/`; create it only when this step needs to materialize or inspect required repos. |
 | Explicit repo source | Optional. Use a URL, local path, package source, or repo name from the prompt or source gate only when the expected repo path is missing. |
 
@@ -17,7 +17,7 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: workspace context from `resolve-workspace` and source gate summary from `read-gate`.
+1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace` and source gate summary from `read-env-gate`.
 2. **Identify required repos** from the source gate, desired commands, repo URLs, package names, import paths, build instructions, README references, and common project files already present under `<topic-workspace-dir>/repos/`.
 3. **Use the required repo root**. Place every independent repo under `<topic-workspace-dir>/repos/<repo-name>`. Create `<topic-workspace-dir>/repos/` when needed.
 4. **Find existing repos first**. If the expected repo already exists under `repos/<repo-name>`, treat it as read-only for this subcommand: inspect it, record evidence, and do not run `git pull`, `git checkout`, copy files into it, delete files from it, install packages into it, regenerate files in it, or otherwise mutate it.

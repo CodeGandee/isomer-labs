@@ -1,0 +1,4 @@
+schema_version = "isomer-research-topic-config.v1"
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+topic_statement = "Flash Attention 4 Peak Performance Optimization on DGX Spark GB10"
+measurable_objectives = []

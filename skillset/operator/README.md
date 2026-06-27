@@ -10,7 +10,7 @@ Install these skills into the agent surface that acts as the Project Operator Se
 | --- | --- |
 | `isomer-admin-project-mgr` | Run the operator Project lifecycle workflow. It exposes short local subcommands such as `help`, `init-project`, `check-project`, `list-topics`, `show-context`, `init-runtime`, `prep-runtime`, and `specialize-team`; it initializes `.isomer-labs/` and the Isomer-managed `.isomer-labs/.houmao/` overlay through `isomer-cli project init`, checks Project health, resolves context, prepares runtime, and hands topic-team adaptation to `isomer-admin-topic-team-specialize`. |
 | `isomer-admin-topic-team-specialize` | Run the module-level Topic Team Specialization workflow. It exposes procedural subcommands from `init-topic` through `finalize-topic-team`, five helper subcommands for lower-level specialization work, and misc commands such as `help`, `step-by-step`, and `fast-forward`; it creates `topic-overview.md`, copies and adapts Domain Agent Team Template material under `<topic-workspace>/team-profile/`, prepares topic environment and Agent Workspace setup, validates readiness, writes `isomer-topic-summary.md`, and keeps approval, materialization, and launch as explicit boundaries. |
-| `isomer-admin-topic-workspace-mgr` | Prepare and validate the Git-backed Topic Workspace collaboration layout. It owns `<topic-workspace-dir>/repos/topic-main`, per-agent worktrees under `<topic-workspace-dir>/agents/<agent-key>`, `per-agent/<agent-key>/main` branch planning, future `per-agent/<agent-key>/<branch-name>` branches, `agent_workspace_ref` planning or validation, advisory Workspace Boundary notes, and summary output. It does not create Agent Instances, mutate Workspace Runtime, launch Houmao agents, or replace `isomer-srv-env-setup` environment setup. |
+| `isomer-admin-topic-workspace-mgr` | Prepare and validate the Git-backed Topic Workspace collaboration layout. It owns `<topic-workspace-dir>/repos/topic-main`, per-agent worktrees under `<topic-workspace-dir>/agents/<agent-key>`, `per-agent/<agent-key>/main` branch planning, future `per-agent/<agent-key>/<branch-name>` branches, `agent_workspace_ref` planning or validation, advisory Workspace Boundary notes, and summary output. It does not create Agent Instances, mutate Workspace Runtime, launch Houmao agents, or replace `isomer-srv-topic-env-setup` environment setup. |
 | `isomer-admin-houmao-interop` | Bridge Isomer Labs project constructs and the Houmao agent runtime. It explains how the Houmao agent loop works, lists agent-loop customization points, maps Domain Agent Team Templates such as DeepScientist onto Houmao concepts, and guides runtime inspection. Use it when a topic-team specialization or launch task touches Houmao loop, roles, recipes, presets, specialists, launch dossiers, project overlays, credentials, mailbox, or gateway. |
 
 ## Example: Initialize and Check a Project
@@ -30,13 +30,13 @@ Use this flow when a user gives a research topic and asks the operator to instan
 
 1. The operator can ask `isomer-admin-topic-team-specialize init-topic` to turn a new research topic idea into a provisional topic workspace seed with `<topic-dir>/topic-def/topic-overview.md`. If the topic already exists in the Project Manifest, the skill can use the registered Research Topic and Topic Workspace instead.
 2. If the user wants usage information, call `isomer-admin-topic-team-specialize help`; invoking `isomer-admin-topic-team-specialize` without a prompt defaults to the same help output.
-3. The normal procedural flow is `init-topic`, optional `clarify-topic`, `specialize-team`, optional `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`. `finalize-topic-team` writes `isomer-topic-summary.md` with the topic team, goal, working logic, environment setup, Agent Workspace layout, validation status, blockers, and next actions.
+3. The normal procedural flow is `init-topic`, optional `clarify-topic`, `ensure-topic-registration`, optional independent `setup-topic-env` when `env-gate.md` exists or a runnable target is clear, `specialize-team`, optional `clarify-topic-team`, optional repeated `setup-topic-env` when specialization changes runnable requirements, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`. `finalize-topic-team` writes `isomer-topic-summary.md` with the topic team, goal, working logic, environment setup, Agent Workspace layout, validation status, blockers, and next actions.
 4. If the user wants guided specialization, call `step-by-step`; it follows the same required path as `fast-forward` but explains each step and waits for user confirmation before continuing.
 5. If the user wants manual lower-level work, call one helper subcommand at a time, such as `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, or `draft-profile`.
 6. If the user explicitly approves continuing past finalization, the same skill's local `approve-profile`, `materialize-profile`, and `launch-team` subcommands handle approval provenance, validated bundle writing, and launch-facing runtime or adapter work.
 7. The operator reports topic overview path, copied material paths, packet/profile inputs, environment status, Agent Workspace paths, validation refs, summary path, and blockers.
 
-For Git-backed Agent Workspace setup, call `isomer-admin-topic-workspace-mgr` from the `setup-agent-workspace` stage. `isomer-admin-topic-team-specialize` remains responsible for static topic-team evidence and final summaries; the workspace manager handles the concrete `repos/topic-main` repository, Git worktrees, branch namespace, and `agent_workspace_ref` validation evidence. `isomer-srv-env-setup` remains the environment setup surface for gate-driven Pixi and independent repository acquisition checks, not the shared topic collaboration repository.
+For Git-backed Agent Workspace setup, call `isomer-admin-topic-workspace-mgr` from the `setup-agent-workspace` stage. `isomer-admin-topic-team-specialize` remains responsible for static topic-team evidence and final summaries; the workspace manager handles the concrete `repos/topic-main` repository, Git worktrees, branch namespace, and `agent_workspace_ref` validation evidence. `isomer-srv-topic-env-setup` remains the environment setup surface for gate-driven Pixi and independent repository acquisition checks, not the shared topic collaboration repository.
 
 ```mermaid
 sequenceDiagram
@@ -45,9 +45,10 @@ sequenceDiagram
     participant Store as Isomer Project and Topic Workspace
 
     User->>Operator: Request topic team for research topic
-    Operator->>Store: init-topic and specialize-team for topic and template
+    Operator->>Store: init-topic and ensure-topic-registration
     Store-->>Operator: Project, topic, workspace, template refs
-    Operator->>Store: setup-topic-env and setup-agent-workspace
+    Operator->>Store: setup-topic-env when env gate is available
+    Operator->>Store: specialize-team and setup-agent-workspace
     Store-->>Operator: Copied guide, plan, topic edits, setup records, packet/profile inputs
     Operator->>Store: validate-topic-team and finalize-topic-team
     Store-->>Operator: isomer-topic-summary.md

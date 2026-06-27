@@ -354,6 +354,92 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
 
+    def write_topic_env_setup_service(
+        self,
+        root: Path,
+        *,
+        omit_skill_term: str | None = None,
+        omit_reference_term: str | None = None,
+        include_legacy_folder: bool = False,
+    ) -> None:
+        skill_dir = root / "skillset" / "service" / "isomer-srv-topic-env-setup"
+        subcommand_links = ", ".join(
+            f"`references/{subcommand_name}`" for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS
+        )
+        skill_text = f"""
+            ---
+            name: isomer-srv-topic-env-setup
+            description: Valid fixture topic env setup service.
+            ---
+
+            # Isomer Service Topic Environment Setup
+
+            Topic environment setup is independent of Topic Agent Team structure.
+            A single capable agent or operator uses this skill to prepare the Topic Workspace environment.
+            Do not require or inspect Topic Agent Team Profile material, team-profile material, roles, or agent count.
+
+            ## Workflow
+
+            1. Select one subcommand and report blockers.
+
+            ## Subcommands
+
+            Procedural Subcommands: `resolve-topic-workspace`, `read-env-gate`, `ensure-topic-repos`, `derive-env-gate`, `install-topic-deps`, and `verify-env-gate`.
+
+            Misc Subcommands: `setup-topic-env` and `help`.
+
+            Use {subcommand_links}.
+
+            Commands include `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, `pixi add --manifest-path <manifest_path>`, and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
+            Use `.isomer-user-env/` only as fallback and block sudo.
+            """
+        if omit_skill_term is not None:
+            skill_text = skill_text.replace(omit_skill_term, "")
+        write(skill_dir / "SKILL.md", skill_text)
+        write(
+            skill_dir / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-srv-topic-env-setup"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-srv-topic-env-setup to validate this fixture."
+            """,
+        )
+        reference_terms = {
+            "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup.",
+            "read-env-gate.md": "Interpret the runnable target as what one agent or operator must run.",
+            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain.",
+            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness.",
+        }
+        for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
+            term = reference_terms.get(subcommand_name, "Topic Workspace environment setup reference.")
+            if omit_reference_term is not None:
+                term = term.replace(omit_reference_term, "")
+            write(
+                skill_dir / "references" / subcommand_name,
+                f"""
+                # {subcommand_name}
+
+                ## Workflow
+
+                1. Run the service fixture step.
+
+                {term}
+                """,
+            )
+        if include_legacy_folder:
+            write(
+                root / "skillset" / "service" / "isomer-srv-env-setup" / "SKILL.md",
+                """
+                ---
+                name: isomer-srv-env-setup
+                description: Legacy fixture.
+                ---
+
+                # Legacy
+                """,
+            )
+
     def test_operator_validator_accepts_topic_team_specialization_contract(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -728,3 +814,39 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("Workspace Runtime" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_accepts_topic_env_setup_contract(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_service_validator_rejects_legacy_env_setup_folder(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, include_legacy_folder=True)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("legacy isomer-srv-env-setup" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_topic_env_setup_subcommands(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        (root / "skillset" / "service" / "isomer-srv-topic-env-setup" / "references" / "setup-topic-env.md").unlink()
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("setup-topic-env.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_team_independent_env_setup_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="Do not require `team-profile/`")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("team-independent environment setup" in message for message in messages(diagnostics)), messages(diagnostics))

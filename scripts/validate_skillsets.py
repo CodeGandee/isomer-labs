@@ -289,6 +289,55 @@ TOPIC_WORKSPACE_MANAGER_REFERENCE_REQUIRED_TERMS = (
 
 TOPIC_WORKSPACE_MANAGER_FORBIDDEN_SUPPORT_REFS = TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS
 
+TOPIC_ENV_SETUP_SERVICE_SKILL = "isomer-srv-topic-env-setup"
+
+TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS = (
+    "setup-topic-env",
+    "resolve-topic-workspace",
+    "read-env-gate",
+    "ensure-topic-repos",
+    "derive-env-gate",
+    "install-topic-deps",
+    "verify-env-gate",
+    "single capable agent or operator",
+    "Topic environment setup is independent of Topic Agent Team structure",
+    "Do not require or inspect Topic Agent Team Profile material",
+    "agent count",
+    "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
+    "pixi add --manifest-path <manifest_path>",
+    "pixi install --manifest-path <manifest_path> --environment <pixi_environment>",
+    ".isomer-user-env/",
+    "sudo",
+)
+
+TOPIC_ENV_SETUP_SUBCOMMANDS = (
+    "resolve-topic-workspace.md",
+    "read-env-gate.md",
+    "ensure-topic-repos.md",
+    "derive-env-gate.md",
+    "install-topic-deps.md",
+    "verify-env-gate.md",
+    "setup-topic-env.md",
+)
+
+TOPIC_ENV_SETUP_REMOVED_SUBCOMMANDS = (
+    "resolve-workspace.md",
+    "read-gate.md",
+    "ensure-repos.md",
+    "derive-gate.md",
+    "install-deps.md",
+    "verify-gate.md",
+    "setup-for-topic-workspace.md",
+)
+
+TOPIC_ENV_SETUP_INDEPENDENCE_TERMS = (
+    "Do not block solely because `<topic-workspace>/team-profile/`",
+    "non-blocking for this subcommand unless",
+    "one agent or operator",
+    "Do not require `team-profile/`",
+    "Do not require or verify `team-profile/`",
+)
+
 REMOVED_OPERATOR_SKILLS = (
     "isomer-admin-project-aware",
     "isomer-admin-template-inspect",
@@ -911,18 +960,82 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     return sorted(set(diagnostics))
 
 
-def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
-    return sorted(
-        set(
-            validate_simple_skill_layout(
-                repo_root / "skillset" / "service",
+def validate_topic_env_setup_service(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    old_skill_dir = repo_root / "skillset" / "service" / "isomer-srv-env-setup"
+    if old_skill_dir.exists():
+        add(diagnostics, repo_root, old_skill_dir, 1, "SVS002", "legacy isomer-srv-env-setup skill folder must be renamed to isomer-srv-topic-env-setup")
+    skill_dir = repo_root / "skillset" / "service" / TOPIC_ENV_SETUP_SERVICE_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "SVS002", f"{TOPIC_ENV_SETUP_SERVICE_SKILL} is required")
+        return diagnostics
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    for term in TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS:
+        if term not in text:
+            add(
+                diagnostics,
                 repo_root,
-                prefix="isomer-srv-",
-                code="SVS001",
-                manifest_required=False,
+                skill_md,
+                first_line_containing(lines, "# Isomer"),
+                "SVS002",
+                f"{TOPIC_ENV_SETUP_SERVICE_SKILL} must document '{term}'",
             )
-        )
+    references_dir = skill_dir / "references"
+    for removed_subcommand in TOPIC_ENV_SETUP_REMOVED_SUBCOMMANDS:
+        removed_path = references_dir / removed_subcommand
+        if removed_path.exists():
+            add(diagnostics, repo_root, removed_path, 1, "SVS002", f"legacy subcommand references/{removed_subcommand} must be renamed")
+    allowed_reference_names = set(TOPIC_ENV_SETUP_SUBCOMMANDS)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_reference_names:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "SVS002",
+                f"{TOPIC_ENV_SETUP_SERVICE_SKILL} has unexpected reference page references/{reference_path.name}",
+            )
+    for subcommand_file_name in TOPIC_ENV_SETUP_SUBCOMMANDS:
+        subcommand_path = references_dir / subcommand_file_name
+        if not subcommand_path.exists():
+            add(diagnostics, repo_root, subcommand_path, 1, "SVS002", f"{TOPIC_ENV_SETUP_SERVICE_SKILL} must include references/{subcommand_file_name}")
+            continue
+        if f"references/{subcommand_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "SVS002", f"{TOPIC_ENV_SETUP_SERVICE_SKILL} must link references/{subcommand_file_name}")
+    for file_name, term in zip(
+        ("resolve-topic-workspace.md", "resolve-topic-workspace.md", "read-env-gate.md", "setup-topic-env.md", "verify-env-gate.md"),
+        TOPIC_ENV_SETUP_INDEPENDENCE_TERMS,
+        strict=True,
+    ):
+        subcommand_path = references_dir / file_name
+        if subcommand_path.exists():
+            subcommand_lines = read_lines(subcommand_path)
+            subcommand_text = "\n".join(subcommand_lines)
+            if term not in subcommand_text:
+                add(
+                    diagnostics,
+                    repo_root,
+                    subcommand_path,
+                    first_line_containing(subcommand_lines, "#"),
+                    "SVS002",
+                    f"references/{file_name} must document team-independent environment setup term '{term}'",
+                )
+    return diagnostics
+
+
+def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
+    diagnostics = validate_simple_skill_layout(
+        repo_root / "skillset" / "service",
+        repo_root,
+        prefix="isomer-srv-",
+        code="SVS001",
+        manifest_required=False,
     )
+    diagnostics.extend(validate_topic_env_setup_service(repo_root))
+    return sorted(set(diagnostics))
 
 
 def validate_all(repo_root: Path) -> list[Diagnostic]:
