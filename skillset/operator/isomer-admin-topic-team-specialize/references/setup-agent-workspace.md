@@ -23,8 +23,10 @@ When this subcommand is selected, execute the following steps in order.
    - Require `topic.intent.agent_env_requirements` or an explicit target spec source.
    - Require Topic Workspace predecessor evidence including `topic.env.topic_setup_target_spec`, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, and authoritative Agent Names.
    - Call `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>` or the needed direct subcommand.
-   - Require delegated output to record resource checks and conservative skip, defer, or blocker decisions before any heavy per-agent cwd verification command such as compilation, deep model inference, full dataset download, large archive extraction, or broad test suite execution.
-   - Record `agent_env_source_label`, `agent_env_source_path`, `agent_env_target_spec_label`, `agent_env_target_spec_path`, Topic Main Development Repository predecessor evidence, projection predecessor evidence, Agent Names, resolved `agent.workspace` paths, branch plan, worktree status by agent, resource check status, readiness by agent, overall readiness, commands run, changed files, blockers, and next action as service evidence.
+   - Require delegated output to include `topic.env.agent_setup_target_spec`, its `## Gate Checklist`, readiness by Agent Name, and whether every required per-agent checklist item is checked with supporting cwd execution, path, dependency, resource, projection, or expected-result evidence before accepting overall readiness.
+   - Require delegated output to record resource checks and bounded real-path verification decisions before any heavy per-agent cwd verification command such as compilation, deep model inference, full dataset download, large archive extraction, or broad test suite execution. Selected-agent partial checks can reduce how many Agent Workspaces run the check, but the selected command must still exercise the requested build, inference, dataset, or benchmark path. If no bounded real-path command can run safely, require a blocker with evidence instead of readiness.
+   - Record `agent_env_source_label`, `agent_env_source_path`, `agent_env_target_spec_label`, `agent_env_target_spec_path`, Topic Main Development Repository predecessor evidence, projection predecessor evidence, Agent Names, resolved `agent.workspace` paths, branch plan, worktree status by agent, gate checklist completion evidence, resource check status, readiness by agent, overall readiness, commands run, changed files, blockers, and next action as service evidence.
+   - Preserve selected-agent partial evidence as partial; it cannot satisfy `overall_readiness_status: ready` unless the complete planned Agent Name matrix has already passed.
 7. Treat non-Git static setup as an explicit blocker or exception for launch-facing worker Agent Workspaces:
    - If the user intentionally requests non-Git support material, record why it is outside the standard worker layout.
 8. Create or report Agent Workspace directories only after the specialized team shape is clear and the target paths are safe.
@@ -98,6 +100,8 @@ $isomer-srv-agent-env-setup verify-agent-env-gate <research_topic_id> --agent <a
 
 Use the full `setup-agent-env` flow for overall readiness. Use direct selected-agent verification only when the user explicitly asks for partial selected-agent repair or rerun evidence.
 
+Accept delegated `overall_readiness_status: ready` only when every required per-agent `## Gate Checklist` item is checked with cwd evidence for every planned Agent Name. If the service output contains unchecked, failed, blocked, partial, or not-checked checklist items, record those exact items, Agent Names, reasons, and next actions instead of summarizing the agent environment as ready.
+
 ## Guardrails
 
 Use **Topic Workspace** for the topic-level work area and **Agent Workspace** for per-agent work areas.
@@ -107,6 +111,8 @@ Do not create Agent Workspaces before team specialization defines expected Agent
 Do not hand-roll Git worktree or `isomer-managed/` setup inside this subcommand. Use `isomer-srv-agent-env-setup` for per-agent worktree creation and cwd verification. Use `isomer-admin-topic-workspace-mgr` only for optional topology inspection, branch helpers, boundary summaries, or legacy compatibility diagnostics.
 
 Do not hand-roll per-Agent Workspace environment verification inside this subcommand. Use `isomer-srv-agent-env-setup` for source intent reading, `topic.env.agent_setup_target_spec`, worktree creation, per-agent cwd verification, selected-agent partial evidence, and no-runtime-mutation guardrails.
+
+Do not accept a weaker smoke-test substitution as normal Agent Workspace readiness. If the service records a user downgrade from a critical-path checklist item, preserve that limitation in the setup evidence, validation refs, and later summaries.
 
 Do not call `isomer-srv-agent-env-setup` before `topic.intent.agent_env_requirements` exists, unless the caller supplied an explicit manual agent env target spec. Route to `resolve-agent-env-gate` only when commands, expected results, and cwd assumptions are clear enough for the service to derive a per-agent verification matrix.
 

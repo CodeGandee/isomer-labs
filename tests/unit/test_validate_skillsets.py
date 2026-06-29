@@ -158,15 +158,19 @@ class SkillsetValidatorTests(unittest.TestCase):
             extra_terms = ""
             if subcommand_name == "setup-agent-workspace.md":
                 extra_terms = """
-                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support paths, `semantic_paths`, `local_tmp_path_status`, semantic labels, path sources, `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, and `isomer-srv-agent-env-setup`. generate the source gate from a clear task and reject default-looking directories without semantic labels and path sources.
+                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support paths, `semantic_paths`, `local_tmp_path_status`, semantic labels, path sources, `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, and `isomer-srv-agent-env-setup`. generate the source gate from a clear task and reject default-looking directories without semantic labels and path sources. Accept readiness only when every required per-agent `## Gate Checklist` item has evidence, preserve selected-agent partial evidence, and record any weaker smoke-test substitution as a limitation.
                 """
             elif subcommand_name == "validate-topic-team.md":
                 extra_terms = """
-                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support labels, `semantic_paths`, `local_tmp_path_status`, path sources, and reject hard-coded default-only paths without semantic labels.
+                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support labels, `semantic_paths`, `local_tmp_path_status`, path sources, and reject hard-coded default-only paths without semantic labels. Verify every required topic gate checklist item and every required per-agent checklist item, and preserve any weaker smoke-test downgrade.
                 """
             elif subcommand_name == "finalize-topic-team.md":
                 extra_terms = """
-                Report semantic labels first with `topic.repos.main`, `topic.repos.main.tmp`, `agent.workspace`, `agent.tmp`, path sources, `isomer-default.v1`, and reject hard-coded default-only paths without semantic label evidence.
+                Report semantic labels first with `topic.repos.main`, `topic.repos.main.tmp`, `agent.workspace`, `agent.tmp`, path sources, `isomer-default.v1`, and reject hard-coded default-only paths without semantic label evidence. Include required topic `## Gate Checklist` completion evidence, required per-agent `## Gate Checklist` completion evidence, and smoke-test downgrades.
+                """
+            elif subcommand_name == "setup-topic-env.md":
+                extra_terms = """
+                Require complete required `## Gate Checklist` evidence before accepting ready, keep each required checklist item visible when blocked, failed, or not checked, and reject a weaker smoke test as readiness evidence.
                 """
             elif subcommand_name == "fast-forward.md":
                 extra_terms = """
@@ -487,6 +491,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             Commands include `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, `pixi add --manifest-path <manifest_path>`, and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
             Use `.isomer-user-env/` only as fallback and block sudo.
             Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`; accept an explicit manual target spec; produce Topic Workspace predecessor evidence, Topic Main Development Repository Git state, external repo projection evidence, and `per_agent_readiness_status` when per-agent readiness is not checked. Also resolve the appropriate topic repository label before creating repos.
+            Use bounded real-path verification for heavy source-intent paths. A generic smoke test is allowed only as supporting evidence.
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -506,10 +511,10 @@ class SkillsetValidatorTests(unittest.TestCase):
             "ensure-topic-repos.md": "Use resolved non-main `topic.repos.*` paths from `semantic_paths`; report semantic label, path, and path source. Keep existing canonical external repos read-only by default. Do not place task repos outside the resolved semantic path, and default helper-created repos under `repos/extern/...`.",
             "project-extern-repos.md": "Create external repo projection entries under `topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`, track metadata in `topic.repos.main.projections.manifest`, and distinguish read-only projections from writable projections.",
             "read-env-gate.md": "Resolve and read `topic.intent.topic_env_requirements`. Interpret the runnable target as what one agent or operator must run.",
-            "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec.",
-            "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy.",
-            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `topic.intent.agent_env_requirements`.",
-            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, and projection evidence.",
+            "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec. Include `## Gate Checklist`, `- [ ]`, and `- [x]`. Define the required readiness work contract with a pass condition, evidence source, optional diagnostics outside the checklist, and blocker condition. Preserve every source-intent runnable target and use bounded real-path verification; a simple smoke test that misses the source path is insufficient unless the user explicitly records a downgrade.",
+            "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy plus bounded real setup path decisions.",
+            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `topic.intent.agent_env_requirements`. Use bounded real-path verification; a generic smoke test is not enough.",
+            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, projection evidence, bounded real-path coverage, source-intent runnable target coverage, every required `## Gate Checklist` item checked with supporting evidence, the exact checklist item when blocked, failed, or not checked, any weaker smoke test limitation, and any user downgrade.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
             term = reference_terms.get(subcommand_name, "Topic Workspace environment setup reference.")
@@ -575,6 +580,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             Use {subcommand_links}.
 
             This fixture reads `topic.intent.agent_env_requirements`, writes or validates `topic.env.agent_setup_target_spec`, accepts an explicit manual target spec, consumes `topic.env.topic_setup_target_spec`, requires prepared Topic Main Development Repository and projection predecessor evidence at `topic.repos.main`, uses authoritative Agent Names, resolves `agent.workspace`, runs `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, records selected-agent partial evidence, Service Request refs, Provenance refs, and `overall_readiness_status`.
+            Use bounded real-path verification for heavy cwd commands. A generic smoke test is only supporting evidence.
 
             Do not initialize, repair, or configure the Topic Main Development Repository. Do not create per-agent Pixi manifests. Do not install or mutate Topic Workspace dependencies. Do not create Agent Instances or mutate Workspace Runtime records.
             """
@@ -1232,6 +1238,46 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("SVS002", codes(diagnostics))
         self.assertTrue(any("topic.tmp" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_service_validator_requires_bounded_real_path_topic_env_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="bounded real-path")
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("bounded real-path" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_complete_checklist_readiness_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="every required `## Gate Checklist` item")
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("every required `## Gate Checklist` item" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_explicit_blocked_checklist_item_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="exact checklist item")
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("exact checklist item" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_rejects_missing_smoke_test_substitution_guardrail(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="weaker smoke test")
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("weaker smoke test" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_service_validator_accepts_agent_env_setup_contract(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root)
@@ -1260,6 +1306,16 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("SVS003", codes(diagnostics))
         self.assertTrue(any("topic.intent.agent_env_requirements" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_bounded_real_path_agent_env_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root, omit_reference_term="bounded real-path")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS003", codes(diagnostics))
+        self.assertTrue(any("bounded real-path" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_requires_agent_env_target_spec_terms(self) -> None:
         root = self.make_root()

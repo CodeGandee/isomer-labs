@@ -29,9 +29,11 @@ When this subcommand is selected, execute the following steps in order.
    - Call `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`.
    - Pass the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `topic.intent.topic_env_requirements` metadata or explicit target spec source, and relevant topic/setup notes as context.
    - Let `isomer-srv-topic-env-setup` handle source-gate reading, target-spec validation, Topic Main Development Repository setup, canonical external repo materialization, external repo projection materialization, dependency inference, Pixi mutation, and topic-root or repo-specific verification only.
-   - Require delegated output to record resource checks and conservative skip, defer, or blocker decisions before any heavy setup or verification command such as compilation, deep model inference, full dataset download, large archive extraction, or broad test suite execution.
+   - Require delegated output to include `topic.env.topic_setup_target_spec`, its `## Gate Checklist`, and whether every required checklist item is checked with supporting setup, path, dependency, resource, command, or expected-result evidence before accepting `readiness_status: ready`.
+   - Require delegated output to record resource checks and bounded real-path verification decisions before any heavy setup or verification command such as compilation, deep model inference, full dataset download, large archive extraction, or broad test suite execution. Heavy source-intent paths must still run in bounded form unless blocked; a generic smoke test that misses the essential code path is not enough.
+   - Example: for a CUDA kernel source gate, the service should identify the local GPU, compile only the local architecture, cap build parallelism such as with `MAX_JOBS=1`, build a selected baseline kernel or extension rather than all release artifacts, then run a tiny benchmark case. If even that bounded real path cannot run safely, the service reports a blocker instead of `ready`.
 9. Map the service output using **Service Output Mapping**:
-   - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, projection metadata, resource check status, commands run, changed files, repo warnings, blockers, and validation refs.
+   - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, projection metadata, gate checklist completion evidence, resource check status, commands run, changed files, repo warnings, blockers, and validation refs.
    - Record `per_agent_readiness_status: not checked` when the service reports it as durable setup evidence.
 10. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand. Do not report per-Agent Workspace cwd readiness from this subcommand.
 
@@ -73,16 +75,18 @@ Use `auto` when this subcommand is reached from `fast-forward` or a direct concr
 
 | `isomer-srv-topic-env-setup` Output | Operator Output |
 | --- | --- |
-| `readiness_status: ready` | `topic_environment_status: ready` |
+| `readiness_status: ready` plus complete required `## Gate Checklist` evidence | `topic_environment_status: ready` |
+| `readiness_status: ready` but a required checklist item is unchecked, missing, or completed only by a weaker smoke test that does not prove the item | `topic_environment_status: blocked`, with the incomplete checklist item and repair action |
 | `readiness_status: blocked` | `topic_environment_status: blocked` |
-| `readiness_status: failed` | `topic_environment_status: blocked`, with failed command evidence |
-| `readiness_status: not checked` | `topic_environment_status: deferred` or `not checked`, based on whether setup was intentionally deferred |
+| `readiness_status: failed` | `topic_environment_status: blocked`, with failed command evidence and the failed checklist item |
+| `readiness_status: not checked` | `topic_environment_status: not checked` only when verification was not requested; if a required checklist item or source-intent runnable target could not run in bounded real-path form, map it to `topic_environment_status: blocked` with blocker evidence |
 | `topic_env_source_label`, `topic_env_source_path`, `topic_env_source_storage_profile`, `topic_env_source`, `topic_env_source_detail` | source intent setup evidence |
 | `topic_env_target_spec_label`, `topic_env_target_spec_path`, `topic_env_target_spec_storage_profile`, `topic_env_target_spec_source`, `topic_env_target_spec_source_detail` | target spec validation ref |
+| `gate_checklist`, `required_checklist_items`, `unchecked_checklist_items`, `checklist_evidence` | readiness checklist evidence; incomplete required items become operator blockers |
 | `path_diagnostics` or label diagnostics | operator blockers or warnings with the relevant semantic label |
 | `topic_main_repository` | topic-main predecessor evidence for later agent setup |
 | `external_repo_projections`, `external_repo_projection_manifest` | projection predecessor evidence for later agent setup |
-| `resource_check_status`, `resource_check_evidence`, `resource_conservative_decisions` | operator-visible evidence that heavy setup or verification work checked host capacity first and chose smoke-test, skip, defer, or blocker decisions instead of overloading the system |
+| `resource_check_status`, `resource_check_evidence`, `resource_conservative_decisions` | operator-visible evidence that heavy setup or verification work checked host capacity first and chose bounded real-path commands such as reduced parallelism, selected build targets, tiny input shapes, sample data, reduced iterations, or a blocker when no bounded real-path check can run safely |
 | `commands_run` | setup command evidence |
 | `changed_files` | changed setup file evidence |
 | `inferred_source_warnings` | setup warnings and later validation notes |
@@ -102,4 +106,6 @@ Do not start live team execution, launch execution adapters, or create runtime s
 
 Do not store credentials, API keys, command payloads, live provider state, or adapter state in topic profile material.
 
-Do not claim Topic Workspace environment readiness unless `isomer-srv-topic-env-setup` reports readiness, or unless readiness is explicitly deferred or blocked with named evidence. Topic Workspace readiness does not satisfy Agent Workspace cwd readiness.
+Do not claim Topic Workspace environment readiness unless `isomer-srv-topic-env-setup` reports readiness and every required `## Gate Checklist` item is checked with supporting evidence, or unless incomplete checklist items are explicitly reported as blocked, failed, or not checked with named evidence. Topic Workspace readiness does not satisfy Agent Workspace cwd readiness.
+
+Do not treat a weaker smoke-test substitution as normal readiness. If the service records a user downgrade from a critical-path checklist item, preserve that limitation in operator output and validation notes.

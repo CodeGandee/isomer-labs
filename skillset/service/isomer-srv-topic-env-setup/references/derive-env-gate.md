@@ -25,7 +25,8 @@ When this subcommand is selected, execute the following steps in order.
    - Record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
    - Create the parent directory when writing the target spec.
 3. **Translate or validate operations**:
-   - Convert source intent into concrete topic-main requirements, canonical external repo requirements, projection access intent, dependency plan, enclosure strategy, resource check plan, Pixi install commands, verification commands, expected results, and blockers.
+   - Preserve every source-intent runnable target as either a verification target or a named blocker; do not narrow a requested build, inference, dataset, or benchmark target into an unrelated smoke test.
+   - Convert source intent into concrete topic-main requirements, canonical external repo requirements, projection access intent, dependency plan, enclosure strategy, bounded real-path resource check plan, Pixi install commands, verification commands, expected results, and blockers.
    - Or validate that the explicit target spec already contains those details.
 4. **Apply dependency and enclosure policy**:
    - Include Python as the Topic Workspace glue language.
@@ -40,6 +41,8 @@ When this subcommand is selected, execute the following steps in order.
 5. **Write or update the fixed Markdown template** from **Template**:
    - Write at the resolved `topic.env.topic_setup_target_spec` path when deriving from source intent.
    - When using an explicit manual target spec, record the explicit source and normalized target-spec copy or reference, then preserve every required section.
+   - Use Markdown checkboxes in the generated gate file for every required setup item, resource check, verification command, expected-result comparison, and blocker-resolution item that must be done or checked before readiness can be declared.
+   - Keep optional diagnostics and supporting smoke checks outside `## Gate Checklist` unless they are required readiness work.
 6. **Warning-label inferred repo requirements** in `## Inferred Source Warnings` and carry the same warnings to the final skill output. `ensure-topic-repos` may later add stronger source evidence when it materializes missing repos.
 7. **Report target spec metadata** and any blockers that prevent topic-main setup, repo acquisition, projection materialization, installation, or verification.
 
@@ -51,6 +54,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 # Isomer Environment Gate
 
 ## Source Intent
+
+## Gate Checklist
 
 ## Runnable Target
 
@@ -77,33 +82,102 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Section Guidance
 
-`## Source Intent` should summarize the user-authored `topic.intent.topic_env_requirements` source intent and cite its resolved path, or name the explicit target spec source when the service was invoked manually.
+### Source Intent
 
-`## Runnable Target` should name the desired command or behavior that must work after setup.
+- Cite `topic.intent.topic_env_requirements` and its resolved path when deriving from source intent.
+- Name the explicit target spec source when the service was invoked manually.
+- Preserve later Agent Workspace cwd assumptions as source context only.
 
-`## Repo Requirements` should list repo names, semantic `topic.repos.*` labels, expected resolved paths, source hints, and inspection notes. For helper-created non-main topic repos, use the default `repos/extern/<repo-label-path>` location unless an explicit safe binding already exists. Existing canonical external repos are read-only evidence by default unless this target spec explicitly authorizes mutation.
+### Gate Checklist
 
-`## Inferred Source Warnings` should list inferred repo sources and the reason each was chosen. Use `None.` only when no repo source was inferred.
+- Treat `## Gate Checklist` as the required readiness work contract, not a progress decoration. Every item in this section is required for `readiness_status: ready`.
+- Use Markdown checkboxes for required actionable gate work: `- [ ]` before work runs and `- [x]` only after evidence exists.
+- Include setup items, repo checks, projection checks, dependency installation, resource probes, bounded real-path verification commands, expected-result checks, and blocker-resolution items.
+- For each required checklist item, state the pass condition, evidence source, and blocker condition either in the item text or in the matching `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, `## Blockers`, or `## Execution Log` entry.
+- Keep optional diagnostics and supporting smoke checks outside `## Gate Checklist`; if a smoke check is included in the checklist, its item text must make clear that only the smoke check is required.
+- Keep unchecked items visible when they are blocked, unsafe, or not yet run; explain the reason in `## Blockers` or `## Execution Log`.
+- Do not mark a checkbox complete because a weaker smoke test passed unless the checkbox itself was only for that smoke test, or the user explicitly records a downgrade from the original critical-path item.
 
-`## Projection Requirements` should list which canonical external repositories must be visible from topic-main, their intended access (`read-only` or `writable`), expected projection root (`topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`), acceptable projection modes, mutation policy, and blockers. Use `None.` when no external repo must be projected into topic-main.
+### Runnable Target
 
-`## Dependency Plan` should list Python glue baseline, selected Python version, Python version evidence, any version conflicts and adaptation plan, starter Python dependencies, PyPI dependencies, Pixi/Conda dependencies, native toolchains, package source evidence, NVIDIA channel decisions when relevant, editable installs, local package stores or system Python fallbacks when used, and an enclosure strategy for every dependency or runtime need. Mark each item as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked. For every non-Pixi-managed choice, record why Pixi-managed installation was not used. When package repository, mirror, registry, channel, local package store, or source reachability is uncertain or policy-relevant, record the `isomer-srv-resolve-pkg-repo` resolution evidence. When CUDA architecture targets, CUDA/C++ build environments, or build parallelism choices affect the gate, record the `isomer-misc-nvidia-tools` preference evidence.
+- Name the command or behavior that must work after setup.
+- Keep every source-intent runnable target in scope as a verification target, bounded real-path target, or blocker.
+- For heavy work, state the bounded real-path variant: selected build target, reduced build parallelism, tiny model or tensor shape, sample data, reduced benchmark iterations, or short representative dataset slice.
 
-When a named library has package-specific installation caveats, variant choices, or runtime checks, consult `isomer-misc-pkg-specifics` before choosing its package source and record the package-specific evidence in the dependency plan. If that skill exists and lists specific rules for the package, follow those rules. Keep package-specific caveats in that misc skill, not in this core service workflow.
+### Repo Requirements
 
-`## Resource Check Plan` should classify setup and verification commands as light or heavy. Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy. For each heavy command, name the lightweight resource probes to run first, the capacity signals to inspect, the conservative fallback such as smoke test, sample data, reduced parallelism, selected tests, dry-run, metadata check, skip, or defer, and the blocker condition when capacity is insufficient or unclear. Prefer a bounded proof over a full expensive run unless the user explicitly requires the expensive run and the resource check shows enough idle capacity.
+- List repo names, semantic `topic.repos.*` labels, expected resolved paths, source hints, and inspection notes.
+- Use `repos/extern/<repo-label-path>` for helper-created non-main topic repos unless a safe explicit binding exists.
+- Treat existing canonical external repos as read-only evidence unless this target spec explicitly authorizes mutation.
 
-`## Pixi Install Commands` should list the concrete commands the agent will run from the Topic Workspace root or with `--manifest-path <manifest_path>`, including the starter dependency command when those packages are missing. Dependency mutation commands must use `pixi add --manifest-path <manifest_path>` or `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`. Setup commands that need runtime wiring must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>` and record any sourced script or exported path.
+### Inferred Source Warnings
 
-`## Verification Commands` should list the exact Pixi commands that prove the runnable target works. If a command needs external runtime wiring, include the recorded environment variables, sourced scripts, or runtime paths inside the Pixi-run command rather than relying on ambient shell state.
+- List each inferred repo source and the reason it was chosen.
+- Use `None.` only when no repo source was inferred.
 
-When the source intent mentions later Agent Workspace use, preserve cwd assumptions explicitly as source context only. Commands that prove Topic Workspace readiness remain topic-scoped. Do not derive per-Agent Workspace verification here and do not write `topic.env.agent_setup_target_spec`.
+### Projection Requirements
 
-`## Expected Results` should state pass/fail criteria and expected outputs.
+- List canonical external repos that must be visible from topic-main.
+- State intended access: `read-only` or `writable`.
+- State expected projection root: `topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`.
+- Include acceptable projection modes, mutation policy, and blockers.
+- Use `None.` when no external repo must be projected into topic-main.
 
-`## Blockers` should list missing repos, missing dependencies, ambiguous commands, unavailable packages, unsupported live-agent actions, privileged or machine-global setup requirements, unclassified dependencies, or other reasons readiness cannot be claimed. When repo docs or the source gate ask for `sudo`, system package manager mutation, global shell profile edits, global Python or Node installs, `/etc` changes, `ldconfig`, daemons, kernel driver changes, or similar host mutation, record that request as a blocker or external prerequisite rather than an executable setup command.
+### Dependency Plan
 
-`## Execution Log` should be initialized as `Not run yet.` before `install-topic-deps` or `verify-env-gate`, then updated by those subcommands when they run commands. The log should preserve resource check evidence, conservative execution decisions, enclosure evidence, Pixi-managed commands, external runtime wiring, topic-local fallback commands, changed files, and blockers.
+- Include Python glue baseline, selected Python version, Python version evidence, version conflicts, and adaptation plan.
+- Include starter Python dependencies, PyPI dependencies, Pixi/Conda dependencies, native toolchains, editable installs, local package stores, and system Python fallbacks when used.
+- Classify every dependency or runtime need as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked.
+- For every non-Pixi-managed choice, record why Pixi-managed installation was not used.
+- Record package source evidence, NVIDIA channel decisions, and `isomer-srv-resolve-pkg-repo` evidence when repository, mirror, registry, channel, local package store, or source reachability is uncertain or policy-relevant.
+- Record CUDA architecture, CUDA/C++ build environment, and build parallelism preference evidence when those choices affect the gate.
+- For named packages with package-specific caveats, consult `isomer-misc-pkg-specifics`, record the selected package-specific evidence, and keep those caveats out of this core service workflow.
+
+### Resource Check Plan
+
+- Classify each setup and verification command as light or heavy.
+- Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy.
+- For each heavy command, name the lightweight probes, capacity signals, bounded real-path command, and blocker condition.
+- Prefer fewer build jobs, selected kernel targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, metadata-limited downloads, selected tests, and short benchmark cases over full expensive runs unless the user explicitly requires the full run and resources are clearly idle.
+- Do not accept a simple smoke test that misses the source-intent heavy path as readiness evidence.
+
+### Pixi Install Commands
+
+- List concrete commands to run from the Topic Workspace root or with `--manifest-path <manifest_path>`.
+- Use `pixi add --manifest-path <manifest_path>` or `pixi install --manifest-path <manifest_path> --environment <pixi_environment>` for dependency mutation.
+- Use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>` for setup commands that need the prepared environment.
+- Include recorded sourced scripts, exported variables, or runtime paths inside the Pixi-run command when runtime wiring is required.
+
+### Verification Commands
+
+- List exact Pixi commands that prove the runnable target works.
+- Ensure each source-intent runnable target has a corresponding verification command, bounded real-path command, or blocker.
+- Include recorded environment variables, sourced scripts, or runtime paths inside the Pixi-run command when needed.
+- Keep Topic Workspace readiness topic-scoped; do not derive per-Agent Workspace verification here and do not write `topic.env.agent_setup_target_spec`.
+
+Example for a CUDA kernel topic:
+
+- Intent says: build the baseline kernel and run a baseline benchmark.
+- Good action: identify the host GPU with `nvidia-smi`; compile only the host architecture rather than a broad portable architecture list; cap CUDA build parallelism with `MAX_JOBS=1` or another conservative build-job count; build a selected extension or kernel target instead of all release artifacts; run a tiny benchmark case with one short input shape and few iterations.
+- Bad action: replace the required build and benchmark with only `import torch` and `torch.cuda.is_available()`.
+- If the bounded build or benchmark still cannot run safely: mark readiness `blocked` with resource evidence and the exact command to retry later.
+
+### Expected Results
+
+- State pass/fail criteria.
+- State expected outputs, files, command output snippets, metrics, or runtime signals.
+
+### Blockers
+
+- List missing repos, missing dependencies, ambiguous commands, unavailable packages, unsupported live-agent actions, privileged or machine-global setup requirements, unclassified dependencies, or other reasons readiness cannot be claimed.
+- Record `sudo`, system package manager mutation, global shell profile edits, global Python or Node installs, `/etc` changes, `ldconfig`, daemons, kernel driver changes, or similar host mutation as blockers or external prerequisites.
+- Do not turn privileged or machine-global setup requests into executable setup commands.
+
+### Execution Log
+
+- Initialize as `Not run yet.` before `install-topic-deps` or `verify-env-gate`.
+- Preserve resource check evidence, bounded real-path execution decisions, enclosure evidence, Pixi-managed commands, external runtime wiring, topic-local fallback commands, changed files, and blockers.
+- Update this section after `install-topic-deps` or `verify-env-gate` runs commands.
 
 ## Python Version Policy
 

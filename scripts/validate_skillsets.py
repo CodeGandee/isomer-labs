@@ -106,6 +106,12 @@ TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS = {
         "topic.repos.main",
         "agent.workspace",
     ),
+    "setup-topic-env.md": (
+        "complete required `## Gate Checklist` evidence",
+        "required checklist item",
+        "weaker smoke test",
+        "blocked, failed, or not checked",
+    ),
     "setup-agent-workspace.md": (
         "topic.repos.main",
         "agent.workspace",
@@ -119,6 +125,9 @@ TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS = {
     "isomer-srv-agent-env-setup",
     "generate",
     "default-looking directories without semantic labels and path sources",
+    "every required per-agent `## Gate Checklist` item",
+    "selected-agent partial",
+    "weaker smoke-test substitution",
     ),
     "validate-topic-team.md": (
         "topic.repos.main",
@@ -129,6 +138,9 @@ TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS = {
         "agent.tmp",
         "path sources",
         "hard-coded default-only paths without semantic labels",
+        "every required topic gate checklist item",
+        "every required per-agent checklist item",
+        "weaker smoke-test downgrade",
     ),
     "finalize-topic-team.md": (
         "semantic labels first",
@@ -139,6 +151,9 @@ TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS = {
         "path sources",
         "isomer-default.v1",
         "hard-coded default-only paths without semantic label",
+        "required topic `## Gate Checklist` completion evidence",
+        "required per-agent `## Gate Checklist` completion evidence",
+        "smoke-test downgrades",
     ),
 }
 
@@ -486,6 +501,8 @@ TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "external repo projection",
     "per_agent_readiness_status",
     "resolve the appropriate topic repository label",
+    "bounded real-path verification",
+    "A generic smoke test is allowed only as supporting evidence",
 )
 
 TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
@@ -536,6 +553,8 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "local, ignored, disposable, not shared, and not durable evidence",
         "per_agent_readiness_status: not checked",
         "Do not read `topic.intent.agent_env_requirements`",
+        "bounded real-path",
+        "generic smoke test",
     ),
     "read-env-gate.md": (
         "topic.intent.topic_env_requirements",
@@ -543,16 +562,35 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
     "derive-env-gate.md": (
         "topic.env.topic_setup_target_spec",
         "explicit manual target spec",
+        "## Gate Checklist",
+        "`- [ ]`",
+        "`- [x]`",
+        "required readiness work contract",
+        "pass condition",
+        "evidence source",
+        "optional diagnostics",
+        "Preserve every source-intent runnable target",
+        "bounded real-path",
+        "simple smoke test",
+        "user explicitly records a downgrade",
     ),
     "install-topic-deps.md": (
         "topic.env.topic_setup_target_spec",
         "enclosure strategy",
+        "bounded real setup path",
     ),
     "verify-env-gate.md": (
         "per-Agent Workspace cwd verification is not checked here",
         "Topic Workspace predecessor evidence",
         "Topic Main Development Repository",
         "projection",
+        "bounded real-path coverage",
+        "source-intent runnable target",
+        "every required `## Gate Checklist` item",
+        "checked with supporting evidence",
+        "exact checklist item",
+        "weaker smoke test",
+        "user downgrade",
     ),
 }
 
@@ -612,6 +650,8 @@ AGENT_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "Service Request",
     "Provenance refs",
     "overall_readiness_status",
+    "bounded real-path verification",
+    "A generic smoke test is only supporting evidence",
     "Do not initialize, repair, or configure the Topic Main Development Repository",
     "Do not create per-agent Pixi manifests",
     "Do not install or mutate Topic Workspace dependencies",
@@ -661,6 +701,7 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "topic.env.agent_setup_target_spec",
         "explicit manual target spec",
         "## Source Agent Gate",
+        "## Gate Checklist",
         "## Topic Env Gate",
         "## Topic Pixi Binding",
         "## Topic Main Development Repository Predecessor",
@@ -674,6 +715,15 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "## Execution Log",
         "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
         "gate-cwd-incompatible",
+        "`- [ ]`",
+        "`- [x]`",
+        "required per-agent readiness work contract",
+        "pass condition",
+        "evidence source",
+        "affected Agent Name or matrix scope",
+        "optional diagnostics",
+        "bounded real-path",
+        "simple smoke test",
     ),
     "require-topic-main-ready.md": (
         "Topic Main Development Repository predecessor evidence",
@@ -697,6 +747,12 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "overall_readiness_status",
         "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
         "Agent Workspace cwd",
+        "bounded real-path",
+        "source-agent required",
+        "every targeted required `## Gate Checklist` item",
+        "checked with cwd evidence",
+        "exact checklist item",
+        "user downgrade",
     ),
     "setup-agent-env.md": (
         "resolve-agent-env-context",
@@ -711,6 +767,8 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "topic-main/",
         "agents/",
         "<agent-name>/",
+        "bounded real-path",
+        "generic smoke test",
     ),
     "help.md": (
         "| Subcommand | Purpose | Produces |",

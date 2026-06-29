@@ -12,7 +12,7 @@ Recover these before asking the user:
 | Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
 | Topic-main and projection evidence | Require `ensure-topic-main-repository`, `ensure-topic-repos`, and `project-extern-repos` outputs when the target spec names topic-main, canonical external repos, or projected external repos. |
 | Installed dependencies | Require an `install-topic-deps` result unless the prompt explicitly asks to verify an existing environment. In either case, check Pixi files before running verification commands. |
-| Verification commands, expected results, resource check plan, and enclosure records | Read from the derived gate's `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, and enclosure records in `## Dependency Plan` and `## Execution Log`. Refuse to claim readiness if commands, expectations, resource checks for heavy commands, runtime wiring, or fallback records are missing or ambiguous. |
+| Verification commands, expected results, resource check plan, gate checklist, and enclosure records | Read from the derived gate's `## Gate Checklist`, `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, and enclosure records in `## Dependency Plan` and `## Execution Log`. Refuse to claim readiness if required checklist items, commands, expectations, resource checks for heavy commands, runtime wiring, fallback records, or bounded real-path coverage for each source-intent runnable target are missing or ambiguous. |
 | Optional modifiers | None for this step. |
 
 ## Workflow
@@ -22,7 +22,10 @@ When this subcommand is selected, execute the following steps in order.
 1. **Require predecessor artifacts**:
    - Require workspace context from `resolve-topic-workspace`, resolved `topic.env.topic_setup_target_spec`, topic-main/repo/projection predecessor outputs when required, and installed dependencies from `install-topic-deps`.
 2. **Read the target spec**:
-   - Extract `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, `## Blockers`, `## Repo Requirements`, `## Projection Requirements`, any `## Inferred Source Warnings`, and enclosure records for Pixi-managed dependencies, external runtime wiring, and topic-local fallbacks.
+   - Extract `## Gate Checklist`, `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, `## Blockers`, `## Repo Requirements`, `## Projection Requirements`, any `## Inferred Source Warnings`, and enclosure records for Pixi-managed dependencies, external runtime wiring, and topic-local fallbacks.
+   - Treat every item under `## Gate Checklist` as required readiness work unless the target spec explicitly moved the item to a non-readiness diagnostic section.
+   - Confirm every required checklist item has a pass condition, evidence source, and blocker condition.
+   - Confirm that each source-intent runnable target has a matching verification command, bounded real-path command, or blocker. Do not accept a generic import, device-visibility, or repository-inspection smoke test as coverage for a requested build, inference, dataset, or benchmark path.
 3. **Check Pixi files**:
    - Confirm the resolved `manifest_path`, the Topic Workspace `pixi.lock`, and `<topic-workspace-dir>/.pixi/` exist before reporting readiness.
    - The resolved manifest may be `pixi.toml` or Pixi-enabled `pyproject.toml`.
@@ -33,26 +36,26 @@ When this subcommand is selected, execute the following steps in order.
 5. **Check resources before heavy verification commands**:
    - Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy.
    - Use lightweight read-only probes before heavy commands, including CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
-   - Prefer the smallest proof that satisfies the gate: smoke tests, sample data, reduced parallelism, selected tests, dry-run, metadata check, skip, or defer.
-   - If resources are insufficient, ambiguous, or already busy, do not run the heavy command. Report `blocked` or `not checked` with `resource_check_status: blocked` or `deferred`.
+   - Run the smallest real command that exercises the essential path named by the source intent, such as fewer build jobs, selected kernel targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, or short benchmark cases.
+   - If resources are insufficient, ambiguous, or already busy, do not run an unrelated smoke test in place of the heavy path. Report `blocked` with `resource_check_status: blocked`, the capacity reason, and the bounded real-path command that would be run when capacity is available.
 6. **Run verification commands through Pixi**:
    - Run from the Topic Workspace root unless the target spec specifies the resolved Topic Main Development Repository or a repo-specific working directory.
    - Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.
-7. **Compare results to expected outputs** from the target spec.
+7. **Compare results to expected outputs** from the target spec and mark each relevant checklist item as checked only when the supporting command, path evidence, dependency evidence, resource probe, or expected-result comparison proves that item.
 8. **Update `topic.env.topic_setup_target_spec` `## Execution Log`**:
-   - Include resource check evidence, conservative execution decisions, commands run, exit status, relevant output summary, enclosure records used, and pass/fail result.
+   - Include resource check evidence, bounded real-path execution decisions, commands run, exit status, relevant output summary, enclosure records used, pass/fail result, and any required unchecked checklist item with its exact reason and next safe action.
 9. **Report readiness**:
-   - Use `ready` only when Pixi files exist, topic-main evidence is ready when required, required canonical repos exist, required projections are ready or explicitly blocked, inferred-source warnings are reported, enclosure records are complete, and all verification commands satisfy the expected results.
-   - Otherwise report `failed` or `blocked`.
+   - Use `ready` only when Pixi files exist, topic-main evidence is ready when required, required canonical repos exist, required projections are ready or explicitly blocked, inferred-source warnings are reported, enclosure records are complete, every required `## Gate Checklist` item is checked with supporting evidence, every source-intent runnable target is covered by a passed verification command or bounded real-path command, and all verification commands satisfy the expected results.
+   - If any required checklist item is unchecked, report `blocked`, `failed`, or `not checked` with the exact checklist item, reason, and next safe action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `topic.env.topic_setup_target_spec`, parent guardrails, and user request, then execute the plan.
 
 ## Readiness Rules
 
-- `ready`: all required Pixi files exist, topic-main and projection predecessor evidence is ready when required, all required repos exist, enclosure records are complete, and verification commands pass through recorded Pixi-scoped commands.
-- `failed`: verification commands ran and did not satisfy expected results.
-- `blocked`: predecessor artifacts, Pixi files, topic-main evidence, repo evidence, projection evidence, dependencies, enclosure records, permissions, or expected results are missing.
-- `not checked`: verification was not requested or was intentionally deferred.
+- `ready`: all required Pixi files exist, topic-main and projection predecessor evidence is ready when required, all required repos exist, enclosure records are complete, every required `## Gate Checklist` item is checked with supporting evidence, every source-intent runnable target is covered by a passed verification command or bounded real-path command, and verification commands pass through recorded Pixi-scoped commands.
+- `failed`: a required checklist item was attempted through its matching command or check and did not satisfy expected results.
+- `blocked`: predecessor artifacts, Pixi files, topic-main evidence, repo evidence, projection evidence, dependencies, enclosure records, permissions, expected results, or a required checklist item cannot be completed. Name the exact checklist item and blocker.
+- `not checked`: verification was explicitly not requested. Do not use `not checked` to bypass a source-intent runnable target or unchecked checklist item during setup; report `blocked` when a required bounded real-path check cannot be run safely.
 
 When `ready` depends on Pixi-mediated external runtime wiring or `.isomer-user-env/` fallback, include a warning in the final output naming the paths, scripts, variables, or fallback prefix and explaining that those pieces may need repair or reinstall if the Topic Workspace moves or the host runtime changes.
 
@@ -66,4 +69,5 @@ When `ready` depends on Pixi-mediated external runtime wiring or `.isomer-user-e
 - Do not run live agent launch, Agent Instance creation, Topic Agent Team Profile materialization, GUI operation, or research decision commands as environment verification.
 - Do not suppress warnings about inferred repo sources.
 - Do not suppress warnings about external runtime wiring or topic-local user-space fallback.
-- Do not run resource-heavy verification merely to make readiness look stronger. When a bounded smoke test is enough, run that. When the full command is required but the host is busy, low on memory or disk, out of GPU capacity, or otherwise uncertain, defer or block with resource evidence.
+- Do not run resource-heavy verification at full scale merely to make readiness look stronger. When a bounded real-path command is enough and it exercises the critical path named by the checklist item, run that. When the required source-intent path cannot be exercised safely even in bounded form, block with resource evidence and leave the checklist item unchecked. A simple smoke test that misses the essential code path is not enough to claim readiness.
+- Do not mark a required checklist item complete with an unrelated weaker smoke test. If the user explicitly accepts a weaker check, record the user downgrade, original checklist item, weaker evidence, and limitation instead of presenting it as proof that the original critical path passed.

@@ -29,6 +29,7 @@ When this subcommand is selected, execute the following steps in order.
 2. **Run the setup chain** in this fixed order:
    - Run `resolve-topic-workspace`, `read-env-gate` when deriving from source intent, `derive-env-gate`, `ensure-topic-main-repository`, `ensure-topic-repos`, `project-extern-repos`, `install-topic-deps`, and `verify-env-gate`.
    - If an explicit target spec is supplied, `derive-env-gate` validates that spec and records its source instead of requiring `read-env-gate`.
+   - Preserve every source-intent runnable target through the chain. Heavy targets must become bounded real-path setup and verification commands, not generic smoke tests that miss the requested build, inference, dataset, or benchmark path.
 3. **In `fast-forward` mode**, load each referenced subcommand page, execute its `## Workflow`, and carry forward its outputs to the next step without pausing for optional consent.
 4. **In `step-by-step` mode**, pause before each step:
    - Explain what will happen and why.
@@ -39,7 +40,7 @@ When this subcommand is selected, execute the following steps in order.
 5. **Stop on blockers** in either mode:
    - Stop when a step reports missing required inputs, missing predecessor artifacts, unsafe ambiguity, out-of-scope requests, or a failed precondition.
 6. **Report the combined result** using the parent skill's **Output Contract**:
-   - Include `subcommand`, selected `mode`, step results, topic-main Git state, Isomer-managed namespace posture, projection metadata, resource check status, commands run, changed files, enclosure strategy, external runtime wiring, topic-local fallbacks, Topic Workspace readiness status, `per_agent_readiness_status: not checked` when relevant, blockers, and next action.
+   - Include `subcommand`, selected `mode`, step results, topic-main Git state, Isomer-managed namespace posture, projection metadata, resource check status, bounded real-path decisions, commands run, changed files, enclosure strategy, external runtime wiring, topic-local fallbacks, Topic Workspace readiness status, `per_agent_readiness_status: not checked` when relevant, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the linked subcommands, parent guardrails, mode rules, and user request, then execute the plan.
 
@@ -54,7 +55,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | 5 | Ensure canonical external repos | [ensure-topic-repos.md](ensure-topic-repos.md) | Repo paths, source warnings, inspection notes, read-only existing-repo evidence, and blockers. |
 | 6 | Project external repos into topic-main | [project-extern-repos.md](project-extern-repos.md) | Projection paths, projection access intent, projection manifest metadata, changed files, and blockers. |
 | 7 | Install dependencies | [install-topic-deps.md](install-topic-deps.md) | Commands run, changed Pixi files, external runtime wiring, topic-local fallbacks, install results, and blockers. |
-| 8 | Verify the gate | [verify-env-gate.md](verify-env-gate.md) | Gate execution results, resource check evidence, conservative execution decisions, enclosure warnings, topic-main/projection readiness evidence, and final readiness status. |
+| 8 | Verify the gate | [verify-env-gate.md](verify-env-gate.md) | Gate execution results, resource check evidence, bounded real-path decisions, enclosure warnings, topic-main/projection readiness evidence, and final readiness status. |
 
 ## Fast-Forward Mode
 
@@ -114,7 +115,9 @@ Successful setup leaves the selected Topic Workspace with:
       isomer-env-gate.md       # default binding for topic.env.topic_setup_target_spec
 ```
 
-Readiness means the desired command from the resolved `topic.env.topic_setup_target_spec` runs successfully through recorded Pixi-scoped commands for a single agent or operator working in the selected Topic Workspace root, the resolved Topic Main Development Repository, or a repo-specific working directory named by the target spec. It also means required topic-main setup, canonical external repos, and external projections are ready or explicitly blocked. It does not merely mean that Pixi files exist, it does not mean a command passed because the ambient shell already had a global tool, activated environment, PATH entry, library path, or sourced script, and it does not mean a Topic Agent Team Profile, per-Agent Workspace cwd, or live Agent Team Instance is ready.
+Readiness means the desired command from the resolved `topic.env.topic_setup_target_spec` runs successfully through recorded Pixi-scoped commands for a single agent or operator working in the selected Topic Workspace root, the resolved Topic Main Development Repository, or a repo-specific working directory named by the target spec. It also means required topic-main setup, canonical external repos, and external projections are ready or explicitly blocked. It does not merely mean that Pixi files exist, it does not mean a command passed because the ambient shell already had a global tool, activated environment, PATH entry, library path, or sourced script, and it does not mean a Topic Agent Team Profile, per-Agent Workspace cwd, or live Agent Team Instance is ready. A generic smoke test can support diagnostics but cannot replace bounded real-path verification of each source-intent runnable target.
+
+Example for CUDA kernel setup: if the source intent requires building a baseline kernel and running a baseline benchmark, the target spec should identify the local GPU with `nvidia-smi`, compile only that host architecture, cap build parallelism such as `MAX_JOBS=1`, build a selected baseline kernel or extension rather than all release artifacts, and run a tiny benchmark case with a short input shape and few iterations. If that bounded real path cannot run safely, report a blocker with resource evidence instead of marking readiness ready.
 
 If the caller needs every Agent Workspace cwd verified, report `per_agent_readiness_status: not checked` and list the ready Topic Workspace predecessor evidence that a separate agent readiness workflow can consume. That predecessor evidence includes the ready Topic Workspace Pixi binding, resolved `topic.env.topic_setup_target_spec`, Topic Main Development Repository Git state, Isomer-managed namespace posture, projection metadata, enclosure records, commands run, changed files, and blockers when present. Do not read `topic.intent.agent_env_requirements` or trigger agent env setup from this topic-scoped flow.
 
