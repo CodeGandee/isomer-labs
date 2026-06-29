@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-misc-pkg-specifics"
+  short_description: "Package source routing and variant checks"
+  default_prompt: "Use $isomer-misc-pkg-specifics to check package-specific source-routing rules, installation caveats, and runtime variants before finalizing this environment."

@@ -1,4 +1,4 @@
 interface:
-  display_name: "Isomer NVIDIA Tools"
+  display_name: "isomer-misc-nvidia-tools"
   short_description: "Isomer CUDA and Pixi build guidance"
   default_prompt: "Use $isomer-misc-nvidia-tools to apply Isomer CUDA preferences or set up a Pixi CUDA/C++ build environment."

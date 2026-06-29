@@ -11,7 +11,7 @@ Recover these before asking the user:
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
 | Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`, whether derived from source intent or supplied as an explicit manual target spec. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
 | Dependency plan, resource check plan, enclosure strategy, and Pixi install commands | Read from the target spec's `## Dependency Plan`, `## Resource Check Plan`, and `## Pixi Install Commands` sections, including the selected Python version, version evidence, starter Python dependencies, enclosure classification, heavy-command classification, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, or missing enclosure strategy for a required dependency or runtime need. |
-| Package-source override or resolution evidence | Optional. Use only when the prompt or derived gate explicitly names a package source override, or when `isomer-srv-resolve-pkg-repo` evidence is needed because repository, mirror, registry, or channel reachability is uncertain. Otherwise follow the fixed source evidence and PyPI-first Python policy in this page. |
+| Package-source override or resolution evidence | Optional. Use only when the prompt or derived gate explicitly names a package source override, when package-specific rules from `isomer-misc-pkg-specifics` apply, or when `isomer-srv-resolve-pkg-repo` evidence is needed because repository, mirror, registry, or channel reachability is uncertain. Otherwise follow **Package Installation Routing** in this page. |
 
 ## Workflow
 
@@ -36,38 +36,49 @@ When this subcommand is selected, execute the following steps in order.
 7. **Keep Python available** as the Topic Workspace root glue and orchestration language, even when the runnable target uses another language.
 8. **Install Pixi-managed starter Python dependencies** through PyPI when missing or not already satisfied:
    - Use `pixi add --manifest-path <manifest_path> --pypi scipy mdutils ruff mkdocs-material mypy attrs omegaconf imageio matplotlib jsonschema jinja2`.
-9. **Install Pixi-managed Python packages from PyPI by default**:
-   - Use `pixi add --manifest-path <manifest_path> --pypi <requirement>` when PyPI can satisfy the gate and no fixed source evidence says otherwise.
-   - If PyPI, mirror, or private-index reachability is uncertain, use `isomer-srv-resolve-pkg-repo` evidence before mutating the manifest.
-10. **Install Pixi-managed native or Conda-required dependencies through Pixi/Conda**:
+9. **Route package installation decisions**:
+   - For each named package or library, first check whether `isomer-misc-pkg-specifics` is available in the skillset. If it exists and lists specific rules for that package, follow those rules before applying this page's generic source ladder.
+   - If package-specific rules do not apply and the package concerns NVIDIA official packages, prefer the `nvidia` Conda channel, then PyPI, then `conda-forge`. Record evidence for each skipped source.
+   - If package-specific rules do not apply and the dependency is a Python library, try PyPI first. Only use `conda-forge` after PyPI cannot satisfy the requirement. If `conda-forge` cannot satisfy it, scan the Project and Topic Workspace for an installable Python package source. If no project-local source can satisfy it, inspect system Python and introduce it into the Pixi environment only through explicit, recorded fallback wiring or a local artifact.
+   - Do not skip a source-ladder step without evidence in `topic.env.topic_setup_target_spec`.
+10. **Install Pixi-managed Python packages from the selected source**:
+   - Use `pixi add --manifest-path <manifest_path> --pypi <requirement>` when PyPI is the selected source.
+   - Use package-specific commands when `isomer-misc-pkg-specifics` selects an official source, special index, wheelhouse, or fallback.
+   - If PyPI, mirror, private-index, local package store, or source reachability is uncertain, use `isomer-srv-resolve-pkg-repo` evidence before mutating the manifest.
+11. **Install Pixi-managed native or Conda-required dependencies through Pixi/Conda**:
    - Use `pixi add --manifest-path <manifest_path> <matchspec>` when the dependency is a non-Python tool, command-line program, binary or system-level runtime dependency, unavailable or unsuitable on PyPI, or required by setup instructions that PyPI cannot satisfy.
-11. **Prefer resolved NVIDIA package sources** for NVIDIA tools and runtime packages:
+12. **Prefer resolved NVIDIA package sources** for NVIDIA tools and runtime packages:
    - When the derived gate or package-resolution evidence selects the `nvidia` channel, add it with `pixi workspace channel add --manifest-path <manifest_path> --prepend nvidia` before adding those packages.
-   - Record any fallback to `conda-forge` or another channel.
+   - For NVIDIA official packages, use `nvidia` channel first, PyPI second, and `conda-forge` third unless package-specific rules say otherwise.
+   - Record any fallback to PyPI, `conda-forge`, or another channel.
    - If CUDA architecture targets, CUDA/C++ build environment choices, `nvcc` flags, or build parallelism need interpretation, use `isomer-misc-nvidia-tools` preference evidence before converting them into setup commands.
-12. **Install editable repo packages when needed**:
+13. **Record package-specific installation evidence when needed**:
+   - Use the selected `isomer-misc-pkg-specifics` page when a named library has known package-source choices, CPU/GPU variants, platform constraints, accelerator runtimes, or runtime checks.
+   - Record the selected package-specific reference and evidence in the target spec.
+   - If the package-specific reference reports that the installed variant cannot satisfy the gate, report a blocker instead of accepting generic install success.
+14. **Install editable repo packages when needed**:
    - Use a PyPI editable requirement such as `pixi add --manifest-path <manifest_path> --pypi --editable '<package-name> @ file://<absolute-repo-path>'` when the repo is Python-installable and the gate needs it importable.
-13. **Record Pixi-mediated external runtime wiring**:
+15. **Record Pixi-mediated external runtime wiring**:
    - Apply this when the target spec requires an external runtime path, sourced script, compiler path, package-config path, CUDA variable, or library path.
    - Do not mutate the host.
    - Record the exact variables or source commands and use them only inside `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
-14. **Use topic-local fallback only when justified** by the target spec:
+16. **Use topic-local fallback only when justified** by the target spec:
    - Place fallback material under `<topic-workspace-dir>/.isomer-user-env/`.
    - Update `.gitignore`.
    - Run fallback setup through Pixi-scoped commands when commands are needed.
    - Record the lower-portability warning.
-15. **Check resources before heavy setup commands**:
+17. **Check resources before heavy setup commands**:
    - Apply this before setup commands that compile code, build native extensions, download full datasets, extract large archives, run model inference, or start broad test suites.
    - Use lightweight read-only probes such as CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
    - Prefer smoke tests, reduced parallelism, sample data, dry-run or metadata checks, skip, or defer when the full command is not needed to prove installation.
    - If capacity is insufficient, unclear, or already busy, do not run the heavy command; record `resource_check_status: blocked` or `deferred` with the reason.
-16. **Run setup commands through the Topic Workspace Pixi environment** when the target spec requires commands beyond dependency mutation:
+18. **Run setup commands through the Topic Workspace Pixi environment** when the target spec requires commands beyond dependency mutation:
    - Use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
    - Include any recorded runtime wiring in the command instead of relying on ambient shell state.
-17. **Install the selected environment** with `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
-18. **Update `topic.env.topic_setup_target_spec`**:
+19. **Install the selected environment** with `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
+20. **Update `topic.env.topic_setup_target_spec`**:
    - Include commands run, selected Python version, version evidence, starter dependencies, VCS ignore changes, adaptation decisions, selected package sources, resource check evidence, conservative execution decisions, enclosure classification, external runtime wiring, topic-local fallbacks, changed files, channel decisions, blockers, and execution log entries.
-19. **Report the install result** using the parent skill's output fields.
+21. **Report the install result** using the parent skill's output fields.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the resolved `topic.env.topic_setup_target_spec`, dependency policy, Pixi help, parent guardrails, and user request, then execute the plan.
 
@@ -85,14 +96,27 @@ If multiple sources conflict, choose the highest Python minor version mentioned 
 | --- | --- |
 | Python runtime | Selected Python minor version from **Python Version Policy** |
 | Starter Python dependencies | PyPI through `pixi add --manifest-path <manifest_path> --pypi scipy mdutils ruff mkdocs-material mypy attrs omegaconf imageio matplotlib jsonschema jinja2` |
+| Named package with package-specific rules | Follow `isomer-misc-pkg-specifics` first; record the selected package page and evidence |
+| NVIDIA official package | `nvidia` Conda channel, then PyPI, then `conda-forge`, with evidence for each skipped source |
 | Normal Python package | PyPI through `pixi add --manifest-path <manifest_path> --pypi <requirement>` |
-| Python package unsuitable or unavailable on PyPI | Pixi/Conda with reason recorded |
+| Python package unsuitable or unavailable on PyPI | `conda-forge` with PyPI failure evidence recorded |
+| Python package unavailable from PyPI and `conda-forge` | Project or Topic Workspace installable package store, such as local wheelhouse, `dist/`, local index, vendored package, or installable repo |
+| Python package unavailable from remote and project-local sources | System Python fallback only through explicit Pixi-mediated wiring or a local artifact, marked host-specific and lower portability |
 | Non-Python command-line tool | Pixi/Conda |
 | Binary/runtime/system dependency | Pixi/Conda |
-| NVIDIA tool or runtime package | Pixi with package source evidence; prefer `nvidia` channel before `conda-forge` when reachable and appropriate |
+| NVIDIA tool or runtime package | Pixi with package source evidence; prefer `nvidia` channel, then PyPI when applicable, then `conda-forge` |
 | Installable local Python repo | PyPI editable file requirement |
 
-When source reachability is uncertain, a local mirror or private registry is likely configured, or NVIDIA channel choice is policy-relevant, use `isomer-srv-resolve-pkg-repo` to choose the reachable repository, registry, or channel before dependency mutation. If the environment gate or manifest already fixes the source and no reachability concern exists, record that fixed source instead of adding a separate resolution step.
+## Package Installation Routing
+
+Apply this route before mutating the Pixi manifest for any package installation task:
+
+1. **Package-specific rules**: if `isomer-misc-pkg-specifics` exists and lists the package, load the selected package page and follow it. These rules override the generic source ladder.
+2. **NVIDIA official packages**: when no package-specific rule overrides the choice, prefer the `nvidia` Conda channel, then PyPI, then `conda-forge`.
+3. **Other Python libraries**: when no package-specific rule overrides the choice, try PyPI first. Use `conda-forge` only after PyPI cannot satisfy the requirement. If `conda-forge` cannot satisfy it, scan the Project and Topic Workspace for an installable Python package store. If that fails, inspect system Python and introduce it into Pixi only through explicit fallback wiring or a local artifact.
+4. **Native tools and runtime dependencies**: use Pixi/Conda, package-specific guidance, or explicit runtime wiring according to **Environment Enclosure Ladder**.
+
+When source reachability is uncertain, a local mirror or private registry is likely configured, a local package store may exist, or NVIDIA channel choice is policy-relevant, use `isomer-srv-resolve-pkg-repo` to choose the reachable repository, registry, channel, or local source before dependency mutation. If the environment gate or manifest already fixes the source and no reachability concern exists, record that fixed source instead of adding a separate resolution step.
 
 Use `isomer-misc-nvidia-tools` for CUDA architecture targets, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `nvcc` flags, CUDA/C++ Pixi build environment preferences, and CUDA build parallelism. Topic env setup records the resulting setup evidence in `topic.env.topic_setup_target_spec`; it should not expand into a general NVIDIA build guide.
 
@@ -162,6 +186,8 @@ Report `blocked` when:
 - a required dependency or runtime need lacks an enclosure strategy in `topic.env.topic_setup_target_spec`;
 - a required heavy setup command lacks a resource check plan, cannot be replaced by a bounded smoke test, or would overload the host;
 - a Python package must use Pixi/Conda but the reason is unknown;
+- a package-source ladder step is skipped without evidence;
 - a channel or package source cannot be reached or cannot be resolved through fixed evidence or `isomer-srv-resolve-pkg-repo`;
+- package-specific guidance reports that the installed package variant cannot satisfy the gate;
 - the desired dependency would mutate the Project-root Pixi environment or an Agent Workspace-specific environment;
 - the setup requires `sudo`, system package manager mutation, global shell profile edits, global Python or Node package installs, `/etc` changes, `ldconfig`, daemons, kernel driver changes, or another privileged or machine-global action.
