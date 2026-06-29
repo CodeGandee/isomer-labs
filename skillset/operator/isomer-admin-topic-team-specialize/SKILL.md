@@ -5,7 +5,7 @@ description: "Initialize and specialize Isomer Research Topics into static topic
 
 # Isomer Admin Topic Team Specialize
 
-Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, resolve Project and Topic Workspace context, write high-level user-editable intent through semantic labels, create or update operator-owned target specs, route environment materialization to service skills, adapt one Domain Agent Team Template into copied topic-specific material, validate static material readiness, maintain durable setup state, and write a final topic-team summary. The canonical setup path is `team specialization invoked -> resolve-project -> resolve-topic-intent -> resolve-topic-env-gate -> create topic env target spec -> setup-topic-env -> adapt-team-template when team material is needed -> resolve-agent-env-gate -> create agent env target spec -> setup-agent-env -> validate-topic-team -> finalize-topic-team`. Always resolve intent and target-spec surfaces through Workspace Path Resolution before reading, writing, or reporting them: `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.agent_env_requirements`, `topic.env.topic_setup_target_spec`, and `topic.env.agent_setup_target_spec`. Route Topic Workspace dependency, Pixi, Topic Main Development Repository setup, canonical external repo acquisition, external projection materialization, and topic-root or repo-specific command verification work only through `isomer-srv-topic-env-setup` from `setup-topic-env`, after `ensure-topic-registration` has proved manifest-backed topic refs, a resolvable Topic Workspace Pixi binding, and a usable `topic.intent.topic_env_requirements` surface or explicit topic target spec. Record that output as Topic Workspace predecessor evidence, not as per-Agent Workspace cwd readiness. When per-Agent Workspace cwd command proof, selected-agent repair, or launch-facing Agent Workspace readiness is requested, require `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, Topic Workspace predecessor evidence, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, semantic label evidence for `topic.repos.main`, `agent.workspace`, and required `agent.*` support paths, and authoritative Agent Names; then delegate worktree creation and cwd verification to `isomer-srv-agent-env-setup` from `setup-agent-workspace`. Use `isomer-admin-topic-workspace-mgr` only for optional topology inspection, branch helpers, boundary summaries, or legacy compatibility diagnostics. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
+Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, resolve Project and Topic Workspace context, write high-level user-editable intent through semantic labels, create or update operator-owned target specs, route environment materialization to service skills, adapt one Domain Agent Team Template into copied topic-specific material, validate static material readiness, maintain durable setup state, and write a final topic-team summary. The canonical procedural dependency graph is recorded in [references/step-dependencies.json](references/step-dependencies.json); query it with [scripts/query_step_dependencies.py](scripts/query_step_dependencies.py) instead of reconstructing dependency paths from prose. Always resolve intent and target-spec surfaces through Workspace Path Resolution before reading, writing, or reporting them: `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.agent_env_requirements`, `topic.env.topic_setup_target_spec`, and `topic.env.agent_setup_target_spec`. Route Topic Workspace dependency, Pixi, Topic Main Development Repository setup, canonical external repo acquisition, external projection materialization, and topic-root or repo-specific command verification work only through `isomer-srv-topic-env-setup` from `setup-topic-env`, after `ensure-topic-registration` has proved manifest-backed topic refs, a resolvable Topic Workspace Pixi binding, and a usable `topic.intent.topic_env_requirements` surface or explicit topic target spec. Record that output as Topic Workspace predecessor evidence, not as per-Agent Workspace cwd readiness. When per-Agent Workspace cwd command proof, selected-agent repair, or launch-facing Agent Workspace readiness is requested, require `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, Topic Workspace predecessor evidence, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, semantic label evidence for `topic.repos.main`, `agent.workspace`, and required `agent.*` support paths, and authoritative Agent Names; then delegate worktree creation and cwd verification to `isomer-srv-agent-env-setup` from `setup-agent-workspace`. Use `isomer-admin-topic-workspace-mgr` only for optional topology inspection, branch helpers, boundary summaries, or legacy compatibility diagnostics. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
 
 ## Planning Required
 
@@ -29,7 +29,7 @@ When this skill is invoked, execute the following steps in order.
    - Do not treat the verb `specialize` in a natural-language request as explicit selection of the internal `adapt-team-template` stage.
    - Select that subcommand from the **Subcommands** tables.
    - Guardrail: load only its detail page.
-   - Load only its detail page, execute its workflow, and report its output.
+   - Load only its detail page, execute its workflow, and report its output. If required predecessor artifacts are missing, apply **Targeted Fast-Forward Recovery** before any mutation.
 3. **Guided mode**:
    - Match when the user asks to specialize step by step, proceed interactively, or confirm each stage.
    - Select `step-by-step`, load [references/step-by-step.md](references/step-by-step.md), and execute the static topic-team setup path one step at a time.
@@ -44,6 +44,45 @@ When this skill is invoked, execute the following steps in order.
 6. Preserve the **Guardrails** and **Output Contract** for all modes.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project context, copied-template constraints, subcommands, output contract, and guardrails in this skill, then execute the plan.
+
+## Targeted Fast-Forward Recovery
+
+When a selected procedural subcommand cannot run because required predecessor artifacts are missing, do not stop with only a refusal. Refuse to run the subcommand directly, name the missing predecessor artifacts, then offer targeted fast-forward recovery to the selected subcommand.
+
+Targeted fast-forward is bounded by the selected subcommand. It is not the same as full `fast-forward`, which runs the topic-team setup path through `finalize-topic-team`. Query [scripts/query_step_dependencies.py](scripts/query_step_dependencies.py) to compute the path:
+
+```bash
+python scripts/query_step_dependencies.py path --target <subcommand> --include-target
+python scripts/query_step_dependencies.py path --target <subcommand> --exclude-target
+python scripts/query_step_dependencies.py explain --target <subcommand>
+```
+
+The script reads [references/step-dependencies.json](references/step-dependencies.json). It describes expected dependency paths, prerequisite artifacts, produced outputs, mutation notes, and unrecoverable blockers; it does not verify that those artifacts exist in the current workspace.
+
+Use these recovery modes:
+
+- **Inclusive**, default: run the missing predecessor stages in canonical order, then run the selected subcommand when its prerequisites are satisfied.
+- **Exclusive**: run the missing predecessor stages in canonical order, then stop before the selected subcommand and report that the target is ready or name any remaining blocker.
+
+Before targeted fast-forward mutates the workspace, ask the user to confirm inclusive mode, choose exclusive mode, or stop, unless the user already gave clear permission to proceed automatically. Mutating recovery includes creating or updating topic intent, registration, derived target specs, environment material, topic-team material, Agent Workspace material, validation summaries, approval material, or materialized profile material.
+
+Use this concise response pattern when prerequisites are missing:
+
+```text
+Cannot run <subcommand> directly because <missing predecessor artifacts>.
+
+I can fast-forward to <subcommand>.
+
+Default, inclusive:
+run the path returned by `query_step_dependencies.py path --target <subcommand> --include-target`.
+
+Alternative, exclusive:
+run the path returned by `query_step_dependencies.py path --target <subcommand> --exclude-target`.
+
+Reply "yes" for the default inclusive path, "exclusive", or "stop".
+```
+
+If the missing input is not recoverable from the canonical flow, ask for the specific missing information instead of inventing topic substance, runnable requirements, Agent Names, selected-agent scope, cwd readiness criteria, approval provenance, or safety decisions. Targeted recovery stops on the same clarification, registration, environment-binding, resource-safety, and live-runtime blockers as the normal flow.
 
 ## User-Facing Flow
 
@@ -66,7 +105,7 @@ init-topic
   -> approve-profile / materialize-profile when explicitly requested
 ```
 
-`fast-forward` runs this path automatically where possible. `step-by-step` runs the same path but asks the user to confirm before each stage.
+`fast-forward` runs this full path automatically where possible. `step-by-step` runs the same path but asks the user to confirm before each stage. Targeted fast-forward recovery runs only the predecessor path returned by `scripts/query_step_dependencies.py`, then either runs that subcommand in inclusive mode or stops before it in exclusive mode.
 
 When `init-topic` receives a user-supplied clear concrete Research Topic without an explicit output directory, it derives a provisional topic workspace seed under the effective Topic Workspace base, normally `isomer-content/topic-ws/<topic-slug>/`. A Project Manifest default topic, the id `default`, a literal `default Research Topic`, or any other generic placeholder statement is not enough topic substance by itself; ask the user for the actual research topic before creating files. Before specialization or setup proceeds from a provisional seed, run `ensure-topic-registration` to verify or create Project Manifest-backed Research Topic and Topic Workspace refs, verify the Topic Workspace Pixi binding required by environment setup, and report blockers.
 
@@ -212,7 +251,7 @@ Do not treat a provisional topic workspace seed as an authoritative Isomer Resea
 
 Do not call `isomer-srv-topic-env-setup` from a provisional Topic Workspace or from a registered topic whose effective Topic Workspace Pixi binding cannot be resolved. Require `ensure-topic-registration` evidence first. Accept an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or the implicit registered Topic Workspace directory default when Pixi resolves it as confined to the Topic Workspace; otherwise report the Pixi binding blocker instead of editing Project Config by hand.
 
-Do not run a procedural subcommand when required predecessor artifacts are missing. Refuse to run, name the missing artifacts, explain which previous subcommand should create them, and stop before mutation.
+Do not run a procedural subcommand directly when required predecessor artifacts are missing. Refuse the direct run, name the missing artifacts, offer targeted fast-forward recovery, and stop before mutation until the user confirms inclusive mode, chooses exclusive mode, or has already given clear permission to proceed automatically.
 
 Do not hide environment installation, Agent Workspace creation, static-material validation, profile approval, or profile materialization behind earlier topic clarification or specialization commands.
 

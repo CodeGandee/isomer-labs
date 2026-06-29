@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow.
 2. Confirm the registered Research Topic, registered Topic Workspace, Domain Agent Team Template, packet path or packet inputs, registration assurance evidence, and approval provenance.
 3. Run generic packet and profile-bundle validation before mutation.
 4. Materialize the approved static Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`:
@@ -23,9 +23,9 @@ Required predecessor artifacts:
 - Registration assurance from `ensure-topic-registration`, including Project Manifest-backed Research Topic and Topic Workspace refs with no unresolved registration blockers.
 - `isomer-topic-summary.md` from `finalize-topic-team`.
 
-If approval provenance is missing, refuse to run, explain that materialization requires explicit approval, and tell the user to run `approve-profile` first.
+If approval provenance is missing, refuse to run directly, explain that materialization requires explicit approval, and offer targeted fast-forward recovery to `materialize-profile` only when the user has explicitly requested approval review as part of the recovery. Query `python scripts/query_step_dependencies.py path --target materialize-profile --exclude-target` for the predecessor path, but stop at `approve-profile` until approval is captured; do not treat missing approval as implicit approval.
 
-If registration assurance is missing or blocked, refuse to run, explain that profile materialization needs authoritative Project Manifest-backed topic refs, and tell the user to run `ensure-topic-registration` before materialization.
+If registration assurance is missing or blocked, refuse to run directly, explain that profile materialization needs authoritative Project Manifest-backed topic refs, and offer targeted fast-forward recovery toward `materialize-profile` when the blocker is recoverable. Use `python scripts/query_step_dependencies.py path --target materialize-profile --include-target` only after explicit approval provenance exists. If registration is blocked, ask for the missing registration input instead of mutating Project Config by hand.
 
 ## Reference Routing
 

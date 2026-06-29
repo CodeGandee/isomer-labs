@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow.
 2. Resolve and read topic clarification inputs:
    - Read `topic.intent.overview`, plus any user answers, source material, or newly supplied constraints.
    - In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/topic-overview.md`.
@@ -84,7 +84,7 @@ Required predecessor artifact:
 
 - `topic.intent.overview` from `resolve-topic-intent`.
 
-If `topic.intent.overview` does not exist, refuse to run, explain that there is no topic definition to clarify, and tell the user to run `resolve-topic-intent` first.
+If `topic.intent.overview` does not exist, refuse to run directly, explain that there is no topic definition to clarify, and offer targeted fast-forward recovery to `clarify-topic`. Use `python scripts/query_step_dependencies.py path --target clarify-topic --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target clarify-topic --exclude-target` for the exclusive path. If the original request lacks enough topic substance for `resolve-topic-intent`, ask for the actual Research Topic and stop before creating files.
 
 ## Guardrails
 

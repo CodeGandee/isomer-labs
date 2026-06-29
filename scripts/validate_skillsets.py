@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 import validate_research_paradigm_skillset as research_validator
 
@@ -198,6 +200,8 @@ TOPIC_TEAM_SPECIALIZATION_HELP_TABLE_TERMS = (
 
 TOPIC_TEAM_SPECIALIZATION_NAMING_EXCEPTIONS = {"help", "step-by-step"}
 TOPIC_TEAM_SPECIALIZATION_LENGTH_EXCEPTIONS = {"ensure-topic-registration"}
+TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_MANIFEST = "step-dependencies.json"
+TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_SCRIPT = "query_step_dependencies.py"
 
 TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES = (
     "isomer-domain-language.md",
@@ -992,6 +996,177 @@ def validate_migrated_operator_refs(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_topic_team_step_dependency_contract(repo_root: Path, skill_dir: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    references_dir = skill_dir / "references"
+    scripts_dir = skill_dir / "scripts"
+    manifest_path = references_dir / TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_MANIFEST
+    script_path = scripts_dir / TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_SCRIPT
+
+    if not manifest_path.exists():
+        add(
+            diagnostics,
+            repo_root,
+            manifest_path,
+            1,
+            "OPS003",
+            f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include references/{TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_MANIFEST}",
+        )
+    if not script_path.exists():
+        add(
+            diagnostics,
+            repo_root,
+            script_path,
+            1,
+            "OPS003",
+            f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include scripts/{TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_SCRIPT}",
+        )
+
+    manifest: dict[str, Any] | None = None
+    if manifest_path.exists():
+        try:
+            manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            add(diagnostics, repo_root, manifest_path, exc.lineno, "OPS003", "step dependency manifest must be valid JSON")
+        else:
+            if isinstance(manifest_data, dict):
+                manifest = manifest_data
+            else:
+                add(diagnostics, repo_root, manifest_path, 1, "OPS003", "step dependency manifest root must be a JSON object")
+
+    if manifest is not None:
+        steps = manifest.get("steps")
+        canonical_order = manifest.get("canonical_order")
+        edges = manifest.get("edges")
+        if not isinstance(steps, dict):
+            add(diagnostics, repo_root, manifest_path, 1, "OPS003", "step dependency manifest must contain object field 'steps'")
+            steps = {}
+        if not isinstance(canonical_order, list) or not all(isinstance(step_id, str) for step_id in canonical_order):
+            add(diagnostics, repo_root, manifest_path, 1, "OPS003", "step dependency manifest must contain string list field 'canonical_order'")
+            canonical_order = []
+        if edges is not None and not isinstance(edges, list):
+            add(diagnostics, repo_root, manifest_path, 1, "OPS003", "step dependency manifest field 'edges' must be a list when present")
+
+        procedural_step_ids = {
+            subcommand.removesuffix(".md") for subcommand in TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS
+        }
+        manifest_step_ids = {step_id for step_id in steps if isinstance(step_id, str)}
+        missing_steps = sorted(procedural_step_ids - manifest_step_ids)
+        if missing_steps:
+            add(
+                diagnostics,
+                repo_root,
+                manifest_path,
+                1,
+                "OPS003",
+                "step dependency manifest must cover procedural subcommands: " + ", ".join(missing_steps),
+            )
+
+        required_step_fields = {
+            "id",
+            "display_name",
+            "kind",
+            "predecessors",
+            "requires",
+            "produces",
+            "recovery_conditions",
+            "mutation_notes",
+            "unrecoverable_blockers",
+        }
+        for step_id, step in steps.items():
+            if not isinstance(step_id, str):
+                add(diagnostics, repo_root, manifest_path, 1, "OPS003", "step dependency manifest step ids must be strings")
+                continue
+            if not isinstance(step, dict):
+                add(diagnostics, repo_root, manifest_path, 1, "OPS003", f"step dependency entry '{step_id}' must be an object")
+                continue
+            missing_fields = sorted(required_step_fields - set(step))
+            if missing_fields:
+                add(
+                    diagnostics,
+                    repo_root,
+                    manifest_path,
+                    1,
+                    "OPS003",
+                    f"step dependency entry '{step_id}' is missing fields: {', '.join(missing_fields)}",
+                )
+            if step.get("id") != step_id:
+                add(diagnostics, repo_root, manifest_path, 1, "OPS003", f"step dependency entry '{step_id}' must declare matching id")
+
+        unknown_order_steps = sorted(step_id for step_id in canonical_order if step_id not in manifest_step_ids)
+        if unknown_order_steps:
+            add(
+                diagnostics,
+                repo_root,
+                manifest_path,
+                1,
+                "OPS003",
+                "step dependency canonical_order contains unknown steps: " + ", ".join(unknown_order_steps),
+            )
+
+    if script_path.exists():
+        result = subprocess.run(
+            [sys.executable, str(script_path), "validate"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        if result.returncode != 0:
+            output = (result.stderr or result.stdout).strip()
+            detail = f": {output}" if output else ""
+            add(
+                diagnostics,
+                repo_root,
+                script_path,
+                1,
+                "OPS003",
+                f"{TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_SCRIPT} validate failed{detail}",
+            )
+
+    key_docs = (skill_dir / "SKILL.md", references_dir / "help.md", references_dir / "fast-forward.md")
+    for doc_path in key_docs:
+        if doc_path.exists() and TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_SCRIPT not in doc_path.read_text(encoding="utf-8"):
+            add(
+                diagnostics,
+                repo_root,
+                doc_path,
+                1,
+                "OPS003",
+                f"{doc_path.name} must route dependency-path questions through {TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_SCRIPT}",
+            )
+
+    for subcommand_file_name in TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS:
+        subcommand_path = references_dir / subcommand_file_name
+        if not subcommand_path.exists():
+            continue
+        subcommand_lines = read_lines(subcommand_path)
+        subcommand_text = "\n".join(subcommand_lines)
+        if "targeted fast-forward recovery" in subcommand_text.lower() and TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_SCRIPT not in subcommand_text:
+            add(
+                diagnostics,
+                repo_root,
+                subcommand_path,
+                first_line_containing(subcommand_lines, "targeted fast-forward recovery"),
+                "OPS003",
+                f"references/{subcommand_file_name} must query {TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_SCRIPT} for targeted recovery paths",
+            )
+        for line_number, line in enumerate(subcommand_lines, start=1):
+            lower_line = line.lower()
+            if "inclusive default path is" in lower_line and "->" in line:
+                add(
+                    diagnostics,
+                    repo_root,
+                    subcommand_path,
+                    line_number,
+                    "OPS003",
+                    f"references/{subcommand_file_name} must not duplicate targeted recovery chains in prose; query {TOPIC_TEAM_SPECIALIZATION_DEPENDENCY_SCRIPT}",
+                )
+
+    return diagnostics
+
+
 def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     skill_dir = repo_root / "skillset" / "operator" / TOPIC_TEAM_SPECIALIZATION_SKILL
@@ -1039,6 +1214,7 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
         support_path = references_dir / support_file_name
         if not support_path.exists():
             add(diagnostics, repo_root, support_path, 1, "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must include references/{support_file_name}")
+    diagnostics.extend(validate_topic_team_step_dependency_contract(repo_root, skill_dir))
     allowed_reference_names = set(TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS) | set(TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES)
     for reference_path in sorted(references_dir.glob("*.md")):
         if reference_path.name not in allowed_reference_names:

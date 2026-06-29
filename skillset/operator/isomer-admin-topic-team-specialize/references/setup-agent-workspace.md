@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow.
 2. Read setup inputs:
    - Specialized topic-team shape, expected Agent Roles, draft profile inputs, registration evidence, and registered Topic Workspace path.
    - Topic Workspace predecessor evidence, `topic.env.topic_setup_target_spec`, and the user task or requested Agent Workspace cwd readiness target.
@@ -47,11 +47,11 @@ Required predecessor artifacts:
 - `topic.env.topic_setup_target_spec`, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, and Topic Workspace predecessor evidence from `isomer-srv-topic-env-setup` before per-Agent Workspace cwd verification or selected-agent repair.
 - A usable `topic.intent.agent_env_requirements`, an explicit manual agent env target spec, or a clear per-agent cwd readiness target from the task, topic-team material, or user prompt that can be routed to `resolve-agent-env-gate`.
 
-If the Topic Workspace predecessor evidence is missing, refuse to run, explain that Agent Workspace environment proof depends on topic env predecessor evidence, and tell the user to run `setup-topic-env` first.
+If the Topic Workspace predecessor evidence is missing, refuse to run directly, explain that Agent Workspace environment proof depends on topic env predecessor evidence, and offer targeted fast-forward recovery to `setup-agent-workspace`. Use `python scripts/query_step_dependencies.py path --target setup-agent-workspace --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target setup-agent-workspace --exclude-target` for the exclusive path.
 
-If registration evidence is missing or only names a provisional topic workspace seed, refuse to run, explain that Agent Workspace setup needs authoritative Topic Workspace refs, and tell the user to run `ensure-topic-registration` first.
+If registration evidence is missing or only names a provisional topic workspace seed, refuse to run directly, explain that Agent Workspace setup needs authoritative Topic Workspace refs, and offer targeted fast-forward recovery through `ensure-topic-registration` to `setup-agent-workspace`. If registration is blocked, ask for the missing registration input instead of mutating Project Config by hand.
 
-If per-Agent Workspace cwd verification or selected-agent repair is requested and `topic.intent.agent_env_requirements` is missing, route to `resolve-agent-env-gate` only when the task clearly states commands, expected results, success criteria, and cwd assumptions for planned Agent Workspaces. If the task is too vague, ask the user for those readiness requirements and stop before calling `isomer-srv-agent-env-setup`.
+If per-Agent Workspace cwd verification or selected-agent repair is requested and `topic.intent.agent_env_requirements` is missing, offer targeted fast-forward recovery through `resolve-agent-env-gate` only when the task clearly states commands, expected results, success criteria, and cwd assumptions for planned Agent Workspaces. If the task is too vague, ask the user for those readiness requirements and stop before calling `isomer-srv-agent-env-setup`.
 
 ## Agent Env Gate Handoff
 

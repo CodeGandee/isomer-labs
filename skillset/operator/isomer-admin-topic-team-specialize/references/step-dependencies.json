@@ -1,0 +1,652 @@
+{
+  "version": 1,
+  "description": "Domain-level dependency graph for isomer-admin-topic-team-specialize. This manifest describes expected procedural step dependencies and recovery paths; it does not verify that workspace artifacts exist.",
+  "canonical_order": [
+    "init-topic",
+    "resolve-topic-intent",
+    "clarify-topic",
+    "ensure-topic-registration",
+    "resolve-topic-env-gate",
+    "setup-topic-env",
+    "adapt-team-template",
+    "clarify-topic-team",
+    "resolve-agent-env-gate",
+    "setup-agent-workspace",
+    "validate-topic-team",
+    "finalize-topic-team",
+    "approve-profile",
+    "materialize-profile"
+  ],
+  "steps": {
+    "init-topic": {
+      "id": "init-topic",
+      "display_name": "Initialize Topic",
+      "kind": "procedural",
+      "predecessors": [],
+      "requires": [
+        "Concrete Research Topic or enough user-supplied topic substance to derive one.",
+        "Candidate Topic Workspace directory or enough context to derive a provisional seed."
+      ],
+      "produces": [
+        "Provisional Topic Workspace seed when needed.",
+        "Next action for topic intent resolution."
+      ],
+      "recovery_conditions": [
+        "Use as the first recoverable step when a later target lacks a topic workspace seed."
+      ],
+      "mutation_notes": [
+        "May create a provisional topic workspace seed and source intent material only after topic substance and path safety are clear."
+      ],
+      "unrecoverable_blockers": [
+        "Research Topic is missing or generic.",
+        "Derived or supplied Topic Workspace directory collides with unsafe Project material."
+      ]
+    },
+    "resolve-topic-intent": {
+      "id": "resolve-topic-intent",
+      "display_name": "Resolve Topic Intent",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "init-topic",
+          "condition": "Topic workspace seed or candidate workspace is missing."
+        }
+      ],
+      "requires": [
+        "Resolved Project context or equivalent evidence.",
+        "Research Topic candidate or user-provided topic prompt.",
+        "Candidate or registered Topic Workspace that can resolve topic.intent.overview."
+      ],
+      "produces": [
+        "topic.intent.overview",
+        "topic_overview_path",
+        "topic_overview_diagnostics"
+      ],
+      "recovery_conditions": [
+        "Recoverable when the request contains enough topic substance to create topic.intent.overview."
+      ],
+      "mutation_notes": [
+        "Writes or updates user-editable topic overview source intent."
+      ],
+      "unrecoverable_blockers": [
+        "Topic substance is missing or too generic to summarize without guessing."
+      ]
+    },
+    "clarify-topic": {
+      "id": "clarify-topic",
+      "display_name": "Clarify Topic",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "resolve-topic-intent",
+          "condition": "topic.intent.overview is missing."
+        }
+      ],
+      "requires": [
+        "topic.intent.overview"
+      ],
+      "produces": [
+        "Revised topic.intent.overview",
+        "Remaining open questions",
+        "Readiness for registration or specialization"
+      ],
+      "recovery_conditions": [
+        "Recoverable when topic intent can be resolved first."
+      ],
+      "mutation_notes": [
+        "Updates topic.intent.overview directly from user clarification answers."
+      ],
+      "unrecoverable_blockers": [
+        "Topic overview is absent and the original request lacks enough topic substance."
+      ]
+    },
+    "ensure-topic-registration": {
+      "id": "ensure-topic-registration",
+      "display_name": "Ensure Topic Registration",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "init-topic",
+          "condition": "No candidate Topic Workspace exists."
+        },
+        {
+          "step": "resolve-topic-intent",
+          "condition": "No concrete topic overview or registered topic statement exists."
+        },
+        {
+          "step": "clarify-topic",
+          "condition": "Topic statement is missing, generic, or unclear."
+        }
+      ],
+      "requires": [
+        "topic.intent.overview or explicit registered Research Topic ref with concrete topic statement.",
+        "Candidate or registered Topic Workspace.",
+        "Supported Isomer CLI/API registration surface."
+      ],
+      "produces": [
+        "registered_research_topic_ref",
+        "registered_topic_workspace_ref",
+        "topic_registration_status",
+        "registration_command_evidence",
+        "environment_binding_status"
+      ],
+      "recovery_conditions": [
+        "Recoverable when topic material and candidate Topic Workspace can be derived safely."
+      ],
+      "mutation_notes": [
+        "May create Project Manifest-backed topic registration through supported Isomer CLI/API surfaces."
+      ],
+      "unrecoverable_blockers": [
+        "Concrete topic statement is missing.",
+        "Topic Workspace path is unsafe or collides with another registration.",
+        "Required Pixi binding cannot be resolved through supported surfaces."
+      ]
+    },
+    "resolve-topic-env-gate": {
+      "id": "resolve-topic-env-gate",
+      "display_name": "Resolve Topic Env Gate",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "resolve-topic-intent",
+          "condition": "topic.intent.overview is missing."
+        },
+        {
+          "step": "ensure-topic-registration",
+          "condition": "Registration-dependent setup or service delegation will follow."
+        }
+      ],
+      "requires": [
+        "Resolved Project and Topic Workspace context.",
+        "topic.intent.overview or equivalent topic material.",
+        "Enough topic material or prompt context to identify topic-level runnable needs."
+      ],
+      "produces": [
+        "topic.intent.topic_env_requirements",
+        "topic_env_source_path",
+        "topic_env_source_diagnostics"
+      ],
+      "recovery_conditions": [
+        "Recoverable when topic intent exists and a runnable target is clear enough to express as source intent."
+      ],
+      "mutation_notes": [
+        "Writes concise user-editable topic environment source intent."
+      ],
+      "unrecoverable_blockers": [
+        "Runnable target is unclear.",
+        "Topic material is too vague to derive topic-level environment requirements."
+      ]
+    },
+    "setup-topic-env": {
+      "id": "setup-topic-env",
+      "display_name": "Setup Topic Env",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "ensure-topic-registration",
+          "condition": "Manifest-backed topic refs or Pixi binding evidence are missing."
+        },
+        {
+          "step": "resolve-topic-env-gate",
+          "condition": "topic.intent.topic_env_requirements is missing and a clear runnable target exists."
+        }
+      ],
+      "requires": [
+        "registered_research_topic_ref",
+        "registered_topic_workspace_ref",
+        "environment_binding_status",
+        "topic.intent.topic_env_requirements or explicit topic env target spec or clear runnable target"
+      ],
+      "produces": [
+        "topic_environment_status",
+        "topic.env.topic_setup_target_spec",
+        "topic_environment_service_output",
+        "Topic Workspace predecessor evidence",
+        "Topic Main Development Repository predecessor evidence",
+        "External repo projection predecessor evidence"
+      ],
+      "recovery_conditions": [
+        "Recoverable when registration and topic env source intent can be prepared first."
+      ],
+      "mutation_notes": [
+        "Delegates heavy setup to isomer-srv-topic-env-setup; records service output as durable predecessor evidence."
+      ],
+      "unrecoverable_blockers": [
+        "Effective Topic Workspace Pixi binding is blocked.",
+        "Runnable target is unclear.",
+        "Host resource check blocks heavy setup or verification."
+      ]
+    },
+    "adapt-team-template": {
+      "id": "adapt-team-template",
+      "display_name": "Adapt Team Template",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "resolve-topic-intent",
+          "condition": "topic.intent.overview is missing."
+        },
+        {
+          "step": "ensure-topic-registration",
+          "condition": "Authoritative topic refs are missing."
+        },
+        {
+          "step": "setup-topic-env",
+          "condition": "Topic env predecessor work is in scope before team material is adapted."
+        }
+      ],
+      "requires": [
+        "topic.intent.overview",
+        "registered_research_topic_ref",
+        "registered_topic_workspace_ref",
+        "Selected Domain Agent Team Template"
+      ],
+      "produces": [
+        "copied_template_root",
+        "team-specialization-guide.md",
+        "team-specialization-plan.md",
+        "Final Report",
+        "Draft packet/profile inputs",
+        "Specialized topic-team scope"
+      ],
+      "recovery_conditions": [
+        "Recoverable when topic intent, registration, and selected template can be resolved."
+      ],
+      "mutation_notes": [
+        "Copies and edits only topic-local team material under the Topic Workspace."
+      ],
+      "unrecoverable_blockers": [
+        "No Domain Agent Team Template can be selected or confirmed.",
+        "Registration remains blocked."
+      ]
+    },
+    "clarify-topic-team": {
+      "id": "clarify-topic-team",
+      "display_name": "Clarify Topic Team",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "adapt-team-template",
+          "condition": "Specialization outputs are missing."
+        }
+      ],
+      "requires": [
+        "team-specialization-guide.md",
+        "team-specialization-plan.md",
+        "Final Report",
+        "Draft packet/profile input summary"
+      ],
+      "produces": [
+        "Revised copied topic-team material",
+        "Updated placeholder resolutions",
+        "Updated deferrals and blockers"
+      ],
+      "recovery_conditions": [
+        "Recoverable when adaptation can run first."
+      ],
+      "mutation_notes": [
+        "Updates copied topic-team material directly from user clarification answers."
+      ],
+      "unrecoverable_blockers": [
+        "Missing team specialization cannot be produced because topic or template selection is blocked."
+      ]
+    },
+    "resolve-agent-env-gate": {
+      "id": "resolve-agent-env-gate",
+      "display_name": "Resolve Agent Env Gate",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "resolve-topic-intent",
+          "condition": "topic.intent.overview is missing."
+        },
+        {
+          "step": "ensure-topic-registration",
+          "condition": "Topic registration evidence is missing."
+        },
+        {
+          "step": "setup-topic-env",
+          "condition": "Topic env predecessor evidence is needed for cwd requirements."
+        },
+        {
+          "step": "adapt-team-template",
+          "condition": "Authoritative Agent Names or topic-team scope are needed."
+        }
+      ],
+      "requires": [
+        "topic.intent.overview",
+        "Topic registration evidence",
+        "Topic env predecessor evidence when available",
+        "Authoritative Agent Names or explicit selected-agent subset"
+      ],
+      "produces": [
+        "topic.intent.agent_env_requirements",
+        "agent_env_source_path",
+        "agent_scope"
+      ],
+      "recovery_conditions": [
+        "Recoverable when topic, registration, topic env evidence, and team scope can be prepared first."
+      ],
+      "mutation_notes": [
+        "Writes concise user-editable per-Agent Workspace source intent."
+      ],
+      "unrecoverable_blockers": [
+        "Agent Names are not authoritative and no explicit selected-agent subset is supplied.",
+        "Per-Agent Workspace cwd requirements are too vague."
+      ]
+    },
+    "setup-agent-workspace": {
+      "id": "setup-agent-workspace",
+      "display_name": "Setup Agent Workspace",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "adapt-team-template",
+          "condition": "Specialized topic-team shape or Agent Names are missing."
+        },
+        {
+          "step": "ensure-topic-registration",
+          "condition": "Registration evidence is missing."
+        },
+        {
+          "step": "setup-topic-env",
+          "condition": "Topic Workspace and Topic Main Development Repository predecessor evidence is missing."
+        },
+        {
+          "step": "resolve-agent-env-gate",
+          "condition": "topic.intent.agent_env_requirements is missing and cwd readiness proof is requested."
+        }
+      ],
+      "requires": [
+        "Specialized topic-team shape and draft profile or packet/profile input summary",
+        "Registration assurance",
+        "topic_environment_status or explicit setup blocker",
+        "Topic Main Development Repository predecessor evidence",
+        "Projection predecessor evidence when required",
+        "topic.intent.agent_env_requirements or explicit agent target spec or clear per-agent cwd readiness target"
+      ],
+      "produces": [
+        "agent_workspace_paths",
+        "semantic_paths",
+        "topic.env.agent_setup_target_spec",
+        "agent_environment_service_output",
+        "branch_plan",
+        "worktree evidence",
+        "local_tmp_path_status",
+        "isomer_managed_path_status"
+      ],
+      "recovery_conditions": [
+        "Recoverable when registration, topic env predecessor evidence, team scope, and source agent env intent can be prepared first."
+      ],
+      "mutation_notes": [
+        "Delegates worktree creation and cwd verification to isomer-srv-agent-env-setup."
+      ],
+      "unrecoverable_blockers": [
+        "Per-agent cwd target is unclear.",
+        "Topic Main Development Repository predecessor evidence is blocked.",
+        "Host resource check blocks heavy per-agent verification."
+      ]
+    },
+    "validate-topic-team": {
+      "id": "validate-topic-team",
+      "display_name": "Validate Topic Team",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "resolve-topic-intent",
+          "condition": "Topic definition material is missing."
+        },
+        {
+          "step": "ensure-topic-registration",
+          "condition": "Registration assurance is missing."
+        },
+        {
+          "step": "setup-topic-env",
+          "condition": "Topic environment status is missing."
+        },
+        {
+          "step": "adapt-team-template",
+          "condition": "Specialized topic-team material is missing."
+        },
+        {
+          "step": "setup-agent-workspace",
+          "condition": "Agent Workspace setup is in scope and evidence is missing."
+        }
+      ],
+      "requires": [
+        "topic.intent.overview",
+        "Registration assurance",
+        "Specialized topic-team material",
+        "topic_environment_status or explicit setup blocker",
+        "Agent Workspace evidence or explicit workspace blocker when in scope"
+      ],
+      "produces": [
+        "topic_team_validation_status",
+        "Validation blockers",
+        "Deferrals",
+        "Next safe action"
+      ],
+      "recovery_conditions": [
+        "Recoverable when missing predecessor evidence can be produced by the canonical flow."
+      ],
+      "mutation_notes": [
+        "Reads and reports static readiness; does not launch or materialize profile material."
+      ],
+      "unrecoverable_blockers": [
+        "Claimed readiness lacks delegated service evidence.",
+        "Agent Workspace evidence is stale or uses legacy support roots."
+      ]
+    },
+    "finalize-topic-team": {
+      "id": "finalize-topic-team",
+      "display_name": "Finalize Topic Team",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "validate-topic-team",
+          "condition": "topic_team_validation_status is missing."
+        },
+        {
+          "step": "ensure-topic-registration",
+          "condition": "Registration assurance is missing from validation context."
+        }
+      ],
+      "requires": [
+        "topic_team_validation_status",
+        "Registration assurance carried through validation"
+      ],
+      "produces": [
+        "isomer-topic-summary.md",
+        "Final validation and blocker summary",
+        "Next operator action"
+      ],
+      "recovery_conditions": [
+        "Recoverable when validation can run first."
+      ],
+      "mutation_notes": [
+        "Writes or updates isomer-topic-summary.md in the registered Topic Workspace."
+      ],
+      "unrecoverable_blockers": [
+        "Only a provisional topic workspace seed exists.",
+        "Validation cannot produce authoritative topic refs or explicit blockers."
+      ]
+    },
+    "approve-profile": {
+      "id": "approve-profile",
+      "display_name": "Approve Profile",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "finalize-topic-team",
+          "condition": "Reviewable final summary or draft profile evidence is missing."
+        },
+        {
+          "step": "adapt-team-template",
+          "condition": "Draft profile or packet/profile input summary is missing."
+        }
+      ],
+      "requires": [
+        "isomer-topic-summary.md",
+        "Draft profile or packet/profile input summary",
+        "Packet validation output or explicit validation blocker"
+      ],
+      "produces": [
+        "Approval provenance",
+        "Approval state",
+        "Next validation or materialization action"
+      ],
+      "recovery_conditions": [
+        "Recoverable when reviewable material can be prepared first."
+      ],
+      "mutation_notes": [
+        "Records explicit approval, rejection, or blocked approval provenance."
+      ],
+      "unrecoverable_blockers": [
+        "Approval cannot be implied.",
+        "Reviewable material remains blocked."
+      ]
+    },
+    "materialize-profile": {
+      "id": "materialize-profile",
+      "display_name": "Materialize Profile",
+      "kind": "procedural",
+      "predecessors": [
+        {
+          "step": "approve-profile",
+          "condition": "Approval provenance is missing."
+        },
+        {
+          "step": "ensure-topic-registration",
+          "condition": "Registration assurance is missing or blocked."
+        },
+        {
+          "step": "finalize-topic-team",
+          "condition": "isomer-topic-summary.md is missing."
+        }
+      ],
+      "requires": [
+        "Approval provenance",
+        "Approved Topic Team Instantiation Packet or packet/profile input summary",
+        "Registration assurance",
+        "isomer-topic-summary.md"
+      ],
+      "produces": [
+        "Materialized Topic Agent Team Profile Bundle",
+        "Profile bundle validation output",
+        "Project Manifest registration guidance"
+      ],
+      "recovery_conditions": [
+        "Recoverable only up to explicit approval; materialization must wait for captured approval provenance."
+      ],
+      "mutation_notes": [
+        "Writes approved static profile bundle under the selected Topic Workspace."
+      ],
+      "unrecoverable_blockers": [
+        "Approval provenance is missing or withheld.",
+        "Registration assurance is blocked."
+      ]
+    }
+  },
+  "edges": [
+    {
+      "from": "init-topic",
+      "to": "resolve-topic-intent",
+      "condition": "A new or unclear topic needs a workspace seed before source topic overview can be written."
+    },
+    {
+      "from": "resolve-topic-intent",
+      "to": "clarify-topic",
+      "condition": "Topic overview exists but has open questions that block downstream work."
+    },
+    {
+      "from": "resolve-topic-intent",
+      "to": "ensure-topic-registration",
+      "condition": "Registration needs concrete topic material."
+    },
+    {
+      "from": "clarify-topic",
+      "to": "ensure-topic-registration",
+      "condition": "Clarification resolves missing or generic topic statement before registration."
+    },
+    {
+      "from": "ensure-topic-registration",
+      "to": "resolve-topic-env-gate",
+      "condition": "Registered topic and workspace context are needed before setup intent feeds service delegation."
+    },
+    {
+      "from": "resolve-topic-env-gate",
+      "to": "setup-topic-env",
+      "condition": "Topic setup needs a user-editable topic env source intent or equivalent explicit target spec."
+    },
+    {
+      "from": "setup-topic-env",
+      "to": "adapt-team-template",
+      "condition": "The normal specialization path prepares topic env predecessor evidence before adapting team material when setup is in scope."
+    },
+    {
+      "from": "adapt-team-template",
+      "to": "clarify-topic-team",
+      "condition": "Team clarification requires copied specialization outputs."
+    },
+    {
+      "from": "adapt-team-template",
+      "to": "resolve-agent-env-gate",
+      "condition": "Agent env source intent needs authoritative Agent Names or topic-team scope."
+    },
+    {
+      "from": "setup-topic-env",
+      "to": "resolve-agent-env-gate",
+      "condition": "Per-agent cwd requirements may depend on topic env predecessor evidence."
+    },
+    {
+      "from": "resolve-agent-env-gate",
+      "to": "setup-agent-workspace",
+      "condition": "Agent Workspace setup needs source agent env intent when cwd readiness proof is requested."
+    },
+    {
+      "from": "setup-topic-env",
+      "to": "setup-agent-workspace",
+      "condition": "Agent Workspace setup needs Topic Main Development Repository and projection predecessor evidence."
+    },
+    {
+      "from": "adapt-team-template",
+      "to": "setup-agent-workspace",
+      "condition": "Agent Workspace setup needs specialized topic-team shape and authoritative Agent Names."
+    },
+    {
+      "from": "setup-agent-workspace",
+      "to": "validate-topic-team",
+      "condition": "Validation consumes Agent Workspace setup evidence when workspaces are in scope."
+    },
+    {
+      "from": "setup-topic-env",
+      "to": "validate-topic-team",
+      "condition": "Validation consumes topic environment setup evidence or explicit setup blockers."
+    },
+    {
+      "from": "adapt-team-template",
+      "to": "validate-topic-team",
+      "condition": "Validation consumes specialized topic-team material."
+    },
+    {
+      "from": "validate-topic-team",
+      "to": "finalize-topic-team",
+      "condition": "Finalization summarizes validation status and blockers."
+    },
+    {
+      "from": "finalize-topic-team",
+      "to": "approve-profile",
+      "condition": "Approval needs reviewable final topic-team material."
+    },
+    {
+      "from": "approve-profile",
+      "to": "materialize-profile",
+      "condition": "Materialization requires explicit approval provenance."
+    },
+    {
+      "from": "finalize-topic-team",
+      "to": "materialize-profile",
+      "condition": "Materialization references the final topic-team summary."
+    }
+  ]
+}

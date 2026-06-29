@@ -31,7 +31,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 No predecessor artifacts are required. This is the first procedural step.
 
-If the user is actually asking for a later procedural subcommand and predecessor artifacts are missing, refuse to run that later subcommand and tell the user to run `init-topic` first.
+If the user is actually asking for a later procedural subcommand and predecessor artifacts are missing, refuse to run that later subcommand directly and offer targeted fast-forward recovery from `init-topic` toward the selected target. Use `python scripts/query_step_dependencies.py path --target <selected-target> --include-target` for the inclusive default path or `--exclude-target` for the exclusive path.
 
 ## Topic Overview Template
 

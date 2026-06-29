@@ -21,7 +21,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Prerequisite Artifacts
 
-If any required predecessor artifact is missing, refuse to run and tell the user why. Required predecessor artifacts are resolved Project context from `resolve-project` or equivalent evidence, a Research Topic candidate or user-provided topic prompt, and a candidate or registered Topic Workspace that can resolve `topic.intent.overview`.
+If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow. Required predecessor artifacts are resolved Project context from `resolve-project` or equivalent evidence, a Research Topic candidate or user-provided topic prompt, and a candidate or registered Topic Workspace that can resolve `topic.intent.overview`.
+
+When the Research Topic or candidate Topic Workspace is missing but the user gave enough topic substance to seed a workspace, offer targeted fast-forward recovery through `init-topic` to `resolve-topic-intent`. Use `python scripts/query_step_dependencies.py path --target resolve-topic-intent --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target resolve-topic-intent --exclude-target` for the exclusive path. When topic substance is missing or generic, ask for the actual Research Topic and stop before creating files.
 
 ## Topic Overview Template
 

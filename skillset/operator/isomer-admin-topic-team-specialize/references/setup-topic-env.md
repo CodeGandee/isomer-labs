@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow.
 2. Require `ensure-topic-registration` evidence:
    - Refuse before service delegation if the Research Topic or Topic Workspace is not Project Manifest-backed.
    - Refuse if `topic_registration_status` is blocked.
@@ -46,7 +46,11 @@ Required predecessor artifacts or inputs:
 
 Specialized topic-team material, `<topic-workspace>/team-profile/`, Topic Agent Team Profile material, draft profile inputs, Agent Team Instance records, roles, and agent count are optional context for this subcommand. Do not refuse solely because they are absent. If the requested runnable target explicitly depends on files produced by specialization and those files are missing, report that specific missing runnable-target input instead of treating team-profile material as a general prerequisite.
 
-If registration evidence is missing, refuse to run, explain that service setup needs manifest-backed Research Topic and Topic Workspace refs, and tell the user to run `ensure-topic-registration` first. If Pixi cannot resolve the effective Topic Workspace Pixi binding target, report that blocker and do not call `isomer-srv-topic-env-setup`.
+If registration evidence is missing, refuse to run directly, explain that service setup needs manifest-backed Research Topic and Topic Workspace refs, and offer targeted fast-forward recovery to `setup-topic-env`. Use `python scripts/query_step_dependencies.py path --target setup-topic-env --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target setup-topic-env --exclude-target` for the exclusive path.
+
+If `topic.intent.topic_env_requirements` is missing and the prompt or topic material gives a clear runnable target, offer targeted fast-forward recovery through `resolve-topic-env-gate` to `setup-topic-env`. If the runnable target is unclear, ask the user what should be able to run after environment setup and stop before service delegation.
+
+If Pixi cannot resolve the effective Topic Workspace Pixi binding target, report that blocker and do not call `isomer-srv-topic-env-setup`.
 
 ## Source Intent Handoff
 

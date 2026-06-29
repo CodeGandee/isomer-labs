@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow.
 2. Read finalization inputs:
    - Topic overview, registration assurance evidence, specialization outputs, and durable setup records including `isomer-srv-topic-env-setup` evidence.
    - Topic Main Development Repository predecessor evidence, projection predecessor evidence, Agent Workspace records, agent names, branch plans, `isomer-managed/` regime status, generated links, and optional delegated workspace-manager inspection evidence when present.
@@ -27,9 +27,9 @@ Required predecessor artifact:
 - `topic_team_validation_status` from `validate-topic-team`, including ready, ready-with-deferrals, or blocked status.
 - Registration assurance from `ensure-topic-registration`, carried through validation.
 
-If validation status is missing, refuse to run, explain that the final summary depends on readiness validation, and tell the user to run `validate-topic-team` first.
+If validation status is missing, refuse to run directly, explain that the final summary depends on readiness validation, and offer targeted fast-forward recovery to `finalize-topic-team`. Use `python scripts/query_step_dependencies.py path --target finalize-topic-team --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target finalize-topic-team --exclude-target` for the exclusive path.
 
-If registration assurance is missing from the validation context, refuse to run, explain that the final summary must report authoritative topic refs or blockers, and tell the user to run `ensure-topic-registration` and then `validate-topic-team`.
+If registration assurance is missing from the validation context, refuse to run directly, explain that the final summary must report authoritative topic refs or blockers, and offer targeted fast-forward recovery through `ensure-topic-registration` and `validate-topic-team` to `finalize-topic-team`.
 
 ## Summary Template
 

@@ -6,7 +6,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**:
    - If neither a concrete registered Research Topic ref nor `topic.intent.overview` from `resolve-topic-intent`, `init-topic`, or `clarify-topic` is available, refuse to run.
-   - Explain that there is no topic material to register, and tell the user to run `resolve-topic-intent` first.
+   - Explain that there is no topic material to register, and offer targeted fast-forward recovery through `resolve-topic-intent` when the original request contains enough topic substance.
 2. Resolve registration inputs:
    - Resolve the Project root, Project Manifest, selected Research Topic id or candidate topic slug, candidate Topic Workspace directory, and topic overview.
    - Do not infer a topic from directory names, the current directory, a Project Manifest default, the registered id `default`, or a generic placeholder statement.
@@ -46,7 +46,9 @@ Required predecessor artifact or input:
 - `topic.intent.overview` from `resolve-topic-intent` or `init-topic`, optionally revised by `clarify-topic`; or
 - An explicit registered Research Topic ref whose registered config contains a concrete Research Topic statement.
 
-If topic material is missing, refuse to run, explain that registration assurance needs a concrete topic statement and candidate Topic Workspace, and tell the user to run `init-topic` first. If the topic overview exists but does not contain a concrete topic statement, refuse to mutate Project Config and route to `clarify-topic`.
+If topic material is missing, refuse to run directly, explain that registration assurance needs a concrete topic statement and candidate Topic Workspace, and offer targeted fast-forward recovery to `ensure-topic-registration`. Use `python scripts/query_step_dependencies.py path --target ensure-topic-registration --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target ensure-topic-registration --exclude-target` for the exclusive path.
+
+If the topic overview exists but does not contain a concrete topic statement, refuse to mutate Project Config and route to `clarify-topic`. Ask for the concrete Research Topic when the topic substance is missing or generic.
 
 ## Verification Targets
 

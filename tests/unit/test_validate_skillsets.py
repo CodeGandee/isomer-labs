@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import shutil
 import sys
 import tempfile
@@ -76,6 +77,8 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             {fallback}
 
+            Use `references/step-dependencies.json` and `scripts/query_step_dependencies.py` for procedural dependency paths.
+
             ## Subcommands
 
             Procedural Subcommands: `init-topic`, `clarify-topic`, `ensure-topic-registration`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile`.
@@ -119,6 +122,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                     ## Workflow
 
                     1. Print public subcommands as a table with semantic path evidence.
+                    2. Explain that `references/step-dependencies.json` and `scripts/query_step_dependencies.py` provide centralized dependency paths.
 
                     If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -164,6 +168,10 @@ class SkillsetValidatorTests(unittest.TestCase):
                 extra_terms = """
                 Report semantic labels first with `topic.repos.main`, `topic.repos.main.tmp`, `agent.workspace`, `agent.tmp`, path sources, `isomer-default.v1`, and reject hard-coded default-only paths without semantic label evidence.
                 """
+            elif subcommand_name == "fast-forward.md":
+                extra_terms = """
+                Use `scripts/query_step_dependencies.py` and `references/step-dependencies.json` to compute full and targeted fast-forward paths.
+                """
             write(
                 root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subcommand_name,
                 f"""
@@ -188,8 +196,69 @@ class SkillsetValidatorTests(unittest.TestCase):
                 Local support reference.
                 """,
             )
+        self.write_topic_team_dependency_contract(root)
         self.write_project_manager_skill(root)
         self.write_topic_workspace_manager_skill(root)
+
+    def write_topic_team_dependency_contract(self, root: Path) -> None:
+        skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize"
+        step_ids = [subcommand.removesuffix(".md") for subcommand in validator.TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS]
+        steps = {}
+        edges = []
+        previous_step_id = None
+        for step_id in step_ids:
+            predecessors = []
+            if previous_step_id is not None:
+                predecessors.append({"step": previous_step_id, "condition": "Fixture predecessor output is missing."})
+                edges.append({"from": previous_step_id, "to": step_id, "condition": "Fixture canonical order."})
+            steps[step_id] = {
+                "id": step_id,
+                "display_name": step_id.replace("-", " ").title(),
+                "kind": "procedural",
+                "predecessors": predecessors,
+                "requires": ["Fixture input."],
+                "produces": ["Fixture output."],
+                "recovery_conditions": ["Fixture recovery condition."],
+                "mutation_notes": ["Fixture mutation note."],
+                "unrecoverable_blockers": ["Fixture blocker."],
+            }
+            previous_step_id = step_id
+        manifest = {
+            "version": 1,
+            "description": "Fixture step dependency graph.",
+            "canonical_order": step_ids,
+            "steps": steps,
+            "edges": edges,
+        }
+        write(
+            skill_dir / "references" / "step-dependencies.json",
+            json.dumps(manifest, indent=2),
+        )
+        write(
+            skill_dir / "scripts" / "query_step_dependencies.py",
+            """
+            #!/usr/bin/env python3
+            from __future__ import annotations
+
+            import json
+            import sys
+            from pathlib import Path
+
+
+            def main() -> int:
+                if len(sys.argv) > 1 and sys.argv[1] == "validate":
+                    manifest_path = Path(__file__).resolve().parents[1] / "references" / "step-dependencies.json"
+                    json.loads(manifest_path.read_text(encoding="utf-8"))
+                    print("step-dependencies.json is valid")
+                    return 0
+                print("fixture dependency query")
+                return 0
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """,
+        )
 
     def write_project_manager_skill(
         self,
@@ -554,6 +623,87 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertEqual([], messages(diagnostics))
+
+    def test_operator_validator_requires_topic_team_dependency_manifest(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        (
+            root
+            / "skillset"
+            / "operator"
+            / "isomer-admin-topic-team-specialize"
+            / "references"
+            / "step-dependencies.json"
+        ).unlink()
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("step-dependencies.json" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_team_dependency_script(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        (
+            root
+            / "skillset"
+            / "operator"
+            / "isomer-admin-topic-team-specialize"
+            / "scripts"
+            / "query_step_dependencies.py"
+        ).unlink()
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("query_step_dependencies.py" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_team_dependency_manifest_coverage(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        manifest_path = (
+            root
+            / "skillset"
+            / "operator"
+            / "isomer-admin-topic-team-specialize"
+            / "references"
+            / "step-dependencies.json"
+        )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["steps"].pop("adapt-team-template")
+        manifest["canonical_order"].remove("adapt-team-template")
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("adapt-team-template" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_duplicated_topic_team_recovery_chain(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        subcommand_path = (
+            root
+            / "skillset"
+            / "operator"
+            / "isomer-admin-topic-team-specialize"
+            / "references"
+            / "validate-topic-team.md"
+        )
+        subcommand_path.write_text(
+            subcommand_path.read_text(encoding="utf-8")
+            + "\nThe inclusive default path is resolve-topic-intent -> ensure-topic-registration -> validate-topic-team.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("must not duplicate targeted recovery chains" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_module_artifact_terms(self) -> None:
         root = self.make_root()

@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow.
 2. Read validation inputs:
    - Topic definition material, registration assurance evidence, specialization outputs, and topic environment setup evidence from `isomer-srv-topic-env-setup`.
    - Topic Main Development Repository predecessor evidence, projection predecessor evidence when needed, and optional delegated workspace-manager topology inspection evidence when explicitly requested.
@@ -43,7 +43,11 @@ Required predecessor artifacts:
 - `agent_names`, `agent_workspace_paths`, `semantic_paths`, `local_tmp_path_status`, `isomer_managed_path_status`, `branch_plan`, worktree evidence, generated-link evidence, or explicit workspace blocker from `setup-agent-workspace`.
 - `agent_environment_service_output`, `topic.intent.agent_env_requirements`, and `topic.env.agent_setup_target_spec` when per-Agent Workspace cwd proof was requested, or an explicit service blocker when that setup was intentionally deferred.
 
-If registration evidence is missing or only names a provisional topic workspace seed, refuse to run, explain that validation depends on authoritative topic refs, and tell the user to run `ensure-topic-registration` first. If environment status or Agent Workspace paths are missing, refuse to run, explain that readiness validation depends on setup outputs, and tell the user to run `setup-topic-env` and `setup-agent-workspace` first. If `topic_environment_status` claims ready without Topic Workspace predecessor evidence or a named validation ref, report the missing `isomer-srv-topic-env-setup` evidence as a blocker. If per-Agent Workspace cwd verification was requested and `agent_environment_service_output` is missing, report that missing `isomer-srv-agent-env-setup` evidence as a blocker.
+If registration evidence is missing or only names a provisional topic workspace seed, refuse to run directly, explain that validation depends on authoritative topic refs, and offer targeted fast-forward recovery through `ensure-topic-registration` to `validate-topic-team`.
+
+If specialization, environment status, or Agent Workspace paths are missing, refuse to run directly, explain that readiness validation depends on setup outputs, and offer targeted fast-forward recovery to `validate-topic-team`. Use `python scripts/query_step_dependencies.py path --target validate-topic-team --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target validate-topic-team --exclude-target` for the exclusive path.
+
+If `topic_environment_status` claims ready without Topic Workspace predecessor evidence or a named validation ref, report the missing `isomer-srv-topic-env-setup` evidence as a blocker. If per-Agent Workspace cwd verification was requested and `agent_environment_service_output` is missing, report that missing `isomer-srv-agent-env-setup` evidence as a blocker.
 
 ## Guardrails
 

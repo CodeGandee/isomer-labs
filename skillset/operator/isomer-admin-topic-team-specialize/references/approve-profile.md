@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow.
 2. Read approval inputs:
    - Include the draft profile bundle summary, registration assurance evidence, packet validation report, copied material plan, proposed topic edits, static-material blockers, later-operation blockers, and `isomer-topic-summary.md`.
 3. Present review points:
@@ -23,7 +23,7 @@ Required predecessor artifacts:
 - Draft profile or packet/profile input summary from `adapt-team-template`.
 - Packet validation output or explicit validation blocker.
 
-If the final summary or draft profile evidence is missing, refuse to run, explain that approval needs reviewable team material, and tell the user to run `finalize-topic-team` first.
+If the final summary or draft profile evidence is missing, refuse to run directly, explain that approval needs reviewable team material, and offer targeted fast-forward recovery to `approve-profile`. Use `python scripts/query_step_dependencies.py path --target approve-profile --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target approve-profile --exclude-target` for the exclusive path.
 
 ## Reference Routing
 

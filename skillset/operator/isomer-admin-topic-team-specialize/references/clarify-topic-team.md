@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow.
 2. Read specialization outputs:
    - Include topic overview, copied template root, `team-specialization-guide.md`, `team-specialization-plan.md`, `Final Report`, placeholder resolutions, deferrals, and draft profile summary.
 3. Run the **Coverage and Clarity Scan** across the specialization outputs.
@@ -87,7 +87,7 @@ Required predecessor artifacts from `adapt-team-template`:
 - `<topic-workspace>/team-profile/execplan/team-specialization-plan.md` with a filled or pending `Final Report`.
 - Draft profile or packet/profile input summary from `draft-profile`.
 
-If any required specialization output is missing, refuse to run, explain which artifact is missing, and tell the user to run `adapt-team-template` first.
+If any required specialization output is missing, refuse to run directly, explain which artifact is missing, and offer targeted fast-forward recovery to `clarify-topic-team`. Use `python scripts/query_step_dependencies.py path --target clarify-topic-team --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target clarify-topic-team --exclude-target` for the exclusive path.
 
 ## Guardrails
 

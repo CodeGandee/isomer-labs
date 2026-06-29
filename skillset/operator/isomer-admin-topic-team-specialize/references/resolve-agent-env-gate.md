@@ -27,7 +27,11 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Prerequisite Artifacts
 
-If any required predecessor artifact is missing, refuse to run and tell the user why. Required predecessor artifacts are `topic.intent.overview`, topic registration evidence, topic env predecessor evidence when available, and enough topic-team or caller-provided scope to know authoritative Agent Names or an explicit selected-agent subset.
+If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow. Required predecessor artifacts are `topic.intent.overview`, topic registration evidence, topic env predecessor evidence when available, and enough topic-team or caller-provided scope to know authoritative Agent Names or an explicit selected-agent subset.
+
+When topic intent, registration evidence, topic env predecessor evidence, or specialization scope is missing but recoverable, offer targeted fast-forward recovery to `resolve-agent-env-gate`. Use `python scripts/query_step_dependencies.py path --target resolve-agent-env-gate --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target resolve-agent-env-gate --exclude-target` for the exclusive path.
+
+When Agent Names are not authoritative and the caller did not provide an explicit selected-agent subset, ask for the missing scope or route through `adapt-team-template` when team specialization can produce it. Do not invent Agent Names.
 
 ## Agent Env Requirements Template
 

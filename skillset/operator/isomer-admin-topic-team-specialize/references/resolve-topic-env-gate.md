@@ -23,7 +23,11 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Prerequisite Artifacts
 
-If any required predecessor artifact is missing, refuse to run and tell the user why. Required predecessor artifacts are resolved Project and Topic Workspace context, `topic.intent.overview` from `resolve-topic-intent` or equivalent evidence, and enough topic material or prompt context to identify topic-level runnable needs.
+If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint when the missing predecessor can be created by the canonical flow. Required predecessor artifacts are resolved Project and Topic Workspace context, `topic.intent.overview` from `resolve-topic-intent` or equivalent evidence, and enough topic material or prompt context to identify topic-level runnable needs.
+
+When `topic.intent.overview` is missing but the request contains enough topic substance, offer targeted fast-forward recovery to `resolve-topic-env-gate`. Use `python scripts/query_step_dependencies.py path --target resolve-topic-env-gate --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target resolve-topic-env-gate --exclude-target` for the exclusive path.
+
+When the runnable need is too vague, ask the user what the Topic Workspace should be able to run after setup and stop. Do not invent runnable requirements from generic topic text.
 
 ## Topic Env Requirements Template
 

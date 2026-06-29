@@ -6,11 +6,11 @@ This subcommand is the internal template-adaptation stage of Topic Team Speciali
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
+1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run directly and use **Targeted Fast-Forward Recovery** from the entrypoint.
 2. Confirm the Research Topic is clear enough to specialize. If not, route to `clarify-topic`.
 3. Confirm registration evidence:
    - Require `ensure-topic-registration` evidence showing a manifest-backed Research Topic and Topic Workspace with no unresolved registration blockers.
-   - If registration evidence is missing or blocked, refuse to run and tell the user to run `ensure-topic-registration` first.
+   - If registration evidence is missing or blocked, refuse to run directly and offer targeted fast-forward recovery through `ensure-topic-registration` unless the registration blocker needs user input.
 4. Ask the user to select or confirm one Domain Agent Team Template when the template is not already clear.
 5. Run `resolve-project`, `inspect-template`, and `resolve-context` to gather Project, registered topic, registered workspace, template, copied-material, policy, binding, and static setup refs.
 6. Create or confirm copied team material:
@@ -32,11 +32,11 @@ Required predecessor artifact:
 - `topic.intent.overview` from `resolve-topic-intent`, optionally revised by `clarify-topic`.
 - Registration assurance from `ensure-topic-registration`, including `registered_research_topic_ref`, `registered_topic_workspace_ref`, `topic_registration_status: registered`, and no unresolved `registration_blockers`.
 
-If this page is reached from a natural-language request like `specialize <team-path> over topic <topic>` and prerequisites are missing, refuse the direct internal-stage run and tell the user the request should route to `fast-forward` with the supplied team path and topic.
+If this page is reached from a natural-language request like `specialize <team-path> over topic <topic>`, do not treat it as a targeted recovery case. Route the request to full `fast-forward` with the supplied team path and topic.
 
-If `topic.intent.overview` does not exist during an explicit `adapt-team-template` request, refuse to run, explain that there is no topic definition to adapt against, and tell the user to run `resolve-topic-intent` first.
+If `topic.intent.overview` does not exist during an explicit `adapt-team-template` request, refuse to run directly, explain that there is no topic definition to adapt against, and offer targeted fast-forward recovery to `adapt-team-template`. Use `python scripts/query_step_dependencies.py path --target adapt-team-template --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target adapt-team-template --exclude-target` for the exclusive path.
 
-If registration assurance is missing or reports `topic_registration_status: blocked` during an explicit `adapt-team-template` request, refuse to run, explain that template adaptation needs authoritative Project Manifest-backed topic refs, and tell the user to run `ensure-topic-registration` first.
+If registration assurance is missing during an explicit `adapt-team-template` request, refuse to run directly, explain that template adaptation needs authoritative Project Manifest-backed topic refs, and offer targeted fast-forward recovery through `ensure-topic-registration` to `adapt-team-template`. If registration assurance reports `topic_registration_status: blocked`, report the blocker and ask for the specific missing registration input instead of inventing it.
 
 ## Guardrails
 
