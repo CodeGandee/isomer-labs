@@ -21,3 +21,8 @@ execplan/agents/bo-reviewer.local.toml
 # installed by the agent runtime per machine; not DeepResearch product source). Never commit.
 /.claude/
 /.codex/
+
+# Runtime agent skill-discovery mirror + skill-tooling working output (generated locally by the agent
+# runtime and the imsight-agent-skill-handling skill; not DeepResearch product source). Never commit.
+/.agents/
+/.agent-skill-handling/

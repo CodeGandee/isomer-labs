@@ -489,10 +489,13 @@ CREATE TABLE IF NOT EXISTS bo_review (
     created_at       TEXT NOT NULL
 );
 
--- DeepScientist-inspired idea-level BO: the UCB-like ACQUISITION decision over reviewed candidates —
--- which candidate to try next and why (and why not the others). ADVISORY only (never blocks a transition
--- or finalize; never alters idea_select.valid). acquisition_method is documented (e.g. ucb_like_v1); this is
--- an LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian optimization. QUEST-LOCAL.
+-- DeepScientist-inspired idea-level BO: the acquisition decision over reviewed candidates —
+-- which candidate to try next and why (and why not the others). BO-reviewer valuations are surrogate evidence
+-- and not hard validity gates (never alters idea_select.valid), but `bo select` makes this bo_decision DECISIVE /
+-- binding for multi-candidate idea selection and eligible next-move routing (a required bo_decision's absence
+-- blocks via the bo_idea_decision / bo_next_move gates); hard gates remain authoritative. Default
+-- acquisition_method is ucb_official_v1 = utility+quality+exploration_value; ucb_like_v1 (Houmao) is explicit
+-- opt-in. LLM-reviewer surrogate + acquisition, NOT full statistical Bayesian optimization. QUEST-LOCAL.
 CREATE TABLE IF NOT EXISTS bo_decision (
     decision_id        TEXT PRIMARY KEY,
     quest_id           TEXT NOT NULL REFERENCES quest(quest_id),

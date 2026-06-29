@@ -117,9 +117,13 @@ see `execplan/docs/binding-gates.md`):
 - `bo_review` — **advisory** LLM-reviewer SURROGATE valuation of one candidate research move for the
   idea-level BO loop (`valuation` vector on 0–100; `is_stub=1` marks an offline stub). Not proof, not a
   gate. Quest-local only (`context_refs` cite this quest's rows).
-- `bo_decision` — **advisory** UCB-like acquisition decision over reviewed candidates (selected
-  candidate + per-candidate score breakdown). Never blocks, never alters `idea_select.valid`. An
-  LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian optimization.
+- `bo_decision` — the acquisition decision over reviewed candidates (selected candidate + per-candidate
+  score breakdown). BO-reviewer valuations are surrogate evidence and not hard validity gates (never alters
+  `idea_select.valid`), but `bo select` makes this **decisive / binding** for multi-candidate idea selection
+  and eligible next-move routing (a required bo_decision's absence blocks via the `bo_idea_decision` /
+  `bo_next_move` gates); hard gates remain authoritative. Default acquisition `utility + quality +
+  exploration_value`; the Houmao acquisition (`ucb_like_v1`) is explicit opt-in. An LLM-reviewer surrogate +
+  acquisition, NOT full statistical Bayesian optimization.
 
 Continuation + comms ledgers:
 
@@ -198,9 +202,13 @@ Every dispatch between agents (or self) carries `loop_id` (= `quest_id`) + a sta
 
 The `bo` group runs an **idea-level / hypothesis-level** optimization loop: it picks which candidate
 research move to try next. It is an **LLM-reviewer surrogate + UCB-like acquisition**, NOT full
-statistical Bayesian optimization (there is no probabilistic surrogate / posterior). It is QUEST-LOCAL
-and ADVISORY throughout — no BO record blocks a transition or finalize, none enters `blocking_gates` or
-`finalize_readiness`, and none alters `idea_select.valid`.
+statistical Bayesian optimization (there is no probabilistic surrogate / posterior). It is QUEST-LOCAL.
+BO-reviewer valuations (`bo_review`) are surrogate evidence and not hard validity gates — no BO record alters
+`idea_select.valid` or enters finalize coverage. But `bo select` records a **decisive / binding** `bo_decision`
+for multi-candidate idea selection and eligible next-move routing: a required bo_decision's absence blocks via
+the `bo_idea_decision` / `bo_next_move` gates (which surface in `gate status` / `blocking_gates` when
+applicable). Hard gates remain authoritative (BO only ranks gate-eligible candidates). Default acquisition is
+`utility + quality + exploration_value`; the Houmao acquisition (`ucb_like_v1`) is explicit opt-in.
 
 1. **Candidates** (`bo candidates`) — gather quest-local candidate moves by source priority: open
    `research_opportunity` rows, the latest `idea_select` candidate, quest-local `frontier_entry`

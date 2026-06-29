@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "deepresearch/records/bo-decision",
   "title": "bo_decision record",
-  "description": "The UCB-like ACQUISITION decision over reviewed candidates for the DeepScientist-inspired idea-level BO loop: which candidate was selected to try next and why (and why the others were not). record_id = decision_id; append-only (insert). ADVISORY — a bo_decision never blocks a transition or finalize, and never alters idea_select.valid. QUEST-LOCAL ONLY. This is an LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian optimization.",
+  "description": "The acquisition decision over reviewed candidates for the DeepScientist-inspired idea-level BO loop: which candidate was selected to try next and why (and why the others were not). record_id = decision_id; append-only (insert). BO-reviewer valuations are surrogate evidence and not hard validity gates (a bo_decision never alters idea_select.valid and never enters finalize coverage), but `bo select` creates a DECISIVE / binding bo_decision for multi-candidate idea selection and eligible next-move routing — a required bo_decision's absence blocks via the bo_idea_decision / bo_next_move gates. Hard gates remain authoritative (BO only ranks gate-eligible candidates). Default acquisition is utility + quality + exploration_value (acquisition_method=ucb_official_v1); the richer Houmao acquisition (ucb_like_v1) is explicit opt-in via --acquisition houmao. QUEST-LOCAL ONLY. LLM-reviewer surrogate + acquisition, NOT full statistical Bayesian optimization.",
   "type": "object",
   "additionalProperties": false,
   "required": ["record_type", "record_id", "at", "quest_id", "acquisition_method"],

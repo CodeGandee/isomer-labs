@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "skills": {
+    "imsight-agent-skill-handling": {
+      "source": "igamenovoer/houmao-agents",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skillset/imsight-skills/imsight-agent-skill-handling/SKILL.md",
+      "computedHash": "8cf7e295af067ad0deee3490a027cddc8c357fa861377bcbeca6d13151cb3938"
+    },
+    "imsight-doc-writing": {
+      "source": "igamenovoer/houmao-agents",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skillset/imsight-skills/imsight-doc-writing/SKILL.md",
+      "computedHash": "fddedc18b44846fb49c84d7b3eec02c67913ee791f15ae930f7b5fc08f0f4bf0"
+    }
+  }
+}
