@@ -4,12 +4,17 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Print a concise description: `isomer-admin-topic-workspace-mgr` prepares Git-backed Topic Workspace surfaces through semantic labels such as `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, and `agent.links`.
+1. Print a concise description:
+   - `isomer-admin-topic-workspace-mgr` prepares Git-backed Topic Workspace surfaces through semantic labels such as `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, and `agent.links`.
 2. Explain that invoking the skill without a prompt defaults to `topic-workspace`, while explicit help prints this usage surface.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
 4. Name the required inputs: Project Manifest context, Research Topic, Topic Workspace, optional packet/profile material, and any requested agent-name mapping.
-5. State the output contract: semantic paths with labels and sources, topic repo path, `isomer-managed/` regime status, local tmp posture, records root, runtime root, agent workspace paths, branch plan, derived compatibility `agent_workspace_ref` values, boundary docs, generated links, optional `isomer-srv-agent-env-setup` evidence when already available, validation status, blockers, and next operator action.
-6. State the key guardrails: no directory-scanning selection, no silent Git repair, no cross-topic refs, no Agent Instance creation, no Workspace Runtime mutation, no Houmao launch, and no Execution Adapter operation.
+5. State the output contract:
+   - Include semantic paths with labels and sources, topic repo path, `isomer-managed/` regime status, local tmp posture, records root, runtime root, agent workspace paths, branch plan, derived compatibility `agent_workspace_ref` values, boundary docs, and generated links.
+   - Include optional `isomer-srv-agent-env-setup` evidence when already available, validation status, blockers, and next operator action.
+6. State the key guardrails:
+   - No directory-scanning selection, no silent Git repair, and no cross-topic refs.
+   - No Agent Instance creation, Workspace Runtime mutation, Houmao launch, or Execution Adapter operation.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which usage details to print, then execute the plan.
 

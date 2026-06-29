@@ -24,10 +24,16 @@ When this subcommand is selected, execute the following steps in order.
 4. **Report existing matching worktrees as ready** when the resolved `agent.workspace` path already exists as a worktree of `topic.repos.main` on the expected branch.
 5. **Block existing nonmatching paths**. Do not overwrite, delete, move, clean, reset, or reinitialize an existing path that is not the expected worktree.
 6. **Reject duplicate branch checkout** when `per-agent/<agent-name>/main` is already checked out in another worktree of the Topic Main Repository.
-7. **Create missing safe worktrees** only for authoritative Agent Names and safe resolved paths. Use the Topic Main Repository as the Git anchor and the resolved `agent.workspace` path as the Agent Workspace path.
-8. **Prepare or validate required support labels** for each ready worktree: `agent.isomer_managed`, `agent.runtime`, `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, `agent.inbox`, `agent.topic_readonly`, `agent.topic_writable`, and `agent.links`. Include `agent.tmp` only as local ignored disposable posture when available.
-9. **Write or validate advisory boundary material** naming cwd-friendly self-query guidance, Peer Read Access, owner/reader split, branch rules, and the fact that cwd inference is not filesystem-grade identity or access control.
-10. **Update or report derived gate worktree evidence** with branch plan, worktree status by agent, support label posture, changed files, commands run, blockers, and selected-agent partial scope when present.
+7. **Create missing safe worktrees** only for authoritative Agent Names and safe resolved paths:
+   - Use the Topic Main Repository as the Git anchor.
+   - Use the resolved `agent.workspace` path as the Agent Workspace path.
+8. **Prepare or validate required support labels** for each ready worktree:
+   - Check `agent.isomer_managed`, `agent.runtime`, `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, `agent.inbox`, `agent.topic_readonly`, `agent.topic_writable`, and `agent.links`.
+   - Include `agent.tmp` only as local ignored disposable posture when available.
+9. **Write or validate advisory boundary material**:
+   - Name cwd-friendly self-query guidance, Peer Read Access, owner/reader split, branch rules, and the fact that cwd inference is not filesystem-grade identity or access control.
+10. **Update or report derived gate worktree evidence**:
+   - Include branch plan, worktree status by agent, support label posture, changed files, commands run, blockers, and selected-agent partial scope when present.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to inspect first, separate ready entries from blocked entries, and mutate only entries that are safe.
 

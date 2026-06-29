@@ -5,11 +5,26 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Explain that `step-by-step` follows the same required static topic-team setup path as `fast-forward`, but pauses before each step for user confirmation.
-2. Prepare a progress tracker with these steps: `init-topic`, `resolve-topic-intent`, `clarify-topic` when needed, `ensure-topic-registration`, `resolve-topic-env-gate`, `setup-topic-env`, `specialize-team`, `clarify-topic-team` when needed, optional repeated `resolve-topic-env-gate` and `setup-topic-env` when specialization changes runnable requirements, `resolve-agent-env-gate` when per-agent cwd readiness is in scope, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, and optional later approval or materialization boundaries. If the user has not supplied concrete Research Topic substance, ask for it before confirming or running `init-topic`.
-3. Before each step, tell the user what will happen, what inputs or semantic labels may be read or changed, and what output should exist after the step. For `resolve-topic-intent`, explain that it resolves and writes `topic.intent.overview`. For `ensure-topic-registration`, explain that it may run supported Isomer Project registration commands and will block instead of hand-editing Project Config or inventing missing bindings. For `resolve-topic-env-gate`, explain that it resolves and writes high-level `topic.intent.topic_env_requirements`. For `setup-topic-env`, explain that the operator step only needs registration, a Pixi binding, and usable `topic.intent.topic_env_requirements` or an explicit target spec; it then delegates target-spec derivation and Topic Workspace materialization to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> manual` and records predecessor evidence. For `resolve-agent-env-gate`, explain that it resolves and writes high-level `topic.intent.agent_env_requirements` from authoritative Agent Names or explicit selected-agent scope. For `setup-agent-workspace`, explain that it first records or delegates Git-backed topology evidence, then delegates readiness proof to `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>` after source intent, predecessor evidence, authoritative Agent Names, and topology evidence exist.
+2. Prepare a progress tracker:
+   - Include `init-topic`, `resolve-topic-intent`, `clarify-topic` when needed, `ensure-topic-registration`, `resolve-topic-env-gate`, `setup-topic-env`, `specialize-team`, and `clarify-topic-team` when needed.
+   - Include optional repeated `resolve-topic-env-gate` and `setup-topic-env` when specialization changes runnable requirements.
+   - Include `resolve-agent-env-gate` when per-agent cwd readiness is in scope, then `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`.
+   - Treat approval or materialization as later optional boundaries.
+   - If the user has not supplied concrete Research Topic substance, ask for it before confirming or running `init-topic`.
+3. Before each step, tell the user what will happen, what inputs or semantic labels may be read or changed, and what output should exist after the step:
+   - For `resolve-topic-intent`, explain that it resolves and writes `topic.intent.overview`.
+   - For `ensure-topic-registration`, explain that it may run supported Isomer Project registration commands and will block instead of hand-editing Project Config or inventing missing bindings.
+   - For `resolve-topic-env-gate`, explain that it resolves and writes high-level `topic.intent.topic_env_requirements`.
+   - For `setup-topic-env`, explain that the operator step only needs registration, a Pixi binding, and usable `topic.intent.topic_env_requirements` or an explicit target spec.
+   - For `setup-topic-env`, also explain that it delegates target-spec derivation and Topic Workspace materialization to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> manual` and records predecessor evidence.
+   - For `resolve-agent-env-gate`, explain that it resolves and writes high-level `topic.intent.agent_env_requirements` from authoritative Agent Names or explicit selected-agent scope.
+   - For `setup-agent-workspace`, explain that it first records or delegates Git-backed topology evidence.
+   - For `setup-agent-workspace`, also explain that it delegates readiness proof to `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>` after source intent, predecessor evidence, authoritative Agent Names, and topology evidence exist.
 4. Ask the user to confirm before running the step. Continue only after explicit confirmation; if the user declines or asks to stop, report progress, blockers, and the next safe step.
 5. Execute exactly one confirmed step, then summarize what changed, what was deferred, and whether the next step is safe.
 6. Ask the user to confirm before moving to the next step, repeating the confirm-execute-summarize cycle until `finalize-topic-team` creates or updates `isomer-topic-summary.md`.
-7. Stop at final topic-team summary output. Run `approve-profile` or `materialize-profile` only when the user explicitly asks for that static profile-material boundary and required validation or approval inputs are available.
+7. Stop at final topic-team summary output:
+   - Run `approve-profile` or `materialize-profile` only when the user explicitly asks for that static profile-material boundary.
+   - Require the needed validation or approval inputs before crossing that boundary.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a guided confirmation plan from the selected topic, template, procedural subcommands, output contract, and guardrails, then execute one confirmed step at a time.

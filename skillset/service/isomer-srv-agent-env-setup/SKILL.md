@@ -17,11 +17,17 @@ This skill is a command-style router: keep the entrypoint lean, choose one subco
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Handle help intent**. If the invocation has no prompt, or if the user asks for help, usage, or available functionality, answer from **Help** and stop unless they also ask for a concrete setup task.
-2. **Select one subcommand** from the **Subcommands** tables. If the prompt describes concrete Agent Workspace environment setup but does not name another subcommand, use `setup-agent-env`.
-3. **Load the selected reference file**. Load only that reference page before executing a direct subcommand. The `setup-agent-env` reference may load the procedural pages it orchestrates.
+1. **Handle help intent**:
+   - If the invocation has no prompt, or if the user asks for help, usage, or available functionality, answer from **Help**.
+   - Stop unless they also ask for a concrete setup task.
+2. **Select one subcommand** from the **Subcommands** tables:
+   - If the prompt describes concrete Agent Workspace environment setup but does not name another subcommand, use `setup-agent-env`.
+3. **Load the selected reference file**:
+   - Load only that reference page before executing a direct subcommand.
+   - The `setup-agent-env` reference may load the procedural pages it orchestrates.
 4. **Resolve that page's required inputs** from its `## Required Inputs` section, then execute its `## Workflow`.
-5. **Report results** using **Output Contract**, including requester, confirmation source, optional Service Request or Provenance refs, semantic path evidence, commands run, readiness by agent, blockers, and next action.
+5. **Report results** using **Output Contract**:
+   - Include requester, confirmation source, optional Service Request or Provenance refs, semantic path evidence, commands run, readiness by agent, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the subcommands, selected reference page, output contract, and guardrails in this skill, then execute the plan.
 

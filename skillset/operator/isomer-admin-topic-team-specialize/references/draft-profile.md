@@ -5,7 +5,8 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Read the Topic Team Instantiation Packet inputs, specialization plan final report, and selected Domain Agent Team Template inspection summary.
-2. Draft reviewable Topic Agent Team Profile Bundle contents: profile fields, role bindings, policy refs, expected Artifacts, copied material plan, proposed topic edits, static-material blockers, later-operation blockers, and provenance refs.
+2. Draft reviewable Topic Agent Team Profile Bundle contents:
+   - Include profile fields, role bindings, policy refs, expected Artifacts, copied material plan, proposed topic edits, static-material blockers, later-operation blockers, and provenance refs.
 3. Preview copied or rewritten template material that will live under `<topic-workspace>/team-profile/`.
 4. Run or request save-time profile validation and capture diagnostics without treating preview material as authoritative.
 5. Return the draft bundle summary and review checklist for approval.

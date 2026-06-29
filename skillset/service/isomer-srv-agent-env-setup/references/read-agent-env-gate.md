@@ -18,10 +18,14 @@ Recover these before asking the user:
 When this subcommand is selected, execute the following steps in order.
 
 1. **Require resolved context** from `resolve-agent-env-context`; refuse to run when Project, Research Topic, Topic Workspace, or Pixi binding evidence is missing.
-2. **Resolve the source intent label** `topic.intent.agent_env_requirements`; record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
-3. **Read the source intent** and extract source intent, required command set, expected results, success criteria, Topic Main Repository configuration requirements, agent plan constraints, cwd assumptions, and blockers.
-4. **Check service-safe scope**. If the source intent asks for Agent Instance creation, Workspace Runtime mutation, Houmao launch, Execution Adapter launch, live research execution, privileged host mutation, dependency mutation, or research decisions, report an out-of-scope blocker instead of deriving executable setup steps.
-5. **Require enough specificity** to derive required Agent Workspace cwd commands. If commands, expected results, or cwd assumptions are missing or ambiguous, report a blocker.
+2. **Resolve the source intent label** `topic.intent.agent_env_requirements`:
+   - Record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
+3. **Read the source intent**:
+   - Extract source intent, required command set, expected results, success criteria, Topic Main Repository configuration requirements, agent plan constraints, cwd assumptions, and blockers.
+4. **Check service-safe scope**:
+   - If the source intent asks for Agent Instance creation, Workspace Runtime mutation, Houmao launch, Execution Adapter launch, live research execution, privileged host mutation, dependency mutation, or research decisions, report an out-of-scope blocker instead of deriving executable setup steps.
+5. **Require enough specificity** to derive required Agent Workspace cwd commands:
+   - If commands, expected results, or cwd assumptions are missing or ambiguous, report a blocker.
 6. **Report the source gate summary** and carry it to `derive-agent-env-gate`, `ensure-topic-main-repository`, and `verify-agent-env-gate`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step source-gate inspection from the resolved context, source file, topic env predecessor, and parent guardrails, then execute the plan.

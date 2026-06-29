@@ -5,11 +5,19 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the Project root and requested destination generated content root from the user's prompt.
-2. Start with a dry-run command: `pixi run isomer-cli --print-json project content-root move --to <content-dir> --dry-run`, or use `pixi run isomer-cli --print-json project --root <project-root> content-root move --to <content-dir> --dry-run` when operating from another directory.
-3. Explain the relocation plan in plain text: old generated content root, new generated content root, managed moves, manifest updates, skipped entries, unmanaged leftovers, diagnostics, and warnings.
-4. Warn that existing Workspace Runtime records, Pixi environments, installed packages, adapter runtime material, logs, and stored path plans may contain old paths after relocation. Tell the user to reinstall or reinitialize those runtimes if needed.
+2. Start with a dry-run command:
+   - Use `pixi run isomer-cli --print-json project content-root move --to <content-dir> --dry-run` from the Project root.
+   - Use `pixi run isomer-cli --print-json project --root <project-root> content-root move --to <content-dir> --dry-run` when operating from another directory.
+3. Explain the relocation plan in plain text:
+   - Old generated content root and new generated content root.
+   - Managed moves, manifest updates, skipped entries, unmanaged leftovers, diagnostics, and warnings.
+4. Warn about stale runtime paths:
+   - Existing Workspace Runtime records, Pixi environments, installed packages, adapter runtime material, logs, and stored path plans may contain old paths after relocation.
+   - Tell the user to reinstall or reinitialize those runtimes if needed.
 5. If the user confirms relocation after reviewing the plan, run the same command with `--yes` instead of `--dry-run`.
-6. Report `project_root`, `project_manifest_path`, old generated content root, new generated content root, `relocation_plan`, applied moves, unmanaged leftovers, diagnostics, warnings, and next operator action.
+6. Report relocation output:
+   - Include `project_root`, `project_manifest_path`, old generated content root, new generated content root, and `relocation_plan`.
+   - Include applied moves, unmanaged leftovers, diagnostics, warnings, and next operator action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the Project root, content-root destination, CLI command boundaries, and guardrails, then execute the plan.
 

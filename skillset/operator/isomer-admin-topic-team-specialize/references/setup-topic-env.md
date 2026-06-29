@@ -5,13 +5,30 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Require `ensure-topic-registration` evidence. Refuse before service delegation if the Research Topic or Topic Workspace is not Project Manifest-backed, if `topic_registration_status` is blocked, or if Pixi cannot resolve either an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or the implicit registered Topic Workspace directory default required by `isomer-srv-topic-env-setup`.
-3. Resolve the selected Research Topic and Topic Workspace from registration evidence, Project Manifest evidence, and any topic or specialization outputs that exist. Refuse to run if the Topic Workspace is missing or provisional without authoritative registration.
-4. Read `topic.intent.overview`, `topic.intent.topic_env_requirements`, prompt-supplied runnable target, specialization outputs when present, copied template setup notes when present, draft packet/profile inputs when present, and any environment requirements from topic material. Do not require specialization outputs solely to prepare the Topic Workspace environment.
-5. Require a usable `topic.intent.topic_env_requirements` source surface or an explicit manual topic env target spec. If source intent is missing and the prompt or topic material gives a clear runnable target, route to `resolve-topic-env-gate` to create or update that concise source intent. If the runnable target is unclear, ask the user for the target and stop before service delegation.
-6. Select the service setup mode. Use `auto` for `fast-forward`, direct setup, or concrete setup requests. Use `manual` when the caller is `step-by-step`, asks for confirmation, or wants to inspect choices before each service step.
-7. Delegate heavy Topic Workspace environment setup to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`, passing the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `topic.intent.topic_env_requirements` metadata or explicit target spec source, and relevant topic/setup notes as context. Let `isomer-srv-topic-env-setup` handle source-gate reading, repo materialization, target-spec generation at `topic.env.topic_setup_target_spec`, dependency inference, Pixi mutation, and topic-root verification only.
-8. Map the service output using **Service Output Mapping**. Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, commands run, changed files, repo warnings, blockers, validation refs, and `per_agent_readiness_status: not checked` when reported as durable setup evidence.
+2. Require `ensure-topic-registration` evidence:
+   - Refuse before service delegation if the Research Topic or Topic Workspace is not Project Manifest-backed.
+   - Refuse if `topic_registration_status` is blocked.
+   - Refuse if Pixi cannot resolve either an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or the implicit registered Topic Workspace directory default required by `isomer-srv-topic-env-setup`.
+3. Resolve the selected Research Topic and Topic Workspace:
+   - Use registration evidence, Project Manifest evidence, and any topic or specialization outputs that exist.
+   - Refuse to run if the Topic Workspace is missing or provisional without authoritative registration.
+4. Read available setup context:
+   - Include `topic.intent.overview`, `topic.intent.topic_env_requirements`, prompt-supplied runnable target, specialization outputs when present, copied template setup notes when present, draft packet/profile inputs when present, and any environment requirements from topic material.
+   - Do not require specialization outputs solely to prepare the Topic Workspace environment.
+5. Require a usable setup source:
+   - Continue when `topic.intent.topic_env_requirements` is usable or an explicit manual topic env target spec exists.
+   - If source intent is missing and the prompt or topic material gives a clear runnable target, route to `resolve-topic-env-gate` to create or update that concise source intent.
+   - If the runnable target is unclear, ask the user for the target and stop before service delegation.
+6. Select the service setup mode:
+   - Use `auto` for `fast-forward`, direct setup, or concrete setup requests.
+   - Use `manual` when the caller is `step-by-step`, asks for confirmation, or wants to inspect choices before each service step.
+7. Delegate heavy Topic Workspace environment setup:
+   - Call `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`.
+   - Pass the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `topic.intent.topic_env_requirements` metadata or explicit target spec source, and relevant topic/setup notes as context.
+   - Let `isomer-srv-topic-env-setup` handle source-gate reading, repo materialization, target-spec generation at `topic.env.topic_setup_target_spec`, dependency inference, Pixi mutation, and topic-root verification only.
+8. Map the service output using **Service Output Mapping**:
+   - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, commands run, changed files, repo warnings, blockers, and validation refs.
+   - Record `per_agent_readiness_status: not checked` when the service reports it as durable setup evidence.
 9. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand. Do not report per-Agent Workspace cwd readiness from this subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a service-delegation plan from the topic material, template requirements, available `topic.intent.topic_env_requirements` intent or explicit target spec source, `isomer-srv-topic-env-setup` output contract, and guardrails, then execute only the operator-safe handoff and reporting portions.

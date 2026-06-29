@@ -11,11 +11,25 @@ Use this as the module-level operator workflow for Topic Team Specialization. It
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Default help mode**: If this skill is invoked without a prompt, select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
-2. **Manual mode**: If the user asks for help, names one subcommand, or asks for one bounded operation, select that subcommand from the **Subcommands** tables, load only its detail page, execute its workflow, and report its output.
-3. **Guided mode**: If the user asks to specialize step by step, proceed interactively, or confirm each stage, select `step-by-step`, load [references/step-by-step.md](references/step-by-step.md), and execute the static topic-team setup path one step at a time.
-4. **Automatic mode**: If the user asks to fully specialize, prepare, adapt end-to-end, or says `fast-forward`, select `fast-forward`, load [references/fast-forward.md](references/fast-forward.md), execute the static topic-team setup path through `finalize-topic-team`, and stop at the approval or materialization boundary unless explicitly instructed otherwise.
-5. Prefer a procedural subcommand when the user names a public single-step workflow action. Prefer a helper subcommand only when the user explicitly asks for a lower-level implementation step. Prefer `help` for unclear empty invocations.
+1. **Default help mode**:
+   - Match when this skill is invoked without a prompt.
+   - Select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
+2. **Manual mode**:
+   - Match when the user asks for help, names one subcommand, or asks for one bounded operation.
+   - Select that subcommand from the **Subcommands** tables.
+   - Guardrail: load only its detail page.
+   - Load only its detail page, execute its workflow, and report its output.
+3. **Guided mode**:
+   - Match when the user asks to specialize step by step, proceed interactively, or confirm each stage.
+   - Select `step-by-step`, load [references/step-by-step.md](references/step-by-step.md), and execute the static topic-team setup path one step at a time.
+4. **Automatic mode**:
+   - Match when the user asks to fully specialize, prepare, adapt end-to-end, or says `fast-forward`.
+   - Select `fast-forward`, load [references/fast-forward.md](references/fast-forward.md), and execute the static topic-team setup path through `finalize-topic-team`.
+   - Stop at the approval or materialization boundary unless explicitly instructed otherwise.
+5. Prefer the narrowest subcommand family:
+   - Prefer a procedural subcommand when the user names a public single-step workflow action.
+   - Prefer a helper subcommand only when the user explicitly asks for a lower-level implementation step.
+   - Prefer `help` for unclear empty invocations.
 6. Preserve the **Guardrails** and **Output Contract** for all modes.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project context, copied-template constraints, subcommands, output contract, and guardrails in this skill, then execute the plan.

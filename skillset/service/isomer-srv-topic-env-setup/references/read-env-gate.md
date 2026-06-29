@@ -16,10 +16,14 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require workspace context** from `resolve-topic-workspace`: `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment`.
-2. **Resolve the source intent label** `topic.intent.topic_env_requirements`; record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
+1. **Require workspace context** from `resolve-topic-workspace`:
+   - Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment`.
+2. **Resolve the source intent label** `topic.intent.topic_env_requirements`:
+   - Record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
 3. **Read the source intent**. If it is missing or unreadable, stop and report a blocker asking the user to create or repair the resolved source intent file.
-4. **Extract setup intent**: topic-level source intent, runnable target, desired command or commands, expected outputs, success criteria, repo hints, dependency hints, native tool requirements, and any out-of-scope requests. Interpret the runnable target as the commands one agent or operator must be able to run from the selected Topic Workspace, not as proof that a multi-agent team can launch.
+4. **Extract setup intent**:
+   - Include topic-level source intent, runnable target, desired command or commands, expected outputs, success criteria, repo hints, dependency hints, native tool requirements, and any out-of-scope requests.
+   - Interpret the runnable target as the commands one agent or operator must be able to run from the selected Topic Workspace, not as proof that a multi-agent team can launch.
 5. **Defer repo and dependency choices**. Do not choose repos, dependency sources, Pixi install commands, or verification commands in this subcommand.
 6. **Report the source gate summary** using the parent skill's output fields.
 

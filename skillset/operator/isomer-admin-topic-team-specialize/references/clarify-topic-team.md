@@ -5,7 +5,8 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Read the specialization outputs: topic overview, copied template root, `team-specialization-guide.md`, `team-specialization-plan.md`, `Final Report`, placeholder resolutions, deferrals, and draft profile summary.
+2. Read specialization outputs:
+   - Include topic overview, copied template root, `team-specialization-guide.md`, `team-specialization-plan.md`, `Final Report`, placeholder resolutions, deferrals, and draft profile summary.
 3. Run the **Coverage and Clarity Scan** across the specialization outputs.
 4. Build a queue of at most five clarification questions from unresolved role, workflow, assumption, policy, binding, copied-material, setup, validation, or blocker ambiguity.
 5. Execute the **Sequential Clarification Loop**, asking exactly one focused question at a time.

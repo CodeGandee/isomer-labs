@@ -6,12 +6,16 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Read the latest resolve, repo, agent plan, worktree, boundary, branch, and validation results available in the operator context.
 2. Summarize the resolved `topic.repos.main` path, source, readiness, and blockers before showing any default path.
-3. Summarize each agent name, role id, resolved `agent.workspace` path, path source, current branch, expected branch namespace, required `agent.*` support label status, `agent.tmp` local ignored disposable posture, and derived compatibility `agent_workspace_ref` when present.
+3. Summarize each agent:
+   - Include agent name, role id, resolved `agent.workspace` path, path source, current branch, expected branch namespace, required `agent.*` support label status, and `agent.tmp` local ignored disposable posture.
+   - Include derived compatibility `agent_workspace_ref` when present.
 4. Summarize `topic.repos.main.tmp` and `agent.tmp` separately from shared material, including ignore policy and tracked-content diagnostics.
 5. Summarize boundary material paths and whether Workspace Boundary, Peer Read Access, owner/reader split, and generated-link notes are present and advisory.
-6. When `isomer-srv-agent-env-setup` evidence is available, summarize `source_agent_env_gate_path`, `agent_env_gate_path`, readiness by agent, overall readiness, command evidence, blockers, and next action under a separate agent environment readiness heading.
+6. When `isomer-srv-agent-env-setup` evidence is available, summarize it under a separate agent environment readiness heading:
+   - Include `source_agent_env_gate_path`, `agent_env_gate_path`, readiness by agent, overall readiness, command evidence, blockers, and next action.
 7. Summarize validation status, blockers, skipped actions, generated links, profile or packet edits, and refs that remain to be updated.
-8. Name the next operator action, such as rerun one subcommand, make a caller-requested `isomer-srv-agent-env-setup setup-agent-env` call after validated topology evidence exists, call `isomer-admin-topic-team-specialize validate-topic-team`, create an Agent Team Instance through runtime workflow, or stop on blockers.
+8. Name the next operator action:
+   - Examples include rerun one subcommand, make a caller-requested `isomer-srv-agent-env-setup setup-agent-env` call after validated topology evidence exists, call `isomer-admin-topic-team-specialize validate-topic-team`, create an Agent Team Instance through runtime workflow, or stop on blockers.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to produce a consumer-neutral summary from whatever validated evidence exists.
 

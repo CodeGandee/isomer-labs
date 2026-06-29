@@ -17,23 +17,51 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace` and resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`.
+1. **Require predecessor artifacts**:
+   - Require workspace context from `resolve-topic-workspace` and resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`.
 2. **Read the target spec** and stop with blockers when its `## Blockers` section contains unresolved install blockers.
-3. **Check enclosure classification** from the target spec's `## Dependency Plan`. Every required dependency or runtime need must be classified as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked. If any required item is unclassified, stop and report a blocker asking to update `topic.env.topic_setup_target_spec` before mutation.
-4. **Resolve the selected Python version** from the target spec. If the target spec does not already contain a usable selection, apply **Python Version Policy** before mutating the Pixi manifest and update the target spec with the selected version and evidence.
-5. **Confirm the resolved Topic Workspace Pixi manifest exists** at `manifest_path`. Do not create a missing manifest in this subcommand; `resolve-topic-workspace` must have already used Pixi to resolve an explicit file target, explicit directory target, or the implicit Topic Workspace directory default.
-6. **Ensure Topic Workspace VCS ignores** by creating or updating `<topic-workspace-dir>/.gitignore` with `.pixi/`, `tmp/`, and `.git/`. Add `.isomer-user-env/` only when topic-local fallback is used. Do not add `extern/orphan` ignore entries from this skill.
+3. **Check enclosure classification** from the target spec's `## Dependency Plan`:
+   - Every required dependency or runtime need must be classified as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked.
+   - If any required item is unclassified, stop and report a blocker asking to update `topic.env.topic_setup_target_spec` before mutation.
+4. **Resolve the selected Python version** from the target spec:
+   - If the target spec does not already contain a usable selection, apply **Python Version Policy** before mutating the Pixi manifest.
+   - Update the target spec with the selected version and evidence.
+5. **Confirm the resolved Topic Workspace Pixi manifest exists** at `manifest_path`:
+   - Do not create a missing manifest in this subcommand.
+   - `resolve-topic-workspace` must have already used Pixi to resolve an explicit file target, explicit directory target, or the implicit Topic Workspace directory default.
+6. **Ensure Topic Workspace VCS ignores**:
+   - Create or update `<topic-workspace-dir>/.gitignore` with `.pixi/`, `tmp/`, and `.git/`.
+   - Add `.isomer-user-env/` only when topic-local fallback is used.
+   - Do not add `extern/orphan` ignore entries from this skill.
 7. **Keep Python available** as the Topic Workspace root glue and orchestration language, even when the runnable target uses another language.
-8. **Install Pixi-managed starter Python dependencies** through PyPI when missing or not already satisfied: `pixi add --manifest-path <manifest_path> --pypi scipy mdutils ruff mkdocs-material mypy attrs omegaconf imageio matplotlib jsonschema jinja2`.
-9. **Install Pixi-managed Python packages from PyPI by default** with `pixi add --manifest-path <manifest_path> --pypi <requirement>` when PyPI can satisfy the gate and no fixed source evidence says otherwise. If PyPI, mirror, or private-index reachability is uncertain, use `isomer-srv-resolve-pkg-repo` evidence before mutating the manifest.
-10. **Install Pixi-managed native or Conda-required dependencies through Pixi/Conda** with `pixi add --manifest-path <manifest_path> <matchspec>` when the dependency is a non-Python tool, command-line program, binary or system-level runtime dependency, unavailable or unsuitable on PyPI, or required by setup instructions that PyPI cannot satisfy.
-11. **Prefer resolved NVIDIA package sources** for NVIDIA tools and runtime packages. When the derived gate or package-resolution evidence selects the `nvidia` channel, add it with `pixi workspace channel add --manifest-path <manifest_path> --prepend nvidia` before adding those packages. Record any fallback to `conda-forge` or another channel. If CUDA architecture targets, CUDA/C++ build environment choices, `nvcc` flags, or build parallelism need interpretation, use `isomer-misc-nvidia-tools` preference evidence before converting them into setup commands.
-12. **Install editable repo packages when needed** using a PyPI editable requirement such as `pixi add --manifest-path <manifest_path> --pypi --editable '<package-name> @ file://<absolute-repo-path>'` when the repo is Python-installable and the gate needs it importable.
-13. **Record Pixi-mediated external runtime wiring** when the target spec requires an external runtime path, sourced script, compiler path, package-config path, CUDA variable, or library path. Do not mutate the host; record the exact variables or source commands and use them only inside `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
-14. **Use topic-local fallback only when justified** by the target spec. Place fallback material under `<topic-workspace-dir>/.isomer-user-env/`, update `.gitignore`, run fallback setup through Pixi-scoped commands when commands are needed, and record the lower-portability warning.
-15. **Run setup commands through the Topic Workspace Pixi environment** when the target spec requires commands beyond dependency mutation: `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`. Include any recorded runtime wiring in the command instead of relying on ambient shell state.
+8. **Install Pixi-managed starter Python dependencies** through PyPI when missing or not already satisfied:
+   - Use `pixi add --manifest-path <manifest_path> --pypi scipy mdutils ruff mkdocs-material mypy attrs omegaconf imageio matplotlib jsonschema jinja2`.
+9. **Install Pixi-managed Python packages from PyPI by default**:
+   - Use `pixi add --manifest-path <manifest_path> --pypi <requirement>` when PyPI can satisfy the gate and no fixed source evidence says otherwise.
+   - If PyPI, mirror, or private-index reachability is uncertain, use `isomer-srv-resolve-pkg-repo` evidence before mutating the manifest.
+10. **Install Pixi-managed native or Conda-required dependencies through Pixi/Conda**:
+   - Use `pixi add --manifest-path <manifest_path> <matchspec>` when the dependency is a non-Python tool, command-line program, binary or system-level runtime dependency, unavailable or unsuitable on PyPI, or required by setup instructions that PyPI cannot satisfy.
+11. **Prefer resolved NVIDIA package sources** for NVIDIA tools and runtime packages:
+   - When the derived gate or package-resolution evidence selects the `nvidia` channel, add it with `pixi workspace channel add --manifest-path <manifest_path> --prepend nvidia` before adding those packages.
+   - Record any fallback to `conda-forge` or another channel.
+   - If CUDA architecture targets, CUDA/C++ build environment choices, `nvcc` flags, or build parallelism need interpretation, use `isomer-misc-nvidia-tools` preference evidence before converting them into setup commands.
+12. **Install editable repo packages when needed**:
+   - Use a PyPI editable requirement such as `pixi add --manifest-path <manifest_path> --pypi --editable '<package-name> @ file://<absolute-repo-path>'` when the repo is Python-installable and the gate needs it importable.
+13. **Record Pixi-mediated external runtime wiring**:
+   - Apply this when the target spec requires an external runtime path, sourced script, compiler path, package-config path, CUDA variable, or library path.
+   - Do not mutate the host.
+   - Record the exact variables or source commands and use them only inside `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
+14. **Use topic-local fallback only when justified** by the target spec:
+   - Place fallback material under `<topic-workspace-dir>/.isomer-user-env/`.
+   - Update `.gitignore`.
+   - Run fallback setup through Pixi-scoped commands when commands are needed.
+   - Record the lower-portability warning.
+15. **Run setup commands through the Topic Workspace Pixi environment** when the target spec requires commands beyond dependency mutation:
+   - Use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
+   - Include any recorded runtime wiring in the command instead of relying on ambient shell state.
 16. **Install the selected environment** with `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
-17. **Update `topic.env.topic_setup_target_spec`** with commands run, selected Python version, version evidence, starter dependencies, VCS ignore changes, adaptation decisions, selected package sources, enclosure classification, external runtime wiring, topic-local fallbacks, changed files, channel decisions, blockers, and execution log entries.
+17. **Update `topic.env.topic_setup_target_spec`**:
+   - Include commands run, selected Python version, version evidence, starter dependencies, VCS ignore changes, adaptation decisions, selected package sources, enclosure classification, external runtime wiring, topic-local fallbacks, changed files, channel decisions, blockers, and execution log entries.
 18. **Report the install result** using the parent skill's output fields.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the resolved `topic.env.topic_setup_target_spec`, dependency policy, Pixi help, parent guardrails, and user request, then execute the plan.

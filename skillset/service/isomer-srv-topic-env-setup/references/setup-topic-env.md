@@ -22,12 +22,24 @@ When asking for missing input, separate `Required` values from `Optional` modifi
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Select execution mode** from the prompt. Use `fast-forward` mode for `fast-forward`, `fast-foward`, `auto`, `automatic`, `just do it`, `fully setup`, or equivalent direct-execution wording. Use `step-by-step` mode for `step-by-step`, `manual`, `interactive`, `ask me`, `confirm before each step`, or equivalent user-controlled wording. If the prompt gives a concrete setup task but no mode, default to `fast-forward` unless the prompt asks to inspect, decide, or proceed carefully.
-2. **Run the setup chain** in this fixed order: `resolve-topic-workspace`, `read-env-gate` when deriving from source intent, `ensure-topic-repos`, `derive-env-gate`, `install-topic-deps`, and `verify-env-gate`. If an explicit target spec is supplied, `derive-env-gate` validates that spec and records its source instead of requiring `read-env-gate`.
+1. **Select execution mode** from the prompt:
+   - Use `fast-forward` mode for `fast-forward`, `fast-foward`, `auto`, `automatic`, `just do it`, `fully setup`, or equivalent direct-execution wording.
+   - Use `step-by-step` mode for `step-by-step`, `manual`, `interactive`, `ask me`, `confirm before each step`, or equivalent user-controlled wording.
+   - If the prompt gives a concrete setup task but no mode, default to `fast-forward` unless the prompt asks to inspect, decide, or proceed carefully.
+2. **Run the setup chain** in this fixed order:
+   - Run `resolve-topic-workspace`, `read-env-gate` when deriving from source intent, `ensure-topic-repos`, `derive-env-gate`, `install-topic-deps`, and `verify-env-gate`.
+   - If an explicit target spec is supplied, `derive-env-gate` validates that spec and records its source instead of requiring `read-env-gate`.
 3. **In `fast-forward` mode**, load each referenced subcommand page, execute its `## Workflow`, and carry forward its outputs to the next step without pausing for optional consent.
-4. **In `step-by-step` mode**, before each step, explain what will happen and why, present an option table from **Manual Choice**, state the recommended option after the table, wait for the user to choose, execute only the chosen action, then report the result before offering the next step.
-5. **Stop on blockers** in either mode when a step reports missing required inputs, missing predecessor artifacts, unsafe ambiguity, out-of-scope requests, or a failed precondition.
-6. **Report the combined result** using the parent skill's **Output Contract**, including `subcommand`, selected `mode`, step results, commands run, changed files, enclosure strategy, external runtime wiring, topic-local fallbacks, Topic Workspace readiness status, `per_agent_readiness_status: not checked` when relevant, blockers, and next action.
+4. **In `step-by-step` mode**, pause before each step:
+   - Explain what will happen and why.
+   - Present an option table from **Manual Choice**.
+   - State the recommended option after the table.
+   - Wait for the user to choose.
+   - Execute only the chosen action, then report the result before offering the next step.
+5. **Stop on blockers** in either mode:
+   - Stop when a step reports missing required inputs, missing predecessor artifacts, unsafe ambiguity, out-of-scope requests, or a failed precondition.
+6. **Report the combined result** using the parent skill's **Output Contract**:
+   - Include `subcommand`, selected `mode`, step results, commands run, changed files, enclosure strategy, external runtime wiring, topic-local fallbacks, Topic Workspace readiness status, `per_agent_readiness_status: not checked` when relevant, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the linked subcommands, parent guardrails, mode rules, and user request, then execute the plan.
 

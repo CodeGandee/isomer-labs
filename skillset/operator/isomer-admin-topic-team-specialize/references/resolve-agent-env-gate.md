@@ -4,11 +4,24 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Require topic intent, topic registration evidence, topic env predecessor evidence when available, and enough topic-team or caller-provided scope to know the relevant Agent Names or selected-agent subset. If Agent Names are not authoritative and no explicit partial scope is supplied, report a blocker instead of inventing names.
-2. Resolve the semantic label `topic.intent.agent_env_requirements` through Workspace Path Resolution. Record the semantic label, resolved path, storage profile, source, source detail, and diagnostics. In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/agent-env-gate.md`.
-3. Read `topic.intent.overview`, `topic.intent.topic_env_requirements`, topic env predecessor evidence, specialization outputs, Agent Names, workspace topology evidence, and any user-provided per-agent cwd requirements.
-4. Write or update the resolved `topic.intent.agent_env_requirements` path with concise high-level per-Agent Workspace cwd requirements. State what each planned Agent Workspace must be able to do from its cwd. Keep this source intent user-editable and avoid derived command matrices, worktree creation logs, or verification results.
-5. If per-Agent Workspace requirements are too vague to derive a target spec later, write open questions or report `agent_env_source_status: blocked`, then stop before `setup-agent-workspace` delegates to `isomer-srv-agent-env-setup`.
+1. Require enough input to describe per-agent cwd requirements:
+   - Require topic intent and topic registration evidence.
+   - Use topic env predecessor evidence when available.
+   - Require enough topic-team or caller-provided scope to know the relevant Agent Names or selected-agent subset.
+   - If Agent Names are not authoritative and no explicit partial scope is supplied, report a blocker instead of inventing names.
+2. Resolve the semantic label `topic.intent.agent_env_requirements` through Workspace Path Resolution:
+   - Record the semantic label, resolved path, storage profile, source, source detail, and diagnostics.
+   - In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/agent-env-gate.md`.
+3. Read agent env source inputs:
+   - Include `topic.intent.overview`, `topic.intent.topic_env_requirements`, topic env predecessor evidence, specialization outputs, Agent Names, and workspace topology evidence.
+   - Include any user-provided per-agent cwd requirements.
+4. Write or update the resolved `topic.intent.agent_env_requirements` path:
+   - Keep the file concise and high-level.
+   - State what each planned Agent Workspace must be able to do from its cwd.
+   - Keep this source intent user-editable and avoid derived command matrices, worktree creation logs, or verification results.
+5. If per-Agent Workspace requirements are too vague to derive a target spec later:
+   - Write open questions or report `agent_env_source_status: blocked`.
+   - Stop before `setup-agent-workspace` delegates to `isomer-srv-agent-env-setup`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from topic-team material, Agent Name evidence, workspace topology evidence, user-provided cwd requirements, Workspace Path Resolution output, and this reference page, then execute the plan.
 

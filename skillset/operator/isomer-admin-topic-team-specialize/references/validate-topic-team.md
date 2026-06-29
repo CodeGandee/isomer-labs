@@ -5,13 +5,30 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Read topic definition material, registration assurance evidence, specialization outputs, topic environment setup evidence from `isomer-srv-topic-env-setup`, Agent Workspace paths, agent names, branch plans, `isomer-managed/` regime status, generated-link evidence, delegated Git-backed workspace manager evidence, delegated `isomer-srv-agent-env-setup` evidence when requested, deferrals, blockers, and validation refs.
+2. Read validation inputs:
+   - Topic definition material, registration assurance evidence, specialization outputs, and topic environment setup evidence from `isomer-srv-topic-env-setup`.
+   - Agent Workspace paths, agent names, branch plans, `isomer-managed/` regime status, generated-link evidence, and delegated Git-backed workspace manager evidence.
+   - Delegated `isomer-srv-agent-env-setup` evidence when requested, deferrals, blockers, and validation refs.
 3. Check that `topic.intent.overview` exists, reports semantic label evidence plus resolved path metadata, and reflects the current Research Topic understanding.
-4. Check that registration assurance names Project Manifest-backed `registered_research_topic_ref` and `registered_topic_workspace_ref`, or records explicit registration blockers. Do not validate readiness from only a provisional topic workspace seed.
-5. Check that copied specialization material, `team-specialization-guide.md`, `team-specialization-plan.md`, `Final Report`, placeholder resolutions, and draft profile inputs exist or have explicit blockers.
-6. Check that topic environment setup and Agent Workspace setup are ready as separate durable preparation streams, intentionally deferred, or blocked with named next actions. Topic environment setup evidence should include `topic_environment_status`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, resolved path metadata, Topic Workspace predecessor readiness status, setup commands, changed files, environment binding status, `per_agent_readiness_status: not checked` when reported, and blockers from `isomer-srv-topic-env-setup`. Treat missing environment setup evidence as an environment-preparation blocker, not as evidence that team-profile material is missing. When Git-backed worktrees were requested, require `isomer-admin-topic-workspace-mgr` validation evidence for `topic.repos.main`, `topic.repos.main.tmp`, `agent.workspace`, `agent.tmp`, required `agent.*` support labels, local tmp ignore posture, generated links, boundary material, path sources, and blockers, or report missing delegated setup as a blocker.
-7. When per-Agent Workspace cwd verification was requested, require `isomer-srv-agent-env-setup` evidence with `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, resolved path metadata, authoritative Agent Names, Topic Main Repository path, resolved `agent.workspace` paths, branch plan, worktree status by agent, readiness by agent, commands run, blockers, and next action. Treat selected-agent evidence as partial, and do not mark overall agent environment readiness as ready unless every planned Agent Name is verified.
-8. Reject stale Agent Workspace setup evidence that treats legacy support roots, top-level Topic Main Repository collaboration directories, tmp contents as readiness evidence, or hard-coded default-only paths without semantic labels as the current standard layout; ask for `isomer-admin-topic-workspace-mgr` validation of semantic labels, `isomer-managed/`, and local tmp posture.
+4. Check registration assurance:
+   - Require Project Manifest-backed `registered_research_topic_ref` and `registered_topic_workspace_ref`, or explicit registration blockers.
+   - Do not validate readiness from only a provisional topic workspace seed.
+5. Check copied specialization material:
+   - Require `team-specialization-guide.md`, `team-specialization-plan.md`, `Final Report`, placeholder resolutions, and draft profile inputs.
+   - Accept explicit blockers when material is missing.
+6. Check setup streams separately:
+   - Confirm topic environment setup and Agent Workspace setup are ready, intentionally deferred, or blocked with named next actions.
+   - Topic environment setup evidence should include `topic_environment_status`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, resolved path metadata, Topic Workspace predecessor readiness status, setup commands, changed files, environment binding status, `per_agent_readiness_status: not checked` when reported, and blockers from `isomer-srv-topic-env-setup`.
+   - Treat missing environment setup evidence as an environment-preparation blocker, not as evidence that team-profile material is missing.
+   - When Git-backed worktrees were requested, require `isomer-admin-topic-workspace-mgr` validation evidence for `topic.repos.main`, `topic.repos.main.tmp`, `agent.workspace`, `agent.tmp`, required `agent.*` support labels, local tmp ignore posture, generated links, boundary material, path sources, and blockers.
+   - Report missing delegated Git-backed workspace setup as a blocker.
+7. When per-Agent Workspace cwd verification was requested, require `isomer-srv-agent-env-setup` evidence:
+   - Require `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, resolved path metadata, authoritative Agent Names, Topic Main Repository path, resolved `agent.workspace` paths, branch plan, worktree status by agent, readiness by agent, commands run, blockers, and next action.
+   - Treat selected-agent evidence as partial.
+   - Do not mark overall agent environment readiness as ready unless every planned Agent Name is verified.
+8. Reject stale Agent Workspace setup evidence:
+   - Reject legacy support roots, top-level Topic Main Repository collaboration directories, tmp contents as readiness evidence, or hard-coded default-only paths without semantic labels as the current standard layout.
+   - Ask for `isomer-admin-topic-workspace-mgr` validation of semantic labels, `isomer-managed/`, and local tmp posture.
 9. Report `topic_team_validation_status` as ready, ready-with-deferrals, blocked, or not checked for static material readiness, and name the next safe subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step static-material validation plan from the available topic-team artifacts, setup outputs, and guardrails, then execute the plan.

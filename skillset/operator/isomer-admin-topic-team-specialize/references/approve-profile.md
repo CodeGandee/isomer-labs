@@ -5,8 +5,10 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Read the draft profile bundle summary, registration assurance evidence, packet validation report, copied material plan, proposed topic edits, static-material blockers, later-operation blockers, and `isomer-topic-summary.md`.
-3. Present review points: registered Research Topic and Topic Workspace refs, selected roles, inactive roles, role binding refs, policy refs, expected Artifacts, copied material, support outputs, unresolved placeholders, and provenance refs.
+2. Read approval inputs:
+   - Include the draft profile bundle summary, registration assurance evidence, packet validation report, copied material plan, proposed topic edits, static-material blockers, later-operation blockers, and `isomer-topic-summary.md`.
+3. Present review points:
+   - Include registered Research Topic and Topic Workspace refs, selected roles, inactive roles, role binding refs, policy refs, expected Artifacts, copied material, support outputs, unresolved placeholders, and provenance refs.
 4. Capture approval state, approval ref, approval actor or session ref, approval mode, review summary, validation result ref, and timestamp.
 5. Update packet-shaped approval provenance or request repair when approval is withheld.
 6. Return whether materialization may proceed and which validation command must run next.

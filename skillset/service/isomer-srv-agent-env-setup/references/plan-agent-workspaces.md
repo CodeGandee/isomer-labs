@@ -21,12 +21,19 @@ When this subcommand is selected, execute the following steps in order.
 1. **Require selected Topic Workspace context** and semantic path evidence from `resolve-agent-env-context`.
 2. **Read authoritative topic-team material** from the Topic Team Instantiation Packet or Topic Agent Team Profile material derived from that packet.
 3. **Extract active role bindings only**. Read active role ids, Agent Names, optional branch plans, and compatibility `agent_workspace_ref` evidence.
-4. **Reject missing Agent Names**. If no authoritative Agent Names exist for planned roles, report a blocker and route the operator back to Topic Team Specialization to repair or complete packet/profile material.
-5. **Handle explicit operator maps as corroboration only**. If a provided map matches the authoritative material, record it as corroborating operator-provided evidence. If it disagrees, report `agent-plan-conflict` and do not create branches, worktrees, support paths, or gate entries from that map.
-6. **Validate Agent Names**. Reject empty names, `.` or `..`, path separators, unsafe shell metacharacters, whitespace-only values, names that normalize outside a safe lowercase segment, and normalized collisions.
-7. **Resolve agent labels** for each authoritative Agent Name through Workspace Path Resolution: `agent.workspace`, `agent.isomer_managed`, `agent.runtime`, `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, `agent.inbox`, `agent.topic_readonly`, `agent.topic_writable`, and `agent.links`. Include `agent.tmp` when available as local ignored disposable posture.
+4. **Reject missing Agent Names**:
+   - If no authoritative Agent Names exist for planned roles, report a blocker and route the operator back to Topic Team Specialization to repair or complete packet/profile material.
+5. **Handle explicit operator maps as corroboration only**:
+   - If a provided map matches the authoritative material, record it as corroborating operator-provided evidence.
+   - If it disagrees, report `agent-plan-conflict` and do not create branches, worktrees, support paths, or gate entries from that map.
+6. **Validate Agent Names**:
+   - Reject empty names, `.` or `..`, path separators, unsafe shell metacharacters, whitespace-only values, names that normalize outside a safe lowercase segment, and normalized collisions.
+7. **Resolve agent labels** for each authoritative Agent Name through Workspace Path Resolution:
+   - Resolve `agent.workspace`, `agent.isomer_managed`, `agent.runtime`, `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, `agent.inbox`, `agent.topic_readonly`, `agent.topic_writable`, and `agent.links`.
+   - Include `agent.tmp` when available as local ignored disposable posture.
 8. **Plan branch names** using `per-agent/<agent-name>/main` by default and keep future branches under `per-agent/<agent-name>/`.
-9. **Report the agent plan** with semantic labels, resolved paths, path sources, branch plan, selected-agent partial scope when present, corroborating evidence, blockers, and next action.
+9. **Report the agent plan**:
+   - Include semantic labels, resolved paths, path sources, branch plan, selected-agent partial scope when present, corroborating evidence, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to produce a read-only plan from available topic-team material, semantic path evidence, and parent guardrails, then execute the safe portion.
 

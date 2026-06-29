@@ -4,13 +4,30 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Print a concise description: `isomer-admin-topic-team-specialize` initializes and specializes one Research Topic into static Topic Team material and durable setup state from one Domain Agent Team Template.
+1. Print a concise description:
+   - `isomer-admin-topic-team-specialize` initializes and specializes one Research Topic into static Topic Team material and durable setup state from one Domain Agent Team Template.
 2. Explain that invoking this skill without a prompt defaults to this `help` output.
-3. Explain the operational modes: manual mode loads one subcommand, `step-by-step` runs the full topic-team path with user confirmation before each step, and `fast-forward` runs the full topic-team path through `finalize-topic-team` without per-step confirmation.
-4. Print the user-facing flow: `init-topic`, `resolve-topic-intent`, optional `clarify-topic`, `ensure-topic-registration`, `resolve-topic-env-gate`, `setup-topic-env` to derive `topic.env.topic_setup_target_spec` and materialize the topic env, `specialize-team`, optional `clarify-topic-team`, optional repeated `resolve-topic-env-gate` and `setup-topic-env` when specialization changes runnable requirements, `resolve-agent-env-gate`, `setup-agent-workspace` with `isomer-srv-agent-env-setup` delegation to derive `topic.env.agent_setup_target_spec` and verify per-agent cwd readiness, `validate-topic-team`, `finalize-topic-team`, then explicit `approve-profile` or `materialize-profile`.
-5. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns. Do not list helper subcommands in help output because they are private implementation API.
-6. Name the required inputs and outputs: Research Topic, topic workspace directory, Project Manifest registration evidence, Topic Workspace Pixi binding status, semantic path evidence, Domain Agent Team Template, `topic.intent.overview`, copied template material, `team-specialization-guide.md`, `team-specialization-plan.md`, `Final Report`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, `isomer-srv-topic-env-setup` service output as Topic Workspace predecessor evidence, environment setup status, Agent Workspace paths, delegated Git-backed workspace evidence from `isomer-admin-topic-workspace-mgr` when requested, `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, delegated agent environment service output from `isomer-srv-agent-env-setup` when per-agent cwd proof is requested, validation status, `isomer-topic-summary.md`, and next operator action.
-7. State the key guardrails: provisional topic workspace seeds are not Project Manifest registrations, do not edit Domain Agent Team Template source, do not hide setup or validation, do not bypass approval or materialization checks, and do not run live teams, create Agent Instances, mutate Workspace Runtime, or launch execution adapters from this skill.
+3. Explain the operational modes:
+   - Manual mode loads one subcommand.
+   - `step-by-step` runs the full topic-team path with user confirmation before each step.
+   - `fast-forward` runs the full topic-team path through `finalize-topic-team` without per-step confirmation.
+4. Print the user-facing flow:
+   - Start with `init-topic`, `resolve-topic-intent`, optional `clarify-topic`, and `ensure-topic-registration`.
+   - Continue through `resolve-topic-env-gate` and `setup-topic-env` to derive `topic.env.topic_setup_target_spec` and materialize the topic env.
+   - Run `specialize-team`, optional `clarify-topic-team`, and optional repeated `resolve-topic-env-gate` plus `setup-topic-env` when specialization changes runnable requirements.
+   - Run `resolve-agent-env-gate` and `setup-agent-workspace` with `isomer-srv-agent-env-setup` delegation to derive `topic.env.agent_setup_target_spec` and verify per-agent cwd readiness.
+   - Finish with `validate-topic-team`, `finalize-topic-team`, then explicit `approve-profile` or `materialize-profile` when requested.
+5. Print the available public subcommands as a three-column table:
+   - Use `Subcommand`, `Purpose`, and `Produces` columns.
+   - Do not list helper subcommands in help output because they are private implementation API.
+6. Name the required inputs and outputs:
+   - Include Research Topic, topic workspace directory, Project Manifest registration evidence, Topic Workspace Pixi binding status, semantic path evidence, Domain Agent Team Template, `topic.intent.overview`, copied template material, `team-specialization-guide.md`, `team-specialization-plan.md`, and `Final Report`.
+   - Include `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, `isomer-srv-topic-env-setup` service output as Topic Workspace predecessor evidence, environment setup status, Agent Workspace paths, and delegated Git-backed workspace evidence from `isomer-admin-topic-workspace-mgr` when requested.
+   - Include `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, delegated agent environment service output from `isomer-srv-agent-env-setup` when per-agent cwd proof is requested, validation status, `isomer-topic-summary.md`, and next operator action.
+7. State the key guardrails:
+   - Provisional topic workspace seeds are not Project Manifest registrations.
+   - Do not edit Domain Agent Team Template source, hide setup or validation, or bypass approval or materialization checks.
+   - Do not run live teams, create Agent Instances, mutate Workspace Runtime, or launch execution adapters from this skill.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which parts of the skill usage information to print, then execute the plan.
 

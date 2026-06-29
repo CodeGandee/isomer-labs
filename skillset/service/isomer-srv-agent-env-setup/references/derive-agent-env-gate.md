@@ -19,13 +19,24 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: resolved context, topic env predecessor evidence, source agent intent summary when deriving from source intent, explicit target spec input when manual mode is used, and authoritative agent plan.
-2. **Resolve the target spec label** `topic.env.agent_setup_target_spec`; record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers. Create the parent directory when writing the target spec.
-3. **Translate or validate source requirements** into a per-agent operational target spec. Use the Topic Workspace predecessor as evidence, but do not duplicate dependency planning from `topic.env.topic_setup_target_spec`.
-4. **Derive the per-agent verification matrix**. For every authoritative Agent Name, record cwd as the resolved `agent.workspace` and each command as `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
-5. **Preserve cwd assumptions** from the topic env gate. If a topic env command is topic-root-only or repo-specific and cannot run from an Agent Workspace cwd, record `gate-cwd-incompatible` or an equivalent blocker instead of false readiness.
-6. **Write or update the fixed Markdown template** from **Template** at the resolved `topic.env.agent_setup_target_spec` path when deriving from source intent. When using an explicit manual target spec, record the explicit source and normalized target-spec copy or reference, then preserve every required section.
-7. **Initialize or update the execution log** with requester, confirmation source, optional Service Request refs, support Artifact refs, Provenance refs, changed files, commands run, blockers, and `Not run yet.` for verification commands that have not been executed.
+1. **Require predecessor artifacts**:
+   - Require resolved context, topic env predecessor evidence, source agent intent summary when deriving from source intent, explicit target spec input when manual mode is used, and authoritative agent plan.
+2. **Resolve the target spec label** `topic.env.agent_setup_target_spec`:
+   - Record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
+   - Create the parent directory when writing the target spec.
+3. **Translate or validate source requirements** into a per-agent operational target spec:
+   - Use the Topic Workspace predecessor as evidence.
+   - Do not duplicate dependency planning from `topic.env.topic_setup_target_spec`.
+4. **Derive the per-agent verification matrix**:
+   - For every authoritative Agent Name, record cwd as the resolved `agent.workspace`.
+   - Record each command as `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
+5. **Preserve cwd assumptions** from the topic env gate:
+   - If a topic env command is topic-root-only or repo-specific and cannot run from an Agent Workspace cwd, record `gate-cwd-incompatible` or an equivalent blocker instead of false readiness.
+6. **Write or update the fixed Markdown template** from **Template**:
+   - Write at the resolved `topic.env.agent_setup_target_spec` path when deriving from source intent.
+   - When using an explicit manual target spec, record the explicit source and normalized target-spec copy or reference, then preserve every required section.
+7. **Initialize or update the execution log**:
+   - Include requester, confirmation source, optional Service Request refs, support Artifact refs, Provenance refs, changed files, commands run, blockers, and `Not run yet.` for verification commands that have not been executed.
 8. **Report target spec metadata** and any blockers that prevent Topic Main Repository setup, worktree creation, or verification.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step derivation plan from the source intent or explicit target spec, topic env predecessor, agent plan evidence, parent guardrails, and user request, then execute the plan.

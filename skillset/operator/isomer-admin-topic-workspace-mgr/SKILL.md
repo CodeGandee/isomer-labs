@@ -11,9 +11,16 @@ Use this command-style operator skill when a Project Operator Session needs to p
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Default subcommand**: If this skill is invoked without a prompt and the user is not asking for help, select `topic-workspace`, load [references/topic-workspace.md](references/topic-workspace.md), and execute the full preparation workflow.
-2. **Manual subcommand**: If the user names one subcommand, asks for help, or asks for one bounded operation, select that subcommand from the **Subcommands** tables, load only its detail page, execute that page's `## Workflow`, and report its output.
-3. **Helper subcommand**: If the user asks for a lower-level planning or validation stage, select the matching helper page, load only that page, and keep the operation scoped to the selected stage.
+1. **Default subcommand**:
+   - Match when this skill is invoked without a prompt and the user is not asking for help.
+   - Select `topic-workspace`, load [references/topic-workspace.md](references/topic-workspace.md), and execute the full preparation workflow.
+2. **Manual subcommand**:
+   - Match when the user names one subcommand, asks for help, or asks for one bounded operation.
+   - Select that subcommand from the **Subcommands** tables.
+   - Load only its detail page, execute that page's `## Workflow`, and report its output.
+3. **Helper subcommand**:
+   - Match when the user asks for a lower-level planning or validation stage.
+   - Select the matching helper page, load only that page, and keep the operation scoped to the selected stage.
 4. Preserve the **Required Inputs**, **Output Contract**, and **Guardrails** for every subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the Project Manifest-backed Isomer context, Git worktree topology, output contract, and guardrails in this skill, then execute the plan.

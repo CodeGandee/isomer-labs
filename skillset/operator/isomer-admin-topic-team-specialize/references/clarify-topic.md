@@ -5,13 +5,16 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
-2. Resolve and read `topic.intent.overview`, plus any user answers, source material, or newly supplied constraints. In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/topic-overview.md`.
+2. Resolve and read topic clarification inputs:
+   - Read `topic.intent.overview`, plus any user answers, source material, or newly supplied constraints.
+   - In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/topic-overview.md`.
 3. Run the **Coverage and Clarity Scan** against `topic-overview.md` and any newly supplied context.
 4. Build a queue of at most five clarification questions from unresolved items that materially affect topic scope, objectives, assumptions, open questions, or template selection.
 5. Execute the **Sequential Clarification Loop**, asking exactly one focused question at a time.
 6. After each accepted answer, update the resolved `topic.intent.overview` path directly through **Direct Topic Overview Integration**.
 7. Stop when the topic is actionable, the user signals completion, or five clarification questions have been asked.
-8. Report the revised topic understanding, changed `topic.intent.overview` label and path metadata, remaining open questions, provisional registration status, and whether `ensure-topic-registration` can proceed.
+8. Report the clarification result:
+   - Include the revised topic understanding, changed `topic.intent.overview` label and path metadata, remaining open questions, provisional registration status, and whether `ensure-topic-registration` can proceed.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step clarification plan from the topic overview, user answers, and Project Config boundary, then execute the plan.
 

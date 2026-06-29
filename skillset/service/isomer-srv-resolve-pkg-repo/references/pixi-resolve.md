@@ -16,11 +16,19 @@ Recover these before running the workflow:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Test official conda-forge reachability**. Send a lightweight HTTP request such as `curl -I --max-time 10 https://conda.anaconda.org/conda-forge/` or run `pixi search --channel conda-forge --limit 1 _libgcc_mutex`. If the command succeeds and returns a usable channel index, mark `conda-forge` as reachable.
+1. **Test official conda-forge reachability**:
+   - Send a lightweight HTTP request such as `curl -I --max-time 10 https://conda.anaconda.org/conda-forge/` or run `pixi search --channel conda-forge --limit 1 _libgcc_mutex`.
+   - If the command succeeds and returns a usable channel index, mark `conda-forge` as reachable.
 2. **If conda-forge is reachable and no NVIDIA packages are involved**, recommend `conda-forge` as the primary channel. Stop and report the result.
-3. **If NVIDIA packages are involved**, also test the `nvidia` channel with `curl -I --max-time 10 https://conda.anaconda.org/nvidia/` or `pixi search --channel nvidia --limit 1 cuda-version`. If the `nvidia` channel is reachable, recommend `nvidia` first and `conda-forge` second. Record that the NVIDIA channel is preferred for NVIDIA packages. Stop and report the result.
+3. **If NVIDIA packages are involved**, also test the `nvidia` channel:
+   - Use `curl -I --max-time 10 https://conda.anaconda.org/nvidia/` or `pixi search --channel nvidia --limit 1 cuda-version`.
+   - If the `nvidia` channel is reachable, recommend `nvidia` first and `conda-forge` second.
+   - Record that the NVIDIA channel is preferred for NVIDIA packages.
+   - Stop and report the result.
 4. **If official conda-forge is not reachable**, inspect local Conda configuration for declared mirrors or channels. See **Local Conda Config Discovery**.
-5. **Test each candidate channel** discovered in local config in the order it appears, using the same reachability tests. Mark the first reachable candidate as the recommended mirror and stop.
+5. **Test each candidate channel** discovered in local config:
+   - Use declaration order and the same reachability tests.
+   - Mark the first reachable candidate as the recommended mirror and stop.
 6. **If no candidate is reachable**, report that `conda-forge` is not usable and stop with a blocker. Do not fall back to an unverified source.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the package context, NVIDIA signal, local config, and reachability tests, then execute the plan.

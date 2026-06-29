@@ -10,7 +10,8 @@ description: Guide Topic Service Agents and Topic Service Masters through bounde
 When this skill is invoked, execute the following steps in order.
 
 1. Confirm the Service Request scope, selected Research Topic, Topic Workspace, requester, authorization, expected outputs, and allowed file surfaces.
-2. Perform only Service Team work: topic environment readiness checks, work-agent setup support, template inspection support, placeholder reconciliation support, copied material planning, topic edit drafting, monitoring, diagnostics, or support Artifact writing.
+2. Perform only Service Team work:
+   - Allowed work includes topic environment readiness checks, work-agent setup support, template inspection support, placeholder reconciliation support, copied material planning, topic edit drafting, monitoring, diagnostics, or support Artifact writing.
 3. Record Service Request refs, Topic Service Agent refs, support Artifact refs, validation refs, and blockers for the Project Operator Session.
 4. Return bounded output that can be validated by generic Isomer packet, profile bundle, runtime, or adapter validators.
 5. Stop or request clarification when the Service Request would require research decision authority.

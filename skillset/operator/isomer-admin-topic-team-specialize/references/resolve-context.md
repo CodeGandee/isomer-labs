@@ -5,7 +5,8 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the selected Research Topic, Research Topic Config, Topic Workspace, registration assurance evidence, and Effective Topic Context.
-2. Read policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, Gate policy refs, and default execution mode from durable project material when they are needed for static packet/profile material.
+2. Read durable project refs when needed for static packet/profile material:
+   - Include policy refs, Capability Binding refs, Skill Binding Projection refs, provider refs, Gate policy refs, and default execution mode.
 3. Inspect topic environment setup status only when durable setup evidence is in scope.
 4. Return concrete manifest-backed refs that can fill a Topic Team Instantiation Packet or explicit blockers when refs are missing or still provisional.
 5. Record whether refs came from Project Manifest, Research Topic Config, local context, service output, or user selection.

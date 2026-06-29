@@ -13,12 +13,19 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Print a concise description: `isomer-srv-agent-env-setup` prepares service-safe Agent Workspace cwd readiness from Topic Workspace predecessor evidence and is the owner of `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, selected-agent partial evidence, and overall Agent Workspace readiness.
+1. Print a concise description:
+   - `isomer-srv-agent-env-setup` prepares service-safe Agent Workspace cwd readiness from Topic Workspace predecessor evidence.
+   - It owns `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, selected-agent partial evidence, and overall Agent Workspace readiness.
 2. Explain that concrete setup defaults to `setup-agent-env`, while direct subcommands are available for manual setup, inspection, or partial repair.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
-4. Name the required inputs: Project Manifest context, registered Research Topic, Topic Workspace, ready `topic.env.topic_setup_target_spec` predecessor evidence, `topic.intent.agent_env_requirements` or an explicit manual target spec, authoritative Topic Team Instantiation Packet or derived Topic Agent Team Profile Agent Names, semantic path evidence, and mutation confirmation.
-5. State the output contract: semantic paths with labels and sources, requester, confirmation source, optional Service Request or Provenance refs, Topic Main Repository, agent workspace paths, branch plan, worktree status by agent, readiness by agent, overall readiness, commands run, blockers, and next action.
-6. State the key guardrails: no per-agent Pixi environments, no dependency mutation by default, no directory-scan agent selection, no silent Git repair, no Agent Instance creation, no Workspace Runtime mutation, no Houmao launch, no Execution Adapter operation, and no research decision authority.
+4. Name the required inputs:
+   - Include Project Manifest context, registered Research Topic, Topic Workspace, ready `topic.env.topic_setup_target_spec` predecessor evidence, `topic.intent.agent_env_requirements` or an explicit manual target spec, authoritative Topic Team Instantiation Packet or derived Topic Agent Team Profile Agent Names, semantic path evidence, and mutation confirmation.
+5. State the output contract:
+   - Include semantic paths with labels and sources, requester, confirmation source, optional Service Request or Provenance refs, Topic Main Repository, agent workspace paths, branch plan, worktree status by agent, readiness by agent, overall readiness, commands run, blockers, and next action.
+6. State the key guardrails:
+   - No per-agent Pixi environments, dependency mutation by default, directory-scan agent selection, or silent Git repair.
+   - No Agent Instance creation, Workspace Runtime mutation, Houmao launch, Execution Adapter operation, or research decision authority.
+   - Literal guardrails: no per-agent Pixi environments, no dependency mutation by default, no Workspace Runtime mutation, and no Execution Adapter operation.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which usage details to print, then execute the plan.
 

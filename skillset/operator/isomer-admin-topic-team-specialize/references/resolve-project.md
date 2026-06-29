@@ -4,13 +4,23 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Resolve the project root from the user-provided path or current working directory, then confirm the Project Manifest and the bundled `references/isomer-domain-language.md` reference.
-2. Read the supplied topic prompt, topic file, or explicit Research Topic ref, then list matching Research Topics and Topic Workspaces from Project Manifest-backed registrations. Do not treat an implicit Project Manifest default, the id `default`, or a generic `default Research Topic` statement as enough topic substance unless the user explicitly supplied it and it contains a concrete research question.
-3. If no registered Research Topic matches but the user supplied enough topic material to seed a workspace, report that `init-topic` should create a provisional Topic Workspace seed, followed by `resolve-topic-intent` for `topic.intent.overview` and `ensure-topic-registration` before registration-dependent work.
+1. Resolve the project root:
+   - Use the user-provided path or current working directory.
+   - Confirm the Project Manifest and the bundled `references/isomer-domain-language.md` reference.
+2. Read topic selection input:
+   - Use the supplied topic prompt, topic file, or explicit Research Topic ref.
+   - List matching Research Topics and Topic Workspaces from Project Manifest-backed registrations.
+   - Do not treat an implicit Project Manifest default, the id `default`, or a generic `default Research Topic` statement as enough topic substance unless the user explicitly supplied it and it contains a concrete research question.
+3. If no registered Research Topic matches but the user supplied enough topic material to seed a workspace:
+   - Report that `init-topic` should create a provisional Topic Workspace seed.
+   - Follow with `resolve-topic-intent` for `topic.intent.overview` and `ensure-topic-registration` before registration-dependent work.
 4. If no registered Research Topic matches and the topic material is unclear, route to `clarify-topic` or ask for more topic detail before proposing topic workspace creation.
 5. Inspect Project Manifest defaults, Research Topic Config refs, Domain Agent Team Templates, and Topic Agent Team Profile Bundle registrations needed for static material production.
-6. If the selected Topic Workspace is missing or provisional, propose `ensure-topic-registration` as the minimal creation or registration action and keep mutations behind normal Isomer CLI or API surfaces.
-7. Return the selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, profile bundle, provisional topic status, and blockers for the next subcommand.
+6. If the selected Topic Workspace is missing or provisional:
+   - Propose `ensure-topic-registration` as the minimal creation or registration action.
+   - Keep mutations behind normal Isomer CLI or API surfaces.
+7. Return next-step context:
+   - Include the selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, profile bundle, provisional topic status, and blockers for the next subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project root, topic material, and requested outcome, then execute the plan.
 

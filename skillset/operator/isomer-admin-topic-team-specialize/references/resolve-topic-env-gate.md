@@ -4,11 +4,20 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Require resolved Project and Topic Workspace context plus `topic.intent.overview` from `resolve-topic-intent` or equivalent evidence. If topic intent is missing, route back to `resolve-topic-intent` before creating environment source intent.
-2. Resolve the semantic label `topic.intent.topic_env_requirements` through Workspace Path Resolution. Record the semantic label, resolved path, storage profile, source, source detail, and diagnostics. In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/topic-env-gate.md`.
+1. Require resolved topic context:
+   - Require resolved Project and Topic Workspace context plus `topic.intent.overview` from `resolve-topic-intent` or equivalent evidence.
+   - If topic intent is missing, route back to `resolve-topic-intent` before creating environment source intent.
+2. Resolve the semantic label `topic.intent.topic_env_requirements` through Workspace Path Resolution:
+   - Record the semantic label, resolved path, storage profile, source, source detail, and diagnostics.
+   - In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/topic-env-gate.md`.
 3. Read the topic overview, user prompt, explicitly mentioned repositories, required datasets, tools, libraries, runtimes, and runnable goals.
-4. Write or update the resolved `topic.intent.topic_env_requirements` path with concise high-level Topic Workspace requirements. State what must be available or runnable for the topic. Keep this source intent user-editable and avoid concrete install commands, package-source choices, cwd matrices, execution logs, or verification command detail unless the user explicitly supplied them as intent.
-5. If the topic environment needs are too vague to derive a service target spec later, write open questions or report `topic_env_source_status: blocked`, then stop before `setup-topic-env`.
+4. Write or update the resolved `topic.intent.topic_env_requirements` path with concise high-level Topic Workspace requirements:
+   - State what must be available or runnable for the topic.
+   - Keep this source intent user-editable.
+   - Avoid concrete install commands, package-source choices, cwd matrices, execution logs, or verification command detail unless the user explicitly supplied them as intent.
+5. If the topic environment needs are too vague to derive a service target spec later:
+   - Write open questions or report `topic_env_source_status: blocked`.
+   - Stop before `setup-topic-env`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `topic.intent.overview`, user-provided environment needs, Workspace Path Resolution output, and this reference page, then execute the plan.
 

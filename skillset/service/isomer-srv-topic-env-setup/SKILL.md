@@ -19,8 +19,13 @@ This skill is a command-style router: keep the entrypoint lean, choose one subco
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Handle help intent**. If the invocation has no prompt, or if the user asks for help, usage, or available functionality, answer from **Help** and stop unless they also ask for a concrete setup task.
-2. **Select one subcommand** from the **Subcommands** tables. Prefer procedural or misc subcommands; use a helper subcommand only if one is added later and the user explicitly asks for it. If the prompt describes a concrete Topic Workspace setup task but does not name a subcommand, use `setup-topic-env`.
+1. **Handle help intent**:
+   - If the invocation has no prompt, or if the user asks for help, usage, or available functionality, answer from **Help**.
+   - Stop unless they also ask for a concrete setup task.
+2. **Select one subcommand** from the **Subcommands** tables:
+   - Prefer procedural or misc subcommands.
+   - Use a helper subcommand only if one is added later and the user explicitly asks for it.
+   - If the prompt describes a concrete Topic Workspace setup task but does not name a subcommand, use `setup-topic-env`.
 3. **Load the selected reference file**.
 4. **Resolve that page's required inputs** from its `## Required Inputs` section, then execute its `## Workflow`.
 5. **Report results** using **Output Contract**.

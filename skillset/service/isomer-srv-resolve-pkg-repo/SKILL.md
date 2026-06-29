@@ -25,10 +25,12 @@ Do not use this skill when the repository is already fixed by a Service Request,
 When this skill is invoked, execute the following steps in order.
 
 1. **Identify the package manager** named in the task or implied by the manifest, lockfile, or command. See **Supported Package Managers**.
-2. **Select one subcommand** from the **Subcommands** table. If the prompt describes repository resolution but does not name a subcommand, use `pixi-resolve` when Pixi is involved.
+2. **Select one subcommand** from the **Subcommands** table:
+   - If the prompt describes repository resolution but does not name a subcommand, use `pixi-resolve` when Pixi is involved.
 3. **Load the selected reference page** and resolve its required inputs.
 4. **Execute the selected subcommand's workflow** to determine the recommended repository, mirror, or channel list.
-5. **Record the resolution** in the active environment gate, manifest comment, or command log, including the reachability test, the source of any mirror, and any NVIDIA channel preference applied.
+5. **Record the resolution** in the active environment gate, manifest comment, or command log:
+   - Include the reachability test, the source of any mirror, and any NVIDIA channel preference applied.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the subcommands and constraints in this skill, then execute the plan.
 

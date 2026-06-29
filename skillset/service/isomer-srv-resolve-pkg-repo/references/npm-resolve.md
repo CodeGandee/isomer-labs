@@ -15,7 +15,9 @@ When this subcommand is selected, execute the following steps in order.
 
 1. **Test the official npm registry** with `curl -I --max-time 10 https://registry.npmjs.org/` or `npm view <package> version`.
 2. **If registry.npmjs.org is reachable**, recommend it.
-3. **If the official registry is not reachable**, inspect local npm configuration. Check `.npmrc` in the project directory, then `~/.npmrc`. Read `registry`, `@<scope>:registry`, and `noproxy` entries.
+3. **If the official registry is not reachable**, inspect local npm configuration:
+   - Check `.npmrc` in the project directory, then `~/.npmrc`.
+   - Read `registry`, `@<scope>:registry`, and `noproxy` entries.
 4. **Test each candidate registry** in declaration order and recommend the first reachable one.
 5. **If no registry is reachable**, report that registry.npmjs.org is not usable and stop with a blocker.
 

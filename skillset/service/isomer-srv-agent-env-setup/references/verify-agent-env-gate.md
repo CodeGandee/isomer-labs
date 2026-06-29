@@ -20,14 +20,23 @@ When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**: resolved context, Topic Workspace predecessor evidence, agent env target spec, authoritative agent plan, and worktree evidence.
 2. **Read the agent env target spec** and extract `## Verification Matrix`, `## Expected Results`, `## Blockers`, `## Topic Pixi Binding`, and `## Execution Log`.
-3. **Check Pixi files**. Confirm the resolved `manifest_path`, selected `pixi_environment`, Topic Workspace `pixi.lock`, and `<topic-workspace-dir>/.pixi/` exist before reporting readiness.
-4. **Choose target agents**. Default to every authoritative planned Agent Name. If a selected Agent Name is provided, verify only that authoritative name and label the result as selected-agent partial readiness evidence.
-5. **Confirm commands are replayable**. Each verification command must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...` and cwd set to the resolved `agent.workspace` for the target Agent Name.
-6. **Verify cwd-friendly semantic path query evidence**. Include or record a check that an agent-scoped semantic label can be resolved from inside each target Agent Workspace without passing Agent Name.
-7. **Run verification commands** from the resolved `agent.workspace` cwd. Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.
+3. **Check Pixi files**:
+   - Confirm the resolved `manifest_path`, selected `pixi_environment`, Topic Workspace `pixi.lock`, and `<topic-workspace-dir>/.pixi/` exist before reporting readiness.
+4. **Choose target agents**:
+   - Default to every authoritative planned Agent Name.
+   - If a selected Agent Name is provided, verify only that authoritative name and label the result as selected-agent partial readiness evidence.
+5. **Confirm commands are replayable**:
+   - Each verification command must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
+   - Set cwd to the resolved `agent.workspace` for the target Agent Name.
+6. **Verify cwd-friendly semantic path query evidence**:
+   - Include or record a check that an agent-scoped semantic label can be resolved from inside each target Agent Workspace without passing Agent Name.
+7. **Run verification commands** from the resolved `agent.workspace` cwd:
+   - Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.
 8. **Compare results to expected outputs** from the target spec and mark each agent command as ready, failed, or blocked.
-9. **Update the target spec execution log** with Agent Name, cwd, command, exit status, output summary, pass/fail result, partial scope when selected, blockers, and next repair action.
-10. **Report readiness**. Use `overall_readiness_status: ready` only when every planned agent has a ready worktree, required support paths, complete path evidence, cwd-friendly query evidence, and every required agent-env-gate command passes from that agent's cwd.
+9. **Update the target spec execution log**:
+   - Include Agent Name, cwd, command, exit status, output summary, pass/fail result, partial scope when selected, blockers, and next repair action.
+10. **Report readiness**:
+   - Use `overall_readiness_status: ready` only when every planned agent has a ready worktree, required support paths, complete path evidence, cwd-friendly query evidence, and every required agent-env-gate command passes from that agent's cwd.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `topic.env.agent_setup_target_spec`, parent guardrails, and user request, then execute the plan.
 

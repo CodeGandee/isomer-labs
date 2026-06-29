@@ -19,11 +19,19 @@ When this subcommand is selected, execute the following steps in order.
 
 1. **Resolve the Project root** from the prompt or current working directory. Confirm `.isomer-labs/manifest.toml` exists.
 2. **Resolve the Research Topic and Topic Workspace** through Project Manifest-backed context. Do not select a Topic Workspace by scanning sibling directories.
-3. **Resolve the Topic Workspace Pixi binding**. Use an active `topic_standalone_pixi_bindings.manifest_path_or_dir` entry when present; otherwise use the registered Topic Workspace directory as the implicit default target. Record `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and binding source.
-4. **Resolve topic semantic labels before mutation**. Required labels are `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `topic.records`, `topic.runtime`, `topic.env.topic_setup_target_spec`, `topic.intent.agent_env_requirements`, and `topic.env.agent_setup_target_spec`. Record each semantic label, resolved path, storage profile, source, source detail, diagnostic, and blocker.
-5. **Confirm path boundaries**. The Topic Workspace and resolved setup labels must be inside the selected Project root unless a later accepted external-root policy explicitly permits the binding.
-6. **Record invocation posture**. Report `requester`, `confirmation_source`, optional Service Request refs, support Artifact refs, Provenance refs, and whether the current invocation is read-only or can proceed to confirmed mutation.
-7. **Report resolved context** using the parent output contract and stop with blockers for missing Project Manifest, unknown Research Topic, missing Topic Workspace, unresolved Pixi binding, semantic label blockers, unsafe paths, or missing mutation confirmation for mutating follow-up steps.
+3. **Resolve the Topic Workspace Pixi binding**:
+   - Use an active `topic_standalone_pixi_bindings.manifest_path_or_dir` entry when present.
+   - Otherwise use the registered Topic Workspace directory as the implicit default target.
+   - Record `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and binding source.
+4. **Resolve topic semantic labels before mutation**:
+   - Required labels are `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `topic.records`, `topic.runtime`, `topic.env.topic_setup_target_spec`, `topic.intent.agent_env_requirements`, and `topic.env.agent_setup_target_spec`.
+   - Record each semantic label, resolved path, storage profile, source, source detail, diagnostic, and blocker.
+5. **Confirm path boundaries**:
+   - The Topic Workspace and resolved setup labels must be inside the selected Project root unless a later accepted external-root policy explicitly permits the binding.
+6. **Record invocation posture**:
+   - Report `requester`, `confirmation_source`, optional Service Request refs, support Artifact refs, Provenance refs, and whether the current invocation is read-only or can proceed to confirmed mutation.
+7. **Report resolved context** using the parent output contract:
+   - Stop with blockers for missing Project Manifest, unknown Research Topic, missing Topic Workspace, unresolved Pixi binding, semantic label blockers, unsafe paths, or missing mutation confirmation for mutating follow-up steps.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from Project Manifest evidence, semantic label requirements, invocation posture, and the parent guardrails, then execute the plan.
 

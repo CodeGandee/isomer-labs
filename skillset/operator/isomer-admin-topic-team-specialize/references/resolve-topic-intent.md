@@ -4,11 +4,18 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Require resolved Project context from `resolve-project` or equivalent evidence. Do not create or mutate topic intent until the target Project, Research Topic candidate, and Topic Workspace candidate are known or explicitly blocked.
-2. Resolve the semantic label `topic.intent.overview` through Workspace Path Resolution. Record the semantic label, resolved path, storage profile, source, source detail, and diagnostics. In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/topic-overview.md`.
+1. Require resolved Project context from `resolve-project` or equivalent evidence:
+   - Do not create or mutate topic intent until the target Project, Research Topic candidate, and Topic Workspace candidate are known or explicitly blocked.
+2. Resolve the semantic label `topic.intent.overview` through Workspace Path Resolution:
+   - Record the semantic label, resolved path, storage profile, source, source detail, and diagnostics.
+   - In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/topic-overview.md`.
 3. Read the user's Research Topic prompt, registered topic statement when present, existing topic material when present, and any explicit source files named by the caller.
-4. Write or update the resolved `topic.intent.overview` path with a concise user-editable topic overview. Include the Research Topic, goal, success metrics, required datasets, explicitly mentioned repositories, explicitly mentioned libraries or tools, assumptions, open questions, and source material. Avoid dependency versions unless the topic context explicitly says them.
-5. If the topic is too vague to summarize without guessing, write the known facts and open questions only when safe, report `topic_intent_status: blocked`, and name the missing topic substance.
+4. Write or update the resolved `topic.intent.overview` path with a concise user-editable topic overview:
+   - Include the Research Topic, goal, success metrics, required datasets, explicitly mentioned repositories, explicitly mentioned libraries or tools, assumptions, open questions, and source material.
+   - Avoid dependency versions unless the topic context explicitly says them.
+5. If the topic is too vague to summarize without guessing:
+   - Write the known facts and open questions only when safe.
+   - Report `topic_intent_status: blocked`, and name the missing topic substance.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from Project context, topic source material, Workspace Path Resolution output, and this reference page, then execute the plan.
 

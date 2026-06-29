@@ -7,7 +7,8 @@ When this subcommand is selected, execute the following steps in order.
 1. Check **Prerequisite Artifacts**. If any required predecessor artifact is missing, refuse to run and tell the user why.
 2. Confirm the registered Research Topic, registered Topic Workspace, Domain Agent Team Template, packet path or packet inputs, registration assurance evidence, and approval provenance.
 3. Run generic packet and profile-bundle validation before mutation.
-4. Materialize the approved static Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`, including `profile.toml`, packet, approval, validation, copied template material, and provenance files.
+4. Materialize the approved static Topic Agent Team Profile Bundle under `<topic-workspace>/team-profile/`:
+   - Include `profile.toml`, packet, approval, validation, copied template material, and provenance files.
 5. Report the Project Manifest registration ref that should point at the bundle's `profile.toml`.
 6. Validate the Project Manifest and profile bundle after materialization.
 

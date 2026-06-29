@@ -6,14 +6,24 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. `init-topic` has no predecessor artifact requirement, so do not refuse to run because earlier flow artifacts are missing.
 2. Read the user's Research Topic prompt, source material, or explicitly supplied topic ref, and decide whether it contains enough topic substance to summarize.
-3. If the user did not supply a Research Topic, stop and ask for the concrete research topic before creating any directory or topic overview file. Do not infer the topic from Project Manifest defaults, the registered id `default`, current directory, existing Topic Workspace names, or a generic placeholder statement.
-4. If a topic ref is supplied but its registered Research Topic Config only contains a generic or placeholder statement, ask the user for the concrete research topic before creating or overwriting `topic.intent.overview`.
-5. If no topic workspace directory is supplied and the user-supplied Research Topic is clear, derive a short topic slug and choose a provisional seed directory under the effective Topic Workspace base. Use the Project Manifest `topic_workspace_base_dir` when present; otherwise use the built-in `isomer-content/topic-ws/` base, giving a normal default such as `isomer-content/topic-ws/<topic-slug>/`.
+3. If the user did not supply a Research Topic, stop before creating files:
+   - Ask for the concrete research topic before creating any directory or topic overview file.
+   - Do not infer the topic from Project Manifest defaults, the registered id `default`, current directory, existing Topic Workspace names, or a generic placeholder statement.
+4. If a topic ref is supplied but its registered Research Topic Config only contains a generic or placeholder statement:
+   - Ask the user for the concrete research topic before creating or overwriting `topic.intent.overview`.
+5. If no topic workspace directory is supplied and the user-supplied Research Topic is clear, choose a provisional seed directory:
+   - Derive a short topic slug.
+   - Use the Project Manifest `topic_workspace_base_dir` when present.
+   - Otherwise use the built-in `isomer-content/topic-ws/` base, giving a normal default such as `isomer-content/topic-ws/<topic-slug>/`.
 6. If no topic workspace directory is supplied and the Research Topic is unclear, ask for more topic detail before choosing a directory.
-7. If the derived or supplied directory is outside the Project root, already exists, collides with registered Project material, or is otherwise ambiguous, stop and ask the user to confirm that directory or provide another one before creating files.
+7. If the derived or supplied directory is unsafe or ambiguous, stop before creating files:
+   - Treat paths outside the Project root, existing paths, collisions with registered Project material, and other ambiguous paths as blockers.
+   - Ask the user to confirm that directory or provide another one.
 8. Create the selected topic directory only after the Research Topic and directory are clear.
 9. Route topic understanding to `resolve-topic-intent`, which resolves `topic.intent.overview` and writes the topic overview at the resolved path.
-10. Report `topic_overview_label`, the resolved `topic_overview_path`, provisional status, assumptions, open questions, and the next safe subcommand. When the created topic material is not already manifest-backed, name `ensure-topic-registration` as the next registration action before specialization or setup.
+10. Report topic initialization output:
+   - Include `topic_overview_label`, the resolved `topic_overview_path`, provisional status, assumptions, open questions, and the next safe subcommand.
+   - When the created topic material is not already manifest-backed, name `ensure-topic-registration` as the next registration action before specialization or setup.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the topic prompt, selected directory, Project Config boundary, and guardrails in this skill, then execute the plan.
 

@@ -15,7 +15,9 @@ When this subcommand is selected, execute the following steps in order.
 
 1. **Test the default Bun registry** with `curl -I --max-time 10 https://registry.npmjs.org/` or `bun pm ls <package>` when Bun is available.
 2. **If the default registry is reachable**, recommend it.
-3. **If the default registry is not reachable**, inspect Bun configuration. Check `bunfig.toml` in the project directory, then `~/.bunfig.toml`. Read `[install]` `registry`, `[install]` `cache`, and scoped registry entries.
+3. **If the default registry is not reachable**, inspect Bun configuration:
+   - Check `bunfig.toml` in the project directory, then `~/.bunfig.toml`.
+   - Read `[install]` `registry`, `[install]` `cache`, and scoped registry entries.
 4. **Test each candidate registry** in declaration order and recommend the first reachable one.
 5. **If no registry is reachable**, report that the default Bun registry is not usable and stop with a blocker.
 

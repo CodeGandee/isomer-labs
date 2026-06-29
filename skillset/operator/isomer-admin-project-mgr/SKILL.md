@@ -11,10 +11,15 @@ Use this as the operator workflow for Isomer Project lifecycle management. It he
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Default help mode**: If this skill is invoked without a prompt, select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
+1. **Default help mode**:
+   - Match when this skill is invoked without a prompt.
+   - Select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
 2. **Resolve the Project root** from the user's prompt or current working directory. See [references/project-concepts.md](references/project-concepts.md).
 3. **Select one subcommand** from the **Subcommands** table that best matches the user's request.
-4. **Load only the selected subcommand page** and any local support reference it names, then execute that workflow. In other words, load only the selected subcommand page for one bounded manual operation.
+4. **Load only the selected subcommand page**:
+   - Guardrail: load only the selected subcommand page.
+   - Include any local support reference it names.
+   - Execute that workflow for one bounded manual operation.
 5. **Report the Project lifecycle output** using the **Output Contract** and preserve the **Guardrails**.
 6. **Hand off topic-team adaptation** to `isomer-admin-topic-team-specialize` whenever the request moves from Project setup into Domain Agent Team Template specialization.
 

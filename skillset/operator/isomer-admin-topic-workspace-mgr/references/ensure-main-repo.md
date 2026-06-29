@@ -4,9 +4,16 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Require successful `resolve-workspace` output, including selected Topic Workspace path and resolved `topic.repos.main`, `topic.repos.main.tmp`, and `topic.repos.main.isomer_managed` labels with sources.
+1. Require successful `resolve-workspace` output:
+   - Include selected Topic Workspace path.
+   - Include resolved `topic.repos.main`, `topic.repos.main.tmp`, and `topic.repos.main.isomer_managed` labels with sources.
 2. Inspect whether the resolved `topic.repos.main` path exists. If it exists, validate that it is a usable normal non-bare Git repository for worktree creation.
-3. If the path is missing and the operator requested creation, create the resolved parent directory, initialize the repository, make the owner-managed branch `topic-owner/main` available, prepare or validate `topic.repos.main.tmp` with the Topic Main Repository root ignore rule, and prepare or validate `topic.repos.main.isomer_managed` plus tracked sublabels without hiding command failures.
+3. If the path is missing and the operator requested creation, prepare the repository:
+   - Create the resolved parent directory.
+   - Initialize the repository.
+   - Make the owner-managed branch `topic-owner/main` available.
+   - Prepare or validate `topic.repos.main.tmp` with the Topic Main Repository root ignore rule.
+   - Prepare or validate `topic.repos.main.isomer_managed` plus tracked sublabels without hiding command failures.
 4. If the path exists but is not a Git repository, is bare, has missing metadata, lacks a usable base branch, or has unsafe state for worktree creation, report a blocker.
 5. Do not delete, replace, pull, reset, reinitialize, or repair the existing path silently.
 6. Report the repository path, detected owner branch, current status summary, blockers, and next operator action.

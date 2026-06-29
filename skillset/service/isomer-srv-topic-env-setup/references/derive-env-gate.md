@@ -18,11 +18,30 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace`, source intent summary from `read-env-gate` when deriving from source intent, explicit target spec input when manual mode is used, and repo context from `ensure-topic-repos` when repos are needed.
-2. **Resolve the target spec label** `topic.env.topic_setup_target_spec`; record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers. Create the parent directory when writing the target spec.
-3. **Translate or validate operations**. Convert source intent and repo evidence into concrete repo requirements, dependency plan, enclosure strategy, Pixi install commands, verification commands, expected results, and blockers, or validate that the explicit target spec already contains those details.
-4. **Apply dependency and enclosure policy**. Include Python as the Topic Workspace glue language, select a Python version with **Python Version Policy**, include the starter Python dependencies from **Starter Python Dependencies**, prefer PyPI for Python packages unless Pixi/Conda is required for the gate, use Pixi/Conda for native tools and binary/runtime dependencies, record package source evidence, consult `isomer-srv-resolve-pkg-repo` when repository, mirror, registry, or channel reachability is a material decision, consult `isomer-misc-nvidia-tools` when CUDA architecture or CUDA/C++ build preferences are needed, and classify every dependency or runtime need with **Environment Enclosure Strategy**.
-5. **Write or update the fixed Markdown template** from **Template** at the resolved `topic.env.topic_setup_target_spec` path when deriving from source intent. When using an explicit manual target spec, record the explicit source and normalized target-spec copy or reference, then preserve every required section.
+1. **Require predecessor artifacts**:
+   - Require workspace context from `resolve-topic-workspace`.
+   - Require source intent summary from `read-env-gate` when deriving from source intent.
+   - Require explicit target spec input when manual mode is used.
+   - Require repo context from `ensure-topic-repos` when repos are needed.
+2. **Resolve the target spec label** `topic.env.topic_setup_target_spec`:
+   - Record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
+   - Create the parent directory when writing the target spec.
+3. **Translate or validate operations**:
+   - Convert source intent and repo evidence into concrete repo requirements, dependency plan, enclosure strategy, Pixi install commands, verification commands, expected results, and blockers.
+   - Or validate that the explicit target spec already contains those details.
+4. **Apply dependency and enclosure policy**:
+   - Include Python as the Topic Workspace glue language.
+   - Select a Python version with **Python Version Policy**.
+   - Include the starter Python dependencies from **Starter Python Dependencies**.
+   - Prefer PyPI for Python packages unless Pixi/Conda is required for the gate.
+   - Use Pixi/Conda for native tools and binary/runtime dependencies.
+   - Record package source evidence.
+   - Consult `isomer-srv-resolve-pkg-repo` when repository, mirror, registry, or channel reachability is a material decision.
+   - Consult `isomer-misc-nvidia-tools` when CUDA architecture or CUDA/C++ build preferences are needed.
+   - Classify every dependency or runtime need with **Environment Enclosure Strategy**.
+5. **Write or update the fixed Markdown template** from **Template**:
+   - Write at the resolved `topic.env.topic_setup_target_spec` path when deriving from source intent.
+   - When using an explicit manual target spec, record the explicit source and normalized target-spec copy or reference, then preserve every required section.
 6. **Warning-label inferred repos** in `## Inferred Source Warnings` and carry the same warnings to the final skill output.
 7. **Report target spec metadata** and any blockers that prevent installation or verification.
 

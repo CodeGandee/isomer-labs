@@ -19,11 +19,15 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Run the setup chain** in this fixed all-agent order: `resolve-agent-env-context`, `require-topic-env-ready`, `read-agent-env-gate` when deriving from source intent, `plan-agent-workspaces`, `derive-agent-env-gate`, `ensure-topic-main-repository`, `create-agent-worktrees`, and `verify-agent-env-gate`. If an explicit target spec is supplied, `derive-agent-env-gate` validates that spec and records its source instead of requiring `read-agent-env-gate`.
+1. **Run the setup chain** in this fixed all-agent order:
+   - Run `resolve-agent-env-context`, `require-topic-env-ready`, `read-agent-env-gate` when deriving from source intent, `plan-agent-workspaces`, `derive-agent-env-gate`, `ensure-topic-main-repository`, `create-agent-worktrees`, and `verify-agent-env-gate`.
+   - If an explicit target spec is supplied, `derive-agent-env-gate` validates that spec and records its source instead of requiring `read-agent-env-gate`.
 2. **Load each referenced subcommand page** and execute its `## Workflow`, carrying forward each result to the next step.
 3. **Verify every authoritative planned Agent Name**. The full flow must not use selected-agent partial mode for overall readiness.
-4. **Stop on blockers** when any step reports missing predecessor artifacts, missing source gate, missing Topic Workspace predecessor status, agent-plan-conflict, unsafe paths, unsafe Git state, nonmatching worktrees, failing cwd gate commands, out-of-scope requests, unconfirmed mutation, or failed preconditions.
-5. **Report the combined result** using the parent **Output Contract**, including topic env predecessor status, semantic paths, requester, confirmation source, optional Service Request or Provenance refs, source intent or explicit target spec metadata, Topic Main Repository state, agent workspace paths, branch plan, worktree status by agent, readiness by agent, overall readiness, changed files, commands run, blockers, and next action.
+4. **Stop on blockers** when any step reports a blocking condition:
+   - Include missing predecessor artifacts, missing source gate, missing Topic Workspace predecessor status, agent-plan-conflict, unsafe paths, unsafe Git state, nonmatching worktrees, failing cwd gate commands, out-of-scope requests, unconfirmed mutation, or failed preconditions.
+5. **Report the combined result** using the parent **Output Contract**:
+   - Include topic env predecessor status, semantic paths, requester, confirmation source, optional Service Request or Provenance refs, source intent or explicit target spec metadata, Topic Main Repository state, agent workspace paths, branch plan, worktree status by agent, readiness by agent, overall readiness, changed files, commands run, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the linked subcommands, parent guardrails, and user request, then execute the plan.
 

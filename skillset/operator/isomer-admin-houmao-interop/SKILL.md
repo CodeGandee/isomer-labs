@@ -17,11 +17,21 @@ Use this skill for one bounded Houmao-interop task at a time. For full Topic Tea
 
 When this skill is invoked, choose one of the modes below.
 
-1. **Default help mode**: If this skill is invoked without a prompt, select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
-2. **Explain-loop mode**: If the user asks how the Houmao agent loop works, what drives it, or what its stages are, select `explain-loop`, load [references/explain-loop.md](references/explain-loop.md), and report a concise architecture summary.
-3. **Customize-loop mode**: If the user asks how to customize the Houmao agent loop, roles, recipes, presets, specialists, launch dossiers, project overlays, credentials, mailbox, gateway, or runtime, select `customize-loop`, load [references/customize-loop.md](references/customize-loop.md), and report the relevant customization points and file paths.
-4. **Map-template mode**: If the user asks how a Domain Agent Team Template such as DeepScientist maps onto Houmao, or how to run DeepScientist stage skills under Houmao, select `map-template-to-houmao`, load [references/map-template-to-houmao.md](references/map-template-to-houmao.md), and report the concept mapping.
-5. **Inspect-runtime mode**: If the user asks how to inspect a running Houmao agent, gateway, mailbox, or runtime state, select `inspect-runtime`, load [references/inspect-runtime.md](references/inspect-runtime.md), and report the appropriate commands or files.
+1. **Default help mode**:
+   - Match when this skill is invoked without a prompt.
+   - Select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
+2. **Explain-loop mode**:
+   - Match when the user asks how the Houmao agent loop works, what drives it, or what its stages are.
+   - Select `explain-loop`, load [references/explain-loop.md](references/explain-loop.md), and report a concise architecture summary.
+3. **Customize-loop mode**:
+   - Match when the user asks how to customize the Houmao agent loop, roles, recipes, presets, specialists, launch dossiers, project overlays, credentials, mailbox, gateway, or runtime.
+   - Select `customize-loop`, load [references/customize-loop.md](references/customize-loop.md), and report the relevant customization points and file paths.
+4. **Map-template mode**:
+   - Match when the user asks how a Domain Agent Team Template such as DeepScientist maps onto Houmao, or how to run DeepScientist stage skills under Houmao.
+   - Select `map-template-to-houmao`, load [references/map-template-to-houmao.md](references/map-template-to-houmao.md), and report the concept mapping.
+5. **Inspect-runtime mode**:
+   - Match when the user asks how to inspect a running Houmao agent, gateway, mailbox, or runtime state.
+   - Select `inspect-runtime`, load [references/inspect-runtime.md](references/inspect-runtime.md), and report the appropriate commands or files.
 6. If the request is ambiguous, prefer the mode that names the most specific concept the user mentioned. If no concept is clear, default to `help`.
 7. Preserve the **Guardrails** and **Output Contract** for all modes.
 
