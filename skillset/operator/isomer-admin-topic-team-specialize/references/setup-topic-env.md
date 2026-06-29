@@ -29,8 +29,9 @@ When this subcommand is selected, execute the following steps in order.
    - Call `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`.
    - Pass the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `topic.intent.topic_env_requirements` metadata or explicit target spec source, and relevant topic/setup notes as context.
    - Let `isomer-srv-topic-env-setup` handle source-gate reading, target-spec validation, Topic Main Development Repository setup, canonical external repo materialization, external repo projection materialization, dependency inference, Pixi mutation, and topic-root or repo-specific verification only.
+   - Require delegated output to record resource checks and conservative skip, defer, or blocker decisions before any heavy setup or verification command such as compilation, deep model inference, full dataset download, large archive extraction, or broad test suite execution.
 9. Map the service output using **Service Output Mapping**:
-   - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, projection metadata, commands run, changed files, repo warnings, blockers, and validation refs.
+   - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, projection metadata, resource check status, commands run, changed files, repo warnings, blockers, and validation refs.
    - Record `per_agent_readiness_status: not checked` when the service reports it as durable setup evidence.
 10. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand. Do not report per-Agent Workspace cwd readiness from this subcommand.
 
@@ -77,6 +78,7 @@ Use `auto` when this subcommand is reached from `fast-forward` or a direct concr
 | `path_diagnostics` or label diagnostics | operator blockers or warnings with the relevant semantic label |
 | `topic_main_repository` | topic-main predecessor evidence for later agent setup |
 | `external_repo_projections`, `external_repo_projection_manifest` | projection predecessor evidence for later agent setup |
+| `resource_check_status`, `resource_check_evidence`, `resource_conservative_decisions` | operator-visible evidence that heavy setup or verification work checked host capacity first and chose smoke-test, skip, defer, or blocker decisions instead of overloading the system |
 | `commands_run` | setup command evidence |
 | `changed_files` | changed setup file evidence |
 | `inferred_source_warnings` | setup warnings and later validation notes |

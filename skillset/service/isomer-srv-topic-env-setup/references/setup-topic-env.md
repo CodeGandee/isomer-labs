@@ -39,7 +39,7 @@ When this subcommand is selected, execute the following steps in order.
 5. **Stop on blockers** in either mode:
    - Stop when a step reports missing required inputs, missing predecessor artifacts, unsafe ambiguity, out-of-scope requests, or a failed precondition.
 6. **Report the combined result** using the parent skill's **Output Contract**:
-   - Include `subcommand`, selected `mode`, step results, topic-main Git state, Isomer-managed namespace posture, projection metadata, commands run, changed files, enclosure strategy, external runtime wiring, topic-local fallbacks, Topic Workspace readiness status, `per_agent_readiness_status: not checked` when relevant, blockers, and next action.
+   - Include `subcommand`, selected `mode`, step results, topic-main Git state, Isomer-managed namespace posture, projection metadata, resource check status, commands run, changed files, enclosure strategy, external runtime wiring, topic-local fallbacks, Topic Workspace readiness status, `per_agent_readiness_status: not checked` when relevant, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the linked subcommands, parent guardrails, mode rules, and user request, then execute the plan.
 
@@ -49,12 +49,12 @@ If the user's task does not map cleanly to these steps, use your native planning
 | --- | --- | --- | --- |
 | 1 | Resolve the Topic Workspace | [resolve-topic-workspace.md](resolve-topic-workspace.md) | Project root, Research Topic, Topic Workspace, semantic setup paths, Pixi binding, and blockers. |
 | 2 | Read the source intent | [read-env-gate.md](read-env-gate.md) | `topic.intent.topic_env_requirements` metadata, source intent summary, runnable target, repo hints, and blockers. Skip only when an explicit manual target spec is supplied. |
-| 3 | Derive or validate the target spec | [derive-env-gate.md](derive-env-gate.md) | `topic.env.topic_setup_target_spec` metadata, target spec source, repository requirements, projection access intent, dependency plan, enclosure strategy, verification commands, and blockers. |
+| 3 | Derive or validate the target spec | [derive-env-gate.md](derive-env-gate.md) | `topic.env.topic_setup_target_spec` metadata, target spec source, repository requirements, projection access intent, dependency plan, enclosure strategy, resource check plan, verification commands, and blockers. |
 | 4 | Ensure Topic Main Development Repository | [ensure-topic-main-repository.md](ensure-topic-main-repository.md) | Topic-main Git state, owner branch posture, Isomer-managed namespace posture, changed files, commands run, and blockers. |
 | 5 | Ensure canonical external repos | [ensure-topic-repos.md](ensure-topic-repos.md) | Repo paths, source warnings, inspection notes, read-only existing-repo evidence, and blockers. |
 | 6 | Project external repos into topic-main | [project-extern-repos.md](project-extern-repos.md) | Projection paths, projection access intent, projection manifest metadata, changed files, and blockers. |
 | 7 | Install dependencies | [install-topic-deps.md](install-topic-deps.md) | Commands run, changed Pixi files, external runtime wiring, topic-local fallbacks, install results, and blockers. |
-| 8 | Verify the gate | [verify-env-gate.md](verify-env-gate.md) | Gate execution results, enclosure warnings, topic-main/projection readiness evidence, and final readiness status. |
+| 8 | Verify the gate | [verify-env-gate.md](verify-env-gate.md) | Gate execution results, resource check evidence, conservative execution decisions, enclosure warnings, topic-main/projection readiness evidence, and final readiness status. |
 
 ## Fast-Forward Mode
 
@@ -126,6 +126,6 @@ The Topic Workspace `.gitignore` may include a default `tmp/` entry as the `isom
 - Stop and report a blocker when any step reports a missing predecessor artifact.
 - Do not require `team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instances, Agent Workspace plans, roles, or agent count before running this setup chain.
 - Keep all direct mutation scoped to the selected Topic Workspace Pixi environment, the resolved Topic Main Development Repository Isomer-managed namespace, missing required canonical external repos at resolved non-main `topic.repos.*` paths, and external projections under `isomer-managed/topic-owned/{readonly,writable}/extern/`.
-- Carry enclosure strategy, external runtime wiring, topic-local fallback warnings, and enclosure blockers from `derive-env-gate`, `install-topic-deps`, and `verify-env-gate` into the combined result.
+- Carry resource check status, enclosure strategy, external runtime wiring, topic-local fallback warnings, and enclosure blockers from `derive-env-gate`, `install-topic-deps`, and `verify-env-gate` into the combined result.
 - Do not mutate an existing repo during `ensure-topic-repos`; later setup or verification steps may only run commands against existing repos when the derived gate explicitly requires those commands.
 - Do not read `topic.intent.agent_env_requirements`, write `topic.env.agent_setup_target_spec`, create Agent Workspace worktrees, or claim per-agent cwd readiness from this topic-scoped flow.

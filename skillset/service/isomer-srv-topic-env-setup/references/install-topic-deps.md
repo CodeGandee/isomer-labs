@@ -10,7 +10,7 @@ Recover these before asking the user:
 | --- | --- |
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
 | Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`, whether derived from source intent or supplied as an explicit manual target spec. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
-| Dependency plan, enclosure strategy, and Pixi install commands | Read from the target spec's `## Dependency Plan` and `## Pixi Install Commands` sections, including the selected Python version, version evidence, starter Python dependencies, enclosure classification, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, or missing enclosure strategy for a required dependency or runtime need. |
+| Dependency plan, resource check plan, enclosure strategy, and Pixi install commands | Read from the target spec's `## Dependency Plan`, `## Resource Check Plan`, and `## Pixi Install Commands` sections, including the selected Python version, version evidence, starter Python dependencies, enclosure classification, heavy-command classification, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, or missing enclosure strategy for a required dependency or runtime need. |
 | Package-source override or resolution evidence | Optional. Use only when the prompt or derived gate explicitly names a package source override, or when `isomer-srv-resolve-pkg-repo` evidence is needed because repository, mirror, registry, or channel reachability is uncertain. Otherwise follow the fixed source evidence and PyPI-first Python policy in this page. |
 
 ## Workflow
@@ -56,13 +56,18 @@ When this subcommand is selected, execute the following steps in order.
    - Update `.gitignore`.
    - Run fallback setup through Pixi-scoped commands when commands are needed.
    - Record the lower-portability warning.
-15. **Run setup commands through the Topic Workspace Pixi environment** when the target spec requires commands beyond dependency mutation:
+15. **Check resources before heavy setup commands**:
+   - Apply this before setup commands that compile code, build native extensions, download full datasets, extract large archives, run model inference, or start broad test suites.
+   - Use lightweight read-only probes such as CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
+   - Prefer smoke tests, reduced parallelism, sample data, dry-run or metadata checks, skip, or defer when the full command is not needed to prove installation.
+   - If capacity is insufficient, unclear, or already busy, do not run the heavy command; record `resource_check_status: blocked` or `deferred` with the reason.
+16. **Run setup commands through the Topic Workspace Pixi environment** when the target spec requires commands beyond dependency mutation:
    - Use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
    - Include any recorded runtime wiring in the command instead of relying on ambient shell state.
-16. **Install the selected environment** with `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
-17. **Update `topic.env.topic_setup_target_spec`**:
-   - Include commands run, selected Python version, version evidence, starter dependencies, VCS ignore changes, adaptation decisions, selected package sources, enclosure classification, external runtime wiring, topic-local fallbacks, changed files, channel decisions, blockers, and execution log entries.
-18. **Report the install result** using the parent skill's output fields.
+17. **Install the selected environment** with `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
+18. **Update `topic.env.topic_setup_target_spec`**:
+   - Include commands run, selected Python version, version evidence, starter dependencies, VCS ignore changes, adaptation decisions, selected package sources, resource check evidence, conservative execution decisions, enclosure classification, external runtime wiring, topic-local fallbacks, changed files, channel decisions, blockers, and execution log entries.
+19. **Report the install result** using the parent skill's output fields.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the resolved `topic.env.topic_setup_target_spec`, dependency policy, Pixi help, parent guardrails, and user request, then execute the plan.
 
@@ -155,6 +160,7 @@ Report `blocked` when:
 - a starter Python dependency cannot be resolved or installed;
 - a dependency cannot be inferred, resolved, or installed;
 - a required dependency or runtime need lacks an enclosure strategy in `topic.env.topic_setup_target_spec`;
+- a required heavy setup command lacks a resource check plan, cannot be replaced by a bounded smoke test, or would overload the host;
 - a Python package must use Pixi/Conda but the reason is unknown;
 - a channel or package source cannot be reached or cannot be resolved through fixed evidence or `isomer-srv-resolve-pkg-repo`;
 - the desired dependency would mutate the Project-root Pixi environment or an Agent Workspace-specific environment;

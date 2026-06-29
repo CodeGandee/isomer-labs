@@ -28,7 +28,7 @@ When this subcommand is selected, execute the following steps in order.
 4. **Stop on blockers** when any step reports a blocking condition:
    - Include missing predecessor artifacts, missing source gate, missing Topic Workspace predecessor status, agent-plan-conflict, unsafe paths, unsafe Git state, nonmatching worktrees, failing cwd gate commands, out-of-scope requests, unconfirmed mutation, or failed preconditions.
 5. **Report the combined result** using the parent **Output Contract**:
-   - Include topic env predecessor status, topic-main predecessor evidence, projection predecessor evidence when required, semantic paths, requester, confirmation source, optional Service Request or Provenance refs, source intent or explicit target spec metadata, agent workspace paths, branch plan, worktree status by agent, readiness by agent, overall readiness, changed files, commands run, blockers, and next action.
+   - Include topic env predecessor status, topic-main predecessor evidence, projection predecessor evidence when required, semantic paths, requester, confirmation source, optional Service Request or Provenance refs, source intent or explicit target spec metadata, agent workspace paths, branch plan, worktree status by agent, resource check status, readiness by agent, overall readiness, changed files, commands run, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the linked subcommands, parent guardrails, and user request, then execute the plan.
 
@@ -40,10 +40,10 @@ If the user's task does not map cleanly to these steps, use your native planning
 | 2 | Require topic env ready | [require-topic-env-ready.md](require-topic-env-ready.md) | Topic env predecessor status and repair route. |
 | 3 | Read source agent intent | [read-agent-env-gate.md](read-agent-env-gate.md) | `topic.intent.agent_env_requirements` metadata, source intent summary, required commands, Topic Main Development Repository predecessor requirements, projection requirements, cwd assumptions, and blockers. Skip only when an explicit manual target spec is supplied. |
 | 4 | Plan Agent Workspaces | [plan-agent-workspaces.md](plan-agent-workspaces.md) | Authoritative Agent Names, branches, semantic paths, path sources, and blockers. |
-| 5 | Derive or validate agent env target spec | [derive-agent-env-gate.md](derive-agent-env-gate.md) | `topic.env.agent_setup_target_spec` metadata, target spec source, verification matrix, expected results, and blockers. |
+| 5 | Derive or validate agent env target spec | [derive-agent-env-gate.md](derive-agent-env-gate.md) | `topic.env.agent_setup_target_spec` metadata, target spec source, verification matrix, resource check plan, expected results, and blockers. |
 | 6 | Require Topic Main Development Repository ready | [require-topic-main-ready.md](require-topic-main-ready.md) | Topic-main predecessor status, projection predecessor status when required, and repair route to `isomer-srv-topic-env-setup`. |
 | 7 | Create Agent Worktrees | [create-agent-worktrees.md](create-agent-worktrees.md) | Worktree status by agent, support path status, boundary material posture, and blockers. |
-| 8 | Verify agent env gate | [verify-agent-env-gate.md](verify-agent-env-gate.md) | Readiness by agent, commands run, execution log, blockers, and overall readiness. |
+| 8 | Verify agent env gate | [verify-agent-env-gate.md](verify-agent-env-gate.md) | Readiness by agent, resource check evidence, conservative execution decisions, commands run, execution log, blockers, and overall readiness. |
 
 ## Expected Result
 
@@ -83,4 +83,5 @@ Readiness means topic env setup has prepared topic-main and required projections
 - Do not create per-agent Pixi environments or mutate dependencies.
 - Do not create, initialize, configure, repair, or project external repos into `topic.repos.main`; route missing or stale predecessor evidence to `isomer-srv-topic-env-setup`.
 - Do not claim runtime launch readiness.
+- Do not multiply resource-heavy verification across every Agent Workspace unless the resource check shows enough idle capacity and the target spec requires the full matrix. Use bounded smoke checks, selected-agent partial evidence, deferral, or blockers when full verification would overload the host.
 - Preserve blockers and partial failures in the combined report.

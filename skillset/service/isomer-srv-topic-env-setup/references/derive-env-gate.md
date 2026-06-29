@@ -25,7 +25,7 @@ When this subcommand is selected, execute the following steps in order.
    - Record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
    - Create the parent directory when writing the target spec.
 3. **Translate or validate operations**:
-   - Convert source intent into concrete topic-main requirements, canonical external repo requirements, projection access intent, dependency plan, enclosure strategy, Pixi install commands, verification commands, expected results, and blockers.
+   - Convert source intent into concrete topic-main requirements, canonical external repo requirements, projection access intent, dependency plan, enclosure strategy, resource check plan, Pixi install commands, verification commands, expected results, and blockers.
    - Or validate that the explicit target spec already contains those details.
 4. **Apply dependency and enclosure policy**:
    - Include Python as the Topic Workspace glue language.
@@ -62,6 +62,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Dependency Plan
 
+## Resource Check Plan
+
 ## Pixi Install Commands
 
 ## Verification Commands
@@ -87,6 +89,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Dependency Plan` should list Python glue baseline, selected Python version, Python version evidence, any version conflicts and adaptation plan, starter Python dependencies, PyPI dependencies, Pixi/Conda dependencies, native toolchains, package source evidence, NVIDIA channel decisions when relevant, editable installs, and an enclosure strategy for every dependency or runtime need. Mark each item as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked. For every non-Pixi-managed choice, record why Pixi-managed installation was not used. When package repository, mirror, registry, or channel reachability is uncertain or policy-relevant, record the `isomer-srv-resolve-pkg-repo` resolution evidence. When CUDA architecture targets, CUDA/C++ build environments, or build parallelism choices affect the gate, record the `isomer-misc-nvidia-tools` preference evidence.
 
+`## Resource Check Plan` should classify setup and verification commands as light or heavy. Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy. For each heavy command, name the lightweight resource probes to run first, the capacity signals to inspect, the conservative fallback such as smoke test, sample data, reduced parallelism, selected tests, dry-run, metadata check, skip, or defer, and the blocker condition when capacity is insufficient or unclear. Prefer a bounded proof over a full expensive run unless the user explicitly requires the expensive run and the resource check shows enough idle capacity.
+
 `## Pixi Install Commands` should list the concrete commands the agent will run from the Topic Workspace root or with `--manifest-path <manifest_path>`, including the starter dependency command when those packages are missing. Dependency mutation commands must use `pixi add --manifest-path <manifest_path>` or `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`. Setup commands that need runtime wiring must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>` and record any sourced script or exported path.
 
 `## Verification Commands` should list the exact Pixi commands that prove the runnable target works. If a command needs external runtime wiring, include the recorded environment variables, sourced scripts, or runtime paths inside the Pixi-run command rather than relying on ambient shell state.
@@ -97,7 +101,7 @@ When the source intent mentions later Agent Workspace use, preserve cwd assumpti
 
 `## Blockers` should list missing repos, missing dependencies, ambiguous commands, unavailable packages, unsupported live-agent actions, privileged or machine-global setup requirements, unclassified dependencies, or other reasons readiness cannot be claimed. When repo docs or the source gate ask for `sudo`, system package manager mutation, global shell profile edits, global Python or Node installs, `/etc` changes, `ldconfig`, daemons, kernel driver changes, or similar host mutation, record that request as a blocker or external prerequisite rather than an executable setup command.
 
-`## Execution Log` should be initialized as `Not run yet.` before `install-topic-deps` or `verify-env-gate`, then updated by those subcommands when they run commands. The log should preserve enclosure evidence: Pixi-managed commands, external runtime wiring, topic-local fallback commands, changed files, and blockers.
+`## Execution Log` should be initialized as `Not run yet.` before `install-topic-deps` or `verify-env-gate`, then updated by those subcommands when they run commands. The log should preserve resource check evidence, conservative execution decisions, enclosure evidence, Pixi-managed commands, external runtime wiring, topic-local fallback commands, changed files, and blockers.
 
 ## Python Version Policy
 

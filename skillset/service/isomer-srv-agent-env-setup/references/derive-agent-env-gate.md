@@ -31,6 +31,7 @@ When this subcommand is selected, execute the following steps in order.
 4. **Derive the per-agent verification matrix**:
    - For every authoritative Agent Name, record cwd as the resolved `agent.workspace`.
    - Record each command as `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
+   - Classify heavy commands and repeated full-matrix checks in `## Resource Check Plan`.
 5. **Preserve cwd assumptions** from the topic env gate:
    - If a topic env command is topic-root-only or repo-specific and cannot run from an Agent Workspace cwd, record `gate-cwd-incompatible` or an equivalent blocker instead of false readiness.
 6. **Write or update the fixed Markdown template** from **Template**:
@@ -63,6 +64,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Verification Matrix
 
+## Resource Check Plan
+
 ## Expected Results
 
 ## Blockers
@@ -88,9 +91,11 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Verification Matrix` should list each Agent Name, source requirement, cwd, exact Pixi command, and expected result.
 
+`## Resource Check Plan` should classify each per-agent verification command as light or heavy. Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy. For every heavy command, name the lightweight resource probes to run first, the capacity signals to inspect, the conservative fallback such as smoke test, sample data, reduced parallelism, selected tests, selected-agent partial run, dry-run, metadata check, skip, or defer, and the blocker condition when capacity is insufficient or unclear. Call out commands whose cost multiplies across every authoritative Agent Workspace, and prefer a bounded proof unless the user explicitly requires the full expensive matrix and the resource check shows enough idle capacity.
+
 `## Blockers` should list missing predecessor evidence, missing source gate, agent-plan-conflict, unsafe path, out-of-scope source gate request, gate-cwd-incompatible command, or unresolved setup ambiguity.
 
-`## Execution Log` should record direct Project Operator Session invocation, mutation confirmation, optional Service Request, support Artifact, or Provenance refs, changed files, commands run, verification results, and blockers.
+`## Execution Log` should record direct Project Operator Session invocation, mutation confirmation, optional Service Request, support Artifact, or Provenance refs, resource check evidence, conservative execution decisions, changed files, commands run, verification results, and blockers.
 
 ## Guardrails
 

@@ -20,7 +20,7 @@ Recover these before asking the user:
 When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**: resolved context, Topic Workspace predecessor evidence, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, agent env target spec, authoritative agent plan, and worktree evidence.
-2. **Read the agent env target spec** and extract `## Verification Matrix`, `## Expected Results`, `## Blockers`, `## Topic Pixi Binding`, and `## Execution Log`.
+2. **Read the agent env target spec** and extract `## Verification Matrix`, `## Resource Check Plan`, `## Expected Results`, `## Blockers`, `## Topic Pixi Binding`, and `## Execution Log`.
 3. **Check Pixi files**:
    - Confirm the resolved `manifest_path`, selected `pixi_environment`, Topic Workspace `pixi.lock`, and `<topic-workspace-dir>/.pixi/` exist before reporting readiness.
 4. **Choose target agents**:
@@ -34,12 +34,17 @@ When this subcommand is selected, execute the following steps in order.
 7. **Verify projected external repo evidence when commands depend on it**:
    - Confirm the relevant projection entry from `topic.repos.main.projections.manifest` is present in predecessor evidence.
    - Confirm the projected path is visible from each target `agent.workspace` cwd without creating a substitute projection.
-8. **Run verification commands** from the resolved `agent.workspace` cwd:
+8. **Check resources before heavy verification commands**:
+   - Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy, especially when the same command would run for every Agent Workspace.
+   - Use lightweight read-only probes before heavy commands, including CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
+   - Prefer the smallest proof that satisfies the gate: smoke tests, sample data, reduced parallelism, selected tests, selected-agent partial run, dry-run, metadata check, skip, or defer.
+   - If resources are insufficient, ambiguous, or already busy, do not run the heavy command. Report `blocked` or `not checked` with `resource_check_status: blocked` or `deferred`. Selected-agent partial evidence must remain partial.
+9. **Run verification commands** from the resolved `agent.workspace` cwd:
    - Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.
-9. **Compare results to expected outputs** from the target spec and mark each agent command as ready, failed, or blocked.
-10. **Update the target spec execution log**:
-   - Include Agent Name, cwd, command, exit status, output summary, pass/fail result, partial scope when selected, blockers, and next repair action.
-11. **Report readiness**:
+10. **Compare results to expected outputs** from the target spec and mark each agent command as ready, failed, or blocked.
+11. **Update the target spec execution log**:
+   - Include Agent Name, cwd, resource check evidence, conservative execution decisions, command, exit status, output summary, pass/fail result, partial scope when selected, blockers, and next repair action.
+12. **Report readiness**:
    - Use `overall_readiness_status: ready` only when every planned agent has a ready worktree, required support paths, complete path evidence, cwd-friendly query evidence, and every required agent-env-gate command passes from that agent's cwd.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `topic.env.agent_setup_target_spec`, parent guardrails, and user request, then execute the plan.
@@ -61,3 +66,4 @@ Selected-agent direct verification updates that agent's evidence but does not ma
 - Report `gate-cwd-incompatible` or equivalent when a topic env command cannot run from Agent Workspace cwd.
 - Do not create Agent Instances, Workspace Runtime records, Houmao launch material, or Execution Adapter material.
 - Do not suppress partial failures; readiness by agent and blockers must remain visible.
+- Do not run resource-heavy verification merely to make the all-agent matrix look stronger. When a bounded smoke test or selected-agent partial run is enough, use it and label the evidence correctly. When the full matrix is required but the host is busy, low on memory or disk, out of GPU capacity, or otherwise uncertain, defer or block with resource evidence.
