@@ -1,8 +1,8 @@
-# Per-stage bounded work (on-task-request step 3)
+# Per-stage bounded work (Workflow step 3, full method)
 
 Do the work for YOUR role and the request's `stage`; record every durable row with `$HARNESS record apply`.
-This is the depth behind step 3 of `SKILL.md`. The compact non-negotiable items per stage are in the
-`SKILL.md` "Mandatory stage checklists"; this file is the full method per stage.
+This is the depth behind Workflow step 3 of `SKILL.md`. The compact non-negotiable items per stage are in the
+`SKILL.md` "Mandatory Stage Checklists" section; this file is the full method per stage.
 
 ## intake-audit (scout-ideator)
 

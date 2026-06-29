@@ -1,13 +1,13 @@
 # Methodology references and usage audit (all roles)
 
-This is the depth behind the "Research-quality disciplines" section of `SKILL.md`. Read the relevant part
+This is the depth behind the "Methodology references + binding usage audit" section of `SKILL.md`. Read the relevant part
 before stage work.
 
 ## Methodology references
 
-These are loop-wide research/writing **craft** packs (`kind='reference'`, enabled by default). Discover with
-`$HARNESS knowledge query --kind reference` and list their files with `$HARNESS knowledge cards`; then READ
-the named file under `execplan/packs/<pack>/references/...`. They are advisory craft, NEVER an authoritative
+These are loop-wide research/writing **craft** references (`kind='reference'`, enabled by default). Discover with
+`$HARNESS knowledge query --kind reference` and list their files with `$HARNESS knowledge cards`; then read
+the cards it returns. They are advisory craft, NEVER an authoritative
 state surface (the DB stays canonical; record outcomes via `record apply`). Map any external tool names
 inside them (`artifact.*`, `bash_exec`, `memory.*`) to the `$HARNESS` surface.
 
