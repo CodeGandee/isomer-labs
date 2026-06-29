@@ -10,9 +10,9 @@ When this subcommand is selected, execute the following steps in order.
 4. Read the topic overview, existing source gate, prompt-supplied runnable target, specialization outputs when present, copied template setup notes when present, draft packet/profile inputs when present, and any environment requirements from topic material. Do not require specialization outputs solely to prepare the Topic Workspace environment.
 5. Ensure the source gate exists at `<topic-workspace>/user-intent/src/env-gate.md`. If it exists, use it as the handoff contract. If it is missing and the prompt or topic material gives a clear runnable target, create or update a concise `env-gate.md` that states what must run after setup. If the runnable target is unclear, ask the user for the target and stop before service delegation.
 6. Select the service setup mode. Use `auto` for `fast-forward`, direct setup, or concrete setup requests. Use `manual` when the caller is `step-by-step`, asks for confirmation, or wants to inspect choices before each service step.
-7. Delegate heavy environment setup to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`, passing the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `env_gate_path`, and relevant topic/setup notes as context. Let `isomer-srv-topic-env-setup` handle source-gate reading, repo materialization, derived gate generation, dependency inference, Pixi mutation, and verification.
-8. Map the service output using **Service Output Mapping**. Record `env_gate_path`, `derived_gate_path`, service readiness status, commands run, changed files, repo warnings, blockers, and validation refs as durable setup evidence.
-9. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand.
+7. Delegate heavy Topic Workspace environment setup to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`, passing the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `env_gate_path`, and relevant topic/setup notes as context. Let `isomer-srv-topic-env-setup` handle source-gate reading, repo materialization, derived gate generation, dependency inference, Pixi mutation, and topic-root verification only.
+8. Map the service output using **Service Output Mapping**. Record `env_gate_path`, `derived_gate_path`, Topic Workspace predecessor readiness status, commands run, changed files, repo warnings, blockers, validation refs, and `per_agent_readiness_status: not checked` when reported as durable setup evidence.
+9. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand. Do not report per-Agent Workspace cwd readiness from this subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a service-delegation plan from the topic material, template requirements, available `env-gate.md` intent, `isomer-srv-topic-env-setup` output contract, and guardrails, then execute only the operator-safe handoff and reporting portions.
 
@@ -61,14 +61,16 @@ Use `auto` when this subcommand is reached from `fast-forward` or a direct concr
 
 ## Guardrails
 
-Treat installed packages, environment files, setup commands, validation records, skipped actions, and blockers as durable Topic Workspace preparation. Topic Team material may consume this evidence later, but it is not a prerequisite for this subcommand.
+Treat installed packages, environment files, setup commands, validation records, skipped actions, and blockers as durable Topic Workspace predecessor preparation. Topic Team material may consume this evidence later, but it is not a prerequisite for this subcommand.
 
 Do not hide mutating setup work inside topic clarification or team specialization.
 
 Do not infer packages, choose repo sources, install dependencies, repair Pixi files, or run verification commands directly from this operator subcommand. Delegate that work to `isomer-srv-topic-env-setup` and record its output.
 
+Do not read `agent-env-gate.md`, write `isomer-agent-env-gate.md`, or claim Agent Workspace cwd readiness from this operator subcommand. Use `setup-agent-workspace` when the caller requested per-Agent Workspace proof.
+
 Do not start live team execution, launch execution adapters, or create runtime service state from this subcommand.
 
 Do not store credentials, API keys, command payloads, live provider state, or adapter state in topic profile material.
 
-Do not claim environment readiness unless `isomer-srv-topic-env-setup` reports readiness, or unless readiness is explicitly deferred or blocked with named evidence.
+Do not claim Topic Workspace environment readiness unless `isomer-srv-topic-env-setup` reports readiness, or unless readiness is explicitly deferred or blocked with named evidence. Topic Workspace readiness does not satisfy Agent Workspace cwd readiness.

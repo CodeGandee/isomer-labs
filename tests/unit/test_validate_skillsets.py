@@ -417,7 +417,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Commands include `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, `pixi add --manifest-path <manifest_path>`, and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
             Use `.isomer-user-env/` only as fallback and block sudo.
-            Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.records`, `topic.runtime`, and any agent-scoped target; resolve the appropriate topic repository label before creating repos.
+            Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.records`, and `topic.runtime`; produce Topic Workspace predecessor evidence and report `per_agent_readiness_status` when per-agent readiness is not checked. Also resolve the appropriate topic repository label before creating repos.
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -435,8 +435,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.repos.main`, `topic.records`, `topic.runtime`, and each path source.",
             "ensure-topic-repos.md": "Use the resolved topic repository root from `semantic_paths`; report semantic label and path source. Do not place task repos outside the resolved root.",
             "read-env-gate.md": "Interpret the runnable target as what one agent or operator must run.",
-            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence.",
-            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness.",
+            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `agent-env-gate.md`.",
+            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
             term = reference_terms.get(subcommand_name, "Topic Workspace environment setup reference.")
@@ -1047,6 +1047,26 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("SVS002", codes(diagnostics))
         self.assertTrue(any("semantic_paths" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_topic_env_predecessor_boundary_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_skill_term="Topic Workspace predecessor evidence")
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("Topic Workspace predecessor evidence" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_per_agent_readiness_not_checked_reference(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="per_agent_readiness_status: not checked")
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("per_agent_readiness_status: not checked" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_requires_tmp_label_posture_reference_terms(self) -> None:
         root = self.make_root()

@@ -13,7 +13,7 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Print a concise description: `isomer-srv-agent-env-setup` prepares service-safe Agent Workspace cwd readiness from an already prepared Topic Workspace Pixi environment.
+1. Print a concise description: `isomer-srv-agent-env-setup` prepares service-safe Agent Workspace cwd readiness from Topic Workspace predecessor evidence and is the owner of `agent-env-gate.md`, `isomer-agent-env-gate.md`, selected-agent partial evidence, and overall Agent Workspace readiness.
 2. Explain that concrete setup defaults to `setup-agent-env`, while direct subcommands are available for manual setup, inspection, or partial repair.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
 4. Name the required inputs: Project Manifest context, registered Research Topic, Topic Workspace, ready topic env predecessor, `user-intent/src/agent-env-gate.md`, authoritative Topic Team Instantiation Packet or derived Topic Agent Team Profile Agent Names, semantic path evidence, and mutation confirmation.
@@ -45,4 +45,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Boundary Notes
 
-This service complements `isomer-srv-topic-env-setup`, which owns Topic Workspace dependency readiness, and `isomer-admin-topic-workspace-mgr`, which owns Git-only static topology flows. It becomes the env-gate-aware service for per-agent Agent Workspace cwd verification.
+This service complements `isomer-srv-topic-env-setup`, which produces Topic Workspace predecessor evidence, and `isomer-admin-topic-workspace-mgr`, which owns Git-only static topology flows. It is the env-gate-aware service for per-agent Agent Workspace cwd verification.

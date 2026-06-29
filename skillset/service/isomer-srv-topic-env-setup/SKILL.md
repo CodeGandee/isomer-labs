@@ -1,17 +1,17 @@
 ---
 name: isomer-srv-topic-env-setup
-description: Use when an Isomer Labs agent needs gate-driven enclosed Pixi development environment setup for a Topic Workspace independent of Topic Agent Team Profile or Agent Team Instance structure, including env-gate.md, isomer-env-gate.md, topic_standalone_pixi_bindings, topic repos, Python version selection, starter Python dependencies, Topic Workspace VCS ignores, PyPI/Pixi dependency inference, NVIDIA channel preference, Pixi command style, explicit external runtime wiring, topic-local user-space fallback, no-sudo blockers, or readiness checks.
+description: Use when an Isomer Labs agent needs gate-driven enclosed Pixi development environment setup for a Topic Workspace independent of Topic Agent Team Profile or Agent Team Instance structure, including env-gate.md, isomer-env-gate.md, topic_standalone_pixi_bindings, topic repos, Python version selection, starter Python dependencies, Topic Workspace VCS ignores, PyPI/Pixi dependency inference, package-source evidence, Pixi command style, explicit external runtime wiring, topic-local user-space fallback, no-sudo blockers, or topic-root readiness checks.
 ---
 
 # Isomer Service Topic Environment Setup
 
 ## Overview
 
-Set up and validate the Topic Workspace Pixi development environment for a user-specified runnable target. Readiness means one agent or operator can run the commands needed to conduct the research from the selected Topic Workspace. Keep setup enclosed and auditable: use Pixi-managed dependencies first, use explicit Pixi-run runtime wiring only when Pixi cannot fully provide a runtime piece, use topic-local user-space fallback only as a secondary option, and block privileged or machine-global mutation.
+Set up and validate the Topic Workspace Pixi development environment for a user-specified runnable target. Readiness means one agent or operator can run the commands needed to conduct the research from the selected Topic Workspace root or a repo-specific working directory named by `isomer-env-gate.md`. The result is Topic Workspace predecessor evidence for later workflows, not proof that every Agent Workspace cwd can run. Keep setup enclosed and auditable: use Pixi-managed dependencies first, use explicit Pixi-run runtime wiring only when Pixi cannot fully provide a runtime piece, use topic-local user-space fallback only as a secondary option, and block privileged or machine-global mutation.
 
 Topic environment setup is independent of Topic Agent Team structure. Do not require `<topic-workspace>/team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instance records, Agent Instance records, Agent Workspace plans, roles, or agent count before preparing the Topic Workspace environment.
 
-Topic environment readiness is topic-scoped. This skill does not read `user-intent/src/agent-env-gate.md`, does not create `user-intent/derived/isomer-agent-env-gate.md`, does not prepare Agent Workspace worktrees, and does not prove that every `agent.workspace` cwd can run gate commands. Route per-Agent Workspace cwd verification to `isomer-srv-agent-env-setup` after the Topic Workspace environment is ready.
+Topic environment readiness is topic-scoped. This skill does not read `user-intent/src/agent-env-gate.md`, does not create `user-intent/derived/isomer-agent-env-gate.md`, does not prepare Agent Workspace worktrees, and does not prove that every `agent.workspace` cwd can run gate commands. If a caller also needs per-Agent Workspace cwd proof, this skill reports that proof as not checked and leaves the follow-up decision to the operator or to `isomer-srv-agent-env-setup`.
 
 This skill is a command-style router: keep the entrypoint lean, choose one subcommand, then load that subcommand's reference page.
 
@@ -63,7 +63,7 @@ Each executable reference page owns its `## Required Inputs` contract. Use the s
 
 ## Help
 
-`isomer-srv-topic-env-setup` prepares a Topic Workspace Pixi development environment so the user-specified target in `user-intent/src/env-gate.md` can run. It assumes a single capable agent or operator needs to execute research commands in the selected Topic Workspace; it does not need a topic team profile, live Agent Team Instance, role list, or agent count. It preserves environment enclosure by preferring Pixi-managed dependencies, recording any external runtime wiring that must be routed through Pixi-run commands, limiting fallback installs to topic-local user space, and refusing sudo or machine-global mutation. Public subcommands are grouped below.
+`isomer-srv-topic-env-setup` prepares a Topic Workspace Pixi development environment so the user-specified target in `user-intent/src/env-gate.md` can run. It assumes a single capable agent or operator needs to execute research commands in the selected Topic Workspace; it does not need a topic team profile, live Agent Team Instance, role list, or agent count. It produces Topic Workspace predecessor evidence for later workflows, including Agent Workspace setup when a different caller requests that. It preserves environment enclosure by preferring Pixi-managed dependencies, recording any external runtime wiring that must be routed through Pixi-run commands, limiting fallback installs to topic-local user space, and refusing sudo or machine-global mutation. Public subcommands are grouped below.
 
 Procedural subcommands:
 
@@ -74,13 +74,13 @@ Procedural subcommands:
 | `ensure-topic-repos` | Find existing required repos or materialize missing repos under the resolved topic repository root. | Repo inventory and inspection notes; acquired topic repos and inferred-source warnings only for missing repos. |
 | `derive-env-gate` | Write the fixed-section `isomer-env-gate.md` operational gate, including the enclosure strategy for each dependency or runtime need. | `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`. |
 | `install-topic-deps` | Install inferred dependencies with Pixi first, record explicit external runtime wiring when needed, and use topic-local fallback only when Pixi cannot satisfy the gate. | Updated Topic Workspace Pixi environment files, `.gitignore`, dependency plan, enclosure records, and blockers. |
-| `verify-env-gate` | Run the desired command through recorded Pixi-scoped commands and report readiness. | Gate execution results, readiness status, enclosure warnings, and blockers. |
+| `verify-env-gate` | Run the desired command through recorded Pixi-scoped commands and report Topic Workspace readiness. | Gate execution results, readiness status, enclosure warnings, and blockers; per-Agent Workspace readiness remains not checked. |
 
 Misc subcommands:
 
 | Subcommand | Purpose | Produces |
 | --- | --- | --- |
-| `setup-topic-env` | Run the full setup flow in `fast-forward`/`auto` or `step-by-step`/`manual` mode. | Combined setup report, selected mode, repo state, derived gate, Pixi environment files, enclosure strategy, and readiness status. |
+| `setup-topic-env` | Run the full setup flow in `fast-forward`/`auto` or `step-by-step`/`manual` mode. | Combined setup report, selected mode, repo state, derived gate, Pixi environment files, enclosure strategy, and Topic Workspace readiness status. |
 | `help` | Print what this skill does and how to use it. | Usage table and examples. |
 
 Example prompts:
@@ -101,7 +101,7 @@ Report:
 - `project_root`: resolved Isomer Project root.
 - `research_topic_id`: selected Research Topic.
 - `topic_workspace_dir`: Project Manifest-declared Topic Workspace directory.
-- `semantic_paths`: resolved labels, paths, sources, and blockers for setup surfaces such as `topic.workspace`, `topic.repos.main`, `topic.records`, `topic.runtime`, and any agent-scoped target when explicitly requested.
+- `semantic_paths`: resolved labels, paths, sources, and blockers for setup surfaces such as `topic.workspace`, `topic.repos.main`, `topic.records`, and `topic.runtime`.
 - `manifest_path_or_dir`: explicit binding target when present, otherwise the registered Topic Workspace directory default.
 - `manifest_path`: Pixi-resolved Topic Workspace Pixi manifest path.
 - `pixi_environment`: selected Pixi environment.
@@ -118,7 +118,8 @@ Report:
 - `changed_files`: environment files changed, especially `pixi.toml`, `pixi.lock`, `.pixi/`, `.gitignore`, `.isomer-user-env/` when used, and `isomer-env-gate.md`.
 - `readiness_status`: ready, failed, blocked, or not checked.
 - `blockers`: missing inputs, failed preconditions, command failures, out-of-scope requests, or repair requirements.
-- `next_action`: safe follow-up, repair route, or stop condition.
+- `per_agent_readiness_status`: always not checked by this skill when reported.
+- `next_action`: safe operator follow-up, repair route, or stop condition.
 
 ## Guardrails
 
@@ -127,7 +128,7 @@ Report:
 - Do not treat the Project-root Pixi environment as the Topic Workspace execution environment.
 - Resolve topic repository paths through semantic labels before acquiring code. Additional durable repos should be registered as `topic.repos.*` with explicit `storage_profile` through `project repos create` or `project paths register`; do not rely on default-looking directories alone.
 - Do not require or inspect Topic Agent Team Profile material, `<topic-workspace-dir>/team-profile/`, Topic Team Instantiation Packets, Agent Team Instances, Agent Instances, Agent Workspace plans, roles, or agent count as prerequisites for Topic Workspace environment setup. If read-only diagnostics mention them, report them only as unrelated downstream context unless they also break Topic Workspace discovery, Pixi binding resolution, source gate reading, dependency setup, repo checks, or Pixi-scoped verification.
-- Do not read `user-intent/src/agent-env-gate.md`, create `user-intent/derived/isomer-agent-env-gate.md`, create Agent Workspace worktrees, mutate Topic Main Repository collaboration topology, verify commands from every `agent.workspace` cwd, or claim per-agent environment readiness from topic-root verification. Route that work to `isomer-srv-agent-env-setup`.
+- Do not read `user-intent/src/agent-env-gate.md`, create `user-intent/derived/isomer-agent-env-gate.md`, create Agent Workspace worktrees, mutate Topic Main Repository collaboration topology, verify commands from every `agent.workspace` cwd, or claim per-agent environment readiness from topic-root verification. Report per-Agent Workspace readiness as not checked when it is relevant to the caller.
 - Do not create or mutate per-agent Pixi environments unless a user task explicitly names an Agent Workspace-specific environment.
 - Do not place required independent repos in the Project root, Agent Workspace, `.pixi/`, or another ad hoc location; resolve the appropriate topic repository label and use that path.
 - Do not modify an existing `<topic-workspace-dir>/repos/<repo-name>` during `ensure-topic-repos`; inspect it as read-only evidence and report blockers if it is unsuitable.

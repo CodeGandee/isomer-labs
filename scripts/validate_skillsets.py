@@ -453,7 +453,8 @@ TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "topic.repos.main",
     "topic.records",
     "topic.runtime",
-    "agent-scoped target",
+    "Topic Workspace predecessor evidence",
+    "per_agent_readiness_status",
     "resolve the appropriate topic repository label",
 )
 
@@ -477,6 +478,12 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "topic.tmp",
         "resolved `topic.tmp`",
         "local, ignored, disposable, not shared, and not durable evidence",
+        "per_agent_readiness_status: not checked",
+        "Do not read `agent-env-gate.md`",
+    ),
+    "verify-env-gate.md": (
+        "per-Agent Workspace cwd verification is not checked here",
+        "Topic Workspace predecessor evidence",
     ),
 }
 

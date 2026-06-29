@@ -11,7 +11,7 @@ When this subcommand is selected, execute the following steps in order.
 5. Summarize boundary material paths and whether Workspace Boundary, Peer Read Access, owner/reader split, and generated-link notes are present and advisory.
 6. When `isomer-srv-agent-env-setup` evidence is available, summarize `source_agent_env_gate_path`, `agent_env_gate_path`, readiness by agent, overall readiness, command evidence, blockers, and next action under a separate agent environment readiness heading.
 7. Summarize validation status, blockers, skipped actions, generated links, profile or packet edits, and refs that remain to be updated.
-8. Name the next operator action, such as rerun one subcommand, call `isomer-srv-agent-env-setup setup-agent-env`, call `isomer-admin-topic-team-specialize validate-topic-team`, create an Agent Team Instance through runtime workflow, or stop on blockers.
+8. Name the next operator action, such as rerun one subcommand, make a caller-requested `isomer-srv-agent-env-setup setup-agent-env` call after validated topology evidence exists, call `isomer-admin-topic-team-specialize validate-topic-team`, create an Agent Team Instance through runtime workflow, or stop on blockers.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to produce a consumer-neutral summary from whatever validated evidence exists.
 

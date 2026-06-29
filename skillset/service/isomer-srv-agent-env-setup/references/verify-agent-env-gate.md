@@ -9,7 +9,7 @@ Recover these before asking the user:
 | Input | Resolution |
 | --- | --- |
 | Agent env context | Require Project, Research Topic, Topic Workspace, `manifest_path`, `pixi_environment`, semantic paths, requester, and confirmation source. |
-| Topic env predecessor | Require ready or explicitly accepted predecessor evidence from `require-topic-env-ready`. |
+| Topic env predecessor | Require ready or explicitly accepted Topic Workspace predecessor evidence from `require-topic-env-ready`. |
 | Derived agent env gate | Require `<topic-workspace-dir>/user-intent/derived/isomer-agent-env-gate.md` from `derive-agent-env-gate`. |
 | Worktree evidence | Require `create-agent-worktrees` output or read-only equivalent showing valid worktrees, support paths, and path evidence. |
 | Optional selected agent | Optional. It must be one authoritative Agent Name and reports selected-agent partial readiness evidence only. |
@@ -18,7 +18,7 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: resolved context, topic env predecessor, derived agent env gate, authoritative agent plan, and worktree evidence.
+1. **Require predecessor artifacts**: resolved context, Topic Workspace predecessor evidence, derived agent env gate, authoritative agent plan, and worktree evidence.
 2. **Read `isomer-agent-env-gate.md`** and extract `## Verification Matrix`, `## Expected Results`, `## Blockers`, `## Topic Pixi Binding`, and `## Execution Log`.
 3. **Check Pixi files**. Confirm the resolved `manifest_path`, selected `pixi_environment`, Topic Workspace `pixi.lock`, and `<topic-workspace-dir>/.pixi/` exist before reporting readiness.
 4. **Choose target agents**. Default to every authoritative planned Agent Name. If a selected Agent Name is provided, verify only that authoritative name and label the result as selected-agent partial readiness evidence.
@@ -43,6 +43,7 @@ Selected-agent direct verification updates that agent's evidence but does not ma
 ## Guardrails
 
 - Do not claim readiness from topic-root-only success.
+- Treat Topic Workspace readiness as prerequisite evidence only; every requested Agent Workspace cwd must be verified by this subcommand before reporting per-agent readiness.
 - Report `gate-cwd-incompatible` or equivalent when a topic env command cannot run from Agent Workspace cwd.
 - Do not create Agent Instances, Workspace Runtime records, Houmao launch material, or Execution Adapter material.
 - Do not suppress partial failures; readiness by agent and blockers must remain visible.

@@ -1,13 +1,13 @@
 ---
 name: isomer-srv-agent-env-setup
-description: Use when an Isomer Labs agent needs service-safe Agent Workspace environment setup after Topic Workspace environment readiness exists, including agent-env-gate.md, isomer-agent-env-gate.md, Topic Main Repository worktrees, authoritative Agent Names from topic-team material, semantic path evidence, per-agent cwd verification through Pixi, selected-agent partial repair evidence, and runtime-boundary guardrails.
+description: Use when an Isomer Labs agent needs service-safe Agent Workspace environment setup after Topic Workspace predecessor evidence exists, including agent-env-gate.md, isomer-agent-env-gate.md, Topic Main Repository worktrees, authoritative Agent Names from topic-team material, semantic path evidence, per-agent cwd verification through Pixi, selected-agent partial repair evidence, and runtime-boundary guardrails.
 ---
 
 # Isomer Service Agent Environment Setup
 
 ## Overview
 
-Set up and validate Agent Workspace cwd readiness for a registered Research Topic. This service is downstream of `isomer-srv-topic-env-setup`: it consumes Topic Workspace Pixi readiness, `user-intent/derived/isomer-env-gate.md`, and the resolved Topic Workspace Pixi manifest and environment. It does not install dependencies by default and it does not create per-agent Pixi manifests, per-agent lockfiles, or per-agent `.pixi/` directories.
+Set up and validate Agent Workspace cwd readiness for a registered Research Topic. This service is the owner of `agent-env-gate.md`, `user-intent/derived/isomer-agent-env-gate.md`, selected-agent partial evidence, and overall per-Agent Workspace readiness. It consumes Topic Workspace predecessor evidence from `isomer-srv-topic-env-setup`, including Topic Workspace Pixi readiness, `user-intent/derived/isomer-env-gate.md`, and the resolved Topic Workspace Pixi manifest and environment. It does not install dependencies by default and it does not create per-agent Pixi manifests, per-agent lockfiles, or per-agent `.pixi/` directories.
 
 Agent env setup reads `user-intent/src/agent-env-gate.md`, derives `user-intent/derived/isomer-agent-env-gate.md`, prepares the shared Topic Main Repository resolved by `topic.repos.main`, creates or validates per-agent `agent.workspace` worktrees for authoritative Agent Names, and verifies the derived gate from each Agent Workspace cwd with `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
 
@@ -61,7 +61,7 @@ Each executable reference page owns its `## Required Inputs` contract. Use the s
 
 ## Help
 
-`isomer-srv-agent-env-setup` prepares Git-backed Agent Workspace cwd readiness after the Topic Workspace Pixi environment has already been prepared by `isomer-srv-topic-env-setup`. It uses authoritative Agent Names from a Topic Team Instantiation Packet or Topic Agent Team Profile material derived from that packet, never from directory scans or ad hoc maps. It writes `user-intent/derived/isomer-agent-env-gate.md` from `user-intent/src/agent-env-gate.md`, records semantic labels and path sources, prepares the Topic Main Repository and per-agent worktrees, and verifies every required command from each resolved `agent.workspace` cwd through `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
+`isomer-srv-agent-env-setup` prepares Git-backed Agent Workspace cwd readiness after Topic Workspace predecessor evidence exists. It uses authoritative Agent Names from a Topic Team Instantiation Packet or Topic Agent Team Profile material derived from that packet, never from directory scans or ad hoc maps. It writes `user-intent/derived/isomer-agent-env-gate.md` from `user-intent/src/agent-env-gate.md`, records semantic labels and path sources, prepares the Topic Main Repository and per-agent worktrees, and verifies every required command from each resolved `agent.workspace` cwd through `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
 
 Public procedural subcommands:
 
@@ -105,7 +105,7 @@ Report:
 - `support_artifact_refs`: optional support Artifact refs when available.
 - `provenance_refs`: optional Provenance refs when available.
 - `semantic_paths`: resolved labels, paths, sources, readiness, and blockers for `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `topic.records`, `topic.runtime`, `agent.workspace`, and required agent support labels.
-- `topic_environment_status`: ready, missing, stale, blocked, failed, or not checked.
+- `topic_environment_status`: predecessor evidence status: ready, missing, stale, blocked, failed, or not checked.
 - `source_agent_env_gate_path`: `<topic-workspace-dir>/user-intent/src/agent-env-gate.md`.
 - `agent_env_gate_path`: `<topic-workspace-dir>/user-intent/derived/isomer-agent-env-gate.md`.
 - `topic_main_repository`: resolved `topic.repos.main` path, label source, Git state, owner branch, changed files, and blockers.
@@ -123,7 +123,7 @@ Report:
 ## Guardrails
 
 - Do not create per-agent Pixi manifests, per-agent lockfiles, per-agent `.pixi/` directories, or dependency environments by default.
-- Do not install or mutate Topic Workspace dependencies. Route missing or stale Topic Workspace dependency readiness back to `isomer-srv-topic-env-setup`.
+- Do not install or mutate Topic Workspace dependencies. Report missing or stale Topic Workspace dependency readiness as a repair next action for `isomer-srv-topic-env-setup`.
 - Do not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, create Houmao launch material, or make research decisions.
 - Do not infer Agent Names from directories, branches, provider ids, or ad hoc maps. Use the Topic Team Instantiation Packet or Topic Agent Team Profile material derived from that packet as the Agent Name authority. A matching explicit operator-provided map is only corroborating evidence; a disagreement is an `agent-plan-conflict` blocker.
 - Do not overwrite, delete, clean, reset, reinitialize, reclone, rewrite history, or silently repair existing repositories or Agent Workspace paths.

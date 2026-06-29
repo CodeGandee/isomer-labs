@@ -34,4 +34,4 @@ This skill complements `isomer-admin-topic-team-specialize`: specialization defi
 
 This skill also stays separate from `isomer-srv-topic-env-setup`, which owns gate-driven topic environment setup and independent repository acquisition for environment checks.
 
-This skill stays separate from `isomer-srv-agent-env-setup`, which owns `user-intent/src/agent-env-gate.md`, `user-intent/derived/isomer-agent-env-gate.md`, Topic Main Repository environment configuration, per-Agent Workspace cwd verification, readiness by Agent Name, and partial selected-agent repair evidence. Route requests for per-agent environment readiness to that service after Git topology evidence exists.
+This skill stays separate from `isomer-srv-agent-env-setup`, which owns `user-intent/src/agent-env-gate.md`, `user-intent/derived/isomer-agent-env-gate.md`, Topic Main Repository environment configuration, per-Agent Workspace cwd verification, readiness by Agent Name, and partial selected-agent repair evidence. Name or call that service for per-agent environment readiness only when the caller requested it and Git topology evidence exists.

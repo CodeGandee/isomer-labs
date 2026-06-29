@@ -11,7 +11,7 @@ Recover these before asking the user:
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
 | Derived gate | Require `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` from `derive-env-gate`. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
 | Dependency plan, enclosure strategy, and Pixi install commands | Read from the derived gate's `## Dependency Plan` and `## Pixi Install Commands` sections, including the selected Python version, version evidence, starter Python dependencies, enclosure classification, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, or missing enclosure strategy for a required dependency or runtime need. |
-| Package-source override | Optional. Use only when the prompt or derived gate explicitly names a package source override; otherwise follow the PyPI-first Python and NVIDIA-channel policies in this page. |
+| Package-source override or resolution evidence | Optional. Use only when the prompt or derived gate explicitly names a package source override, or when `isomer-srv-resolve-pkg-repo` evidence is needed because repository, mirror, registry, or channel reachability is uncertain. Otherwise follow the fixed source evidence and PyPI-first Python policy in this page. |
 
 ## Workflow
 
@@ -25,9 +25,9 @@ When this subcommand is selected, execute the following steps in order.
 6. **Ensure Topic Workspace VCS ignores** by creating or updating `<topic-workspace-dir>/.gitignore` with `.pixi/`, `tmp/`, and `.git/`. Add `.isomer-user-env/` only when topic-local fallback is used. Do not add `extern/orphan` ignore entries from this skill.
 7. **Keep Python available** as the Topic Workspace root glue and orchestration language, even when the runnable target uses another language.
 8. **Install Pixi-managed starter Python dependencies** through PyPI when missing or not already satisfied: `pixi add --manifest-path <manifest_path> --pypi scipy mdutils ruff mkdocs-material mypy attrs omegaconf imageio matplotlib jsonschema jinja2`.
-9. **Install Pixi-managed Python packages from PyPI by default** with `pixi add --manifest-path <manifest_path> --pypi <requirement>` when PyPI can satisfy the gate.
+9. **Install Pixi-managed Python packages from PyPI by default** with `pixi add --manifest-path <manifest_path> --pypi <requirement>` when PyPI can satisfy the gate and no fixed source evidence says otherwise. If PyPI, mirror, or private-index reachability is uncertain, use `isomer-srv-resolve-pkg-repo` evidence before mutating the manifest.
 10. **Install Pixi-managed native or Conda-required dependencies through Pixi/Conda** with `pixi add --manifest-path <manifest_path> <matchspec>` when the dependency is a non-Python tool, command-line program, binary or system-level runtime dependency, unavailable or unsuitable on PyPI, or required by setup instructions that PyPI cannot satisfy.
-11. **Prefer the NVIDIA channel** for NVIDIA tools and runtime packages by adding it with `pixi workspace channel add --manifest-path <manifest_path> --prepend nvidia` before adding those packages. Record any fallback to `conda-forge` or another channel.
+11. **Prefer resolved NVIDIA package sources** for NVIDIA tools and runtime packages. When the derived gate or package-resolution evidence selects the `nvidia` channel, add it with `pixi workspace channel add --manifest-path <manifest_path> --prepend nvidia` before adding those packages. Record any fallback to `conda-forge` or another channel. If CUDA architecture targets, CUDA/C++ build environment choices, `nvcc` flags, or build parallelism need interpretation, use `isomer-misc-nvidia-tools` preference evidence before converting them into setup commands.
 12. **Install editable repo packages when needed** using a PyPI editable requirement such as `pixi add --manifest-path <manifest_path> --pypi --editable '<package-name> @ file://<absolute-repo-path>'` when the repo is Python-installable and the gate needs it importable.
 13. **Record Pixi-mediated external runtime wiring** when the derived gate requires an external runtime path, sourced script, compiler path, package-config path, CUDA variable, or library path. Do not mutate the host; record the exact variables or source commands and use them only inside `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
 14. **Use topic-local fallback only when justified** by the derived gate. Place fallback material under `<topic-workspace-dir>/.isomer-user-env/`, update `.gitignore`, run fallback setup through Pixi-scoped commands when commands are needed, and record the lower-portability warning.
@@ -56,8 +56,12 @@ If multiple sources conflict, choose the highest Python minor version mentioned 
 | Python package unsuitable or unavailable on PyPI | Pixi/Conda with reason recorded |
 | Non-Python command-line tool | Pixi/Conda |
 | Binary/runtime/system dependency | Pixi/Conda |
-| NVIDIA tool or runtime package | Pixi with `nvidia` channel before `conda-forge` |
+| NVIDIA tool or runtime package | Pixi with package source evidence; prefer `nvidia` channel before `conda-forge` when reachable and appropriate |
 | Installable local Python repo | PyPI editable file requirement |
+
+When source reachability is uncertain, a local mirror or private registry is likely configured, or NVIDIA channel choice is policy-relevant, use `isomer-srv-resolve-pkg-repo` to choose the reachable repository, registry, or channel before dependency mutation. If the environment gate or manifest already fixes the source and no reachability concern exists, record that fixed source instead of adding a separate resolution step.
+
+Use `isomer-misc-nvidia-tools` for CUDA architecture targets, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `nvcc` flags, CUDA/C++ Pixi build environment preferences, and CUDA build parallelism. Topic env setup records the resulting setup evidence in `isomer-env-gate.md`; it should not expand into a general NVIDIA build guide.
 
 ## Environment Enclosure Ladder
 
@@ -124,6 +128,6 @@ Report `blocked` when:
 - a dependency cannot be inferred, resolved, or installed;
 - a required dependency or runtime need lacks an enclosure strategy in `isomer-env-gate.md`;
 - a Python package must use Pixi/Conda but the reason is unknown;
-- a channel or package source cannot be reached;
+- a channel or package source cannot be reached or cannot be resolved through fixed evidence or `isomer-srv-resolve-pkg-repo`;
 - the desired dependency would mutate the Project-root Pixi environment or an Agent Workspace-specific environment;
 - the setup requires `sudo`, system package manager mutation, global shell profile edits, global Python or Node package installs, `/etc` changes, `ldconfig`, daemons, kernel driver changes, or another privileged or machine-global action.

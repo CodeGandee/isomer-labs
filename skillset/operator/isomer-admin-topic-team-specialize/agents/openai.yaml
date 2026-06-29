@@ -1,4 +1,4 @@
 interface:
   display_name: "isomer-admin-topic-team-specialize"
   short_description: "Initialize and specialize topic teams"
-  default_prompt: "Use $isomer-admin-topic-team-specialize to initialize a Research Topic, ensure Project Manifest-backed topic registration, specialize a Domain Agent Team Template, route topic environment setup through $isomer-srv-topic-env-setup, prepare Agent Workspace setup, route per-agent cwd readiness through $isomer-srv-agent-env-setup when needed, validate static topic-team material readiness, and write the topic-team summary."
+  default_prompt: "Use $isomer-admin-topic-team-specialize to initialize a Research Topic, ensure Project Manifest-backed topic registration, specialize a Domain Agent Team Template, route Topic Workspace predecessor setup through $isomer-srv-topic-env-setup, prepare Agent Workspace setup, route per-agent cwd readiness through $isomer-srv-agent-env-setup when needed after source gate and topology evidence exist, validate static topic-team material readiness, and write the topic-team summary."

@@ -20,7 +20,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**: resolved context, topic env predecessor evidence, source agent gate summary, and authoritative agent plan.
 2. **Resolve the derived gate path** as `<topic-workspace-dir>/user-intent/derived/isomer-agent-env-gate.md` and create its parent directory when safe.
-3. **Translate source gate requirements** into a per-agent operational gate. Use the topic env predecessor as evidence, but do not duplicate dependency planning from `isomer-env-gate.md`.
+3. **Translate source gate requirements** into a per-agent operational gate. Use the Topic Workspace predecessor as evidence, but do not duplicate dependency planning from `isomer-env-gate.md`.
 4. **Derive the per-agent verification matrix**. For every authoritative Agent Name, record cwd as the resolved `agent.workspace` and each command as `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
 5. **Preserve cwd assumptions** from the topic env gate. If a topic env command is topic-root-only or repo-specific and cannot run from an Agent Workspace cwd, record `gate-cwd-incompatible` or an equivalent blocker instead of false readiness.
 6. **Write the fixed Markdown template** from **Template**. Include every section; write `None.` or a short reason when a section does not apply.
@@ -61,7 +61,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Source Agent Gate` should summarize `user-intent/src/agent-env-gate.md` and cite the source path.
 
-`## Topic Env Gate` should reference `user-intent/derived/isomer-env-gate.md` as predecessor evidence.
+`## Topic Env Gate` should reference `user-intent/derived/isomer-env-gate.md` as Topic Workspace predecessor evidence. A topic-root pass is prerequisite evidence only; it is not Agent Workspace cwd readiness.
 
 `## Topic Pixi Binding` should record `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and binding source.
 
@@ -81,7 +81,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Do not create per-agent dependency plans.
+- Do not create per-agent dependency plans or reinterpret Topic Workspace dependency policy.
 - Do not use tmp paths as durable readiness evidence.
 - Do not claim verification has run before `verify-agent-env-gate`.
 - Do not create Workspace Runtime records or Agent Team Instance records.
