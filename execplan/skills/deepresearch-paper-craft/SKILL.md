@@ -23,6 +23,25 @@ The pack is the source of truth; this skill only indexes and points into it, and
    this craft is advisory, never an authoritative state surface. Map any external tool names in the
    files (`artifact.*`, `memory.*`, `bash_exec`) to the `$HARNESS` surface.
 
+## LaTeX-safe authoring conventions (REQUIRED — the manuscript is compiled to PDF via paper-latex)
+The markdown you write is rendered through Pandoc → LaTeX. Author it so it survives that path:
+- **Math in math mode.** Every variable, Greek letter, inequality, arrow, and equation goes in `$…$`,
+  display `$$…$$` / `\[…\]`, or an `equation`/`align` environment — with real subscripts/superscripts
+  (`$T_{\mathrm{TC}}$`, `$\rho \to 1$`, `$S \ge 16384$`, `$\le 10\%$`). **Never** paste raw Unicode math
+  (ρ ≤ ≥ ≈ ↔ × · −) into body text: the default LaTeX font drops those glyphs and they vanish from the PDF.
+- **Cite with Pandoc `[@bibkey]`**, and let BibTeX build the bibliography. **Never** hand-write a
+  `## References` list when a `.bib` is used — it produces a duplicate, and the real (bibtex) bibliography
+  comes out empty because nothing was cited. Make sure each reference you intend to show is `[@cited]`.
+- **Verify the compiled artifact, not just the markdown.** After paper-latex runs, confirm the PDF/`.log`
+  have no `Missing character`, exactly one non-empty References section (no leaked `bibkey` text, no
+  duplicate), and correctly rendered symbols/equations. Report defects (`status=failed`) rather than
+  claiming success on a broken PDF. (paper-latex now fails the render on these defects — fix, don't bypass.)
+- **Draft for a real venue template.** Papers compile inside a real venue template by default (auto-selected:
+  explicit > paper_spine.venue_style > domain > `iclr2026`; systems work → a systems venue like `osdi2026`).
+  Set `paper_spine.venue_style` to the intended venue family. Generic `article` is an explicit opt-out only
+  (`--venue generic`). Author content the venue can typeset — e.g. two-column systems venues need wide tables
+  as full-width `table*` floats, not `longtable`.
+
 ## Audit / boundaries
 - `--via skill:deepresearch-paper-craft:<role>` is passed for traceability; read-only, so it records no row.
 - Never finalize, mutate results, confirm GPU, or change quest state from here.

@@ -67,6 +67,26 @@ below-floor / no-rejection / retained-not-in-slate / inconsistent-score selectio
 to an experiment handoff until `idea validate` passes** (the experiment-handoff idea gate reads the validator
 flag, not the artifact's existence).
 
+**Candidate selection is BO-decisive (don't self-certify the winner in prose).** `idea validate` now also
+materializes every slate candidate as an enumerable `idea` row, tagged by hard-gate eligibility (selection_gate
+`total` ≥ the rigor `idea_score_min` floor → `proposed`; below-floor → `rejected`). The `retained` you write is
+ADVISORY: when ≥2 candidates are gate-eligible the FINAL pick is made by the BO loop (BO-reviewer valuations →
+`bo select --decision-kind idea-selection --bind`), which binds `idea_select.retained_candidate` to the BO
+winner. So produce a genuine multi-candidate slate; the orchestrator's `bo_idea_decision` gate blocks idea →
+baseline until the BO winner is bound (a single eligible candidate may be skipped with an explicit
+`bo select --skip-reason`). Record selected/rejected ideas + novelty grounding + scope constraints into
+quest-local Findings Memory (`$HARNESS findings update --kind idea|decision|knowledge ...`) so BO and later
+stages can exploit/explore over them.
+
+**Findings Memory (quest-local, every stage).** As you produce durable results, record them to the current
+quest's Findings Memory with `$HARNESS findings update --quest-id <q> --slug <stable> --kind <k> --summary ...`
+(optionally `--grounded-by <result_id>` and `--links <quest-local JSON>`): baseline/experiment results
+(`kind=knowledge`), **failed attempts + refuted alternatives** (`kind=lesson`), analysis bridges + limitations
+(`kind=knowledge`), decisions (`kind=decision`), and the **current frontier / evidence gaps** (`kind=knowledge`).
+This is STRICTLY quest-local (`scope='quest'`; no cross-quest/global memory). It lets BO avoid repeating failed
+attempts, penalize unresolved repeats, and reward candidates that close evidence gaps; `$HARNESS findings
+summarize` renders the digest the BO-reviewer is given.
+
 ## experiment (experimenter, in YOUR isolated worktree)
 
 **GPU gate FIRST** — run `$HARNESS gpu status --quest-id <q>`. If `confirmed=false`, you MUST NOT run anything
@@ -171,9 +191,13 @@ oral-writing principles (write for reviewer cognition not compression; mandatory
 results = pattern→anchor numbers→interpret, never just "which number is larger"; figures/tables carry values,
 prose carries question+takeaway+mechanism), the **section-rewrite checklist**, and the evidence-budget rule
 (spend main-text pages/displays where reviewer friction is highest; keep claim wording inside the
-strongest-evidence zone). Never use polished language to conceal a missing result. Write the abstract last. To
-compile against a real venue style, pass `--params '{"venue": "iclr2026"}'` to `render report` (see step 4;
-default ML/AI venue is `iclr2026`). Steps:
+strongest-evidence zone). Never use polished language to conceal a missing result. Write the abstract last.
+**Venue policy (DeepScientist):** the paper is drafted inside a REAL venue template by default — you normally
+do NOT pass a venue flag; `render report` auto-selects one (precedence: explicit `--venue` >
+`paper_spine.venue_style` > `quest.domain` > `iclr2026` for general ML/AI). Systems/architecture/GPU/OS work
+resolves to a systems venue (ASPLOS-ideal; the closest renderable USENIX `osdi2026`/`nsdi2027` when `acmart`
+is absent). Generic `article` is an EXPLICIT opt-out only (`--venue generic`); the render never silently
+downgrades to it. The flag is `--venue <name>` (NOT `--params '{"venue":...}'`). Steps:
 
 1. **Figures** — for each headline result, emit a real figure from the recorded `result`/`measurement` data:
    write the series to a small CSV/JSON, then `$HARNESS render plot --input <data> --ref
@@ -195,11 +219,19 @@ default ML/AI venue is `iclr2026`). Steps:
    and `\cite`/[@key] citations — asserting **only `supported` claims** (each traceable to a recorded
    analysis/result).
 4. **Compile the paper** — `$HARNESS render report --input <draft.md> --ref runs/<q>/report/paper.pdf --bib
-   runs/<q>/refs/references.bib --venue iclr2026` (paper-latex → LaTeX **+ compiled PDF**; `--bib` triggers a
-   real **BibTeX** pass so `\cite` resolve into a numbered References section; `--venue` compiles against the
-   venue style suite; figures referenced as `.pdf` embed via `\includegraphics`). Confirm the produced PDF
-   actually embeds the figures + bibliography (size/pages should reflect them), not a text-only fallback. This
-   replaces the old Markdown-only report.
+   runs/<q>/refs/references.bib` (paper-latex → LaTeX **+ compiled PDF**; a real venue template is auto-applied
+   per the policy above — omit `--venue` unless overriding; `--bib` triggers a real **BibTeX** pass so cites
+   resolve into a numbered References section; figures referenced as `.pdf` embed via `\includegraphics`).
+   **The render fails loudly on a defect** (dropped glyphs, empty bibliography, or a venue that won't compile)
+   and records no artifact — it never silently emits a generic `article`. Confirm the produced PDF uses the
+   venue class/style and embeds figures + a non-empty single bibliography. If a two-column venue rejects a wide
+   `longtable`, reformat the table (e.g. a full-width `table*` float) — do not drop the venue. Generic article
+   is available only via an explicit `--venue generic`. This replaces the old Markdown-only report.
+   **ZH / CJK edition:** render it the same way (pass the same `--venue`); the adapter detects CJK and renders
+   it in clean `ctexart` WITHOUT the Latin venue style (which would corrupt a CJK layout), recording
+   `cjk_venue_skipped` in the meta. So the EN edition carries the venue style and the ZH edition is a clean
+   ctexart document — both correct. Always open BOTH compiled PDFs and eyeball the title, headings, and tables
+   (the render-health gate catches dropped glyphs / empty bib, NOT layout overlap).
 4c. **Coverage gate (MANDATORY before reply/finalize).** Run `$HARNESS manuscript coverage --quest-id <q> --artifact-ref runs/<q>/report/paper.md --at <ts>`. It is **validator-computed** — you cannot self-certify readiness — and writes `submission_ready` onto the paper-spine. Resolve every reported gap (each main_claim linked to supporting evidence; no unmapped `result` rows; non-empty `not_claiming` + limitations/weak_points; each main claim stated in the prose; no process/draft traces). Finalize `complete` is **blocked** until this reports `submission_ready=true` (research-contract quests at standard/publication rigor).
 4b. **Chinese edition (always produced)** — translate the assembled draft to Chinese as
    `runs/<q>/report/paper-zh.md`, **preserving** all tables, numbers, formulas, metric names, figure includes,

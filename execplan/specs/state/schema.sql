@@ -500,10 +500,15 @@ CREATE TABLE IF NOT EXISTS bo_decision (
     candidate_refs     TEXT,                         -- JSON: candidate refs considered
     review_refs        TEXT,                         -- JSON: bo_review review_ids that fed the acquisition
     selected_candidate_ref TEXT,                     -- the chosen next candidate (NULL if none scored)
-    acquisition_method TEXT NOT NULL,                -- e.g. ucb_like_v1
-    acquisition_config TEXT,                         -- JSON knobs used, e.g. {"beta":0.5}
+    acquisition_method TEXT NOT NULL,                -- e.g. ucb_official_v1 (default) | ucb_like_v1 | skipped
+    acquisition_config TEXT,                         -- JSON knobs used, e.g. {"w_u":1,"w_q":1,"kappa":1}
     acquisition_scores TEXT,                         -- JSON per-candidate breakdown [{candidate_ref,score,...}]
     selection_rationale TEXT,
+    -- which research move this acquisition decided (idea selection is decisive; the rest guide later moves).
+    decision_kind      TEXT NOT NULL DEFAULT 'idea-selection'
+                        CHECK (decision_kind IN ('idea-selection','experiment-selection',
+                                                 'opportunity-selection','stop-write-finalize-selection',
+                                                 'next-move-selection')),
     created_at         TEXT NOT NULL
 );
 

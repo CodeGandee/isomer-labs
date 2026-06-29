@@ -30,6 +30,9 @@ MIGRATIONS = [
     ("analysis_bridge", "validated_fingerprint",    "ALTER TABLE analysis_bridge ADD COLUMN validated_fingerprint TEXT"),
     ("paper_spine", "validated_fingerprint",        "ALTER TABLE paper_spine ADD COLUMN validated_fingerprint TEXT"),
     ("review_verdict", "validated_fingerprint",     "ALTER TABLE review_verdict ADD COLUMN validated_fingerprint TEXT"),
+    # which research move a BO acquisition decided (idea-selection is decisive; the rest guide later moves). The
+    # CHECK lives in the fresh-DB DDL (schema.sql + NEW_TABLES); an ALTER ADD COLUMN keeps a constant default.
+    ("bo_decision", "decision_kind", "ALTER TABLE bo_decision ADD COLUMN decision_kind TEXT NOT NULL DEFAULT 'idea-selection'"),
 ]
 
 
@@ -103,6 +106,10 @@ NEW_TABLES = [
      "  acquisition_config TEXT,"
      "  acquisition_scores TEXT,"
      "  selection_rationale TEXT,"
+     "  decision_kind TEXT NOT NULL DEFAULT 'idea-selection'"
+     "    CHECK (decision_kind IN ('idea-selection','experiment-selection',"
+     "                             'opportunity-selection','stop-write-finalize-selection',"
+     "                             'next-move-selection')),"
      "  created_at TEXT NOT NULL"
      ")"),
 ]

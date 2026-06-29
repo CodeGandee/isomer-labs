@@ -16,12 +16,14 @@ routing but does **not** replace the hard guards — they remain authoritative a
 | Gate | Typed record (table) | Validator command | Hard guard (records.py) — blocks | `gate status` key |
 |---|---|---|---|---|
 | Scope / eval contract | `scope.contract` (`scope_contract`, `valid`) | `scope validate` | idea selection requires it (via `idea validate`, bound) | `scope_contract` |
-| Idea selection | `idea.select` (`idea_select`, `valid`) | `idea validate` (selection pressure + valid `scope.contract` + durable novelty grounding: `prior_comparison.closest_prior_refs` → `reference` rows, ≥2 at publication) | idea→experiment handoff (`_idea_gate`) | `idea_gate` |
+| Idea selection | `idea.select` (`idea_select`, `valid`) | `idea validate` (selection pressure + valid `scope.contract` + durable novelty grounding: `prior_comparison.closest_prior_refs` → `reference` rows, ≥2 at publication; also materializes the slate as enumerable gate-eligibility-tagged `idea` rows) | idea→experiment handoff (`_idea_gate`) | `idea_gate` |
+| BO idea decision | `bo_decision` (`decision_kind='idea-selection'`) bound into `idea_select.retained_candidate` | `gate status` (≥2 gate-eligible `idea` rows ⇒ an idea-selection `bo_decision` whose winner is bound; 1 eligible ⇒ optional, explicit `bo select --skip-reason`) | idea→baseline (routes to `bo-review`); waiver `DEEPRESEARCH_BO_IDEA_GATE` | `bo_idea_decision` |
 | Baseline contract | `baseline.contract` (`baseline_contract`, `valid`) | `baseline validate` (route + eval contract + provenance-backed result) | `quest.baseline_gate=passed/waived` (`_baseline_contract_gate`) | `baseline_contract` |
 | Campaign coverage | claim evidence `evidence_kind` + `analysis.bridge` (`analysis_bridge`, `valid`) | `campaign validate` | analysis→outline/write handoff (`_analysis_bridge_gate`) | `campaign_coverage`, `analysis_bridge` |
 | Paper spine / outline | `paper_spine.upsert` (`paper_spine`) | `outline validate` (structural) | (feeds manuscript coverage) | `paper_spine`, `outline_valid` |
 | Manuscript coverage | `paper_spine` (`submission_ready`) | `manuscript coverage` | `finalize_outcome=complete` (`_finalize_coverage_gate`) | `manuscript_coverage` |
 | Review verdict | `review.verdict` (`review_verdict`, `valid`) | `review validate` (+ `review confirm`, `review route`) | `finalize_outcome=complete` (`_finalize_review_gate`) | `review_verdict` |
+| BO next move | `bo_decision` (later `decision_kind`) recorded at/after the newest result/analysis, selecting an eligible move | `gate status` (post-experiment, no hard gate blocking, ≥2 hard-gate-eligible next moves ⇒ a current next-move `bo_decision`; 1 eligible ⇒ optional, explicit `bo select --next-move --skip-reason`) | the discovery-zone route (routes to `bo-review`; `selected_route` binds the next stage); waiver `DEEPRESEARCH_BO_NEXT_MOVE_GATE` | `bo_next_move` |
 
 Plus the pre-existing finalize guards (`_finalize_scholarship_gate`, `_finalize_authenticity_gate`,
 `_finalize_completeness_gate`) and the GPU gate (`_gpu_gate`).
@@ -72,15 +74,30 @@ overlap), refuted claims (cited or condition match), negative/boundary evidence 
 allowed; the agent should just explain what changed. Quest-local only (a matching attempt in another quest is
 ignored — no cross-quest memory).
 
-**Idea-level BO (advisory, quest-local — NOT a gate).** The `bo` group runs a DeepScientist-inspired
-idea-level optimization loop: the independent **BO-reviewer** role (the LLM Reviewer — a DEFAULT-LAUNCHED tree-loop participant, brought up on every quest like the other roles and dispatched for the `bo-review` stage; configurable; product-default backend `codex`,
-effort `max`, in `agents/bo-reviewer.toml`, with a claude `default` fallback via `agents/bo-reviewer.local.toml` when codex is unprovisioned) scores candidate research moves into `bo_review` valuation
-vectors (a SURROGATE valuation, not proof), and a deterministic UCB-like acquisition
-(`score = exploitation + beta*exploration − penalty`) selects the next candidate, recorded as a
-`bo_decision`. This is an **LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian
-optimization**. Both records are **advisory** — they never enter `blocking_gates`, never affect
-`finalize_readiness`, never set `idea_select.valid`, and need no waiver. There is no gate-bypass env var
-(none is needed — nothing here blocks). `bo review` validates each valuation against the
+**Idea-level BO (quest-local; DECISIVE for idea selection, advisory elsewhere).** The `bo` group runs a
+DeepScientist-style idea-level optimization loop integrated into the research process via quest-local Findings
+Memory: the independent **BO-reviewer** role (the LLM Reviewer — a DEFAULT-LAUNCHED tree-loop participant,
+brought up on every quest like the other roles and dispatched for the `bo-review` stage; configurable;
+product-default backend `codex`, effort `max`, in `agents/bo-reviewer.toml`, with a claude `default` fallback
+via `agents/bo-reviewer.local.toml` when codex is unprovisioned) scores the gate-eligible candidate slate into
+`bo_review` valuation vectors (a SURROGATE valuation, not proof) grounded in the `findings summarize` digest,
+and an acquisition rule selects the winner, recorded as a `bo_decision` (with `decision_kind`). The DEFAULT
+acquisition is the **official** DeepScientist-style score `utility + quality + exploration_value`
+(`ucb_official_v1`, weights `w_u=w_q=kappa=1`); the richer Houmao formula
+(`exploitation + beta*exploration − penalty`, `ucb_like_v1`) stays selectable via `bo select --acquisition
+houmao`. This is an **LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian
+optimization**. **Idea selection is DECISIVE:** for a multi-candidate slate the `bo_idea_decision` gate (above)
+blocks idea→baseline until an idea-selection `bo_decision` binds the winner into `idea_select.retained_candidate`
+(waiver `DEEPRESEARCH_BO_IDEA_GATE`). BO chooses ONLY among hard-gate-eligible candidates — it never sets
+`idea_select.valid` and never overrides scope/novelty/feasibility/validity floors. **Later next-move selection
+is ALSO decisive (the `bo_next_move` gate above).** Post-experiment/analysis, when no hard gate forces the
+route and ≥2 hard-gate-ELIGIBLE next moves exist (`bo next-moves`: open opportunities + synthetic
+write/finalize/stop, each eligibility-tagged with a `route_target`), `bo_next_move` blocks the discovery-zone
+route until a current next-move `bo_decision` (`decision_kind=experiment-/opportunity-/stop-write-finalize-/
+next-move-selection`, recorded at/after the newest result/analysis) binds the winner's `selected_route`; a
+single eligible move is an explicit skip. BO ranks ONLY hard-gate-eligible moves — it never enters
+`finalize_readiness` and never bypasses the campaign/bridge/claim-evidence/review/finalize gates (those decide
+ELIGIBILITY; BO only chooses among the eligible). `bo review` validates each valuation against the
 `bo_review` schema (0–100 dims; missing/out-of-range rejected); the deterministic OFFLINE stub (`is_stub=1`)
 is EXPLICIT-ONLY — `bo review`/`bo suggest` REFUSE it (actionable error) unless `--allow-bo-stub` or
 `DEEPRESEARCH_BO_ALLOW_STUB=1` (CI) is set, so a missing reviewer credential never silently downgrades to

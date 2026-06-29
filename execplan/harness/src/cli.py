@@ -688,6 +688,84 @@ def findings_query(ctx, quest_id, scope, kind, all_quests):
     emit(envelope("findings query", quest_id=quest_id, data={"rows": data}))
 
 
+@findings.command("update")
+@click.option("--quest-id", required=True)  # findings are always quest-owned (total isolation)
+@click.option("--slug", required=True, help="short stable slug; memory_id = <quest>:find:<slug> (idempotent upsert).")
+@click.option("--kind", required=True,
+              type=click.Choice(["idea", "decision", "knowledge", "lesson", "reference"]),
+              help="lesson = failed attempt / refuted alternative; knowledge = frontier / evidence gap / bridge.")
+@click.option("--summary", required=True)
+@click.option("--artifact-ref", default=None)
+@click.option("--grounded-by", default=None, help="quest-local result/measurement id this finding is grounded in.")
+@click.option("--links", "links", default=None,
+              help="OPTIONAL quest-local lineage JSON (idea_select_id, idea_ids[], experiment_id, result_ids[], "
+                   "claim_ids[], analysis_bridge_id, opportunity_ids[]). All ids must belong to THIS quest.")
+@click.option("--at", required=True)
+@click.pass_context
+def findings_update(ctx, quest_id, slug, kind, summary, artifact_ref, grounded_by, links, at):
+    """Add/update a QUEST-LOCAL Findings-Memory entry (convenience over `finding.add` that mints a stable
+    memory_id from --slug). Use across the loop to durably record selected/rejected ideas, novelty grounding,
+    scope constraints, baseline/experiment results, FAILED attempts + refuted alternatives (kind=lesson),
+    analysis bridges, limitations, research opportunities, evidence gaps, review feedback, and the current
+    frontier. STRICTLY quest-local (scope='quest'); no cross-quest/global memory."""
+    p = {"record_type": "finding.add", "record_id": f"{quest_id}:find:{slug}", "at": at, "scope": "quest",
+         "kind": kind, "summary": summary, "quest_id": quest_id}
+    for k, v in dict(artifact_ref=artifact_ref, grounded_by=grounded_by).items():
+        if v is not None:
+            p[k] = v
+    if links is not None:
+        lk = _loads(links)
+        if lk is not None:
+            p["links"] = lk
+    _apply(ctx, "findings update", p, quest_id=quest_id)
+
+
+@findings.command("summarize")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def findings_summarize(ctx, quest_id):
+    """Read-only QUEST-LOCAL Findings-Memory DIGEST for the BO-reviewer's exploit/explore context: findings by
+    kind, the failed-attempt/refuted LESSONS (so BO can avoid repeating them + penalize unresolved repeats),
+    the current frontier (open opportunities, refuted/unsupported claims, parked routes, negative-findings
+    count, repeated-failure warnings) and evidence gaps. Strictly this quest's rows — no cross-quest recall."""
+    conn = _conn(ctx)
+    rows = []
+    try:
+        rows = [dict(memory_id=r["memory_id"], kind=r["kind"], summary=r["summary"],
+                     grounded_by=r["grounded_by"], artifact_ref=r["artifact_ref"])
+                for r in conn.execute("SELECT memory_id, kind, summary, grounded_by, artifact_ref FROM "
+                                      "finding_memory WHERE quest_id=? AND scope='quest' ORDER BY created_at, "
+                                      "memory_id", (quest_id,))]
+    except sqlite3.OperationalError:
+        rows = []
+    by_kind = {}
+    for r in rows:
+        by_kind.setdefault(r["kind"], []).append(r)
+    disc = _discovery(conn, quest_id)
+    # current selected idea (the bound BO winner, if any) for frontier context
+    try:
+        sel_idea = conn.execute("SELECT idea_id, statement FROM idea WHERE quest_id=? AND status='selected' "
+                                "ORDER BY idea_id LIMIT 1", (quest_id,)).fetchone()
+        selected_idea = {"idea_id": sel_idea["idea_id"], "statement": sel_idea["statement"]} if sel_idea else None
+    except sqlite3.OperationalError:
+        selected_idea = None
+    conn.close()
+    frontier = {"selected_idea": selected_idea,
+                "open_opportunities": disc.get("open_opportunities", []),
+                "recommended_next_actions": disc.get("recommended_next_actions", []),
+                "refuted_claims": disc.get("refuted_claims", []),
+                "unsupported_claims": disc.get("unsupported_claims", []),
+                "parked_routes": disc.get("parked_routes", []),
+                "negative_findings": disc.get("negative_findings", 0),
+                "repeated_failure_warnings": disc.get("repeated_failure_warnings", [])}
+    evidence_gaps = {"unsupported_claims": disc.get("unsupported_claims", []),
+                     "opportunities_with_unresolved_refs": disc.get("opportunities_with_unresolved_refs", [])}
+    emit(envelope("findings summarize", quest_id=quest_id,
+                  data={"counts": {k: len(v) for k, v in by_kind.items()}, "total": len(rows),
+                        "lessons": by_kind.get("lesson", []), "findings_by_kind": by_kind,
+                        "frontier": frontier, "evidence_gaps": evidence_gaps}))
+
+
 # ───────────────── claim / evidence ─────────────────
 @cli.group()
 def claim(): ...
@@ -767,9 +845,14 @@ def evidence_validate(ctx, quest_id):
 # selects the next candidate. Everything is QUEST-LOCAL and ADVISORY (never a gate; never alters
 # idea_select.valid; never enters blocking_gates / finalize_readiness). The search_space midpoint remains only
 # a labelled FALLBACK when no idea-level candidate exists.
+# DEFAULT acquisition is the OFFICIAL DeepScientist-style score: w_u*utility + w_q*quality + kappa*exploration_value
+# (defaults 1/1/1 => utility+quality+exploration_value). The richer Houmao formula (exploitation/exploration/
+# penalty with beta) stays selectable as 'ucb_like_v1'. Both are LLM-reviewer surrogate + UCB-like acquisition,
+# NOT full statistical BO.
 _REVIEWER_DEFAULTS = {"backend": "codex", "model": "default", "effort": "max", "temperature": "",
                       "max_candidates": 8, "required_before_select": False,
-                      "acquisition_method": "ucb_like_v1", "beta": 0.5}
+                      "acquisition_method": "ucb_official_v1", "beta": 0.5,
+                      "w_u": 1.0, "w_q": 1.0, "kappa": 1.0}
 _VALUATION_KEYS = ("utility", "quality", "novelty", "exploration_value", "uncertainty", "feasibility", "cost", "risk")
 
 
@@ -811,6 +894,9 @@ def _reviewer_config(overrides=None):
                 cfg["acquisition_method"] = aq["method"]
             if aq.get("beta") is not None:
                 cfg["beta"] = aq["beta"]
+            for wk in ("w_u", "w_q", "kappa"):
+                if aq.get(wk) is not None:
+                    cfg[wk] = aq[wk]
             cfg["config_source"] = str(BO_REVIEWER_TOML)
             cfg["backend_source"] = "product_default"
     except Exception as e:
@@ -857,13 +943,131 @@ def _reviewer_config(overrides=None):
     return cfg
 
 
-def _bo_candidates(conn, quest_id, limit=None):
-    """Gather QUEST-LOCAL candidate research moves for reviewer evaluation, by source priority: open
-    research_opportunity rows; the latest idea_select candidate; quest-local frontier_entry candidates; and —
-    only as a SECONDARY FALLBACK when no idea-level candidate exists — a search_space midpoint param point.
+_EXPERIMENT_OPP_KINDS = {"next_experiment", "ablation", "robustness", "boundary", "baseline_repair",
+                         "failure_followup"}
+
+
+def _next_move_gate_eligibility(conn, quest_id):
+    """Hard-gate eligibility for the LATER next-move candidates — mirrors the gate-status predicates so BO can
+    only choose a move the hard gates already permit (BO never bypasses a quality gate). Returns
+    {move: (eligible_bool, reason)} for write / finalize / experiment / stop. QUEST-LOCAL."""
+    qr = conn.execute("SELECT rigor_level, baseline_gate FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+    rigor = (qr["rigor_level"] if qr else None) or "standard"
+    floors = _gate_floors(rigor)
+    # finalize readiness -> may finalize: manuscript submission-ready AND a validated, accepted review verdict.
+    sp = conn.execute("SELECT submission_ready FROM paper_spine WHERE quest_id=?", (quest_id,)).fetchone()
+    rv = _latest_verdict_row(conn, quest_id)
+    review_ok = bool(rv is not None and rv["valid"] and rv["verdict"] == "accept")
+    finalize_ok = bool(sp is not None and sp["submission_ready"] and review_ok)
+    finalize_reason = ("manuscript submission-ready + validated accepted review verdict" if finalize_ok else
+                       "finalize gates unmet (manuscript coverage and/or review verdict)")
+    # evidence sufficiency -> may write/outline: campaign coverage ok AND a validator-confirmed analysis bridge.
+    # 'write' is a move TOWARD the paper, so it is NOT an eligible next move once the quest is already
+    # finalize-ready (then 'finalize' is the move), keeping the all-satisfied state to a single eligible move.
+    try:
+        cov_ok, cov_reasons, _ = _claim_coverage(conn, quest_id, floors)
+    except Exception:
+        cov_ok, cov_reasons = False, ["coverage uncomputable"]
+    br = _latest_bridge_row(conn, quest_id)
+    bridge_ok = bool(br is not None and br["valid"])
+    write_ok = bool(cov_ok and bridge_ok and not finalize_ok)
+    write_reason = ("evidence sufficient (campaign coverage + validated analysis bridge); write/outline the paper"
+                    if write_ok else ("already finalize-ready (finalize, don't keep writing)" if finalize_ok else
+                                      "evidence not yet sufficient: " + ("; ".join(cov_reasons) if not cov_ok else
+                                                                         "analysis bridge not validator-confirmed")))
+    # another experiment -> baseline/provenance constraints valid (validated contract, or baseline not yet required).
+    bc = conn.execute("SELECT valid FROM baseline_contract WHERE quest_id=? ORDER BY created_at DESC, "
+                      "contract_id DESC LIMIT 1", (quest_id,)).fetchone()
+    bgate = (qr["baseline_gate"] if qr else None)
+    experiment_ok = bool((bc is not None and bc["valid"]) or bgate in (None, "pending") or bgate == "waived")
+    experiment_reason = ("baseline/provenance constraints valid" if experiment_ok else
+                         "baseline.contract not validator-confirmed")
+    # stop -> repeated-failure dominance, or unsupported claims with no sufficient-evidence path.
+    rfw = _repeat_failure_warnings(conn, quest_id)
+    try:
+        unsupported = conn.execute("SELECT COUNT(*) FROM claim WHERE quest_id=? AND kind='claim' AND "
+                                   "status='open'", (quest_id,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        unsupported = 0
+    stop_ok = bool(rfw) or bool(unsupported and not write_ok)
+    stop_reason = ("repeated failures dominate" if rfw else
+                   ("claims unsupported and evidence insufficient" if stop_ok else "claim still has a viable path"))
+    return {"write": (write_ok, write_reason), "finalize": (finalize_ok, finalize_reason),
+            "experiment": (experiment_ok, experiment_reason), "stop": (stop_ok, stop_reason)}
+
+
+def _next_move_candidates(conn, quest_id):
+    """Enumerate the LATER next-move candidate slate from quest-local state (post-experiment/analysis): open
+    research_opportunity rows + synthetic write / finalize / stop moves derived from the hard gates. Each carries
+    route_target + hard-gate ELIGIBILITY (+reason) + provenance. QUEST-LOCAL; the acquisition only scores
+    ELIGIBLE candidates, so BO can never pick a gate-invalid move. Returns the full list (eligible + ineligible)
+    for transparency."""
+    rfw = {w["ref"]: w["warnings"] for w in _repeat_failure_warnings(conn, quest_id)}
+    elig = _next_move_gate_eligibility(conn, quest_id)
+    cands = []
+    try:
+        opps = conn.execute("SELECT opportunity_id, kind, rationale, motivating_refs, attempt_signature, status "
+                            "FROM research_opportunity WHERE quest_id=? AND status='open' "
+                            "ORDER BY created_at, opportunity_id", (quest_id,)).fetchall()
+    except sqlite3.OperationalError:
+        opps = []
+    for o in opps:
+        mr = _loads(o["motivating_refs"])
+        un = _resolve_quest_refs(conn, quest_id, mr if isinstance(mr, dict) else None)
+        is_exp = o["kind"] in _EXPERIMENT_OPP_KINDS
+        route = "experiment" if is_exp else "analysis"
+        grounded = not un
+        gate_ok = (elig["experiment"][0] if is_exp else True)
+        eligible = bool(grounded and gate_ok)
+        if not grounded:
+            reason = "ungrounded: unresolved/cross-quest motivating refs (not followed)"
+        elif not gate_ok:
+            reason = "experiment move blocked: " + elig["experiment"][1]
+        else:
+            reason = "grounded quest-local opportunity"
+        cands.append({"candidate_ref": o["opportunity_id"], "candidate_kind": "opportunity:" + o["kind"],
+                      "source": "opportunity", "route_target": route, "eligible": eligible,
+                      "eligibility_reason": reason, "rationale": o["rationale"], "motivating_refs": mr,
+                      "attempt_signature": _loads(o["attempt_signature"]), "status": o["status"],
+                      "unresolved_refs": un, "repeat_failure_warnings": rfw.get(o["opportunity_id"], [])})
+    for key, kind, route in (("write", "write", "outline"), ("finalize", "finalize", "finalize"),
+                             ("stop", "stop", "decision")):
+        e_ok, e_reason = elig[key]
+        cands.append({"candidate_ref": f"{quest_id}:move:{key}", "candidate_kind": kind, "source": "frontier-move",
+                      "route_target": route, "eligible": bool(e_ok), "eligibility_reason": e_reason,
+                      "rationale": f"{kind} the quest ({e_reason})", "motivating_refs": None,
+                      "attempt_signature": None, "status": "candidate", "unresolved_refs": [],
+                      "repeat_failure_warnings": []})
+    return cands
+
+
+def _derive_next_move_kind(selected_ref, cands):
+    """Map a selected next-move candidate to its bo_decision decision_kind."""
+    c = next((x for x in cands if x["candidate_ref"] == selected_ref), None)
+    if c is None:
+        return "next-move-selection"
+    k = c.get("candidate_kind") or ""
+    if k in ("write", "finalize", "stop"):
+        return "stop-write-finalize-selection"
+    if k.startswith("opportunity:"):
+        return "experiment-selection" if c.get("route_target") == "experiment" else "opportunity-selection"
+    return "next-move-selection"
+
+
+def _bo_candidates(conn, quest_id, limit=None, mode="all"):
+    """Gather QUEST-LOCAL candidate research moves for reviewer evaluation. mode='all' (default): open
+    research_opportunity rows; enumerable idea rows (or the latest idea_select, legacy); frontier_entry; and a
+    search_space midpoint only as a labelled FALLBACK. mode='next-move': the LATER next-move slate
+    (`_next_move_candidates`), filtered to hard-gate-ELIGIBLE moves only (BO never scores a gate-invalid move).
     Each candidate carries a durable ref, kind, rationale, motivating_refs, attempt_signature, status,
     unresolved_refs (cross-quest/missing — flagged, NEVER followed as memory) and repeat-failure warnings.
     Returns (candidates, fallback)."""
+    if mode == "next-move":
+        cands = [c for c in _next_move_candidates(conn, quest_id) if c.get("eligible")]
+        if limit:
+            cands = cands[:int(limit)]
+        return cands, None
+
     def rows(sql, *a):
         try:
             return conn.execute(sql, (quest_id, *a)).fetchall()
@@ -879,12 +1083,26 @@ def _bo_candidates(conn, quest_id, limit=None):
                       "rationale": o["rationale"], "motivating_refs": mr, "attempt_signature": _loads(o["attempt_signature"]),
                       "status": o["status"], "unresolved_refs": un,
                       "repeat_failure_warnings": rfw.get(o["opportunity_id"], [])})
-    idr = _latest_idea_select_row(conn, quest_id)
-    if idr is not None and idr["select_id"]:
-        cands.append({"candidate_ref": idr["select_id"], "candidate_kind": "idea", "source": "idea_select",
-                      "rationale": "latest idea selection (idea_select)", "motivating_refs": None,
-                      "attempt_signature": None, "status": ("valid" if idr["valid"] else "unvalidated"),
-                      "unresolved_refs": [], "repeat_failure_warnings": rfw.get(idr["select_id"], [])})
+    # Enumerable idea candidates: each gate-ELIGIBLE idea row (status proposed/selected) is its own candidate, so
+    # BO can value a multi-candidate slate (not the whole slate collapsed to one idea_select ref). Gate-ineligible
+    # rows (status rejected/exhausted) are EXCLUDED from acquisition (BO must not select gate-invalid candidates).
+    idea_rows = rows("SELECT idea_id, statement, route, status FROM idea WHERE quest_id=? "
+                     "AND status IN ('proposed','selected') ORDER BY idea_id")
+    for ir in idea_rows:
+        cands.append({"candidate_ref": ir["idea_id"], "candidate_kind": "idea", "source": "idea",
+                      "rationale": (ir["statement"] or "")[:200], "route": ir["route"],
+                      "motivating_refs": None, "attempt_signature": None, "status": ir["status"],
+                      "unresolved_refs": [], "repeat_failure_warnings": rfw.get(ir["idea_id"], [])})
+    if not idea_rows:
+        # Backward-compatible lazy read: quests that never materialized idea rows (e.g. legacy q1) still expose
+        # their latest idea selection as ONE candidate so existing tooling keeps working.
+        idr = _latest_idea_select_row(conn, quest_id)
+        if idr is not None and idr["select_id"]:
+            cands.append({"candidate_ref": idr["select_id"], "candidate_kind": "idea", "source": "idea_select",
+                          "rationale": "latest idea selection (idea_select; no enumerable idea rows)",
+                          "motivating_refs": None, "attempt_signature": None,
+                          "status": ("valid" if idr["valid"] else "unvalidated"),
+                          "unresolved_refs": [], "repeat_failure_warnings": rfw.get(idr["select_id"], [])})
     for f in rows("SELECT entry_id, candidate_kind, candidate_ref, status FROM frontier_entry WHERE quest_id=? "
                   "AND status IN ('candidate','incumbent') ORDER BY rank, entry_id"):
         cands.append({"candidate_ref": f["entry_id"], "candidate_kind": "frontier", "source": "frontier",
@@ -945,6 +1163,33 @@ def _ucb_score(valuation, beta, *, has_repeat_warning=False, has_unresolved_ref=
             "beta": beta, "penalty": round(penalty, 4), "context_penalty": round(ctx, 4)}
 
 
+def _official_score(valuation, w_u=1.0, w_q=1.0, kappa=1.0, *, has_repeat_warning=False,
+                    has_unresolved_ref=False, has_cross_quest_ref=False, missing_provenance=False):
+    """OFFICIAL DeepScientist-style acquisition (the DEFAULT): a UCB-like weighted sum of the three core
+    valuation dimensions (dims 0-100):
+
+        score = w_u*utility + w_q*quality + kappa*exploration_value     (defaults w_u=w_q=kappa=1)
+
+    `kappa` is the exploration coefficient (the UCB-like knob — higher kappa weighs exploration_value /
+    information gain more). The official score is a pure weighted sum of the three core dims; the
+    Findings-Memory penalty FLAGS (repeat-failure / unresolved / cross-quest / missing-provenance) are carried
+    as transparency metadata but NOT subtracted here (use acquisition='houmao' / ucb_like_v1 for the richer
+    formula that subtracts them). NOT full statistical BO."""
+    v = valuation or {}
+
+    def g(k, default=0.0):
+        try:
+            return float(v.get(k, default))
+        except (TypeError, ValueError):
+            return default
+    u, q, ev = g("utility"), g("quality"), g("exploration_value")
+    flags = {"has_repeat_warning": has_repeat_warning, "has_unresolved_ref": has_unresolved_ref,
+             "has_cross_quest_ref": has_cross_quest_ref, "missing_provenance": missing_provenance}
+    return {"score": round(w_u * u + w_q * q + kappa * ev, 4),
+            "utility": round(u, 4), "quality": round(q, 4), "exploration_value": round(ev, 4),
+            "w_u": w_u, "w_q": w_q, "kappa": kappa, "penalty_flags": flags}
+
+
 def _stub_valuation(cand):
     """Deterministic OFFLINE stub valuation (is_stub=1) for tests / advisory use when no real reviewer ran.
     Derived ONLY from quest-local candidate signals — it is NOT a model and NOT proof; loudly labelled."""
@@ -1002,13 +1247,18 @@ def bo(): ...
 
 @bo.command("candidates")
 @click.option("--quest-id", required=True)
+@click.option("--next-move", "next_move", is_flag=True, default=False,
+              help="enumerate the LATER next-move slate (eligible open opportunities + write/finalize/stop) "
+                   "instead of the idea/opportunity slate.")
 @click.pass_context
-def bo_candidates(ctx, quest_id):
+def bo_candidates(ctx, quest_id, next_move):
     """List the QUEST-LOCAL candidate research moves for reviewer evaluation (open opportunities, the latest idea
-    selection, quest-local frontier entries; a search_space midpoint only as a labelled fallback). Read-only.
-    Cross-quest / missing motivating refs are WARNED and never followed as memory."""
+    selection, quest-local frontier entries; a search_space midpoint only as a labelled fallback). With
+    --next-move, list the hard-gate-eligible LATER next-move slate. Read-only. Cross-quest / missing motivating
+    refs are WARNED and never followed as memory."""
     conn = _conn(ctx)
-    cands, fallback = _bo_candidates(conn, quest_id, limit=_reviewer_config()["max_candidates"])
+    mode = "next-move" if next_move else "all"
+    cands, fallback = _bo_candidates(conn, quest_id, limit=_reviewer_config()["max_candidates"], mode=mode)
     conn.close()
     warns = []
     for c in cands:
@@ -1020,6 +1270,27 @@ def bo_candidates(ctx, quest_id):
     emit(envelope("bo candidates", ok=True, quest_id=quest_id,
                   data={"candidates": cands, "count": len(cands), "fallback": fallback,
                         "has_idea_level_candidates": bool(cands)}, warnings=warns))
+
+
+@bo.command("next-moves")
+@click.option("--quest-id", required=True)
+@click.pass_context
+def bo_next_moves(ctx, quest_id):
+    """List the LATER next-move candidate slate with hard-gate ELIGIBILITY for transparency (read-only): every
+    open research_opportunity + the synthetic write / finalize / stop moves, each tagged eligible/ineligible
+    with a reason and a route_target. The acquisition (`bo select --next-move`) scores ONLY the eligible ones,
+    so BO can never select a gate-invalid move. STRICTLY quest-local."""
+    conn = _conn(ctx)
+    cands = _next_move_candidates(conn, quest_id)
+    has_results = bool(conn.execute("SELECT 1 FROM result WHERE quest_id=? LIMIT 1", (quest_id,)).fetchone())
+    conn.close()
+    eligible = [c for c in cands if c["eligible"]]
+    emit(envelope("bo next-moves", ok=True, quest_id=quest_id,
+                  data={"candidates": cands, "eligible": eligible, "n_eligible": len(eligible),
+                        "count": len(cands), "post_experiment": has_results,
+                        "routes": sorted({c["route_target"] for c in eligible})},
+                  warnings=([] if has_results else
+                            ["no experiment results yet — next-move BO applies post-experiment/analysis"])))
 
 
 def _bo_write(conn, payload):
@@ -1044,18 +1315,21 @@ def _bo_write(conn, payload):
               help="permit the OFFLINE deterministic stub (is_stub=1) for candidates with no --from-json valuation. "
                    "Explicit test/advisory use ONLY (or set DEEPRESEARCH_BO_ALLOW_STUB=1 in CI). Without it, the "
                    "stub is REFUSED and the command fails with an actionable error — never a silent downgrade.")
+@click.option("--next-move", "next_move", is_flag=True, default=False,
+              help="value the LATER next-move slate (eligible opportunities + write/finalize/stop) instead of "
+                   "the idea/opportunity slate.")
 @click.option("--at", default=None, help="ISO-8601 timestamp (required to persist bo_review rows).")
 @click.pass_context
-def bo_review(ctx, quest_id, candidate_ref, backend, effort, from_json, at, allow_bo_stub):
-    """Run/record the LLM Reviewer's surrogate valuation of candidate research moves (the idea-level BO scoring
-    step). Default backend/effort come from agents/bo-reviewer.toml (codex / max). The harness does NOT call a
+def bo_review(ctx, quest_id, candidate_ref, backend, effort, from_json, at, allow_bo_stub, next_move):
+    """Run/record the LLM Reviewer's surrogate valuation of candidate research moves (the BO scoring step).
+    Default backend/effort come from agents/bo-reviewer.toml (codex / max). The harness does NOT call a
     provider itself: pass `--from-json` with valuations a launched reviewer agent produced (recorded as real
     bo_review rows), or omit it to record a clearly-labelled OFFLINE deterministic stub (is_stub=1) for
-    tests/advisory. Valuations are validated against the bo_review schema (0-100 dims; missing/out-of-range
-    rejected). QUEST-LOCAL only; never a gate."""
+    tests/advisory. With --next-move it scores the later next-move slate. Valuations are validated against the
+    bo_review schema (0-100 dims; missing/out-of-range rejected). QUEST-LOCAL only."""
     cfg = _reviewer_config({"backend": backend, "effort": effort})
     conn = _conn(ctx)
-    cands, _fb = _bo_candidates(conn, quest_id, limit=cfg["max_candidates"])
+    cands, _fb = _bo_candidates(conn, quest_id, limit=cfg["max_candidates"], mode=("next-move" if next_move else "all"))
     if candidate_ref:
         cands = [c for c in cands if c["candidate_ref"] == candidate_ref]
     supplied = {}
@@ -1138,66 +1412,226 @@ def _latest_reviews(conn, quest_id):
     return latest
 
 
-def _bo_acquire(conn, quest_id, beta):
-    """Compute UCB-like acquisition over the latest bo_review per candidate. Returns (scores_sorted, selected_ref,
-    any_stub, review_refs). scores carry the full term breakdown for auditability."""
-    cands, _fb = _bo_candidates(conn, quest_id, limit=None)
+def _acq_score_one(method, val, beta, weights, flags):
+    """Score a single valuation under the chosen acquisition method. 'ucb_official_v1' (default) is the official
+    weighted-sum of the three core dims; 'ucb_like_v1' is the richer Houmao exploitation/exploration/penalty
+    formula. Both consume the same Findings-Memory penalty flags."""
+    fk = {k: flags.get(k, False) for k in
+          ("has_repeat_warning", "has_unresolved_ref", "has_cross_quest_ref", "missing_provenance")}
+    if method == "ucb_like_v1":
+        return _ucb_score(val, beta, **fk)
+    w = weights or {}
+    return _official_score(val, w_u=float(w.get("w_u", 1.0)), w_q=float(w.get("w_q", 1.0)),
+                           kappa=float(w.get("kappa", 1.0)), **fk)
+
+
+def _bo_acquire(conn, quest_id, beta, method="ucb_official_v1", weights=None, mode="all"):
+    """Compute the acquisition over the latest bo_review per candidate. Returns (scores_sorted, selected_ref,
+    any_stub, review_refs). scores carry the full term breakdown + candidate_kind for auditability. Only
+    candidates surfaced by _bo_candidates (gate-eligible) are scored — gate-ineligible idea/next-move candidates
+    never appear. mode='next-move' scores the later next-move slate; default scores the idea/opportunity slate."""
+    cands, _fb = _bo_candidates(conn, quest_id, limit=None, mode=mode)
+    eligible_refs = {c["candidate_ref"] for c in cands}
+    route_by_ref = {c["candidate_ref"]: c.get("route_target") for c in cands}
     flags_by_ref = {c["candidate_ref"]: _cand_penalty_flags(c) for c in cands}
     latest = _latest_reviews(conn, quest_id)
     scores, review_refs, any_stub = [], [], False
     for ref, r in latest.items():
+        if eligible_refs and ref not in eligible_refs:
+            continue  # a review exists but the candidate is no longer gate-eligible -> excluded from acquisition
         val = _loads(r["valuation"]) or {}
-        flags = flags_by_ref.get(ref, {})
-        sc = _ucb_score(val, beta, **{k: flags.get(k, False) for k in
-                                      ("has_repeat_warning", "has_unresolved_ref", "has_cross_quest_ref", "missing_provenance")})
+        sc = _acq_score_one(method, val, beta, weights, flags_by_ref.get(ref, {}))
         any_stub = any_stub or bool(r["is_stub"])
         review_refs.append(r["review_id"])
-        scores.append({"candidate_ref": ref, "candidate_kind": r["candidate_kind"], "review_id": r["review_id"],
-                       "is_stub": bool(r["is_stub"]), **sc})
+        entry = {"candidate_ref": ref, "candidate_kind": r["candidate_kind"], "review_id": r["review_id"],
+                 "is_stub": bool(r["is_stub"]), "eligible": True, **sc}
+        if route_by_ref.get(ref):
+            entry["route_target"] = route_by_ref[ref]
+        scores.append(entry)
     scores.sort(key=lambda s: (-s["score"], s["candidate_ref"]))
     selected = scores[0]["candidate_ref"] if scores else None
     return scores, selected, any_stub, review_refs
 
 
+def _bind_idea_select(conn, quest_id, selected_ref):
+    """Bind idea_select.retained_candidate to the BO-selected winner and flip its idea row to status='selected'
+    (other eligible idea rows revert to 'proposed'). Only applies when the winner is an enumerable idea row.
+    Returns (bound_candidate_id | None, note)."""
+    if not selected_ref:
+        return None, "no selected candidate to bind"
+    irow = conn.execute("SELECT idea_id FROM idea WHERE quest_id=? AND idea_id=?",
+                        (quest_id, selected_ref)).fetchone()
+    if irow is None:
+        return None, f"selected candidate {selected_ref!r} is not an enumerable idea row (nothing to bind)"
+    cid = _idea_candidate_id(selected_ref)
+    # demote other currently-selected idea rows for this quest, then promote the winner
+    conn.execute("UPDATE idea SET status='proposed' WHERE quest_id=? AND status='selected' AND idea_id<>?",
+                (quest_id, selected_ref))
+    conn.execute("UPDATE idea SET status='selected' WHERE quest_id=? AND idea_id=?", (quest_id, selected_ref))
+    isr = _latest_idea_select_row(conn, quest_id)
+    if isr is not None:
+        conn.execute("UPDATE idea_select SET retained_candidate=? WHERE select_id=?", (cid, isr["select_id"]))
+    return cid, f"bound idea_select.retained_candidate={cid} and flipped idea row {selected_ref} to selected"
+
+
+def _ineligible_idea_candidates(conn, quest_id):
+    """Gate-ineligible idea rows (status rejected/exhausted) with the scout's rejection reason (from the slate
+    artifact when readable) — surfaced in the bo_decision for transparency. Quest-local."""
+    try:
+        rows = conn.execute("SELECT idea_id, status, artifact_ref FROM idea WHERE quest_id=? "
+                            "AND status IN ('rejected','exhausted') ORDER BY idea_id", (quest_id,)).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    reasons = {}
+    for r in rows:
+        if r["artifact_ref"] and r["artifact_ref"] not in reasons:
+            try:
+                doc = json.loads(_read_artifact_text(r["artifact_ref"]) or "null")
+                reasons[r["artifact_ref"]] = {x.get("candidate_id"): x.get("reason")
+                                              for x in (doc.get("rejected") or [])} if isinstance(doc, dict) else {}
+            except Exception:
+                reasons[r["artifact_ref"]] = {}
+    out = []
+    for r in rows:
+        cid = _idea_candidate_id(r["idea_id"])
+        rr = (reasons.get(r["artifact_ref"]) or {}).get(cid)
+        out.append({"candidate_ref": r["idea_id"], "candidate_id": cid, "eligible": False,
+                    "rejection_reason": rr or "below idea_score_min floor / gate-ineligible"})
+    return out
+
+
 @bo.command("select")
 @click.option("--quest-id", required=True)
-@click.option("--beta", type=float, default=None, help="UCB exploration coefficient (default from config: 0.5).")
+@click.option("--beta", type=float, default=None, help="ucb_like_v1 exploration coefficient (default 0.5).")
+@click.option("--acquisition", "acquisition", default=None,
+              help="acquisition rule: 'official'/'ucb_official_v1' (DEFAULT: w_u*utility+w_q*quality+"
+                   "kappa*exploration_value) or 'houmao'/'ucb_like_v1' (richer exploitation/exploration/penalty).")
+@click.option("--w-u", "w_u", type=float, default=None, help="official utility weight (default 1).")
+@click.option("--w-q", "w_q", type=float, default=None, help="official quality weight (default 1).")
+@click.option("--kappa", "kappa", type=float, default=None, help="official exploration coefficient (default 1).")
+@click.option("--decision-kind", "decision_kind", default="idea-selection",
+              type=click.Choice(["idea-selection", "experiment-selection", "opportunity-selection",
+                                 "stop-write-finalize-selection", "next-move-selection"]),
+              help="which research move this acquisition decides (default idea-selection). For --next-move it is "
+                   "auto-derived from the winner unless explicitly set.")
+@click.option("--next-move", "next_move", is_flag=True, default=False,
+              help="select over the LATER next-move slate (eligible opportunities + write/finalize/stop) and "
+                   "BIND the routing target to the winner (no idea_select binding).")
+@click.option("--bind/--no-bind", "bind", default=None,
+              help="bind idea_select.retained_candidate to the BO winner (default: on for idea-selection).")
+@click.option("--skip-reason", "skip_reason", default=None,
+              help="record an EXPLICIT single-candidate skip (acquisition_method='skipped'): selects the one "
+                   "viable candidate without scoring and records the reason. Use when only one viable candidate.")
 @click.option("--at", default=None, help="ISO-8601 timestamp (required to persist the bo_decision).")
 @click.pass_context
-def bo_select(ctx, quest_id, beta, at):
-    """Compute the UCB-like ACQUISITION over the latest bo_review valuations and record a bo_decision (which
-    candidate to try next and why; ADVISORY — never blocks). Honest: LLM-reviewer surrogate + UCB-like
-    acquisition, NOT full statistical Bayesian optimization. Run `bo review` first to produce valuations."""
-    cfg = _reviewer_config({"beta": beta})
+def bo_select(ctx, quest_id, beta, acquisition, w_u, w_q, kappa, decision_kind, next_move, bind, skip_reason, at):
+    """Compute the ACQUISITION over the latest bo_review valuations and record a bo_decision (which research move
+    to make next and why the others lost). DEFAULT method 'ucb_official_v1' = w_u*utility + w_q*quality +
+    kappa*exploration_value (1/1/1); 'houmao'/'ucb_like_v1' selects the richer Houmao formula. For
+    decision-kind=idea-selection the winner BINDS idea_select.retained_candidate; for --next-move the winner's
+    route_target is the BOUND next stage (decision_kind auto-derived: experiment-/opportunity-/stop-write-
+    finalize-selection). A single viable candidate may be skipped with --skip-reason (recorded explicitly).
+    LLM-reviewer surrogate + UCB-like acquisition, NOT full statistical Bayesian optimization. Run `bo review`."""
+    method = {"official": "ucb_official_v1", "houmao": "ucb_like_v1"}.get(acquisition, acquisition)
+    cfg = _reviewer_config({"beta": beta, "acquisition_method": method, "w_u": w_u, "w_q": w_q, "kappa": kappa})
+    method = cfg["acquisition_method"]
     beta = float(cfg["beta"])
+    weights = {"w_u": float(cfg["w_u"]), "w_q": float(cfg["w_q"]), "kappa": float(cfg["kappa"])}
+    acq_config = weights if method == "ucb_official_v1" else {"beta": beta}
+    mode = "next-move" if next_move else "all"
+    # idea-selection binds idea_select; next-move binds routing (no idea binding); default per decision_kind.
+    do_bind = bind if bind is not None else (decision_kind == "idea-selection" and not next_move)
     conn = _conn(ctx)
-    scores, selected, any_stub, review_refs = _bo_acquire(conn, quest_id, beta)
+    nm_cands = _next_move_candidates(conn, quest_id) if next_move else []
+    ineligible = ([c for c in nm_cands if not c["eligible"]] if next_move
+                  else _ineligible_idea_candidates(conn, quest_id))
+    warns = []
+
+    def _route_of(ref):
+        c = next((x for x in nm_cands if x["candidate_ref"] == ref), None)
+        return c.get("route_target") if c else None
+
+    # ── Explicit single-candidate SKIP path: record a bo_decision without scoring, then bind. ──
+    if skip_reason is not None:
+        cands, _fb = _bo_candidates(conn, quest_id, limit=None, mode=mode)
+        viable = (cands if next_move else
+                  ([c for c in cands if c["candidate_kind"] == "idea"] if decision_kind == "idea-selection" else cands))
+        if len(viable) != 1:
+            conn.close()
+            emit(envelope("bo select", ok=False, quest_id=quest_id,
+                          data={"viable_candidates": len(viable)},
+                          diagnostics=[f"--skip-reason requires exactly ONE viable candidate; found {len(viable)}. "
+                                       "Run `bo review` + `bo select` to choose among multiple candidates."]))
+            sys.exit(1)
+        selected = viable[0]["candidate_ref"]
+        dkind = _derive_next_move_kind(selected, nm_cands) if next_move else decision_kind
+        sel_route = _route_of(selected) if next_move else None
+        rationale = f"single viable {'next move' if next_move else 'candidate'} skip: {skip_reason}"
+        sc_entry = {"candidate_ref": selected, "eligible": True, "score": None, "skipped": True}
+        if sel_route:
+            sc_entry["route_target"] = sel_route
+        data = {"selected_candidate_ref": selected, "acquisition_method": "skipped", "decision_kind": dkind,
+                "acquisition_config": {}, "acquisition_scores": [sc_entry], "selected_route": sel_route,
+                "ineligible_candidates": ineligible, "selection_rationale": rationale, "skipped": True}
+        if at:
+            did = f"{quest_id}:bodec:{at}"
+            ok, err = _bo_write(conn, {"record_type": "bo_decision.record", "record_id": did, "at": at,
+                                       "quest_id": quest_id, "candidate_refs": [selected], "review_refs": [],
+                                       "selected_candidate_ref": selected, "acquisition_method": "skipped",
+                                       "acquisition_config": {}, "decision_kind": dkind,
+                                       "acquisition_scores": [sc_entry], "selection_rationale": rationale})
+            if ok:
+                data["decision_id"] = did
+                if do_bind and dkind == "idea-selection":
+                    cid, note = _bind_idea_select(conn, quest_id, selected)
+                    data["bound_candidate"] = cid; data["bind_note"] = note
+                conn.commit()
+            else:
+                warns.append(f"bo_decision not persisted: {err}")
+        else:
+            warns.append("pass --at <ISO-8601> to persist the skip bo_decision")
+        conn.close()
+        emit(envelope("bo select", ok=True, quest_id=quest_id, data=data, warnings=warns))
+        return
+
+    scores, selected, any_stub, review_refs = _bo_acquire(conn, quest_id, beta, method=method, weights=weights, mode=mode)
     if not scores:
         conn.close()
         emit(envelope("bo select", ok=True, quest_id=quest_id,
-                      data={"selected_candidate_ref": None, "acquisition_method": cfg["acquisition_method"],
-                            "acquisition_scores": []},
-                      warnings=["no bo_review valuations to select over — run `bo review` first"]))
+                      data={"selected_candidate_ref": None, "acquisition_method": method,
+                            "decision_kind": decision_kind, "acquisition_scores": [],
+                            "ineligible_candidates": ineligible},
+                      warnings=["no bo_review valuations to select over — run `bo review`" +
+                                (" --next-move" if next_move else "") + " first (or pass --skip-reason for a "
+                                "single viable candidate)"]))
         return
+    # next-move decision_kind is auto-derived from the winner unless the caller pinned a non-default one.
+    dkind = decision_kind
+    if next_move and decision_kind == "idea-selection":
+        dkind = _derive_next_move_kind(selected, nm_cands)
+    sel_route = _route_of(selected) if next_move else None
     top = scores[0]
-    rationale = (f"selected {selected} (UCB-like score {top['score']}: exploitation {top['exploitation']} + "
-                 f"beta {beta}*exploration {top['exploration']} - penalty {top['penalty']}); "
+    rationale = (f"selected {selected}" + (f" -> route {sel_route}" if sel_route else "") +
+                 f" via {method} (score {top['score']}); "
                  + (f"beat {len(scores) - 1} other candidate(s)" if len(scores) > 1 else "only candidate"))
-    data = {"selected_candidate_ref": selected, "acquisition_method": cfg["acquisition_method"],
-            "acquisition_config": {"beta": beta}, "acquisition_scores": scores, "selection_rationale": rationale,
-            "used_stub_reviews": any_stub}
-    warns = (["selection used OFFLINE STUB reviews (is_stub=1) — advisory only, not evidence"] if any_stub else [])
+    data = {"selected_candidate_ref": selected, "acquisition_method": method, "decision_kind": dkind,
+            "acquisition_config": acq_config, "acquisition_scores": scores, "ineligible_candidates": ineligible,
+            "selected_route": sel_route, "selection_rationale": rationale, "used_stub_reviews": any_stub}
+    warns += (["selection used OFFLINE STUB reviews (is_stub=1) — advisory only, not evidence"] if any_stub else [])
     if at:
         did = f"{quest_id}:bodec:{at}"
         payload = {"record_type": "bo_decision.record", "record_id": did, "at": at, "quest_id": quest_id,
                    "candidate_refs": [s["candidate_ref"] for s in scores], "review_refs": review_refs,
-                   "selected_candidate_ref": selected, "acquisition_method": cfg["acquisition_method"],
-                   "acquisition_config": {"beta": beta}, "acquisition_scores": scores,
-                   "selection_rationale": rationale}
+                   "selected_candidate_ref": selected, "acquisition_method": method, "decision_kind": dkind,
+                   "acquisition_config": acq_config,
+                   "acquisition_scores": scores + ineligible, "selection_rationale": rationale}
         ok, err = _bo_write(conn, payload)
-        conn.commit()
         if ok:
             data["decision_id"] = did
+            if do_bind and dkind == "idea-selection":
+                cid, note = _bind_idea_select(conn, quest_id, selected)
+                data["bound_candidate"] = cid; data["bind_note"] = note
+            conn.commit()
         else:
             warns.append(f"bo_decision not persisted: {err}")
     else:
@@ -1224,6 +1658,9 @@ def bo_suggest(ctx, quest_id, space_id, beta, at, allow_bo_stub):
     midpoint/default heuristic (NOT real BO). Otherwise returns a clear no-candidate message."""
     cfg = _reviewer_config({"beta": beta})
     beta = float(cfg["beta"])
+    method = cfg["acquisition_method"]
+    weights = {"w_u": float(cfg["w_u"]), "w_q": float(cfg["w_q"]), "kappa": float(cfg["kappa"])}
+    acq_config = weights if method == "ucb_official_v1" else {"beta": beta}
     conn = _conn(ctx)
     cands, fallback = _bo_candidates(conn, quest_id, limit=cfg["max_candidates"])
     if cands:
@@ -1256,13 +1693,11 @@ def bo_suggest(ctx, quest_id, space_id, beta, at, allow_bo_stub):
         if missing and allowed and not at:
             used_stub = True  # in-memory stub for the advisory computation below
         # Acquisition over whatever reviews now exist; if none persisted (no --at), score in-memory.
-        scores, selected, any_stub, review_refs = _bo_acquire(conn, quest_id, beta)
+        scores, selected, any_stub, review_refs = _bo_acquire(conn, quest_id, beta, method=method, weights=weights)
         if not scores and allowed:  # no persisted reviews (no --at): compute in-memory stub scores (stub allowed)
             scores = []
             for c in cands:
-                flags = _cand_penalty_flags(c)
-                sc = _ucb_score(_stub_valuation(c), beta, **{k: flags.get(k, False) for k in
-                                ("has_repeat_warning", "has_unresolved_ref", "has_cross_quest_ref", "missing_provenance")})
+                sc = _acq_score_one(method, _stub_valuation(c), beta, weights, _cand_penalty_flags(c))
                 scores.append({"candidate_ref": c["candidate_ref"], "candidate_kind": c.get("candidate_kind"),
                                "is_stub": True, **sc})
             scores.sort(key=lambda s: (-s["score"], s["candidate_ref"]))
@@ -1276,17 +1711,16 @@ def bo_suggest(ctx, quest_id, space_id, beta, at, allow_bo_stub):
                                     "advisory stub computation"]))
             return
         top = scores[0]
-        rationale = (f"selected {selected} via UCB-like acquisition (score {top['score']}: exploitation "
-                     f"{top['exploitation']} + beta {beta}*exploration {top['exploration']} - penalty {top['penalty']})")
-        data = {"mode": "idea-level-bo", "selected_candidate_ref": selected, "acquisition_method": cfg["acquisition_method"],
-                "acquisition_config": {"beta": beta}, "acquisition_scores": scores, "selection_rationale": rationale,
+        rationale = f"selected {selected} via {method} acquisition (score {top['score']})"
+        data = {"mode": "idea-level-bo", "selected_candidate_ref": selected, "acquisition_method": method,
+                "acquisition_config": acq_config, "acquisition_scores": scores, "selection_rationale": rationale,
                 "used_stub_reviews": any_stub, "reviewer": cfg, "n_candidates": len(cands)}
         if at and review_refs:
             did = f"{quest_id}:bodec:{at}"
             ok, err = _bo_write(conn, {"record_type": "bo_decision.record", "record_id": did, "at": at,
                                        "quest_id": quest_id, "candidate_refs": [s["candidate_ref"] for s in scores],
                                        "review_refs": review_refs, "selected_candidate_ref": selected,
-                                       "acquisition_method": cfg["acquisition_method"], "acquisition_config": {"beta": beta},
+                                       "acquisition_method": method, "acquisition_config": acq_config,
                                        "acquisition_scores": scores, "selection_rationale": rationale})
             conn.commit()
             if ok:
@@ -2129,17 +2563,78 @@ def _opts(f):
     return f
 
 
+# ── DeepScientist venue-template policy ───────────────────────────────────────────────────────────────
+# A paper is drafted inside a REAL venue template by default; the generic pandoc `article` is an EXPLICIT
+# opt-out only (`--venue generic`). Selection precedence:
+#   explicit --venue  >  paper_spine.venue_style  >  quest.domain  >  iclr2026 (general ML/AI default).
+# Inference maps to venues that actually compile in this toolchain. Systems papers prefer a systems venue
+# (ASPLOS is the ideal architecture-performance venue but its acmart class may be absent — the closest
+# RENDERABLE systems template, the USENIX OSDI/NSDI suite, is chosen then).
+_RENDERABLE_VENUES = {"iclr2026", "neurips2025", "osdi2026", "nsdi2027"}
+
+
+def _infer_venue(text):
+    """Map a free-text domain / paper_spine venue-style hint to a venue template. Returns (venue, why)."""
+    t = (text or "").lower()
+    for tok, v in (("iclr", "iclr2026"), ("neurips", "neurips2025"), ("nips", "neurips2025"),
+                   ("osdi", "osdi2026"), ("nsdi", "nsdi2027"), ("usenix", "osdi2026"),
+                   ("asplos", "osdi2026"), ("sosp", "osdi2026"), ("isca", "osdi2026"), ("micro", "osdi2026"),
+                   ("ispass", "osdi2026"), ("mlsys", "osdi2026"), ("hpca", "osdi2026"),
+                   ("icml", "iclr2026"), ("colm", "iclr2026"), ("acl", "iclr2026"), ("aaai", "iclr2026")):
+        if tok in t:
+            return v, "venue token '%s' in hint" % tok
+    net_kw = ("network", "rdma", "congestion", "datacenter network", "packet", "sdn", "switch fabric")
+    sys_kw = ("system", "architecture", "cuda", "gpu", "kernel", "blackwell", "hopper", "microarch",
+              "hardware", "accelerator", "latency", "throughput", "performance model", "perf model",
+              "compiler", "runtime", "operating system", "scheduler", "cache", "interconnect",
+              "memory system", "tensor core", "cuda core", "fpga", "asic")
+    if any(k in t for k in net_kw):
+        return "nsdi2027", "networking-systems keywords"
+    if any(k in t for k in sys_kw):
+        return "osdi2026", "systems/architecture keywords (ASPLOS ideal but needs acmart; OSDI is the closest renderable systems venue)"
+    return "iclr2026", "general ML/AI default"
+
+
+def _resolve_report_venue(ctx, quest_id, explicit):
+    """Apply the venue precedence. Returns (venue_or_'generic', rationale)."""
+    if explicit:
+        if explicit.lower() == "generic":
+            return "generic", "explicit --venue generic (operator opted out of a venue template)"
+        return explicit, "explicit --venue %s" % explicit
+    spine_style = domain = None
+    try:
+        conn = _conn(ctx)
+        r = conn.execute("SELECT venue_style FROM paper_spine WHERE quest_id=?", (quest_id,)).fetchone()
+        spine_style = r[0] if r else None
+        d = conn.execute("SELECT domain FROM quest WHERE quest_id=?", (quest_id,)).fetchone()
+        domain = d[0] if d else None
+        conn.close()
+    except Exception:
+        pass
+    if spine_style:
+        v, why = _infer_venue(spine_style)
+        return v, "inferred from paper_spine.venue_style (%s)" % why
+    if domain and domain != "general":
+        v, why = _infer_venue(domain)
+        return v, "inferred from quest.domain '%s' (%s)" % (domain, why)
+    return "iclr2026", "default: general ML/AI, no stronger venue signal"
+
+
 @render.command("report")
 @_opts
 @click.option("--bib", default=None, help="Path to a .bib (enables a real BibTeX pass via the compiler adapter).")
-@click.option("--venue", default=None, help="Venue template to compile against (e.g. iclr2026; see paper-latex/templates/).")
+@click.option("--venue", default=None,
+              help="Venue template (e.g. iclr2026, osdi2026; see paper-latex/templates/). DEFAULT POLICY: a real "
+                   "venue is auto-selected (explicit > paper_spine > domain > iclr2026); pass '--venue generic' "
+                   "to deliberately emit a plain pandoc article.")
 @click.pass_context
 def render_report(ctx, quest_id, artifact_id, ref, input_path, title, at, bib, venue):
     params = {"title": title}
     if bib:
         params["bib"] = bib if bib.startswith("/") else str(LOOP_DIR / bib)
-    if venue:
-        params["venue"] = venue
+    resolved, rationale = _resolve_report_venue(ctx, quest_id, venue)
+    params["venue"] = resolved
+    params["venue_rationale"] = rationale
     _run_adapter(ctx, "render report", adapter_kind="compiler", entry_default="render", quest_id=quest_id,
                  artifact_id=artifact_id, ref=ref, input_path=input_path, params=params,
                  artifact_kind="report", at=at)
@@ -2458,8 +2953,49 @@ def _gate_floors(rigor):
 
 def _latest_idea_select_row(conn, quest_id):
     return conn.execute(
-        "SELECT select_id, select_ref, valid FROM idea_select WHERE quest_id=? "
+        "SELECT select_id, select_ref, valid, created_at FROM idea_select WHERE quest_id=? "
         "ORDER BY created_at DESC, select_id DESC LIMIT 1", (quest_id,)).fetchone()
+
+
+def _idea_row_id(quest_id, candidate_id):
+    """Deterministic idea_id for a slate candidate so re-validation upserts the same row (and binding can
+    recover the candidate_id by splitting on the ':idea:' marker)."""
+    return f"{quest_id}:idea:{candidate_id}"
+
+
+def _idea_candidate_id(idea_id):
+    """Recover a slate candidate_id (e.g. 'C1') from an idea_id minted by _idea_row_id."""
+    marker = ":idea:"
+    return idea_id.split(marker, 1)[1] if marker in idea_id else idea_id
+
+
+def _materialize_idea_rows(conn, quest_id, content, gate_by_id, floors, retained_id, select_ref, at):
+    """Persist each idea-slate candidate as an ENUMERABLE idea row (so the slate is no longer collapsed inside
+    idea_select JSON). Hard-gate ELIGIBILITY = selection_gate total >= the rigor idea_score_min floor: eligible
+    candidates land as status='proposed' (BO will choose among them); below-floor candidates land as
+    status='rejected' and are EXCLUDED from acquisition (BO cannot select gate-invalid candidates). The scout's
+    retained/reject verdicts stay advisory; the FINAL pick is bound from the BO decision. Idempotent (upsert by
+    deterministic idea_id). QUEST-LOCAL only. Returns the count of eligible candidates."""
+    floor = floors.get("idea_score_min", 0)
+    n_eligible = 0
+    for cand in content.get("raw_slate", []):
+        cid = cand.get("candidate_id")
+        if not cid:
+            continue
+        total = gate_by_id.get(cid)
+        eligible = (total is not None and total >= floor)
+        if eligible:
+            n_eligible += 1
+        status = "proposed" if eligible else "rejected"
+        iid = _idea_row_id(quest_id, cid)
+        stmt = (cand.get("hypothesis") or cand.get("title") or cid)[:1000]
+        conn.execute(
+            "INSERT INTO idea(idea_id,quest_id,branch_id,parent_idea_id,round_index,statement,route,artifact_ref,"
+            "status,created_at,updated_at) VALUES(?,?,NULL,NULL,NULL,?,?,?,?,?,?) "
+            "ON CONFLICT(idea_id) DO UPDATE SET statement=excluded.statement, route=excluded.route, "
+            "artifact_ref=excluded.artifact_ref, status=excluded.status, updated_at=excluded.updated_at",
+            (iid, quest_id, stmt, cand.get("title"), select_ref, status, at, at))
+    return n_eligible
 
 
 _NOVELTY_TYPES = {"mechanistic", "empirical", "dataset_task", "efficiency", "negative_result"}
@@ -2583,10 +3119,17 @@ def idea_validate(ctx, quest_id, select_ref):
     valid = not reasons
     conn.execute("UPDATE idea_select SET valid=?, gate_score=?, retained_candidate=?, novelty_label=? "
                  "WHERE select_id=?", (1 if valid else 0, score, retained_id, novelty, row["select_id"]))
+    # Persist the slate as ENUMERABLE, gate-eligibility-tagged idea rows (the BO candidate slate). Done even on a
+    # failed validation so the rows self-heal on re-validate; idempotent upsert keyed by deterministic idea_id.
+    n_eligible = None
+    if content is not None:
+        n_eligible = _materialize_idea_rows(conn, quest_id, content, gate_by_id, floors, retained_id,
+                                            ref, row["created_at"])
     conn.commit(); conn.close()
     emit(envelope("idea validate", ok=valid, quest_id=quest_id,
                   data={"valid": valid, "rigor": rigor, "floors": floors, "retained": retained_id,
-                        "gate_score": score, "novelty_label": novelty, "reasons": reasons},
+                        "gate_score": score, "novelty_label": novelty, "reasons": reasons,
+                        "eligible_candidates": n_eligible},
                   diagnostics=[] if valid else ["idea selection gate FAILED: " + "; ".join(reasons)]))
     if not valid:
         sys.exit(1)
@@ -3280,7 +3823,7 @@ def gate_status(ctx, quest_id):
     waiver_source. Env-var gate waivers are surfaced as status='waived' (non-blocking) + listed in
     data.active_waivers so an operator override is auditable, never silent."""
     conn = _conn(ctx)
-    q = conn.execute("SELECT rigor_level, baseline_gate, best_result_ref FROM quest WHERE quest_id=?",
+    q = conn.execute("SELECT rigor_level, baseline_gate, best_result_ref, run_state FROM quest WHERE quest_id=?",
                      (quest_id,)).fetchone()
     if not q:
         conn.close(); emit(envelope("gate status", ok=False, quest_id=quest_id, diagnostics=["no such quest"])); sys.exit(1)
@@ -3296,6 +3839,8 @@ def gate_status(ctx, quest_id):
     # waiver_source) and every active waiver is listed at the top level (`active_waivers`).
     _GATE_WAIVERS = {"scope_contract": "DEEPRESEARCH_SCOPE_GATE",
                      "idea_gate": "DEEPRESEARCH_IDEA_GATE",
+                     "bo_idea_decision": "DEEPRESEARCH_BO_IDEA_GATE",
+                     "bo_next_move": "DEEPRESEARCH_BO_NEXT_MOVE_GATE",
                      "baseline_contract": "DEEPRESEARCH_BASELINE_CONTRACT_GATE",
                      "analysis_bridge": "DEEPRESEARCH_BRIDGE_GATE",
                      "manuscript_coverage": "DEEPRESEARCH_COVERAGE_GATE",
@@ -3348,6 +3893,53 @@ def gate_status(ctx, quest_id):
         _nok, nreasons = _novelty_grounding(conn, quest_id, icontent, rigor, True) if isinstance(icontent, dict) else (False, [])
         put("idea_gate", "fail", "idea selection not validated" + ("; " + "; ".join(nreasons) if nreasons else ""),
             "idea", r["select_id"], "fix + idea validate")
+
+    # bo_idea_decision: when the idea stage produced MULTIPLE gate-eligible enumerable candidates, the BO choice
+    # is DECISIVE — idea->baseline waits for an idea-selection bo_decision whose winner is BOUND into
+    # idea_select.retained_candidate. A single viable candidate may proceed (BO optional; the binding step records
+    # an explicit skip). Advisory off-bound; not_applicable until the idea gate itself passes / when no enumerable
+    # idea rows exist (legacy lazy idea_select). NEVER overrides the hard idea gate — it only decides among
+    # candidates the idea gate already deemed eligible.
+    try:
+        eligible_ideas = conn.execute("SELECT idea_id, status FROM idea WHERE quest_id=? AND status IN "
+                                       "('proposed','selected') ORDER BY idea_id", (quest_id,)).fetchall()
+    except sqlite3.OperationalError:
+        eligible_ideas = []
+    n_viable = len(eligible_ideas)
+    idea_passed = gates.get("idea_gate", {}).get("status") in ("pass", "waived")
+    try:
+        bdec = conn.execute("SELECT decision_id, selected_candidate_ref FROM bo_decision WHERE quest_id=? AND "
+                            "decision_kind='idea-selection' ORDER BY created_at DESC, decision_id DESC LIMIT 1",
+                            (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        bdec = None  # un-migrated DB without decision_kind: treat as no decision (gate stays advisory/N-A)
+    if adv:
+        put("bo_idea_decision", "advisory")
+    elif not idea_passed:
+        put("bo_idea_decision", "not_applicable", "idea selection not yet validated")
+    elif n_viable == 0:
+        put("bo_idea_decision", "not_applicable", "no enumerable idea candidates (legacy/lazy idea_select)")
+    elif n_viable == 1:
+        put("bo_idea_decision", "pass", "single viable idea candidate — BO selection optional (record an explicit "
+            "skip via `bo select --skip-reason` for a fully auditable trail)")
+    elif bdec is None:
+        put("bo_idea_decision", "fail", f"{n_viable} gate-eligible idea candidates and no idea-selection "
+            "bo_decision — BO must choose the winner before baseline", "bo-review", None,
+            "run `bo review` (BO-reviewer valuations) then `bo select --decision-kind idea-selection --bind`")
+    else:
+        sel = bdec["selected_candidate_ref"]
+        winner_cid = _idea_candidate_id(sel) if sel else None
+        isr2 = conn.execute("SELECT retained_candidate FROM idea_select WHERE quest_id=? "
+                            "ORDER BY created_at DESC, select_id DESC LIMIT 1", (quest_id,)).fetchone()
+        retained = isr2["retained_candidate"] if isr2 else None
+        srow = conn.execute("SELECT status FROM idea WHERE quest_id=? AND idea_id=?", (quest_id, sel)).fetchone() if sel else None
+        bound_ok = bool(sel and retained == winner_cid and srow is not None and srow["status"] == "selected")
+        if bound_ok:
+            put("bo_idea_decision", "pass", f"BO selected {winner_cid}; bound to idea_select.retained_candidate", ref=bdec["decision_id"])
+        else:
+            put("bo_idea_decision", "fail", f"idea-selection bo_decision exists but its winner ({winner_cid!r}) is not "
+                f"bound to idea_select.retained_candidate ({retained!r})", "bo-review", bdec["decision_id"],
+                "re-run `bo select --decision-kind idea-selection --bind`")
 
     bc = conn.execute("SELECT contract_id, valid, validated_fingerprint FROM baseline_contract "
                       "WHERE quest_id=? ORDER BY created_at DESC, contract_id DESC LIMIT 1", (quest_id,)).fetchone()
@@ -3475,6 +4067,58 @@ def gate_status(ctx, quest_id):
     elif fin: put("finalize_readiness", "fail", "; ".join(fin), None, None, "resolve blocking gates above")
     else: put("finalize_readiness", "pass")
 
+    # bo_next_move: LATER next-move BO. Post-experiment/analysis, when NO hard gate forces the route and there are
+    # ≥2 hard-gate-ELIGIBLE next moves, the choice is BO-DECISIVE — route to bo-review until a CURRENT next-move
+    # bo_decision (recorded at/after the newest result/analysis, selecting an eligible move) binds the route.
+    # Never competes with a hard gate (not_applicable while any blocks); pre-experiment and on non-active quests
+    # it is not_applicable (so finalized quests like q1 are never retroactively blocked). Waiver
+    # DEEPRESEARCH_BO_NEXT_MOVE_GATE. BO only ranks moves the hard gates already permit — it bypasses none.
+    _NM_HARD = ["scope_contract", "idea_gate", "bo_idea_decision", "baseline_contract", "campaign_coverage",
+                "analysis_bridge", "paper_spine", "outline_valid", "manuscript_coverage", "review_verdict"]
+    nm_hard_blocking = any(gates.get(g, {}).get("blocking") for g in _NM_HARD)
+    active_quest = (q["run_state"] in ("running", "paused", "recovering", "waiting_user"))
+    has_results = bool(conn.execute("SELECT 1 FROM result WHERE quest_id=? LIMIT 1", (quest_id,)).fetchone())
+    nm_cands = _next_move_candidates(conn, quest_id)
+    nm_eligible = [c for c in nm_cands if c["eligible"]]
+
+    def _maxts(sql):
+        try:
+            r = conn.execute(sql, (quest_id,)).fetchone()
+            return (r[0] if r and r[0] else "")
+        except sqlite3.OperationalError:
+            return ""
+    newest_evidence = max(_maxts("SELECT MAX(created_at) FROM result WHERE quest_id=?"),
+                          _maxts("SELECT MAX(created_at) FROM analysis WHERE quest_id=?"))
+    try:
+        nm_dec = conn.execute(
+            "SELECT decision_id, selected_candidate_ref, created_at FROM bo_decision WHERE quest_id=? AND "
+            "decision_kind IN ('next-move-selection','experiment-selection','opportunity-selection',"
+            "'stop-write-finalize-selection') ORDER BY created_at DESC, decision_id DESC LIMIT 1", (quest_id,)).fetchone()
+    except sqlite3.OperationalError:
+        nm_dec = None
+    nm_elig_refs = {c["candidate_ref"] for c in nm_eligible}
+    nm_fresh = bool(nm_dec and (nm_dec["created_at"] or "") >= newest_evidence
+                    and nm_dec["selected_candidate_ref"] in nm_elig_refs)
+    if adv:
+        put("bo_next_move", "advisory")
+    elif not active_quest:
+        put("bo_next_move", "not_applicable", "quest not in an active run state")
+    elif not has_results:
+        put("bo_next_move", "not_applicable", "no experiment results yet (next-move BO applies post-experiment)")
+    elif nm_hard_blocking:
+        put("bo_next_move", "not_applicable", "a hard gate determines the next move")
+    elif len(nm_eligible) <= 1:
+        put("bo_next_move", "pass", ("single eligible next move — BO optional (record an explicit skip via "
+            "`bo select --next-move --skip-reason`)" if len(nm_eligible) == 1 else "no eligible next move yet"))
+    elif nm_fresh:
+        put("bo_next_move", "pass", f"next-move bo_decision binds {nm_dec['selected_candidate_ref']} "
+            f"(route via `bo next-moves`)", ref=nm_dec["decision_id"])
+    else:
+        put("bo_next_move", "fail", f"{len(nm_eligible)} eligible next moves and no current next-move bo_decision "
+            "— BO must choose the next move", "bo-review", (nm_dec["decision_id"] if nm_dec else None),
+            "run `bo review --next-move` (BO-reviewer valuations) then `bo select --next-move --at <ts>` to bind "
+            "the route (or `--skip-reason` if only one is eligible)")
+
     discovery = _discovery(conn, quest_id)  # ADVISORY quest-local discovery (compute before closing the conn)
     conn.close()
     emit(envelope("gate status", ok=True, quest_id=quest_id,
@@ -3485,6 +4129,9 @@ def gate_status(ctx, quest_id):
                         "finalize_ack_missing": finalize_ack_missing,
                         "stale_gates": stale_gates,
                         "discovery": discovery,
+                        "next_moves": {"eligible": nm_eligible, "all": nm_cands,
+                                       "current_decision": (nm_dec["decision_id"] if nm_dec else None),
+                                       "decision_fresh": nm_fresh},
                         "finalize_readiness": gates["finalize_readiness"]["status"],
                         "blocking_gates": [k for k, gv in gates.items() if gv["blocking"]]}))
 

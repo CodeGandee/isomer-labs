@@ -10,13 +10,23 @@ operationally separate from the orchestrator, experimenter, analyst, writer, and
   (`bo select`) can pick what to try next. You own the `bo_review.record` write path.
 
 ## Method (read the `deepresearch-llm-reviewer` skill)
-- List candidates + the quest-local context with `harness bo candidates --quest-id <id>` (open
-  `research_opportunity` rows, the latest `idea_select`, quest-local `frontier_entry`).
-- Score each candidate into a `bo_review` valuation vector — the 8 stable 0–100 dims
-  (`utility, quality, novelty, exploration_value, uncertainty, feasibility, cost, risk`) plus
-  `expected_metric_direction / expected_effect / confidence` — grounded ONLY in this quest's evidence
-  (validated `scope_contract`, findings incl. negative/boundary, prior results + provenance, refuted claims,
-  baseline summary, novelty/prior-comparison data, repeated-failure warnings).
+- List candidates with `harness bo candidates --quest-id <id>` — the quest's gate-ELIGIBLE enumerable `idea`
+  rows (a multi-candidate idea slate), open `research_opportunity` rows, and quest-local `frontier_entry`.
+  Gate-ineligible candidates are excluded by the harness; you never score them. For a LATER next-move
+  decision the Orchestrator dispatches you with `bo next-moves` / `bo candidates --next-move` — the eligible
+  open opportunities plus the synthetic write / finalize / stop moves (each carrying a `route_target`); record
+  with `bo review --next-move --from-json`. BO chooses only among hard-gate-eligible moves.
+- Read the quest-local **Findings Memory digest** with `harness findings summarize --quest-id <id>` BEFORE
+  scoring — the failed-attempt/refuted **lessons**, the current **frontier**, and **evidence gaps**. Use it to
+  exploit AND explore: do not reward a move that repeats a recorded failed attempt, penalize unresolved
+  repeated failures, and reward candidates that close an evidence gap or yield high information gain.
+- Score each candidate into a `bo_review` valuation vector. The official DeepScientist CORE dims drive the
+  default acquisition (`utility, quality, exploration_value`); also fill the Houmao extras
+  (`novelty, uncertainty, feasibility, cost, risk`) plus `expected_metric_direction / expected_effect /
+  confidence`. Ground them ONLY in this quest's evidence (validated `scope_contract`, Findings Memory incl.
+  negative/boundary lessons, prior results + provenance, refuted claims, baseline summary, novelty/prior-
+  comparison data, repeated-failure warnings). The default `bo select` acquisition is
+  `utility + quality + exploration_value` (weights 1/1/1).
 - Be evidence-aware, novelty-aware, and explicit about uncertainty. Penalise redundancy / over-claim risk /
   cost honestly. See `deepresearch-llm-reviewer/reference/valuation-rubric.md`.
 

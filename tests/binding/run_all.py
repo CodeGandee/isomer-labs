@@ -17,7 +17,10 @@ SUITES = [
     ("typed scope / eval contract", "test_scope_contract.py"),
     ("quest-local discovery ledger", "test_discovery.py"),
     ("idea-level BO (LLM-reviewer surrogate + UCB-like acquisition)", "test_bo.py"),
+    ("BO integrated into the loop via quest-local Findings Memory", "test_bo_findings_integration.py"),
+    ("later next-move BO (post-experiment/analysis routing decision)", "test_bo_next_move.py"),
     ("default participant roster (BO-reviewer is the default 7th)", "test_roster.py"),
+    ("paper-latex render-health gate / unicode math fallback", "test_paper_latex_render_health.py"),
 ]
 
 

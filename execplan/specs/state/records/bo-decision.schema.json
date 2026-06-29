@@ -26,13 +26,14 @@
     "acquisition_method": { "type": "string", "description": "e.g. ucb_like_v1 — the documented acquisition rule used" },
     "acquisition_config": {
       "type": "object",
-      "description": "the acquisition knobs used, e.g. {beta: 0.5}"
+      "description": "the acquisition knobs used, e.g. {w_u:1, w_q:1, kappa:1} for ucb_official_v1 or {beta:0.5} for ucb_like_v1"
     },
     "acquisition_scores": {
       "type": "array",
-      "description": "per-candidate score breakdown: [{candidate_ref, score, exploitation, exploration, penalty, ...}]",
+      "description": "per-candidate score breakdown: [{candidate_ref, score, eligible, rejection_reason, ...}] including hard-gate eligibility for transparency",
       "items": { "type": "object" }
     },
-    "selection_rationale": { "type": "string", "description": "why the selected candidate beat the others" }
+    "selection_rationale": { "type": "string", "description": "why the selected candidate beat the others (or the explicit skip reason for a single viable candidate)" },
+    "decision_kind": { "enum": ["idea-selection", "experiment-selection", "opportunity-selection", "stop-write-finalize-selection", "next-move-selection"], "description": "which research move this acquisition decided. 'idea-selection' is DECISIVE (binds idea_select.retained_candidate). The later next-move kinds (experiment-/opportunity-/stop-write-finalize-/next-move-selection) bind orchestrator ROUTING to the winner's route_target. Default 'idea-selection'." }
   }
 }

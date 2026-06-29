@@ -90,17 +90,17 @@ def main():
               "count=%s refs=%s" % (cd["count"], refs))
 
         # B2: the DURABLE product default is always Codex / max (invariant), regardless of any machine-local
-        # override; acquisition method ucb_like_v1; required=false. We assert product_default_* (not the
-        # effective backend, which a local override file / env may legitimately change on a given machine).
+        # override; acquisition method ucb_official_v1 (DeepScientist-style u+q+ev default); required=false. We
+        # assert product_default_* (not the effective backend, which a local override file / env may change).
         print("B2 product-default reviewer config invariant (codex / max):")
         db = setup(tmp, "b2"); opp(db, "b2", "b2:o1")
         rv = jdata(run(db, ["bo", "review", "--quest-id", "b2", "--at", AT, "--allow-bo-stub"]))
         st = jdata(run(db, ["bo", "status", "--quest-id", "b2"]))
         rc = st["reviewer_config"]
-        check("B2: product default backend=codex effort=max (durable); method=ucb_like_v1; required_before_select=false",
+        check("B2: product default backend=codex effort=max (durable); method=ucb_official_v1; required_before_select=false",
               rv["reviewer"]["product_default_backend"] == "codex" and rv["reviewer"]["product_default_effort"] == "max"
               and rc["product_default_backend"] == "codex" and rc["product_default_effort"] == "max"
-              and rc["acquisition_method"] == "ucb_like_v1" and rc["required_before_select"] is False,
+              and rc["acquisition_method"] == "ucb_official_v1" and rc["required_before_select"] is False,
               "reviewer=%s rc=%s" % (rv["reviewer"], rc))
 
         # B2b: an env override changes the EFFECTIVE backend + backend_source, but NOT the product default
@@ -178,7 +178,7 @@ def main():
                          val(utility=80, quality=60, feasibility=40, exploration_value=20, novelty=20,
                              uncertainty=20, cost=20, risk=20, expected_effect=50)}])
         run(db, ["bo", "review", "--quest-id", "b7", "--from-json", rj, "--at", AT])
-        sel = jdata(run(db, ["bo", "select", "--quest-id", "b7", "--beta", "0.5", "--at", AT]))
+        sel = jdata(run(db, ["bo", "select", "--quest-id", "b7", "--acquisition", "houmao", "--beta", "0.5", "--at", AT]))
         c = sqlite3.connect(db)
         drow = c.execute("SELECT selected_candidate_ref,acquisition_method FROM bo_decision WHERE quest_id='b7'").fetchone()
         c.close()
@@ -197,8 +197,8 @@ def main():
             {"candidate_ref": "b9:U", "valuation": val(utility=90, novelty=10, exploration_value=10, uncertainty=10)},
             {"candidate_ref": "b9:E", "valuation": val(utility=30, novelty=90, exploration_value=90, uncertainty=90)}])
         run(db, ["bo", "review", "--quest-id", "b9", "--from-json", rj, "--at", AT])
-        lo = jdata(run(db, ["bo", "select", "--quest-id", "b9", "--beta", "0.1"]))["selected_candidate_ref"]
-        hi = jdata(run(db, ["bo", "select", "--quest-id", "b9", "--beta", "0.9"]))["selected_candidate_ref"]
+        lo = jdata(run(db, ["bo", "select", "--quest-id", "b9", "--acquisition", "houmao", "--beta", "0.1"]))["selected_candidate_ref"]
+        hi = jdata(run(db, ["bo", "select", "--quest-id", "b9", "--acquisition", "houmao", "--beta", "0.9"]))["selected_candidate_ref"]
         check("B9: low beta picks high-utility, high beta picks high-exploration", lo == "b9:U" and hi == "b9:E",
               "lo=%s hi=%s" % (lo, hi))
 
@@ -209,10 +209,10 @@ def main():
             {"candidate_ref": "b10:lo", "valuation": val(cost=10, risk=10)},
             {"candidate_ref": "b10:hi", "valuation": val(cost=90, risk=90)}])
         run(db, ["bo", "review", "--quest-id", "b10", "--from-json", rj, "--at", AT])
-        scs = {s["candidate_ref"]: s for s in jdata(run(db, ["bo", "select", "--quest-id", "b10", "--beta", "0.5"]))["acquisition_scores"]}
+        scs = {s["candidate_ref"]: s for s in jdata(run(db, ["bo", "select", "--quest-id", "b10", "--acquisition", "houmao", "--beta", "0.5"]))["acquisition_scores"]}
         check("B10: higher risk/cost => higher penalty => lower score",
               scs["b10:hi"]["penalty"] > scs["b10:lo"]["penalty"] and scs["b10:hi"]["score"] < scs["b10:lo"]["score"]
-              and jdata(run(db, ["bo", "select", "--quest-id", "b10", "--beta", "0.5"]))["selected_candidate_ref"] == "b10:lo",
+              and jdata(run(db, ["bo", "select", "--quest-id", "b10", "--acquisition", "houmao", "--beta", "0.5"]))["selected_candidate_ref"] == "b10:lo",
               "lo=%s hi=%s" % (scs["b10:lo"]["score"], scs["b10:hi"]["score"]))
 
         # B11: repeated-failure warnings penalize/annotate but never block
@@ -224,7 +224,7 @@ def main():
         opencand = [c for c in cdat["candidates"] if c["candidate_ref"] == "b11:open"][0]
         rj = review_json(tmp, "b11.json", [{"candidate_ref": "b11:open", "valuation": val()}])
         rev = run(db, ["bo", "review", "--quest-id", "b11", "--from-json", rj, "--at", AT])
-        selr = run(db, ["bo", "select", "--quest-id", "b11", "--beta", "0.5", "--at", AT])
+        selr = run(db, ["bo", "select", "--quest-id", "b11", "--acquisition", "houmao", "--beta", "0.5", "--at", AT])
         sc = jdata(selr)["acquisition_scores"][0]
         check("B11: repeat warning annotated on candidate + context_penalty applied, commands still succeed (no block)",
               bool(opencand["repeat_failure_warnings"]) and sc["context_penalty"] >= 15.0

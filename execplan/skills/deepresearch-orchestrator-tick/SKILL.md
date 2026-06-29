@@ -51,8 +51,9 @@ handoff ids + idempotent `record apply` mean a duplicate fire never double-dispa
    publication-bundle checklist, and finalize-honesty rules are in **`reference/finalize-and-dispatch.md`**.
 5. **Else dispatch the next stage — driven by `$HARNESS gate status --quest-id <q>`:** read `data.gates`
    and, when any gate is `blocking`, dispatch to the **first blocking gate's `route_target`** (idea_gate→idea,
-   baseline_contract→baseline, campaign_coverage→experiment|analysis, analysis_bridge→analysis,
-   paper_spine/outline_valid→outline, manuscript_coverage→write, review_verdict→its route_target). Do NOT route
+   bo_idea_decision→bo-review, baseline_contract→baseline, campaign_coverage→experiment|analysis,
+   analysis_bridge→analysis, paper_spine/outline_valid→outline, manuscript_coverage→write,
+   review_verdict→its route_target, bo_next_move→bo-review). Do NOT route
    on LLM discretion when a hard gate says fail; the same hard guards block the write/finalize/handoff anyway
    (gate status only makes routing deterministic, it does not replace them). **Re-validate after changes:** a
    gate may report `status=fail` with a *stale* reason (or appear in `data.stale_gates`) when evidence/results/
@@ -63,7 +64,31 @@ handoff ids + idempotent `record apply` mean a duplicate fire never double-dispa
    consult `gate status` `data.discovery` (open opportunities + recommended_next_actions, unsupported/refuted
    claims, parked routes, negative-findings count) and `$HARNESS opportunity list`; record the next direction
    (and why, citing this quest's finding/result/claim ids) via `record apply --type opportunity.record`. This
-   layer is ADVISORY — it never blocks — and is strictly quest-local (no cross-quest memory). `decision`/
+   layer is ADVISORY — it never blocks — and is strictly quest-local (no cross-quest memory).
+   **Idea-level BO is DECISIVE (the `bo_idea_decision` gate).** After `idea validate` materializes the slate as
+   enumerable, gate-eligibility-tagged `idea` rows, a multi-candidate selection is chosen by BO, not by the
+   scout's prose: when `bo_idea_decision` is `blocking` (≥2 gate-eligible idea rows, no idea-selection
+   `bo_decision`), dispatch the **BO-reviewer** for `bo-review` (task: value each viable candidate against the
+   quest-local Findings-Memory digest — pass `$HARNESS findings summarize` + the candidate slate from
+   `$HARNESS bo candidates`). Ingest its valuations with `$HARNESS bo review --from-json`, then
+   `$HARNESS bo select --decision-kind idea-selection --bind --at <ts>` — this records the `bo_decision` and
+   BINDS `idea_select.retained_candidate` to the winner. If exactly one candidate is gate-eligible, BO may be
+   skipped but record it explicitly: `$HARNESS bo select --skip-reason "<why>" --at <ts>`. Only then does
+   idea→baseline unblock. BO chooses ONLY among candidates the hard idea gate already deemed eligible — it never
+   overrides scope/novelty/feasibility/validity floors. **Next-move BO is DECISIVE for the LATER route too (the
+   `bo_next_move` gate).** Post-experiment/analysis, after you update quest-local Findings Memory
+   (`findings update`), the next move is BO-chosen when NO hard gate forces it and ≥2 hard-gate-ELIGIBLE moves
+   exist: when `bo_next_move` is `blocking`, dispatch the **BO-reviewer** for `bo-review` — pass the
+   `findings summarize` digest + the eligible slate from `$HARNESS bo next-moves` (open opportunities + the
+   synthetic write/finalize/stop moves, each tagged with hard-gate eligibility + a route_target). Ingest with
+   `$HARNESS bo review --next-move --from-json`, then `$HARNESS bo select --next-move --at <ts>` — this records
+   a `bo_decision` (decision_kind auto-derived: experiment-/opportunity-/stop-write-finalize-selection) and the
+   winner's `selected_route` is the BOUND next stage you dispatch (open opportunity → experiment/analysis, write
+   → outline/write, finalize → finalize, stop → decision). Create the handoff for that stage. If exactly one
+   move is eligible, record an explicit skip (`bo select --next-move --skip-reason "<why>"`). BO ranks ONLY
+   moves the hard gates already permit (`bo next-moves` excludes ineligible write/finalize/experiment moves), so
+   it never bypasses the campaign/bridge/claim-evidence/review/finalize gates; a fresh decision is required after
+   each new result/analysis. `decision`/
    `finalize`/`optimize` you do yourself (orchestrator-internal); all other stages dispatch to the owning role. The decision discipline (name ≥2 candidates + mark losers + bottleneck
    classification + exploration-depth gate), the `optimize` frontier/search discipline, the `experiment` BO
    path, the **GPU gate** (normally already confirmed; route to operator-control only as a safety fallback),

@@ -27,8 +27,13 @@ max_candidates = 8     # max candidates scored per `bo review` call
 required_before_select = false
 
 [acquisition]
-method = "ucb_like_v1"  # documented in docs/binding-gates.md + `bo select` output; not full statistical BO
-beta   = 0.5            # UCB-like exploration coefficient (higher => exploration weighed more)
+# DEFAULT official DeepScientist-style score: w_u*utility + w_q*quality + kappa*exploration_value (1/1/1).
+# Set method = "ucb_like_v1" for the richer Houmao exploitation/exploration/penalty formula (uses beta).
+method = "ucb_official_v1"  # ucb_official_v1 (default) | ucb_like_v1 ; documented in docs/binding-gates.md
+w_u    = 1.0             # official utility weight
+w_q    = 1.0             # official quality weight
+kappa  = 1.0             # official exploration coefficient (the UCB-like knob; higher => exploration weighed more)
+beta   = 0.5            # ucb_like_v1 exploration coefficient (only used when method = "ucb_like_v1")
 
 # ── Local / temporary override (does NOT change the product default above) ──
 # When the default backend's credential is unavailable on a machine, override the EFFECTIVE backend without
