@@ -40,7 +40,7 @@ Load only the subcommand pages needed for the user's task.
 | `show-context` | Show Effective Topic Context and selected refs for topic-scoped work | [references/show-context.md](references/show-context.md) |
 | `init-runtime` | Initialize or reopen Workspace Runtime for a selected Research Topic | [references/init-runtime.md](references/init-runtime.md) |
 | `prep-runtime` | Prepare and validate launch-facing Topic Environment Readiness | [references/prep-runtime.md](references/prep-runtime.md) |
-| `specialize-team` | Resolve Project readiness and hand off Domain Agent Team Template adaptation | [references/specialize-team.md](references/specialize-team.md) |
+| `specialize-team` | Resolve Project readiness and hand off full topic-team specialization | [references/specialize-team.md](references/specialize-team.md) |
 
 ## Output Contract
 
@@ -58,7 +58,7 @@ When reporting results, include the fields that apply:
 - `relocation_plan`: old generated content root, new generated content root, managed moves, manifest updates, unmanaged leftovers, warnings, and applied moves when content-root relocation is selected.
 - `commands_run`: Isomer or Houmao CLI commands used, with read-only or mutation posture.
 - `diagnostics`: blockers, warnings, or validation diagnostics.
-- `next_operator_action`: usually initialize, repair, validate, prepare runtime, specialize team, or stop on blockers.
+- `next_operator_action`: usually initialize, repair, validate, prepare runtime, run topic-team specialization, or stop on blockers.
 
 ## Guardrails
 
@@ -78,7 +78,7 @@ Hand off per-agent worktree setup and cwd proof to `isomer-srv-agent-env-setup` 
 
 Do not scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
 
-Do not duplicate Topic Team Specialization. When the user asks to adapt or instantiate a Domain Agent Team Template for a Research Topic, use `specialize-team` to hand off to `isomer-admin-topic-team-specialize`.
+Do not duplicate Topic Team Specialization. When the user asks to adapt or instantiate a Domain Agent Team Template for a Research Topic, use `specialize-team` to hand off to `isomer-admin-topic-team-specialize fast-forward`.
 
 ## Local References
 

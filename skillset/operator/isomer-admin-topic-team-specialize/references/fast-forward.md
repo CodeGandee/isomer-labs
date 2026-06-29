@@ -1,5 +1,7 @@
 # Fast Forward
 
+Use this subcommand for natural-language requests like `specialize <team-path> over topic <topic>`. Carry the supplied team path as the selected Domain Agent Team Template and the supplied topic as the Research Topic input.
+
 ## Workflow
 
 When this subcommand is selected, execute the following steps in order.
@@ -18,7 +20,7 @@ When this subcommand is selected, execute the following steps in order.
 7. Run `setup-topic-env` when setup source exists:
    - Continue when `topic.intent.topic_env_requirements` is usable or an explicit topic env target spec is supplied.
    - Create or validate `topic.env.topic_setup_target_spec`, then delegate Topic Workspace, Topic Main Development Repository, canonical external repo, projection, dependency, and verification materialization to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> auto`.
-8. Run `specialize-team` to select or confirm one Domain Agent Team Template and execute the helper specialization path through draft profile output.
+8. Run `adapt-team-template` to select or confirm one Domain Agent Team Template, copy it into the Topic Workspace, map placeholders, and adapt copied template material through draft profile output.
 9. Run `clarify-topic-team` only when specialization outputs contain open questions that block setup or validation.
 10. Run or rerun `resolve-topic-env-gate` and `setup-topic-env` when specialization adds or changes runnable environment requirements.
 11. Run `resolve-agent-env-gate` after Topic Workspace predecessor evidence and specialization evidence exist when per-Agent Workspace cwd readiness is requested.

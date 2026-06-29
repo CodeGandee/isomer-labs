@@ -1,15 +1,21 @@
 ---
 name: isomer-admin-topic-team-specialize
-description: "Initialize and specialize Isomer Research Topics into static topic-team material. Use when an operator needs topic-team setup for one Research Topic: help, init-topic, resolve-topic-intent, clarify-topic, ensure-topic-registration, resolve-topic-env-gate, specialize-team, clarify-topic-team, setup-topic-env through isomer-srv-topic-env-setup, resolve-agent-env-gate, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
+description: "Initialize and specialize Isomer Research Topics into static topic-team material. Use when an operator needs topic-team setup for one Research Topic, including direct requests like specialize a team path over a topic, help, init-topic, resolve-topic-intent, clarify-topic, ensure-topic-registration, resolve-topic-env-gate, adapt-team-template, clarify-topic-team, setup-topic-env through isomer-srv-topic-env-setup, resolve-agent-env-gate, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
 ---
 
 # Isomer Admin Topic Team Specialize
 
-Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, resolve Project and Topic Workspace context, write high-level user-editable intent through semantic labels, create or update operator-owned target specs, route environment materialization to service skills, adapt one Domain Agent Team Template into copied topic-specific material, validate static material readiness, maintain durable setup state, and write a final topic-team summary. The canonical setup path is `team specialization invoked -> resolve-project -> resolve-topic-intent -> resolve-topic-env-gate -> create topic env target spec -> setup-topic-env -> specialize-team when team material is needed -> resolve-agent-env-gate -> create agent env target spec -> setup-agent-env -> validate-topic-team -> finalize-topic-team`. Always resolve intent and target-spec surfaces through Workspace Path Resolution before reading, writing, or reporting them: `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.agent_env_requirements`, `topic.env.topic_setup_target_spec`, and `topic.env.agent_setup_target_spec`. Route Topic Workspace dependency, Pixi, Topic Main Development Repository setup, canonical external repo acquisition, external projection materialization, and topic-root or repo-specific command verification work only through `isomer-srv-topic-env-setup` from `setup-topic-env`, after `ensure-topic-registration` has proved manifest-backed topic refs, a resolvable Topic Workspace Pixi binding, and a usable `topic.intent.topic_env_requirements` surface or explicit topic target spec. Record that output as Topic Workspace predecessor evidence, not as per-Agent Workspace cwd readiness. When per-Agent Workspace cwd command proof, selected-agent repair, or launch-facing Agent Workspace readiness is requested, require `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, Topic Workspace predecessor evidence, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, semantic label evidence for `topic.repos.main`, `agent.workspace`, and required `agent.*` support paths, and authoritative Agent Names; then delegate worktree creation and cwd verification to `isomer-srv-agent-env-setup` from `setup-agent-workspace`. Use `isomer-admin-topic-workspace-mgr` only for optional topology inspection, branch helpers, boundary summaries, or legacy compatibility diagnostics. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
+Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, resolve Project and Topic Workspace context, write high-level user-editable intent through semantic labels, create or update operator-owned target specs, route environment materialization to service skills, adapt one Domain Agent Team Template into copied topic-specific material, validate static material readiness, maintain durable setup state, and write a final topic-team summary. The canonical setup path is `team specialization invoked -> resolve-project -> resolve-topic-intent -> resolve-topic-env-gate -> create topic env target spec -> setup-topic-env -> adapt-team-template when team material is needed -> resolve-agent-env-gate -> create agent env target spec -> setup-agent-env -> validate-topic-team -> finalize-topic-team`. Always resolve intent and target-spec surfaces through Workspace Path Resolution before reading, writing, or reporting them: `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.agent_env_requirements`, `topic.env.topic_setup_target_spec`, and `topic.env.agent_setup_target_spec`. Route Topic Workspace dependency, Pixi, Topic Main Development Repository setup, canonical external repo acquisition, external projection materialization, and topic-root or repo-specific command verification work only through `isomer-srv-topic-env-setup` from `setup-topic-env`, after `ensure-topic-registration` has proved manifest-backed topic refs, a resolvable Topic Workspace Pixi binding, and a usable `topic.intent.topic_env_requirements` surface or explicit topic target spec. Record that output as Topic Workspace predecessor evidence, not as per-Agent Workspace cwd readiness. When per-Agent Workspace cwd command proof, selected-agent repair, or launch-facing Agent Workspace readiness is requested, require `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, Topic Workspace predecessor evidence, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, semantic label evidence for `topic.repos.main`, `agent.workspace`, and required `agent.*` support paths, and authoritative Agent Names; then delegate worktree creation and cwd verification to `isomer-srv-agent-env-setup` from `setup-agent-workspace`. Use `isomer-admin-topic-workspace-mgr` only for optional topology inspection, branch helpers, boundary summaries, or legacy compatibility diagnostics. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
 
 ## Planning Required
 
 Topic Team Specialization is a complicated, multi-stage process with many predecessor artifacts, semantic path bindings, service handoffs, and readiness distinctions. It is easy to skip a required intent surface, confuse topic-level readiness with per-Agent Workspace readiness, or mutate the wrong layer. Before executing any nontrivial invocation, use the agent's built-in planning tool to break the request into stages and substeps, name predecessor artifacts for each step, identify which subcommand owns each action, and track blockers as the work proceeds. Update the plan as substeps complete, and proceed carefully rather than relying on memory of the canonical flow.
+
+## Intent Routing
+
+Treat natural-language requests such as `specialize <team-path> over topic <topic>`, `specialize this team for this topic`, or `adapt this template to this research topic` as full Topic Team Specialization requests. Select `fast-forward` by default, carrying the supplied team path as the selected Domain Agent Team Template and the supplied topic as the Research Topic input. Select `step-by-step` only when the user asks to proceed interactively or confirm each stage.
+
+Do not route direct "specialize team" language to `adapt-team-template`. That subcommand is an internal stage for adapting copied template material after topic intent, registration, and environment predecessor work exist. Route directly to `adapt-team-template` only when the user explicitly names `adapt-team-template` or asks for the internal template-adaptation stage and the required predecessor artifacts already exist.
 
 ## Workflow
 
@@ -19,7 +25,8 @@ When this skill is invoked, execute the following steps in order.
    - Match when this skill is invoked without a prompt.
    - Select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
 2. **Manual mode**:
-   - Match when the user asks for help, names one subcommand, or asks for one bounded operation.
+   - Match when the user asks for help, explicitly names one subcommand, or asks for one bounded operation.
+   - Do not treat the verb `specialize` in a natural-language request as explicit selection of the internal `adapt-team-template` stage.
    - Select that subcommand from the **Subcommands** tables.
    - Guardrail: load only its detail page.
    - Load only its detail page, execute its workflow, and report its output.
@@ -27,7 +34,7 @@ When this skill is invoked, execute the following steps in order.
    - Match when the user asks to specialize step by step, proceed interactively, or confirm each stage.
    - Select `step-by-step`, load [references/step-by-step.md](references/step-by-step.md), and execute the static topic-team setup path one step at a time.
 4. **Automatic mode**:
-   - Match when the user asks to fully specialize, prepare, adapt end-to-end, or says `fast-forward`.
+   - Match when the user asks to fully specialize, prepare, adapt end-to-end, says `fast-forward`, or gives a direct command like `specialize <team-path> over topic <topic>`.
    - Select `fast-forward`, load [references/fast-forward.md](references/fast-forward.md), and execute the static topic-team setup path through `finalize-topic-team`.
    - Stop at the approval or materialization boundary unless explicitly instructed otherwise.
 5. Prefer the narrowest subcommand family:
@@ -49,7 +56,7 @@ init-topic
   -> ensure-topic-registration
   -> resolve-topic-env-gate
   -> setup-topic-env (create topic target spec, then materialize topic env, topic-main, and projections)
-  -> specialize-team
+  -> adapt-team-template
   -> clarify-topic-team (optional)
   -> setup-topic-env (optional rerun when specialization changes runnable requirements)
   -> resolve-agent-env-gate
@@ -78,7 +85,7 @@ Procedural subcommands are the public single-step workflow API.
 | `clarify-topic` | Refine the Research Topic and update `topic.intent.overview` open questions before team specialization | [references/clarify-topic.md](references/clarify-topic.md) |
 | `ensure-topic-registration` | Verify or create authoritative Project Manifest-backed Research Topic and Topic Workspace registration before registration-dependent work | [references/ensure-topic-registration.md](references/ensure-topic-registration.md) |
 | `resolve-topic-env-gate` | Resolve high-level Topic Workspace environment requirements into `topic.intent.topic_env_requirements` | [references/resolve-topic-env-gate.md](references/resolve-topic-env-gate.md) |
-| `specialize-team` | Select a Domain Agent Team Template and run the topic-team specialization path | [references/specialize-team.md](references/specialize-team.md) |
+| `adapt-team-template` | Internal stage that selects or confirms a Domain Agent Team Template, copies it into the Topic Workspace, maps placeholders, and adapts copied template material after prerequisites exist | [references/adapt-team-template.md](references/adapt-team-template.md) |
 | `clarify-topic-team` | Revise specialized topic-team outputs before setup, approval, or materialization | [references/clarify-topic-team.md](references/clarify-topic-team.md) |
 | `setup-topic-env` | Create or validate the topic env target spec, then delegate Topic Workspace, topic-main, external repo, projection, dependency, and verification materialization to `isomer-srv-topic-env-setup` | [references/setup-topic-env.md](references/setup-topic-env.md) |
 | `resolve-agent-env-gate` | Resolve high-level per-Agent Workspace cwd requirements into `topic.intent.agent_env_requirements` | [references/resolve-agent-env-gate.md](references/resolve-agent-env-gate.md) |
@@ -195,7 +202,7 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `deferrals`: unresolved items, with static-material or later-operation impact.
 - `packet_profile_inputs`: proposed Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.
 - `validation_status`: commands or validators run, plus any blockers.
-- `next_operator_action`: usually clarify topic, ensure topic registration, specialize team, setup environment, validate, finalize, request approval, materialize an approved bundle, hand off to a later runtime workflow, or stop on blockers.
+- `next_operator_action`: usually clarify topic, ensure topic registration, run topic-team specialization, setup environment, validate, finalize, request approval, materialize an approved bundle, hand off to a later runtime workflow, or stop on blockers.
 
 ## Guardrails
 

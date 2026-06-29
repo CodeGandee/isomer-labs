@@ -6,7 +6,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Explain that `step-by-step` follows the same required static topic-team setup path as `fast-forward`, but pauses before each step for user confirmation.
 2. Prepare a progress tracker:
-   - Include `init-topic`, `resolve-topic-intent`, `clarify-topic` when needed, `ensure-topic-registration`, `resolve-topic-env-gate`, `setup-topic-env`, `specialize-team`, and `clarify-topic-team` when needed.
+   - Include `init-topic`, `resolve-topic-intent`, `clarify-topic` when needed, `ensure-topic-registration`, `resolve-topic-env-gate`, `setup-topic-env`, `adapt-team-template`, and `clarify-topic-team` when needed.
    - Include optional repeated `resolve-topic-env-gate` and `setup-topic-env` when specialization changes runnable requirements.
    - Include `resolve-agent-env-gate` when per-agent cwd readiness is in scope, then `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`.
    - Treat approval or materialization as later optional boundaries.

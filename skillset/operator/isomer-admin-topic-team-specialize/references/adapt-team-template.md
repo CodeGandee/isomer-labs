@@ -1,4 +1,6 @@
-# Specialize Team
+# Adapt Team Template
+
+This subcommand is the internal template-adaptation stage of Topic Team Specialization. It assumes topic intent and Project Manifest registration already exist. It is not the normal entrypoint for natural-language requests like `specialize <team-path> over topic <topic>`; route those requests to `fast-forward` unless the user explicitly asks for `adapt-team-template`.
 
 ## Workflow
 
@@ -18,7 +20,7 @@ When this subcommand is selected, execute the following steps in order.
 7. Read `team-specialization-guide.md` in the copied template root, or create it with the generated-guide fenced block from the entrypoint when no source guide exists.
 8. Create `team-specialization-plan.md` in the copied template root with the required checklist, planned edits, validation plan, and pending `Final Report`.
 9. Run `map-placeholders`, adapt only copied template material according to the plan, fill the `Final Report`, and run `draft-profile`.
-10. Report specialization output:
+10. Report template-adaptation output:
    - Include created or updated Topic Agent Team Profile Bundle inputs, copied template material, placeholder resolutions, registration evidence, deferrals, validation refs, and the next operator action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step specialization plan from the topic material, selected template, helper subcommands, output contract, and guardrails, then execute the plan.
@@ -30,13 +32,15 @@ Required predecessor artifact:
 - `topic.intent.overview` from `resolve-topic-intent`, optionally revised by `clarify-topic`.
 - Registration assurance from `ensure-topic-registration`, including `registered_research_topic_ref`, `registered_topic_workspace_ref`, `topic_registration_status: registered`, and no unresolved `registration_blockers`.
 
-If `topic.intent.overview` does not exist, refuse to run, explain that there is no topic definition to specialize against, and tell the user to run `resolve-topic-intent` first.
+If this page is reached from a natural-language request like `specialize <team-path> over topic <topic>` and prerequisites are missing, refuse the direct internal-stage run and tell the user the request should route to `fast-forward` with the supplied team path and topic.
 
-If registration assurance is missing or reports `topic_registration_status: blocked`, refuse to run, explain that specialization needs authoritative Project Manifest-backed topic refs, and tell the user to run `ensure-topic-registration` first.
+If `topic.intent.overview` does not exist during an explicit `adapt-team-template` request, refuse to run, explain that there is no topic definition to adapt against, and tell the user to run `resolve-topic-intent` first.
+
+If registration assurance is missing or reports `topic_registration_status: blocked` during an explicit `adapt-team-template` request, refuse to run, explain that template adaptation needs authoritative Project Manifest-backed topic refs, and tell the user to run `ensure-topic-registration` first.
 
 ## Guardrails
 
-Specialize exactly one Research Topic and one Domain Agent Team Template at a time.
+Adapt exactly one Research Topic and one Domain Agent Team Template at a time.
 
 Do not edit the source Domain Agent Team Template. Adapt only copied material under the selected Topic Workspace.
 

@@ -97,7 +97,7 @@ The project manager skill SHALL guide Project lifecycle commands without bypassi
 
 #### Scenario: Topic team specialization is handed off
 - **WHEN** the user asks to adapt, instantiate, or specialize a Domain Agent Team Template for a Research Topic
-- **THEN** the skill routes to `specialize-team`, resolves enough Project context with `isomer-cli project ...` command surfaces, and hands off to `isomer-admin-topic-team-specialize` instead of duplicating Topic Team Specialization logic
+- **THEN** the skill routes to `specialize-team`, resolves enough Project context with `isomer-cli project ...` command surfaces, and hands off to `isomer-admin-topic-team-specialize fast-forward` instead of duplicating Topic Team Specialization logic
 
 ### Requirement: Project Manager Support References
 The project manager skill SHALL keep required support knowledge inside its own skill directory.

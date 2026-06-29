@@ -24,11 +24,11 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 
 #### Scenario: Local subcommands exist
 - **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
-- **THEN** it contains local subcommand pages named `help`, `init-topic`, `clarify-topic`, `ensure-topic-registration`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `fast-forward`, and `step-by-step` under `references/`
+- **THEN** it contains local subcommand pages named `help`, `init-topic`, `clarify-topic`, `ensure-topic-registration`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `fast-forward`, and `step-by-step` under `references/`
 
 #### Scenario: Subcommands are grouped by contract
 - **WHEN** the skill entrypoint, workflow text, or operator documentation lists local subcommands
-- **THEN** it groups `init-topic`, `clarify-topic`, `ensure-topic-registration`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile` as procedural subcommands, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile` as helper subcommands, and `help`, `fast-forward`, and `step-by-step` as misc subcommands
+- **THEN** it groups `init-topic`, `clarify-topic`, `ensure-topic-registration`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile` as procedural subcommands, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile` as helper subcommands, and `help`, `fast-forward`, and `step-by-step` as misc subcommands
 
 #### Scenario: Help lists public subcommands only
 - **WHEN** the user invokes the local `help` subcommand
@@ -205,7 +205,7 @@ The implementation SHALL validate the module skill with skill-creator and reposi
 
 #### Scenario: Operator skillset validation runs
 - **WHEN** `pixi run validate-operator-skills` runs
-- **THEN** it accepts the module skill without `references/launch-team.md`, detects missing required guide, plan, support-reference, subcommand-group, predecessor-artifact, or static-material terms including `init-topic`, `clarify-topic`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`, verifies local subcommand workflow structure and naming, rejects external support refs, rejects unexpected runtime launch subcommand pages, and does not require `evals/`
+- **THEN** it accepts the module skill without `references/launch-team.md`, detects missing required guide, plan, support-reference, subcommand-group, predecessor-artifact, or static-material terms including `init-topic`, `clarify-topic`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`, verifies local subcommand workflow structure and naming, rejects external support refs, rejects unexpected runtime launch subcommand pages, and does not require `evals/`
 
 #### Scenario: Unit validation covers removed launch subcommand
 - **WHEN** `pixi run python -m unittest tests.unit.test_validate_skillsets` runs
@@ -353,15 +353,19 @@ The module skill SHALL present the primary user-facing flow as procedural subcom
 #### Scenario: Topic environment setup can run before team specialization
 - **WHEN** the user asks to prepare the Topic Workspace development environment after `ensure-topic-registration`
 - **AND** `topic.intent.topic_env_requirements` exists and is usable
-- **THEN** the skill routes to `setup-topic-env` without requiring `specialize-team`, `team-profile/`, Topic Agent Team Profile material, Agent Team Instance records, agent roles, or agent count
+- **THEN** the skill routes to `setup-topic-env` without requiring `adapt-team-template`, `team-profile/`, Topic Agent Team Profile material, Agent Team Instance records, agent roles, or agent count
 - **AND** it records the service output as durable setup evidence
 
-#### Scenario: Specialize team selects domain team
-- **WHEN** the user asks to specialize a team after the topic is clear and registration blockers are resolved
-- **THEN** the skill routes to `specialize-team`, asks the user to select or confirm one Domain Agent Team Template, and runs the internal specialization path against the topic material
+#### Scenario: Direct specialize request runs full flow
+- **WHEN** the user asks to specialize a team over a topic, such as `specialize <team-path> over topic <topic>`
+- **THEN** the skill routes to `fast-forward`, carries the supplied team path as the selected Domain Agent Team Template, carries the supplied topic as the Research Topic input, and runs the full topic-team setup path rather than calling the internal template-adaptation stage directly
 
-#### Scenario: Specialize team creates topic team material
-- **WHEN** `specialize-team` completes its specialization work
+#### Scenario: Adapt team template selects domain team
+- **WHEN** the user explicitly asks for `adapt-team-template` after the topic is clear and registration blockers are resolved
+- **THEN** the skill asks the user to select or confirm one Domain Agent Team Template, copies it into the Topic Workspace, maps placeholders, and adapts copied template material against the topic material
+
+#### Scenario: Adapt team template creates topic team material
+- **WHEN** `adapt-team-template` completes its template-adaptation work
 - **THEN** it reports the created or updated Topic Agent Team Profile Bundle inputs, copied template material, placeholder resolutions, deferrals, validation refs, and next operator action
 
 #### Scenario: Clarify topic team revises specialization
@@ -496,7 +500,7 @@ The module skill SHALL make `clarify-topic` and `clarify-topic-team` use a bound
 
 #### Scenario: Clarification answers update topic material directly
 - **WHEN** the user answers a `clarify-topic` question clearly or accepts the proposed answer
-- **THEN** the subcommand validates the answer, updates `topic.intent.overview` directly, removes or revises resolved open questions and obsolete assumptions, and reports remaining open questions and readiness for `specialize-team`
+- **THEN** the subcommand validates the answer, updates `topic.intent.overview` directly, removes or revises resolved open questions and obsolete assumptions, and reports remaining open questions and readiness for `adapt-team-template`
 
 #### Scenario: Clarification answers update team material directly
 - **WHEN** the user answers a `clarify-topic-team` question clearly or accepts the proposed answer
@@ -740,4 +744,3 @@ The Topic Team Specialization module skill SHALL provide `resolve-topic-intent`,
 - **WHEN** a resolve subcommand cannot infer a high-level source requirement without guessing
 - **THEN** it records open questions or blockers in the relevant source file or report
 - **AND** setup subcommands do not proceed as if the missing source gate exists
-

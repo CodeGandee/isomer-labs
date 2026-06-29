@@ -20,7 +20,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 Required predecessor artifacts:
 
 - `isomer-topic-summary.md` from `finalize-topic-team`.
-- Draft profile or packet/profile input summary from `specialize-team`.
+- Draft profile or packet/profile input summary from `adapt-team-template`.
 - Packet validation output or explicit validation blocker.
 
 If the final summary or draft profile evidence is missing, refuse to run, explain that approval needs reviewable team material, and tell the user to run `finalize-topic-team` first.

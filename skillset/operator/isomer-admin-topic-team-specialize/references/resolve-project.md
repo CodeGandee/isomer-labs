@@ -40,7 +40,7 @@ Read as needed:
 
 - The selected Project, Research Topic, Topic Workspace, Domain Agent Team Template, and profile bundle refs are explicit, or the provisional topic seed path is named.
 - Any missing workspace, manifest, topic config, topic overview, or registration blockers are named.
-- The next subcommand is explicit, usually `init-topic`, `resolve-topic-intent`, `clarify-topic`, `ensure-topic-registration`, `resolve-topic-env-gate`, `specialize-team`, or a lower-level helper.
+- The next subcommand is explicit, usually `init-topic`, `resolve-topic-intent`, `clarify-topic`, `ensure-topic-registration`, `resolve-topic-env-gate`, `adapt-team-template`, or a lower-level helper.
 
 ## Guardrails
 

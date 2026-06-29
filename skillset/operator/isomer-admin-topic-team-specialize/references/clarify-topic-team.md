@@ -81,13 +81,13 @@ Replace obsolete or contradicted copied-material text instead of duplicating it.
 
 ## Prerequisite Artifacts
 
-Required predecessor artifacts from `specialize-team`:
+Required predecessor artifacts from `adapt-team-template`:
 
 - `<topic-workspace>/team-profile/execplan/team-specialization-guide.md`.
 - `<topic-workspace>/team-profile/execplan/team-specialization-plan.md` with a filled or pending `Final Report`.
 - Draft profile or packet/profile input summary from `draft-profile`.
 
-If any required specialization output is missing, refuse to run, explain which artifact is missing, and tell the user to run `specialize-team` first.
+If any required specialization output is missing, refuse to run, explain which artifact is missing, and tell the user to run `adapt-team-template` first.
 
 ## Guardrails
 

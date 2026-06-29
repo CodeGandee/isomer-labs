@@ -68,7 +68,7 @@ flowchart TD
     TENV["isomer-srv<br/>topic-env-setup"]:::skill
     AENV["isomer-srv<br/>agent-env-setup"]:::skill
 
-    S0["S0<br/>specialize-team"]:::route
+    S0["S0<br/>specialize-team<br/>handoff to fast-forward"]:::route
     S1["S1<br/>optional topology<br/>inspection or branch helper"]:::route
     S2["S2<br/>resolve-topic-env-gate<br/>create target spec<br/>then setup-topic-env"]:::route
     S3["S3<br/>resolve-agent-env-gate<br/>create target spec<br/>then setup-agent-env"]:::route
@@ -81,7 +81,7 @@ flowchart TD
 
 | ID | Caller | Route | Callee | Calling condition |
 | --- | --- | --- | --- | --- |
-| S0 | `isomer-admin-project-mgr` | `specialize-team` | `isomer-admin-topic-team-specialize` | Project-level work needs **Topic Team Specialization** for one **Research Topic**. This is an optional entry route into the same process. |
+| S0 | `isomer-admin-project-mgr` | `specialize-team` handoff to `fast-forward` | `isomer-admin-topic-team-specialize` | Project-level work needs full **Topic Team Specialization** for one **Research Topic**. This is an optional entry route into the same process and should not call the internal `adapt-team-template` stage directly. |
 | S1 | `isomer-admin-topic-team-specialize` | optional topology inspection or branch helper | `isomer-admin-topic-workspace-mgr` | The operator asks for read-only topology inspection, branch helper operations, boundary summaries, or legacy compatibility diagnostics. The workspace manager is not the canonical creator of the Topic Main Development Repository in the normal setup path. |
 | S2 | `isomer-admin-topic-team-specialize` | `resolve-topic-env-gate`, create `topic.env.topic_setup_target_spec`, then `setup-topic-env` | `isomer-srv-topic-env-setup` | `topic.intent.topic_env_requirements` exists, can be created from a clear runnable target, or an explicit topic env target spec is provided. The service materializes the Topic Workspace environment, Topic Main Development Repository, canonical external repositories, external repository projections, Pixi dependencies, and verification evidence, and must not claim per-agent readiness. |
 | S3 | `isomer-admin-topic-team-specialize` | `resolve-agent-env-gate`, create `topic.env.agent_setup_target_spec`, then `setup-agent-env` | `isomer-srv-agent-env-setup` | `topic.intent.agent_env_requirements` exists, can be created from requested cwd proof, or an explicit agent env target spec is provided. The service consumes topic env readiness, Topic Main Development Repository predecessor evidence, external projection evidence when needed, and authoritative **Agent Names** before creating worktrees or verifying cwd readiness. |
@@ -107,7 +107,7 @@ def specialize_topic_team(project_root: Path, user_request: str) -> StageResult:
     # Example output: "setup-agent-env"
     requested_route = agent_select(
         [
-            "specialize-team",
+            "adapt-team-template",
             "inspect-topic-workspace",
             "setup-topic-env",
             "setup-agent-env",
@@ -146,25 +146,6 @@ def specialize_topic_team(project_root: Path, user_request: str) -> StageResult:
     if topic_intent.status in {"blocked", "failed"}:
         # Condition matched when the topic overview cannot be safely created or updated.
         return topic_intent
-
-    if requested_route == "specialize-team":
-        # Condition matched when the selected route stops at static topic-team specialization.
-        # Stop after specialization when the user did not ask for setup evidence.
-        # Example output: StageResult(status="ready", evidence=["Topic Agent Team Profile", "Agent Names: planner, analyst"])
-        team = agent_do(
-            "Specialize the selected Domain Agent Team Template for this topic and produce authoritative Agent Names when available.",
-            context={"project_topic": project_topic, "topic_intent": topic_intent, "requested_route": requested_route},
-            returns=StageResult,
-            constraints=["Do not launch runtime teams."],
-        )
-        if team.status in {"blocked", "failed"}:
-            # Condition matched when static team specialization fails.
-            return team
-        return agent_do(
-            "Write a topic-team specialization summary with deferred setup evidence clearly marked.",
-            context={"project_topic": project_topic, "topic_intent": topic_intent, "team": team},
-            returns=StageResult,
-        )
 
     if requested_route == "inspect-topic-workspace":
         # Condition matched when the operator asks for optional topology inspection, branch helpers, boundary summaries, or legacy diagnostics.
@@ -245,13 +226,13 @@ def specialize_topic_team(project_root: Path, user_request: str) -> StageResult:
             returns=StageResult,
         )
 
-    agent_env_routes = {"setup-agent-env", "full-topic-team-setup"}
+    team_routes = {"adapt-team-template", "setup-agent-env", "full-topic-team-setup"}
 
-    if requested_route in agent_env_routes:
-        # Specialize the team after topic env predecessor evidence exists, so Agent Names and cwd intent can reflect the prepared topic-main repository.
+    if requested_route in team_routes:
+        # Adapt the team template after topic env predecessor evidence exists when that evidence is in scope.
         # Example output: StageResult(status="ready", evidence=["Topic Agent Team Profile", "Agent Names: planner, analyst"])
         team = agent_do(
-            "Specialize the selected Domain Agent Team Template for this topic and produce authoritative Agent Names for agent env setup.",
+            "Adapt the selected Domain Agent Team Template for this topic and produce authoritative Agent Names when available.",
             context={"project_topic": project_topic, "topic_intent": topic_intent, "topic_env": topic_env, "requested_route": requested_route},
             returns=StageResult,
             constraints=["Do not launch runtime teams."],
@@ -260,6 +241,17 @@ def specialize_topic_team(project_root: Path, user_request: str) -> StageResult:
             # Condition matched when team specialization fails or a route that needs Agent Names cannot get them.
             return team
 
+    if requested_route == "adapt-team-template":
+        # Condition matched when the explicit internal route stops after copied template adaptation.
+        return agent_do(
+            "Write a template-adaptation handoff summary with deferred setup evidence clearly marked.",
+            context={"project_topic": project_topic, "topic_intent": topic_intent, "team": team, "topic_env": topic_env},
+            returns=StageResult,
+        )
+
+    agent_env_routes = {"setup-agent-env", "full-topic-team-setup"}
+
+    if requested_route in agent_env_routes:
         # Condition matched when the route needs per-Agent Workspace cwd readiness evidence.
         # Create high-level source intent before the agent env service derives an operational matrix.
         # Example output: StageResult(status="ready", evidence=["topic.intent.agent_env_requirements"])
@@ -359,7 +351,7 @@ def specialize_topic_team(project_root: Path, user_request: str) -> StageResult:
 The process is a chain of readable intent and bounded service evidence. `isomer-admin-topic-team-specialize` stays in charge of the whole process, but it does not do every job itself. It writes the user-facing intent, delegates operational setup to the right service, then checks the returned evidence before moving on.
 
 - Route and resolve the topic:
-  - The operator request first becomes a concrete route, such as `specialize-team`, `setup-topic-env`, `setup-agent-env`, or `full-topic-team-setup`.
+  - The operator request first becomes a concrete route, such as `full-topic-team-setup`, `setup-topic-env`, or `setup-agent-env`. Natural-language requests like `specialize <team-path> over topic <topic>` map to `full-topic-team-setup`; `adapt-team-template` is the internal static-material stage.
   - The skill resolves the <u>*Research Topic*</u> and registered <u>*Topic Workspace*</u> from Project Manifest-backed context.
   - It writes `topic.intent.overview` so later stages share the same topic goal, metrics, datasets, explicit repositories, libraries, and tools.
   - If the topic is ambiguous, this stage blocks instead of guessing.
@@ -398,7 +390,7 @@ The process is a chain of readable intent and bounded service evidence. `isomer-
 
 | Producing skill | Evidence | Consuming stage |
 | --- | --- | --- |
-| `isomer-admin-topic-team-specialize` | `topic.intent.overview` | `resolve-topic-env-gate`, `specialize-team`, validation, finalization |
+| `isomer-admin-topic-team-specialize` | `topic.intent.overview` | `resolve-topic-env-gate`, `adapt-team-template`, validation, finalization |
 | `isomer-admin-topic-team-specialize` | `topic.intent.topic_env_requirements` | `isomer-srv-topic-env-setup setup-topic-env` |
 | `isomer-srv-topic-env-setup` | `topic.env.topic_setup_target_spec`, Pixi binding, Topic Main Development Repository Git state, projection metadata, dependency/enclosure evidence, verification commands, `per_agent_readiness_status: not checked` when relevant | `resolve-agent-env-gate`, `isomer-srv-agent-env-setup require-topic-env-ready`, `isomer-srv-agent-env-setup require-topic-main-ready`, validation, finalization |
 | `isomer-admin-topic-team-specialize` | `topic.intent.agent_env_requirements` | `isomer-srv-agent-env-setup setup-agent-env` |

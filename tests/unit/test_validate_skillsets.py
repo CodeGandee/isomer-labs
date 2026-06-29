@@ -78,7 +78,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Subcommands
 
-            Procedural Subcommands: `init-topic`, `clarify-topic`, `ensure-topic-registration`, `specialize-team`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile`.
+            Procedural Subcommands: `init-topic`, `clarify-topic`, `ensure-topic-registration`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile`.
 
             Helper Subcommands: five lower-level implementation commands: `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile`.
 
@@ -129,7 +129,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                     | `init-topic` | Start topic setup. | `topic-overview.md`. |
                     | `clarify-topic` | Clarify topic. | Updated `topic-overview.md`. |
                     | `ensure-topic-registration` | Ensure Project registration. | Registered topic refs. |
-                    | `specialize-team` | Specialize topic team. | Draft profile inputs. |
+                    | `adapt-team-template` | Adapt team template. | Draft profile inputs. |
                     | `setup-topic-env` | Prepare topic environment. | `topic_environment_status`. |
                     | `setup-agent-workspace` | Prepare Agent Workspaces. | `semantic_paths`, `topic.repos.main`, `agent.workspace`, `agent_workspace_paths`. |
                     | `validate-topic-team` | Validate static material. | `topic_team_validation_status`. |
@@ -649,13 +649,13 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_operator_validator_requires_procedural_subcommand_prerequisites(self) -> None:
         root = self.make_root()
-        self.write_topic_team_specialization_skill(root, omit_prerequisite_subcommand="specialize-team.md")
+        self.write_topic_team_specialization_skill(root, omit_prerequisite_subcommand="adapt-team-template.md")
         self.write_deepsci_mini_guide(root)
 
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS003", codes(diagnostics))
-        self.assertTrue(any("specialize-team.md" in message and "predecessor artifacts" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("adapt-team-template.md" in message and "predecessor artifacts" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_private_helpers_in_help(self) -> None:
         root = self.make_root()

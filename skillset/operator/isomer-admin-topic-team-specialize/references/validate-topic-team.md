@@ -38,7 +38,7 @@ Required predecessor artifacts:
 
 - `topic.intent.overview` with resolved path metadata.
 - Registration assurance from `ensure-topic-registration`, including registered Research Topic and Topic Workspace refs, Topic Workspace Pixi binding status, and any registration blockers.
-- Specialized topic-team material and draft profile or packet/profile input summary from `specialize-team`.
+- Specialized topic-team material and draft profile or packet/profile input summary from `adapt-team-template`.
 - `topic_environment_status` or explicit setup blocker from `setup-topic-env`, preferably with `isomer-srv-topic-env-setup` service output evidence.
 - `agent_names`, `agent_workspace_paths`, `semantic_paths`, `local_tmp_path_status`, `isomer_managed_path_status`, `branch_plan`, worktree evidence, generated-link evidence, or explicit workspace blocker from `setup-agent-workspace`.
 - `agent_environment_service_output`, `topic.intent.agent_env_requirements`, and `topic.env.agent_setup_target_spec` when per-Agent Workspace cwd proof was requested, or an explicit service blocker when that setup was intentionally deferred.

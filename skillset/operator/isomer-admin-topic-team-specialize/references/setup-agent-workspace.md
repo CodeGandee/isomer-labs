@@ -41,7 +41,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 Required predecessor artifacts:
 
-- Specialized topic-team shape and draft profile or packet/profile input summary from `specialize-team`.
+- Specialized topic-team shape and draft profile or packet/profile input summary from `adapt-team-template`.
 - Registration assurance from `ensure-topic-registration`, including Project Manifest-backed Research Topic and Topic Workspace refs or an explicit registration blocker.
 - `topic_environment_status` or explicit Topic Workspace predecessor setup blocker from `setup-topic-env`.
 - `topic.env.topic_setup_target_spec`, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, and Topic Workspace predecessor evidence from `isomer-srv-topic-env-setup` before per-Agent Workspace cwd verification or selected-agent repair.
