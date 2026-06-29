@@ -22,7 +22,7 @@ When this subcommand is selected, execute the following steps in order.
    - Generated content-root relocation starts with `isomer-cli project content-root move --to <content-dir> --dry-run`; use `--yes` only after review.
    - Relocation does not rewrite Workspace Runtime records or Pixi environments.
    - Checks stay read-only, Workspace Runtime creation is explicit, and readiness preparation is explicit.
-   - Per-agent worktree preparation belongs to `isomer-admin-topic-workspace-mgr`.
+   - Per-agent worktree preparation belongs to `isomer-srv-agent-env-setup`; optional topology inspection and branch helpers belong to `isomer-admin-topic-workspace-mgr`.
    - Topic Team Specialization belongs to `isomer-admin-topic-team-specialize`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which parts of the skill usage information to print, then execute the plan.

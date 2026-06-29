@@ -64,6 +64,6 @@ If any required predecessor artifact is missing, refuse to run and tell the user
 
 Do not derive `topic.env.topic_setup_target_spec` here. The topic env service owns operational target-spec generation, dependency plans, Pixi commands, repo acquisition decisions, expected outputs, and execution logs.
 
-Do not write canonical source intent to `<topic-workspace>/user-intent/src/env-gate.md`. If only that legacy path exists, report a legacy-path migration note and name `topic.intent.topic_env_requirements` plus its resolved default-layout path.
+Do not write canonical source intent to `<topic-workspace>/user-intent/src/env-gate.md`. If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.topic_env_requirements` plus its resolved default-layout path.
 
 Do not require Topic Agent Team Profile material, Agent Names, Agent Workspaces, or per-agent cwd readiness before resolving topic-level environment source intent.

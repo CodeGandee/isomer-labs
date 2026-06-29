@@ -126,7 +126,7 @@ class ValidateDocsTests(unittest.TestCase):
             (docs / "isomer-cli.md").write_text("\n".join(all_examples), encoding="utf-8")
             self.assertEqual([], check_cli_error_example_registry(root))
 
-    def test_legacy_workspace_paths_are_reported_outside_migration_notes(self) -> None:
+    def test_legacy_workspace_paths_are_reported_outside_breaking_layout_notes(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "docs").mkdir()
@@ -136,13 +136,13 @@ class ValidateDocsTests(unittest.TestCase):
             self.assertEqual(2, len(issues))
             self.assertTrue(all("isomer-managed/" in issue for issue in issues))
 
-    def test_legacy_workspace_paths_are_allowed_in_migration_notes(self) -> None:
+    def test_legacy_workspace_paths_are_allowed_in_breaking_layout_notes(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "docs").mkdir()
-            (root / "README.md").write_text("## Legacy Layout Migration\n\nOld .isomer-agent/ paths are migration diagnostics.\n", encoding="utf-8")
+            (root / "README.md").write_text("## Breaking Layout Diagnostics\n\nOld .isomer-agent/ paths are breaking diagnostics.\n", encoding="utf-8")
             (root / "docs" / "topic.md").write_text(
-                "Legacy repos/topic-main/artifacts paths must be reported as migration diagnostics.\n",
+                "Legacy repos/topic-main/artifacts paths must be reported as breaking diagnostics.\n",
                 encoding="utf-8",
             )
             self.assertEqual([], check_legacy_workspace_paths(root))

@@ -60,7 +60,7 @@ If any required predecessor artifact is missing, refuse to run and tell the user
 
 ## Guardrails
 
-Do not write canonical topic understanding to `<topic-workspace>/topic-def/topic-overview.md`. If only that legacy path exists, report a legacy-path migration note and name `topic.intent.overview` plus its resolved default-layout path.
+Do not write canonical topic understanding to `<topic-workspace>/topic-def/topic-overview.md`. If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.overview` plus its resolved default-layout path.
 
 Do not infer exact dependency versions, repository URLs, datasets, metrics, or tools unless the source topic context explicitly names them. Record uncertainty as assumptions or open questions.
 

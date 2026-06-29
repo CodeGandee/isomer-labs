@@ -20,7 +20,7 @@ When this subcommand is selected, execute the following steps in order.
 2. **Resolve `research_topic_id`** from the prompt or Project Manifest. If more than one Research Topic remains plausible, ask the user which one to use.
 3. **Read the Project Manifest** and locate the Project Manifest-declared Topic Workspace for the selected Research Topic.
 4. **Resolve setup semantic paths** for the selected Topic Workspace:
-   - Required read-only labels are `topic.workspace`, `topic.repos.main`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`.
+   - Required read-only labels are `topic.workspace`, `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`.
    - Report each semantic label, resolved path, storage profile, path source, source detail, and any manifest diagnostics.
 5. **Resolve the effective Topic Workspace Pixi binding target** for the selected Research Topic:
    - Use an active `topic_standalone_pixi_bindings.manifest_path_or_dir` entry when present.
@@ -64,7 +64,7 @@ Carry these values to later subcommands:
 - Do not block solely because the Project Manifest lacks an explicit `topic_standalone_pixi_bindings` entry when Pixi resolves the registered Topic Workspace directory as a confined Pixi workspace.
 - Do not block solely because `<topic-workspace>/team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instance records, Agent Workspace plans, roles, or agent count are absent.
 - Do not treat the Project-root Pixi environment as the Topic Workspace environment.
-- Do not proceed to `read-env-gate`, `ensure-topic-repos`, `derive-env-gate`, `install-topic-deps`, or `verify-env-gate` when any resolved context value is missing.
+- Do not proceed to `read-env-gate`, `derive-env-gate`, `ensure-topic-main-repository`, `ensure-topic-repos`, `project-extern-repos`, `install-topic-deps`, or `verify-env-gate` when any resolved context value is missing.
 
 ## Examples
 

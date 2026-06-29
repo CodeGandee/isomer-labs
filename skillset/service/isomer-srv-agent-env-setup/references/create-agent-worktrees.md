@@ -1,6 +1,6 @@
 # Create Agent Worktrees
 
-Use this subcommand to create or validate each Agent Workspace as a Git worktree of the Topic Main Repository and prepare required support surfaces.
+Use this subcommand to create or validate each Agent Workspace as a Git worktree of the prepared Topic Main Development Repository and prepare required support surfaces.
 
 ## Required Inputs
 
@@ -10,7 +10,7 @@ Recover these before asking the user:
 | --- | --- |
 | Agent env context | Require resolved Topic Workspace, `topic.repos.main`, `topic.agents_root`, requester, and confirmation source. |
 | Agent plan | Require `plan-agent-workspaces` output with authoritative Agent Names, resolved `agent.workspace`, support labels, path sources, and branch plan. |
-| Topic Main Repository state | Require `ensure-topic-main-repository` output with a normal non-bare repository and owner branch posture. |
+| Topic Main Development Repository predecessor evidence | Require `require-topic-main-ready` output with a normal non-bare repository, owner branch posture, Isomer-managed namespace posture, and required projection predecessor evidence. |
 | Agent env target spec | Require resolved `topic.env.agent_setup_target_spec` so worktree status can be recorded. |
 | Optional selected agent | Optional. It must be one authoritative Agent Name and yields partial setup evidence only. |
 
@@ -18,14 +18,14 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: resolved context, authoritative agent plan, usable Topic Main Repository state, agent env target spec, and mutation confirmation.
+1. **Require predecessor artifacts**: resolved context, authoritative agent plan, usable Topic Main Development Repository predecessor evidence, required projection predecessor evidence, agent env target spec, and mutation confirmation.
 2. **Inspect Git worktree metadata** for the resolved `topic.repos.main` before creating any worktree.
 3. **For each targeted authoritative Agent Name**, validate the expected branch `per-agent/<agent-name>/main` and resolved `agent.workspace` path.
 4. **Report existing matching worktrees as ready** when the resolved `agent.workspace` path already exists as a worktree of `topic.repos.main` on the expected branch.
 5. **Block existing nonmatching paths**. Do not overwrite, delete, move, clean, reset, or reinitialize an existing path that is not the expected worktree.
-6. **Reject duplicate branch checkout** when `per-agent/<agent-name>/main` is already checked out in another worktree of the Topic Main Repository.
+6. **Reject duplicate branch checkout** when `per-agent/<agent-name>/main` is already checked out in another worktree of the Topic Main Development Repository.
 7. **Create missing safe worktrees** only for authoritative Agent Names and safe resolved paths:
-   - Use the Topic Main Repository as the Git anchor.
+   - Use the already-prepared Topic Main Development Repository as the Git anchor.
    - Use the resolved `agent.workspace` path as the Agent Workspace path.
 8. **Prepare or validate required support labels** for each ready worktree:
    - Check `agent.isomer_managed`, `agent.runtime`, `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, `agent.inbox`, `agent.topic_readonly`, `agent.topic_writable`, and `agent.links`.
@@ -43,5 +43,6 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Do not select agents by scanning existing directories.
 - Do not create a worktree outside the selected Topic Workspace unless a later accepted external-root policy explicitly permits the semantic label.
 - Do not create worktrees for unsafe Agent Names, unsafe branch names, unsafe custom semantic bindings, or branches checked out elsewhere.
+- Do not initialize, repair, or configure the Topic Main Development Repository here; route missing predecessor evidence to `isomer-srv-topic-env-setup`.
 - Do not describe tmp or private runtime material as a sharing surface.
 - Do not claim Agent Workspace environment readiness until `verify-agent-env-gate` passes from cwd.

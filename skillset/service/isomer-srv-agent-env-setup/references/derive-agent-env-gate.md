@@ -10,6 +10,7 @@ Recover these before asking the user:
 | --- | --- |
 | Agent env context | Require Project, Research Topic, Topic Workspace, Pixi binding, semantic topic labels, requester, and confirmation source from `resolve-agent-env-context`. |
 | Topic env predecessor | Require `require-topic-env-ready` output and `topic.env.topic_setup_target_spec`. |
+| Topic-main predecessor | Require `require-topic-main-ready` output when deriving or validating target specs that create worktrees or use projected external repos. |
 | Source agent intent summary | Require `read-agent-env-gate` output from `topic.intent.agent_env_requirements` when deriving from source intent. |
 | Explicit target spec | Optional. A manual file, prompt, or context may supply the per-agent operational target spec directly. When supplied, validate it against this page's fixed sections and per-agent cwd verification policy instead of requiring source intent. |
 | Agent plan | Require `plan-agent-workspaces` output with authoritative Agent Names, branch plan, and resolved semantic labels. |
@@ -37,7 +38,7 @@ When this subcommand is selected, execute the following steps in order.
    - When using an explicit manual target spec, record the explicit source and normalized target-spec copy or reference, then preserve every required section.
 7. **Initialize or update the execution log**:
    - Include requester, confirmation source, optional Service Request refs, support Artifact refs, Provenance refs, changed files, commands run, blockers, and `Not run yet.` for verification commands that have not been executed.
-8. **Report target spec metadata** and any blockers that prevent Topic Main Repository setup, worktree creation, or verification.
+8. **Report target spec metadata** and any blockers that prevent topic-main predecessor consumption, projection predecessor consumption, worktree creation, or verification.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step derivation plan from the source intent or explicit target spec, topic env predecessor, agent plan evidence, parent guardrails, and user request, then execute the plan.
 
@@ -52,7 +53,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Topic Pixi Binding
 
-## Topic Main Repository Configuration
+## Topic Main Development Repository Predecessor
 
 ## Agent Plan
 
@@ -77,11 +78,11 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Topic Pixi Binding` should record `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and binding source.
 
-`## Topic Main Repository Configuration` should record non-destructive configuration requirements for the Topic Main Repository resolved by `topic.repos.main`.
+`## Topic Main Development Repository Predecessor` should record required `topic.repos.main` predecessor evidence, required projection predecessor evidence from `topic.repos.main.projections.manifest`, and any repair route to `isomer-srv-topic-env-setup`. It must not ask agent env setup to create, initialize, configure, or repair topic-main.
 
 `## Agent Plan` should list authoritative Agent Names, source role ids, branch plan, selected-agent partial scope when present, and any corroborating operator map evidence.
 
-`## Semantic Paths` should list `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `agent.workspace`, required agent support labels, path sources, and blockers.
+`## Semantic Paths` should list `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.agents_root`, `agent.workspace`, required agent support labels, path sources, and blockers.
 
 `## Worktree Plan` should list expected `per-agent/<agent-name>/main` branches and resolved `agent.workspace` worktree paths.
 
@@ -93,7 +94,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Do not create per-agent dependency plans or reinterpret Topic Workspace dependency policy.
+- Do not create per-agent dependency plans, reinterpret Topic Workspace dependency policy, or ask this service to repair topic-main/projection predecessors.
 - Do not use tmp paths as durable readiness evidence.
 - Do not claim verification has run before `verify-agent-env-gate`.
 - Do not create Workspace Runtime records or Agent Team Instance records.

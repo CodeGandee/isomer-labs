@@ -15,14 +15,14 @@ When this subcommand is selected, execute the following steps in order.
    - Include `source_agent_env_gate_path`, `agent_env_gate_path`, readiness by agent, overall readiness, command evidence, blockers, and next action.
 7. Summarize validation status, blockers, skipped actions, generated links, profile or packet edits, and refs that remain to be updated.
 8. Name the next operator action:
-   - Examples include rerun one subcommand, make a caller-requested `isomer-srv-agent-env-setup setup-agent-env` call after validated topology evidence exists, call `isomer-admin-topic-team-specialize validate-topic-team`, create an Agent Team Instance through runtime workflow, or stop on blockers.
+   - Examples include rerun one subcommand, make a caller-requested `isomer-srv-agent-env-setup setup-agent-env` call after topic env predecessor evidence exists, call `isomer-admin-topic-team-specialize validate-topic-team`, create an Agent Team Instance through runtime workflow, or stop on blockers.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to produce a consumer-neutral summary from whatever validated evidence exists.
 
 ## Output
 
-Report `research_topic_ref`, `topic_workspace_ref`, `semantic_paths`, `topic_main_repo_path`, `isomer_managed_path_status`, `local_tmp_path_status`, `records_root`, `runtime_root`, `agent_workspace_paths`, derived `agent_workspace_refs`, `branch_plan`, `generated_links`, `boundary_material_paths`, optional `agent_environment_service_output`, `validation_status`, `blockers`, and `next_operator_action`.
+Report `research_topic_ref`, `topic_workspace_ref`, `semantic_paths`, `topic_main_repo_path`, projection roots, `isomer_managed_path_status`, `local_tmp_path_status`, `records_root`, `runtime_root`, `agent_workspace_paths`, derived `agent_workspace_refs`, `branch_plan`, `generated_links`, `boundary_material_paths`, optional `agent_environment_service_output`, `validation_status`, `blockers`, and `next_operator_action`.
 
 Include cwd-friendly guidance for prepared agents: from inside their own Agent Workspace, they can query labels such as `agent.private_artifacts`, `agent.scratch`, `agent.public_share`, and `agent.tmp` without passing Agent Name. Cross-agent queries still require explicit Agent Name, Agent Instance, handoff, Artifact, or boundary-approved share context. State that `agent.tmp` is local, ignored, disposable, not shared, and not durable evidence.
 
-Do not claim live team readiness, Workspace Runtime readiness, or per-agent environment readiness from static workspace preparation. Agent environment readiness must come from `isomer-srv-agent-env-setup` evidence, and selected-agent evidence from that service remains partial until every planned Agent Name is verified.
+Do not claim live team readiness, Workspace Runtime readiness, or per-agent environment readiness from static topology inspection. Agent environment readiness must come from `isomer-srv-agent-env-setup` evidence, and selected-agent evidence from that service remains partial until every planned Agent Name is verified.

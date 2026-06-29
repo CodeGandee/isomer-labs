@@ -46,7 +46,7 @@ LEGACY_WORKSPACE_PATTERNS = [
         re.compile(r"\brepos/topic-main/(?:shared|artifacts|tasks|runs|views|logs|tools)\b"),
     ),
 ]
-MIGRATION_NOTE_TERMS = ("legacy", "migration", "migrate", "diagnostic", "compatibility")
+BREAKING_LAYOUT_NOTE_TERMS = ("legacy", "breaking", "break", "diagnostic", "compatibility")
 SEMANTIC_PATH_COMMANDS = (
     "project paths default",
     "project paths explain",
@@ -197,15 +197,15 @@ def check_legacy_workspace_paths(repo_root: Path) -> list[str]:
         if not path.is_file():
             continue
         content = path.read_text(encoding="utf-8")
-        migration_context = False
+        breaking_layout_context = False
         for line_number, line in enumerate(content.splitlines(), start=1):
             if line.startswith("## "):
-                migration_context = any(term in line.lower() for term in MIGRATION_NOTE_TERMS)
-            is_migration_note = migration_context or any(term in line.lower() for term in MIGRATION_NOTE_TERMS)
+                breaking_layout_context = any(term in line.lower() for term in BREAKING_LAYOUT_NOTE_TERMS)
+            is_breaking_layout_note = breaking_layout_context or any(term in line.lower() for term in BREAKING_LAYOUT_NOTE_TERMS)
             for label, pattern in LEGACY_WORKSPACE_PATTERNS:
-                if pattern.search(line) and not is_migration_note:
+                if pattern.search(line) and not is_breaking_layout_note:
                     issues.append(
-                        f"{path.relative_to(repo_root)}:{line_number}: stale workspace layout language uses {label}; use isomer-managed/ or explicit migration diagnostics"
+                        f"{path.relative_to(repo_root)}:{line_number}: stale workspace layout language uses {label}; use isomer-managed/ or explicit breaking-layout diagnostics"
                     )
     return issues
 

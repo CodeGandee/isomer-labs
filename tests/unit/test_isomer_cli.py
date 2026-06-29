@@ -2125,6 +2125,22 @@ class IsomerCliTests(unittest.TestCase):
             paths["topic_main_tracked_artifacts"]["path"],
         )
         self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "repos" / "topic-main" / "isomer-managed" / "topic-owned" / "readonly" / "extern"),
+            paths["topic_main_projections_readonly"]["path"],
+        )
+        self.assertEqual("topic.repos.main.projections.readonly", paths["topic_main_projections_readonly"]["semantic_label"])
+        self.assertEqual("topic_repo_readonly_projection_dir", paths["topic_main_projections_readonly"]["storage_profile"])
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "repos" / "topic-main" / "isomer-managed" / "topic-owned" / "writable" / "extern"),
+            paths["topic_main_projections_writable"]["path"],
+        )
+        self.assertEqual("topic_repo_writable_projection_dir", paths["topic_main_projections_writable"]["storage_profile"])
+        self.assertEqual(
+            str(root / "isomer-content" / "topic-ws" / "default" / "repos" / "topic-main" / "isomer-managed" / "tracked" / "manifests" / "extern-projections.toml"),
+            paths["topic_main_projections_manifest"]["path"],
+        )
+        self.assertEqual("topic_repo_tracked_file", paths["topic_main_projections_manifest"]["storage_profile"])
+        self.assertEqual(
             str(root / "isomer-content" / "topic-ws" / "default" / "tmp"),
             paths["topic_tmp"]["path"],
         )
@@ -2391,6 +2407,17 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["project", "paths", "get", "topic.repos.main.tracked.artifacts", "--configured", "--json"], cwd=topic_workspace)
         data = json.loads(output)
         self.assertEqual(str(topic_workspace / "source" / "main" / "isomer-managed" / "tracked" / "artifacts"), data["path"]["path"])
+        status, output = self.run_cli(["project", "paths", "get", "topic.repos.main.projections.readonly", "--configured", "--json"], cwd=topic_workspace)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(topic_workspace / "source" / "main" / "isomer-managed" / "topic-owned" / "readonly" / "extern"), data["path"]["path"])
+        self.assertEqual("topic_repo_readonly_projection_dir", data["path"]["storage_profile"])
+        status, output = self.run_cli(["project", "paths", "explain", "topic.repos.main.projections.manifest", "--json"], cwd=topic_workspace)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("topic.repos.main.projections.manifest", data["explanation"]["semantic_label"])
+        self.assertEqual("configured", data["explanation"]["selected_mode"])
+        self.assertEqual("topic_repo_tracked_file", data["explanation"]["selected"]["storage_profile"])
         status, output = self.run_cli(["project", "paths", "reset", "topic.repos.main", "--json"], cwd=topic_workspace)
         self.assertEqual(0, status, output)
         status, output = self.run_cli(["project", "paths", "get", "topic.repos.main", "--configured", "--json"], cwd=topic_workspace)
@@ -2466,6 +2493,13 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(str(topic_workspace / "custom-main" / "local-tmp"), data["path"]["path"])
         self.assertEqual("topic_main_tmp", data["path"]["compatibility_surface"])
 
+        status, output = self.run_cli(["project", "paths", "get", "topic.repos.main.projections.writable", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("default_profile", data["path"]["source"])
+        self.assertEqual(str(topic_workspace / "custom-main" / "isomer-managed" / "topic-owned" / "writable" / "extern"), data["path"]["path"])
+        self.assertEqual("topic_repo_writable_projection_dir", data["path"]["storage_profile"])
+
         status, output = self.run_cli(
             ["project", "paths", "get", "agent.private_artifacts", "--topic", "default", "--agent", "alice", "--json"],
             cwd=root,
@@ -2532,6 +2566,25 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO005", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        write(
+            manifest_path,
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.repos.main.unexpected"
+            path = "repos/topic-main/unexpected"
+            storage_profile = "topic_repo"
+            status = "active"
+            """,
+        )
+        status, output = self.run_cli(["project", "paths", "get", "topic.repos.main.unexpected", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(any("Unknown or reserved Topic Main Development Repository semantic label" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
 
     def test_cwd_derived_agent_context_and_selector_conflicts(self) -> None:
         root = self.make_root()

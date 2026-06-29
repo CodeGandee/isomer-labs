@@ -11,7 +11,6 @@ Recover these before asking the user:
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
 | Source intent summary | Require the extracted `topic.intent.topic_env_requirements` summary from `read-env-gate` when deriving from source intent. Refuse to run if source-intent derivation was requested and the summary is missing. |
 | Explicit target spec | Optional. A manual file, prompt, or context may supply the operational target spec directly. When supplied, validate it against this page's fixed sections and enclosure policy instead of requiring source intent. |
-| Repo context | Require repo context from `ensure-topic-repos` when the source intent or explicit target spec needs independent repos. If repos are required and context is missing, refuse to run and tell the user to run `ensure-topic-repos` first. |
 | Topic env target spec | Resolve `topic.env.topic_setup_target_spec` through Workspace Path Resolution. Under `isomer-default.v1`, this defaults to `<topic-workspace-dir>/intent/derived/isomer-env-gate.md`; create the parent directory when writing the target spec. |
 
 ## Workflow
@@ -22,12 +21,11 @@ When this subcommand is selected, execute the following steps in order.
    - Require workspace context from `resolve-topic-workspace`.
    - Require source intent summary from `read-env-gate` when deriving from source intent.
    - Require explicit target spec input when manual mode is used.
-   - Require repo context from `ensure-topic-repos` when repos are needed.
 2. **Resolve the target spec label** `topic.env.topic_setup_target_spec`:
    - Record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
    - Create the parent directory when writing the target spec.
 3. **Translate or validate operations**:
-   - Convert source intent and repo evidence into concrete repo requirements, dependency plan, enclosure strategy, Pixi install commands, verification commands, expected results, and blockers.
+   - Convert source intent into concrete topic-main requirements, canonical external repo requirements, projection access intent, dependency plan, enclosure strategy, Pixi install commands, verification commands, expected results, and blockers.
    - Or validate that the explicit target spec already contains those details.
 4. **Apply dependency and enclosure policy**:
    - Include Python as the Topic Workspace glue language.
@@ -42,8 +40,8 @@ When this subcommand is selected, execute the following steps in order.
 5. **Write or update the fixed Markdown template** from **Template**:
    - Write at the resolved `topic.env.topic_setup_target_spec` path when deriving from source intent.
    - When using an explicit manual target spec, record the explicit source and normalized target-spec copy or reference, then preserve every required section.
-6. **Warning-label inferred repos** in `## Inferred Source Warnings` and carry the same warnings to the final skill output.
-7. **Report target spec metadata** and any blockers that prevent installation or verification.
+6. **Warning-label inferred repo requirements** in `## Inferred Source Warnings` and carry the same warnings to the final skill output. `ensure-topic-repos` may later add stronger source evidence when it materializes missing repos.
+7. **Report target spec metadata** and any blockers that prevent topic-main setup, repo acquisition, projection materialization, installation, or verification.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the source gate, repo evidence, dependency policy, parent guardrails, and user request, then execute the plan.
 
@@ -59,6 +57,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 ## Repo Requirements
 
 ## Inferred Source Warnings
+
+## Projection Requirements
 
 ## Dependency Plan
 
@@ -79,9 +79,11 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Runnable Target` should name the desired command or behavior that must work after setup.
 
-`## Repo Requirements` should list repo names, semantic `topic.repos.*` labels, resolved paths, sources, and inspection notes. For helper-created non-main topic repos, use the default `repos/extern/<repo-label-path>` location unless an explicit safe binding already exists.
+`## Repo Requirements` should list repo names, semantic `topic.repos.*` labels, expected resolved paths, source hints, and inspection notes. For helper-created non-main topic repos, use the default `repos/extern/<repo-label-path>` location unless an explicit safe binding already exists. Existing canonical external repos are read-only evidence by default unless this target spec explicitly authorizes mutation.
 
 `## Inferred Source Warnings` should list inferred repo sources and the reason each was chosen. Use `None.` only when no repo source was inferred.
+
+`## Projection Requirements` should list which canonical external repositories must be visible from topic-main, their intended access (`read-only` or `writable`), expected projection root (`topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`), acceptable projection modes, mutation policy, and blockers. Use `None.` when no external repo must be projected into topic-main.
 
 `## Dependency Plan` should list Python glue baseline, selected Python version, Python version evidence, any version conflicts and adaptation plan, starter Python dependencies, PyPI dependencies, Pixi/Conda dependencies, native toolchains, package source evidence, NVIDIA channel decisions when relevant, editable installs, and an enclosure strategy for every dependency or runtime need. Mark each item as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked. For every non-Pixi-managed choice, record why Pixi-managed installation was not used. When package repository, mirror, registry, or channel reachability is uncertain or policy-relevant, record the `isomer-srv-resolve-pkg-repo` resolution evidence. When CUDA architecture targets, CUDA/C++ build environments, or build parallelism choices affect the gate, record the `isomer-misc-nvidia-tools` preference evidence.
 

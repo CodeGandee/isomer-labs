@@ -8,29 +8,28 @@ When this subcommand is selected, execute the following steps in order.
 2. Read setup inputs:
    - Specialized topic-team shape, expected Agent Roles, draft profile inputs, registration evidence, and registered Topic Workspace path.
    - Topic Workspace predecessor evidence, `topic.env.topic_setup_target_spec`, and the user task or requested Agent Workspace cwd readiness target.
-3. Determine whether the requested Agent Workspace layout needs standard Git-backed topology:
-   - Check whether it needs `topic.repos.main`, `agent.workspace`, and worker support labels.
-   - Resolve that need from the selected Topic Workspace Manifest or `isomer-default.v1`.
-4. Delegate Git-backed workspace preparation when needed:
-   - Delegate when Git-backed worktrees, `agent.*` worker-facing support paths, `topic.repos.main.tmp`, `agent.tmp`, peer-readable large artifact paths, generated links, or launch-facing worker Agent Workspaces are needed.
-   - Use `isomer-admin-topic-workspace-mgr topic-workspace` or the needed subcommand.
-   - Record semantic labels, paths, sources, agent names, branches, `isomer-managed/` regime status, local tmp ignore posture, generated links, derived compatibility refs, boundary, validation, blocker, and next-action output as durable setup evidence.
-5. Require a per-agent source intent before cwd verification:
+3. Require topic-main predecessor evidence before Agent Workspace setup:
+   - Require topic env setup output that includes Topic Main Development Repository Git state, Isomer-managed namespace posture, and projection metadata when the target depends on projected external repos.
+   - If this evidence is missing, stale, blocked, or failed, route repair to `setup-topic-env` and stop before service delegation.
+4. Require a per-agent source intent before cwd verification:
    - Apply this when the user requested per-Agent Workspace cwd verification, agent environment readiness, selected-agent repair, or launch-facing Agent Workspace readiness.
    - Continue when a usable `topic.intent.agent_env_requirements` source surface or an explicit manual agent env target spec exists.
    - If source intent is missing and the task gives a clear per-agent cwd readiness target, route to `resolve-agent-env-gate` before service delegation.
    - If the target is unclear, ask the user what every planned Agent Workspace cwd must be able to run and stop before service delegation.
+5. Prepare the derived agent target spec boundary:
+   - Ensure `topic.env.agent_setup_target_spec` exists, is supplied explicitly, or can be created from `topic.intent.agent_env_requirements` before service materialization.
+   - Keep source intent high level; put per-agent verification matrix, required projection predecessor references, expected results, and blockers in the derived target spec.
 6. Delegate gate-driven Agent Workspace environment setup only after required evidence exists:
    - Require `topic.intent.agent_env_requirements` or an explicit target spec source.
-   - Require Topic Workspace predecessor evidence including `topic.env.topic_setup_target_spec`, authoritative Agent Names, and Git topology evidence.
+   - Require Topic Workspace predecessor evidence including `topic.env.topic_setup_target_spec`, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, and authoritative Agent Names.
    - Call `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>` or the needed direct subcommand.
-   - Record `agent_env_source_label`, `agent_env_source_path`, `agent_env_target_spec_label`, `agent_env_target_spec_path`, Topic Main Repository path, Agent Names, resolved `agent.workspace` paths, branch plan, worktree status by agent, readiness by agent, overall readiness, commands run, changed files, blockers, and next action as service evidence.
+   - Record `agent_env_source_label`, `agent_env_source_path`, `agent_env_target_spec_label`, `agent_env_target_spec_path`, Topic Main Development Repository predecessor evidence, projection predecessor evidence, Agent Names, resolved `agent.workspace` paths, branch plan, worktree status by agent, readiness by agent, overall readiness, commands run, changed files, blockers, and next action as service evidence.
 7. Treat non-Git static setup as an explicit blocker or exception for launch-facing worker Agent Workspaces:
    - If the user intentionally requests non-Git support material, record why it is outside the standard worker layout.
 8. Create or report Agent Workspace directories only after the specialized team shape is clear and the target paths are safe.
 9. Record durable setup material:
    - Include agent names, resolved `agent.workspace` paths, required `agent.*` support paths, `topic.repos.main.tmp` and `agent.tmp` posture, path sources, role ownership, worker visibility boundary notes, and generated-link notes.
-   - Include delegated workspace manager evidence, delegated `isomer-srv-agent-env-setup` evidence, skipped actions, blockers, and validation refs.
+   - Include delegated `isomer-srv-agent-env-setup` evidence, skipped actions, blockers, and validation refs.
 10. Report Agent Workspace setup output:
    - Include `agent_names`, `agent_workspace_paths`, `semantic_paths`, `local_tmp_path_status`, `isomer_managed_path_status`, `branch_plan`, `topic_main_repo`, `records_root`, and delegated derived `agent_workspace_ref` evidence when present.
    - Include agent env source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, `agent_environment_service_output`, readiness by agent, generated links, unresolved workspace blockers, and whether `validate-topic-team` can proceed.
@@ -44,7 +43,7 @@ Required predecessor artifacts:
 - Specialized topic-team shape and draft profile or packet/profile input summary from `specialize-team`.
 - Registration assurance from `ensure-topic-registration`, including Project Manifest-backed Research Topic and Topic Workspace refs or an explicit registration blocker.
 - `topic_environment_status` or explicit Topic Workspace predecessor setup blocker from `setup-topic-env`.
-- `topic.env.topic_setup_target_spec` and Topic Workspace predecessor evidence from `isomer-srv-topic-env-setup` before per-Agent Workspace cwd verification or selected-agent repair.
+- `topic.env.topic_setup_target_spec`, Topic Main Development Repository predecessor evidence, projection predecessor evidence when required, and Topic Workspace predecessor evidence from `isomer-srv-topic-env-setup` before per-Agent Workspace cwd verification or selected-agent repair.
 - A usable `topic.intent.agent_env_requirements`, an explicit manual agent env target spec, or a clear per-agent cwd readiness target from the task, topic-team material, or user prompt that can be routed to `resolve-agent-env-gate`.
 
 If the Topic Workspace predecessor evidence is missing, refuse to run, explain that Agent Workspace environment proof depends on topic env predecessor evidence, and tell the user to run `setup-topic-env` first.
@@ -68,11 +67,13 @@ Use this source-gate structure when generating the file:
 
 ## Topic Env Predecessor
 
+## Topic Main Predecessor
+
+## Projection Preconditions
+
 ## Required Cwd Commands
 
 ## Expected Results
-
-## Topic Main Repository Requirements
 
 ## Cwd Assumptions
 
@@ -81,13 +82,13 @@ Use this source-gate structure when generating the file:
 ## Open Questions
 ```
 
-`## Source Task` should quote or summarize the user-provided task that caused this gate. `## Agent Scope` should name all planned Agent Names, or state that the authoritative Agent Names must come from the Topic Team Instantiation Packet or Topic Agent Team Profile material. `## Required Cwd Commands` should list concrete commands or state the exact blocker if the task did not give them. `## Expected Results` should say what counts as success. `## Topic Main Repository Requirements` should record non-destructive configuration expectations for `topic.repos.main`. `## Cwd Assumptions` should state whether commands must run from every `agent.workspace` cwd or a selected-agent partial scope. `## Out-of-Scope Requests` should preserve any request for live Agent Instances, Workspace Runtime mutation, Houmao launch, Execution Adapter launch, privileged host mutation, dependency mutation, or research decisions as blockers for the service skill. `## Open Questions` should contain `None.` only when the task is precise enough for service delegation.
+`## Source Task` should quote or summarize the user-provided task that caused this gate. `## Agent Scope` should name all planned Agent Names, or state that the authoritative Agent Names must come from the Topic Team Instantiation Packet or Topic Agent Team Profile material. `## Topic Main Predecessor` should reference topic env setup evidence for `topic.repos.main` instead of asking agent env setup to create it. `## Projection Preconditions` should name any external repo projections that must be visible from each Agent Workspace cwd. `## Required Cwd Commands` should list concrete commands or state the exact blocker if the task did not give them. `## Expected Results` should say what counts as success. `## Cwd Assumptions` should state whether commands must run from every `agent.workspace` cwd or a selected-agent partial scope. `## Out-of-Scope Requests` should preserve any request for live Agent Instances, Workspace Runtime mutation, Houmao launch, Execution Adapter launch, privileged host mutation, dependency mutation, or research decisions as blockers for the service skill. `## Open Questions` should contain `None.` only when the task is precise enough for service delegation.
 
-Do not generate `topic.env.agent_setup_target_spec` from this operator subcommand. That derived target spec belongs to `isomer-srv-agent-env-setup`.
+Do not put concrete per-agent verification commands into the source intent. The operator flow may create or update `topic.env.agent_setup_target_spec`, but the operational details belong in that derived target spec, not in `topic.intent.agent_env_requirements`.
 
 ## Service Delegation
 
-Use `isomer-srv-agent-env-setup` for gate-driven Agent Workspace environment readiness after source intent preparation, Topic Workspace predecessor evidence, authoritative Agent Names, and Git topology evidence:
+Use `isomer-srv-agent-env-setup` for gate-driven Agent Workspace environment readiness after source intent preparation, Topic Workspace predecessor evidence, Topic Main Development Repository predecessor evidence, required projection predecessor evidence, and authoritative Agent Names:
 
 ```text
 $isomer-srv-agent-env-setup setup-agent-env <research_topic_id>
@@ -102,13 +103,13 @@ Use **Topic Workspace** for the topic-level work area and **Agent Workspace** fo
 
 Do not create Agent Workspaces before team specialization defines expected Agent Roles.
 
-Do not hand-roll Git worktree or `isomer-managed/` setup inside this subcommand. Use `isomer-admin-topic-workspace-mgr` for `repos/topic-main`, `isomer-managed/`, `topic-owner/main`, `per-agent/<agent-name>/main`, derived compatibility refs, generated links, and Git topology validation.
+Do not hand-roll Git worktree or `isomer-managed/` setup inside this subcommand. Use `isomer-srv-agent-env-setup` for per-agent worktree creation and cwd verification. Use `isomer-admin-topic-workspace-mgr` only for optional topology inspection, branch helpers, boundary summaries, or legacy compatibility diagnostics.
 
-Do not hand-roll per-Agent Workspace environment verification inside this subcommand. Use `isomer-srv-agent-env-setup` for source intent reading, `topic.env.agent_setup_target_spec`, Topic Main Repository environment configuration, per-agent cwd verification, selected-agent partial evidence, and no-runtime-mutation guardrails.
+Do not hand-roll per-Agent Workspace environment verification inside this subcommand. Use `isomer-srv-agent-env-setup` for source intent reading, `topic.env.agent_setup_target_spec`, worktree creation, per-agent cwd verification, selected-agent partial evidence, and no-runtime-mutation guardrails.
 
 Do not call `isomer-srv-agent-env-setup` before `topic.intent.agent_env_requirements` exists, unless the caller supplied an explicit manual agent env target spec. Route to `resolve-agent-env-gate` only when commands, expected results, and cwd assumptions are clear enough for the service to derive a per-agent verification matrix.
 
-Do not accept stale workspace setup evidence that names legacy support roots, top-level Topic Main Repository collaboration directories, or default-looking directories without semantic labels and path sources as current readiness. Ask for delegated `isomer-admin-topic-workspace-mgr` validation of semantic labels and the `isomer-managed/` layout instead.
+Do not accept stale workspace setup evidence that names legacy support roots, top-level Topic Main Development Repository collaboration directories, or default-looking directories without semantic labels and path sources as current readiness. Ask for delegated `isomer-srv-agent-env-setup` verification when worktree or cwd readiness is missing, or for optional `isomer-admin-topic-workspace-mgr` inspection when the user only needs topology diagnostics.
 
 Do not accept tmp contents as readiness evidence. `topic.repos.main.tmp` and `agent.tmp` evidence is limited to resolved paths, ignored local disposable posture, and tracked-content diagnostics.
 

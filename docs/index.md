@@ -33,7 +33,7 @@ These pages are plain Markdown files in `docs/`. Relative links connect them; no
 | `index.md` | Home and navigation map | documentation set |
 | `getting-started.md` | Smallest useful operator path | Project, Research Topic, Topic Workspace, Agent Team Instance |
 | `concepts.md` | Canonical concept summary | domain language, execution layers, state ownership |
-| `topic-workspace-definition.md` | Topic and agent workspace structure standard | Topic Workspace, Agent Workspace, Agent Name, Topic Main Repository |
+| `topic-workspace-definition.md` | Topic and agent workspace structure standard | Topic Workspace, Agent Workspace, Agent Name, Topic Main Development Repository |
 | `system-design.md` | Architecture and boundaries | discovery, context, path resolution, runtime, adapter boundary |
 | `isomer-cli.md` | Command reference | commands, side effects, JSON output, examples |
 | `workflows.md` | Task-oriented operating guides | inspection, init, prepare, launch, stop, reconcile, adopt |

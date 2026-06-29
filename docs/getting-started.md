@@ -67,6 +67,8 @@ pixi run isomer-cli project paths preview --topic my-topic
 
 These commands are read-only. `project context show` displays the resolved Project, Research Topic, Topic Workspace, and selected refs for a topic-scoped command. `project paths get` answers one semantic label, `project paths list` shows known labels and resolution status, and `project paths preview` prints the broader path plan without creating directories or a Topic Workspace Manifest.
 
+The default Topic Main Development Repository label is `topic.repos.main`. Projection labels such as `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, and `topic.repos.main.projections.manifest` resolve under the selected topic-main repository, including when `topic.repos.main` is bound to a custom existing repository. Topic environment setup owns creating and verifying topic-main and those projections; agent environment setup later consumes that evidence before making per-agent worktrees.
+
 If you want the standard semantic directories, materialize them explicitly:
 
 ```bash
@@ -82,11 +84,11 @@ pixi run isomer-cli --print-json project repos create inner_group.some_repo_name
 pixi run isomer-cli --print-json project paths get topic.repos.inner_group.some_repo_name --topic my-topic
 ```
 
-The helper creates `repos/extern/inner_group/some_repo_name` by default, records `label = "topic.repos.inner_group.some_repo_name"`, `path = "repos/extern/inner_group/some_repo_name"`, and `storage_profile = "topic_repo"`, and leaves later path lookup to Workspace Path Resolution. This default marks the repository as supporting topic-local code rather than the primary Topic Main Repository.
+The helper creates `repos/extern/inner_group/some_repo_name` by default, records `label = "topic.repos.inner_group.some_repo_name"`, `path = "repos/extern/inner_group/some_repo_name"`, and `storage_profile = "topic_repo"`, and leaves later path lookup to Workspace Path Resolution. This default marks the repository as supporting topic-local code rather than the primary Topic Main Development Repository. Topic environment setup decides whether that canonical external repository should also be projected into topic-main under `isomer-managed/topic-owned/readonly/extern/` or `isomer-managed/topic-owned/writable/extern/`.
 
 ## Initialize and Prepare Workspace Runtime
 
-`isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It resolves required semantic labels such as `topic.runtime.db`, `topic.records.artifacts`, and `topic.runtime`, records path plans, and creates those runtime-owned paths. It does not create per-agent `agent.*` paths before Agent Workspace setup.
+`isomer-cli project runtime init` creates or reopens the Workspace Runtime for the selected Topic Workspace. It resolves required semantic labels such as `topic.runtime.db`, `topic.records.artifacts`, `topic.runtime`, `topic.repos.main`, and topic-main support labels, records path plans, and creates runtime-owned paths. It does not replace topic environment setup, does not create or repair topic-main or projections, and does not create per-agent `agent.*` paths before Agent Workspace setup.
 
 ```bash
 pixi run isomer-cli --print-json project runtime init --topic my-topic
@@ -98,7 +100,7 @@ pixi run isomer-cli --print-json project runtime init --topic my-topic
 pixi run isomer-cli --print-json project runtime prepare --topic my-topic
 ```
 
-If readiness is `failed` or `blocked`, repair is explicit. Treat environment setup or compatibility work as a Service Request rather than hiding it inside `project runtime prepare`.
+If readiness is `failed` or `blocked`, repair is explicit. Treat environment setup or compatibility work as a Service Request rather than hiding it inside `project runtime prepare`. The normal setup path is for topic environment setup to prepare topic-main, external repositories, projections, Pixi dependencies, and verification first; agent environment setup then prepares Agent Workspace worktrees and cwd checks from that predecessor evidence.
 
 ## Validate Readiness
 

@@ -866,7 +866,7 @@ def _cmd_repos_create(
                 concept="Topic Workspace Manifest",
                 field=semantic_label,
                 message=(
-                    "`topic.repos.main` is a built-in Topic Main Repository label. "
+                    "`topic.repos.main` is a built-in Topic Main Development Repository label. "
                     "Use `project paths materialize-default --label topic.repos.main` or "
                     "`project paths register topic.repos.main --path <path> --storage-profile topic_repo`."
                 ),

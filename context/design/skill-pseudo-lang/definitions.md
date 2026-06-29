@@ -397,12 +397,12 @@ def setup_topic_team(project_root: Path, user_request: str) -> StageResult:
 
     workspace = agent_invoke(
         "isomer-admin-topic-workspace-mgr",
-        task="Prepare Topic Main Repository and Agent Workspace Git topology for the specialized topic team.",
+        task="Prepare Topic Main Development Repository and Agent Workspace Git topology for the specialized topic team.",
         context={"topic": topic, "user_request": user_request},
         returns=StageResult,
         params={
             "subcommand": "topic-workspace",
-            "expect": ["Topic Main Repository", "Agent Workspace paths", "branch plan", "Git topology validation"],
+            "expect": ["Topic Main Development Repository", "Agent Workspace paths", "branch plan", "Git topology validation"],
             "must_not_call": ["isomer-srv-agent-env-setup"],
         },
     )

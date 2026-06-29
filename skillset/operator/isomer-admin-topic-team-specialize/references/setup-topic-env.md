@@ -22,14 +22,17 @@ When this subcommand is selected, execute the following steps in order.
 6. Select the service setup mode:
    - Use `auto` for `fast-forward`, direct setup, or concrete setup requests.
    - Use `manual` when the caller is `step-by-step`, asks for confirmation, or wants to inspect choices before each service step.
-7. Delegate heavy Topic Workspace environment setup:
+7. Prepare the derived target spec boundary:
+   - Ensure `topic.env.topic_setup_target_spec` exists, is supplied explicitly, or can be created from `topic.intent.topic_env_requirements` before service materialization.
+   - Keep the source intent concise and user-editable; put operational commands, repo acquisition details, projection access intent, and verification details in the derived target spec.
+8. Delegate heavy Topic Workspace environment setup:
    - Call `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`.
    - Pass the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `topic.intent.topic_env_requirements` metadata or explicit target spec source, and relevant topic/setup notes as context.
-   - Let `isomer-srv-topic-env-setup` handle source-gate reading, repo materialization, target-spec generation at `topic.env.topic_setup_target_spec`, dependency inference, Pixi mutation, and topic-root verification only.
-8. Map the service output using **Service Output Mapping**:
-   - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, commands run, changed files, repo warnings, blockers, and validation refs.
+   - Let `isomer-srv-topic-env-setup` handle source-gate reading, target-spec validation, Topic Main Development Repository setup, canonical external repo materialization, external repo projection materialization, dependency inference, Pixi mutation, and topic-root or repo-specific verification only.
+9. Map the service output using **Service Output Mapping**:
+   - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, projection metadata, commands run, changed files, repo warnings, blockers, and validation refs.
    - Record `per_agent_readiness_status: not checked` when the service reports it as durable setup evidence.
-9. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand. Do not report per-Agent Workspace cwd readiness from this subcommand.
+10. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand. Do not report per-Agent Workspace cwd readiness from this subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a service-delegation plan from the topic material, template requirements, available `topic.intent.topic_env_requirements` intent or explicit target spec source, `isomer-srv-topic-env-setup` output contract, and guardrails, then execute only the operator-safe handoff and reporting portions.
 
@@ -72,6 +75,8 @@ Use `auto` when this subcommand is reached from `fast-forward` or a direct concr
 | `topic_env_source_label`, `topic_env_source_path`, `topic_env_source_storage_profile`, `topic_env_source`, `topic_env_source_detail` | source intent setup evidence |
 | `topic_env_target_spec_label`, `topic_env_target_spec_path`, `topic_env_target_spec_storage_profile`, `topic_env_target_spec_source`, `topic_env_target_spec_source_detail` | target spec validation ref |
 | `path_diagnostics` or label diagnostics | operator blockers or warnings with the relevant semantic label |
+| `topic_main_repository` | topic-main predecessor evidence for later agent setup |
+| `external_repo_projections`, `external_repo_projection_manifest` | projection predecessor evidence for later agent setup |
 | `commands_run` | setup command evidence |
 | `changed_files` | changed setup file evidence |
 | `inferred_source_warnings` | setup warnings and later validation notes |
@@ -83,7 +88,7 @@ Treat installed packages, environment files, setup commands, validation records,
 
 Do not hide mutating setup work inside topic clarification or team specialization.
 
-Do not infer packages, choose repo sources, install dependencies, repair Pixi files, or run verification commands directly from this operator subcommand. Delegate that work to `isomer-srv-topic-env-setup` and record its output.
+Do not infer packages, choose repo sources, install dependencies, repair Pixi files, create topic-main, project external repos, or run verification commands directly from this operator subcommand. Delegate that work to `isomer-srv-topic-env-setup` and record its output.
 
 Do not read `topic.intent.agent_env_requirements`, write `topic.env.agent_setup_target_spec`, or claim Agent Workspace cwd readiness from this operator subcommand. Use `resolve-agent-env-gate` and `setup-agent-workspace` when the caller requested per-Agent Workspace proof.
 

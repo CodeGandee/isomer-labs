@@ -14,16 +14,16 @@ Recover these before asking the user:
 When this subcommand is selected, execute the following steps in order.
 
 1. Print a concise description:
-   - `isomer-srv-agent-env-setup` prepares service-safe Agent Workspace cwd readiness from Topic Workspace predecessor evidence.
-   - It owns `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, selected-agent partial evidence, and overall Agent Workspace readiness.
+   - `isomer-srv-agent-env-setup` prepares service-safe Agent Workspace cwd readiness from Topic Workspace and Topic Main Development Repository predecessor evidence.
+   - It owns selected-agent partial evidence, Agent Workspace worktrees, and overall Agent Workspace readiness; in the normal operator flow, `isomer-admin-topic-team-specialize` owns the derived target specs.
 2. Explain that concrete setup defaults to `setup-agent-env`, while direct subcommands are available for manual setup, inspection, or partial repair.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
 4. Name the required inputs:
-   - Include Project Manifest context, registered Research Topic, Topic Workspace, ready `topic.env.topic_setup_target_spec` predecessor evidence, `topic.intent.agent_env_requirements` or an explicit manual target spec, authoritative Topic Team Instantiation Packet or derived Topic Agent Team Profile Agent Names, semantic path evidence, and mutation confirmation.
+   - Include Project Manifest context, registered Research Topic, Topic Workspace, ready `topic.env.topic_setup_target_spec` predecessor evidence, ready Topic Main Development Repository and projection predecessor evidence, `topic.intent.agent_env_requirements` or an explicit manual target spec, authoritative Topic Team Instantiation Packet or derived Topic Agent Team Profile Agent Names, semantic path evidence, and mutation confirmation.
 5. State the output contract:
-   - Include semantic paths with labels and sources, requester, confirmation source, optional Service Request or Provenance refs, Topic Main Repository, agent workspace paths, branch plan, worktree status by agent, readiness by agent, overall readiness, commands run, blockers, and next action.
+   - Include semantic paths with labels and sources, requester, confirmation source, optional Service Request or Provenance refs, Topic Main Development Repository predecessor evidence, projection predecessor evidence, agent workspace paths, branch plan, worktree status by agent, readiness by agent, overall readiness, commands run, blockers, and next action.
 6. State the key guardrails:
-   - No per-agent Pixi environments, dependency mutation by default, directory-scan agent selection, or silent Git repair.
+   - No per-agent Pixi environments, dependency mutation by default, directory-scan agent selection, topic-main/projection repair, or silent Git repair.
    - No Agent Instance creation, Workspace Runtime mutation, Houmao launch, Execution Adapter operation, or research decision authority.
    - Literal guardrails: no per-agent Pixi environments, no dependency mutation by default, no Workspace Runtime mutation, and no Execution Adapter operation.
 
@@ -35,10 +35,10 @@ If the user's task does not map cleanly to these steps, use your native planning
 | --- | --- | --- |
 | `resolve-agent-env-context` | Resolve Project, Research Topic, Topic Workspace, Pixi binding, semantic paths, and invocation posture. | `semantic_paths`, requester, confirmation source, optional refs, and blockers. |
 | `require-topic-env-ready` | Require Topic Workspace Pixi predecessor readiness. | `topic_environment_status`, predecessor target spec path, and repair route. |
+| `require-topic-main-ready` | Require prepared topic-main and projection predecessor evidence. | `topic_main_repository`, projection predecessor status, and repair route. |
 | `read-agent-env-gate` | Read the source Agent Workspace cwd intent. | Source intent metadata, commands, expected results, cwd assumptions, and blockers. |
 | `plan-agent-workspaces` | Plan Agent Workspaces from authoritative topic-team material. | Agent Names, branches, semantic paths, path sources, and blockers. |
 | `derive-agent-env-gate` | Write or validate the per-agent operational target spec. | `agent_env_target_spec_path`, target spec source, and verification matrix. |
-| `ensure-topic-main-repository` | Prepare the Topic Main Repository. | `topic_main_repository`, owner branch, changed files, commands run, blockers. |
 | `create-agent-worktrees` | Prepare per-agent worktrees and support paths. | `worktree_status_by_agent`, support labels, boundary material posture, blockers. |
 | `verify-agent-env-gate` | Verify cwd commands from Agent Workspace paths. | `readiness_by_agent`, selected-agent partial evidence, commands run, blockers. |
 | `setup-agent-env` | Run the full all-agent flow. | Combined setup report and `overall_readiness_status`. |
@@ -49,7 +49,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - `$isomer-srv-agent-env-setup setup-agent-env <topic-id>`
 - `$isomer-srv-agent-env-setup verify-agent-env-gate <topic-id> --agent analyst`
 - `$isomer-srv-agent-env-setup require-topic-env-ready for <topic-id>`
+- `$isomer-srv-agent-env-setup require-topic-main-ready for <topic-id>`
 
 ## Boundary Notes
 
-This service complements `isomer-srv-topic-env-setup`, which produces Topic Workspace predecessor evidence, and `isomer-admin-topic-workspace-mgr`, which owns Git-only static topology flows. It is the env-gate-aware service for per-agent Agent Workspace cwd verification.
+This service complements `isomer-srv-topic-env-setup`, which produces Topic Workspace, topic-main, and projection predecessor evidence, and `isomer-admin-topic-workspace-mgr`, which remains optional topology inspection and branch-helper support. It is the env-gate-aware service for per-agent Agent Workspace cwd verification.

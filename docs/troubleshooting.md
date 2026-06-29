@@ -119,7 +119,7 @@ pixi run isomer-cli --print-json project team-instances show <id> --topic my-top
 
 Recovery:
 
-- Treat legacy `.isomer-agent/` and old top-level Topic Main Repository collaboration paths as migration diagnostics, not as instructions to delete files.
+- Treat legacy `.isomer-agent/` and old top-level Topic Main Development Repository collaboration paths as breaking-layout diagnostics, not as instructions to delete files.
 - Restore or prepare the current `isomer-managed/` layout through explicit operator workflow before launch-facing work depends on it.
 - Promote files under `isomer-managed/agent-owned/` or `isomer-managed/topic-owned/` into tracked Isomer material, owner-preserved records, or Provenance Records before using them as durable evidence.
 - Inspect generated `isomer-managed/links/` targets and remove or replace unsafe links only after the operator confirms the intended target.

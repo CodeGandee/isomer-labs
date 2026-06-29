@@ -55,7 +55,7 @@ Workspace Runtime is the persistent substrate inside a Topic Workspace. It owns:
 - Validation Issue records;
 - adapter manifest refs, reconciliation records, payload refs, command run records, materialization records, launch attempt records, inspection snapshots, and stop outcome records.
 
-`isomer-cli project runtime init` creates or reopens the Workspace Runtime. Reopening a current-schema runtime is idempotent. Runtime initialization records the Topic Main Repository and `repos/topic-main/isomer-managed/` path plans, but it does not create per-agent untracked share directories before Agent Workspace setup. Unsupported older or newer runtime schemas produce diagnostics and do not create runtime directories or rewrite owner refs.
+`isomer-cli project runtime init` creates or reopens the Workspace Runtime. Reopening a current-schema runtime is idempotent. Runtime initialization records the Topic Main Development Repository, `repos/topic-main/isomer-managed/`, and projection label path plans, but it does not replace topic environment setup and does not create per-agent untracked share directories before Agent Workspace setup. Unsupported older or newer runtime schemas produce diagnostics and do not create runtime directories or rewrite owner refs.
 
 `isomer-cli project runtime prepare` records Topic Environment Readiness by checking explicit Project Manifest bindings and the implicit Topic Workspace directory default when no explicit standalone binding exists. Successful checks record `ready`; failed checks record `failed`; missing required topic binding intent records `blocked`. Repair remains explicit and should be represented as a Service Request rather than hidden inside `project runtime prepare`.
 

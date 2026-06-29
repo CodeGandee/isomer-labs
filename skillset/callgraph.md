@@ -16,11 +16,10 @@ flowchart TD
     TSA["isomer-srv<br/>topic-service-agent-support"]:::skill
 
     C1["C1<br/>specialize-team"]:::route
-    C2["C2<br/>resolve-topic-env-gate<br/>then setup-topic-env"]:::route
-    C3["C3<br/>setup-agent-workspace<br/>(Git topology)"]:::route
-    C4["C4<br/>resolve-agent-env-gate<br/>then setup-agent-workspace<br/>(agent readiness)"]:::route
-    C5["C5<br/>topic-workspace"]:::route
-    C6["C6<br/>require-topic-env-ready"]:::route
+    C2["C2<br/>resolve-topic-env-gate<br/>create target spec<br/>then setup-topic-env"]:::route
+    C3["C3<br/>optional topology<br/>inspection or branch helper"]:::route
+    C4["C4<br/>resolve-agent-env-gate<br/>create target spec<br/>then setup-agent-env"]:::route
+    C6["C6<br/>require-topic-env-ready<br/>or require-topic-main-ready"]:::route
     C7["C7<br/>bounded<br/>Service Request"]:::route
     C8["C8<br/>bounded<br/>Service Request"]:::route
 
@@ -30,9 +29,7 @@ flowchart TD
     TTS --> C3 --> TWM
     TTS --> C4 --> AENV
 
-    TWM --> C5 --> AENV
-
-    AENV --> C6 --> TENV
+    AENV -.-> C6 -.-> TENV
 
     TSA -.-> C7 -.-> TENV
     TSA -.-> C8 -.-> TTS
@@ -47,11 +44,10 @@ flowchart TD
 | ID | Caller | Route | Callee | Calling condition and context |
 | --- | --- | --- | --- | --- |
 | C1 | `isomer-admin-project-mgr` | `specialize-team` | `isomer-admin-topic-team-specialize` | The operator moves from Project lifecycle work into adapting or instantiating a Domain Agent Team Template for one Research Topic. Project-level context is resolved first, then specialization is handed off instead of duplicated. |
-| C2 | `isomer-admin-topic-team-specialize` | `resolve-topic-env-gate` then `setup-topic-env` | `isomer-srv-topic-env-setup` | Topic Team Specialization needs independent Topic Workspace dependency, Pixi, repository acquisition, or topic-root command verification work. The topic must already have manifest-backed Research Topic and Topic Workspace refs, a resolvable Topic Workspace Pixi binding, and either `topic.intent.topic_env_requirements` or an explicit topic env target spec. The service derives or validates `topic.env.topic_setup_target_spec`; the result is Topic Workspace predecessor evidence, not per-Agent Workspace cwd readiness. |
-| C3 | `isomer-admin-topic-team-specialize` | `setup-agent-workspace` | `isomer-admin-topic-workspace-mgr` | Specialization needs Git-backed `topic.repos.main`, per-agent `agent.workspace` worktrees, worker-facing support paths, branch plans, semantic path evidence, or workspace boundary material. The workspace manager owns this static Git topology. |
-| C4 | `isomer-admin-topic-team-specialize` | `resolve-agent-env-gate` then `setup-agent-workspace` | `isomer-srv-agent-env-setup` | The operator asks for per-Agent Workspace cwd verification, selected-agent repair, or launch-facing Agent Workspace readiness. The route first resolves `topic.intent.agent_env_requirements` or receives an explicit agent env target spec. Topic Workspace predecessor evidence from `topic.env.topic_setup_target_spec`, authoritative Agent Names, and Git topology evidence must exist before the service derives or validates `topic.env.agent_setup_target_spec`. |
-| C5 | `isomer-admin-topic-workspace-mgr` | `topic-workspace` | `isomer-srv-agent-env-setup` | The Git-backed Topic Workspace flow has validated topology and the user also asks for per-Agent Workspace environment readiness. The service consumes the workspace manager's semantic labels, worktree paths, branch plan, support-path evidence, `topic.env.topic_setup_target_spec` predecessor evidence, and either `topic.intent.agent_env_requirements` or an explicit agent env target spec. |
-| C6 | `isomer-srv-agent-env-setup` | `require-topic-env-ready` | `isomer-srv-topic-env-setup` | Agent Workspace setup finds missing, stale, blocked, or failed Topic Workspace predecessor evidence. The service reports a dependency repair next action back to topic env setup instead of mutating Topic Workspace dependencies itself. |
+| C2 | `isomer-admin-topic-team-specialize` | `resolve-topic-env-gate`, create `topic.env.topic_setup_target_spec`, then `setup-topic-env` | `isomer-srv-topic-env-setup` | Topic Team Specialization needs Topic Workspace dependencies, Pixi readiness, Topic Main Development Repository setup, canonical external repository acquisition, external projection materialization, or topic-root/repo-specific verification work. The operator-owned flow creates or validates `topic.env.topic_setup_target_spec` before delegation. The service returns Topic Workspace predecessor evidence, topic-main Git state, projection metadata, blockers, and `per_agent_readiness_status: not_checked`. |
+| C3 | `isomer-admin-topic-team-specialize` | optional topology inspection or branch helper | `isomer-admin-topic-workspace-mgr` | The operator asks for read-only topology inspection, branch helper operations, boundary summaries, or legacy compatibility diagnostics. This is optional support and is not the canonical path for creating `topic.repos.main`, external projections, or Agent Workspace worktrees. |
+| C4 | `isomer-admin-topic-team-specialize` | `resolve-agent-env-gate`, create `topic.env.agent_setup_target_spec`, then `setup-agent-env` | `isomer-srv-agent-env-setup` | The operator asks for per-Agent Workspace cwd verification, selected-agent repair, or launch-facing Agent Workspace readiness. The route first resolves `topic.intent.agent_env_requirements` or receives an explicit agent env target spec. Topic env readiness, Topic Main Development Repository predecessor evidence, projection evidence when required, and authoritative Agent Names must exist before the service creates worktrees or verifies cwd readiness. |
+| C6 | `isomer-srv-agent-env-setup` | `require-topic-env-ready` or `require-topic-main-ready` repair route | `isomer-srv-topic-env-setup` | Agent Workspace setup finds missing, stale, blocked, or failed Topic Workspace, Topic Main Development Repository, or external projection predecessor evidence. The service reports a dependency repair next action back to topic env setup instead of creating, repairing, or projecting topic-main material itself. |
 | C7 | `isomer-srv-topic-service-agent-support` | bounded Service Request | `isomer-srv-topic-env-setup` | A Topic Service Agent or Topic Service Master receives a bounded Service Request for topic-scoped environment readiness checks, diagnostics, or support artifacts. The service support skill does not own the environment setup workflow; it delegates concrete setup or verification to topic env setup. |
 | C8 | `isomer-srv-topic-service-agent-support` | bounded Service Request | `isomer-admin-topic-team-specialize` | A bounded service request supports Topic Team Specialization through template inspection, placeholder reconciliation, copied-material planning, topic edit drafting, diagnostics, or support artifacts. Research decision authority and final specialization ownership remain with the operator specialization skill. |
 

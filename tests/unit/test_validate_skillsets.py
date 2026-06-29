@@ -280,7 +280,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Workspace Mgr
 
-            Prepare semantic workspace labels through Topic Workspace Manifest bindings and `isomer-default.v1`, including `project paths register`, `project repos create`, explicit `storage_profile`, `custom.*`, grouped `topic.repos.*`, `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `semantic_paths`, `local_tmp_path_status`, `topic-owner/main`, `per-agent/<agent-name>/main`, `isomer-managed/`, `tracked/`, `agent-owned/`, `topic-owned/`, `links/`, `topic.records.*`, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries.
+            Prepare optional topology inspection, branch helpers, boundary summaries, and legacy compatibility diagnostics through semantic workspace labels, Topic Workspace Manifest bindings, and `isomer-default.v1`, including `project paths register`, `project repos create`, explicit `storage_profile`, `custom.*`, grouped `topic.repos.*`, `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `semantic_paths`, `local_tmp_path_status`, `topic-owner/main`, `per-agent/<agent-name>/main`, `isomer-managed/`, `tracked/`, `agent-owned/`, `topic-owned/`, `links/`, `topic.records.*`, projection roots, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries. The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`.
 
             ## Workflow
 
@@ -346,13 +346,13 @@ class SkillsetValidatorTests(unittest.TestCase):
             fallback = "" if omit_subcommand_fallback and subcommand_name == "plan-agents.md" else "If the user's task does not map cleanly to these steps, use your native planning tool."
             extra_terms = {
                 "resolve-workspace.md": "Use `isomer-cli project paths get`, `project paths explain`, `semantic_paths`, `topic.repos.main`, and `agent.workspace` before mutation.",
-                "ensure-main-repo.md": "Use `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, and `isomer-default.v1` examples only after semantic resolution.",
+                "ensure-main-repo.md": "Use `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, and `isomer-default.v1` examples only after semantic resolution. Require predecessor evidence or an explicit manual topology operation.",
                 "plan-agents.md": "Resolve `agent.workspace` through Workspace Path Resolution and report path sources.",
-                "create-worktrees.md": "Create worktrees at `agent.workspace` from `topic.repos.main`, with `agent.tmp`, path sources, and semantic support paths.",
+                "create-worktrees.md": "Create worktrees at `agent.workspace` from `topic.repos.main`, with `agent.tmp`, prepared Topic Main Development Repository predecessor evidence, path sources, and semantic support paths.",
                 "write-boundaries.md": "Write boundary notes for `topic.repos.main`, `agent.workspace`, each path source, and self-query guidance without passing Agent Name.",
                 "validate-worktrees.md": "Validate semantic label bindings, `topic.repos.main.tmp`, `agent.tmp`, tracked tmp contents, and reject hard-coded default-only evidence.",
                 "summarize.md": "Report `semantic_paths`, `local_tmp_path_status`, `agent.tmp`, cwd-friendly guidance, and self-query guidance without passing Agent Name.",
-                "topic-workspace.md": "Use `project repos create` with explicit `storage_profile`. Prepare `topic.repos.main.tmp` and `agent.tmp`. Runtime later consumes `agent.workspace` path plans. Missing semantic label evidence is a blocker.",
+                "topic-workspace.md": "Use `project repos create` with explicit `storage_profile`. Prepare `topic.repos.main.tmp` and `agent.tmp`. Runtime later consumes `agent.workspace` path plans. Missing semantic label evidence is a blocker. This is optional topology inspection and does not create topic-main.",
             }.get(subcommand_name, "")
             write(
                 root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "references" / subcommand_name,
@@ -409,7 +409,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Subcommands
 
-            Procedural Subcommands: `resolve-topic-workspace`, `read-env-gate`, `ensure-topic-repos`, `derive-env-gate`, `install-topic-deps`, and `verify-env-gate`.
+            Procedural Subcommands: `resolve-topic-workspace`, `read-env-gate`, `derive-env-gate`, `ensure-topic-main-repository`, `ensure-topic-repos`, `project-extern-repos`, `install-topic-deps`, and `verify-env-gate`.
 
             Misc Subcommands: `setup-topic-env` and `help`.
 
@@ -417,7 +417,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Commands include `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, `pixi add --manifest-path <manifest_path>`, and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
             Use `.isomer-user-env/` only as fallback and block sudo.
-            Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`; accept an explicit manual target spec; produce Topic Workspace predecessor evidence and report `per_agent_readiness_status` when per-agent readiness is not checked. Also resolve the appropriate topic repository label before creating repos.
+            Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`; accept an explicit manual target spec; produce Topic Workspace predecessor evidence, Topic Main Development Repository Git state, external repo projection evidence, and `per_agent_readiness_status` when per-agent readiness is not checked. Also resolve the appropriate topic repository label before creating repos.
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -432,13 +432,15 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
         reference_terms = {
-            "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.repos.main`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, and each path source.",
-            "ensure-topic-repos.md": "Use resolved non-main `topic.repos.*` paths from `semantic_paths`; report semantic label, path, and path source. Do not place task repos outside the resolved semantic path, and default helper-created repos under `repos/extern/...`.",
+            "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, and each path source.",
+            "ensure-topic-main-repository.md": "Prepare the Topic Main Development Repository at `topic.repos.main` as a normal non-bare repo, with `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, and `topic.repos.main.projections.manifest`.",
+            "ensure-topic-repos.md": "Use resolved non-main `topic.repos.*` paths from `semantic_paths`; report semantic label, path, and path source. Keep existing canonical external repos read-only by default. Do not place task repos outside the resolved semantic path, and default helper-created repos under `repos/extern/...`.",
+            "project-extern-repos.md": "Create external repo projection entries under `topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`, track metadata in `topic.repos.main.projections.manifest`, and distinguish read-only projections from writable projections.",
             "read-env-gate.md": "Resolve and read `topic.intent.topic_env_requirements`. Interpret the runnable target as what one agent or operator must run.",
             "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec.",
             "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy.",
-            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `topic.intent.agent_env_requirements`.",
-            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence.",
+            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `topic.intent.agent_env_requirements`.",
+            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, and projection evidence.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
             term = reference_terms.get(subcommand_name, "Topic Workspace environment setup reference.")
@@ -497,15 +499,15 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Subcommands
 
-            Procedural Subcommands: `resolve-agent-env-context`, `require-topic-env-ready`, `read-agent-env-gate`, `plan-agent-workspaces`, `derive-agent-env-gate`, `ensure-topic-main-repository`, `create-agent-worktrees`, and `verify-agent-env-gate`.
+            Procedural Subcommands: `resolve-agent-env-context`, `require-topic-env-ready`, `read-agent-env-gate`, `plan-agent-workspaces`, `derive-agent-env-gate`, `require-topic-main-ready`, `create-agent-worktrees`, and `verify-agent-env-gate`.
 
             Misc Subcommands: `setup-agent-env` and `help`.
 
             Use {subcommand_links}.
 
-            This fixture reads `topic.intent.agent_env_requirements`, writes or validates `topic.env.agent_setup_target_spec`, accepts an explicit manual target spec, consumes `topic.env.topic_setup_target_spec`, prepares the Topic Main Repository at `topic.repos.main`, uses authoritative Agent Names, resolves `agent.workspace`, runs `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, records selected-agent partial evidence, Service Request refs, Provenance refs, and `overall_readiness_status`.
+            This fixture reads `topic.intent.agent_env_requirements`, writes or validates `topic.env.agent_setup_target_spec`, accepts an explicit manual target spec, consumes `topic.env.topic_setup_target_spec`, requires prepared Topic Main Development Repository and projection predecessor evidence at `topic.repos.main`, uses authoritative Agent Names, resolves `agent.workspace`, runs `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, records selected-agent partial evidence, Service Request refs, Provenance refs, and `overall_readiness_status`.
 
-            Do not create per-agent Pixi manifests. Do not install or mutate Topic Workspace dependencies. Do not create Agent Instances or mutate Workspace Runtime records.
+            Do not initialize, repair, or configure the Topic Main Development Repository. Do not create per-agent Pixi manifests. Do not install or mutate Topic Workspace dependencies. Do not create Agent Instances or mutate Workspace Runtime records.
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")

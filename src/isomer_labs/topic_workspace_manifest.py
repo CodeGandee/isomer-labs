@@ -395,6 +395,8 @@ def _unknown_or_reserved_label_message(label: str) -> str:
     if root == CUSTOM_LABEL_ROOT:
         return "Custom semantic labels must be declared under `custom.*` with valid dotted segments."
     if root in ISOMER_RESERVED_LABEL_ROOTS:
+        if label.startswith("topic.repos.main."):
+            return "Unknown or reserved Topic Main Development Repository semantic label."
         if label.startswith(GROUPED_TOPIC_REPO_PREFIX):
             return "Grouped topic repository labels must use valid path-safe segments and storage_profile = \"topic_repo\"."
         return "Unknown or reserved Isomer-owned semantic label."

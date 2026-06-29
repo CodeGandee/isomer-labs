@@ -130,6 +130,84 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         target_surface = catalog()["topic.env.agent_setup_target_spec"]
         self.assertEqual("topic_env_target_spec_file", target_surface.storage_profile)
         self.assertEqual("file", target_surface.path_kind)
+        readonly_projection = catalog()["topic.repos.main.projections.readonly"]
+        self.assertEqual("topic_repo_readonly_projection_dir", readonly_projection.storage_profile)
+        self.assertEqual("topic_read", readonly_projection.sharing)
+        writable_projection = catalog()["topic.repos.main.projections.writable"]
+        self.assertEqual("topic_repo_writable_projection_dir", writable_projection.storage_profile)
+        self.assertEqual("topic_write", writable_projection.sharing)
+        projection_manifest = catalog()["topic.repos.main.projections.manifest"]
+        self.assertEqual("topic_repo_tracked_file", projection_manifest.storage_profile)
+        self.assertEqual("file", projection_manifest.path_kind)
+        self.assertEqual("topic.repos.main.projections.manifest", compatibility_aliases()["topic_main_projections_manifest"])
+
+    def test_default_profile_resolves_topic_main_projection_labels(self) -> None:
+        context = self.make_context()
+
+        readonly, readonly_diagnostics = resolve_semantic_binding(context, "topic.repos.main.projections.readonly", env={})
+        writable, writable_diagnostics = resolve_semantic_binding(context, "topic.repos.main.projections.writable", env={})
+        manifest, manifest_diagnostics = resolve_semantic_binding(context, "topic.repos.main.projections.manifest", env={})
+
+        self.assertEqual([], readonly_diagnostics)
+        self.assertEqual([], writable_diagnostics)
+        self.assertEqual([], manifest_diagnostics)
+        self.assertIsNotNone(readonly)
+        self.assertIsNotNone(writable)
+        self.assertIsNotNone(manifest)
+        self.assertEqual(context.topic_workspace_path / "repos" / "topic-main" / "isomer-managed" / "topic-owned" / "readonly" / "extern", readonly.path)
+        self.assertEqual(context.topic_workspace_path / "repos" / "topic-main" / "isomer-managed" / "topic-owned" / "writable" / "extern", writable.path)
+        self.assertEqual(context.topic_workspace_path / "repos" / "topic-main" / "isomer-managed" / "tracked" / "manifests" / "extern-projections.toml", manifest.path)
+        self.assertEqual("topic_repo_readonly_projection_dir", readonly.catalog.storage_profile)
+        self.assertEqual("topic_repo_writable_projection_dir", writable.catalog.storage_profile)
+        self.assertEqual("topic_repo_tracked_file", manifest.catalog.storage_profile)
+
+    def test_projection_labels_follow_custom_topic_main_binding(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.repos.main"
+            path = "source/main"
+            storage_profile = "topic_repo"
+            status = "active"
+            """,
+        )
+
+        readonly, readonly_diagnostics = resolve_semantic_binding(context, "topic.repos.main.projections.readonly", env={})
+        manifest, manifest_diagnostics = resolve_semantic_binding(context, "topic.repos.main.projections.manifest", env={})
+
+        self.assertEqual([], readonly_diagnostics)
+        self.assertEqual([], manifest_diagnostics)
+        self.assertIsNotNone(readonly)
+        self.assertIsNotNone(manifest)
+        self.assertEqual(context.topic_workspace_path / "source" / "main" / "isomer-managed" / "topic-owned" / "readonly" / "extern", readonly.path)
+        self.assertEqual(context.topic_workspace_path / "source" / "main" / "isomer-managed" / "tracked" / "manifests" / "extern-projections.toml", manifest.path)
+
+    def test_unknown_topic_main_sublabel_is_reserved(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.repos.main.projections.extra"
+            path = "repos/topic-main/isomer-managed/topic-owned/readonly/extern/extra"
+            storage_profile = "topic_repo"
+            status = "active"
+            """,
+        )
+
+        _, diagnostics = load_topic_workspace_manifest(context)
+
+        self.assertTrue(any("Unknown or reserved Topic Main Development Repository semantic label" in diagnostic.message for diagnostic in diagnostics), diagnostics)
 
     def test_default_profile_resolves_topic_intent_file_labels(self) -> None:
         context = self.make_context()

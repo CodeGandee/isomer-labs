@@ -9,7 +9,7 @@ Recover these before asking the user:
 | Input | Resolution |
 | --- | --- |
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `semantic_paths`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
-| Source gate summary | Require the extracted source gate summary from `read-env-gate`, including runnable target, desired commands, success criteria, repo hints, dependency hints, and blockers. Refuse to run if it is missing, and tell the user to run `read-env-gate` first. |
+| Source gate or target spec summary | Require the extracted source gate summary from `read-env-gate` and the repository requirements from `derive-env-gate`, including runnable target, desired commands, success criteria, repo hints, projection access intent, dependency hints, and blockers. Refuse to run if both are missing, and tell the user to run `read-env-gate` and `derive-env-gate` first. |
 | Repo semantic path | For each required repository, resolve or register a non-main `topic.repos.*` label. Under `isomer-default.v1`, `project repos create <repo-label>` creates the default target under `<topic-workspace-dir>/repos/extern/<repo-label-path>`. Create the resolved path only when this step needs to materialize or inspect that repo, and record the semantic label, path, and path source. |
 | Explicit repo source | Optional. Use a URL, local path, package source, or repo name from the prompt or source gate only when the expected repo path is missing. |
 
@@ -20,10 +20,10 @@ When this subcommand is selected, execute the following steps in order.
 1. **Require predecessor artifacts**:
    - Require workspace context from `resolve-topic-workspace` and source gate summary from `read-env-gate`.
 2. **Identify required repos**:
-   - Use the source gate, desired commands, repo URLs, package names, import paths, build instructions, README references, and common project files already present at resolved `topic.repos.*` paths.
+   - Use the source gate, target spec, desired commands, repo URLs, package names, import paths, build instructions, README references, projection access intent, and common project files already present at resolved `topic.repos.*` paths.
 3. **Use semantic repo paths**. Place every independent repo at a resolved non-main `topic.repos.*` path. The default helper location is `repos/extern/<repo-label-path>`, but explicit safe manifest bindings remain valid.
 4. **Find existing repos first**:
-   - If the expected repo already exists at the resolved semantic path, treat it as read-only for this subcommand.
+   - If the expected repo already exists at the resolved semantic path, treat it as read-only by default for this subcommand.
    - Inspect it and record evidence.
    - Do not run `git pull`, `git checkout`, copy files into it, delete files from it, install packages into it, regenerate files in it, or otherwise mutate it.
 5. **Acquire explicit sources only when missing**:
@@ -61,6 +61,7 @@ Carry forward:
 - binding command evidence when a new `topic.repos.*` label was registered;
 - explicit or inferred source;
 - source warning, if any;
+- projection access intent, if the target spec says the repo must be visible from topic-main;
 - relevant files inspected;
 - likely dependency signals;
 - likely verification commands;

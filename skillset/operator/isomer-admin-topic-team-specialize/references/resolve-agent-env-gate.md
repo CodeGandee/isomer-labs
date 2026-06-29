@@ -13,7 +13,7 @@ When this subcommand is selected, execute the following steps in order.
    - Record the semantic label, resolved path, storage profile, source, source detail, and diagnostics.
    - In `isomer-default.v1`, the resolved path is `<topic-workspace>/intent/src/agent-env-gate.md`.
 3. Read agent env source inputs:
-   - Include `topic.intent.overview`, `topic.intent.topic_env_requirements`, topic env predecessor evidence, specialization outputs, Agent Names, and workspace topology evidence.
+   - Include `topic.intent.overview`, `topic.intent.topic_env_requirements`, topic env predecessor evidence, Topic Main Development Repository predecessor evidence, projection predecessor expectations, specialization outputs, and Agent Names.
    - Include any user-provided per-agent cwd requirements.
 4. Write or update the resolved `topic.intent.agent_env_requirements` path:
    - Keep the file concise and high-level.
@@ -65,8 +65,8 @@ If any required predecessor artifact is missing, refuse to run and tell the user
 
 ## Guardrails
 
-Do not derive `topic.env.agent_setup_target_spec` here. The agent env service owns operational target-spec generation, Topic Main Repository configuration, per-agent command matrices, cwd verification, readiness by Agent Name, and execution logs.
+Do not derive `topic.env.agent_setup_target_spec` here. The `setup-agent-workspace` operator flow creates or validates the operational target spec before service delegation, while direct service invocation may accept an explicit target spec. This subcommand only writes high-level source intent.
 
-Do not write canonical source intent to `<topic-workspace>/user-intent/src/agent-env-gate.md`. If only that legacy path exists, report a legacy-path migration note and name `topic.intent.agent_env_requirements` plus its resolved default-layout path.
+Do not write canonical source intent to `<topic-workspace>/user-intent/src/agent-env-gate.md`. If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.agent_env_requirements` plus its resolved default-layout path.
 
-Do not create Agent Workspace worktrees, mutate Topic Main Repository configuration, run per-agent commands, mutate Workspace Runtime, launch Houmao, or create live Agent Instances from this subcommand.
+Do not create Agent Workspace worktrees, mutate Topic Main Development Repository configuration, run per-agent commands, mutate Workspace Runtime, launch Houmao, or create live Agent Instances from this subcommand.

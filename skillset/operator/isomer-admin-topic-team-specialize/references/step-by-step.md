@@ -16,10 +16,10 @@ When this subcommand is selected, execute the following steps in order.
    - For `ensure-topic-registration`, explain that it may run supported Isomer Project registration commands and will block instead of hand-editing Project Config or inventing missing bindings.
    - For `resolve-topic-env-gate`, explain that it resolves and writes high-level `topic.intent.topic_env_requirements`.
    - For `setup-topic-env`, explain that the operator step only needs registration, a Pixi binding, and usable `topic.intent.topic_env_requirements` or an explicit target spec.
-   - For `setup-topic-env`, also explain that it delegates target-spec derivation and Topic Workspace materialization to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> manual` and records predecessor evidence.
+   - For `setup-topic-env`, also explain that it creates or validates `topic.env.topic_setup_target_spec`, delegates Topic Workspace, Topic Main Development Repository, external repo projection, dependency, and verification materialization to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> manual`, and records predecessor evidence.
    - For `resolve-agent-env-gate`, explain that it resolves and writes high-level `topic.intent.agent_env_requirements` from authoritative Agent Names or explicit selected-agent scope.
-   - For `setup-agent-workspace`, explain that it first records or delegates Git-backed topology evidence.
-   - For `setup-agent-workspace`, also explain that it delegates readiness proof to `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>` after source intent, predecessor evidence, authoritative Agent Names, and topology evidence exist.
+   - For `setup-agent-workspace`, explain that it creates or validates `topic.env.agent_setup_target_spec`.
+   - For `setup-agent-workspace`, also explain that it delegates per-agent worktree creation and readiness proof to `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>` after source intent, Topic Main Development Repository predecessor evidence, required projection predecessor evidence, and authoritative Agent Names exist.
 4. Ask the user to confirm before running the step. Continue only after explicit confirmation; if the user declines or asks to stop, report progress, blockers, and the next safe step.
 5. Execute exactly one confirmed step, then summarize what changed, what was deferred, and whether the next step is safe.
 6. Ask the user to confirm before moving to the next step, repeating the confirm-execute-summarize cycle until `finalize-topic-team` creates or updates `isomer-topic-summary.md`.

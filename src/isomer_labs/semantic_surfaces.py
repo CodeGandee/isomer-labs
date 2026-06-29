@@ -92,6 +92,9 @@ STORAGE_PROFILES = (
     StorageProfile("topic_repo", "topic", "repository", "durable", "topic", "topic_workspace_local", "topic", git_semantics="repository"),
     StorageProfile("topic_repo_disposable_dir", "topic", "directory", "disposable", "private", "topic_repo_local", "topic"),
     StorageProfile("topic_repo_tracked_dir", "topic", "directory", "durable", "shared", "topic_repo_local", "topic"),
+    StorageProfile("topic_repo_readonly_projection_dir", "topic", "directory", "durable", "topic_read", "topic_repo_local", "topic"),
+    StorageProfile("topic_repo_writable_projection_dir", "topic", "directory", "durable", "topic_write", "topic_repo_local", "topic"),
+    StorageProfile("topic_repo_tracked_file", "topic", "file", "durable", "shared", "topic_repo_local", "topic", path_kind="file"),
     StorageProfile("agent_worktree", "agent", "repository", "durable", "private", "agent_workspace_local", "agent", git_semantics="worktree"),
     StorageProfile("agent_durable_dir", "agent", "directory", "durable", "private", "agent_workspace_local", "agent"),
     StorageProfile("agent_disposable_dir", "agent", "directory", "disposable", "private", "agent_workspace_local", "agent"),
@@ -210,6 +213,9 @@ SEMANTIC_SURFACES = (
     _surface("topic.repos.main.tracked.tools", "topic", "topic_main_tracked_tools", "repos/topic-main/isomer-managed/tracked/tools", "topic_repo_tracked_dir"),
     _surface("topic.repos.main.tracked.boundaries", "topic", "topic_main_tracked_boundaries", "repos/topic-main/isomer-managed/tracked/boundaries", "topic_repo_tracked_dir"),
     _surface("topic.repos.main.tracked.manifests", "topic", "topic_main_tracked_manifests", "repos/topic-main/isomer-managed/tracked/manifests", "topic_repo_tracked_dir"),
+    _surface("topic.repos.main.projections.readonly", "topic", "topic_main_projections_readonly", "repos/topic-main/isomer-managed/topic-owned/readonly/extern", "topic_repo_readonly_projection_dir"),
+    _surface("topic.repos.main.projections.writable", "topic", "topic_main_projections_writable", "repos/topic-main/isomer-managed/topic-owned/writable/extern", "topic_repo_writable_projection_dir"),
+    _surface("topic.repos.main.projections.manifest", "topic", "topic_main_projections_manifest", "repos/topic-main/isomer-managed/tracked/manifests/extern-projections.toml", "topic_repo_tracked_file"),
     _surface("topic.agents_root", "topic", "agents", "agents", "topic_private_dir"),
     _surface("agent.workspace", "agent", "agent_workspace", "agents/{agent_name}", "agent_worktree", required_context="agent"),
     _surface("agent.tmp", "agent", "agent_tmp", "agents/{agent_name}/tmp", "agent_disposable_dir", required_context="agent"),
@@ -250,6 +256,9 @@ PATH_ENV_VARS_BY_LABEL = {
     "topic.repos.main": "ISOMER_TOPIC_MAIN_REPO_DIR",
     "topic.repos.main.tmp": "ISOMER_TOPIC_MAIN_TMP_DIR",
     "topic.repos.main.isomer_managed": "ISOMER_TOPIC_MAIN_ISOMER_MANAGED_DIR",
+    "topic.repos.main.projections.readonly": "ISOMER_TOPIC_MAIN_PROJECTIONS_READONLY_DIR",
+    "topic.repos.main.projections.writable": "ISOMER_TOPIC_MAIN_PROJECTIONS_WRITABLE_DIR",
+    "topic.repos.main.projections.manifest": "ISOMER_TOPIC_MAIN_PROJECTIONS_MANIFEST",
     "topic.records": "ISOMER_TOPIC_WORKSPACE_RECORDS_DIR",
     "topic.records.artifacts": "ISOMER_TOPIC_WORKSPACE_ARTIFACTS_DIR",
     "topic.records.tasks": "ISOMER_TOPIC_WORKSPACE_TASKS_DIR",
@@ -290,6 +299,8 @@ def is_grouped_topic_repo_label(label: str) -> bool:
     if not label.startswith(GROUPED_TOPIC_REPO_PREFIX):
         return False
     suffix = label[len(GROUPED_TOPIC_REPO_PREFIX) :]
+    if suffix.startswith("main."):
+        return False
     return bool(suffix) and all(_LABEL_SEGMENT_RE.match(segment) for segment in suffix.split("."))
 
 
