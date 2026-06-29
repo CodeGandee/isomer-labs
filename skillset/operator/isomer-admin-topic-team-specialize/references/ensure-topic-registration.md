@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Check **Prerequisite Artifacts**. If neither a concrete registered Research Topic ref nor `<topic-dir>/topic-def/topic-overview.md` from `init-topic` or `clarify-topic` is available, refuse to run, explain that there is no topic material to register, and tell the user to run `init-topic` first.
+1. Check **Prerequisite Artifacts**. If neither a concrete registered Research Topic ref nor `topic.intent.overview` from `resolve-topic-intent`, `init-topic`, or `clarify-topic` is available, refuse to run, explain that there is no topic material to register, and tell the user to run `resolve-topic-intent` first.
 2. Resolve the Project root, Project Manifest, selected Research Topic id or candidate topic slug, candidate Topic Workspace directory, and topic overview. Do not infer a topic from directory names, the current directory, a Project Manifest default, the registered id `default`, or a generic placeholder statement.
 3. Recover the concrete Research Topic statement from user input, `topic-overview.md`, or an already registered Research Topic Config. If the statement is missing, generic, or unclear, stop with a blocker asking the user for the concrete research topic before any Project Config mutation.
 4. Idempotently verify existing Project Manifest-backed registrations. If the selected Research Topic and Topic Workspace are already registered and point to the intended topic material, report `topic_registration_status: registered`, carry forward the registered refs, and record that no mutation was needed.
@@ -21,7 +21,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 Required predecessor artifact or input:
 
-- `<topic-dir>/topic-def/topic-overview.md` from `init-topic`, optionally revised by `clarify-topic`; or
+- `topic.intent.overview` from `resolve-topic-intent` or `init-topic`, optionally revised by `clarify-topic`; or
 - An explicit registered Research Topic ref whose registered config contains a concrete Research Topic statement.
 
 If topic material is missing, refuse to run, explain that registration assurance needs a concrete topic statement and candidate Topic Workspace, and tell the user to run `init-topic` first. If the topic overview exists but does not contain a concrete topic statement, refuse to mutate Project Config and route to `clarify-topic`.

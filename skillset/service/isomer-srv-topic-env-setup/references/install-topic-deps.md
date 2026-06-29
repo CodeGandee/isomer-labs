@@ -9,18 +9,18 @@ Recover these before asking the user:
 | Input | Resolution |
 | --- | --- |
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
-| Derived gate | Require `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` from `derive-env-gate`. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
-| Dependency plan, enclosure strategy, and Pixi install commands | Read from the derived gate's `## Dependency Plan` and `## Pixi Install Commands` sections, including the selected Python version, version evidence, starter Python dependencies, enclosure classification, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, or missing enclosure strategy for a required dependency or runtime need. |
+| Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`, whether derived from source intent or supplied as an explicit manual target spec. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
+| Dependency plan, enclosure strategy, and Pixi install commands | Read from the target spec's `## Dependency Plan` and `## Pixi Install Commands` sections, including the selected Python version, version evidence, starter Python dependencies, enclosure classification, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, or missing enclosure strategy for a required dependency or runtime need. |
 | Package-source override or resolution evidence | Optional. Use only when the prompt or derived gate explicitly names a package source override, or when `isomer-srv-resolve-pkg-repo` evidence is needed because repository, mirror, registry, or channel reachability is uncertain. Otherwise follow the fixed source evidence and PyPI-first Python policy in this page. |
 
 ## Workflow
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace` and `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` from `derive-env-gate`.
-2. **Read `isomer-env-gate.md`** and stop with blockers when its `## Blockers` section contains unresolved install blockers.
-3. **Check enclosure classification** from the derived gate's `## Dependency Plan`. Every required dependency or runtime need must be classified as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked. If any required item is unclassified, stop and report a blocker asking to update `isomer-env-gate.md` before mutation.
-4. **Resolve the selected Python version** from the derived gate. If the derived gate does not already contain a usable selection, apply **Python Version Policy** before mutating the Pixi manifest and update the derived gate with the selected version and evidence.
+1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace` and resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`.
+2. **Read the target spec** and stop with blockers when its `## Blockers` section contains unresolved install blockers.
+3. **Check enclosure classification** from the target spec's `## Dependency Plan`. Every required dependency or runtime need must be classified as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked. If any required item is unclassified, stop and report a blocker asking to update `topic.env.topic_setup_target_spec` before mutation.
+4. **Resolve the selected Python version** from the target spec. If the target spec does not already contain a usable selection, apply **Python Version Policy** before mutating the Pixi manifest and update the target spec with the selected version and evidence.
 5. **Confirm the resolved Topic Workspace Pixi manifest exists** at `manifest_path`. Do not create a missing manifest in this subcommand; `resolve-topic-workspace` must have already used Pixi to resolve an explicit file target, explicit directory target, or the implicit Topic Workspace directory default.
 6. **Ensure Topic Workspace VCS ignores** by creating or updating `<topic-workspace-dir>/.gitignore` with `.pixi/`, `tmp/`, and `.git/`. Add `.isomer-user-env/` only when topic-local fallback is used. Do not add `extern/orphan` ignore entries from this skill.
 7. **Keep Python available** as the Topic Workspace root glue and orchestration language, even when the runnable target uses another language.
@@ -29,18 +29,18 @@ When this subcommand is selected, execute the following steps in order.
 10. **Install Pixi-managed native or Conda-required dependencies through Pixi/Conda** with `pixi add --manifest-path <manifest_path> <matchspec>` when the dependency is a non-Python tool, command-line program, binary or system-level runtime dependency, unavailable or unsuitable on PyPI, or required by setup instructions that PyPI cannot satisfy.
 11. **Prefer resolved NVIDIA package sources** for NVIDIA tools and runtime packages. When the derived gate or package-resolution evidence selects the `nvidia` channel, add it with `pixi workspace channel add --manifest-path <manifest_path> --prepend nvidia` before adding those packages. Record any fallback to `conda-forge` or another channel. If CUDA architecture targets, CUDA/C++ build environment choices, `nvcc` flags, or build parallelism need interpretation, use `isomer-misc-nvidia-tools` preference evidence before converting them into setup commands.
 12. **Install editable repo packages when needed** using a PyPI editable requirement such as `pixi add --manifest-path <manifest_path> --pypi --editable '<package-name> @ file://<absolute-repo-path>'` when the repo is Python-installable and the gate needs it importable.
-13. **Record Pixi-mediated external runtime wiring** when the derived gate requires an external runtime path, sourced script, compiler path, package-config path, CUDA variable, or library path. Do not mutate the host; record the exact variables or source commands and use them only inside `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
-14. **Use topic-local fallback only when justified** by the derived gate. Place fallback material under `<topic-workspace-dir>/.isomer-user-env/`, update `.gitignore`, run fallback setup through Pixi-scoped commands when commands are needed, and record the lower-portability warning.
-15. **Run setup commands through the Topic Workspace Pixi environment** when the derived gate requires commands beyond dependency mutation: `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`. Include any recorded runtime wiring in the command instead of relying on ambient shell state.
+13. **Record Pixi-mediated external runtime wiring** when the target spec requires an external runtime path, sourced script, compiler path, package-config path, CUDA variable, or library path. Do not mutate the host; record the exact variables or source commands and use them only inside `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
+14. **Use topic-local fallback only when justified** by the target spec. Place fallback material under `<topic-workspace-dir>/.isomer-user-env/`, update `.gitignore`, run fallback setup through Pixi-scoped commands when commands are needed, and record the lower-portability warning.
+15. **Run setup commands through the Topic Workspace Pixi environment** when the target spec requires commands beyond dependency mutation: `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`. Include any recorded runtime wiring in the command instead of relying on ambient shell state.
 16. **Install the selected environment** with `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
-17. **Update `isomer-env-gate.md`** with commands run, selected Python version, version evidence, starter dependencies, VCS ignore changes, adaptation decisions, selected package sources, enclosure classification, external runtime wiring, topic-local fallbacks, changed files, channel decisions, blockers, and execution log entries.
+17. **Update `topic.env.topic_setup_target_spec`** with commands run, selected Python version, version evidence, starter dependencies, VCS ignore changes, adaptation decisions, selected package sources, enclosure classification, external runtime wiring, topic-local fallbacks, changed files, channel decisions, blockers, and execution log entries.
 18. **Report the install result** using the parent skill's output fields.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `isomer-env-gate.md`, dependency policy, Pixi help, parent guardrails, and user request, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the resolved `topic.env.topic_setup_target_spec`, dependency policy, Pixi help, parent guardrails, and user request, then execute the plan.
 
 ## Python Version Policy
 
-Recover Python version evidence from the prompt, `env-gate.md`, the derived gate, and inspected repos before editing `pixi.toml`. Useful evidence includes `requires-python`, `python_requires`, requirement markers, `.python-version`, `runtime.txt`, `tox.ini`, `noxfile.py`, CI files, Dockerfiles, lockfiles, README setup notes, and package-manager config.
+Recover Python version evidence from the prompt, resolved `topic.intent.topic_env_requirements`, explicit target spec input, resolved `topic.env.topic_setup_target_spec`, and inspected repos before editing `pixi.toml`. Useful evidence includes `requires-python`, `python_requires`, requirement markers, `.python-version`, `runtime.txt`, `tox.ini`, `noxfile.py`, CI files, Dockerfiles, lockfiles, README setup notes, and package-manager config.
 
 If the version is unspecified or cannot be recovered from existing context, choose the previous stable Python minor release relative to the latest stable Python release at execution time. For example, if the latest stable line is `3.N`, select `3.(N-1)`; do not choose a prerelease and do not hard-code this fallback in the skill.
 
@@ -61,7 +61,7 @@ If multiple sources conflict, choose the highest Python minor version mentioned 
 
 When source reachability is uncertain, a local mirror or private registry is likely configured, or NVIDIA channel choice is policy-relevant, use `isomer-srv-resolve-pkg-repo` to choose the reachable repository, registry, or channel before dependency mutation. If the environment gate or manifest already fixes the source and no reachability concern exists, record that fixed source instead of adding a separate resolution step.
 
-Use `isomer-misc-nvidia-tools` for CUDA architecture targets, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `nvcc` flags, CUDA/C++ Pixi build environment preferences, and CUDA build parallelism. Topic env setup records the resulting setup evidence in `isomer-env-gate.md`; it should not expand into a general NVIDIA build guide.
+Use `isomer-misc-nvidia-tools` for CUDA architecture targets, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `nvcc` flags, CUDA/C++ Pixi build environment preferences, and CUDA build parallelism. Topic env setup records the resulting setup evidence in `topic.env.topic_setup_target_spec`; it should not expand into a general NVIDIA build guide.
 
 ## Environment Enclosure Ladder
 
@@ -74,7 +74,7 @@ Apply this ladder before installing or verifying any dependency or runtime need:
 
 ## Runtime Wiring Policy
 
-External runtime wiring must be explicit and replayable. Record the exact source script, runtime path, environment variable, and reason in `isomer-env-gate.md`, then run commands through Pixi. Common variables include `PATH`, `LD_LIBRARY_PATH`, `DYLD_LIBRARY_PATH` when applicable, `CPATH`, `LIBRARY_PATH`, `PKG_CONFIG_PATH`, and `CUDA_HOME`.
+External runtime wiring must be explicit and replayable. Record the exact source script, runtime path, environment variable, and reason in `topic.env.topic_setup_target_spec`, then run commands through Pixi. Common variables include `PATH`, `LD_LIBRARY_PATH`, `DYLD_LIBRARY_PATH` when applicable, `CPATH`, `LIBRARY_PATH`, `PKG_CONFIG_PATH`, and `CUDA_HOME`.
 
 Do not treat a tool found in the ambient shell as ready unless the derived gate records how it is made available through the Pixi-scoped command. A valid verification or setup command may use a form like:
 
@@ -84,7 +84,7 @@ pixi run --manifest-path <manifest_path> --environment <pixi_environment> bash -
 
 ## Topic-Local Fallback Policy
 
-Use `<topic-workspace-dir>/.isomer-user-env/` only after Pixi-managed installation and Pixi-mediated runtime wiring are insufficient. Preserve all fallback commands and installed paths in `isomer-env-gate.md`, add `.isomer-user-env/` to the Topic Workspace `.gitignore`, and report a lower-portability warning in the final output.
+Use `<topic-workspace-dir>/.isomer-user-env/` only after Pixi-managed installation and Pixi-mediated runtime wiring are insufficient. Preserve all fallback commands and installed paths in `topic.env.topic_setup_target_spec`, add `.isomer-user-env/` to the Topic Workspace `.gitignore`, and report a lower-portability warning in the final output.
 
 ## VCS Ignore Policy
 
@@ -126,7 +126,7 @@ Report `blocked` when:
 - Python version conflicts cannot be adapted within the service-safe environment setup boundary;
 - a starter Python dependency cannot be resolved or installed;
 - a dependency cannot be inferred, resolved, or installed;
-- a required dependency or runtime need lacks an enclosure strategy in `isomer-env-gate.md`;
+- a required dependency or runtime need lacks an enclosure strategy in `topic.env.topic_setup_target_spec`;
 - a Python package must use Pixi/Conda but the reason is unknown;
 - a channel or package source cannot be reached or cannot be resolved through fixed evidence or `isomer-srv-resolve-pkg-repo`;
 - the desired dependency would mutate the Project-root Pixi environment or an Agent Workspace-specific environment;

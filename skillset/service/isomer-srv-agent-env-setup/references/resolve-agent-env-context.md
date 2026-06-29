@@ -20,7 +20,7 @@ When this subcommand is selected, execute the following steps in order.
 1. **Resolve the Project root** from the prompt or current working directory. Confirm `.isomer-labs/manifest.toml` exists.
 2. **Resolve the Research Topic and Topic Workspace** through Project Manifest-backed context. Do not select a Topic Workspace by scanning sibling directories.
 3. **Resolve the Topic Workspace Pixi binding**. Use an active `topic_standalone_pixi_bindings.manifest_path_or_dir` entry when present; otherwise use the registered Topic Workspace directory as the implicit default target. Record `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and binding source.
-4. **Resolve topic semantic labels before mutation**. Required labels are `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `topic.records`, and `topic.runtime`. Record each path source, diagnostic, and blocker.
+4. **Resolve topic semantic labels before mutation**. Required labels are `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `topic.records`, `topic.runtime`, `topic.env.topic_setup_target_spec`, `topic.intent.agent_env_requirements`, and `topic.env.agent_setup_target_spec`. Record each semantic label, resolved path, storage profile, source, source detail, diagnostic, and blocker.
 5. **Confirm path boundaries**. The Topic Workspace and resolved setup labels must be inside the selected Project root unless a later accepted external-root policy explicitly permits the binding.
 6. **Record invocation posture**. Report `requester`, `confirmation_source`, optional Service Request refs, support Artifact refs, Provenance refs, and whether the current invocation is read-only or can proceed to confirmed mutation.
 7. **Report resolved context** using the parent output contract and stop with blockers for missing Project Manifest, unknown Research Topic, missing Topic Workspace, unresolved Pixi binding, semantic label blockers, unsafe paths, or missing mutation confirmation for mutating follow-up steps.
@@ -37,7 +37,7 @@ Carry these values to later subcommands:
 | `research_topic_id` | The selected Research Topic id. |
 | `topic_workspace_dir` | The Project Manifest-declared Topic Workspace directory. |
 | `topic_workspace_pixi_binding` | `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and binding source. |
-| `semantic_paths` | Resolved labels, paths, sources, diagnostics, and blockers for `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `topic.records`, and `topic.runtime`. |
+| `semantic_paths` | Resolved labels, paths, storage profiles, sources, source details, diagnostics, and blockers for `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `topic.records`, `topic.runtime`, `topic.env.topic_setup_target_spec`, `topic.intent.agent_env_requirements`, and `topic.env.agent_setup_target_spec`. |
 | `requester` | Project Operator Session, Operator Agent, Service Request ref, or explicit blocker. |
 | `confirmation_source` | Direct mutation confirmation, Service Request authorization, or read-only invocation. |
 | `service_request_refs` | Optional Service Request refs when available. |

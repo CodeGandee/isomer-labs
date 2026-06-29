@@ -14,6 +14,7 @@ from isomer_labs.topic_workspace_manifest import (
     catalog,
     compatibility_aliases,
     load_topic_workspace_manifest,
+    materialize_default_manifest,
     parse_topic_workspace_manifest,
     render_topic_workspace_manifest,
     resolve_semantic_binding,
@@ -114,6 +115,8 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual("topic.tmp", compatibility_aliases()["topic_tmp"])
         self.assertEqual("topic.repos.main.tmp", compatibility_aliases()["topic_main_tmp"])
         self.assertEqual("agent.tmp", compatibility_aliases()["agent_tmp"])
+        self.assertEqual("topic.intent.overview", compatibility_aliases()["topic_intent_overview"])
+        self.assertEqual("topic.env.topic_setup_target_spec", compatibility_aliases()["topic_env_topic_setup_target_spec"])
         private_surface = catalog()["agent.private_artifacts"]
         self.assertEqual("agent", private_surface.owner)
         self.assertEqual("private", private_surface.sharing)
@@ -121,6 +124,74 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         tmp_surface = catalog()["topic.repos.main.tmp"]
         self.assertEqual("disposable", tmp_surface.durability)
         self.assertEqual("private", tmp_surface.sharing)
+        intent_surface = catalog()["topic.intent.topic_env_requirements"]
+        self.assertEqual("topic_intent_source_file", intent_surface.storage_profile)
+        self.assertEqual("file", intent_surface.path_kind)
+        target_surface = catalog()["topic.env.agent_setup_target_spec"]
+        self.assertEqual("topic_env_target_spec_file", target_surface.storage_profile)
+        self.assertEqual("file", target_surface.path_kind)
+
+    def test_default_profile_resolves_topic_intent_file_labels(self) -> None:
+        context = self.make_context()
+
+        overview, overview_diagnostics = resolve_semantic_binding(context, "topic.intent.overview", env={})
+        topic_gate, topic_gate_diagnostics = resolve_semantic_binding(context, "topic.intent.topic_env_requirements", env={})
+        agent_target, agent_target_diagnostics = resolve_semantic_binding(context, "topic.env.agent_setup_target_spec", env={})
+
+        self.assertEqual([], overview_diagnostics)
+        self.assertEqual([], topic_gate_diagnostics)
+        self.assertEqual([], agent_target_diagnostics)
+        self.assertIsNotNone(overview)
+        self.assertIsNotNone(topic_gate)
+        self.assertIsNotNone(agent_target)
+        self.assertEqual(context.topic_workspace_path / "intent" / "src" / "topic-overview.md", overview.path)
+        self.assertEqual(context.topic_workspace_path / "intent" / "src" / "topic-env-gate.md", topic_gate.path)
+        self.assertEqual(context.topic_workspace_path / "intent" / "derived" / "isomer-agent-env-gate.md", agent_target.path)
+        self.assertEqual("default_profile", overview.source)
+        self.assertEqual("topic_intent_source_file", topic_gate.catalog.storage_profile)
+        self.assertEqual("topic_env_target_spec_file", agent_target.catalog.storage_profile)
+
+    def test_materialize_default_intent_file_labels_creates_parent_only(self) -> None:
+        context = self.make_context()
+
+        manifest, created, diagnostics = materialize_default_manifest(
+            context,
+            labels=("topic.intent.overview", "topic.env.topic_setup_target_spec"),
+            agent_name=None,
+        )
+
+        self.assertEqual([], diagnostics)
+        self.assertIsNotNone(manifest)
+        self.assertIn(context.topic_workspace_path / "intent" / "src", created)
+        self.assertIn(context.topic_workspace_path / "intent" / "derived", created)
+        self.assertTrue((context.topic_workspace_path / "intent" / "src").is_dir())
+        self.assertTrue((context.topic_workspace_path / "intent" / "derived").is_dir())
+        self.assertFalse((context.topic_workspace_path / "intent" / "src" / "topic-overview.md").exists())
+        self.assertFalse((context.topic_workspace_path / "intent" / "derived" / "isomer-env-gate.md").exists())
+
+    def test_manifest_rejects_wrong_intent_storage_profile(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.intent.overview"
+            path = "intent/src/topic-overview.md"
+            storage_profile = "topic_records_dir"
+            status = "active"
+            """,
+        )
+
+        _, diagnostics = load_topic_workspace_manifest(context)
+
+        self.assertTrue(
+            any('requires storage_profile = "topic_intent_source_file"' in diagnostic.message for diagnostic in diagnostics),
+            diagnostics,
+        )
 
     def test_manifest_validation_reports_schema_duplicate_and_unsafe_paths(self) -> None:
         context = self.make_context()

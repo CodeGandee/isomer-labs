@@ -5,19 +5,22 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Determine whether the user supplied a concrete Research Topic, an explicit registered topic ref with concrete topic material, or enough source material to seed a topic. If no topic substance is supplied, ask for the actual research topic and stop before running `init-topic`.
-2. Run `init-topic` when topic material or the topic workspace directory is missing or provisional setup is requested.
-3. Run `clarify-topic` only when missing or unclear topic details block specialization.
-4. Run `ensure-topic-registration` to verify or create Project Manifest-backed Research Topic and Topic Workspace refs, then verify the Topic Workspace Pixi binding needed by `isomer-srv-topic-env-setup`. Stop on registration or binding blockers.
-5. Run `setup-topic-env` before specialization when an existing `env-gate.md` is available or the user supplied a clear runnable target; it delegates heavy Topic Workspace setup to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> auto`.
-6. Run `specialize-team` to select or confirm one Domain Agent Team Template and execute the helper specialization path through draft profile output.
-7. Run `clarify-topic-team` only when specialization outputs contain open questions that block setup or validation.
-8. Run or rerun `setup-topic-env` when specialization adds or changes runnable environment requirements. This step prepares or reuses `<topic-workspace>/user-intent/src/env-gate.md` and delegates heavy setup to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> auto`.
-9. Run `setup-agent-workspace` after Topic Workspace predecessor evidence and specialization evidence exist. This step delegates Git-backed topology to `isomer-admin-topic-workspace-mgr` when needed, prepares `<topic-workspace>/user-intent/src/agent-env-gate.md` from the task when per-Agent Workspace cwd proof is requested and the user has not supplied it, then delegates readiness proof to `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>` only after source gate, predecessor evidence, authoritative Agent Names, and Git topology evidence exist.
-10. Run `validate-topic-team`, then run `finalize-topic-team` to create `isomer-topic-summary.md`.
-11. Stop at final topic-team summary output. Run `approve-profile` or `materialize-profile` only when the user explicitly asks for that static profile-material boundary and required validation or approval inputs are available.
+2. Run `init-topic` when the topic workspace directory is missing or provisional setup is requested.
+3. Run `resolve-topic-intent` to resolve `topic.intent.overview` and write topic understanding before any setup or specialization step.
+4. Run `clarify-topic` only when missing or unclear topic details block registration, setup, or specialization.
+5. Run `ensure-topic-registration` to verify or create Project Manifest-backed Research Topic and Topic Workspace refs, then verify the Topic Workspace Pixi binding needed by `isomer-srv-topic-env-setup`. Stop on registration or binding blockers.
+6. Run `resolve-topic-env-gate` to resolve `topic.intent.topic_env_requirements` when the topic needs environment setup or the user supplied a clear runnable target.
+7. Run `setup-topic-env` when `topic.intent.topic_env_requirements` is usable or an explicit topic env target spec is supplied; it delegates topic target-spec derivation and Topic Workspace materialization to `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> auto`.
+8. Run `specialize-team` to select or confirm one Domain Agent Team Template and execute the helper specialization path through draft profile output.
+9. Run `clarify-topic-team` only when specialization outputs contain open questions that block setup or validation.
+10. Run or rerun `resolve-topic-env-gate` and `setup-topic-env` when specialization adds or changes runnable environment requirements.
+11. Run `resolve-agent-env-gate` after Topic Workspace predecessor evidence and specialization evidence exist when per-Agent Workspace cwd readiness is requested.
+12. Run `setup-agent-workspace` after `topic.intent.agent_env_requirements`, Topic Workspace predecessor evidence, specialization evidence, authoritative Agent Names, and Git topology evidence exist. This step delegates Git-backed topology to `isomer-admin-topic-workspace-mgr` when needed and delegates agent target-spec derivation plus cwd readiness proof to `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>`.
+13. Run `validate-topic-team`, then run `finalize-topic-team` to create `isomer-topic-summary.md`.
+14. Stop at final topic-team summary output. Run `approve-profile` or `materialize-profile` only when the user explicitly asks for that static profile-material boundary and required validation or approval inputs are available.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the selected topic, template, procedural subcommands, output contract, and guardrails, then execute the plan.
 
 ## Output Contract
 
-Report the topic overview path, registration status, registered topic and workspace refs, environment binding status, selected Domain Agent Team Template, copied material paths, topic environment status, Agent Workspace paths, topic-team validation status, `isomer-topic-summary.md` path, blockers, deferrals, and next operator action.
+Report semantic labels and resolved paths for topic overview, topic env source intent, topic env target spec, agent env source intent, and agent env target spec when present; also report registration status, registered topic and workspace refs, environment binding status, selected Domain Agent Team Template, copied material paths, topic environment status, Agent Workspace paths, topic-team validation status, `isomer-topic-summary.md` path, blockers, deferrals, and next operator action.

@@ -21,10 +21,10 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 Required predecessor artifact:
 
-- `<topic-dir>/topic-def/topic-overview.md` from `init-topic`, optionally revised by `clarify-topic`.
+- `topic.intent.overview` from `resolve-topic-intent`, optionally revised by `clarify-topic`.
 - Registration assurance from `ensure-topic-registration`, including `registered_research_topic_ref`, `registered_topic_workspace_ref`, `topic_registration_status: registered`, and no unresolved `registration_blockers`.
 
-If `topic-overview.md` does not exist, refuse to run, explain that there is no topic definition to specialize against, and tell the user to run `init-topic` first.
+If `topic.intent.overview` does not exist, refuse to run, explain that there is no topic definition to specialize against, and tell the user to run `resolve-topic-intent` first.
 
 If registration assurance is missing or reports `topic_registration_status: blocked`, refuse to run, explain that specialization needs authoritative Project Manifest-backed topic refs, and tell the user to run `ensure-topic-registration` first.
 

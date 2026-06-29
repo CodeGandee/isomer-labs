@@ -9,7 +9,7 @@ Recover these before asking the user:
 | Input | Resolution |
 | --- | --- |
 | Agent env context | Require `topic.repos.main`, `topic.repos.main.isomer_managed`, path sources, requester, and confirmation source from `resolve-agent-env-context`. |
-| Derived agent env gate | Require `<topic-workspace-dir>/user-intent/derived/isomer-agent-env-gate.md` from `derive-agent-env-gate`. |
+| Agent env target spec | Require resolved `topic.env.agent_setup_target_spec` from `derive-agent-env-gate`. |
 | Mutation confirmation | Require direct Project Operator Session mutation confirmation or Service Request authorization before creating or changing files. |
 | Optional modifiers | None for this step. |
 
@@ -17,11 +17,11 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: resolved context and derived agent env gate. Refuse to run if semantic path evidence or mutation confirmation is missing.
+1. **Require predecessor artifacts**: resolved context and agent env target spec. Refuse to run if semantic path evidence or mutation confirmation is missing.
 2. **Inspect the resolved `topic.repos.main` path**. The target must be a normal non-bare Git repository, a missing safe path, an empty safe directory, or an empty normal Git repository.
 3. **Initialize safe missing or empty targets** only when mutation is confirmed. Create or initialize a normal non-bare Topic Main Repository at the resolved path, create owner branch `topic-owner/main`, and create a minimal baseline commit before per-agent worktrees are created.
 4. **Reuse existing safe repositories** without rewriting, cleaning, resetting, deleting, moving, recloning, pulling, or silently repairing them. If `topic-owner/main` is missing, create or validate it from the accepted current base only when that base is unambiguous.
-5. **Apply non-destructive Topic Main Repository configuration** required by `user-intent/derived/isomer-agent-env-gate.md`. Record changed files, commands run, semantic path evidence, and blockers in service output and the derived gate execution log.
+5. **Apply non-destructive Topic Main Repository configuration** required by `topic.env.agent_setup_target_spec`. Record changed files, commands run, semantic path evidence, and blockers in service output and the target spec execution log.
 6. **Prepare or validate the resolved `topic.repos.main.isomer_managed` namespace** and tracked sublabels when required, without creating legacy top-level collaboration directories.
 7. **Report Topic Main Repository state**: path, label source, Git state, owner branch, changed files, commands run, blockers, and next action.
 

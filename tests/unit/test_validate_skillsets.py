@@ -154,7 +154,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             extra_terms = ""
             if subcommand_name == "setup-agent-workspace.md":
                 extra_terms = """
-                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support paths, `semantic_paths`, `local_tmp_path_status`, semantic labels, path sources, `user-intent/src/agent-env-gate.md`, `user-intent/derived/isomer-agent-env-gate.md`, and `isomer-srv-agent-env-setup`. generate the source gate from a clear task and reject default-looking directories without semantic labels and path sources.
+                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support paths, `semantic_paths`, `local_tmp_path_status`, semantic labels, path sources, `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, and `isomer-srv-agent-env-setup`. generate the source gate from a clear task and reject default-looking directories without semantic labels and path sources.
                 """
             elif subcommand_name == "validate-topic-team.md":
                 extra_terms = """
@@ -417,7 +417,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Commands include `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, `pixi add --manifest-path <manifest_path>`, and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
             Use `.isomer-user-env/` only as fallback and block sudo.
-            Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.records`, and `topic.runtime`; produce Topic Workspace predecessor evidence and report `per_agent_readiness_status` when per-agent readiness is not checked. Also resolve the appropriate topic repository label before creating repos.
+            Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`; accept an explicit manual target spec; produce Topic Workspace predecessor evidence and report `per_agent_readiness_status` when per-agent readiness is not checked. Also resolve the appropriate topic repository label before creating repos.
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -432,10 +432,12 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
         reference_terms = {
-            "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.repos.main`, `topic.records`, `topic.runtime`, and each path source.",
+            "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.repos.main`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, and each path source.",
             "ensure-topic-repos.md": "Use the resolved topic repository root from `semantic_paths`; report semantic label and path source. Do not place task repos outside the resolved root.",
-            "read-env-gate.md": "Interpret the runnable target as what one agent or operator must run.",
-            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `agent-env-gate.md`.",
+            "read-env-gate.md": "Resolve and read `topic.intent.topic_env_requirements`. Interpret the runnable target as what one agent or operator must run.",
+            "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec.",
+            "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy.",
+            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `topic.intent.agent_env_requirements`.",
             "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
@@ -501,7 +503,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Use {subcommand_links}.
 
-            This fixture reads `user-intent/src/agent-env-gate.md`, writes `user-intent/derived/isomer-agent-env-gate.md`, prepares the Topic Main Repository at `topic.repos.main`, uses authoritative Agent Names, resolves `agent.workspace`, runs `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, records selected-agent partial evidence, Service Request refs, Provenance refs, and `overall_readiness_status`.
+            This fixture reads `topic.intent.agent_env_requirements`, writes or validates `topic.env.agent_setup_target_spec`, accepts an explicit manual target spec, consumes `topic.env.topic_setup_target_spec`, prepares the Topic Main Repository at `topic.repos.main`, uses authoritative Agent Names, resolves `agent.workspace`, runs `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, records selected-agent partial evidence, Service Request refs, Provenance refs, and `overall_readiness_status`.
 
             Do not create per-agent Pixi manifests. Do not install or mutate Topic Workspace dependencies. Do not create Agent Instances or mutate Workspace Runtime records.
             """
@@ -1097,25 +1099,25 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("SVS003", codes(diagnostics))
         self.assertTrue(any("verify-agent-env-gate.md" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_service_validator_requires_agent_env_gate_terms(self) -> None:
+    def test_service_validator_requires_agent_env_source_intent_terms(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root)
-        self.write_agent_env_setup_service(root, omit_skill_term="user-intent/src/agent-env-gate.md")
+        self.write_agent_env_setup_service(root, omit_skill_term="topic.intent.agent_env_requirements")
 
         diagnostics = validator.validate_service_skillset(root)
 
         self.assertIn("SVS003", codes(diagnostics))
-        self.assertTrue(any("user-intent/src/agent-env-gate.md" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("topic.intent.agent_env_requirements" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_service_validator_requires_agent_env_derived_gate_terms(self) -> None:
+    def test_service_validator_requires_agent_env_target_spec_terms(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root)
-        self.write_agent_env_setup_service(root, omit_skill_term="user-intent/derived/isomer-agent-env-gate.md")
+        self.write_agent_env_setup_service(root, omit_skill_term="topic.env.agent_setup_target_spec")
 
         diagnostics = validator.validate_service_skillset(root)
 
         self.assertIn("SVS003", codes(diagnostics))
-        self.assertTrue(any("user-intent/derived/isomer-agent-env-gate.md" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("topic.env.agent_setup_target_spec" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_requires_agent_env_semantic_path_terms(self) -> None:
         for term in ("topic.repos.main", "agent.workspace"):

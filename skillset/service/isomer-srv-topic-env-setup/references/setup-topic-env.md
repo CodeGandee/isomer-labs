@@ -13,8 +13,8 @@ Recover these before asking the user:
 | Project root | Use the provided path or current working directory; it must resolve to an Isomer Project root containing `.isomer-labs/manifest.toml`. |
 | Research Topic or Topic Workspace selector | Read a Research Topic id, Topic Workspace ref, or Topic Workspace path from the prompt or Project Manifest context. Ask only when several topics remain plausible. |
 | `topic_workspace_dir`, `semantic_paths`, `manifest_path_or_dir`, `manifest_path`, `pixi_environment` | Resolve through `resolve-topic-workspace` before any later step mutates or verifies Pixi state. `semantic_paths` must include setup labels such as `topic.repos.main`, `topic.records`, and `topic.runtime`; `manifest_path_or_dir` may be an explicit file target, an explicit directory target, or the implicit Topic Workspace directory default; `manifest_path` is Pixi's resolved manifest path. |
-| `env_gate_path` | Use `<topic-workspace-dir>/user-intent/src/env-gate.md`; `read-env-gate` must confirm it exists before readiness can be claimed. |
-| `derived_gate_path` | Use `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`; `derive-env-gate` must create or update it before install or verification. |
+| Topic env source intent | Resolve `topic.intent.topic_env_requirements` when deriving from user-authored source intent. Under `isomer-default.v1`, this defaults to `<topic-workspace-dir>/intent/src/topic-env-gate.md`; `read-env-gate` must confirm it exists before source-intent-derived readiness can be claimed. |
+| Topic env target spec | Resolve `topic.env.topic_setup_target_spec`, or accept an explicit manual target spec file, prompt, or context. Under `isomer-default.v1`, the label defaults to `<topic-workspace-dir>/intent/derived/isomer-env-gate.md`; `derive-env-gate` must create, update, normalize, or validate it before install or verification. |
 
 When asking for missing input, separate `Required` values from `Optional` modifiers. If no optional inputs apply, say `Optional: none for this setup run.`
 
@@ -23,7 +23,7 @@ When asking for missing input, separate `Required` values from `Optional` modifi
 When this subcommand is selected, execute the following steps in order.
 
 1. **Select execution mode** from the prompt. Use `fast-forward` mode for `fast-forward`, `fast-foward`, `auto`, `automatic`, `just do it`, `fully setup`, or equivalent direct-execution wording. Use `step-by-step` mode for `step-by-step`, `manual`, `interactive`, `ask me`, `confirm before each step`, or equivalent user-controlled wording. If the prompt gives a concrete setup task but no mode, default to `fast-forward` unless the prompt asks to inspect, decide, or proceed carefully.
-2. **Run the setup chain** in this fixed order: `resolve-topic-workspace`, `read-env-gate`, `ensure-topic-repos`, `derive-env-gate`, `install-topic-deps`, and `verify-env-gate`.
+2. **Run the setup chain** in this fixed order: `resolve-topic-workspace`, `read-env-gate` when deriving from source intent, `ensure-topic-repos`, `derive-env-gate`, `install-topic-deps`, and `verify-env-gate`. If an explicit target spec is supplied, `derive-env-gate` validates that spec and records its source instead of requiring `read-env-gate`.
 3. **In `fast-forward` mode**, load each referenced subcommand page, execute its `## Workflow`, and carry forward its outputs to the next step without pausing for optional consent.
 4. **In `step-by-step` mode**, before each step, explain what will happen and why, present an option table from **Manual Choice**, state the recommended option after the table, wait for the user to choose, execute only the chosen action, then report the result before offering the next step.
 5. **Stop on blockers** in either mode when a step reports missing required inputs, missing predecessor artifacts, unsafe ambiguity, out-of-scope requests, or a failed precondition.
@@ -36,9 +36,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Order | Step | Reference | Carry Forward |
 | --- | --- | --- | --- |
 | 1 | Resolve the Topic Workspace | [resolve-topic-workspace.md](resolve-topic-workspace.md) | Project root, Research Topic, Topic Workspace, semantic setup paths, Pixi binding, and blockers. |
-| 2 | Read the source gate | [read-env-gate.md](read-env-gate.md) | Source gate summary, runnable target, repo hints, and blockers. |
+| 2 | Read the source intent | [read-env-gate.md](read-env-gate.md) | `topic.intent.topic_env_requirements` metadata, source intent summary, runnable target, repo hints, and blockers. Skip only when an explicit manual target spec is supplied. |
 | 3 | Ensure required repos | [ensure-topic-repos.md](ensure-topic-repos.md) | Repo paths, source warnings, inspection notes, and blockers. |
-| 4 | Derive the operational gate | [derive-env-gate.md](derive-env-gate.md) | `derived_gate_path`, dependency plan, enclosure strategy, verification commands, and blockers. |
+| 4 | Derive or validate the target spec | [derive-env-gate.md](derive-env-gate.md) | `topic.env.topic_setup_target_spec` metadata, target spec source, dependency plan, enclosure strategy, verification commands, and blockers. |
 | 5 | Install dependencies | [install-topic-deps.md](install-topic-deps.md) | Commands run, changed Pixi files, external runtime wiring, topic-local fallbacks, install results, and blockers. |
 | 6 | Verify the gate | [verify-env-gate.md](verify-env-gate.md) | Gate execution results, enclosure warnings, and final readiness status. |
 
@@ -82,16 +82,16 @@ Successful setup leaves the selected Topic Workspace with:
   .isomer-user-env/   # only when topic-local fallback is needed
   repos/                 # default `topic.repos.main` parent for independent setup repos
     <repo-name>/
-  user-intent/
+  intent/
     src/
-      env-gate.md
+      topic-env-gate.md        # default binding for topic.intent.topic_env_requirements
     derived/
-      isomer-env-gate.md
+      isomer-env-gate.md       # default binding for topic.env.topic_setup_target_spec
 ```
 
-Readiness means the desired command from `isomer-env-gate.md` runs successfully through recorded Pixi-scoped commands for a single agent or operator working in the selected Topic Workspace root or a repo-specific working directory named by the derived gate. It does not merely mean that Pixi files exist, it does not mean a command passed because the ambient shell already had a global tool, activated environment, PATH entry, library path, or sourced script, and it does not mean a Topic Agent Team Profile, per-Agent Workspace cwd, or live Agent Team Instance is ready.
+Readiness means the desired command from the resolved `topic.env.topic_setup_target_spec` runs successfully through recorded Pixi-scoped commands for a single agent or operator working in the selected Topic Workspace root or a repo-specific working directory named by the target spec. It does not merely mean that Pixi files exist, it does not mean a command passed because the ambient shell already had a global tool, activated environment, PATH entry, library path, or sourced script, and it does not mean a Topic Agent Team Profile, per-Agent Workspace cwd, or live Agent Team Instance is ready.
 
-If the caller needs every Agent Workspace cwd verified, report `per_agent_readiness_status: not checked` and list the ready Topic Workspace predecessor evidence that a separate agent readiness workflow can consume. That predecessor evidence includes the ready Topic Workspace Pixi binding, `user-intent/derived/isomer-env-gate.md`, enclosure records, commands run, changed files, and blockers when present. Do not read `agent-env-gate.md` or trigger agent env setup from this topic-scoped flow.
+If the caller needs every Agent Workspace cwd verified, report `per_agent_readiness_status: not checked` and list the ready Topic Workspace predecessor evidence that a separate agent readiness workflow can consume. That predecessor evidence includes the ready Topic Workspace Pixi binding, resolved `topic.env.topic_setup_target_spec`, enclosure records, commands run, changed files, and blockers when present. Do not read `topic.intent.agent_env_requirements` or trigger agent env setup from this topic-scoped flow.
 
 The Topic Workspace `.gitignore` may include a default `tmp/` entry as the `isomer-default.v1` binding for the resolved `topic.tmp` label. Report `topic.tmp` when Workspace Path Resolution can resolve it, and preserve the literal `tmp/` ignore entry for default Topic Workspace posture. `tmp/` material is local, ignored, disposable, not shared, and not durable evidence unless another accepted contract promotes it. Add `.pixi/` and `.git/`, add `.isomer-user-env/` only when topic-local fallback is used, and do not add an `extern/orphan` ignore rule from this skill.
 
@@ -103,4 +103,4 @@ The Topic Workspace `.gitignore` may include a default `tmp/` entry as the `isom
 - Keep all direct mutation scoped to the selected Topic Workspace Pixi environment and missing required repos under the resolved topic repository root.
 - Carry enclosure strategy, external runtime wiring, topic-local fallback warnings, and enclosure blockers from `derive-env-gate`, `install-topic-deps`, and `verify-env-gate` into the combined result.
 - Do not mutate an existing repo during `ensure-topic-repos`; later setup or verification steps may only run commands against existing repos when the derived gate explicitly requires those commands.
-- Do not read `user-intent/src/agent-env-gate.md`, write `user-intent/derived/isomer-agent-env-gate.md`, create Agent Workspace worktrees, or claim per-agent cwd readiness from this topic-scoped flow.
+- Do not read `topic.intent.agent_env_requirements`, write `topic.env.agent_setup_target_spec`, create Agent Workspace worktrees, or claim per-agent cwd readiness from this topic-scoped flow.

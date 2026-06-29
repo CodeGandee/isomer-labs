@@ -1,6 +1,6 @@
 # Derive Agent Env Gate
 
-Use this subcommand to generate the operational per-agent readiness gate from the source agent gate, topic env predecessor evidence, and authoritative agent plan.
+Use this subcommand to generate or validate the operational per-agent readiness target spec from source agent intent, topic env predecessor evidence, authoritative agent plan, or an explicit manual target spec.
 
 ## Required Inputs
 
@@ -9,25 +9,26 @@ Recover these before asking the user:
 | Input | Resolution |
 | --- | --- |
 | Agent env context | Require Project, Research Topic, Topic Workspace, Pixi binding, semantic topic labels, requester, and confirmation source from `resolve-agent-env-context`. |
-| Topic env predecessor | Require `require-topic-env-ready` output and `user-intent/derived/isomer-env-gate.md`. |
-| Source agent gate summary | Require `read-agent-env-gate` output from `user-intent/src/agent-env-gate.md`. |
+| Topic env predecessor | Require `require-topic-env-ready` output and `topic.env.topic_setup_target_spec`. |
+| Source agent intent summary | Require `read-agent-env-gate` output from `topic.intent.agent_env_requirements` when deriving from source intent. |
+| Explicit target spec | Optional. A manual file, prompt, or context may supply the per-agent operational target spec directly. When supplied, validate it against this page's fixed sections and per-agent cwd verification policy instead of requiring source intent. |
 | Agent plan | Require `plan-agent-workspaces` output with authoritative Agent Names, branch plan, and resolved semantic labels. |
-| Derived gate path | Use `<topic-workspace-dir>/user-intent/derived/isomer-agent-env-gate.md`; create the parent directory when writing the gate. |
+| Agent env target spec | Resolve `topic.env.agent_setup_target_spec` through Workspace Path Resolution. Under `isomer-default.v1`, this defaults to `<topic-workspace-dir>/intent/derived/isomer-agent-env-gate.md`; create the parent directory when writing the target spec. |
 
 ## Workflow
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: resolved context, topic env predecessor evidence, source agent gate summary, and authoritative agent plan.
-2. **Resolve the derived gate path** as `<topic-workspace-dir>/user-intent/derived/isomer-agent-env-gate.md` and create its parent directory when safe.
-3. **Translate source gate requirements** into a per-agent operational gate. Use the Topic Workspace predecessor as evidence, but do not duplicate dependency planning from `isomer-env-gate.md`.
+1. **Require predecessor artifacts**: resolved context, topic env predecessor evidence, source agent intent summary when deriving from source intent, explicit target spec input when manual mode is used, and authoritative agent plan.
+2. **Resolve the target spec label** `topic.env.agent_setup_target_spec`; record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers. Create the parent directory when writing the target spec.
+3. **Translate or validate source requirements** into a per-agent operational target spec. Use the Topic Workspace predecessor as evidence, but do not duplicate dependency planning from `topic.env.topic_setup_target_spec`.
 4. **Derive the per-agent verification matrix**. For every authoritative Agent Name, record cwd as the resolved `agent.workspace` and each command as `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
 5. **Preserve cwd assumptions** from the topic env gate. If a topic env command is topic-root-only or repo-specific and cannot run from an Agent Workspace cwd, record `gate-cwd-incompatible` or an equivalent blocker instead of false readiness.
-6. **Write the fixed Markdown template** from **Template**. Include every section; write `None.` or a short reason when a section does not apply.
+6. **Write or update the fixed Markdown template** from **Template** at the resolved `topic.env.agent_setup_target_spec` path when deriving from source intent. When using an explicit manual target spec, record the explicit source and normalized target-spec copy or reference, then preserve every required section.
 7. **Initialize or update the execution log** with requester, confirmation source, optional Service Request refs, support Artifact refs, Provenance refs, changed files, commands run, blockers, and `Not run yet.` for verification commands that have not been executed.
-8. **Report `agent_env_gate_path`** and any blockers that prevent Topic Main Repository setup, worktree creation, or verification.
+8. **Report target spec metadata** and any blockers that prevent Topic Main Repository setup, worktree creation, or verification.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step derivation plan from the source gate, topic env predecessor, agent plan evidence, parent guardrails, and user request, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step derivation plan from the source intent or explicit target spec, topic env predecessor, agent plan evidence, parent guardrails, and user request, then execute the plan.
 
 ## Template
 
@@ -59,9 +60,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Section Guidance
 
-`## Source Agent Gate` should summarize `user-intent/src/agent-env-gate.md` and cite the source path.
+`## Source Agent Gate` should summarize `topic.intent.agent_env_requirements` and cite its resolved path, or name the explicit target spec source when the service was invoked manually.
 
-`## Topic Env Gate` should reference `user-intent/derived/isomer-env-gate.md` as Topic Workspace predecessor evidence. A topic-root pass is prerequisite evidence only; it is not Agent Workspace cwd readiness.
+`## Topic Env Gate` should reference `topic.env.topic_setup_target_spec` as Topic Workspace predecessor evidence. A topic-root pass is prerequisite evidence only; it is not Agent Workspace cwd readiness.
 
 `## Topic Pixi Binding` should record `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and binding source.
 

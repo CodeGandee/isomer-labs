@@ -7,13 +7,13 @@ When this subcommand is selected, execute the following steps in order.
 1. Check **Prerequisite Artifacts**. `init-topic` has no predecessor artifact requirement, so do not refuse to run because earlier flow artifacts are missing.
 2. Read the user's Research Topic prompt, source material, or explicitly supplied topic ref, and decide whether it contains enough topic substance to summarize.
 3. If the user did not supply a Research Topic, stop and ask for the concrete research topic before creating any directory or topic overview file. Do not infer the topic from Project Manifest defaults, the registered id `default`, current directory, existing Topic Workspace names, or a generic placeholder statement.
-4. If a topic ref is supplied but its registered Research Topic Config only contains a generic or placeholder statement, ask the user for the concrete research topic before creating or overwriting `topic-overview.md`.
+4. If a topic ref is supplied but its registered Research Topic Config only contains a generic or placeholder statement, ask the user for the concrete research topic before creating or overwriting `topic.intent.overview`.
 5. If no topic workspace directory is supplied and the user-supplied Research Topic is clear, derive a short topic slug and choose a provisional seed directory under the effective Topic Workspace base. Use the Project Manifest `topic_workspace_base_dir` when present; otherwise use the built-in `isomer-content/topic-ws/` base, giving a normal default such as `isomer-content/topic-ws/<topic-slug>/`.
 6. If no topic workspace directory is supplied and the Research Topic is unclear, ask for more topic detail before choosing a directory.
 7. If the derived or supplied directory is outside the Project root, already exists, collides with registered Project material, or is otherwise ambiguous, stop and ask the user to confirm that directory or provide another one before creating files.
-8. Create the selected topic directory and `<topic-dir>/topic-def/` only after the Research Topic and directory are clear.
-9. Write `<topic-dir>/topic-def/topic-overview.md` from the agent's understanding of the Research Topic with the sections in **Topic Overview Template**.
-10. Report the created `topic_overview_path`, provisional status, assumptions, open questions, and the next safe subcommand. When the created topic material is not already manifest-backed, name `ensure-topic-registration` as the next registration action before specialization or setup.
+8. Create the selected topic directory only after the Research Topic and directory are clear.
+9. Route topic understanding to `resolve-topic-intent`, which resolves `topic.intent.overview` and writes the topic overview at the resolved path.
+10. Report `topic_overview_label`, the resolved `topic_overview_path`, provisional status, assumptions, open questions, and the next safe subcommand. When the created topic material is not already manifest-backed, name `ensure-topic-registration` as the next registration action before specialization or setup.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the topic prompt, selected directory, Project Config boundary, and guardrails in this skill, then execute the plan.
 
@@ -25,7 +25,7 @@ If the user is actually asking for a later procedural subcommand and predecessor
 
 ## Topic Overview Template
 
-Write `topic-overview.md` with these sections:
+`resolve-topic-intent` writes `topic.intent.overview` with these sections:
 
 ```markdown
 # Topic Overview
@@ -51,10 +51,13 @@ Report:
 
 - `research_topic_ref`: the topic label or provisional topic id.
 - `topic_workspace_ref`: the selected directory as a provisional topic workspace seed unless it is already registered.
-- `topic_overview_path`: `<topic-dir>/topic-def/topic-overview.md`.
+- `topic_overview_label`: `topic.intent.overview`.
+- `topic_overview_path`: resolved path for `topic.intent.overview`, defaulting to `<topic-workspace>/intent/src/topic-overview.md`.
+- `topic_overview_storage_profile`: usually `topic_intent_source_file`.
+- `topic_overview_source`: Workspace Path Resolution source and source detail.
 - `topic_registration_status`: registered, provisional, blocked, or not checked.
 - `open_questions`: questions that should go to `clarify-topic`.
-- `next_operator_action`: usually `clarify-topic` or `ensure-topic-registration`.
+- `next_operator_action`: usually `resolve-topic-intent`, `clarify-topic`, or `ensure-topic-registration`.
 
 ## Guardrails
 

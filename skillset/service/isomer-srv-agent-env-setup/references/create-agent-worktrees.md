@@ -11,14 +11,14 @@ Recover these before asking the user:
 | Agent env context | Require resolved Topic Workspace, `topic.repos.main`, `topic.agents_root`, requester, and confirmation source. |
 | Agent plan | Require `plan-agent-workspaces` output with authoritative Agent Names, resolved `agent.workspace`, support labels, path sources, and branch plan. |
 | Topic Main Repository state | Require `ensure-topic-main-repository` output with a normal non-bare repository and owner branch posture. |
-| Derived agent env gate | Require `user-intent/derived/isomer-agent-env-gate.md` so worktree status can be recorded. |
+| Agent env target spec | Require resolved `topic.env.agent_setup_target_spec` so worktree status can be recorded. |
 | Optional selected agent | Optional. It must be one authoritative Agent Name and yields partial setup evidence only. |
 
 ## Workflow
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: resolved context, authoritative agent plan, usable Topic Main Repository state, derived agent env gate, and mutation confirmation.
+1. **Require predecessor artifacts**: resolved context, authoritative agent plan, usable Topic Main Repository state, agent env target spec, and mutation confirmation.
 2. **Inspect Git worktree metadata** for the resolved `topic.repos.main` before creating any worktree.
 3. **For each targeted authoritative Agent Name**, validate the expected branch `per-agent/<agent-name>/main` and resolved `agent.workspace` path.
 4. **Report existing matching worktrees as ready** when the resolved `agent.workspace` path already exists as a worktree of `topic.repos.main` on the expected branch.

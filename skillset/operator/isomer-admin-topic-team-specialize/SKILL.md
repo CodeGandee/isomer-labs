@@ -1,11 +1,11 @@
 ---
 name: isomer-admin-topic-team-specialize
-description: "Initialize and specialize Isomer Research Topics into static topic-team material. Use when an operator needs topic-team setup for one Research Topic: help, init-topic, clarify-topic, ensure-topic-registration, specialize-team, clarify-topic-team, setup-topic-env through isomer-srv-topic-env-setup, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
+description: "Initialize and specialize Isomer Research Topics into static topic-team material. Use when an operator needs topic-team setup for one Research Topic: help, init-topic, resolve-topic-intent, clarify-topic, ensure-topic-registration, resolve-topic-env-gate, specialize-team, clarify-topic-team, setup-topic-env through isomer-srv-topic-env-setup, resolve-agent-env-gate, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
 ---
 
 # Isomer Admin Topic Team Specialize
 
-Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, prepare topic definition material, ensure authoritative Research Topic and Topic Workspace registration through supported Isomer surfaces, optionally route independent Topic Workspace environment setup through `isomer-srv-topic-env-setup` once a runnable gate exists, adapt one Domain Agent Team Template into copied topic-specific material, prepare Agent Workspaces as durable setup state, validate static material readiness, and write a final topic-team summary. Route Topic Workspace dependency, Pixi, repo-acquisition, and topic-root command verification work only through `isomer-srv-topic-env-setup` from `setup-topic-env`, after `ensure-topic-registration` has proved manifest-backed topic refs and a resolvable Topic Workspace Pixi binding. Record that output as Topic Workspace predecessor evidence, not as per-Agent Workspace cwd readiness. When Git-backed Agent Workspace worktrees or worker-facing support paths are requested, delegate that concrete workspace topology to `isomer-admin-topic-workspace-mgr` and require semantic label evidence for `topic.repos.main`, `agent.workspace`, and required `agent.*` support paths. When per-Agent Workspace cwd command proof, selected-agent repair, or launch-facing Agent Workspace readiness is requested, prepare `user-intent/src/agent-env-gate.md` from the task if the user has not supplied it, then delegate gate-driven readiness to `isomer-srv-agent-env-setup` from `setup-agent-workspace` only after source agent gate, Topic Workspace predecessor evidence, authoritative Agent Names, and Git-backed topology evidence exist. Record `user-intent/derived/isomer-agent-env-gate.md`, readiness by Agent Name, commands, blockers, and partial selected-agent evidence when present. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
+Use this as the module-level operator workflow for Topic Team Specialization. It helps an operator start from a Research Topic, resolve Project and Topic Workspace context, write high-level user-editable intent through semantic labels, derive service-owned target specs, route environment materialization to service skills, adapt one Domain Agent Team Template into copied topic-specific material, prepare Agent Workspaces as durable setup state, validate static material readiness, and write a final topic-team summary. The canonical setup path is `team specialization invoked -> resolve-project -> resolve-topic-intent -> resolve-topic-env-gate -> derive topic env spec -> materialize topic env -> resolve-agent-env-gate -> derive agent env spec -> materialize agent env -> validate-topic-team`. Always resolve intent and target-spec surfaces through Workspace Path Resolution before reading, writing, or reporting them: `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.agent_env_requirements`, `topic.env.topic_setup_target_spec`, and `topic.env.agent_setup_target_spec`. Route Topic Workspace dependency, Pixi, repo-acquisition, and topic-root command verification work only through `isomer-srv-topic-env-setup` from `setup-topic-env`, after `ensure-topic-registration` has proved manifest-backed topic refs, a resolvable Topic Workspace Pixi binding, and a usable `topic.intent.topic_env_requirements` surface. Record that output as Topic Workspace predecessor evidence, not as per-Agent Workspace cwd readiness. When Git-backed Agent Workspace worktrees or worker-facing support paths are requested, delegate that concrete workspace topology to `isomer-admin-topic-workspace-mgr` and require semantic label evidence for `topic.repos.main`, `agent.workspace`, and required `agent.*` support paths. When per-Agent Workspace cwd command proof, selected-agent repair, or launch-facing Agent Workspace readiness is requested, require `topic.intent.agent_env_requirements`, then delegate gate-driven readiness to `isomer-srv-agent-env-setup` from `setup-agent-workspace` only after source agent env intent, Topic Workspace predecessor evidence, authoritative Agent Names, and Git-backed topology evidence exist. Record `topic.env.agent_setup_target_spec`, readiness by Agent Name, commands, blockers, and partial selected-agent evidence when present. This skill does not run the team, create live Agent Instances, mutate Workspace Runtime, or launch execution adapters.
 
 ## Workflow
 
@@ -26,13 +26,16 @@ The normal procedural flow is:
 
 ```text
 init-topic
+  -> resolve-topic-intent
   -> clarify-topic (optional)
   -> ensure-topic-registration
-  -> setup-topic-env (optional when env-gate.md is available or a runnable target is clear)
+  -> resolve-topic-env-gate
+  -> setup-topic-env (derive topic target spec, then materialize topic env)
   -> specialize-team
   -> clarify-topic-team (optional)
   -> setup-topic-env (optional rerun when specialization changes runnable requirements)
-  -> setup-agent-workspace (routes Git topology, then agent env gate/readiness when requested and predecessor evidence exists)
+  -> resolve-agent-env-gate
+  -> setup-agent-workspace (routes Git topology, derives agent target spec, then materializes agent env readiness)
   -> validate-topic-team
   -> finalize-topic-team
   -> approve-profile / materialize-profile when explicitly requested
@@ -52,13 +55,16 @@ Procedural subcommands are the public single-step workflow API.
 
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
-| `init-topic` | Create a provisional topic workspace seed and `topic-overview.md` for a new or unclear Research Topic | [references/init-topic.md](references/init-topic.md) |
-| `clarify-topic` | Refine the Research Topic and update topic overview open questions before team specialization | [references/clarify-topic.md](references/clarify-topic.md) |
+| `init-topic` | Create or select a provisional topic workspace seed for a new or unclear Research Topic | [references/init-topic.md](references/init-topic.md) |
+| `resolve-topic-intent` | Resolve the Research Topic into `topic.intent.overview` before setup or specialization | [references/resolve-topic-intent.md](references/resolve-topic-intent.md) |
+| `clarify-topic` | Refine the Research Topic and update `topic.intent.overview` open questions before team specialization | [references/clarify-topic.md](references/clarify-topic.md) |
 | `ensure-topic-registration` | Verify or create authoritative Project Manifest-backed Research Topic and Topic Workspace registration before registration-dependent work | [references/ensure-topic-registration.md](references/ensure-topic-registration.md) |
+| `resolve-topic-env-gate` | Resolve high-level Topic Workspace environment requirements into `topic.intent.topic_env_requirements` | [references/resolve-topic-env-gate.md](references/resolve-topic-env-gate.md) |
 | `specialize-team` | Select a Domain Agent Team Template and run the topic-team specialization path | [references/specialize-team.md](references/specialize-team.md) |
 | `clarify-topic-team` | Revise specialized topic-team outputs before setup, approval, or materialization | [references/clarify-topic-team.md](references/clarify-topic-team.md) |
-| `setup-topic-env` | Prepare the env-gate handoff, delegate independent Topic Workspace environment setup to `isomer-srv-topic-env-setup`, and record Topic Workspace predecessor evidence | [references/setup-topic-env.md](references/setup-topic-env.md) |
-| `setup-agent-workspace` | Create or report per-agent Agent Workspace directories and boundaries, delegating Git-backed `topic.repos.main` worktree setup to `isomer-admin-topic-workspace-mgr`, preparing missing `agent-env-gate.md` from the task, and routing per-agent cwd environment proof to `isomer-srv-agent-env-setup` when requested after predecessor and topology evidence exists | [references/setup-agent-workspace.md](references/setup-agent-workspace.md) |
+| `setup-topic-env` | Delegate topic env target-spec derivation and Topic Workspace environment materialization to `isomer-srv-topic-env-setup` | [references/setup-topic-env.md](references/setup-topic-env.md) |
+| `resolve-agent-env-gate` | Resolve high-level per-Agent Workspace cwd requirements into `topic.intent.agent_env_requirements` | [references/resolve-agent-env-gate.md](references/resolve-agent-env-gate.md) |
+| `setup-agent-workspace` | Create or report per-agent Agent Workspace directories and boundaries, delegating Git-backed `topic.repos.main` worktree setup to `isomer-admin-topic-workspace-mgr` and routing per-agent cwd environment proof to `isomer-srv-agent-env-setup` when requested after predecessor and topology evidence exists | [references/setup-agent-workspace.md](references/setup-agent-workspace.md) |
 | `validate-topic-team` | Check topic definition, specialized team material, environment posture, Agent Workspaces, deferrals, and blockers | [references/validate-topic-team.md](references/validate-topic-team.md) |
 | `finalize-topic-team` | Write `isomer-topic-summary.md` with the topic team, goal, working logic, setup, validation, blockers, and next actions | [references/finalize-topic-team.md](references/finalize-topic-team.md) |
 | `approve-profile` | Review draft profile material and prepare bundle-local approval provenance | [references/approve-profile.md](references/approve-profile.md) |
@@ -134,7 +140,8 @@ When reporting results, include these fields in structured prose or JSON, depend
 
 - `research_topic_ref`: the resolved Research Topic or provisional topic label.
 - `topic_workspace_ref`: the resolved Topic Workspace or provisional topic workspace seed.
-- `topic_overview_path`: the `<topic-dir>/topic-def/topic-overview.md` path when topic material was created or revised.
+- `topic_overview_label`: `topic.intent.overview` when topic material was created or revised.
+- `topic_overview_path`: the resolved `topic.intent.overview` path, defaulting under `<topic-workspace>/intent/src/topic-overview.md`.
 - `topic_registration_status`: registered, provisional, blocked, or not checked.
 - `registration_command_evidence`: supported Isomer CLI/API command evidence used to create or verify registration, or `not needed` when no mutation was required.
 - `registered_research_topic_ref`: the Project Manifest-backed Research Topic ref when registration is verified.
@@ -151,11 +158,15 @@ When reporting results, include these fields in structured prose or JSON, depend
 - `placeholder_resolutions`: concrete topic values for template placeholders.
 - `topic_team_revision_status`: unchanged, revised, blocked, or not requested.
 - `topic_environment_status`: ready, changed, deferred, blocked, or not checked, mapped from `isomer-srv-topic-env-setup` Topic Workspace predecessor readiness output when environment setup runs.
-- `env_gate_path`: `<topic-workspace>/user-intent/src/env-gate.md` when `setup-topic-env` prepares or uses the source gate.
-- `derived_gate_path`: `<topic-workspace>/user-intent/derived/isomer-env-gate.md` when `isomer-srv-topic-env-setup` derives the operational gate.
+- `topic_env_source_label`: `topic.intent.topic_env_requirements` when topic env source intent is resolved or used.
+- `topic_env_source_path`: the resolved `topic.intent.topic_env_requirements` path, defaulting under `<topic-workspace>/intent/src/topic-env-gate.md`.
+- `topic_env_target_spec_label`: `topic.env.topic_setup_target_spec` when `isomer-srv-topic-env-setup` derives or uses the operational target spec.
+- `topic_env_target_spec_path`: the resolved `topic.env.topic_setup_target_spec` path, defaulting under `<topic-workspace>/intent/derived/isomer-env-gate.md`.
 - `topic_environment_service_output`: summarized `isomer-srv-topic-env-setup` output, including service subcommand, mode, Topic Workspace predecessor readiness status, commands run, changed files, per-agent readiness not checked when reported, and blockers when present.
-- `source_agent_env_gate_path`: `<topic-workspace>/user-intent/src/agent-env-gate.md` when agent env setup consumes the source gate.
-- `agent_env_gate_path`: `<topic-workspace>/user-intent/derived/isomer-agent-env-gate.md` when `isomer-srv-agent-env-setup` derives the per-agent operational gate.
+- `agent_env_source_label`: `topic.intent.agent_env_requirements` when agent env setup consumes source intent.
+- `agent_env_source_path`: the resolved `topic.intent.agent_env_requirements` path, defaulting under `<topic-workspace>/intent/src/agent-env-gate.md`.
+- `agent_env_target_spec_label`: `topic.env.agent_setup_target_spec` when `isomer-srv-agent-env-setup` derives the per-agent operational target spec.
+- `agent_env_target_spec_path`: the resolved `topic.env.agent_setup_target_spec` path, defaulting under `<topic-workspace>/intent/derived/isomer-agent-env-gate.md`.
 - `agent_environment_service_output`: summarized `isomer-srv-agent-env-setup` output, including service subcommand, Topic Main Repository path, Agent Names, resolved `agent.workspace` paths, branch plan, worktree status by agent, tmp ignore posture, readiness by agent, overall readiness, commands run, changed files, blockers, and next action.
 - `semantic_paths`: delegated resolved labels, paths, path sources, and blockers for Topic Main Repository, Agent Workspace, local tmp labels, and worker-facing support labels when workspace setup runs.
 - `agent_workspace_paths`: per-agent resolved `agent.workspace` paths or blockers, including delegated Git-backed worktree paths, semantic labels, path sources, and `agent_workspace_ref` evidence when `isomer-admin-topic-workspace-mgr` was used.
@@ -180,13 +191,13 @@ Do not run a procedural subcommand when required predecessor artifacts are missi
 
 Do not hide environment installation, Agent Workspace creation, static-material validation, profile approval, or profile materialization behind earlier topic clarification or specialization commands.
 
-Do not require Topic Agent Team Profile material, `team-profile/`, Agent Team Instance records, Agent Workspace plans, roles, or agent count before `setup-topic-env`. That operator subcommand needs manifest-backed topic registration, Topic Workspace Pixi binding evidence, and a usable `env-gate.md` or clear runnable target.
+Do not require Topic Agent Team Profile material, `team-profile/`, Agent Team Instance records, Agent Workspace plans, roles, or agent count before `setup-topic-env`. That operator subcommand needs manifest-backed topic registration, Topic Workspace Pixi binding evidence, and a usable `topic.intent.topic_env_requirements` surface or an explicit manual topic env target spec.
 
 Do not perform dependency inference, repo acquisition, Pixi installation, package repair, or environment verification directly inside `setup-topic-env`. Prepare the operator handoff and route heavy Topic Workspace environment setup through `isomer-srv-topic-env-setup`.
 
-Do not perform `agent-env-gate.md` translation, Topic Main Repository environment configuration, per-agent cwd command verification, or selected-agent repair directly inside `setup-agent-workspace`. Prepare the operator handoff and route that work through `isomer-srv-agent-env-setup` only after source `agent-env-gate.md`, Topic Workspace predecessor evidence, authoritative Agent Names, and Git-backed Agent Workspace topology evidence exist.
+Do not perform `topic.intent.agent_env_requirements` translation, Topic Main Repository environment configuration, per-agent cwd command verification, or selected-agent repair directly inside `setup-agent-workspace`. Prepare the operator handoff and route that work through `isomer-srv-agent-env-setup` only after source `topic.intent.agent_env_requirements`, Topic Workspace predecessor evidence, authoritative Agent Names, and Git-backed Agent Workspace topology evidence exist.
 
-Do not call `isomer-srv-agent-env-setup` without a usable `<topic-workspace>/user-intent/src/agent-env-gate.md`. If the user did not create one and the task clearly states what every planned Agent Workspace cwd must be able to run, generate the source gate from that task during `setup-agent-workspace`; otherwise ask for the per-agent cwd readiness target and stop before service delegation.
+Do not call `isomer-srv-agent-env-setup` without a usable `topic.intent.agent_env_requirements` surface or an explicit manual agent env target spec. If the user did not create source intent and the task clearly states what every planned Agent Workspace cwd must be able to run, route to `resolve-agent-env-gate`; otherwise ask for the per-agent cwd readiness target and stop before service delegation.
 
 Do not create a directory named `teams` under a Topic Workspace for topic-specific profiles. Store topic-specific copied material inside `<topic-workspace>/team-profile/`, and keep only discovery refs in the Project Manifest.
 

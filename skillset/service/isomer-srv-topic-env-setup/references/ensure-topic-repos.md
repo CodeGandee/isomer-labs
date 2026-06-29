@@ -35,7 +35,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Copy or link local sources only when `<resolved-repos-root>/<repo-name>` does not already exist and the user or gate clearly authorizes that source.
 - Keep the manifest binding compact: `label`, `path`, and `storage_profile`. Do not infer `storage_profile` from a directory name, and do not treat default-looking paths as registered storage without a semantic label.
 - Do not place task repos in the Project root, Agent Workspace, `.pixi/`, `tmp/`, or other disposable directories as the durable repo location.
-- Do not claim readiness just because a repo exists; repo checks must still be represented in `isomer-env-gate.md` and verified later.
+- Do not claim readiness just because a repo exists; repo checks must still be represented in `topic.env.topic_setup_target_spec` and verified later.
 - Do not mutate an existing repo to make it match the gate. If an existing repo is the wrong source, wrong branch, dirty, missing files, or otherwise unsuitable, report a blocker and explain what user action or explicit authorization is needed.
 
 ## Output Notes

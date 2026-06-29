@@ -2,9 +2,28 @@
 
 ## Purpose
 
-This note records the intended process for Topic Team Specialization skill orchestration. It is a design-level process contract for aligning `isomer-admin-topic-team-specialize`, `isomer-admin-topic-workspace-mgr`, `isomer-srv-topic-env-setup`, `isomer-srv-agent-env-setup`, and `skillset/callgraph.md`.
+This note records the intended process for **Topic Team Specialization** skill orchestration. It is a design-level process contract for aligning `isomer-admin-topic-team-specialize`, `isomer-admin-topic-workspace-mgr`, `isomer-srv-topic-env-setup`, `isomer-srv-agent-env-setup`, and `skillset/callgraph.md`.
 
 The key rule is that `isomer-admin-topic-team-specialize` is the only orchestrator across topic workspace setup, topic environment setup, and agent environment setup. Service skills and workspace-manager skills return bounded evidence; they do not decide the next cross-skill process step.
+
+## Concepts
+
+- **Research Topic**: the root research problem or investigation intent that drives **Topic Team Specialization**.
+- **Topic Workspace**: the project-local work area for one **Research Topic**. It owns topic runtime material, the **Topic Main Repository**, **Agent Workspaces**, and topic-local records.
+- **Domain Agent Team Template**: the reusable research-field or method-specific team design that gets adapted for one **Research Topic**.
+- **Topic Team Specialization**: the design-time process that adapts one **Domain Agent Team Template** into a topic-specific team profile. It ends before runtime launch.
+- **Topic Agent Team Profile**: the topic-specific design-time team produced by **Topic Team Specialization**. It is not a running team.
+- **Topic Agent Team Profile Bundle**: the fixed **Topic Workspace** directory that stores the authoritative **Topic Agent Team Profile** and related editable specialization material.
+- **Topic Intent Overview**: the user-editable topic summary resolved by semantic label `topic.intent.overview`.
+- **Topic Env Requirements**: the concise user-editable topic environment intent resolved by semantic label `topic.intent.topic_env_requirements`.
+- **Topic Env Target Spec**: the operational topic environment setup spec resolved by semantic label `topic.env.topic_setup_target_spec`.
+- **Agent Env Requirements**: the concise user-editable per-agent cwd intent resolved by semantic label `topic.intent.agent_env_requirements`.
+- **Agent Env Target Spec**: the operational per-agent cwd verification spec resolved by semantic label `topic.env.agent_setup_target_spec`.
+- **Topic Main Repository**: the worker-visible collaboration repository for the **Topic Workspace**, resolved through semantic label `topic.repos.main`.
+- **Agent Workspace**: the per-agent work area inside a **Topic Workspace**, normally resolved through semantic label `agent.workspace`.
+- **Agent Name**: the topic-local name used for default **Agent Workspace** bindings, such as `planner` or `analyst`.
+- **Agent Team Instance**: the runtime team created later from a **Topic Agent Team Profile**. It is outside the setup flow described here.
+- **Execution Adapter**: the launch and command-execution adapter layer used for runtime dispatch. It remains a later boundary in this document.
 
 ## High Level Process
 
@@ -13,31 +32,61 @@ sequenceDiagram
     autonumber
     actor U as User
     participant T as isomer-admin-topic-<br/>team-specialize
-    participant R as ensure-topic-registration /<br/>specialize-team
     participant W as isomer-admin-topic-<br/>workspace-mgr
     participant TE as isomer-srv-<br/>topic-env-setup
     participant AE as isomer-srv-<br/>agent-env-setup
     participant F as validate-topic-team /<br/>finalize-topic-team
 
-    U->>T: User request
-    T->>R: Understand the request and register<br/>the Research Topic, then shape the team<br/>with Agent Names when available
-    R-->>T: Return Topic Workspace,<br/>team shape, and known Agent Names.
-
-    T->>W: Prepare Topic Workspace and<br/>Agent Workspace topology<br/>for this team.
-    W-->>T: Return repo paths, workspace paths,<br/>branch plan, support labels,<br/>and topology validation.
-
-    T->>TE: Read env-gate.md and prepare<br/>the Topic Workspace environment,<br/>without touching agent env materials
-    TE-->>T: Return isomer-env-gate.md,<br/>Pixi readiness, dependency evidence,<br/>enclosure evidence, and no per-agent claim.
-
-    T->>AE: Use agent-env-gate.md, topic env evidence,<br/>Git topology, and Agent Names<br/>to prepare requested cwd targets.
-    AE-->>T: Return isomer-agent-env-gate.md,<br/>readiness by Agent Name,<br/>scoped selected-agent evidence,<br/>and overall readiness.
-
-    T->>F: Check evidence streams separately<br/>and write the final handoff<br/>with blockers preserved.
-    F-->>T: Return the final<br/>topic-team setup summary.
-    T-->>U: Topic-team setup result
+    U->>T: Start topic-team specialization for this Research Topic.
+    T->>T: Resolve the Isomer Project and registered Topic Workspace.
+    T->>T: Create or update topic.intent.overview with the topic goal, metrics, datasets, and explicit dependencies.
+    T->>T: Specialize the team and produce authoritative Agent Names when the topic route needs them.
+    T->>T: Create topic.intent.topic_env_requirements as concise user-editable topic environment intent.
+    T->>TE: Derive topic.env.topic_setup_target_spec from topic env intent, then materialize and verify the Topic Workspace environment.
+    TE-->>T: Return topic env target spec, Pixi readiness, enclosure evidence, blockers, and no per-agent claim.
+    T->>T: Create topic.intent.agent_env_requirements from Agent Names, topic intent, and requested cwd proof.
+    T->>W: Materialize Topic Main Repository and Agent Workspace topology for the authoritative Agent Names.
+    W-->>T: Return repo paths, workspace paths, branch plan, support labels, and topology validation.
+    T->>AE: Derive topic.env.agent_setup_target_spec from agent env intent and predecessor evidence, then materialize and verify Agent Workspaces.
+    AE-->>T: Return agent env target spec, readiness by Agent Name, selected-agent evidence, blockers, and overall readiness.
+    T->>F: Validate each evidence stream separately and write the final topic-team handoff.
+    F-->>U: Return the topic-team setup summary.
 ```
 
-## Python-like Process Sketch
+## Skill Call Graph
+
+This graph shows the top-level skill calls used by this process. Route nodes name the operator surface or service setup stage that creates the edge.
+
+```mermaid
+flowchart TD
+    classDef skill fill:#eef6ff,stroke:#2563eb,stroke-width:1.5px,color:#111827
+    classDef route fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#334155
+
+    PM["isomer-admin<br/>project-mgr"]:::skill
+    TTS["isomer-admin<br/>topic-team-specialize"]:::skill
+    TWM["isomer-admin<br/>topic-workspace-mgr"]:::skill
+    TENV["isomer-srv<br/>topic-env-setup"]:::skill
+    AENV["isomer-srv<br/>agent-env-setup"]:::skill
+
+    S0["S0<br/>specialize-team"]:::route
+    S1["S1<br/>setup-agent-workspace<br/>(Git topology)"]:::route
+    S2["S2<br/>resolve-topic-env-gate<br/>then setup-topic-env"]:::route
+    S3["S3<br/>resolve-agent-env-gate<br/>then setup-agent-env"]:::route
+
+    PM -.-> S0 -.-> TTS
+    TTS --> S1 --> TWM
+    TTS --> S2 --> TENV
+    TTS --> S3 --> AENV
+```
+
+| ID | Caller | Route | Callee | Calling condition |
+| --- | --- | --- | --- | --- |
+| S0 | `isomer-admin-project-mgr` | `specialize-team` | `isomer-admin-topic-team-specialize` | Project-level work needs **Topic Team Specialization** for one **Research Topic**. This is an optional entry route into the same process. |
+| S1 | `isomer-admin-topic-team-specialize` | `setup-agent-workspace` Git topology | `isomer-admin-topic-workspace-mgr` | The selected route needs **Topic Main Repository**, **Agent Workspace** worktrees, branch plans, support labels, or workspace boundary evidence before agent env materialization. |
+| S2 | `isomer-admin-topic-team-specialize` | `resolve-topic-env-gate` then `setup-topic-env` | `isomer-srv-topic-env-setup` | `topic.intent.topic_env_requirements` exists, can be created from a clear runnable target, or an explicit topic env target spec is provided. The service derives or validates `topic.env.topic_setup_target_spec`, materializes the Topic Workspace environment, and must not claim per-agent readiness. |
+| S3 | `isomer-admin-topic-team-specialize` | `resolve-agent-env-gate` then `setup-agent-workspace` agent readiness | `isomer-srv-agent-env-setup` | `topic.intent.agent_env_requirements` exists, can be created from requested cwd proof, or an explicit agent env target spec is provided. The service consumes `topic.env.topic_setup_target_spec`, authoritative **Agent Names**, and Git topology evidence before deriving or validating `topic.env.agent_setup_target_spec`. |
+
+## Formal Skill Process
 
 This sketch uses the Agent-Primitive Python vocabulary from `context/design/skill-pseudo-lang/definitions.md`. Python handles exact control flow and file checks. The `agent_*` calls mark semantic work, qualitative checks, and explicit cross-skill calls.
 
@@ -46,15 +95,15 @@ from pathlib import Path
 
 
 # Entry point: this operator skill owns the whole setup decision sequence.
-# Example input: topic_root=Path("topics/user-intent"), user_request="Set up this topic team through agent env readiness."
+# Example input: project_root=Path("."), user_request="Set up this topic team through agent env readiness."
 # Example output: StageResult(status="ready", evidence=["topic-team finalized"])
 @skill(
     name="isomer-admin-topic-team-specialize",
     description="Specialize a Research Topic team and orchestrate topic workspace, topic env, and agent env setup.",
 )
-def specialize_topic_team(topic_root: Path, user_request: str) -> StageResult:
+def specialize_topic_team(project_root: Path, user_request: str) -> StageResult:
     # Interpret user intent semantically, but keep the resulting route as exact Python data.
-    # Example input: user_request="Set up agent env from agent-env-gate.md after topic env is ready."
+    # Example input: user_request="Set up agent env after topic env is ready."
     # Example output: "setup-agent-env"
     requested_route = agent_select(
         [
@@ -65,23 +114,50 @@ def specialize_topic_team(topic_root: Path, user_request: str) -> StageResult:
             "full-topic-team-setup",
         ],
         criterion="Choose the narrowest route that satisfies the user's requested topic-team setup proof.",
-        context={"user_request": user_request, "topic_root": topic_root},
+        context={"user_request": user_request, "project_root": project_root},
     )
 
-    # Resolve the topic-team foundation before any workspace or environment setup can run.
-    # Example output: StageResult(status="ready", evidence=["registered Topic Workspace", "Agent Names: planner, analyst"])
-    topic = agent_do(
-        "Resolve or create the registered Research Topic and Topic Workspace, then specialize the selected Domain Agent Team Template.",
-        context={"topic_root": topic_root, "user_request": user_request, "requested_route": requested_route},
+    # Resolve project and topic before writing any topic-local intent.
+    # Example output: StageResult(status="ready", evidence=["registered Topic Workspace: alpha"])
+    project_topic = agent_do(
+        "Resolve the Isomer Project, Research Topic, and registered Topic Workspace for this request.",
+        context={"project_root": project_root, "user_request": user_request, "requested_route": requested_route},
         returns=StageResult,
         constraints=[
-            "Produce authoritative Agent Names when available.",
-            "Do not launch runtime teams.",
+            "Use Project Manifest-backed refs.",
+            "Do not select a Topic Workspace by scanning sibling directories.",
         ],
     )
-    if topic.status in {"blocked", "failed"}:
-        # Condition matched when topic registration or specialization cannot complete.
-        return topic
+    if project_topic.status in {"blocked", "failed"}:
+        # Condition matched when the project, Research Topic, or registered Topic Workspace cannot be resolved.
+        return project_topic
+
+    # Create the user-editable topic overview intent before setup requirements are derived.
+    # Example output: StageResult(status="ready", evidence=["topic.intent.overview"])
+    topic_intent = agent_do(
+        "Create or update topic.intent.overview with the topic goal, metrics, datasets, explicitly mentioned repositories, libraries, and tools.",
+        context={"project_topic": project_topic, "user_request": user_request},
+        returns=StageResult,
+        constraints=[
+            "Keep the file concise and user-editable.",
+            "Avoid dependency versions unless the topic context explicitly says them.",
+        ],
+    )
+    if topic_intent.status in {"blocked", "failed"}:
+        # Condition matched when the topic overview cannot be safely created or updated.
+        return topic_intent
+
+    # Specialize the team after topic intent exists.
+    # Example output: StageResult(status="ready", evidence=["Topic Agent Team Profile", "Agent Names: planner, analyst"])
+    team = agent_do(
+        "Specialize the selected Domain Agent Team Template for this topic and produce authoritative Agent Names when available.",
+        context={"project_topic": project_topic, "topic_intent": topic_intent, "requested_route": requested_route},
+        returns=StageResult,
+        constraints=["Do not launch runtime teams."],
+    )
+    if team.status in {"blocked", "failed"}:
+        # Condition matched when team specialization fails or a route that needs Agent Names cannot get them.
+        return team
 
     if requested_route == "specialize-team":
         # Condition matched when the selected route stops at static topic-team specialization.
@@ -89,56 +165,65 @@ def specialize_topic_team(topic_root: Path, user_request: str) -> StageResult:
         # Example output: StageResult(status="ready", evidence=["topic-team specialized"], next_action="Run setup-topic-workspace when needed.")
         return agent_do(
             "Write a topic-team specialization summary with deferred setup evidence clearly marked.",
-            context={"topic": topic},
+            context={"project_topic": project_topic, "topic_intent": topic_intent, "team": team},
             returns=StageResult,
         )
 
-    # Cross-skill call: workspace manager owns filesystem and Git topology evidence only.
-    # Example output: StageResult(status="ready", evidence=["Topic Main Repository", "Agent Workspace paths", "branch plan"])
-    workspace = agent_invoke(
-        "isomer-admin-topic-workspace-mgr",
-        task="Prepare Topic Workspace and Agent Workspace filesystem or Git topology for the specialized topic team.",
-        context={"topic": topic, "user_request": user_request},
-        returns=StageResult,
-        params={
-            "subcommand": "setup-topic-workspace",
-            "expect": [
-                "Topic Main Repository",
-                "Agent Workspace paths",
-                "branch plan",
-                "support labels",
-                "Git topology validation evidence",
-            ],
-            "must_not_call": ["isomer-srv-agent-env-setup"],
-        },
-    )
-    if workspace.status in {"blocked", "failed"}:
-        # Condition matched when workspace topology setup is blocked or failed.
+    workspace = StageResult(status="not_checked", evidence=["Agent Workspace topology was outside the requested route."])
+    topic_env_routes = {"setup-topic-env", "setup-agent-env", "full-topic-team-setup"}
+    workspace_only_routes = {"setup-topic-workspace"}
+
+    if requested_route in workspace_only_routes:
+        # Condition matched when the user only needs Git-backed workspace topology.
+        # Example output: StageResult(status="ready", evidence=["Topic Main Repository", "Agent Workspace paths"])
+        workspace = agent_invoke(
+            "isomer-admin-topic-workspace-mgr",
+            task="Prepare Topic Main Repository and Agent Workspace filesystem or Git topology for the authoritative Agent Names.",
+            context={"project_topic": project_topic, "team": team, "user_request": user_request},
+            returns=StageResult,
+            params={
+                "subcommand": "topic-workspace",
+                "expect": ["Topic Main Repository", "Agent Workspace paths", "branch plan", "support labels"],
+                "must_not_call": ["isomer-srv-agent-env-setup"],
+            },
+        )
         return workspace
 
-    env_gate = topic_root / "user-intent/src/env-gate.md"
-    topic_env_routes = {"setup-topic-env", "setup-agent-env", "full-topic-team-setup"}
+    if requested_route in topic_env_routes:
+        # Condition matched when the route needs Topic Workspace environment predecessor evidence.
+        # Create high-level source intent first; the service owns operational commands and mutation.
+        # Example output: StageResult(status="ready", evidence=["topic.intent.topic_env_requirements"])
+        topic_env_intent = agent_do(
+            "Create or update topic.intent.topic_env_requirements as concise high-level topic environment intent.",
+            context={"project_topic": project_topic, "topic_intent": topic_intent, "team": team, "user_request": user_request},
+            returns=StageResult,
+            constraints=[
+                "Name what must be runnable for the topic.",
+                "Keep repo, dataset, tool, and runtime needs high level.",
+                "Do not write Pixi commands or implementation details into the source intent.",
+            ],
+        )
+        if topic_env_intent.status in {"blocked", "failed"}:
+            # Condition matched when topic env requirements cannot be derived from the user request or topic material.
+            return topic_env_intent
 
-    if env_gate.exists() and requested_route in topic_env_routes:
-        # Condition matched when topic env setup is requested and env-gate.md exists.
-        # Cross-skill call: topic env setup owns env-gate.md and must not inspect agent env gates.
-        # Example input: env_gate=Path("user-intent/src/env-gate.md"), workspace.evidence=["Topic Main Repository", "Agent Workspace paths"]
-        # Example output: StageResult(status="ready", evidence=["isomer-env-gate.md", "Topic Workspace Pixi readiness"])
+        # Cross-skill call: topic env setup owns target-spec derivation, Pixi mutation, and topic-root verification.
+        # Example output: StageResult(status="ready", evidence=["topic.env.topic_setup_target_spec", "Topic Workspace Pixi readiness"])
         topic_env = agent_invoke(
             "isomer-srv-topic-env-setup",
-            task="Set up the Topic Workspace environment from env-gate.md.",
-            context={"topic": topic, "workspace": workspace, "env_gate": env_gate},
+            task="Derive topic.env.topic_setup_target_spec from topic.intent.topic_env_requirements, then materialize and verify the Topic Workspace environment.",
+            context={"project_topic": project_topic, "topic_intent": topic_intent, "topic_env_intent": topic_env_intent},
             returns=StageResult,
             params={
                 "subcommand": "setup-topic-env",
                 "expect": [
-                    "user-intent/derived/isomer-env-gate.md",
+                    "topic.env.topic_setup_target_spec",
                     "Topic Workspace Pixi readiness",
                     "dependency and enclosure evidence",
                     "Topic Workspace predecessor evidence",
                 ],
-                "must_not_read": ["user-intent/src/agent-env-gate.md"],
-                "must_not_write": ["user-intent/derived/isomer-agent-env-gate.md"],
+                "must_not_read": ["topic.intent.agent_env_requirements"],
+                "must_not_write": ["topic.env.agent_setup_target_spec"],
                 "must_not_call": ["isomer-srv-agent-env-setup"],
                 "per_agent_readiness_status": "not_checked",
             },
@@ -147,10 +232,10 @@ def specialize_topic_team(topic_root: Path, user_request: str) -> StageResult:
             # Condition matched when topic env setup reports blocked or failed evidence.
             return topic_env
     else:
-        # Condition matched when topic env setup is not requested or env-gate.md does not exist.
+        # Condition matched when topic env setup is outside the requested route.
         topic_env = StageResult(
             status="not_checked",
-            evidence=["Topic env setup was outside the requested route or no env-gate.md exists."],
+            evidence=["Topic env setup was outside the requested route."],
         )
 
     if requested_route == "setup-topic-env":
@@ -159,55 +244,92 @@ def specialize_topic_team(topic_root: Path, user_request: str) -> StageResult:
         # Example output: StageResult(status="ready", evidence=["topic env ready", "per_agent_readiness_status: not_checked"])
         return agent_do(
             "Write a topic env setup handoff. Include workspace evidence and state that agent env readiness was not checked.",
-            context={"topic": topic, "workspace": workspace, "topic_env": topic_env},
+            context={"project_topic": project_topic, "topic_intent": topic_intent, "team": team, "workspace": workspace, "topic_env": topic_env},
             returns=StageResult,
         )
 
-    agent_env_gate = topic_root / "user-intent/src/agent-env-gate.md"
     agent_env_routes = {"setup-agent-env", "full-topic-team-setup"}
 
-    if agent_env_gate.exists() and requested_route in agent_env_routes:
-        # Condition matched when agent env setup is requested and agent-env-gate.md exists.
-        # Semantic prerequisite check: the exact file exists, but evidence sufficiency is qualitative.
-        # Example input: topic_env.status="ready", workspace.evidence=["Agent Workspace paths"], agent_env_gate=Path("user-intent/src/agent-env-gate.md")
+    if requested_route in agent_env_routes:
+        # Condition matched when the route needs per-Agent Workspace cwd readiness evidence.
+        # Create high-level source intent before the agent env service derives an operational matrix.
+        # Example output: StageResult(status="ready", evidence=["topic.intent.agent_env_requirements"])
+        agent_env_intent = agent_do(
+            "Create or update topic.intent.agent_env_requirements from authoritative Agent Names, topic intent, topic env predecessor evidence, and requested cwd proof.",
+            context={"project_topic": project_topic, "topic_intent": topic_intent, "team": team, "topic_env": topic_env, "user_request": user_request},
+            returns=StageResult,
+            constraints=[
+                "Keep the source intent concise and high level.",
+                "Do not write per-agent Pixi commands into the source intent.",
+            ],
+        )
+        if agent_env_intent.status in {"blocked", "failed"}:
+            # Condition matched when agent env requirements cannot be derived from the user request or topic material.
+            return agent_env_intent
+
+        # Cross-skill call: workspace manager owns filesystem and Git topology evidence only.
+        # Example output: StageResult(status="ready", evidence=["Topic Main Repository", "Agent Workspace paths", "branch plan"])
+        workspace = agent_invoke(
+            "isomer-admin-topic-workspace-mgr",
+            task="Prepare Topic Main Repository and Agent Workspace filesystem or Git topology for the authoritative Agent Names.",
+            context={"project_topic": project_topic, "team": team, "agent_env_intent": agent_env_intent},
+            returns=StageResult,
+            params={
+                "subcommand": "topic-workspace",
+                "expect": [
+                    "Topic Main Repository",
+                    "Agent Workspace paths",
+                    "branch plan",
+                    "support labels",
+                    "Git topology validation evidence",
+                ],
+                "must_not_call": ["isomer-srv-agent-env-setup"],
+            },
+        )
+        if workspace.status in {"blocked", "failed"}:
+            # Condition matched when workspace topology setup is blocked or failed.
+            return workspace
+
+        # Semantic prerequisite check: evidence sufficiency is qualitative, so ask the agent.
         # Example output: True
         agent_env_inputs_ready = agent_check(
-            "Do the existing topic-team, workspace topology, topic env evidence, and agent-env-gate.md satisfy the prerequisites for agent env setup?",
+            "Do topic.env.topic_setup_target_spec, topic.intent.agent_env_requirements, authoritative Agent Names, and workspace topology evidence satisfy the prerequisites for agent env setup?",
             context={
-                "topic": topic,
+                "project_topic": project_topic,
+                "team": team,
                 "workspace": workspace,
                 "topic_env": topic_env,
-                "agent_env_gate": agent_env_gate,
+                "agent_env_intent": agent_env_intent,
             },
             returns=bool,
-            rubric="True only when Git topology evidence exists, authoritative Agent Names are known, agent-env-gate.md defines per-Agent Workspace cwd requirements, and Topic Workspace predecessor evidence is ready or explicitly deferred.",
+            rubric="True only when Git topology evidence exists, authoritative Agent Names are known, agent env source intent or explicit target spec defines per-Agent Workspace cwd requirements, and Topic Workspace predecessor evidence is ready or explicitly accepted.",
         )
         if not agent_env_inputs_ready:
             # Condition matched when existing evidence is insufficient for safe agent env setup.
             return StageResult(
                 status="blocked",
                 blockers=["Agent env setup prerequisites are not satisfied."],
-                evidence=[str(agent_env_gate)],
+                evidence=["topic.intent.agent_env_requirements", "topic.env.topic_setup_target_spec"],
                 next_action="Repair missing topic env, workspace topology, or Agent Name evidence before setup-agent-env.",
             )
 
         # Cross-skill call: agent env setup owns per-Agent Workspace cwd readiness.
-        # Example input: agent_env_gate=Path("user-intent/src/agent-env-gate.md"), topic_env.evidence=["isomer-env-gate.md"], workspace.evidence=["Agent Workspace paths"]
-        # Example output: StageResult(status="ready", evidence=["isomer-agent-env-gate.md", "overall agent readiness"])
+        # Example output: StageResult(status="ready", evidence=["topic.env.agent_setup_target_spec", "overall agent readiness"])
         agent_env = agent_invoke(
             "isomer-srv-agent-env-setup",
-            task="Set up and verify Agent Workspace cwd readiness from agent-env-gate.md using existing topic env and workspace evidence.",
+            task="Derive topic.env.agent_setup_target_spec from topic.intent.agent_env_requirements and predecessor evidence, then verify Agent Workspace cwd readiness.",
             context={
-                "topic": topic,
+                "project_topic": project_topic,
+                "team": team,
                 "workspace": workspace,
                 "topic_env": topic_env,
-                "agent_env_gate": agent_env_gate,
+                "agent_env_intent": agent_env_intent,
             },
             returns=StageResult,
             params={
                 "subcommand": "setup-agent-env",
                 "expect": [
-                    "user-intent/derived/isomer-agent-env-gate.md",
+                    "topic.env.agent_setup_target_spec",
                     "readiness by Agent Name",
                     "selected-agent partial evidence when scoped",
                     "overall agent readiness",
@@ -219,10 +341,10 @@ def specialize_topic_team(topic_root: Path, user_request: str) -> StageResult:
             # Condition matched when agent env setup reports blocked or failed evidence.
             return agent_env
     else:
-        # Condition matched when agent env setup is not requested or agent-env-gate.md does not exist.
+        # Condition matched when agent env setup is outside the requested route.
         agent_env = StageResult(
             status="not_checked",
-            evidence=["Agent env setup was outside the requested route or no agent-env-gate.md exists."],
+            evidence=["Agent env setup was outside the requested route."],
         )
 
     # Final semantic write-up: validate the evidence streams without changing ownership boundaries.
@@ -230,7 +352,9 @@ def specialize_topic_team(topic_root: Path, user_request: str) -> StageResult:
     return agent_do(
         "Validate the separate evidence streams and write the topic-team finalization summary.",
         context={
-            "topic": topic,
+            "project_topic": project_topic,
+            "topic_intent": topic_intent,
+            "team": team,
             "workspace": workspace,
             "topic_env": topic_env,
             "agent_env": agent_env,
@@ -243,83 +367,51 @@ def specialize_topic_team(topic_root: Path, user_request: str) -> StageResult:
     )
 ```
 
-## Process Stages
+## Skill Process Explanation
 
-### 1. User Calls Team Specialization
+The process is a chain of readable intent and bounded service evidence. `isomer-admin-topic-team-specialize` stays in charge of the whole process, but it does not do every job itself. It writes the user-facing intent, delegates operational setup to the right service, then checks the returned evidence before moving on.
 
-The user enters through `isomer-admin-topic-team-specialize`, either directly or through `isomer-admin-project-mgr specialize-team`. This operator skill owns the process state and decides which setup stages are needed.
-
-This stage resolves or creates enough topic material to know the Research Topic, registered Topic Workspace, selected Domain Agent Team Template, and specialized topic-team shape. If Agent Workspace topology is needed, specialization should provide or derive authoritative Agent Names before workspace setup.
-
-### 2. Set Up Topic Workspace
-
-`isomer-admin-topic-team-specialize` calls `isomer-admin-topic-workspace-mgr` for Topic Workspace and Agent Workspace filesystem or Git topology.
-
-The workspace manager owns Git-only and filesystem-topology evidence: `topic.repos.main`, `agent.workspace`, branch plan, generated links, local tmp posture, support labels, and workspace boundary material. It must not call `isomer-srv-agent-env-setup`. If the caller later needs agent environment proof, the workspace manager reports its topology evidence and returns control to `isomer-admin-topic-team-specialize`.
-
-### 3. Set Up Topic Environment from `env-gate.md`
-
-After topic workspace prerequisites are available, `isomer-admin-topic-team-specialize` calls `isomer-srv-topic-env-setup` through its `setup-topic-env` stage when `env-gate.md` exists or the user supplied a clear topic-level runnable target.
-
-`isomer-srv-topic-env-setup` owns `env-gate.md`, `isomer-env-gate.md`, Topic Workspace Pixi mutation, dependency enclosure, package source evidence, topic-root or repo-specific command verification, and Topic Workspace predecessor evidence.
-
-It must not read `agent-env-gate.md`, write `isomer-agent-env-gate.md`, prepare Agent Workspace worktrees, or call agent env setup. If the caller asks whether every Agent Workspace cwd is ready, topic env setup reports `per_agent_readiness_status: not checked` and returns Topic Workspace predecessor evidence.
-
-### 4. Set Up Agent Environment from `agent-env-gate.md`
-
-`isomer-admin-topic-team-specialize` calls `isomer-srv-agent-env-setup` through a distinct agent-env setup stage after all required inputs exist:
-
-- `agent-env-gate.md` as the source contract for per-Agent Workspace cwd requirements.
-- Existing Topic Workspace env evidence from `isomer-srv-topic-env-setup`.
-- Git topology evidence from `isomer-admin-topic-workspace-mgr`.
-- Authoritative Agent Names from topic-team material.
-
-`isomer-srv-agent-env-setup` owns `agent-env-gate.md`, `isomer-agent-env-gate.md`, per-Agent Workspace cwd verification, selected-agent partial evidence, readiness by Agent Name, and overall agent readiness. If Topic Workspace env evidence is missing or stale, it should report a blocker or repair need to the operator; it should not directly orchestrate topic env setup.
-
-### 5. Validate and Finalize
-
-`isomer-admin-topic-team-specialize` validates the evidence streams separately:
-
-- Topic Workspace topology evidence from `isomer-admin-topic-workspace-mgr`.
-- Topic Workspace env evidence from `isomer-srv-topic-env-setup`.
-- Agent Workspace env evidence from `isomer-srv-agent-env-setup`, only when per-agent cwd proof was requested.
-
-Finalization writes a topic-team summary that preserves missing or deferred evidence as explicit blockers. Runtime launch, Agent Team Instance creation, Houmao launch, and Execution Adapter work remain later boundaries.
+- Route and resolve the topic:
+  - The operator request first becomes a concrete route, such as `specialize-team`, `setup-topic-env`, `setup-agent-env`, or `full-topic-team-setup`.
+  - The skill resolves the <u>*Research Topic*</u> and registered <u>*Topic Workspace*</u> from Project Manifest-backed context.
+  - It writes `topic.intent.overview` so later stages share the same topic goal, metrics, datasets, explicit repositories, libraries, and tools.
+  - If the topic is ambiguous, this stage blocks instead of guessing.
+- Specialize the team:
+  - The skill applies the selected <u>*Domain Agent Team Template*</u> to the topic overview.
+  - It produces the <u>*Topic Agent Team Profile*</u> and authoritative <u>*Agent Names*</u> when the selected route needs per-agent setup.
+  - This stage still stops before runtime launch. It does not create an <u>*Agent Team Instance*</u>.
+- Prepare topic environment intent:
+  - The skill writes `topic.intent.topic_env_requirements` as a short user-editable description of what must be runnable for the topic.
+  - This source intent should mention goals, datasets, repositories, tools, and success criteria at a high level.
+  - It should not contain Pixi commands, concrete install plans, or host-specific runtime wiring.
+- Materialize the Topic Workspace environment:
+  - `isomer-srv-topic-env-setup` turns `topic.intent.topic_env_requirements` into `topic.env.topic_setup_target_spec`, unless the caller supplies an explicit target spec.
+  - The target spec is where repo acquisition details, dependency plans, Pixi commands, package-source choices, expected outputs, blockers, runtime wiring, fallbacks, and execution logs belong.
+  - The service prepares the <u>*Topic Workspace*</u> environment and returns predecessor evidence. It must leave per-agent readiness as `not_checked`.
+- Prepare agent environment intent:
+  - The skill writes `topic.intent.agent_env_requirements` only after topic env predecessor evidence and authoritative <u>*Agent Names*</u> are known or intentionally accepted.
+  - This source intent describes what each <u>*Agent Workspace*</u> cwd must be able to run.
+  - It stays high level and user-editable; the service later derives the operational matrix.
+- Materialize Agent Workspace topology:
+  - `isomer-admin-topic-workspace-mgr` prepares the <u>*Topic Main Repository*</u>, <u>*Agent Workspace*</u> worktrees, branch plan, support labels, and boundary notes.
+  - This is Git and filesystem topology evidence only.
+  - It does not prove that an <u>*Agent Workspace*</u> cwd can run topic commands.
+- Materialize Agent Workspace readiness:
+  - `isomer-srv-agent-env-setup` turns `topic.intent.agent_env_requirements` into `topic.env.agent_setup_target_spec`, unless the caller supplies an explicit target spec.
+  - The target spec is the per-agent cwd verification matrix.
+  - The service consumes `topic.env.topic_setup_target_spec`, topology evidence, and authoritative <u>*Agent Names*</u>, then reports readiness by <u>*Agent Name*</u> and overall readiness.
+- Validate and finalize:
+  - Team specialization validates topic overview, topic env evidence, workspace topology, and agent env evidence as separate streams.
+  - The final handoff should say what is ready, what was intentionally not checked, and what remains blocked.
+  - Runtime launch, Houmao launch, <u>*Agent Team Instance*</u> creation, and <u>*Execution Adapter*</u> work remain outside this setup process.
 
 ## Evidence Handoffs
 
 | Producing skill | Evidence | Consuming stage |
 | --- | --- | --- |
-| `isomer-admin-topic-workspace-mgr` | Topic Main Repository, Agent Workspace paths, branch plan, support labels, Git topology validation | `isomer-admin-topic-team-specialize setup-topic-env`, `setup-agent-env`, validation, finalization |
-| `isomer-srv-topic-env-setup` | `env-gate.md`, `isomer-env-gate.md`, Pixi binding, dependency/enclosure evidence, topic-root verification, `per_agent_readiness_status: not checked` when relevant | `isomer-admin-topic-team-specialize setup-agent-env`, validation, finalization |
-| `isomer-srv-agent-env-setup` | `agent-env-gate.md`, `isomer-agent-env-gate.md`, readiness by Agent Name, selected-agent partial evidence, overall readiness | `isomer-admin-topic-team-specialize validate-topic-team`, finalization, later runtime handoff |
-
-## Call Graph Implications
-
-The call graph should show these process edges:
-
-```text
-isomer-admin-topic-team-specialize -> isomer-admin-topic-workspace-mgr
-isomer-admin-topic-team-specialize -> isomer-srv-topic-env-setup
-isomer-admin-topic-team-specialize -> isomer-srv-agent-env-setup
-```
-
-The call graph should not show these edges:
-
-```text
-isomer-admin-topic-workspace-mgr -> isomer-srv-agent-env-setup
-isomer-srv-topic-env-setup -> isomer-srv-agent-env-setup
-isomer-srv-agent-env-setup -> isomer-srv-topic-env-setup
-```
-
-Those relationships can exist as reported blockers, missing-evidence notes, or next-action suggestions, but not as direct orchestration edges. The operator specialization skill decides whether to run the next setup stage.
-
-## Naming Implication
-
-`setup-agent-workspace` currently mixes two concerns: Git-backed Agent Workspace topology and per-agent environment proof. The target process is clearer if the operator surface distinguishes:
-
-- `setup-topic-workspace`: orchestrates workspace manager work.
-- `setup-topic-env`: orchestrates topic env setup from `env-gate.md`.
-- `setup-agent-env`: orchestrates agent env setup from `agent-env-gate.md` after workspace and topic env evidence exist.
-
-This split keeps each stage aligned with one source contract and one evidence stream.
+| `isomer-admin-topic-team-specialize` | `topic.intent.overview` | `resolve-topic-env-gate`, `specialize-team`, validation, finalization |
+| `isomer-admin-topic-team-specialize` | `topic.intent.topic_env_requirements` | `isomer-srv-topic-env-setup setup-topic-env` |
+| `isomer-srv-topic-env-setup` | `topic.env.topic_setup_target_spec`, Pixi binding, dependency/enclosure evidence, topic-root verification, `per_agent_readiness_status: not checked` when relevant | `resolve-agent-env-gate`, `isomer-srv-agent-env-setup require-topic-env-ready`, validation, finalization |
+| `isomer-admin-topic-team-specialize` | `topic.intent.agent_env_requirements` | `isomer-srv-agent-env-setup setup-agent-env` |
+| `isomer-admin-topic-workspace-mgr` | **Topic Main Repository**, **Agent Workspace** paths, branch plan, support labels, Git topology validation | `isomer-srv-agent-env-setup setup-agent-env`, validation, finalization |
+| `isomer-srv-agent-env-setup` | `topic.env.agent_setup_target_spec`, readiness by **Agent Name**, selected-agent partial evidence, overall readiness | `isomer-admin-topic-team-specialize validate-topic-team`, finalization, later runtime handoff |

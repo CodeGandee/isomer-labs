@@ -1,6 +1,6 @@
 # Derive Env Gate
 
-Use this subcommand to generate the operational environment gate from the source gate and repo evidence.
+Use this subcommand to generate or validate the operational topic environment target spec from source intent, repo evidence, or an explicit manual target spec.
 
 ## Required Inputs
 
@@ -9,22 +9,22 @@ Recover these before asking the user:
 | Input | Resolution |
 | --- | --- |
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
-| Source gate summary | Require the extracted source gate summary from `read-env-gate`. Refuse to run if it is missing, and tell the user to run `read-env-gate` first. |
-| Repo context | Require repo context from `ensure-topic-repos` when the source gate needs independent repos. If repos are required and context is missing, refuse to run and tell the user to run `ensure-topic-repos` first. |
-| `derived_gate_path` | Use `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`; create the parent directory when writing the gate. |
-| Optional modifiers | None for this step. |
+| Source intent summary | Require the extracted `topic.intent.topic_env_requirements` summary from `read-env-gate` when deriving from source intent. Refuse to run if source-intent derivation was requested and the summary is missing. |
+| Explicit target spec | Optional. A manual file, prompt, or context may supply the operational target spec directly. When supplied, validate it against this page's fixed sections and enclosure policy instead of requiring source intent. |
+| Repo context | Require repo context from `ensure-topic-repos` when the source intent or explicit target spec needs independent repos. If repos are required and context is missing, refuse to run and tell the user to run `ensure-topic-repos` first. |
+| Topic env target spec | Resolve `topic.env.topic_setup_target_spec` through Workspace Path Resolution. Under `isomer-default.v1`, this defaults to `<topic-workspace-dir>/intent/derived/isomer-env-gate.md`; create the parent directory when writing the target spec. |
 
 ## Workflow
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace`, source gate summary from `read-env-gate`, and repo context from `ensure-topic-repos` when the source gate needs repos.
-2. **Resolve the derived gate path** as `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` and create its parent directory when needed.
-3. **Translate user intent into operations**. Convert the source gate and repo evidence into concrete repo requirements, dependency plan, enclosure strategy, Pixi install commands, verification commands, expected results, and blockers.
+1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace`, source intent summary from `read-env-gate` when deriving from source intent, explicit target spec input when manual mode is used, and repo context from `ensure-topic-repos` when repos are needed.
+2. **Resolve the target spec label** `topic.env.topic_setup_target_spec`; record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers. Create the parent directory when writing the target spec.
+3. **Translate or validate operations**. Convert source intent and repo evidence into concrete repo requirements, dependency plan, enclosure strategy, Pixi install commands, verification commands, expected results, and blockers, or validate that the explicit target spec already contains those details.
 4. **Apply dependency and enclosure policy**. Include Python as the Topic Workspace glue language, select a Python version with **Python Version Policy**, include the starter Python dependencies from **Starter Python Dependencies**, prefer PyPI for Python packages unless Pixi/Conda is required for the gate, use Pixi/Conda for native tools and binary/runtime dependencies, record package source evidence, consult `isomer-srv-resolve-pkg-repo` when repository, mirror, registry, or channel reachability is a material decision, consult `isomer-misc-nvidia-tools` when CUDA architecture or CUDA/C++ build preferences are needed, and classify every dependency or runtime need with **Environment Enclosure Strategy**.
-5. **Write the fixed Markdown template** from **Template**. Include every section; write `None.` or a short reason when a section does not apply.
+5. **Write or update the fixed Markdown template** from **Template** at the resolved `topic.env.topic_setup_target_spec` path when deriving from source intent. When using an explicit manual target spec, record the explicit source and normalized target-spec copy or reference, then preserve every required section.
 6. **Warning-label inferred repos** in `## Inferred Source Warnings` and carry the same warnings to the final skill output.
-7. **Report `derived_gate_path`** and any blockers that prevent installation or verification.
+7. **Report target spec metadata** and any blockers that prevent installation or verification.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the source gate, repo evidence, dependency policy, parent guardrails, and user request, then execute the plan.
 
@@ -56,7 +56,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Section Guidance
 
-`## Source Intent` should summarize the user-authored source gate and cite `<topic-workspace-dir>/user-intent/src/env-gate.md`.
+`## Source Intent` should summarize the user-authored `topic.intent.topic_env_requirements` source intent and cite its resolved path, or name the explicit target spec source when the service was invoked manually.
 
 `## Runnable Target` should name the desired command or behavior that must work after setup.
 
@@ -70,7 +70,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Verification Commands` should list the exact Pixi commands that prove the runnable target works. If a command needs external runtime wiring, include the recorded environment variables, sourced scripts, or runtime paths inside the Pixi-run command rather than relying on ambient shell state.
 
-When the source intent mentions later Agent Workspace use, preserve cwd assumptions explicitly as source context only. Commands that prove Topic Workspace readiness remain topic-scoped. Do not derive per-Agent Workspace verification here and do not write `user-intent/derived/isomer-agent-env-gate.md`.
+When the source intent mentions later Agent Workspace use, preserve cwd assumptions explicitly as source context only. Commands that prove Topic Workspace readiness remain topic-scoped. Do not derive per-Agent Workspace verification here and do not write `topic.env.agent_setup_target_spec`.
 
 `## Expected Results` should state pass/fail criteria and expected outputs.
 
@@ -80,7 +80,7 @@ When the source intent mentions later Agent Workspace use, preserve cwd assumpti
 
 ## Python Version Policy
 
-Recover Python version evidence from the prompt, `env-gate.md`, repo metadata, and inspected repo files before choosing a version. Useful evidence includes `requires-python`, `python_requires`, requirement markers, `.python-version`, `runtime.txt`, `tox.ini`, `noxfile.py`, CI files, Dockerfiles, lockfiles, README setup notes, and package-manager config.
+Recover Python version evidence from the prompt, resolved `topic.intent.topic_env_requirements`, explicit target spec input, repo metadata, and inspected repo files before choosing a version. Useful evidence includes `requires-python`, `python_requires`, requirement markers, `.python-version`, `runtime.txt`, `tox.ini`, `noxfile.py`, CI files, Dockerfiles, lockfiles, README setup notes, and package-manager config.
 
 If the version is unspecified or cannot be recovered from existing context, choose the previous stable Python minor release relative to the latest stable Python release at execution time. For example, if the latest stable line is `3.N`, select `3.(N-1)`; do not choose a prerelease and do not hard-code this fallback in the skill.
 

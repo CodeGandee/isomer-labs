@@ -1,6 +1,6 @@
 # Verify Env Gate
 
-Use this subcommand to run the desired command through Pixi and decide Topic Workspace environment readiness for a single agent or operator working in the selected Topic Workspace root or a repo-specific working directory named by `isomer-env-gate.md`. This is topic-scoped verification; per-Agent Workspace cwd verification is not checked here.
+Use this subcommand to run the desired command through Pixi and decide Topic Workspace environment readiness for a single agent or operator working in the selected Topic Workspace root or a repo-specific working directory named by `topic.env.topic_setup_target_spec`. This is topic-scoped verification; per-Agent Workspace cwd verification is not checked here.
 
 ## Required Inputs
 
@@ -9,7 +9,7 @@ Recover these before asking the user:
 | Input | Resolution |
 | --- | --- |
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
-| Derived gate | Require `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` from `derive-env-gate`. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
+| Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
 | Installed dependencies | Require an `install-topic-deps` result unless the prompt explicitly asks to verify an existing environment. In either case, check Pixi files before running verification commands. |
 | Verification commands, expected results, and enclosure records | Read from the derived gate's `## Verification Commands`, `## Expected Results`, and enclosure records in `## Dependency Plan` and `## Execution Log`. Refuse to claim readiness if commands, expectations, runtime wiring, or fallback records are missing or ambiguous. |
 | Optional modifiers | None for this step. |
@@ -18,16 +18,16 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace`, `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`, and installed dependencies from `install-topic-deps`.
-2. **Read `isomer-env-gate.md`** and extract `## Verification Commands`, `## Expected Results`, `## Blockers`, any `## Inferred Source Warnings`, and enclosure records for Pixi-managed dependencies, external runtime wiring, and topic-local fallbacks.
+1. **Require predecessor artifacts**: workspace context from `resolve-topic-workspace`, resolved `topic.env.topic_setup_target_spec`, and installed dependencies from `install-topic-deps`.
+2. **Read the target spec** and extract `## Verification Commands`, `## Expected Results`, `## Blockers`, any `## Inferred Source Warnings`, and enclosure records for Pixi-managed dependencies, external runtime wiring, and topic-local fallbacks.
 3. **Check Pixi files**. Confirm the resolved `manifest_path`, the Topic Workspace `pixi.lock`, and `<topic-workspace-dir>/.pixi/` exist before reporting readiness. The resolved manifest may be `pixi.toml` or Pixi-enabled `pyproject.toml`.
-4. **Confirm verification commands are replayable**. Each command must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`. When a command needs external runtime wiring, the derived gate must record the exact variables, paths, sourced scripts, or activation commands before the command runs.
-5. **Run verification commands through Pixi**. Run from the Topic Workspace root unless the derived gate specifies a repo-specific working directory. Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.
-6. **Compare results to expected outputs** from `isomer-env-gate.md`.
-7. **Update `isomer-env-gate.md`** `## Execution Log` with commands run, exit status, relevant output summary, enclosure records used, and pass/fail result.
+4. **Confirm verification commands are replayable**. Each command must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`. When a command needs external runtime wiring, the target spec must record the exact variables, paths, sourced scripts, or activation commands before the command runs.
+5. **Run verification commands through Pixi**. Run from the Topic Workspace root unless the target spec specifies a repo-specific working directory. Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.
+6. **Compare results to expected outputs** from the target spec.
+7. **Update `topic.env.topic_setup_target_spec`** `## Execution Log` with commands run, exit status, relevant output summary, enclosure records used, and pass/fail result.
 8. **Report readiness** as `ready` only when Pixi files exist, required repos exist, inferred-source warnings are reported, enclosure records are complete, and all verification commands satisfy the expected results. Otherwise report `failed` or `blocked`.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `isomer-env-gate.md`, parent guardrails, and user request, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `topic.env.topic_setup_target_spec`, parent guardrails, and user request, then execute the plan.
 
 ## Readiness Rules
 
