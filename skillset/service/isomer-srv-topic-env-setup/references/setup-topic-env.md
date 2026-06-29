@@ -92,8 +92,10 @@ Successful setup leaves the selected Topic Workspace with:
   pixi.toml
   pixi.lock
   .isomer-user-env/   # only when topic-local fallback is needed
-  repos/                 # default `topic.repos.main` parent for independent setup repos
-    <repo-name>/
+  repos/
+    topic-main/          # default `topic.repos.main`; primary Agent Workspace worktree source
+    extern/              # default helper-created non-main `topic.repos.*` repositories
+      <repo-label-path>/
   intent/
     src/
       topic-env-gate.md        # default binding for topic.intent.topic_env_requirements
@@ -112,7 +114,7 @@ The Topic Workspace `.gitignore` may include a default `tmp/` entry as the `isom
 - Run the subcommands in the order listed in **Step Order**; do not skip directly to dependency installation.
 - Stop and report a blocker when any step reports a missing predecessor artifact.
 - Do not require `team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instances, Agent Workspace plans, roles, or agent count before running this setup chain.
-- Keep all direct mutation scoped to the selected Topic Workspace Pixi environment and missing required repos under the resolved topic repository root.
+- Keep all direct mutation scoped to the selected Topic Workspace Pixi environment and missing required repos at resolved non-main `topic.repos.*` paths.
 - Carry enclosure strategy, external runtime wiring, topic-local fallback warnings, and enclosure blockers from `derive-env-gate`, `install-topic-deps`, and `verify-env-gate` into the combined result.
 - Do not mutate an existing repo during `ensure-topic-repos`; later setup or verification steps may only run commands against existing repos when the derived gate explicitly requires those commands.
 - Do not read `topic.intent.agent_env_requirements`, write `topic.env.agent_setup_target_spec`, create Agent Workspace worktrees, or claim per-agent cwd readiness from this topic-scoped flow.

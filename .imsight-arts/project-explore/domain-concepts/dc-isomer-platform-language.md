@@ -31,11 +31,11 @@ The topic-owned `topic-workspace.toml` file at the Topic Workspace root. It bind
 _Avoid_: Project Manifest path registry, runtime database, hidden workspace config
 
 **Semantic Workspace Surface Label**:
-A stable dotted label for a workspace path surface, such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `topic.agents_root`, `topic.tmp`, `topic.repos.main.tmp`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, `agent.scratch`, or `agent.tmp`. Semantic labels are the user-facing path contract; compatibility surface ids such as `records_artifacts` or `agent_workspace:<agent-name>` may remain for older path plans and migration output.
+A stable dotted label for a workspace path surface, such as `topic.repos.main`, `topic.repos.<group...>.<repo-name>`, `topic.records.artifacts`, `topic.runtime.db`, `topic.agents_root`, `topic.tmp`, `topic.repos.main.tmp`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, `agent.scratch`, or `agent.tmp`. Semantic labels are the user-facing path contract; compatibility surface ids such as `records_artifacts` or `agent_workspace:<agent-name>` may remain for older path plans and migration output.
 _Avoid_: hard-coded path, directory name as contract, arbitrary surface string
 
 **Default Layout Profile**:
-The built-in `isomer-default.v1` mapping from semantic workspace surface labels to the standard Topic Workspace, Topic Main Repository, and Agent Workspace directories, such as `repos/topic-main`, `records/artifacts`, `runtime`, `agents/<agent-name>`, and the local ignored `tmp/` surfaces. It is a fallback and explicit materialization profile, not the only valid layout.
+The built-in `isomer-default.v1` mapping from semantic workspace surface labels to the standard Topic Workspace, Topic Main Repository, and Agent Workspace directories, such as `repos/topic-main`, `records/artifacts`, `runtime`, `agents/<agent-name>`, and the local ignored `tmp/` surfaces. Repository helper commands use `repos/extern/...` as the default physical namespace for non-main topic repositories. It is a fallback and explicit materialization profile, not the only valid layout.
 _Avoid_: mandatory directory structure, fixed path contract, implicit migration
 
 **Workspace Runtime**:
@@ -87,6 +87,7 @@ Project
       Topic Main Repository, semantic label topic.repos.main
         Isomer-managed worker namespace, isomer-managed/
         Local Tmp Surface, semantic label topic.repos.main.tmp
+      Non-main topic repositories, semantic labels under topic.repos.<group...>.<repo-name>, helper-created under repos/extern/
       Research Inquiry graph
         Research Task(s)
       Owner-preserved records, semantic labels under topic.records.*

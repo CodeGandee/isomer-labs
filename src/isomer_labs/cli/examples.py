@@ -25,7 +25,7 @@ COMMAND_EXAMPLES: dict[str, tuple[str, ...]] = {
     ),
     "project paths register": (
         "pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create",
-        "pixi run isomer-cli --print-json project paths register topic.repos.inner_group.some_repo_name --topic my-topic --path repos/inner_group/some_repo_name --storage-profile topic_repo --create",
+        "pixi run isomer-cli --print-json project paths register topic.repos.inner_group.some_repo_name --topic my-topic --path repos/extern/inner_group/some_repo_name --storage-profile topic_repo --create",
     ),
     "project paths materialize-default": (
         "pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --label topic.records.artifacts",

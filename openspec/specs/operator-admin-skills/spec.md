@@ -2,7 +2,6 @@
 
 ## Purpose
 Define the operator/admin skillset used by Project Operator Sessions and Operator Agents for project control surfaces, approval, materialization, Service Request routing, and team launch orchestration.
-
 ## Requirements
 ### Requirement: Operator Admin Skillset Layout
 The repository SHALL provide Project Operator Session and Operator Agent skills under `skillset/operator/` using the `isomer-admin-<purpose>` naming convention.
@@ -89,7 +88,7 @@ The repository SHALL validate operator/admin skill structure and naming separate
 - **THEN** validation covers the research, operator, and service skillsets or clearly prints the separate commands required to validate each skillset
 
 ### Requirement: Topic Workspace Manager Operator Skill
-The operator/admin skillset SHALL include `isomer-admin-topic-workspace-mgr` as the operator surface for Git-backed Topic Workspace repository and Agent Workspace worktree preparation.
+The operator/admin skillset SHALL include `isomer-admin-topic-workspace-mgr` as the operator surface for Git-backed Topic Workspace repository and Agent Workspace worktree preparation, and it SHALL describe non-main topic repositories as supporting repositories resolved through the semantic storage contract.
 
 #### Scenario: Topic workspace manager skill is active
 - **WHEN** the operator skillset is inspected
@@ -106,3 +105,10 @@ The operator/admin skillset SHALL include `isomer-admin-topic-workspace-mgr` as 
 #### Scenario: Topic workspace manager stays bounded
 - **WHEN** the topic workspace manager skill reports prepared workspaces
 - **THEN** it does not claim Agent Team Instance creation, Workspace Runtime mutation, Houmao launch, adapter launch material readiness, or runtime team readiness
+
+#### Scenario: Additional topic repositories are external support surfaces
+- **WHEN** the topic workspace manager skill documents or registers an additional non-main topic repository
+- **THEN** it uses `topic.repos.<group...>.<repo-name>` semantic labels with `storage_profile = "topic_repo"`
+- **AND** it describes `repos/extern/...` as the default physical location for helper-created non-main topic repositories
+- **AND** it does not describe non-main repositories as Agent Workspace worktree sources
+

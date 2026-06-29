@@ -23,10 +23,10 @@ The service environment setup skill SHALL define environment enclosure as Pixi-f
 The service environment setup skill SHALL classify each dependency or runtime need through a fixed enclosure ladder before installation or verification.
 
 #### Scenario: Pixi-managed dependency is preferred
-- **WHEN** a dependency required by `env-gate.md` can be satisfied by PyPI through Pixi or by Pixi/Conda packages
+- **WHEN** a dependency required by `topic.intent.topic_env_requirements` can be satisfied by PyPI through Pixi or by Pixi/Conda packages
 - **THEN** the skill instructs the agent to install it through the selected Topic Workspace Pixi manifest
 - **AND** the command uses `pixi add --manifest-path <manifest_path>` or `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`
-- **AND** the dependency and selected source are recorded in `isomer-env-gate.md`
+- **AND** the dependency and selected source are recorded in `topic.env.topic_setup_target_spec`
 
 #### Scenario: External runtime wiring is explicit
 - **WHEN** a gate requires an external DLL, SO, SDK, compiler, CUDA runtime, package-config path, activation script, or similar runtime piece that cannot reasonably be installed through Pixi
@@ -36,9 +36,9 @@ The service environment setup skill SHALL classify each dependency or runtime ne
 
 #### Scenario: Topic-local fallback is secondary
 - **WHEN** Pixi-managed installation and Pixi-mediated external runtime wiring cannot satisfy the gate
-- **THEN** the skill MAY instruct the agent to use a topic-local user-space fallback under `<topic-workspace-dir>/.isomer-user-env/`
+- **THEN** the skill SHALL either instruct the agent to use a topic-local user-space fallback under `<topic-workspace-dir>/.isomer-user-env/` or report a blocker
 - **AND** the fallback path is added to the Topic Workspace `.gitignore` when used
-- **AND** the fallback command, installed path, and reason for fallback are recorded in `isomer-env-gate.md`
+- **AND** the fallback command, installed path, and reason for fallback are recorded in `topic.env.topic_setup_target_spec`
 - **AND** the final output reports the fallback as a lower-portability dependency
 
 #### Scenario: Privileged or global mutation blocks setup
@@ -50,7 +50,7 @@ The service environment setup skill SHALL classify each dependency or runtime ne
 The service environment setup skill SHALL require `derive-env-gate` to record the enclosure strategy that later dependency installation and verification must follow.
 
 #### Scenario: Dependency plan includes enclosure choices
-- **WHEN** `derive-env-gate` writes or updates `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`
+- **WHEN** `derive-env-gate` writes or updates `topic.env.topic_setup_target_spec`
 - **THEN** the `Dependency Plan` section records the enclosure strategy for each dependency or runtime need
 - **AND** each entry identifies whether it is Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked
 - **AND** non-Pixi choices include reasons
@@ -71,7 +71,7 @@ The service environment setup skill SHALL require `derive-env-gate` to record th
 The service environment setup skill SHALL require `install-topic-deps` to enforce the enclosure strategy before mutating Topic Workspace environment files or running setup commands.
 
 #### Scenario: Install step refuses unclassified dependencies
-- **WHEN** `install-topic-deps` reads `isomer-env-gate.md`
+- **WHEN** `install-topic-deps` reads `topic.env.topic_setup_target_spec`
 - **AND** a required dependency or runtime need lacks an enclosure strategy
 - **THEN** the subcommand reports a blocker instead of installing or verifying the dependency
 - **AND** the blocker tells the agent to update the derived gate before mutation
@@ -96,7 +96,7 @@ The service environment setup skill SHALL require `install-topic-deps` to enforc
 The service environment setup skill SHALL require `verify-env-gate` to judge readiness from recorded Pixi-scoped commands and recorded runtime wiring, not from ambient shell state.
 
 #### Scenario: Verification command is replayable
-- **WHEN** `verify-env-gate` runs a command from `isomer-env-gate.md`
+- **WHEN** `verify-env-gate` runs a command from `topic.env.topic_setup_target_spec`
 - **THEN** the command uses `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`
 - **AND** any required runtime variables, sourced scripts, or external runtime paths are recorded in the derived gate before the command runs
 - **AND** the execution log records the exact command form used
@@ -110,5 +110,44 @@ The service environment setup skill SHALL require `verify-env-gate` to judge rea
 - **WHEN** the final readiness status is `ready`
 - **AND** the setup uses external runtime wiring or topic-local user-space fallback
 - **THEN** the final output reports the relevant paths, scripts, variables, or fallback prefix
-- **AND** the final output warns that those pieces may need repair or reinstall if the Topic Workspace moves or the host runtime changes
+- **AND** the final output warns that those pieces can require repair or reinstall if the Topic Workspace moves or the host runtime changes
+
+### Requirement: Package Source Resolution Is Delegated When It Becomes a Decision
+The service environment setup enclosure workflow SHALL keep dependency installation Pixi-scoped while routing package repository, mirror, registry, or channel choice to the package repository resolver when source selection is uncertain or policy-relevant.
+
+#### Scenario: Reachability uncertainty invokes package resolver guidance
+- **WHEN** topic env setup must choose among official package sources, configured mirrors, private registries, or fallback channels before dependency mutation
+- **THEN** the skill text names `isomer-srv-resolve-pkg-repo` as the package source resolution surface
+- **AND** the topic env setup output records the selected source, source evidence, and any reachability or fallback warning rather than embedding an untraceable source decision
+
+#### Scenario: Fixed gate or manifest source does not require extra resolution
+- **WHEN** the environment gate, Pixi manifest, lockfile, or Service Request already fixes the package source and there is no reachability concern
+- **THEN** topic env setup may use that fixed source without invoking package repository resolution
+- **AND** it records the source as fixed by existing evidence
+
+### Requirement: CUDA and NVIDIA Build Policy Is Routed to NVIDIA Tools
+The service environment setup enclosure workflow SHALL route CUDA architecture, CUDA/C++ build environment, and NVIDIA build preference decisions to `isomer-misc-nvidia-tools` instead of expanding topic env setup into a general CUDA guide.
+
+#### Scenario: CUDA build decisions use NVIDIA tools skill
+- **WHEN** topic env setup encounters CUDA architecture targets, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `nvcc` build flags, CUDA/C++ Pixi build environments, or CUDA build parallelism decisions
+- **THEN** the skill text points to `isomer-misc-nvidia-tools` for those build preferences
+- **AND** topic env setup records only the setup decisions needed for the selected Topic Workspace Pixi environment and derived gate
+
+#### Scenario: NVIDIA channel choice remains auditable
+- **WHEN** an NVIDIA tool or runtime package must be installed through Pixi channels
+- **THEN** the final setup evidence records the selected channel and reason
+- **AND** if channel reachability or mirror selection is uncertain, the package repository resolver provides the source decision before topic env setup mutates the Pixi manifest
+
+### Requirement: Explicit Target Specs Need Enclosure Validation
+The service environment setup skill SHALL validate enclosure strategy in any explicit derived topic env target spec before mutating Topic Workspace environment files or running setup commands.
+
+#### Scenario: Explicit target spec contains enclosure strategy
+- **WHEN** `isomer-srv-topic-env-setup` receives an explicit derived gate file, target-spec prompt, or target-spec context from a manual invocation
+- **AND** the target spec contains dependency or runtime setup requirements
+- **THEN** the service validates that each requirement has a Pixi-managed, Pixi-mediated external runtime wiring, topic-local fallback, or blocked enclosure strategy before materialization
+
+#### Scenario: Explicit target spec lacks enclosure strategy
+- **WHEN** an explicit derived topic env target spec lacks enclosure strategy for a dependency or runtime need
+- **THEN** the service either derives the missing enclosure strategy into the target spec before mutation or reports a blocker
+- **AND** it does not install or verify that dependency from ambient shell state alone
 

@@ -23,7 +23,7 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to split the request into the closest subcommands, run read-only stages first, and ask for explicit mutation only when needed.
 
-When the operator asks to add another repository under `repos/<custom-repo>`, register it through `project repos create <repo-label>` or `project paths register topic.repos.<group...>.<repo-name> --storage-profile topic_repo`. The Topic Workspace Manifest binding must keep the compact `label`/`path`/`storage_profile` shape. Report the resulting semantic label and path source before using the repository.
+When the operator asks to add another non-main topic repository, register it through `project repos create <repo-label>` or `project paths register topic.repos.<group...>.<repo-name> --storage-profile topic_repo`. Helper-created repositories default under `repos/extern/<repo-label-path>` and are supporting topic-local repositories, not Agent Workspace worktree sources. The Topic Workspace Manifest binding must keep the compact `label`/`path`/`storage_profile` shape. Report the resulting semantic label and path source before using the repository.
 
 ## Full Flow Boundary
 

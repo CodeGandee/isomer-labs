@@ -82,7 +82,7 @@ pixi run isomer-cli --print-json project repos create inner_group.some_repo_name
 pixi run isomer-cli --print-json project paths get topic.repos.inner_group.some_repo_name --topic my-topic
 ```
 
-The helper creates `repos/inner_group/some_repo_name` by default, records `label = "topic.repos.inner_group.some_repo_name"`, `path = "repos/inner_group/some_repo_name"`, and `storage_profile = "topic_repo"`, and leaves later path lookup to Workspace Path Resolution.
+The helper creates `repos/extern/inner_group/some_repo_name` by default, records `label = "topic.repos.inner_group.some_repo_name"`, `path = "repos/extern/inner_group/some_repo_name"`, and `storage_profile = "topic_repo"`, and leaves later path lookup to Workspace Path Resolution. This default marks the repository as supporting topic-local code rather than the primary Topic Main Repository.
 
 ## Initialize and Prepare Workspace Runtime
 

@@ -37,20 +37,20 @@ sequenceDiagram
     participant AE as isomer-srv-<br/>agent-env-setup
     participant F as validate-topic-team /<br/>finalize-topic-team
 
-    U->>T: Start topic-team specialization for this Research Topic.
-    T->>T: Resolve the Isomer Project and registered Topic Workspace.
-    T->>T: Create or update topic.intent.overview with the topic goal, metrics, datasets, and explicit dependencies.
-    T->>T: Specialize the team and produce authoritative Agent Names when the topic route needs them.
-    T->>T: Create topic.intent.topic_env_requirements as concise user-editable topic environment intent.
-    T->>TE: Derive topic.env.topic_setup_target_spec from topic env intent, then materialize and verify the Topic Workspace environment.
-    TE-->>T: Return topic env target spec, Pixi readiness, enclosure evidence, blockers, and no per-agent claim.
-    T->>T: Create topic.intent.agent_env_requirements from Agent Names, topic intent, and requested cwd proof.
-    T->>W: Materialize Topic Main Repository and Agent Workspace topology for the authoritative Agent Names.
-    W-->>T: Return repo paths, workspace paths, branch plan, support labels, and topology validation.
-    T->>AE: Derive topic.env.agent_setup_target_spec from agent env intent and predecessor evidence, then materialize and verify Agent Workspaces.
-    AE-->>T: Return agent env target spec, readiness by Agent Name, selected-agent evidence, blockers, and overall readiness.
-    T->>F: Validate each evidence stream separately and write the final topic-team handoff.
-    F-->>U: Return the topic-team setup summary.
+    U->>T: Start topic-team specialization<br/>for one Research Topic.
+    T->>T: Resolve the Isomer Project<br/>and registered Topic Workspace.
+    T->>T: Create or update<br/>topic.intent.overview.
+    T->>T: Specialize the team<br/>and produce Agent Names.
+    T->>T: Create topic env intent<br/>as user-editable requirements.
+    T->>TE: Derive topic env target spec,<br/>then materialize and verify.
+    TE-->>T: Return Pixi readiness,<br/>evidence, blockers,<br/>and no per-agent claim.
+    T->>T: Create agent env intent<br/>from Agent Names and cwd proof.
+    T->>W: Materialize Topic Main Repository<br/>and Agent Workspace topology.
+    W-->>T: Return paths, branch plan,<br/>support labels, and validation.
+    T->>AE: Derive agent env target spec,<br/>then materialize and verify.
+    AE-->>T: Return readiness by Agent Name,<br/>selected-agent evidence,<br/>blockers, and overall readiness.
+    T->>F: Validate evidence streams<br/>and write final handoff.
+    F-->>U: Return topic-team<br/>setup summary.
 ```
 
 ## Skill Call Graph

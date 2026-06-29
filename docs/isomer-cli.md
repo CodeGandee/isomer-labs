@@ -241,13 +241,13 @@ pixi run isomer-cli --print-json project paths list --topic my-topic --agent ali
 
 Register a semantic binding in the Topic Workspace Manifest. Active binding fields are intentionally compact: `label`, `path`, and `storage_profile`. Isomer does not infer `storage_profile` from the path because the same directory shape can have different ownership, durability, and safety semantics.
 
-Use `custom.*` for user-defined labels. Use grouped reserved repository labels under `topic.repos.*`, such as `topic.repos.inner_group.some_repo_name`, when the binding describes another topic repository. Reserved roots such as `project`, `topic`, and `agent` are Isomer-owned except for accepted grouped families.
+Use `custom.*` for user-defined labels. Use grouped reserved repository labels under `topic.repos.*`, such as `topic.repos.inner_group.some_repo_name`, when the binding describes another topic repository. Helper-created non-main repositories default under `repos/extern/...`; callers should still query the semantic label. Reserved roots such as `project`, `topic`, and `agent` are Isomer-owned except for accepted grouped families.
 
 **Side effects:** writes `<topic-workspace>/topic-workspace.toml`; with `--create`, creates the validated target path. It does not create Workspace Runtime records or rewrite historical Path Plans.
 
 ```bash
 pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
-pixi run isomer-cli --print-json project paths register topic.repos.inner_group.some_repo_name --topic my-topic --path repos/inner_group/some_repo_name --storage-profile topic_repo --create
+pixi run isomer-cli --print-json project paths register topic.repos.inner_group.some_repo_name --topic my-topic --path repos/extern/inner_group/some_repo_name --storage-profile topic_repo --create
 ```
 
 ### `project paths update`
@@ -304,13 +304,13 @@ pixi run isomer-cli --print-json project paths materialize topic.repos.main --to
 
 ### `project repos create`
 
-Register and create a topic repository binding without writing the manifest by hand. A bare name such as `inner_group.some_repo_name` becomes `topic.repos.inner_group.some_repo_name`; the command uses `storage_profile = "topic_repo"`.
+Register and create a non-main topic repository binding without writing the manifest by hand. A bare name such as `inner_group.some_repo_name` becomes `topic.repos.inner_group.some_repo_name`; the command uses `storage_profile = "topic_repo"` and defaults the path to `repos/extern/inner_group/some_repo_name`. Use semantic path commands to materialize or override `topic.repos.main`.
 
 **Side effects:** writes `<topic-workspace>/topic-workspace.toml` and, unless `--no-create` is set, creates the repository target directory. It does not initialize Git by itself.
 
 ```bash
 pixi run isomer-cli --print-json project repos create inner_group.some_repo_name --topic my-topic
-pixi run isomer-cli --print-json project repos create topic.repos.tools.benchmarks --topic my-topic --path repos/tools/benchmarks --replace
+pixi run isomer-cli --print-json project repos create topic.repos.tools.benchmarks --topic my-topic --path repos/extern/tools/benchmarks --replace
 ```
 
 ### `schemas list`

@@ -30,7 +30,7 @@ Workspace Runtime, adapter manifests, command payloads, and research Artifacts a
 
 ### Workspace path contracts are semantic labels
 
-Topic-internal paths are resolved through semantic workspace surface labels and the Topic Workspace Manifest, not by assuming fixed directory names. The built-in `isomer-default.v1` layout remains the default profile for fresh topics and explicit materialization. Read-only commands such as `project paths get`, `project paths list`, `project paths preview`, `project paths default`, and `project paths explain` must not create manifests, directories, repositories, or runtime records. Manifest bindings use `label`, `path`, and explicit `storage_profile`; user-defined labels live under `custom.*`, while additional topic repositories may use grouped `topic.repos.*` labels.
+Topic-internal paths are resolved through semantic workspace surface labels and the Topic Workspace Manifest, not by assuming fixed directory names. The built-in `isomer-default.v1` layout remains the default profile for fresh topics and explicit materialization. Read-only commands such as `project paths get`, `project paths list`, `project paths preview`, `project paths default`, and `project paths explain` must not create manifests, directories, repositories, or runtime records. Manifest bindings use `label`, `path`, and explicit `storage_profile`; user-defined labels live under `custom.*`, while additional topic repositories may use grouped `topic.repos.*` labels and helper-created non-main repositories default under `repos/extern/...`.
 
 ### Local tmp surfaces are semantic labels
 

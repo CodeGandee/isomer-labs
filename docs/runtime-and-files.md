@@ -122,6 +122,7 @@ The following are not durable research state and may be regenerated or lost:
 | Topic Workspace Pixi environment | `<topic-workspace>/.pixi/` | no |
 | Topic Agent Team Profile Bundle | `<topic-workspace>/team-profile/` | yes |
 | Topic Main Repository | `<topic-workspace>/repos/topic-main/` | policy-dependent topic support surface |
+| Non-main topic repository | `<topic-workspace>/repos/extern/<repo-label-path>/` by helper default | policy-dependent supporting topic repository; resolve through `topic.repos.<group...>.<repo-name>` |
 | Topic Main Isomer-managed namespace | `<topic-workspace>/repos/topic-main/isomer-managed/` | yes for path plan; tracked subpaths are Git policy surfaces |
 | Isomer-managed tracked material | `<topic-workspace>/repos/topic-main/isomer-managed/tracked/` | yes when committed or recorded |
 | Workspace Runtime DB | `<topic-workspace>/state.sqlite` | yes |

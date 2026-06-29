@@ -1,6 +1,6 @@
 # Ensure Topic Repos
 
-Use this subcommand to ensure independent repos required by the source gate exist under the resolved topic repository root. When a repo becomes a durable topic repository, register it through Workspace Path Resolution as a `topic.repos.*` label with `storage_profile = "topic_repo"`; prefer `project repos create` or `project paths register` over manual `topic-workspace.toml` edits.
+Use this subcommand to ensure independent repos required by the source gate exist at resolved non-main `topic.repos.*` paths. When a repo becomes a durable topic repository, register it through Workspace Path Resolution as a `topic.repos.<group...>.<repo-name>` label with `storage_profile = "topic_repo"`; prefer `project repos create` or `project paths register` over manual `topic-workspace.toml` edits. Under `isomer-default.v1`, helper-created non-main repositories default under `<topic-workspace-dir>/repos/extern/...`.
 
 ## Required Inputs
 
@@ -10,7 +10,7 @@ Recover these before asking the user:
 | --- | --- |
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `semantic_paths`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
 | Source gate summary | Require the extracted source gate summary from `read-env-gate`, including runnable target, desired commands, success criteria, repo hints, dependency hints, and blockers. Refuse to run if it is missing, and tell the user to run `read-env-gate` first. |
-| `repos_root` | Use the resolved topic repository root from semantic path evidence; under `isomer-default.v1` this is normally `<topic-workspace-dir>/repos/` for independent setup repos. Create it only when this step needs to materialize or inspect required repos, and record the semantic label and path source. |
+| Repo semantic path | For each required repository, resolve or register a non-main `topic.repos.*` label. Under `isomer-default.v1`, `project repos create <repo-label>` creates the default target under `<topic-workspace-dir>/repos/extern/<repo-label-path>`. Create the resolved path only when this step needs to materialize or inspect that repo, and record the semantic label, path, and path source. |
 | Explicit repo source | Optional. Use a URL, local path, package source, or repo name from the prompt or source gate only when the expected repo path is missing. |
 
 ## Workflow
@@ -20,10 +20,10 @@ When this subcommand is selected, execute the following steps in order.
 1. **Require predecessor artifacts**:
    - Require workspace context from `resolve-topic-workspace` and source gate summary from `read-env-gate`.
 2. **Identify required repos**:
-   - Use the source gate, desired commands, repo URLs, package names, import paths, build instructions, README references, and common project files already present under the resolved topic repository root.
-3. **Use the required repo root**. Place every independent repo under the resolved topic repository root. Create that root when needed and safe.
+   - Use the source gate, desired commands, repo URLs, package names, import paths, build instructions, README references, and common project files already present at resolved `topic.repos.*` paths.
+3. **Use semantic repo paths**. Place every independent repo at a resolved non-main `topic.repos.*` path. The default helper location is `repos/extern/<repo-label-path>`, but explicit safe manifest bindings remain valid.
 4. **Find existing repos first**:
-   - If the expected repo already exists under `repos/<repo-name>`, treat it as read-only for this subcommand.
+   - If the expected repo already exists at the resolved semantic path, treat it as read-only for this subcommand.
    - Inspect it and record evidence.
    - Do not run `git pull`, `git checkout`, copy files into it, delete files from it, install packages into it, regenerate files in it, or otherwise mutate it.
 5. **Acquire explicit sources only when missing**:
@@ -43,8 +43,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Acquisition Rules
 
-- Use `git clone <source> <resolved-repos-root>/<repo-name>` for Git sources only when `<resolved-repos-root>/<repo-name>` does not already exist.
-- Copy or link local sources only when `<resolved-repos-root>/<repo-name>` does not already exist and the user or gate clearly authorizes that source.
+- Use `git clone <source> <resolved-topic-repo-path>` for Git sources only when `<resolved-topic-repo-path>` does not already exist.
+- Copy or link local sources only when `<resolved-topic-repo-path>` does not already exist and the user or gate clearly authorizes that source.
 - Keep the manifest binding compact: `label`, `path`, and `storage_profile`. Do not infer `storage_profile` from a directory name, and do not treat default-looking paths as registered storage without a semantic label.
 - Do not place task repos in the Project root, Agent Workspace, `.pixi/`, `tmp/`, or other disposable directories as the durable repo location.
 - Do not claim readiness just because a repo exists; repo checks must still be represented in `topic.env.topic_setup_target_spec` and verified later.
@@ -55,8 +55,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 Carry forward:
 
 - repo name;
+- semantic label;
 - expected path;
-- semantic label and path source for the repo root;
+- path source for the repository;
 - binding command evidence when a new `topic.repos.*` label was registered;
 - explicit or inferred source;
 - source warning, if any;

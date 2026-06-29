@@ -69,35 +69,42 @@ The service skill SHALL prepare the selected Topic Workspace Pixi layout and bas
 - **AND** it still preserves unrelated existing ignore entries
 
 ### Requirement: Environment Gate Verification
-The service environment setup skill SHALL read `<topic-workspace-dir>/user-intent/src/env-gate.md`, generate `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`, and use the derived gate as the operational verification gate for Topic Workspace environment readiness.
+The service environment setup skill SHALL use a derived topic env target spec as the operational verification gate for Topic Workspace environment readiness. The target spec can come from `topic.env.topic_setup_target_spec`, derivation from `topic.intent.topic_env_requirements`, or explicit manual input.
 
-#### Scenario: Gate file is required for readiness verification
+#### Scenario: Source gate can derive target spec
 - **WHEN** an agent uses `isomer-srv-topic-env-setup` for a Topic Workspace environment
-- **THEN** the skill instructs the agent to look for `<topic-workspace-dir>/user-intent/src/env-gate.md`
-- **AND** the skill treats the file as the source of user intent for what must be able to run after setup
+- **THEN** the skill instructs the agent to resolve `topic.intent.topic_env_requirements`
+- **AND** the skill treats the resolved file as the source of user intent for deriving `topic.env.topic_setup_target_spec` when no explicit target spec is supplied
 
-#### Scenario: Missing gate file blocks readiness
-- **WHEN** `<topic-workspace-dir>/user-intent/src/env-gate.md` is missing or unreadable
+#### Scenario: Missing gate file blocks readiness only when no target spec is supplied
+- **WHEN** `topic.intent.topic_env_requirements` is missing or unreadable
+- **AND** no explicit derived topic env target spec is supplied
 - **THEN** the skill reports a blocker instead of claiming the Topic Workspace environment is ready
-- **AND** it asks for the gate file to be created or repaired before final readiness verification
+- **AND** it asks for `resolve-topic-env-gate` to create or repair the source gate, or for the caller to provide an explicit target spec, before final readiness verification
+
+#### Scenario: Legacy source gate path is not canonical
+- **WHEN** `<topic-workspace-dir>/user-intent/src/env-gate.md` exists but `<topic-workspace-dir>/intent/src/topic-env-gate.md` is missing
+- **THEN** the skill reports a legacy-path blocker naming `topic.intent.topic_env_requirements` and its default-layout path
+- **AND** it does not silently treat the legacy file as the canonical source gate
 
 #### Scenario: Derived gate is generated from source intent
-- **WHEN** `<topic-workspace-dir>/user-intent/src/env-gate.md` is present and readable
-- **THEN** the skill instructs the agent to generate `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`
+- **WHEN** `topic.intent.topic_env_requirements` is present and readable
+- **AND** no explicit derived topic env target spec is supplied
+- **THEN** the skill instructs the agent to generate `topic.env.topic_setup_target_spec`
 - **AND** the generated gate preserves the source gate's user intent while converting it into operational environment-readiness checks based on the user requirement and any required repo contents
 
-#### Scenario: Derived gate uses fixed Markdown sections
-- **WHEN** the skill generates `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`
-- **THEN** the generated file includes top-level sections named `Source Intent`, `Runnable Target`, `Repo Requirements`, `Inferred Source Warnings`, `Dependency Plan`, `Pixi Install Commands`, `Verification Commands`, `Expected Results`, `Blockers`, and `Execution Log`
+#### Scenario: Target spec uses fixed Markdown sections
+- **WHEN** the skill generates or accepts a derived topic env target spec
+- **THEN** the target spec includes top-level sections named `Source Intent`, `Runnable Target`, `Repo Requirements`, `Inferred Source Warnings`, `Dependency Plan`, `Pixi Install Commands`, `Verification Commands`, `Expected Results`, `Blockers`, and `Execution Log`
 - **AND** every section is present even when the section content is `None.` or a short reason that it does not apply
 
 #### Scenario: Vague source gate is made operational
-- **WHEN** the source gate is vague about what must run after environment setup
+- **WHEN** the source gate is vague but understandable about what must be available or runnable after environment setup
 - **THEN** the generated `isomer-env-gate.md` includes concrete required-to-succeed dependencies, Pixi install commands, Pixi run commands, scripts, imports, tools, expected outputs, or equivalent pass/fail checks
 - **AND** it establishes success criteria that another agent can execute or inspect without reinterpreting the vague source wording
 
-#### Scenario: Derived gate contents drive post-setup checks
-- **WHEN** the gate file describes commands, scripts, imports, tools, or other runnable checks expected after setup
+#### Scenario: Target spec contents drive post-setup checks
+- **WHEN** the target spec describes tools, libraries, repos, datasets, commands, scripts, imports, or other runnable checks expected after setup
 - **THEN** the skill uses the derived `isomer-env-gate.md` expectations to select or report dependency installation commands and verification commands after Pixi setup
 - **AND** readiness is reported only when the gate expectations are satisfied or explicitly deferred with blockers
 
@@ -107,39 +114,40 @@ The service environment setup skill SHALL read `<topic-workspace-dir>/user-inten
 - **AND** it verifies only the service-safe Topic Workspace environment setup portion
 
 ### Requirement: Topic Workspace Repo Materialization
-The service environment setup skill SHALL use `<topic-workspace-dir>/repos/<repo-name>` as the location for independent repositories required by the Topic Workspace task or environment gate.
+The service environment setup skill SHALL use resolved semantic `topic.repos.*` paths for independent repositories required by the Topic Workspace task or environment gate, defaulting non-main helper-created repositories under `<topic-workspace-dir>/repos/extern/<repo-label-path>`.
 
 #### Scenario: Required repos are rooted under the Topic Workspace
 - **WHEN** the gate or task requires an independent repository
-- **THEN** the skill instructs the agent to find an existing repository or place a missing repository under `<topic-workspace-dir>/repos/<repo-name>`
+- **THEN** the skill instructs the agent to resolve or register a non-main `topic.repos.*` label and find an existing repository or place a missing repository at that resolved path
+- **AND** the skill treats `repos/extern/...` as the default non-main repository namespace under `isomer-default.v1`
 - **AND** the skill does not place task repositories in the Project root, Agent Workspace, `.pixi/`, or another ad hoc location
 
 #### Scenario: Derived gate records repo requirements
 - **WHEN** the source gate implies that runnable repository code is needed
 - **THEN** the generated `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` lists the required repository names
-- **AND** it lists each expected `<topic-workspace-dir>/repos/<repo-name>` path
+- **AND** it lists each expected semantic `topic.repos.*` label and resolved repository path
 - **AND** it records the acquisition source when the source is known
 - **AND** it records commands, scripts, imports, or equivalent checks that verify each repo is usable
 
 #### Scenario: Missing repo is acquired when enough source information exists
-- **WHEN** a required repository is missing from `<topic-workspace-dir>/repos/<repo-name>`
+- **WHEN** a required repository is missing from its resolved non-main `topic.repos.*` path
 - **AND** the gate or task provides enough source information to acquire it through service-safe operations
-- **THEN** the skill instructs the agent to download or materialize the repository under `<topic-workspace-dir>/repos/<repo-name>`
+- **THEN** the skill instructs the agent to download or materialize the repository at the resolved semantic path
 - **AND** the skill records evidence from the repository at that expected path before reporting readiness
 
 #### Scenario: Missing repo source may be inferred
-- **WHEN** a required repository is missing from `<topic-workspace-dir>/repos/<repo-name>`
+- **WHEN** a required repository is missing from its resolved non-main `topic.repos.*` path
 - **AND** the gate or task implies runnable repository code is needed without naming an explicit source
-- **THEN** the skill may instruct the agent to infer, search for, and acquire a likely repository source under `<topic-workspace-dir>/repos/<repo-name>`
+- **THEN** the skill may instruct the agent to infer, search for, and acquire a likely repository source at the resolved semantic path
 - **AND** the generated `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md` includes a visible warning in `Inferred Source Warnings` that the repository source was inferred rather than explicitly provided by the user
-- **AND** the warning names the repo, expected path, inferred source, reason for choosing it, and any uncertainty or review needed
+- **AND** the warning names the repo, semantic label, expected path, inferred source, reason for choosing it, and any uncertainty or review needed
 - **AND** the final skill output reports the same warning
 
 #### Scenario: Missing repo blocks readiness when source remains ambiguous
-- **WHEN** a required repository is missing from `<topic-workspace-dir>/repos/<repo-name>`
+- **WHEN** a required repository is missing from its resolved non-main `topic.repos.*` path
 - **AND** the gate, task, and agent source inference do not identify a likely source that can be verified against the desired command
 - **THEN** the skill reports a blocker instead of claiming the Topic Workspace environment is ready
-- **AND** the blocker names the missing repo requirement and the expected `<topic-workspace-dir>/repos/<repo-name>` location
+- **AND** the blocker names the missing repo requirement, semantic label, and expected resolved path
 
 #### Scenario: Repo checks drive readiness
 - **WHEN** the derived gate requires one or more repositories
@@ -149,15 +157,20 @@ The service environment setup skill SHALL use `<topic-workspace-dir>/repos/<repo
 #### Scenario: Repo materialization keeps Pixi root stable
 - **WHEN** a required repo has its own project files, install commands, or run commands
 - **THEN** the Topic Workspace remains the standalone Pixi environment root
-- **AND** repo-specific commands may run from `<topic-workspace-dir>/repos/<repo-name>` only as checks or setup steps defined by the derived gate
+- **AND** repo-specific commands may run from the resolved repository path only as checks or setup steps defined by the derived gate
+
+#### Scenario: External topic repos are not primary worktree sources
+- **WHEN** topic environment setup acquires or verifies a non-main topic repository under `repos/extern/...`
+- **THEN** the skill treats that repository as supporting topic-local code rather than the primary Topic Main Repository used for Agent Workspace worktrees
+- **AND** the skill may inspect or modify it only when the gate or user authorizes that action
 
 ### Requirement: Dependency Inference and Pixi Execution
-The service environment setup skill SHALL instruct the agent to infer the dependencies needed for `env-gate.md` to pass, install those dependencies with Pixi, and run the desired command through the Topic Workspace Pixi environment.
+The service environment setup skill SHALL instruct the agent to infer the dependencies needed for `topic.intent.topic_env_requirements` to pass, install those dependencies with Pixi, and run the desired command through the Topic Workspace Pixi environment.
 
 #### Scenario: Dependencies are inferred from source gate and repo contents
 - **WHEN** the source gate and any required repos are available
 - **THEN** the skill instructs the agent to infer the language runtimes, libraries, tools, package-manager requirements, editable repo installs, and command-line programs needed for the gate to pass
-- **AND** the inferred dependencies are recorded in `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`
+- **AND** the inferred dependencies are recorded in `topic.env.topic_setup_target_spec`
 
 #### Scenario: Python packages prefer PyPI
 - **WHEN** the inferred dependency is a Python package
@@ -189,7 +202,7 @@ The service environment setup skill SHALL instruct the agent to infer the depend
 
 #### Scenario: Python version is recovered before fallback
 - **WHEN** the skill selects the Topic Workspace Python runtime version
-- **THEN** it first checks the prompt, `env-gate.md`, derived gate content, and inspected repo evidence for Python version constraints
+- **THEN** it first checks the prompt, `topic.intent.topic_env_requirements`, derived gate content, and inspected repo evidence for Python version constraints
 - **AND** repo evidence includes Python metadata, requirement markers, runtime files, CI files, Dockerfiles, lockfiles, and setup notes when present
 - **AND** the selected version and evidence are recorded in `isomer-env-gate.md`
 
@@ -221,7 +234,7 @@ The service environment setup skill SHALL instruct the agent to infer the depend
 - **THEN** the skill instructs the agent to run the desired command or commands through the Topic Workspace Pixi environment
 - **AND** the command form is `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`
 - **AND** the skill does not rely on activated shells or ambient Python environments
-- **AND** the command results determine whether `env-gate.md` has passed
+- **AND** the command results determine whether the derived topic env target spec has passed
 
 #### Scenario: Dependency blockers are explicit
 - **WHEN** the agent cannot infer or install a dependency needed for the gate to pass
@@ -229,9 +242,9 @@ The service environment setup skill SHALL instruct the agent to infer the depend
 - **AND** the blocker names the missing dependency, why it is needed, and what information or manual action is required
 
 ### Requirement: Direct Topic Workspace Environment Mutation
-The service environment setup skill SHALL allow direct service-safe mutation of the selected Topic Workspace Pixi environment during an explicit setup invocation, without requiring a separate Service Request boundary.
+The service environment setup skill SHALL allow direct, auditable mutation of the selected Topic Workspace Pixi environment and missing required topic repositories after the selected Topic Workspace and its effective Pixi binding are confirmed.
 
-#### Scenario: Setup invocation authorizes Topic Workspace Pixi mutation
+#### Scenario: Direct mutation is allowed after confirmation
 - **WHEN** the user invokes `isomer-srv-topic-env-setup` for Topic Workspace environment setup
 - **AND** the Project Manifest-declared Topic Workspace and effective Topic Workspace Pixi binding have been confirmed
 - **THEN** the skill may instruct the agent to add dependencies, update `pixi.toml`, refresh `pixi.lock`, install packages, and run gate commands for that Topic Workspace
@@ -239,10 +252,10 @@ The service environment setup skill SHALL allow direct service-safe mutation of 
 
 #### Scenario: Direct mutation remains scoped
 - **WHEN** the skill performs direct setup mutation
-- **THEN** the mutation scope is limited to the selected Topic Workspace Pixi environment and missing required repos under `<topic-workspace-dir>/repos/<repo-name>`
+- **THEN** the mutation scope is limited to the selected Topic Workspace Pixi environment and missing required repositories at resolved non-main `topic.repos.*` paths
 
 #### Scenario: Existing topic repos are not mutated by ensure-topic-repos
-- **GIVEN** a required repo path already exists under `<topic-workspace-dir>/repos/<repo-name>`
+- **GIVEN** a required repo path already exists at the resolved non-main `topic.repos.*` path
 - **WHEN** `ensure-topic-repos` runs
 - **THEN** it inspects the existing repo as read-only evidence
 - **AND** it does not run `git pull`, switch branches, copy files into the repo, delete files from the repo, install packages into the repo, regenerate files in the repo, or otherwise mutate the repo
@@ -265,7 +278,7 @@ The service environment setup skill SHALL present the Topic Workspace setup work
 
 #### Scenario: Repos and dependencies are resolved before derived gate generation
 - **WHEN** the source gate indicates that runnable repo code is needed
-- **THEN** the skill resolves required repos under `<topic-workspace-dir>/repos/<repo-name>` before finalizing `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`
+- **THEN** the skill resolves required repositories through semantic non-main `topic.repos.*` labels before finalizing `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`
 - **AND** the skill infers dependencies from inspected repo files before finalizing the derived gate
 - **AND** the derived gate may use inspected repo files to choose concrete Pixi install commands, Pixi run commands, scripts, imports, tools, and expected outputs
 - **AND** any repo acquired from an inferred source is warning-labeled in the derived gate before readiness is reported
@@ -273,12 +286,11 @@ The service environment setup skill SHALL present the Topic Workspace setup work
 #### Scenario: Derived gate defines Pixi verification commands
 - **WHEN** required repos are present or repo blockers are known
 - **THEN** the skill instructs the agent to generate or update `isomer-env-gate.md` with Pixi install commands and Pixi run commands that verify the user-specified runnable target
-- **AND** those Pixi commands are specific enough to run or inspect without reinterpreting the source gate
 
-#### Scenario: Pixi readiness follows user-specified runnable target
-- **WHEN** Pixi setup commands have completed
-- **THEN** the skill verifies readiness using the Pixi commands and checks from `isomer-env-gate.md`
-- **AND** readiness means the user-specified runnable target works, not merely that Pixi files exist
+#### Scenario: Temporary setup files stay local
+- **WHEN** environment setup needs disposable intermediate files
+- **THEN** the skill uses resolved `topic.tmp` or another explicitly temporary path
+- **AND** it reports that the material is local, ignored, disposable, not shared, and not durable evidence
 
 ### Requirement: Topic Workspace Environment Setup Independence
 The service environment setup skill SHALL treat Topic Workspace development environment readiness as independent from Topic Agent Team Profile material, Agent Team Instance records, agent roles, and agent count.
@@ -296,11 +308,11 @@ The service environment setup skill SHALL treat Topic Workspace development envi
 
 #### Scenario: Project diagnostics are classified by environment relevance
 - **WHEN** a read-only Project validation or doctor command reports diagnostics that mention missing Topic Agent Team Profile material, missing Agent Team Instances, missing Agent Workspaces, roles, or launch readiness
-- **THEN** `isomer-srv-topic-env-setup` MAY report those diagnostics as unrelated or downstream context
-- **AND** it MUST NOT treat those diagnostics as blockers unless they also prevent Topic Workspace discovery, Pixi binding resolution, source gate reading, dependency setup, repo checks, or Pixi-scoped verification
+- **THEN** `isomer-srv-topic-env-setup` reports those diagnostics as unrelated or downstream context
+- **AND** it does not treat those diagnostics as blockers unless they also prevent Topic Workspace discovery, Pixi binding resolution, source gate reading, dependency setup, repo checks, or Pixi-scoped verification
 
 #### Scenario: Single-agent runnable target is the setup model
-- **WHEN** `isomer-srv-topic-env-setup` interprets `env-gate.md`
+- **WHEN** `isomer-srv-topic-env-setup` interprets `topic.intent.topic_env_requirements`
 - **THEN** it frames readiness as whether one agent or operator can run the commands needed to conduct the research inside the selected Topic Workspace
 - **AND** it does not require proof that a multi-agent team can be launched or coordinated
 
@@ -320,17 +332,13 @@ The service environment setup skill SHALL resolve semantic Topic Workspace surfa
 ### Requirement: Service Setup Preserves Custom Topic Layouts
 The service environment setup skill SHALL accept safe manifest-backed Topic Workspace layout bindings that differ from the default layout.
 
-#### Scenario: Custom repo root is accepted
-- **WHEN** the Topic Workspace Manifest binds setup repositories to a safe project-local path that differs from `<topic-workspace>/repos/<repo-name>`
-- **THEN** the service uses that binding for repository checks and setup evidence
+#### Scenario: Custom repo path is accepted
+- **WHEN** the Topic Workspace Manifest binds setup repositories to safe project-local `topic.repos.*` paths that differ from `<topic-workspace>/repos/extern/<repo-label-path>`
+- **THEN** the service uses those bindings for repository checks and setup evidence
 
 #### Scenario: Custom gate root is accepted
 - **WHEN** the Topic Workspace Manifest binds user intent gate surfaces to safe project-local paths
 - **THEN** the service reads, derives, writes, and reports gate material through those bindings
-
-#### Scenario: Unsafe custom binding blocks setup
-- **WHEN** a required semantic binding resolves outside the Project root, inside `.isomer-labs/`, or into another Topic Workspace without an accepted policy
-- **THEN** the service reports a blocker and does not mutate setup files at that path
 
 ### Requirement: Service Output Reports Semantic Evidence
 The service environment setup skill SHALL report semantic path evidence in its output.
@@ -359,12 +367,12 @@ The Topic Workspace environment setup service SHALL remain responsible for Topic
 
 #### Scenario: Topic setup does not create agent worktrees
 - **WHEN** `isomer-srv-topic-env-setup setup-topic-env` runs
-- **THEN** it does not read or create `user-intent/src/agent-env-gate.md`
+- **THEN** it does not read or create `topic.intent.agent_env_requirements`
 - **AND** it does not create Agent Workspace Git worktrees, per-agent branches, Agent Workspace boundary material, or `isomer-agent-env-gate.md`
 
 #### Scenario: Topic setup output can be consumed downstream
 - **WHEN** topic env setup reports readiness
-- **THEN** its output and `user-intent/derived/isomer-env-gate.md` are suitable predecessor evidence for `isomer-srv-agent-env-setup`
+- **THEN** its output and `topic.env.topic_setup_target_spec` are suitable predecessor evidence for `isomer-srv-agent-env-setup`
 
 #### Scenario: Agent cwd failures route to downstream service
 - **WHEN** the Topic Workspace env passes from the Topic Workspace root but a user asks whether it passes from every Agent Workspace cwd
@@ -374,7 +382,7 @@ The Topic Workspace environment setup service SHALL remain responsible for Topic
 The Topic Workspace environment setup service SHALL keep its derived env gate replayable enough for downstream per-agent cwd verification.
 
 #### Scenario: Derived gate records replayable commands
-- **WHEN** `derive-env-gate` writes `user-intent/derived/isomer-env-gate.md`
+- **WHEN** `derive-env-gate` writes `topic.env.topic_setup_target_spec`
 - **THEN** verification commands use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`
 - **AND** external runtime wiring is recorded explicitly rather than relying on ambient shell state
 
@@ -390,12 +398,17 @@ The Topic Workspace environment setup service SHALL keep its derived env gate re
 ### Requirement: Topic Env Setup Consumes Storage Contract
 The service environment setup skill SHALL resolve setup file surfaces through Workspace Path Resolution before reading, writing, or reporting them.
 
+#### Scenario: Topic env intent and target labels are resolved
+- **WHEN** topic environment setup needs source intent or a derived target spec in the normal operator flow
+- **THEN** it resolves `topic.intent.topic_env_requirements` and `topic.env.topic_setup_target_spec` through Workspace Path Resolution
+- **AND** it reports the semantic labels, resolved paths, storage profiles, sources, source details, and diagnostics in service output
+
 #### Scenario: Setup repo uses resolved semantic label
 - **WHEN** topic environment setup checks or mutates the setup repository surface
 - **THEN** it uses the resolved semantic label for that surface, reports source metadata, and does not assume `repos/topic-main` or another default physical path
 
 #### Scenario: Custom setup surface is accepted
-- **WHEN** `env-gate.md`, setup notes, or operator input names a valid `custom.*` semantic label for setup material
+- **WHEN** `topic.intent.topic_env_requirements`, setup notes, or operator input names a valid `custom.*` semantic label for setup material
 - **THEN** the service resolves that label, validates safety and storage-profile-derived traits, and uses the resolved path for the dependent setup step
 
 #### Scenario: Unknown setup label blocks mutation
@@ -412,4 +425,68 @@ The service environment setup skill SHALL use storage-profile-derived lifecycle 
 #### Scenario: Durable custom label may carry setup evidence
 - **WHEN** a custom semantic label uses a `storage_profile` with durable lifecycle and passes safety validation
 - **THEN** the service may report files under that label as changed files or setup evidence with semantic label and source metadata
+
+### Requirement: Topic Env Setup Stops at Topic Workspace Readiness
+The service environment setup skill SHALL treat Topic Workspace Pixi readiness as its final readiness boundary and SHALL NOT own Agent Workspace cwd readiness.
+
+#### Scenario: Topic setup reports predecessor evidence
+- **WHEN** `isomer-srv-topic-env-setup` completes `setup-topic-env` or `verify-env-gate`
+- **THEN** it reports Topic Workspace predecessor evidence including the resolved Topic Workspace, Topic Workspace Pixi binding, source `env-gate.md`, derived `isomer-env-gate.md`, dependency and enclosure records, topic-root verification status, commands run, changed files, blockers, and next action
+- **AND** it does not report `overall_readiness_status`, `readiness_by_agent`, Agent Names, Agent Workspace paths, or `isomer-agent-env-gate.md` evidence
+
+#### Scenario: Agent gate files are outside topic setup
+- **WHEN** `isomer-srv-topic-env-setup` is invoked for Topic Workspace setup or verification
+- **THEN** it does not read `user-intent/src/agent-env-gate.md`
+- **AND** it does not create or update `user-intent/derived/isomer-agent-env-gate.md`
+- **AND** it does not verify commands from any resolved `agent.workspace` cwd
+
+#### Scenario: Per-agent readiness is a follow-up, not a topic setup call
+- **WHEN** topic setup output needs to mention per-Agent Workspace readiness
+- **THEN** it states that per-agent readiness is not checked by `isomer-srv-topic-env-setup`
+- **AND** it may name `isomer-srv-agent-env-setup` as an operator follow-up only when the caller requested per-agent proof or launch-facing Agent Workspace readiness
+- **AND** it does not present the follow-up as a topic env setup subcommand, delegated call, or readiness dependency
+
+### Requirement: Topic Env Call Graph Does Not Show Downstream Agent Readiness Ownership
+The service environment setup skill SHALL be represented in skill call graphs as producing Topic Workspace predecessor evidence, not as calling Agent Workspace readiness setup.
+
+#### Scenario: Topic env to agent env edge is absent
+- **WHEN** `skillset/callgraph.md` documents top-level skill-to-skill call paths
+- **THEN** it does not include a normal call path from `isomer-srv-topic-env-setup` to `isomer-srv-agent-env-setup`
+- **AND** any note about per-agent readiness describes it as a caller or operator decision outside topic env setup
+
+#### Scenario: Repair edge remains agent-owned
+- **WHEN** the call graph includes the relationship between `isomer-srv-agent-env-setup` and `isomer-srv-topic-env-setup`
+- **THEN** it represents the repair route as `isomer-srv-agent-env-setup` requiring or routing missing or stale Topic Workspace environment predecessor evidence back to `isomer-srv-topic-env-setup`
+
+### Requirement: Topic Env Source Intent is High Level
+The service environment setup skill SHALL treat `topic.intent.topic_env_requirements` as high-level user-editable source intent and SHALL place operational setup detail in `topic.env.topic_setup_target_spec`. In the normal operator flow those surfaces are resolved through Workspace Path Resolution; manual service invocation can supply an explicit target spec file, prompt, or context.
+
+#### Scenario: High-level tool requirement is valid source intent
+- **WHEN** `topic.intent.topic_env_requirements` says that a tool, library, repository, dataset, runtime, or capability must be available for the topic
+- **THEN** the service treats that statement as sufficient source intent for deriving operational checks when the requirement is understandable
+- **AND** it does not require the source file to name exact commands
+
+#### Scenario: Commands belong in the derived gate
+- **WHEN** the service derives Pixi install commands, verification commands, expected outputs, package-source choices, repo acquisition steps, or execution logs
+- **THEN** it resolves `topic.env.topic_setup_target_spec` and writes those details to the resolved path
+- **AND** it does not rewrite `topic.intent.topic_env_requirements` with generated implementation detail
+
+### Requirement: Topic Env Target Spec Precedes Materialization
+The service environment setup skill SHALL require a derived topic env target spec before it materializes Topic Workspace environment changes.
+
+#### Scenario: Derived topic env target spec is the materialization input
+- **WHEN** `setup-topic-env` runs from `topic.intent.topic_env_requirements`
+- **THEN** it creates or updates `topic.env.topic_setup_target_spec` before installing dependencies, acquiring repositories, applying Pixi mutations, or running verification commands
+- **AND** those materialization actions use the derived target spec as their execution contract
+
+#### Scenario: Explicit topic env target spec is accepted
+- **WHEN** `isomer-srv-topic-env-setup` is invoked manually with an explicit derived gate file, target-spec prompt, or target-spec context
+- **THEN** it treats that input as the topic env target spec after checking that it is operational enough to drive service-safe materialization
+- **AND** it records the target spec source in output
+- **AND** it does not require `topic.intent.topic_env_requirements` solely because the invocation is manual
+
+#### Scenario: Materialization blocks when target spec is missing
+- **WHEN** the service cannot create, load, or validate a usable derived topic env target spec
+- **THEN** it reports a blocker
+- **AND** it does not materialize Topic Workspace environment changes from the high-level source intent alone
 

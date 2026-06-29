@@ -58,7 +58,7 @@ The service skill SHALL require Topic Workspace Pixi readiness evidence before i
 
 #### Scenario: Topic env gate is required
 - **WHEN** `require-topic-env-ready` runs
-- **THEN** it checks for the resolved Topic Workspace Pixi manifest path, selected Pixi environment, `pixi.lock`, `.pixi/`, and `user-intent/derived/isomer-env-gate.md`
+- **THEN** it checks for the resolved Topic Workspace Pixi manifest path, selected Pixi environment, `pixi.lock`, `.pixi/`, and `topic.env.topic_setup_target_spec`
 - **AND** it reports blockers when any predecessor is missing or not ready
 
 #### Scenario: Topic env setup is not duplicated
@@ -68,7 +68,7 @@ The service skill SHALL require Topic Workspace Pixi readiness evidence before i
 
 #### Scenario: Topic env gate is consumed as predecessor evidence
 - **WHEN** the service derives the agent env gate
-- **THEN** it references `user-intent/derived/isomer-env-gate.md` as the topic-level predecessor gate
+- **THEN** it references `topic.env.topic_setup_target_spec` as the topic-level predecessor gate
 - **AND** it does not duplicate or reinterpret dependency installation policy as a separate per-agent dependency plan
 
 ### Requirement: Invocation and Provenance Posture
@@ -93,17 +93,29 @@ The service skill SHALL allow direct Project Operator Session invocation for sta
 - **THEN** it still does not create Workspace Runtime records, Agent Team Instance records, Agent Instance records, Houmao launch material, or Execution Adapter material
 
 ### Requirement: Source Agent Env Gate
-The service skill SHALL read a user-authored Agent Workspace source gate at `user-intent/src/agent-env-gate.md` before deriving, configuring, or verifying Agent Workspace cwd readiness.
+The service skill SHALL use a derived agent env target spec before configuring or verifying Agent Workspace cwd readiness. The target spec can come from `topic.env.agent_setup_target_spec`, derivation from `topic.intent.agent_env_requirements`, or explicit manual input.
 
-#### Scenario: Source agent gate is required
+#### Scenario: Source agent gate can derive target spec
 - **WHEN** `read-agent-env-gate` runs
-- **THEN** it resolves `<topic-workspace-dir>/user-intent/src/agent-env-gate.md`
-- **AND** it reports a blocker when that file is missing, unreadable, or not specific enough to derive required Agent Workspace cwd commands
+- **THEN** it resolves `topic.intent.agent_env_requirements`
+- **AND** it treats the resolved file as the source of user intent for deriving `topic.env.agent_setup_target_spec` when no explicit target spec is supplied
+
+#### Scenario: Missing source agent gate blocks only when no target spec is supplied
+- **WHEN** `topic.intent.agent_env_requirements` is missing, unreadable, or too vague to derive required Agent Workspace cwd checks
+- **AND** no explicit derived agent env target spec is supplied
+- **THEN** the service reports a blocker instead of claiming Agent Workspace environment readiness
+- **AND** it asks for `resolve-agent-env-gate` to create or repair the source gate, or for the caller to provide an explicit target spec, before materialization
+
+#### Scenario: Legacy source agent gate path is not canonical
+- **WHEN** `<topic-workspace-dir>/user-intent/src/agent-env-gate.md` exists but `<topic-workspace-dir>/intent/src/agent-env-gate.md` is missing
+- **THEN** the service reports a legacy-path blocker naming `topic.intent.agent_env_requirements` and its default-layout path
+- **AND** it does not silently treat the legacy file as the canonical source gate
 
 #### Scenario: Source agent gate is interpreted
 - **WHEN** `read-agent-env-gate` reads the source gate
-- **THEN** it extracts the source intent, required command set, expected results, success criteria, Topic Main Repository configuration requirements, agent plan constraints, cwd assumptions, and blockers
-- **AND** it treats passing as every required command being runnable from each planned `agent.workspace` cwd through the resolved Topic Workspace Pixi environment
+- **AND** no explicit derived agent env target spec is supplied
+- **THEN** it extracts the source intent, high-level required capabilities, expected results or success criteria when present, Topic Main Repository configuration requirements, agent plan constraints, cwd assumptions, and blockers
+- **AND** it treats passing as every derived required command being runnable from each planned `agent.workspace` cwd through the resolved Topic Workspace Pixi environment
 
 #### Scenario: Source agent gate stays inside static setup scope
 - **WHEN** the source gate asks for Agent Instance creation, Workspace Runtime mutation, Houmao launch, Execution Adapter launch, live research execution, privileged host mutation, or research decisions
@@ -183,8 +195,8 @@ The service skill SHALL create or reuse one shared Topic Main Repository, config
 - **AND** it reports a blocker when the accepted base is ambiguous
 
 #### Scenario: Topic Main Repository is configured for the agent gate
-- **WHEN** `ensure-topic-main-repository` runs after `derive-agent-env-gate`
-- **THEN** it applies non-destructive Topic Main Repository configuration required by `user-intent/derived/isomer-agent-env-gate.md`
+- **WHEN** `ensure-topic-main-repository` runs after the derived agent env target spec is resolved
+- **THEN** it applies non-destructive Topic Main Repository configuration required by `topic.env.agent_setup_target_spec`
 - **AND** it records changed files, commands run, semantic path evidence, and blockers in service output and the derived gate execution log
 - **AND** it reports a blocker instead of deleting, resetting, cleaning, rewriting history, mutating topic dependencies, or applying ambiguous gate requirements
 
@@ -203,7 +215,7 @@ The service skill SHALL create or reuse one shared Topic Main Repository, config
 
 #### Scenario: Duplicate branch checkout is rejected
 - **WHEN** `per-agent/<agent-name>/main` is already checked out in another worktree of the Topic Main Repository
-- **THEN** the service reports a blocker and does not create a second worktree for that branch
+- **THEN** the service reports a blocker instead of force-moving or deleting the existing checkout
 
 ### Requirement: Agent Support Paths and Boundaries
 The service skill SHALL prepare or validate required agent support surfaces and advisory boundary material for each prepared Agent Workspace.
@@ -228,21 +240,25 @@ The service skill SHALL prepare or validate required agent support surfaces and 
 - **AND** it does not describe tmp or private runtime material as a sharing surface
 
 ### Requirement: Agent Env Gate File
-The service skill SHALL generate and maintain a topic-owned derived per-agent readiness gate at `user-intent/derived/isomer-agent-env-gate.md` from the source gate `user-intent/src/agent-env-gate.md`.
+The service skill SHALL resolve a derived per-agent readiness target spec before Agent Workspace materialization. In the normal operator flow, that target spec is `topic.env.agent_setup_target_spec`; in manual service invocation, it can be an explicit derived gate file, prompt, or context supplied by the caller.
 
-#### Scenario: Source and derived agent gate paths are paired
+#### Scenario: Source and derived agent gate paths are paired in operator flow
 - **WHEN** `derive-agent-env-gate` resolves gate paths
-- **THEN** it reads the source gate at `<topic-workspace-dir>/user-intent/src/agent-env-gate.md`
-- **AND** it writes the derived gate at `<topic-workspace-dir>/user-intent/derived/isomer-agent-env-gate.md`
+- **THEN** it reads the source gate at `topic.intent.agent_env_requirements`
+- **AND** it writes the derived gate at `topic.env.agent_setup_target_spec`
 
-#### Scenario: Gate file has fixed sections
-- **WHEN** `derive-agent-env-gate` writes the gate
+#### Scenario: Explicit agent target spec source is recorded
+- **WHEN** the service receives an explicit derived gate file, target-spec prompt, or target-spec context from a manual invocation
+- **THEN** it records that source in service output and in the execution log when a canonical derived gate is written
+
+#### Scenario: Target spec has fixed sections
+- **WHEN** the service generates or accepts the target spec
 - **THEN** the file includes sections named `Source Agent Gate`, `Topic Env Gate`, `Topic Pixi Binding`, `Topic Main Repository Configuration`, `Agent Plan`, `Semantic Paths`, `Worktree Plan`, `Verification Matrix`, `Expected Results`, `Blockers`, and `Execution Log`
 - **AND** every section is present even when the section content is `None.` or a short reason that it does not apply
 
 #### Scenario: Gate records per-agent cwd commands
-- **WHEN** verification commands are derived
-- **THEN** each command records the source `agent-env-gate.md` requirement, Agent Name, cwd as the resolved `agent.workspace`, the `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...` command, and expected result
+- **WHEN** verification commands are defined by the target spec
+- **THEN** each command records the source `topic.intent.agent_env_requirements` requirement, Agent Name, cwd as the resolved `agent.workspace`, the `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...` command, and expected result
 
 #### Scenario: Gate records path evidence
 - **WHEN** the gate records an Agent Workspace
@@ -263,7 +279,7 @@ The service skill SHALL verify the Topic Workspace environment from each planned
 
 #### Scenario: Passing means required commands run
 - **WHEN** `verify-agent-env-gate` reports Agent Name `alice` as ready
-- **THEN** every required command from `user-intent/derived/isomer-agent-env-gate.md` for `alice` has passed with the resolved `agent.workspace` as process cwd
+- **THEN** every required command from `topic.env.agent_setup_target_spec` for `alice` has passed with the resolved `agent.workspace` as process cwd
 - **AND** a command passing from the Topic Workspace root alone does not satisfy the agent gate
 
 #### Scenario: Cwd-friendly agent path query is verified
@@ -316,30 +332,23 @@ The implementation SHALL validate the service skill through repository skillset 
 
 #### Scenario: Unit validation covers required terms
 - **WHEN** unit validation for skillsets runs
-- **THEN** it fails if the service skill omits `user-intent/src/agent-env-gate.md`, `isomer-agent-env-gate.md`, `topic.repos.main`, `agent.workspace`, `pixi run --manifest-path`, per-agent cwd verification, or the no-runtime-mutation boundary
+- **THEN** it fails if the service skill omits `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, `topic.repos.main`, `agent.workspace`, `pixi run --manifest-path`, per-agent cwd verification, or the no-runtime-mutation boundary
 
 #### Scenario: OpenSpec validation passes
-- **WHEN** `openspec validate add-agent-env-setup-service-skill --strict` runs
+- **WHEN** `openspec validate refine-topic-intent-gates --strict` runs
 - **THEN** the change artifacts validate without schema or scenario-format errors
 
 ### Requirement: Agent Env Setup Consumes Storage Contract
-The Agent Workspace environment setup service SHALL resolve every target path through Workspace Path Resolution before mutating Git state, writing support files, or claiming readiness.
+The agent environment setup service skill SHALL resolve setup file surfaces through Workspace Path Resolution before reading, writing, or reporting them.
 
-#### Scenario: Agent workspace setup uses resolved labels
-- **WHEN** the service prepares an Agent Workspace for a planned Agent Name
-- **THEN** it resolves `agent.workspace`, `agent.isomer_managed`, `agent.runtime`, `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, `agent.inbox`, `agent.topic_readonly`, `agent.topic_writable`, `agent.links`, and `agent.tmp` through Workspace Path Resolution
+#### Scenario: Agent env intent and target labels are resolved
+- **WHEN** agent environment setup needs source intent, a derived agent target spec, or predecessor topic env evidence in the normal operator flow
+- **THEN** it resolves `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, and `topic.env.topic_setup_target_spec` through Workspace Path Resolution
+- **AND** it reports the semantic labels, resolved paths, storage profiles, sources, source details, and diagnostics in service output
 
-#### Scenario: Default worktree path is not assembled directly
-- **WHEN** the service creates or validates a Git worktree
-- **THEN** it uses the resolved `agent.workspace` path and resolved `topic.repos.main` path rather than assembling `agents/<agent-name>` and `repos/topic-main`
-
-#### Scenario: Custom agent support label is accepted
-- **WHEN** the Topic Workspace Manifest declares a valid agent-required `custom.*` support label needed by agent setup
-- **THEN** the service resolves that label for each relevant Agent Name and reports path, source, `storage_profile` id, storage-profile-derived traits, and blockers
-
-#### Scenario: Missing custom agent label blocks dependent setup
-- **WHEN** agent setup material names a custom semantic label that is not valid in the effective catalog
-- **THEN** the service reports a Workspace Path Resolution blocker and avoids mutating a guessed fallback directory
+#### Scenario: Explicit manual target spec records source
+- **WHEN** manual invocation supplies an explicit derived gate file, target-spec prompt, or target-spec context instead of a resolved semantic label
+- **THEN** the service records that explicit source and still resolves related semantic labels needed for Topic Workspace, Topic Main Repository, and Agent Workspace path evidence
 
 ### Requirement: Agent Env Setup Preserves Path Source Evidence
 The Agent Workspace environment setup service SHALL include path source evidence in readiness output for every semantic surface it uses.
@@ -351,4 +360,71 @@ The Agent Workspace environment setup service SHALL include path source evidence
 #### Scenario: Default layout profile source remains explicit
 - **WHEN** an agent setup path comes from `isomer-default.v1`
 - **THEN** the readiness output identifies the default layout profile source instead of presenting the concrete path as an authored contract
+
+### Requirement: Agent Env Setup Owns Agent Gate Readiness
+The agent environment setup service skill SHALL be the only service skill that reads the source Agent Workspace gate, derives the operational Agent Workspace gate, and claims per-Agent Workspace cwd readiness.
+
+#### Scenario: Agent setup reads source agent gate
+- **WHEN** per-Agent Workspace cwd readiness is requested
+- **THEN** `isomer-srv-agent-env-setup` reads `user-intent/src/agent-env-gate.md`
+- **AND** it treats that file as the source contract for what every authoritative planned Agent Workspace cwd must be able to run
+
+#### Scenario: Agent setup writes derived agent gate
+- **WHEN** `isomer-srv-agent-env-setup` derives operational readiness checks
+- **THEN** it writes or updates `user-intent/derived/isomer-agent-env-gate.md`
+- **AND** it records Agent Names, resolved `agent.workspace` paths, Topic Workspace Pixi binding evidence, verification matrix entries, expected results, blockers, and execution log details
+
+#### Scenario: Overall readiness requires all planned Agent Names
+- **WHEN** `isomer-srv-agent-env-setup` reports `overall_readiness_status: ready`
+- **THEN** every authoritative planned Agent Name has a valid worktree, required support paths, complete semantic path evidence, and passing verification commands from its resolved `agent.workspace` cwd
+- **AND** selected-agent verification remains partial evidence unless the full planned Agent Name matrix has passed
+
+### Requirement: Agent Env Setup Consumes Topic Env as Predecessor Evidence
+The agent environment setup service skill SHALL consume Topic Workspace Pixi readiness from topic env setup as predecessor evidence without duplicating topic dependency planning.
+
+#### Scenario: Topic env predecessor is required before agent proof
+- **WHEN** `isomer-srv-agent-env-setup` prepares or verifies Agent Workspace cwd readiness
+- **THEN** it requires the selected Topic Workspace Pixi binding, `user-intent/derived/isomer-env-gate.md`, and Topic Workspace predecessor readiness evidence before claiming Agent Workspace readiness
+
+#### Scenario: Missing topic dependency readiness routes repair back
+- **WHEN** `isomer-srv-agent-env-setup` finds missing, stale, blocked, or failed Topic Workspace dependency readiness
+- **THEN** it reports a repair next action naming `isomer-srv-topic-env-setup`
+- **AND** it does not mutate Topic Workspace dependencies, create per-agent Pixi manifests, create per-agent lockfiles, or create per-agent `.pixi/` directories by default
+
+#### Scenario: Topic-root pass is not agent readiness
+- **WHEN** `isomer-srv-agent-env-setup` reads Topic Workspace predecessor evidence
+- **THEN** it treats a topic-root `isomer-env-gate.md` pass as prerequisite evidence only
+- **AND** it still verifies the derived agent gate from each required `agent.workspace` cwd before reporting per-agent readiness
+
+### Requirement: Agent Env Source Intent is High Level
+The agent environment setup service skill SHALL treat `topic.intent.agent_env_requirements` as high-level user-editable source intent and SHALL place per-agent operational verification detail in `topic.env.agent_setup_target_spec`. In the normal operator flow those surfaces are resolved through Workspace Path Resolution; manual service invocation can supply an explicit target spec file, prompt, or context.
+
+#### Scenario: High-level per-agent requirement is valid source intent
+- **WHEN** `topic.intent.agent_env_requirements` says that every planned Agent Workspace cwd must support a tool, repository, runtime, dataset access posture, or development capability
+- **THEN** the service treats that statement as sufficient source intent for deriving operational checks when the requirement is understandable
+- **AND** it does not require the source file to name the exact per-agent command matrix
+
+#### Scenario: Per-agent commands belong in the derived gate
+- **WHEN** the service derives per-Agent Workspace commands, cwd assumptions, Topic Main Repository configuration, expected outputs, readiness matrices, or execution logs
+- **THEN** it resolves `topic.env.agent_setup_target_spec` and writes those details to the resolved path
+- **AND** it does not rewrite `topic.intent.agent_env_requirements` with generated implementation detail
+
+### Requirement: Agent Env Target Spec Precedes Materialization
+The agent environment setup service skill SHALL require a derived agent env target spec before it materializes Topic Main Repository configuration, Agent Workspace worktrees, or per-agent cwd verification changes.
+
+#### Scenario: Derived agent env target spec is the materialization input
+- **WHEN** `setup-agent-env` runs from `topic.intent.agent_env_requirements`
+- **THEN** it creates or updates `topic.env.agent_setup_target_spec` before configuring the Topic Main Repository, creating or validating Agent Workspace worktrees, or running per-agent cwd verification commands
+- **AND** those materialization actions use the derived target spec as their execution contract
+
+#### Scenario: Explicit agent env target spec is accepted
+- **WHEN** `isomer-srv-agent-env-setup` is invoked manually with an explicit derived gate file, target-spec prompt, or target-spec context
+- **THEN** it treats that input as the agent env target spec after checking that it is operational enough to drive service-safe materialization and per-agent cwd verification
+- **AND** it records the target spec source in output
+- **AND** it does not require `topic.intent.agent_env_requirements` solely because the invocation is manual
+
+#### Scenario: Materialization blocks when target spec is missing
+- **WHEN** the service cannot create, load, or validate a usable derived agent env target spec
+- **THEN** it reports a blocker
+- **AND** it does not materialize Agent Workspace environment readiness from the high-level source intent alone
 

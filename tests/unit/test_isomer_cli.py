@@ -2398,14 +2398,21 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(str(topic_workspace / "repos" / "topic-main"), data["path"]["path"])
         self.assertTrue((topic_workspace / "source" / "main").is_dir())
 
+        status, output = self.run_cli(["project", "repos", "create", "main", "--json"], cwd=topic_workspace)
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertFalse((topic_workspace / "repos" / "main").exists())
+        self.assertTrue(any(diagnostic["field"] == "topic.repos.main" for diagnostic in data["diagnostics"]))
+
         status, output = self.run_cli(["project", "repos", "create", "inner_group.some_repo_name", "--json"], cwd=topic_workspace)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertTrue((topic_workspace / "repos" / "inner_group" / "some_repo_name").is_dir())
+        self.assertTrue((topic_workspace / "repos" / "extern" / "inner_group" / "some_repo_name").is_dir())
         status, output = self.run_cli(["project", "paths", "get", "topic.repos.inner_group.some_repo_name", "--json"], cwd=topic_workspace)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("topic_repo", data["path"]["storage_profile"])
+        self.assertEqual(str(topic_workspace / "repos" / "extern" / "inner_group" / "some_repo_name"), data["path"]["path"])
 
     def test_topic_workspace_manifest_custom_bindings_and_diagnostics(self) -> None:
         root = self.make_root()

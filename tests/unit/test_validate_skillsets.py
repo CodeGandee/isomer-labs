@@ -433,7 +433,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         reference_terms = {
             "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.repos.main`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, and each path source.",
-            "ensure-topic-repos.md": "Use the resolved topic repository root from `semantic_paths`; report semantic label and path source. Do not place task repos outside the resolved root.",
+            "ensure-topic-repos.md": "Use resolved non-main `topic.repos.*` paths from `semantic_paths`; report semantic label, path, and path source. Do not place task repos outside the resolved semantic path, and default helper-created repos under `repos/extern/...`.",
             "read-env-gate.md": "Resolve and read `topic.intent.topic_env_requirements`. Interpret the runnable target as what one agent or operator must run.",
             "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec.",
             "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy.",

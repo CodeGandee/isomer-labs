@@ -858,8 +858,24 @@ def _cmd_repos_create(
     replace_existing: bool,
 ) -> int:
     semantic_label = repo_label if repo_label.startswith("topic.repos.") else f"topic.repos.{repo_label}"
+    if semantic_label == "topic.repos.main" and path is None:
+        diagnostics = [
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Topic Workspace Manifest",
+                field=semantic_label,
+                message=(
+                    "`topic.repos.main` is a built-in Topic Main Repository label. "
+                    "Use `project paths materialize-default --label topic.repos.main` or "
+                    "`project paths register topic.repos.main --path <path> --storage-profile topic_repo`."
+                ),
+            )
+        ]
+        payload: dict[str, Any] = {"ok": False, "mutated": False, "manifest": None, "created_paths": []}
+        return _emit("repos create", options, payload, diagnostics, [])
     repo_suffix = semantic_label.removeprefix("topic.repos.")
-    default_path = "repos/" + "/".join(repo_suffix.split("."))
+    default_path = "repos/extern/" + "/".join(repo_suffix.split("."))
     return _cmd_paths_register(
         options,
         semantic_label,

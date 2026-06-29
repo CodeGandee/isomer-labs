@@ -479,8 +479,9 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
     ),
     "ensure-topic-repos.md": (
         "semantic_paths",
-        "resolved topic repository root",
-        "semantic label and path source",
+        "non-main `topic.repos.*`",
+        "repos/extern",
+        "semantic label, path, and path source",
         "Do not place task repos",
     ),
     "setup-topic-env.md": (

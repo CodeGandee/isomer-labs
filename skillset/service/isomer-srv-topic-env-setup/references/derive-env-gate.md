@@ -79,7 +79,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `## Runnable Target` should name the desired command or behavior that must work after setup.
 
-`## Repo Requirements` should list repo names, paths under `repos/<repo-name>`, sources, and inspection notes.
+`## Repo Requirements` should list repo names, semantic `topic.repos.*` labels, resolved paths, sources, and inspection notes. For helper-created non-main topic repos, use the default `repos/extern/<repo-label-path>` location unless an explicit safe binding already exists.
 
 `## Inferred Source Warnings` should list inferred repo sources and the reason each was chosen. Use `None.` only when no repo source was inferred.
 
