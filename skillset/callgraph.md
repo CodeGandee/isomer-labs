@@ -37,6 +37,7 @@ flowchart TD
     HOU["isomer-admin<br/>houmao-interop"]:::isolated
     PKG["isomer-srv<br/>resolve-pkg-repo"]:::isolated
     NVIDIA["isomer-misc<br/>nvidia-tools"]:::isolated
+    BOUNDED["isomer-misc<br/>bounded-run-tips"]:::isolated
 ```
 
 ## Calling Conditions
@@ -53,4 +54,4 @@ flowchart TD
 
 `isomer-srv-topic-env-setup` may report `per_agent_readiness_status: not checked` and name an operator follow-up when the caller asks about Agent Workspace proof. That is not a skill-to-skill call path, so it is not represented as an edge.
 
-The isolated skills in this graph do not make explicit skill-to-skill calls inside the inspected `misc`, `operator`, and `service` subtree. `isomer-admin-houmao-interop` answers Houmao bridge questions, `isomer-srv-resolve-pkg-repo` resolves package repositories and channels, and `isomer-misc-nvidia-tools` provides CUDA/NVIDIA build preferences.
+The isolated skills in this graph do not make explicit skill-to-skill calls inside the inspected `misc`, `operator`, and `service` subtree. `isomer-admin-houmao-interop` answers Houmao bridge questions, `isomer-srv-resolve-pkg-repo` resolves package repositories and channels, `isomer-misc-nvidia-tools` provides CUDA/Pixi environment setup preferences, and `isomer-misc-bounded-run-tips` provides bounded execution guidance for heavy operations.

@@ -10,7 +10,7 @@ Recover these before asking the user:
 | --- | --- |
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
 | Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`, whether derived from source intent or supplied as an explicit manual target spec. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
-| Dependency plan, resource check plan, enclosure strategy, and Pixi install commands | Read from the target spec's `## Dependency Plan`, `## Resource Check Plan`, and `## Pixi Install Commands` sections, including the selected Python version, version evidence, starter Python dependencies, enclosure classification, heavy-command classification, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, or missing enclosure strategy for a required dependency or runtime need. |
+| Dependency plan, resource check plan, enclosure strategy, and Pixi install commands | Read from the target spec's `## Dependency Plan`, `## Resource Check Plan`, and `## Pixi Install Commands` sections, including the selected Python version, version evidence, starter Python dependencies, enclosure classification, heavy-command classification, bounded-run guidance source, generic best-effort fallback evidence when used, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, missing bounded-run source for a heavy setup command, or missing enclosure strategy for a required dependency or runtime need. |
 | Package-source override or resolution evidence | Optional. Use only when the prompt or derived gate explicitly names a package source override, when package-specific rules from `isomer-misc-pkg-specifics` apply, or when `isomer-srv-resolve-pkg-repo` evidence is needed because repository, mirror, registry, or channel reachability is uncertain. Otherwise follow **Package Installation Routing** in this page. |
 
 ## Workflow
@@ -51,7 +51,8 @@ When this subcommand is selected, execute the following steps in order.
    - When the derived gate or package-resolution evidence selects the `nvidia` channel, add it with `pixi workspace channel add --manifest-path <manifest_path> --prepend nvidia` before adding those packages.
    - For NVIDIA official packages, use `nvidia` channel first, PyPI second, and `conda-forge` third unless package-specific rules say otherwise.
    - Record any fallback to PyPI, `conda-forge`, or another channel.
-   - If CUDA architecture targets, CUDA/C++ build environment choices, `nvcc` flags, or build parallelism need interpretation, use `isomer-misc-nvidia-tools` preference evidence before converting them into setup commands.
+   - If CUDA architecture targets, `nvcc` flags, or build parallelism need interpretation, use `isomer-misc-bounded-run-tips` subcommand `cuda-compile` evidence before converting them into setup commands.
+   - If CUDA/C++ Pixi environment choices or NVIDIA package/runtime wiring need interpretation, use `isomer-misc-nvidia-tools` evidence.
 13. **Record package-specific installation evidence when needed**:
    - Use the selected `isomer-misc-pkg-specifics` page when a named library has known package-source choices, CPU/GPU variants, platform constraints, accelerator runtimes, or runtime checks.
    - Record the selected package-specific reference and evidence in the target spec.
@@ -69,6 +70,8 @@ When this subcommand is selected, execute the following steps in order.
    - Record the lower-portability warning.
 17. **Check resources before heavy setup commands**:
    - Apply this before setup commands that compile code, build native extensions, download full datasets, extract large archives, run model inference, or start broad test suites.
+   - Treat the generated `## Resource Check Plan` as the execution contract for heavy setup commands. It must name the bounded-run guidance source, either a matching `isomer-misc-bounded-run-tips` subcommand or explicit generic best-effort judgment.
+   - If the heavy setup command lacks a bounded-run guidance source, lightweight probes, capacity signals, bounded real setup command, expected result, or blocker condition, stop with a blocker and ask for `derive-env-gate` to repair `topic.env.topic_setup_target_spec`.
    - Use lightweight read-only probes such as CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
    - Run the bounded real setup path named by the target spec, such as reduced build parallelism, a selected native-extension target, sample data, reduced model/input size, or metadata-limited acquisition when that path is needed to make later verification meaningful.
    - If capacity is insufficient, unclear, or already busy, do not substitute an unrelated smoke test for the required setup path; record `resource_check_status: blocked` with the reason and the smallest real-path command that would be run when capacity is available.
@@ -118,7 +121,7 @@ Apply this route before mutating the Pixi manifest for any package installation 
 
 When source reachability is uncertain, a local mirror or private registry is likely configured, a local package store may exist, or NVIDIA channel choice is policy-relevant, use `isomer-srv-resolve-pkg-repo` to choose the reachable repository, registry, channel, or local source before dependency mutation. If the environment gate or manifest already fixes the source and no reachability concern exists, record that fixed source instead of adding a separate resolution step.
 
-Use `isomer-misc-nvidia-tools` for CUDA architecture targets, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `nvcc` flags, CUDA/C++ Pixi build environment preferences, and CUDA build parallelism. Topic env setup records the resulting setup evidence in `topic.env.topic_setup_target_spec`; it should not expand into a general NVIDIA build guide.
+Use `isomer-misc-bounded-run-tips` before local generic resource judgment for heavy setup commands. Use subcommand `cuda-compile` for CUDA architecture targets, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `nvcc` flags, and CUDA build parallelism. If no bounded-run tips subcommand applies, record generic best-effort judgment with probes, capacity signals, limits, bounded command, expected result, and blocker condition. Use `isomer-misc-nvidia-tools` for CUDA/C++ Pixi build environment preferences and NVIDIA package/runtime wiring. Topic env setup records the resulting setup evidence in `topic.env.topic_setup_target_spec`; it should not expand into a general NVIDIA build guide.
 
 ## Environment Enclosure Ladder
 
@@ -184,7 +187,7 @@ Report `blocked` when:
 - a starter Python dependency cannot be resolved or installed;
 - a dependency cannot be inferred, resolved, or installed;
 - a required dependency or runtime need lacks an enclosure strategy in `topic.env.topic_setup_target_spec`;
-- a required heavy setup command lacks a resource check plan, lacks a bounded real-path setup command, or would overload the host even in bounded form;
+- a required heavy setup command lacks a resource check plan, lacks a bounded-run guidance source, lacks generic best-effort fallback evidence when no bounded-run tips subcommand applies, lacks a bounded real-path setup command, or would overload the host even in bounded form;
 - a Python package must use Pixi/Conda but the reason is unknown;
 - a package-source ladder step is skipped without evidence;
 - a channel or package source cannot be reached or cannot be resolved through fixed evidence or `isomer-srv-resolve-pkg-repo`;

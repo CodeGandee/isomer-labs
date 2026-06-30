@@ -27,6 +27,8 @@ When this subcommand is selected, execute the following steps in order.
 3. **Translate or validate operations**:
    - Preserve every source-intent runnable target as either a verification target or a named blocker; do not narrow a requested build, inference, dataset, or benchmark target into an unrelated smoke test.
    - Convert source intent into concrete topic-main requirements, canonical external repo requirements, projection access intent, dependency plan, enclosure strategy, bounded real-path resource check plan, Pixi install commands, verification commands, expected results, and blockers.
+   - Classify each setup and verification item as light or heavy before writing `## Resource Check Plan`.
+   - For every heavy item, consult `isomer-misc-bounded-run-tips` first for an applicable subcommand or recipe. If one matches, apply the selected guidance and record the skill/subcommand as the bounded-run guidance source. If none matches, write an explicit generic best-effort bounded plan that balances system resource utilization and crash prevention while still exercising the source-intent path.
    - Or validate that the explicit target spec already contains those details.
 4. **Apply dependency and enclosure policy**:
    - Include Python as the Topic Workspace glue language.
@@ -36,7 +38,8 @@ When this subcommand is selected, execute the following steps in order.
    - Use Pixi/Conda for native tools and binary/runtime dependencies.
    - Record package source evidence.
    - Consult `isomer-srv-resolve-pkg-repo` when repository, mirror, registry, or channel reachability is a material decision.
-   - Consult `isomer-misc-nvidia-tools` when CUDA architecture or CUDA/C++ build preferences are needed.
+   - Consult `isomer-misc-bounded-run-tips` before local generic resource judgment for every heavy setup or verification item; use subcommand `cuda-compile` when CUDA architecture, `nvcc`, or CUDA build parallelism choices are needed.
+   - Consult `isomer-misc-nvidia-tools` only when CUDA/C++ Pixi environment setup or NVIDIA package/runtime wiring is needed.
    - Classify every dependency or runtime need with **Environment Enclosure Strategy**.
 5. **Write or update the fixed Markdown template** from **Template**:
    - Write at the resolved `topic.env.topic_setup_target_spec` path when deriving from source intent.
@@ -93,7 +96,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Treat `## Gate Checklist` as the required readiness work contract, not a progress decoration. Every item in this section is required for `readiness_status: ready`.
 - Use Markdown checkboxes for required actionable gate work: `- [ ]` before work runs and `- [x]` only after evidence exists.
 - Include setup items, repo checks, projection checks, dependency installation, resource probes, bounded real-path verification commands, expected-result checks, and blocker-resolution items.
-- For each required checklist item, state the pass condition, evidence source, and blocker condition either in the item text or in the matching `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, `## Blockers`, or `## Execution Log` entry.
+- For each required checklist item, state the pass condition, evidence source, bounded-run guidance source when heavy, and blocker condition either in the item text or in the matching `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, `## Blockers`, or `## Execution Log` entry.
 - Keep optional diagnostics and supporting smoke checks outside `## Gate Checklist`; if a smoke check is included in the checklist, its item text must make clear that only the smoke check is required.
 - Keep unchecked items visible when they are blocked, unsafe, or not yet run; explain the reason in `## Blockers` or `## Execution Log`.
 - Do not mark a checkbox complete because a weaker smoke test passed unless the checkbox itself was only for that smoke test, or the user explicitly records a downgrade from the original critical-path item.
@@ -137,7 +140,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 - Classify each setup and verification command as light or heavy.
 - Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy.
-- For each heavy command, name the lightweight probes, capacity signals, bounded real-path command, and blocker condition.
+- For each heavy command, consult `isomer-misc-bounded-run-tips` before writing local generic guidance.
+- When a bounded-run tips subcommand applies, record the matched skill/subcommand, the selected lightweight probes, capacity signals, limits, bounded real-path command, expected result, and blocker condition.
+- When no bounded-run tips subcommand applies, record the source as generic best-effort judgment, then name the probes, capacity signals, limits, bounded real-path command, expected result, and blocker condition.
 - Prefer fewer build jobs, selected kernel targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, metadata-limited downloads, selected tests, and short benchmark cases over full expensive runs unless the user explicitly requires the full run and resources are clearly idle.
 - Do not accept a simple smoke test that misses the source-intent heavy path as readiness evidence.
 
@@ -152,6 +157,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 - List exact Pixi commands that prove the runnable target works.
 - Ensure each source-intent runnable target has a corresponding verification command, bounded real-path command, or blocker.
+- For heavy verification commands, align the command with the `## Resource Check Plan` guidance source and bounded limits instead of inventing an unrecorded full-scale command.
 - Include recorded environment variables, sourced scripts, or runtime paths inside the Pixi-run command when needed.
 - Keep Topic Workspace readiness topic-scoped; do not derive per-Agent Workspace verification here and do not write `topic.env.agent_setup_target_spec`.
 
@@ -166,6 +172,7 @@ Example for a CUDA kernel topic:
 
 - State pass/fail criteria.
 - State expected outputs, files, command output snippets, metrics, or runtime signals.
+- For heavy items, include the expected evidence that the bounded real-path command exercised the source-intent path, not merely a supporting smoke check.
 
 ### Blockers
 

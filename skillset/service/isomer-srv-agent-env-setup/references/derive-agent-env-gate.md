@@ -33,6 +33,7 @@ When this subcommand is selected, execute the following steps in order.
    - For every authoritative Agent Name, record cwd as the resolved `agent.workspace`.
    - Record each command as `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
    - Classify heavy commands and repeated full-matrix checks in `## Resource Check Plan`, and design bounded real-path variants that still exercise the requested command path.
+   - For every heavy per-agent cwd command, consult `isomer-misc-bounded-run-tips` first for an applicable subcommand or recipe. If one matches, apply the selected guidance and record the skill/subcommand as the bounded-run guidance source. If none matches, write an explicit generic best-effort bounded plan that balances useful verification against host crash prevention while still exercising the source-agent cwd path.
 5. **Preserve cwd assumptions** from the topic env gate:
    - If a topic env command is topic-root-only or repo-specific and cannot run from an Agent Workspace cwd, record `gate-cwd-incompatible` or an equivalent blocker instead of false readiness.
 6. **Write or update the fixed Markdown template** from **Template**:
@@ -91,7 +92,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Treat `## Gate Checklist` as the required per-agent readiness work contract, not a progress decoration. Every item in this section is required for the relevant per-agent readiness status, and full-matrix items are required for `overall_readiness_status: ready`.
 - Use Markdown checkboxes for required actionable gate work: `- [ ]` before work runs and `- [x]` only after evidence exists.
 - Include predecessor checks, worktree checks, semantic path checks, projection visibility checks, resource probes, bounded real-path verification commands, expected-result checks, and blocker-resolution items.
-- For each required checklist item, state the pass condition, evidence source, affected Agent Name or matrix scope, and blocker condition either in the item text or in the matching `## Verification Matrix`, `## Expected Results`, `## Resource Check Plan`, `## Blockers`, or `## Execution Log` entry.
+- For each required checklist item, state the pass condition, evidence source, bounded-run guidance source when heavy, affected Agent Name or matrix scope, and blocker condition either in the item text or in the matching `## Verification Matrix`, `## Expected Results`, `## Resource Check Plan`, `## Blockers`, or `## Execution Log` entry.
 - Keep optional diagnostics and supporting smoke checks outside `## Gate Checklist`; if a smoke check is included in the checklist, its item text must make clear that only the smoke check is required.
 - Keep unchecked items visible when they are blocked, unsafe, partial, or not yet run; explain the reason in `## Blockers` or `## Execution Log`.
 - Do not mark all-agent readiness complete from selected-agent partial evidence.
@@ -142,13 +143,15 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 - List each Agent Name, source requirement, cwd, exact Pixi command, and expected result.
 - Use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
-- For heavy commands, selected-agent partial coverage or bounded inputs are allowed, but the command must still exercise the source-agent required path.
+- For heavy commands, selected-agent partial coverage or bounded inputs are allowed, but the command must still exercise the source-agent required path and align with the `## Resource Check Plan` guidance source.
 
 ### Resource Check Plan
 
 - Classify each per-agent verification command as light or heavy.
 - Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy.
-- For every heavy command, name lightweight probes, capacity signals, bounded real-path command, and blocker condition.
+- For every heavy command, consult `isomer-misc-bounded-run-tips` before writing local generic guidance.
+- When a bounded-run tips subcommand applies, record the matched skill/subcommand, selected lightweight probes, capacity signals, limits, bounded real-path command, affected Agent Name scope, expected result, and blocker condition.
+- When no bounded-run tips subcommand applies, record the source as generic best-effort judgment, then name probes, capacity signals, limits, bounded real-path command, affected Agent Name scope, expected result, and blocker condition.
 - Call out commands whose cost multiplies across every authoritative Agent Workspace.
 - Prefer selected-agent partial coverage, fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases unless the user explicitly requires the full expensive matrix and resources are clearly idle.
 - Do not accept a simple smoke test that misses the requested cwd command path as readiness evidence.
@@ -165,6 +168,7 @@ Example for per-agent CUDA cwd verification:
 - State pass/fail criteria for each matrix command.
 - State expected files, outputs, metrics, device visibility, projection visibility, or command output snippets.
 - State when selected-agent partial evidence is insufficient for `overall_readiness_status: ready`.
+- For heavy items, include the expected evidence that the bounded real-path command exercised the source-agent cwd command path, not merely a supporting smoke check.
 
 ### Blockers
 

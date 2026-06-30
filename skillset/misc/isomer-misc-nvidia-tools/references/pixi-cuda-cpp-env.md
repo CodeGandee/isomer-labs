@@ -11,11 +11,13 @@ When this subcommand is selected, execute the following steps in order.
 5. **Resolve C++ build tools** according to **C++ Toolchain Resolution**.
 6. **Resolve NVIDIA components** according to **NVIDIA Component Resolution**.
 7. **Configure build tasks** according to **CMake Task Preferences**.
-8. **Apply `nvcc-tips`** for architecture targets and build parallelism.
+8. **Route compile bounding separately**:
+   - Use `isomer-misc-bounded-run-tips` subcommand `cuda-compile` for architecture targets, `nvcc` flags, and build parallelism.
+   - Keep this page focused on Pixi environment setup, CUDA components, runtime wiring, and build tasks.
 9. **Verify with a small build** according to **Verification Preference**.
 10. **Report changes and caveats** using **Output Contract**.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this page, `nvcc-tips`, and the user's request, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this page, `isomer-misc-bounded-run-tips` compile guidance when needed, and the user's request, then execute the plan.
 
 ## Setup Modes
 
@@ -99,7 +101,7 @@ Report:
 - `dependencies_added`
 - `system_install_guidance`
 - `tasks_added_or_changed`
-- `nvcc_tips_applied`
+- `bounded_cuda_compile_guidance`: `not needed`, or evidence from `isomer-misc-bounded-run-tips cuda-compile`
 - `verification_command`
 - `verification_result`
 - `changed_files`

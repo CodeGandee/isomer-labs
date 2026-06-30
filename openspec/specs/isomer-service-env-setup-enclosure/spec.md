@@ -125,12 +125,13 @@ The service environment setup enclosure workflow SHALL keep dependency installat
 - **THEN** topic env setup may use that fixed source without invoking package repository resolution
 - **AND** it records the source as fixed by existing evidence
 
-### Requirement: CUDA and NVIDIA Build Policy Is Routed to NVIDIA Tools
-The service environment setup enclosure workflow SHALL route CUDA architecture, CUDA/C++ build environment, and NVIDIA build preference decisions to `isomer-misc-nvidia-tools` instead of expanding topic env setup into a general CUDA guide.
+### Requirement: CUDA Compile and NVIDIA Environment Policy Are Routed to Misc Skills
+The service environment setup enclosure workflow SHALL route CUDA compile bounding decisions to `isomer-misc-bounded-run-tips` and CUDA/C++ Pixi environment decisions to `isomer-misc-nvidia-tools` instead of expanding topic env setup into a general CUDA guide.
 
-#### Scenario: CUDA build decisions use NVIDIA tools skill
+#### Scenario: CUDA compile decisions use bounded run skill
 - **WHEN** topic env setup encounters CUDA architecture targets, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `nvcc` build flags, CUDA/C++ Pixi build environments, or CUDA build parallelism decisions
-- **THEN** the skill text points to `isomer-misc-nvidia-tools` for those build preferences
+- **THEN** the skill text points to `isomer-misc-bounded-run-tips` for CUDA architecture targets, `nvcc` build flags, and CUDA build parallelism
+- **AND** the skill text points to `isomer-misc-nvidia-tools` for CUDA/C++ Pixi build environment preferences and NVIDIA package/runtime wiring
 - **AND** topic env setup records only the setup decisions needed for the selected Topic Workspace Pixi environment and derived gate
 
 #### Scenario: NVIDIA channel choice remains auditable
@@ -151,3 +152,21 @@ The service environment setup skill SHALL validate enclosure strategy in any exp
 - **THEN** the service either derives the missing enclosure strategy into the target spec before mutation or reports a blocker
 - **AND** it does not install or verify that dependency from ambient shell state alone
 
+### Requirement: Heavy Operation Resource Strategy Routes Through Bounded Run Tips First
+The service environment setup enclosure workflow SHALL treat bounded-run tips as the first routing surface for resource-heavy setup and verification planning across topic env and agent env gates.
+
+#### Scenario: Heavy-operation policy is shared
+- **WHEN** topic env setup or agent env setup generates an operational env gate with a resource-heavy setup or verification item
+- **THEN** the service guidance routes the item to `isomer-misc-bounded-run-tips` before using local generic resource judgment
+- **AND** the generated gate records the bounded-run guidance source in its `Resource Check Plan`
+- **AND** the gate records generic best-effort judgment only when no specific bounded-run guidance applies
+
+#### Scenario: Bounded run guidance does not replace dependency policy
+- **WHEN** a heavy operation also needs package installation, CUDA/C++ Pixi environment setup, NVIDIA runtime wiring, package repository resolution, or package-specific caveat handling
+- **THEN** bounded-run tips provide only the resource-safe execution strategy
+- **AND** package installation, runtime wiring, and repository source choices remain routed to their existing package-specific, NVIDIA, repository-resolution, and enclosure policy surfaces
+
+#### Scenario: Readiness still requires real-path evidence
+- **WHEN** a generated env gate includes a heavy source-intent path
+- **THEN** readiness requires passing evidence from the bounded real-path command or a named blocker with resource evidence
+- **AND** a smoke test that misses the critical build, inference, dataset, benchmark, or cwd command path does not satisfy the checklist item unless the user explicitly downgraded the gate
