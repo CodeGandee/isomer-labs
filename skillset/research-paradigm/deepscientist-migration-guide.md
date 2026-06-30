@@ -18,6 +18,8 @@ Many upstream DeepScientist skills assume a harness around the agent, especially
 
 For the first Isomer Labs implementation, the equivalent harness surface is the DeepScientist-flavored extension command family `isomer-cli ext deepsci ...`. Its initial role is compatibility: mock the DeepScientist command inputs and outputs, persist mock state in Isomer Workspace Runtime SQLite, and keep the migrated skills runnable while we replace individual source behaviors with real Isomer semantics.
 
+Where an original source skill calls its DeepScientist MCP harness, the migrated skill should call the Isomer CLI extension harness instead. Treat `isomer-cli ext harness ...` as the generic Isomer harness intent; in the current DeepScientist-compatible implementation, spell concrete calls as `isomer-cli ext deepsci call <namespace.tool> --input-json <json-object>` so `memory.*`, `artifact.*`, and `bash_exec.bash_exec` preserve their source input and output shape.
+
 When a source skill depends on `memory.*`, `artifact.*`, or `bash_exec.bash_exec`, preserve the intended research meaning in the migrated skill and use placeholders for produced or consumed research objects. Do not hard-code DeepScientist paths, quest directories, venv assumptions, or final Isomer storage labels in the skill text. Bind those placeholders to the Isomer storage system later, after the semantics are clear.
 
 ## Core Logic Rule
@@ -54,11 +56,10 @@ Each migrated skill must include `agents/openai.yaml`. Set `interface.display_na
 
 ## Migration Workflow
 
-1. **Read the source skill**. Load the source `SKILL.md` and inventory every file inside the original source skill directory before deciding what each file means.
-2. **Extract the core logic**. Identify the purpose, triggers, workflow, judgments, handoffs, and failure conditions before editing.
-3. **Create the Isomer skill shell**. Use the target `isomer-rsch-<purpose>-v2` name, required frontmatter, required sections, and `agents/openai.yaml`.
-4. **Migrate source content faithfully**. Copy every original skill-dir file into the migrated skill, preserve internal pages first, update the migrated `SKILL.md` to reference those files in the same proper places, convert source-specific names only when an Isomer term already exists, and keep source-derived reasoning intact.
-5. **Replace handoffs with placeholders**. Add or reuse entries in the central placeholder registry for every cross-skill research object.
-6. **Format and validate**. Apply the `$imsight-agent-skill-handling create` and `$imsight-agent-skill-handling format` rules, then run the research skill validator before treating the migration as ready for review.
+1. **Copy the source skill directory**. Copy every file from `<original-skill>/` into `<new-skill-dir>/`, but copy the original entrypoint `SKILL.md` or `skill.md` to `<new-skill-dir>/skill-org.md` instead of overwriting the target entrypoint. Preserve subdirectories, references, scripts, templates, and support files exactly enough that the source skill can still be audited from the migrated directory.
+2. **Rewrite the target entrypoint with Isomer terms**. Read `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md` to understand canonical Isomer terms, then read `<new-skill-dir>/skill-org.md` and identify source terms that need replacement. Rewrite `<new-skill-dir>/SKILL.md` with Isomer terms while following `skill-org.md` logic as closely as possible, including the source skill's internal structure, workflow order, reference boundaries, and placement of links to copied files.
+3. **Replace the harness calls**. Where `skill-org.md` calls the DeepScientist MCP harness, rewrite the migrated `SKILL.md` to call the Isomer CLI extension harness instead. Use the current DeepScientist-compatible form `isomer-cli ext deepsci call <namespace.tool> --input-json <json-object>` for `memory.*`, `artifact.*`, and `bash_exec.bash_exec`, and keep produced or consumed research objects as placeholders until storage binding is decided.
+4. **Replace handoffs with placeholders**. Add or reuse entries in the central placeholder registry for every cross-skill research object.
+5. **Format and validate**. Apply the `$imsight-agent-skill-handling create` and `$imsight-agent-skill-handling format` rules, then run the research skill validator before treating the migration as ready for review.
 
 If a source concept has no clear Isomer equivalent, keep it as source-derived wording in the migrated skill and mark the naming question in the placeholder registry or a local note. Do not invent storage binding to make the migration look complete.

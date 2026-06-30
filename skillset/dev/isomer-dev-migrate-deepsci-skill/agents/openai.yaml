@@ -1,0 +1,6 @@
+interface:
+  display_name: "isomer-dev-migrate-deepsci-skill"
+  short_description: "Migrate DeepScientist skills into Isomer"
+  default_prompt: "Use $isomer-dev-migrate-deepsci-skill copy-migrate to migrate a DeepScientist source skill into an Isomer research skill."
+policy:
+  allow_implicit_invocation: false
