@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-paper-plot-v1"
+  short_description: "First-pass academic figures"
+  default_prompt: "Use $isomer-rsch-paper-plot-v1 to turn structured numeric evidence into a first-pass academic figure."

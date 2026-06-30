@@ -19,7 +19,46 @@ FRONTMATTER_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*?)\s*$")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 TBD_PLACEHOLDER_RE = re.compile(r"\[\[tbd-surface:([a-z0-9][a-z0-9-]*)\]\]")
+RSCH_OBJECT_PLACEHOLDER_RE = re.compile(r"\[\[rsch-object:([a-z0-9][a-z0-9-]*)\]\]")
 REGISTRY_ROW_ID_RE = re.compile(r"^(?:path|api|schema|policy|provider)-[a-z0-9-]+$")
+SEMANTIC_PLACEHOLDER_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+EXPECTED_V1_SKILLS = frozenset(
+    {
+        "isomer-rsch-analysis-v1",
+        "isomer-rsch-baseline-v1",
+        "isomer-rsch-decision-v1",
+        "isomer-rsch-experiment-v1",
+        "isomer-rsch-figure-polish-v1",
+        "isomer-rsch-finalize-v1",
+        "isomer-rsch-idea-v1",
+        "isomer-rsch-intake-v1",
+        "isomer-rsch-optimize-v1",
+        "isomer-rsch-paper-outline-v1",
+        "isomer-rsch-paper-plot-v1",
+        "isomer-rsch-rebuttal-v1",
+        "isomer-rsch-review-v1",
+        "isomer-rsch-science-v1",
+        "isomer-rsch-scout-v1",
+        "isomer-rsch-shared-v1",
+        "isomer-rsch-write-v1",
+    }
+)
+
+EXPECTED_V2_SKILLS = frozenset(
+    {
+        "isomer-rsch-analysis-v2",
+        "isomer-rsch-baseline-v2",
+        "isomer-rsch-decision-v2",
+        "isomer-rsch-experiment-v2",
+        "isomer-rsch-finalize-v2",
+        "isomer-rsch-idea-v2",
+        "isomer-rsch-optimize-v2",
+        "isomer-rsch-science-v2",
+        "isomer-rsch-scout-v2",
+        "isomer-rsch-shared-v2",
+    }
+)
 
 STALE_TERMS = {
     "Research Goal": "Research Topic",
@@ -109,9 +148,10 @@ DEFAULT_ALLOW_ZONES = {
         "Rejected Source Runtime Concepts",
         "Rejected Runtime Concepts",
         "Runtime Boundary",
+        "Source Lineage",
     ),
     "resolved_id_file_globs": (
-        "isomer-rsch-shared/references/tbd-surface-registry.md",
+        "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md",
     ),
     "resolved_id_section_headings": (
         "Research Recording Contracts",
@@ -125,9 +165,33 @@ DEFAULT_ALLOW_ZONES = {
         "Resolved Surfaces",
         "Resolved Extension Surfaces",
     ),
+    "v2_storage_binding_file_globs": (
+        "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md",
+    ),
+    "v2_storage_binding_section_headings": (
+        "Source Lineage",
+        "Placeholder Rule",
+        "Storage Binding Status",
+    ),
 }
 
 LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/")
+
+V2_STORAGE_BINDING_PATTERNS = (
+    (
+        "storage-bound research record",
+        re.compile(r"\b(?:Artifact|Evidence Item|Gate|Decision Record|Provenance Record)s?\b|\bRun records?\b"),
+    ),
+    (
+        "storage or runtime implementation binding",
+        re.compile(
+            r"\b(?:Workspace Path Resolution|Topic Workspace records?|lifecycle rows?|"
+            r"execution adapters?|database schemas?|database rows?|storage labels?|"
+            r"concrete paths?|scheduler fields?)\b",
+            re.I,
+        ),
+    ),
+)
 
 
 @dataclass(frozen=True, order=True)
@@ -242,6 +306,10 @@ def section_stack(lines: tuple[str, ...]) -> tuple[tuple[str, ...], ...]:
 
 def classify_document(rel_target: str, lines: tuple[str, ...]) -> frozenset[str]:
     roles: set[str] = set()
+    if rel_target.startswith("v1/"):
+        roles.add("v1")
+    if rel_target.startswith("v2/"):
+        roles.add("v2")
     if rel_target == "PROVENANCE.md" or fnmatch.fnmatch(rel_target, "*/references/provenance.md"):
         roles.add("provenance")
     if fnmatch.fnmatch(rel_target, "licenses/*.md"):
@@ -252,8 +320,10 @@ def classify_document(rel_target: str, lines: tuple[str, ...]) -> frozenset[str]
         roles.add("deferred-resource")
     if rel_target.endswith("references/source-term-mapping.md"):
         roles.add("source-term-mapping")
-    if rel_target == "isomer-rsch-shared/references/tbd-surface-registry.md":
+    if rel_target == "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md":
         roles.add("canonical-registry")
+    if rel_target == "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md":
+        roles.add("semantic-placeholder-registry")
     if any(normalize_heading(line.removeprefix("##")) == "TBD Surface Registry" for line in lines if line.startswith("##")):
         roles.add("registry-mirror")
     if not roles:
@@ -353,10 +423,19 @@ def workflow_step_numbers(lines: tuple[str, ...], workflow_line: int) -> list[in
     return numbers
 
 
-def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
+def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic], generation: str | None) -> None:
     skill_name = skill_dir.name
     if not SKILL_NAME_RE.match(skill_name):
         add(diagnostics, repo_root, skill_dir, 1, "RPS007", f"skill folder '{skill_name}' must match isomer-rsch-*")
+    if generation in {"v1", "v2"} and not skill_name.endswith(f"-{generation}"):
+        add(
+            diagnostics,
+            repo_root,
+            skill_dir,
+            1,
+            "RPS007",
+            f"skill folder '{skill_name}' must end with -{generation}",
+        )
 
     skill_md = skill_dir / "SKILL.md"
     if not skill_md.exists():
@@ -479,6 +558,22 @@ def parse_registry_rows(lines: tuple[str, ...]) -> dict[str, RegistryRow]:
     return rows
 
 
+def parse_semantic_placeholder_ids(lines: tuple[str, ...]) -> dict[str, int]:
+    ids: dict[str, int] = {}
+    for line_number, line in enumerate(lines, start=1):
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        raw_id = cells[0].strip("`")
+        if raw_id.casefold() in {"id", "---"} or set(raw_id) <= {"-"}:
+            continue
+        if SEMANTIC_PLACEHOLDER_ID_RE.match(raw_id):
+            ids[raw_id] = line_number
+    return ids
+
+
 def normalize_resolution(text: str) -> str:
     text = re.sub(r"[`*_]", "", text)
     text = re.sub(r"\s+", " ", text)
@@ -492,7 +587,7 @@ def validate_registry_mirrors(
     diagnostics: list[Diagnostic],
 ) -> None:
     expected = {row_id: row for row_id, row in canonical_rows.items() if row_id in RESOLVED_TBD_IDS}
-    canonical_path = "isomer-rsch-shared/references/tbd-surface-registry.md"
+    canonical_path = "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md"
     for document in documents:
         if document.rel_target == canonical_path or "registry-mirror" not in document.roles:
             continue
@@ -556,6 +651,53 @@ def validate_tbd_placeholders(
                     line_number,
                     "RPS003",
                     f"TBD surface id '{tbd_id}' is not registered in the shared registry",
+                )
+
+
+def validate_rsch_object_placeholders(
+    document: Document,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    registered_ids: set[str],
+) -> None:
+    if "v2" not in document.roles:
+        return
+    for line_number, line in enumerate(document.lines, start=1):
+        for match in RSCH_OBJECT_PLACEHOLDER_RE.finditer(line):
+            placeholder_id = match.group(1)
+            if placeholder_id not in registered_ids:
+                add(
+                    diagnostics,
+                    repo_root,
+                    document.path,
+                    line_number,
+                    "RPS009",
+                    f"research object placeholder '{placeholder_id}' is not registered in the v2 semantic-placeholder registry",
+                )
+
+
+def validate_v2_storage_binding(
+    document: Document,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    allow_zones: dict[str, tuple[str, ...]],
+) -> None:
+    if "v2" not in document.roles:
+        return
+    for line_index, line in enumerate(document.lines):
+        if allowed_by_rule("v2_storage_binding", document, line_index, allow_zones):
+            continue
+        if is_rejection_line(line) or "not storage-bound" in line.casefold() or "storage binding is deferred" in line.casefold():
+            continue
+        for label, pattern in V2_STORAGE_BINDING_PATTERNS:
+            if pattern.search(line):
+                add(
+                    diagnostics,
+                    repo_root,
+                    document.path,
+                    line_index + 1,
+                    "RPS010",
+                    f"active v2 guidance contains {label}",
                 )
 
 
@@ -633,28 +775,62 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         return diagnostics
 
     allow_zones = load_allow_zones(target)
-    skill_dirs = sorted(path for path in target.iterdir() if path.is_dir() and path.name.startswith("isomer-rsch-"))
+    flat_skill_dirs = sorted(path for path in target.iterdir() if path.is_dir() and path.name.startswith("isomer-rsch-"))
+    for skill_dir in flat_skill_dirs:
+        add(
+            diagnostics,
+            repo_root,
+            skill_dir,
+            1,
+            "RPS007",
+            "active flat root research skill folders are not allowed; use v1/ or v2/",
+        )
+
+    skill_dirs: list[tuple[Path, str]] = []
+    for generation, expected in (("v1", EXPECTED_V1_SKILLS), ("v2", EXPECTED_V2_SKILLS)):
+        generation_root = target / generation
+        if not generation_root.exists():
+            add(diagnostics, repo_root, generation_root, 1, "RPS007", f"{generation}/ generation directory is missing")
+            continue
+        generation_skill_dirs = sorted(
+            path for path in generation_root.iterdir() if path.is_dir() and path.name.startswith("isomer-rsch-")
+        )
+        actual_names = {path.name for path in generation_skill_dirs}
+        for missing in sorted(expected - actual_names):
+            add(diagnostics, repo_root, generation_root / missing, 1, "RPS007", f"expected {generation} skill is missing")
+        for skill_dir in generation_skill_dirs:
+            skill_dirs.append((skill_dir, generation))
+
     if not skill_dirs:
-        add(diagnostics, repo_root, target, 1, "RPS007", "no isomer-rsch-* skill folders were found")
-    for skill_dir in skill_dirs:
-        validate_skill_layout(skill_dir, repo_root, diagnostics)
+        add(diagnostics, repo_root, target, 1, "RPS007", "no generationed isomer-rsch-* skill folders were found")
+    for skill_dir, generation in skill_dirs:
+        validate_skill_layout(skill_dir, repo_root, diagnostics, generation)
         validate_manifest(skill_dir, repo_root, diagnostics)
         validate_local_references(skill_dir, repo_root, diagnostics)
 
     documents = collect_documents(target, repo_root)
-    registry_path = target / "isomer-rsch-shared" / "references" / "tbd-surface-registry.md"
+    registry_path = target / "v1" / "isomer-rsch-shared-v1" / "references" / "tbd-surface-registry.md"
     if registry_path.exists():
         canonical_rows = parse_registry_rows(read_lines(registry_path))
     else:
         canonical_rows = {}
-        add(diagnostics, repo_root, registry_path, 1, "RPS003", "canonical shared TBD registry is missing")
+        add(diagnostics, repo_root, registry_path, 1, "RPS003", "canonical v1 shared TBD registry is missing")
     registered_ids = set(canonical_rows)
+
+    semantic_registry_path = target / "v2" / "isomer-rsch-shared-v2" / "references" / "semantic-placeholders.md"
+    if semantic_registry_path.exists():
+        semantic_placeholder_ids = set(parse_semantic_placeholder_ids(read_lines(semantic_registry_path)))
+    else:
+        semantic_placeholder_ids = set()
+        add(diagnostics, repo_root, semantic_registry_path, 1, "RPS009", "v2 semantic-placeholder registry is missing")
 
     for document in documents:
         validate_tbd_placeholders(document, repo_root, diagnostics, registered_ids)
+        validate_rsch_object_placeholders(document, repo_root, diagnostics, semantic_placeholder_ids)
         validate_resolved_id_text(document, repo_root, diagnostics, allow_zones)
         validate_stale_terms(document, repo_root, diagnostics, allow_zones)
         validate_coupling_patterns(document, repo_root, diagnostics, allow_zones)
+        validate_v2_storage_binding(document, repo_root, diagnostics, allow_zones)
     validate_registry_mirrors(documents, canonical_rows, repo_root, diagnostics)
     return sorted(set(diagnostics))
 

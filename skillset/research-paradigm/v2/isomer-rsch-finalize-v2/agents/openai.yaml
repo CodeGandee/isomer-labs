@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-finalize-v2"
+  short_description: "Summarize final claims, limits, and next action."
+  default_prompt: "Use $isomer-rsch-finalize-v2 to produce a responsible final summary or route away from premature closure."

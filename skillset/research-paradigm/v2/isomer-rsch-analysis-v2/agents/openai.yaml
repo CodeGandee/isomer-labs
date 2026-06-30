@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-analysis-v2"
+  short_description: "Run focused follow-up analysis for a result."
+  default_prompt: "Use $isomer-rsch-analysis-v2 to answer the smallest follow-up question that changes a result's interpretation."

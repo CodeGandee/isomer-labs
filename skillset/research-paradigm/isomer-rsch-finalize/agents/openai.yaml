@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-finalize"
-  short_description: "Close research state"
-  default_prompt: "Use $isomer-rsch-finalize to consolidate final claims, limitations, recommendations, and closure state."

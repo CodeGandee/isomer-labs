@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-science-v2"
+  short_description: "Check scientific computation and validity."
+  default_prompt: "Use $isomer-rsch-science-v2 to validate scientific computation, data, package, simulation, or model evidence."

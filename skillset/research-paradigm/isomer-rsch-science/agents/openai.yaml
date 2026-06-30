@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-science"
-  short_description: "Scientific evidence workflows"
-  default_prompt: "Use $isomer-rsch-science to plan, validate, and record scientific computation or analysis evidence."

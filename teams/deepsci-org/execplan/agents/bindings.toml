@@ -29,8 +29,8 @@ capability_binding_placeholder = "{deepsci_org_master_capability_binding_ref}"
 skill_projection_placeholder = "{deepsci_org_master_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_master_agent_workspace_ref}"
 generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-team-start", "deepsci-org-on-handoff-result", "deepsci-org-on-tick", "deepsci-org-operator-control"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-intake", "isomer-rsch-decision", "isomer-rsch-finalize"]
-optional_isomer_skills = ["isomer-rsch-review"]
+required_isomer_skills = ["isomer-rsch-shared-v2", "isomer-rsch-intake-v1", "isomer-rsch-decision-v2", "isomer-rsch-finalize-v2"]
+optional_isomer_skills = ["isomer-rsch-review-v1"]
 
 [[participants]]
 role_id = "deepsci-org-framer"
@@ -42,8 +42,8 @@ capability_binding_placeholder = "{deepsci_org_framer_capability_binding_ref}"
 skill_projection_placeholder = "{deepsci_org_framer_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_framer_agent_workspace_ref}"
 generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]
-optional_isomer_skills = ["isomer-rsch-science", "isomer-rsch-paper-outline"]
+required_isomer_skills = ["isomer-rsch-shared-v2", "isomer-rsch-scout-v2", "isomer-rsch-baseline-v2"]
+optional_isomer_skills = ["isomer-rsch-science-v2", "isomer-rsch-paper-outline-v1"]
 
 [[participants]]
 role_id = "deepsci-org-designer"
@@ -55,8 +55,8 @@ capability_binding_placeholder = "{deepsci_org_designer_capability_binding_ref}"
 skill_projection_placeholder = "{deepsci_org_designer_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_designer_agent_workspace_ref}"
 generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"]
-optional_isomer_skills = ["isomer-rsch-scout"]
+required_isomer_skills = ["isomer-rsch-shared-v2", "isomer-rsch-idea-v2", "isomer-rsch-optimize-v2"]
+optional_isomer_skills = ["isomer-rsch-scout-v2"]
 
 [[participants]]
 role_id = "deepsci-org-experimenter"
@@ -68,8 +68,8 @@ capability_binding_placeholder = "{deepsci_org_experimenter_capability_binding_r
 skill_projection_placeholder = "{deepsci_org_experimenter_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_experimenter_agent_workspace_ref}"
 generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"]
-optional_isomer_skills = ["isomer-rsch-analysis"]
+required_isomer_skills = ["isomer-rsch-shared-v2", "isomer-rsch-experiment-v2", "isomer-rsch-science-v2"]
+optional_isomer_skills = ["isomer-rsch-analysis-v2"]
 scalable = true
 scaling_scope = "research_task"
 
@@ -83,8 +83,8 @@ capability_binding_placeholder = "{deepsci_org_analyzer_capability_binding_ref}"
 skill_projection_placeholder = "{deepsci_org_analyzer_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_analyzer_agent_workspace_ref}"
 generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"]
-optional_isomer_skills = ["isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+required_isomer_skills = ["isomer-rsch-shared-v2", "isomer-rsch-analysis-v2", "isomer-rsch-science-v2"]
+optional_isomer_skills = ["isomer-rsch-paper-plot-v1", "isomer-rsch-figure-polish-v1"]
 scalable = true
 scaling_scope = "research_task"
 
@@ -98,7 +98,7 @@ capability_binding_placeholder = "{deepsci_org_publisher_capability_binding_ref}
 skill_projection_placeholder = "{deepsci_org_publisher_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_publisher_agent_workspace_ref}"
 generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+required_isomer_skills = ["isomer-rsch-shared-v2", "isomer-rsch-paper-outline-v1", "isomer-rsch-write-v1", "isomer-rsch-paper-plot-v1", "isomer-rsch-figure-polish-v1"]
 optional_isomer_skills = ["nature-data", "nature-figure", "nature-paper2ppt", "nature-polishing"]
 
 [[participants]]
@@ -111,5 +111,5 @@ capability_binding_placeholder = "{deepsci_org_reviewer_capability_binding_ref}"
 skill_projection_placeholder = "{deepsci_org_reviewer_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_reviewer_agent_workspace_ref}"
 generated_skill_names = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"]
-optional_isomer_skills = ["isomer-rsch-scout"]
+required_isomer_skills = ["isomer-rsch-shared-v2", "isomer-rsch-review-v1", "isomer-rsch-rebuttal-v1", "isomer-rsch-analysis-v2"]
+optional_isomer_skills = ["isomer-rsch-scout-v2"]

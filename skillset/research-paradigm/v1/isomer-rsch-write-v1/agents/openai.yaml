@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-write-v1"
+  short_description: "Evidence-bound research writing"
+  default_prompt: "Use $isomer-rsch-write-v1 to draft or refine this research deliverable from durable evidence without inventing support."

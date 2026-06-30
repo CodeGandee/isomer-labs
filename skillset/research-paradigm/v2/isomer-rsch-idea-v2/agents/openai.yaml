@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-idea-v2"
+  short_description: "Select one falsifiable research route."
+  default_prompt: "Use $isomer-rsch-idea-v2 to turn the current frame and comparator into one selected falsifiable hypothesis."

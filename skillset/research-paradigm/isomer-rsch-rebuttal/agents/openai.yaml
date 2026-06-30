@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-rebuttal"
-  short_description: "Reviewer-response workflow"
-  default_prompt: "Use $isomer-rsch-rebuttal to map reviewer feedback into a response matrix, evidence actions, manuscript deltas, and rebuttal text."

@@ -1,76 +1,47 @@
 # Research Paradigm Skills
 
-This subtree contains portable research-stage skills for Isomer Labs agents. The skills capture reusable research practice: framing a problem, accepting a baseline, choosing ideas, running experiments, analyzing evidence, writing, reviewing, rebutting, finalizing, plotting, figure polishing, and scientific computation.
+This subtree contains Isomer Labs research-method skills. The skillset is generationed so existing source-derived material remains available while the active v2 core loop can stay concise and semantics-first.
 
-Project Operator Session and Operator Agent skills live under `skillset/operator/` and use `isomer-admin-*` names. Service Team skills live under `skillset/service/` and use `isomer-srv-*` names.
+## Generations
 
-The skills are adapted from richer source research skills, but they are written as Isomer-native bundles. They use Isomer concepts such as Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Topic Workspace, Workspace Runtime, Agent Workspace, Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Operator Agent, Agent Team Instance, Capability Binding, Execution Adapter, and Workflow Stage.
+| Generation | Path | Role |
+| --- | --- | --- |
+| v2 | `v2/isomer-rsch-<purpose>-v2/` | Active core research-method skills. These use semantic placeholders such as `[[rsch-object:research-frame]]` and do not bind outputs to storage yet. |
+| v1 | `v1/isomer-rsch-<purpose>-v1/` | Preserved first-generation Isomer adaptations of source skills. These keep the richer storage, lifecycle, policy, and paper-facing guidance for reference and compatibility. |
 
-## Skill Set
+The root directory should not contain active flat `isomer-rsch-*` skill folders. New core research work should target v2 unless a preserved paper-facing or intake behavior is explicitly needed from v1.
+
+## V2 Core Skills
 
 | Skill | Purpose |
 | --- | --- |
-| `isomer-rsch-shared` | Shared evidence, handoff, terminology, provenance, and TBD-surface rules. |
-| `isomer-rsch-intake` | Audit and reconcile existing research state before choosing the next stage. |
-| `isomer-rsch-scout` | Frame the task, narrow unknowns, inspect literature or local evidence, and route to baseline, idea, or blocker. |
-| `isomer-rsch-baseline` | Establish a trustworthy comparator, metric contract, waiver, or blocker. |
-| `isomer-rsch-idea` | Convert the evidence board into candidate hypotheses and one falsifiable route. |
-| `isomer-rsch-optimize` | Manage algorithm-first candidates, frontier ranking, promotion, bounded attempts, fusion, or debug routes. |
-| `isomer-rsch-experiment` | Turn a selected route into one trustworthy measured result. |
-| `isomer-rsch-analysis` | Run follow-up evidence work such as ablations, robustness checks, error analysis, failure analysis, or review-linked slices. |
-| `isomer-rsch-decision` | Make explicit go, stop, route, write, finalize, reset, Gate, or blocker decisions from durable evidence. |
-| `isomer-rsch-finalize` | Consolidate final claims, limitations, recommendations, and closure or handoff state. |
-| `isomer-rsch-write` | Draft or refine reports, papers, or summaries from existing evidence. |
-| `isomer-rsch-review` | Audit substantial drafts, reports, or paper-like artifacts skeptically. |
-| `isomer-rsch-rebuttal` | Map reviewer feedback into evidence actions, text deltas, and revision responses. |
-| `isomer-rsch-paper-outline` | Build or repair a paper-native outline with scoped claims and evidence boundaries. |
-| `isomer-rsch-paper-plot` | Turn structured numeric evidence into first-pass academic figures. |
-| `isomer-rsch-figure-polish` | Polish meaningful draft figures into durable milestone, manuscript, appendix, or review figures. |
-| `isomer-rsch-science` | Support scientific computation, simulation, dataset analysis, validation, and evidence-backed claims. |
+| `isomer-rsch-shared-v2` | Shared v2 loop and semantic placeholder contract. |
+| `isomer-rsch-scout-v2` | Clarify the research frame, metric direction, comparator neighborhood, and next route. |
+| `isomer-rsch-baseline-v2` | Establish the comparator and metric basis, or state a waiver or blocker. |
+| `isomer-rsch-idea-v2` | Select one falsifiable hypothesis from the current frame and comparator. |
+| `isomer-rsch-optimize-v2` | Manage algorithm-first candidate frontiers and promote one route. |
+| `isomer-rsch-experiment-v2` | Test one selected hypothesis and interpret the result. |
+| `isomer-rsch-analysis-v2` | Run focused follow-up analysis for a result. |
+| `isomer-rsch-decision-v2` | Make one evidence-backed route choice. |
+| `isomer-rsch-finalize-v2` | Summarize final claims, limits, and next action. |
+| `isomer-rsch-science-v2` | Check scientific computation, data, package, simulation, or model validity. |
 
-Stage and companion skills should read `isomer-rsch-shared/SKILL.md` first when common evidence, handoff, terminology, or unsettled-surface rules matter.
+The v2 loop is `Frame -> Comparator -> Hypothesis -> Experiment -> Analysis -> Decision -> Finalize`. `isomer-rsch-optimize-v2` overlays hypothesis, experiment, and analysis when candidate search is the work. `isomer-rsch-science-v2` supports any stage whose trust depends on scientific computation or data validity.
 
-## Bundle Pattern
+## V2 Placeholder Contract
 
-Each stage or companion skill should be usable as a self-contained bundle. `SKILL.md` is the concise entrypoint, `references/` holds source-derived playbooks and templates, `assets/` or `scripts/` are used only when a sanitized resource is directly useful, and `agents/openai.yaml` gives the UI manifest with `interface.display_name` equal to the skill name.
+V2 skills name reusable research objects with `[[rsch-object:<id>]]` placeholders. The authoritative registry is `v2/isomer-rsch-shared-v2/references/semantic-placeholders.md`.
 
-Long source details should move into one-level local references linked directly from `SKILL.md`. Active skill docs should not require source-analysis paths, source checkouts, archived OpenSpec paths, absolute local paths, or another skill folder outside this subtree.
+These placeholders define semantics only. They are not yet bound to Artifact, Evidence Item, Run, Gate, Decision Record, Provenance Record, path, storage label, or database schema. Storage binding belongs to a later design pass after the placeholder meanings are stable.
 
-Deferred resource decisions should be recorded inside the relevant skill's local references. Current deferrals include broad venue LaTeX templates for `isomer-rsch-write`, fixed-data plotting scripts for `isomer-rsch-paper-plot`, and the large generated science package-card catalog for `isomer-rsch-science`.
+## V1 Preserved Skills
 
-## Migration Contract
-
-When migrating a source research skill into this subtree, preserve as much reusable research method as possible. Do not reduce a rich source skill to a thin checklist if the source contains portable judgment, route taxonomy, templates, examples, validation gates, boundary cases, or failure handling.
-
-Preserve source richness by moving detail into bundled resources:
-
-- Keep `SKILL.md` concise and procedural.
-- Put long playbooks, examples, templates, checklists, boundary cases, and operational guidance under `references/`.
-- Link every reference directly from `SKILL.md` and state when to read it.
-- Keep references one level deep from `SKILL.md`.
-- Prefer local reference files over references to source-tree paths.
-
-Translate source concepts into Isomer terms:
-
-- Source lifecycle work becomes Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, or Workflow Stage, depending on scope.
-- Source artifact APIs become Artifacts, Evidence Items, Decision Records, Gates, Provenance Records, or host Artifact APIs.
-- Source memory APIs become Findings, Evidence Items, Artifacts, or durable context queries.
-- Source command execution becomes Execution Adapter Command Request with Capability Binding refs.
-- Source worktree or workspace assumptions become Topic Workspace, Workspace Runtime, Agent Workspace, Agent Runtime state, or semantic Artifact scopes resolved by Workspace Path Resolution.
-- Source scheduler and continuation terms become Workflow Stage recommendations, Gates, Decision Records, observations, or pauses for Operator Agent instruction.
-
-Mark unsettled concrete surfaces explicitly. If the source skill depends on a filename, command wrapper, runtime API, runner home, prompt-injection mechanism, paper-search provider, generated layout, schema, or path outside Workspace Path Resolution that Isomer has not accepted, use a registered TBD-surface placeholder and list the id in the relevant TBD registry.
+The v1 generation contains all previous `isomer-rsch-*` skills with `-v1` suffixes, including intake, write, review, rebuttal, paper-outline, paper-plot, and figure-polish. Use v1 when a team or task still needs the richer first-generation guidance, especially paper-facing workflows not yet rewritten for v2.
 
 ## Skill Writing Constraints
 
-Skill folders must be named `isomer-rsch-<purpose>`, and `SKILL.md` frontmatter `name:` must match the folder name. Frontmatter must contain only `name` and `description`.
+V2 `SKILL.md` files should use valid frontmatter with `name` and `description`, a near-top `## Workflow`, numbered workflow steps, semantic inputs, semantic outputs, guardrails, and explicit reference routing when references exist. The `agents/openai.yaml` manifest must use the same generation-suffixed skill name in `interface.display_name` and `interface.default_prompt`.
 
-For `agents/openai.yaml`, `interface.display_name` must be the skill name itself, such as `isomer-rsch-analysis`. The `default_prompt` should invoke the same skill with `$isomer-rsch-<purpose>`.
+Do not add active storage, runtime, scheduler, provider, lifecycle, or concrete path binding to v2 skill guidance. If a v2 skill needs to name a research object, add or reuse a registered `[[rsch-object:<id>]]` placeholder instead.
 
-Do not make active skills depend on source repository paths, archived OpenSpec files, local absolute paths, or external skill folders. A standalone skill bundle must contain the references it needs under its own directory. Shared skills may be referenced only when the bundle is intentionally installed as part of this research-paradigm subtree.
-
-Do not port source runtime APIs, concrete storage layouts, scheduler fields, credentials, mailbox routes, gateway routes, or team topology into skill requirements. Those belong in Isomer platform design, runtime profiles, or operator documentation.
-
-Keep negative, partial, failed, blocked, infeasible, null, and contradictory results visible as evidence. Do not let polished prose, summaries, or route recommendations hide missing evidence or broken comparability.
-
-Active research-stage skill docs should use `isomer-rsch-*` names. Operator/admin skills such as project awareness, Service Request routing, Topic Team Specialization orchestration, approval provenance, profile materialization, and team launch orchestration should use `isomer-admin-*` names under `skillset/operator/`. Historical archive files may mention older names only as migration history.
+Operator/admin skills belong under `skillset/operator/` with `isomer-admin-*` names. Service skills belong under `skillset/service/` with `isomer-srv-*` names.

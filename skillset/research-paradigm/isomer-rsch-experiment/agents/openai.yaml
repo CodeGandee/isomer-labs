@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-experiment"
-  short_description: "Run and record measured experiments"
-  default_prompt: "Use $isomer-rsch-experiment to lock a run contract, execute one measured result, and record the evidence."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-scout-v2"
+  short_description: "Frame the research task and choose the next stage."
+  default_prompt: "Use $isomer-rsch-scout-v2 to clarify the research frame, metric direction, comparator neighborhood, and next route."

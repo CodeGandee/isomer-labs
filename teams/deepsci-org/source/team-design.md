@@ -49,17 +49,17 @@ Decision Records, Gates, Artifacts, Evidence Items, Research Claims, final packa
 
 ## Skill Binding Projection
 
-Install `isomer-rsch-shared` for every team role. It carries common evidence, handoff, terminology, provenance, and unsettled-surface rules.
+Install `isomer-rsch-shared-v2` for every team role. It carries common evidence, handoff, terminology, provenance, and unsettled-surface rules.
 
 | Agent Role | Required Skills | Optional Skills |
 | --- | --- | --- |
-| `deepsci-org-master` | `isomer-rsch-shared`, `isomer-rsch-intake`, `isomer-rsch-decision`, `isomer-rsch-finalize` | `isomer-rsch-review` when the master must inspect a review handoff before opening a Gate. |
-| `deepsci-org-framer` | `isomer-rsch-shared`, `isomer-rsch-scout`, `isomer-rsch-baseline` | `isomer-rsch-science` for domain package checks, `isomer-rsch-paper-outline` when the framer must state paper evidence needs early. |
-| `deepsci-org-designer` | `isomer-rsch-shared`, `isomer-rsch-idea`, `isomer-rsch-optimize` | `isomer-rsch-scout` for narrow literature checks that change idea selection. |
-| `deepsci-org-experimenter` | `isomer-rsch-shared`, `isomer-rsch-experiment`, `isomer-rsch-science` | `isomer-rsch-analysis` for tiny post-run checks that do not justify a separate analysis handoff. |
-| `deepsci-org-analyzer` | `isomer-rsch-shared`, `isomer-rsch-analysis`, `isomer-rsch-science` | `isomer-rsch-paper-plot`, `isomer-rsch-figure-polish` for analysis-facing result displays. |
-| `deepsci-org-publisher` | `isomer-rsch-shared`, `isomer-rsch-paper-outline`, `isomer-rsch-write`, `isomer-rsch-paper-plot`, `isomer-rsch-figure-polish` | Source DeepScientist companions `nature-data`, `nature-figure`, `nature-paper2ppt`, and `nature-polishing`, or future Isomer equivalents, when those bundles are available in the active Skill Binding projection. |
-| `deepsci-org-reviewer` | `isomer-rsch-shared`, `isomer-rsch-review`, `isomer-rsch-rebuttal`, `isomer-rsch-analysis` | `isomer-rsch-scout` for novelty benchmarking and comparator-paper checks. |
+| `deepsci-org-master` | `isomer-rsch-shared-v2`, `isomer-rsch-intake-v1`, `isomer-rsch-decision-v2`, `isomer-rsch-finalize-v2` | `isomer-rsch-review-v1` when the master must inspect a review handoff before opening a Gate. |
+| `deepsci-org-framer` | `isomer-rsch-shared-v2`, `isomer-rsch-scout-v2`, `isomer-rsch-baseline-v2` | `isomer-rsch-science-v2` for domain package checks, `isomer-rsch-paper-outline-v1` when the framer must state paper evidence needs early. |
+| `deepsci-org-designer` | `isomer-rsch-shared-v2`, `isomer-rsch-idea-v2`, `isomer-rsch-optimize-v2` | `isomer-rsch-scout-v2` for narrow literature checks that change idea selection. |
+| `deepsci-org-experimenter` | `isomer-rsch-shared-v2`, `isomer-rsch-experiment-v2`, `isomer-rsch-science-v2` | `isomer-rsch-analysis-v2` for tiny post-run checks that do not justify a separate analysis handoff. |
+| `deepsci-org-analyzer` | `isomer-rsch-shared-v2`, `isomer-rsch-analysis-v2`, `isomer-rsch-science-v2` | `isomer-rsch-paper-plot-v1`, `isomer-rsch-figure-polish-v1` for analysis-facing result displays. |
+| `deepsci-org-publisher` | `isomer-rsch-shared-v2`, `isomer-rsch-paper-outline-v1`, `isomer-rsch-write-v1`, `isomer-rsch-paper-plot-v1`, `isomer-rsch-figure-polish-v1` | Source DeepScientist companions `nature-data`, `nature-figure`, `nature-paper2ppt`, and `nature-polishing`, or future Isomer equivalents, when those bundles are available in the active Skill Binding projection. |
+| `deepsci-org-reviewer` | `isomer-rsch-shared-v2`, `isomer-rsch-review-v1`, `isomer-rsch-rebuttal-v1`, `isomer-rsch-analysis-v2` | `isomer-rsch-scout-v2` for novelty benchmarking and comparator-paper checks. |
 
 The optional Nature-family companions should be bound only when the Topic Agent Team Profile needs that publication surface. They should not be installed as mandatory research capabilities for all topics.
 
@@ -70,11 +70,11 @@ The optional Nature-family companions should be bound only when the Topic Agent 
 The master is the root Agent Role of the `deepsci-org` team. It owns the team loop after the Agent Team Instance is launched: it interprets the Research Topic, plans the stage route, dispatches bounded Research Tasks to specialists, records team-level Decisions and Gates, and closes or parks the research package.
 
 - Open or resume the Research Topic from the user prompt, Topic Workspace state, and any existing Artifacts.
-- Use `isomer-rsch-intake` when the Topic Workspace is not blank or when prior evidence needs trust ranking.
+- Use `isomer-rsch-intake-v1` when the Topic Workspace is not blank or when prior evidence needs trust ranking.
 - Maintain the Workflow Stage Cursor, current Research Inquiry graph, Research Task routing, Gate state, and Decision Records.
 - Dispatch bounded Research Tasks to specialist Agent Instances and define the Completion Watcher Contract for each handoff.
-- Use `isomer-rsch-decision` for go, stop, branch, write, finalize, reset, baseline waiver, and preference-sensitive choices.
-- Use `isomer-rsch-finalize` to consolidate claims, limitations, recommendations, resume packets, and closure state.
+- Use `isomer-rsch-decision-v2` for go, stop, branch, write, finalize, reset, baseline waiver, and preference-sensitive choices.
+- Use `isomer-rsch-finalize-v2` to consolidate claims, limitations, recommendations, resume packets, and closure state.
 - Own the final team answer; specialists recommend routes, but the master records the team-level route authority.
 
 ### `deepsci-org-framer`
@@ -126,7 +126,7 @@ This role owns communication artifacts, not research truth. It writes only from 
 - Refresh the paper contract: outline, claim-evidence map, experiment matrix, analysis matrix, bibliography, figure and table status, bundle status, and unresolved Gates.
 - Build or repair a paper-native outline with separate paper view and evidence view.
 - Draft bounded section jobs from Evidence Items, verified citations, and supported Research Claims.
-- Use `isomer-rsch-paper-plot` for first-pass standard figures and `isomer-rsch-figure-polish` for final render-inspect-revise work.
+- Use `isomer-rsch-paper-plot-v1` for first-pass standard figures and `isomer-rsch-figure-polish-v1` for final render-inspect-revise work.
 - Use Nature-family companions only for their bounded surfaces: data availability, submission-grade figures, presentation decks, or Nature-leaning language.
 - Route back to the analyzer, framer, reviewer, or master decision when evidence, citations, or claim boundaries are insufficient.
 
@@ -200,7 +200,7 @@ Automatic mode flow:
 1. The master performs intake, chooses the next Workflow Stage Cursor, and dispatches the smallest useful Research Task.
 2. The Completion Watcher Contract observes candidate completion through agent replies, inspected Agent Artifacts, adapter events, file observations, validation rules, or staleness rules.
 3. When a specialist completes, the master records the handoff, runs the required validation or decision skill, and dispatches the next Research Task if no Gate is required.
-4. Routine route choices, such as moving from baseline to idea after a confirmed comparator, can proceed through `isomer-rsch-decision` without user interruption.
+4. Routine route choices, such as moving from baseline to idea after a confirmed comparator, can proceed through `isomer-rsch-decision-v2` without user interruption.
 5. Governed actions still open Gates. Automatic mode must not bypass cost, credential, privacy, data export, destructive change, long-compute, baseline-waiver, publication-facing, or final-completion Gates.
 6. When the state is blocked, stale, contradictory, or repeatedly unchanged, the master records the blocker and parks the Agent Team Instance with a resume packet rather than looping.
 
@@ -256,7 +256,7 @@ Recommended defaults for the Domain Agent Team Template:
 | --- | --- |
 | Core roles | 7 |
 | Horizontally scalable roles | `deepsci-org-experimenter`, `deepsci-org-analyzer` |
-| Required shared skill | `isomer-rsch-shared` for all roles |
+| Required shared skill | `isomer-rsch-shared-v2` for all roles |
 | Default dispatcher | `deepsci-org-master` |
 | Default Control Mode | Manual Mode for first launch, automatic mode only after Gate policies and Capability Bindings are configured |
 | Gate-sensitive actions | Credential use, paid or long compute, private data, data export, destructive mutation, baseline waiver, publication-facing finality, final completion |

@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-review-v1"
+  short_description: "Skeptical draft audit"
+  default_prompt: "Use $isomer-rsch-review-v1 to audit this draft, report, or paper-like artifact against claims, evidence, novelty, and likely rejection paths."

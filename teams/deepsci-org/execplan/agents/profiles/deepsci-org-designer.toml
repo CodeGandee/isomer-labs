@@ -8,5 +8,5 @@ capability_binding_placeholder = "{deepsci_org_designer_capability_binding_ref}"
 skill_projection_placeholder = "{deepsci_org_designer_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_designer_agent_workspace_ref}"
 generated_skills = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"]
-optional_isomer_skills = ["isomer-rsch-scout"]
+required_isomer_skills = ["isomer-rsch-shared-v2", "isomer-rsch-idea-v2", "isomer-rsch-optimize-v2"]
+optional_isomer_skills = ["isomer-rsch-scout-v2"]

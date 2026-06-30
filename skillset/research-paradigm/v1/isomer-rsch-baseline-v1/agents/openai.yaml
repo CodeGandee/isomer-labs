@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-baseline-v1"
+  short_description: "Baseline comparators and Gates"
+  default_prompt: "Use $isomer-rsch-baseline-v1 to establish a trustworthy comparator and metric contract for this research task."

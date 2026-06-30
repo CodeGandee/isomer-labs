@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-intake-v1"
+  short_description: "Audit existing research state"
+  default_prompt: "Use $isomer-rsch-intake-v1 to audit the existing research state and recommend the next trustworthy workflow stage."

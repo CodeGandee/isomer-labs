@@ -24,9 +24,10 @@ runtime_coupling_section_headings = [
   "Rejected Source Runtime Concepts",
   "Rejected Runtime Concepts",
   "Runtime Boundary",
+  "Source Lineage",
 ]
 resolved_id_file_globs = [
-  "isomer-rsch-shared/references/tbd-surface-registry.md",
+  "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md",
 ]
 resolved_id_section_headings = [
   "Research Recording Contracts",
@@ -39,4 +40,12 @@ resolved_id_section_headings = [
   "Resolved Research Execution Extension Surfaces",
   "Resolved Surfaces",
   "Resolved Extension Surfaces",
+]
+v2_storage_binding_file_globs = [
+  "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md",
+]
+v2_storage_binding_section_headings = [
+  "Source Lineage",
+  "Placeholder Rule",
+  "Storage Binding Status",
 ]

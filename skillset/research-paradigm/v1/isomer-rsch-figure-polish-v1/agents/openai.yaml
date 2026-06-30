@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-figure-polish-v1"
+  short_description: "Final figure polish"
+  default_prompt: "Use $isomer-rsch-figure-polish-v1 to polish and record a durable research figure."
