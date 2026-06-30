@@ -68,9 +68,9 @@ Create or update `<target-skill-dir>/org/README.md` after analysis. State what i
 
 ## Migration Plan
 
-Create `<target-skill-dir>/migrate/migration-plan.md` before adapting the migrated runtime files. The plan should explain how the migration will substitute DeepScientist terms, harness calls, storage assumptions, environment assumptions, artifact mentions, and artifact handoffs.
+Create `<target-skill-dir>/migrate/migration-plan.md` before adapting the migrated runtime files. The plan should explain how the migration will substitute DeepScientist terms, harness calls, storage assumptions, environment assumptions, artifact mentions, artifact handoffs, and source-skill routes that have no matching Isomer skill.
 
-Include term substitutions, harness substitutions, storage and artifact substitutions, environment substitutions, rewrite targets, placeholder registry requirements, and checks that the migrated skill still matches the source structure.
+Include term substitutions, harness substitutions, storage and artifact substitutions, unmatched skill-route substitutions, environment substitutions, rewrite targets, placeholder registry requirements, and checks that the migrated skill still matches the source structure.
 
 ## Logic Preservation
 
@@ -120,9 +120,12 @@ Do not leave migrated instructions that tell the agent to call the DeepScientist
 
 Use placeholders for every artifact mentioned in the source skill until Isomer storage bindings are finalized. This includes handoff artifacts, output artifacts, input artifacts, evidence files, state files, reports, generated figures, datasets, scripts treated as research artifacts, and any source path whose meaning is artifact-like. A placeholder should name the semantic object, not a filesystem path.
 
+Use placeholders for source-skill routes that have no matching skill in this project. If the source skill invokes, delegates to, routes to, or otherwise depends on another DeepScientist skill and there is no matching Isomer skill, replace that route with a semantic placeholder such as `<MISSING_REVIEW_SKILL_ROUTE>` or `<MISSING_BASELINE_SKILL_ROUTE>`.
+
 - Use angle-bracket names such as `<SCOUT_CONTEXT_BRIEF>`, `<BASELINE_EVIDENCE_SUMMARY>`, `<SELECTED_RESEARCH_INQUIRY>`, `<EXPERIMENT_RUN_RECORD>`, or `<PAPER_OUTLINE_INPUT>`.
 - Define each placeholder once in `<target-skill-dir>/migrate/placeholders.md`.
-- For each placeholder, record the source artifact text or path, placeholder name, meaning, producer skill or stage, consumer skill or stage, and whether it represents evidence, a decision, a handoff, a run record, a draft, runtime state, a dataset, code, a figure, or a report.
+- For each artifact placeholder, record the source artifact text or path, placeholder name, meaning, producer skill or stage, consumer skill or stage, and whether it represents evidence, a decision, a handoff, a run record, a draft, runtime state, a dataset, code, a figure, or a report.
+- For each missing skill-route placeholder, record the source route text, source skill name, expected behavior, nearest Isomer candidate if any, caller page, and status `missing-isomer-skill`.
 - Add a reference to `<target-skill-dir>/migrate/placeholders.md` in every migrated skill page that mentions one or more placeholders. The reference can be a short sentence near the first placeholder use, such as `Placeholder definitions live in migrate/placeholders.md.`
 - Keep concrete paths only inside `<target-skill-dir>/org/` provenance material, or when the user explicitly asks for a storage binding pass.
 
@@ -131,9 +134,10 @@ Use this shape for `<target-skill-dir>/migrate/placeholders.md`:
 ```markdown
 # Migration Placeholders
 
-| Placeholder | Source Artifact | Meaning | Producer | Consumer | Kind |
+| Placeholder | Source Artifact or Route | Meaning | Producer or Caller | Consumer or Callee | Kind |
 | --- | --- | --- | --- | --- | --- |
 | `<PLACEHOLDER_NAME>` | `<source artifact text or path>` | <Semantic meaning.> | <Skill or stage.> | <Skill or stage.> | <evidence, decision, handoff, run record, draft, runtime state, dataset, code, figure, or report> |
+| `<MISSING_SKILL_ROUTE>` | `<source route text>` | <Expected routed behavior.> | <Caller page or skill.> | <Missing source skill and nearest Isomer candidate, if any.> | missing-isomer-skill |
 ```
 
 ## Skill Format
@@ -163,13 +167,14 @@ Before finishing, validate both provenance layout and migrated skill structure.
 4. Confirm substitutions in the migration plan are reflected in migrated runtime files.
 5. Confirm every source artifact mention outside `<target-skill-dir>/org/` has been replaced by a placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
 6. Confirm every migrated skill page that uses placeholders references `<target-skill-dir>/migrate/placeholders.md`.
-7. Run the skill validator when available:
+7. Confirm every source-skill route without a matching Isomer skill has been replaced by a missing skill-route placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
+8. Run the skill validator when available:
 
 ```bash
 python /home/huangzhe/.codex/skills/.system/skill-creator/scripts/quick_validate.py <target-skill-dir>
 ```
 
-8. Inspect leftovers outside audit material:
+9. Inspect leftovers outside audit material:
 
 ```bash
 rg -n "DeepScientist MCP|mcp__|quest|quest_root|venv|artifact\.|memory\.|bash_exec" <target-skill-dir>
@@ -187,5 +192,6 @@ Leftovers inside `<target-skill-dir>/org/` are expected because it contains sour
 - Binding storage paths too early instead of using semantic placeholders.
 - Creating placeholders in migrated pages without listing them in `<target-skill-dir>/migrate/placeholders.md`.
 - Forgetting to reference `<target-skill-dir>/migrate/placeholders.md` from a migrated page that uses placeholders.
+- Leaving a route to a missing source skill as if the matching Isomer skill already exists.
 - Leaving direct DeepScientist MCP calls in migrated instructions.
 - Replacing `venv` instructions with another virtualenv pattern instead of using Pixi.
