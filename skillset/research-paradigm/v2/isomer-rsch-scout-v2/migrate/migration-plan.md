@@ -79,8 +79,22 @@ These placeholders cover source mentions of `brief.md`, `plan.md`, `status.md`, 
 - `references/operational-guidance.md`: rewrite the tactical scout workflow using Research Topic, Topic Workspace, Workspace Runtime, Artifact, Evidence Item, Gate, Decision Record, and provider-bound discovery language.
 - `references/paper-triage-playbook.md`: rewrite bounded paper, repository, and benchmark triage guidance.
 - `references/literature-scout-template.md`: rewrite the durable literature report template with placeholders and Isomer provenance language.
-- `references/evaluation-contract-template.md`: rename the source `eval-contract-template.md` shape into an Isomer-native evaluation contract template.
+- `references/eval-contract-template.md`: preserve and refactor the source evaluation contract template.
+- `references/evaluation-contract-template.md`: compatibility redirect for the earlier v2 expanded filename.
 - `references/baseline-shortlist-template.md`: rewrite the baseline shortlist template around comparator route decisions.
+
+## Main Workflow Support Mapping
+
+| Target Workflow Step | Source Sections and References | Runtime Support Pages |
+| --- | --- | --- |
+| Check entry fit | `SKILL.md` Match signals, Do not use when, Preconditions and gate, Exit criteria; `references/operational-guidance.md` planning and stop notes. | `references/operational-guidance.md` |
+| Reconstruct the current frame | `SKILL.md` Control workflow step 1, Truth sources, Preconditions and gate; `references/operational-guidance.md` detailed workflow step 1. | `references/operational-guidance.md` |
+| Reuse prior knowledge first | `SKILL.md` Constraints, Tool discipline, Truth sources; `references/operational-guidance.md` memory note; `references/paper-triage-playbook.md` search order and reuse discipline. | `references/operational-guidance.md`, `references/paper-triage-playbook.md` |
+| Name the minimum unknowns | `SKILL.md` Control workflow step 2, One-sentence summary, AVOID/pitfalls; `references/operational-guidance.md` minimum unknowns and unknown classification. | `references/operational-guidance.md` |
+| Search the unresolved neighborhood | `SKILL.md` Control workflow step 3, Constraints, Tool discipline, Non-negotiable rules; `references/paper-triage-playbook.md`; `references/literature-scout-template.md`. | `references/paper-triage-playbook.md`, `references/literature-scout-template.md` |
+| Clarify route-facing outputs | `SKILL.md` Control workflow step 4, Validation; `references/eval-contract-template.md`; `references/baseline-shortlist-template.md`; `references/literature-scout-template.md`. | `references/eval-contract-template.md`, `references/baseline-shortlist-template.md`, `references/literature-scout-template.md` |
+| Record the next route or blocker | `SKILL.md` Control workflow step 5, Blocked-state handling, Exit criteria; `references/operational-guidance.md`. | `references/operational-guidance.md` |
+| Preserve continuity | `SKILL.md` Interaction discipline, Operational guidance, Exit criteria; `references/operational-guidance.md`; `references/literature-scout-template.md`. | `references/operational-guidance.md`, `references/literature-scout-template.md` |
 
 The existing `agents/openai.yaml` already uses the correct v2 skill name and remains unchanged.
 

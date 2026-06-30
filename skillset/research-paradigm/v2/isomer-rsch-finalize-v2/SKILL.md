@@ -30,12 +30,12 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Gather closure context**. Build <FINALIZE_CONTEXT_BRIEF> from accepted comparator state, runs, analysis, writing state, decisions, blockers, and package or paper manifests.
-2. **Check closure legitimacy**. If required evidence, writing, review, proofing, or submission gates fail, create <FINALIZE_BLOCKER_RECORD> or route to decision instead of forcing closure.
-3. **Build the claim ledger**. Classify every important claim in <CLAIM_LEDGER> as supported, partially supported, unsupported, or deferred with evidence and caveats.
-4. **State limitations and failures**. Create <FINAL_LIMITATIONS_REPORT> including data, metric, implementation, resource, literature, and unsupported-claim limits.
-5. **Write final state**. Produce <FINAL_SUMMARY> and <RESUME_PACKET> when continuation is plausible.
-6. **Choose closure route**. Record <CLOSURE_DECISION> and preserve <FINALIZE_CONTINUITY_UPDATE> for stop, park-and-continue-later, publish-and-continue, archive, or route-back decisions.
+1. **Gather closure context**. Build <FINALIZE_CONTEXT_BRIEF> from accepted comparator state, runs, analysis, writing state, decisions, blockers, and package or paper manifests. Read `references/closure-gate.md` and `references/finalization-checklist.md` for the inventory gates.
+2. **Check closure legitimacy**. If required evidence, writing, review, proofing, or submission gates fail, create <FINALIZE_BLOCKER_RECORD> or route to decision instead of forcing closure. Read `references/closure-gate.md`.
+3. **Build the claim ledger**. Classify every important claim in <CLAIM_LEDGER> as supported, partially supported, unsupported, or deferred with evidence and caveats. Read `references/claim-ledger-template.md`.
+4. **State limitations and failures**. Create <FINAL_LIMITATIONS_REPORT> including data, metric, implementation, resource, literature, and unsupported-claim limits. Read `references/final-summary-template.md` and `references/finalization-checklist.md`.
+5. **Write final state**. Produce <FINAL_SUMMARY> and <RESUME_PACKET> when continuation is plausible. Read `references/final-summary-template.md` and `references/resume-packet-template.md`.
+6. **Choose closure route**. Record <CLOSURE_DECISION> and preserve <FINALIZE_CONTINUITY_UPDATE> for stop, park-and-continue-later, publish-and-continue, archive, or route-back decisions. Read `references/resume-packet-template.md` and `references/checkpoint-memory-template.md`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 
@@ -47,6 +47,8 @@ Read these pages as needed:
 - `references/claim-ledger-template.md` for classify final claim status.
 - `references/final-summary-template.md` for write the responsible end-state summary.
 - `references/resume-packet-template.md` for leave a clean continuation path.
+- `references/finalization-checklist.md` for closure checklist, package inventory, and anti-pattern gates.
+- `references/checkpoint-memory-template.md` for pause-ready or continue-later checkpoint continuity notes.
 
 ## Exit Criteria
 
@@ -56,6 +58,6 @@ This skill can end only when the relevant placeholders are explicit enough for t
 
 - Do not continue after the route, gate, or blocker is already clear.
 - Do not replace evidence requirements with optimistic prose.
-- Do not bind source paths, filenames, or DeepScientist harness outputs as final Isomer storage contracts.
+- Do not bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
 - Do not ask the user routine technical questions before checking durable local evidence.
 - Do not hide blocked states behind vague progress language.

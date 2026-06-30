@@ -2,60 +2,33 @@
 
 Use this reference when scout must map a paper, repository, benchmark, or provenance neighborhood before routing. Placeholder definitions live in `../migrate/placeholders.md`.
 
-## Workflow
+## Guidance
 
-When this playbook is used, execute the following steps in order.
+When performing this step, execute these substeps in order.
 
 1. **Set the triage question**. Name the route-changing uncertainty from `<SCOUT_MINIMUM_UNKNOWNS>`.
 2. **Reuse local evidence**. Check `<SCOUT_CONTEXT_BRIEF>` and `<SCOUT_MEMORY_REUSE_NOTE>` before external discovery.
 3. **Search the smallest useful neighborhood**. Build `<SCOUT_DISCOVERY_LEDGER>` around direct, mechanism, and bottleneck neighbors.
 4. **Retain only route-changing references**. Keep papers, repositories, and benchmark docs that affect task framing, `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, or `<NEXT_ROUTE_DECISION>`.
-5. **Inspect repository provenance when needed**. Check official linkage, evaluation path, dependency realism, maintenance signal, and reproducibility risk.
+5. **Inspect repository provenance when needed**. Check official linkage, evaluation path, dependency realism, maintenance signal, license or access blockers, and reproducibility risk.
 6. **Stop on routing clarity**. Convert retained evidence into `<LITERATURE_SCOUTING_REPORT>`, `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, or `<SCOUT_BLOCKER_RECORD>`.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step triage plan from the scout entrypoint, the route-changing uncertainty, and available provider surfaces, then execute the plan.
+## Preferences
 
-## Search Objective
+- Prefer primary papers, official benchmark docs, and official repositories over secondary summaries (if official sources are missing, otherwise mark provenance risk).
+- Prefer the smallest useful neighborhood over broad survey expansion (if metric, split, or comparator ambiguity remains, otherwise continue only that branch).
+- Prefer disconfirming evidence as well as supportive evidence.
 
-The goal is not to collect many papers. The goal is to map the smallest neighborhood that can justify the task frame, evaluation contract, comparator shortlist, or blocker.
+## Constraints
 
-## Search Order
+- Scout must not retain references that do not change task framing, evaluation contract, comparator routing, or blocker status.
+- Repository triage must not ignore official linkage, evaluation path, dependency realism, maintenance signal, license, data, model weights, or benchmark access when those affect route viability.
+- Discovery must stop when retained references are enough to rank comparator routes, settle metric and split ambiguity, or record a blocker.
+- Scout must not use discovery to justify a route that local durable evidence already contradicts.
 
-Use this order unless the user provides a more specific source:
+## Quality Gates
 
-1. Existing Artifacts, Evidence Items, Findings, Decision Records, repository docs, and `<SCOUT_MEMORY_REUSE_NOTE>`.
-2. Primary papers and official benchmark documentation for the direct task, dataset, split, and metric.
-3. Official repositories and clearly linked implementation repositories.
-4. Mechanism-neighbor papers that share the main method lever or objective.
-5. Bottleneck-neighbor papers that explain failures, evaluation caveats, or boundary conditions.
-6. Broader web or repository search for provenance checks, recency checks, and missing links.
-
-When a provider-bound paper route is available, prefer that route for paper discovery and only read full text when the route-changing detail is absent from summary metadata.
-
-## Retention Test
-
-Retain a reference only when it answers at least one question:
-
-- Does it define or clarify the task?
-- Does it define the benchmark, dataset, split, metric, or fair-comparison rule?
-- Does it supply, reject, or rank a comparator candidate?
-- Does it change whether baseline or idea should be next?
-- Does it reveal a blocker or risk that must be recorded?
-
-Reject references that are merely adjacent, duplicative, or unlikely to change downstream work. Mention rejected references only when their rejection prevents future rework.
-
-## Repository Triage
-
-For a candidate repository, inspect:
-
-- Whether the repository is official or clearly linked from the paper, benchmark, organization, or maintainer.
-- Whether the evaluation path maps to `<EVALUATION_CONTRACT>`.
-- Whether dependencies and runtime assumptions look realistic for the Topic Workspace.
-- Whether the code appears maintained or at least stable enough for attach, import, or reproduce work.
-- Whether license, data, model weights, or benchmark access could block use.
-
-Fold repository findings into `<SCOUT_DISCOVERY_LEDGER>` and `<BASELINE_SHORTLIST>` rather than producing a broad repository audit.
-
-## Stop Condition
-
-Stop triage when retained references are enough to rank comparator routes, settle metric and split ambiguity, or record a blocker. Continue only if remaining ambiguity would change `<NEXT_ROUTE_DECISION>`.
+- Triage focus: each search or inspection is tied to a route-changing unknown.
+- Retention quality: retained references say why they matter and which placeholder they inform.
+- Repository viability: candidate repositories are triaged for provenance, evaluation mapping, runtime realism, and access blockers.
+- Stop condition: `<SCOUT_DISCOVERY_LEDGER>` shows why further search is or is not needed.

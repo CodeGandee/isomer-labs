@@ -33,14 +33,14 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Check entry fit**. Use **Entry Signals** and **Pre-Scout Gate** to decide whether scout should run or route directly to another v2 skill.
-2. **Reconstruct the current frame**. Build `<SCOUT_CONTEXT_BRIEF>` from user constraints, Workspace Runtime records, Artifacts, Evidence Items, Findings, Decision Records, and local repository context.
-3. **Reuse prior knowledge first**. Build `<SCOUT_MEMORY_REUSE_NOTE>` from available Workspace Runtime or DeepScientist-compatible memory retrieval before broad discovery.
-4. **Name the minimum unknowns**. Produce `<SCOUT_MINIMUM_UNKNOWNS>` with only questions that can change baseline, idea, Decision Record, Gate, or blocker routing.
-5. **Search the unresolved neighborhood**. Use **Discovery Discipline** and the reference routing below to produce `<SCOUT_DISCOVERY_LEDGER>` only when local evidence cannot settle route-changing unknowns.
-6. **Clarify route-facing outputs**. Produce or revise `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, and `<LITERATURE_SCOUTING_REPORT>` when those objects are needed by the next route.
-7. **Record the next route or blocker**. Return `<NEXT_ROUTE_DECISION>` when routing is clear, or `<SCOUT_BLOCKER_RECORD>` when missing input, conflicting contracts, or weak comparator candidates prevent a responsible route.
-8. **Preserve continuity**. Create `<SCOUT_CONTINUITY_UPDATE>` for any reusable conclusion, changed route, literature lesson, metric caveat, or blocker before leaving scout.
+1. **Check entry fit**. Use **Entry Signals**, **Pre-Scout Gate**, and `references/operational-guidance.md` to decide whether scout should run or route directly to another v2 skill.
+2. **Reconstruct the current frame**. Build `<SCOUT_CONTEXT_BRIEF>` from user constraints, Workspace Runtime records, Artifacts, Evidence Items, Findings, Decision Records, and local repository context. Read `references/operational-guidance.md` for the context quality gate.
+3. **Reuse prior knowledge first**. Build `<SCOUT_MEMORY_REUSE_NOTE>` from available Workspace Runtime or source-compatible prior-knowledge retrieval before broad discovery. Read `references/operational-guidance.md` and `references/paper-triage-playbook.md` before opening external discovery.
+4. **Name the minimum unknowns**. Produce `<SCOUT_MINIMUM_UNKNOWNS>` with only questions that can change baseline, idea, Decision Record, Gate, or blocker routing. Read `references/operational-guidance.md` for unknown classification constraints.
+5. **Search the unresolved neighborhood**. Use **Discovery Discipline**, `references/paper-triage-playbook.md`, and `references/literature-scout-template.md` to produce `<SCOUT_DISCOVERY_LEDGER>` only when local evidence cannot settle route-changing unknowns.
+6. **Clarify route-facing outputs**. Produce or revise `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, and `<LITERATURE_SCOUTING_REPORT>` when those objects are needed by the next route. Read `references/eval-contract-template.md` and `references/baseline-shortlist-template.md`.
+7. **Record the next route or blocker**. Return `<NEXT_ROUTE_DECISION>` when routing is clear, or `<SCOUT_BLOCKER_RECORD>` when missing input, conflicting contracts, or weak comparator candidates prevent a responsible route. Read `references/operational-guidance.md` for blocker and stop rules.
+8. **Preserve continuity**. Create `<SCOUT_CONTINUITY_UPDATE>` for any reusable conclusion, changed route, literature lesson, metric caveat, or blocker before leaving scout. Read `references/operational-guidance.md` and `references/literature-scout-template.md` for durable-output requirements.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 
@@ -51,7 +51,7 @@ Read these pages as needed:
 - `references/operational-guidance.md` when the scout pass needs the full tactical workflow, continuity rules, blocked-state handling, or harness guidance.
 - `references/paper-triage-playbook.md` when paper, repository, benchmark, or provenance discovery affects the route.
 - `references/literature-scout-template.md` when external discovery materially changes the frame and must become `<LITERATURE_SCOUTING_REPORT>`.
-- `references/evaluation-contract-template.md` when dataset, split, metric, fairness, useful-improvement threshold, evidence, or ambiguity must become `<EVALUATION_CONTRACT>`.
+- `references/eval-contract-template.md` when dataset, split, metric, fairness, useful-improvement threshold, evidence, or ambiguity must become `<EVALUATION_CONTRACT>`.
 - `references/baseline-shortlist-template.md` when serious comparator candidates must become `<BASELINE_SHORTLIST>`.
 
 ## Entry Signals
@@ -82,7 +82,7 @@ If this context already yields a stable `<EVALUATION_CONTRACT>`, `<BASELINE_SHOR
 
 Use discovery only for unresolved questions that can change the next route. Prefer primary papers, official repositories, benchmark documentation, and provider-bound literature results over recollection or broad web summaries.
 
-When current literature, repository state, or benchmark details may have changed, use available search or Literature Provider Binding surfaces. For source-compatible harness behavior, route `memory.*`, `artifact.*`, and `bash_exec` calls through `isomer-cli ext deepsci call ... --input-json <json-object>` or the corresponding Execution Adapter Command Request, then summarize durable meaning with the placeholders in `migrate/placeholders.md`.
+When current literature, repository state, or benchmark details may have changed, use available search or Literature Provider Binding surfaces. For source-compatible harness behavior, route legacy state, evidence, and shell-tool calls through `isomer-cli ext deepsci call ... --input-json <json-object>` or the corresponding Execution Adapter Command Request, then summarize durable meaning with the placeholders in `migrate/placeholders.md`.
 
 Search for disconfirming evidence as well as supportive evidence. Stop when the next route is clear, not when every adjacent paper has been collected.
 

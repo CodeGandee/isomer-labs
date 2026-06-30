@@ -1,17 +1,5 @@
 # Idea Sourcing
 
-Use this reference to generate useful candidates from bottlenecks and contradictions. Placeholder definitions live in `../migrate/placeholders.md`.
+Use `references/high-value-idea-sourcing.md`, `references/idea-thinking-flow.md`, `references/controlled-brainstorming-playbook.md`, and `references/idea-generation-playbook.md` for the canonical step support. Placeholder definitions live in `../migrate/placeholders.md`.
 
-## Workflow
-
-When this reference is used, execute the following steps in order.
-
-1. **Use limitation-first thinking, mechanism maps, field history, related work, local evidence, and cross-domain transfer**.
-2. **Do not inflate novelty without closest-prior-work checks**.
-
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this reference, the parent skill, and the available evidence, then execute the plan.
-
-## Guidance
-
-- Use limitation-first thinking, mechanism maps, field history, related work, local evidence, and cross-domain transfer.
-- Do not inflate novelty without closest-prior-work checks.
+This compatibility page exists for older references to the previous v2 migration. The operative guidance, preferences, constraints, and quality gates now live in the preserved source-reference runtime pages named above.

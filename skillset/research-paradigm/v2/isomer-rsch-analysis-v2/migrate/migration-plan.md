@@ -6,6 +6,7 @@
 - Target skill: `skillset/research-paradigm/v2/isomer-rsch-analysis-v2`.
 - Migration mode: `refactor-migrate`.
 - Source copy: every source file is copied unchanged into `org/src/`.
+- Runtime support copy: every source file is copied and refactored under the target runtime tree with source-relative paths preserved, except the source entrypoint and `agents/openai.yaml`.
 - Source files covered: `SKILL.md`, `references/artifact-flow-examples.md`, `references/boundary-cases.md`, `references/campaign-checklist-template.md`, `references/campaign-design.md`, `references/campaign-plan-template.md`, `references/operational-guidance.md`, `references/writing-facing-slice-examples.md`.
 - Source analysis: `org/analysis/analysis-of-analysis-campaign.md`.
 - Exclusions from deep inspection: package-card and static catalog files are treated as progressive-disclosure reference material when present; runtime behavior is summarized in the source analysis and native v2 pages.
@@ -17,8 +18,9 @@
 | quest | Research Topic, Research Inquiry, Research Task, or Topic Workspace, depending on the source meaning. |
 | quest files and durable quest state | Workspace Runtime records, Artifacts, Evidence Items, Findings, Gates, Decision Records, Provenance Records, and user-provided Research Topic context. |
 | stage | v2 research skill route or Workflow Stage context inside a Topic Agent Team Profile. |
-| next stage or next anchor | `<...ROUTE_DECISION>` placeholder in this migration, later bound to v2 skill routing. |
+| next stage or next anchor | `<ANALYSIS_ROUTE_DECISION>` or `<ANALYSIS_BLOCKER_RECORD>`, later bound to v2 skill routing. |
 | source templates and fixed paths | Semantic placeholders in `migrate/placeholders.md` until Isomer storage bindings are finalized. |
+| `PLAN.md`, local matrices, or checklist files | `<ANALYSIS_CAMPAIGN_PLAN>`, `<ANALYSIS_CAMPAIGN_CHECKLIST>`, or `<ANALYSIS_WRITEBACK_MAP>` depending on the source meaning. |
 
 ## Harness Substitutions
 
@@ -27,8 +29,7 @@
 | `memory.*` | Prefer Workspace Runtime-backed retrieval or recording. When compatibility is required, use `isomer-cli ext deepsci call memory.<tool> --input-json <json-object>` and summarize the result with the local placeholders. |
 | `artifact.*` | Prefer Isomer Artifacts, Evidence Items, Findings, Decision Records, Gates, and Workspace Runtime records. When compatibility is required, use `isomer-cli ext deepsci call artifact.<tool> --input-json <json-object>` and summarize semantic meaning with placeholders. |
 | `bash_exec(...)` | Use an Execution Adapter Command Request or the DeepScientist-compatible extension call for shell, CLI, Python, git, package, scheduler, or environment work. Do not describe native shell calls as the final skill contract. |
-| Quest files such as `SUMMARY.md`, `status.md`, `PLAN.md`, or source templates | Treat as source artifact-like records. Runtime pages use placeholders until Isomer storage bindings are finalized. |
-
+| Source campaign objects, paper matrices, slice worktrees, and slice records | Use `<ANALYSIS_CAMPAIGN_PLAN>`, `<ANALYSIS_WRITEBACK_MAP>`, `<ANALYSIS_SLICE_RECORD>`, and related placeholders until storage bindings are finalized. |
 
 ## Storage and Artifact Substitutions
 
@@ -36,8 +37,12 @@ The migrated runtime pages do not bind source artifacts to concrete paths. They 
 
 - `<ANALYSIS_CONTEXT_BRIEF>`
 - `<PARENT_RESULT_EVIDENCE>`
+- `<ANALYSIS_RESOURCE_ENVELOPE>`
+- `<ANALYSIS_CAMPAIGN_PLAN>`
+- `<ANALYSIS_CAMPAIGN_CHECKLIST>`
 - `<ANALYSIS_SLICE_PLAN>`
 - `<ANALYSIS_SLICE_RECORD>`
+- `<ANALYSIS_WRITEBACK_MAP>`
 - `<ANALYSIS_CAMPAIGN_SUMMARY>`
 - `<ANALYSIS_ROUTE_DECISION>`
 - `<ANALYSIS_BLOCKER_RECORD>`
@@ -61,18 +66,41 @@ Where a source route names a DeepScientist skill that has no v2 target in this b
 
 ## Rewrite Targets
 
-- `SKILL.md`: native v2 control surface.
-- `references/campaign-design.md`: Campaign Design.
-- `references/slice-record-template.md`: Analysis Slice Record Template.
-- `references/evidence-gate.md`: Analysis Evidence Gate.
-- `references/operational-guidance.md`: Operational Guidance.
+- `SKILL.md`: native v2 control surface with workflow steps that reference the required support pages.
+- `references/campaign-design.md`: source-preserved campaign design page refactored into route shape, priority, slice class, and resource-aware support.
+- `references/campaign-plan-template.md`: source-preserved campaign plan template refactored into native route-record support and template fields.
+- `references/campaign-checklist-template.md`: source-preserved campaign checklist template refactored into acceptance-boundary support and template fields.
+- `references/evidence-gate.md`: v2 support page distilled from source validation, hard success gates, comparability contract, negative cases, and aggregation rules.
+- `references/slice-record-template.md`: v2 support page distilled from source slice evidence contract and durable route-record rules.
+- `references/artifact-flow-examples.md`: source-preserved evidence-flow examples refactored into native Isomer evidence-record sequences.
+- `references/boundary-cases.md`: source-preserved boundary-case page refactored into stage-boundary, comparability, qualitative, one-slice, repeated-failure, pre-outline, extra-comparator, and interpretation-boundary support.
+- `references/writing-facing-slice-examples.md`: source-preserved writing-facing example page refactored into paper, review, and rebuttal write-back support.
+- `references/operational-guidance.md`: source-preserved operational support page refactored into durable route, resource, execution, memory, and charting rules.
+
+## Main Workflow Support Mapping
+
+| Target Workflow Step | Source Support Material | Target Runtime Support |
+| --- | --- | --- |
+| Lock the parent boundary | `SKILL.md` Match signals, Control workflow step 1, Hard success gates, Analysis routes, Durable route records, Negative cases; `references/campaign-design.md`; `references/boundary-cases.md`; `references/campaign-plan-template.md`. | `references/campaign-design.md`, `references/boundary-cases.md`, `references/campaign-plan-template.md` |
+| Audit the execution envelope | `SKILL.md` Control workflow step 2, Paper-facing quantity reminder, Authority and freedom, Hard success gates; `references/campaign-design.md` resource gate; `references/operational-guidance.md`; `references/campaign-checklist-template.md`. | `references/operational-guidance.md`, `references/campaign-design.md`, `references/campaign-checklist-template.md` |
+| Choose the smallest useful slice set | `SKILL.md` Control workflow step 3, Analysis routes, Slice evidence contract, Writing-facing boundary; `references/campaign-design.md`; `references/writing-facing-slice-examples.md`; `references/boundary-cases.md`. | `references/campaign-design.md`, `references/boundary-cases.md`, `references/writing-facing-slice-examples.md` |
+| Gate resources and comparability | `SKILL.md` Constraints, Validation, Hard success gates, Comparability contract, Negative cases; `references/campaign-checklist-template.md`; `references/boundary-cases.md`. | `references/evidence-gate.md`, `references/campaign-checklist-template.md`, `references/boundary-cases.md` |
+| Run and record slices | `SKILL.md` Control workflow steps 4-5, Slice evidence contract, Durable route records, Operational guidance; `references/artifact-flow-examples.md`; `references/operational-guidance.md`. | `references/slice-record-template.md`, `references/artifact-flow-examples.md`, `references/operational-guidance.md` |
+| Interpret the campaign boundary | `SKILL.md` Control workflow step 6, Aggregation and reporting, Writing-facing boundary, Negative cases; `references/boundary-cases.md`; `references/writing-facing-slice-examples.md`; `references/campaign-checklist-template.md`. | `references/evidence-gate.md`, `references/boundary-cases.md`, `references/writing-facing-slice-examples.md` |
+| Route from evidence | `SKILL.md` Hard success gates, Durable route records, Negative cases and stop rules, Exit criteria; `references/artifact-flow-examples.md`; `references/operational-guidance.md`. | `references/evidence-gate.md`, `references/artifact-flow-examples.md`, `references/operational-guidance.md` |
 
 ## Semantic Match Checks
 
 The rewritten skill must preserve these source behaviors:
 
-- Parent result exists.
-- Slice plan is bounded.
-- Comparability is explicit.
-- Slice records precede campaign claims.
-- Next route or blocker is explicit.
+- Parent result, parent claim, paper gap, reviewer item, or route decision exists before analysis begins.
+- The parent evidence question, comparison target, stop condition, and route condition are explicit.
+- Current execution envelope conditions campaign design, slice ordering, and infeasible-slice handling.
+- The lightest trustworthy route is selected rather than defaulting to heavy campaign machinery.
+- Slice frontier is bounded and prioritized by soundness gain per cost.
+- Comparability is explicit, and non-comparable evidence is labeled.
+- Writing-facing slices are write-backable or blocked explicitly.
+- Slice records precede campaign-level claims.
+- Null, negative, failed, partial, blocked, infeasible, superseded, and contradictory findings remain visible.
+- Campaign aggregation separates stable support, contradiction, partial support, and unresolved ambiguity.
+- Next route or blocker is explicit and evidence-backed.

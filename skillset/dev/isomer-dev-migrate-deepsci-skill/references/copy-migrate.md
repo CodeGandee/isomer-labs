@@ -4,7 +4,7 @@
 
 Use `copy-migrate` to migrate one DeepScientist source skill into an Isomer Labs skill while keeping the migrated skill as close to the original as practical. Preserve the original document structure, section order, internal pages, assumptions, constraints, and workflow logic. Make targeted changes for Isomer Labs terms, storage placeholders, CLI names, harness calls, Pixi usage, and skill metadata.
 
-Treat the upstream DeepScientist skill as the source of truth, keep the untouched source copy under `<target-skill-dir>/org/src/`, translate user-facing terms into Isomer Labs language, replace DeepScientist MCP harness calls with `isomer-cli ext deepsci`, and defer concrete storage bindings through named placeholders.
+Treat the upstream DeepScientist skill as the source of truth, keep the untouched source copy under `<target-skill-dir>/org/src/`, copy the source support files into the target runtime tree, translate user-facing terms into Isomer Labs language, replace DeepScientist MCP harness calls with `isomer-cli ext deepsci`, and defer concrete storage bindings through named placeholders.
 
 ## Workflow
 
@@ -12,7 +12,7 @@ When `copy-migrate` is invoked, execute the following steps in order.
 
 1. **Resolve the source and target**. See **Source and Target**.
 2. **Create the provenance workspace** under `<target-skill-dir>/org/`. See **Org Layout**.
-3. **Copy the source skill files** into `<target-skill-dir>/org/src/`. See **Source Copy Rules**.
+3. **Copy the source skill files** into `<target-skill-dir>/org/src/` and copy runtime support files into `<target-skill-dir>/`. See **Source Copy Rules**.
 4. **Analyze the source structure** at `<target-skill-dir>/org/analysis/analysis-of-<source-skill-name>.md`. See **Source Analysis**.
 5. **Write the migration plan** at `<target-skill-dir>/migrate/migration-plan.md`. See **Migration Plan**.
 6. **Create the placeholder registry** at `<target-skill-dir>/migrate/placeholders.md`. See **Placeholder Rules**.
@@ -32,6 +32,7 @@ Use `<repo>/...` for paths relative to the Isomer Labs repository root. Use `<so
 - Existing migration guide, if present: `<repo>/skillset/research-paradigm/deepscientist-migration-guide.md`.
 - Placeholder registry, if present: `<repo>/skillset/research-paradigm/v2/isomer-rsch-shared-v2/references/semantic-placeholders.md`.
 - Source copy: `<target-skill-dir>/org/src/`.
+- Runtime support copy: `<target-skill-dir>/...`, excluding the source entrypoint and `agents/openai.yaml`.
 - Source analysis: `<target-skill-dir>/org/analysis/analysis-of-<source-skill-name>.md`.
 - Org inventory: `<target-skill-dir>/org/README.md`.
 - Migration support directory: `<target-skill-dir>/migrate/`.
@@ -55,6 +56,13 @@ The source entrypoint remains available in `<target-skill-dir>/org/src/`.
 Inspect the source and target before editing, and preserve unrelated user changes in the target. Inventory every file in `<source-skill-dir>/`, including the entrypoint, internal pages, references, scripts, templates, and assets.
 
 Copy every source file into `<target-skill-dir>/org/src/` while preserving paths relative to `<source-skill-dir>/`. The original source entrypoint remains at `<target-skill-dir>/org/src/SKILL.md` or `<target-skill-dir>/org/src/skill.md`.
+
+Also copy every source file from `<source-skill-dir>/` into `<target-skill-dir>/` with paths preserved, except:
+
+- `SKILL.md` or `skill.md`, because the target entrypoint must keep the migrated skill name and metadata.
+- `agents/openai.yaml`, because the target skill owns OpenAI-facing metadata and routing text.
+
+The runtime copy is mutable migration material. Adapt those copied files in place for Isomer terms, placeholders, harness replacements, and target style. Do not omit source subpages, templates, references, scripts, assets, package cards, or other support files from the runtime copy merely because the target entrypoint can summarize them.
 
 Use the files in `<target-skill-dir>/org/src/` as the source material for the migrated runtime files at `<target-skill-dir>/`. Keep all source files in `org/src/` even if some look verbose.
 
@@ -163,18 +171,19 @@ Before finishing, validate both provenance layout and migrated skill structure.
 
 1. Confirm `<target-skill-dir>/org/src/`, `<target-skill-dir>/org/analysis/analysis-of-<source-skill-name>.md`, `<target-skill-dir>/org/README.md`, `<target-skill-dir>/migrate/migration-plan.md`, and `<target-skill-dir>/migrate/placeholders.md` exist.
 2. Confirm every source file was copied under `<target-skill-dir>/org/src/` with paths preserved.
-3. Confirm the migrated runtime files at `<target-skill-dir>/` preserve the source document structure as closely as practical.
-4. Confirm substitutions in the migration plan are reflected in migrated runtime files.
-5. Confirm every source artifact mention outside `<target-skill-dir>/org/` has been replaced by a placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
-6. Confirm every migrated skill page that uses placeholders references `<target-skill-dir>/migrate/placeholders.md`.
-7. Confirm every source-skill route without a matching Isomer skill has been replaced by a missing skill-route placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
-8. Run the skill validator when available:
+3. Confirm every source file except `SKILL.md` or `skill.md` and `agents/openai.yaml` was copied under `<target-skill-dir>/` with paths preserved.
+4. Confirm the migrated runtime files at `<target-skill-dir>/` preserve the source document structure as closely as practical.
+5. Confirm substitutions in the migration plan are reflected in migrated runtime files.
+6. Confirm every source artifact mention outside `<target-skill-dir>/org/` has been replaced by a placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
+7. Confirm every migrated skill page that uses placeholders references `<target-skill-dir>/migrate/placeholders.md`.
+8. Confirm every source-skill route without a matching Isomer skill has been replaced by a missing skill-route placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
+9. Run the skill validator when available:
 
 ```bash
 python /home/huangzhe/.codex/skills/.system/skill-creator/scripts/quick_validate.py <target-skill-dir>
 ```
 
-9. Inspect leftovers outside audit material:
+10. Inspect leftovers outside audit material:
 
 ```bash
 rg -n "DeepScientist MCP|mcp__|quest|quest_root|venv|artifact\.|memory\.|bash_exec" <target-skill-dir>
@@ -186,7 +195,10 @@ Leftovers inside `<target-skill-dir>/org/` are expected because it contains sour
 
 - Using an earlier migrated Isomer skill instead of the upstream DeepScientist source skill.
 - Copying only files referenced by the entrypoint instead of every file in the source skill directory.
+- Copying source files only into `org/src/` and forgetting the required runtime support copy under `<target-skill-dir>/`.
+- Collapsing source subpages into a summary instead of copying and adapting them as runtime support files.
 - Overwriting `<target-skill-dir>/SKILL.md` with the source entrypoint.
+- Overwriting `<target-skill-dir>/agents/openai.yaml` with the source agent metadata.
 - Editing files under `<target-skill-dir>/org/src/` so they no longer serve as an untouched source copy.
 - Flattening the source workflow into vague advice and losing decision gates or stop conditions.
 - Binding storage paths too early instead of using semantic placeholders.

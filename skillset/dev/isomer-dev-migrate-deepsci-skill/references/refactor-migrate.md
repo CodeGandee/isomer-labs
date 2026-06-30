@@ -11,11 +11,11 @@ This mode is analysis-first. It must create durable source provenance under `<ta
 When `refactor-migrate` is invoked, execute the following steps in order.
 
 1. **Resolve the source and target**. See **Source and Target**.
-2. **Copy the source skill files** into `<target-skill-dir>/org/src/`. See **Source Copy Rules**.
+2. **Copy the source skill files** into `<target-skill-dir>/org/src/` and copy runtime support files into `<target-skill-dir>/`. See **Source Copy Rules**.
 3. **Deep-inspect the source skill** by invoking `$imsight-agent-skill-handling deep-inspect`. See **Source Analysis**.
 4. **Write the migration plan** at `<target-skill-dir>/migrate/migration-plan.md`. See **Migration Plan**.
 5. **Create the placeholder registry** at `<target-skill-dir>/migrate/placeholders.md`. See **Placeholder Rules**.
-6. **Rewrite the target skill and subpages** according to `$imsight-agent-skill-handling create`, the source analysis, the migration plan, and the placeholder registry. See **Native Rewrite**.
+6. **Rewrite the target skill and subpages** according to `$imsight-agent-skill-handling create`, the source analysis, the migration plan, and the placeholder registry. See **Native Rewrite** and **Main Workflow Support Extraction**.
 7. **Validate semantic match and skill format**. See **Validation**.
 8. **Report** changed files, analysis artifacts, migration-plan choices, copied files, rewritten pages, validation results, and unresolved issues.
 
@@ -30,6 +30,7 @@ Use `<repo>/...` for paths relative to the Isomer Labs repository root. Use `<so
 - Canonical Isomer Labs domain language: `<repo>/.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`.
 - Analysis directory: `<target-skill-dir>/org/`.
 - Source copy: `<target-skill-dir>/org/src/`.
+- Runtime support copy: `<target-skill-dir>/...`, excluding the source entrypoint and `agents/openai.yaml`.
 - Deep inspection output: `<target-skill-dir>/org/analysis/analysis-of-<source-skill-name>.md`.
 - Analysis README: `<target-skill-dir>/org/README.md`.
 - Migration support directory: `<target-skill-dir>/migrate/`.
@@ -53,6 +54,13 @@ The source entrypoint remains available in `<target-skill-dir>/org/src/`.
 Inspect the source and target before editing, and preserve unrelated user changes in the target. Inventory every file in `<source-skill-dir>/`, including the entrypoint, internal pages, references, scripts, templates, and assets.
 
 Copy every source file into `<target-skill-dir>/org/src/` while preserving paths relative to `<source-skill-dir>/`. The original source entrypoint remains at `<target-skill-dir>/org/src/SKILL.md` or `<target-skill-dir>/org/src/skill.md`.
+
+Also copy every source file from `<source-skill-dir>/` into `<target-skill-dir>/` with paths preserved, except:
+
+- `SKILL.md` or `skill.md`, because the target entrypoint must keep the migrated skill name and metadata.
+- `agents/openai.yaml`, because the target skill owns OpenAI-facing metadata and routing text.
+
+The runtime copy is mutable migration material. Refactor those copied files in place into native Isomer workflow pages, templates, scripts, assets, package cards, or references as appropriate. Do not omit source subpages, templates, references, scripts, assets, package cards, or other support files from the runtime copy merely because the target entrypoint can summarize them.
 
 Keep the copied source files available as source material until the rewrite has been validated against `<target-skill-dir>/org/analysis/analysis-of-<source-skill-name>.md`.
 
@@ -81,7 +89,8 @@ Include these sections:
 - **Unmatched Skill-Route Substitutions**: source skill calls, routes, or delegations with no matching Isomer skill mapped to semantic placeholders.
 - **Environment Substitutions**: source environment assumptions, including `venv`, mapped to Isomer Labs conventions such as Pixi.
 - **Placeholder Registry**: required entries for `<target-skill-dir>/migrate/placeholders.md` and the migrated pages that must reference it.
-- **Rewrite Targets**: target `SKILL.md` and subpages that must be rewritten.
+- **Rewrite Targets**: target `SKILL.md` plus every copied runtime source file outside `<target-skill-dir>/org/` that must be refactored, with explicit notes for any copied file that is intentionally left as an asset, data file, package card, or passive template.
+- **Main Workflow Support Mapping**: for each target main workflow step, list the source entrypoint sections and source reference pages that provide preferences, constraints, guidance, quality gates, common mistakes, stop conditions, or output requirements for that step.
 - **Semantic Match Checks**: the logic, constraints, assumptions, inputs, and outputs that the rewritten skill must preserve.
 
 ## Placeholder Rules
@@ -110,7 +119,9 @@ Use this shape for `<target-skill-dir>/migrate/placeholders.md`:
 
 ## Native Rewrite
 
-Rewrite `<target-skill-dir>/SKILL.md` and every target subpage that represents executable skill behavior. Use `$imsight-agent-skill-handling create` as the style and contract reference for the target skill, not as permission to ignore the source analysis.
+Rewrite `<target-skill-dir>/SKILL.md` and every copied runtime subpage that represents executable skill behavior. Use `$imsight-agent-skill-handling create` as the style and contract reference for the target skill, not as permission to ignore the source analysis.
+
+Refactor mode may change wording, headings, and Isomer-facing organization, but it must not drop source support pages from the runtime tree. Keep copied passive templates, package cards, assets, data files, and examples available at their preserved paths unless a later user request explicitly asks to prune them. If a copied runtime file is not rewritten, record why in the migration plan or report.
 
 The rewritten skill must:
 
@@ -121,7 +132,86 @@ The rewritten skill must:
 - Preserve essential source logic, constraints, assumptions, inputs, outputs, gates, evidence handoffs, and stop conditions.
 - Fit the current project's skill style, including concise frontmatter, `## Overview`, `## Workflow`, subcommand structure when needed, and `## Common Mistakes`.
 - Rewrite subpages so they are native Isomer workflow pages rather than lightly edited DeepScientist pages.
+- Reference the relevant support section or support page from every main workflow step so the running agent knows what to read before executing that step.
 - Keep `<target-skill-dir>/org/src/` as the untouched audit copy of the original source skill.
+
+## Main Workflow Support Extraction
+
+After the first native rewrite from analyzed source logic, reread `<target-skill-dir>/org/src/SKILL.md` or `<target-skill-dir>/org/src/skill.md` directly. Do not rely only on the deep-inspection summary. Extract the source skill's preferences, constraints, guidance, quality gates, common mistakes, stop conditions, artifact rules, memory rules, and output requirements, even when those rules are not explicitly linked from the source control workflow.
+
+For each step in the target skill's main `## Workflow`:
+
+1. Identify the source sections and source reference pages that constrain or guide that step. Include top-level source sections such as protocols, mandates, non-negotiable rules, failure handling, quality rules, memory rules, artifact rules, and interaction rules when they affect the step.
+2. Create or update a corresponding refactored support section or runtime support page under `<target-skill-dir>/`. Use native Isomer wording, but preserve the operative rule, gate, preference, or stop condition.
+3. Put step-specific material near the step's support page or under the standard support blocks in **Step Support Templates**. Put rules that apply across all steps in a clearly named global support section such as `## Global Constraints` or `## Cross-Step Quality Gates`, using the same block shapes.
+4. Reference the support section or support page from the matching main workflow step. A step should not depend on hidden source knowledge that is absent from the target runtime tree.
+5. Record in `<target-skill-dir>/migrate/migration-plan.md` how source support sections map to target workflow steps, including any source rule intentionally left as a global rule instead of a step-specific rule.
+
+Do not drop a source rule merely because it appears outside the source's numbered workflow, because it is duplicated in a later section, or because the target main workflow has fewer steps than the source. Compress wording when useful, but keep the operational content discoverable from the target main workflow.
+
+## Step Support Templates
+
+Use these block shapes when extracting source support material into target runtime pages. These sections are optional for any given workflow step. If the source skill has no information that fits a support type, omit that section instead of inventing filler.
+
+Before omitting a support section, look hard for clues in the source entrypoint, linked and unlinked source references, templates, examples, non-negotiable rules, common mistakes, validation rules, artifact rules, memory rules, and failure-handling sections. Do not give up after a rough scan just because the source does not use the exact words `guidance`, `preferences`, `constraints`, or `quality gates`.
+
+### Guidance
+
+`Guidance` expands one main workflow step into a smaller step-by-step workflow. It should read like a local `## Workflow`, with ordered substeps that an agent can execute.
+
+Use this shape:
+
+```markdown
+## Guidance
+
+When performing this step, execute these substeps in order.
+
+1. **<Substep name>**. <Concrete action and expected intermediate output.>
+2. **<Substep name>**. <Concrete action and expected intermediate output.>
+3. **<Substep name>**. <Concrete action and expected intermediate output.>
+```
+
+### Preferences
+
+`Preferences` list preferred ways of thinking and doing the step. Each item should be a sentence in the form `Prefer ...` with any condition or fallback in parentheses.
+
+Use this shape:
+
+```markdown
+## Preferences
+
+- Prefer <preferred approach> (if <condition>, otherwise <fallback>).
+- Prefer <preferred evidence source or reasoning style> (if <condition>, otherwise <fallback>).
+```
+
+### Constraints
+
+`Constraints` list hard or strong requirements for the step. Each item should name the subject and use `should`, `should not`, `must`, or `must not`.
+
+Use this shape:
+
+```markdown
+## Constraints
+
+- <Subject> must <required behavior>.
+- <Subject> must not <forbidden behavior>.
+- <Subject> should <recommended behavior when not absolute>.
+- <Subject> should not <discouraged behavior when not absolute>.
+```
+
+### Quality Gates
+
+`Quality Gates` list concrete metrics or checks for assessing the outcome quality of the step. Each item should be inspectable from the step output, local evidence, placeholders, or runtime records.
+
+Use this shape:
+
+```markdown
+## Quality Gates
+
+- <Metric or check>: <passing condition>.
+- <Metric or check>: <passing condition>.
+- <Metric or check>: <passing condition>.
+```
 
 ## Validation
 
@@ -129,18 +219,22 @@ Before finishing, validate both structure and semantic preservation.
 
 1. Confirm `<target-skill-dir>/org/src/`, `<target-skill-dir>/org/analysis/analysis-of-<source-skill-name>.md`, `<target-skill-dir>/org/README.md`, `<target-skill-dir>/migrate/migration-plan.md`, and `<target-skill-dir>/migrate/placeholders.md` exist.
 2. Confirm every source file was copied under `<target-skill-dir>/org/src/` with paths preserved.
-3. Confirm the rewritten `SKILL.md` and rewritten workflow subpages match the source process analysis, not merely the source wording.
-4. Confirm substitutions in the migration plan are reflected in rewritten pages.
-5. Confirm every source artifact mention outside `<target-skill-dir>/org/` has been replaced by a placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
-6. Confirm every rewritten skill page that uses placeholders references `<target-skill-dir>/migrate/placeholders.md`.
-7. Confirm every source-skill route without a matching Isomer skill has been replaced by a missing skill-route placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
-8. Run the skill validator when available:
+3. Confirm every source file except `SKILL.md` or `skill.md` and `agents/openai.yaml` was copied under `<target-skill-dir>/` with paths preserved.
+4. Confirm the rewritten `SKILL.md` and rewritten workflow subpages match the source process analysis, not merely the source wording.
+5. Confirm every main workflow step references the support section or support page that carries its extracted preferences, constraints, guidance, quality gates, stop conditions, and output requirements.
+6. Confirm extracted step support uses the standard `Guidance`, `Preferences`, `Constraints`, and `Quality Gates` shapes when those support types are present, and confirm omitted support types were omitted because the source lacked fitting material after a careful search.
+7. Confirm the migration plan records the mapping from source support sections and source reference pages to target workflow steps or global target support sections.
+8. Confirm substitutions in the migration plan are reflected in rewritten pages.
+9. Confirm every source artifact mention outside `<target-skill-dir>/org/` has been replaced by a placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
+10. Confirm every rewritten skill page that uses placeholders references `<target-skill-dir>/migrate/placeholders.md`.
+11. Confirm every source-skill route without a matching Isomer skill has been replaced by a missing skill-route placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
+12. Run the skill validator when available:
 
 ```bash
 python /home/huangzhe/.codex/skills/.system/skill-creator/scripts/quick_validate.py <target-skill-dir>
 ```
 
-9. Inspect leftovers outside audit material:
+13. Inspect leftovers outside audit material:
 
 ```bash
 rg -n "DeepScientist MCP|mcp__|quest|quest_root|venv|artifact\.|memory\.|bash_exec" <target-skill-dir>
@@ -152,10 +246,18 @@ Leftovers inside `<target-skill-dir>/org/` are expected when they document the s
 
 - Rewriting from intuition instead of from the deep-inspection output.
 - Treating `refactor-migrate` as a cosmetic cleanup of `copy-migrate`.
+- Copying source files only into `org/src/` and forgetting the required runtime support copy under `<target-skill-dir>/`.
+- Collapsing source subpages into a smaller set of native pages instead of copying and refactoring each source support file in the runtime tree.
 - Skipping `<target-skill-dir>/org/README.md`, which records analysis coverage.
 - Creating `<target-skill-dir>/migrate/migration-plan.md` after the rewrite instead of before it.
 - Creating placeholders in rewritten pages without listing them in `<target-skill-dir>/migrate/placeholders.md`.
 - Forgetting to reference `<target-skill-dir>/migrate/placeholders.md` from a rewritten page that uses placeholders.
 - Leaving a route to a missing source skill as if the matching Isomer skill already exists.
+- Rewriting only from analyzed high-level logic and failing to reread the source entrypoint for preferences, constraints, guidance, quality gates, and stop conditions.
+- Leaving main workflow steps without references to the support sections or pages they require.
+- Dropping source rules because they live outside the source's numbered control workflow.
+- Mixing guidance, preferences, constraints, and quality gates into one prose blob instead of using the standard support block shapes.
+- Inventing empty support sections when the source has no fitting material, or omitting support sections after only a rough scan.
 - Preserving native-looking prose while losing source gates, evidence handoffs, assumptions, inputs, or outputs.
+- Overwriting `<target-skill-dir>/agents/openai.yaml` with source agent metadata.
 - Editing files under `<target-skill-dir>/org/src/` so they no longer serve as an untouched source copy.

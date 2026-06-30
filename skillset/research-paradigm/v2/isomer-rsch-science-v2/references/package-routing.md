@@ -1,19 +1,5 @@
 # Package Routing
 
-Use this reference to use package knowledge as routing context, not availability proof. Placeholder definitions live in `../migrate/placeholders.md`.
+Use `references/package-index.min.json`, `references/domain-index.md`, package cards under `references/packages/`, and `references/package-check-playbook.md` for canonical package-routing support. Placeholder definitions live in `../migrate/placeholders.md`.
 
-## Workflow
-
-When this reference is used, execute the following steps in order.
-
-1. **Inspect domain and package metadata**.
-2. **Run import, executable, version, module, container, and smoke checks before expensive work**.
-3. **Record failed and blocked package checks honestly**.
-
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this reference, the parent skill, and the available evidence, then execute the plan.
-
-## Guidance
-
-- Inspect domain and package metadata.
-- Run import, executable, version, module, container, and smoke checks before expensive work.
-- Record failed and blocked package checks honestly.
+This compatibility page exists because the first v2 draft used a synthesized page name before the refactor migration restored source reference filenames.

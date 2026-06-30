@@ -6,7 +6,8 @@
 - Target skill: `skillset/research-paradigm/v2/isomer-rsch-idea-v2`.
 - Migration mode: `refactor-migrate`.
 - Source copy: every source file is copied unchanged into `org/src/`.
-- Source files covered: `SKILL.md`, `references/controlled-brainstorming-playbook.md`, `references/current-board-packet-template.md`, `references/high-value-idea-sourcing.md`, `references/idea-generation-playbook.md`, `references/idea-thinking-flow.md`, `references/literature-survey-template.md`, `references/objective-contract-template.md`, `references/outline-seeding-example.md`, `references/pre-idea-draft-template.md`, `references/related-work-playbook.md`, `references/research-history-playbook.md`, and 2 more files.
+- Runtime support copy: every source reference page is copied and refactored under `references/` with the source-relative path preserved. The source entrypoint is not copied over target `SKILL.md`, and target `agents/openai.yaml` is preserved.
+- Source files covered: `SKILL.md`, `references/controlled-brainstorming-playbook.md`, `references/current-board-packet-template.md`, `references/high-value-idea-sourcing.md`, `references/idea-generation-playbook.md`, `references/idea-thinking-flow.md`, `references/literature-survey-template.md`, `references/objective-contract-template.md`, `references/outline-seeding-example.md`, `references/pre-idea-draft-template.md`, `references/related-work-playbook.md`, `references/research-history-playbook.md`, `references/research-outline-template.md`, and `references/selection-gate.md`.
 - Source analysis: `org/analysis/analysis-of-idea.md`.
 - Exclusions from deep inspection: package-card and static catalog files are treated as progressive-disclosure reference material when present; runtime behavior is summarized in the source analysis and native v2 pages.
 
@@ -38,11 +39,20 @@ The migrated runtime pages do not bind source artifacts to concrete paths. They 
 - `<OBJECTIVE_CONTRACT>`
 - `<CURRENT_BOARD_PACKET>`
 - `<LITERATURE_SURVEY_REPORT>`
+- `<RELATED_WORK_MAP>`
+- `<LIMITATIONS_MAP>`
+- `<MECHANISM_FRAMING>`
+- `<RAW_IDEA_SLATE>`
 - `<CANDIDATE_IDEA_FRONTIER>`
+- `<REJECTED_AND_DEFERRED_IDEAS>`
 - `<PRE_IDEA_DRAFT>`
 - `<SELECTED_HYPOTHESIS>`
+- `<SELECTED_IDEA_DRAFT>`
 - `<IDEA_ROUTE_DECISION>`
 - `<IDEA_BLOCKER_RECORD>`
+- `<IDEA_MEMORY_RECORD>`
+- `<PAPER_OUTLINE_SEED>`
+- `<RESEARCH_OUTLINE_NOTE>`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -63,18 +73,47 @@ Where a source route names a DeepScientist skill that has no v2 target in this b
 ## Rewrite Targets
 
 - `SKILL.md`: native v2 control surface.
-- `references/objective-contract.md`: Objective Contract.
-- `references/idea-sourcing.md`: Idea Sourcing.
-- `references/selection-gate.md`: Selection Gate.
-- `references/selected-hypothesis-template.md`: Selected Hypothesis Template.
-- `references/literature-survey-template.md`: Literature Survey Template.
+- `references/objective-contract-template.md`: Objective Contract Template.
+- `references/current-board-packet-template.md`: Current Board Packet Template.
+- `references/high-value-idea-sourcing.md`: High-Value Idea Sourcing.
+- `references/related-work-playbook.md`: Related-Work Playbook.
+- `references/research-history-playbook.md`: Research History Playbook.
+- `references/literature-survey-template.md`: Literature Survey Report Template.
+- `references/idea-thinking-flow.md`: Idea Thinking Flow.
+- `references/idea-generation-playbook.md`: Idea Generation Playbook.
+- `references/controlled-brainstorming-playbook.md`: Controlled Brainstorming Playbook.
+- `references/pre-idea-draft-template.md`: Pre-Idea Draft Template.
+- `references/selection-gate.md`: Selection Gate And Handoff.
+- `references/outline-seeding-example.md`: Outline Seeding Example.
+- `references/research-outline-template.md`: Research Outline Template.
+- `references/selected-hypothesis-template.md`: v2 selected hypothesis handoff page distilled from source output contract and selection gate.
+- `references/objective-contract.md` and `references/idea-sourcing.md`: compatibility pages that point to the preserved source-reference runtime pages.
+
+## Main Workflow Support Mapping
+
+| Target Workflow Step | Source Sections and References | Runtime Support Pages |
+| --- | --- | --- |
+| Check readiness and recover context | `SKILL.md` Match signals, Use when, Do not use when, Preconditions and gate, Failure and blocked handling, Exit criteria; `references/selection-gate.md` promotion gate. | `references/objective-contract-template.md`, `references/current-board-packet-template.md`, `references/selection-gate.md` |
+| Lock the objective and board | `SKILL.md` Control workflow steps 1-2, Constraints, Validation, Three-layer todo contract, Current-node plan and checklist; `references/objective-contract-template.md`; `references/current-board-packet-template.md`. | `references/objective-contract-template.md`, `references/current-board-packet-template.md` |
+| Plan and refresh evidence | `SKILL.md` Control workflow step 4, Truth sources, Related-work and novelty mandate, Memory rules; `references/literature-survey-template.md`; `references/related-work-playbook.md`; `references/research-history-playbook.md`. | `references/literature-survey-template.md`, `references/related-work-playbook.md`, `references/research-history-playbook.md` |
+| Extract the limitation and mechanism frame | `SKILL.md` Control workflow steps 3 and 5, Direction-shaping protocol, Thinking protocol, Stage purpose; `references/high-value-idea-sourcing.md`; `references/idea-thinking-flow.md`; `references/research-outline-template.md`. | `references/high-value-idea-sourcing.md`, `references/idea-thinking-flow.md`, `references/research-outline-template.md` |
+| Generate a bounded frontier | `SKILL.md` Control workflow steps 6-7, Creative-divergence protocol, Integrated ideation workflow, Common ideation failure modes; `references/controlled-brainstorming-playbook.md`; `references/idea-generation-playbook.md`. | `references/controlled-brainstorming-playbook.md`, `references/idea-generation-playbook.md` |
+| Challenge serious candidates | `SKILL.md` Control workflow step 8, Draft-before-submit SOP, Non-negotiable rules; `references/pre-idea-draft-template.md`. | `references/pre-idea-draft-template.md` |
+| Select, branch, reject, or block | `SKILL.md` Control workflow steps 9-10, Idea output contract, Idea quality rules, Novelty and research-value rules, Artifact rules, Failure and blocked handling; `references/selection-gate.md`. | `references/selection-gate.md`, `references/selected-hypothesis-template.md` |
+| Record durable outcomes and route next | `SKILL.md` Required durable outputs, Memory rules, Artifact rules, Research-map role, Exit criteria; `references/literature-survey-template.md`; `references/outline-seeding-example.md`; `references/research-outline-template.md`. | `references/literature-survey-template.md`, `references/outline-seeding-example.md`, `references/research-outline-template.md` |
 
 ## Semantic Match Checks
 
 The rewritten skill must preserve these source behaviors:
 
-- Objective grounded.
-- Current board recovered.
-- Literature refreshed only where needed.
-- Candidate frontier bounded.
-- One falsifiable route selected or blocker recorded.
+- Objective grounded before ideation, with false-progress and hard constraints explicit.
+- Current board recovered before widening, with incumbent, blocker, stale routes, and validation budget class explicit.
+- Durable memory and local evidence checked before external search.
+- Literature refreshed or deliberately reused, with related-work map, history view, closest-prior-work table, novelty or value verdict, and citation-ready support.
+- Limitation, contradiction, mechanism framing, and lever bucket extracted before candidate generation.
+- Bounded divergence run with route-family diversity unless strong durable evidence justifies abbreviation.
+- Candidate frontier narrowed to serious decision packages rather than slogans.
+- Pre-idea draft or equivalent challenge memo written for serious surviving candidates before promotion.
+- Selection gate applied with value, feasibility, novelty, falsifiability, evidence quality, constraint fit, anti-win, minimal validation, and abandonment checks.
+- One falsifiable route selected, an algorithm-first frontier routed to optimize, a branch or reject decision recorded, or a blocker recorded.
+- Durable outcome records and reusable memory or outline seeds preserved when the source rules call for them.

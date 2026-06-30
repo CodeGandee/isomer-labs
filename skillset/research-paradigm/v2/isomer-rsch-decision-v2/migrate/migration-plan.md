@@ -61,10 +61,23 @@ Where a source route names a DeepScientist skill that has no v2 target in this b
 ## Rewrite Targets
 
 - `SKILL.md`: native v2 control surface.
-- `references/canonical-actions.md`: Canonical Actions.
-- `references/route-criteria.md`: Route Criteria.
-- `references/decision-record-template.md`: Decision Record Template.
+- `references/operational-guidance.md`: source-preserved tactical decision guidance.
+- `references/research-route-criteria.md`: source-preserved route-selection criteria.
+- `references/strategic-decision-template.md`: source-preserved decision record template.
 - `references/checkpoint-memory-template.md`: Checkpoint Memory Template.
+- `references/canonical-actions.md`: extracted source-entrypoint canonical action vocabulary.
+- `references/route-criteria.md`: compatibility redirect to `references/research-route-criteria.md`.
+- `references/decision-record-template.md`: compatibility redirect to `references/strategic-decision-template.md`.
+
+## Main Workflow Support Mapping
+
+| Target Workflow Step | Source Sections and References | Runtime Support Pages |
+| --- | --- | --- |
+| Check decision readiness | `SKILL.md` Match signals, Do not use when, Control workflow step 1, Preconditions implied by truth sources, Operational guidance. | `references/operational-guidance.md` |
+| State the route question | `SKILL.md` Control workflow step 2, Truth sources, Required decision record; `references/research-route-criteria.md`. | `references/research-route-criteria.md` |
+| Choose the smallest canonical action | `SKILL.md` Control workflow step 3, Canonical actions, Constraints, AVOID/pitfalls; `references/research-route-criteria.md`; `references/operational-guidance.md`. | `references/canonical-actions.md`, `references/research-route-criteria.md`, `references/operational-guidance.md` |
+| Record the verdict | `SKILL.md` Control workflow step 4, Required decision record, Decision-quality rules; `references/strategic-decision-template.md`. | `references/strategic-decision-template.md` |
+| Preserve the resume point | `SKILL.md` Control workflow step 5, Interaction discipline, Memory note, Exit criteria; `references/checkpoint-memory-template.md`; `references/operational-guidance.md`. | `references/checkpoint-memory-template.md`, `references/operational-guidance.md` |
 
 ## Semantic Match Checks
 
@@ -75,3 +88,4 @@ The rewritten skill must preserve these source behaviors:
 - Smallest canonical action selected.
 - Decision recorded durably.
 - User asked only for real preference or scope choices.
+- Source operational rules for baseline reuse, paper-route stop loss, optimization-frontier routing, package selection, and checkpoint memory remain discoverable from runtime support pages.

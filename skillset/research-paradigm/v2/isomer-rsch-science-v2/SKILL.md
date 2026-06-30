@@ -7,18 +7,18 @@ description: Use when research work depends on scientific computation, data anal
 
 ## Overview
 
-Science provides companion evidence discipline for scientific computation and validation. It routes tasks through package and domain context, keeps execution in Isomer command surfaces, and records claim-supporting evidence nodes before scientific claims are trusted.
+Science provides companion evidence discipline for scientific computation and validation. It routes tasks through package and domain context, keeps execution in Isomer command surfaces, and records claim-supporting evidence before scientific claims are trusted.
 
-Placeholder definitions live in `migrate/placeholders.md`.
+Placeholder definitions live in `migrate/placeholders.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language. Package cards and `references/package-index.min.json` are passive catalog material and do not prove runtime availability.
 
 ## When to Use
 
 Use this skill when:
 
 - A task requires scientific package, solver, simulation, data, model, or HPC support.
-- A package, executable, module, container, or environment needs availability and smoke checks.
+- A package, executable, module, container, license, dataset, or environment needs availability and smoke checks.
 - A computed, parsed, digitized, or hypothesis claim needs evidence classification.
-- Experiment or analysis work needs scientific validity notes.
+- Experiment or analysis work needs scientific validity notes, convergence checks, unit checks, schema checks, controls, or scientific caveats.
 
 Do not use this skill when:
 
@@ -28,35 +28,63 @@ Do not use this skill when:
 
 ## Workflow
 
-When this skill is invoked, execute the following steps in order.
+When this skill is invoked, execute these steps in order.
 
-1. **Frame the science task**. Create <SCIENCE_TASK_BRIEF> with domain, objective, inputs, expected outputs, claim type, package needs, and validation risks.
-2. **Route through package or domain context**. Use package and domain knowledge only as routing context, then verify availability through <SCIENCE_PACKAGE_CHECK> before computed work.
-3. **Execute through Isomer command surfaces**. Use Execution Adapter Command Requests or compatible harness calls for code, CLI, solver, scheduler, and HPC work.
-4. **Record scientific evidence**. Create <SCIENCE_RUN_RECORD> and <SCIENCE_VALIDATION_RESULT> for computation, parsing, digitization, dataset analysis, parameter sweep, convergence, units, schema, or controls.
-5. **Classify claims conservatively**. Create <SCIENCE_CLAIM_RECORD> only after supporting run, analysis, sweep, or validation evidence exists.
-6. **Update the evidence graph or route**. Record <SCIENCE_EVIDENCE_GRAPH_UPDATE>, <SCIENCE_ROUTE_DECISION>, or <SCIENCE_BLOCKER_RECORD>.
+1. **Frame the science task**. Create <SCIENCE_TASK_BRIEF> with domain, objective, inputs, expected outputs, claim type, package needs, resources, constraints, validation risks, and downstream consumer. Read `references/science-task-brief-template.md`.
+2. **Route through package or domain context**. Search `references/package-index.min.json`, inspect `references/domain-index.md`, and open only relevant `references/packages/<package_id>.md` cards. Treat catalog material as routing context, then verify availability through <SCIENCE_PACKAGE_CHECK>. Read `references/package-check-playbook.md`.
+3. **Execute through Isomer command surfaces**. Use Execution Adapter Command Requests or compatible execution bindings for code, CLI, solver, scheduler, remote shell, queue, and log work. Read `references/hpc-via-bash-exec.md` when HPC, SSH, scheduler, allocation, or remote logs are involved.
+4. **Record scientific evidence**. Create or update <SCIENCE_RUN_RECORD> and <SCIENCE_VALIDATION_RESULT> for computation, parsing, digitization, dataset analysis, parameter sweep, convergence, units, schema, controls, tolerances, seeds, or invariants. Read `references/artifact-science-tool.md`.
+5. **Classify claims conservatively**. Create <SCIENCE_CLAIM_RECORD> only after supporting run, analysis, sweep, package-check, or validation evidence exists. Read `references/claim-type-discipline.md`.
+6. **Update the evidence graph or route**. Record <SCIENCE_EVIDENCE_GRAPH_UPDATE>, <SCIENCE_ROUTE_DECISION>, or <SCIENCE_BLOCKER_RECORD> so later skills can reconstruct what was checked, what failed, and what claims are safe. Read `references/artifact-science-tool.md`, `references/claim-type-discipline.md`, and `references/hpc-via-bash-exec.md`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
+
+## Cross-Step Preferences
+
+- Prefer package cards for routing context, not availability claims (if a solver is needed, otherwise run an environment check first).
+- Prefer typed evidence records over prose-only scientific summaries (if evidence is missing, otherwise record a blocker or hypothesis).
+- Prefer conservative claim types (if the computation did not run in the current workspace, otherwise do not call it computed).
+- Prefer low-frequency durable monitoring for HPC and long runs (if a job is queued or running, otherwise do not infer completion).
+
+## Cross-Step Constraints
+
+- Package metadata must not override task-specific evidence.
+- Runtime availability must be checked before computed work when package, executable, module, container, license, or backend availability matters.
+- Computed claims must link to run, analysis, sweep, package-check, validation, or evidence paths.
+- Digitized or parsed evidence must not be relabeled as computed.
+- Scientific tolerances, filters, physical models, convergence criteria, and validation checks must not be weakened merely to make a run pass.
+- Queued or submitted jobs must not be reported as completed results.
+- Blocked package checks, missing data, missing licenses, missing credentials, failed modules, and unavailable resources must be recorded when they affect the route.
+
+## Cross-Step Quality Gates
+
+- Task gate: <SCIENCE_TASK_BRIEF> names domain, objective, inputs, outputs, package needs, claim type, resources, validation checks, and downstream consumer.
+- Package gate: <SCIENCE_PACKAGE_CHECK> records import, executable, version, module, container, backend, license, and smoke evidence when relevant.
+- Execution gate: <SCIENCE_RUN_RECORD> preserves command, input, log, output, status, environment, and package context.
+- Validation gate: <SCIENCE_VALIDATION_RESULT> records convergence, units, schema, controls, tolerances, seeds, invariants, or correctness checks when they matter.
+- Claim gate: <SCIENCE_CLAIM_RECORD> has claim type and linked evidence.
+- Route gate: <SCIENCE_ROUTE_DECISION> or <SCIENCE_BLOCKER_RECORD> states next action or blocker plainly.
 
 ## Reference Routing
 
 Read these pages as needed:
 
-- `references/science-task-brief.md` for frame a scientific computation or validation task before execution.
-- `references/evidence-recording.md` for record scientific evidence as typed nodes before claims.
-- `references/package-routing.md` for use package knowledge as routing context, not availability proof.
-- `references/hpc-execution-adapter.md` for handle ssh, scheduler, queue, and log evidence through isomer command surfaces.
-- `references/claim-discipline.md` for calibrate scientific claims to evidence type.
+- `references/science-task-brief-template.md` for framing a scientific computation, validation task, or scientific code optimization brief.
+- `references/package-index.min.json` and `references/domain-index.md` for package and domain routing.
+- `references/packages/<package_id>.md` for package-specific routing cards.
+- `references/package-check-playbook.md` for package, executable, module, container, backend, and smoke checks.
+- `references/artifact-science-tool.md` for science evidence graph record shapes and required evidence rules.
+- `references/hpc-via-bash-exec.md` for HPC, SSH, scheduler, queue, job id, and remote-log discipline through Isomer execution surfaces.
+- `references/claim-type-discipline.md` for computed, parsed, digitized, and hypothesis claim discipline.
 
 ## Exit Criteria
 
-This skill can end only when the relevant placeholders are explicit enough for the next route, a blocker is recorded, and later v2 skills do not need to guess what changed or why.
+This skill can end only when package availability is checked or blocked, scientific runs and validations have evidence records when applicable, claims are typed conservatively, and the next route or blocker is explicit.
 
 ## Common Mistakes
 
-- Do not continue after the route, gate, or blocker is already clear.
-- Do not replace evidence requirements with optimistic prose.
-- Do not bind source paths, filenames, or DeepScientist harness outputs as final Isomer storage contracts.
-- Do not ask the user routine technical questions before checking durable local evidence.
-- Do not hide blocked states behind vague progress language.
+- Do not treat this skill as a solver installation or package manager.
+- Do not call a result computed from a plot redraw, paper figure reading, or guess.
+- Do not create science evidence only in chat.
+- Do not let package-card metadata override task-specific evidence.
+- Do not skip the support pages referenced by workflow steps; they contain the source skill's operative guidance and gates.

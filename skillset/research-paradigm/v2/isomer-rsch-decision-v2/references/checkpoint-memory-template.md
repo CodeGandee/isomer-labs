@@ -1,15 +1,34 @@
 # Checkpoint Memory Template
 
-Use this reference to preserve a resume point after a route-changing decision. Placeholder definitions live in `../migrate/placeholders.md`.
-
-## Workflow
-
-When this reference is used, execute the following steps in order.
-
-1. **Record active node, node history, what not to reopen by default, first files or artifacts to read, next route, and reopen conditions**.
-
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this reference, the parent skill, and the available evidence, then execute the plan.
+Use this when later turns could otherwise resume from the wrong node, route, or blocker. Placeholder definitions live in `../migrate/placeholders.md`.
 
 ## Guidance
 
-- Record active node, node history, what not to reopen by default, first files or artifacts to read, next route, and reopen conditions.
+When performing this step, execute these substeps in order.
+
+1. **State the current route**. Record current route label, current stage or anchor, and short route judgment.
+2. **Name the authoritative resume point**. Identify active branch, run, paper node, report pair, or equivalent runtime state and why it is authoritative now.
+3. **Preserve node history**. Name predecessor nodes, superseded nodes or routes, and why the current node beat or replaced them.
+4. **Record retained result or blocker**. Name the strongest still-valid result or dominant blocker.
+5. **Mark do-not-reopen routes**. List experiments, routes, or closure paths that should stay closed unless new evidence appears.
+6. **Name next resume step and first-read files**. Record the single best next step plus route-critical files, reports, manifests, or handoffs.
+7. **Define reopen condition**. State the exact condition that would justify reopening an older node or switching away.
+
+## Preferences
+
+- Prefer one compact checkpoint-style memory card over a long narrative (if the resume point did not change, otherwise skip the memory write).
+- Prefer explicit do-not-reopen rules when stale routes caused confusion (if none exist, otherwise omit rather than invent one).
+- Prefer first-read artifacts that make the next turn operational immediately.
+
+## Constraints
+
+- <DECISION_CHECKPOINT_MEMORY> must be written when the decision changes the authoritative resume point.
+- The checkpoint must not leave later turns guessing which node, branch, run, or blocker is active.
+- Reopen conditions must be concrete enough to prevent accidental churn.
+
+## Quality Gates
+
+- Resume clarity: the next turn can identify the current active node and next step without rereading the entire history.
+- History clarity: superseded routes and do-not-reopen items are explicit.
+- Evidence clarity: the strongest retained result or blocker is named.
+- Reopen clarity: old routes reopen only under stated conditions.

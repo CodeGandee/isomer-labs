@@ -1,15 +1,5 @@
 # Optimization Attempt Recording
 
-Use this reference to record implementation-level attempts without confusing them with durable lines. Placeholder definitions live in `../migrate/placeholders.md`.
+Use `references/operational-guidance.md`, `references/candidate-board-template.md`, `references/frontier-review-template.md`, and `references/debug-response-template.md` for the canonical attempt-recording support. Placeholder definitions live in `../migrate/placeholders.md`.
 
-## Workflow
-
-When this reference is used, execute the following steps in order.
-
-1. **Track patch, smoke candidate, debug fix, fusion candidate, measured result, failure mode, and next route**.
-
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this reference, the parent skill, and the available evidence, then execute the plan.
-
-## Guidance
-
-- Track patch, smoke candidate, debug fix, fusion candidate, measured result, failure mode, and next route.
+This compatibility page exists because the first v2 draft used a synthesized page name before the refactor migration restored source reference filenames.

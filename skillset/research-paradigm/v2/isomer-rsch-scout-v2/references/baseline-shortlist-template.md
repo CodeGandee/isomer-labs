@@ -1,76 +1,33 @@
 # Baseline Shortlist Template
 
-Use this template when scout must recommend a concrete comparator route before baseline or idea work can proceed. Placeholder definitions live in `../migrate/placeholders.md`.
+Use this when scout must recommend a concrete comparator route before baseline or idea work can proceed. Placeholder definitions live in `../migrate/placeholders.md`.
 
-## Workflow
+## Guidance
 
-When this template is used, execute the following steps in order.
+When performing this step, execute these substeps in order.
 
 1. **Start from the evaluation contract**. Use `<EVALUATION_CONTRACT>` to decide which comparator candidates are relevant.
-2. **Gather candidate evidence**. Use `<SCOUT_DISCOVERY_LEDGER>`, `<LITERATURE_SCOUTING_REPORT>`, repository inspection, and existing Artifacts or Findings.
-3. **Score serious candidates only**. Keep the shortlist small and score candidates by provenance, metric and split fit, implementation availability, environment risk, expected cost, downstream value, and main risk.
-4. **Assign a route per candidate**. Choose attach, import, reproduce, or reject.
-5. **Recommend one next action**. End with `<NEXT_ROUTE_DECISION>` and record `<SCOUT_BLOCKER_RECORD>` if no candidate is responsible to use.
+2. **Gather candidate evidence**. Use `<SCOUT_DISCOVERY_LEDGER>`, `<LITERATURE_SCOUTING_REPORT>`, repository inspection, and existing Artifacts, Evidence Items, Findings, or Decision Records.
+3. **Score serious candidates only**. Keep the shortlist small and score provenance, metric and split fit, implementation availability, environment risk, expected cost, downstream value, why it matters, and main risk.
+4. **Assign one route per candidate**. Mark each candidate as attach, import, reproduce, or reject.
+5. **Recommend one next action**. End with `<BASELINE_SHORTLIST>`, `<NEXT_ROUTE_DECISION>`, and `<SCOUT_BLOCKER_RECORD>` if no candidate is responsible to use.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a comparator-shortlist plan from the evaluation contract and candidate evidence, then execute the plan.
+## Preferences
 
-## Template
+- Prefer one recommended comparator route over a broad option dump (if no candidate is usable, otherwise record the blocker).
+- Prefer attach or import when provenance, metric fit, and implementation availability are already trustworthy (if not, otherwise route to reproduce or reject).
+- Prefer a small decision-facing shortlist over a survey of every adjacent method (if a candidate cannot change baseline or idea routing, otherwise keep it out).
 
-```md
-# Baseline Shortlist
+## Constraints
 
-## Contract Basis
+- `<BASELINE_SHORTLIST>` must start from `<EVALUATION_CONTRACT>`.
+- Each serious comparator candidate must have provenance, metric and split match, implementation availability, expected cost, downstream value, main risk, and route.
+- Scout must not route to idea when no comparator basis is durable enough.
+- A rejected comparator should state the reason when the rejection prevents future rework.
 
-- Evaluation contract: <EVALUATION_CONTRACT>
-- Research Topic:
-- Research Inquiry or Research Task:
-- Comparator need:
+## Quality Gates
 
-## Candidate 1
-
-- Name:
-- Source paper or repository:
-- Candidate role: direct baseline, strong competitor, adjacent reference, sanity check
-- Route: attach, import, reproduce, reject
-- Provenance trust: high, medium, low
-- Metric and split match:
-- Implementation availability:
-- Environment risk:
-- Expected cost:
-- Downstream value:
-- Why it matters:
-- Main risk:
-- Evidence refs:
-
-## Candidate 2
-
-- Name:
-- Source paper or repository:
-- Candidate role:
-- Route:
-- Provenance trust:
-- Metric and split match:
-- Implementation availability:
-- Environment risk:
-- Expected cost:
-- Downstream value:
-- Why it matters:
-- Main risk:
-- Evidence refs:
-
-## Ranking
-
-| Candidate | Route | Trust | Fit | Cost | Value | Main Risk | Verdict |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-|  | attach, import, reproduce, reject | high, medium, low | high, medium, low | low, medium, high | high, medium, low |  |  |
-
-## Recommendation
-
-- Recommended candidate:
-- Recommended route:
-- Why this route now:
-- Fallback route:
-- Blocker if none is usable: <SCOUT_BLOCKER_RECORD>
-- Output placeholder: <BASELINE_SHORTLIST>
-- Next route: <NEXT_ROUTE_DECISION>
-```
+- Comparator relevance: every retained candidate can affect `isomer-rsch-baseline-v2`, `isomer-rsch-idea-v2`, or `isomer-rsch-decision-v2`.
+- Evidence sufficiency: the recommended route has enough paper, repository, benchmark, or local evidence to justify the next action.
+- Route clarity: each candidate has exactly one route recommendation.
+- Blocker clarity: if no candidate is usable, `<SCOUT_BLOCKER_RECORD>` names what evidence or decision is missing.

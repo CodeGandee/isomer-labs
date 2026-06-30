@@ -2,20 +2,39 @@
 
 Use this reference to run analysis work without turning it into an unbounded campaign. Placeholder definitions live in `../migrate/placeholders.md`.
 
-## Workflow
-
-When this reference is used, execute the following steps in order.
-
-1. **Start from durable parent evidence**.
-2. **Use Execution Adapter Command Requests for command work**.
-3. **Record each meaningful slice before summary**.
-4. **Stop when the parent claim boundary or next route is clear**.
-
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this reference, the parent skill, and the available evidence, then execute the plan.
-
 ## Guidance
 
-- Start from durable parent evidence.
-- Use Execution Adapter Command Requests for command work.
-- Record each meaningful slice before summary.
-- Stop when the parent claim boundary or next route is clear.
+When performing this step, execute these substeps in order.
+
+1. **Select the durable evidence route**. Use a light durable report for one bounded answer, or a campaign lineage route when multiple slices, branch isolation, reviewability, writing traceability, or later replay matter.
+2. **Verify executable slices before launch**. Confirm assets, comparators, dependencies, services, credentials, runtime, and workspace needs before committing to <ANALYSIS_CAMPAIGN_PLAN>.
+3. **Use faithful execution tactics**. Choose direct verification, a bounded smoke check, or a real slice run based on command uncertainty, output uncertainty, metric-path uncertainty, and evidence value.
+4. **Monitor long-running slices through durable signals**. Use managed Execution Adapter sessions, durable logs, stall signals, and structured progress markers when runtime is long or uncertain.
+5. **Record every launched slice promptly**. After each slice completes, fails, becomes infeasible, or is superseded, update <ANALYSIS_SLICE_RECORD> and the campaign frontier before summarizing.
+6. **Use memory selectively**. Check Workspace Runtime memory when resuming, reopening old command paths, repeated failures, prior slice outcomes, or comparability caveats may affect the route; preserve reusable campaign lessons before exit.
+7. **Keep connector-facing visuals restrained**. If the campaign produces milestone visuals, show the main boundary change clearly, use restrained project palettes, and do not decorate every slice equally.
+
+## Preferences
+
+- Prefer the shortest durable route that preserves trust and auditability (if lineage or write-back matters, otherwise use a campaign object).
+- Prefer direct verification when the path is concrete (if command or evaluator wiring is uncertain, otherwise use a bounded smoke check).
+- Prefer one decisive runnable slice over several speculative expensive slices (if resources are tight, otherwise prioritize soundness gain per cost).
+- Prefer recording non-success slices immediately (if a replacement slice is launched, otherwise keep the original blocker visible).
+- Prefer memory only for repeated-failure avoidance or reusable lessons (if it is just a run record, otherwise keep it in the evidence record).
+
+## Constraints
+
+- <ANALYSIS_CAMPAIGN_PLAN> must not launch slices before assets, comparators, dependencies, and current runtime feasibility are checked or blockers are recorded.
+- Long-running execution should preserve durable logs and monitoring state.
+- If a slice is invalid, wedged, unsupported by the environment, or superseded, it should be stopped or marked honestly before replacement.
+- Repeated failure with no route, evidence, environment, or design change should route through decision, redesign, experiment, or blocker rather than widening silently.
+- Connector-facing charts must not imply stronger evidence than the slice records support.
+
+## Quality Gates
+
+- Route gate: the chosen durable evidence route matches slice count, lineage, reviewability, and write-back needs.
+- Resource gate: <ANALYSIS_RESOURCE_ENVELOPE> covers machine class, memory, storage, wall-clock, concurrency, services, credentials, dependencies, and infeasible slices when relevant.
+- Execution gate: smoke, direct verification, or real run choice is justified by the uncertainty and evidence value.
+- Recording gate: every launched, failed, infeasible, partial, or superseded slice has an <ANALYSIS_SLICE_RECORD>.
+- Continuity gate: reusable lessons, comparability caveats, and route-changing outcomes are preserved in <ANALYSIS_CONTINUITY_UPDATE>.
+- Visual gate: any connector-facing chart highlights the boundary change and stays aligned with the project visual language.

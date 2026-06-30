@@ -7,16 +7,16 @@ description: Use when algorithm-first research needs candidate briefs, frontier 
 
 ## Overview
 
-Optimize manages an algorithm-first frontier. It chooses one submode per pass, keeps candidate briefs distinct from durable lines and implementation attempts, and records exactly one next route or stop condition.
+Optimize manages an algorithm-first frontier one justified move at a time. It recovers current frontier state, chooses one submode for the pass, keeps candidate briefs distinct from durable lines and implementation attempts, and records exactly one next route or stop condition.
 
-Placeholder definitions live in `migrate/placeholders.md`.
+Placeholder definitions live in `migrate/placeholders.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.
 
 ## When to Use
 
 Use this skill when:
 
 - The research line is algorithm-first and needs frontier management.
-- Candidate briefs must be shaped, ranked, promoted, fused, debugged, or stopped.
+- Candidate briefs must be shaped, ranked, promoted, fused, debugged, archived, or stopped.
 - A measured result needs frontier review before another run.
 - A plateau or repeated failure requires route review instead of more micro-edits.
 
@@ -24,40 +24,83 @@ Do not use this skill when:
 
 - The task is broad ideation before an algorithm frontier exists.
 - A single selected route is ready for experiment with no frontier decision needed.
-- The work is baseline recovery or paper writing.
-- The request is simply to run an already locked experiment.
+- The work is baseline recovery, paper writing, or one already locked experiment.
 
 ## Workflow
 
-When this skill is invoked, execute the following steps in order.
+When this skill is invoked, execute these steps in order.
 
-1. **Recover the frontier**. Build <OPTIMIZATION_CONTEXT_BRIEF> and <OPTIMIZATION_FRONTIER> from candidate briefs, active lines, measured results, failures, and current route.
-2. **Choose one submode**. Select brief, rank, seed, loop, fusion, debug, or stop based on the frontier, not momentum.
-3. **Shape or rank candidates**. Create <CANDIDATE_BRIEF> and <CANDIDATE_RANKING> when the next route needs differentiated options.
-4. **Promote or execute one line**. Record <PROMOTED_OPTIMIZATION_LINE> or <OPTIMIZATION_ATTEMPT_RECORD> when the route justifies implementation or measured testing.
-5. **Review plateau, debug, or fusion evidence**. Produce <FRONTIER_REVIEW> when results, repeated failures, or complementary lines change the frontier.
-6. **Record exactly one next route**. Return <OPTIMIZE_ROUTE_DECISION> or <OPTIMIZE_BLOCKER_RECORD> and stop.
+1. **Recover the frontier**. Build <OPTIMIZATION_CONTEXT_BRIEF>, <OPTIMIZATION_FRONTIER>, <CANDIDATE_BOARD>, and <OPTIMIZE_CHECKLIST> from candidate briefs, active lines, measured results, failures, prior lessons, and current route. Read `references/operational-guidance.md`, `references/candidate-board-template.md`, `references/optimize-checklist-template.md`, and `references/frontier-review-template.md`.
+2. **Choose one submode**. Select exactly one primary submode: brief, rank, seed, loop, fusion, debug, or stop. Use frontier state, plateau signals, failure class, and candidate slate quality, not momentum. Read `references/operational-guidance.md`, `references/frontier-review-template.md`, and `references/plateau-response-playbook.md`.
+3. **Shape or rank candidates**. Create <CANDIDATE_BRIEF>, <METHOD_BRIEF>, or <CANDIDATE_RANKING> when the next route needs differentiated options or promotion-ready comparison. Read `references/brief-shaping-playbook.md`, `references/method-brief-template.md`, `references/candidate-ranking-template.md`, and `references/prompt-patterns.md`.
+4. **Promote or prepare one line**. Record <PROMOTED_OPTIMIZATION_LINE> when a brief deserves durable line status, or create <OPTIMIZATION_ATTEMPT_RECORD> for a within-line seed, loop, smoke, patch, or quick validation candidate. Read `references/operational-guidance.md`, `references/codegen-route-playbook.md`, and `references/candidate-board-template.md`.
+5. **Handle debug, fusion, or plateau evidence**. Produce <DEBUG_RESPONSE>, <FUSION_PLAN>, <PLATEAU_RESPONSE>, or <FRONTIER_REVIEW> when a failure, complementary line, repeated non-improvement, or measured result changes the frontier. Read `references/debug-response-template.md`, `references/fusion-playbook.md`, `references/plateau-response-playbook.md`, and `references/frontier-review-template.md`.
+6. **Record the lesson and route**. Write <OPTIMIZATION_MEMORY_CARD> only when a reusable success pattern, failure pattern, fusion lesson, or non-retry rule was learned, then return <OPTIMIZE_ROUTE_DECISION> or <OPTIMIZE_BLOCKER_RECORD>. Read `references/optimization-memory-template.md`, `references/frontier-review-template.md`, and `references/operational-guidance.md`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
+
+## Cross-Step Preferences
+
+- Prefer one primary optimize submode per pass (if new evidence changes the submode, otherwise record the route shift before continuing).
+- Prefer mechanism-level distinctness over candidate volume (if a slate collapses into one familiar family, otherwise widen once before ranking).
+- Prefer one atomic improvement per loop pass (if changes are tightly coupled or fusion is explicit, otherwise split them).
+- Prefer targeted debug over broad rewrite (if the failure changes the mechanism, otherwise route back to brief or loop).
+- Prefer stopping or route-changing when the frontier is saturated (if remaining moves are redundant or low value, otherwise record a non-retry rule).
+
+## Cross-Step Constraints
+
+- Candidate briefs, durable optimization lines, implementation attempts, measured results, failures, and stopped routes must remain distinct.
+- Candidate briefs must not be promoted automatically.
+- Same-family slates should not fill the frontier unless one candidate clearly dominates.
+- Measured runs belong to the experiment route; optimize should manage frontier decisions and then hand off when real execution is needed.
+- Debug is bugfix-only and must not smuggle in a new performance-improvement mechanism.
+- Fusion must not combine redundant or weak lines just because multiple lines exist.
+- A pass must end with one durable next action, stop condition, blocker, or route decision.
+
+## Cross-Step Quality Gates
+
+- Frontier gate: <OPTIMIZATION_FRONTIER> separates candidate briefs, durable lines, implementation attempts, measured results, failures, blockers, and route recommendation.
+- Submode gate: exactly one primary submode is selected with a reason.
+- Brief gate: <CANDIDATE_BRIEF> or <METHOD_BRIEF> states bottleneck, mechanism, family, change layer, keep-unchanged contract, expected gain, risks, foundation, and next target.
+- Ranking gate: <CANDIDATE_RANKING> compares serious candidates on one shared surface and states winner, non-winner handling, and promotion cap.
+- Attempt gate: <OPTIMIZATION_ATTEMPT_RECORD> records candidate id, parent line, strategy, mechanism family, change plan, validation step, status, and archive condition.
+- Frontier-review gate: <FRONTIER_REVIEW> names strongest support, contradiction, unresolved risk, active submode, exact next action, and trigger for another review.
+- Closeout gate: <OPTIMIZE_ROUTE_DECISION> or <OPTIMIZE_BLOCKER_RECORD> leaves later stages with no guesswork.
 
 ## Reference Routing
 
 Read these pages as needed:
 
-- `references/frontier-management.md` for keep algorithm-first state explicit.
-- `references/candidate-brief-template.md` for shape loose methods into comparable briefs.
-- `references/candidate-ranking.md` for choose a route by criteria rather than enthusiasm.
-- `references/run-recording.md` for record implementation-level attempts without confusing them with durable lines.
-- `references/plateau-and-fusion.md` for respond to repeated non-improvement or complementary lines.
+- `references/operational-guidance.md` for the full native optimize protocol: frontier recovery, submode selection, candidate, promotion, seed, loop, memory, evidence records, execution, codegen, debug, fusion, plateau, and completion.
+- `references/brief-shaping-playbook.md` for turning fuzzy directions into differentiated, ranking-ready candidate briefs.
+- `references/method-brief-template.md` for method brief fields.
+- `references/candidate-board-template.md` for the compact candidate ledger.
+- `references/candidate-ranking-template.md` for shared-surface ranking and promotion caps.
+- `references/frontier-review-template.md` for route choice, active submode, and immediate next action.
+- `references/optimize-checklist-template.md` for pass-level frontier tracking.
+- `references/optimization-memory-template.md` for reusable success, failure, fusion, and non-retry lessons.
+- `references/codegen-route-playbook.md` for brief-only, stepwise, diff/patch, or full-rewrite code-generation route choice.
+- `references/debug-response-template.md` for concrete failure repair without scope creep.
+- `references/fusion-playbook.md` for justified complementary-line fusion.
+- `references/plateau-response-playbook.md` for route review after repeated non-improvement.
+- `references/prompt-patterns.md` for stable optimization, plateau, fusion, and debug prompt contracts.
 
 ## Exit Criteria
 
-This skill can end only when the relevant placeholders are explicit enough for the next route, a blocker is recorded, and later v2 skills do not need to guess what changed or why.
+This skill can end only when one of these states is durable:
+
+- A stronger line was promoted and the next anchor is clear.
+- The current line produced a measured result and the next frontier route is recorded.
+- The frontier says stop and the stop decision is recorded.
+- A blocker explains why frontier work cannot proceed responsibly.
+
+Do not treat one candidate creation or one smoke pass as completion.
 
 ## Common Mistakes
 
 - Do not continue after the route, gate, or blocker is already clear.
 - Do not replace evidence requirements with optimistic prose.
-- Do not bind source paths, filenames, or DeepScientist harness outputs as final Isomer storage contracts.
+- Do not bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
 - Do not ask the user routine technical questions before checking durable local evidence.
 - Do not hide blocked states behind vague progress language.
+- Do not skip the support pages referenced by workflow steps; they contain the source skill's operative guidance and gates.

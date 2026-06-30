@@ -2,20 +2,37 @@
 
 Use this reference to check whether slice evidence is strong enough to update a claim or route. Placeholder definitions live in `../migrate/placeholders.md`.
 
-## Workflow
-
-When this reference is used, execute the following steps in order.
-
-1. **Verify the slice used the intended data, code, metric, and comparison context**.
-2. **Separate failed execution from negative evidence**.
-3. **Call out non-comparable slices instead of hiding them**.
-4. **Escalate to experiment only when follow-up analysis reveals a new main-run requirement**.
-
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this reference, the parent skill, and the available evidence, then execute the plan.
-
 ## Guidance
 
-- Verify the slice used the intended data, code, metric, and comparison context.
-- Separate failed execution from negative evidence.
-- Call out non-comparable slices instead of hiding them.
-- Escalate to experiment only when follow-up analysis reveals a new main-run requirement.
+When performing this step, execute these substeps in order.
+
+1. **Verify intended execution**. Confirm the slice used the intended data, code, metric, observable, comparison target, fixed conditions, and execution envelope.
+2. **Classify the slice outcome**. Mark each slice as completed, partial, failed, blocked, infeasible, superseded, or read-only audit; keep non-success outcomes visible.
+3. **Check comparability**. State exactly what changed, what stayed fixed, whether direct comparison still holds, and whether a non-comparable slice is generalization, stress test, boundary evidence, or failure analysis.
+4. **Classify the claim update**. Label stable support, partial support, contradiction, unresolved ambiguity, strengthened, weakened, narrowed, abandoned, or still ambiguous as appropriate.
+5. **Apply paper or review write-back gates**. For paper-ready or reviewer-facing slices, verify <ANALYSIS_WRITEBACK_MAP> points to the relevant outline, matrix, evidence ledger, section, claim, table, reviewer item, or rebuttal item.
+6. **Choose the route**. Route to continue analysis, experiment, idea, write, decision, stop, reset, or blocker from the evidence boundary, not from the planned slice count.
+
+## Preferences
+
+- Prefer treating failed execution separately from negative evidence (if the slice did not produce valid evidence, otherwise do not interpret it as claim refutation).
+- Prefer direct-comparison claims only when the comparison contract is preserved (if it differs, otherwise label the slice as non-comparable or boundary evidence).
+- Prefer stopping after one decisive slice (if the parent boundary and next route are already clear, otherwise continue only with claim-critical slices).
+- Prefer the top `3-5` decision-relevant findings in campaign summaries (if there are many slices, otherwise keep the summary concise).
+
+## Constraints
+
+- Campaign-level claims must not precede per-slice evidence.
+- Null, negative, partial, failed, blocked, infeasible, superseded, and contradictory slices must not be hidden.
+- Subjective or manual inspection must not support a claim without rubric, sample, prompt or inspection basis, trace, and caveat.
+- A new dataset, split, metric, or protocol must not be presented as apples-to-apples comparison unless the contract says so.
+- A writing-facing slice must not be called paper-ready while its write-back target remains stale or missing.
+
+## Quality Gates
+
+- Execution gate: the slice evidence corresponds to the intended data, code, metric, comparison target, and fixed conditions.
+- Outcome gate: the slice status is explicit and non-success states are preserved.
+- Comparability gate: direct, non-comparable, generalization, stress-test, boundary, or failure-analysis status is labeled.
+- Claim gate: claim update and caveat are traceable to slice evidence.
+- Write-back gate: paper or review slices have a current <ANALYSIS_WRITEBACK_MAP> or a recorded blocker.
+- Route gate: next action follows from the updated evidence boundary.

@@ -66,6 +66,19 @@ Where a source route names a DeepScientist skill that has no v2 target in this b
 - `references/claim-ledger-template.md`: Claim Ledger Template.
 - `references/final-summary-template.md`: Final Summary Template.
 - `references/resume-packet-template.md`: Resume Packet Template.
+- `references/finalization-checklist.md`: source-preserved closure checklist and anti-pattern gate.
+- `references/checkpoint-memory-template.md`: source-preserved pause-ready checkpoint memory template.
+
+## Main Workflow Support Mapping
+
+| Target Workflow Step | Source Sections and References | Runtime Support Pages |
+| --- | --- | --- |
+| Gather closure context | `SKILL.md` Preconditions and gate, Truth sources, Required durable outputs, Workflow step 1; `references/finalization-checklist.md`. | `references/closure-gate.md`, `references/finalization-checklist.md` |
+| Check closure legitimacy | `SKILL.md` Preconditions and gate, Do not use when, Failure and blocked handling; `references/finalization-checklist.md`. | `references/closure-gate.md`, `references/finalization-checklist.md` |
+| Build the claim ledger | `SKILL.md` Workflow step 2, Finalization-quality rules, Required durable outputs; `references/finalization-checklist.md` claim-ledger minimum. | `references/claim-ledger-template.md`, `references/finalization-checklist.md` |
+| State limitations and failures | `SKILL.md` Workflow step 3, Stage purpose, Finalization-quality rules; `references/finalization-checklist.md`. | `references/final-summary-template.md`, `references/finalization-checklist.md` |
+| Write final state | `SKILL.md` Workflow steps 4-6, Required durable outputs, Memory rules, Artifact rules; `references/resume-packet-template.md`. | `references/final-summary-template.md`, `references/resume-packet-template.md` |
+| Choose closure route | `SKILL.md` Research-map role, Workflow step 7, Exit criteria, Interaction discipline; `references/checkpoint-memory-template.md`; `references/resume-packet-template.md`. | `references/resume-packet-template.md`, `references/checkpoint-memory-template.md` |
 
 ## Semantic Match Checks
 
@@ -77,3 +90,4 @@ The rewritten skill must preserve these source behaviors:
 - Limitations explicit.
 - Closure decision or blocker recorded.
 - Resume path preserved when needed.
+- Source closure checklist, checkpoint memory, paper/package gates, claim downgrade history, limitations, failure preservation, and reopen-condition rules remain discoverable from runtime support pages.

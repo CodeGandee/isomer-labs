@@ -7,7 +7,7 @@ description: Use when a v2 Isomer research skill needs shared coordination rules
 
 ## Overview
 
-Shared defines the coordination contract for v2 research skills. It is not migrated from one upstream DeepScientist source skill; it exists to keep v2 skill handoffs, route decisions, placeholder usage, and storage-binding cautions consistent across the refactor-migrated skills.
+Shared defines the coordination contract for v2 research skills. It is not migrated from one upstream source skill; it exists to keep v2 skill handoffs, route decisions, placeholder usage, and storage-binding cautions consistent across the refactor-migrated skills.
 
 ## When to Use
 
@@ -24,11 +24,11 @@ Do not use this skill as a substitute for a domain skill such as scout, baseline
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Identify the coordination question**. Name the handoff, route, placeholder, or storage-binding ambiguity that needs shared rules.
+1. **Identify the coordination question**. Name the handoff, route, placeholder, or storage-binding ambiguity that needs shared rules. Read `references/coordination-contract.md`.
 2. **Check the semantic registry**. Read `references/semantic-placeholders.md` and choose the closest existing semantic object.
-3. **Preserve skill ownership**. Route domain work back to the owning v2 skill; use shared only for vocabulary and coordination consistency.
-4. **Avoid premature storage binding**. Keep unresolved records semantic until an Isomer storage-binding pass assigns Artifact, Evidence Item, Run, Gate, Decision Record, Provenance Record, path, or schema bindings.
-5. **Return the coordination result**. State the chosen semantic object, owning producer, intended consumer, and any unresolved binding or route question.
+3. **Preserve skill ownership**. Route domain work back to the owning v2 skill; use shared only for vocabulary and coordination consistency. Read `references/coordination-contract.md`.
+4. **Avoid premature storage binding**. Keep unresolved records semantic until an Isomer storage-binding pass assigns Artifact, Evidence Item, Run, Gate, Decision Record, Provenance Record, path, or schema bindings. Read `references/semantic-placeholders.md` and `references/coordination-contract.md`.
+5. **Return the coordination result**. State the chosen semantic object, owning producer, intended consumer, and any unresolved binding or route question. Read `references/coordination-contract.md`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the shared registry, the relevant v2 skill, and the user's request, then execute the plan.
 
@@ -41,4 +41,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Reference Routing
 
-Read `references/semantic-placeholders.md` whenever a v2 skill needs shared handoff vocabulary.
+Read `references/semantic-placeholders.md` whenever a v2 skill needs shared handoff vocabulary. Read `references/coordination-contract.md` whenever the question is about ownership, routing, unresolved storage binding, or handoff shape.

@@ -31,11 +31,11 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Check decision readiness**. Build <DECISION_CONTEXT_BRIEF> and confirm the current line, latest decisive result, and stale-route state are clear enough to judge.
-2. **State the route question**. Record <ROUTE_QUESTION> with the real choice, strongest support, strongest contradiction, main risk, main cost, and new evidence.
-3. **Choose the smallest canonical action**. Use <DECISION_EVIDENCE_PACKET> to select one action from the canonical action set without hiding rejected alternatives.
-4. **Record the verdict**. Create <ROUTE_DECISION_RECORD> with verdict, action, reason, evidence, rejected alternatives, and next route.
-5. **Preserve the resume point**. Write <DECISION_CHECKPOINT_MEMORY> when the decision changes the active route, or create <USER_DECISION_REQUEST> or <DECISION_BLOCKER_RECORD> when local evidence cannot decide safely.
+1. **Check decision readiness**. Build <DECISION_CONTEXT_BRIEF> and confirm the current line, latest decisive result, and stale-route state are clear enough to judge. Read `references/operational-guidance.md` before judging readiness.
+2. **State the route question**. Record <ROUTE_QUESTION> with the real choice, strongest support, strongest contradiction, main risk, main cost, and new evidence. Read `references/research-route-criteria.md` before evidence compression.
+3. **Choose the smallest canonical action**. Use <DECISION_EVIDENCE_PACKET> to select one action from the canonical action set without hiding rejected alternatives. Read `references/canonical-actions.md` and `references/research-route-criteria.md`.
+4. **Record the verdict**. Create <ROUTE_DECISION_RECORD> with verdict, action, reason, evidence, rejected alternatives, and next route. Read `references/strategic-decision-template.md`.
+5. **Preserve the resume point**. Write <DECISION_CHECKPOINT_MEMORY> when the decision changes the active route, or create <USER_DECISION_REQUEST> or <DECISION_BLOCKER_RECORD> when local evidence cannot decide safely. Read `references/checkpoint-memory-template.md` and `references/operational-guidance.md`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 
@@ -43,9 +43,10 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 Read these pages as needed:
 
+- `references/operational-guidance.md` for tactical route judgment, baseline reuse, user-input, blocker, and checkpoint rules.
 - `references/canonical-actions.md` for use a stable action vocabulary so downstream stages know what changed.
-- `references/route-criteria.md` for judge routes from evidence rather than optimism.
-- `references/decision-record-template.md` for record a consequential route decision durably.
+- `references/research-route-criteria.md` for judge routes from evidence rather than optimism.
+- `references/strategic-decision-template.md` for record a consequential route decision durably.
 - `references/checkpoint-memory-template.md` for preserve a resume point after a route-changing decision.
 
 ## Exit Criteria
@@ -56,6 +57,6 @@ This skill can end only when the relevant placeholders are explicit enough for t
 
 - Do not continue after the route, gate, or blocker is already clear.
 - Do not replace evidence requirements with optimistic prose.
-- Do not bind source paths, filenames, or DeepScientist harness outputs as final Isomer storage contracts.
+- Do not bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
 - Do not ask the user routine technical questions before checking durable local evidence.
 - Do not hide blocked states behind vague progress language.
