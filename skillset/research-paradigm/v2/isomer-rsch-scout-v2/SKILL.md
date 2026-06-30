@@ -1,32 +1,109 @@
 ---
 name: isomer-rsch-scout-v2
-description: Use when a research task needs framing, metric clarification, literature orientation, benchmark neighborhood discovery, or next-stage routing before deeper work.
+description: Use when a Research Topic or Research Inquiry lacks enough framing, metric clarity, literature orientation, benchmark context, or comparator direction to route into baseline, idea, experiment, decision, or closure work.
 ---
 
 # Isomer Research Scout V2
 
 ## Overview
 
-Scout clarifies a research problem enough to choose the next core stage. Placeholder: detailed source-derived process will be remigrated later.
+Scout makes an unclear research situation concrete enough to choose the next route. It resolves only the framing unknowns that can change downstream work, records the result as semantic handoff material, and stops once baseline, idea, Decision Record, Gate, or blocker routing is clear.
+
+Placeholder definitions live in `migrate/placeholders.md`.
 
 ## When to Use
 
-Placeholder: define precise triggers, non-triggers, and handoff conditions after the source skill is migrated from scratch.
+Use this skill when:
+
+- The Research Topic, Research Inquiry, or Research Task is still ambiguous.
+- The dataset, split, benchmark, primary metric, or fair-comparison rule is unclear.
+- No trustworthy comparator direction has been identified.
+- The paper, repository, or benchmark neighborhood is too thin to route with confidence.
+- A paused topic needs framing reconstruction before deeper work resumes.
+- The next route is blocked by ambiguity rather than implementation, execution, or verification.
+
+Do not use this skill when:
+
+- The task frame, comparator, dataset, metric contract, and scope are already fixed.
+- A validated comparator exists and the work is ready for `isomer-rsch-idea-v2`, `isomer-rsch-experiment-v2`, or `isomer-rsch-analysis-v2`.
+- The real blocker is command execution, environment repair, implementation, or verification rather than framing.
+- The user asks for exhaustive literature review after the next route is already clear.
 
 ## Workflow
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Confirm the purpose**. Placeholder: restate the framing question this skill should clarify.
-2. **Apply the source-derived method**. Placeholder: insert the remigrated scout procedure here later.
-3. **Return the semantic handoff**. Placeholder: summarize the intended research meaning without binding it to an implementation layer.
+1. **Check entry fit**. Use **Entry Signals** and **Pre-Scout Gate** to decide whether scout should run or route directly to another v2 skill.
+2. **Reconstruct the current frame**. Build `<SCOUT_CONTEXT_BRIEF>` from user constraints, Workspace Runtime records, Artifacts, Evidence Items, Findings, Decision Records, and local repository context.
+3. **Reuse prior knowledge first**. Build `<SCOUT_MEMORY_REUSE_NOTE>` from available Workspace Runtime or DeepScientist-compatible memory retrieval before broad discovery.
+4. **Name the minimum unknowns**. Produce `<SCOUT_MINIMUM_UNKNOWNS>` with only questions that can change baseline, idea, Decision Record, Gate, or blocker routing.
+5. **Search the unresolved neighborhood**. Use **Discovery Discipline** and the reference routing below to produce `<SCOUT_DISCOVERY_LEDGER>` only when local evidence cannot settle route-changing unknowns.
+6. **Clarify route-facing outputs**. Produce or revise `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, and `<LITERATURE_SCOUTING_REPORT>` when those objects are needed by the next route.
+7. **Record the next route or blocker**. Return `<NEXT_ROUTE_DECISION>` when routing is clear, or `<SCOUT_BLOCKER_RECORD>` when missing input, conflicting contracts, or weak comparator candidates prevent a responsible route.
+8. **Preserve continuity**. Create `<SCOUT_CONTINUITY_UPDATE>` for any reusable conclusion, changed route, literature lesson, metric caveat, or blocker before leaving scout.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the skill purpose, placeholder constraints, and user request, then execute the plan.
-
-## Common Mistakes
-
-Placeholder: add mistake patterns after the source skill is migrated from scratch.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 
 ## Reference Routing
 
-Placeholder: add source-derived references after migration. For now, use this `SKILL.md` as a mock entrypoint only.
+Read these pages as needed:
+
+- `references/operational-guidance.md` when the scout pass needs the full tactical workflow, continuity rules, blocked-state handling, or harness guidance.
+- `references/paper-triage-playbook.md` when paper, repository, benchmark, or provenance discovery affects the route.
+- `references/literature-scout-template.md` when external discovery materially changes the frame and must become `<LITERATURE_SCOUTING_REPORT>`.
+- `references/evaluation-contract-template.md` when dataset, split, metric, fairness, useful-improvement threshold, evidence, or ambiguity must become `<EVALUATION_CONTRACT>`.
+- `references/baseline-shortlist-template.md` when serious comparator candidates must become `<BASELINE_SHORTLIST>`.
+
+## Entry Signals
+
+Run scout only when at least one route-changing unknown remains after quick local context review:
+
+- Task definition is too vague for a bounded Research Task.
+- Dataset, benchmark, split, metric, or fair-comparison rule is unsettled.
+- Candidate comparators exist but provenance, implementation availability, or metric compatibility is uncertain.
+- Local Artifacts and Findings disagree with the user's apparent framing.
+- Literature or repository context could change whether the next route is `isomer-rsch-baseline-v2`, `isomer-rsch-idea-v2`, `isomer-rsch-decision-v2`, a Gate, or a blocker.
+
+Exit quickly when the frame is already explicit and the next route is obvious.
+
+## Pre-Scout Gate
+
+Before broad discovery, inspect available durable context in this order:
+
+1. User-provided task description and explicit constraints.
+2. Workspace Runtime records for the current Research Topic, Research Inquiry, Research Task, Runs, Gates, Decision Records, and Provenance Records.
+3. Artifacts, Evidence Items, Findings, comparator records, and literature notes.
+4. Topic Main Development Repository docs and benchmark or evaluation docs.
+5. Prior memory or compatibility memory results.
+
+If this context already yields a stable `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, and `<NEXT_ROUTE_DECISION>`, record the decision and stop instead of searching.
+
+## Discovery Discipline
+
+Use discovery only for unresolved questions that can change the next route. Prefer primary papers, official repositories, benchmark documentation, and provider-bound literature results over recollection or broad web summaries.
+
+When current literature, repository state, or benchmark details may have changed, use available search or Literature Provider Binding surfaces. For source-compatible harness behavior, route `memory.*`, `artifact.*`, and `bash_exec` calls through `isomer-cli ext deepsci call ... --input-json <json-object>` or the corresponding Execution Adapter Command Request, then summarize durable meaning with the placeholders in `migrate/placeholders.md`.
+
+Search for disconfirming evidence as well as supportive evidence. Stop when the next route is clear, not when every adjacent paper has been collected.
+
+## Exit Criteria
+
+Scout can end when all applicable checks are true:
+
+- `<SCOUT_CONTEXT_BRIEF>` states the task frame clearly enough for the next route.
+- `<EVALUATION_CONTRACT>` states task, dataset, split, metric direction, fair-comparison rule, and known ambiguities.
+- `<BASELINE_SHORTLIST>` identifies at least one justified comparator route, or explains why idea work can proceed without more comparator scouting.
+- `<NEXT_ROUTE_DECISION>` names `isomer-rsch-baseline-v2`, `isomer-rsch-idea-v2`, `isomer-rsch-decision-v2`, a Gate, a blocker, or another justified v2 route.
+- `<LITERATURE_SCOUTING_REPORT>` exists when external discovery materially changed the route.
+- `<SCOUT_BLOCKER_RECORD>` exists when the frame cannot responsibly be completed.
+
+## Common Mistakes
+
+- Turning scout into an exhaustive survey instead of a route-setting stage.
+- Asking the user routine technical questions before checking local durable evidence.
+- Guessing the metric, split, or comparator identity when local evidence is ambiguous.
+- Repeating wide discovery when prior Artifacts, Findings, Decision Records, or memory already narrow the space.
+- Writing long paper summaries that do not change `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, or `<NEXT_ROUTE_DECISION>`.
+- Inflating novelty when the apparent gap is already closed by standard engineering, straightforward scaling, or a strong recent result.
+- Routing to idea work before comparator trust is durable enough.
+- Hiding a blocked scout state behind generic literature commentary.
