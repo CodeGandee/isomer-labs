@@ -27,12 +27,20 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Output Contract
 
-Report:
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+### Essential Output
 
 - `subcommand`: `conda-resolve`.
-- `official_conda_forge_reachable`: `true`, `false`, or `not tested`.
-- `nvidia_channel_reachable`: `true`, `false`, or `not tested`.
-- `local_config_channels`: channels declared in local config, in order.
 - `recommended_channels`: ordered list of channels to use.
-- `tested_channels`: each candidate and its reachability result.
+- `status`: reachable, blocked, or not tested.
 - `blockers`: missing package context or no reachable channel.
+
+### Complete Output
+
+- `official_conda_forge_reachable`
+- `nvidia_channel_reachable`
+- `local_config_channels`
+- `recommended_channels`
+- `tested_channels`
+- `blockers`

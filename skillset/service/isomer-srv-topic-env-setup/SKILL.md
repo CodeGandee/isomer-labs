@@ -7,13 +7,15 @@ description: Use when an Isomer Labs agent needs gate-driven enclosed Pixi devel
 
 ## Overview
 
-Set up and validate the Topic Workspace Pixi development environment for a user-specified runnable target. The normal operator flow reads source intent from `topic.intent.topic_env_requirements`, creates or updates the operational target spec at `topic.env.topic_setup_target_spec`, then materializes and verifies from that target spec. Manual invocation may supply an explicit target spec file, prompt, or context instead of source intent. Readiness means one agent or operator can run the commands needed to conduct the research from the selected Topic Workspace root, the Topic Main Development Repository, or a repo-specific working directory named by the target spec. Heavy work such as compilation, model inference, dataset processing, and benchmark execution still needs bounded real-path verification: consult `isomer-misc-bounded-run-tips` before local generic resource judgment, then design a small but real build, inference, dataset, or benchmark run that exercises the essential code path named by the source intent. If no bounded-run tips subcommand applies, record generic best-effort judgment with probes, limits, command, expected result, and blocker condition. A generic smoke test is allowed only as supporting evidence; it cannot replace a source-intent runnable target. The result is Topic Workspace predecessor evidence for later workflows, including Topic Main Development Repository Git state, each external repo projection status, and projection metadata, not proof that every Agent Workspace cwd can run. Keep setup enclosed and auditable: use Pixi-managed dependencies first, use explicit Pixi-run runtime wiring only when Pixi cannot fully provide a runtime piece, use topic-local user-space fallback only as a secondary option, and block privileged or machine-global mutation.
-
-Topic environment setup is independent of Topic Agent Team structure. Do not require `<topic-workspace>/team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instance records, Agent Instance records, Agent Workspace plans, roles, or agent count before preparing the Topic Workspace environment.
-
-Topic environment readiness is topic-scoped. This skill owns Topic Main Development Repository creation, configuration, and verification for the selected Topic Workspace; it also owns canonical external repository acquisition and external repository projection materialization when the target spec requires them. This skill does not read `topic.intent.agent_env_requirements`, does not create `topic.env.agent_setup_target_spec`, does not prepare Agent Workspace worktrees, and does not prove that every `agent.workspace` cwd can run gate commands. If a caller also needs per-Agent Workspace cwd proof, this skill reports that proof as not checked and leaves the follow-up decision to the operator or to `isomer-srv-agent-env-setup`.
-
-This skill is a command-style router: keep the entrypoint lean, choose one subcommand, then load that subcommand's reference page.
+- **Purpose**: set up and validate the Topic Workspace Pixi development environment for a user-specified runnable target.
+- **Inputs**: use `topic.intent.topic_env_requirements` to create or update `topic.env.topic_setup_target_spec`; direct service calls may supply an explicit manual target spec.
+- **Readiness**: one agent or operator can run the required commands from the Topic Workspace root, Topic Main Development Repository, or a repo-specific working directory named by the target spec.
+- **Resource classification**: ask `isomer-misc-bounded-run-tips` to classify resource-relevant setup and verification operations; record classification source, classification result, reason, resource dimensions, and whether bounded guidance is required.
+- **Bounded proof**: operations classified as `heavy` or `unknown-risk` need bounded real-path verification; generic best-effort judgment is allowed only when no recipe applies. A generic smoke test is allowed only as supporting evidence.
+- **Scope**: Topic environment setup is independent of Topic Agent Team structure. Do not require `<topic-workspace>/team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Workspace plans, roles, or agent count.
+- **Ownership**: this skill owns Topic Main Development Repository setup, Topic Main Development Repository Git state evidence, canonical external repo acquisition, and external repo projections when the target spec requires them; it does not read `topic.intent.agent_env_requirements`, create `topic.env.agent_setup_target_spec`, prepare Agent Workspace worktrees, or prove every `agent.workspace` cwd.
+- **Enclosure**: prefer Pixi-managed dependencies, use explicit Pixi-run runtime wiring only when needed, use topic-local user-space fallback only as a secondary option, and block privileged or machine-global mutation.
+- **Routing**: keep the entrypoint lean, choose one subcommand, then load that subcommand's reference page.
 
 ## Workflow
 
@@ -28,7 +30,7 @@ When this skill is invoked, execute the following steps in order.
    - If the prompt describes a concrete Topic Workspace setup task but does not name a subcommand, use `setup-topic-env`.
 3. **Load the selected reference file**.
 4. **Resolve that page's required inputs** from its `## Required Inputs` section, then execute its `## Workflow`.
-5. **Report results** using **Output Contract**.
+5. **Report results** using **Essential Output** by default and **Complete Output** when requested.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the subcommands, selected reference page, output contract, and guardrails in this skill, then execute the plan.
 
@@ -103,47 +105,34 @@ Example prompts:
 
 ## Output Contract
 
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
+
+### Essential Output
+
 Report:
 
-- `subcommand`: selected subcommand.
-- `mode`: selected `setup-topic-env` mode when relevant.
-- `project_root`: resolved Isomer Project root.
-- `research_topic_id`: selected Research Topic.
-- `topic_workspace_dir`: Project Manifest-declared Topic Workspace directory.
-- `semantic_paths`: resolved labels, paths, sources, storage profiles, source details, diagnostics, and blockers for setup surfaces such as `topic.workspace`, `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`.
-- `manifest_path_or_dir`: explicit binding target when present, otherwise the registered Topic Workspace directory default.
-- `manifest_path`: Pixi-resolved Topic Workspace Pixi manifest path.
-- `pixi_environment`: selected Pixi environment.
-- `topic_env_source_label`: `topic.intent.topic_env_requirements` when source intent is used.
-- `topic_env_source_path`: resolved source intent path, defaulting to `<topic-workspace-dir>/intent/src/topic-env-gate.md`.
-- `topic_env_source_storage_profile`: usually `topic_intent_source_file`.
-- `topic_env_source`: resolver source such as `default_profile`, `topic_workspace_manifest`, `env`, or `path_plan`.
-- `topic_env_source_detail`: resolver source detail such as `isomer-default.v1` or manifest binding detail.
-- `topic_env_target_spec_label`: `topic.env.topic_setup_target_spec` when the operational target spec is used or written.
-- `topic_env_target_spec_path`: resolved target spec path, defaulting to `<topic-workspace-dir>/intent/derived/isomer-env-gate.md`.
-- `topic_env_target_spec_storage_profile`: usually `topic_env_target_spec_file`.
-- `topic_env_target_spec_source`: resolver source or explicit manual target spec source.
-- `topic_env_target_spec_source_detail`: resolver source detail or explicit target spec detail.
-- `path_diagnostics`: Workspace Path Resolution diagnostics for source and target spec surfaces.
-- `repos`: required repo names, paths, sources, and whether any source was inferred.
-- `topic_main_repository`: resolved `topic.repos.main` path, source, Git state, owner branch posture, Isomer-managed namespace posture, commands run, changed files, blockers, and readiness evidence.
-- `external_repo_projections`: projection access intent, canonical source label, canonical source path, projection path, projection mode, mutation policy, status, blockers, and evidence for each projected external repo.
-- `external_repo_projection_manifest`: resolved `topic.repos.main.projections.manifest` path, status, changed flag, and blockers.
-- `inferred_source_warnings`: warnings for repos acquired from inferred or discovered sources.
-- `dependency_plan`: selected Python version, version evidence, starter Python dependencies, package sources, Pixi/PyPI choices, channels, editable installs, native tools, Python glue baseline, and enclosure strategy.
-- `environment_enclosure`: dependency and runtime classification as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked.
-- `external_runtime_wiring`: any PATH, library path, compiler path, package-config path, CUDA variable, sourced script, or external runtime path used through Pixi-run commands.
-- `topic_local_fallbacks`: any fallback installs under `<topic-workspace-dir>/.isomer-user-env/`, including commands, installed paths, changed files, and portability warnings.
-- `enclosure_warnings`: warnings for external runtime wiring, topic-local fallbacks, host-specific paths, relocation risk, or missing enclosure records.
-- `resource_check_status`: ready, deferred, blocked, or not needed for resource-heavy setup or verification commands.
-- `resource_check_evidence`: lightweight host-capacity checks used before heavy operations, such as CPU load, memory, disk space, GPU availability and active GPU processes when relevant, plus the reason a check was skipped when not relevant.
-- `resource_conservative_decisions`: bounded real-path choices such as reduced parallelism, selected build targets, tiny model/input shapes, sample data, reduced iterations, or small benchmark cases used to exercise essential code paths without overloading the system; blockers when no bounded real-path check can be run safely.
-- `commands_run`: commands executed, in order.
-- `changed_files`: environment files changed, especially `pixi.toml`, `pixi.lock`, `.pixi/`, `.gitignore`, `.isomer-user-env/` when used, topic-main `isomer-managed/.gitignore`, `isomer-managed/tracked/manifests/extern-projections.toml`, and the resolved `topic.env.topic_setup_target_spec` target spec.
-- `readiness_status`: ready, failed, blocked, or not checked.
-- `blockers`: missing inputs, failed preconditions, command failures, out-of-scope requests, or repair requirements.
-- `per_agent_readiness_status`: always not checked by this skill when reported.
+- `status`: `readiness_status` and selected subcommand or setup mode.
+- `topic`: `research_topic_id` and `topic_workspace_dir`.
+- `pixi`: manifest target, resolved `manifest_path`, and `pixi_environment`.
+- `topic_main`: Topic Main Development Repository readiness summary.
+- `extern_repos`: external repo projection summary.
+- `gate`: critical `topic.env.topic_setup_target_spec` checklist result.
+- `changed_files`: important files changed.
+- `blockers`: user-actionable blockers or failed commands.
+- `per_agent_readiness_status`: `not checked` when Agent Workspace cwd readiness is relevant.
 - `next_action`: safe operator follow-up, repair route, or stop condition.
+
+### Complete Output
+
+When requested, include grouped handoff and audit fields:
+
+- **Identity**: `subcommand`, `mode`, `project_root`, `research_topic_id`, and `topic_workspace_dir`.
+- **Semantic paths**: `semantic_paths`, `topic.workspace`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and `path_diagnostics`.
+- **Source and target specs**: `topic_env_source_label`, `topic_env_source_path`, `topic_env_source_storage_profile`, `topic_env_source`, `topic_env_source_detail`, `topic_env_target_spec_label`, `topic_env_target_spec_path`, `topic_env_target_spec_storage_profile`, `topic_env_target_spec_source`, and `topic_env_target_spec_source_detail`.
+- **Repos and projections**: `repos`, `topic_main_repository`, `external_repo_projections`, `external_repo_projection_manifest`, and `inferred_source_warnings`.
+- **Dependencies and enclosure**: `dependency_plan`, `environment_enclosure`, `external_runtime_wiring`, `topic_local_fallbacks`, and `enclosure_warnings`.
+- **Operations and resources**: `resource_check_status`, `operation_classification`, `resource_check_evidence`, and `resource_conservative_decisions`.
+- **Execution result**: `commands_run`, `changed_files`, `readiness_status`, blockers, `per_agent_readiness_status`, and `next_action`.
 
 ## Guardrails
 
@@ -161,7 +150,7 @@ Report:
 - Apply the enclosure ladder before dependency mutation or verification: Pixi-managed install first, Pixi-mediated external runtime wiring second, topic-local user-space fallback under `<topic-workspace-dir>/.isomer-user-env/` third, and blockers for privileged or machine-global mutation.
 - When mutating dependencies, use `pixi add --manifest-path <manifest_path> ...` or `pixi install --manifest-path <manifest_path> --environment <pixi_environment>` so changes target the selected Topic Workspace manifest.
 - When running Topic Workspace setup, inspection, or verification commands inside the prepared environment, use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>` instead of relying on the ambient shell environment. Explicitly sourced scripts and exported runtime paths are allowed only when recorded in `topic.env.topic_setup_target_spec` and the execution log.
-- Before running resource-heavy setup or verification work, check system resources with lightweight read-only probes and choose the smallest real execution that satisfies the gate. Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, or large GPU jobs as heavy. Consult `isomer-misc-bounded-run-tips` first; apply a matching subcommand such as `cuda-compile` when available, or record generic best-effort judgment when no specific recipe applies. Do not replace the essential source-intent path with an unrelated smoke test. Use bounded real-path tactics such as fewer build jobs, selected kernel targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, metadata-limited downloads, and short benchmark cases. If no bounded real-path command can safely exercise the required path, record a blocker instead of claiming readiness.
+- Before resource-check planning, ask `isomer-misc-bounded-run-tips` to classify each relevant setup or verification operation as `light`, `heavy`, `unknown-risk`, or `not-applicable`. Treat `heavy` and `unknown-risk` as requiring bounded real-path guidance or a blocker. Treat examples such as CUDA compile, model inference, downloads, archive extraction, broad tests, or GPU jobs as examples only; bounded-run tips owns the classification decision. Do not replace the essential source-intent path with an unrelated smoke test.
 - Do not run `sudo`, mutate system package managers, edit global shell profiles, install global Python or Node packages, change `/etc`, run `ldconfig`, install daemons, change kernel drivers, or perform other privileged or machine-global setup from this skill. Report those needs as blockers or external prerequisites.
 - Do not hide inferred repo sources; warning-label them in `topic.env.topic_setup_target_spec` and final output.
 - Do not launch Houmao agents, create Agent Instances, materialize Topic Agent Team Profiles, mutate unrelated Workspace Runtime records, perform GUI work, or make research decisions from this skill.

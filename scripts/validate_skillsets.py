@@ -111,6 +111,8 @@ TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS = {
         "required checklist item",
         "weaker smoke test",
         "blocked, failed, or not checked",
+        "operation_classification",
+        "owns the classification decision",
     ),
     "setup-agent-workspace.md": (
         "topic.repos.main",
@@ -128,6 +130,8 @@ TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS = {
     "every required per-agent `## Gate Checklist` item",
     "selected-agent partial",
     "weaker smoke-test substitution",
+    "operation_classification",
+    "classification source",
     ),
     "validate-topic-team.md": (
         "topic.repos.main",
@@ -141,6 +145,7 @@ TOPIC_TEAM_SPECIALIZATION_REFERENCE_REQUIRED_TERMS = {
         "every required topic gate checklist item",
         "every required per-agent checklist item",
         "weaker smoke-test downgrade",
+        "operation classification evidence",
     ),
     "finalize-topic-team.md": (
         "semantic labels first",
@@ -180,6 +185,23 @@ TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS = (
     "materialize-profile.md",
     "fast-forward.md",
     "step-by-step.md",
+)
+
+CORE_OWNED_HEAVY_OPERATION_FORBIDDEN_TERMS = (
+    "Treat compilation, deep model inference",
+    "Classify each per-agent verification command as light or heavy",
+    "Classify each setup or verification command as light or heavy",
+    "resource-heavy work such as compilation, deep model inference",
+    "heavy setup or verification command such as compilation",
+    "heavy per-agent cwd verification command such as compilation",
+)
+
+OUTPUT_CONTRACT_SECTION_HEADINGS = ("## Output Contract", "## Reporting Contract")
+OUTPUT_CONTRACT_REQUIRED_TERMS = (
+    "Default to **Essential Output** in chat.",
+    "Essential Output",
+    "Complete Output",
+    "complete, verbose, audit, debug, full handoff, JSON, or full output",
 )
 
 TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS = (
@@ -503,6 +525,10 @@ TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "resolve the appropriate topic repository label",
     "bounded real-path verification",
     "isomer-misc-bounded-run-tips",
+    "operation_classification",
+    "classification source",
+    "classification result",
+    "unknown-risk",
     "generic best-effort judgment",
     "A generic smoke test is allowed only as supporting evidence",
 )
@@ -574,6 +600,11 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "Preserve every source-intent runnable target",
         "bounded real-path",
         "isomer-misc-bounded-run-tips",
+        "classification_source",
+        "classification_result",
+        "classification_reason",
+        "resource_dimensions",
+        "unknown-risk",
         "bounded-run guidance source",
         "generic best-effort judgment",
         "simple smoke test",
@@ -582,6 +613,8 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
     "install-topic-deps.md": (
         "topic.env.topic_setup_target_spec",
         "enclosure strategy",
+        "classification evidence",
+        "unknown-risk",
         "bounded-run guidance source",
         "generic best-effort",
         "bounded real setup path",
@@ -592,6 +625,8 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "Topic Main Development Repository",
         "projection",
         "bounded real-path coverage",
+        "operation classification evidence",
+        "unknown-risk",
         "bounded-run guidance source",
         "generic best-effort",
         "source-intent runnable target",
@@ -661,6 +696,10 @@ AGENT_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "overall_readiness_status",
     "bounded real-path verification",
     "isomer-misc-bounded-run-tips",
+    "operation_classification",
+    "classification source",
+    "classification result",
+    "unknown-risk",
     "generic best-effort judgment",
     "A generic smoke test is only supporting evidence",
     "Do not initialize, repair, or configure the Topic Main Development Repository",
@@ -735,6 +774,11 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "optional diagnostics",
         "bounded real-path",
         "isomer-misc-bounded-run-tips",
+        "classification_source",
+        "classification_result",
+        "classification_reason",
+        "resource_dimensions",
+        "unknown-risk",
         "bounded-run guidance source",
         "generic best-effort judgment",
         "simple smoke test",
@@ -761,6 +805,9 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "overall_readiness_status",
         "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
         "Agent Workspace cwd",
+        "classification source",
+        "classification evidence",
+        "unknown-risk",
         "bounded real-path",
         "bounded-run guidance source",
         "source-agent required",
@@ -783,6 +830,8 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "agents/",
         "<agent-name>/",
         "bounded real-path",
+        "classification evidence",
+        "unknown-risk",
         "generic best-effort",
         "generic smoke test",
     ),
@@ -888,6 +937,92 @@ def has_numbered_step_after(lines: tuple[str, ...], start_index: int) -> bool:
         if re.match(r"^\d+\.\s+", line):
             return True
     return False
+
+
+def add_forbidden_heavy_operation_diagnostics(
+    diagnostics: list[Diagnostic],
+    repo_root: Path,
+    path: Path,
+    lines: tuple[str, ...],
+    *,
+    code: str,
+) -> None:
+    text = "\n".join(lines)
+    for forbidden_term in CORE_OWNED_HEAVY_OPERATION_FORBIDDEN_TERMS:
+        if forbidden_term in text:
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                first_line_containing(lines, forbidden_term),
+                code,
+                f"{path.name} must delegate heavy-operation classification to isomer-misc-bounded-run-tips instead of using fixed core-owned lists",
+            )
+
+
+def output_contract_section(lines: tuple[str, ...]) -> tuple[int, str] | None:
+    for index, line in enumerate(lines):
+        if line.strip() not in OUTPUT_CONTRACT_SECTION_HEADINGS:
+            continue
+        end_index = len(lines)
+        for next_index in range(index + 1, len(lines)):
+            if lines[next_index].startswith("## "):
+                end_index = next_index
+                break
+        return index, "\n".join(lines[index:end_index])
+    return None
+
+
+def add_split_output_contract_diagnostics(
+    diagnostics: list[Diagnostic],
+    repo_root: Path,
+    path: Path,
+    lines: tuple[str, ...],
+    *,
+    code: str,
+    require_contract: bool = False,
+) -> None:
+    section = output_contract_section(lines)
+    if section is None:
+        if require_contract:
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                1,
+                code,
+                f"{path.name} must include a split ## Output Contract with Essential Output and Complete Output",
+            )
+        return
+    start_index, section_text = section
+    for required_term in OUTPUT_CONTRACT_REQUIRED_TERMS:
+        if required_term not in section_text:
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                start_index + 1,
+                code,
+                f"{path.name} output contract must document '{required_term}'",
+            )
+
+
+def validate_split_output_contract_docs(repo_root: Path, roots: tuple[Path, ...], *, code: str) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in sorted(root.rglob("*.md")):
+            if "research-paradigm" in path.parts:
+                continue
+            add_split_output_contract_diagnostics(
+                diagnostics,
+                repo_root,
+                path,
+                read_lines(path),
+                code=code,
+            )
+    return diagnostics
 
 
 def strip_scalar(value: str) -> str:
@@ -1263,6 +1398,8 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
             )
     lines = read_lines(skill_md)
     text = "\n".join(lines)
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS003", require_contract=True)
+    add_forbidden_heavy_operation_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS003")
     for term in TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
@@ -1326,6 +1463,7 @@ def validate_topic_team_specialization_module(repo_root: Path) -> list[Diagnosti
         if f"references/{subcommand_file_name}" not in text:
             add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "OPS003", f"{TOPIC_TEAM_SPECIALIZATION_SKILL} must link references/{subcommand_file_name}")
         subcommand_lines = read_lines(subcommand_path)
+        add_forbidden_heavy_operation_diagnostics(diagnostics, repo_root, subcommand_path, subcommand_lines, code="OPS003")
         workflow_index = line_index_containing(subcommand_lines, "## Workflow")
         if workflow_index is None:
             add(diagnostics, repo_root, subcommand_path, 1, "OPS003", f"references/{subcommand_file_name} must include a ## Workflow section")
@@ -1383,6 +1521,7 @@ def validate_project_manager_module(repo_root: Path) -> list[Diagnostic]:
         add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS005", f"{PROJECT_MANAGER_SKILL} must not contain evals/")
     lines = read_lines(skill_md)
     text = "\n".join(lines)
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS005", require_contract=True)
     for term in PROJECT_MANAGER_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
@@ -1479,6 +1618,7 @@ def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]
         add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must not contain evals/")
     lines = read_lines(skill_md)
     text = "\n".join(lines)
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS006", require_contract=True)
     for term in TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
@@ -1615,6 +1755,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_project_manager_module(repo_root))
     diagnostics.extend(validate_topic_workspace_manager_module(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
+    diagnostics.extend(validate_split_output_contract_docs(repo_root, (repo_root / "skillset" / "operator",), code="OPS007"))
     return sorted(set(diagnostics))
 
 
@@ -1630,6 +1771,8 @@ def validate_topic_env_setup_service(repo_root: Path) -> list[Diagnostic]:
         return diagnostics
     lines = read_lines(skill_md)
     text = "\n".join(lines)
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="SVS002", require_contract=True)
+    add_forbidden_heavy_operation_diagnostics(diagnostics, repo_root, skill_md, lines, code="SVS002")
     for term in TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
@@ -1664,6 +1807,7 @@ def validate_topic_env_setup_service(repo_root: Path) -> list[Diagnostic]:
         if f"references/{subcommand_file_name}" not in text:
             add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "SVS002", f"{TOPIC_ENV_SETUP_SERVICE_SKILL} must link references/{subcommand_file_name}")
         subcommand_lines = read_lines(subcommand_path)
+        add_forbidden_heavy_operation_diagnostics(diagnostics, repo_root, subcommand_path, subcommand_lines, code="SVS002")
         subcommand_text = "\n".join(subcommand_lines)
         for required_term in TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
             if required_term not in subcommand_text:
@@ -1698,6 +1842,8 @@ def validate_agent_env_setup_service(repo_root: Path) -> list[Diagnostic]:
         return diagnostics
     lines = read_lines(skill_md)
     text = "\n".join(lines)
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="SVS003", require_contract=True)
+    add_forbidden_heavy_operation_diagnostics(diagnostics, repo_root, skill_md, lines, code="SVS003")
     for term in AGENT_ENV_SETUP_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
@@ -1728,6 +1874,7 @@ def validate_agent_env_setup_service(repo_root: Path) -> list[Diagnostic]:
         if f"references/{subcommand_file_name}" not in text:
             add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "SVS003", f"{AGENT_ENV_SETUP_SERVICE_SKILL} must link references/{subcommand_file_name}")
         subcommand_lines = read_lines(subcommand_path)
+        add_forbidden_heavy_operation_diagnostics(diagnostics, repo_root, subcommand_path, subcommand_lines, code="SVS003")
         subcommand_text = "\n".join(subcommand_lines)
         for required_term in AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
             if required_term not in subcommand_text:
@@ -1745,6 +1892,13 @@ def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
     )
     diagnostics.extend(validate_agent_env_setup_service(repo_root))
     diagnostics.extend(validate_topic_env_setup_service(repo_root))
+    diagnostics.extend(
+        validate_split_output_contract_docs(
+            repo_root,
+            (repo_root / "skillset" / "service", repo_root / "skillset" / "misc"),
+            code="SVS004",
+        )
+    )
     return sorted(set(diagnostics))
 
 

@@ -36,6 +36,21 @@ def messages(diagnostics: list[object]) -> list[str]:
     return [diagnostic.render() for diagnostic in diagnostics]
 
 
+OUTPUT_CONTRACT_FIXTURE = """
+            ## Output Contract
+
+            Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+            ### Essential Output
+
+            - Report the concise status, blockers, evidence, and next action.
+
+            ### Complete Output
+
+            - Include all bookkeeping, semantic refs, audit evidence, and handoff fields.
+"""
+
+
 class SkillsetValidatorTests(unittest.TestCase):
     def make_root(self) -> Path:
         tmp = tempfile.TemporaryDirectory()
@@ -96,6 +111,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             ```generated-guide
             Generated Guide
             ```
+
+            {OUTPUT_CONTRACT_FIXTURE}
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -158,11 +175,11 @@ class SkillsetValidatorTests(unittest.TestCase):
             extra_terms = ""
             if subcommand_name == "setup-agent-workspace.md":
                 extra_terms = """
-                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support paths, `semantic_paths`, `local_tmp_path_status`, semantic labels, path sources, `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, and `isomer-srv-agent-env-setup`. generate the source gate from a clear task and reject default-looking directories without semantic labels and path sources. Accept readiness only when every required per-agent `## Gate Checklist` item has evidence, preserve selected-agent partial evidence, and record any weaker smoke-test substitution as a limitation.
+                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support paths, `semantic_paths`, `local_tmp_path_status`, semantic labels, path sources, `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, and `isomer-srv-agent-env-setup`. generate the source gate from a clear task and reject default-looking directories without semantic labels and path sources. Accept readiness only when every required per-agent `## Gate Checklist` item has evidence, preserve selected-agent partial evidence, require `operation_classification` with classification source, and record any weaker smoke-test substitution as a limitation.
                 """
             elif subcommand_name == "validate-topic-team.md":
                 extra_terms = """
-                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support labels, `semantic_paths`, `local_tmp_path_status`, path sources, and reject hard-coded default-only paths without semantic labels. Verify every required topic gate checklist item and every required per-agent checklist item, and preserve any weaker smoke-test downgrade.
+                Require `topic.repos.main`, `agent.workspace`, `agent.tmp`, required `agent.*` support labels, `semantic_paths`, `local_tmp_path_status`, path sources, and reject hard-coded default-only paths without semantic labels. Verify every required topic gate checklist item and every required per-agent checklist item, require operation classification evidence, and preserve any weaker smoke-test downgrade.
                 """
             elif subcommand_name == "finalize-topic-team.md":
                 extra_terms = """
@@ -170,7 +187,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 """
             elif subcommand_name == "setup-topic-env.md":
                 extra_terms = """
-                Require complete required `## Gate Checklist` evidence before accepting ready, keep each required checklist item visible when blocked, failed, or not checked, and reject a weaker smoke test as readiness evidence.
+                Require complete required `## Gate Checklist` evidence before accepting ready, keep each required checklist item visible when blocked, failed, or not checked, require `operation_classification`, state that bounded-run tips owns the classification decision, and reject a weaker smoke test as readiness evidence.
                 """
             elif subcommand_name == "fast-forward.md":
                 extra_terms = """
@@ -274,7 +291,7 @@ class SkillsetValidatorTests(unittest.TestCase):
     ) -> None:
         write(
             root / "skillset" / "operator" / "isomer-admin-project-mgr" / "SKILL.md",
-            """
+            f"""
             ---
             name: isomer-admin-project-mgr
             description: Valid fixture project manager skill.
@@ -293,6 +310,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             ## Subcommands
 
             Use `references/help.md`, `references/init-project.md`, `references/cleanup-project.md`, `references/move-content.md`, `references/check-project.md`, `references/list-topics.md`, `references/show-context.md`, `references/init-runtime.md`, `references/prep-runtime.md`, and `references/specialize-team.md`.
+
+            {OUTPUT_CONTRACT_FIXTURE}
             """,
         )
         write(
@@ -371,6 +390,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             Misc Subcommands: `help` and `topic-workspace`.
 
             Use {subcommand_links}.
+
+            {OUTPUT_CONTRACT_FIXTURE}
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -491,7 +512,9 @@ class SkillsetValidatorTests(unittest.TestCase):
             Commands include `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, `pixi add --manifest-path <manifest_path>`, and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
             Use `.isomer-user-env/` only as fallback and block sudo.
             Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`; accept an explicit manual target spec; produce Topic Workspace predecessor evidence, Topic Main Development Repository Git state, external repo projection evidence, and `per_agent_readiness_status` when per-agent readiness is not checked. Also resolve the appropriate topic repository label before creating repos.
-            Use bounded real-path verification for heavy source-intent paths. Consult `isomer-misc-bounded-run-tips` before generic best-effort judgment. A generic smoke test is allowed only as supporting evidence.
+            Use bounded real-path verification for source-intent paths classified as `heavy` or `unknown-risk`. Consult `isomer-misc-bounded-run-tips`, record `operation_classification`, classification source, classification result, and generic best-effort judgment only when no recipe applies. A generic smoke test is allowed only as supporting evidence.
+
+            {OUTPUT_CONTRACT_FIXTURE}
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -511,10 +534,10 @@ class SkillsetValidatorTests(unittest.TestCase):
             "ensure-topic-repos.md": "Use resolved non-main `topic.repos.*` paths from `semantic_paths`; report semantic label, path, and path source. Keep existing canonical external repos read-only by default. Do not place task repos outside the resolved semantic path, and default helper-created repos under `repos/extern/...`.",
             "project-extern-repos.md": "Create external repo projection entries under `topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`, track metadata in `topic.repos.main.projections.manifest`, and distinguish read-only projections from writable projections.",
             "read-env-gate.md": "Resolve and read `topic.intent.topic_env_requirements`. Interpret the runnable target as what one agent or operator must run.",
-            "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec. Include `## Gate Checklist`, `- [ ]`, and `- [x]`. Define the required readiness work contract with a pass condition, evidence source, optional diagnostics outside the checklist, and blocker condition. Preserve every source-intent runnable target and use bounded real-path verification; consult `isomer-misc-bounded-run-tips`, record the bounded-run guidance source, and use generic best-effort judgment only when no recipe applies. A simple smoke test that misses the source path is insufficient unless the user explicitly records a downgrade.",
-            "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy plus bounded-run guidance source, generic best-effort fallback evidence when used, and bounded real setup path decisions.",
+            "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec. Include `## Gate Checklist`, `- [ ]`, and `- [x]`. Define the required readiness work contract with a pass condition, evidence source, optional diagnostics outside the checklist, and blocker condition. Preserve every source-intent runnable target and use bounded real-path verification; consult `isomer-misc-bounded-run-tips`, record `classification_source`, `classification_result`, `classification_reason`, `resource_dimensions`, `unknown-risk`, the bounded-run guidance source, and use generic best-effort judgment only when no recipe applies. A simple smoke test that misses the source path is insufficient unless the user explicitly records a downgrade.",
+            "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy plus classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, and bounded real setup path decisions.",
             "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `topic.intent.agent_env_requirements`. Use bounded real-path verification; a generic smoke test is not enough.",
-            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, projection evidence, bounded real-path coverage, bounded-run guidance source, generic best-effort fallback evidence when used, source-intent runnable target coverage, every required `## Gate Checklist` item checked with supporting evidence, the exact checklist item when blocked, failed, or not checked, any weaker smoke test limitation, and any user downgrade.",
+            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, projection evidence, bounded real-path coverage, operation classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, source-intent runnable target coverage, every required `## Gate Checklist` item checked with supporting evidence, the exact checklist item when blocked, failed, or not checked, any weaker smoke test limitation, and any user downgrade.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
             term = reference_terms.get(subcommand_name, "Topic Workspace environment setup reference.")
@@ -580,9 +603,11 @@ class SkillsetValidatorTests(unittest.TestCase):
             Use {subcommand_links}.
 
             This fixture reads `topic.intent.agent_env_requirements`, writes or validates `topic.env.agent_setup_target_spec`, accepts an explicit manual target spec, consumes `topic.env.topic_setup_target_spec`, requires prepared Topic Main Development Repository and projection predecessor evidence at `topic.repos.main`, uses authoritative Agent Names, resolves `agent.workspace`, runs `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, records selected-agent partial evidence, Service Request refs, Provenance refs, and `overall_readiness_status`.
-            Use bounded real-path verification for heavy cwd commands. Consult `isomer-misc-bounded-run-tips` before generic best-effort judgment. A generic smoke test is only supporting evidence.
+            Use bounded real-path verification for cwd commands classified as `heavy` or `unknown-risk`. Consult `isomer-misc-bounded-run-tips`, record `operation_classification`, classification source, classification result, and generic best-effort judgment only when no recipe applies. A generic smoke test is only supporting evidence.
 
             Do not initialize, repair, or configure the Topic Main Development Repository. Do not create per-agent Pixi manifests. Do not install or mutate Topic Workspace dependencies. Do not create Agent Instances or mutate Workspace Runtime records.
+
+            {OUTPUT_CONTRACT_FIXTURE}
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -629,6 +654,81 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertEqual([], messages(diagnostics))
+
+    def test_operator_validator_requires_split_output_contract_trigger(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "complete, verbose, audit, debug, full handoff, JSON, or full output",
+                "complete output",
+            ),
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("complete, verbose, audit, debug, full handoff, JSON, or full output" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_complete_output_as_default(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "Default to **Essential Output** in chat.",
+                "Default to **Complete Output** in chat.",
+            ),
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("Default to **Essential Output** in chat." in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_checks_reference_output_contract_shape(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        reference_path = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "help.md"
+        reference_path.write_text(
+            reference_path.read_text(encoding="utf-8")
+            + "\n## Output Contract\n\nDefault to **Essential Output** in chat.\n\n### Essential Output\n\n- Fixture summary.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS007", codes(diagnostics))
+        self.assertTrue(any("Complete Output" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_core_owned_heavy_operation_lists(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        subcommand_path = (
+            root
+            / "skillset"
+            / "operator"
+            / "isomer-admin-topic-team-specialize"
+            / "references"
+            / "setup-topic-env.md"
+        )
+        subcommand_path.write_text(
+            subcommand_path.read_text(encoding="utf-8")
+            + "\nUse a heavy setup or verification command such as compilation, deep model inference, or broad test suite execution.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("delegate heavy-operation classification" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_topic_team_dependency_manifest(self) -> None:
         root = self.make_root()
@@ -1167,6 +1267,24 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertEqual([], messages(diagnostics))
 
+    def test_service_validator_requires_split_output_contract_trigger(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
+        skill_path = root / "skillset" / "service" / "isomer-srv-topic-env-setup" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "complete, verbose, audit, debug, full handoff, JSON, or full output",
+                "complete output",
+            ),
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("complete, verbose, audit, debug, full handoff, JSON, or full output" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_service_validator_rejects_legacy_env_setup_folder(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root, include_legacy_folder=True)
@@ -1247,6 +1365,21 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("SVS002", codes(diagnostics))
         self.assertTrue(any("bounded real-path" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_rejects_core_owned_heavy_operation_lists(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
+        skill_path = root / "skillset" / "service" / "isomer-srv-topic-env-setup" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8") + "\nTreat compilation, deep model inference, and full dataset download as heavy.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("delegate heavy-operation classification" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_requires_complete_checklist_readiness_terms(self) -> None:
         root = self.make_root()

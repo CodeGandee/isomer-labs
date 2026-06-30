@@ -50,4 +50,20 @@ In inclusive targeted recovery, run the returned path with the target included. 
 
 ## Output Contract
 
-Report semantic labels and resolved paths for topic overview, topic env source intent, topic env target spec, agent env source intent, and agent env target spec when present; also report registration status, registered topic and workspace refs, environment binding status, selected Domain Agent Team Template, copied material paths, topic environment status, Topic Main Development Repository and projection predecessor evidence, Agent Workspace paths, topic-team validation status, `isomer-topic-summary.md` path, blockers, deferrals, and next operator action.
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+### Essential Output
+
+- `status`: fast-forward status.
+- `topic`: Research Topic and Topic Workspace.
+- `registration`: registration and environment binding status.
+- `template`: selected Domain Agent Team Template and copied material status.
+- `environment`: topic and agent environment status when checked.
+- `validation`: topic-team validation status.
+- `important_paths`: topic overview, gates, copied material, and `isomer-topic-summary.md` when present.
+- `blockers`: user-actionable blockers and deferrals.
+- `next_operator_action`
+
+### Complete Output
+
+Include semantic labels and resolved paths for topic overview, topic env source intent, topic env target spec, agent env source intent, and agent env target spec when present; also include registration status, registered topic and workspace refs, environment binding status, selected Domain Agent Team Template, copied material paths, topic environment status, Topic Main Development Repository and projection predecessor evidence, Agent Workspace paths, topic-team validation status, `isomer-topic-summary.md` path, blockers, deferrals, and next operator action.

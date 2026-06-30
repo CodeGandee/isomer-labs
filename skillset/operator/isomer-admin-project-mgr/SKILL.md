@@ -20,7 +20,7 @@ When this skill is invoked, execute the following steps in order.
    - Guardrail: load only the selected subcommand page.
    - Include any local support reference it names.
    - Execute that workflow for one bounded manual operation.
-5. **Report the Project lifecycle output** using the **Output Contract** and preserve the **Guardrails**.
+5. **Report the Project lifecycle output** using **Essential Output** by default and **Complete Output** when requested, and preserve the **Guardrails**.
 6. **Hand off topic-team adaptation** to `isomer-admin-topic-team-specialize` whenever the request moves from Project setup into Domain Agent Team Template specialization.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project context, subcommands, CLI boundaries, output contract, and guardrails in this skill, then execute the plan.
@@ -44,21 +44,29 @@ Load only the subcommand pages needed for the user's task.
 
 ## Output Contract
 
-When reporting results, include the fields that apply:
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
 
-- `project_root`: resolved Project root.
-- `project_manifest_path`: `.isomer-labs/manifest.toml` when present or planned.
-- `houmao_project_dir`: Isomer-managed Houmao Project directory, normally `.isomer-labs/`.
-- `houmao_overlay_dir`: Isomer-managed Houmao overlay path, normally `.isomer-labs/.houmao/`.
-- `research_topic_refs`: selected or listed Research Topic ids.
-- `topic_workspace_refs`: selected or listed Topic Workspace ids and paths.
-- `effective_topic_context`: selected topic, workspace, profile, template, and runtime refs when resolved.
-- `runtime_status`: Workspace Runtime init, readiness, and validation status when checked.
-- `cleanup_plan`: selected cleanup parts, dry-run or confirmed mode, planned targets, skipped targets, and removed targets when cleanup is selected.
-- `relocation_plan`: old generated content root, new generated content root, managed moves, manifest updates, unmanaged leftovers, warnings, and applied moves when content-root relocation is selected.
-- `commands_run`: Isomer or Houmao CLI commands used, with read-only or mutation posture.
-- `diagnostics`: blockers, warnings, or validation diagnostics.
-- `next_operator_action`: usually initialize, repair, validate, prepare runtime, run topic-team specialization, or stop on blockers.
+### Essential Output
+
+Report:
+
+- `status`: Project lifecycle, cleanup, relocation, runtime, or validation result.
+- `project`: resolved `project_root` and Project Manifest status.
+- `topic`: selected Research Topic or Topic Workspace when relevant.
+- `what_changed`: important created, moved, removed, or validated paths.
+- `blockers`: user-actionable blockers, warnings, or diagnostics.
+- `next_action`: usually initialize, repair, validate, prepare runtime, run topic-team specialization, or stop on blockers.
+
+### Complete Output
+
+When requested, include grouped handoff and audit fields:
+
+- **Project identity**: `project_root`, `project_manifest_path`, `houmao_project_dir`, and `houmao_overlay_dir`.
+- **Topic context**: `research_topic_refs`, `topic_workspace_refs`, and `effective_topic_context`.
+- **Runtime**: `runtime_status` and related diagnostics.
+- **Cleanup**: `cleanup_plan`, selected parts, dry-run or confirmed mode, planned targets, skipped targets, and removed targets.
+- **Relocation**: `relocation_plan`, old and new generated content roots, managed moves, manifest updates, unmanaged leftovers, warnings, and applied moves.
+- **Commands and diagnostics**: `commands_run`, read-only or mutation posture, diagnostics, blockers, and `next_operator_action`.
 
 ## Guardrails
 

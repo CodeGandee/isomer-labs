@@ -63,22 +63,31 @@ Helper subcommands are callable when the operator wants one implementation stage
 
 ## Output Contract
 
-When reporting results, include these fields in structured prose or JSON, depending on the caller's print mode:
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
 
-- `research_topic_ref`: selected Research Topic id or explicit blocker.
-- `topic_workspace_ref`: selected Topic Workspace id and path.
-- `semantic_paths`: resolved labels, paths, sources, readiness, and blockers for `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.agents_root`, `topic.records`, `topic.runtime`, `agent.workspace`, `agent.tmp`, and required agent support labels.
-- `topic_main_repo_path`: resolved `topic.repos.main` path.
-- `isomer_managed_path_status`: readiness for `isomer-managed/.gitignore`, `tracked/`, `agent-owned/`, `topic-owned/`, projection roots, and `links/`.
-- `local_tmp_path_status`: readiness for `topic.repos.main.tmp` and `agent.tmp`, including resolved paths, ignored posture, tracked-content diagnostics, and confirmation that tmp material is not shared or durable evidence.
-- `agent_workspace_paths`: role id, agent name, resolved `agent.workspace` path, source, and readiness for each active role binding.
-- `agent_workspace_refs`: derived compatibility packet or profile `agent_workspace_ref` values that were validated, proposed, or changed when older material needs them.
-- `branch_plan`: default `per-agent/<agent-name>/main` branch, owner branch `topic-owner/main`, and future branch namespace for each agent name.
-- `boundary_material_paths`: topic-level and per-agent Workspace Boundary docs written or validated.
-- `validation_status`: ready, ready-with-deferrals, blocked, or not checked.
-- `agent_environment_service_output`: optional summarized `isomer-srv-agent-env-setup` evidence when a caller already requested per-Agent Workspace cwd verification, including `source_agent_env_gate_path`, `agent_env_gate_path`, readiness by agent, overall readiness, commands run, blockers, and next action.
-- `blockers`: unsafe repo state, unsafe path, normalized key collision, duplicate branch checkout, cross-topic ref, missing input, or unapproved mutation.
-- `next_operator_action`: usually rerun a specific subcommand, update packet/profile material, make a caller-requested `isomer-srv-agent-env-setup` call after topic env predecessor evidence exists, run `isomer-admin-topic-team-specialize validate-topic-team`, create an Agent Team Instance through runtime workflow, or stop on blockers.
+### Essential Output
+
+Report:
+
+- `status`: topology, worktree, or validation status.
+- `topic`: selected `research_topic_ref` and `topic_workspace_ref`.
+- `topic_main`: `topic.repos.main` path and readiness summary.
+- `agent_workspaces`: Agent Workspace path summary and any unsafe topology problem.
+- `tmp_posture`: local tmp readiness summary for `topic.repos.main.tmp` and `agent.tmp`.
+- `changed_paths`: boundary material or generated links when created or changed.
+- `blockers`: unsafe repo state, unsafe path, branch conflict, missing input, or unapproved mutation.
+- `next_action`: the next safe operator step.
+
+### Complete Output
+
+When requested, include grouped handoff and audit fields:
+
+- **Identity**: `research_topic_ref` and `topic_workspace_ref`.
+- **Semantic paths**: full `semantic_paths` with labels, paths, sources, readiness, and blockers.
+- **Topic main and managed paths**: `topic_main_repo_path`, `isomer_managed_path_status`, projection roots, `agent-owned/`, `links/`, and generated links.
+- **Tmp posture**: `local_tmp_path_status`, ignored posture, tracked-content diagnostics, and non-durable evidence notes.
+- **Agent workspaces**: `agent_workspace_paths`, `agent_workspace_refs`, and `branch_plan`.
+- **Boundary and validation**: `boundary_material_paths`, `validation_status`, optional `agent_environment_service_output`, blockers, and `next_operator_action`.
 
 ## Guardrails
 

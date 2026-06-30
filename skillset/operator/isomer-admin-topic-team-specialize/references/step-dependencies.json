@@ -209,12 +209,12 @@
         "Recoverable when registration and topic env source intent can be prepared first."
       ],
       "mutation_notes": [
-        "Delegates heavy setup to isomer-srv-topic-env-setup; records service output as durable predecessor evidence."
+        "Delegates setup to isomer-srv-topic-env-setup; records classification-aware service output as durable predecessor evidence."
       ],
       "unrecoverable_blockers": [
         "Effective Topic Workspace Pixi binding is blocked.",
         "Runnable target is unclear.",
-        "Host resource check blocks heavy setup or verification."
+        "Host resource check blocks setup or verification classified as heavy or unknown-risk."
       ]
     },
     "adapt-team-template": {
@@ -384,7 +384,7 @@
       "unrecoverable_blockers": [
         "Per-agent cwd target is unclear.",
         "Topic Main Development Repository predecessor evidence is blocked.",
-        "Host resource check blocks heavy per-agent verification."
+        "Host resource check blocks per-agent verification classified as heavy or unknown-risk."
       ]
     },
     "validate-topic-team": {

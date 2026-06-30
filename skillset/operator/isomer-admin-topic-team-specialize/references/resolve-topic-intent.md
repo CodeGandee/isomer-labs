@@ -51,14 +51,26 @@ When the Research Topic or candidate Topic Workspace is missing but the user gav
 
 ## Output Contract
 
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+### Essential Output
+
 - `topic_intent_status`: ready, revised, blocked, or not changed.
-- `topic_overview_label`: `topic.intent.overview`.
 - `topic_overview_path`: resolved path for `topic.intent.overview`.
-- `topic_overview_storage_profile`: usually `topic_intent_source_file`.
-- `topic_overview_source`: resolver source such as `default_profile`, `topic_workspace_manifest`, `env`, or `path_plan`.
-- `topic_overview_source_detail`: resolver source detail such as `isomer-default.v1` or manifest binding detail.
-- `topic_overview_diagnostics`: Workspace Path Resolution diagnostics and topic-understanding blockers.
-- `open_questions`: topic questions that materially affect scope, goals, metrics, datasets, repositories, tools, or team selection.
+- `open_questions`: material topic questions.
+- `blockers`: topic-understanding blockers.
+- `next_operator_action`: usually `ensure-topic-registration`, `resolve-topic-env-gate`, or ask the user to answer open questions.
+
+### Complete Output
+
+- `topic_intent_status`
+- `topic_overview_label`
+- `topic_overview_path`
+- `topic_overview_storage_profile`
+- `topic_overview_source`
+- `topic_overview_source_detail`
+- `topic_overview_diagnostics`
+- `open_questions`
 
 ## Guardrails
 

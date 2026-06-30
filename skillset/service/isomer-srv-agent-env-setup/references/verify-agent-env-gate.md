@@ -14,7 +14,7 @@ Recover these before asking the user:
 | Agent env target spec | Require resolved `topic.env.agent_setup_target_spec` from `derive-agent-env-gate`. |
 | Gate checklist | Require `## Gate Checklist` from the agent env target spec; treat every item in that section as required readiness work unless the target spec explicitly moved the item to a non-readiness diagnostic section. |
 | Worktree evidence | Require `create-agent-worktrees` output or read-only equivalent showing valid worktrees, support paths, and path evidence. |
-| Verification matrix and resource check plan | Read `## Verification Matrix`, `## Resource Check Plan`, and `## Expected Results` from the target spec. Refuse to claim readiness when a heavy matrix command lacks a bounded-run guidance source, generic best-effort fallback evidence when used, affected Agent Name scope, bounded command, expected result, or blocker condition. |
+| Verification matrix and resource check plan | Read `## Verification Matrix`, `## Resource Check Plan`, and `## Expected Results` from the target spec. Refuse to claim readiness when a resource-relevant matrix command lacks bounded-run tips classification evidence, or when a command classified as `heavy` or `unknown-risk` lacks a bounded-run guidance source, generic best-effort fallback evidence when used, affected Agent Name scope, bounded command, expected result, or blocker condition. |
 | Optional selected agent | Optional. It must be one authoritative Agent Name and reports selected-agent partial readiness evidence only. |
 
 ## Workflow
@@ -38,13 +38,13 @@ When this subcommand is selected, execute the following steps in order.
 7. **Verify projected external repo evidence when commands depend on it**:
    - Confirm the relevant projection entry from `topic.repos.main.projections.manifest` is present in predecessor evidence.
    - Confirm the projected path is visible from each target `agent.workspace` cwd without creating a substitute projection.
-8. **Check resources before heavy verification commands**:
-   - Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy, especially when the same command would run for every Agent Workspace.
-   - Treat the generated `## Resource Check Plan` and matching checklist item as the execution contract for each heavy matrix command.
-   - Confirm the heavy-command plan names the bounded-run guidance source, either a matching `isomer-misc-bounded-run-tips` subcommand or explicit generic best-effort judgment.
-   - If the plan lacks a guidance source, affected Agent Name scope, lightweight probes, capacity signals, bounded command, expected result, or blocker condition, report `blocked` and ask for `derive-agent-env-gate` to repair the target spec before verification.
-   - Use lightweight read-only probes before heavy commands, including CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
-   - Prefer the smallest real command that satisfies the gate: selected-agent partial run, reduced parallelism, selected build target, tiny model or tensor shape, sample data, reduced iterations, reduced batch size, selected tests, or short benchmark case.
+8. **Check resources before classified risky verification commands**:
+   - Apply this when bounded-run tips classified a verification command as `heavy` or `unknown-risk`.
+   - Treat the generated `## Resource Check Plan` and matching checklist item as the execution contract for each classified matrix command.
+   - Confirm classification source, result, reason, resource dimensions, affected Agent Name scope, bounded-run guidance source, bounded command, expected result, and blocker condition.
+   - If classification evidence or required bounded guidance is missing, report `blocked` and ask for `derive-agent-env-gate` to repair the target spec before verification.
+   - Use lightweight read-only probes before commands classified as `heavy` or `unknown-risk`, including CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
+   - Prefer the smallest real command that satisfies the gate, for example selected-agent partial run, reduced parallelism, selected build target, tiny model or tensor shape, sample data, reduced iterations, reduced batch size, selected tests, or short benchmark case.
    - If resources are insufficient, ambiguous, or already busy, do not run an unrelated smoke test in place of the required path. Report `blocked` with `resource_check_status: blocked`, the capacity reason, and the bounded real-path command that should be retried later. Selected-agent partial evidence must remain partial.
 9. **Run verification commands** from the resolved `agent.workspace` cwd:
    - Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.
@@ -75,5 +75,5 @@ Selected-agent direct verification updates that agent's evidence but does not ma
 - Report `gate-cwd-incompatible` or equivalent when a topic env command cannot run from Agent Workspace cwd.
 - Do not create Agent Instances, Workspace Runtime records, Houmao launch material, or Execution Adapter material.
 - Do not suppress partial failures; readiness by agent and blockers must remain visible.
-- Do not run resource-heavy verification at full scale merely to make the all-agent matrix look stronger or because the generated bounded-run plan is incomplete. When selected-agent partial coverage or another bounded real-path command is enough and it exercises the critical path named by the checklist item, use it and label the evidence correctly. When the required command path cannot be exercised safely even in bounded form, block with resource evidence and leave the checklist item unchecked. A simple smoke test that misses the essential cwd command path is not enough to claim readiness.
+- Do not run verification classified as `heavy` or `unknown-risk` at full scale merely to make the all-agent matrix look stronger or because the generated bounded-run plan is incomplete. When selected-agent partial coverage or another bounded real-path command is enough and it exercises the critical path named by the checklist item, use it and label the evidence correctly. When the required command path cannot be exercised safely even in bounded form, block with resource evidence and leave the checklist item unchecked. A simple smoke test that misses the essential cwd command path is not enough to claim readiness.
 - Do not mark a required checklist item complete with an unrelated weaker smoke test. If the user explicitly accepts a weaker check, record the user downgrade, original checklist item, affected Agent Name or matrix scope, weaker evidence, and limitation instead of presenting it as proof that the original critical path passed.

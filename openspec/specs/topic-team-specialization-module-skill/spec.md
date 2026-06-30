@@ -403,12 +403,39 @@ The module skill SHALL present the primary user-facing flow as procedural subcom
 - **WHEN** the user asks for `step-by-step`
 - **THEN** the skill treats it as the guided form of the same user-facing path and waits for confirmation between project resolution, topic intent creation, topic env source intent creation, topic env derived spec creation, topic env materialization, agent env source intent creation when in scope, agent env derived spec creation, agent env materialization, validation, and finalization steps
 
+#### Scenario: Procedural subcommands offer prerequisite recovery
+- **WHEN** a procedural subcommand after `init-topic` is selected and the artifacts expected from its predecessor steps are missing
+- **THEN** the subcommand refuses to run directly, explains which predecessor artifacts are missing, and offers targeted fast-forward recovery to the selected subcommand
+- **AND** the recovery offer presents inclusive mode as the default, which runs missing predecessor stages and then runs the selected subcommand
+- **AND** the recovery offer presents exclusive mode as an alternative, which runs missing predecessor stages and stops before the selected subcommand
+- **AND** `setup-topic-env` treats manifest-backed topic registration, Topic Workspace Pixi binding evidence, and a usable `topic.intent.topic_env_requirements` surface as its predecessor requirements instead of requiring specialization outputs or team-profile material
+
+#### Scenario: Targeted fast-forward is bounded by selected subcommand
+- **WHEN** targeted fast-forward recovery starts for a selected subcommand
+- **THEN** the skill runs the canonical predecessor path only as far as the selected subcommand requires
+- **AND** it does not continue through later specialization stages, validation, finalization, approval, or materialization unless those later stages are part of the selected target or explicitly requested by the user
+
+#### Scenario: Inclusive targeted fast-forward runs target
+- **WHEN** the user accepts targeted fast-forward recovery without choosing a mode
+- **THEN** the skill uses inclusive mode
+- **AND** it runs the missing predecessor subcommands in canonical order and then runs the originally selected subcommand when prerequisites are satisfied
+
+#### Scenario: Exclusive targeted fast-forward stops before target
+- **WHEN** the user chooses exclusive targeted fast-forward recovery
+- **THEN** the skill runs the missing predecessor subcommands in canonical order
+- **AND** it stops before running the originally selected subcommand and reports that the target is now ready or names any remaining blocker
+
+#### Scenario: Targeted fast-forward asks before mutation
+- **WHEN** targeted fast-forward recovery would create or update topic intent, registration, derived target specs, environment material, topic-team material, Agent Workspace material, or validation summaries
+- **AND** the user has not already given clear permission to proceed automatically
+- **THEN** the skill asks the user to confirm inclusive mode, choose exclusive mode, or stop before performing the mutation
+
 ### Requirement: Topic Environment Setup is Explicit
 The module skill SHALL route topic environment setup through `isomer-srv-topic-env-setup` and SHALL treat the setup as durable Topic Workspace preparation. The skill SHALL NOT block environment setup solely because the Project Manifest lacks an explicit `topic_standalone_pixi_bindings` entry when Pixi can resolve the registered Topic Workspace directory as the default Topic Workspace Pixi binding target. The skill SHALL NOT block environment setup solely because topic-team specialization material is absent.
 
 #### Scenario: Setup delegates to environment service
 - **WHEN** the Topic Workspace needs a development environment before research work can start
-- **THEN** the skill routes to `setup-topic-env`, requires or reuses `topic.intent.topic_env_requirements`, and delegates heavy environment setup to `isomer-srv-topic-env-setup`
+- **THEN** the skill routes to `setup-topic-env`, requires or reuses `topic.intent.topic_env_requirements`, and delegates environment setup to `isomer-srv-topic-env-setup`
 - **AND** it does not perform dependency inference, repo acquisition, Pixi installation, source gate generation, or verification directly inside the operator subcommand
 
 #### Scenario: Default binding removes explicit binding blocker
@@ -426,12 +453,30 @@ The module skill SHALL route topic environment setup through `isomer-srv-topic-e
 #### Scenario: Missing team profile does not block service delegation
 - **WHEN** `setup-topic-env` runs for a registered Topic Workspace with a usable source gate and effective Topic Workspace Pixi binding
 - **AND** `<topic-workspace>/team-profile/` or Topic Agent Team Profile material is absent
-- **THEN** the operator subcommand still delegates heavy environment setup to `isomer-srv-topic-env-setup`
+- **THEN** the operator subcommand still delegates environment setup to `isomer-srv-topic-env-setup`
 - **AND** it records absent team-profile material only as unrelated or downstream topic-team context
 
 #### Scenario: Setup records environment status
 - **WHEN** `setup-topic-env` completes or stops on a blocker
 - **THEN** it records environment setup status, commands run, changed files, validation refs, and blockers as durable static preparation evidence
+
+### Requirement: Topic Team Specialization Consumes Operation Classification Evidence
+The Topic Team Specialization operator skill SHALL rely on delegated service outputs for operation classification and bounded-run evidence instead of defining heavy-operation categories itself.
+
+#### Scenario: Operator requires classification evidence from topic env service
+- **WHEN** Topic Team Specialization delegates Topic Workspace environment setup to `isomer-srv-topic-env-setup`
+- **THEN** the operator output contract expects classification source, classification result, resource dimensions, bounded guidance when required, and blockers from the delegated service output
+- **AND** the operator does not classify operations from a fixed heavy-operation category list before delegation
+
+#### Scenario: Operator requires classification evidence from agent env service
+- **WHEN** Topic Team Specialization delegates Agent Workspace environment setup to `isomer-srv-agent-env-setup`
+- **THEN** the operator output contract expects per-agent or matrix-scope classification source, classification result, resource dimensions, bounded guidance when required, selected-agent partial scope when used, and blockers from the delegated service output
+- **AND** the operator does not classify per-agent operations from a fixed heavy-operation category list before delegation
+
+#### Scenario: Operator examples remain non-normative
+- **WHEN** Topic Team Specialization documentation gives examples of operations that often need bounded handling
+- **THEN** it states that `isomer-misc-bounded-run-tips` owns the classification decision
+- **AND** it treats the examples as reader guidance rather than the definition of heavy operation
 
 ### Requirement: Static Topic Team Material Boundary
 The module skill SHALL focus on static Topic Team material and durable setup preparation, and SHALL exclude live runtime operation.
@@ -482,6 +527,21 @@ The Topic Team Specialization module skill SHALL delegate Git-backed Agent Works
 #### Scenario: Legacy support setup is not accepted as new readiness
 - **WHEN** the only available workspace setup evidence names `.isomer-agent/` or top-level `repos/topic-main/{shared,artifacts,tasks,runs,views,logs,tools}` as the current standard layout
 - **THEN** `validate-topic-team` reports stale workspace setup evidence and asks for `isomer-admin-topic-workspace-mgr` validation of the `isomer-managed/` layout
+
+#### Scenario: Topic-main setup is not workspace-manager work in the canonical path
+- **WHEN** the normal topic-team setup path needs `topic.repos.main`
+- **THEN** `isomer-admin-topic-team-specialize` gets that evidence through `setup-topic-env` and `isomer-srv-topic-env-setup`
+- **AND** it does not route canonical Topic Main Development Repository creation to `isomer-admin-topic-workspace-mgr`
+
+#### Scenario: Setup agent workspace delegates agent worktree setup
+- **WHEN** `setup-agent-workspace` determines that the selected topic team needs Git-backed Agent Workspaces under resolved `agent.workspace` paths
+- **THEN** it routes per-agent worktree creation and cwd verification through `isomer-srv-agent-env-setup` after Topic Main Development Repository predecessor evidence exists
+- **AND** it does not create the worktrees itself
+
+#### Scenario: Workspace manager remains optional
+- **WHEN** the operator asks for read-only topology inspection, branch helper operations, boundary summaries, or legacy compatibility diagnostics
+- **THEN** the skill may route that bounded work to `isomer-admin-topic-workspace-mgr`
+- **AND** it records that evidence separately from topic env materialization and agent env readiness evidence
 
 ### Requirement: Clarification Option Loop
 The module skill SHALL make `clarify-topic` and `clarify-topic-team` use a bounded option-asking clarification loop that updates static topic-team artifacts directly instead of creating separate user-decision records.
@@ -648,6 +708,23 @@ The Topic Team Specialization module skill SHALL own the decision to invoke Topi
 - **THEN** Topic Team Specialization delegates that topology to `isomer-admin-topic-workspace-mgr`
 - **AND** it records the workspace manager evidence separately from topic env setup evidence and agent env setup evidence
 
+#### Scenario: Topic setup is delegated only after derived topic target spec exists
+- **WHEN** `isomer-admin-topic-team-specialize setup-topic-env` runs after registration and Topic Workspace Pixi binding evidence exists
+- **THEN** it ensures `topic.intent.topic_env_requirements` and `topic.env.topic_setup_target_spec` exist or reports blockers
+- **AND** it delegates Topic Main Development Repository setup, external repo acquisition, external projection materialization, Pixi mutation, and topic-root or repo-specific verification work to `isomer-srv-topic-env-setup`
+- **AND** it records topic env setup evidence as Topic Workspace predecessor evidence
+- **AND** it does not treat that evidence as per-Agent Workspace cwd readiness
+
+#### Scenario: Agent setup is delegated after topic-main readiness exists
+- **WHEN** `isomer-admin-topic-team-specialize setup-agent-workspace` receives a request for per-Agent Workspace cwd verification, selected-agent repair, or launch-facing Agent Workspace readiness
+- **THEN** it ensures `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, Topic Workspace env readiness, authoritative Agent Names, and Topic Main Development Repository predecessor evidence exist or reports blockers
+- **AND** it delegates gate-driven Agent Workspace environment setup to `isomer-srv-agent-env-setup`
+
+#### Scenario: Derived gates are orchestrator-owned in normal flow
+- **WHEN** the normal topic-team setup flow creates operational target specs
+- **THEN** `isomer-admin-topic-team-specialize` owns the creation or update of `topic.env.topic_setup_target_spec` and `topic.env.agent_setup_target_spec`
+- **AND** direct service invocation may still accept explicit target specs outside the normal operator flow
+
 ### Requirement: Validation Distinguishes Topic and Agent Readiness Evidence
 The Topic Team Specialization module skill SHALL validate topic environment readiness and Agent Workspace readiness as separate static setup evidence streams.
 
@@ -660,6 +737,26 @@ The Topic Team Specialization module skill SHALL validate topic environment read
 - **WHEN** per-Agent Workspace cwd verification was requested but `isomer-srv-agent-env-setup` evidence is missing
 - **THEN** Topic Team Specialization reports an explicit blocker or deferral for Agent Workspace environment readiness
 - **AND** it does not infer readiness from topic-root verification, Pixi install success, or Git topology readiness
+
+#### Scenario: Topic env ready requires complete topic checklist evidence
+- **WHEN** `validate-topic-team` or `finalize-topic-team` consumes `isomer-srv-topic-env-setup` output that reports Topic Workspace environment readiness as `ready`
+- **THEN** the operator evidence includes `topic.env.topic_setup_target_spec`, its `Gate Checklist`, and confirmation that every required checklist item is checked with supporting execution, path, dependency, resource, or expected-result evidence
+- **AND** the operator does not treat topic env setup as ready when required checklist items are unchecked, missing, or completed only by a weaker smoke test that does not prove the named critical path
+
+#### Scenario: Agent env ready requires complete per-agent checklist evidence
+- **WHEN** `validate-topic-team` or `finalize-topic-team` consumes `isomer-srv-agent-env-setup` output that reports Agent Workspace environment readiness as `ready`
+- **THEN** the operator evidence includes `topic.env.agent_setup_target_spec`, its `Gate Checklist`, readiness by Agent Name, and confirmation that every planned Agent Name has every required checklist item checked with supporting cwd execution, path, dependency, resource, projection, or expected-result evidence
+- **AND** selected-agent partial evidence does not satisfy overall Agent Workspace environment readiness unless the complete planned Agent Name matrix has already passed
+
+#### Scenario: Incomplete checklist item blocks static readiness
+- **WHEN** delegated topic env or agent env evidence contains a required unchecked checklist item
+- **THEN** `validate-topic-team` reports static setup readiness as blocked, failed, or not checked according to the delegated evidence
+- **AND** it names the incomplete checklist item, owning target spec, reason, and next safe repair action
+
+#### Scenario: Smoke-test downgrade remains visible
+- **WHEN** delegated env setup evidence records that the user accepted a weaker smoke test instead of the original critical-path checklist item
+- **THEN** `validate-topic-team` and `finalize-topic-team` preserve that limitation in validation and summary output
+- **AND** they do not describe the weaker evidence as proof that the original critical path passed
 
 ### Requirement: Topic Intent Semantic Surfaces
 The Topic Team Specialization module skill SHALL treat semantic labels, not hard-coded paths, as the canonical user-editable source specification surfaces for one Research Topic.
@@ -744,3 +841,75 @@ The Topic Team Specialization module skill SHALL provide `resolve-topic-intent`,
 - **WHEN** a resolve subcommand cannot infer a high-level source requirement without guessing
 - **THEN** it records open questions or blockers in the relevant source file or report
 - **AND** setup subcommands do not proceed as if the missing source gate exists
+
+### Requirement: Topic Team Specialization Uses Essential and Complete Output
+The Topic Team Specialization operator skill SHALL split its output contract into Essential Output and Complete Output.
+
+#### Scenario: Essential specialization output reports user-facing progress
+- **WHEN** `isomer-admin-topic-team-specialize` reports a result without a complete-output request
+- **THEN** it reports the selected Research Topic and Topic Workspace, registration status, selected Domain Agent Team Template, topic-team material status, topic environment status, agent environment status when checked, validation status, blockers, and next action
+- **AND** it names important created or changed paths such as topic overview, copied team material, environment gates, and final summary when those paths exist
+
+#### Scenario: Complete specialization output preserves handoff detail
+- **WHEN** complete output is requested from `isomer-admin-topic-team-specialize`
+- **THEN** it reports registration evidence, environment binding evidence, copied material paths, placeholder resolutions, source and target intent paths, delegated service outputs, semantic path evidence, Agent Workspace paths, tmp posture, validation details, deferrals, packet/profile inputs, blockers, and next action
+
+#### Scenario: Delegated service output remains summarized by default
+- **WHEN** topic or agent environment services return large output payloads during specialization
+- **THEN** Essential Output summarizes their readiness, blockers, important paths, and next action
+- **AND** Complete Output may include the full delegated service output or the complete field groups needed for handoff
+
+### Requirement: Breaking Topic Team Setup Order
+The Topic Team Specialization module skill SHALL present the revised setup order as a breaking replacement for old generated Topic Workspace internals.
+
+#### Scenario: Revised order is canonical
+- **WHEN** help text, workflow text, or operator documentation describes the normal setup path
+- **THEN** it presents the order as `resolve-project`, `resolve-topic-intent`, `resolve-topic-env-gate`, create `topic.env.topic_setup_target_spec`, materialize topic env including Topic Main Development Repository and projections, `specialize-team` when team material is needed, `resolve-agent-env-gate`, create `topic.env.agent_setup_target_spec`, materialize agent env worktrees and cwd proof, `validate-topic-team`, and `finalize-topic-team`
+
+#### Scenario: Old generated internals are not preserved
+- **WHEN** existing generated `isomer-content/` internals conflict with the revised setup order
+- **THEN** the skill reports that generated topic content should be recreated
+- **AND** it does not require compatibility steps for the old internal layout
+
+### Requirement: Centralized Step Dependency Contract
+The Topic Team Specialization module skill SHALL centralize procedural step dependencies, recovery paths, produced artifacts, and blocker metadata in a machine-readable dependency manifest and SHALL provide a local script for querying that manifest.
+
+#### Scenario: Dependency manifest and query script exist
+- **WHEN** the `isomer-admin-topic-team-specialize` skill bundle is inspected
+- **THEN** it contains `references/step-dependencies.json`
+- **AND** it contains `scripts/query_step_dependencies.py`
+
+#### Scenario: Manifest covers procedural subcommands
+- **WHEN** `references/step-dependencies.json` is inspected
+- **THEN** it records every public procedural subcommand in the Topic Team Specialization flow
+- **AND** each recorded step includes a step id, display name, kind, required predecessor artifacts or inputs, produced artifacts or outputs, dependency edges or predecessor steps, recovery conditions, mutation notes, and unrecoverable blockers when applicable
+
+#### Scenario: Query script validates graph
+- **WHEN** `python skillset/operator/isomer-admin-topic-team-specialize/scripts/query_step_dependencies.py validate` runs from the repository root
+- **THEN** it validates that all referenced step ids exist
+- **AND** it validates that dependency paths are acyclic
+- **AND** it reports an error for missing required fields, unknown targets, invalid edges, or malformed manifest data
+
+#### Scenario: Query script returns targeted recovery paths
+- **WHEN** an agent needs a targeted fast-forward recovery path for a selected subcommand
+- **THEN** it can run `python skillset/operator/isomer-admin-topic-team-specialize/scripts/query_step_dependencies.py path --target <subcommand> --include-target`
+- **AND** the output includes the canonical predecessor path plus the selected subcommand
+- **AND** it can run the same command with `--exclude-target` to stop before the selected subcommand
+
+#### Scenario: Query script answers local dependency questions
+- **WHEN** an agent needs the prerequisites, produced artifacts, blockers, or explanation for one subcommand
+- **THEN** it can query the script with `prereqs`, `produces`, `blockers`, or `explain`
+- **AND** the script answers from `references/step-dependencies.json` without reading or mutating the Topic Workspace
+
+#### Scenario: Skill prose delegates recovery paths to script
+- **WHEN** the skill entrypoint, `fast-forward`, or procedural subcommand pages describe missing-prerequisite recovery
+- **THEN** they instruct the agent to query `scripts/query_step_dependencies.py` for dependency paths
+- **AND** they avoid duplicating long full recovery chains that are already represented in `references/step-dependencies.json`
+- **AND** they preserve local prose for subcommand purpose, local evidence requirements, safety blockers, and information the agent must not invent
+
+#### Scenario: Validation checks centralized contract
+- **WHEN** `pixi run python scripts/validate_skillsets.py --scope operator` runs
+- **THEN** it verifies that the dependency manifest and query script exist
+- **AND** it verifies that the query script can validate the manifest
+- **AND** it verifies that the manifest covers the topic-team procedural subcommands
+- **AND** it does not require every procedural subcommand page to duplicate the full targeted fast-forward path in prose

@@ -7,7 +7,9 @@ description: Use when Codex is setting up or repairing a Pixi CUDA/C++ build env
 
 ## Overview
 
-Use this skill as a compact preference ledger for NVIDIA and CUDA Pixi environment setup in Isomer Labs. Do not use it for `nvcc` architecture or compile-parallelism policy; route bounded CUDA compile decisions to `isomer-misc-bounded-run-tips`.
+- **Purpose**: keep NVIDIA and CUDA Pixi environment setup preferences for Isomer Labs.
+- **Boundary**: do not use this skill for `nvcc` architecture or compile-parallelism policy.
+- **Routing**: send bounded CUDA compile decisions to `isomer-misc-bounded-run-tips`.
 
 ## Workflow
 

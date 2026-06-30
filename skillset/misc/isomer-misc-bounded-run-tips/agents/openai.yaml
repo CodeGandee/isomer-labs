@@ -1,4 +1,4 @@
 interface:
   display_name: "isomer-misc-bounded-run-tips"
-  short_description: "Bounded execution for heavy operations"
-  default_prompt: "Use $isomer-misc-bounded-run-tips to plan safe bounded execution for heavy operations before running compile, inference, dataset, benchmark, or broad test commands."
+  short_description: "Classify operation risk and plan bounded execution"
+  default_prompt: "Use $isomer-misc-bounded-run-tips to classify operation resource risk and plan bounded execution when needed."

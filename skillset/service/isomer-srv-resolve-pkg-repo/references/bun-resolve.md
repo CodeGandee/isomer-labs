@@ -25,11 +25,19 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Output Contract
 
-Report:
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+### Essential Output
 
 - `subcommand`: `bun-resolve`.
-- `default_registry_reachable`: `true`, `false`, or `not tested`.
-- `local_registries`: registries discovered from `bunfig.toml` files, including scoped entries.
 - `recommended_registry`: the URL or config entry to pass to Bun.
-- `tested_registries`: each candidate and its reachability result.
+- `status`: reachable, blocked, or not tested.
 - `blockers`: missing package context or no reachable registry.
+
+### Complete Output
+
+- `default_registry_reachable`
+- `local_registries`
+- `recommended_registry`
+- `tested_registries`
+- `blockers`

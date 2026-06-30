@@ -113,6 +113,32 @@ The service environment setup skill SHALL use a derived topic env target spec as
 - **THEN** the skill reports those parts as out-of-scope blockers or deferrals
 - **AND** it verifies only the service-safe Topic Workspace environment setup portion
 
+#### Scenario: Gate checklist records required readiness work
+- **WHEN** the skill generates `topic.env.topic_setup_target_spec`
+- **THEN** every required setup, repo, projection, dependency, resource, verification, expected-result, and blocker-resolution item needed for readiness is represented as a Markdown checkbox under `Gate Checklist`
+- **AND** optional diagnostics or supporting smoke checks that are not required for readiness are recorded outside `Gate Checklist`
+
+#### Scenario: Unchecked checklist item blocks readiness
+- **WHEN** any required item under `Gate Checklist` remains unchecked after setup or verification
+- **THEN** the skill does not report the Topic Workspace environment as ready
+- **AND** it reports `blocked` when the item could not be run, `failed` when it ran and missed its expected result, or `not checked` only when verification was explicitly not requested
+- **AND** it names the exact checklist item, reason, and next safe action in `Blockers`, `Execution Log`, or the final output
+
+#### Scenario: Bounded real-path evidence can complete heavy checklist item
+- **WHEN** a required checklist item names heavy work such as compilation, model inference, dataset processing, benchmark execution, large archive extraction, or a broad test suite
+- **THEN** the skill may check the item only after a bounded real-path command exercises the same critical path named by the item and passes its expected result
+- **AND** bounded real-path evidence may use reduced parallelism, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, or short benchmark cases
+
+#### Scenario: Unrelated smoke test cannot complete critical checklist item
+- **WHEN** a required checklist item names a critical build, inference, dataset, benchmark, or repo-specific runtime path
+- **THEN** the skill does not mark that item checked merely because a weaker smoke test passed
+- **AND** generic import success, device visibility, Pixi install success, repository inspection, or path existence counts only for a checklist item that specifically asks for that smoke evidence
+
+#### Scenario: User downgrade is explicit evidence
+- **WHEN** the user explicitly instructs the agent to accept a weaker check instead of the original critical-path checklist item
+- **THEN** the skill records the user instruction, original checklist item, weaker evidence, and resulting limitation in the execution log or blocker record
+- **AND** it does not silently present the weaker check as proof that the original critical path passed
+
 ### Requirement: Topic Workspace Repo Materialization
 The service environment setup skill SHALL use resolved semantic `topic.repos.*` paths for independent repositories required by the Topic Workspace task or environment gate, defaulting non-main helper-created repositories under `<topic-workspace-dir>/repos/extern/<repo-label-path>`.
 
@@ -163,6 +189,11 @@ The service environment setup skill SHALL use resolved semantic `topic.repos.*` 
 - **WHEN** topic environment setup acquires or verifies a non-main topic repository under `repos/extern/...`
 - **THEN** the skill treats that repository as supporting topic-local code rather than the primary Topic Main Repository used for Agent Workspace worktrees
 - **AND** the skill may inspect or modify it only when the gate or user authorizes that action
+
+#### Scenario: External repo projection is materialized
+- **WHEN** the target spec says a canonical external repository must be visible from topic-main
+- **THEN** the service creates or validates a projection under `topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`
+- **AND** it records projection metadata in `topic.repos.main.projections.manifest`
 
 ### Requirement: Dependency Inference and Pixi Execution
 The service environment setup skill SHALL instruct the agent to infer the dependencies needed for `topic.intent.topic_env_requirements` to pass, install those dependencies with Pixi, and run the desired command through the Topic Workspace Pixi environment.
@@ -219,32 +250,45 @@ The service environment setup skill SHALL instruct the agent to infer the depend
 - **AND** it does not mutate existing repo source files merely to force compatibility
 - **AND** if service-safe adaptation is impossible, it reports a blocker naming the conflicting sources and attempted target version
 
-### Requirement: Topic Env Gate Heavy Operations Use Bounded Run Tips First
-The service environment setup skill SHALL require topic env gate derivation to consult `isomer-misc-bounded-run-tips` before inventing resource plans for heavy setup or verification work.
+### Requirement: Topic Env Gate Delegates Operation Classification
+The service environment setup skill SHALL delegate setup and verification operation classification to `isomer-misc-bounded-run-tips` before deciding whether a topic env gate item needs a resource check plan.
 
-#### Scenario: Derivation routes heavy topic commands to bounded run tips first
+#### Scenario: Derivation records classification evidence
 - **WHEN** `derive-env-gate` converts source intent or an explicit target spec into `topic.env.topic_setup_target_spec`
-- **AND** a setup or verification item involves compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, large GPU jobs, benchmark execution, or another resource-heavy operation
-- **THEN** the generated `Resource Check Plan` identifies the operation as heavy
-- **AND** the derivation first checks `isomer-misc-bounded-run-tips` for an applicable subcommand or recipe
-- **AND** the generated gate records the selected bounded-run guidance source, probes, capacity signals, bounded command, expected result, and blocker condition
+- **THEN** it asks `isomer-misc-bounded-run-tips` to classify each setup or verification operation whose resource cost affects readiness planning
+- **AND** the generated gate records classification source, classification result, reason, resource dimensions, and whether bounded guidance is required
+
+#### Scenario: Heavy and unknown-risk classifications require bounded plan
+- **WHEN** bounded-run tips classifies a topic env operation as `heavy` or `unknown-risk`
+- **THEN** `derive-env-gate` includes a `Resource Check Plan` entry with bounded-run guidance, a bounded real-path command, expected result, and blocker condition
+- **AND** the gate does not replace the source-intent operation with an unrelated smoke test
 
 #### Scenario: Specific bounded run guidance is applied when available
-- **WHEN** a heavy topic env operation matches a bounded-run tips subcommand such as `cuda-compile`
+- **WHEN** an operation classified as `heavy` or `unknown-risk` matches a bounded-run tips subcommand such as `cuda-compile`
 - **THEN** `derive-env-gate` applies that subcommand's relevant guidance in the generated `Resource Check Plan`, `Verification Commands`, `Expected Results`, and `Gate Checklist`
 - **AND** the gate records the matched skill and subcommand name as evidence for the resource decision
 - **AND** the gate does not duplicate the full reference guide when only the selected probes, limits, and command are needed
 
 #### Scenario: Generic best-effort plan is explicit when no recipe exists
-- **WHEN** a heavy topic env operation has no matching `isomer-misc-bounded-run-tips` subcommand
+- **WHEN** a topic env operation classified as `heavy` or `unknown-risk` has no matching `isomer-misc-bounded-run-tips` subcommand
 - **THEN** `derive-env-gate` creates a generic bounded real-path plan that balances system resource utilization and crash prevention
 - **AND** the gate records that the source is generic best-effort judgment
 - **AND** the plan still exercises the source-intent build, inference, dataset, benchmark, or test path with bounded scope rather than replacing it with an unrelated smoke test
 
+#### Scenario: Light classification can skip resource plan
+- **WHEN** bounded-run tips classifies a topic env operation as `light`
+- **THEN** `derive-env-gate` may record that no resource check plan is required for that operation
+- **AND** the gate preserves the classification evidence and reason
+
+#### Scenario: Topic env setup does not own heavy-operation list
+- **WHEN** topic env setup documentation mentions examples of operations that may be resource-heavy
+- **THEN** the documentation states that bounded-run tips owns the classification decision
+- **AND** it does not make the example list the normative definition of heavy operation
+
 #### Scenario: Install and verify enforce the derived bounded plan
-- **WHEN** `install-topic-deps` or `verify-env-gate` encounters a required heavy command from `topic.env.topic_setup_target_spec`
+- **WHEN** `install-topic-deps` or `verify-env-gate` encounters a command classified as `heavy` or `unknown-risk` in `topic.env.topic_setup_target_spec`
 - **THEN** it uses the generated `Resource Check Plan` and matching checklist item as the execution contract
-- **AND** it reports a blocker when the bounded-run plan is missing, ambiguous, unsafe, or cannot exercise the required path
+- **AND** it reports a blocker when classification evidence or the bounded-run plan is missing, ambiguous, unsafe, or cannot exercise the required path
 - **AND** it does not mark readiness ready from an unrelated smoke test or an unrecorded full-scale command
 
 #### Scenario: Native target tooling is still installed
@@ -295,6 +339,12 @@ The service environment setup skill SHALL allow direct, auditable mutation of th
 - **THEN** the skill reports changed environment files, commands run, readiness status, and blockers through the parent skill output contract
 - **AND** changed environment files include `.gitignore` when the VCS ignore rules are added or refreshed
 - **AND** it does not hide dependency or lockfile changes behind generic readiness language
+
+#### Scenario: Existing external repos are not mutated by ensure-topic-repos
+- **WHEN** `ensure-topic-repos` sees that a required repo path already exists at the resolved non-main `topic.repos.*` path
+- **THEN** it inspects the existing repo as read-only evidence by default
+- **AND** it does not run `git pull`, switch branches, copy files into the repo, delete files from the repo, install packages into it, regenerate files in it, or otherwise mutate it unless the target spec explicitly authorizes that repository mutation
+- **AND** if the existing repo is unsuitable for the gate, it reports a blocker instead of repairing the repo without explicit authorization
 
 ### Requirement: Setup Workflow Ordering
 The service environment setup skill SHALL present the Topic Workspace setup workflow as source-gate analysis, repo acquisition or verification, dependency inference, derived-gate generation, Pixi installation, desired-command execution, and readiness verification in that order.
@@ -517,3 +567,66 @@ The service environment setup skill SHALL require a derived topic env target spe
 - **WHEN** the service cannot create, load, or validate a usable derived topic env target spec
 - **THEN** it reports a blocker
 - **AND** it does not materialize Topic Workspace environment changes from the high-level source intent alone
+
+### Requirement: Topic Env Setup Uses Essential and Complete Output
+The topic environment setup service skill SHALL split its output contract into Essential Output and Complete Output.
+
+#### Scenario: Essential topic env output reports user-facing readiness
+- **WHEN** `isomer-srv-topic-env-setup` reports a result without a complete-output request
+- **THEN** it reports the selected topic, Topic Workspace, Pixi binding summary, readiness status, Topic Main Development Repository status, external repo projection summary, critical gate checklist result, important changed files, blockers, and next action
+- **AND** it reports `per_agent_readiness_status: not checked` when Agent Workspace cwd readiness is relevant to the caller
+
+#### Scenario: Complete topic env output preserves handoff detail
+- **WHEN** complete output is requested from `isomer-srv-topic-env-setup`
+- **THEN** it reports semantic paths, source and target spec labels and paths, path diagnostics, repo source details, dependency plan, enclosure records, operation classification evidence, resource probes, commands run, changed files, warnings, blockers, and next action
+
+#### Scenario: Reference pages use parent output mode
+- **WHEN** a topic env setup reference page reports through the parent output contract
+- **THEN** it follows the parent skill's Essential Output by default and Complete Output on request
+
+### Requirement: Topic Main Development Repository Setup
+The Topic Workspace environment setup service SHALL create, configure, and verify the Topic Main Development Repository before downstream Agent Workspace setup consumes it.
+
+#### Scenario: Missing main repository is initialized
+- **WHEN** `topic.repos.main` resolves to a missing safe path, empty directory, or empty normal Git repository
+- **THEN** topic env setup initializes or validates a normal non-bare Git repository
+- **AND** it creates a topic-owner branch posture accepted by the target spec
+- **AND** it prepares `topic.repos.main.isomer_managed` and the projection labels required by the target spec
+
+#### Scenario: Existing main repository is reused
+- **WHEN** `topic.repos.main` resolves to an existing normal non-bare Git repository
+- **THEN** topic env setup reuses it without deleting, resetting, cleaning, recloning, pulling, or rewriting history
+- **AND** it places Isomer-created material only under the resolved `topic.repos.main.isomer_managed` namespace unless the user explicitly authorizes another path
+
+#### Scenario: Main repository readiness is predecessor evidence
+- **WHEN** topic env setup reports ready or blocked status
+- **THEN** its output includes Topic Main Development Repository readiness as predecessor evidence for Agent Workspace setup
+- **AND** it does not claim per-Agent Workspace cwd readiness
+
+### Requirement: Topic Env Gate Heavy Operations Use Bounded Run Tips First
+The service environment setup skill SHALL require topic env gate derivation to consult `isomer-misc-bounded-run-tips` before inventing resource plans for heavy setup or verification work.
+
+#### Scenario: Derivation routes heavy topic commands to bounded run tips first
+- **WHEN** `derive-env-gate` converts source intent or an explicit target spec into `topic.env.topic_setup_target_spec`
+- **AND** a setup or verification item involves compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, large GPU jobs, benchmark execution, or another resource-heavy operation
+- **THEN** the generated `Resource Check Plan` identifies the operation as heavy
+- **AND** the derivation first checks `isomer-misc-bounded-run-tips` for an applicable subcommand or recipe
+- **AND** the generated gate records the selected bounded-run guidance source, probes, capacity signals, bounded command, expected result, and blocker condition
+
+#### Scenario: Specific bounded run guidance is applied when available
+- **WHEN** a heavy topic env operation matches a bounded-run tips subcommand such as `cuda-compile`
+- **THEN** `derive-env-gate` applies that subcommand's relevant guidance in the generated `Resource Check Plan`, `Verification Commands`, `Expected Results`, and `Gate Checklist`
+- **AND** the gate records the matched skill and subcommand name as evidence for the resource decision
+- **AND** the gate does not duplicate the full reference guide when only the selected probes, limits, and command are needed
+
+#### Scenario: Generic best-effort plan is explicit when no recipe exists
+- **WHEN** a heavy topic env operation has no matching `isomer-misc-bounded-run-tips` subcommand
+- **THEN** `derive-env-gate` creates a generic bounded real-path plan that balances system resource utilization and crash prevention
+- **AND** the gate records that the source is generic best-effort judgment
+- **AND** the plan still exercises the source-intent build, inference, dataset, benchmark, or test path with bounded scope rather than replacing it with an unrelated smoke test
+
+#### Scenario: Install and verify enforce the derived bounded plan
+- **WHEN** `install-topic-deps` or `verify-env-gate` encounters a required heavy command from `topic.env.topic_setup_target_spec`
+- **THEN** it uses the generated `Resource Check Plan` and matching checklist item as the execution contract
+- **AND** it reports a blocker when the bounded-run plan is missing, ambiguous, unsafe, or cannot exercise the required path
+- **AND** it does not mark readiness ready from an unrelated smoke test or an unrecorded full-scale command

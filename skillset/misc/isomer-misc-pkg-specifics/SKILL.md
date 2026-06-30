@@ -7,7 +7,9 @@ description: Use when an Isomer Labs agent needs package-specific installation c
 
 ## Overview
 
-Use this skill as a compact index of package-specific installation caveats for Isomer Labs. Keep core environment setup skills generic; put library-specific preferences, traps, source-routing rules, and verification expectations here.
+- **Purpose**: provide a compact index of package-specific installation caveats for Isomer Labs.
+- **Ownership**: keep library-specific preferences, traps, source-routing rules, and verification expectations here.
+- **Boundary**: core environment setup skills stay generic and route named-package caveats to this skill.
 
 ## When to Use
 

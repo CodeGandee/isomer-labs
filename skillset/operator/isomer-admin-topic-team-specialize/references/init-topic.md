@@ -57,17 +57,28 @@ If the user is actually asking for a later procedural subcommand and predecessor
 
 ## Output Contract
 
-Report:
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
 
-- `research_topic_ref`: the topic label or provisional topic id.
-- `topic_workspace_ref`: the selected directory as a provisional topic workspace seed unless it is already registered.
-- `topic_overview_label`: `topic.intent.overview`.
-- `topic_overview_path`: resolved path for `topic.intent.overview`, defaulting to `<topic-workspace>/intent/src/topic-overview.md`.
-- `topic_overview_storage_profile`: usually `topic_intent_source_file`.
-- `topic_overview_source`: Workspace Path Resolution source and source detail.
-- `topic_registration_status`: registered, provisional, blocked, or not checked.
+### Essential Output
+
+- `status`: initialized, provisional, blocked, or not checked.
+- `topic`: `research_topic_ref` and `topic_workspace_ref`.
+- `overview`: `topic_overview_path` when created or resolved.
+- `registration`: `topic_registration_status`.
 - `open_questions`: questions that should go to `clarify-topic`.
-- `next_operator_action`: usually `resolve-topic-intent`, `clarify-topic`, or `ensure-topic-registration`.
+- `next_operator_action`
+
+### Complete Output
+
+- `research_topic_ref`
+- `topic_workspace_ref`
+- `topic_overview_label`
+- `topic_overview_path`
+- `topic_overview_storage_profile`
+- `topic_overview_source`
+- `topic_registration_status`
+- `open_questions`
+- `next_operator_action`
 
 ## Guardrails
 

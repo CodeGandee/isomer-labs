@@ -7,11 +7,15 @@ description: Use when an Isomer Labs agent needs service-safe Agent Workspace en
 
 ## Overview
 
-Set up and validate Agent Workspace cwd readiness for a registered Research Topic. This service is the owner of selected-agent partial evidence, per-agent worktree creation, and overall per-Agent Workspace readiness. In the normal operator flow, `isomer-admin-topic-team-specialize` owns creating `topic.intent.agent_env_requirements` and `topic.env.agent_setup_target_spec`; direct service invocation may still accept source intent or an explicit target spec. This service consumes Topic Workspace predecessor evidence from `isomer-srv-topic-env-setup`, including Topic Workspace Pixi readiness, `topic.env.topic_setup_target_spec`, Topic Main Development Repository Git state, projection metadata when required, and the resolved Topic Workspace Pixi manifest and environment. It does not install dependencies by default and it does not create per-agent Pixi manifests, per-agent lockfiles, or per-agent `.pixi/` directories.
-
-Agent env setup normally reads source intent from `topic.intent.agent_env_requirements`, derives or validates the per-agent operational target spec at `topic.env.agent_setup_target_spec`, requires the already-prepared Topic Main Development Repository resolved by `topic.repos.main`, creates or validates per-agent `agent.workspace` worktrees for authoritative Agent Names, and verifies the target spec from each Agent Workspace cwd with `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`. Manual invocation may supply an explicit target spec file, prompt, or context instead of source intent. Heavy cwd checks still require bounded real-path verification: consult `isomer-misc-bounded-run-tips` before local generic resource judgment, then use selected agents, reduced parallelism, tiny inputs, sample data, selected tests, or short benchmark cases to exercise the requested path without multiplying load across every workspace. If no bounded-run tips subcommand applies, record generic best-effort judgment with probes, affected Agent Name scope, limits, command, expected result, and blocker condition. A generic smoke test is only supporting evidence and cannot replace the command path required by source intent.
-
-This skill is a command-style router: keep the entrypoint lean, choose one subcommand, then load that subcommand's reference page. The full `setup-agent-env` flow verifies every authoritative planned Agent Name before reporting overall readiness. Direct verification can target one authoritative Agent Name only as selected-agent partial readiness evidence.
+- **Purpose**: set up and validate Agent Workspace cwd readiness for a registered Research Topic.
+- **Inputs**: consume Topic Workspace predecessor evidence from `isomer-srv-topic-env-setup`, including Topic Workspace Pixi readiness, `topic.env.topic_setup_target_spec`, Topic Main Development Repository Git state, projection metadata when required, and the resolved Pixi manifest and environment.
+- **Source and target specs**: read `topic.intent.agent_env_requirements` and derive or validate `topic.env.agent_setup_target_spec`; direct service calls may supply source intent or an explicit manual target spec.
+- **Workspace scope**: create or validate per-agent `agent.workspace` worktrees for authoritative Agent Names, then verify from each cwd with `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
+- **Resource classification**: ask `isomer-misc-bounded-run-tips` to classify resource-relevant per-agent cwd operations as `light`, `heavy`, `unknown-risk`, or `not-applicable`; record classification source, classification result, reason, resource dimensions, and whether bounded guidance is required.
+- **Bounded proof**: operations classified as `heavy` or `unknown-risk` need bounded real-path verification; generic best-effort judgment is allowed only when no recipe applies. A generic smoke test is only supporting evidence.
+- **Boundaries**: this service does not install Topic Workspace dependencies and does not create per-agent Pixi manifests, per-agent lockfiles, or per-agent `.pixi/` directories.
+- **Readiness**: the full `setup-agent-env` flow verifies every authoritative planned Agent Name before reporting overall readiness; direct verification for one Agent Name is selected-agent partial evidence only.
+- **Routing**: keep the entrypoint lean, choose one subcommand, then load that subcommand's reference page.
 
 ## Workflow
 
@@ -26,7 +30,7 @@ When this skill is invoked, execute the following steps in order.
    - Load only that reference page before executing a direct subcommand.
    - The `setup-agent-env` reference may load the procedural pages it orchestrates.
 4. **Resolve that page's required inputs** from its `## Required Inputs` section, then execute its `## Workflow`.
-5. **Report results** using **Output Contract**:
+5. **Report results** using **Essential Output** by default and **Complete Output** when requested:
    - Include requester, confirmation source, optional Service Request or Provenance refs, semantic path evidence, commands run, readiness by agent, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the subcommands, selected reference page, output contract, and guardrails in this skill, then execute the plan.
@@ -98,49 +102,32 @@ Example prompts:
 
 ## Output Contract
 
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
+
+### Essential Output
+
 Report:
 
-- `subcommand`: selected subcommand.
-- `project_root`: resolved Isomer Project root.
-- `research_topic_id`: selected Research Topic.
-- `topic_workspace_dir`: Project Manifest-declared Topic Workspace directory.
-- `topic_workspace_pixi_binding`: `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and binding source.
-- `requester`: Project Operator Session, Operator Agent, Service Request ref, or explicit blocker.
-- `confirmation_source`: direct mutation confirmation, Service Request authorization, or read-only invocation.
-- `service_request_refs`: optional Service Request refs when available.
-- `support_artifact_refs`: optional support Artifact refs when available.
-- `provenance_refs`: optional Provenance refs when available.
-- `semantic_paths`: resolved labels, paths, storage profiles, sources, source details, diagnostics, readiness, and blockers for `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.agents_root`, `topic.records`, `topic.runtime`, `topic.env.topic_setup_target_spec`, `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, `agent.workspace`, and required agent support labels.
-- `topic_environment_status`: predecessor evidence status: ready, missing, stale, blocked, failed, or not checked.
-- `topic_env_target_spec_label`: `topic.env.topic_setup_target_spec`.
-- `topic_env_target_spec_path`: resolved predecessor target spec path.
-- `agent_env_source_label`: `topic.intent.agent_env_requirements` when source intent is used.
-- `agent_env_source_path`: resolved source intent path, defaulting to `<topic-workspace-dir>/intent/src/agent-env-gate.md`.
-- `agent_env_source_storage_profile`: storage profile for the resolved source intent path.
-- `agent_env_source_source`: manifest, default profile, explicit override, or missing.
-- `agent_env_source_source_detail`: specific binding, default, or override detail.
-- `agent_env_source_diagnostics`: path-resolution warnings and blockers.
-- `agent_env_target_spec_label`: `topic.env.agent_setup_target_spec` when the operational target spec is used or written.
-- `agent_env_target_spec_path`: resolved target spec path, defaulting to `<topic-workspace-dir>/intent/derived/isomer-agent-env-gate.md`.
-- `agent_env_target_spec_storage_profile`: storage profile for the resolved target spec path.
-- `agent_env_target_spec_source`: manifest, default profile, explicit input, or missing.
-- `agent_env_target_spec_source_detail`: specific binding, explicit file, explicit prompt/context, or default detail.
-- `agent_env_target_spec_diagnostics`: path-resolution warnings and blockers.
-- `topic_main_repository`: resolved `topic.repos.main` path, label source, predecessor evidence source, Git state, owner branch, Isomer-managed namespace posture, changed files, and blockers.
-- `external_repo_projection_predecessors`: required projection entries from `topic.repos.main.projections.manifest`, projected paths, status, blockers, and whether each required projection was checked from Agent Workspace cwd.
-- `agent_workspace_paths`: Agent Name, role id, resolved `agent.workspace`, source, branch, worktree status, and blockers.
-- `branch_plan`: owner branch `topic-owner/main`, default `per-agent/<agent-name>/main` branches, and any future branch namespace notes.
-- `worktree_status_by_agent`: ready, created, blocked, failed, or not checked for each authoritative Agent Name.
-- `readiness_by_agent`: ready, failed, blocked, or not checked for each authoritative Agent Name.
-- `overall_readiness_status`: ready only after every authoritative planned Agent Name has a valid worktree, required support paths, path evidence, and passing cwd verification.
-- `selected_agent_partial`: selected Agent Name and partial evidence status when a direct subcommand targets one authoritative Agent Name.
-- `resource_check_status`: ready, deferred, blocked, or not needed for resource-heavy per-agent verification commands.
-- `resource_check_evidence`: lightweight host-capacity checks used before heavy per-agent operations, such as CPU load, memory, disk space, GPU availability and active GPU processes when relevant, plus the reason a check was skipped when not relevant.
-- `resource_conservative_decisions`: bounded real-path choices such as reduced scope, reduced parallelism, selected-agent partial coverage, tiny inputs, sample data, selected tests, or short benchmark cases used to exercise required command paths without multiplying heavy work across every Agent Workspace; blockers when no bounded real-path command can run safely.
-- `commands_run`: commands executed, in order, including every `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...` verification command.
-- `changed_files`: files created or changed, including the resolved `topic.env.agent_setup_target_spec`, boundary material, support path policy files, and Git metadata-affecting commands.
-- `blockers`: missing inputs, missing Topic Workspace env predecessor, missing Topic Main Development Repository predecessor, missing projection predecessor, missing source gate, agent-plan-conflict, unsafe path, nonmatching worktree, duplicate branch checkout, failing cwd gate command, out-of-scope request, or repair requirement.
-- `next_action`: safe follow-up, repair route, selected-agent rerun, route to `isomer-srv-topic-env-setup`, route to Topic Team Specialization, or stop condition.
+- `status`: `overall_readiness_status`, selected-agent partial status, or blocker status.
+- `topic`: `research_topic_id` and `topic_workspace_dir`.
+- `topic_predecessors`: Topic Workspace environment, Topic Main Development Repository, and projection predecessor summary.
+- `agent_workspaces`: worktree and readiness summary by Agent Name.
+- `verification`: critical cwd verification result, including selected-agent partial scope when used.
+- `changed_files`: important files changed.
+- `blockers`: user-actionable blockers by Agent Name or matrix scope.
+- `next_action`: safe follow-up, repair route, selected-agent rerun, route to topic env setup, or stop condition.
+
+### Complete Output
+
+When requested, include grouped handoff and audit fields:
+
+- **Identity and authorization**: `subcommand`, `project_root`, `research_topic_id`, `topic_workspace_dir`, `topic_workspace_pixi_binding`, `requester`, `confirmation_source`, `service_request_refs`, `support_artifact_refs`, and `provenance_refs`.
+- **Semantic paths**: full `semantic_paths` and path diagnostics.
+- **Topic predecessor evidence**: `topic_environment_status`, `topic_env_target_spec_label`, `topic_env_target_spec_path`, `topic_main_repository`, and `external_repo_projection_predecessors`.
+- **Agent source and target specs**: `agent_env_source_label`, `agent_env_source_path`, `agent_env_source_storage_profile`, `agent_env_source_source`, `agent_env_source_source_detail`, `agent_env_source_diagnostics`, `agent_env_target_spec_label`, `agent_env_target_spec_path`, `agent_env_target_spec_storage_profile`, `agent_env_target_spec_source`, `agent_env_target_spec_source_detail`, and `agent_env_target_spec_diagnostics`.
+- **Workspace matrix**: `agent_workspace_paths`, `branch_plan`, `worktree_status_by_agent`, `readiness_by_agent`, `overall_readiness_status`, and `selected_agent_partial`.
+- **Operations and resources**: `operation_classification`, `resource_check_status`, `resource_check_evidence`, and `resource_conservative_decisions`, with affected Agent Name or matrix scope.
+- **Execution result**: `commands_run`, `changed_files`, blockers, and `next_action`.
 
 ## Guardrails
 
@@ -155,4 +142,4 @@ Report:
 - Treat `topic.repos.main.tmp` and `agent.tmp` as local ignored disposable surfaces when available. Do not use tmp contents as durable readiness evidence.
 - Direct Project Operator Session invocation is allowed after selected Project, Research Topic, Topic Workspace, topic env predecessor evidence, authoritative Agent Name plan, and mutation scope are confirmed. Record optional Service Request, support Artifact, and Provenance refs when available.
 - Selected-agent direct verification is partial evidence. It must not report `overall_readiness_status` as ready unless the complete planned Agent Name matrix has passed.
-- Before running resource-heavy cwd verification, check system resources with lightweight read-only probes and choose the smallest real command that satisfies the gate. Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, or large GPU jobs as heavy, especially when repeated across every Agent Workspace. Consult `isomer-misc-bounded-run-tips` first; apply a matching subcommand such as `cuda-compile` when available, or record generic best-effort judgment when no specific recipe applies. Use bounded real-path tactics such as selected-agent partial checks, fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases. If no bounded real-path command can safely exercise the required path, record `resource_check_status: blocked` and the command to retry later instead of claiming readiness.
+- Before resource-check planning, ask `isomer-misc-bounded-run-tips` to classify each resource-relevant per-agent cwd verification operation. Treat `heavy` and `unknown-risk` classifications as requiring bounded guidance, lightweight read-only resource probes, and the smallest real command that satisfies the gate. Apply a matching bounded-run tips subcommand when available, or record generic best-effort judgment when no specific recipe applies. Examples include selected-agent partial checks, fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases; bounded-run tips owns the classification decision. If no bounded real-path command can safely exercise the required path, record `resource_check_status: blocked` and the command to retry later instead of claiming readiness.

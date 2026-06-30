@@ -36,11 +36,19 @@ Treat the first explicitly declared `index-url` as the user's preference. If onl
 
 ## Output Contract
 
-Report:
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+### Essential Output
 
 - `subcommand`: `pip-resolve`.
-- `pypi_reachable`: `true`, `false`, or `not tested`.
-- `local_index_urls`: URLs discovered from environment variables and config files.
 - `recommended_index_url`: the URL to pass to pip.
-- `tested_indexes`: each candidate and its reachability result.
+- `status`: reachable, blocked, or not tested.
 - `blockers`: missing package context or no reachable index.
+
+### Complete Output
+
+- `pypi_reachable`
+- `local_index_urls`
+- `recommended_index_url`
+- `tested_indexes`
+- `blockers`

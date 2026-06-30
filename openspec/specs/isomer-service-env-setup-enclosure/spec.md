@@ -152,6 +152,34 @@ The service environment setup skill SHALL validate enclosure strategy in any exp
 - **THEN** the service either derives the missing enclosure strategy into the target spec before mutation or reports a blocker
 - **AND** it does not install or verify that dependency from ambient shell state alone
 
+### Requirement: Heavy Operation Classification Is Delegated Policy
+The service environment setup enclosure workflow SHALL treat operation classification as delegated user-tunable policy from `isomer-misc-bounded-run-tips`.
+
+#### Scenario: Shared enclosure policy consumes classification evidence
+- **WHEN** topic env setup or agent env setup generates an operational env gate
+- **THEN** the service guidance requires operation classification evidence from `isomer-misc-bounded-run-tips` before resource-check planning
+- **AND** the generated gate records classification source, result, reason, and resource dimensions
+
+#### Scenario: Core services avoid fixed normative heavy lists
+- **WHEN** shared env setup policy describes resource-heavy work
+- **THEN** it presents operation names only as examples
+- **AND** it states that bounded-run tips owns the classification decision for the active project and host
+
+#### Scenario: Classification remains separate from package and enclosure policy
+- **WHEN** bounded-run tips classifies an operation as `heavy`, `unknown-risk`, `light`, or `not-applicable`
+- **THEN** that classification controls resource-check and bounded-execution handling only
+- **AND** dependency source choice, runtime wiring, Pixi enclosure, repository materialization, and privileged-operation blockers remain owned by their existing service policies
+
+#### Scenario: Bounded run guidance does not replace dependency policy
+- **WHEN** an operation classified as `heavy` or `unknown-risk` also needs package installation, CUDA/C++ Pixi environment setup, NVIDIA runtime wiring, package repository resolution, or package-specific caveat handling
+- **THEN** bounded-run tips provide only the resource-safe execution strategy
+- **AND** package installation, runtime wiring, and repository source choices remain routed to their existing package-specific, NVIDIA, repository-resolution, and enclosure policy surfaces
+
+#### Scenario: Readiness still requires real-path evidence
+- **WHEN** a generated env gate includes a source-intent path classified as `heavy` or `unknown-risk`
+- **THEN** readiness requires passing evidence from the bounded real-path command or a named blocker with resource evidence
+- **AND** a smoke test that misses the critical build, inference, dataset, benchmark, or cwd command path does not satisfy the checklist item unless the user explicitly downgraded the gate
+
 ### Requirement: Heavy Operation Resource Strategy Routes Through Bounded Run Tips First
 The service environment setup enclosure workflow SHALL treat bounded-run tips as the first routing surface for resource-heavy setup and verification planning across topic env and agent env gates.
 

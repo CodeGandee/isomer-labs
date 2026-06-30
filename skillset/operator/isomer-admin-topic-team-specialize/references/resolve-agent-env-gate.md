@@ -57,15 +57,27 @@ When Agent Names are not authoritative and the caller did not provide an explici
 
 ## Output Contract
 
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+### Essential Output
+
 - `agent_env_source_status`: ready, revised, blocked, or not changed.
-- `agent_env_source_label`: `topic.intent.agent_env_requirements`.
 - `agent_env_source_path`: resolved path for `topic.intent.agent_env_requirements`.
-- `agent_env_source_storage_profile`: usually `topic_intent_source_file`.
-- `agent_env_source`: resolver source such as `default_profile`, `topic_workspace_manifest`, `env`, or `path_plan`.
-- `agent_env_source_detail`: resolver source detail such as `isomer-default.v1` or manifest binding detail.
-- `agent_env_source_diagnostics`: Workspace Path Resolution diagnostics and source-intent blockers.
 - `agent_scope`: authoritative Agent Names, selected-agent subset, or blocker.
+- `blockers`: source-intent blockers or open questions.
 - `next_operator_action`: usually `setup-agent-workspace` when source intent is usable, or ask the user to answer open questions.
+
+### Complete Output
+
+- `agent_env_source_status`
+- `agent_env_source_label`
+- `agent_env_source_path`
+- `agent_env_source_storage_profile`
+- `agent_env_source`
+- `agent_env_source_detail`
+- `agent_env_source_diagnostics`
+- `agent_scope`
+- `next_operator_action`
 
 ## Guardrails
 

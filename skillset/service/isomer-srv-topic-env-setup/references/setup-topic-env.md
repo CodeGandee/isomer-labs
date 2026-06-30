@@ -29,7 +29,7 @@ When this subcommand is selected, execute the following steps in order.
 2. **Run the setup chain** in this fixed order:
    - Run `resolve-topic-workspace`, `read-env-gate` when deriving from source intent, `derive-env-gate`, `ensure-topic-main-repository`, `ensure-topic-repos`, `project-extern-repos`, `install-topic-deps`, and `verify-env-gate`.
    - If an explicit target spec is supplied, `derive-env-gate` validates that spec and records its source instead of requiring `read-env-gate`.
-   - Preserve every source-intent runnable target through the chain. Heavy targets must become bounded real-path setup and verification commands, not generic smoke tests that miss the requested build, inference, dataset, or benchmark path.
+   - Preserve every source-intent runnable target through the chain. Operations that `isomer-misc-bounded-run-tips` classifies as `heavy` or `unknown-risk` must become bounded real-path setup and verification commands, not generic smoke tests that miss the requested build, inference, dataset, or benchmark path.
 3. **In `fast-forward` mode**, load each referenced subcommand page, execute its `## Workflow`, and carry forward its outputs to the next step without pausing for optional consent.
 4. **In `step-by-step` mode**, pause before each step:
    - Explain what will happen and why.
@@ -39,7 +39,7 @@ When this subcommand is selected, execute the following steps in order.
    - Execute only the chosen action, then report the result before offering the next step.
 5. **Stop on blockers** in either mode:
    - Stop when a step reports missing required inputs, missing predecessor artifacts, unsafe ambiguity, out-of-scope requests, or a failed precondition.
-6. **Report the combined result** using the parent skill's **Output Contract**:
+6. **Report the combined result** using the parent skill's **Essential Output** by default and **Complete Output** when requested:
    - Include `subcommand`, selected `mode`, step results, topic-main Git state, Isomer-managed namespace posture, projection metadata, resource check status, bounded real-path decisions, commands run, changed files, enclosure strategy, external runtime wiring, topic-local fallbacks, Topic Workspace readiness status, `per_agent_readiness_status: not checked` when relevant, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the linked subcommands, parent guardrails, mode rules, and user request, then execute the plan.

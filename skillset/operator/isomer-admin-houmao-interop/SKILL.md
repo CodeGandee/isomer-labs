@@ -51,17 +51,32 @@ Load only the subcommand pages needed for the user's task.
 
 ## Output Contract
 
-When reporting results, include these fields in structured prose or a JSON block:
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
 
-- `mode`: the subcommand selected.
-- `houmao_source_root`: resolved path to the Houmao source checkout, usually `extern/orphan/houmao`.
-- `domain_template_root`: resolved path to the Domain Agent Team Template, if relevant.
-- `key_files`: list of concrete files or directories the operator should read or edit.
-- `concept_mapping`: table or prose mapping Isomer concepts to Houmao concepts.
-- `customization_points`: list of customization points with file paths and when to use each.
-- `commands`: relevant `houmao-mgr`, `houmao-passive-server`, or Houmao skill commands.
+### Essential Output
+
+Report:
+
+- `status`: interop, customization, or help result.
+- `mode`: selected subcommand.
+- `key_files`: the most important files or directories to inspect or edit.
+- `commands`: relevant Houmao or Isomer commands.
 - `blockers`: unresolved items that prevent customization or launch.
 - `next_operator_action`: what the operator should do next.
+
+### Complete Output
+
+When requested, include:
+
+- `mode`
+- `houmao_source_root`
+- `domain_template_root`
+- `key_files`
+- `concept_mapping`
+- `customization_points`
+- `commands`
+- `blockers`
+- `next_operator_action`
 
 ## Guardrails
 

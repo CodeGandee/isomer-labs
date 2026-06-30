@@ -200,48 +200,32 @@ Leave `Final Report` empty or marked pending until adaptation is complete. After
 
 ## Output Contract
 
-When reporting results, include these fields in structured prose or JSON, depending on the caller's print mode:
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
 
-- `research_topic_ref`: the resolved Research Topic or provisional topic label.
-- `topic_workspace_ref`: the resolved Topic Workspace or provisional topic workspace seed.
-- `topic_overview_label`: `topic.intent.overview` when topic material was created or revised.
-- `topic_overview_path`: the resolved `topic.intent.overview` path, defaulting under `<topic-workspace>/intent/src/topic-overview.md`.
-- `topic_registration_status`: registered, provisional, blocked, or not checked.
-- `registration_command_evidence`: supported Isomer CLI/API command evidence used to create or verify registration, or `not needed` when no mutation was required.
-- `registered_research_topic_ref`: the Project Manifest-backed Research Topic ref when registration is verified.
-- `registered_topic_workspace_ref`: the Project Manifest-backed Topic Workspace ref when registration is verified.
-- `environment_binding_status`: active, implicit-default, blocked, or not checked for the explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or implicit Topic Workspace directory default needed by `isomer-srv-topic-env-setup`.
-- `environment_binding_ref`: the binding source, `manifest_path_or_dir`, Pixi-resolved manifest path, and Pixi environment when available.
-- `registration_blockers`: missing topic statement, unsafe path, colliding workspace, unsupported config mutation, missing environment binding, or other blockers from `ensure-topic-registration`.
-- `selected_domain_team_template_ref`: the selected Domain Agent Team Template.
-- `domain_team_template_ref`: the source Domain Agent Team Template when specialization has begun.
-- `copied_template_root`: usually `<topic-workspace>/team-profile/execplan/` for `deepsci-mini`.
-- `team_specialization_guide_path`: the copied or generated `team-specialization-guide.md`.
-- `team_specialization_plan_path`: the `team-specialization-plan.md` with checklist and `Final Report`.
-- `changed_copied_material_paths`: copied-root files edited for the topic.
-- `placeholder_resolutions`: concrete topic values for template placeholders.
-- `topic_team_revision_status`: unchanged, revised, blocked, or not requested.
-- `topic_environment_status`: ready, changed, deferred, blocked, or not checked, mapped from `isomer-srv-topic-env-setup` Topic Workspace predecessor readiness output when environment setup runs.
-- `topic_env_source_label`: `topic.intent.topic_env_requirements` when topic env source intent is resolved or used.
-- `topic_env_source_path`: the resolved `topic.intent.topic_env_requirements` path, defaulting under `<topic-workspace>/intent/src/topic-env-gate.md`.
-- `topic_env_target_spec_label`: `topic.env.topic_setup_target_spec` when the operator flow creates, validates, or supplies the operational target spec used by `isomer-srv-topic-env-setup`.
-- `topic_env_target_spec_path`: the resolved `topic.env.topic_setup_target_spec` path, defaulting under `<topic-workspace>/intent/derived/isomer-env-gate.md`.
-- `topic_environment_service_output`: summarized `isomer-srv-topic-env-setup` output, including service subcommand, mode, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, projection metadata, resource check status for heavy setup or verification commands, commands run, changed files, per-agent readiness not checked when reported, and blockers when present.
-- `agent_env_source_label`: `topic.intent.agent_env_requirements` when agent env setup consumes source intent.
-- `agent_env_source_path`: the resolved `topic.intent.agent_env_requirements` path, defaulting under `<topic-workspace>/intent/src/agent-env-gate.md`.
-- `agent_env_target_spec_label`: `topic.env.agent_setup_target_spec` when the operator flow creates, validates, or supplies the per-agent operational target spec used by `isomer-srv-agent-env-setup`.
-- `agent_env_target_spec_path`: the resolved `topic.env.agent_setup_target_spec` path, defaulting under `<topic-workspace>/intent/derived/isomer-agent-env-gate.md`.
-- `agent_environment_service_output`: summarized `isomer-srv-agent-env-setup` output, including service subcommand, Topic Main Development Repository predecessor evidence, projection predecessor evidence, Agent Names, resolved `agent.workspace` paths, branch plan, worktree status by agent, tmp ignore posture, resource check status for heavy per-agent verification commands, readiness by agent, overall readiness, commands run, changed files, blockers, and next action.
-- `semantic_paths`: delegated resolved labels, paths, path sources, and blockers for Topic Main Development Repository, projection labels, Agent Workspace, local tmp labels, and worker-facing support labels when setup runs.
-- `agent_workspace_paths`: per-agent resolved `agent.workspace` paths or blockers, including delegated Git-backed worktree paths, semantic labels, path sources, and `agent_workspace_ref` evidence when available.
-- `isomer_managed_path_status`: delegated `isomer-managed/` tracked, agent-owned, topic-owned, and generated-link regime evidence when Git-backed Agent Workspaces are requested.
-- `local_tmp_path_status`: delegated `topic.repos.main.tmp` and `agent.tmp` local ignored disposable posture when Git-backed Agent Workspaces are requested; tmp contents are not durable readiness evidence.
-- `topic_team_validation_status`: ready, ready-with-deferrals, blocked, or not checked for static material readiness.
-- `isomer_topic_summary_path`: the `isomer-topic-summary.md` path when finalization runs.
-- `deferrals`: unresolved items, with static-material or later-operation impact.
-- `packet_profile_inputs`: proposed Topic Team Instantiation Packet and Topic Agent Team Profile Bundle inputs.
-- `validation_status`: commands or validators run, plus any blockers.
-- `next_operator_action`: usually clarify topic, ensure topic registration, run topic-team specialization, setup environment, validate, finalize, request approval, materialize an approved bundle, hand off to a later runtime workflow, or stop on blockers.
+### Essential Output
+
+Report:
+
+- `status`: topic-team specialization, validation, or setup status.
+- `topic`: resolved `research_topic_ref` and `topic_workspace_ref`.
+- `registration`: `topic_registration_status` and blocker summary.
+- `template`: selected Domain Agent Team Template and copied material status.
+- `important_paths`: `topic-overview.md`, copied team material under `<topic-workspace>/team-profile/execplan/`, `isomer-managed/` material, environment gates, Agent Workspace root, or final summary paths when created or changed.
+- `environment`: `topic_environment_status` and `agent_environment_status` when checked.
+- `validation`: `topic_team_validation_status` or validation blocker.
+- `blockers`: user-actionable blockers and deferrals.
+- `next_action`: the next safe operator step.
+
+### Complete Output
+
+When requested, include grouped handoff and audit fields:
+
+- **Identity and registration**: `research_topic_ref`, `topic_workspace_ref`, `topic_overview_label`, `topic_overview_path`, `topic_registration_status`, `registration_command_evidence`, `registered_research_topic_ref`, `registered_topic_workspace_ref`, `environment_binding_status`, `environment_binding_ref`, and `registration_blockers`.
+- **Template adaptation**: `selected_domain_team_template_ref`, `domain_team_template_ref`, `copied_template_root`, `team_specialization_guide_path`, `team_specialization_plan_path`, `changed_copied_material_paths`, `placeholder_resolutions`, and `topic_team_revision_status`.
+- **Topic environment**: `topic_environment_status`, `topic_env_source_label`, `topic_env_source_path`, `topic_env_target_spec_label`, `topic_env_target_spec_path`, and summarized or full `topic_environment_service_output`.
+- **Agent environment**: `agent_env_source_label`, `agent_env_source_path`, `agent_env_target_spec_label`, `agent_env_target_spec_path`, and summarized or full `agent_environment_service_output`.
+- **Workspace paths**: `semantic_paths`, semantic labels, path sources, `agent_workspace_paths`, `isomer-managed/` path status, and `local_tmp_path_status`.
+- **Validation and finalization**: `topic_team_validation_status`, `isomer_topic_summary_path`, `deferrals`, `packet_profile_inputs`, `validation_status`, blockers, and `next_operator_action`.
 
 ## Guardrails
 
@@ -257,11 +241,18 @@ Do not hide environment installation, Agent Workspace creation, static-material 
 
 Do not require Topic Agent Team Profile material, `team-profile/`, Agent Team Instance records, Agent Workspace plans, roles, or agent count before `setup-topic-env`. That operator subcommand needs manifest-backed topic registration, Topic Workspace Pixi binding evidence, and a usable `topic.intent.topic_env_requirements` surface or an explicit manual topic env target spec.
 
-Do not perform dependency inference, repo acquisition, Pixi installation, package repair, or environment verification directly inside `setup-topic-env`. Prepare the operator handoff and route heavy Topic Workspace environment setup through `isomer-srv-topic-env-setup`.
+Do not perform dependency inference, repo acquisition, Pixi installation, package repair, or environment verification directly inside `setup-topic-env`. Prepare the operator handoff and route Topic Workspace environment setup through `isomer-srv-topic-env-setup`.
 
 Do not perform `topic.intent.agent_env_requirements` translation, Agent Workspace worktree creation, per-agent cwd command verification, or selected-agent repair directly inside `setup-agent-workspace`. Prepare the operator handoff and route that work through `isomer-srv-agent-env-setup` only after source `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, Topic Workspace predecessor evidence, Topic Main Development Repository predecessor evidence, required projection predecessor evidence, and authoritative Agent Names exist.
 
-Do not ask service skills to prove readiness by overloading the host, but do not allow them to skip essential source-intent code paths. When setup or verification would run resource-heavy work such as compilation, deep model inference, full dataset download, large archive extraction, or broad test suites, require the delegated service output to include a resource check and a bounded real-path execution plan: fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, or short benchmark cases. A generic smoke test that misses the requested build, inference, dataset, or benchmark path is not enough to claim readiness; if no bounded real-path command can run safely, require a blocker with evidence.
+Do not ask service skills to prove readiness by overloading the host, but do not allow them to skip essential source-intent code paths. Require delegated env setup output to include:
+
+- `operation_classification` from `isomer-misc-bounded-run-tips`, including classification source, result, reason, resource dimensions, and affected scope.
+- bounded-run guidance, resource check evidence, bounded real-path command, expected result, and blocker condition for operations classified as `heavy` or `unknown-risk`.
+- a no-plan reason for operations classified as `light` or `not-applicable`.
+- blocker evidence when no bounded real-path command can safely exercise the required source-intent path.
+
+Examples of bounded tactics include fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases. These are examples; bounded-run tips owns the classification decision. A generic smoke test that misses the requested build, inference, dataset, or benchmark path is not enough to claim readiness.
 
 Do not call `isomer-srv-agent-env-setup` without a usable `topic.intent.agent_env_requirements` surface or an explicit manual agent env target spec. If the user did not create source intent and the task clearly states what every planned Agent Workspace cwd must be able to run, route to `resolve-agent-env-gate`; otherwise ask for the per-agent cwd readiness target and stop before service delegation.
 

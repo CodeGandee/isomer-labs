@@ -7,7 +7,9 @@ description: Use when an Isomer Labs agent must choose or fall back to package r
 
 ## Overview
 
-Choose reachable, policy-aligned package repositories and channels before installing dependencies. Prefer official upstream sources, fall back to user-declared mirrors from local package-manager configuration, and report a blocker only when no usable source can be reached.
+- **Purpose**: choose reachable, policy-aligned package repositories and channels before installing dependencies.
+- **Preference**: use official upstream sources first, then user-declared mirrors from local package-manager configuration.
+- **Blocker rule**: report a blocker only when no usable source can be reached.
 
 ## When to Use
 

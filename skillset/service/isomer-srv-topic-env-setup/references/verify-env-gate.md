@@ -12,7 +12,7 @@ Recover these before asking the user:
 | Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
 | Topic-main and projection evidence | Require `ensure-topic-main-repository`, `ensure-topic-repos`, and `project-extern-repos` outputs when the target spec names topic-main, canonical external repos, or projected external repos. |
 | Installed dependencies | Require an `install-topic-deps` result unless the prompt explicitly asks to verify an existing environment. In either case, check Pixi files before running verification commands. |
-| Verification commands, expected results, resource check plan, gate checklist, and enclosure records | Read from the derived gate's `## Gate Checklist`, `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, and enclosure records in `## Dependency Plan` and `## Execution Log`. Refuse to claim readiness if required checklist items, commands, expectations, bounded-run guidance source for heavy commands, generic best-effort fallback evidence when used, runtime wiring, fallback records, or bounded real-path coverage for each source-intent runnable target are missing or ambiguous. |
+| Verification commands, expected results, resource check plan, gate checklist, and enclosure records | Read from the derived gate's `## Gate Checklist`, `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, and enclosure records in `## Dependency Plan` and `## Execution Log`. Refuse to claim readiness if required checklist items, commands, expectations, operation classification evidence, bounded-run guidance for `heavy` or `unknown-risk`, generic best-effort fallback evidence when used, runtime wiring, fallback records, or bounded real-path coverage for each source-intent runnable target are missing or ambiguous. |
 | Optional modifiers | None for this step. |
 
 ## Workflow
@@ -33,12 +33,12 @@ When this subcommand is selected, execute the following steps in order.
    - Each command must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
    - When a command needs external runtime wiring, the target spec must record the exact variables, paths, sourced scripts, or activation commands before the command runs.
    - When the gate depends on package-specific runtime behavior, use the verification expectations recorded from `isomer-misc-pkg-specifics`.
-5. **Check resources before heavy verification commands**:
-   - Treat compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, and large GPU jobs as heavy.
-   - Treat the generated `## Resource Check Plan` and matching checklist item as the execution contract for each heavy verification command.
-   - Confirm the heavy-command plan names the bounded-run guidance source, either a matching `isomer-misc-bounded-run-tips` subcommand or explicit generic best-effort judgment.
-   - If the plan lacks a guidance source, lightweight probes, capacity signals, bounded command, expected result, or blocker condition, report `blocked` and ask for `derive-env-gate` to repair the target spec before verification.
-   - Use lightweight read-only probes before heavy commands, including CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
+5. **Check resources before classified risky verification commands**:
+   - Apply this when bounded-run tips classified a verification command as `heavy` or `unknown-risk`.
+   - Treat the generated `## Resource Check Plan` and matching checklist item as the execution contract.
+   - Confirm classification source, result, reason, resource dimensions, bounded-run guidance source, bounded command, expected result, and blocker condition.
+   - If classification evidence or required bounded guidance is missing, report `blocked` and ask for `derive-env-gate` to repair the target spec before verification.
+   - Use lightweight read-only probes before commands classified as `heavy` or `unknown-risk`, including CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
    - Run the smallest real command that exercises the essential path named by the source intent, such as fewer build jobs, selected kernel targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, or short benchmark cases.
    - If resources are insufficient, ambiguous, or already busy, do not run an unrelated smoke test in place of the heavy path. Report `blocked` with `resource_check_status: blocked`, the capacity reason, and the bounded real-path command that would be run when capacity is available.
 6. **Run verification commands through Pixi**:
@@ -72,5 +72,5 @@ When `ready` depends on Pixi-mediated external runtime wiring or `.isomer-user-e
 - Do not run live agent launch, Agent Instance creation, Topic Agent Team Profile materialization, GUI operation, or research decision commands as environment verification.
 - Do not suppress warnings about inferred repo sources.
 - Do not suppress warnings about external runtime wiring or topic-local user-space fallback.
-- Do not run resource-heavy verification at full scale merely to make readiness look stronger or because the generated bounded-run plan is incomplete. When a bounded real-path command is enough and it exercises the critical path named by the checklist item, run that. When the required source-intent path cannot be exercised safely even in bounded form, block with resource evidence and leave the checklist item unchecked. A simple smoke test that misses the essential code path is not enough to claim readiness.
+- Do not run verification classified as `heavy` or `unknown-risk` at full scale merely to make readiness look stronger or because the generated bounded-run plan is incomplete. When a bounded real-path command is enough and it exercises the critical path named by the checklist item, run that. When the required source-intent path cannot be exercised safely even in bounded form, block with resource evidence and leave the checklist item unchecked. A simple smoke test that misses the essential code path is not enough to claim readiness.
 - Do not mark a required checklist item complete with an unrelated weaker smoke test. If the user explicitly accepts a weaker check, record the user downgrade, original checklist item, weaker evidence, and limitation instead of presenting it as proof that the original critical path passed.

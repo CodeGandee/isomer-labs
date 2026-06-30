@@ -25,13 +25,14 @@ When this subcommand is selected, execute the following steps in order.
 7. Prepare the derived target spec boundary:
    - Ensure `topic.env.topic_setup_target_spec` exists, is supplied explicitly, or can be created from `topic.intent.topic_env_requirements` before service materialization.
    - Keep the source intent concise and user-editable; put operational commands, repo acquisition details, projection access intent, and verification details in the derived target spec.
-8. Delegate heavy Topic Workspace environment setup:
+8. Delegate Topic Workspace environment setup:
    - Call `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`.
    - Pass the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `topic.intent.topic_env_requirements` metadata or explicit target spec source, and relevant topic/setup notes as context.
    - Let `isomer-srv-topic-env-setup` handle source-gate reading, target-spec validation, Topic Main Development Repository setup, canonical external repo materialization, external repo projection materialization, dependency inference, Pixi mutation, and topic-root or repo-specific verification only.
    - Require delegated output to include `topic.env.topic_setup_target_spec`, its `## Gate Checklist`, and whether every required checklist item is checked with supporting setup, path, dependency, resource, command, or expected-result evidence before accepting `readiness_status: ready`.
-   - Require delegated output to record resource checks and bounded real-path verification decisions before any heavy setup or verification command such as compilation, deep model inference, full dataset download, large archive extraction, or broad test suite execution. Heavy source-intent paths must still run in bounded form unless blocked; a generic smoke test that misses the essential code path is not enough.
-   - Example: for a CUDA kernel source gate, the service should identify the local GPU, compile only the local architecture, cap build parallelism such as with `MAX_JOBS=1`, build a selected baseline kernel or extension rather than all release artifacts, then run a tiny benchmark case. If even that bounded real path cannot run safely, the service reports a blocker instead of `ready`.
+   - Require delegated output to record `operation_classification` from `isomer-misc-bounded-run-tips`, including classification source, result, reason, resource dimensions, and affected scope.
+   - Require delegated output to record resource checks and bounded real-path verification decisions for commands classified as `heavy` or `unknown-risk`. Source-intent paths must still run in bounded form unless blocked; a generic smoke test that misses the essential code path is not enough.
+   - Example only: for a CUDA kernel source gate, the service might identify the local GPU, compile only the local architecture, cap build parallelism such as with `MAX_JOBS=1`, build a selected baseline kernel or extension rather than all release artifacts, then run a tiny benchmark case. `isomer-misc-bounded-run-tips` owns the classification decision. If even that bounded real path cannot run safely, the service reports a blocker instead of `ready`.
 9. Map the service output using **Service Output Mapping**:
    - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, projection metadata, gate checklist completion evidence, resource check status, commands run, changed files, repo warnings, blockers, and validation refs.
    - Record `per_agent_readiness_status: not checked` when the service reports it as durable setup evidence.
@@ -62,7 +63,7 @@ Do not invent runnable requirements from vague topic text. If the source intent 
 
 ## Service Delegation
 
-Use `isomer-srv-topic-env-setup` for the heavy setup path:
+Use `isomer-srv-topic-env-setup` for the setup path:
 
 ```text
 $isomer-srv-topic-env-setup setup-topic-env <research_topic_id> auto
@@ -86,7 +87,7 @@ Use `auto` when this subcommand is reached from `fast-forward` or a direct concr
 | `path_diagnostics` or label diagnostics | operator blockers or warnings with the relevant semantic label |
 | `topic_main_repository` | topic-main predecessor evidence for later agent setup |
 | `external_repo_projections`, `external_repo_projection_manifest` | projection predecessor evidence for later agent setup |
-| `resource_check_status`, `resource_check_evidence`, `resource_conservative_decisions` | operator-visible evidence that heavy setup or verification work checked host capacity first and chose bounded real-path commands such as reduced parallelism, selected build targets, tiny input shapes, sample data, reduced iterations, or a blocker when no bounded real-path check can run safely |
+| `operation_classification`, `resource_check_status`, `resource_check_evidence`, `resource_conservative_decisions` | operator-visible evidence that bounded-run tips classified resource-relevant setup or verification work, commands classified as `heavy` or `unknown-risk` checked host capacity first, and the service chose bounded real-path commands such as reduced parallelism, selected build targets, tiny input shapes, sample data, reduced iterations, or a blocker when no bounded real-path check can run safely |
 | `commands_run` | setup command evidence |
 | `changed_files` | changed setup file evidence |
 | `inferred_source_warnings` | setup warnings and later validation notes |

@@ -15,7 +15,7 @@ When this subcommand is selected, execute the following steps in order.
    - Use `isomer-misc-bounded-run-tips` subcommand `cuda-compile` for architecture targets, `nvcc` flags, and build parallelism.
    - Keep this page focused on Pixi environment setup, CUDA components, runtime wiring, and build tasks.
 9. **Verify with a small build** according to **Verification Preference**.
-10. **Report changes and caveats** using **Output Contract**.
+10. **Report changes and caveats** using **Essential Output** by default and **Complete Output** when requested.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this page, `isomer-misc-bounded-run-tips` compile guidance when needed, and the user's request, then execute the plan.
 
@@ -87,7 +87,22 @@ Treat compile success separately from runtime success. On a host without a compa
 
 ## Output Contract
 
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+### Essential Output
+
 Report:
+
+- `status`: setup, plan-only, or blocker status.
+- `target`: `project_path`, `manifest_file`, and `target_environment`.
+- `cuda`: selected `cuda_version` and CUDA/C++ setup posture.
+- `verification`: `verification_result` and the key command when run.
+- `changed_files`: important files changed.
+- `warnings_or_blockers`: user-actionable warnings or blockers.
+
+### Complete Output
+
+When requested, include:
 
 - `project_path`
 - `manifest_file`

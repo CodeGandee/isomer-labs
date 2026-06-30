@@ -22,7 +22,7 @@ When this subcommand is selected, execute the following steps in order.
 7. Handle per-Agent Workspace environment readiness only when requested:
    - If the user explicitly asked for readiness, name `isomer-srv-agent-env-setup setup-agent-env` as the normal owner of worktree creation and cwd proof after topic env predecessor evidence exists.
    - Otherwise report that agent environment verification is not checked.
-8. Run the `summarize` workflow and report the output contract with blockers and next operator action.
+8. Run the `summarize` workflow and report Essential Output by default, with blockers and next operator action; use Complete Output when requested.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to split the request into the closest subcommands, run read-only stages first, and ask for explicit mutation only when needed.
 

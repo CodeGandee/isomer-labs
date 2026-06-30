@@ -55,14 +55,25 @@ When the runnable need is too vague, ask the user what the Topic Workspace shoul
 
 ## Output Contract
 
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+### Essential Output
+
 - `topic_env_source_status`: ready, revised, blocked, or not changed.
-- `topic_env_source_label`: `topic.intent.topic_env_requirements`.
 - `topic_env_source_path`: resolved path for `topic.intent.topic_env_requirements`.
-- `topic_env_source_storage_profile`: usually `topic_intent_source_file`.
-- `topic_env_source`: resolver source such as `default_profile`, `topic_workspace_manifest`, `env`, or `path_plan`.
-- `topic_env_source_detail`: resolver source detail such as `isomer-default.v1` or manifest binding detail.
-- `topic_env_source_diagnostics`: Workspace Path Resolution diagnostics and source-intent blockers.
+- `blockers`: source-intent blockers or open questions.
 - `next_operator_action`: usually `setup-topic-env` when source intent is usable, or ask the user to answer open questions.
+
+### Complete Output
+
+- `topic_env_source_status`
+- `topic_env_source_label`
+- `topic_env_source_path`
+- `topic_env_source_storage_profile`
+- `topic_env_source`
+- `topic_env_source_detail`
+- `topic_env_source_diagnostics`
+- `next_operator_action`
 
 ## Guardrails
 

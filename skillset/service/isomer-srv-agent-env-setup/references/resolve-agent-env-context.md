@@ -30,7 +30,7 @@ When this subcommand is selected, execute the following steps in order.
    - The Topic Workspace and resolved setup labels must be inside the selected Project root unless a later accepted external-root policy explicitly permits the binding.
 6. **Record invocation posture**:
    - Report `requester`, `confirmation_source`, optional Service Request refs, support Artifact refs, Provenance refs, and whether the current invocation is read-only or can proceed to confirmed mutation.
-7. **Report resolved context** using the parent output contract:
+7. **Report resolved context** using the parent Essential Output by default and Complete Output when requested:
    - Stop with blockers for missing Project Manifest, unknown Research Topic, missing Topic Workspace, unresolved Pixi binding, semantic label blockers, unsafe paths, or missing mutation confirmation for mutating follow-up steps.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from Project Manifest evidence, semantic label requirements, invocation posture, and the parent guardrails, then execute the plan.

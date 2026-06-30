@@ -37,4 +37,23 @@ Do not use this skill for full Topic Team Specialization; use `isomer-admin-topi
 
 ## Output Contract
 
-Report `mode`, `houmao_source_root`, `key_files`, `concept_mapping`, `customization_points`, `commands`, `blockers`, and `next_operator_action`.
+Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+### Essential Output
+
+- `mode`
+- `key_files`
+- `commands`
+- `blockers`
+- `next_operator_action`
+
+### Complete Output
+
+- `mode`
+- `houmao_source_root`
+- `key_files`
+- `concept_mapping`
+- `customization_points`
+- `commands`
+- `blockers`
+- `next_operator_action`

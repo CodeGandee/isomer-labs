@@ -239,32 +239,45 @@ The service skill SHALL prepare or validate required agent support surfaces and 
 - **THEN** it names `agent.public_share`, approved topic-owned projections, generated links, or Git-tracked material as supported sharing routes
 - **AND** it does not describe tmp or private runtime material as a sharing surface
 
-### Requirement: Agent Env Gate Heavy Operations Use Bounded Run Tips First
-The Agent Workspace environment setup service SHALL require agent env gate derivation to consult `isomer-misc-bounded-run-tips` before inventing resource plans for heavy per-agent cwd verification work.
+### Requirement: Agent Env Gate Delegates Operation Classification
+The Agent Workspace environment setup service SHALL delegate per-agent cwd operation classification to `isomer-misc-bounded-run-tips` before deciding whether an agent env matrix item needs bounded handling.
 
-#### Scenario: Derivation routes heavy per-agent commands to bounded run tips first
+#### Scenario: Derivation records per-agent classification evidence
 - **WHEN** `derive-agent-env-gate` converts source agent intent or an explicit target spec into `topic.env.agent_setup_target_spec`
-- **AND** a per-agent cwd verification item involves compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, large GPU jobs, benchmark execution, or another resource-heavy operation
-- **THEN** the generated `Resource Check Plan` identifies the operation as heavy
-- **AND** the derivation first checks `isomer-misc-bounded-run-tips` for an applicable subcommand or recipe
-- **AND** the generated gate records the selected bounded-run guidance source, probes, capacity signals, bounded command, affected Agent Name scope, expected result, and blocker condition
+- **THEN** it asks `isomer-misc-bounded-run-tips` to classify each per-agent cwd verification operation whose resource cost affects readiness planning
+- **AND** the generated gate records classification source, classification result, reason, resource dimensions, affected Agent Name or matrix scope, and whether bounded guidance is required
+
+#### Scenario: Heavy and unknown-risk classifications require bounded matrix handling
+- **WHEN** bounded-run tips classifies a per-agent cwd operation as `heavy` or `unknown-risk`
+- **THEN** `derive-agent-env-gate` includes a `Resource Check Plan` entry with bounded-run guidance, a bounded real-path command, affected Agent Name scope, expected result, and blocker condition
+- **AND** selected-agent partial coverage is labeled partial unless every authoritative Agent Name has equivalent passing evidence
 
 #### Scenario: Selected-agent partial checks keep their scope
-- **WHEN** a heavy per-agent command would multiply across all authoritative Agent Workspaces
+- **WHEN** an operation classified as `heavy` or `unknown-risk` would multiply across all authoritative Agent Workspaces
 - **THEN** `derive-agent-env-gate` may use selected-agent partial coverage or another bounded real-path tactic only when it still exercises the required cwd command path
 - **AND** the gate records the partial scope and the bounded-run guidance source
 - **AND** selected-agent partial evidence is not enough for `overall_readiness_status: ready` unless every required authoritative Agent Name has equivalent passing evidence
 
 #### Scenario: Generic best-effort plan is explicit when no recipe exists
-- **WHEN** a heavy per-agent cwd operation has no matching `isomer-misc-bounded-run-tips` subcommand
+- **WHEN** a per-agent cwd operation classified as `heavy` or `unknown-risk` has no matching `isomer-misc-bounded-run-tips` subcommand
 - **THEN** `derive-agent-env-gate` creates a generic bounded real-path plan that balances useful verification against host crash prevention
 - **AND** the gate records that the source is generic best-effort judgment
 - **AND** the plan still exercises the source-agent required cwd command path rather than replacing it with an unrelated smoke test
 
+#### Scenario: Light classification can skip bounded matrix handling
+- **WHEN** bounded-run tips classifies a per-agent cwd operation as `light`
+- **THEN** `derive-agent-env-gate` may record that no resource check plan is required for that operation
+- **AND** the gate preserves the classification evidence and reason
+
+#### Scenario: Agent env setup does not own heavy-operation list
+- **WHEN** agent env setup documentation mentions examples of operations that may be resource-heavy across Agent Workspaces
+- **THEN** the documentation states that bounded-run tips owns the classification decision
+- **AND** it does not make the example list the normative definition of heavy operation
+
 #### Scenario: Agent verification enforces the derived bounded plan
-- **WHEN** `verify-agent-env-gate` encounters a required heavy matrix command from `topic.env.agent_setup_target_spec`
+- **WHEN** `verify-agent-env-gate` encounters a matrix command classified as `heavy` or `unknown-risk` in `topic.env.agent_setup_target_spec`
 - **THEN** it uses the generated `Resource Check Plan` and matching checklist item as the execution contract
-- **AND** it reports a blocker when the bounded-run plan is missing, ambiguous, unsafe, or cannot exercise the required cwd path
+- **AND** it reports a blocker when classification evidence or the bounded-run plan is missing, ambiguous, unsafe, or cannot exercise the required cwd path
 - **AND** it does not mark an agent ready from an unrelated smoke test or mark all agents ready from selected-agent partial evidence
 
 ### Requirement: Agent Env Gate File
@@ -296,6 +309,11 @@ The service skill SHALL resolve a derived per-agent readiness target spec before
 - **WHEN** the gate mentions tmp labels
 - **THEN** it describes them as local ignored disposable surfaces
 - **AND** it does not use tmp contents as readiness evidence
+
+#### Scenario: Gate checklist records required per-agent readiness work
+- **WHEN** the service generates `topic.env.agent_setup_target_spec`
+- **THEN** every required predecessor, worktree, semantic path, projection visibility, resource, verification, expected-result, and blocker-resolution item needed for Agent Workspace readiness is represented as a Markdown checkbox under `Gate Checklist`
+- **AND** optional diagnostics or supporting smoke checks that are not required for readiness are recorded outside `Gate Checklist`
 
 ### Requirement: Agent Cwd Env Verification
 The service skill SHALL verify the Topic Workspace environment from each planned Agent Workspace cwd.
@@ -331,6 +349,37 @@ The service skill SHALL verify the Topic Workspace environment from each planned
 #### Scenario: Partial results remain visible
 - **WHEN** one or more agents fail or block
 - **THEN** the service reports readiness by agent, commands run, command outcomes, blockers, and the next safe repair action
+
+#### Scenario: Passing means required checklist items are complete
+- **WHEN** `verify-agent-env-gate` reports Agent Name `alice` as ready
+- **THEN** every required checklist item from `topic.env.agent_setup_target_spec` that applies to `alice` is checked and backed by evidence from the resolved `agent.workspace` cwd
+- **AND** every required command for `alice` has passed with the resolved `agent.workspace` as process cwd
+- **AND** a command passing from the Topic Workspace root alone does not satisfy the agent gate
+
+#### Scenario: Overall readiness requires every agent checklist
+- **WHEN** the service reports overall readiness as `ready`
+- **THEN** every planned agent has a ready worktree, required support paths, complete path evidence, cwd-friendly query evidence, and every required checklist item for that agent checked with passing evidence from that agent's cwd
+
+#### Scenario: Unchecked checklist item blocks readiness
+- **WHEN** any required item under `Gate Checklist` remains unchecked for a targeted Agent Name after setup or verification
+- **THEN** the service does not report that agent as ready
+- **AND** it reports `blocked` when the item could not be run, `failed` when it ran and missed its expected result, or `not checked` only when verification was explicitly not requested
+- **AND** it names the exact checklist item, Agent Name, reason, and next safe action in `Blockers`, `Execution Log`, or the final output
+
+#### Scenario: Bounded real-path evidence can complete heavy per-agent checklist item
+- **WHEN** a required checklist item names heavy work such as compilation, model inference, dataset processing, benchmark execution, large archive extraction, a broad test suite, or repeated full-matrix checks
+- **THEN** the service may check the item only after a bounded real-path command exercises the same critical path named by the item and passes its expected result from the required Agent Workspace cwd
+- **AND** bounded real-path evidence may use selected-agent partial runs, reduced parallelism, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, or short benchmark cases
+
+#### Scenario: Unrelated smoke test cannot complete critical per-agent checklist item
+- **WHEN** a required checklist item names a critical build, inference, dataset, benchmark, projection-dependent, or repo-specific runtime path
+- **THEN** the service does not mark that item checked merely because a weaker smoke test passed
+- **AND** generic import success, device visibility, Pixi install success, projection path visibility, or worktree existence counts only for a checklist item that specifically asks for that smoke evidence
+
+#### Scenario: User downgrade is explicit evidence
+- **WHEN** the user explicitly instructs the agent to accept a weaker check instead of the original critical-path checklist item
+- **THEN** the service records the user instruction, original checklist item, affected Agent Name or matrix scope, weaker evidence, and resulting limitation in the execution log or blocker record
+- **AND** it does not silently present the weaker check as proof that the original critical path passed
 
 ### Requirement: Agent Env Setup Output Contract
 The service skill SHALL report structured output that downstream operator skills can treat as static setup evidence.
@@ -455,3 +504,90 @@ The agent environment setup service skill SHALL require a derived agent env targ
 - **WHEN** the service cannot create, load, or validate a usable derived agent env target spec
 - **THEN** it reports a blocker
 - **AND** it does not materialize Agent Workspace environment readiness from the high-level source intent alone
+
+### Requirement: Agent Env Setup Uses Essential and Complete Output
+The Agent Workspace environment setup service skill SHALL split its output contract into Essential Output and Complete Output.
+
+#### Scenario: Essential agent env output reports user-facing readiness
+- **WHEN** `isomer-srv-agent-env-setup` reports a result without a complete-output request
+- **THEN** it reports the selected topic, Topic Workspace predecessor status, Topic Main Development Repository predecessor status, Agent Workspace readiness summary, readiness by agent or selected-agent partial status, critical verification result, blockers, and next action
+- **AND** it makes selected-agent partial evidence visibly partial when overall readiness is not proven
+
+#### Scenario: Complete agent env output preserves handoff detail
+- **WHEN** complete output is requested from `isomer-srv-agent-env-setup`
+- **THEN** it reports requester and confirmation source, semantic paths, source and target spec labels and paths, topic env predecessor refs, projection predecessor evidence, full Agent Workspace path and branch plan, full readiness matrix, operation classification evidence, resource probes, commands run, changed files, blockers, and next action
+
+#### Scenario: Complete output includes matrix scope
+- **WHEN** complete output includes per-agent verification evidence
+- **THEN** it names the affected Agent Name or matrix scope for each readiness, blocker, operation classification, and resource check entry
+
+### Requirement: Topic Main Development Repository and Agent Worktrees
+The service skill SHALL require a prepared Topic Main Development Repository as predecessor evidence and SHALL prepare per-agent Agent Workspace worktrees using semantic labels and deterministic branch namespaces.
+
+#### Scenario: Topic Main Development Repository readiness is required
+- **WHEN** `require-topic-main-ready` runs
+- **THEN** it checks Topic Workspace predecessor evidence from `isomer-srv-topic-env-setup` for the resolved `topic.repos.main`, owner branch posture, Isomer-managed namespace, projection labels relevant to the agent gate, and blockers
+- **AND** it reports a repair next action to `isomer-srv-topic-env-setup` when topic-main readiness is missing, stale, blocked, or failed
+
+#### Scenario: Agent env setup does not initialize topic-main
+- **WHEN** `setup-agent-env`, `create-agent-worktrees`, or `verify-agent-env-gate` runs
+- **THEN** it does not create, initialize, configure, repair, reset, or rewrite `topic.repos.main`
+- **AND** it does not create external repo projections inside topic-main
+
+#### Scenario: Agent worktree uses prepared topic-main
+- **WHEN** `create-agent-worktrees` prepares Agent Name `alice`
+- **THEN** it creates or validates the resolved `agent.workspace` path as a Git worktree of the already-prepared resolved `topic.repos.main`
+- **AND** the default branch is `per-agent/alice/main`
+
+#### Scenario: Existing matching worktree is ready
+- **WHEN** the resolved `agent.workspace` path already exists as the expected worktree on the expected branch
+- **THEN** the service reports it as ready instead of creating another worktree
+
+#### Scenario: Existing nonmatching path blocks creation
+- **WHEN** the resolved `agent.workspace` path exists but is not the expected worktree
+- **THEN** the service reports a blocker and does not overwrite, delete, move, clean, reset, or reinitialize the path
+
+#### Scenario: Duplicate branch checkout is rejected
+- **WHEN** `per-agent/<agent-name>/main` is already checked out in another worktree of the Topic Main Development Repository
+- **THEN** the service reports a blocker instead of force-moving or deleting the existing checkout
+
+### Requirement: Topic Main Projection Predecessor Evidence
+The agent environment setup service skill SHALL consume external repo projection evidence from topic env setup when per-agent cwd verification depends on projected external repositories.
+
+#### Scenario: Agent gate references external projection
+- **WHEN** `topic.env.agent_setup_target_spec` requires an external repo projection to be visible from each Agent Workspace cwd
+- **THEN** the service checks predecessor evidence for the relevant projection entry in `topic.repos.main.projections.manifest`
+- **AND** it verifies the projection path from each target `agent.workspace` cwd without recreating the projection
+
+#### Scenario: Missing projection routes repair to topic env
+- **WHEN** a required external repo projection is missing, stale, blocked, or inconsistent with the agent gate
+- **THEN** the service reports a repair next action to `isomer-srv-topic-env-setup`
+- **AND** it does not create a substitute projection under the Agent Workspace
+
+### Requirement: Agent Env Gate Heavy Operations Use Bounded Run Tips First
+The Agent Workspace environment setup service SHALL require agent env gate derivation to consult `isomer-misc-bounded-run-tips` before inventing resource plans for heavy per-agent cwd verification work.
+
+#### Scenario: Derivation routes heavy per-agent commands to bounded run tips first
+- **WHEN** `derive-agent-env-gate` converts source agent intent or an explicit target spec into `topic.env.agent_setup_target_spec`
+- **AND** a per-agent cwd verification item involves compilation, deep model inference, full dataset download, large archive extraction, broad test suites, multi-process training, large GPU jobs, benchmark execution, or another resource-heavy operation
+- **THEN** the generated `Resource Check Plan` identifies the operation as heavy
+- **AND** the derivation first checks `isomer-misc-bounded-run-tips` for an applicable subcommand or recipe
+- **AND** the generated gate records the selected bounded-run guidance source, probes, capacity signals, bounded command, affected Agent Name scope, expected result, and blocker condition
+
+#### Scenario: Selected-agent partial checks keep their scope
+- **WHEN** a heavy per-agent command would multiply across all authoritative Agent Workspaces
+- **THEN** `derive-agent-env-gate` may use selected-agent partial coverage or another bounded real-path tactic only when it still exercises the required cwd command path
+- **AND** the gate records the partial scope and the bounded-run guidance source
+- **AND** selected-agent partial evidence is not enough for `overall_readiness_status: ready` unless every required authoritative Agent Name has equivalent passing evidence
+
+#### Scenario: Generic best-effort plan is explicit when no recipe exists
+- **WHEN** a heavy per-agent cwd operation has no matching `isomer-misc-bounded-run-tips` subcommand
+- **THEN** `derive-agent-env-gate` creates a generic bounded real-path plan that balances useful verification against host crash prevention
+- **AND** the gate records that the source is generic best-effort judgment
+- **AND** the plan still exercises the source-agent required cwd command path rather than replacing it with an unrelated smoke test
+
+#### Scenario: Agent verification enforces the derived bounded plan
+- **WHEN** `verify-agent-env-gate` encounters a required heavy matrix command from `topic.env.agent_setup_target_spec`
+- **THEN** it uses the generated `Resource Check Plan` and matching checklist item as the execution contract
+- **AND** it reports a blocker when the bounded-run plan is missing, ambiguous, unsafe, or cannot exercise the required cwd path
+- **AND** it does not mark an agent ready from an unrelated smoke test or mark all agents ready from selected-agent partial evidence

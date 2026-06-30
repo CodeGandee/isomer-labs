@@ -61,6 +61,29 @@ The topic workspace manager skill SHALL use `<topic-workspace-dir>/repos/topic-m
 - **WHEN** `<topic-workspace-dir>/repos/topic-main` exists but is not a usable Git repository for worktree creation
 - **THEN** the skill reports a blocker and does not delete, replace, pull, or reinitialize the existing path without explicit user instruction
 
+#### Scenario: Shared topic repo path is semantic
+- **WHEN** the skill inspects or validates the shared topic repository
+- **THEN** it uses the resolved `topic.repos.main` path and reports the path source
+- **AND** the default path remains `<topic-workspace-dir>/repos/topic-main` under `isomer-default.v1`
+
+#### Scenario: Isomer-managed namespace is inside topic-main
+- **WHEN** the skill inspects or validates the shared topic repository
+- **THEN** the expected Isomer worker-facing namespace is the resolved `topic.repos.main.isomer_managed` path
+
+#### Scenario: Agent worktrees are placed under resolved agent labels
+- **WHEN** the skill inspects, validates, or optionally creates an Agent Workspace for agent name `alice`
+- **THEN** the expected worktree path is the resolved `agent.workspace` path for `alice`
+
+#### Scenario: Canonical main repo creation is not required from this skill
+- **WHEN** topic env setup has already prepared Topic Main Development Repository predecessor evidence
+- **THEN** the workspace manager uses that evidence for validation or summaries
+- **AND** it does not present itself as the canonical creator of `topic.repos.main`
+
+#### Scenario: Existing unsafe repo blocks optional topology work
+- **WHEN** the resolved `topic.repos.main` exists but is not a usable Git repository for worktree inspection or creation
+- **THEN** the skill reports a blocker
+- **AND** it does not delete, replace, pull, or reinitialize the existing path without explicit user instruction
+
 ### Requirement: Agent Planning and Branch Names
 The topic workspace manager skill SHALL normalize per-agent names, map them to role bindings, and use deterministic per-agent branch namespaces.
 
@@ -196,6 +219,11 @@ The topic workspace manager skill SHALL materialize default semantic workspace d
 #### Scenario: Read-only planning does not create manifest
 - **WHEN** the skill runs `resolve-workspace`, `plan-agents`, `validate-worktrees`, or `summarize` without creation intent
 - **THEN** it does not create or rewrite `topic-workspace.toml`, directories, branches, or worktrees
+
+#### Scenario: Default main repo materialization is not canonical
+- **WHEN** the operator asks this skill to create default Topic Main Development Repository material
+- **THEN** the skill reports that the canonical setup path is `isomer-srv-topic-env-setup`
+- **AND** it may perform only an explicitly requested manual repair or compatibility operation with mutation confirmation
 
 ### Requirement: Semantic Agent Planning
 The topic workspace manager skill SHALL plan Agent Names, branches, worktrees, and compatibility refs from semantic `agent.workspace` resolution.
@@ -340,3 +368,30 @@ The topic workspace manager skill SHALL preserve semantic evidence for custom st
 - **WHEN** operator-provided topic material names a label that is not built in and not declared as a valid custom manifest binding
 - **THEN** the skill reports a Workspace Path Resolution blocker instead of falling back to a guessed directory
 
+### Requirement: Topic Workspace Manager Uses Essential and Complete Output
+The Topic Workspace Manager operator skill SHALL split its output contract into Essential Output and Complete Output.
+
+#### Scenario: Essential topic workspace output reports topology status
+- **WHEN** `isomer-admin-topic-workspace-mgr` reports a result without a complete-output request
+- **THEN** it reports the selected Research Topic, Topic Workspace, topic-main status, Agent Workspace path summary, local tmp posture summary, blockers, and next action
+- **AND** it highlights unsafe topology problems that need operator attention
+
+#### Scenario: Complete topic workspace output preserves semantic path detail
+- **WHEN** complete output is requested from `isomer-admin-topic-workspace-mgr`
+- **THEN** it reports semantic paths, path sources, readiness diagnostics, topic-main path evidence, `isomer-managed/` status, tmp posture, Agent Workspace paths, branch plan, boundary material paths, generated links, validation status, blockers, and next action
+
+### Requirement: Optional Topology Support Boundary
+The topic workspace manager skill SHALL be optional support for topology inspection, branch helpers, boundary summaries, and legacy compatibility diagnostics after the breaking Topic Main Development Repository revision.
+
+#### Scenario: Topology inspection remains supported
+- **WHEN** an operator asks to inspect prepared topic-main and Agent Workspace topology
+- **THEN** the skill reports semantic paths, Git state, branch namespace, worktree state, Isomer-managed layout, projection roots, generated links, blockers, and next actions without materializing missing topic env surfaces
+
+#### Scenario: Branch helper remains supported
+- **WHEN** an operator asks to create a future per-agent branch under an accepted agent branch namespace
+- **THEN** the skill may perform that bounded Git helper operation after validating the prepared Topic Main Development Repository and Agent Name
+
+#### Scenario: Legacy generated content can break
+- **WHEN** the skill sees old generated `isomer-content/` internals or old topic-main support paths
+- **THEN** it may report them as unsupported under the revised layout
+- **AND** it does not need to provide migration instructions beyond recreating generated topic content
