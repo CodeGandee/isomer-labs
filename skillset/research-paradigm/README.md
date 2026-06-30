@@ -1,17 +1,17 @@
 # Research Paradigm Skills
 
-This subtree contains Isomer Labs research-method skills. The skillset is generationed so existing source-derived material remains available while the active v2 core loop can stay concise and semantics-first.
+This subtree contains Isomer Labs research-method skills. The skillset is generationed so existing source-derived material remains available while the active v2 research and companion-skill surface can stay concise and semantics-first.
 
 ## Generations
 
 | Generation | Path | Role |
 | --- | --- | --- |
-| v2 | `v2/isomer-rsch-<purpose>-v2/` | Active core research-method skills. These use semantic placeholders such as `[[rsch-object:research-frame]]` and do not bind outputs to storage yet. |
+| v2 | `v2/isomer-rsch-<purpose>-v2/` | Active current research-method and companion skills. Core loop skills use semantic placeholders such as `[[rsch-object:research-frame]]`; refactor-migrated companion skills use local placeholders such as `<PAPER_CONTRACT>`. V2 does not bind outputs to storage yet. |
 | v1 | `v1/isomer-rsch-<purpose>-v1/` | Preserved first-generation Isomer adaptations of source skills. These keep the richer storage, lifecycle, policy, and paper-facing guidance for reference and compatibility. |
 
-The root directory should not contain active flat `isomer-rsch-*` skill folders. New core research work should target v2 unless a preserved paper-facing or intake behavior is explicitly needed from v1.
+The root directory should not contain active flat `isomer-rsch-*` skill folders. New research work should target v2 unless a preserved intake behavior or older compatibility surface is explicitly needed from v1.
 
-## V2 Core Skills
+## V2 Core Research Skills
 
 | Skill | Purpose |
 | --- | --- |
@@ -28,15 +28,38 @@ The root directory should not contain active flat `isomer-rsch-*` skill folders.
 
 The v2 loop is `Frame -> Comparator -> Hypothesis -> Experiment -> Analysis -> Decision -> Finalize`. `isomer-rsch-optimize-v2` overlays hypothesis, experiment, and analysis when candidate search is the work. `isomer-rsch-science-v2` supports any stage whose trust depends on scientific computation or data validity.
 
+## V2 Paper Writing Skills
+
+| Skill | Purpose |
+| --- | --- |
+| `isomer-rsch-write-v2` | Draft or revise paper, report, summary, and manuscript text from bounded evidence. |
+| `isomer-rsch-paper-outline-v2` | Build or repair a paper-native outline, claim boundary, method abstraction, and writing plan. |
+| `isomer-rsch-paper-plot-v2` | Adapt bundled plotting templates into first-pass publication figures. |
+| `isomer-rsch-figure-polish-v2` | Render, inspect, revise, export, and record durable academic figures. |
+| `isomer-rsch-review-v2` | Audit a substantial draft or paper-like report and route concrete fixes. |
+| `isomer-rsch-rebuttal-v2` | Normalize reviewer feedback, route required fixes, and assemble a response package. |
+| `isomer-rsch-nature-data-v2` | Prepare Nature-style Data Availability statements, repository plans, dataset citations, and FAIR metadata checks. |
+| `isomer-rsch-nature-figure-v2` | Create, revise, audit, or polish Nature-grade figures with one selected Python or R backend. |
+| `isomer-rsch-nature-paper2ppt-v2` | Build a complete Chinese PPTX presentation from a scientific paper or paper-derived notes. |
+| `isomer-rsch-nature-polishing-v2` | Polish, restructure, or translate academic prose into Nature-leaning English without hiding evidence gaps. |
+
+These paper-writing skills were refactor-migrated from the paper-writing source analysis index. Each target directory keeps source provenance under `org/`, a local migration plan under `migrate/`, copied runtime support files, and an `agents/openai.yaml` manifest.
+
+## V2 Runtime and Traceability Layout
+
+Active v2 execution guidance lives in each skill's `SKILL.md`, `agents/openai.yaml`, directly linked `references/`, active `assets/`, and active `scripts/`. Migration and traceability material lives under `migrate/`, `org/analysis/`, `org/src/`, passive `templates/`, provenance files, license notices, and deferred-resource notes. Those files preserve review history and source context; they are not required runtime inputs when invoking an installed skill.
+
 ## V2 Placeholder Contract
 
-V2 skills name reusable research objects with `[[rsch-object:<id>]]` placeholders. The authoritative registry is `v2/isomer-rsch-shared-v2/references/semantic-placeholders.md`.
+V2 core-loop skills name reusable research objects with `[[rsch-object:<id>]]` placeholders. The authoritative registry is `v2/isomer-rsch-shared-v2/references/semantic-placeholders.md`.
+
+Refactor-migrated companion skills may name handoff objects with uppercase angle-bracket placeholders such as `<PAPER_CONTRACT>`. Those placeholders are local to the skill and must be listed in that skill's `migrate/placeholders.md`.
 
 These placeholders define semantics only. They are not yet bound to Artifact, Evidence Item, Run, Gate, Decision Record, Provenance Record, path, storage label, or database schema. Storage binding belongs to a later design pass after the placeholder meanings are stable.
 
 ## V1 Preserved Skills
 
-The v1 generation contains all previous `isomer-rsch-*` skills with `-v1` suffixes, including intake, write, review, rebuttal, paper-outline, paper-plot, and figure-polish. Use v1 when a team or task still needs the richer first-generation guidance, especially paper-facing workflows not yet rewritten for v2.
+The v1 generation contains all previous `isomer-rsch-*` skills with `-v1` suffixes, including intake, write, review, rebuttal, paper-outline, paper-plot, and figure-polish. Use v1 when a team or task still needs the richer first-generation guidance or compatibility with older paper-facing references.
 
 ## Skill Writing Constraints
 

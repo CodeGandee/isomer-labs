@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-paper-plot-v2"
+  short_description: "Create first-pass publication figures from templates."
+  default_prompt: "Use $isomer-rsch-paper-plot-v2 to adapt a bundled plotting template to structured numeric data and produce a first-pass paper figure."

@@ -42,6 +42,17 @@ When this skill is invoked, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 
+## Reference Routing
+
+Read these pages as needed:
+
+- `references/objective-contract-template.md` for target, proxy, false-progress, and constraint rules.
+- `references/current-board-packet-template.md` for incumbent, blocker, stale-route, and budget-class context.
+- `references/selection-gate.md` for scoring, novelty labels, handoff fields, citations, and routing.
+- `references/literature-survey-template.md`, `references/related-work-playbook.md`, and `references/research-history-playbook.md` for evidence refresh and novelty checks.
+- `references/high-value-idea-sourcing.md`, `references/idea-thinking-flow.md`, and `references/idea-generation-playbook.md` for bounded candidate generation.
+- `references/pre-idea-draft-template.md`, `references/selected-hypothesis-template.md`, `references/outline-seeding-example.md`, and `references/research-outline-template.md` for promotion, paper-facing seeding, and final handoff shape.
+
 ## Cross-Step Constraints
 
 - The accepted dataset, metric, and evaluation contract must stay fixed unless the Research Topic scope explicitly changed.

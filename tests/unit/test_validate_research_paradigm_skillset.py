@@ -158,6 +158,20 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_skillset(target, root)
         self.assertEqual([], messages(diagnostics))
 
+    def test_expected_inventory_includes_expanded_v2_contract(self) -> None:
+        self.assertIn("isomer-rsch-intake-v1", validator.EXPECTED_V1_SKILLS)
+        self.assertIn("isomer-rsch-write-v1", validator.EXPECTED_V1_SKILLS)
+        self.assertIn("isomer-rsch-write-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-paper-outline-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-paper-plot-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-figure-polish-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-review-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-rebuttal-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-nature-data-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-nature-figure-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-nature-paper2ppt-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-nature-polishing-v2", validator.EXPECTED_V2_SKILLS)
+
     def test_reports_core_failure_fixtures(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
@@ -175,6 +189,25 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         )
         diagnostics = validator.validate_skillset(target, root)
         self.assertTrue({"RPS001", "RPS002", "RPS003", "RPS004", "RPS005", "RPS006"} <= codes(diagnostics))
+
+    def test_allows_non_active_migration_and_source_copy_zones(self) -> None:
+        root, target = self.make_valid_skillset()
+        non_active_text = """
+        # Source Context
+
+        DeepScientist source text may mention Research Goal, path-topic-workspace, /data/source/run,
+        `artifact.science(...)`, `memory.read`, and instructions to Create an Artifact.
+        """
+        write(target / "deepscientist-migration-guide.md", non_active_text)
+        write(target / "ds-analysis" / "write.md", non_active_text)
+        write(target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "migration-plan.md", non_active_text)
+        write(target / "v2" / "isomer-rsch-valid-v2" / "org" / "analysis" / "analysis-of-valid.md", non_active_text)
+        write(target / "v2" / "isomer-rsch-valid-v2" / "org" / "src" / "SKILL.md", non_active_text)
+        write(target / "v2" / "isomer-rsch-valid-v2" / "templates" / "README.md", non_active_text)
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assert_no_codes(diagnostics, {"RPS001", "RPS002", "RPS004", "RPS010"})
 
     def test_allows_narrow_explanatory_zones(self) -> None:
         root, target = self.make_valid_skillset()
@@ -227,6 +260,20 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_skillset(target, root)
         self.assertTrue({"RPS001", "RPS002", "RPS004"} <= codes(diagnostics), messages(diagnostics))
 
+    def test_active_guidance_still_rejects_runtime_and_storage_terms(self) -> None:
+        root, target = self.make_valid_skillset()
+        self.write_skill(
+            target / "v2",
+            "isomer-rsch-valid-v2",
+            workflow_extra=(
+                "3. **Break active guidance**. Use Research Goal, DeepScientist, /data/source/run, "
+                "[[tbd-surface:path-topic-workspace]], and Create an Artifact for this output."
+            ),
+            v2=True,
+        )
+        diagnostics = validator.validate_skillset(target, root)
+        self.assertTrue({"RPS001", "RPS002", "RPS004", "RPS010"} <= codes(diagnostics), messages(diagnostics))
+
     def test_accepts_registered_unresolved_tbd_placeholder(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
@@ -250,6 +297,38 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_skillset(target, root)
         self.assertIn("RPS009", codes(diagnostics), messages(diagnostics))
 
+    def test_accepts_registered_migration_placeholder(self) -> None:
+        root, target = self.make_valid_skillset()
+        self.write_skill(
+            target / "v2",
+            "isomer-rsch-valid-v2",
+            workflow_extra="3. **Use local placeholder**. Produce `<VALID_HANDOFF>` for the next route.",
+            v2=True,
+        )
+        write(
+            target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "placeholders.md",
+            """
+            # Migration Placeholders
+
+            | Placeholder | Meaning |
+            | --- | --- |
+            | <VALID_HANDOFF> | Fixture handoff. |
+            """,
+        )
+        diagnostics = validator.validate_skillset(target, root)
+        self.assert_no_codes(diagnostics, {"RPS009"})
+
+    def test_rejects_unregistered_migration_placeholder(self) -> None:
+        root, target = self.make_valid_skillset()
+        self.write_skill(
+            target / "v2",
+            "isomer-rsch-valid-v2",
+            workflow_extra="3. **Break local placeholder**. Produce `<MISSING_HANDOFF>` for the next route.",
+            v2=True,
+        )
+        diagnostics = validator.validate_skillset(target, root)
+        self.assertIn("RPS009", codes(diagnostics), messages(diagnostics))
+
     def test_rejects_v2_storage_binding(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
@@ -266,6 +345,24 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.write_skill(target, "isomer-rsch-flat", reference="references/isomer-research-contract.md", v2=False)
         diagnostics = validator.validate_skillset(target, root)
         self.assertIn("RPS007", codes(diagnostics), messages(diagnostics))
+
+    def test_allows_pattern_references_but_reports_concrete_missing_references(self) -> None:
+        root, target = self.make_valid_skillset()
+        self.write_skill(
+            target / "v2",
+            "isomer-rsch-valid-v2",
+            routing_extra=(
+                "- `references/packages/<package_id>.md` documents package-specific reference shape.\n"
+                "- `scripts/<script>.py` documents script-specific reference shape.\n"
+                "- `references/missing.md` is a concrete broken reference."
+            ),
+            v2=True,
+        )
+        diagnostics = validator.validate_skillset(target, root)
+        rendered = messages(diagnostics)
+        self.assertTrue(any("references/missing.md" in message for message in rendered), rendered)
+        self.assertFalse(any("references/packages/<package_id>.md" in message for message in rendered), rendered)
+        self.assertFalse(any("scripts/<script>.py" in message for message in rendered), rendered)
 
     def test_registry_mirror_match_passes(self) -> None:
         root, target = self.make_valid_skillset()

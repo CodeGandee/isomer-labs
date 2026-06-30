@@ -8,7 +8,7 @@ When performing this step, execute these substeps in order.
 
 1. **Confirm scout is needed**. Check whether existing context already yields `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, and `<NEXT_ROUTE_DECISION>`.
 2. **Reconstruct `<SCOUT_CONTEXT_BRIEF>`**. Summarize the current Research Topic or Research Inquiry, task boundary, dataset and split understanding, metric direction, comparator status, and blockers.
-3. **Reuse prior knowledge**. Create `<SCOUT_MEMORY_REUSE_NOTE>` from Workspace Runtime records, Artifacts, Findings, Decision Records, and compatibility memory retrieval before broad discovery.
+3. **Reuse prior knowledge**. Build `<SCOUT_MEMORY_REUSE_NOTE>` from Workspace Runtime context, Artifact summaries, Finding summaries, Decision Record summaries, and compatibility memory retrieval before broad discovery.
 4. **Classify `<SCOUT_MINIMUM_UNKNOWNS>`**. Keep only unknowns that block baseline work, idea work, both, a Gate, a Decision Record, or an explicit blocker.
 5. **Resolve route-changing unknowns only**. Use local evidence first, then the smallest useful paper, repository, benchmark, or provenance discovery surface.
 6. **Create route-facing outputs**. Draft `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, and `<LITERATURE_SCOUTING_REPORT>` only to the extent needed for downstream routing.
@@ -44,4 +44,4 @@ When performing this step, execute these substeps in order.
 
 ## Compatibility Harness
 
-Use Isomer Workspace Runtime, Artifact, Literature Provider Binding, repository inspection, and Execution Adapter Command Request surfaces when available. When a source-compatible call is still the only binding, route it through `isomer-cli ext deepsci call <namespace.tool> --input-json <json-object>` and summarize the durable meaning with the placeholders in `../migrate/placeholders.md`.
+Use Workspace Runtime, Artifact, Literature Provider Binding, repository inspection, and Execution Adapter Command Request surfaces when available. When a source-compatible call is still the only binding, route it through `isomer-cli ext deepsci call <namespace.tool> --input-json <json-object>` and summarize the durable meaning with the placeholders in `../migrate/placeholders.md`.

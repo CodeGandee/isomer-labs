@@ -1,0 +1,88 @@
+---
+name: isomer-rsch-paper-outline-v2
+description: Use when evidence exists but the paper idea, outline, claim boundary, method abstraction, evaluation plan, analysis plan, or writing plan is not yet mature enough for drafting.
+---
+
+# Isomer Research Paper Outline V2
+
+## Overview
+
+Paper Outline separates the paper view from the evidence view. It builds the reader-facing thesis, claims, method abstraction, evaluation plan, and analysis plan while keeping runs, paths, metrics, commands, and reproducibility details in a separate evidence structure.
+
+Placeholder definitions live in `migrate/placeholders.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
+
+## When to Use
+
+Use this skill when:
+
+- A Research Inquiry has results or evidence but lacks a mature paper-native outline.
+- A section list, run log, or project chronology needs conversion into a reader-facing paper structure.
+- Claims need explicit evidence and falsification boundaries before writing.
+- A writing pass is blocked by weak thesis, weak method abstraction, missing analysis plan, or poor claim-evidence mapping.
+
+Do not use this skill when:
+
+- No meaningful evidence exists yet; route to scout, baseline, idea, experiment, or analysis first.
+- The task is already a mature section rewrite; use `isomer-rsch-write-v2`.
+- The user wants final review or rebuttal routing rather than outline repair.
+- The outline would require unsupported claims or invented novelty.
+
+## Workflow
+
+When this skill is invoked, execute the following steps in order.
+
+1. **Read paper state**. Build `<PAPER_STATE_SNAPSHOT>` from current outline, paper contract, evidence surfaces, run records, figures, reviewer needs, and user constraints.
+2. **Name the one-sentence idea**. Produce `<ONE_SENTENCE_PAPER_IDEA>` stating what readers should remember and why the result matters.
+3. **Separate facts from interpretation**. Produce `<CLAIM_EVIDENCE_BOUNDARY>` that distinguishes measured facts, allowed interpretations, limitations, and unsupported claims.
+4. **Build the paper view**. Draft `<PAPER_VIEW>` with thesis, story spine, scoped claims, method abstraction, evaluation plan, analysis plan, and target reader logic. Read `references/outline-patterns.md` when choosing outline structure.
+5. **Build the evidence view**. Draft `<EVIDENCE_VIEW>` with runs, paths, metrics, settings, source data, figures, reproducibility details, and appendix-only support separated from manuscript story.
+6. **Validate the outline**. Produce `<OUTLINE_VALIDATION_REPORT>` using claim support, falsification boundary, method clarity, evaluation coverage, analysis maturity, and reviewer-risk checks.
+7. **Repair until mature or blocked**. If validation fails, revise the paper view, evidence view, or claim boundary. Stop with `<PAPER_OUTLINE_ROUTE_DECISION>` when missing evidence or a strategic decision blocks maturity.
+8. **Compile writing plan**. When validation passes, produce `<SECTION_WRITING_PLAN>` for `isomer-rsch-write-v2`, including section jobs, required displays, citation needs, and evidence limits.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
+
+## Cross-Step Preferences
+
+- Prefer durable evidence and explicit placeholders over concrete source paths until storage binding is finalized.
+- Prefer the smallest route that preserves downstream trust, and route missing evidence to the skill that can actually produce it.
+- Prefer source-compatible `isomer-cli ext deepsci call ... --input-json '{...}'` only when the source harness behavior matters; otherwise use native Isomer topic context, provider, and execution-adapter surfaces without binding storage prematurely.
+- Prefer paper-facing language that names claims, evidence, limits, and next routes without exposing operator, agent, prompt, worktree, or local runtime details.
+
+## Cross-Step Constraints
+
+- Every paper-facing claim must stay inside the current evidence boundary.
+- Every placeholder used by runtime instructions must be listed in `migrate/placeholders.md`.
+- Concrete source paths, source harness outputs, and source storage assumptions must not become final Isomer storage contracts.
+- Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
+- Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
+
+## Cross-Step Quality Checks
+
+- Evidence check: all claims, figures, tables, responses, or statements are traceable to source evidence or explicitly marked as missing.
+- Route check: the next skill route is named when this skill cannot responsibly finish the task itself.
+- Placeholder check: all handoff objects in the workflow appear in `migrate/placeholders.md`.
+- Source-preservation check: source logic remains auditable in `org/src/` and `org/analysis/analysis-of-paper-outline.md`.
+- Paper-hygiene check: manuscript-facing output excludes route-control wording, local runtime details, and unsupported certainty.
+
+## Reference Routing
+
+Read these pages as needed:
+
+- `references/outline-patterns.md` for outline examples, paper-view/evidence-view patterns, and repair cues.
+
+## Exit Criteria
+
+This skill can end when all applicable checks are true:
+
+- `<PAPER_VIEW>` and `<EVIDENCE_VIEW>` are both present and separated.
+- `<OUTLINE_VALIDATION_REPORT>` either passes or names a concrete blocker.
+- `<SECTION_WRITING_PLAN>` exists when the outline is ready for writing.
+
+## Common Mistakes
+
+- Copying run logs into the paper plan.
+- Treating a section list as a mature outline.
+- Leaving claims without evidence or falsification boundaries.
+- Planning too little reviewer-facing analysis for an empirical paper.
+- Inventing a paper story that the evidence cannot support.

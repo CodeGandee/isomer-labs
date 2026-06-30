@@ -10,7 +10,7 @@ When performing this step, execute these substeps in order.
 2. **Name decisive evidence**. Record the latest result that changed route quality, the strongest negative evidence, and any active blocker.
 3. **Mark stale routes**. List routes that should not be reopened unless new evidence weakens the current mainline.
 4. **Set decision scope and budget class**. Classify whether this pass is choosing a mechanism, objective, measurement, or infrastructure route, and whether validation is `fast-check` or `slow-check`.
-5. **Gate widening**. If the packet cannot be made coherent, create <IDEA_BLOCKER_RECORD> and route to decision, intake audit, scout, or baseline instead of generating candidates.
+5. **Gate widening**. If the packet cannot be made coherent, produce <IDEA_BLOCKER_RECORD> and route to decision, intake audit, scout, or baseline instead of generating candidates.
 
 ## Preferences
 

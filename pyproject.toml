@@ -29,7 +29,7 @@ validate-skills = "python scripts/validate_skillsets.py --scope all"
 docs-validate = "python scripts/validate_docs.py"
 
 [tool.ruff]
-extend-exclude = ["teams/lfeng-team"]
+extend-exclude = ["teams/lfeng-team", "skillset/research-paradigm/v2/*/org/src/**"]
 
 [tool.pixi.dependencies]
 python = "3.11.*"

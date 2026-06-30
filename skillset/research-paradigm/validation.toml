@@ -2,6 +2,11 @@
 stale_terms_file_globs = [
   "PROVENANCE.md",
   "licenses/*.md",
+  "deepscientist-migration-guide.md",
+  "ds-analysis/**",
+  "*/migrate/**",
+  "*/org/**",
+  "*/templates/**",
   "*/references/provenance.md",
   "*/references/source-term-mapping.md",
 ]
@@ -12,6 +17,11 @@ stale_terms_section_headings = [
 runtime_coupling_file_globs = [
   "PROVENANCE.md",
   "licenses/*.md",
+  "deepscientist-migration-guide.md",
+  "ds-analysis/**",
+  "*/migrate/**",
+  "*/org/**",
+  "*/templates/**",
   "*/references/provenance.md",
   "*/references/source-term-mapping.md",
   "*/references/deferred-resources.md",
@@ -28,6 +38,11 @@ runtime_coupling_section_headings = [
 ]
 resolved_id_file_globs = [
   "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md",
+  "deepscientist-migration-guide.md",
+  "ds-analysis/**",
+  "*/migrate/**",
+  "*/org/**",
+  "*/templates/**",
 ]
 resolved_id_section_headings = [
   "Research Recording Contracts",
@@ -43,9 +58,28 @@ resolved_id_section_headings = [
 ]
 v2_storage_binding_file_globs = [
   "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md",
+  "*/migrate/**",
+  "*/org/**",
+  "*/templates/**",
 ]
 v2_storage_binding_section_headings = [
   "Source Lineage",
   "Placeholder Rule",
   "Storage Binding Status",
+]
+
+[file_roles]
+migration_file_globs = [
+  "deepscientist-migration-guide.md",
+  "*/migrate/**",
+]
+source_analysis_file_globs = [
+  "ds-analysis/**",
+  "*/org/analysis/**",
+]
+source_copy_file_globs = [
+  "*/org/**",
+]
+passive_template_file_globs = [
+  "*/templates/**",
 ]

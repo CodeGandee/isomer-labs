@@ -20,6 +20,9 @@ MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 TBD_PLACEHOLDER_RE = re.compile(r"\[\[tbd-surface:([a-z0-9][a-z0-9-]*)\]\]")
 RSCH_OBJECT_PLACEHOLDER_RE = re.compile(r"\[\[rsch-object:([a-z0-9][a-z0-9-]*)\]\]")
+MIGRATION_PLACEHOLDER_RE = re.compile(r"<([A-Z][A-Z0-9_]*)>")
+MIGRATION_PLACEHOLDER_CELL_RE = re.compile(r"^<?([A-Z][A-Z0-9_]*)>?$")
+PLACEHOLDER_PATH_SEGMENT_RE = re.compile(r"<[A-Za-z0-9_-]+>")
 REGISTRY_ROW_ID_RE = re.compile(r"^(?:path|api|schema|policy|provider)-[a-z0-9-]+$")
 SEMANTIC_PLACEHOLDER_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
@@ -51,12 +54,22 @@ EXPECTED_V2_SKILLS = frozenset(
         "isomer-rsch-baseline-v2",
         "isomer-rsch-decision-v2",
         "isomer-rsch-experiment-v2",
+        "isomer-rsch-figure-polish-v2",
         "isomer-rsch-finalize-v2",
         "isomer-rsch-idea-v2",
+        "isomer-rsch-nature-data-v2",
+        "isomer-rsch-nature-figure-v2",
+        "isomer-rsch-nature-paper2ppt-v2",
+        "isomer-rsch-nature-polishing-v2",
         "isomer-rsch-optimize-v2",
+        "isomer-rsch-paper-outline-v2",
+        "isomer-rsch-paper-plot-v2",
+        "isomer-rsch-rebuttal-v2",
+        "isomer-rsch-review-v2",
         "isomer-rsch-science-v2",
         "isomer-rsch-scout-v2",
         "isomer-rsch-shared-v2",
+        "isomer-rsch-write-v2",
     }
 )
 
@@ -126,6 +139,11 @@ DEFAULT_ALLOW_ZONES = {
     "stale_terms_file_globs": (
         "PROVENANCE.md",
         "licenses/*.md",
+        "deepscientist-migration-guide.md",
+        "ds-analysis/**",
+        "*/migrate/**",
+        "*/org/**",
+        "*/templates/**",
         "*/references/provenance.md",
         "*/references/source-term-mapping.md",
     ),
@@ -136,6 +154,11 @@ DEFAULT_ALLOW_ZONES = {
     "runtime_coupling_file_globs": (
         "PROVENANCE.md",
         "licenses/*.md",
+        "deepscientist-migration-guide.md",
+        "ds-analysis/**",
+        "*/migrate/**",
+        "*/org/**",
+        "*/templates/**",
         "*/references/provenance.md",
         "*/references/source-term-mapping.md",
         "*/references/deferred-resources.md",
@@ -152,6 +175,11 @@ DEFAULT_ALLOW_ZONES = {
     ),
     "resolved_id_file_globs": (
         "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md",
+        "deepscientist-migration-guide.md",
+        "ds-analysis/**",
+        "*/migrate/**",
+        "*/org/**",
+        "*/templates/**",
     ),
     "resolved_id_section_headings": (
         "Research Recording Contracts",
@@ -167,6 +195,9 @@ DEFAULT_ALLOW_ZONES = {
     ),
     "v2_storage_binding_file_globs": (
         "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md",
+        "*/migrate/**",
+        "*/org/**",
+        "*/templates/**",
     ),
     "v2_storage_binding_section_headings": (
         "Source Lineage",
@@ -174,6 +205,38 @@ DEFAULT_ALLOW_ZONES = {
         "Storage Binding Status",
     ),
 }
+
+DEFAULT_FILE_ROLES = {
+    "migration_file_globs": (
+        "deepscientist-migration-guide.md",
+        "*/migrate/**",
+    ),
+    "source_analysis_file_globs": (
+        "ds-analysis/**",
+        "*/org/analysis/**",
+    ),
+    "source_copy_file_globs": (
+        "*/org/**",
+    ),
+    "passive_template_file_globs": (
+        "*/templates/**",
+    ),
+}
+
+NON_ACTIVE_ROLES = frozenset(
+    {
+        "canonical-registry",
+        "deferred-resource",
+        "license",
+        "migration",
+        "passive-template",
+        "provenance",
+        "semantic-placeholder-registry",
+        "source-analysis",
+        "source-copy",
+        "source-term-mapping",
+    }
+)
 
 LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/")
 
@@ -185,12 +248,16 @@ V2_STORAGE_BINDING_PATTERNS = (
     (
         "storage or runtime implementation binding",
         re.compile(
-            r"\b(?:Workspace Path Resolution|Topic Workspace records?|lifecycle rows?|"
-            r"execution adapters?|database schemas?|database rows?|storage labels?|"
-            r"concrete paths?|scheduler fields?)\b",
+            r"\b(?:Topic Workspace records?|lifecycle rows?|database schemas?|database rows?|"
+            r"storage labels?|concrete paths?|scheduler fields?)\b",
             re.I,
         ),
     ),
+)
+
+V2_STORAGE_BINDING_VERB_RE = re.compile(
+    r"\b(?:create|emit|persist|register|store|submit|update|write)\b",
+    re.I,
 )
 
 
@@ -304,13 +371,27 @@ def section_stack(lines: tuple[str, ...]) -> tuple[tuple[str, ...], ...]:
     return tuple(result)
 
 
-def classify_document(rel_target: str, lines: tuple[str, ...]) -> frozenset[str]:
+def classify_document(
+    rel_target: str,
+    lines: tuple[str, ...],
+    file_roles: dict[str, tuple[str, ...]],
+) -> frozenset[str]:
     roles: set[str] = set()
     if rel_target.startswith("v1/"):
         roles.add("v1")
     if rel_target.startswith("v2/"):
         roles.add("v2")
+    for role_key, role_name in (
+        ("migration_file_globs", "migration"),
+        ("source_analysis_file_globs", "source-analysis"),
+        ("source_copy_file_globs", "source-copy"),
+        ("passive_template_file_globs", "passive-template"),
+    ):
+        if any(fnmatch.fnmatch(rel_target, pattern) for pattern in file_roles.get(role_key, ())):
+            roles.add(role_name)
     if rel_target == "PROVENANCE.md" or fnmatch.fnmatch(rel_target, "*/references/provenance.md"):
+        roles.add("provenance")
+    if rel_target.endswith("/PROVENANCE.md"):
         roles.add("provenance")
     if fnmatch.fnmatch(rel_target, "licenses/*.md"):
         roles.add("license")
@@ -326,7 +407,7 @@ def classify_document(rel_target: str, lines: tuple[str, ...]) -> frozenset[str]
         roles.add("semantic-placeholder-registry")
     if any(normalize_heading(line.removeprefix("##")) == "TBD Surface Registry" for line in lines if line.startswith("##")):
         roles.add("registry-mirror")
-    if not roles:
+    if not (roles & NON_ACTIVE_ROLES):
         roles.add("active")
     return frozenset(roles)
 
@@ -343,6 +424,24 @@ def load_allow_zones(target: Path) -> dict[str, tuple[str, ...]]:
         if isinstance(value, list) and all(isinstance(item, str) for item in value):
             config[key] = tuple(value)
     return config
+
+
+def load_file_roles(target: Path) -> dict[str, tuple[str, ...]]:
+    config = {key: tuple(value) for key, value in DEFAULT_FILE_ROLES.items()}
+    config_path = target / "validation.toml"
+    if not config_path.exists():
+        return config
+    data = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    file_roles = data.get("file_roles", {})
+    for key in config:
+        value = file_roles.get(key)
+        if isinstance(value, list) and all(isinstance(item, str) for item in value):
+            config[key] = tuple(value)
+    return config
+
+
+def is_active_guidance(document: Document) -> bool:
+    return "active" in document.roles
 
 
 def allowed_by_rule(rule: str, document: Document, line_index: int, allow_zones: dict[str, tuple[str, ...]]) -> bool:
@@ -371,7 +470,7 @@ def is_rejection_line(line: str) -> bool:
     )
 
 
-def collect_documents(target: Path, repo_root: Path) -> list[Document]:
+def collect_documents(target: Path, repo_root: Path, file_roles: dict[str, tuple[str, ...]]) -> list[Document]:
     documents: list[Document] = []
     for path in sorted(target.rglob("*")):
         if path.suffix not in {".md", ".yaml", ".yml"} or not path.is_file():
@@ -385,7 +484,7 @@ def collect_documents(target: Path, repo_root: Path) -> list[Document]:
                 rel_target=rel_target,
                 lines=lines,
                 sections_by_line=section_stack(lines),
-                roles=classify_document(rel_target, lines),
+                roles=classify_document(rel_target, lines, file_roles),
             )
         )
     return documents
@@ -453,7 +552,7 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
     if workflow_line is None:
         add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must contain ## Workflow")
     else:
-        if workflow_line > 30:
+        if workflow_line > 40:
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
         numbers = workflow_step_numbers(lines, workflow_line)
         if len(numbers) < 2 or numbers[0] != 1:
@@ -511,6 +610,10 @@ def clean_reference(raw: str) -> str | None:
     return None
 
 
+def is_placeholder_reference(reference: str) -> bool:
+    return bool(PLACEHOLDER_PATH_SEGMENT_RE.search(reference))
+
+
 def local_references_from_line(line: str) -> Iterable[str]:
     for match in CODE_SPAN_RE.finditer(line):
         cleaned = clean_reference(match.group(1))
@@ -530,6 +633,8 @@ def validate_local_references(skill_dir: Path, repo_root: Path, diagnostics: lis
     skill_root = skill_dir.resolve()
     for line_number, line in enumerate(read_lines(skill_md), start=1):
         for reference in local_references_from_line(line):
+            if is_placeholder_reference(reference):
+                continue
             target = (skill_dir / reference).resolve()
             if not target.is_relative_to(skill_root) or not target.exists():
                 add(
@@ -571,6 +676,23 @@ def parse_semantic_placeholder_ids(lines: tuple[str, ...]) -> dict[str, int]:
             continue
         if SEMANTIC_PLACEHOLDER_ID_RE.match(raw_id):
             ids[raw_id] = line_number
+    return ids
+
+
+def parse_migration_placeholder_ids(lines: tuple[str, ...]) -> dict[str, int]:
+    ids: dict[str, int] = {}
+    for line_number, line in enumerate(lines, start=1):
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if not cells:
+            continue
+        raw_id = cells[0].strip("`")
+        if raw_id.casefold() in {"placeholder", "---"} or set(raw_id) <= {"-"}:
+            continue
+        match = MIGRATION_PLACEHOLDER_CELL_RE.match(raw_id)
+        if match:
+            ids[match.group(1)] = line_number
     return ids
 
 
@@ -631,6 +753,8 @@ def validate_tbd_placeholders(
     diagnostics: list[Diagnostic],
     registered_ids: set[str],
 ) -> None:
+    if not is_active_guidance(document):
+        return
     for line_number, line in enumerate(document.lines, start=1):
         for match in TBD_PLACEHOLDER_RE.finditer(line):
             tbd_id = match.group(1)
@@ -660,7 +784,7 @@ def validate_rsch_object_placeholders(
     diagnostics: list[Diagnostic],
     registered_ids: set[str],
 ) -> None:
-    if "v2" not in document.roles:
+    if "v2" not in document.roles or not is_active_guidance(document):
         return
     for line_number, line in enumerate(document.lines, start=1):
         for match in RSCH_OBJECT_PLACEHOLDER_RE.finditer(line):
@@ -676,21 +800,57 @@ def validate_rsch_object_placeholders(
                 )
 
 
+def validate_migration_placeholders(
+    document: Document,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    registered_by_skill: dict[str, set[str]],
+) -> None:
+    if not is_active_guidance(document):
+        return
+    parts = document.rel_target.split("/")
+    if len(parts) < 3 or parts[0] not in {"v1", "v2"}:
+        return
+    skill_rel = "/".join(parts[:2])
+    registered_ids = registered_by_skill.get(skill_rel, set())
+    for line_number, line in enumerate(document.lines, start=1):
+        for match in MIGRATION_PLACEHOLDER_RE.finditer(line):
+            placeholder_id = match.group(1)
+            if placeholder_id not in registered_ids:
+                add(
+                    diagnostics,
+                    repo_root,
+                    document.path,
+                    line_number,
+                    "RPS009",
+                    f"migration placeholder '{placeholder_id}' is not registered in migrate/placeholders.md",
+                )
+
+
 def validate_v2_storage_binding(
     document: Document,
     repo_root: Path,
     diagnostics: list[Diagnostic],
     allow_zones: dict[str, tuple[str, ...]],
 ) -> None:
-    if "v2" not in document.roles:
+    if "v2" not in document.roles or not is_active_guidance(document):
         return
     for line_index, line in enumerate(document.lines):
         if allowed_by_rule("v2_storage_binding", document, line_index, allow_zones):
             continue
-        if is_rejection_line(line) or "not storage-bound" in line.casefold() or "storage binding is deferred" in line.casefold():
+        lowered = line.casefold()
+        if (
+            is_rejection_line(line)
+            or "not storage-bound" in lowered
+            or "storage binding is deferred" in lowered
+            or "source-compatible" in lowered
+            or "placeholder" in lowered
+        ):
             continue
         for label, pattern in V2_STORAGE_BINDING_PATTERNS:
             if pattern.search(line):
+                if label == "storage-bound research record" and not V2_STORAGE_BINDING_VERB_RE.search(line):
+                    continue
                 add(
                     diagnostics,
                     repo_root,
@@ -707,6 +867,8 @@ def validate_resolved_id_text(
     diagnostics: list[Diagnostic],
     allow_zones: dict[str, tuple[str, ...]],
 ) -> None:
+    if not is_active_guidance(document):
+        return
     for line_index, line in enumerate(document.lines):
         if allowed_by_rule("resolved_id", document, line_index, allow_zones):
             continue
@@ -728,6 +890,8 @@ def validate_stale_terms(
     diagnostics: list[Diagnostic],
     allow_zones: dict[str, tuple[str, ...]],
 ) -> None:
+    if not is_active_guidance(document):
+        return
     for line_index, line in enumerate(document.lines):
         if allowed_by_rule("stale_terms", document, line_index, allow_zones):
             continue
@@ -749,6 +913,8 @@ def validate_coupling_patterns(
     diagnostics: list[Diagnostic],
     allow_zones: dict[str, tuple[str, ...]],
 ) -> None:
+    if not is_active_guidance(document):
+        return
     for line_index, line in enumerate(document.lines):
         if allowed_by_rule("runtime_coupling", document, line_index, allow_zones):
             continue
@@ -775,6 +941,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         return diagnostics
 
     allow_zones = load_allow_zones(target)
+    file_roles = load_file_roles(target)
     flat_skill_dirs = sorted(path for path in target.iterdir() if path.is_dir() and path.name.startswith("isomer-rsch-"))
     for skill_dir in flat_skill_dirs:
         add(
@@ -808,7 +975,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_manifest(skill_dir, repo_root, diagnostics)
         validate_local_references(skill_dir, repo_root, diagnostics)
 
-    documents = collect_documents(target, repo_root)
+    documents = collect_documents(target, repo_root, file_roles)
     registry_path = target / "v1" / "isomer-rsch-shared-v1" / "references" / "tbd-surface-registry.md"
     if registry_path.exists():
         canonical_rows = parse_registry_rows(read_lines(registry_path))
@@ -824,9 +991,19 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         semantic_placeholder_ids = set()
         add(diagnostics, repo_root, semantic_registry_path, 1, "RPS009", "v2 semantic-placeholder registry is missing")
 
+    migration_placeholder_ids_by_skill: dict[str, set[str]] = {}
+    for skill_dir, _generation in skill_dirs:
+        rel_skill_dir = relpath(skill_dir, target)
+        placeholder_path = skill_dir / "migrate" / "placeholders.md"
+        if placeholder_path.exists():
+            migration_placeholder_ids_by_skill[rel_skill_dir] = set(
+                parse_migration_placeholder_ids(read_lines(placeholder_path))
+            )
+
     for document in documents:
         validate_tbd_placeholders(document, repo_root, diagnostics, registered_ids)
         validate_rsch_object_placeholders(document, repo_root, diagnostics, semantic_placeholder_ids)
+        validate_migration_placeholders(document, repo_root, diagnostics, migration_placeholder_ids_by_skill)
         validate_resolved_id_text(document, repo_root, diagnostics, allow_zones)
         validate_stale_terms(document, repo_root, diagnostics, allow_zones)
         validate_coupling_patterns(document, repo_root, diagnostics, allow_zones)

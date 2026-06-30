@@ -1,0 +1,93 @@
+---
+name: isomer-rsch-nature-data-v2
+description: Use when a manuscript needs a Nature-ready Data Availability statement, repository plan, dataset citation plan, FAIR metadata check, or author-facing data-sharing audit.
+---
+
+# Isomer Research Nature Data V2
+
+## Overview
+
+Nature Data maps every result-supporting dataset to an availability route before drafting prose. It inventories generated, processed, reused, restricted, source-data, software-output, model, table, image, and statistical-analysis materials, chooses repository and identifier strategy, drafts explicit statement text, and records missing fields without inventing accession details.
+
+Placeholder definitions live in `migrate/placeholders.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
+
+## When to Use
+
+Use this skill when:
+
+- A Nature-family or high-impact journal manuscript needs a data availability statement.
+- Datasets, source data, figure data, derived files, models, or statistical-analysis files need repository and identifier planning.
+- The author needs FAIR metadata, license, provenance, embargo, or citation checks.
+- Chinese author-facing data-availability notes need bilingual alignment.
+
+Do not use this skill when:
+
+- The task is general manuscript rewriting or statistics.
+- No dataset inventory can be produced from available evidence.
+- The requested statement would require inventing repositories, DOIs, access committees, licenses, approvals, or embargoes.
+- The target journal policy has changed and has not been checked when the exact policy matters.
+
+## Workflow
+
+When this skill is invoked, execute the following steps in order.
+
+1. **Identify journal and article type**. Produce `<DATA_AVAILABILITY_CONTEXT>` with target journal, article type, policy source, and author constraints. Read `references/policy-principles.md` and `references/source-basis.md` when exact rules matter.
+2. **Inventory datasets**. Produce `<DATASET_INVENTORY>` covering every dataset or source file supporting results, including raw, processed, figure source, secondary, restricted, model, table, image, and statistical-analysis data.
+3. **Classify access routes**. Produce `<DATA_ACCESS_CLASSIFICATION>` for each dataset: public repository, controlled access, paper/supplement, reused public source, third-party restricted, request-based, or not applicable.
+4. **Choose repository strategy**. Produce `<REPOSITORY_STRATEGY>` before drafting text, including repository candidates, identifiers, versioning, embargo, license, accession, and dataset citation needs. Read `references/repository-and-identifiers.md`.
+5. **Draft data availability text**. Produce `<DATA_AVAILABILITY_STATEMENT>` using `references/statement-patterns.md`, mapping every dataset class to a concrete location, restriction, or action.
+6. **Add dataset citation actions**. Produce `<DATASET_CITATION_ACTIONS>` for public and reused datasets, including formal dataset citations and missing identifier work.
+7. **Run FAIR metadata audit**. Produce `<FAIR_METADATA_AUDIT>` using `references/fair-metadata-checklist.md`, covering metadata, README, file organization, license, provenance, and reuse clarity.
+8. **Return ready text or blocker**. If fields are confirmed, return ready-to-paste text and actions. Otherwise produce `<DATA_AVAILABILITY_BLOCKER>` with author confirmations, missing identifiers, risk flags, and Chinese author-facing questions when useful via `references/chinese-author-alignment.md`.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
+
+## Cross-Step Preferences
+
+- Prefer durable evidence and explicit placeholders over concrete source paths until storage binding is finalized.
+- Prefer the smallest route that preserves downstream trust, and route missing evidence to the skill that can actually produce it.
+- Prefer source-compatible `isomer-cli ext deepsci call ... --input-json '{...}'` only when the source harness behavior matters; otherwise use native Isomer topic context, provider, and execution-adapter surfaces without binding storage prematurely.
+- Prefer paper-facing language that names claims, evidence, limits, and next routes without exposing operator, agent, prompt, worktree, or local runtime details.
+
+## Cross-Step Constraints
+
+- Every paper-facing claim must stay inside the current evidence boundary.
+- Every placeholder used by runtime instructions must be listed in `migrate/placeholders.md`.
+- Concrete source paths, source harness outputs, and source storage assumptions must not become final Isomer storage contracts.
+- Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
+- Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
+
+## Cross-Step Quality Checks
+
+- Evidence check: all claims, figures, tables, responses, or statements are traceable to source evidence or explicitly marked as missing.
+- Route check: the next skill route is named when this skill cannot responsibly finish the task itself.
+- Placeholder check: all handoff objects in the workflow appear in `migrate/placeholders.md`.
+- Source-preservation check: source logic remains auditable in `org/src/` and `org/analysis/analysis-of-nature-data.md`.
+- Paper-hygiene check: manuscript-facing output excludes route-control wording, local runtime details, and unsupported certainty.
+
+## Reference Routing
+
+Read these pages as needed:
+
+- `references/policy-principles.md` for Nature/Springer Nature data-sharing principles and edge cases.
+- `references/source-basis.md` for which official source supports which rule.
+- `references/repository-and-identifiers.md` for repository, accession, DOI, embargo, version, and citation guidance.
+- `references/statement-patterns.md` for ready-to-adapt statement patterns.
+- `references/fair-metadata-checklist.md` for FAIR metadata, README, license, provenance, and DataCite checks.
+- `references/chinese-author-alignment.md` for Chinese terminology and author-facing intake questions.
+
+## Exit Criteria
+
+This skill can end when all applicable checks are true:
+
+- Every result-supporting dataset has an availability route or explicit blocker.
+- `<DATA_AVAILABILITY_STATEMENT>` does not invent repositories, identifiers, licenses, or approvals.
+- `<FAIR_METADATA_AUDIT>` and `<DATASET_CITATION_ACTIONS>` record remaining actions.
+
+## Common Mistakes
+
+- Using available on request as a default instead of a justified exception.
+- Inventing accession numbers, DOIs, embargoes, licenses, or ethics approvals.
+- Writing polished prose before repository strategy is clear.
+- Ignoring target journal instructions when exact policy matters.
+- Letting data availability become a general manuscript rewrite task.

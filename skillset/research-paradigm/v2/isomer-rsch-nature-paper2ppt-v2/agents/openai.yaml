@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-nature-paper2ppt-v2"
+  short_description: "Build a Chinese PPTX from a scientific paper."
+  default_prompt: "Use $isomer-rsch-nature-paper2ppt-v2 to build a complete Chinese PPTX presentation from a scientific paper, preprint, PDF, article text, abstract, figure legends, or reading notes."

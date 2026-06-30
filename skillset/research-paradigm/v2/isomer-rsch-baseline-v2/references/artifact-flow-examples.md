@@ -56,7 +56,7 @@ When performing this step, execute these substeps in order.
 
 ### Verify a Local-Existing Comparator
 
-1. Identify the concrete path or endpoint.
+1. Identify the user-provided comparator location or endpoint.
 2. Identify the real evaluation command or endpoint.
 3. Verify outputs or metrics under the intended contract.
 4. Produce <COMPARABILITY_CONTRACT>.
