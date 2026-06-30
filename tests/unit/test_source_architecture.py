@@ -39,6 +39,7 @@ MODULE_SIZE_EXEMPTIONS = {
 
 ALLOWED_PACKAGE_NAMES = {
     "cli",
+    "deepsci_ext",
     "houmao",
     "runtime",
     "__pycache__",
@@ -54,6 +55,7 @@ class SourceArchitectureTests(unittest.TestCase):
         self.assertTrue((SRC_ROOT / "cli" / "output.py").is_file())
 
         command_modules = [
+            "deepsci_ext.py",
             "project.py",
             "doctor.py",
             "runtime.py",
@@ -71,6 +73,7 @@ class SourceArchitectureTests(unittest.TestCase):
 
     def test_canonical_package_imports_work(self) -> None:
         modules = [
+            "isomer_labs.deepsci_ext",
             "isomer_labs.houmao.adapter",
             "isomer_labs.houmao.manifests",
             "isomer_labs.runtime.models",

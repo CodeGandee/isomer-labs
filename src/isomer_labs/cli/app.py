@@ -160,6 +160,8 @@ Command surface:
   project team-profiles specialize
   project team-profiles materialize
   project team-profiles validate
+  ext deepsci call
+  ext deepsci tools
   schemas list
 """
 
@@ -2527,6 +2529,7 @@ def _output_format(options: CliOptions) -> str:
 
 
 def _register_commands() -> None:
+    from isomer_labs.cli.commands.deepsci_ext import register_deepsci_ext_commands
     from isomer_labs.cli.commands.doctor import register_doctor_commands
     from isomer_labs.cli.commands.handoffs import register_handoff_commands
     from isomer_labs.cli.commands.project import register_project_commands, register_schema_commands
@@ -2542,6 +2545,7 @@ def _register_commands() -> None:
     register_handoff_commands(project_group)
     register_team_template_commands(project_group)
     register_team_profile_commands(project_group)
+    register_deepsci_ext_commands(app)
     register_schema_commands(app)
 
 

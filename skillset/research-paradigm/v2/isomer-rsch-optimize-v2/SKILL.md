@@ -7,48 +7,26 @@ description: Use when an algorithm-first research task needs candidate shaping, 
 
 ## Overview
 
-Optimize manages candidate search when the research problem is mostly algorithmic. It keeps the frontier small enough to act on and promotes one route at a time.
+Optimize manages algorithm-first candidate search and promotes one route for testing. Placeholder: detailed source-derived process will be remigrated later.
 
 ## When to Use
 
-Use this skill when [[rsch-object:selected-hypothesis]] needs algorithm-first refinement, multiple candidate variants compete, or a result points to fusion or debug search. Do not use it to turn every tiny attempt into a new research branch.
+Placeholder: define precise triggers, non-triggers, and handoff conditions after the source skill is migrated from scratch.
 
 ## Workflow
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Refresh the frontier**. State the active candidate set, current best line, rejected lines, and the reason search is still useful.
-2. **Choose the optimization mode**. Pick explore, exploit, fuse, debug, simplify, or stop based on the bottleneck.
-3. **Shape candidate briefs**. Keep each candidate tied to a mechanism, expected effect, risk, and falsification cue.
-4. **Promote one route**. Select the next hypothesis or experimental attempt that should receive attention.
-5. **Produce [[rsch-object:optimization-frontier]] and, when ready, [[rsch-object:selected-hypothesis]]**.
+1. **Confirm the purpose**. Placeholder: restate the candidate-search question this skill should address.
+2. **Apply the source-derived method**. Placeholder: insert the remigrated optimize procedure here later.
+3. **Return the semantic handoff**. Placeholder: summarize the intended research meaning without binding it to an implementation layer.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the v2 shared loop, the placeholder registry, and the user's request, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the skill purpose, placeholder constraints, and user request, then execute the plan.
 
-## Semantic Inputs
+## Common Mistakes
 
-- [[rsch-object:research-frame]]
-- Optional [[rsch-object:comparator-contract]]
-- Optional [[rsch-object:selected-hypothesis]]
-- Optional [[rsch-object:experiment-result]]
-- Optional [[rsch-object:analysis-finding]]
-
-## Semantic Outputs
-
-- [[rsch-object:optimization-frontier]]
-- Optional [[rsch-object:selected-hypothesis]]
-- Optional [[rsch-object:route-decision]] when search should stop, reset, or move to experiment work.
+Placeholder: add mistake patterns after the source skill is migrated from scratch.
 
 ## Reference Routing
 
-- Read `isomer-rsch-shared-v2` for the core loop and placeholder rule.
-
-## Guardrails
-
-- Do not promote every plausible variant.
-- Do not optimize without a comparator or metric unless the goal is explicitly exploratory.
-- Do not let search continue after the next decisive experiment is clear.
-
-## Source Lineage
-
-Distilled from the DeepScientist optimize process analysis: manage candidate briefs, frontier ranking, line promotion, fusion, debug, and stop decisions.
+Placeholder: add source-derived references after migration. For now, use this `SKILL.md` as a mock entrypoint only.

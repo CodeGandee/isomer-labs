@@ -1,0 +1,208 @@
+{
+  "artifact_tools": [
+    "record",
+    "science",
+    "checkpoint",
+    "git",
+    "prepare_branch",
+    "activate_branch",
+    "submit_idea",
+    "list_research_branches",
+    "resolve_runtime_refs",
+    "get_paper_contract",
+    "get_paper_contract_health",
+    "validate_manuscript_coverage",
+    "validate_academic_outline",
+    "validate_manuscript_language",
+    "compile_outline_to_writing_plan",
+    "get_quest_state",
+    "get_global_status",
+    "get_research_map_status",
+    "get_benchstore_catalog",
+    "get_start_setup_context",
+    "get_method_scoreboard",
+    "get_optimization_frontier",
+    "read_quest_documents",
+    "get_conversation_context",
+    "get_analysis_campaign",
+    "record_main_experiment",
+    "create_analysis_campaign",
+    "submit_paper_outline",
+    "list_paper_outlines",
+    "submit_paper_bundle",
+    "record_analysis_slice",
+    "publish_baseline",
+    "attach_baseline",
+    "confirm_baseline",
+    "overwrite_baseline",
+    "waive_baseline",
+    "arxiv",
+    "refresh_summary",
+    "render_git_graph",
+    "interact",
+    "complete_quest"
+  ],
+  "bash_exec_tools": [
+    "bash_exec"
+  ],
+  "memory_tools": [
+    "write",
+    "read",
+    "search",
+    "list_recent",
+    "promote_to_global"
+  ],
+  "required_response_keys": {
+    "artifact.get_quest_state": [
+      "ok",
+      "detail",
+      "quest_state"
+    ],
+    "artifact.read_quest_documents": [
+      "ok",
+      "mode",
+      "count",
+      "items"
+    ],
+    "bash_exec.bash_exec.detach": [
+      "id",
+      "bash_id",
+      "log_path",
+      "status",
+      "kind",
+      "comment",
+      "label",
+      "command",
+      "workdir",
+      "cwd",
+      "started_at",
+      "finished_at",
+      "exit_code",
+      "stop_reason",
+      "last_progress",
+      "last_progress_at",
+      "last_output_at",
+      "last_output_seq"
+    ],
+    "bash_exec.bash_exec.history": [
+      "ok",
+      "count",
+      "lines",
+      "items"
+    ],
+    "bash_exec.bash_exec.list": [
+      "ok",
+      "count",
+      "items",
+      "status_counts",
+      "summary",
+      "history_lines"
+    ],
+    "bash_exec.bash_exec.read": [
+      "id",
+      "bash_id",
+      "log_path",
+      "status",
+      "command",
+      "log",
+      "log_lines",
+      "log_line_count",
+      "log_windowed"
+    ],
+    "memory.list_recent": [
+      "ok",
+      "count",
+      "items"
+    ],
+    "memory.search": [
+      "ok",
+      "count",
+      "items"
+    ],
+    "memory.write": [
+      "id",
+      "title",
+      "type",
+      "scope",
+      "path",
+      "metadata",
+      "body",
+      "updated_at",
+      "excerpt"
+    ]
+  },
+  "tool_argument_keys": {
+    "artifact.get_quest_state": [
+      "detail",
+      "comment"
+    ],
+    "artifact.read_quest_documents": [
+      "names",
+      "mode",
+      "max_lines",
+      "comment"
+    ],
+    "bash_exec.bash_exec": [
+      "command",
+      "mode",
+      "id",
+      "reason",
+      "workdir",
+      "env",
+      "export_log",
+      "export_log_to",
+      "timeout_seconds",
+      "wait_timeout_seconds",
+      "status",
+      "kind",
+      "agent_ids",
+      "agent_instance_ids",
+      "chat_session_id",
+      "limit",
+      "start",
+      "tail",
+      "tail_limit",
+      "before_seq",
+      "after_seq",
+      "order",
+      "include_log",
+      "wait",
+      "force",
+      "comment"
+    ],
+    "memory.list_recent": [
+      "scope",
+      "limit",
+      "kind",
+      "comment"
+    ],
+    "memory.promote_to_global": [
+      "card_id",
+      "path",
+      "comment"
+    ],
+    "memory.read": [
+      "card_id",
+      "path",
+      "scope",
+      "comment"
+    ],
+    "memory.search": [
+      "query",
+      "scope",
+      "limit",
+      "kind",
+      "comment"
+    ],
+    "memory.write": [
+      "kind",
+      "title",
+      "body",
+      "markdown",
+      "scope",
+      "tags",
+      "metadata",
+      "comment"
+    ]
+  }
+}

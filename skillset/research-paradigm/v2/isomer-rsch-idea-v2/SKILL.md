@@ -7,46 +7,26 @@ description: Use when a framed research task needs candidate hypotheses, limitat
 
 ## Overview
 
-Idea turns the current research situation into one falsifiable route. It favors small, testable hypotheses over decorative variations.
+Idea turns a framed research problem into one falsifiable hypothesis or route. Placeholder: detailed source-derived process will be remigrated later.
 
 ## When to Use
 
-Use this skill when [[rsch-object:research-frame]] and usually [[rsch-object:comparator-contract]] are available, but the next hypothesis or route is not selected. Do not use it to brainstorm before the objective and evaluation boundary are clear.
+Placeholder: define precise triggers, non-triggers, and handoff conditions after the source skill is migrated from scratch.
 
 ## Workflow
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Restate the objective contract**. Name the target improvement, constraint, or explanation the idea must serve.
-2. **Read the current situation**. Identify the comparator, failure pattern, limitation, gap, or contradiction that justifies ideation.
-3. **Generate bounded candidates**. Produce a small set of meaningfully different routes and reject cosmetic changes.
-4. **Select one hypothesis**. Choose the route with the best balance of novelty, feasibility, expected effect, and falsifiability.
-5. **Produce [[rsch-object:selected-hypothesis]]**. Include the expected effect, risk, falsification condition, and next experiment.
+1. **Confirm the purpose**. Placeholder: restate the hypothesis or route this skill should shape.
+2. **Apply the source-derived method**. Placeholder: insert the remigrated idea procedure here later.
+3. **Return the semantic handoff**. Placeholder: summarize the intended research meaning without binding it to an implementation layer.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the v2 shared loop, the placeholder registry, and the user's request, then execute the plan.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the skill purpose, placeholder constraints, and user request, then execute the plan.
 
-## Semantic Inputs
+## Common Mistakes
 
-- [[rsch-object:research-frame]]
-- Optional [[rsch-object:comparator-contract]]
-- Optional [[rsch-object:analysis-finding]]
-- Optional [[rsch-object:optimization-frontier]]
-
-## Semantic Outputs
-
-- [[rsch-object:selected-hypothesis]]
-- Optional [[rsch-object:route-decision]] when the best route is to stop, reframe, or repair the comparator first.
+Placeholder: add mistake patterns after the source skill is migrated from scratch.
 
 ## Reference Routing
 
-- Read `isomer-rsch-shared-v2` for the core loop and placeholder rule.
-
-## Guardrails
-
-- Do not brainstorm before naming the bottleneck.
-- Do not select ideas that cannot be falsified by a near-term experiment.
-- Do not hide rejected candidates if their rejection explains the chosen route.
-
-## Source Lineage
-
-Distilled from the DeepScientist idea process analysis: recover the objective, read the current board, identify limitation patterns, create bounded candidates, and select one route.
+Placeholder: add source-derived references after migration. For now, use this `SKILL.md` as a mock entrypoint only.
