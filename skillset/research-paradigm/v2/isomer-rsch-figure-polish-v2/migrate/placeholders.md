@@ -7,4 +7,4 @@
 | <FIGURE_STYLE_CONTRACT> | style contract | Academic visual styling, dimensions, typography, color, legend, and hierarchy requirements. | isomer-rsch-figure-polish-v2 | figure-polish | report |
 | <FIGURE_RENDER_REVIEW> | render-inspect-revise checklist | Inspection note for the actual rendered image and revisions needed. | isomer-rsch-figure-polish-v2 | figure-polish | report |
 | <FINAL_FIGURE_EXPORT> | final figure exports | Final durable figure files and previews. | isomer-rsch-figure-polish-v2 | write, review, finalize | figure |
-| <FIGURE_PROVENANCE_RECORD> | link to claim, source, artifact, script | Record connecting the figure to its source data, script, claim, and downstream consumer. | isomer-rsch-figure-polish-v2 | write, review, finalize | evidence |
+| <FIGURE_PROVENANCE_RECORD> | link to claim, source, artifact, script | Record connecting the figure to its source data, script, claim, and downstream consumer. | isomer-rsch-figure-polish-v2 | write, review, finalize | provenance |

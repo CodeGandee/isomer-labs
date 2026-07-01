@@ -8,5 +8,5 @@
 | <PAPER_VIEW> | paper_view | Reader-facing thesis, claim spine, method abstraction, evaluation plan, and analysis plan. | isomer-rsch-paper-outline-v2 | write, review | handoff |
 | <EVIDENCE_VIEW> | evidence_view | Runs, paths, metrics, settings, source data, and reproducibility material kept outside the story spine. | isomer-rsch-paper-outline-v2 | write, review, finalize | evidence |
 | <OUTLINE_VALIDATION_REPORT> | artifact.validate_academic_outline(detail="full") | Validation record for outline maturity and evidence support. | isomer-rsch-paper-outline-v2 | paper-outline, write, decision | report |
-| <SECTION_WRITING_PLAN> | artifact.compile_outline_to_writing_plan(detail="full") | Section jobs derived from a valid outline. | isomer-rsch-paper-outline-v2 | write | handoff |
+| <SECTION_WRITING_PLAN> | artifact.compile_outline_to_writing_plan(detail="full") | Section jobs derived from a valid outline. | isomer-rsch-paper-outline-v2 | write | research task |
 | <PAPER_OUTLINE_ROUTE_DECISION> | repair, compile writing plan, or route back | Decision when outline repair exposes missing evidence or route ambiguity. | isomer-rsch-paper-outline-v2 | analysis, decision, write | decision |
