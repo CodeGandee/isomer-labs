@@ -41,6 +41,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Preferences
 
+Read these preferences as defaults that apply across the whole skill. They should shape route, evidence, and handoff choices unless a step-specific page gives a stronger source-backed reason.
+
 - Prefer one primary optimize submode per pass (if new evidence changes the submode, otherwise record the route shift before continuing).
 - Prefer mechanism-level distinctness over candidate volume (if a slate collapses into one familiar family, otherwise widen once before ranking).
 - Prefer one atomic improvement per loop pass (if changes are tightly coupled or fusion is explicit, otherwise split them).
@@ -48,6 +50,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Prefer stopping or route-changing when the frontier is saturated (if remaining moves are redundant or low value, otherwise record a non-retry rule).
 
 ## Cross-Step Constraints
+
+Read these constraints as global validity boundaries for the skill. A result that violates a `must` or `must not` item is not ready to hand off until the violation is fixed, waived, or recorded as a blocker.
 
 - Candidate briefs, durable optimization lines, implementation attempts, measured results, failures, and stopped routes must remain distinct.
 - Candidate briefs must not be promoted automatically.
@@ -58,6 +62,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - A pass must end with one durable next action, stop condition, blocker, or route decision.
 
 ## Cross-Step Quality Gates
+
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
 
 ### Metrics
 

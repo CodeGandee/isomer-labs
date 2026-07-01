@@ -14,12 +14,16 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer durable evidence over vibe, momentum, or optimism.
 - Prefer routes that attack a real bottleneck, stay compatible with the existing architecture when possible, produce interpretable evidence, and remain defensible later.
 - Prefer careful judgment from durable evidence over launching tie-break runs by reflex.
 - Prefer branch or stop when publishability, evidence sufficiency, or reader value has collapsed beyond reasonable narrowing.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <ROUTE_QUESTION> must name the real choice before evidence is judged.
 - <DECISION_EVIDENCE_PACKET> must name support, contradiction, cost, risk, reversibility, and user-preference sensitivity when relevant.
@@ -28,6 +32,8 @@ When performing this step, execute these substeps in order.
 - A blocked state must not be hidden behind a vague continue decision.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

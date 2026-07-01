@@ -13,11 +13,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer the real target over the easiest measurable surrogate (if the scoreboard metric is ambiguous, otherwise use the accepted metric contract).
 - Prefer explicit false-progress signals over broad warnings (if the current evidence names known misleading metrics, otherwise name the likely misleading proxies).
 - Prefer keeping the accepted dataset, metric, and evaluation contract fixed (if scope changed, otherwise record the scope change before ideation).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <OBJECTIVE_CONTRACT> must name the primary objective, scoreboard metric, trusted proxies, false-progress signals, hard constraints, contribution frame, and exit rule.
 - The idea pass must not widen the frontier while the true target and invalid routes are unclear.
@@ -25,6 +29,8 @@ When performing this step, execute these substeps in order.
 - Implementation convenience must not outrank target alignment.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

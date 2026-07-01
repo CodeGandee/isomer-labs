@@ -18,11 +18,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer limitation-first thinking over method shopping (if the failure is vague, otherwise sharpen the limitation before proposing mechanisms).
 - Prefer competing hypotheses over a single favorite explanation (if one hypothesis is already decisive, otherwise record why alternatives were ruled out).
 - Prefer fast falsification and reader value over large speculative mechanisms (if the route is expensive, otherwise justify the evidence-per-run).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <MECHANISM_FRAMING> must separate symptom, mechanism hypothesis, and consequence.
 - A serious route must name its lever bucket before candidate generation.
@@ -30,6 +34,8 @@ When performing this step, execute these substeps in order.
 - Cross-domain mechanisms must be translated causally rather than metaphorically.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

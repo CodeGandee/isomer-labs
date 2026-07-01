@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer the smallest smoke path that proves route viability (if the solver has no smoke path, otherwise record version and executable/import evidence).
 - Prefer recording failed and blocked checks when they determine the route.
 - Prefer environment facts that affect scientific validity over incidental setup noise.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <SCIENCE_PACKAGE_CHECK> must precede computed work when availability matters.
 - Package cards must not be treated as install, import, executable, license, or backend proof.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Failed or blocked checks must include diagnostic evidence when they affect the route.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

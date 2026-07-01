@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer route review over another local tweak after repeated non-improvement (if new evidence changes the cause, otherwise proceed deliberately).
 - Prefer Tier2, Tier3, orthogonal family, fusion, or stop when same-family Tier1 attempts stall.
 - Prefer explicit non-retry rule over vague "try something else" language.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <PLATEAU_RESPONSE> must not hide plateau under one more tiny edit.
 - Same unchanged candidate must not be rerun.
@@ -26,6 +30,8 @@ When performing this step, execute these substeps in order.
 - Stop must be allowed when remaining routes are low value.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

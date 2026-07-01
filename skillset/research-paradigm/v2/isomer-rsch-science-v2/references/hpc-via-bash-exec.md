@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer saved job ids and log paths over chat-only status.
 - Prefer low-frequency monitoring for multi-hour jobs (if the job is short, otherwise still preserve logs).
 - Prefer blocked package or environment records when modules, licenses, credentials, data, or allocations are missing.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Queued or running jobs must not be reported as completed evidence.
 - Scheduler facts, resource limits, module state, logs, and outputs must be recorded when they affect interpretation.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Completion must be checked from logs, scheduler status, and output files, not from submission success alone.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

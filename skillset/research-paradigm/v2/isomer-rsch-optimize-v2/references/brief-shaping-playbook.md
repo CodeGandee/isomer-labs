@@ -15,6 +15,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer one clarification question at a time (if durable evidence already answers it, otherwise inspect before asking).
 - Prefer mechanism-level distinctness over many renamed variants (if two variants differ only by parameter detail, otherwise keep the sharper one).
 - Prefer a slate small enough to rank seriously (if the slate is too close to call, otherwise widen once or narrow further).
@@ -22,12 +24,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - Candidate shaping must not jump from intuition directly to branch creation.
 - <CANDIDATE_BRIEF> must answer what bottleneck is targeted, why the current line is limited, how the mechanism addresses it, and what must remain unchanged.
 - Same-mechanism variants must not be counted as a differentiated slate.
 - More than one lead brief must not be promoted without an explicit promotion cap reason.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

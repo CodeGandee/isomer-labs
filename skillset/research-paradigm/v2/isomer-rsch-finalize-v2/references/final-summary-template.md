@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer highest-impact findings and decisions over a full chronological replay.
 - Prefer explicit supported/partial/unsupported distinctions over a smooth narrative.
 - Prefer a recommendation with reopen conditions over a vague wrap-up.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <FINAL_SUMMARY> must not overclaim unresolved work.
 - <FINAL_SUMMARY> must include limitations, failures, recommendation, and reopen conditions.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Package or file inventory needed for resumption must not be omitted when outputs exist.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

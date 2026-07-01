@@ -17,12 +17,16 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer routing to experiment when the slice would become a new primary measured line (if it is a bounded follow-up, otherwise keep it in analysis).
 - Prefer explicit non-comparable labels over discarding useful stress-test evidence (if the slice is still decision-relevant, otherwise drop it).
 - Prefer one decisive slice over a padded campaign (if the next route is clear, otherwise stop).
 - Prefer blocker records over repeated failed retries (if failure repeats without new information, otherwise redesign).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Analysis must not disguise a new main experiment.
 - Non-comparable evidence must not be mixed into direct comparison tables as if it were apples-to-apples support.
@@ -31,6 +35,8 @@ When performing this step, execute these substeps in order.
 - A paper-ready label must not be used without a write-back target.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

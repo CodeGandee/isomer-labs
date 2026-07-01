@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer a focused audit of evaluation-critical paths (if a full audit adds no comparator trust, otherwise skip it).
 - Prefer source-native commands and configs when they preserve paper comparability (if they differ, otherwise record deviations).
 - Prefer documenting risks that affect trust, not every file in the repository (if a module is irrelevant to comparison, otherwise omit it).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <CODEBASE_AUDIT_RECORD> must not become a broad codebase tour detached from comparator trust.
 - Source audit should not precede attach, import, or verify-local-existing when those routes are concrete and trustworthy.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Later stages should be able to understand how the baseline runs and is evaluated without reopening the source from scratch.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

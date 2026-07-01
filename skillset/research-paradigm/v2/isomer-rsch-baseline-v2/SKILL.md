@@ -42,6 +42,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Preferences
 
+Read these preferences as defaults that apply across the whole skill. They should shape route, evidence, and handoff choices unless a step-specific page gives a stronger source-backed reason.
+
 - Prefer attach, import, or verify-local-existing before full reproduction (if those routes can establish trust, otherwise escalate to reproduce or repair).
 - Prefer the route with highest trust per unit time and compute (if a heavier route does not remove a named comparison risk, otherwise stop at the lighter accepted comparator).
 - Prefer direct verification over smoke work when command path, environment viability, evaluator wiring, and output schema are already concrete (if uncertainty remains, otherwise use a bounded smoke check).
@@ -49,6 +51,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Prefer asking the user only for real scope, cost, permission, data-access, or scientific-preference decisions (if local evidence can answer the question, otherwise inspect it first).
 
 ## Cross-Step Constraints
+
+Read these constraints as global validity boundaries for the skill. A result that violates a `must` or `must not` item is not ready to hand off until the violation is fixed, waived, or recorded as a blocker.
 
 - Attach, import, or publish alone must not open the downstream baseline gate.
 - Verification must precede acceptance.
@@ -59,6 +63,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Baseline identifiers and variant names should stay stable enough for later stages to cite without guesswork.
 
 ## Cross-Step Quality Gates
+
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
 
 ### Metrics
 

@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer one record per evidence-bearing slice (if a read-only audit answers the question, otherwise record it as an audit rather than a launched slice).
 - Prefer semantic slice ids that can survive later write-back (if paper metadata exists, otherwise align ids with <ANALYSIS_WRITEBACK_MAP>).
 - Prefer concrete metrics, observables, tables, examples, or rubrics over broad prose (if qualitative evidence is used, otherwise record the inspection basis).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <ANALYSIS_SLICE_RECORD> must include question, intervention or inspection target, fixed conditions, metric or observable, evidence source, claim update, comparability verdict, and next action.
 - A slice record must not claim direct support when comparison was non-comparable.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Multiple changed factors must not be interpreted as isolating one factor.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

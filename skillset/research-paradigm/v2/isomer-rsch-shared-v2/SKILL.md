@@ -48,6 +48,8 @@ Read `references/semantic-placeholders.md` whenever a v2 skill needs shared hand
 
 ## Cross-Step Quality Gates
 
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
+
 ### Metrics
 
 - Semantic-registry reuse rate: fraction of coordination questions resolved with an existing shared semantic object instead of a new invented term; higher is better.

@@ -13,11 +13,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer compact structured fields over long prose (if a caveat affects comparison, otherwise include both field and explanation).
 - Prefer explicit baseline variant ids when variants matter (if one comparator is primary, otherwise mark default variant).
 - Prefer source and environment facts only when they affect trust or comparability (if incidental, otherwise omit).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <BASELINE_PAYLOAD_RECORD> must not omit the trusted comparison surface because one headline metric exists.
 - Accepted baseline payloads must not represent blocked, waived, or incomplete verification states.
@@ -25,6 +29,8 @@ When performing this step, execute these substeps in order.
 - Accepted payloads must include baseline id, kind, task, dataset, primary metric, metrics summary, environment, source, and summary when available.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

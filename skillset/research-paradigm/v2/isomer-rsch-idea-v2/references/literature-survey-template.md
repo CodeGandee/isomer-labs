@@ -17,11 +17,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer reusing recent durable survey coverage before external search (if the coverage is stale or incomplete, otherwise search only the missing buckets).
 - Prefer standard citation entries for papers that shape the selected idea (if citation style is not specified, otherwise use one consistent style).
 - Prefer paper buckets over a flat bibliography (if the paper only checks novelty, otherwise mark it separately from direct support).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <LITERATURE_SURVEY_REPORT> must separate reused findings, newly retrieved papers, unresolved gaps, and watchlist items.
 - <LITERATURE_SURVEY_REPORT> must include a search ledger for meaningful search passes.
@@ -29,6 +33,8 @@ When performing this step, execute these substeps in order.
 - The selected route must not claim novelty from recall alone.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

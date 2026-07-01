@@ -43,12 +43,16 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Preferences
 
+Read these preferences as defaults that apply across the whole skill. They should shape route, evidence, and handoff choices unless a step-specific page gives a stronger source-backed reason.
+
 - Prefer the lightest route that preserves trust and downstream utility (if one slice answers the question, otherwise use a larger campaign only when lineage, traceability, or multiple slices matter).
 - Prefer claim-critical contradiction checks before broad supporting checks (if the claim boundary is already clear, otherwise stop widening).
 - Prefer code-based and repeatable analysis when it is faithful to the evidence question (if qualitative inspection is more appropriate, otherwise record rubric, sample, prompt or inspection basis, and caveats).
 - Prefer writing-facing metadata only when the slice supports a paper-like deliverable (if no selected outline exists yet, otherwise run pre-outline analysis and route to writing or decision afterward).
 
 ## Cross-Step Constraints
+
+Read these constraints as global validity boundaries for the skill. A result that violates a `must` or `must not` item is not ready to hand off until the violation is fixed, waived, or recorded as a blocker.
 
 - Every meaningful slice must map to a parent claim, parent result, paper gap, reviewer item, rebuttal item, or route decision.
 - Campaign design must be conditioned on the current execution envelope, not an idealized future machine.
@@ -59,6 +63,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - The campaign must not keep expanding after the next route is already clear.
 
 ## Cross-Step Quality Gates
+
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
 
 ### Metrics
 

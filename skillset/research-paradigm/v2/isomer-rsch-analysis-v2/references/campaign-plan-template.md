@@ -16,11 +16,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer a compact <ANALYSIS_CAMPAIGN_PLAN> for analysis-lite (if a multi-slice or writing-facing path is active, otherwise use the full template).
 - Prefer frontier rows that make the decision value visible (if a slice has no decision value, otherwise drop or defer it).
 - Prefer recording non-comparable slices before execution (if the difference is the point, otherwise state the label).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <ANALYSIS_CAMPAIGN_PLAN> must not list planned slices as evidence.
 - <ANALYSIS_CAMPAIGN_PLAN> must record resource blockers instead of assuming ideal resources.
@@ -28,6 +32,8 @@ When performing this step, execute these substeps in order.
 - If slice feasibility, ordering, comparators, or interpretation changes materially, the plan should be revised before more compute is spent.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

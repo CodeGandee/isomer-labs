@@ -15,6 +15,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer concrete bottlenecks over generic performance goals (if the bottleneck is unclear, otherwise return to brief shaping).
 - Prefer explicit mechanism family and change layer (if classification is hard, otherwise explain uncertainty).
 - Prefer expected gain tied to measurable evidence (if gain is qualitative, otherwise state observable).
@@ -22,12 +24,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - <METHOD_BRIEF> must not omit keep-unchanged conditions.
 - Change layer and mechanism family must not be left implicit.
 - Implementation surface must distinguish local, moderate, and broad scope.
 - Promotion status must include why.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

@@ -13,11 +13,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer a checklist only when it clarifies acceptance (if the route is already obvious and recorded, otherwise keep it compact).
 - Prefer active uncertainty as a concrete question (if there is no uncertainty, otherwise proceed to closeout).
 - Prefer blocker classes that guide next action (if blocked, otherwise do not leave vague failure language).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <BASELINE_GATE_CHECKLIST> must not replace verification evidence.
 - Acceptance cannot be checked complete without <COMPARABILITY_CONTRACT> and <BASELINE_VERIFICATION_EVIDENCE>.
@@ -25,6 +29,8 @@ When performing this step, execute these substeps in order.
 - Closeout must name the next route explicitly.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer one recommended comparator route over a broad option dump (if no candidate is usable, otherwise record the blocker).
 - Prefer attach or import when provenance, metric fit, and implementation availability are already trustworthy (if not, otherwise route to reproduce or reject).
 - Prefer a small decision-facing shortlist over a survey of every adjacent method (if a candidate cannot change baseline or idea routing, otherwise keep it out).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - `<BASELINE_SHORTLIST>` must start from `<EVALUATION_CONTRACT>`.
 - Each serious comparator candidate must have provenance, metric and split match, implementation availability, expected cost, downstream value, main risk, and route.
@@ -26,6 +30,8 @@ When performing this step, execute these substeps in order.
 - A rejected comparator should state the reason when the rejection prevents future rework.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

@@ -16,11 +16,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer an outline-style note when the Research Topic needs a serious plan artifact (if the task is tiny, otherwise keep the outline light).
 - Prefer direct code and metric grounding over abstract method prose.
 - Prefer exactly five directions only when the search space is broad enough (if the space is tiny, otherwise state why fewer directions are enough).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <RESEARCH_OUTLINE_NOTE> must not replace literature survey or selected-idea handoff records.
 - Direction entries must include both conceptual thrust and repo-grounded translation.
@@ -28,6 +32,8 @@ When performing this step, execute these substeps in order.
 - The outline should not force a paper structure when the route is only an algorithm-first optimization brief.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

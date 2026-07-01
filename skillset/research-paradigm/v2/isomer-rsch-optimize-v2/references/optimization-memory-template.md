@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer retrieval-friendly lessons over generic summaries (if nothing reusable was learned, otherwise record why the pass was still necessary).
 - Prefer local same-line lessons before broad search during seed, loop, and debug (if same-line evidence exists, otherwise inspect broader prior lessons).
 - Prefer one useful <OPTIMIZATION_MEMORY_CARD> over several vague notes.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <OPTIMIZATION_MEMORY_CARD> must not say only that optimization was attempted.
 - Reuse hint must include when the lesson should not be reused.
@@ -26,6 +30,8 @@ When performing this step, execute these substeps in order.
 - Memory should not replace frontier records or candidate board updates.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

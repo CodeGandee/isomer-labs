@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer route-back through decision when closure legitimacy is uncertain (if all gates pass, otherwise proceed to claim ledger).
 - Prefer explicit package inventory over general statements that outputs exist.
 - Prefer checking latest durable state over chat memory (if restart or long pause makes state unclear, otherwise recover state first).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Finalize must not proceed while major evidence, writing, review, proofing, submission, outline, or package gates remain unresolved.
 - A paper-like deliverable must not be finalized when coverage, academic outline, language, or package state is only draft-checkpoint or review-package ready.
@@ -26,6 +30,8 @@ When performing this step, execute these substeps in order.
 - Failed closure gates must become <FINALIZE_BLOCKER_RECORD> or a route-back decision.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

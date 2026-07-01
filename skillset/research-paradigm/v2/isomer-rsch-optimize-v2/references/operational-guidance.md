@@ -19,6 +19,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer one bottom-layer optimize move in progress at a time (if multiple live attempts exist, otherwise isolate and justify them).
 - Prefer frontier refresh before candidate generation (if frontier is stale or missing, otherwise recover it first).
 - Prefer fusion before debug only when the frontier explicitly says fusion (if a concrete fixable failure dominates, otherwise debug).
@@ -27,6 +29,8 @@ When performing this step, execute these substeps in order.
 - Prefer quick evidence over over-arguing when validation is cheap (if validation is slow, otherwise narrow the candidate pool).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <OPTIMIZATION_FRONTIER> must be checked before new candidates, promotion, fusion, debug, or stop decisions.
 - One pass must not bounce among submodes without recording a route shift.
@@ -38,6 +42,8 @@ When performing this step, execute these substeps in order.
 - A completed optimize pass must leave one durable next action or stop condition.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

@@ -15,12 +15,16 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer comparison-ready when the next scientific step only needs fair comparison (if paper claims or registry publication require more, otherwise expand).
 - Prefer caveated acceptance over false exactness (if caveats do not change comparison meaning, otherwise block or repair).
 - Prefer clarifying concrete local evidence before reproducing from scratch (if path and metrics stay ambiguous, otherwise reproduce).
 - Prefer stopping repeated failures over another unchanged retry (if no new evidence exists, otherwise change route).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Comparison-ready must still include a durable core metric contract.
 - Trusted-with-caveats must not hide dataset, split, metric, evaluation, or source-identity changes.
@@ -29,6 +33,8 @@ When performing this step, execute these substeps in order.
 - Repeated failure with no new evidence must not continue silently.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

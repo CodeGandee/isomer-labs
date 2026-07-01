@@ -14,12 +14,16 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer a read-only audit when existing evidence answers the question (if no new slice is launched, otherwise record it as an audit).
 - Prefer one-slice lineage when reviewability or write-back matters (if lineage adds no trust, otherwise keep the route lightweight).
 - Prefer multi-slice campaigns only when several slices together answer one evidence question (if one slice is decisive, otherwise stop).
 - Prefer recording failed or infeasible slices as evidence about feasibility (if replacement is needed, otherwise keep the blocker visible).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Planned slices must not count as evidence before they run or are audited.
 - A real launched supplementary run must not be reported only in chat.
@@ -28,6 +32,8 @@ When performing this step, execute these substeps in order.
 - A read-only audit must not pretend it created new slice evidence.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

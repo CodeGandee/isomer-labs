@@ -19,6 +19,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer non-interactive, auditable commands with durable logs (if a command must be interactive, otherwise wrap it through a reproducible adapter path).
 - Prefer one clean experiment at a time (if parallel execution is justified, otherwise isolate each run and record why).
 - Prefer a small discriminative diagnostic over another full retry when the cause is unclear (if the path is already understood, otherwise continue the planned run).
@@ -26,6 +28,8 @@ When performing this step, execute these substeps in order.
 - Prefer updating <EXPERIMENT_PLAN> and <EXPERIMENT_CHECKLIST> as evidence arrives (if the run is lightweight, otherwise keep a compact rolling log).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Shell, CLI, Python, package, Git, scheduler, and environment work should go through an Execution Adapter Command Request or the approved source-compatible extension path until native bindings are finalized.
 - The comparator reference must remain read-only.
@@ -36,6 +40,8 @@ When performing this step, execute these substeps in order.
 - Invalid, wedged, or superseded long-running work should be stopped, recorded, fixed, and relaunched cleanly instead of being hidden.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

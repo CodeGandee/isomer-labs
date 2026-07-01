@@ -155,6 +155,8 @@ Use these block shapes when extracting source support material into target runti
 
 Before omitting a support section, look hard for clues in the source entrypoint, linked and unlinked source references, templates, examples, non-negotiable rules, common mistakes, validation rules, artifact rules, memory rules, and failure-handling sections. Do not give up after a rough scan just because the source does not use the exact words `guidance`, `preferences`, `constraints`, or `quality gates`.
 
+Every emitted `Guidance`, `Preferences`, `Constraints`, and `Quality Gates` section must begin with a short interpretive paragraph of one to three sentences under the section heading. Use that paragraph to tell the future agent how to read the bullets or substeps, what kind of authority they have, and when to revise, route, or block instead of treating the list as decorative text.
+
 ### Guidance
 
 `Guidance` expands one main workflow step into a smaller step-by-step workflow. It should read like a local `## Workflow`, with ordered substeps that an agent can execute.
@@ -164,7 +166,7 @@ Use this shape:
 ```markdown
 ## Guidance
 
-When performing this step, execute these substeps in order.
+Read this section as the local execution procedure for this workflow step. Follow the substeps in order unless a substep explicitly routes to a blocker or another skill; each substep should leave the named intermediate output.
 
 1. **<Substep name>**. <Concrete action and expected intermediate output.>
 2. **<Substep name>**. <Concrete action and expected intermediate output.>
@@ -180,6 +182,8 @@ Use this shape:
 ```markdown
 ## Preferences
 
+Read these preferences as route-shaping defaults, not hard requirements. Apply the preferred path when its condition holds, and use the fallback or record a reason when the condition does not hold.
+
 - Prefer <preferred approach> (if <condition>, otherwise <fallback>).
 - Prefer <preferred evidence source or reasoning style> (if <condition>, otherwise <fallback>).
 ```
@@ -192,6 +196,8 @@ Use this shape:
 
 ```markdown
 ## Constraints
+
+Read these constraints as the boundaries that make the step valid. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <Subject> must <required behavior>.
 - <Subject> must not <forbidden behavior>.
@@ -212,6 +218,8 @@ Use this shape:
 ```markdown
 ## Quality Gates
 
+Read these gates after producing the step output and before handing off or claiming completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or route change rather than polished prose.
+
 ### Metrics
 
 - <Metric name>: <definition>; <direction> is better.
@@ -231,6 +239,48 @@ Or, when no meaningful check exists:
 None
 ```
 
+Use this example as the interpretive-paragraph pattern, not as fixed migration content:
+
+```markdown
+## Guidance
+
+Read this section as the route-selection procedure for the baseline step. Follow the substeps in order so the final route is based on trust evidence rather than whichever comparator is easiest to run.
+
+1. **Name the acceptance target**. Choose comparison-ready, paper-repro-ready, registry-publishable, waived, or blocked.
+2. **List comparator evidence**. Record the available package, local path, service, source repository, metric contract, outputs, and blockers.
+3. **Choose the lightest trustworthy route**. Select attach, import, verify-local-existing, reproduce, repair, publish, waive, or block with the reason.
+
+## Preferences
+
+Read these preferences as defaults for choosing among valid baseline routes. Prefer the lighter path only when it preserves downstream trust; otherwise escalate and record why the lighter route failed.
+
+- Prefer attach when a trustworthy reusable comparator already exists (if outputs and metric contract can be inspected, otherwise import or verify).
+- Prefer reproduce only when lighter routes leave the comparator incomparable (if a source audit is needed, otherwise start with the audit checklist).
+
+## Constraints
+
+Read these constraints as the acceptance boundary for the baseline step. A result that violates a `must` item cannot open the downstream gate until the violation is fixed, waived, or recorded as a blocker.
+
+- The comparator route record must choose one dominant route and acceptance target.
+- A heavier route must name the unresolved comparison risk it removes.
+- Waiver must not be used merely because reproduction is inconvenient.
+
+## Quality Gates
+
+Read these gates before accepting the baseline route or handing off to the next skill. Metrics indicate whether the route is becoming more trustworthy and cheaper to resume; checks decide whether the gate can actually close.
+
+### Metrics
+
+- Contract field coverage: fraction of comparator identity, task, dataset, split, evaluation path, required metric keys, metric directions, source identity, known deviations, and caveats recorded; higher is better.
+- Downstream guesswork count: number of comparator, metric, provenance, or caveat questions later stages would still need to infer; lower is better.
+
+### Checks
+
+- Target gate: acceptance target and current trust state are explicit.
+- Evidence gate: trusted outputs or metrics trace to concrete evidence.
+- Closeout gate: acceptance, waiver, blocker, or route change is durable.
+```
+
 ## Validation
 
 Before finishing, validate both structure and semantic preservation.
@@ -240,7 +290,7 @@ Before finishing, validate both structure and semantic preservation.
 3. Confirm every source file except `SKILL.md` or `skill.md` and `agents/openai.yaml` was copied under `<target-skill-dir>/` with paths preserved.
 4. Confirm the rewritten `SKILL.md` and rewritten workflow subpages match the source process analysis, not merely the source wording.
 5. Confirm every main workflow step references the support section or support page that carries its extracted preferences, constraints, guidance, quality gates, stop conditions, and output requirements.
-6. Confirm extracted step support uses the standard `Guidance`, `Preferences`, `Constraints`, and `Quality Gates` shapes when those support types are present. If `Quality Gates` exists, confirm it contains both `Metrics` and `Checks`, and that any subsection without meaningful source material says `None` Confirm omitted support types were omitted because the source lacked fitting material after a careful search.
+6. Confirm extracted step support uses the standard `Guidance`, `Preferences`, `Constraints`, and `Quality Gates` shapes when those support types are present. Confirm each present support section starts with a one-to-three-sentence interpretive paragraph before bullets or substeps. If `Quality Gates` exists, confirm it contains both `Metrics` and `Checks`, and that any subsection without meaningful source material says `None`. Confirm omitted support types were omitted because the source lacked fitting material after a careful search.
 7. Confirm the migration plan records the mapping from source support sections and source reference pages to target workflow steps or global target support sections.
 8. Confirm substitutions in the migration plan are reflected in rewritten pages.
 9. Confirm every source artifact mention outside `<target-skill-dir>/org/` has been replaced by a placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.

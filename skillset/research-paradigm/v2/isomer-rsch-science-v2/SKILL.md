@@ -41,12 +41,16 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Preferences
 
+Read these preferences as defaults that apply across the whole skill. They should shape route, evidence, and handoff choices unless a step-specific page gives a stronger source-backed reason.
+
 - Prefer package cards for routing context, not availability claims (if a solver is needed, otherwise run an environment check first).
 - Prefer typed evidence records over prose-only scientific summaries (if evidence is missing, otherwise record a blocker or hypothesis).
 - Prefer conservative claim types (if the computation did not run in the current workspace, otherwise do not call it computed).
 - Prefer low-frequency durable monitoring for HPC and long runs (if a job is queued or running, otherwise do not infer completion).
 
 ## Cross-Step Constraints
+
+Read these constraints as global validity boundaries for the skill. A result that violates a `must` or `must not` item is not ready to hand off until the violation is fixed, waived, or recorded as a blocker.
 
 - Package metadata must not override task-specific evidence.
 - Runtime availability must be checked before computed work when package, executable, module, container, license, or backend availability matters.
@@ -57,6 +61,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Blocked package checks, missing data, missing licenses, missing credentials, failed modules, and unavailable resources must be recorded when they affect the route.
 
 ## Cross-Step Quality Gates
+
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
 
 ### Metrics
 

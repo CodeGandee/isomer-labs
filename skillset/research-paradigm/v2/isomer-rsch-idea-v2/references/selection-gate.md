@@ -16,6 +16,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer `novel` routes when they remain feasible (if novelty is limited, otherwise require concrete incremental value).
 - Prefer the best evidence-per-run route over the most exciting-sounding route.
 - Prefer rejecting decorative tweaks unless the survey and current evidence show they are the highest-value surviving route.
@@ -23,12 +25,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - A candidate with quality-gate total below seven out of ten must not be promoted without refinement.
 - <SELECTED_HYPOTHESIS> must include a falsifiable claim tied to metric, expected direction, and boundary condition.
 - <SELECTED_IDEA_DRAFT> must include citation markers and a standard-format reference list for papers that shaped the route.
 - The selection gate must not promote a route with vague mechanism, vague falsification path, missing survey, or incomplete handoff contract.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

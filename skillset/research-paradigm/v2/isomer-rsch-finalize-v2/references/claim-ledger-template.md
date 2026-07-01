@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer honest partial or unsupported labels over optimistic claim smoothing.
 - Prefer preserving weakened claims with downgrade history over silently deleting them.
 - Prefer evidence pointers over broad claim prose when later agents may need to inspect support.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <CLAIM_LEDGER> must classify every important claim as supported, partially supported, unsupported, or deferred.
 - Each claim must include evidence, caveats, safe-to-surface status, and recommendation.
@@ -26,6 +30,8 @@ When performing this step, execute these substeps in order.
 - Unsupported claims must not appear in final summary as supported findings.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

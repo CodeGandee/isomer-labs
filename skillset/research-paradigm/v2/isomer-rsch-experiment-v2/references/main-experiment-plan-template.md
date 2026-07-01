@@ -16,6 +16,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer a one-screen plan for lightweight runs (if it preserves route, comparability, command path, outputs, and fallback, otherwise use the full template).
 - Prefer explicit code-translation rows before edits (if the code path is obvious, otherwise state why no table is needed).
 - Prefer safe efficiency levers that preserve comparator equivalence (if they affect comparability, otherwise record them as experiment changes).
@@ -23,12 +25,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - <EXPERIMENT_PLAN> must lead with the selected hypothesis and comparator boundary.
 - <EXPERIMENT_PLAN> must include required metrics, stop condition, abandonment condition, and fallback options for substantial runs.
 - <EXPERIMENT_PLAN> should not hide user constraints, resource limits, or known comparability risks.
 - Runtime strategy must not broaden resources, datasets, or metric definitions silently.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

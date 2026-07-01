@@ -17,6 +17,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer quick exit when the frame is already explicit and the next route is obvious (if not, otherwise continue with the minimum unknowns).
 - Prefer local durable context and Workspace Runtime records before new discovery (if local evidence is insufficient, otherwise search only the missing neighborhood).
 - Prefer conclusion-first scout outputs over large documentation packages (if external discovery changed the route, otherwise write the smallest durable report that prevents rework).
@@ -24,6 +26,8 @@ When performing this step, execute these substeps in order.
 - Prefer stopping on clarity over searching to exhaustion.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Scout must not become endless exploration.
 - Scout must not ask routine technical questions before checking local durable evidence.
@@ -34,6 +38,8 @@ When performing this step, execute these substeps in order.
 - Scout must record a blocked state when required source evidence, evaluation choice, or comparator viability remains unresolved.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

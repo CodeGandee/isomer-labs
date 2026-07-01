@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer updating the same durable draft when a candidate survives revisions (if the candidate changes meaningfully, otherwise preserve lineage rather than scattering drafts).
 - Prefer a compact challenge memo over long persuasive prose (if the route is still unclear, otherwise clarify before promotion).
 - Prefer outside-family or assumption-reversal alternatives in the draft (if no plausible outside-family route exists, otherwise record why).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - A candidate must not become <SELECTED_HYPOTHESIS> without <PRE_IDEA_DRAFT> or equivalent challenge memo.
 - <PRE_IDEA_DRAFT> must surface hidden assumptions, local-optimum risk, strongest rejection case, and cheapest falsification path.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - The draft must compare the likely winner against the incumbent and at least one outside-family or assumption-reversal alternative when available.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

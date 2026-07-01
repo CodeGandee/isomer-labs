@@ -341,6 +341,18 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_skillset(target, root)
         self.assertIn("RPS010", codes(diagnostics), messages(diagnostics))
 
+    def test_rejects_v2_support_section_without_intro(self) -> None:
+        root, target = self.make_valid_skillset()
+        self.write_skill(target / "v2", "isomer-rsch-valid-v2", v2=True)
+        skill_md = target / "v2" / "isomer-rsch-valid-v2" / "SKILL.md"
+        skill_md.write_text(
+            skill_md.read_text(encoding="utf-8")
+            + "\n## Preferences\n\n- Prefer fixture behavior (if the fixture applies, otherwise explain why).\n",
+            encoding="utf-8",
+        )
+        diagnostics = validator.validate_skillset(target, root)
+        self.assertIn("RPS011", codes(diagnostics), messages(diagnostics))
+
     def test_rejects_flat_root_skill_folder(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(target, "isomer-rsch-flat", reference="references/isomer-research-contract.md", v2=False)

@@ -14,6 +14,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer reuse when registry or package evidence is trustworthy (if output and contract are traceable, otherwise verify).
 - Prefer import when the user already provides a prepared package or snapshot (if provenance is durable, otherwise block or verify).
 - Prefer local-existing verification when it is cheaper and more faithful than clean reproduction (if split, metric, and command are clear, otherwise audit).
@@ -22,6 +24,8 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - Attach, import, or publish alone must not open the gate.
 - <COMPARABILITY_CONTRACT> must precede acceptance.
 - Attached or imported packages require durable provenance.
@@ -29,6 +33,8 @@ When performing this step, execute these substeps in order.
 - Waiver must record what was tried, what remains missing, and why continuation is justified.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

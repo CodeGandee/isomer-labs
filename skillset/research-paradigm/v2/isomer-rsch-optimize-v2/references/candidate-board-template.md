@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer a small board with actionable status over a long stale list (if old candidates matter, otherwise archive or hold them explicitly).
 - Prefer clear promote/archive recommendations over empty placeholders (if uncertain, otherwise name the evidence needed).
 - Prefer one current active candidate pool over several half-started directions (if several are live, otherwise state isolation and reason).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <CANDIDATE_BOARD> must not merge candidate briefs with implementation attempts.
 - Candidate status must not imply promotion before ranking or route decision exists.
@@ -26,6 +30,8 @@ When performing this step, execute these substeps in order.
 - Board updates should not create new candidates without frontier recovery.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

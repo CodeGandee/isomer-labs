@@ -44,12 +44,16 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Preferences
 
+Read these preferences as defaults that apply across the whole skill. They should shape route, evidence, and handoff choices unless a step-specific page gives a stronger source-backed reason.
+
 - Prefer durable evidence and explicit placeholders over concrete source paths until storage binding is finalized.
 - Prefer the smallest route that preserves downstream trust, and route missing evidence to the skill that can actually produce it.
 - Prefer source-compatible `isomer-cli ext deepsci call ... --input-json '{...}'` only when the source harness behavior matters; otherwise use native Isomer topic context, provider, and execution-adapter surfaces without binding storage prematurely.
 - Prefer paper-facing language that names claims, evidence, limits, and next routes without exposing operator, agent, prompt, worktree, or local runtime details.
 
 ## Cross-Step Constraints
+
+Read these constraints as global validity boundaries for the skill. A result that violates a `must` or `must not` item is not ready to hand off until the violation is fixed, waived, or recorded as a blocker.
 
 - Every paper-facing claim must stay inside the current evidence boundary.
 - Every placeholder used by runtime instructions must be listed in `migrate/placeholders.md`.
@@ -58,6 +62,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
 ## Cross-Step Quality Gates
+
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
 
 ### Metrics
 

@@ -15,12 +15,16 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer exact evidence pointers over narrative reconstruction (if an output is missing, otherwise record the gap).
 - Prefer concise structured fields on top of longer narrative notes (if the result is complex, otherwise include both).
 - Prefer preserving failed attempts and anomalies (if they affect interpretation, otherwise keep them as supporting evidence).
 - Prefer a milestone-style user update when a meaningful measured result is recorded (if the result is partial or blocked, otherwise name the blocker plainly).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <MAIN_RUN_RECORD> must not claim completion before durable evidence exists.
 - <EXPERIMENT_RESULT_SUMMARY> must not omit comparability, failure mode, or next action.
@@ -29,6 +33,8 @@ When performing this step, execute these substeps in order.
 - A partial or blocked run must be labeled partial or blocked rather than converted into a success story.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

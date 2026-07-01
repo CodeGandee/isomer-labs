@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer explicit response formats for ranking, debug, fusion, and code-generation tasks (if free-form answer risks drift, otherwise keep it concise).
 - Prefer a keep-unchanged clause whenever comparability matters.
 - Prefer prompt contracts that move the frontier or stop stale work (if the prompt only generates activity, otherwise revise it).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <PROMPT_CONTRACT> must not omit what changes, why it changes, how it helps, keep-unchanged conditions, and next action.
 - Plateau prompts must not permit another trivial tweak when route change is required.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Debug prompts must not turn into new-method prompts.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

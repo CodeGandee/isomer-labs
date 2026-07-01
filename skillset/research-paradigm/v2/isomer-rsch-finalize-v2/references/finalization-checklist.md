@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer checklist-backed closure over a polished but unverifiable summary.
 - Prefer package inventory when code, experiments, or writing outputs exist (if no package exists, otherwise state that explicitly).
 - Prefer concrete reopen conditions over generic future-work language.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Finalization must not call a Research Topic successful without claim statuses.
 - Finalization must not omit package inventory when outputs exist.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Finalization must not erase negative evidence or failed branches.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

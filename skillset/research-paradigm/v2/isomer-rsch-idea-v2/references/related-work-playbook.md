@@ -16,11 +16,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer broad, purpose-driven search over confirmation search (if the direct neighborhood is saturated, otherwise add adjacent-domain mechanism search).
 - Prefer strongest nearby work over weak or convenient comparisons (if the baseline paper is not the strongest neighbor, otherwise explain the stronger neighbor).
 - Prefer paper discovery before claim formation (if an existing survey is sufficient, otherwise record the reuse reason).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - The related-work pass must not rely on one query family.
 - The related-work pass must not treat recency as relevance or a title match as evidence.
@@ -28,6 +32,8 @@ When performing this step, execute these substeps in order.
 - Cross-domain imports must explain why the mechanism translates into the current codebase and metric contract.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

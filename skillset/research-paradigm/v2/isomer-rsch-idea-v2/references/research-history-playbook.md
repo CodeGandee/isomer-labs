@@ -15,17 +15,23 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer lineage views over isolated paper titles (if the field is broad, otherwise still identify the paper roles).
 - Prefer citation chaining when novelty or history is unclear (if the route is narrow and well-covered, otherwise record why chaining can be abbreviated).
 - Prefer mapping assumptions over only summarizing methods (if an assumption was never tested, otherwise mark it as a possible opportunity).
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - The history pass must not confuse recent fashion with structural importance.
 - The history pass must identify the field's mainline, strongest assumptions, and unresolved breakpoints before supporting novelty claims.
 - The history pass should not deep-read one narrow cluster before mapping the wider landscape.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

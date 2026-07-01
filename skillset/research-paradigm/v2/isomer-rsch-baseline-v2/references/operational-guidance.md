@@ -15,6 +15,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer compact durable records for fast attach, import, or local verification (if the route is complex, otherwise use the plan and checklist templates).
 - Prefer source paper and repository reading only when reproduction or repair is active (if reuse or local verification is enough, otherwise avoid broad audit).
 - Prefer bounded smoke only when command path, environment viability, evaluator wiring, or output schema is unclear (if the path is concrete, otherwise verify directly).
@@ -22,6 +24,8 @@ When performing this step, execute these substeps in order.
 - Prefer memory only when it avoids repeated work or clarifies stale route state (if the route is fast and clear, otherwise skip it).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Durable route records are required in substance, not in fixed filenames.
 - <BASELINE_PROVENANCE_RECORD> is required for attached or imported baselines.
@@ -31,6 +35,8 @@ When performing this step, execute these substeps in order.
 - Repeated unchanged checks must not continue without new evidence, code change, environment change, or route change.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

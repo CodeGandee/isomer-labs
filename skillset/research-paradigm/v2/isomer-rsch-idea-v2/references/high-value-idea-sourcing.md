@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer contradiction-first sourcing over method-first module shopping (if no contradiction is clear, otherwise stay in problem definition).
 - Prefer ideas with interpretable failure value (if a route can only produce noise on failure, otherwise downgrade it).
 - Prefer non-local or assumption-reversal alternatives when the current mainline has hidden untested assumptions (if the mainline is already decisive, otherwise record why widening is unnecessary).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - A serious candidate must name its targeted contradiction or bottleneck.
 - A serious candidate must state a dominant novelty source or research-value source.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - The idea pass must not treat the easiest continuation of the incumbent as best by default.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

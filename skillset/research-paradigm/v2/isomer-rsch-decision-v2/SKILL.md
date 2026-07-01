@@ -51,6 +51,8 @@ Read these pages as needed:
 
 ## Cross-Step Quality Gates
 
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
+
 ### Metrics
 
 - Route-blocking unknown count: number of unresolved state, evidence, preference, scope, or cost unknowns that would change the chosen canonical action; lower is better.

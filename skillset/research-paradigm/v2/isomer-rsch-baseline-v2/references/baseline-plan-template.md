@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer one-screen route records for fast paths (if the route is complex, otherwise expand the sections that reduce ambiguity).
 - Prefer explicit acceptance target and metric contract over process narration (if the route changes, otherwise revise before more work).
 - Prefer frontier fields that make the next action obvious to a later turn (if blocked, otherwise name the blocker and fallback).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <BASELINE_ROUTE_PLAN> must not turn route selection into unnecessary paperwork.
 - <BASELINE_ROUTE_PLAN> must preserve comparator identity, metric contract, evidence required, and stop condition when the route is non-trivial.
@@ -26,6 +30,8 @@ When performing this step, execute these substeps in order.
 - Material route changes should be reflected before more execution or verification work continues.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

@@ -16,6 +16,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer a compact plan when the execution route is simple (if the run is expensive, otherwise use the full plan and checklist).
 - Prefer exact workspace and resource facts over inferred branch or hardware assumptions (if the runtime exposes explicit values, otherwise record uncertainty).
 - Prefer recording durable lessons only when they prevent repeated failures or preserve reusable experiment knowledge (if the note is just a run record, otherwise keep it in <MAIN_RUN_RECORD>).
@@ -23,6 +25,8 @@ When performing this step, execute these substeps in order.
 - Prefer charts that show the decisive comparison (if many series are present, otherwise downplay non-decisive context).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Active experiment work must stay inside the active workspace or explicitly assigned run surface.
 - Comparator material must remain read-only.
@@ -32,6 +36,8 @@ When performing this step, execute these substeps in order.
 - Connector-facing visuals must not imply stronger evidence than the metrics support.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

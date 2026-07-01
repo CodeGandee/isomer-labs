@@ -15,12 +15,16 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer objective evidence over paper-table copying (if the acceptance target requires local verification, otherwise treat copied numbers as insufficient).
 - Prefer real verification over attach/import ceremony (if the package is attached or imported, otherwise inspect outputs, provenance, and metrics).
 - Prefer direct verification when the path is concrete (if command path or schema is uncertain, otherwise use a bounded smoke check).
 - Prefer recording failure class and next move over repeated unchanged retries (if new evidence or route changes exist, otherwise continue once).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <BASELINE_VERIFICATION_EVIDENCE> must trace metrics or outputs to real files, logs, service responses, source artifacts, registry records, or package records.
 - Attach, import, or publish must not count as acceptance without verification.
@@ -29,6 +33,8 @@ When performing this step, execute these substeps in order.
 - Verification must separate likely implementation mismatch, environment mismatch, data or split mismatch, stochastic variance, and unexplained divergence when those distinctions matter.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

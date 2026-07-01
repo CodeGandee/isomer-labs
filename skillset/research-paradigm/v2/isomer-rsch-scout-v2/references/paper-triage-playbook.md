@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer primary papers, official benchmark docs, and official repositories over secondary summaries (if official sources are missing, otherwise mark provenance risk).
 - Prefer the smallest useful neighborhood over broad survey expansion (if metric, split, or comparator ambiguity remains, otherwise continue only that branch).
 - Prefer disconfirming evidence as well as supportive evidence.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Scout must not retain references that do not change task framing, evaluation contract, comparator routing, or blocker status.
 - Repository triage must not ignore official linkage, evaluation path, dependency realism, maintenance signal, license, data, model weights, or benchmark access when those affect route viability.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Scout must not use discovery to justify a route that local durable evidence already contradicts.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

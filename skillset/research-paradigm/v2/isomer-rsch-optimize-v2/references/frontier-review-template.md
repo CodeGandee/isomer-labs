@@ -14,6 +14,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer explore when no line is dominant, lines are too similar, or no strong incumbent exists (if one line clearly leads, otherwise exploit).
 - Prefer exploit when one line leads on evidence and comparability (if repeated non-improvement appears, otherwise review plateau).
 - Prefer fusion when two lines have complementary strengths (if strengths are redundant, otherwise avoid fusion).
@@ -22,12 +24,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - <FRONTIER_REVIEW> must not skip stagnant branches, candidate backlog, fusion candidates, or blockers.
 - Route choice must follow evidence rather than momentum.
 - The active submode must be singular for the next pass.
 - Frontier review must name the trigger for another review.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

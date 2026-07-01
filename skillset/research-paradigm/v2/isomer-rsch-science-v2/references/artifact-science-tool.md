@@ -15,12 +15,16 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer append-only updates over replacing earlier evidence (if status changes, otherwise add an update).
 - Prefer stable logical node ids over mutable file-slot names.
 - Prefer explicit evidence paths over prose-only summaries.
 - Prefer failed or blocked records when a diagnostic changes the route.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <SCIENCE_PACKAGE_CHECK> with passed status must include environment-check evidence.
 - <SCIENCE_RUN_RECORD> with success status must include input, log, output, or evidence paths.
@@ -29,6 +33,8 @@ When performing this step, execute these substeps in order.
 - Computed claims must not exist without evidence paths or related computed/validation nodes.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

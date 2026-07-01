@@ -13,11 +13,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer the smallest canonical action that changes the route correctly (if a richer action is tempting, otherwise justify why the smaller action is insufficient).
 - Prefer continuing automatically when durable evidence makes the next action obvious (if the choice is preference-sensitive, otherwise request the user decision).
 - Prefer `reuse_baseline` or `attach_baseline` only when the concrete attachment and confirmation path is clear.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - The selected action must match the actual durable state, not the desired state.
 - `launch_analysis_campaign` must not be selected unless expected information gain justifies the cost.
@@ -25,6 +29,8 @@ When performing this step, execute these substeps in order.
 - A stop decision for low paper quality must ask the user when publication, scope, cost, or non-paper preferences materially affect the choice.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

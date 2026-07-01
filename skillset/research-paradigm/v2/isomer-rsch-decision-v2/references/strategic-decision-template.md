@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer a compact structured decision over loose prose (if the decision is minor, otherwise keep only fields that affect routing).
 - Prefer conclusion-first verdict and action before rationale.
 - Prefer evidence pointers over broad summaries when downstream work must inspect the source.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <ROUTE_DECISION_RECORD> must include verdict, action, reason, evidence basis, rejected alternatives or blocker, and next route.
 - The decision record must not repeat the same decision without new evidence.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - The record must make the next stage or next action explicit.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

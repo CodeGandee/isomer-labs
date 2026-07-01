@@ -55,6 +55,8 @@ Read these pages as needed:
 
 ## Cross-Step Constraints
 
+Read these constraints as global validity boundaries for the skill. A result that violates a `must` or `must not` item is not ready to hand off until the violation is fixed, waived, or recorded as a blocker.
+
 - The accepted dataset, metric, and evaluation contract must stay fixed unless the Research Topic scope explicitly changed.
 - The skill must not propose routes that depend on submit-time unavailable features, leakage-prone labels, or post-hoc information.
 - Serious ideation must not start from memory, taste, or implementation convenience alone; it must use durable local evidence and literature coverage or record why the existing survey is sufficient.
@@ -63,6 +65,8 @@ Read these pages as needed:
 - The skill must not exit with a selected route when the survey, novelty or value verdict, falsification path, or handoff contract is still hand-wavy.
 
 ## Cross-Step Quality Gates
+
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
 
 ### Metrics
 

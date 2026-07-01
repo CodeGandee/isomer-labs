@@ -52,6 +52,8 @@ Read these pages as needed:
 
 ## Cross-Step Quality Gates
 
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
+
 ### Metrics
 
 - Readiness-signal coverage: fraction of final topic summary, registered topic and workspace refs, topic-team validation status, Workspace Runtime readiness, topic-team profile material, Agent Workspace context, and actor identity checked before bootstrap; higher is better.

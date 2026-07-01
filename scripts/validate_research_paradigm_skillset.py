@@ -261,6 +261,21 @@ V2_STORAGE_BINDING_VERB_RE = re.compile(
     re.I,
 )
 
+V2_SUPPORT_SECTION_HEADINGS = frozenset(
+    {
+        "Guidance",
+        "Preferences",
+        "Constraints",
+        "Quality Gates",
+        "Cross-Step Guidance",
+        "Cross-Step Preferences",
+        "Cross-Step Constraints",
+        "Cross-Step Quality Gates",
+    }
+)
+SUPPORT_INTRO_DISALLOWED_PREFIXES = tuple(f"{number}. " for number in range(1, 10)) + ("- ", "##", "###")
+SENTENCE_END_RE = re.compile(r"[.!?](?:\s|$)")
+
 
 @dataclass(frozen=True, order=True)
 class Diagnostic:
@@ -862,6 +877,75 @@ def validate_v2_storage_binding(
                 )
 
 
+def validate_v2_support_section_intros(
+    document: Document,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    if "v2" not in document.roles or not is_active_guidance(document):
+        return
+    for line_index, line in enumerate(document.lines):
+        match = HEADING_RE.match(line)
+        if not match:
+            continue
+        heading = normalize_heading(match.group(2))
+        if heading not in V2_SUPPORT_SECTION_HEADINGS:
+            continue
+        content_index = line_index + 1
+        while content_index < len(document.lines) and not document.lines[content_index].strip():
+            content_index += 1
+        if content_index >= len(document.lines):
+            add(
+                diagnostics,
+                repo_root,
+                document.path,
+                line_index + 1,
+                "RPS011",
+                f"active v2 {heading} section must start with a one-to-three-sentence interpretive paragraph",
+            )
+            continue
+        first_content = document.lines[content_index].strip()
+        if first_content == "None" or first_content.startswith(SUPPORT_INTRO_DISALLOWED_PREFIXES):
+            add(
+                diagnostics,
+                repo_root,
+                document.path,
+                content_index + 1,
+                "RPS011",
+                f"active v2 {heading} section must start with a one-to-three-sentence interpretive paragraph",
+            )
+            continue
+        paragraph_lines: list[str] = []
+        paragraph_end = content_index
+        while paragraph_end < len(document.lines):
+            current = document.lines[paragraph_end].strip()
+            if not current or current == "None" or current.startswith(SUPPORT_INTRO_DISALLOWED_PREFIXES):
+                break
+            paragraph_lines.append(current)
+            paragraph_end += 1
+        sentence_count = len(SENTENCE_END_RE.findall(" ".join(paragraph_lines)))
+        if sentence_count < 1 or sentence_count > 3:
+            add(
+                diagnostics,
+                repo_root,
+                document.path,
+                content_index + 1,
+                "RPS011",
+                f"active v2 {heading} section intro must be one to three sentences",
+            )
+        if paragraph_end < len(document.lines):
+            next_line = document.lines[paragraph_end].strip()
+            if next_line and next_line.startswith(SUPPORT_INTRO_DISALLOWED_PREFIXES):
+                add(
+                    diagnostics,
+                    repo_root,
+                    document.path,
+                    paragraph_end + 1,
+                    "RPS011",
+                    f"active v2 {heading} section intro must be separated from following content by a blank line",
+                )
+
+
 def validate_resolved_id_text(
     document: Document,
     repo_root: Path,
@@ -1009,6 +1093,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_stale_terms(document, repo_root, diagnostics, allow_zones)
         validate_coupling_patterns(document, repo_root, diagnostics, allow_zones)
         validate_v2_storage_binding(document, repo_root, diagnostics, allow_zones)
+        validate_v2_support_section_intros(document, repo_root, diagnostics)
     validate_registry_mirrors(documents, canonical_rows, repo_root, diagnostics)
     return sorted(set(diagnostics))
 

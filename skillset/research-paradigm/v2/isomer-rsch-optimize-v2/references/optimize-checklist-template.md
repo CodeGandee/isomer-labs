@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer a checklist that changes as the frontier changes (if it stops changing, otherwise revise the node contract or route).
 - Prefer one active bottom-layer move (if several are active, otherwise state isolation and reason).
 - Prefer explicit next action over broad "continue optimization" language.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <OPTIMIZE_CHECKLIST> must not list candidate creation as completion by itself.
 - Checklist state must distinguish candidate briefs from implementation attempts.
@@ -26,6 +30,8 @@ When performing this step, execute these substeps in order.
 - Completion must leave a durable next action or stop condition.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

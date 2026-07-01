@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer hypothesis when evidence is not yet present (if the claim is plausible but unverified, otherwise do not overstate it).
 - Prefer parsed over computed for existing data or metadata interpretation (if the computation was not rerun, otherwise keep the source clear).
 - Prefer digitized for figure extraction even when values look numeric (if the underlying computation was not rerun, otherwise do not call it computed).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <SCIENCE_CLAIM_RECORD> must state computed, parsed, digitized, or hypothesis.
 - Computed claims must link to current-run evidence, outputs, or validation records.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Hypotheses must not be phrased as if the result already happened.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

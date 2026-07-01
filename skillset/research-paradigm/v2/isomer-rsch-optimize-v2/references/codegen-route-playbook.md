@@ -14,6 +14,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer brief-only before code when ranking is unresolved (if a durable line is selected, otherwise move to implementation planning).
 - Prefer stepwise generation for broad first implementations (if the change is local, otherwise use patch generation).
 - Prefer diff or patch for improve, exploit, debug, and most fusion work (if current structure is usable, otherwise avoid rewrites).
@@ -21,12 +23,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - <CODEGEN_ROUTE_PLAN> must name what stays unchanged for comparability.
 - Large patches should not begin from a vague idea with no implementation surface.
 - Debug route must not use full rewrite unless the existing implementation is structurally broken.
 - Fusion route must preserve the comparison surface unless the route explicitly changes it.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

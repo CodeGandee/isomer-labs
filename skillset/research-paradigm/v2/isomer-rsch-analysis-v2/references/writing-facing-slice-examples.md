@@ -14,6 +14,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer stable ids over free-form notes for paper-ready slices (if ids are unavailable, otherwise record the blocker or recover them).
 - Prefer claim-carrying slices before supporting slices in writing-facing campaigns (if the selected narrative is already supported, otherwise deepen interpretation).
 - Prefer `main_text` or `main_required` only when the slice blocks the main section (if useful but non-blocking, otherwise use `appendix` or `reference_only`).
@@ -21,12 +23,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - Paper-ready slices must map to write-back targets, not only to local execution notes.
 - Paper-facing metadata must separate manuscript takeaway from reproducibility detail and internal-only notes.
 - Analysis counts must not be padded with stale methods, abandoned methods, unrelated comparator repairs, or old exploratory rows.
 - A completed paper-relevant slice must not leave the paper contract stale unless the stale target is recorded as a blocker.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

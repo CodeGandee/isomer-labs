@@ -15,12 +15,16 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer the original paper's evaluation protocol as the starting point (if the user specifies another comparator, otherwise record that route).
 - Prefer a core contract for comparison-ready baselines (if paper claims, registry publication, or variant-heavy comparison need more coverage, otherwise expand).
 - Prefer richer existing structured results over a thinner hand-written scalar (if a leaderboard, result file, or metric contract exists, otherwise summarize minimally).
 - Prefer preserving both aggregate and per-dataset or per-task metrics when the source reports both (if feasible, otherwise record the missing coverage).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <COMPARABILITY_CONTRACT> must include task, dataset, split, evaluation path, required metric ids, metric directions, source identity, known deviations, and caveats.
 - The primary metric must not erase the rest of the comparison surface.
@@ -29,6 +33,8 @@ When performing this step, execute these substeps in order.
 - A caveat must not hide a different dataset split, evaluation script, source identity, or comparison meaning.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

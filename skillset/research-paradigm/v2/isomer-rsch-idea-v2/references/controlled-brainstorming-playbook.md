@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer bounded divergence over open-ended brainstorming (if strong evidence already forces one route, otherwise record why widening was abbreviated).
 - Prefer a mixed family slate over mechanism-only routes (if objective, measurement, or infrastructure may be the blocker, otherwise include those families).
 - Prefer evidence-per-run over novelty theater when choosing the final serious candidates.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Brainstorming must not start before objective and board grounding.
 - The raw slate must not be scored too early.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Stale routes must not be reopened without new evidence.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

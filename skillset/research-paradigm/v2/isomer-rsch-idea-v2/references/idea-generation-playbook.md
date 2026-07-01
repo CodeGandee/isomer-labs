@@ -16,11 +16,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer direction families over within-family micro-variants (if the mechanism family is already chosen, otherwise route within-family shaping to optimize).
 - Prefer candidates that can change the capability boundary, claim boundary, or evidence value (if a small local tweak survives, otherwise state why broader routes failed).
 - Prefer durable rejected and deferred rationale over chat-only brainstorming notes (if a route remains plausible, otherwise mark why it is deferred).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Serious ideation must not begin before a real literature pass or a recorded reuse justification.
 - <RAW_IDEA_SLATE> must not be only renamed variants of one mechanism family.
@@ -28,6 +32,8 @@ When performing this step, execute these substeps in order.
 - <REJECTED_AND_DEFERRED_IDEAS> must preserve enough rationale to prevent later rediscovery.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

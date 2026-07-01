@@ -16,17 +16,23 @@ When using this index, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer `references/package-index.min.json` for quick package lookup (if package name is known, otherwise use this domain index).
 - Prefer one or a few relevant package cards over broad catalog loading (if the domain is ambiguous, otherwise inspect the nearest domains).
 - Prefer package-check evidence over catalog metadata.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - Package cards must not prove installation, importability, executability, license availability, backend availability, or HPC module state.
 - Package routing should not load unrelated cards into context.
 - Domain labels should not override task-specific package evidence.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

@@ -16,17 +16,23 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer one compact checkpoint-style memory card over a long narrative (if the resume point did not change, otherwise skip the memory write).
 - Prefer explicit do-not-reopen rules when stale routes caused confusion (if none exist, otherwise omit rather than invent one).
 - Prefer first-read artifacts that make the next turn operational immediately.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - <DECISION_CHECKPOINT_MEMORY> must be written when the decision changes the authoritative resume point.
 - The checkpoint must not leave later turns guessing which node, branch, run, or blocker is active.
 - Reopen conditions must be concrete enough to prevent accidental churn.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

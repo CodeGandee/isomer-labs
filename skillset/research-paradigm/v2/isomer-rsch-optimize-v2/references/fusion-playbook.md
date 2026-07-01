@@ -14,11 +14,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer fusion only after real source-line strengths exist (if one line is merely weak, otherwise do not fuse it).
 - Prefer complementary mechanisms over combining everything (if strengths overlap, otherwise route to exploit or stop).
 - Prefer returning to brief when the fusion hypothesis is underspecified (if fusion is clear, otherwise avoid premature implementation).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <FUSION_PLAN> must identify source lines, strengths, weaknesses, keep-unchanged conditions, and validation signal.
 - Fusion must not combine two same-mechanism lines under different names.
@@ -26,6 +30,8 @@ When performing this step, execute these substeps in order.
 - Fusion must not be justified merely because multiple branches exist.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

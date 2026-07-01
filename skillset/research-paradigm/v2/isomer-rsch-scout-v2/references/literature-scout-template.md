@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer retained references that change routing over long paper summaries (if a reference is only adjacent, otherwise put it in watchlist or reject).
 - Prefer provenance labels such as official, community, or uncertain (if provenance is unclear, otherwise treat it as a route risk).
 - Prefer one next-route recommendation over open-ended literature commentary.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - `<LITERATURE_SCOUTING_REPORT>` must include a search ledger when external discovery affects routing.
 - The report must separate retained, watchlist, and rejected references when that distinction prevents downstream rework.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Scout must not write a literature report just to collect references after the next route is already clear.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

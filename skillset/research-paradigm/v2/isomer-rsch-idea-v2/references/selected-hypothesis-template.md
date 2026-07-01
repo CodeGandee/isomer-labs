@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer one falsifiable claim over a bundle of loosely related ideas (if multiple claims survive, otherwise record a branch or decision route).
 - Prefer citation-supported motivation and mechanism over casual paper mentions (if citation style is unspecified, otherwise use one consistent standard style).
 - Prefer `continue_line` style routing for a child of the current route and branch-style routing for sibling alternatives when the runtime supports lineage semantics.
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <SELECTED_HYPOTHESIS> must include id, pitch, hypothesis, mechanism, expected effect, comparator relation, risk, falsification, minimal test, abandonment condition, citations, and next route.
 - <SELECTED_IDEA_DRAFT> must cite papers that shaped the mechanism, motivation, novelty check, or claim boundary.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - The selected route must not be submitted before the literature survey and pre-idea draft gates are satisfied.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

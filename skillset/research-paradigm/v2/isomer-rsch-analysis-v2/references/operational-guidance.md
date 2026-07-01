@@ -16,6 +16,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer the shortest durable route that preserves trust and auditability (if lineage or write-back matters, otherwise use a campaign object).
 - Prefer direct verification when the path is concrete (if command or evaluator wiring is uncertain, otherwise use a bounded smoke check).
 - Prefer one decisive runnable slice over several speculative expensive slices (if resources are tight, otherwise prioritize soundness gain per cost).
@@ -24,6 +26,8 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - <ANALYSIS_CAMPAIGN_PLAN> must not launch slices before assets, comparators, dependencies, and current runtime feasibility are checked or blockers are recorded.
 - Long-running execution should preserve durable logs and monitoring state.
 - If a slice is invalid, wedged, unsupported by the environment, or superseded, it should be stopped or marked honestly before replacement.
@@ -31,6 +35,8 @@ When performing this step, execute these substeps in order.
 - Connector-facing charts must not imply stronger evidence than the slice records support.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

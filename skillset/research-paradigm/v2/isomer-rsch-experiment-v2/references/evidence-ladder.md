@@ -14,6 +14,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer `minimum` evidence first when the execution path or comparability is still uncertain (if the path is already verified, otherwise move toward `solid`).
 - Prefer `solid` evidence before writing or claim promotion (if the result is only executable, otherwise keep it as a partial signal).
 - Prefer `maximum` polish only after the main claim is credible (if the claim is not yet solid, otherwise use resources on the decisive gap).
@@ -21,12 +23,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - Main-claim promotion must not proceed from smoke, pilot, or non-comparable evidence.
 - Maximum-level polish must not consume the run before minimum and solid gates are satisfied.
 - Supplementary metrics must not replace required comparator metrics.
 - Evidence level should be downgraded when metrics are incomplete, non-finite, unstable, or not traceable to outputs.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

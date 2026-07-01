@@ -43,12 +43,16 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Preferences
 
+Read these preferences as defaults that apply across the whole skill. They should shape route, evidence, and handoff choices unless a step-specific page gives a stronger source-backed reason.
+
 - Prefer one clean implementation pass and one real run over repeated half-runs (if the route is already concrete, otherwise resolve the missing route first).
 - Prefer the smallest valid experiment package that answers the research question (if the claim needs stronger evidence, climb the evidence ladder deliberately).
 - Prefer existing verified comparator evidence over full reproduction when equivalence and comparability are preserved (if an efficiency change affects comparability, treat it as an experiment change).
 - Prefer direct local evidence before routine user questions (if durable evidence is missing after inspection, record the missing precondition).
 
 ## Cross-Step Constraints
+
+Read these constraints as global validity boundaries for the skill. A result that violates a `must` or `must not` item is not ready to hand off until the violation is fixed, waived, or recorded as a blocker.
 
 - The comparator reference must remain read-only unless the run is explicitly a comparator-repair route.
 - Dataset, split, metric definition, evaluator logic, or comparison recipe must not change silently.
@@ -59,6 +63,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - After a main result is recorded, the next route must be chosen from the measured result before launching another large run.
 
 ## Cross-Step Quality Gates
+
+Read these gates before claiming the skill output is ready for handoff. Use `Metrics` to judge directional quality across the workflow and `Checks` to decide whether the output must be revised, blocked, or rerouted.
 
 ### Metrics
 

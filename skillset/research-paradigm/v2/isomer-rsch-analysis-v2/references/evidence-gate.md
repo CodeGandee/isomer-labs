@@ -15,12 +15,16 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer treating failed execution separately from negative evidence (if the slice did not produce valid evidence, otherwise do not interpret it as claim refutation).
 - Prefer direct-comparison claims only when the comparison contract is preserved (if it differs, otherwise label the slice as non-comparable or boundary evidence).
 - Prefer stopping after one decisive slice (if the parent boundary and next route are already clear, otherwise continue only with claim-critical slices).
 - Prefer the top `3-5` decision-relevant findings in campaign summaries (if there are many slices, otherwise keep the summary concise).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Campaign-level claims must not precede per-slice evidence.
 - Null, negative, partial, failed, blocked, infeasible, superseded, and contradictory slices must not be hidden.
@@ -29,6 +33,8 @@ When performing this step, execute these substeps in order.
 - A writing-facing slice must not be called paper-ready while its write-back target remains stale or missing.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

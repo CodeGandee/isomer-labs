@@ -15,6 +15,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer one shared scoring surface over candidate-specific stories (if criteria differ, otherwise explain why).
 - Prefer each mechanism family contributing at most one promoted line (if overriding the cap, otherwise justify dominance).
 - Prefer returning to brief shaping when top candidates are all same-family (if one clearly dominates, otherwise promote only that one).
@@ -22,12 +24,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - <CANDIDATE_RANKING> must state candidate set, criteria, ranked candidates, winner, non-winner handling, and promotion cap.
 - "All promising" must not justify promoting everything.
 - Ranking must not ignore family diversity and change-layer diversity.
 - Promotion must not exceed the cap without a stated reason.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

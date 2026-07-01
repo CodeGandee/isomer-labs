@@ -15,11 +15,15 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer targeted fixes over broad rewrites (if the root cause is local, otherwise route back to brief or loop).
 - Prefer archive over debug when the failure is strategic rather than local (if candidate no longer beats alternatives, otherwise stop repair).
 - Prefer reusing prior failure lessons before changing code (if no relevant lesson exists, otherwise proceed with evidence).
 
 ## Constraints
+
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - <DEBUG_RESPONSE> must not introduce a new performance mechanism under a debug label.
 - Debug must preserve keep-unchanged conditions for comparability.
@@ -27,6 +31,8 @@ When performing this step, execute these substeps in order.
 - Post-fix validation must be defined before editing.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

@@ -15,6 +15,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer the smallest slice set that can change the evidence boundary (if more slices would only add polish, otherwise stop).
 - Prefer claim-carrying and contradiction slices before supporting slices (if the main claim is already credible, otherwise broaden confidence only after the core boundary is stable).
 - Prefer slices runnable under the current envelope (if a blocked high-value slice matters, otherwise record the blocker and choose a lower-cost alternative).
@@ -22,12 +24,16 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - <ANALYSIS_SLICE_PLAN> must not include slices that lack a parent claim, parent result, paper gap, reviewer item, rebuttal item, or route decision.
 - Campaign scope must not assume hardware, memory, storage, runtime, services, or credentials that are not actually available.
 - Infeasible slices must be downscoped, replaced, deferred with a blocker, or dropped explicitly.
 - A slice frontier must not keep widening after the next route is already clear.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 

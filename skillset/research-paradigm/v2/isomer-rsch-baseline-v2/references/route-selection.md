@@ -14,6 +14,8 @@ When performing this step, execute these substeps in order.
 
 ## Preferences
 
+Read these preferences as route-shaping defaults for this step, not as hard requirements. Apply the preferred path when its condition holds, and record the fallback or reason when it does not.
+
 - Prefer attach when a trustworthy reusable comparator already exists (if its outputs and metric contract can be inspected, otherwise import or verify).
 - Prefer import when the user provides a package, bundle, or snapshot (if provenance and metrics are traceable, otherwise verify or block).
 - Prefer verify-local-existing when a local path or service can be evaluated cheaply (if command, endpoint, split, and metrics are concrete, otherwise audit or reproduce).
@@ -22,6 +24,8 @@ When performing this step, execute these substeps in order.
 
 ## Constraints
 
+Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
+
 - <COMPARATOR_ROUTE_RECORD> must choose one dominant route and acceptance target.
 - A heavier route must name the unresolved comparison risk it removes.
 - Waiver must not be used merely because reproduction is inconvenient.
@@ -29,6 +33,8 @@ When performing this step, execute these substeps in order.
 - Route choice must not change accepted comparison meaning without recording the change.
 
 ## Quality Gates
+
+Read these gates after producing the step output and before handoff or completion. Use `Metrics` as directional quality signals and `Checks` as inspectable pass/fail conditions; weak metrics or failed checks should trigger revision, blocker recording, or a route change.
 
 ### Metrics
 
