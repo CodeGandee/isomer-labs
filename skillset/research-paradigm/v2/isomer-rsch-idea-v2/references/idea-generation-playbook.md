@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Competing hypothesis count: number of competing hypotheses kept alive near the top of the idea pass; closer to 2-3 is better.
+- Literature coverage layer count: number of required literature layers completed across direct-field frontier, strongest nearby prior work, and adjacent-domain mechanism pass when relevant; higher is better.
+
+### Checks
+
 - Literature gate: serious generation follows survey coverage and closest-prior-work checks.
 - Diversity gate: the frontier contains meaningfully different route families or records why it cannot.
 - Decision-package gate: each serious candidate includes limitation, mechanism, why now, prior-work overlap, evidence burden, falsification path, and research value.

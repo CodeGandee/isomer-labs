@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Verification-record field coverage: fraction of route, source identity, metric contract, evidence source, checked outputs, deviations, trust verdict, blocker, and next route fields completed; higher is better.
+- Untrusted-metric count: number of metric values or output pointers that lack traceable files, logs, service responses, source records, or accepted package records; lower is better.
+
+### Checks
+
 - Evidence gate: trusted metrics or outputs are traceable to real evidence.
 - Dataset gate: intended dataset and split are checked.
 - Metric gate: metric definitions, metric directions, required ids, and values are checked.

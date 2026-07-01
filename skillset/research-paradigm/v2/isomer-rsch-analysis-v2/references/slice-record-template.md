@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Slice-record field coverage: fraction of slice id, class, parent object, evidence question, intervention or inspection target, fixed conditions, metric or observable, evidence path, claim update, comparability verdict, and next action fields completed; higher is better.
+- Missing-evidence-path count: number of evidence-bearing slices without inspectable evidence paths or source records; lower is better.
+
+### Checks
+
 - Identity gate: parent object, parent claim or gap, slice id, slice class, and evidence question are present.
 - Evidence gate: metric, observable, table, qualitative artifact, rubric, or inspection trace is recorded.
 - Comparability gate: changed and fixed conditions are explicit.

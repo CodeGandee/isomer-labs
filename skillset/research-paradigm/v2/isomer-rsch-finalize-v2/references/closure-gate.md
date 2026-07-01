@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Closure-context coverage: fraction of latest baseline, run, analysis, writing, decision, blocker, package, manifest, review, proofing, submission, and topic-document surfaces checked when present; higher is better.
+- Failed-gate count: number of required evidence, writing, review, proofing, submission, outline, coverage, language, or package gates still failing; lower is better.
+
+### Checks
+
 - Inventory completeness: <FINALIZE_CONTEXT_BRIEF> names accepted evidence, writing/package state, decisions, blockers, and manifest-like material when present.
 - Gate clarity: passed and failed closure gates are explicit.
 - Route legitimacy: closure, pause, archive, publish, or route-back is justified by durable evidence.

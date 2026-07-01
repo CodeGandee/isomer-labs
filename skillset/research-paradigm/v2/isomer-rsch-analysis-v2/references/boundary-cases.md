@@ -32,6 +32,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Boundary-label coverage: fraction of plausible boundary cases labeled as main experiment, non-comparable, qualitative, one-slice-sufficient, repeated failure, pre-outline, extra comparator, support, contradiction, or ambiguity; higher is better.
+- Silent-widening count: number of repeated-failure or one-slice-sufficient cases that keep widening without blocker, redesign, route, or stop decision; lower is better.
+
+### Checks
+
 - Stage gate: the work is truly follow-up analysis rather than a new main experiment, baseline recovery, or idea revision.
 - Comparability gate: direct, non-comparable, stress-test, limitation-boundary, or failure-analysis status is labeled.
 - Qualitative gate: rubric, sample, inspection basis, trace, caveat, and route relevance are recorded.

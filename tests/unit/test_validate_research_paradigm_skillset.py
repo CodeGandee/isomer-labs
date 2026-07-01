@@ -171,6 +171,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("isomer-rsch-nature-figure-v2", validator.EXPECTED_V2_SKILLS)
         self.assertIn("isomer-rsch-nature-paper2ppt-v2", validator.EXPECTED_V2_SKILLS)
         self.assertIn("isomer-rsch-nature-polishing-v2", validator.EXPECTED_V2_SKILLS)
+        self.assertIn("isomer-rsch-workspace-mgr-v2", validator.EXPECTED_V2_SKILLS)
 
     def test_reports_core_failure_fixtures(self) -> None:
         root, target = self.make_valid_skillset()

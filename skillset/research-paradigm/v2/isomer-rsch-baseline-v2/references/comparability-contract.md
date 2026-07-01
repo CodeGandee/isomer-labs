@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Core contract field coverage: fraction of comparator identity, task, dataset, split, evaluation path, required metric keys, metric directions, source identity, known deviations, and caveats recorded; higher is better.
+- Downstream-guesswork count: number of comparator, metric, provenance, or caveat questions later stages would still need to infer; lower is better.
+
+### Checks
+
 - Identity gate: comparator id, variant, source, and provenance are stable enough to cite.
 - Data gate: task, dataset, split, evaluation path, and expected outputs are explicit.
 - Metric gate: required metric ids, directions, primary metric, supplementary metrics, and derivation or origin paths are recorded.

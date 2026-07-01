@@ -60,6 +60,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Quality Gates
 
+### Metrics
+
+- Ready evidence group count: number of current ready paper-facing experiment or analysis groups mapped to the active paper line; higher is better until the active target range is reached.
+- Reviewer-facing analysis job count: number of completed and mapped analysis jobs when a full empirical paper target names reviewer-facing analyses; closer to the active target is better.
+
+### Checks
+
 - Parent gate: <ANALYSIS_CONTEXT_BRIEF> names the parent object, parent claim or gap, evidence question, comparison target, and stop condition.
 - Resource gate: <ANALYSIS_RESOURCE_ENVELOPE> screens slices as runnable now, runnable with downscope, or blocked by resources when execution constraints matter.
 - Slice gate: each <ANALYSIS_SLICE_RECORD> includes question, intervention or inspection target, fixed conditions, metric or observable, evidence source, claim update, comparability verdict, and next action.

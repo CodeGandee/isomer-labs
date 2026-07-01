@@ -26,6 +26,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Research-question count: number of paper-facing research questions named in the seed; closer to the source 1-3 range is better.
+- Evidence-gap coverage: fraction of core claims linked to required evidence items, falsifiers, controlled factors, and likely main-text or appendix roles; higher is better.
+
+### Checks
+
 - Readiness gate: the route has a clear likely contribution, one to three research questions, and a first main experiment.
 - Evidence gate: the seed names evidence gaps and falsifiers.
 - Scope gate: claims are limited to current benchmark, model, comparator, and metric contracts unless broader evidence exists.

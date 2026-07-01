@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Final-report component coverage: fraction of supported claims, partial claims, failed branches, unresolved blockers, limitations, recommendation, and reopen condition components included; higher is better.
+- Package-inventory coverage: fraction of required paper or release manifest paths checked when a paper-like deliverable exists; higher is better.
+
+### Checks
+
 - Checklist coverage: closure questions, report contents, claim ledger, package inventory, and reopen conditions are all checked.
 - Anti-pattern gate: none of the source anti-patterns remain true.
 - Inventory gate: package, run, report, analysis, writing, summary, and status records are named when present.

@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Write-back metadata coverage: fraction of paper-ready slice fields present across stable ids, paper role, section id, item id, claim links, analysis role, reviewer question, target display, placement, and failure interpretation; higher is better.
+- Stale-contract count: number of completed paper-relevant slices whose write-back target remains stale or missing without a blocker; lower is better.
+
+### Checks
+
 - Target gate: selected outline, matrix, evidence ledger, section, claim, reviewer item, rebuttal item, or display target is identified.
 - Metadata gate: <ANALYSIS_WRITEBACK_MAP> includes stable ids and role fields needed for write-back.
 - Failure gate: failure interpretation states how null or contradictory evidence changes the paper or route.

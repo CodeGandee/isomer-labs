@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Boundary-case classification coverage: fraction of comparison-ready, trusted-with-caveats, weak-provenance, local-path, heavier-route, and repeated-failure cases classified with an explicit route; higher is better.
+- Weak-provenance metric count: number of imported or local metric values accepted without real outputs, services, source records, or package records; lower is better.
+
+### Checks
+
 - Comparison gate: downstream work can compare without guessing task, split, metric, or comparator identity.
 - Caveat gate: caveats are explicit and do not change comparison meaning.
 - Provenance gate: metrics tie to real outputs, services, source records, or package records.

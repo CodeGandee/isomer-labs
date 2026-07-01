@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Decomposed sub-problem count: number of decomposed sub-problems in the outline; closer to 3-5 is better.
+- Direction count: number of proposed research directions when the space is broad enough; closer to exactly 5 is better.
+
+### Checks
+
 - Grounding gate: the outline links objective, code, data, metric, comparator, and constraints.
 - Direction gate: candidate directions are actionable and not only slogans.
 - Feasibility gate: each direction includes implementation surface, success metric, risk, and abandonment cue.

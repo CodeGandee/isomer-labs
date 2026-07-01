@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Required-evidence coverage: fraction of science package checks, computational runs, dataset analyses, parameter sweeps, validation results, and claims with the required evidence fields for their node type; higher is better.
+- Unsupported-claim count: number of science claims without claim type, evidence paths, or related computed or validation nodes when required; lower is better.
+
+### Checks
+
 - Type gate: node type matches the evidence being recorded.
 - Evidence gate: inputs, logs, outputs, evidence paths, or related nodes support the status.
 - Link gate: validation and claim records link to supporting records.

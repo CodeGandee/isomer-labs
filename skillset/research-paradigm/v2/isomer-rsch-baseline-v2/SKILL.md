@@ -60,6 +60,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Quality Gates
 
+### Metrics
+
+- Metric-contract coverage: fraction of required metric ids, directions, primary metric, derivation or origin path, and comparison caveats recorded in <COMPARABILITY_CONTRACT>; higher is better.
+- Verification evidence coverage: fraction of trusted comparator metrics or outputs backed by source, package, run, service, or local verification evidence; higher is better.
+
+### Checks
+
 - Target gate: <BASELINE_CONTEXT_BRIEF> names the trust state, acceptance target, candidate comparator, and active uncertainty.
 - Route gate: <COMPARATOR_ROUTE_RECORD> chooses one dominant route and explains why lighter routes are or are not trustworthy.
 - Contract gate: <COMPARABILITY_CONTRACT> records task, dataset, split, evaluation path, required metric ids, metric directions, source identity, known deviations, and caveats.

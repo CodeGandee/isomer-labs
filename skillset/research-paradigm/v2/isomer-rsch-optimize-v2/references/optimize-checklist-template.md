@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Checklist completion: fraction of optimize pass checklist items satisfied or explicitly waived with a route reason; higher is better.
+- Mechanism-family count: number of mechanism families represented in the current brief slate; higher is better until the slate is not one-family narrow.
+
+### Checks
+
 - Frontier gate: current frontier and lessons are checked.
 - Submode gate: route and primary submode are explicit.
 - Slate gate: candidate diversity, ranking, and promotion status are visible.

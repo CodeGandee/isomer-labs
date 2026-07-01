@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Intended-execution coverage: fraction of intended data, code, metric, observable, comparison target, fixed conditions, and execution envelope confirmed for the slice; higher is better.
+- Write-back blocker count: number of paper-ready or reviewer-facing slices without a current write-back map or recorded blocker; lower is better.
+
+### Checks
+
 - Execution gate: the slice evidence corresponds to the intended data, code, metric, comparison target, and fixed conditions.
 - Outcome gate: the slice status is explicit and non-success states are preserved.
 - Comparability gate: direct, non-comparable, generalization, stress-test, boundary, or failure-analysis status is labeled.

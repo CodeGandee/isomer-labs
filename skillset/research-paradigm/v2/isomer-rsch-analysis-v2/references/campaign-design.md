@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Priority-tier coverage: number of source priority tiers considered across claim-critical contradiction, robustness or sensitivity, failure-mode explanation, and efficiency or secondary support; higher is better until all relevant tiers are considered.
+- Resource-budget fit: expected wall-clock and compute demand of the selected slice set relative to the current execution envelope; lower is better when evidence value is preserved.
+
+### Checks
+
 - Boundary gate: parent object, evidence question, comparison target, and stop condition are explicit.
 - Route-shape gate: the selected analysis route matches the required traceability and slice count.
 - Resource gate: candidate slices are screened against the actual execution envelope.

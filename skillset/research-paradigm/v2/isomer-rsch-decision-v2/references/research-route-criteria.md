@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Route-criteria coverage: fraction of evidence support, opportunity cost, blocker severity, route reversibility, user preference, and next-action clarity criteria checked for the route choice; higher is better.
+- Expected-information-gain gap: number of analysis or experiment launches whose expected information gain is not stated relative to cost; lower is better.
+
+### Checks
+
 - Evidence fit: the chosen route follows the strongest durable evidence, not inertia.
 - Tradeoff visibility: novelty, feasibility, verification cost, architecture fit, immediate progress, and long-term research value are named when relevant.
 - Alternative quality: rejected alternatives are visible and rejected for stated criteria.

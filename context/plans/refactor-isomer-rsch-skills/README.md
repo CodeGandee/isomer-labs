@@ -18,6 +18,8 @@ Refactor the research-paradigm skills so each durable output maps to an implemen
 
 Patch the storage system before tightening skill requirements. A skill should not require a command, label, record type, status, or validation rule that does not exist unless the skill marks it as a planned platform surface and routes through a Gate or blocker.
 
+After Topic Team Specialization and standard Topic Workspace initialization, use `isomer-rsch-workspace-mgr-v2` as the research-specific bootstrap manager. It prepares the selected Topic Workspace context, placeholder binding registry, semantic label readiness plan, Agent Workspace access posture, validation report, and blocker record before ordinary v2 research skills rely on durable placeholder outputs.
+
 ## Workstreams
 
 ### A. Storage Surface and Layout Patch
@@ -60,6 +62,7 @@ Patch the storage system before tightening skill requirements. A skill should no
 
 ### F. Skill Refactor
 
+- [ ] Keep `isomer-rsch-workspace-mgr-v2` as the post-specialization bootstrap skill while the typed storage layer is still incomplete; once record commands exist, revise it to call those commands directly.
 - [ ] Start with `isomer-rsch-shared`: replace conceptual "accepted recording APIs" language with the implemented `project records` contract and the new semantic labels.
 - [ ] Refactor execution-heavy skills next: `isomer-rsch-experiment`, `isomer-rsch-science`, `isomer-rsch-baseline`, `isomer-rsch-analysis`, and `isomer-rsch-optimize`.
 - [ ] Refactor publication-heavy skills after package support exists: `isomer-rsch-paper-plot`, `isomer-rsch-figure-polish`, `isomer-rsch-paper-outline`, `isomer-rsch-write`, `isomer-rsch-review`, `isomer-rsch-rebuttal`, and `isomer-rsch-finalize`.

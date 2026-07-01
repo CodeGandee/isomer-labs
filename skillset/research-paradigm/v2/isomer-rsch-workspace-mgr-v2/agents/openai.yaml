@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-workspace-mgr-v2"
+  short_description: "Prepare v2 research workspace storage bootstrap."
+  default_prompt: "Use $isomer-rsch-workspace-mgr-v2 to prepare v2 research placeholder binding, semantic record surfaces, agent access posture, and bootstrap readiness."

@@ -28,6 +28,13 @@ When using this index, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Package-card loading count: number of unrelated package cards opened while routing a task; lower is better.
+- Routing precision: fraction of opened package cards that plausibly match the task domain, package need, or solver family; higher is better.
+
+### Checks
+
 - Routing gate: selected package cards match the task domain and package needs.
 - Availability gate: package availability is checked or blocked before computed work.
 - Evidence gate: package metadata is not used as scientific evidence without runtime checks.

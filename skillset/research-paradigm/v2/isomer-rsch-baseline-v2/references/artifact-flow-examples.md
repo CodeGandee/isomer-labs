@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Contract-before-acceptance coverage: fraction of acceptance, import, verify, publish, or waiver flows where <COMPARABILITY_CONTRACT> exists before accepted closeout; higher is better.
+- Incomplete-trust closeout count: number of attach, import, publish, or waiver flows treated as accepted before verification, provenance, metric contract, and caveats are durable; lower is better.
+
+### Checks
+
 - Flow gate: selected flow matches route and acceptance target.
 - Evidence gate: outputs, provenance, metrics, and package or service identity are inspected.
 - Verification gate: minimum evidence needed for trust is collected.

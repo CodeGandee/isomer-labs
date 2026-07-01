@@ -32,6 +32,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Smoke budget fit: number of smoke checks used when command, output, metric path, or evaluator wiring is uncertain; closer to the source 0-2 default budget is better.
+- Repeated-failure count: number of repeated slice failures with the same failure class and no new evidence or route change; lower is better.
+
+### Checks
+
 - Route gate: the chosen durable evidence route matches slice count, lineage, reviewability, and write-back needs.
 - Resource gate: <ANALYSIS_RESOURCE_ENVELOPE> covers machine class, memory, storage, wall-clock, concurrency, services, credentials, dependencies, and infeasible slices when relevant.
 - Execution gate: smoke, direct verification, or real run choice is justified by the uncertainty and evidence value.

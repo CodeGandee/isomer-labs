@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Checkpoint-field coverage: fraction of current route, active node, node history, strongest retained result or blocker, do-not-reopen list, next resume step, first-read files, and reopen condition fields completed; higher is better.
+- Repeat-risk count: number of branches, closure paths, experiments, or blocker checks left without do-not-repeat or reopen guidance; lower is better.
+
+### Checks
+
 - Resume fidelity: the card points to the same authoritative state as <RESUME_PACKET>.
 - History fidelity: superseded paths and do-not-reopen items are explicit.
 - Restart usability: the first-read files and next step are concrete.

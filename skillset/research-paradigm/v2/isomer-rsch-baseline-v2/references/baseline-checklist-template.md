@@ -26,6 +26,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Core checklist completion: fraction of identity, frontier, core gate, blocked-boundary, and closeout checklist items satisfied or explicitly marked not applicable; higher is better.
+- Blocker-field coverage: fraction of blocked-state fields with failure class, tried steps, evidence sources, and next best move recorded when blocked; higher is better.
+
+### Checks
+
 - Identity gate: baseline id, route, acceptance target, and comparator are explicit.
 - Frontier gate: next step, active uncertainty, and next route are visible.
 - Core gate: comparator provenance, data, evaluation, metrics, output pointers, and contract are checked.

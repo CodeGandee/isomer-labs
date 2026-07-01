@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Source-lens coverage: number of idea-source lenses checked across gap-driven, anomaly-driven, bottleneck-driven, assumption-reversal, cross-domain transfer, and writing-to-think routes; higher is better.
+- Failure-value coverage: fraction of serious candidates with an interpretable negative-result lesson for bottleneck, mechanism, or evaluation; higher is better.
+
+### Checks
+
 - Contradiction quality: the target problem is important to the real objective, not merely convenient to implement.
 - Novelty quality: the dominant novelty or value source is explicit and honest.
 - Mechanism quality: the route says what changes and what condition would make it fail.

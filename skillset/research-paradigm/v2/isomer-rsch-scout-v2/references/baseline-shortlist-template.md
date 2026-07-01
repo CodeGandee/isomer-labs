@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Justified candidate count: number of baseline candidates with paper evidence, repo evidence, metric compatibility, expected route, and risk recorded; higher is better until enough candidates exist to choose the next anchor.
+- Candidate-risk count: number of shortlist candidates with unresolved provenance, implementation, metric, or maintenance risks; lower is better.
+
+### Checks
+
 - Comparator relevance: every retained candidate can affect `isomer-rsch-baseline-v2`, `isomer-rsch-idea-v2`, or `isomer-rsch-decision-v2`.
 - Evidence sufficiency: the recommended route has enough paper, repository, benchmark, or local evidence to justify the next action.
 - Route clarity: each candidate has exactly one route recommendation.

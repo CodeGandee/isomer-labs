@@ -86,6 +86,22 @@ When current literature, repository state, or benchmark details may have changed
 
 Search for disconfirming evidence as well as supportive evidence. Stop when the next route is clear, not when every adjacent paper has been collected.
 
+## Cross-Step Quality Gates
+
+### Metrics
+
+- Route-changing unknown count: number of unresolved framing unknowns that can still change baseline, idea, Decision Record, Gate, or blocker routing; lower is better.
+- Evaluation-contract coverage: fraction of task, dataset, split, primary metric, metric direction, fair-comparison rule, useful-improvement threshold, evidence, and ambiguity fields that are explicit when relevant; higher is better.
+
+### Checks
+
+- Entry check: scout runs only when at least one route-changing unknown remains after quick local durable context review.
+- Context check: <SCOUT_CONTEXT_BRIEF> makes the task frame, current comparator status, evidence state, and blockers explicit before discovery.
+- Reuse check: <SCOUT_MEMORY_REUSE_NOTE> or an equivalent context note explains what prior knowledge was reused before broad search.
+- Discovery check: <SCOUT_DISCOVERY_LEDGER> keeps only discoveries that affect task framing, evaluation contract, comparator direction, route choice, or blocker status.
+- Handoff check: <EVALUATION_CONTRACT>, <BASELINE_SHORTLIST>, and <NEXT_ROUTE_DECISION> are explicit enough for the next v2 skill, or <SCOUT_BLOCKER_RECORD> states what is missing and why it matters.
+- Continuity check: <SCOUT_CONTINUITY_UPDATE> preserves reusable literature lessons, metric caveats, route changes, or blockers before leaving scout.
+
 ## Exit Criteria
 
 Scout can end when all applicable checks are true:

@@ -57,7 +57,14 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
-## Cross-Step Quality Checks
+## Cross-Step Quality Gates
+
+### Metrics
+
+- Message recognition time: time needed for a reviewer to identify the main figure message from the rendered output; lower is better.
+- Paper-facing export coverage: number of required paper-facing export formats produced for the selected surface; higher is better until all required formats exist.
+
+### Checks
 
 - Evidence check: all claims, figures, tables, responses, or statements are traceable to source evidence or explicitly marked as missing.
 - Route check: the next skill route is named when this skill cannot responsibly finish the task itself.

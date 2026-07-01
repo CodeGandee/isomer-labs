@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Raw slate size: number of raw ideas generated before aggressive filtering; closer to the 6-12 source target is better.
+- Serious frontier size: number of serious candidates retained after collapse; closer to 2-3 is better, and more than 5 is worse.
+
+### Checks
+
 - Framing gate: <OBJECTIVE_CONTRACT> and <CURRENT_BOARD_PACKET> are explicit before widening.
 - Diversity gate: the slate contains at least one non-incumbent family when the problem permits.
 - Filtering gate: weak surrogate-only, stale, invalid, and unfalsifiable ideas are removed or downgraded.

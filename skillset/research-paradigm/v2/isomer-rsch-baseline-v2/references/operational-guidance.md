@@ -32,6 +32,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Unchanged retry count: number of repeated validation or reproduction attempts run without new evidence, code change, environment change, or route change; lower is better.
+- Smoke budget fit: number of smoke or pilot checks used before the route has evidence; closer to the source 0-2 default budget is better.
+
+### Checks
+
 - Route-record gate: chosen route, acceptance target, comparator identity, command or evaluation path, expected outputs, acceptance condition, blocker or fallback, and verification verdict are recoverable.
 - Provenance gate: attached or imported package identity, source, outputs, metrics, and caveats are durable.
 - Execution gate: smoke, direct verification, reproduce, or repair route is justified by uncertainty and trust need.

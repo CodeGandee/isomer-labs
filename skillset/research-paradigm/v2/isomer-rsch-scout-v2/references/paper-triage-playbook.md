@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Route-changing retention rate: fraction of retained papers, repositories, or benchmark documents that change task framing, evaluation contract, comparator routing, or blocker status; higher is better.
+- Remaining triage unknown count: number of route-changing uncertainties still open after retained references are mapped to the handoff placeholders; lower is better.
+
+### Checks
+
 - Triage focus: each search or inspection is tied to a route-changing unknown.
 - Retention quality: retained references say why they matter and which placeholder they inform.
 - Repository viability: candidate repositories are triaged for provenance, evaluation mapping, runtime realism, and access blockers.

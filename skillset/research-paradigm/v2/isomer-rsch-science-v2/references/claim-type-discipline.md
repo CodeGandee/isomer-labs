@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Claim-support coverage: fraction of computed, parsed, digitized, and hypothesis claims with the source-required support for their claim type; higher is better.
+- Misclassified-claim count: number of digitized, parsed, or hypothesis assertions mislabeled as computed; lower is better.
+
+### Checks
+
 - Type gate: claim type matches how the assertion was obtained.
 - Support gate: required evidence for the claim type is present.
 - Calibration gate: language strength matches evidence strength.

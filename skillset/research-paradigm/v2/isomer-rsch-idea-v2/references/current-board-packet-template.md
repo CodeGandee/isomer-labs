@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Board-question coverage: fraction of current mainline, route-changing result, distrust reason, do-not-reopen route, mechanism/objective/evaluator/infrastructure focus, and budget-class questions answered; higher is better.
+- Stale-route ambiguity count: number of old routes that might be reopened without new evidence because the packet lacks a do-not-reopen note; lower is better.
+
+### Checks
+
 - Incumbent clarity: the packet identifies what each candidate must beat or replace.
 - Staleness control: routes to ignore are explicit enough to prevent rediscovery of rejected work.
 - Decision scope: the packet makes the current decision type visible before candidate generation.

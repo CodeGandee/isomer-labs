@@ -69,6 +69,7 @@ EXPECTED_V2_SKILLS = frozenset(
         "isomer-rsch-science-v2",
         "isomer-rsch-scout-v2",
         "isomer-rsch-shared-v2",
+        "isomer-rsch-workspace-mgr-v2",
         "isomer-rsch-write-v2",
     }
 )

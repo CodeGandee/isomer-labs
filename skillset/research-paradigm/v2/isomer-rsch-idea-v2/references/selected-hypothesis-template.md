@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Handoff-field coverage: fraction of id, pitch, hypothesis, mechanism, expected effect, comparator relation, risk, falsification, minimal test, abandonment condition, citations, and next route recorded; higher is better.
+- Missing alternative count: number of selected-route handoffs without strongest alternative hypothesis, strongest likely objection, or anti-win condition; lower is better.
+
+### Checks
+
 - Handoff completeness: the next stage can run from the handoff without reconstructing metric, code surface, prior work, falsifier, or abandon rule.
 - Citation quality: references are standard-format and tied to actual route-shaping papers.
 - Claim quality: the claim is falsifiable, scoped, and tied to the accepted comparator basis.

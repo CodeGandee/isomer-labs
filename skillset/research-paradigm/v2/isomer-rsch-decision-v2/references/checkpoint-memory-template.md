@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Checkpoint-field coverage: fraction of current route, active node, node history, strongest retained result or blocker, do-not-reopen list, next resume step, first-read files, and reopen condition fields completed; higher is better.
+- Reopen-ambiguity count: number of routes, experiments, closure paths, or decisions that lack a clear do-not-reopen or reopen condition; lower is better.
+
+### Checks
+
 - Resume clarity: the next turn can identify the current active node and next step without rereading the entire history.
 - History clarity: superseded routes and do-not-reopen items are explicit.
 - Evidence clarity: the strongest retained result or blocker is named.

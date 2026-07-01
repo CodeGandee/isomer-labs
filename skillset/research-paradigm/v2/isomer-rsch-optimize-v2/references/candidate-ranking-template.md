@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Ranked candidate count: number of serious candidates given a score summary and promote, hold, or reject verdict; higher is better until the serious frontier is fully ranked.
+- Promotion dilution count: number of extra promotions that would dilute the frontier without a clear reason; lower is better.
+
+### Checks
+
 - Set gate: candidates and ranking scope are explicit.
 - Criteria gate: comparison uses one shared surface.
 - Diversity gate: family and change-layer collapse are checked.

@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Discovery-gap closure: number of search passes that close a named task, metric, baseline, provenance, or split gap; higher is better.
+- Route-relevant reference count: number of retained references that affect task framing, evaluation contract, baseline shortlist, or next anchor; higher is better until route clarity is reached.
+
+### Checks
+
 - Reuse value: the report prevents later baseline or idea work from restarting the same discovery.
 - Route impact: every retained reference explains which task, evaluation, comparator, or future-idea question it informs.
 - Provenance clarity: official, community, and uncertain sources are distinguishable.

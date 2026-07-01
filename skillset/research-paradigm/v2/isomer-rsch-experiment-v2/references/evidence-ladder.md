@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Evidence level: achieved evidence level on the source minimum, solid, maximum ladder; higher is better only after the comparison contract is preserved.
+- Claim-critical gap count: number of unresolved main-result, robustness, sensitivity, or claim-critical follow-up gaps still blocking the target evidence level; lower is better.
+
+### Checks
+
 - Level clarity: the run is labeled `auxiliary/dev` or `main/test`, and `minimum`, `solid`, or `maximum`.
 - Minimum gate: commands finish, required outputs exist, and the comparison remains comparable.
 - Solid gate: required metrics are complete and traceable, caveats are bounded, and the result can support or refute the selected hypothesis.

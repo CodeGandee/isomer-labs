@@ -30,6 +30,14 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Usable related-paper count: number of related and usable papers covered by the survey; higher is better until at least 5 and usually 5-10 papers are covered.
+- Paper-bucket coverage: number of required paper buckets represented across core papers, closest competitors, adjacent inspirations, cross-domain transferable mechanisms, and watchlist items; higher is better.
+- Unresolved search-gap count: number of route-relevant gaps still open after meaningful search passes; lower is better.
+
+### Checks
+
 - Coverage gate: the survey durably covers at least five and usually five to ten usable related papers for paper-ready selection, or explicitly documents why fewer exist.
 - Ledger gate: every new external query closes a named gap rather than restarting broad discovery from zero.
 - Novelty gate: every serious candidate has a closest-prior-work verdict.

@@ -201,16 +201,34 @@ Use this shape:
 
 ### Quality Gates
 
-`Quality Gates` list concrete metrics or checks for assessing the outcome quality of the step. Each item should be inspectable from the step output, local evidence, placeholders, or runtime records.
+`Quality Gates` assess the outcome quality of the step. Split them into `Metrics` and `Checks` so measurable quality signals do not get mixed with boolean pass/fail conditions. If `Quality Gates` exists in the refactored output, both subsections must exist. If the source has no meaningful material for one subsection after a careful search, write `None` under that subsection instead of omitting it.
+
+`Metrics` list measurable or ordinal signals. Each item should use the shape `<Metric name>: <definition>; <direction> is better.` The direction should be explicit, such as `higher`, `lower`, `larger`, `smaller`, `earlier`, `later`, `more complete`, or `less frequent`.
+
+`Checks` list conditions that should be satisfied. Each item should use the shape `<Check name>: <condition that should be satisfied>.` Each check should be inspectable from the step output, local evidence, placeholders, or runtime records.
 
 Use this shape:
 
 ```markdown
 ## Quality Gates
 
-- <Metric or check>: <passing condition>.
-- <Metric or check>: <passing condition>.
-- <Metric or check>: <passing condition>.
+### Metrics
+
+- <Metric name>: <definition>; <direction> is better.
+- <Metric name>: <definition>; <direction> is better.
+
+Or, when no meaningful metric exists:
+
+None
+
+### Checks
+
+- <Check name>: <condition that should be satisfied>.
+- <Check name>: <condition that should be satisfied>.
+
+Or, when no meaningful check exists:
+
+None
 ```
 
 ## Validation
@@ -222,7 +240,7 @@ Before finishing, validate both structure and semantic preservation.
 3. Confirm every source file except `SKILL.md` or `skill.md` and `agents/openai.yaml` was copied under `<target-skill-dir>/` with paths preserved.
 4. Confirm the rewritten `SKILL.md` and rewritten workflow subpages match the source process analysis, not merely the source wording.
 5. Confirm every main workflow step references the support section or support page that carries its extracted preferences, constraints, guidance, quality gates, stop conditions, and output requirements.
-6. Confirm extracted step support uses the standard `Guidance`, `Preferences`, `Constraints`, and `Quality Gates` shapes when those support types are present, and confirm omitted support types were omitted because the source lacked fitting material after a careful search.
+6. Confirm extracted step support uses the standard `Guidance`, `Preferences`, `Constraints`, and `Quality Gates` shapes when those support types are present. If `Quality Gates` exists, confirm it contains both `Metrics` and `Checks`, and that any subsection without meaningful source material says `None` Confirm omitted support types were omitted because the source lacked fitting material after a careful search.
 7. Confirm the migration plan records the mapping from source support sections and source reference pages to target workflow steps or global target support sections.
 8. Confirm substitutions in the migration plan are reflected in rewritten pages.
 9. Confirm every source artifact mention outside `<target-skill-dir>/org/` has been replaced by a placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
@@ -257,6 +275,8 @@ Leftovers inside `<target-skill-dir>/org/` are expected when they document the s
 - Leaving main workflow steps without references to the support sections or pages they require.
 - Dropping source rules because they live outside the source's numbered control workflow.
 - Mixing guidance, preferences, constraints, and quality gates into one prose blob instead of using the standard support block shapes.
+- Mixing directional quality metrics and boolean checks into one flat `Quality Gates` list.
+- Adding `Quality Gates` with only `Metrics` or only `Checks`; when the section exists, both subsections must be present.
 - Inventing empty support sections when the source has no fitting material, or omitting support sections after only a rough scan.
 - Preserving native-looking prose while losing source gates, evidence handoffs, assumptions, inputs, or outputs.
 - Overwriting `<target-skill-dir>/agents/openai.yaml` with source agent metadata.

@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Decision-record field coverage: fraction of action, reason, evidence support, rejected alternatives, risks, key steps, success criteria, abandonment criteria, and next route fields completed; higher is better.
+- Missing-rejected-alternative count: number of serious alternatives omitted from the decision record without explanation; lower is better.
+
+### Checks
+
 - Record completeness: verdict, action, reason, evidence, rejected alternatives, and next route are present.
 - Decision traceability: a later v2 skill can inspect the evidence basis without guessing.
 - Action consistency: the action matches the actual state and canonical action set.

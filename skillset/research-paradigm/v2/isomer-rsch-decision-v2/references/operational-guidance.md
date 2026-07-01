@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- User-option count: number of concrete options presented in a necessary user decision request; closer to the source 1-3 option target is better.
+- Repeated-decision count: number of repeated route decisions made without new evidence; lower is better.
+
+### Checks
+
 - Tactical fit: the decision changes the route once instead of re-explaining the same state.
 - Baseline fit: reuse, attach, or publish decisions leave a concrete next path or blocker.
 - Package-selection fit: candidate decisions name the winner and why alternatives lost.

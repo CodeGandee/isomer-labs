@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Package-check step coverage: fraction of import or executable check, version/backend capture, smoke test, durable result file, and science.package_check node steps completed or explicitly blocked; higher is better.
+- Blocked-check count: number of package checks blocked by missing credentials, data, modules, licenses, hardware, or unsupported runtime paths; lower is better.
+
+### Checks
+
 - Availability gate: import, executable, module, container, service, or solver path is checked.
 - Version gate: version and backend details are recorded when relevant.
 - Smoke gate: minimal test is run or explicitly unavailable.

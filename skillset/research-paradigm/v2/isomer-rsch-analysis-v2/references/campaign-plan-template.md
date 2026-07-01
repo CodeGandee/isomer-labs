@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Slice-frontier coverage: fraction of planned slices with class, evidence question, intervention or inspection target, metric or observable, priority, and paper role recorded; higher is better.
+- Interpretation-boundary coverage: fraction of stable support, partial support, contradiction, unresolved ambiguity, and stop-condition fields completed; higher is better.
+
+### Checks
+
 - Objective gate: parent object, evidence question, success condition, stop condition, and route outcomes are explicit.
 - Comparability gate: fixed conditions, variables, direct-comparison limits, and non-comparable labels are recorded.
 - Frontier gate: each slice has class, question, target, metric or observable, priority, and role.

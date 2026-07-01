@@ -6,7 +6,7 @@ This subtree contains Isomer Labs research-method skills. The skillset is genera
 
 | Generation | Path | Role |
 | --- | --- | --- |
-| v2 | `v2/isomer-rsch-<purpose>-v2/` | Active current research-method and companion skills. Core loop skills use semantic placeholders such as `[[rsch-object:research-frame]]`; refactor-migrated companion skills use local placeholders such as `<PAPER_CONTRACT>`. V2 does not bind outputs to storage yet. |
+| v2 | `v2/isomer-rsch-<purpose>-v2/` | Active current research-method and companion skills. Core loop skills use semantic placeholders such as `[[rsch-object:research-frame]]`; refactor-migrated companion skills use local placeholders such as `<PAPER_CONTRACT>`. V2 keeps skill outputs semantic; `isomer-rsch-workspace-mgr-v2` performs the topic-specific bootstrap pass that maps placeholders to available, planned, custom-needed, blocked, or deferred storage surfaces. |
 | v1 | `v1/isomer-rsch-<purpose>-v1/` | Preserved first-generation Isomer adaptations of source skills. These keep the richer storage, lifecycle, policy, and paper-facing guidance for reference and compatibility. |
 
 The root directory should not contain active flat `isomer-rsch-*` skill folders. New research work should target v2 unless a preserved intake behavior or older compatibility surface is explicitly needed from v1.
@@ -27,6 +27,14 @@ The root directory should not contain active flat `isomer-rsch-*` skill folders.
 | `isomer-rsch-science-v2` | Check scientific computation, data, package, simulation, or model validity. |
 
 The v2 loop is `Frame -> Comparator -> Hypothesis -> Experiment -> Analysis -> Decision -> Finalize`. `isomer-rsch-optimize-v2` overlays hypothesis, experiment, and analysis when candidate search is the work. `isomer-rsch-science-v2` supports any stage whose trust depends on scientific computation or data validity.
+
+## V2 Workspace Bootstrap Skill
+
+| Skill | Purpose |
+| --- | --- |
+| `isomer-rsch-workspace-mgr-v2` | Prepare the post-specialization research bootstrap contract for v2 skills, including workspace context, semantic label planning, placeholder binding, Agent Workspace access posture, validation, and blockers. |
+
+Run this skill after Topic Team Specialization and standard Topic Workspace initialization, before ordinary v2 research skills start writing durable placeholder bodies. The Topic Service Master may perform this pass from the Topic Workspace cwd; when that optional agent is not running, the Project Operator Session or Operator Agent performs the same bounded work.
 
 ## V2 Paper Writing Skills
 

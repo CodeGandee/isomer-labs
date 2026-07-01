@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Lesson-field coverage: fraction of lesson type, situation, action, evidence, reuse condition, and avoid condition fields completed; higher is better.
+- Overbroad-reuse count: number of optimization lessons without a clear boundary for when to reuse or avoid the lesson; lower is better.
+
+### Checks
+
 - Type gate: success, failure, fusion, or non-retry type is explicit.
 - Evidence gate: observation is tied to result, failure, or route evidence.
 - Retrieval gate: keywords and mechanism family make the card findable.

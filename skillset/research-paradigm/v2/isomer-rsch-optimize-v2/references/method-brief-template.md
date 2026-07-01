@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Brief-field coverage: fraction of title, bottleneck, limitation, mechanism, family, change layer, source lens, keep-unchanged contract, expected gain, implementation surface, risk, foundation, promote-now status, and next target completed; higher is better.
+- Implicit-comparability count: number of method briefs missing keep-unchanged conditions despite expected comparison or promotion; lower is better.
+
+### Checks
+
 - Bottleneck gate: limitation is concrete.
 - Mechanism gate: intervention, family, and change layer are explicit.
 - Comparability gate: keep-unchanged contract is present.

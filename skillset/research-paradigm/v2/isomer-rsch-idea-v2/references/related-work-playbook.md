@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Coverage-bucket count: number of relevant coverage buckets represented before final selection, including direct task overlap, failure-mode work, baseline limitations, adjacent mechanisms, and closest extensions; higher is better.
+- Cross-domain pass count: number of deliberate cross-domain mechanism passes when the bottleneck may transfer; higher is better until at least one credible pass is complete.
+
+### Checks
+
 - Search breadth: direct, failure-mode, mechanism, and adjacent-domain neighborhoods were checked when relevant.
 - Prior-work table: each serious candidate has comparable prior work with mechanism, task, dataset, metric, claim, and implication fields.
 - Novelty verdict: each top candidate has one of `novel`, `incremental but valuable`, or `not sufficiently differentiated`.

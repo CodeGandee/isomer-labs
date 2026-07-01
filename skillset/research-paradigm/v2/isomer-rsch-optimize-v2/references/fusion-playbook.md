@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Real-strength line count: number of candidate or implementation lines with real, durable strengths before fusion; higher is better until at least two complementary lines exist.
+- Fusion-survival coverage: fraction of line strengths that are explicitly marked as must-survive in the fusion plan; higher is better.
+
+### Checks
+
 - Eligibility gate: two or more lines have real, complementary strengths.
 - Mechanism gate: fusion object and bottleneck are concrete.
 - Comparability gate: keep-unchanged contract is explicit.

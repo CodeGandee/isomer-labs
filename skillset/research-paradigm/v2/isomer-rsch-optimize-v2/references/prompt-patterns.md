@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Prompt-field coverage: fraction of target, change, keep-unchanged contract, evidence, validation, and archive instruction fields included in the generated prompt; higher is better.
+- Low-information-activity count: number of generated prompts that would create activity without moving the incumbent, frontier, blocker, or route decision; lower is better.
+
+### Checks
+
 - Skeleton gate: context, prior line, instructions, and response shape are present when needed.
 - Reasoning gate: what, why, how, keep-unchanged, and next action are explicit.
 - Drift gate: prompt prevents activity without frontier movement.

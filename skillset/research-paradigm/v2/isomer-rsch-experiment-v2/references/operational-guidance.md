@@ -33,6 +33,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Run-manifest coverage: fraction of required run manifest fields captured for commands, paths, metrics, environment, resources, and provenance when a main run is executed; higher is better.
+- Repeated-incident count: number of old command paths or failure patterns retried without checking recent memory or recording a new mitigation; lower is better.
+
+### Checks
+
 - Workspace gate: active workspace, comparator source, output surface, and branch assumptions are explicit.
 - Resource gate: assigned resources, environment facts, dependency risks, and reconstruction gaps are recorded.
 - Durable-output gate: <EXPERIMENT_ARTIFACT_MANIFEST> accounts for manifest, metrics, summary, command logs, config pointers, environment facts, and route decision.

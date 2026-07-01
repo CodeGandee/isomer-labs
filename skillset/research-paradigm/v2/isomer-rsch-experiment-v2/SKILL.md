@@ -60,6 +60,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Quality Gates
 
+### Metrics
+
+- Evidence target level: achieved evidence level relative to the planned minimum, solid, or maximum target; higher is better only after comparability is preserved.
+- Required metric completeness: fraction of required metric keys that are finite, traceable to outputs, and comparable with the accepted comparator; higher is better.
+
+### Checks
+
 - Contract readiness: <EXPERIMENT_CONTRACT> names the question, hypothesis, comparator, dataset, split, metric keys, stop and abandonment conditions, expected outputs, and route linkage.
 - Scope control: <IMPLEMENTATION_CHANGE_MAP> covers the intended mechanism and excludes unrelated cleanup.
 - Evidence completeness: <MAIN_RUN_RECORD> includes commands, configs, logs, outputs, seeds, environment facts, and last-known-good state.

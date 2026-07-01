@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Route-record field coverage: fraction of objective, baseline contract, execution choice, acceptance boundary, and current-frontier fields completed; higher is better.
+- Acceptance-boundary ambiguity count: number of accept, block, waive, route-switch, or evidence-required conditions still unclear; lower is better.
+
+### Checks
+
 - Objective gate: acceptance target, success condition, and user constraints are explicit.
 - Contract gate: route, comparator, source, task, dataset, split, metrics, and deviations are recorded.
 - Execution gate: environment, command, endpoint, trusted-output path, expected outputs, and cost are visible.

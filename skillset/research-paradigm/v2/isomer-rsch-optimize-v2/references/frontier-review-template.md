@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Frontier-field coverage: fraction of mode, best line, best run, stagnant branches, candidate backlog, fusion candidates, blockers, strongest support, contradiction, unresolved risk, route choice, submode, and review trigger fields completed; higher is better.
+- Active-submode count: number of active optimize submodes selected for the next pass; closer to exactly 1 is better.
+
+### Checks
+
 - State gate: best line, best run, stagnation, backlog, fusion candidates, and blockers are visible.
 - Evidence gate: support, contradiction, and unresolved risk are separate.
 - Route gate: explore, exploit, fusion, debug, or stop is justified.

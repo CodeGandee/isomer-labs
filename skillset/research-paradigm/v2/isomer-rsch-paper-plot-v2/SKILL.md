@@ -56,7 +56,14 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
-## Cross-Step Quality Checks
+## Cross-Step Quality Gates
+
+### Metrics
+
+- Render inspection coverage: fraction of generated first-pass figures that were actually opened and inspected before handoff; higher is better.
+- Template mutation count: number of bundled template files mutated instead of copied before editing; lower is better.
+
+### Checks
 
 - Evidence check: all claims, figures, tables, responses, or statements are traceable to source evidence or explicitly marked as missing.
 - Route check: the next skill route is named when this skill cannot responsibly finish the task itself.

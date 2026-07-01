@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Contract field coverage: fraction of question, hypotheses, comparator, dataset, split, metric keys, primary metric, evaluator assumptions, outputs, stop condition, abandonment condition, budget, and alternative hypothesis recorded; higher is better.
+- Material-change ambiguity count: number of code-path, comparability, runtime, or execution-route changes still unrecorded before compute or code work continues; lower is better.
+
+### Checks
+
 - Readiness check: selected hypothesis, accepted comparator basis, metric contract, and execution surface are explicit.
 - Research check: question, null hypothesis, alternative hypothesis, selected hypothesis, expected answer signal, and strongest alternative hypothesis are stated.
 - Comparability check: dataset, split, evaluator, primary metric, required metric keys, and comparator basis are fixed or deviations are named.

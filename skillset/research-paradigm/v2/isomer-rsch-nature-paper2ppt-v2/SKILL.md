@@ -57,7 +57,14 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
-## Cross-Step Quality Checks
+## Cross-Step Quality Gates
+
+### Metrics
+
+- Slide count fit: number of slides in a quick or unspecified deck; closer to the 10-14 slide target is better, and staying at or below 16 is better unless the user asked for a detailed seminar.
+- Embedded media count: number of embedded figures or media items that remain readable at presentation scale; higher is better until every evidence-critical visual is represented.
+
+### Checks
 
 - Evidence check: all claims, figures, tables, responses, or statements are traceable to source evidence or explicitly marked as missing.
 - Route check: the next skill route is named when this skill cannot responsibly finish the task itself.

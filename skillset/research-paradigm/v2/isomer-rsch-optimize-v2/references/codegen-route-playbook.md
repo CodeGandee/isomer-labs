@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Codegen-plan coverage: fraction of short plan, bounded implementation surface, keep-unchanged contract, and validation step fields completed before code generation; higher is better.
+- Comparability-risk count: number of generated-code changes without an explicit keep-unchanged condition when comparability matters; lower is better.
+
+### Checks
+
 - Route gate: brief-only, stepwise, patch, or rewrite route is justified.
 - Scope gate: implementation surface is bounded.
 - Stability gate: keep-unchanged contract is explicit.

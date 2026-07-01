@@ -26,6 +26,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Objective-field coverage: fraction of real objective, scoreboard metric, trusted proxy, convenience proxy, failure case, and inviolable constraint fields completed; higher is better.
+- Proxy-risk count: number of apparent improvements that would still fail the real objective or violate deployment, leakage, submission-time, or comparability constraints; lower is better.
+
+### Checks
+
 - Target clarity: <OBJECTIVE_CONTRACT> lets a later agent tell whether a candidate improves the real target or only a proxy.
 - Constraint clarity: every hard constraint is testable enough to reject an invalid route.
 - False-progress clarity: the contract names at least one concrete misleading signal when the source context exposes one.

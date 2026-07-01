@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Audit-path coverage: fraction of source identity, execution entrypoint, evaluation path, config, data flow, metric computation, outputs, checkpoints, logs, and trust-risk fields recorded; higher is better.
+- Unresolved trust-risk count: number of environment, hardware, service, credential, download, setup, or comparability risks still unresolved after the audit; lower is better.
+
+### Checks
+
 - Necessity gate: reproduce or repair needs the audit.
 - Identity gate: source, version, package, or commit is recorded.
 - Execution gate: entrypoints, evaluation path, config, data, metrics, outputs, and checkpoints are mapped.

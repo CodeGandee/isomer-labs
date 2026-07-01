@@ -56,13 +56,21 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
-## Cross-Step Quality Checks
+## Cross-Step Quality Gates
 
-- Evidence check: all claims, figures, tables, responses, or statements are traceable to source evidence or explicitly marked as missing.
-- Route check: the next skill route is named when this skill cannot responsibly finish the task itself.
-- Placeholder check: all handoff objects in the workflow appear in `migrate/placeholders.md`.
-- Source-preservation check: source logic remains auditable in `org/src/` and `org/analysis/analysis-of-rebuttal.md`.
-- Paper-hygiene check: manuscript-facing output excludes route-control wording, local runtime details, and unsupported certainty.
+### Metrics
+
+- Reviewer-item resolution coverage: fraction of serious reviewer items with a stable id, action class, route, evidence or text delta, and response status; higher is better.
+- Feasible critical-row blocker count: number of reviewer-critical and currently feasible experiment, analysis, or manuscript matrix rows still unresolved before package handoff; lower is better.
+
+### Checks
+
+- Review-matrix check: <REVIEWER_ITEM_MATRIX> preserves reviewer wording faithfully and gives each substantive item a stable id, class, severity, effect, evidence anchor, and preliminary route.
+- Action-plan check: <REBUTTAL_ACTION_PLAN> records stance, route, sufficiency reason, existing evidence, missing work, and for experimental items a hypothesis, required metrics, minimal plan, enhanced plan, and fallback response.
+- Experiment-routing check: supplementary runs are launched only for named reviewer concerns and link back to reviewer ids and paper experiment matrix ids when those ids exist.
+- Text-delta check: <MANUSCRIPT_TEXT_DELTA> identifies section, old claim or weakness, new wording or scope, and evidence basis for manuscript changes.
+- Response-honesty check: <RESPONSE_LETTER_DRAFT> is evidence-backed, calm, specific, and explicit about limitations or infeasible requests instead of promising unsupported work.
+- Handoff check: <REVISION_HANDOFF_BUNDLE> covers overall response, reviewer-specific replies, revision strategy, evidence mapping, unresolved risks, and next route.
 
 ## Reference Routing
 

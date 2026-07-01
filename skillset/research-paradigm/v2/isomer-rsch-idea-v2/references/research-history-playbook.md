@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Field-map coverage: number of strong reviews or tutorials, recent representative papers, and seminal or foundational papers covered relative to the source targets of 3, about 10, and about 5; higher is better until those targets are satisfied.
+- Lineage-table coverage: number of strongest active-neighborhood papers tracked with paradigm, assumption, dataset, metric, limitation, and inheritance notes; higher is better until the 20-40 paper source range is covered.
+
+### Checks
+
 - Field map: the major subproblems, paradigms, datasets, metrics, and failure modes are visible.
 - Paper roles: foundational, turning-point, and current strongest papers are named or their absence is justified.
 - Lineage clarity: the pass shows which assumptions survived, changed, or were never tested.

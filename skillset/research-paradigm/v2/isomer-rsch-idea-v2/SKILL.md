@@ -64,6 +64,13 @@ Read these pages as needed:
 
 ## Cross-Step Quality Gates
 
+### Metrics
+
+- Usable literature coverage: count of directly usable or mechanism-relevant papers grounding a paper-ready idea package; higher is better until the active survey floor is satisfied.
+- Ideation lens diversity: count of distinct relevant ideation lenses used before convergence; higher is better until the required diversity floor is satisfied.
+
+### Checks
+
 - Evidence coverage: <LITERATURE_SURVEY_REPORT> identifies reused evidence, new evidence, unresolved gaps, and closest prior work before selection.
 - Candidate diversity: <CANDIDATE_IDEA_FRONTIER> contains meaningfully different route families unless durable evidence justifies a single route.
 - Challenge coverage: every serious surviving candidate has a <PRE_IDEA_DRAFT> or equivalent challenge memo before promotion.

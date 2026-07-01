@@ -39,6 +39,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Mechanism-family coverage: number of distinct mechanism families represented in the serious brief slate before ranking; higher is better until the slate is not one-family narrow.
+- Primary-submode count: number of primary optimize submodes selected for one meaningful pass; closer to exactly 1 is better.
+
+### Checks
+
 - Frontier gate: candidates, active lines, recent results, failures, blockers, and recommended route are current.
 - Submode gate: fusion, debug, rank, brief, seed, loop, or stop is singular and justified.
 - Candidate gate: brief slate has differentiated mechanisms, shared comparison surface, ranking or promotion rationale, and cap.

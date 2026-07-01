@@ -50,6 +50,22 @@ Read these pages as needed:
 - `references/finalization-checklist.md` for closure checklist, package inventory, and anti-pattern gates.
 - `references/checkpoint-memory-template.md` for pause-ready or continue-later checkpoint continuity notes.
 
+## Cross-Step Quality Gates
+
+### Metrics
+
+- Closure blocker count: number of unresolved evidence, writing, review, proofing, submission, package, or route blockers that still prevent honest closure; lower is better.
+- Claim-ledger coverage: fraction of important outcomes classified as supported, partially supported, unsupported, or deferred with evidence paths and caveats; higher is better.
+
+### Checks
+
+- Context check: <FINALIZE_CONTEXT_BRIEF> inventories accepted comparator state, runs, analysis, writing state, decisions, blockers, and package or paper manifests before closure judgment.
+- Legitimacy check: <FINALIZE_BLOCKER_RECORD> or route-back decision exists whenever required evidence, writing, review, proofing, or submission gates fail.
+- Claim check: <CLAIM_LEDGER> preserves important claims, caveats, evidence, and downgrade history instead of silently deleting weakened beliefs.
+- Limitation check: <FINAL_LIMITATIONS_REPORT> records data, metric, implementation, resource, literature, reproducibility, and unsupported-claim limits.
+- Recommendation check: <CLOSURE_DECISION> states stop, park-and-continue-later, publish-and-continue, archive, or route-back with the evidence and reopen condition.
+- Resume check: <RESUME_PACKET> or <FINALIZE_CONTINUITY_UPDATE> tells a later agent what to read first, what not to repeat, and which route remains open.
+
 ## Exit Criteria
 
 This skill can end only when the relevant placeholders are explicit enough for the next route, a blocker is recorded, and later v2 skills do not need to guess what changed or why.

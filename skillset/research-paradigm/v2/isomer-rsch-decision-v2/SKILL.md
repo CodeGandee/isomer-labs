@@ -49,6 +49,22 @@ Read these pages as needed:
 - `references/strategic-decision-template.md` for record a consequential route decision durably.
 - `references/checkpoint-memory-template.md` for preserve a resume point after a route-changing decision.
 
+## Cross-Step Quality Gates
+
+### Metrics
+
+- Route-blocking unknown count: number of unresolved state, evidence, preference, scope, or cost unknowns that would change the chosen canonical action; lower is better.
+- Rejected-alternative coverage: fraction of serious rejected alternatives or blockers in <ROUTE_DECISION_RECORD> with a decisive reason and evidence basis; higher is better.
+
+### Checks
+
+- Readiness check: <DECISION_CONTEXT_BRIEF> makes the current line, latest decisive result, and stale-route state clear enough to judge or routes to a reconciliation skill.
+- Question check: <ROUTE_QUESTION> names the real decision, strongest support, strongest contradiction, main risk, main cost, and genuinely new evidence.
+- Action check: the chosen canonical action is the smallest action that resolves the current state and does not hide a blocker behind vague continuation.
+- Record check: <ROUTE_DECISION_RECORD> includes verdict, action, reason, evidence, rejected alternatives, and next route.
+- User-decision check: <USER_DECISION_REQUEST> appears only when local evidence cannot safely resolve a real preference, scope, or cost choice.
+- Continuity check: <DECISION_CHECKPOINT_MEMORY> or the next route record is explicit enough that later v2 skills do not need to guess what changed.
+
 ## Exit Criteria
 
 This skill can end only when the relevant placeholders are explicit enough for the next route, a blocker is recorded, and later v2 skills do not need to guess what changed or why.

@@ -58,6 +58,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Quality Gates
 
+### Metrics
+
+- Evidence-node coverage: fraction of package checks, runs, analyses, sweeps, validations, and claims that have corresponding Science Evidence Graph records when they materially affect the result; higher is better.
+- Unsupported computed-claim count: number of claims labeled computed without linked run, analysis, sweep, validation, or evidence paths; lower is better.
+
+### Checks
+
 - Task gate: <SCIENCE_TASK_BRIEF> names domain, objective, inputs, outputs, package needs, claim type, resources, validation checks, and downstream consumer.
 - Package gate: <SCIENCE_PACKAGE_CHECK> records import, executable, version, module, container, backend, license, and smoke evidence when relevant.
 - Execution gate: <SCIENCE_RUN_RECORD> preserves command, input, log, output, status, environment, and package context.

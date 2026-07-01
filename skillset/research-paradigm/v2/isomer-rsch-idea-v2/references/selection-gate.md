@@ -30,6 +30,14 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Value-screen score: average or total score across importance, novelty, feasibility, verifiability, report or paper potential, failure value, and boundary-changing potential on the source 1-5 scale; higher is better.
+- Lightweight quality total: sum of novelty, falsifiability, feasibility, evidence quality, and constraint fit on the source 0/1/2 scale; higher is better, and at least 7 out of 10 is required for promotion.
+- Usable related-paper count: number of related and usable papers already covered by the survey before paper-ready promotion; higher is better until the usual 5-10 paper range is satisfied.
+
+### Checks
+
 - Value gate: the route passes importance, feasibility, verifiability, failure value, and relevance checks.
 - Novelty gate: the route is `novel` or `incremental but valuable`, not `not sufficiently differentiated`.
 - Evidence gate: literature, comparator evidence, and pre-idea draft support the selection.

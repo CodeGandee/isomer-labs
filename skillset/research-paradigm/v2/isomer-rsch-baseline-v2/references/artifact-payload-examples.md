@@ -26,6 +26,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Payload-field coverage: fraction of required route, blocker, accepted baseline, variant, metric, environment, source, caveat, and next-direction fields present for the selected payload type; higher is better.
+- Untraceable-metric count: number of metric ids, primary metrics, or metric summaries collapsed into an untraceable scalar; lower is better.
+
+### Checks
+
 - Type gate: payload type matches accepted, waived, blocked, or route decision state.
 - Audit gate: reason, evidence, source, metrics, caveats, and next direction are recoverable.
 - Metric gate: required metric ids, primary metric, and metric summary are not collapsed into an untraceable scalar.

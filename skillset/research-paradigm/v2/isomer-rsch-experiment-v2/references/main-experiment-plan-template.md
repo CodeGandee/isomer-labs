@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Plan-section coverage: fraction of map link, objective, current tasks, baseline/comparability, code translation, execution design, runtime strategy, fallbacks, checklist link, and revision log sections completed; higher is better.
+- Budget-ambiguity count: number of expected runtime, compute, fallback, or downscope decisions still unspecified before execution; lower is better.
+
+### Checks
+
 - Objective gate: selected hypothesis, user constraints, research question, null hypothesis, and alternative hypothesis are explicit.
 - Comparability gate: comparator, dataset, split, metric keys, evaluator assumptions, and risks are visible.
 - Implementation gate: planned code changes are mapped to mechanism and risk.

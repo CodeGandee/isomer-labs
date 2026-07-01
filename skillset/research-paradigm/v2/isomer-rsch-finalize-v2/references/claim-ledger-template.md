@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Claim classification coverage: fraction of important supported, partial, weakened, failed, deferred, and intentionally unmade claims classified with status, evidence, caveats, surface-safety, and recommendation; higher is better.
+- Missing downgrade-history count: number of weakened claims without a recorded belief-change reason; lower is better.
+
+### Checks
+
 - Claim coverage: every important outcome and major negative result is represented.
 - Evidence traceability: each claim has inspectable evidence or a clear absence of support.
 - Caveat quality: claim limits are concrete enough to prevent overclaiming.

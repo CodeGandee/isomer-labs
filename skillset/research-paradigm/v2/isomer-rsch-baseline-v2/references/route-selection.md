@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Trust-per-cost rank: ordinal fit of the chosen route relative to lighter trustworthy routes that could satisfy the acceptance target; lower-cost trustworthy routes are better.
+- Unresolved comparison-risk count: number of named comparison risks that still justify escalate, repair, reproduce, waive, or block routing; lower is better.
+
+### Checks
+
 - Target gate: acceptance target and current trust state are explicit.
 - Comparator gate: candidate comparator identity, source identity, and evidence already available are listed.
 - Trust-per-cost gate: chosen route explains why lighter routes are sufficient or insufficient.

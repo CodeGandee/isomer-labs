@@ -35,6 +35,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Unresolved routing unknown count: number of framing unknowns that still change baseline, idea, decision, Gate, or blocker routing; lower is better.
+- Retained discovery relevance: fraction of retained discoveries that change frame, evaluation contract, comparator shortlist, or next route; higher is better.
+
+### Checks
+
 - Entry fit: scout runs only when framing ambiguity blocks routing, and exits when routing is already clear.
 - Context quality: `<SCOUT_CONTEXT_BRIEF>` states current task, dataset, split, metric, comparator status, evidence already available, and blockers.
 - Unknown quality: `<SCOUT_MINIMUM_UNKNOWNS>` contains only questions that can change baseline, idea, decision, Gate, or blocker routing.

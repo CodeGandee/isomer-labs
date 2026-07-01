@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Serious approach count: number of differentiated serious approaches generated before ranking; closer to the source 2-3 default target is better.
+- Shared-comparison coverage: fraction of serious candidates compared on the same bottleneck, mechanism, expected gain, implementation cost, risk, and fast-disconfirmation surface; higher is better.
+
+### Checks
+
 - Ambiguity gate: bottleneck, constraint, comparator boundary, and incumbent are clear enough to shape candidates.
 - Diversity gate: serious slate covers distinct mechanism families or explains why it cannot.
 - Comparison gate: all serious candidates are judged on one shared surface.

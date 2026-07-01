@@ -59,6 +59,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Cross-Step Quality Gates
 
+### Metrics
+
+- Quick validation latency: expected time for seed or candidate checks in fast-validation mode; lower is better when the check still answers the target.
+- Complementary line count: number of durable optimization lines with meaningful complementary strengths before fusion; higher is better until the fusion precondition is satisfied.
+
+### Checks
+
 - Frontier gate: <OPTIMIZATION_FRONTIER> separates candidate briefs, durable lines, implementation attempts, measured results, failures, blockers, and route recommendation.
 - Submode gate: exactly one primary submode is selected with a reason.
 - Brief gate: <CANDIDATE_BRIEF> or <METHOD_BRIEF> states bottleneck, mechanism, family, change layer, keep-unchanged contract, expected gain, risks, foundation, and next target.

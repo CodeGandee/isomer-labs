@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Checklist completion: fraction of objective, resource, evidence, comparability, paper/review, and closeout checklist items satisfied or explicitly waived; higher is better.
+- Unresolved route item count: number of checklist items whose failure would change continue, write, experiment, idea, decision, stop, or blocker routing; lower is better.
+
+### Checks
+
 - Frontier gate: next slice, aggregation, blocker, or route decision is explicit.
 - Resource gate: planned slices are screened against current limits.
 - Evidence gate: launched slices have durable outcomes, evidence fields, claim updates, and comparability verdicts.

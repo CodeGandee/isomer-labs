@@ -57,7 +57,14 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
-## Cross-Step Quality Checks
+## Cross-Step Quality Gates
+
+### Metrics
+
+- Final text size fit: final-size label text stays within the selected journal-readable point-size range; closer to the accepted range is better.
+- Panel evidence coverage: fraction of panels with explicit source data, statistic, claim, and integrity notes; higher is better.
+
+### Checks
 
 - Evidence check: all claims, figures, tables, responses, or statements are traceable to source evidence or explicitly marked as missing.
 - Route check: the next skill route is named when this skill cannot responsibly finish the task itself.

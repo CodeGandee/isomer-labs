@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Summary component coverage: fraction of closure recommendation, stage, accepted comparator, supported findings, partial claims, negative results, risks, deliverables, package status, limitations, recommendation, and reopen conditions included; higher is better.
+- Unsupported-claim count: number of unresolved, unsupported, or intentionally unmade claims surfaced as if they were supported findings; lower is better.
+
+### Checks
+
 - Summary accuracy: the summary reflects <CLAIM_LEDGER> and <FINAL_LIMITATIONS_REPORT>.
 - Recommendation clarity: the chosen closure route and alternatives are understandable.
 - Limitation quality: unresolved risks and unsupported claims are visible.

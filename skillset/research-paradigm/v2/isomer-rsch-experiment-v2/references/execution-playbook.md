@@ -37,6 +37,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Required metric completeness: fraction of exact metric keys that decide success or failure and are present, finite, and comparable with the baseline contract; higher is better.
+- Evidence-ladder progress: achieved position on the minimum -> solid -> maximum paper-facing evidence ladder; higher is better after comparability is preserved.
+
+### Checks
+
 - Preflight gate: dataset, split, comparator metrics, selected hypothesis, code plan, outputs, and prior incident risks are known.
 - Implementation gate: <IMPLEMENTATION_CHANGE_MAP> names the changed files, intended mechanism, expected risk, and any guard or sanity check.
 - Smoke gate: <SMOKE_CHECK_RECORD> states the uncertainty tested, result, and whether main execution is now justified.

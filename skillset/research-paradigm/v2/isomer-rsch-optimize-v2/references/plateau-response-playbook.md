@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Same-family retry count: number of repeated same-family Tier1 tweaks after plateau or patience exhaustion; lower is better.
+- Plateau-response field coverage: fraction of plateau description, root cause, route change, non-repeat rule, and family-shift trigger fields completed; higher is better.
+
+### Checks
+
 - Plateau gate: repeated non-improvement or same-family collapse is documented.
 - Cause gate: likely root cause is named.
 - Route gate: widen, alternative, fusion, debug, or stop is selected.

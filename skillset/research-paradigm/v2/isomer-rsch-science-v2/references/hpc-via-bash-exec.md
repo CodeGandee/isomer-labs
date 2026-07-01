@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- HPC lifecycle coverage: fraction of remote access, scheduler availability, job script, submission, job id, queue state, log path, monitoring, completion, and validation-record steps completed; higher is better.
+- Unmonitored job count: number of submitted or queued jobs without a status-reading plan and log path; lower is better.
+
+### Checks
+
 - Access gate: scheduler, remote access, modules, license, data, and allocation are available or blocked explicitly.
 - Submission gate: job id, queue state, logs, resources, and expected outputs are recorded.
 - Monitoring gate: status is read from durable scheduler and log evidence.

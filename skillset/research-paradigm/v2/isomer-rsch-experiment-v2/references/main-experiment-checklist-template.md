@@ -26,6 +26,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Checklist completion: fraction of checklist items satisfied or explicitly marked not applicable across idea summary, baseline/comparability, execution, result, and route sections; higher is better.
+- Unresolved required-item count: number of required checklist items still unchecked without a blocker, waiver, or route change; lower is better.
+
+### Checks
+
 - Frontier clarity: one concrete item is in progress and the next step is explicit.
 - Planning coverage: selected hypothesis, comparator, code touchpoints, smoke plan, full run plan, and fallback options are checked or explicitly not needed.
 - Implementation coverage: intended files, unrelated-change avoidance, risky logic guards, and route changes are tracked.

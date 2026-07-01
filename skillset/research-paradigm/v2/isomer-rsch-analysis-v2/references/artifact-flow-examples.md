@@ -29,6 +29,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Launched-slice record coverage: fraction of launched slices that have <ANALYSIS_SLICE_RECORD> before campaign-level interpretation; higher is better.
+- Flow-mismatch count: number of evidence flows whose selected route does not match existing, one-slice, multi-slice, writing-facing, failed, infeasible, or audit-only status; lower is better.
+
+### Checks
+
 - Flow gate: the selected flow matches whether evidence is existing, one-slice, multi-slice, writing-facing, failed, infeasible, or audit-only.
 - Lineage gate: campaign lineage is used when it adds durable trust, not as automatic ceremony.
 - Record gate: every launched slice has <ANALYSIS_SLICE_RECORD>.

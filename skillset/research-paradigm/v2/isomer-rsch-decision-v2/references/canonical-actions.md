@@ -26,6 +26,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Rejected-action coverage: fraction of serious alternative canonical actions recorded with decisive reasons; higher is better.
+- Oversized-action count: number of chosen actions larger than the smallest canonical action that genuinely resolves the route question; lower is better.
+
+### Checks
+
 - Action fit: the chosen action resolves the route question with no larger move than necessary.
 - Alternative visibility: main rejected actions and decisive reasons are recorded.
 - Downstream clarity: the next v2 skill or blocker can act from <ROUTE_DECISION_RECORD>.

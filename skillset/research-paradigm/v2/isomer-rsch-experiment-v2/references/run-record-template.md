@@ -30,6 +30,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Payload completeness: fraction of contract, implementation delta, commands, logs, outputs, metrics, seeds, environment facts, changed files, and config paths present or explicitly marked missing; higher is better.
+- Claim-validation coverage: fraction of claims with metric key, expected direction, observed result, verdict, and caveat recorded; higher is better.
+
+### Checks
+
 - Payload completeness: contract, implementation delta, commands, logs, outputs, metrics, seeds, environment facts, changed files, and config paths are present or gaps are recorded.
 - Evaluation summary: `takeaway`, `claim_update`, `baseline_relation`, `comparability`, `failure_mode`, and `next_action` are filled.
 - Claim traceability: each claim has a metric key, expected direction, observed result, and verdict.

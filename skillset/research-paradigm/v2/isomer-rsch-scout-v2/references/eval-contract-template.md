@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Evaluation-contract field coverage: fraction of task, dataset, split, primary metric, metric direction, fair-comparison rule, useful-improvement threshold, evidence, and ambiguity fields completed; higher is better.
+- Remaining ambiguity count: number of evaluation-contract ambiguities that still change baseline, idea, experiment, or blocker routing; lower is better.
+
+### Checks
+
 - Downstream sufficiency: `isomer-rsch-baseline-v2`, `isomer-rsch-idea-v2`, and `isomer-rsch-experiment-v2` can use the contract without re-deriving task, split, metric, or fairness.
 - Evidence traceability: key contract fields cite local, literature, benchmark, or repository evidence.
 - Ambiguity visibility: unresolved ambiguity is tabled with impact and proposed resolution.

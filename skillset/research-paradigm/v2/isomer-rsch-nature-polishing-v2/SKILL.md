@@ -57,13 +57,20 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
-## Cross-Step Quality Checks
+## Cross-Step Quality Gates
 
-- Evidence check: all claims, figures, tables, responses, or statements are traceable to source evidence or explicitly marked as missing.
-- Route check: the next skill route is named when this skill cannot responsibly finish the task itself.
-- Placeholder check: all handoff objects in the workflow appear in `migrate/placeholders.md`.
-- Source-preservation check: source logic remains auditable in `org/src/` and `org/analysis/analysis-of-nature-polishing.md`.
-- Paper-hygiene check: manuscript-facing output excludes route-control wording, local runtime details, and unsupported certainty.
+### Metrics
+
+- Long-sentence count: number of polished sentences longer than 30 words; lower is better.
+- Claim-boundary violation count: number of polished claims whose strength exceeds the source evidence, author meaning, or known limitation boundary; lower is better.
+
+### Checks
+
+- Claim-boundary check: <CLAIM_BOUNDARY_CHECK> exists before polished claims are returned and marks any missing support, overclaim risk, or needed downgrade.
+- Argument-order check: the rewrite addresses paper type, section job, paragraph logic, and claim/evidence/boundary fit before sentence-level polish.
+- Source-fidelity check: <POLISHED_MANUSCRIPT_TEXT> preserves author meaning and does not invent data, references, mechanisms, methods, novelty, or conclusions.
+- Style-QA check: <POLISHING_STYLE_QA> records sentence length, paragraph controlling idea, Results versus Discussion drift, citation hygiene, and AI-boundary risks when relevant.
+- Paper-hygiene check: manuscript-facing output excludes route-control wording, local runtime details, prompt state, and unsupported certainty.
 
 ## Reference Routing
 

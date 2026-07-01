@@ -31,6 +31,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Competing hypothesis count: number of competing hypotheses kept alive before convergence; closer to 2-3 is better.
+- Falsification clarity count: number of candidate routes with an explicit failure result or demotion condition; higher is better.
+
+### Checks
+
 - Limitation quality: the failure is concrete, important, and supported by evidence.
 - Hypothesis quality: the main hypothesis and competing hypotheses can be distinguished by evidence.
 - Mechanism quality: the route has code touchpoints and assumptions, not only a surface metric.

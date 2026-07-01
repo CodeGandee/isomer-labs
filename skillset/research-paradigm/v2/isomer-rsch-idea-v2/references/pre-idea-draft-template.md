@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Candidate focus count: number of top candidates maintained in the pre-idea draft set; closer to 1-3 is better.
+- Challenge-question coverage: fraction of the nine required candidate challenge questions answered explicitly; higher is better.
+
+### Checks
+
 - Assumption gate: the most fragile assumptions are explicit.
 - Rejection gate: the draft states why the candidate might be wrong now.
 - Falsification gate: the minimal experiment and abandonment condition are concrete.

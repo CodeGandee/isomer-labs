@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Resume-field coverage: fraction of current state, accepted baseline, strongest evidence, open blockers, next action, do-not-repeat notes, first-read files, and reopen condition fields completed; higher is better.
+- Open-blocker count: number of unresolved blockers left without owner, evidence need, or route implication; lower is better.
+
+### Checks
+
 - Restart clarity: a future turn can resume from the packet without reconstructing the whole history.
 - Evidence clarity: strongest evidence and caveats are named.
 - Blocker clarity: open blockers have owning stages or routes.

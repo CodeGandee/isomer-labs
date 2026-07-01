@@ -57,7 +57,14 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
-## Cross-Step Quality Checks
+## Cross-Step Quality Gates
+
+### Metrics
+
+- Dataset route coverage: fraction of result-supporting datasets with a public, controlled, reused-source, request-based, supplementary, or explicit blocked availability route; higher is better.
+- FAIR metadata coverage: fraction of required findability, accessibility, interoperability, reusability, license, provenance, README, and DataCite-style fields completed or explicitly blocked; higher is better.
+
+### Checks
 
 - Evidence check: all claims, figures, tables, responses, or statements are traceable to source evidence or explicitly marked as missing.
 - Route check: the next skill route is named when this skill cannot responsibly finish the task itself.

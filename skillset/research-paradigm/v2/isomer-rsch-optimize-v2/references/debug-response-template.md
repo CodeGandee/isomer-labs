@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Debug-response field coverage: fraction of concrete error, reused failure lesson, changed parts, unchanged parts, next check, and archive threshold fields completed; higher is better.
+- Unvalidated-fix count: number of debug changes without a bounded smoke or validation check; lower is better.
+
+### Checks
+
 - Error gate: concrete failure and evidence source are stated.
 - Lesson gate: relevant prior lessons are checked or marked absent.
 - Cause gate: likely root cause and uncertainty are explicit.

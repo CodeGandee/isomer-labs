@@ -27,6 +27,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Candidate-row coverage: fraction of candidate rows with id, type, parent, strategy, status, headline, evidence, and next action completed; higher is better.
+- Pending-next-action count: number of candidate rows whose next action remains unclear after frontier review; lower is better.
+
+### Checks
+
 - Identity gate: candidate id, level, parent, and strategy are present.
 - Status gate: proposed, smoke, promoted, failed, archived, held, or stopped status is explicit.
 - Evidence gate: observed result is evidence-backed or marked unavailable.

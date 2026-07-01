@@ -28,6 +28,13 @@ When performing this step, execute these substeps in order.
 
 ## Quality Gates
 
+### Metrics
+
+- Brief-field coverage: fraction of domain, objective, inputs, outputs, package needs, claim type, privacy, units, budget, runtime constraints, validation checks, and evidence-recording fields completed; higher is better.
+- Missing-validation count: number of task outputs or claims without a planned validation, invariant, tolerance, schema, unit, or correctness check; lower is better.
+
+### Checks
+
 - Objective gate: domain, task type, objective, and downstream consumer are clear.
 - Setup gate: inputs, parameters, units, packages, resources, and constraints are explicit.
 - Success gate: validation checks and deliverables are concrete.
