@@ -17,7 +17,7 @@ The `project` command group exposes:
 
 When `project --root` is omitted, `isomer-cli` walks up from the current working directory until it finds a `.isomer-labs/` Project Config Directory.
 
-Many topic-scoped commands also accept lifecycle selectors such as `--topic`, `--topic-workspace`, `--research-inquiry`, `--task`, `--run`, `--agent-team-instance`, and `--agent-instance`. These selectors refine the Effective Topic Context. They do not by themselves mutate state.
+Many topic-scoped commands also accept lifecycle selectors such as `--topic`, `--topic-workspace`, `--research-inquiry`, `--task`, `--run`, `--agent-team-instance`, `--agent-instance`, and `--topic-actor`. These selectors refine the Effective Topic Context or actor-scoped path context. They do not by themselves mutate state.
 
 ## Output Posture
 
@@ -196,11 +196,12 @@ Resolve one semantic workspace surface label for the selected Topic Workspace.
 
 **Side effects:** none. This command does not create `topic-workspace.toml`, directories, Workspace Runtime records, Git repositories, branches, or worktrees.
 
-Use dotted semantic labels such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch`. Add `--configured` when you need the current manifest or environment answer instead of a historical Path Plan. Agent-scoped labels need an Agent Name or Agent Instance selector unless the current working directory is already inside the selected agent's Agent Workspace.
+Use dotted semantic labels such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `topic.actors.workspace`, `topic.actors.private_artifacts`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch`. Add `--configured` when you need the current manifest or environment answer instead of a historical Path Plan. Actor-scoped labels need a Topic Actor selector unless the current working directory is already inside the selected Topic Actor Workspace. Agent-scoped labels need an Agent Name or Agent Instance selector unless the current working directory is already inside the selected agent's Agent Workspace.
 
 ```bash
 pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
 pixi run isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured
+pixi run isomer-cli --print-json project paths get topic.actors.workspace --topic my-topic --topic-actor operator
 pixi run isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent alice
 ```
 
@@ -208,10 +209,11 @@ pixi run isomer-cli --print-json project paths get agent.private_artifacts --top
 
 Show the built-in default-layout path for one reserved semantic label without Path Plan, environment, or manifest override precedence.
 
-**Side effects:** none. This command is only for Isomer-defined labels with default paths, such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `topic.tmp`, and supported `agent.*` labels.
+**Side effects:** none. This command is only for Isomer-defined labels with default paths, such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `topic.tmp`, supported `topic.actors.*` labels, and supported `agent.*` labels.
 
 ```bash
 pixi run isomer-cli --print-json project paths default topic.repos.main --topic my-topic
+pixi run isomer-cli --print-json project paths default topic.actors.workspace --topic my-topic --topic-actor operator
 pixi run isomer-cli --print-json project paths default agent.workspace --topic my-topic --agent alice
 ```
 
@@ -234,6 +236,7 @@ List known semantic workspace labels with scope, required context, resolution st
 
 ```bash
 pixi run isomer-cli project paths list --topic my-topic
+pixi run isomer-cli --print-json project paths list --topic my-topic --topic-actor operator
 pixi run isomer-cli --print-json project paths list --topic my-topic --agent alice
 ```
 
@@ -284,10 +287,11 @@ pixi run isomer-cli --print-json project paths reset topic.repos.main --topic my
 
 Write or update the Topic Workspace Manifest and create selected default-layout paths from `isomer-default.v1`.
 
-**Side effects:** writes `<topic-workspace>/topic-workspace.toml` and creates only the selected owned default directories. Without `--label`, the command materializes the standard topic-owned default readiness labels and does not create per-agent directories. Agent-scoped labels such as `agent.private_artifacts` require `--agent` or another explicit agent selector.
+**Side effects:** writes `<topic-workspace>/topic-workspace.toml` and creates only the selected owned default directories. Without `--label`, the command materializes the standard topic-owned default readiness labels and does not create per-actor or per-agent directories. Actor-scoped labels such as `topic.actors.private_artifacts` require `--topic-actor` or another explicit Topic Actor selector. Agent-scoped labels such as `agent.private_artifacts` require `--agent` or another explicit agent selector.
 
 ```bash
 pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --label topic.records.artifacts
+pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --topic-actor operator --label topic.actors.private_artifacts
 pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --agent alice --label agent.private_artifacts
 ```
 
@@ -312,6 +316,26 @@ Register and create a non-main topic repository binding without writing the mani
 pixi run isomer-cli --print-json project repos create inner_group.some_repo_name --topic my-topic
 pixi run isomer-cli --print-json project repos create topic.repos.tools.benchmarks --topic my-topic --path repos/extern/tools/benchmarks --replace
 ```
+
+### `project topic-actors list/show/register/update/archive/materialize/repair/diagnose`
+
+Manage Topic Actor bindings and Topic Actor Workspaces for human-orchestrated workers. Topic Actor bindings live in the Topic Workspace Manifest, which remains the topology and path-resolution authority. When Workspace Runtime is available, mutating operations may also record audit or provenance rows, but runtime records do not replace manifest topology.
+
+**Side effects:** `list`, `show`, and `diagnose` are read-only. `register`, `update`, and `archive` write `<topic-workspace>/topic-workspace.toml`. `materialize` and `repair` create or reuse the resolved Topic Actor Workspace and support paths, and may create a Git worktree from `topic.repos.main` using `per-topic-actor/<topic-actor-name>/main`. They do not create Agent Team Instance records, Agent Instance records, formal Agent Workspaces, Houmao launch material, or research records.
+
+```bash
+pixi run isomer-cli --print-json project topic-actors list --topic my-topic
+pixi run isomer-cli --print-json project topic-actors show operator --topic my-topic
+pixi run isomer-cli --print-json project topic-actors register operator --topic my-topic --actor-kind operator --runtime-kind human_cli --role-kind operator --controller-kind project_operator_session --materialize
+pixi run isomer-cli --print-json project topic-actors register claude-scout --topic my-topic --actor-kind manual_worker --runtime-kind claude_code --role-kind scout --controller-kind human_user --materialize
+pixi run isomer-cli --print-json project topic-actors update claude-scout --topic my-topic --status active
+pixi run isomer-cli --print-json project topic-actors materialize claude-scout --topic my-topic
+pixi run isomer-cli --print-json project topic-actors repair claude-scout --topic my-topic
+pixi run isomer-cli --print-json project topic-actors diagnose --topic my-topic --topic-actor claude-scout
+pixi run isomer-cli --print-json project topic-actors archive claude-scout --topic my-topic --reason "finished manual scouting"
+```
+
+`--source-repo` on materialization must resolve to `topic.repos.main` in this change. Alternate worktree source repositories are rejected instead of accepted as ad hoc topology.
 
 ### `schemas list`
 
@@ -555,6 +579,8 @@ Create, inspect, query, update, or archive transitional topic-scoped research re
 
 **Use:** these commands are the current extension-backed bridge for `skillset/research-paradigm/v2/*/placeholder-bindings.md`. Prefer the exact placeholder token, profile, skill, producer, and consumer metadata from the binding page. Future native `project records ...` commands may replace this extension surface.
 
+When a Topic Actor creates or updates an accepted research record, include `--topic-actor <topic-actor-name>` and known actor metadata such as `--actor-kind`, `--runtime-kind`, `--controller-kind`, and `--adapter-ref`. Include formal Agent Team Instance, Agent Instance, or Agent Workspace refs only when the record was actually produced inside that formal context; do not fabricate those refs for Topic Actor work.
+
 ```bash
 pixi run isomer-cli --print-json ext research records create \
   --topic my-topic \
@@ -564,6 +590,10 @@ pixi run isomer-cli --print-json ext research records create \
   --skill isomer-rsch-scout-v2 \
   --producer isomer-rsch-scout-v2 \
   --consumer isomer-rsch-idea-v2 \
+  --topic-actor claude-scout \
+  --actor-kind manual_worker \
+  --runtime-kind claude_code \
+  --controller-kind human_user \
   --body-file scouting-report.md
 
 pixi run isomer-cli --print-json ext research records list \
@@ -691,6 +721,9 @@ pixi run isomer-cli project --root tests/fixtures/projects/deepsci-profile-use-c
 | `project paths unregister` | yes (`topic-workspace.toml` only) | no | no | no |
 | `project paths reset` | yes (`topic-workspace.toml` only) | no | no | no |
 | `project repos create` | yes (`topic-workspace.toml`, optional repository target dir) | no | no | no |
+| `project topic-actors list/show/diagnose` | no | no | no | no |
+| `project topic-actors register/update/archive` | yes (`topic-workspace.toml`) | yes when runtime audit is available | no | no |
+| `project topic-actors materialize/repair` | yes (Topic Actor Workspace dirs or worktree) | yes when runtime audit is available | no | no |
 | `schemas list` | no | no | no | no |
 | `project runtime init` | yes (dirs, sqlite) | yes | no | no |
 | `project runtime prepare` | no | yes | no | no |

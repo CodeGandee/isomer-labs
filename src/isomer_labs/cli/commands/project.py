@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import click
 
 from isomer_labs.cli.app import (
@@ -22,6 +24,13 @@ from isomer_labs.cli.app import (
     _cmd_paths_update,
     _cmd_repos_create,
     _cmd_schemas_list,
+    _cmd_topic_actors_archive,
+    _cmd_topic_actors_diagnose,
+    _cmd_topic_actors_list,
+    _cmd_topic_actors_materialize,
+    _cmd_topic_actors_register,
+    _cmd_topic_actors_show,
+    _cmd_topic_actors_update,
     _cmd_topics_create,
     _cmd_topics_delete,
     _cmd_topics_list,
@@ -354,6 +363,401 @@ def register_project_commands(app: click.Group) -> None:
         )
 
 
+    @app.group(name="topic-actors", help="Topic Actor and Topic Actor Workspace commands.")
+    def topic_actors_group() -> None:
+        pass
+
+
+    @topic_actors_group.command(name="list", help="List Topic Actors registered in the Topic Workspace Manifest.")
+    @_common_options
+    @_topic_selection_options
+    @click.pass_context
+    def topic_actors_list_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_topic_actors_list(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
+
+
+    @topic_actors_group.command(name="show", help="Show one Topic Actor binding.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("topic_actor_name")
+    @click.pass_context
+    def topic_actors_show_command(
+        ctx: click.Context,
+        topic_actor_name: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_topic_actors_show(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            topic_actor_name,
+        )
+
+
+    def _topic_actor_mutation_options(command: Any) -> Any:
+        command = click.option("--adapter-ref", default=None, help="Optional runtime adapter ref.")(command)
+        command = click.option("--branch", default=None, help="Worktree branch under per-topic-actor/<name>/.")(command)
+        command = click.option("--workspace-path", default=None, help="Project-local Topic Actor Workspace path override.")(command)
+        command = click.option("--controller-ref", default=None, help="Optional controller ref.")(command)
+        command = click.option("--controller-kind", default=None, help="Controller kind. Core values allow custom.*.")(command)
+        command = click.option("--role-kind", default=None, help="Role kind. Core values allow custom.*.")(command)
+        command = click.option("--runtime-kind", default=None, help="Runtime kind. Core values allow custom.*.")(command)
+        command = click.option("--actor-kind", default=None, help="Actor kind. Core values allow custom.*.")(command)
+        return command
+
+
+    @topic_actors_group.command(name="register", help="Register a Topic Actor binding.")
+    @_common_options
+    @_topic_selection_options
+    @_topic_actor_mutation_options
+    @click.option("--status", "actor_status", default="ready", show_default=True, help="Topic Actor status.")
+    @click.option("--replace", "replace_existing", is_flag=True, help="Replace an existing Topic Actor binding explicitly.")
+    @click.option("--materialize", is_flag=True, help="Materialize the Topic Actor Workspace after registration.")
+    @click.argument("topic_actor_name")
+    @click.pass_context
+    def topic_actors_register_command(
+        ctx: click.Context,
+        topic_actor_name: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        actor_kind: str | None = None,
+        runtime_kind: str | None = None,
+        role_kind: str | None = None,
+        controller_kind: str | None = None,
+        controller_ref: str | None = None,
+        workspace_path: str | None = None,
+        branch: str | None = None,
+        adapter_ref: str | None = None,
+        actor_status: str = "ready",
+        replace_existing: bool = False,
+        materialize: bool = False,
+    ) -> int:
+        return _cmd_topic_actors_register(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            topic_actor_name,
+            actor_kind=actor_kind,
+            runtime_kind=runtime_kind,
+            role_kind=role_kind,
+            controller_kind=controller_kind,
+            controller_ref=controller_ref,
+            workspace_path=workspace_path,
+            branch=branch,
+            adapter_ref=adapter_ref,
+            status=actor_status,
+            replace_existing=replace_existing,
+            materialize=materialize,
+        )
+
+
+    @topic_actors_group.command(name="update", help="Update an existing Topic Actor binding.")
+    @_common_options
+    @_topic_selection_options
+    @_topic_actor_mutation_options
+    @click.option("--status", "actor_status", default=None, help="Replacement Topic Actor status.")
+    @click.argument("topic_actor_name")
+    @click.pass_context
+    def topic_actors_update_command(
+        ctx: click.Context,
+        topic_actor_name: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        actor_kind: str | None = None,
+        runtime_kind: str | None = None,
+        role_kind: str | None = None,
+        controller_kind: str | None = None,
+        controller_ref: str | None = None,
+        workspace_path: str | None = None,
+        branch: str | None = None,
+        adapter_ref: str | None = None,
+        actor_status: str | None = None,
+    ) -> int:
+        return _cmd_topic_actors_update(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            topic_actor_name,
+            actor_kind=actor_kind,
+            runtime_kind=runtime_kind,
+            role_kind=role_kind,
+            controller_kind=controller_kind,
+            controller_ref=controller_ref,
+            workspace_path=workspace_path,
+            branch=branch,
+            adapter_ref=adapter_ref,
+            status=actor_status,
+        )
+
+
+    @topic_actors_group.command(name="archive", help="Archive a Topic Actor binding without deleting its workspace.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("topic_actor_name")
+    @click.pass_context
+    def topic_actors_archive_command(
+        ctx: click.Context,
+        topic_actor_name: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_topic_actors_archive(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            topic_actor_name,
+        )
+
+
+    @topic_actors_group.command(name="materialize", help="Materialize or reuse a Topic Actor Workspace.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--source-repo", default=None, help="Must resolve to topic.repos.main in this change.")
+    @click.argument("topic_actor_name")
+    @click.pass_context
+    def topic_actors_materialize_command(
+        ctx: click.Context,
+        topic_actor_name: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        source_repo: str | None = None,
+    ) -> int:
+        return _cmd_topic_actors_materialize(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            topic_actor_name,
+            source_repo=source_repo,
+        )
+
+
+    @topic_actors_group.command(name="repair", help="Repair Topic Actor Workspace materialization.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--source-repo", default=None, help="Must resolve to topic.repos.main in this change.")
+    @click.argument("topic_actor_name")
+    @click.pass_context
+    def topic_actors_repair_command(
+        ctx: click.Context,
+        topic_actor_name: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        source_repo: str | None = None,
+    ) -> int:
+        return _cmd_topic_actors_materialize(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            topic_actor_name,
+            source_repo=source_repo,
+            command_name="topic-actors repair",
+        )
+
+
+    @topic_actors_group.command(name="diagnose", help="Diagnose Topic Actor topology and paths.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name to diagnose.")
+    @click.pass_context
+    def topic_actors_diagnose_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        topic_actor_name: str | None = None,
+    ) -> int:
+        return _cmd_topic_actors_diagnose(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            topic_actor_name,
+        )
+
+
     @app.group(name="context", help="Effective Topic Context commands.")
     def context_group() -> None:
         pass
@@ -363,6 +767,7 @@ def register_project_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-context display.")
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name for actor-context display.")
     @click.pass_context
     def context_show_command(
         ctx: click.Context,
@@ -378,6 +783,7 @@ def register_project_commands(app: click.Group) -> None:
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
         agent_name: str | None = None,
+        topic_actor_name: str | None = None,
         topic_agent_team_profile_id: str | None = None,
     ) -> int:
         return _cmd_context_show(
@@ -395,6 +801,7 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             )
         )
@@ -447,6 +854,7 @@ def register_project_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name for actor-scoped labels.")
     @click.option("--configured", is_flag=True, help="Ignore stored Path Plans and use current configuration.")
     @click.argument("semantic_label")
     @click.pass_context
@@ -465,6 +873,7 @@ def register_project_commands(app: click.Group) -> None:
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
         agent_name: str | None = None,
+        topic_actor_name: str | None = None,
         topic_agent_team_profile_id: str | None = None,
         configured: bool = False,
     ) -> int:
@@ -483,6 +892,7 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
                 paths_configured=configured,
             ),
@@ -493,6 +903,7 @@ def register_project_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name for actor-scoped labels.")
     @click.argument("semantic_label")
     @click.pass_context
     def paths_default_command(
@@ -510,6 +921,7 @@ def register_project_commands(app: click.Group) -> None:
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
         agent_name: str | None = None,
+        topic_actor_name: str | None = None,
         topic_agent_team_profile_id: str | None = None,
     ) -> int:
         return _cmd_paths_default(
@@ -527,6 +939,7 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             ),
             semantic_label,
@@ -536,6 +949,7 @@ def register_project_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name for actor-scoped labels.")
     @click.argument("semantic_label")
     @click.pass_context
     def paths_explain_command(
@@ -553,6 +967,7 @@ def register_project_commands(app: click.Group) -> None:
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
         agent_name: str | None = None,
+        topic_actor_name: str | None = None,
         topic_agent_team_profile_id: str | None = None,
     ) -> int:
         return _cmd_paths_explain(
@@ -570,6 +985,7 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             ),
             semantic_label,
@@ -580,6 +996,7 @@ def register_project_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name for actor-scoped labels.")
     @click.pass_context
     def paths_list_command(
         ctx: click.Context,
@@ -595,6 +1012,7 @@ def register_project_commands(app: click.Group) -> None:
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
         agent_name: str | None = None,
+        topic_actor_name: str | None = None,
         topic_agent_team_profile_id: str | None = None,
     ) -> int:
         return _cmd_paths_list(
@@ -612,6 +1030,7 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             )
         )
@@ -621,6 +1040,7 @@ def register_project_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name for actor-scoped labels.")
     @click.option("--label", "labels", multiple=True, help="Semantic label to materialize. Repeat to select multiple labels.")
     @click.pass_context
     def paths_materialize_default_command(
@@ -637,6 +1057,7 @@ def register_project_commands(app: click.Group) -> None:
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
         agent_name: str | None = None,
+        topic_actor_name: str | None = None,
         topic_agent_team_profile_id: str | None = None,
         labels: tuple[str, ...] = (),
     ) -> int:
@@ -655,6 +1076,7 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             ),
             labels=labels,
@@ -664,6 +1086,7 @@ def register_project_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name for actor-scoped labels.")
     @click.argument("semantic_label")
     @click.pass_context
     def paths_materialize_command(
@@ -681,6 +1104,7 @@ def register_project_commands(app: click.Group) -> None:
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
         agent_name: str | None = None,
+        topic_actor_name: str | None = None,
         topic_agent_team_profile_id: str | None = None,
     ) -> int:
         return _cmd_paths_materialize(
@@ -698,6 +1122,7 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             ),
             semantic_label,

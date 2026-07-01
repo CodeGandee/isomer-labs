@@ -15,11 +15,15 @@ When this subcommand is selected, execute the following steps in order.
 2. Determine whether the user supplied enough topic substance:
    - Accept a concrete Research Topic, an explicit registered topic ref with concrete topic material, or enough source material to seed a topic.
    - If no topic substance is supplied, ask for the actual research topic and stop before running `init-topic`.
-3. Execute the returned path in order:
+3. Check for prepared-topic evidence:
+   - If reusable evidence from `isomer-admin-topic-prepare` exists, consume the Research Topic ref, Topic Workspace ref, topic overview, Workspace Runtime readiness, topic environment readiness, `topic.repos.main` readiness, storage bootstrap refs, current Topic Actor roster, and Topic Actor Workspace refs instead of recreating those common artifacts.
+   - If common preparation is missing and the request is full `fast-forward`, delegate common topic preparation before team-specific stages.
+   - Preserve active Topic Actor bindings and Topic Actor Workspace refs. Do not archive, delete, or convert them into Agent Workspace material.
+4. Execute the returned path in order:
    - Load each step's subcommand page before running that step.
    - Respect each step's local prerequisite evidence, produced output, mutation notes, and unrecoverable blockers.
    - Stop on the same clarification, registration, environment-binding, resource-safety, and live-runtime blockers as a direct subcommand run.
-4. Stop at the targeted or full stop point:
+5. Stop at the targeted or full stop point:
    - In inclusive targeted recovery, stop after the target subcommand completes.
    - In exclusive targeted recovery, stop immediately before the target subcommand.
    - In full `fast-forward`, stop at final topic-team summary output from `finalize-topic-team`.
@@ -66,4 +70,4 @@ Default to **Essential Output** in chat. Print **Complete Output** only when the
 
 ### Complete Output
 
-Include semantic labels and resolved paths for topic overview, topic env source intent, topic env target spec, agent env source intent, and agent env target spec when present; also include registration status, registered topic and workspace refs, environment binding status, selected Domain Agent Team Template, copied material paths, topic environment status, Topic Main Development Repository and projection predecessor evidence, Agent Workspace paths, topic-team validation status, `isomer-topic-summary.md` path, blockers, deferrals, and next operator action.
+Include semantic labels and resolved paths for topic overview, topic env source intent, topic env target spec, agent env source intent, and agent env target spec when present; also include reused common preparation refs, current Topic Actor roster, Topic Actor Workspace refs, registration status, registered topic and workspace refs, environment binding status, selected Domain Agent Team Template, copied material paths, topic environment status, Topic Main Development Repository and projection predecessor evidence, Agent Workspace paths, topic-team validation status, `isomer-topic-summary.md` path, blockers, deferrals, and next operator action.

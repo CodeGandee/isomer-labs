@@ -204,6 +204,47 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertIn("records/runs", content_path.as_posix())
         self.assertEqual("run output", content_path.read_text(encoding="utf-8"))
 
+    def test_topic_actor_metadata_is_stored_and_queryable_without_team_refs(self) -> None:
+        root = self.make_project()
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--record-kind",
+                "artifact",
+                "--id",
+                "artifact-actor-note",
+                "--placeholder",
+                "<ACTOR_NOTE>",
+                "--topic-actor",
+                "operator",
+                "--actor-kind",
+                "operator",
+                "--runtime-kind",
+                "codex",
+                "--controller-kind",
+                "project_operator_session",
+                "--body",
+                "actor note",
+            ],
+        )
+        self.assertEqual(0, status, created)
+        record = created["record"]
+        assert isinstance(record, dict)
+        metadata = record["transition_metadata"]
+        assert isinstance(metadata, dict)
+        self.assertEqual("operator", metadata["topic_actor_name"])
+        self.assertEqual("codex", metadata["runtime_kind"])
+        lifecycle_refs = record["lifecycle_refs"]
+        assert isinstance(lifecycle_refs, dict)
+        self.assertEqual("operator", lifecycle_refs["topic_actor_name"])
+        self.assertNotIn("agent_instance_id", lifecycle_refs)
+        self.assertNotIn("agent_team_instance_id", lifecycle_refs)
+
+        status, listed = self.run_records(root, ["list", "--topic-actor", "operator", "--runtime-kind", "codex"])
+        self.assertEqual(0, status, listed)
+        self.assertEqual(1, listed["count"])
+
     def test_context_resolution_failure_is_deterministic(self) -> None:
         root = self.make_root()
         status, output = self.run_main(

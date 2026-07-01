@@ -303,13 +303,13 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             1. **Default help mode**: If invoked without a prompt, run `help`.
             2. Select one subcommand and load only the selected subcommand page.
-            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, and `isomer-admin-topic-team-specialize` boundaries.
+            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, `isomer-admin-topic-prepare`, `isomer-admin-manual-research-session`, `isomer-admin-topic-workspace-mgr`, and `isomer-admin-topic-team-specialize` boundaries.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
             ## Subcommands
 
-            Use `references/help.md`, `references/init-project.md`, `references/cleanup-project.md`, `references/move-content.md`, `references/check-project.md`, `references/list-topics.md`, `references/show-context.md`, `references/init-runtime.md`, `references/prep-runtime.md`, and `references/specialize-team.md`.
+            Use `references/help.md`, `references/init-project.md`, `references/cleanup-project.md`, `references/move-content.md`, `references/check-project.md`, `references/list-topics.md`, `references/show-context.md`, `references/init-runtime.md`, `references/prep-runtime.md`, `references/prepare-topic.md`, `references/manual-research.md`, and `references/specialize-team.md`.
 
             {OUTPUT_CONTRACT_FIXTURE}
             """,
@@ -372,7 +372,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Workspace Mgr
 
-            Prepare optional topology inspection, branch helpers, boundary summaries, and legacy compatibility diagnostics through semantic workspace labels, Topic Workspace Manifest bindings, and `isomer-default.v1`, including `project paths register`, `project repos create`, explicit `storage_profile`, `custom.*`, grouped `topic.repos.*`, `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `semantic_paths`, `local_tmp_path_status`, `topic-owner/main`, `per-agent/<agent-name>/main`, `isomer-managed/`, `tracked/`, `agent-owned/`, `topic-owned/`, `links/`, `topic.records.*`, projection roots, and `per-agent/<agent-name>/<branch-name>` while planning `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries. The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`.
+            Prepare optional topology inspection, branch helpers, boundary summaries, and legacy compatibility diagnostics through semantic workspace labels, Topic Workspace Manifest bindings, and `isomer-default.v1`, including `project paths register`, `project repos create`, `project topic-actors`, explicit `storage_profile`, `custom.*`, grouped `topic.repos.*`, `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.actors_root`, `topic.actors.workspace`, `topic.actors.tmp`, `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `semantic_paths`, `local_tmp_path_status`, `topic-owner/main`, `per-topic-actor/<topic-actor-name>/main`, `per-agent/<agent-name>/main`, `isomer-managed/`, `tracked/`, `agent-owned/`, `topic-owned/`, `links/`, `topic.records.*`, projection roots, and `per-agent/<agent-name>/<branch-name>` while planning `topic_actor`, `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries. The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`.
 
             ## Workflow
 
@@ -383,9 +383,9 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Subcommands
 
-            Procedural Subcommands: `resolve-workspace`, `ensure-main-repo`, `plan-agents`, `create-worktrees`, `write-boundaries`, `create-agent-branch`, `validate-worktrees`, and `summarize`.
+            Procedural Subcommands: `resolve-workspace`, `ensure-main-repo`, `manage-actors`, `plan-agents`, `create-worktrees`, `write-boundaries`, `create-agent-branch`, `validate-worktrees`, and `summarize`.
 
-            Helper Subcommands: `resolve-workspace`, `ensure-main-repo`, `plan-agents`, `create-worktrees`, and `validate-worktrees`.
+            Helper Subcommands: `resolve-workspace`, `ensure-main-repo`, `manage-actors`, `plan-agents`, `create-worktrees`, and `validate-worktrees`.
 
             Misc Subcommands: `help` and `topic-workspace`.
 
@@ -426,6 +426,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                     | --- | --- | --- |
                     | `resolve-workspace` | Resolve Project context. | `semantic_paths`, `topic.repos.main`, `agent.workspace`. |
                     | `ensure-main-repo` | Prepare repo. | Repo readiness. |
+                    | `manage-actors` | Manage Topic Actors. | `topic.actors.workspace` and actor blockers. |
                     | `plan-agents` | Plan agents. | Agent name plans. |
                     | `create-worktrees` | Create worktrees. | Worktree readiness. |
                     | `write-boundaries` | Write boundaries. | Boundary paths. |
@@ -441,6 +442,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             extra_terms = {
                 "resolve-workspace.md": "Use `isomer-cli project paths get`, `project paths explain`, `semantic_paths`, `topic.repos.main`, and `agent.workspace` before mutation.",
                 "ensure-main-repo.md": "Use `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, and `isomer-default.v1` examples only after semantic resolution. Require predecessor evidence or an explicit manual topology operation.",
+                "manage-actors.md": "Use `project topic-actors`, `topic.actors.workspace`, `topic.actors.tmp`, `per-topic-actor/<topic-actor-name>/main`, Topic Workspace Manifest, Workspace Runtime, alternate source repositories, and blocker reporting.",
                 "plan-agents.md": "Resolve `agent.workspace` through Workspace Path Resolution and report path sources.",
                 "create-worktrees.md": "Create worktrees at `agent.workspace` from `topic.repos.main`, with `agent.tmp`, prepared Topic Main Development Repository predecessor evidence, path sources, and semantic support paths.",
                 "write-boundaries.md": "Write boundary notes for `topic.repos.main`, `agent.workspace`, each path source, and self-query guidance without passing Agent Name.",

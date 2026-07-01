@@ -4,6 +4,8 @@ This page binds the placeholders in `migrate/placeholders.md` to Isomer Topic Wo
 
 Use `isomer-cli ext research records` as the current transitional CRUD surface. Future native `project records ...` commands may replace these command shapes, but the placeholder tokens, producer, consumer, and profile metadata should remain stable.
 
+When a Topic Actor creates or updates a record, add `--topic-actor <topic-actor-name>` and any known `--actor-kind`, `--runtime-kind`, `--controller-kind`, and `--adapter-ref` values. When a formal team agent creates or updates a record, include Agent Team Instance, Agent Instance, or Agent Workspace refs only when that formal context truly produced the record; do not fabricate those refs for Topic Actor work.
+
 ## Binding Rules
 
 - Read `migrate/placeholders.md` first to understand the placeholder meaning, producer, consumer, and kind.

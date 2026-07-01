@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Domain-level dependency graph for isomer-admin-topic-team-specialize. This manifest describes expected procedural step dependencies and recovery paths; it does not verify that workspace artifacts exist.",
+  "description": "Domain-level dependency graph for isomer-admin-topic-team-specialize. This manifest describes expected procedural step dependencies and recovery paths; it does not verify that workspace artifacts exist. Prepared-topic evidence from isomer-admin-topic-prepare can satisfy reusable topic prerequisites while team-specific steps still run through this graph.",
   "canonical_order": [
     "init-topic",
     "resolve-topic-intent",
@@ -119,7 +119,7 @@
         }
       ],
       "requires": [
-        "topic.intent.overview or explicit registered Research Topic ref with concrete topic statement.",
+        "topic.intent.overview, prepared-topic evidence, or explicit registered Research Topic ref with concrete topic statement.",
         "Candidate or registered Topic Workspace.",
         "Supported Isomer CLI/API registration surface."
       ],
@@ -128,7 +128,8 @@
         "registered_topic_workspace_ref",
         "topic_registration_status",
         "registration_command_evidence",
-        "environment_binding_status"
+        "environment_binding_status",
+        "Reused common preparation refs when supplied"
       ],
       "recovery_conditions": [
         "Recoverable when topic material and candidate Topic Workspace can be derived safely."
@@ -195,7 +196,7 @@
         "registered_research_topic_ref",
         "registered_topic_workspace_ref",
         "environment_binding_status",
-        "topic.intent.topic_env_requirements or explicit topic env target spec or clear runnable target"
+        "topic.intent.topic_env_requirements, prepared topic environment evidence, explicit topic env target spec, or clear runnable target"
       ],
       "produces": [
         "topic_environment_status",
@@ -203,7 +204,8 @@
         "topic_environment_service_output",
         "Topic Workspace predecessor evidence",
         "Topic Main Development Repository predecessor evidence",
-        "External repo projection predecessor evidence"
+        "External repo projection predecessor evidence",
+        "Preserved Topic Actor roster and Topic Actor Workspace refs when present"
       ],
       "recovery_conditions": [
         "Recoverable when registration and topic env source intent can be prepared first."
@@ -239,7 +241,8 @@
         "topic.intent.overview",
         "registered_research_topic_ref",
         "registered_topic_workspace_ref",
-        "Selected Domain Agent Team Template"
+        "Selected Domain Agent Team Template",
+        "Prepared-topic evidence when available, including current Topic Actor roster and Topic Actor Workspace refs"
       ],
       "produces": [
         "copied_template_root",
@@ -418,7 +421,8 @@
         "Registration assurance",
         "Specialized topic-team material",
         "topic_environment_status or explicit setup blocker",
-        "Agent Workspace evidence or explicit workspace blocker when in scope"
+        "Agent Workspace evidence or explicit workspace blocker when in scope",
+        "Current Topic Actor roster and Topic Actor Workspace refs when present"
       ],
       "produces": [
         "topic_team_validation_status",
@@ -453,11 +457,13 @@
       ],
       "requires": [
         "topic_team_validation_status",
-        "Registration assurance carried through validation"
+        "Registration assurance carried through validation",
+        "Reused common preparation refs and current Topic Actor refs when present"
       ],
       "produces": [
         "isomer-topic-summary.md",
         "Final validation and blocker summary",
+        "Current Topic Actor roster and Topic Actor Workspace refs preserved in the summary",
         "Next operator action"
       ],
       "recovery_conditions": [

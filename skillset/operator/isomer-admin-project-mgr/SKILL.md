@@ -1,11 +1,11 @@
 ---
 name: isomer-admin-project-mgr
-description: Initialize, inspect, validate, clean up, move generated content, and prepare an Isomer Project from a Project Operator Session. Use this skill when the user asks to create or fix `.isomer-labs/`, initialize or clean up the Isomer-managed Houmao overlay, move the generated content root, check Project health, list Research Topics or Topic Workspaces, inspect Effective Topic Context, initialize or prepare Workspace Runtime, or get ready to hand off to topic-team specialization.
+description: Initialize, inspect, validate, clean up, move generated content, and prepare an Isomer Project from a Project Operator Session. Use this skill when the user asks to create or fix `.isomer-labs/`, initialize or clean up the Isomer-managed Houmao overlay, move the generated content root, check Project health, list Research Topics or Topic Workspaces, inspect Effective Topic Context, initialize or prepare Workspace Runtime, prepare a topic for manual research, manage human-orchestrated Topic Actor research, or get ready to hand off to topic-team specialization.
 ---
 
 # Isomer Admin Project Mgr
 
-Use this as the operator workflow for Isomer Project lifecycle management. It helps an operator create, check, clean up, and move generated content for the Isomer Project config, Isomer-managed Houmao overlay, Research Topic and Topic Workspace registrations, Effective Topic Context, and explicit Workspace Runtime readiness steps before topic-team specialization or launch work.
+Use this as the operator workflow for Isomer Project lifecycle management. It helps an operator create, check, clean up, and move generated content for the Isomer Project config, Isomer-managed Houmao overlay, Research Topic and Topic Workspace registrations, Effective Topic Context, explicit Workspace Runtime readiness steps, common topic preparation, human-orchestrated Topic Actor research sessions, and handoffs before topic-team specialization or launch work.
 
 ## Workflow
 
@@ -21,7 +21,11 @@ When this skill is invoked, execute the following steps in order.
    - Include any local support reference it names.
    - Execute that workflow for one bounded manual operation.
 5. **Report the Project lifecycle output** using **Essential Output** by default and **Complete Output** when requested, and preserve the **Guardrails**.
-6. **Hand off topic-team adaptation** to `isomer-admin-topic-team-specialize` whenever the request moves from Project setup into Domain Agent Team Template specialization.
+6. **Hand off topic-oriented work** to the narrow owner:
+   - Use `isomer-admin-topic-prepare` for common topic preparation before manual research or team specialization.
+   - Use `isomer-admin-topic-workspace-mgr` for Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped path diagnostics, branch helpers, and topology repair.
+   - Use `isomer-admin-manual-research-session` for human-orchestrated research sessions and per-actor start packs.
+   - Use `isomer-admin-topic-team-specialize` only when the user explicitly asks to adapt or instantiate a Domain Agent Team Template.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project context, subcommands, CLI boundaries, output contract, and guardrails in this skill, then execute the plan.
 
@@ -40,6 +44,8 @@ Load only the subcommand pages needed for the user's task.
 | `show-context` | Show Effective Topic Context and selected refs for topic-scoped work | [references/show-context.md](references/show-context.md) |
 | `init-runtime` | Initialize or reopen Workspace Runtime for a selected Research Topic | [references/init-runtime.md](references/init-runtime.md) |
 | `prep-runtime` | Prepare and validate launch-facing Topic Environment Readiness | [references/prep-runtime.md](references/prep-runtime.md) |
+| `prepare-topic` | Hand off reusable topic preparation for manual research or future team specialization | [references/prepare-topic.md](references/prepare-topic.md) |
+| `manual-research` | Hand off a human-orchestrated Topic Actor research session without implying Topic Team Specialization | [references/manual-research.md](references/manual-research.md) |
 | `specialize-team` | Resolve Project readiness and hand off full topic-team specialization | [references/specialize-team.md](references/specialize-team.md) |
 
 ## Output Contract
@@ -82,9 +88,11 @@ Use read-only commands for checks unless the user explicitly requests initializa
 
 Keep Workspace Runtime creation explicit through `isomer-cli project runtime init`, and keep launch-facing readiness explicit through `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness`. When explaining runtime initialization, distinguish worker-facing `repos/topic-main` and `agents/<agent-name>` from owner-preserved `records/*`, runtime-internal `runtime/*`, and `state.sqlite`.
 
-Hand off per-agent worktree setup and cwd proof to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Use `isomer-admin-topic-workspace-mgr` only for optional topology inspection, branch helper operations, boundary summaries, manual compatibility operations, and legacy diagnostics.
+Hand off per-agent worktree setup and cwd proof to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Use `isomer-admin-topic-workspace-mgr` for optional topology inspection, branch helper operations, boundary summaries, manual compatibility operations, legacy diagnostics, and Topic Actor CRUD or Topic Actor Workspace materialization.
 
 Do not scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
+
+Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly asks for a Domain Agent Team Template. Use `prepare-topic`, Topic Workspace Manager actor management, and `manual-research` for those requests.
 
 Do not duplicate Topic Team Specialization. When the user asks to adapt or instantiate a Domain Agent Team Template for a Research Topic, use `specialize-team` to hand off to `isomer-admin-topic-team-specialize fast-forward`.
 

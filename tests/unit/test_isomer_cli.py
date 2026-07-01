@@ -2441,6 +2441,167 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual("topic_repo", data["path"]["storage_profile"])
         self.assertEqual(str(topic_workspace / "repos" / "extern" / "inner_group" / "some_repo_name"), data["path"]["path"])
 
+    def test_topic_actor_crud_materialization_and_path_resolution(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+
+        status, output = self.run_cli(["project", "runtime", "init", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue((topic_workspace / "actors").is_dir())
+        surfaces = {record["surface"] for record in data["runtime"]["path_plans"]}
+        self.assertIn("actors", surfaces)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "topic-actors",
+                "register",
+                "operator",
+                "--topic",
+                "default",
+                "--runtime-kind",
+                "codex",
+                "--materialize",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        actor = data["topic_actor"]
+        self.assertEqual("operator", actor["topic_actor_name"])
+        self.assertEqual("per-topic-actor/operator/main", actor["branch"])
+        self.assertEqual("directory-placeholder", data["materialization"]["worktree_mode"])
+        self.assertTrue((topic_workspace / "actors" / "operator").is_dir())
+        self.assertTrue((topic_workspace / "actors" / "operator" / "tmp").is_dir())
+        self.assertIn("tmp/\n", (topic_workspace / "actors" / "operator" / ".gitignore").read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
+            ["project", "paths", "get", "topic.actors.workspace", "--topic", "default", "--topic-actor", "operator", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(topic_workspace / "actors" / "operator"), data["path"]["path"])
+        self.assertEqual("operator", data["path"]["topic_actor_name"])
+        self.assertEqual("topic_actor:operator", data["path"]["scope_ref"])
+
+        status, output = self.run_cli(["project", "topic-actors", "diagnose", "--topic", "default", "--topic-actor", "operator", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        labels = {item["semantic_label"] for item in data["actor_paths"]}
+        self.assertIn("topic.actors.workspace", labels)
+        self.assertIn("topic.actors.private_artifacts", labels)
+
+        with sqlite3.connect(topic_workspace / "state.sqlite") as connection:
+            actor_records = connection.execute(
+                "SELECT COUNT(*) FROM lifecycle_records WHERE transition_metadata_json LIKE ?",
+                ('%"topic_actor_name":"operator"%',),
+            ).fetchone()[0]
+            actor_plan = connection.execute(
+                "SELECT path FROM path_plans WHERE semantic_label = ? AND scope_ref = ?",
+                ("topic.actors.workspace", "topic_actor:operator"),
+            ).fetchone()
+        self.assertGreaterEqual(actor_records, 1)
+        self.assertIsNotNone(actor_plan)
+
+    def test_topic_actor_roster_supports_manual_and_houmao_workers_without_team_membership(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+
+        status, output = self.run_cli(["project", "runtime", "init", "--topic", "default", "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+
+        actor_commands = (
+            [
+                "project",
+                "topic-actors",
+                "register",
+                "operator",
+                "--topic",
+                "default",
+                "--actor-kind",
+                "operator",
+                "--runtime-kind",
+                "codex",
+                "--role-kind",
+                "operator",
+                "--controller-kind",
+                "project_operator_session",
+                "--materialize",
+                "--json",
+            ],
+            [
+                "project",
+                "topic-actors",
+                "register",
+                "claude-scout",
+                "--topic",
+                "default",
+                "--actor-kind",
+                "manual_worker",
+                "--runtime-kind",
+                "claude_code",
+                "--role-kind",
+                "scout",
+                "--controller-kind",
+                "human_user",
+                "--materialize",
+                "--json",
+            ],
+            [
+                "project",
+                "topic-actors",
+                "register",
+                "houmao-exp",
+                "--topic",
+                "default",
+                "--actor-kind",
+                "houmao_backed",
+                "--runtime-kind",
+                "houmao",
+                "--role-kind",
+                "experimenter",
+                "--controller-kind",
+                "houmao",
+                "--adapter-ref",
+                "houmao:manual",
+                "--materialize",
+                "--json",
+            ],
+        )
+        for command in actor_commands:
+            status, output = self.run_cli(command, cwd=root)
+            self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(["project", "topic-actors", "list", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        actors = {actor["topic_actor_name"]: actor for actor in data["topic_actors"]}
+        self.assertEqual({"operator", "claude-scout", "houmao-exp"}, set(actors))
+        self.assertEqual("manual_worker", actors["claude-scout"]["actor_kind"])
+        self.assertEqual("houmao_backed", actors["houmao-exp"]["actor_kind"])
+        self.assertEqual("houmao", actors["houmao-exp"]["runtime_kind"])
+        for actor_name in actors:
+            self.assertTrue((topic_workspace / "actors" / actor_name).is_dir())
+
+        self.assertFalse((topic_workspace / "team-profile").exists())
+        self.assertFalse((topic_workspace / ".houmao").exists())
+        with sqlite3.connect(topic_workspace / "state.sqlite") as connection:
+            agent_team_count = connection.execute("SELECT COUNT(*) FROM agent_team_instances").fetchone()[0]
+            agent_instance_count = connection.execute("SELECT COUNT(*) FROM agent_instances").fetchone()[0]
+            actor_records = connection.execute(
+                "SELECT COUNT(*) FROM lifecycle_records WHERE transition_metadata_json LIKE ?",
+                ('%"operation":"topic_actor_register"%',),
+            ).fetchone()[0]
+        self.assertEqual(0, agent_team_count)
+        self.assertEqual(0, agent_instance_count)
+        self.assertGreaterEqual(actor_records, 3)
+
     def test_topic_workspace_manifest_custom_bindings_and_diagnostics(self) -> None:
         root = self.make_root()
         self.init_project(root)

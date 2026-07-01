@@ -21,6 +21,7 @@ RUNTIME_DIRECTORIES = (
     "topic_main_repo",
     "topic_main_isomer_managed",
     "agents",
+    "actors",
     "records",
     "records_artifacts",
     "records_tasks",

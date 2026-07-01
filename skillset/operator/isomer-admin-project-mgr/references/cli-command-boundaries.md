@@ -60,6 +60,21 @@ pixi run isomer-cli --print-json project context show --topic <topic-id>
 pixi run isomer-cli project paths preview --topic <topic-id>
 ```
 
+Topic Actor and Topic Actor Workspace operations:
+
+```bash
+pixi run isomer-cli --print-json project topic-actors list --topic <topic-id>
+pixi run isomer-cli --print-json project topic-actors show <topic-actor-name> --topic <topic-id>
+pixi run isomer-cli --print-json project topic-actors register <topic-actor-name> --topic <topic-id> --actor-kind manual_worker --runtime-kind codex --role-kind scout --controller-kind human_user --materialize
+pixi run isomer-cli --print-json project topic-actors update <topic-actor-name> --topic <topic-id> --status active
+pixi run isomer-cli --print-json project topic-actors materialize <topic-actor-name> --topic <topic-id>
+pixi run isomer-cli --print-json project topic-actors repair <topic-actor-name> --topic <topic-id>
+pixi run isomer-cli --print-json project topic-actors diagnose --topic <topic-id> --topic-actor <topic-actor-name>
+pixi run isomer-cli --print-json project topic-actors archive <topic-actor-name> --topic <topic-id> --reason <reason>
+```
+
+Use these operations through `isomer-admin-topic-workspace-mgr`. They mutate or inspect Topic Workspace Manifest actor bindings and Topic Actor Workspace materialization. They do not create Agent Team Instance records, Agent Instance records, formal Agent Workspaces, Houmao launch material, or research records.
+
 Explicit Workspace Runtime mutations:
 
 ```bash

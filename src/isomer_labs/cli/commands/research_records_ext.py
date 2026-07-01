@@ -77,6 +77,11 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     @click.option("--skill", default=None, help="Filter by producing skill name.")
     @click.option("--producer", default=None, help="Filter by producer metadata.")
     @click.option("--consumer", default=None, help="Filter by consumer metadata.")
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Filter by Topic Actor name.")
+    @click.option("--actor-kind", default=None, help="Filter by Topic Actor kind metadata.")
+    @click.option("--runtime-kind", default=None, help="Filter by Topic Actor runtime kind metadata.")
+    @click.option("--controller-kind", default=None, help="Filter by Topic Actor controller kind metadata.")
+    @click.option("--adapter-ref", default=None, help="Filter by Topic Actor adapter ref metadata.")
     @click.pass_context
     def list_command(ctx: click.Context, **kwargs: Any) -> int:
         filters = dict(kwargs)
@@ -93,6 +98,11 @@ def register_research_record_ext_commands(app: click.Group) -> None:
                 skill=filters.get("skill"),
                 producer=filters.get("producer"),
                 consumer=filters.get("consumer"),
+                topic_actor_name=filters.get("topic_actor_name"),
+                actor_kind=filters.get("actor_kind"),
+                runtime_kind=filters.get("runtime_kind"),
+                controller_kind=filters.get("controller_kind"),
+                adapter_ref=filters.get("adapter_ref"),
             ),
             build_request=False,
         )
@@ -138,6 +148,11 @@ def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
         command = click.option("--skill", default=None, help="Producing or owning skill name.")(command)
         command = click.option("--profile", default=None, help="Artifact or record profile.")(command)
         command = click.option("--placeholder", default=None, help="Exact v2 placeholder token.")(command)
+        command = click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name metadata.")(command)
+        command = click.option("--actor-kind", default=None, help="Topic Actor kind metadata.")(command)
+        command = click.option("--runtime-kind", default=None, help="Topic Actor runtime kind metadata.")(command)
+        command = click.option("--controller-kind", default=None, help="Topic Actor controller kind metadata.")(command)
+        command = click.option("--adapter-ref", default=None, help="Topic Actor adapter ref metadata.")(command)
         command = click.option("--status", default="ready", show_default=True, help="Lifecycle status.")(command)
         if include_id:
             command = click.option("--id", "record_id", default=None, help="Explicit record id.")(command)
@@ -214,6 +229,11 @@ def _request_from_values(values: dict[str, Any]) -> ResearchRecordRequest:
         skill=values.get("skill"),
         producer=values.get("producer"),
         consumer=values.get("consumer"),
+        topic_actor_name=values.get("topic_actor_name"),
+        actor_kind=values.get("actor_kind"),
+        runtime_kind=values.get("runtime_kind"),
+        controller_kind=values.get("controller_kind"),
+        adapter_ref=values.get("adapter_ref"),
         semantic_label=values.get("semantic_label"),
         body=values.get("body"),
         body_file=values.get("body_file"),

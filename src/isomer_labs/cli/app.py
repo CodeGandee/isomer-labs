@@ -51,6 +51,7 @@ from isomer_labs.paths import (
     materialize_semantic_path,
     preview_paths,
     resolve_effective_agent_context,
+    resolve_effective_topic_actor_context,
     resolve_semantic_path,
 )
 from isomer_labs.topic_workspace_manifest import (
@@ -58,6 +59,15 @@ from isomer_labs.topic_workspace_manifest import (
     reset_manifest_binding,
     unregister_manifest_binding,
     update_manifest_binding,
+)
+from isomer_labs.topic_actors import (
+    archive_topic_actor,
+    diagnose_topic_actor,
+    list_topic_actors,
+    materialize_topic_actor_workspace,
+    register_topic_actor,
+    show_topic_actor,
+    update_topic_actor,
 )
 from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
 from isomer_labs.project import (
@@ -123,6 +133,14 @@ Command surface:
   project topics create
   project topics update
   project topics delete
+  project topic-actors list
+  project topic-actors show
+  project topic-actors register
+  project topic-actors update
+  project topic-actors archive
+  project topic-actors materialize
+  project topic-actors repair
+  project topic-actors diagnose
   project workspaces list
   project context show
   project repos create
@@ -556,13 +574,180 @@ def _cmd_workspaces_list(options: CliOptions) -> int:
     return _emit("workspaces list", options, payload, diagnostics, lines)
 
 
+def _cmd_topic_actors_list(options: CliOptions) -> int:
+    context, diagnostics = _context_for_path_options(options)
+    payload: dict[str, Any] = {"ok": False, "mutated": False, "topic_actors": []}
+    if context is not None:
+        payload, actor_diagnostics = list_topic_actors(context)
+        diagnostics.extend(actor_diagnostics)
+    lines = ["Topic Actors"]
+    for actor in payload.get("topic_actors", []):
+        if isinstance(actor, dict):
+            lines.append(f"- {actor.get('topic_actor_name')} ({actor.get('runtime_kind')}, {actor.get('status')})")
+    return _emit("topic-actors list", options, payload, diagnostics, lines)
+
+
+def _cmd_topic_actors_show(options: CliOptions, topic_actor_name: str) -> int:
+    context, diagnostics = _context_for_path_options(options)
+    payload: dict[str, Any] = {"ok": False, "mutated": False, "topic_actor": None}
+    if context is not None:
+        payload, actor_diagnostics = show_topic_actor(context, topic_actor_name)
+        diagnostics.extend(actor_diagnostics)
+    actor = payload.get("topic_actor")
+    lines = []
+    if isinstance(actor, dict):
+        lines = [
+            f"Topic Actor: {actor.get('topic_actor_name')}",
+            f"Workspace label: {actor.get('workspace_label')}",
+            f"Branch: {actor.get('branch')}",
+        ]
+    return _emit("topic-actors show", options, payload, diagnostics, lines)
+
+
+def _cmd_topic_actors_register(
+    options: CliOptions,
+    topic_actor_name: str,
+    *,
+    actor_kind: str | None,
+    runtime_kind: str | None,
+    role_kind: str | None,
+    controller_kind: str | None,
+    controller_ref: str | None,
+    workspace_path: str | None,
+    branch: str | None,
+    adapter_ref: str | None,
+    status: str,
+    replace_existing: bool,
+    materialize: bool,
+) -> int:
+    context, diagnostics = _context_for_path_options(options)
+    payload: dict[str, Any] = {"ok": False, "mutated": False, "topic_actor": None}
+    if context is not None:
+        payload, actor_diagnostics = register_topic_actor(
+            context,
+            env=os.environ,
+            topic_actor_name=topic_actor_name,
+            actor_kind=actor_kind,
+            runtime_kind=runtime_kind,
+            role_kind=role_kind,
+            controller_kind=controller_kind,
+            controller_ref=controller_ref,
+            workspace_path=workspace_path,
+            branch=branch,
+            adapter_ref=adapter_ref,
+            status=status,
+            replace_existing=replace_existing,
+            materialize=materialize,
+        )
+        diagnostics.extend(actor_diagnostics)
+    lines = [f"Registered Topic Actor: {topic_actor_name}"] if payload.get("topic_actor") is not None else []
+    return _emit("topic-actors register", options, payload, diagnostics, lines)
+
+
+def _cmd_topic_actors_update(
+    options: CliOptions,
+    topic_actor_name: str,
+    *,
+    actor_kind: str | None,
+    runtime_kind: str | None,
+    role_kind: str | None,
+    controller_kind: str | None,
+    controller_ref: str | None,
+    workspace_path: str | None,
+    branch: str | None,
+    adapter_ref: str | None,
+    status: str | None,
+) -> int:
+    context, diagnostics = _context_for_path_options(options)
+    payload: dict[str, Any] = {"ok": False, "mutated": False, "topic_actor": None}
+    if context is not None:
+        payload, actor_diagnostics = update_topic_actor(
+            context,
+            env=os.environ,
+            topic_actor_name=topic_actor_name,
+            actor_kind=actor_kind,
+            runtime_kind=runtime_kind,
+            role_kind=role_kind,
+            controller_kind=controller_kind,
+            controller_ref=controller_ref,
+            workspace_path=workspace_path,
+            branch=branch,
+            adapter_ref=adapter_ref,
+            status=status,
+        )
+        diagnostics.extend(actor_diagnostics)
+    lines = [f"Updated Topic Actor: {topic_actor_name}"] if payload.get("topic_actor") is not None else []
+    return _emit("topic-actors update", options, payload, diagnostics, lines)
+
+
+def _cmd_topic_actors_archive(options: CliOptions, topic_actor_name: str) -> int:
+    context, diagnostics = _context_for_path_options(options)
+    payload: dict[str, Any] = {"ok": False, "mutated": False, "topic_actor": None}
+    if context is not None:
+        payload, actor_diagnostics = archive_topic_actor(context, env=os.environ, topic_actor_name=topic_actor_name)
+        diagnostics.extend(actor_diagnostics)
+    lines = [f"Archived Topic Actor: {topic_actor_name}"] if payload.get("topic_actor") is not None else []
+    return _emit("topic-actors archive", options, payload, diagnostics, lines)
+
+
+def _cmd_topic_actors_materialize(
+    options: CliOptions,
+    topic_actor_name: str,
+    *,
+    source_repo: str | None,
+    command_name: str = "topic-actors materialize",
+) -> int:
+    context, diagnostics = _context_for_path_options(options)
+    payload: dict[str, Any] = {"ok": False, "mutated": False, "materialization": None}
+    if context is not None:
+        payload, actor_diagnostics = materialize_topic_actor_workspace(
+            context,
+            env=os.environ,
+            topic_actor_name=topic_actor_name,
+            source_repo=source_repo,
+        )
+        diagnostics.extend(actor_diagnostics)
+    lines: list[str] = []
+    materialization = payload.get("materialization")
+    if isinstance(materialization, dict):
+        workspace = materialization.get("workspace")
+        if isinstance(workspace, dict):
+            lines.append(f"Topic Actor Workspace: {workspace.get('path')}")
+        lines.append(f"Branch: {materialization.get('branch')}")
+    return _emit(command_name, options, payload, diagnostics, lines)
+
+
+def _cmd_topic_actors_diagnose(options: CliOptions, topic_actor_name: str | None) -> int:
+    context, diagnostics = _context_for_path_options(options)
+    payload: dict[str, Any] = {"ok": False, "mutated": False, "topic_actors": [], "actor_paths": []}
+    if context is not None:
+        payload, actor_diagnostics = diagnose_topic_actor(context, env=os.environ, topic_actor_name=topic_actor_name)
+        diagnostics.extend(actor_diagnostics)
+    lines = ["Topic Actor Diagnostics"]
+    for item in payload.get("actor_paths", []):
+        if isinstance(item, dict):
+            lines.append(f"- {item.get('semantic_label')}: {item.get('path')}")
+    return _emit("topic-actors diagnose", options, payload, diagnostics, lines)
+
+
 def _cmd_context_show(options: CliOptions) -> int:
     context, diagnostics = _context_for_options(options)
     agent_context = None
+    topic_actor_context = None
     payload = {"context": context.to_json() if context is not None else None}
     if context is None:
         lines = []
     else:
+        topic_actor_context, topic_actor_diagnostics = resolve_effective_topic_actor_context(
+            context,
+            env=os.environ,
+            cwd=Path.cwd(),
+            explicit_topic_actor_name=_value(options, "topic_actor_name"),
+            missing_is_error=False,
+        )
+        diagnostics.extend(topic_actor_diagnostics)
+        if topic_actor_context is not None:
+            payload["effective_topic_actor_context"] = topic_actor_context.to_json()
         agent_context, agent_diagnostics = resolve_effective_agent_context(
             context,
             env=os.environ,
@@ -587,6 +772,7 @@ def _cmd_context_show(options: CliOptions) -> int:
                 ("Topic Workspace", context.topic_workspace_id),
                 ("Topic Workspace Path", context.topic_workspace_path),
                 ("Research Topic Source", context.sources["research_topic_id"]),
+                ("Topic Actor", topic_actor_context.topic_actor_name if topic_actor_context is not None else "none"),
                 ("Agent Name", agent_context.agent_name if agent_context is not None else "none"),
             ]
         )
@@ -604,6 +790,7 @@ def _cmd_paths_get(options: CliOptions, semantic_label: str) -> int:
             cwd=Path.cwd(),
             agent_name=_value(options, "agent_name"),
             agent_instance_id=_value(options, "agent_instance_id"),
+            topic_actor_name=_value(options, "topic_actor_name"),
             use_path_plan=not bool(_value(options, "paths_configured")),
         )
         diagnostics.extend(path_diagnostics)
@@ -620,6 +807,8 @@ def _cmd_paths_get(options: CliOptions, semantic_label: str) -> int:
         ]
         if result.agent_name is not None:
             lines.append(f"Agent Name: {result.agent_name}")
+        if result.topic_actor_name is not None:
+            lines.append(f"Topic Actor: {result.topic_actor_name}")
     return _emit("paths get", options, payload, diagnostics, lines)
 
 
@@ -631,6 +820,7 @@ def _cmd_paths_default(options: CliOptions, semantic_label: str) -> int:
             context,
             semantic_label,
             agent_name=_value(options, "agent_name"),
+            topic_actor_name=_value(options, "topic_actor_name"),
         )
         diagnostics.extend(path_diagnostics)
     payload = {
@@ -658,6 +848,7 @@ def _cmd_paths_explain(options: CliOptions, semantic_label: str) -> int:
             cwd=Path.cwd(),
             agent_name=_value(options, "agent_name"),
             agent_instance_id=_value(options, "agent_instance_id"),
+            topic_actor_name=_value(options, "topic_actor_name"),
         )
         diagnostics.extend(path_diagnostics)
     payload = {
@@ -686,6 +877,7 @@ def _cmd_paths_list(options: CliOptions) -> int:
             cwd=Path.cwd(),
             agent_name=_value(options, "agent_name"),
             agent_instance_id=_value(options, "agent_instance_id"),
+            topic_actor_name=_value(options, "topic_actor_name"),
         )
         diagnostics.extend(path_diagnostics)
     payload = {
@@ -713,6 +905,7 @@ def _cmd_paths_materialize_default(
             context,
             labels=labels,
             agent_name=_value(options, "agent_name"),
+            topic_actor_name=_value(options, "topic_actor_name"),
         )
         diagnostics.extend(path_diagnostics)
     payload = {
@@ -739,6 +932,7 @@ def _cmd_paths_materialize(options: CliOptions, semantic_label: str) -> int:
             cwd=Path.cwd(),
             agent_name=_value(options, "agent_name"),
             agent_instance_id=_value(options, "agent_instance_id"),
+            topic_actor_name=_value(options, "topic_actor_name"),
         )
         diagnostics.extend(path_diagnostics)
     payload = {

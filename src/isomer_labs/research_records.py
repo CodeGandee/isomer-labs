@@ -57,6 +57,11 @@ class ResearchRecordRequest:
     skill: str | None = None
     producer: str | None = None
     consumer: str | None = None
+    topic_actor_name: str | None = None
+    actor_kind: str | None = None
+    runtime_kind: str | None = None
+    controller_kind: str | None = None
+    adapter_ref: str | None = None
     semantic_label: str | None = None
     body: str | None = None
     body_file: Path | None = None
@@ -158,6 +163,11 @@ def list_records(
     skill: str | None = None,
     producer: str | None = None,
     consumer: str | None = None,
+    topic_actor_name: str | None = None,
+    actor_kind: str | None = None,
+    runtime_kind: str | None = None,
+    controller_kind: str | None = None,
+    adapter_ref: str | None = None,
 ) -> tuple[dict[str, Any], list[Diagnostic]]:
     """List research records matching filters."""
 
@@ -180,6 +190,11 @@ def list_records(
             and _matches_metadata(record, "skill", skill)
             and _matches_metadata(record, "producer", producer)
             and _matches_metadata(record, "consumer", consumer)
+            and _matches_metadata(record, "topic_actor_name", topic_actor_name)
+            and _matches_metadata(record, "actor_kind", actor_kind)
+            and _matches_metadata(record, "runtime_kind", runtime_kind)
+            and _matches_metadata(record, "controller_kind", controller_kind)
+            and _matches_metadata(record, "adapter_ref", adapter_ref)
         ]
         return {
             "ok": True,
@@ -366,6 +381,11 @@ def _record_metadata(request: ResearchRecordRequest) -> dict[str, object]:
         ("skill", request.skill),
         ("producer", request.producer),
         ("consumer", request.consumer),
+        ("topic_actor_name", request.topic_actor_name),
+        ("actor_kind", request.actor_kind),
+        ("runtime_kind", request.runtime_kind),
+        ("controller_kind", request.controller_kind),
+        ("adapter_ref", request.adapter_ref),
         ("semantic_label", _semantic_label_for_request(request)),
     ):
         if value is not None:
@@ -377,6 +397,8 @@ def _lifecycle_refs(context: EffectiveTopicContext, request: ResearchRecordReque
     refs = dict(context.lifecycle_refs)
     if context.topic_agent_team_profile_id is not None:
         refs.setdefault("topic_agent_team_profile_id", context.topic_agent_team_profile_id)
+    if request.topic_actor_name is not None:
+        refs.setdefault("topic_actor_name", request.topic_actor_name)
     for key, value in (request.lifecycle_refs or {}).items():
         refs[str(key)] = str(value)
     return refs

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from isomer_labs.context import resolve_effective_topic_context
 from isomer_labs.models import EffectiveTopicContext, SelectionRequest
+from isomer_labs.paths import resolve_semantic_path
 from isomer_labs.project import discover_project
 from isomer_labs.topic_workspace_manifest import (
     DEFAULT_LAYOUT_PROFILE,
@@ -140,6 +141,97 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual("topic_repo_tracked_file", projection_manifest.storage_profile)
         self.assertEqual("file", projection_manifest.path_kind)
         self.assertEqual("topic.repos.main.projections.manifest", compatibility_aliases()["topic_main_projections_manifest"])
+        actor_workspace = catalog()["topic.actors.workspace"]
+        self.assertEqual("topic_actor", actor_workspace.scope)
+        self.assertEqual("topic_actor_worktree", actor_workspace.storage_profile)
+        self.assertEqual("topic_actor", actor_workspace.required_context)
+
+    def test_topic_actor_binding_resolves_actor_scoped_paths(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[topic_actors]]
+            topic_actor_name = "operator"
+            actor_kind = "operator"
+            runtime_kind = "codex"
+            role_kind = "operator"
+            controller_kind = "project_operator_session"
+            default_cwd_label = "topic.actors.workspace"
+            workspace_label = "topic.actors.workspace"
+            status = "ready"
+
+            [[topic_actors]]
+            topic_actor_name = "claude-scout"
+            actor_kind = "manual_worker"
+            runtime_kind = "claude_code"
+            role_kind = "scout"
+            controller_kind = "human_user"
+            default_cwd_label = "topic.actors.workspace"
+            workspace_label = "topic.actors.workspace"
+            status = "ready"
+            """,
+        )
+
+        manifest, diagnostics = load_topic_workspace_manifest(context)
+        self.assertEqual([], diagnostics)
+        actor = manifest.topic_actor_binding_for("operator")
+        self.assertIsNotNone(actor)
+        assert actor is not None
+        self.assertEqual("per-topic-actor/operator/main", actor.effective_branch)
+
+        result, result_diagnostics = resolve_semantic_path(
+            context,
+            "topic.actors.workspace",
+            env={},
+            cwd=context.topic_workspace_path,
+            topic_actor_name="operator",
+            use_path_plan=False,
+        )
+
+        self.assertEqual([], result_diagnostics)
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual(context.topic_workspace_path / "actors" / "operator", result.path)
+        self.assertEqual("topic_actor:operator", result.scope_ref)
+        self.assertEqual("operator", result.topic_actor_name)
+
+        missing, missing_diagnostics = resolve_semantic_path(
+            context,
+            "topic.actors.workspace",
+            env={},
+            cwd=context.topic_workspace_path,
+            use_path_plan=False,
+        )
+        self.assertIsNone(missing)
+        self.assertTrue(any("Topic Actor-scoped command requires" in diagnostic.message for diagnostic in missing_diagnostics))
+
+    def test_topic_actor_binding_rejects_unknown_non_extension_enum(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[topic_actors]]
+            topic_actor_name = "operator"
+            actor_kind = "mystery"
+            runtime_kind = "codex"
+            role_kind = "operator"
+            controller_kind = "project_operator_session"
+            status = "ready"
+            """,
+        )
+
+        _, diagnostics = load_topic_workspace_manifest(context)
+
+        self.assertTrue(any("Unsupported Topic Actor actor_kind" in diagnostic.message for diagnostic in diagnostics), diagnostics)
 
     def test_default_profile_resolves_topic_main_projection_labels(self) -> None:
         context = self.make_context()

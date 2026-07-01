@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-admin-manual-research-session"
+  short_description: "Start human-orchestrated topic research"
+  default_prompt: "Use $isomer-admin-manual-research-session to prepare manual Topic Actor research start packs."

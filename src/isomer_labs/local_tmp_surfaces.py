@@ -11,7 +11,7 @@ from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.path_utils import is_within
 
 if TYPE_CHECKING:
-    from isomer_labs.topic_workspace_manifest import EffectiveAgentContext
+    from isomer_labs.topic_workspace_manifest import EffectiveAgentContext, EffectiveTopicActorContext
 
 
 @dataclass(frozen=True)
@@ -39,8 +39,9 @@ def tmp_surface_ignore_policy(
     *,
     env: Mapping[str, str],
     agent_context: EffectiveAgentContext | None = None,
+    topic_actor_context: EffectiveTopicActorContext | None = None,
 ) -> tuple[TmpSurfaceIgnorePolicy | None, list[Diagnostic]]:
-    diagnostics = _tmp_surface_boundary_diagnostics(context, label, tmp_path, env=env, agent_context=agent_context)
+    diagnostics = _tmp_surface_boundary_diagnostics(context, label, tmp_path, env=env, agent_context=agent_context, topic_actor_context=topic_actor_context)
     if any(diagnostic.is_error for diagnostic in diagnostics):
         return None, diagnostics
     if label == "topic.tmp":
@@ -72,6 +73,14 @@ def tmp_surface_ignore_policy(
             TmpSurfaceIgnorePolicy(label, topic_main / ".gitignore", tmp_path, agent_context.agent_workspace_path, entry),
             diagnostics,
         )
+    if label == "topic.actors.tmp" and topic_actor_context is not None:
+        entry = _gitignore_entry(topic_actor_context.topic_actor_workspace_path, tmp_path)
+        if entry is None:
+            return None, diagnostics
+        return (
+            TmpSurfaceIgnorePolicy(label, topic_actor_context.topic_actor_workspace_path / ".gitignore", tmp_path, topic_actor_context.topic_actor_workspace_path, entry),
+            diagnostics,
+        )
     return None, diagnostics
 
 
@@ -82,8 +91,16 @@ def ensure_tmp_surface_ignore_policy(
     *,
     env: Mapping[str, str],
     agent_context: EffectiveAgentContext | None = None,
+    topic_actor_context: EffectiveTopicActorContext | None = None,
 ) -> list[Diagnostic]:
-    policy, diagnostics = tmp_surface_ignore_policy(context, label, tmp_path, env=env, agent_context=agent_context)
+    policy, diagnostics = tmp_surface_ignore_policy(
+        context,
+        label,
+        tmp_path,
+        env=env,
+        agent_context=agent_context,
+        topic_actor_context=topic_actor_context,
+    )
     if policy is None or any(diagnostic.is_error for diagnostic in diagnostics):
         return diagnostics
     policy.gitignore_path.parent.mkdir(parents=True, exist_ok=True)
@@ -103,6 +120,7 @@ def _tmp_surface_boundary_diagnostics(
     *,
     env: Mapping[str, str],
     agent_context: EffectiveAgentContext | None,
+    topic_actor_context: EffectiveTopicActorContext | None,
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     if label == "topic.tmp":
@@ -117,6 +135,8 @@ def _tmp_surface_boundary_diagnostics(
         return diagnostics
     if label == "agent.tmp" and agent_context is not None and not is_within(path, agent_context.agent_workspace_path):
         diagnostics.append(_tmp_boundary_diagnostic(label, "`agent.tmp` must stay inside the resolved `agent.workspace`."))
+    if label == "topic.actors.tmp" and topic_actor_context is not None and not is_within(path, topic_actor_context.topic_actor_workspace_path):
+        diagnostics.append(_tmp_boundary_diagnostic(label, "`topic.actors.tmp` must stay inside the resolved `topic.actors.workspace`."))
     return diagnostics
 
 

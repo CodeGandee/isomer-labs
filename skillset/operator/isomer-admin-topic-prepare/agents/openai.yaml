@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-admin-topic-prepare"
+  short_description: "Prepare common Research Topic state"
+  default_prompt: "Use $isomer-admin-topic-prepare to prepare a Research Topic for manual research or team specialization."

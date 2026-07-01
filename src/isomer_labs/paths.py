@@ -21,14 +21,17 @@ from isomer_labs.topic_workspace_manifest import (
     DEFAULT_PROFILE_SOURCE,
     PATH_PLAN_SOURCE,
     EffectiveAgentContext,
+    EffectiveTopicActorContext,
     SemanticPathResult,
     catalog,
     compatibility_aliases,
     compatibility_surface_for_label,
+    DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL,
     default_path_for_label,
     effective_catalog,
     load_topic_workspace_manifest,
     match_agent_name_from_template,
+    match_topic_actor_name_from_template,
     materialize_default_manifest,
     resolve_binding_path,
     resolve_semantic_binding,
@@ -56,6 +59,13 @@ PATH_ENV_VARS = {
     "records_views": "ISOMER_TOPIC_WORKSPACE_VIEWS_DIR",
     "records_logs": "ISOMER_TOPIC_WORKSPACE_LOGS_DIR",
     "runtime": "ISOMER_TOPIC_WORKSPACE_RUNTIME_DIR",
+    "topic_actors_root": "ISOMER_TOPIC_ACTORS_ROOT_DIR",
+    "topic_actor_workspace": "ISOMER_TOPIC_ACTOR_WORKSPACE_DIR",
+    "topic_actor_tmp": "ISOMER_TOPIC_ACTOR_TMP_DIR",
+    "topic_actor_isomer_managed": "ISOMER_TOPIC_ACTOR_ISOMER_MANAGED_DIR",
+    "topic_actor_private_artifacts": "ISOMER_TOPIC_ACTOR_PRIVATE_ARTIFACTS_DIR",
+    "topic_actor_logs": "ISOMER_TOPIC_ACTOR_LOGS_DIR",
+    "topic_actor_links": "ISOMER_TOPIC_ACTOR_LINKS_DIR",
     "agent_workspace": "ISOMER_AGENT_WORKSPACE_DIR",
     "agent_tmp": "ISOMER_AGENT_WORKSPACE_TMP_DIR",
     "agent_isomer_managed": "ISOMER_AGENT_ISOMER_MANAGED_DIR",
@@ -120,6 +130,7 @@ TOPIC_LABELS = (
     "topic.repos.main.projections.writable",
     "topic.repos.main.projections.manifest",
     "topic.agents_root",
+    "topic.actors_root",
     "topic.records",
     "topic.records.artifacts",
     "topic.records.tasks",
@@ -127,6 +138,14 @@ TOPIC_LABELS = (
     "topic.records.views",
     "topic.records.logs",
     "topic.runtime",
+)
+TOPIC_ACTOR_LABELS = (
+    "topic.actors.workspace",
+    "topic.actors.tmp",
+    "topic.actors.isomer_managed",
+    "topic.actors.private_artifacts",
+    "topic.actors.logs",
+    "topic.actors.links",
 )
 AGENT_LABELS = (
     "agent.workspace",
@@ -188,7 +207,14 @@ def preview_paths(
     ]
 
     for label in TOPIC_LABELS:
-        entry, label_diagnostics = _entry_for_label(context, label, env=env, agent_context=None, use_path_plan=False)
+        entry, label_diagnostics = _entry_for_label(
+            context,
+            label,
+            env=env,
+            agent_context=None,
+            topic_actor_context=None,
+            use_path_plan=False,
+        )
         diagnostics.extend(label_diagnostics)
         if entry is not None:
             entries.append(entry)
@@ -207,11 +233,27 @@ def preview_paths(
             ]
         )
 
+    topic_actor_context, topic_actor_diagnostics = _topic_actor_context_from_refs(context, env)
+    diagnostics.extend(topic_actor_diagnostics)
+    if topic_actor_context is not None:
+        for label in TOPIC_ACTOR_LABELS:
+            entry, label_diagnostics = _entry_for_label(
+                context,
+                label,
+                env=env,
+                agent_context=None,
+                topic_actor_context=topic_actor_context,
+                use_path_plan=False,
+            )
+            diagnostics.extend(label_diagnostics)
+            if entry is not None:
+                entries.append(entry)
+
     agent_context, agent_diagnostics = _agent_context_from_refs(context, env)
     diagnostics.extend(agent_diagnostics)
     if agent_context is not None:
         for label in AGENT_LABELS:
-            entry, label_diagnostics = _entry_for_label(context, label, env=env, agent_context=agent_context, use_path_plan=False)
+            entry, label_diagnostics = _entry_for_label(context, label, env=env, agent_context=agent_context, topic_actor_context=None, use_path_plan=False)
             diagnostics.extend(label_diagnostics)
             if entry is not None:
                 entries.append(entry)
@@ -257,6 +299,7 @@ def resolve_semantic_path(
     cwd: Path,
     agent_name: str | None = None,
     agent_instance_id: str | None = None,
+    topic_actor_name: str | None = None,
     use_path_plan: bool = True,
 ) -> tuple[SemanticPathResult | None, list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
@@ -275,6 +318,7 @@ def resolve_semantic_path(
         )
         return None, diagnostics
     agent_context = None
+    topic_actor_context = None
     if surface.scope == "agent":
         agent_context, agent_diagnostics = resolve_effective_agent_context(
             context,
@@ -286,8 +330,18 @@ def resolve_semantic_path(
         diagnostics.extend(agent_diagnostics)
         if agent_context is None:
             return None, diagnostics
+    if surface.scope == "topic_actor":
+        topic_actor_context, topic_actor_diagnostics = resolve_effective_topic_actor_context(
+            context,
+            env=env,
+            cwd=cwd,
+            explicit_topic_actor_name=topic_actor_name,
+        )
+        diagnostics.extend(topic_actor_diagnostics)
+        if topic_actor_context is None:
+            return None, diagnostics
     if use_path_plan:
-        plan = _path_plan_result(context, label, env=env, agent_context=agent_context)
+        plan = _path_plan_result(context, label, env=env, agent_context=agent_context, topic_actor_context=topic_actor_context)
         if plan is not None:
             return plan, diagnostics
     result, binding_diagnostics = resolve_semantic_binding(
@@ -295,6 +349,7 @@ def resolve_semantic_path(
         label,
         env=env,
         agent_context=agent_context,
+        topic_actor_context=topic_actor_context,
     )
     diagnostics.extend(binding_diagnostics)
     return result, diagnostics
@@ -307,8 +362,17 @@ def list_semantic_paths(
     cwd: Path,
     agent_name: str | None = None,
     agent_instance_id: str | None = None,
+    topic_actor_name: str | None = None,
 ) -> tuple[list[dict[str, object]], list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
+    topic_actor_context, topic_actor_diagnostics = resolve_effective_topic_actor_context(
+        context,
+        env=env,
+        cwd=cwd,
+        explicit_topic_actor_name=topic_actor_name,
+        missing_is_error=False,
+    )
+    diagnostics.extend(topic_actor_diagnostics)
     agent_context, agent_diagnostics = resolve_effective_agent_context(
         context,
         env=env,
@@ -322,6 +386,17 @@ def list_semantic_paths(
     diagnostics.extend(catalog_diagnostics)
     rows: list[dict[str, object]] = []
     for surface in sorted(surfaces.values(), key=lambda item: item.label):
+        if surface.scope == "topic_actor" and topic_actor_context is None:
+            rows.append(
+                {
+                    "semantic_label": surface.label,
+                    "scope": surface.scope,
+                    "required_context": surface.required_context,
+                    "resolved": False,
+                    "diagnostics": ["Topic Actor-scoped label requires a Topic Actor context."],
+                }
+            )
+            continue
         if surface.scope == "agent" and agent_context is None:
             rows.append(
                 {
@@ -340,6 +415,11 @@ def list_semantic_paths(
             cwd=cwd,
             agent_name=agent_context.agent_name if agent_context is not None and surface.scope == "agent" else None,
             agent_instance_id=agent_context.agent_instance_id if agent_context is not None and surface.scope == "agent" else None,
+            topic_actor_name=(
+                topic_actor_context.topic_actor_name
+                if topic_actor_context is not None and surface.scope == "topic_actor"
+                else None
+            ),
         )
         non_blocking = [diagnostic.render() for diagnostic in result_diagnostics]
         if result is None:
@@ -366,8 +446,14 @@ def materialize_default_paths(
     *,
     labels: tuple[str, ...],
     agent_name: str | None,
+    topic_actor_name: str | None = None,
 ) -> tuple[dict[str, object] | None, list[Diagnostic]]:
-    manifest, created, diagnostics = materialize_default_manifest(context, labels=labels, agent_name=agent_name)
+    manifest, created, diagnostics = materialize_default_manifest(
+        context,
+        labels=labels,
+        agent_name=agent_name,
+        topic_actor_name=topic_actor_name,
+    )
     if manifest is None:
         return None, diagnostics
     return {
@@ -381,6 +467,7 @@ def default_semantic_path(
     label_or_surface: str,
     *,
     agent_name: str | None = None,
+    topic_actor_name: str | None = None,
 ) -> tuple[dict[str, object] | None, list[Diagnostic]]:
     label = _normalize_label(label_or_surface)
     surface = catalog().get(label)
@@ -407,7 +494,18 @@ def default_semantic_path(
             )
         )
         return None, diagnostics
-    path = default_path_for_label(context, label, agent_name=agent_name)
+    if surface.scope == "topic_actor" and topic_actor_name is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Effective Topic Actor Context",
+                field=label,
+                message="Default path query for Topic Actor-scoped labels requires a Topic Actor selector.",
+            )
+        )
+        return None, diagnostics
+    path = default_path_for_label(context, label, agent_name=agent_name, topic_actor_name=topic_actor_name)
     profile = storage_profile_by_id(surface.storage_profile)
     return (
         {
@@ -432,6 +530,7 @@ def materialize_semantic_path(
     cwd: Path,
     agent_name: str | None = None,
     agent_instance_id: str | None = None,
+    topic_actor_name: str | None = None,
 ) -> tuple[dict[str, object] | None, list[Diagnostic]]:
     result, diagnostics = resolve_semantic_path(
         context,
@@ -440,6 +539,7 @@ def materialize_semantic_path(
         cwd=cwd,
         agent_name=agent_name,
         agent_instance_id=agent_instance_id,
+        topic_actor_name=topic_actor_name,
         use_path_plan=False,
     )
     if result is None or any(diagnostic.is_error for diagnostic in diagnostics):
@@ -451,7 +551,7 @@ def materialize_semantic_path(
     else:
         result.path.mkdir(parents=True, exist_ok=True)
         created.append(result.path)
-    if result.label in ("topic.tmp", "topic.repos.main.tmp", "agent.tmp"):
+    if result.label in ("topic.tmp", "topic.repos.main.tmp", "topic.actors.tmp", "agent.tmp"):
         diagnostics.extend(_ensure_materialized_tmp_policy(context, result, env=env))
     return {
         "path": result.to_json(),
@@ -467,6 +567,7 @@ def explain_semantic_path(
     cwd: Path,
     agent_name: str | None = None,
     agent_instance_id: str | None = None,
+    topic_actor_name: str | None = None,
 ) -> tuple[dict[str, object] | None, list[Diagnostic]]:
     recorded, recorded_diagnostics = resolve_semantic_path(
         context,
@@ -475,6 +576,7 @@ def explain_semantic_path(
         cwd=cwd,
         agent_name=agent_name,
         agent_instance_id=agent_instance_id,
+        topic_actor_name=topic_actor_name,
         use_path_plan=True,
     )
     configured, configured_diagnostics = resolve_semantic_path(
@@ -484,6 +586,7 @@ def explain_semantic_path(
         cwd=cwd,
         agent_name=agent_name,
         agent_instance_id=agent_instance_id,
+        topic_actor_name=topic_actor_name,
         use_path_plan=False,
     )
     diagnostics = [*recorded_diagnostics, *configured_diagnostics]
@@ -588,17 +691,103 @@ def resolve_effective_agent_context(
     return None, diagnostics
 
 
+def resolve_effective_topic_actor_context(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    cwd: Path,
+    explicit_topic_actor_name: str | None = None,
+    missing_is_error: bool = True,
+) -> tuple[EffectiveTopicActorContext | None, list[Diagnostic]]:
+    diagnostics: list[Diagnostic] = []
+    candidates: list[EffectiveTopicActorContext] = []
+    if explicit_topic_actor_name is not None:
+        actor_context, actor_diagnostics = _topic_actor_context_for_name(context, explicit_topic_actor_name, "explicit selector")
+        diagnostics.extend(actor_diagnostics)
+        if actor_context is None:
+            return None, diagnostics
+        candidates.append(actor_context)
+
+    env_actor_name = env.get("ISOMER_TOPIC_ACTOR_NAME")
+    env_actor_workspace = env.get("ISOMER_TOPIC_ACTOR_WORKSPACE_DIR")
+    env_context = None
+    if env_actor_name:
+        env_context, env_diagnostics = _topic_actor_context_for_name(context, env_actor_name, "environment")
+        diagnostics.extend(env_diagnostics)
+    elif env_actor_workspace:
+        workspace_path = resolve_project_path(context.project.root, env_actor_workspace)
+        env_context = EffectiveTopicActorContext(
+            topic_actor_name=workspace_path.name,
+            topic_actor_workspace_path=workspace_path,
+            source="environment",
+        )
+    if env_context is not None:
+        candidates.append(env_context)
+
+    cwd_context, cwd_diagnostics = _topic_actor_context_from_cwd(context, cwd, env=env)
+    diagnostics.extend(cwd_diagnostics)
+    if cwd_context is not None:
+        candidates.append(cwd_context)
+
+    lifecycle_actor_name = context.lifecycle_refs.get("topic_actor_name")
+    if lifecycle_actor_name is not None:
+        lifecycle_context, lifecycle_diagnostics = _topic_actor_context_for_name(context, lifecycle_actor_name, "recorded context")
+        diagnostics.extend(lifecycle_diagnostics)
+        if lifecycle_context is not None:
+            candidates.append(lifecycle_context)
+
+    if not candidates:
+        manifest_context, manifest_diagnostics = _single_manifest_topic_actor_context(context)
+        diagnostics.extend(manifest_diagnostics)
+        if manifest_context is not None:
+            candidates.append(manifest_context)
+
+    if not candidates:
+        if missing_is_error:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO061",
+                    severity="error",
+                    concept="Effective Topic Actor Context",
+                    message="Topic Actor-scoped command requires a Topic Actor selector or inferred Topic Actor Workspace context.",
+                )
+            )
+        return None, diagnostics
+
+    selected = candidates[0]
+    for candidate in candidates[1:]:
+        if candidate.topic_actor_name != selected.topic_actor_name:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO061",
+                    severity="error",
+                    concept="Effective Topic Actor Context",
+                    field="topic_actor_name",
+                    message="Topic Actor context sources conflict; provide one explicit --topic-actor selector or align environment/cwd/lifecycle refs.",
+                )
+            )
+            return None, diagnostics
+    return selected, diagnostics
+
+
 def _entry_for_label(
     context: EffectiveTopicContext,
     label: str,
     *,
     env: Mapping[str, str],
     agent_context: EffectiveAgentContext | None,
+    topic_actor_context: EffectiveTopicActorContext | None,
     use_path_plan: bool,
 ) -> tuple[ResolvedPathEntry | None, list[Diagnostic]]:
-    result, diagnostics = resolve_semantic_binding(context, label, env=env, agent_context=agent_context)
+    result, diagnostics = resolve_semantic_binding(
+        context,
+        label,
+        env=env,
+        agent_context=agent_context,
+        topic_actor_context=topic_actor_context,
+    )
     if use_path_plan:
-        plan = _path_plan_result(context, label, env=env, agent_context=agent_context)
+        plan = _path_plan_result(context, label, env=env, agent_context=agent_context, topic_actor_context=topic_actor_context)
         if plan is not None:
             result = plan
     if result is None:
@@ -620,7 +809,21 @@ def _ensure_materialized_tmp_policy(
             source=result.agent_context_source or "materialize",
             agent_instance_id=result.agent_instance_id,
         )
-    return ensure_tmp_surface_ignore_policy(context, result.label, result.path, env=env, agent_context=agent_context)
+    topic_actor_context = None
+    if result.topic_actor_name is not None:
+        topic_actor_context = EffectiveTopicActorContext(
+            topic_actor_name=result.topic_actor_name,
+            topic_actor_workspace_path=result.path.parent if result.label == "topic.actors.tmp" else result.path,
+            source=result.topic_actor_context_source or "materialize",
+        )
+    return ensure_tmp_surface_ignore_policy(
+        context,
+        result.label,
+        result.path,
+        env=env,
+        agent_context=agent_context,
+        topic_actor_context=topic_actor_context,
+    )
 
 
 def _entry_from_result(result: SemanticPathResult) -> ResolvedPathEntry:
@@ -658,14 +861,14 @@ def _with_semantic(entry: ResolvedPathEntry, label: str, scope_ref: str) -> Reso
 
 
 def _runtime_db_lookup_path(context: EffectiveTopicContext, *, env: Mapping[str, str]) -> Path:
-    result, _ = resolve_semantic_binding(context, "topic.runtime.db", env=env, agent_context=None)
+    result, _ = resolve_semantic_binding(context, "topic.runtime.db", env=env, agent_context=None, topic_actor_context=None)
     if result is not None:
         return result.path
     return default_path_for_label(context, "topic.runtime.db", agent_name=None)
 
 
 def _topic_main_lookup_path(context: EffectiveTopicContext, *, env: Mapping[str, str]) -> Path:
-    result, _ = resolve_semantic_binding(context, "topic.repos.main", env=env, agent_context=None)
+    result, _ = resolve_semantic_binding(context, "topic.repos.main", env=env, agent_context=None, topic_actor_context=None)
     if result is not None:
         return result.path
     return default_path_for_label(context, "topic.repos.main", agent_name=None)
@@ -677,6 +880,7 @@ def _path_plan_result(
     *,
     env: Mapping[str, str],
     agent_context: EffectiveAgentContext | None,
+    topic_actor_context: EffectiveTopicActorContext | None,
 ) -> SemanticPathResult | None:
     runtime_db = _runtime_db_lookup_path(context, env=env)
     if not runtime_db.exists():
@@ -688,6 +892,8 @@ def _path_plan_result(
     agent_name = None
     agent_instance_id = None
     agent_source = None
+    topic_actor_name = None
+    topic_actor_source = None
     if surface.scope == "agent":
         if agent_context is None:
             return None
@@ -695,7 +901,13 @@ def _path_plan_result(
         agent_name = agent_context.agent_name
         agent_instance_id = agent_context.agent_instance_id
         agent_source = agent_context.source
-    compatibility_surface = compatibility_surface_for_label(label, agent_name=agent_name)
+    if surface.scope == "topic_actor":
+        if topic_actor_context is None:
+            return None
+        scope_ref = topic_actor_context.scope_ref
+        topic_actor_name = topic_actor_context.topic_actor_name
+        topic_actor_source = topic_actor_context.source
+    compatibility_surface = compatibility_surface_for_label(label, agent_name=agent_name, topic_actor_name=topic_actor_name)
     try:
         with sqlite3.connect(runtime_db) as connection:
             connection.row_factory = sqlite3.Row
@@ -712,7 +924,18 @@ def _path_plan_result(
                     (context.topic_workspace_id, label, scope_ref),
                 ).fetchone()
                 if row is not None:
-                    return _semantic_result_from_plan(context, row, label, surface, scope_ref, agent_name, agent_instance_id, agent_source)
+                    return _semantic_result_from_plan(
+                        context,
+                        row,
+                        label,
+                        surface,
+                        scope_ref,
+                        agent_name,
+                        agent_instance_id,
+                        agent_source,
+                        topic_actor_name,
+                        topic_actor_source,
+                    )
             if compatibility_surface is not None:
                 row = connection.execute(
                     """
@@ -723,7 +946,18 @@ def _path_plan_result(
                     (context.topic_workspace_id, compatibility_surface),
                 ).fetchone()
                 if row is not None:
-                    return _semantic_result_from_plan(context, row, label, surface, scope_ref, agent_name, agent_instance_id, agent_source)
+                    return _semantic_result_from_plan(
+                        context,
+                        row,
+                        label,
+                        surface,
+                        scope_ref,
+                        agent_name,
+                        agent_instance_id,
+                        agent_source,
+                        topic_actor_name,
+                        topic_actor_source,
+                    )
     except sqlite3.Error:
         return None
     return None
@@ -738,6 +972,8 @@ def _semantic_result_from_plan(
     agent_name: str | None,
     agent_instance_id: str | None,
     agent_source: str | None,
+    topic_actor_name: str | None,
+    topic_actor_source: str | None,
 ) -> SemanticPathResult:
     compatibility_surface = row["surface"]
     return SemanticPathResult(
@@ -752,6 +988,8 @@ def _semantic_result_from_plan(
         agent_name=agent_name,
         agent_instance_id=agent_instance_id,
         agent_context_source=agent_source,
+        topic_actor_name=topic_actor_name,
+        topic_actor_context_source=topic_actor_source,
     )
 
 
@@ -791,6 +1029,65 @@ def _agent_context_from_refs(
             ],
         )
     return None, []
+
+
+def _topic_actor_context_from_refs(
+    context: EffectiveTopicContext,
+    env: Mapping[str, str],
+) -> tuple[EffectiveTopicActorContext | None, list[Diagnostic]]:
+    topic_actor_name = context.lifecycle_refs.get("topic_actor_name") or env.get("ISOMER_TOPIC_ACTOR_NAME")
+    if topic_actor_name is not None:
+        return _topic_actor_context_for_name(context, topic_actor_name, "recorded context")
+    workspace_value = env.get(PATH_ENV_VARS["topic_actor_workspace"])
+    if workspace_value:
+        workspace_path = resolve_project_path(context.project.root, workspace_value)
+        return (
+            EffectiveTopicActorContext(
+                topic_actor_name=workspace_path.name,
+                topic_actor_workspace_path=workspace_path,
+                source="env",
+            ),
+            [],
+        )
+    return None, []
+
+
+def _topic_actor_context_for_name(
+    context: EffectiveTopicContext,
+    topic_actor_name: str,
+    source: str,
+) -> tuple[EffectiveTopicActorContext | None, list[Diagnostic]]:
+    manifest, diagnostics = load_topic_workspace_manifest(context)
+    binding = manifest.topic_actor_binding_for(topic_actor_name)
+    if binding is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Effective Topic Actor Context",
+                field="topic_actor_name",
+                message=f"Selected Topic Actor is not registered in the Topic Workspace Manifest: {topic_actor_name}.",
+            )
+        )
+        return None, diagnostics
+    workspace_path = _topic_actor_workspace_path(context, binding)
+    return (
+        EffectiveTopicActorContext(
+            topic_actor_name=topic_actor_name,
+            topic_actor_workspace_path=workspace_path,
+            source=source,
+            binding=binding,
+        ),
+        diagnostics,
+    )
+
+
+def _topic_actor_workspace_path(context: EffectiveTopicContext, binding: object) -> Path:
+    workspace_path = getattr(binding, "workspace_path", None)
+    topic_actor_name = getattr(binding, "topic_actor_name")
+    if isinstance(workspace_path, str) and workspace_path:
+        return resolve_project_path(context.project.root, workspace_path)
+    return default_path_for_label(context, DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL, agent_name=None, topic_actor_name=topic_actor_name)
 
 
 def _agent_context_for_name(
@@ -845,6 +1142,91 @@ def _agent_context_from_runtime_instance(
         source="runtime",
         agent_instance_id=row["agent_instance_id"],
     )
+
+
+def _topic_actor_context_from_cwd(
+    context: EffectiveTopicContext,
+    cwd: Path,
+    *,
+    env: Mapping[str, str],
+) -> tuple[EffectiveTopicActorContext | None, list[Diagnostic]]:
+    diagnostics: list[Diagnostic] = []
+    canonical_cwd = canonicalize(cwd)
+    topic_main = _topic_main_lookup_path(context, env=env)
+    try:
+        canonical_cwd.relative_to(topic_main)
+        return None, diagnostics
+    except ValueError:
+        pass
+
+    manifest, manifest_diagnostics = load_topic_workspace_manifest(context)
+    diagnostics.extend(manifest_diagnostics)
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, diagnostics
+
+    matches: list[EffectiveTopicActorContext] = []
+    for binding in manifest.active_topic_actor_bindings():
+        workspace_path = _topic_actor_workspace_path(context, binding)
+        try:
+            canonical_cwd.relative_to(workspace_path)
+        except ValueError:
+            continue
+        matches.append(
+            EffectiveTopicActorContext(
+                topic_actor_name=binding.topic_actor_name,
+                topic_actor_workspace_path=workspace_path,
+                source="cwd",
+                binding=binding,
+            )
+        )
+    if matches:
+        matches.sort(key=lambda item: len(str(item.topic_actor_workspace_path)), reverse=True)
+        longest = len(str(matches[0].topic_actor_workspace_path))
+        longest_matches = [item for item in matches if len(str(item.topic_actor_workspace_path)) == longest]
+        if len(longest_matches) == 1:
+            return longest_matches[0], diagnostics
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Effective Topic Actor Context",
+                field="cwd",
+                message="Current directory matches more than one Topic Actor Workspace.",
+            )
+        )
+        return None, diagnostics
+
+    workspace_binding = manifest.binding_for(DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL)
+    if workspace_binding is not None:
+        topic_actor_name, workspace_root, issue = match_topic_actor_name_from_template(context.topic_workspace_path, workspace_binding.path_template, canonical_cwd)
+        if issue is not None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO061",
+                    severity="warning",
+                    concept="Effective Topic Actor Context",
+                    path=manifest.path,
+                    field=DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL,
+                    message=issue,
+                )
+            )
+            return None, diagnostics
+        if topic_actor_name is not None and workspace_root is not None:
+            registered = manifest.topic_actor_binding_for(topic_actor_name)
+            if registered is not None:
+                return (
+                    EffectiveTopicActorContext(
+                        topic_actor_name=topic_actor_name,
+                        topic_actor_workspace_path=workspace_root,
+                        source="cwd",
+                        binding=registered,
+                    ),
+                    diagnostics,
+                )
+    cross_topic = _cross_topic_cwd_diagnostic(context, canonical_cwd)
+    if cross_topic is not None:
+        diagnostics.append(cross_topic)
+    return None, diagnostics
 
 
 def _agent_context_from_cwd(
@@ -999,6 +1381,25 @@ def _agent_contexts_from_runtime_cwd(
         return []
     longest = len(str(contexts[0].agent_workspace_path))
     return [context for context in contexts if len(str(context.agent_workspace_path)) == longest]
+
+
+def _single_manifest_topic_actor_context(context: EffectiveTopicContext) -> tuple[EffectiveTopicActorContext | None, list[Diagnostic]]:
+    manifest, diagnostics = load_topic_workspace_manifest(context)
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, diagnostics
+    actors = manifest.active_topic_actor_bindings()
+    if len(actors) != 1:
+        return None, diagnostics
+    binding = actors[0]
+    return (
+        EffectiveTopicActorContext(
+            topic_actor_name=binding.topic_actor_name,
+            topic_actor_workspace_path=_topic_actor_workspace_path(context, binding),
+            source="manifest default",
+            binding=binding,
+        ),
+        diagnostics,
+    )
 
 
 def _select_project_path(
