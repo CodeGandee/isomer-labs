@@ -1,0 +1,45 @@
+schema_version = "isomer-skillset-manifest.v1"
+
+[groups.core]
+description = "Core Isomer operator, service, and miscellaneous skills."
+skills = [
+  "misc/isomer-misc-bounded-run-tips",
+  "misc/isomer-misc-nvidia-tools",
+  "misc/isomer-misc-pkg-specifics",
+  "operator/isomer-admin-houmao-interop",
+  "operator/isomer-admin-manual-research-session",
+  "operator/isomer-admin-project-mgr",
+  "operator/isomer-admin-topic-prepare",
+  "operator/isomer-admin-topic-team-specialize",
+  "operator/isomer-admin-topic-workspace-mgr",
+  "service/isomer-srv-agent-env-setup",
+  "service/isomer-srv-resolve-pkg-repo",
+  "service/isomer-srv-topic-env-setup",
+  "service/isomer-srv-topic-service-agent-support",
+]
+
+[groups.deepsci-v2]
+description = "DeepScientist-derived research paradigm v2 skills."
+skills = [
+  "research-paradigm/v2/isomer-rsch-analysis-v2",
+  "research-paradigm/v2/isomer-rsch-baseline-v2",
+  "research-paradigm/v2/isomer-rsch-decision-v2",
+  "research-paradigm/v2/isomer-rsch-experiment-v2",
+  "research-paradigm/v2/isomer-rsch-figure-polish-v2",
+  "research-paradigm/v2/isomer-rsch-finalize-v2",
+  "research-paradigm/v2/isomer-rsch-idea-v2",
+  "research-paradigm/v2/isomer-rsch-nature-data-v2",
+  "research-paradigm/v2/isomer-rsch-nature-figure-v2",
+  "research-paradigm/v2/isomer-rsch-nature-paper2ppt-v2",
+  "research-paradigm/v2/isomer-rsch-nature-polishing-v2",
+  "research-paradigm/v2/isomer-rsch-optimize-v2",
+  "research-paradigm/v2/isomer-rsch-paper-outline-v2",
+  "research-paradigm/v2/isomer-rsch-paper-plot-v2",
+  "research-paradigm/v2/isomer-rsch-rebuttal-v2",
+  "research-paradigm/v2/isomer-rsch-review-v2",
+  "research-paradigm/v2/isomer-rsch-science-v2",
+  "research-paradigm/v2/isomer-rsch-scout-v2",
+  "research-paradigm/v2/isomer-rsch-shared-v2",
+  "research-paradigm/v2/isomer-rsch-workspace-mgr-v2",
+  "research-paradigm/v2/isomer-rsch-write-v2",
+]

@@ -524,16 +524,16 @@ The service environment setup skill SHALL treat Topic Workspace Pixi readiness a
 - **AND** it may name `isomer-srv-agent-env-setup` as an operator follow-up only when the caller requested per-agent proof or launch-facing Agent Workspace readiness
 - **AND** it does not present the follow-up as a topic env setup subcommand, delegated call, or readiness dependency
 
-### Requirement: Topic Env Call Graph Does Not Show Downstream Agent Readiness Ownership
-The service environment setup skill SHALL be represented in skill call graphs as producing Topic Workspace predecessor evidence, not as calling Agent Workspace readiness setup.
+### Requirement: Topic Env Process Graph Does Not Show Downstream Agent Readiness Ownership
+The service environment setup skill SHALL be represented in process graphs as producing Topic Workspace predecessor evidence, not as calling Agent Workspace readiness setup.
 
 #### Scenario: Topic env to agent env edge is absent
-- **WHEN** `skillset/callgraph.md` documents top-level skill-to-skill call paths
+- **WHEN** the Topic Team Specialization process documentation describes top-level skill-to-skill call paths
 - **THEN** it does not include a normal call path from `isomer-srv-topic-env-setup` to `isomer-srv-agent-env-setup`
 - **AND** any note about per-agent readiness describes it as a caller or operator decision outside topic env setup
 
 #### Scenario: Repair edge remains agent-owned
-- **WHEN** the call graph includes the relationship between `isomer-srv-agent-env-setup` and `isomer-srv-topic-env-setup`
+- **WHEN** a process graph includes the relationship between `isomer-srv-agent-env-setup` and `isomer-srv-topic-env-setup`
 - **THEN** it represents the repair route as `isomer-srv-agent-env-setup` requiring or routing missing or stale Topic Workspace environment predecessor evidence back to `isomer-srv-topic-env-setup`
 
 ### Requirement: Topic Env Source Intent is High Level

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This note records the intended process for **Topic Team Specialization** skill orchestration. It is a design-level process contract for aligning `isomer-admin-topic-team-specialize`, `isomer-admin-topic-workspace-mgr`, `isomer-srv-topic-env-setup`, `isomer-srv-agent-env-setup`, and `skillset/callgraph.md`.
+This note records the intended process for **Topic Team Specialization** skill orchestration. It is a design-level process contract for aligning `isomer-admin-topic-team-specialize`, `isomer-admin-topic-workspace-mgr`, `isomer-srv-topic-env-setup`, and `isomer-srv-agent-env-setup`.
 
 The key rule is that `isomer-admin-topic-team-specialize` is the only orchestrator across topic workspace setup, topic environment setup, and agent environment setup. Service skills and workspace-manager skills return bounded evidence; they do not decide the next cross-skill process step.
 
