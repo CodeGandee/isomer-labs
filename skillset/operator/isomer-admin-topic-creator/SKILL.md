@@ -7,6 +7,8 @@ description: Create or resume an Isomer Research Topic from empty or partial Pro
 
 Use this command-style operator skill when the user wants one front door for creating, initializing, preparing, starting, or repairing a Research Topic for manual or human-orchestrated research. This skill owns the user-facing ladder from blank or partial Project state to manual-research-ready Topic Workspace, while delegating lower-level mutation to `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, `isomer-admin-topic-workspace-mgr`, `isomer-rsch-workspace-mgr-v2`, and compatibility workflow `isomer-admin-manual-research-session`.
 
+Concrete Research Topic substance is a hard gate. The topic can come from the prompt, a Markdown brief, selected context, or a registered concrete topic statement, but missing or generic topic material such as `default` must block before deriving a topic id, choosing or creating a Topic Workspace, registering a topic, or writing `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, or derived env gates.
+
 ## Workflow
 
 When this skill is invoked, execute the following steps in order.
@@ -14,51 +16,73 @@ When this skill is invoked, execute the following steps in order.
 1. **Default help mode**:
    - Match when this skill is invoked without a prompt.
    - Select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
-2. **Select one command** from the **Commands** table that best matches the user's request:
-   - Use `create` for the end-to-end happy path.
-   - Use `plan` before mutation, `status` to inspect progress, and `repair` to resume from blockers.
-   - Use a stage command for bounded work when the user names that stage.
-3. **Load only the selected command page**:
-   - Guardrail: load only the selected command page.
+2. **Select one subcommand** from the **Subcommands** tables that best matches the user's request:
+   - Use `fast-forward` for the end-to-end happy path.
+   - Use `status` to inspect progress and `repair` to resume from blockers.
+   - Use a procedural subcommand for bounded user-facing setup or handoff work.
+   - Use a helper subcommand only when the user explicitly names a lower-level stage or `fast-forward`/`repair` needs it.
+3. **Load only the selected subcommand page**:
+   - Guardrail: load only the selected subcommand page.
    - Execute that page's `## Workflow`.
    - Follow that page's delegation and mutation boundary rules.
 4. **Preserve the initialization ladder**:
    - Project readiness.
-   - Topic definition and registration.
+   - Topic input resolution and registration.
+   - Research intent overview through `create-research-intent`.
    - Workspace Runtime readiness.
-   - Topic environment and `topic.repos.main` readiness.
-   - Topic Actor workspace readiness.
+   - Topic env source gate through `define-topic-env`.
+   - Topic environment and `topic.repos.main` readiness through `setup-topic-env`.
+   - Actor definitions through `define-actors`.
+   - Topic Actor workspace and derived actor env gate readiness through `setup-actors`.
    - v2 research bootstrap.
    - Manual research start packs.
 5. **Report topic creation output** using **Essential Output** by default and **Complete Output** when requested.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded topic-creation plan from Project Manifest-backed context, selected Research Topic refs, Topic Workspace refs, semantic path evidence, delegated owner boundaries, blockers, and the user's intended first research action.
 
-## Commands
+## Subcommands
 
-Load only the selected reference page before executing a command.
+Load only the selected reference page before executing a subcommand.
 
-| Command | Use For | Detail |
+### Procedural Subcommands
+
+Procedural subcommands are user-facing setup and handoff operations in topic initialization order.
+
+| Subcommand | Use For | Detail |
 | --- | --- | --- |
-| `help` | Print what this skill does, required inputs, commands, outputs, and guardrails | [references/help.md](references/help.md) |
-| `plan` | Dry-run the topic initialization ladder without mutation | [references/plan.md](references/plan.md) |
-| `create` | Run the end-to-end path to manual-research-ready Topic Workspace | [references/create.md](references/create.md) |
+| `create-research-intent` | Create or update only the topic overview intent surface | [references/create-research-intent.md](references/create-research-intent.md) |
+| `define-topic-env` | Create or refine the topic env source gate and pause for user verification unless running under `fast-forward` | [references/define-topic-env.md](references/define-topic-env.md) |
+| `setup-topic-env` | Prepare topic environment readiness and `topic.repos.main` evidence | [references/setup-topic-env.md](references/setup-topic-env.md) |
+| `define-actors` | Create or refine Topic Actor definitions, defaulting to the `operator` actor when no actor details are supplied | [references/define-actors.md](references/define-actors.md) |
+| `setup-actors` | Create or validate selected Topic Actors and Topic Actor Workspaces | [references/setup-actors.md](references/setup-actors.md) |
+| `start-manual-research` | Produce per-actor manual research start packs and final cwd handoff | [references/start-manual-research.md](references/start-manual-research.md) |
+
+### Helper Subcommands
+
+Helper subcommands are lower-level ladder stages normally called by `fast-forward`, `repair`, or a procedural subcommand. Load them directly only when the user explicitly names that stage.
+
+| Subcommand | Use For | Detail |
+| --- | --- | --- |
 | `ensure-project` | Ensure Project bootstrap and basic Project health | [references/ensure-project.md](references/ensure-project.md) |
-| `define-topic` | Resolve topic statement, topic id, topic overview, and topic intent | [references/define-topic.md](references/define-topic.md) |
+| `resolve-topic-input` | Resolve concrete topic source material, derive or confirm topic id, and identify the Topic Workspace candidate without writing intent files | [references/resolve-topic-input.md](references/resolve-topic-input.md) |
 | `register-topic` | Create or validate Research Topic and Topic Workspace registration | [references/register-topic.md](references/register-topic.md) |
 | `init-runtime` | Initialize or validate Workspace Runtime for the selected topic | [references/init-runtime.md](references/init-runtime.md) |
-| `setup-topic-env` | Prepare topic environment readiness and `topic.repos.main` evidence | [references/setup-topic-env.md](references/setup-topic-env.md) |
-| `setup-actors` | Create or validate selected Topic Actors and Topic Actor Workspaces | [references/setup-actors.md](references/setup-actors.md) |
 | `bootstrap-research` | Run or validate v2 research workspace bootstrap | [references/bootstrap-research.md](references/bootstrap-research.md) |
-| `start-manual-research` | Produce per-actor manual research start packs and final cwd handoff | [references/start-manual-research.md](references/start-manual-research.md) |
-| `status` | Report current ladder progress and the next command | [references/status.md](references/status.md) |
+
+### Misc Subcommands
+
+| Subcommand | Use For | Detail |
+| --- | --- | --- |
+| `help` | Print what this skill does, required inputs, subcommands, outputs, and guardrails | [references/help.md](references/help.md) |
+| `fast-forward` | Run the end-to-end path to manual-research-ready Topic Workspace | [references/fast-forward.md](references/fast-forward.md) |
+| `status` | Report current ladder progress and the next subcommand | [references/status.md](references/status.md) |
 | `repair` | Resume from the first blocked or stale stage without rerunning ready stages | [references/repair.md](references/repair.md) |
 
 ## Required Inputs
 
 - A Project root or permission to initialize one.
 - A concrete Research Topic statement, topic id, or registered Research Topic ref.
-- Operator intent for mutation before Project initialization, topic creation, runtime initialization, topic environment setup, Topic Actor registration, worktree materialization, research bootstrap, or start-pack writing.
+- Operator intent for mutation before Project initialization, topic registration, topic env setup, runtime initialization, Topic Actor registration, worktree materialization, research bootstrap, or start-pack writing.
 - Requested manual Topic Actors, runtime kinds, role kinds, and controller kinds when the user wants workers beyond the default `operator`.
 - An explicit opt-out when the user does not want the default `operator` Topic Actor or Topic Actor Workspace.
 - Selected v2 research skill set or first intended research route when start packs should be specific.
@@ -73,7 +97,7 @@ Report `status`, Project root, Research Topic ref, Topic Workspace ref, `topic.r
 
 ### Complete Output
 
-Include commands run, semantic labels, path sources, Project lifecycle evidence, topic registration evidence, runtime validation output, topic environment setup evidence, `topic.repos.main` evidence, actor binding JSON, actor-scoped semantic paths, placeholder binding entrypoints, storage recording command shapes, start-pack metadata, actor-local pointer paths, delegated owner evidence, skipped stages, and repair routes.
+Include commands run, semantic labels, path sources, Project lifecycle evidence, topic registration evidence, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, runtime validation output, topic environment setup evidence, `topic.repos.main` evidence, actor binding JSON, actor-scoped semantic paths, placeholder binding entrypoints, storage recording command shapes, start-pack metadata, actor-local pointer paths, delegated owner evidence, skipped stages, and repair routes.
 
 ## Guardrails
 

@@ -369,19 +369,25 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Creator
 
-            Create a manual-research-ready Topic Workspace through Project Manifest-backed context, `topic.repos.main`, Workspace Runtime, Topic Actor roster, actor cwd, v2 bootstrap status, and start-pack record refs.
+            Create a manual-research-ready Topic Workspace through Project Manifest-backed context, `topic.repos.main`, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, Workspace Runtime, Topic Actor roster, actor cwd, v2 bootstrap status, and start-pack record refs.
 
             ## Workflow
 
             1. **Default help mode**: If invoked without a prompt, run `help`.
-            2. Select one command and load only that command page.
+            2. Select one subcommand and load only that subcommand page.
             3. Preserve lower-level owner boundaries for `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, `isomer-admin-topic-workspace-mgr`, `isomer-rsch-workspace-mgr-v2`, `isomer-admin-manual-research-session`, and `isomer-admin-topic-team-specialize`.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
-            ## Commands
+            ## Subcommands
 
-            Commands: `help`, `plan`, `create`, `ensure-project`, `define-topic`, `register-topic`, `init-runtime`, `setup-topic-env`, `setup-actors`, `bootstrap-research`, `start-manual-research`, `status`, and `repair`.
+            Procedural Subcommands: `setup-topic-env`, `setup-actors`, and `start-manual-research`.
+
+            Procedural Subcommands: `create-research-intent`, `define-topic-env`, `setup-topic-env`, `define-actors`, `setup-actors`, and `start-manual-research`.
+
+            Helper Subcommands are lower-level ladder stages: `ensure-project`, `resolve-topic-input`, `register-topic`, `init-runtime`, and `bootstrap-research`.
+
+            Misc Subcommands: `help`, `fast-forward`, `status`, and `repair`.
 
             Use {command_links}.
 
@@ -403,16 +409,19 @@ class SkillsetValidatorTests(unittest.TestCase):
             if command_name == omit_command:
                 continue
             extra_terms = {
-                "help.md": "Command Functionalities. Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.",
-                "plan.md": "This command is dry-run and must not create or modify Project, Topic Workspace, runtime, repository, actor, bootstrap, or start-pack state.",
-                "create.md": "Run `plan`, stops at the first blocker, and report the next command to resume.",
-                "setup-topic-env.md": "Delegate to `isomer-srv-topic-env-setup` and report `topic.repos.main` readiness.",
-                "setup-actors.md": "Delegate to `isomer-admin-topic-workspace-mgr` and report `topic.actors.workspace` readiness.",
+                "help.md": "Subcommand Functionalities. Procedural Subcommands. Helper Subcommands. Misc Subcommands. Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.",
+                "fast-forward.md": "`fast-forward` stops at the first blocker, reports the next subcommand to resume, and routes through `define-topic-env` and `define-actors`.",
+                "resolve-topic-input.md": "Resolve a concrete Research Topic and does not write `topic.intent.overview`.",
+                "create-research-intent.md": "Write only `topic.intent.overview`; do not write `topic.intent.topic_env_requirements`.",
+                "define-topic-env.md": "Create `topic.intent.topic_env_requirements`, wait for user verification, and report `fast-forward` assumptions.",
+                "setup-topic-env.md": "Delegate to `isomer-srv-topic-env-setup`, read `topic.intent.topic_env_requirements`, derive `topic.env.topic_setup_target_spec`, and report `topic.repos.main` readiness.",
+                "define-actors.md": "Create `topic.intent.actor_definitions` for the default `operator` and each actor source env gate.",
+                "setup-actors.md": "Delegate to `isomer-admin-topic-workspace-mgr`, consume `topic.intent.actor_definitions`, report `topic.actors.workspace`, and verify `topic.env.actor_env_gates`.",
                 "bootstrap-research.md": "Run `isomer-rsch-workspace-mgr-v2` and validate `placeholder-bindings.md`.",
                 "start-manual-research.md": "Delegate to `isomer-admin-manual-research-session` and report each start-pack record.",
-                "status.md": "Report ready, blocked, skipped, and next command state.",
+                "status.md": "Report ready, blocked, skipped, and next subcommand state.",
                 "repair.md": "Repair the first blocked stage without rerunning ready destructive work.",
-            }.get(command_name, "Report blocker state and next command.")
+            }.get(command_name, "Report blocker state and next subcommand.")
             write(
                 skill_dir / "references" / command_name,
                 f"""
@@ -1340,6 +1349,51 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS008", codes(diagnostics))
         self.assertTrue(any("isomer-admin-topic-creator is required" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_creator_staged_flow_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_creator_skill(root, omit_skill_term="define-topic-env")
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS008", codes(diagnostics))
+        self.assertTrue(any("define-topic-env" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_actor_definition_gate_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_creator_skill(root, omit_skill_term="topic.env.actor_env_gates")
+        self.write_deepsci_mini_guide(root)
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS008", codes(diagnostics))
+        self.assertTrue(any("topic.env.actor_env_gates" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_stale_define_topic_reference(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_creator_skill(root)
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-creator" / "references" / "define-topic.md",
+            """
+            # Define Topic
+
+            ## Workflow
+
+            1. Write topic intent from a stale command.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS008", codes(diagnostics))
+        self.assertTrue(any("define-topic.md" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_deprecation_metadata_for_compatibility_skills(self) -> None:
         root = self.make_root()

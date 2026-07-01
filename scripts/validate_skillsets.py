@@ -342,15 +342,21 @@ PROJECT_MANAGER_FORBIDDEN_SUPPORT_REFS = TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUP
 TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
     "Default help mode",
     "invoked without a prompt",
-    "## Commands",
+    "## Subcommands",
+    "Procedural Subcommands",
+    "Helper Subcommands",
+    "Misc Subcommands",
+    "lower-level ladder stages",
     "references/help.md",
-    "plan",
-    "create",
+    "fast-forward",
     "ensure-project",
-    "define-topic",
+    "resolve-topic-input",
     "register-topic",
+    "create-research-intent",
     "init-runtime",
+    "define-topic-env",
     "setup-topic-env",
+    "define-actors",
     "setup-actors",
     "bootstrap-research",
     "start-manual-research",
@@ -359,6 +365,10 @@ TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
     "manual-research-ready Topic Workspace",
     "Project Manifest-backed context",
     "topic.repos.main",
+    "topic.intent.overview",
+    "topic.intent.topic_env_requirements",
+    "topic.intent.actor_definitions",
+    "topic.env.actor_env_gates",
     "Workspace Runtime",
     "Topic Actor roster",
     "actor cwd",
@@ -376,13 +386,15 @@ TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
 
 TOPIC_CREATOR_COMMANDS = (
     "help.md",
-    "plan.md",
-    "create.md",
+    "fast-forward.md",
     "ensure-project.md",
-    "define-topic.md",
+    "resolve-topic-input.md",
     "register-topic.md",
+    "create-research-intent.md",
     "init-runtime.md",
+    "define-topic-env.md",
     "setup-topic-env.md",
+    "define-actors.md",
     "setup-actors.md",
     "bootstrap-research.md",
     "start-manual-research.md",
@@ -392,26 +404,51 @@ TOPIC_CREATOR_COMMANDS = (
 
 TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
     "help.md": (
-        "Command Functionalities",
+        "Subcommand Functionalities",
+        "Procedural Subcommands",
+        "Helper Subcommands",
+        "Misc Subcommands",
         "Default to **Essential Output** in chat.",
         "complete, verbose, audit, debug, full handoff, JSON, or full output",
     ),
-    "plan.md": (
-        "dry-run",
-        "must not create or modify",
-    ),
-    "create.md": (
-        "plan",
+    "fast-forward.md": (
+        "fast-forward",
         "stops at the first blocker",
-        "next command to resume",
+        "next subcommand to resume",
+        "define-topic-env",
+        "define-actors",
+    ),
+    "resolve-topic-input.md": (
+        "concrete Research Topic",
+        "does not write",
+        "topic.intent.overview",
+    ),
+    "create-research-intent.md": (
+        "topic.intent.overview",
+        "only",
+        "topic.intent.topic_env_requirements",
+    ),
+    "define-topic-env.md": (
+        "topic.intent.topic_env_requirements",
+        "user verification",
+        "fast-forward",
+    ),
+    "define-actors.md": (
+        "topic.intent.actor_definitions",
+        "operator",
+        "source env gate",
     ),
     "setup-topic-env.md": (
         "isomer-srv-topic-env-setup",
         "topic.repos.main",
+        "topic.intent.topic_env_requirements",
+        "topic.env.topic_setup_target_spec",
     ),
     "setup-actors.md": (
         "isomer-admin-topic-workspace-mgr",
         "topic.actors.workspace",
+        "topic.intent.actor_definitions",
+        "topic.env.actor_env_gates",
     ),
     "bootstrap-research.md": (
         "isomer-rsch-workspace-mgr-v2",
@@ -424,7 +461,7 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
     "status.md": (
         "ready",
         "blocked",
-        "next command",
+        "next subcommand",
     ),
     "repair.md": (
         "first blocked",
@@ -1813,7 +1850,7 @@ def validate_topic_creator_module(repo_root: Path) -> list[Diagnostic]:
             add(diagnostics, repo_root, command_path, 1, "OPS008", f"{TOPIC_CREATOR_SKILL} must include references/{command_file_name}")
             continue
         if f"references/{command_file_name}" not in text:
-            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Commands"), "OPS008", f"{TOPIC_CREATOR_SKILL} must link references/{command_file_name}")
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "OPS008", f"{TOPIC_CREATOR_SKILL} must link references/{command_file_name}")
         command_lines = read_lines(command_path)
         command_text = "\n".join(command_lines)
         command_workflow_index = line_index_containing(command_lines, "## Workflow")

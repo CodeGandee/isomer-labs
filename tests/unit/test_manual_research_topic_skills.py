@@ -75,11 +75,14 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
     def test_topic_creator_documents_happy_path_and_manual_research_contract(self) -> None:
         skill = read_repo_file("skillset/operator/isomer-admin-topic-creator/SKILL.md")
         help_page = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/help.md")
-        create = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/create.md")
+        fast_forward = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/fast-forward.md")
+        research_intent = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/create-research-intent.md")
+        topic_env = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/define-topic-env.md")
+        actor_defs = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/define-actors.md")
         actors = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/setup-actors.md")
         bootstrap = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/bootstrap-research.md")
         start = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/start-manual-research.md")
-        combined = "\n".join((skill, help_page, create, actors, bootstrap, start))
+        combined = "\n".join((skill, help_page, fast_forward, research_intent, topic_env, actor_defs, actors, bootstrap, start))
 
         self.assertContainsAll(
             combined,
@@ -87,13 +90,14 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "isomer-admin-topic-creator",
                 "manual-research-ready Topic Workspace",
                 "Default help mode",
-                "`plan`",
-                "`create`",
                 "`ensure-project`",
-                "`define-topic`",
+                "`resolve-topic-input`",
                 "`register-topic`",
+                "`create-research-intent`",
                 "`init-runtime`",
+                "`define-topic-env`",
                 "`setup-topic-env`",
+                "`define-actors`",
                 "`setup-actors`",
                 "`bootstrap-research`",
                 "`start-manual-research`",

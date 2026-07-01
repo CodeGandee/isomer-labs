@@ -117,7 +117,9 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual("topic.repos.main.tmp", compatibility_aliases()["topic_main_tmp"])
         self.assertEqual("agent.tmp", compatibility_aliases()["agent_tmp"])
         self.assertEqual("topic.intent.overview", compatibility_aliases()["topic_intent_overview"])
+        self.assertEqual("topic.intent.actor_definitions", compatibility_aliases()["topic_intent_actor_definitions"])
         self.assertEqual("topic.env.topic_setup_target_spec", compatibility_aliases()["topic_env_topic_setup_target_spec"])
+        self.assertEqual("topic.env.actor_env_gates", compatibility_aliases()["topic_env_actor_env_gates"])
         private_surface = catalog()["agent.private_artifacts"]
         self.assertEqual("agent", private_surface.owner)
         self.assertEqual("private", private_surface.sharing)
@@ -128,6 +130,12 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         intent_surface = catalog()["topic.intent.topic_env_requirements"]
         self.assertEqual("topic_intent_source_file", intent_surface.storage_profile)
         self.assertEqual("file", intent_surface.path_kind)
+        actor_definition_surface = catalog()["topic.intent.actor_definitions"]
+        self.assertEqual("topic_intent_source_file", actor_definition_surface.storage_profile)
+        self.assertEqual("file", actor_definition_surface.path_kind)
+        actor_gate_surface = catalog()["topic.env.actor_env_gates"]
+        self.assertEqual("topic_env_target_spec_file", actor_gate_surface.storage_profile)
+        self.assertEqual("file", actor_gate_surface.path_kind)
         target_surface = catalog()["topic.env.agent_setup_target_spec"]
         self.assertEqual("topic_env_target_spec_file", target_surface.storage_profile)
         self.assertEqual("file", target_surface.path_kind)
@@ -306,19 +314,29 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
 
         overview, overview_diagnostics = resolve_semantic_binding(context, "topic.intent.overview", env={})
         topic_gate, topic_gate_diagnostics = resolve_semantic_binding(context, "topic.intent.topic_env_requirements", env={})
+        actor_definitions, actor_definition_diagnostics = resolve_semantic_binding(context, "topic.intent.actor_definitions", env={})
+        actor_gates, actor_gate_diagnostics = resolve_semantic_binding(context, "topic.env.actor_env_gates", env={})
         agent_target, agent_target_diagnostics = resolve_semantic_binding(context, "topic.env.agent_setup_target_spec", env={})
 
         self.assertEqual([], overview_diagnostics)
         self.assertEqual([], topic_gate_diagnostics)
+        self.assertEqual([], actor_definition_diagnostics)
+        self.assertEqual([], actor_gate_diagnostics)
         self.assertEqual([], agent_target_diagnostics)
         self.assertIsNotNone(overview)
         self.assertIsNotNone(topic_gate)
+        self.assertIsNotNone(actor_definitions)
+        self.assertIsNotNone(actor_gates)
         self.assertIsNotNone(agent_target)
         self.assertEqual(context.topic_workspace_path / "intent" / "src" / "topic-overview.md", overview.path)
         self.assertEqual(context.topic_workspace_path / "intent" / "src" / "topic-env-gate.md", topic_gate.path)
+        self.assertEqual(context.topic_workspace_path / "intent" / "src" / "actor-definitions.md", actor_definitions.path)
+        self.assertEqual(context.topic_workspace_path / "intent" / "derived" / "actor-env-gates.md", actor_gates.path)
         self.assertEqual(context.topic_workspace_path / "intent" / "derived" / "isomer-agent-env-gate.md", agent_target.path)
         self.assertEqual("default_profile", overview.source)
         self.assertEqual("topic_intent_source_file", topic_gate.catalog.storage_profile)
+        self.assertEqual("topic_intent_source_file", actor_definitions.catalog.storage_profile)
+        self.assertEqual("topic_env_target_spec_file", actor_gates.catalog.storage_profile)
         self.assertEqual("topic_env_target_spec_file", agent_target.catalog.storage_profile)
 
     def test_materialize_default_intent_file_labels_creates_parent_only(self) -> None:

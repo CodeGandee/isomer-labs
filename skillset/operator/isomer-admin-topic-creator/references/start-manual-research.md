@@ -2,9 +2,9 @@
 
 ## Workflow
 
-When this command is selected, execute the following steps in order.
+When this subcommand is selected, execute the following steps in order.
 
-1. Require selected Topic Actors, ready Topic Actor Workspaces, and research bootstrap status.
+1. Require selected Topic Actors, ready Topic Actor Workspaces, derived actor env gate verification evidence, and research bootstrap status.
 2. Delegate compatibility start-pack finalization to `isomer-admin-manual-research-session` when the existing start-pack workflow is needed.
 3. Create or validate one authoritative Topic Workspace research record per selected actor using the `handoff.topic-actor-start-pack` profile and Topic Actor metadata.
 4. Write or validate a small actor-local copy or pointer under the actor's resolved `topic.actors.isomer_managed` or `topic.actors.links` surface.
