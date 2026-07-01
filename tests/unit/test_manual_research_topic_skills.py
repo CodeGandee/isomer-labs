@@ -39,6 +39,9 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "--materialize",
                 "Do not silently recreate the `operator` Topic Actor after an explicit user opt-out",
                 "does not create Topic Agent Team Profile material, Agent Team Instance records, Agent Instance records, formal Agent Workspaces, or Houmao launch material",
+                "deprecated: true",
+                "replaced_by: isomer-admin-topic-creator",
+                "scope: direct-user-invocation",
             ),
         )
 
@@ -63,6 +66,49 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "does not require it",
                 "Do not claim formal adoption of Topic Actor-produced work into Agent Instance or Agent Team Instance identity",
                 "actor-local copy or pointer",
+                "deprecated: true",
+                "replaced_by: isomer-admin-topic-creator",
+                "scope: direct-user-invocation",
+            ),
+        )
+
+    def test_topic_creator_documents_happy_path_and_manual_research_contract(self) -> None:
+        skill = read_repo_file("skillset/operator/isomer-admin-topic-creator/SKILL.md")
+        help_page = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/help.md")
+        create = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/create.md")
+        actors = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/setup-actors.md")
+        bootstrap = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/bootstrap-research.md")
+        start = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/start-manual-research.md")
+        combined = "\n".join((skill, help_page, create, actors, bootstrap, start))
+
+        self.assertContainsAll(
+            combined,
+            (
+                "isomer-admin-topic-creator",
+                "manual-research-ready Topic Workspace",
+                "Default help mode",
+                "`plan`",
+                "`create`",
+                "`ensure-project`",
+                "`define-topic`",
+                "`register-topic`",
+                "`init-runtime`",
+                "`setup-topic-env`",
+                "`setup-actors`",
+                "`bootstrap-research`",
+                "`start-manual-research`",
+                "`status`",
+                "`repair`",
+                "isomer-admin-project-mgr",
+                "isomer-srv-topic-env-setup",
+                "isomer-admin-topic-workspace-mgr",
+                "isomer-rsch-workspace-mgr-v2",
+                "isomer-admin-manual-research-session",
+                "Topic Actor roster",
+                "each selected actor cwd",
+                "v2 bootstrap status",
+                "start-pack record refs",
+                "placeholder-bindings.md",
             ),
         )
 

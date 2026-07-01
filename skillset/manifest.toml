@@ -9,6 +9,7 @@ skills = [
   "operator/isomer-admin-houmao-interop",
   "operator/isomer-admin-manual-research-session",
   "operator/isomer-admin-project-mgr",
+  "operator/isomer-admin-topic-creator",
   "operator/isomer-admin-topic-prepare",
   "operator/isomer-admin-topic-team-specialize",
   "operator/isomer-admin-topic-workspace-mgr",

@@ -21,6 +21,7 @@ CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/")
 TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-admin-topic-team-specialize"
 PROJECT_MANAGER_SKILL = "isomer-admin-project-mgr"
+TOPIC_CREATOR_SKILL = "isomer-admin-topic-creator"
 TOPIC_WORKSPACE_MANAGER_SKILL = "isomer-admin-topic-workspace-mgr"
 
 MIGRATED_OPERATOR_SKILLS = (
@@ -289,6 +290,7 @@ PROJECT_MANAGER_REQUIRED_SKILL_TERMS = (
     "isomer-cli project doctor",
     "isomer-cli project runtime init",
     "isomer-cli project runtime prepare",
+    "isomer-admin-topic-creator",
     "isomer-admin-topic-prepare",
     "isomer-admin-manual-research-session",
     "isomer-admin-topic-workspace-mgr",
@@ -335,6 +337,104 @@ PROJECT_MANAGER_SUPPORT_REFERENCES = (
 )
 
 PROJECT_MANAGER_FORBIDDEN_SUPPORT_REFS = TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS
+
+TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
+    "Default help mode",
+    "invoked without a prompt",
+    "## Commands",
+    "references/help.md",
+    "plan",
+    "create",
+    "ensure-project",
+    "define-topic",
+    "register-topic",
+    "init-runtime",
+    "setup-topic-env",
+    "setup-actors",
+    "bootstrap-research",
+    "start-manual-research",
+    "status",
+    "repair",
+    "manual-research-ready Topic Workspace",
+    "Project Manifest-backed context",
+    "topic.repos.main",
+    "Workspace Runtime",
+    "Topic Actor roster",
+    "actor cwd",
+    "v2 bootstrap status",
+    "start-pack record refs",
+    "isomer-admin-project-mgr",
+    "isomer-srv-topic-env-setup",
+    "isomer-admin-topic-workspace-mgr",
+    "isomer-rsch-workspace-mgr-v2",
+    "isomer-admin-manual-research-session",
+    "isomer-admin-topic-team-specialize",
+    "Essential Output",
+    "Complete Output",
+)
+
+TOPIC_CREATOR_COMMANDS = (
+    "help.md",
+    "plan.md",
+    "create.md",
+    "ensure-project.md",
+    "define-topic.md",
+    "register-topic.md",
+    "init-runtime.md",
+    "setup-topic-env.md",
+    "setup-actors.md",
+    "bootstrap-research.md",
+    "start-manual-research.md",
+    "status.md",
+    "repair.md",
+)
+
+TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
+    "help.md": (
+        "Command Functionalities",
+        "Default to **Essential Output** in chat.",
+        "complete, verbose, audit, debug, full handoff, JSON, or full output",
+    ),
+    "plan.md": (
+        "dry-run",
+        "must not create or modify",
+    ),
+    "create.md": (
+        "plan",
+        "stops at the first blocker",
+        "next command to resume",
+    ),
+    "setup-topic-env.md": (
+        "isomer-srv-topic-env-setup",
+        "topic.repos.main",
+    ),
+    "setup-actors.md": (
+        "isomer-admin-topic-workspace-mgr",
+        "topic.actors.workspace",
+    ),
+    "bootstrap-research.md": (
+        "isomer-rsch-workspace-mgr-v2",
+        "placeholder-bindings.md",
+    ),
+    "start-manual-research.md": (
+        "isomer-admin-manual-research-session",
+        "start-pack record",
+    ),
+    "status.md": (
+        "ready",
+        "blocked",
+        "next command",
+    ),
+    "repair.md": (
+        "first blocked",
+        "without rerunning ready",
+    ),
+}
+
+DEPRECATED_COMPATIBILITY_SKILLS = {
+    "isomer-admin-topic-prepare": "common-preparation",
+    "isomer-admin-manual-research-session": "start-pack",
+}
 
 TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
     "topic-workspace",
@@ -1636,6 +1736,105 @@ def validate_project_manager_module(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_topic_creator_module(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skill_dir = repo_root / "skillset" / "operator" / TOPIC_CREATOR_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "OPS008", f"{TOPIC_CREATOR_SKILL} is required")
+        return diagnostics
+    if (skill_dir / "evals").exists():
+        add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS008", f"{TOPIC_CREATOR_SKILL} must not contain evals/")
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS008", require_contract=True)
+    for term in TOPIC_CREATOR_REQUIRED_SKILL_TERMS:
+        if term not in text:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(lines, "# Isomer"),
+                "OPS008",
+                f"{TOPIC_CREATOR_SKILL} must document '{term}'",
+            )
+    workflow_index = line_index_containing(lines, "## Workflow")
+    if workflow_index is None:
+        add(diagnostics, repo_root, skill_md, 1, "OPS008", f"{TOPIC_CREATOR_SKILL} must include a ## Workflow section")
+    else:
+        if workflow_index > 24:
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS008", f"{TOPIC_CREATOR_SKILL} must place ## Workflow near the top")
+        if not has_numbered_step_after(lines, workflow_index):
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS008", f"{TOPIC_CREATOR_SKILL} workflow must use numbered steps")
+        if "does not map cleanly" not in text:
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS008", f"{TOPIC_CREATOR_SKILL} must include a freeform fallback")
+    references_dir = skill_dir / "references"
+    allowed_reference_names = set(TOPIC_CREATOR_COMMANDS)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_reference_names:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "OPS008",
+                f"{TOPIC_CREATOR_SKILL} has unexpected reference page references/{reference_path.name}",
+            )
+    for command_file_name in TOPIC_CREATOR_COMMANDS:
+        command_path = references_dir / command_file_name
+        if not command_path.exists():
+            add(diagnostics, repo_root, command_path, 1, "OPS008", f"{TOPIC_CREATOR_SKILL} must include references/{command_file_name}")
+            continue
+        if f"references/{command_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Commands"), "OPS008", f"{TOPIC_CREATOR_SKILL} must link references/{command_file_name}")
+        command_lines = read_lines(command_path)
+        command_text = "\n".join(command_lines)
+        command_workflow_index = line_index_containing(command_lines, "## Workflow")
+        if command_workflow_index is None:
+            add(diagnostics, repo_root, command_path, 1, "OPS008", f"references/{command_file_name} must include a ## Workflow section")
+            continue
+        if command_workflow_index > 8:
+            add(diagnostics, repo_root, command_path, command_workflow_index + 1, "OPS008", f"references/{command_file_name} must place ## Workflow near the top")
+        if not has_numbered_step_after(command_lines, command_workflow_index):
+            add(diagnostics, repo_root, command_path, command_workflow_index + 1, "OPS008", f"references/{command_file_name} workflow must use numbered steps")
+        if "does not map cleanly" not in command_text:
+            add(diagnostics, repo_root, command_path, command_workflow_index + 1, "OPS008", f"references/{command_file_name} must include a freeform fallback")
+        for required_term in TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS.get(command_file_name, ()):
+            if required_term not in command_text:
+                add(diagnostics, repo_root, command_path, 1, "OPS008", f"references/{command_file_name} must document '{required_term}'")
+    return diagnostics
+
+
+def validate_deprecated_compatibility_operator_skills(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for skill_name, compatibility_scope in DEPRECATED_COMPATIBILITY_SKILLS.items():
+        skill_md = repo_root / "skillset" / "operator" / skill_name / "SKILL.md"
+        if not skill_md.exists():
+            add(diagnostics, repo_root, skill_md, 1, "OPS009", f"{skill_name} compatibility skill is required")
+            continue
+        lines = read_lines(skill_md)
+        text = "\n".join(lines)
+        frontmatter = parse_frontmatter(lines)
+        if frontmatter.get("deprecated") != "true":
+            add(diagnostics, repo_root, skill_md, 1, "OPS009", f"{skill_name} must set deprecated: true")
+        for term in (
+            "deprecation:",
+            "replaced_by: isomer-admin-topic-creator",
+            "scope: direct-user-invocation",
+            compatibility_scope,
+            "Use isomer-admin-topic-creator",
+        ):
+            if term not in text:
+                add(diagnostics, repo_root, skill_md, first_line_containing(lines, "deprecation"), "OPS009", f"{skill_name} must document deprecation term '{term}'")
+        help_path = repo_root / "skillset" / "operator" / skill_name / "references" / "help.md"
+        if help_path.exists():
+            help_text = "\n".join(read_lines(help_path))
+            for term in ("Deprecation Warning", "Use `isomer-admin-topic-creator", "compatibility"):
+                if term not in help_text:
+                    add(diagnostics, repo_root, help_path, 1, "OPS009", f"{skill_name} help must document '{term}'")
+    return diagnostics
+
+
 def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     skill_dir = repo_root / "skillset" / "operator" / TOPIC_WORKSPACE_MANAGER_SKILL
@@ -1782,6 +1981,8 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_migrated_operator_refs(repo_root))
     diagnostics.extend(validate_topic_team_specialization_module(repo_root))
     diagnostics.extend(validate_project_manager_module(repo_root))
+    diagnostics.extend(validate_topic_creator_module(repo_root))
+    diagnostics.extend(validate_deprecated_compatibility_operator_skills(repo_root))
     diagnostics.extend(validate_topic_workspace_manager_module(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
     diagnostics.extend(validate_split_output_contract_docs(repo_root, (repo_root / "skillset" / "operator",), code="OPS007"))

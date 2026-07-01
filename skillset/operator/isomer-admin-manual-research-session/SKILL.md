@@ -1,9 +1,16 @@
 ---
 name: isomer-admin-manual-research-session
-description: Start or repair a human-orchestrated research session over a prepared Topic Workspace by selecting Topic Actors, delegating actor workspace readiness to the Topic Workspace Manager, running v2 research bootstrap, and writing per-actor start packs.
+description: "DEPRECATED for direct user invocation: use isomer-admin-topic-creator create or start-manual-research. Retained for compatibility and delegated start-pack finalization."
+deprecated: true
+deprecation:
+  replaced_by: isomer-admin-topic-creator
+  scope: direct-user-invocation
+  warning: "Use isomer-admin-topic-creator for manual-research-ready topic setup. This skill remains available for compatibility and delegated start-pack finalization."
 ---
 
 # Isomer Admin Manual Research Session
+
+Deprecation warning: direct user invocation of this skill is deprecated. Use `isomer-admin-topic-creator create` or `isomer-admin-topic-creator start-manual-research` for manual-research-ready topic setup. This skill remains available for compatibility and delegated start-pack finalization.
 
 Use this operator skill when the user wants to conduct research manually or with several manually controlled agents, including mixed Codex, Claude Code, shell, or Houmao-backed workers, without requiring a formal Topic Agent Team. This skill consumes common preparation evidence from `isomer-admin-topic-prepare`, delegates all Topic Actor CRUD and Topic Actor Workspace materialization to `isomer-admin-topic-workspace-mgr`, runs `isomer-rsch-workspace-mgr-v2` over the selected topology, and writes authoritative per-actor start packs as Topic Workspace research records with actor-local copies or pointers for startup convenience.
 

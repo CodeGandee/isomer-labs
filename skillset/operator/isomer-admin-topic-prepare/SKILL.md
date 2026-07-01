@@ -1,11 +1,18 @@
 ---
 name: isomer-admin-topic-prepare
-description: Prepare a Research Topic for later manual research or Topic Team Specialization by resolving topic registration, Workspace Runtime, topic environment readiness, topic-main readiness, research storage bootstrap inputs, and the default operator Topic Actor Workspace unless explicitly opted out.
+description: "DEPRECATED for direct user invocation: use isomer-admin-topic-creator for topic initialization. Retained for compatibility and delegated common-preparation steps."
+deprecated: true
+deprecation:
+  replaced_by: isomer-admin-topic-creator
+  scope: direct-user-invocation
+  warning: "Use isomer-admin-topic-creator for end-to-end topic initialization. This skill remains available for compatibility and delegated common-preparation steps."
 ---
 
 # Isomer Admin Topic Prepare
 
-Use this operator skill when a Project Operator Session or Operator Agent needs reusable topic preparation before either human-orchestrated Topic Actor research or formal Topic Team Specialization. The skill prepares the common topic layer and delegates topology mutation to existing owners: Project lifecycle work to `isomer-admin-project-mgr`, topic environment setup to `isomer-srv-topic-env-setup`, Topic Actor CRUD and Topic Actor Workspace materialization to `isomer-admin-topic-workspace-mgr`, and research placeholder/storage bootstrap to `isomer-rsch-workspace-mgr-v2`.
+Deprecation warning: direct user invocation of this skill is deprecated. Use `isomer-admin-topic-creator` for end-to-end topic initialization. This skill remains available for compatibility and delegated common-preparation steps.
+
+Use this operator skill when a Project Operator Session or Operator Agent needs reusable topic preparation before either human-orchestrated Topic Actor research or formal Topic Team Specialization. The skill prepares the common topic layer, including the default operator Topic Actor Workspace unless explicitly opted out, and delegates topology mutation to existing owners: Project lifecycle work to `isomer-admin-project-mgr`, topic environment setup to `isomer-srv-topic-env-setup`, Topic Actor CRUD and Topic Actor Workspace materialization to `isomer-admin-topic-workspace-mgr`, and research placeholder/storage bootstrap to `isomer-rsch-workspace-mgr-v2`.
 
 ## Workflow
 

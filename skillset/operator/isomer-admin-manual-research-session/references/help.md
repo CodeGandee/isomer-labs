@@ -1,5 +1,9 @@
 # Isomer Admin Manual Research Session Help
 
+## Deprecation Warning
+
+Direct user invocation of this skill is deprecated. Use `isomer-admin-topic-creator create` or `isomer-admin-topic-creator start-manual-research` for manual-research-ready topic setup. This skill remains available for compatibility and delegated start-pack finalization.
+
 ## What This Skill Does
 
 This skill starts or repairs a human-orchestrated research session over a prepared Topic Workspace. It selects Topic Actors, delegates actor workspace readiness to the Topic Workspace Manager, runs v2 research workspace bootstrap, writes per-actor start packs, and reports the cwd and research-skill entrypoints each manually controlled worker should use.

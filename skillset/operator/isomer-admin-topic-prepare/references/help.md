@@ -1,5 +1,9 @@
 # Isomer Admin Topic Prepare Help
 
+## Deprecation Warning
+
+Direct user invocation of this skill is deprecated. Use `isomer-admin-topic-creator` for end-to-end topic initialization. This skill remains available for compatibility and delegated common-preparation steps.
+
 ## What This Skill Does
 
 This skill prepares the common Research Topic layer before either manual research or formal Topic Team Specialization. It resolves or creates topic registration, checks Workspace Runtime and topic environment readiness, treats `topic.repos.main` as the Git anchor, optionally creates the default `operator` Topic Actor, and returns a handoff route to the next operator workflow.

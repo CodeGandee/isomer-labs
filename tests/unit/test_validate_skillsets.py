@@ -219,6 +219,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             )
         self.write_topic_team_dependency_contract(root)
         self.write_project_manager_skill(root)
+        self.write_topic_creator_skill(root)
+        self.write_deprecated_compatibility_skills(root)
         self.write_topic_workspace_manager_skill(root)
 
     def write_topic_team_dependency_contract(self, root: Path) -> None:
@@ -303,7 +305,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             1. **Default help mode**: If invoked without a prompt, run `help`.
             2. Select one subcommand and load only the selected subcommand page.
-            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, `isomer-admin-topic-prepare`, `isomer-admin-manual-research-session`, `isomer-admin-topic-workspace-mgr`, and `isomer-admin-topic-team-specialize` boundaries.
+            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, `isomer-admin-topic-creator`, `isomer-admin-topic-prepare`, `isomer-admin-manual-research-session`, `isomer-admin-topic-workspace-mgr`, and `isomer-admin-topic-team-specialize` boundaries.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -347,6 +349,127 @@ class SkillsetValidatorTests(unittest.TestCase):
                 # {support_reference_name}
 
                 Local support reference.
+                """,
+            )
+
+    def write_topic_creator_skill(
+        self,
+        root: Path,
+        *,
+        omit_command: str | None = None,
+        omit_skill_term: str | None = None,
+    ) -> None:
+        skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-creator"
+        command_links = ", ".join(f"`references/{command_name}`" for command_name in validator.TOPIC_CREATOR_COMMANDS)
+        skill_text = f"""
+            ---
+            name: isomer-admin-topic-creator
+            description: Valid fixture topic creator skill.
+            ---
+
+            # Isomer Admin Topic Creator
+
+            Create a manual-research-ready Topic Workspace through Project Manifest-backed context, `topic.repos.main`, Workspace Runtime, Topic Actor roster, actor cwd, v2 bootstrap status, and start-pack record refs.
+
+            ## Workflow
+
+            1. **Default help mode**: If invoked without a prompt, run `help`.
+            2. Select one command and load only that command page.
+            3. Preserve lower-level owner boundaries for `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, `isomer-admin-topic-workspace-mgr`, `isomer-rsch-workspace-mgr-v2`, `isomer-admin-manual-research-session`, and `isomer-admin-topic-team-specialize`.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Commands
+
+            Commands: `help`, `plan`, `create`, `ensure-project`, `define-topic`, `register-topic`, `init-runtime`, `setup-topic-env`, `setup-actors`, `bootstrap-research`, `start-manual-research`, `status`, and `repair`.
+
+            Use {command_links}.
+
+            {OUTPUT_CONTRACT_FIXTURE}
+            """
+        if omit_skill_term is not None:
+            skill_text = skill_text.replace(omit_skill_term, "")
+        write(skill_dir / "SKILL.md", skill_text)
+        write(
+            skill_dir / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-admin-topic-creator"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-admin-topic-creator to validate this fixture."
+            """,
+        )
+        for command_name in validator.TOPIC_CREATOR_COMMANDS:
+            if command_name == omit_command:
+                continue
+            extra_terms = {
+                "help.md": "Command Functionalities. Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.",
+                "plan.md": "This command is dry-run and must not create or modify Project, Topic Workspace, runtime, repository, actor, bootstrap, or start-pack state.",
+                "create.md": "Run `plan`, stops at the first blocker, and report the next command to resume.",
+                "setup-topic-env.md": "Delegate to `isomer-srv-topic-env-setup` and report `topic.repos.main` readiness.",
+                "setup-actors.md": "Delegate to `isomer-admin-topic-workspace-mgr` and report `topic.actors.workspace` readiness.",
+                "bootstrap-research.md": "Run `isomer-rsch-workspace-mgr-v2` and validate `placeholder-bindings.md`.",
+                "start-manual-research.md": "Delegate to `isomer-admin-manual-research-session` and report each start-pack record.",
+                "status.md": "Report ready, blocked, skipped, and next command state.",
+                "repair.md": "Repair the first blocked stage without rerunning ready destructive work.",
+            }.get(command_name, "Report blocker state and next command.")
+            write(
+                skill_dir / "references" / command_name,
+                f"""
+                # {command_name}
+
+                ## Workflow
+
+                1. Run the command fixture step and report any blocker.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                {extra_terms}
+                """,
+            )
+
+    def write_deprecated_compatibility_skills(self, root: Path) -> None:
+        fixtures = {
+            "isomer-admin-topic-prepare": ("common-preparation", "delegated common-preparation steps"),
+            "isomer-admin-manual-research-session": ("start-pack", "delegated start-pack finalization"),
+        }
+        for skill_name, (scope_term, warning_tail) in fixtures.items():
+            skill_dir = root / "skillset" / "operator" / skill_name
+            write(
+                skill_dir / "SKILL.md",
+                f"""
+                ---
+                name: {skill_name}
+                description: "DEPRECATED for direct user invocation: use isomer-admin-topic-creator. Retained for compatibility and {warning_tail}."
+                deprecated: true
+                deprecation:
+                  replaced_by: isomer-admin-topic-creator
+                  scope: direct-user-invocation
+                  warning: "Use isomer-admin-topic-creator for topic initialization. This skill remains available for compatibility and {warning_tail}."
+                ---
+
+                # {skill_name}
+
+                Use isomer-admin-topic-creator. Compatibility scope: {scope_term}.
+                """,
+            )
+            write(
+                skill_dir / "agents" / "openai.yaml",
+                f"""
+                interface:
+                  display_name: "{skill_name}"
+                  short_description: "Deprecated fixture"
+                  default_prompt: "Use ${skill_name} to validate this deprecated fixture."
+                """,
+            )
+            write(
+                skill_dir / "references" / "help.md",
+                f"""
+                # Help
+
+                ## Deprecation Warning
+
+                Direct user invocation is deprecated. Use `isomer-admin-topic-creator` for topic initialization. This skill remains available for compatibility and {warning_tail}.
                 """,
             )
 
@@ -1176,6 +1299,29 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("isomer-admin-topic-workspace-mgr is required" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_creator(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        shutil.rmtree(root / "skillset" / "operator" / "isomer-admin-topic-creator")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS008", codes(diagnostics))
+        self.assertTrue(any("isomer-admin-topic-creator is required" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_deprecation_metadata_for_compatibility_skills(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-prepare" / "SKILL.md"
+        skill_path.write_text(skill_path.read_text(encoding="utf-8").replace("deprecated: true", "deprecated: false"), encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS009", codes(diagnostics))
+        self.assertTrue(any("isomer-admin-topic-prepare must set deprecated: true" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_topic_workspace_subcommands(self) -> None:
         root = self.make_root()
