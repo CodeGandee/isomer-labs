@@ -2,7 +2,7 @@
 dependencies = ["scipy>=1.17.1,<2", "mdutils>=1.8.1,<2", "ruff>=0.15.16,<0.16", "mkdocs-material>=9.7.6,<10", "mypy>=2.1.0,<3", "attrs>=26.1.0,<27", "omegaconf>=2.3.1,<3", "imageio>=2.37.3,<3", "jinja2>=3.1.6,<4", "jsonschema>=4.26.0,<5", "click>=8.4.1,<9", "tomlkit>=0.15.0,<0.16"]
 name = "isomer-labs"
 requires-python = ">= 3.11"
-version = "0.1.0"
+version = "0.1.0+local"
 
 [project.scripts]
 isomer-cli = "isomer_labs.cli:main"
