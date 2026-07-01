@@ -9,7 +9,7 @@ description: Use when evidence exists but the paper idea, outline, claim boundar
 
 Paper Outline separates the paper view from the evidence view. It builds the reader-facing thesis, claims, method abstraction, evaluation plan, and analysis plan while keeping runs, paths, metrics, commands, and reproducibility details in a separate evidence structure.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
 
 ## When to Use
 

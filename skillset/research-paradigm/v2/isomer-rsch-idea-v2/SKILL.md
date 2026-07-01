@@ -9,7 +9,7 @@ description: Use when a framed Research Topic and comparator basis need one fals
 
 Idea selects a research direction by grounding the objective, current board, literature, bottleneck, and candidate frontier. It promotes one falsifiable route to experiment, records a blocker, or hands an algorithm-first frontier to optimize.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.
 
 ## When to Use
 

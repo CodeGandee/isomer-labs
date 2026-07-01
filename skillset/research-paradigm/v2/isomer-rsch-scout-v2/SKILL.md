@@ -9,7 +9,7 @@ description: Use when a Research Topic or Research Inquiry lacks enough framing,
 
 Scout makes an unclear research situation concrete enough to choose the next route. It resolves only the framing unknowns that can change downstream work, records the result as semantic handoff material, and stops once baseline, idea, Decision Record, Gate, or blocker routing is clear.
 
-Placeholder definitions live in `migrate/placeholders.md`.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.
 
 ## When to Use
 

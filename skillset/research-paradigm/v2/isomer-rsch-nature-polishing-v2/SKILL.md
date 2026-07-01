@@ -9,7 +9,7 @@ description: Use when academic prose needs Nature-leaning polishing, restructuri
 
 Nature Polishing edits argument before wording. It identifies paper type, diagnoses the failure mode, checks claim boundaries, exposes unsupported claims, rebuilds section logic, applies section-specific moves, polishes sentences, and returns revised text plus cautions when evidence is insufficient.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
 
 ## When to Use
 

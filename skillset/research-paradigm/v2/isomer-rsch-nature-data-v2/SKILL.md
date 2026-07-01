@@ -9,7 +9,7 @@ description: Use when a manuscript needs a Nature-ready Data Availability statem
 
 Nature Data maps every result-supporting dataset to an availability route before drafting prose. It inventories generated, processed, reused, restricted, source-data, software-output, model, table, image, and statistical-analysis materials, chooses repository and identifier strategy, drafts explicit statement text, and records missing fields without inventing accession details.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
 
 ## When to Use
 

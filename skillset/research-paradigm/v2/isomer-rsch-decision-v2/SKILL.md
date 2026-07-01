@@ -9,7 +9,7 @@ description: Use when research work needs an explicit evidence-backed route choi
 
 Decision makes one route judgment from durable evidence, records the verdict and smallest valid action, then gets the Research Topic moving again. It does not substitute for state reconciliation when the active line is still unclear.
 
-Placeholder definitions live in `migrate/placeholders.md`.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.
 
 ## When to Use
 

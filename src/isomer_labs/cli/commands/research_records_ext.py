@@ -1,0 +1,233 @@
+"""Click registration for Isomer research record extension commands."""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+from typing import Any
+
+import click
+
+from isomer_labs.cli.app import _context_for_options
+from isomer_labs.cli.options import (
+    common_options as _common_options,
+    merge_options as _merge_options,
+    topic_selection_options as _topic_selection_options,
+)
+from isomer_labs.deepsci_ext.rendering import dumps_raw_json
+from isomer_labs.diagnostics import has_errors
+from isomer_labs.research_records import (
+    ResearchRecordError,
+    ResearchRecordRequest,
+    archive_record,
+    create_record,
+    list_records,
+    parse_json_object,
+    parse_string_map,
+    show_record,
+    update_record,
+)
+
+
+def register_research_record_ext_commands(app: click.Group) -> None:
+    ext_command = app.commands.get("ext")
+    if isinstance(ext_command, click.Group):
+        ext_group = ext_command
+    else:
+        ext_group = click.Group(name="ext", help="Extension commands.")
+        app.add_command(ext_group)
+
+    @ext_group.group(name="research", help="Isomer research extension commands.")
+    def research_group() -> None:
+        pass
+
+    @research_group.group(name="records", help="CRUD commands for topic-scoped research records.")
+    def records_group() -> None:
+        pass
+
+    @records_group.command(name="create", help="Create a topic-scoped research record.")
+    @_common_options
+    @_topic_selection_options
+    @_record_request_options(require_kind=True, include_id=True)
+    @click.pass_context
+    def create_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _with_context(ctx, kwargs, lambda context, request: create_record(context, request, env=os.environ, cwd=Path.cwd()))
+
+    @records_group.command(name="show", help="Show one topic-scoped research record.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--include-body", is_flag=True, help="Include body text when the record has a readable local content path.")
+    @click.argument("record_id")
+    @click.pass_context
+    def show_command(ctx: click.Context, record_id: str, include_body: bool = False, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            kwargs,
+            lambda context, _request: show_record(context, record_id, env=os.environ, include_body=include_body),
+        )
+
+    @records_group.command(name="list", help="List topic-scoped research records.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--record-kind", default=None, help="Filter by Workspace Runtime lifecycle record kind.")
+    @click.option("--status", default=None, help="Filter by lifecycle status.")
+    @click.option("--placeholder", default=None, help="Filter by exact v2 placeholder token.")
+    @click.option("--profile", default=None, help="Filter by artifact or record profile.")
+    @click.option("--skill", default=None, help="Filter by producing skill name.")
+    @click.option("--producer", default=None, help="Filter by producer metadata.")
+    @click.option("--consumer", default=None, help="Filter by consumer metadata.")
+    @click.pass_context
+    def list_command(ctx: click.Context, **kwargs: Any) -> int:
+        filters = dict(kwargs)
+        return _with_context(
+            ctx,
+            filters,
+            lambda context, _request: list_records(
+                context,
+                env=os.environ,
+                record_kind=filters.get("record_kind"),
+                status=filters.get("status"),
+                placeholder=filters.get("placeholder"),
+                profile=filters.get("profile"),
+                skill=filters.get("skill"),
+                producer=filters.get("producer"),
+                consumer=filters.get("consumer"),
+            ),
+            build_request=False,
+        )
+
+    @records_group.command(name="update", help="Update a topic-scoped research record.")
+    @_common_options
+    @_topic_selection_options
+    @_record_request_options(require_kind=True, include_id=False)
+    @click.argument("record_id")
+    @click.pass_context
+    def update_command(ctx: click.Context, record_id: str, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            kwargs,
+            lambda context, request: update_record(context, record_id, request, env=os.environ, cwd=Path.cwd()),
+        )
+
+    @records_group.command(name="delete", help="Archive a topic-scoped research record.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--reason", default=None, help="Reason for archiving the record.")
+    @click.argument("record_id")
+    @click.pass_context
+    def delete_command(ctx: click.Context, record_id: str, reason: str | None = None, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            kwargs,
+            lambda context, _request: archive_record(context, record_id, env=os.environ, reason=reason),
+            build_request=False,
+        )
+
+
+def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
+    def decorator(command: Any) -> Any:
+        command = click.option("--lifecycle-refs-json", default=None, help="Additional lifecycle refs as a JSON object.")(command)
+        command = click.option("--metadata-json", default=None, help="Additional transition metadata as a JSON object.")(command)
+        command = click.option("--content-name", default=None, help="Stored body filename.")(command)
+        command = click.option("--body-file", type=click.Path(path_type=Path), default=None, help="File to copy as the record body.")(command)
+        command = click.option("--body", default=None, help="Inline UTF-8 body to store for the record.")(command)
+        command = click.option("--semantic-label", default=None, help="Semantic label used for optional body storage.")(command)
+        command = click.option("--consumer", default=None, help="Consumer metadata.")(command)
+        command = click.option("--producer", default=None, help="Producer metadata.")(command)
+        command = click.option("--skill", default=None, help="Producing or owning skill name.")(command)
+        command = click.option("--profile", default=None, help="Artifact or record profile.")(command)
+        command = click.option("--placeholder", default=None, help="Exact v2 placeholder token.")(command)
+        command = click.option("--status", default="ready", show_default=True, help="Lifecycle status.")(command)
+        if include_id:
+            command = click.option("--id", "record_id", default=None, help="Explicit record id.")(command)
+        command = click.option("--record-kind", required=require_kind, help="Workspace Runtime lifecycle record kind.")(command)
+        return command
+    return decorator
+
+
+def _with_context(
+    ctx: click.Context,
+    values: dict[str, Any],
+    callback: Any,
+    *,
+    build_request: bool = True,
+) -> int:
+    try:
+        request = _request_from_values(values) if build_request else None
+    except (ResearchRecordError, json.JSONDecodeError) as exc:
+        payload = exc.to_payload() if isinstance(exc, ResearchRecordError) else _json_error_payload(exc)
+        click.echo(dumps_raw_json(payload))
+        return 1
+    options = _merge_options(
+        ctx,
+        project=values.get("project"),
+        manifest=values.get("manifest"),
+        output_format=values.get("output_format"),
+        json_output=bool(values.get("json_output", False)),
+        research_topic_id=values.get("research_topic_id"),
+        topic_workspace_id=values.get("topic_workspace_id"),
+        research_inquiry_id=values.get("research_inquiry_id"),
+        research_task_id=values.get("research_task_id"),
+        run_id=values.get("run_id"),
+        agent_team_instance_id=values.get("agent_team_instance_id"),
+        agent_instance_id=values.get("agent_instance_id"),
+        topic_agent_team_profile_id=values.get("topic_agent_team_profile_id"),
+    )
+    context, diagnostics = _context_for_options(options)
+    if context is None or has_errors(diagnostics):
+        click.echo(
+            dumps_raw_json(
+                {
+                    "ok": False,
+                    "mutated": False,
+                    "error": {
+                        "code": "context_resolution_failed",
+                        "message": "Research record commands require a selected Isomer Topic Workspace.",
+                    },
+                    "diagnostics": [diagnostic.to_json() for diagnostic in diagnostics],
+                }
+            )
+        )
+        return 1
+    try:
+        payload, call_diagnostics = callback(context, request)
+    except ResearchRecordError as exc:
+        click.echo(dumps_raw_json(exc.to_payload()))
+        return 1
+    if call_diagnostics and has_errors(call_diagnostics):
+        payload = {
+            **payload,
+            "diagnostics": [diagnostic.to_json() for diagnostic in call_diagnostics],
+        }
+    click.echo(dumps_raw_json(payload))
+    return 0 if payload.get("ok") is not False and not has_errors(call_diagnostics) else 1
+
+
+def _request_from_values(values: dict[str, Any]) -> ResearchRecordRequest:
+    return ResearchRecordRequest(
+        record_kind=str(values.get("record_kind") or ""),
+        record_id=values.get("record_id"),
+        status=str(values.get("status") or "ready"),
+        placeholder=values.get("placeholder"),
+        profile=values.get("profile"),
+        skill=values.get("skill"),
+        producer=values.get("producer"),
+        consumer=values.get("consumer"),
+        semantic_label=values.get("semantic_label"),
+        body=values.get("body"),
+        body_file=values.get("body_file"),
+        content_name=values.get("content_name"),
+        metadata=parse_json_object(values.get("metadata_json"), field_name="metadata-json"),
+        lifecycle_refs=parse_string_map(values.get("lifecycle_refs_json"), field_name="lifecycle-refs-json"),
+    )
+
+
+def _json_error_payload(exc: Exception) -> dict[str, object]:
+    return {
+        "ok": False,
+        "error": {
+            "code": "invalid_json",
+            "message": str(exc),
+        },
+    }

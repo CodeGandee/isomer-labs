@@ -58,6 +58,7 @@ resolved_id_section_headings = [
 ]
 v2_storage_binding_file_globs = [
   "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md",
+  "*/placeholder-bindings.md",
   "*/migrate/**",
   "*/org/**",
   "*/templates/**",

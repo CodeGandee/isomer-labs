@@ -9,7 +9,7 @@ description: Use when algorithm-first research needs candidate briefs, frontier 
 
 Optimize manages an algorithm-first frontier one justified move at a time. It recovers current frontier state, chooses one submode for the pass, keeps candidate briefs distinct from durable lines and implementation attempts, and records exactly one next route or stop condition.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.
 
 ## When to Use
 

@@ -9,7 +9,7 @@ description: Use when a complete Chinese PPTX presentation must be built from a 
 
 Nature Paper2PPT is deck-first. It extracts source material in two passes, classifies the paper type, chooses presentation logic, builds a Chinese slide plan, selects evidence figures, prepares assets, writes slide content and speaker notes, creates an editable `.pptx`, then verifies package structure and rendered previews when possible.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
 
 ## When to Use
 

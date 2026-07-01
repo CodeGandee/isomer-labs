@@ -153,6 +153,18 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         present = codes(diagnostics) & unexpected
         self.assertFalse(present, messages(diagnostics))
 
+    def write_placeholder_bindings(self, skill_dir: Path, placeholders: list[str]) -> None:
+        rows = "".join(f"| <{placeholder}> | artifact |\n" for placeholder in placeholders)
+        write(
+            skill_dir / "placeholder-bindings.md",
+            (
+                "# Placeholder Bindings\n\n"
+                "| Placeholder | Kind |\n"
+                "| --- | --- |\n"
+                f"{rows}"
+            ),
+        )
+
     def test_minimal_valid_research_paradigm_skillset_passes(self) -> None:
         root, target = self.make_valid_skillset()
         diagnostics = validator.validate_skillset(target, root)
@@ -316,8 +328,9 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             | <VALID_HANDOFF> | Fixture handoff. |
             """,
         )
+        self.write_placeholder_bindings(target / "v2" / "isomer-rsch-valid-v2", ["VALID_HANDOFF"])
         diagnostics = validator.validate_skillset(target, root)
-        self.assert_no_codes(diagnostics, {"RPS009"})
+        self.assert_no_codes(diagnostics, {"RPS009", "RPS012"})
 
     def test_rejects_unregistered_migration_placeholder(self) -> None:
         root, target = self.make_valid_skillset()
@@ -329,6 +342,59 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         )
         diagnostics = validator.validate_skillset(target, root)
         self.assertIn("RPS009", codes(diagnostics), messages(diagnostics))
+
+    def test_rejects_missing_v2_placeholder_binding_page(self) -> None:
+        root, target = self.make_valid_skillset()
+        write(
+            target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "placeholders.md",
+            """
+            # Migration Placeholders
+
+            | Placeholder | Meaning |
+            | --- | --- |
+            | <VALID_HANDOFF> | Fixture handoff. |
+            """,
+        )
+        diagnostics = validator.validate_skillset(target, root)
+        self.assertIn("RPS012", codes(diagnostics), messages(diagnostics))
+
+    def test_rejects_missing_v2_placeholder_binding_row(self) -> None:
+        root, target = self.make_valid_skillset()
+        write(
+            target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "placeholders.md",
+            """
+            # Migration Placeholders
+
+            | Placeholder | Meaning |
+            | --- | --- |
+            | <VALID_HANDOFF> | Fixture handoff. |
+            | <SECOND_HANDOFF> | Fixture handoff. |
+            """,
+        )
+        self.write_placeholder_bindings(target / "v2" / "isomer-rsch-valid-v2", ["VALID_HANDOFF"])
+        diagnostics = validator.validate_skillset(target, root)
+        self.assertIn("RPS012", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("<SECOND_HANDOFF>" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_rejects_extra_v2_placeholder_binding_row(self) -> None:
+        root, target = self.make_valid_skillset()
+        write(
+            target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "placeholders.md",
+            """
+            # Migration Placeholders
+
+            | Placeholder | Meaning |
+            | --- | --- |
+            | <VALID_HANDOFF> | Fixture handoff. |
+            """,
+        )
+        self.write_placeholder_bindings(
+            target / "v2" / "isomer-rsch-valid-v2",
+            ["VALID_HANDOFF", "EXTRA_HANDOFF"],
+        )
+        diagnostics = validator.validate_skillset(target, root)
+        self.assertIn("RPS012", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("<EXTRA_HANDOFF>" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_rejects_v2_storage_binding(self) -> None:
         root, target = self.make_valid_skillset()

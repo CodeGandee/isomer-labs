@@ -184,7 +184,9 @@ The v2 skill placeholders should bind through a small storage-item mapping inste
 
 This mapping is a storage-binding layer over the v2 semantic contract, not a replacement for the skill methods. The active skill should say what research object it needs or produces; storage support should decide whether that object is an Artifact, Evidence Item, Run, Decision Record, Gate, Provenance Record, View Manifest, package inventory, custom dataset label, or Agent Workspace promotion.
 
-Current CLI support is transitional. Today agents can resolve and materialize semantic paths, initialize and inspect Workspace Runtime, validate generic lifecycle records, and dispatch or normalize handoffs. Native typed record commands such as `project records artifact create`, `project records evidence create`, `project records decision create`, `project records gate open`, `project records run create`, `project records provenance create`, and `project records package create` do not exist yet; they are the target API named in this report.
+Current CLI support is transitional. Today agents can resolve and materialize semantic paths, initialize and inspect Workspace Runtime, validate generic lifecycle records, dispatch or normalize handoffs, and use `isomer-cli ext research records` as an extension-backed CRUD layer for placeholder-bound research records. Native typed record commands such as `project records artifact create`, `project records evidence create`, `project records decision create`, `project records gate open`, `project records run create`, `project records provenance create`, and `project records package create` do not exist yet; they are the target API named in this report.
+
+The extension-backed layer writes a Workspace Runtime lifecycle row plus an optional body file under the resolved semantic label. It stores the exact v2 placeholder token, skill, producer, consumer, profile, semantic label, and caller-supplied metadata in the lifecycle row so later agents can query by placeholder before they scan files. Each active v2 skill with `migrate/placeholders.md` should therefore keep a sibling `placeholder-bindings.md` page that maps every placeholder to a record kind, default semantic label, profile, and `ext research records` command shape.
 
 | Placeholder kind in v2 registries | Target Isomer storage item | Current transitional storage access | Target record command shape |
 |---|---|---|---|
@@ -201,7 +203,7 @@ Current CLI support is transitional. Today agents can resolve and materialize se
 | provenance-like placeholder | Provenance Record with source identity, input refs, output refs, hashes or snapshots, actor/tool refs, environment facts, and interpretation boundary. | Resolve `topic.records.artifacts` for provenance bodies today; add the proposed `topic.records.provenance` label before relying on a dedicated provenance directory. | `project records provenance create` and `project records provenance link ...`. |
 | package or bundle placeholder | Package inventory record that gathers Artifact refs, Evidence Item refs, claim coverage, missing items, build/render status, and handoff target. | Resolve `topic.records.artifacts` for package manifests today; add the proposed `topic.records.packages` label before relying on a dedicated package directory. | `project records package create/update/validate ...`. |
 
-The current write pattern for a v2 placeholder should be conservative:
+The current write pattern for a v2 placeholder should be conservative. First confirm the Topic Workspace surfaces and runtime state, then use the skill's `placeholder-bindings.md` page to create or update the record through the transitional extension:
 
 ```bash
 pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic <topic>
@@ -209,7 +211,11 @@ pixi run isomer-cli --print-json project paths get topic.records.runs --topic <t
 pixi run isomer-cli --print-json project paths get topic.records.logs --topic <topic>
 pixi run isomer-cli --print-json project runtime inspect --topic <topic>
 pixi run isomer-cli --print-json project runtime validate --topic <topic>
+pixi run isomer-cli --print-json ext research records create --topic <topic> --record-kind artifact --placeholder '<PLACEHOLDER>' --profile <profile> --skill <skill> --producer <producer> --consumer <consumer> --body-file <body-file>
+pixi run isomer-cli --print-json ext research records list --topic <topic> --placeholder '<PLACEHOLDER>'
 ```
+
+Use `show --include-body` when a working agent needs to read a prior placeholder-bound body, `update` when the same semantic record receives a revised body or status, and `delete` only to archive a superseded or invalid lifecycle row while preserving body files. The extension is intentionally generic; it does not decide whether a placeholder is scientifically valid, ready for a Gate, or accepted as final evidence.
 
 When a placeholder needs a storage behavior that does not fit a built-in label, the working agent should register a `custom.*` semantic label instead of inventing an untracked path:
 

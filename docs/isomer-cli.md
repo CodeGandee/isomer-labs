@@ -524,6 +524,67 @@ pixi run isomer-cli --print-json project handoffs normalize <handoff-id> \
   --rationale "Accepted after Operator review."
 ```
 
+### `ext deepsci tools`
+
+List the DeepScientist compatibility tools exposed through Isomer extension shims.
+
+**Side effects:** none.
+
+```bash
+pixi run isomer-cli ext deepsci tools
+pixi run isomer-cli ext deepsci tools artifact
+```
+
+### `ext deepsci call`
+
+Call one DeepScientist compatibility tool against the selected Topic Workspace.
+
+**Side effects:** depends on the tool. Compatibility calls may write extension-owned records inside the Workspace Runtime database and may return durable references that later v2 skills summarize through normal Isomer placeholder bindings. Use this surface only for source-shaped compatibility behavior while the native research record APIs are still incomplete.
+
+```bash
+pixi run isomer-cli ext deepsci call artifact.record \
+  --topic my-topic \
+  --input-json '{"title":"Draft note","body":"Compatibility note."}'
+```
+
+### `ext research records create/show/list/update/delete`
+
+Create, inspect, query, update, or archive transitional topic-scoped research records for v2 research skill placeholder bindings.
+
+**Side effects:** `create` and `update` write or update a Workspace Runtime lifecycle record and, when `--body` or `--body-file` is supplied, write a durable body under the resolved semantic label, defaulting to `topic.records.artifacts` except for runs, tasks, and views. `delete` archives the lifecycle record by setting its status to `archived`; it does not remove stored body files. `show` and `list` are read-only.
+
+**Use:** these commands are the current extension-backed bridge for `skillset/research-paradigm/v2/*/placeholder-bindings.md`. Prefer the exact placeholder token, profile, skill, producer, and consumer metadata from the binding page. Future native `project records ...` commands may replace this extension surface.
+
+```bash
+pixi run isomer-cli --print-json ext research records create \
+  --topic my-topic \
+  --record-kind artifact \
+  --placeholder '<LITERATURE_SCOUTING_REPORT>' \
+  --profile report.literature-scouting-report \
+  --skill isomer-rsch-scout-v2 \
+  --producer isomer-rsch-scout-v2 \
+  --consumer isomer-rsch-idea-v2 \
+  --body-file scouting-report.md
+
+pixi run isomer-cli --print-json ext research records list \
+  --topic my-topic \
+  --placeholder '<LITERATURE_SCOUTING_REPORT>'
+
+pixi run isomer-cli --print-json ext research records show <record-id> \
+  --topic my-topic --include-body
+
+pixi run isomer-cli --print-json ext research records update <record-id> \
+  --topic my-topic \
+  --record-kind artifact \
+  --status complete \
+  --placeholder '<LITERATURE_SCOUTING_REPORT>' \
+  --body-file scouting-report-v2.md
+
+pixi run isomer-cli --print-json ext research records delete <record-id> \
+  --topic my-topic \
+  --reason superseded
+```
+
 ### UC-01 Manual Harness
 
 UC-01 is intentionally not a product CLI command. Run the pinned acceptance path from the manual harness so case-specific ids, fixture output specs, simulated handoff payloads, summaries, and closeout assertions stay outside `src/isomer_labs`.
@@ -648,6 +709,13 @@ pixi run isomer-cli project --root tests/fixtures/projects/deepsci-profile-use-c
 | `project handoffs dispatch` | no | yes | yes (handoff payloads) | yes |
 | `project handoffs observe` | no | yes | yes (observation payloads) | mail/gateway only |
 | `project handoffs normalize` | no | yes | yes (normalization payloads) | no |
+| `ext deepsci call` | no | tool-dependent | no | no |
+| `ext deepsci tools` | no | no | no | no |
+| `ext research records create` | yes with body files | yes | no | no |
+| `ext research records show` | no | no | no | no |
+| `ext research records list` | no | no | no | no |
+| `ext research records update` | yes with body files | yes | no | no |
+| `ext research records delete` | no | yes (archives record) | no | no |
 | `project team-templates list` | no | no | no | no |
 | `project team-templates inspect` | no | no | no | no |
 | `project team-templates validate` | no | no | no | no |

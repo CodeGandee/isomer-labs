@@ -9,7 +9,7 @@ description: Use when an already meaningful figure needs durable academic stylin
 
 Figure Polish makes figures durable. It classifies the surface, states the one message, chooses a chart form that matches the research question, applies a restrained academic style, renders, inspects the actual output, revises until the check passes, exports the right formats, and records the figure against its evidence or claim.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
 
 ## When to Use
 

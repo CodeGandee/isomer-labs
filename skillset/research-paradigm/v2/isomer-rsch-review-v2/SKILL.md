@@ -9,7 +9,7 @@ description: Use when a substantial draft, paper, report, or paper-like bundle n
 
 Review audits from evidence rather than author optimism. It builds an audit plan, benchmarks nearby literature and venue expectations, writes a skeptical review report, turns issues into a revision log, creates experiment TODOs only for real evidence gaps, and routes the next step.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
 
 ## When to Use
 

@@ -9,7 +9,7 @@ description: Use after Topic Team Specialization has written the final topic sum
 
 Workspace manager prepares the research-facing contract that v2 skills use after the topic team is specialized. It first detects Topic Workspace readiness from the final topic-team summary and a small set of fresh semantic checks, then verifies that the selected Research Topic, Topic Workspace, Workspace Runtime, topic-team profile material, and Agent Workspace context are ready enough for research placeholder outputs to land in durable topic-owned surfaces or become explicit blockers.
 
-Placeholder definitions live in `migrate/placeholders.md`.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.
 
 ## When to Use
 
@@ -46,7 +46,7 @@ Read these pages as needed:
 
 - `references/bootstrap-workflow.md` for minimal Topic Workspace readiness detection, entry conditions, actor fallback, and the post-specialization sequence.
 - `references/semantic-surface-plan.md` for existing topic record labels, planned evidence/provenance/package labels, and `custom.*` escalation.
-- `references/placeholder-binding-registry.md` for mapping v2 placeholder kinds to semantic targets while preserving placeholder names.
+- `references/placeholder-binding-registry.md` and each relevant skill's `placeholder-bindings.md` for mapping v2 placeholder kinds to semantic targets while preserving placeholder names.
 - `references/agent-access-plan.md` for Agent Workspace pre-promotion surfaces, generated links, and promotion boundaries.
 - `references/validation-and-blockers.md` for readiness checks, bootstrap reports, validation output, and blocker records.
 

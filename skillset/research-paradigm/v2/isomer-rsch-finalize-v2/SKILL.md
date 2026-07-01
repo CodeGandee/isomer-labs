@@ -9,7 +9,7 @@ description: Use when a Research Topic or Research Inquiry is ready to close, pa
 
 Finalize closes or pauses work responsibly. It consolidates accepted evidence, records claim status and limitations, chooses stop, park, publish, or continue-later routing, and refuses closure when evidence or writing gates still block it.
 
-Placeholder definitions live in `migrate/placeholders.md`.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.
 
 ## When to Use
 

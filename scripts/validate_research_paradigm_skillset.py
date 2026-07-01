@@ -196,6 +196,7 @@ DEFAULT_ALLOW_ZONES = {
     ),
     "v2_storage_binding_file_globs": (
         "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md",
+        "*/placeholder-bindings.md",
         "*/migrate/**",
         "*/org/**",
         "*/templates/**",
@@ -421,6 +422,8 @@ def classify_document(
         roles.add("canonical-registry")
     if rel_target == "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md":
         roles.add("semantic-placeholder-registry")
+    if rel_target.endswith("/placeholder-bindings.md"):
+        roles.add("placeholder-binding")
     if any(normalize_heading(line.removeprefix("##")) == "TBD Surface Registry" for line in lines if line.startswith("##")):
         roles.add("registry-mirror")
     if not (roles & NON_ACTIVE_ROLES):
@@ -712,6 +715,23 @@ def parse_migration_placeholder_ids(lines: tuple[str, ...]) -> dict[str, int]:
     return ids
 
 
+def parse_placeholder_binding_ids(lines: tuple[str, ...]) -> dict[str, int]:
+    ids: dict[str, int] = {}
+    for line_number, line in enumerate(lines, start=1):
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if not cells:
+            continue
+        raw_id = cells[0].strip("`")
+        if raw_id.casefold() in {"placeholder", "---"} or set(raw_id) <= {"-"}:
+            continue
+        match = MIGRATION_PLACEHOLDER_CELL_RE.match(raw_id)
+        if match:
+            ids[match.group(1)] = line_number
+    return ids
+
+
 def normalize_resolution(text: str) -> str:
     text = re.sub(r"[`*_]", "", text)
     text = re.sub(r"\s+", " ", text)
@@ -824,6 +844,8 @@ def validate_migration_placeholders(
 ) -> None:
     if not is_active_guidance(document):
         return
+    if "placeholder-binding" in document.roles:
+        return
     parts = document.rel_target.split("/")
     if len(parts) < 3 or parts[0] not in {"v1", "v2"}:
         return
@@ -841,6 +863,51 @@ def validate_migration_placeholders(
                     "RPS009",
                     f"migration placeholder '{placeholder_id}' is not registered in migrate/placeholders.md",
                 )
+
+
+def validate_v2_placeholder_bindings(
+    skill_dirs: list[tuple[Path, str]],
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    for skill_dir, generation in skill_dirs:
+        if generation != "v2":
+            continue
+        placeholder_path = skill_dir / "migrate" / "placeholders.md"
+        if not placeholder_path.exists():
+            continue
+        expected = parse_migration_placeholder_ids(read_lines(placeholder_path))
+        binding_path = skill_dir / "placeholder-bindings.md"
+        if not binding_path.exists():
+            add(
+                diagnostics,
+                repo_root,
+                skill_dir,
+                1,
+                "RPS012",
+                "v2 skill with migrate/placeholders.md must include placeholder-bindings.md",
+            )
+            continue
+        actual = parse_placeholder_binding_ids(read_lines(binding_path))
+        heading_line = find_h2(read_lines(binding_path), "Placeholder Bindings") or 1
+        for placeholder_id in sorted(set(expected) - set(actual)):
+            add(
+                diagnostics,
+                repo_root,
+                binding_path,
+                heading_line,
+                "RPS012",
+                f"placeholder-bindings.md is missing migration placeholder '<{placeholder_id}>'",
+            )
+        for placeholder_id in sorted(set(actual) - set(expected)):
+            add(
+                diagnostics,
+                repo_root,
+                binding_path,
+                actual[placeholder_id],
+                "RPS012",
+                f"placeholder-bindings.md has extra migration placeholder '<{placeholder_id}>'",
+            )
 
 
 def validate_v2_storage_binding(
@@ -1094,6 +1161,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_coupling_patterns(document, repo_root, diagnostics, allow_zones)
         validate_v2_storage_binding(document, repo_root, diagnostics, allow_zones)
         validate_v2_support_section_intros(document, repo_root, diagnostics)
+    validate_v2_placeholder_bindings(skill_dirs, repo_root, diagnostics)
     validate_registry_mirrors(documents, canonical_rows, repo_root, diagnostics)
     return sorted(set(diagnostics))
 

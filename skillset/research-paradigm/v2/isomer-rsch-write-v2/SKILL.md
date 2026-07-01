@@ -9,7 +9,7 @@ description: Use when a Research Inquiry has enough evidence to draft or revise 
 
 Write turns validated research evidence into paper-facing prose. It refreshes the paper contract, repairs weak outlines before drafting, separates claims from source material, plans displays before prose, and routes evidence gaps back to the skill that can fix them.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.
 
 ## When to Use
 

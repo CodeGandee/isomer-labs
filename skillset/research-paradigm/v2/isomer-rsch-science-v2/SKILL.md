@@ -9,7 +9,7 @@ description: Use when research work depends on scientific computation, data anal
 
 Science provides companion evidence discipline for scientific computation and validation. It routes tasks through package and domain context, keeps execution in Isomer command surfaces, and records claim-supporting evidence before scientific claims are trusted.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language. Package cards and `references/package-index.min.json` are passive catalog material and do not prove runtime availability.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language. Package cards and `references/package-index.min.json` are passive catalog material and do not prove runtime availability.
 
 ## When to Use
 

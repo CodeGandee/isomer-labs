@@ -9,7 +9,7 @@ description: Use when a selected hypothesis or route, accepted comparator basis,
 
 Experiment turns one selected route into one interpretable measured result. It locks a run contract, changes only what the hypothesis needs, preserves command and metric evidence, records the result, and routes from the evidence.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.
 
 ## When to Use
 

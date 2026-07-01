@@ -9,7 +9,7 @@ description: Use when a Research Inquiry or Research Task needs bounded follow-u
 
 Analysis answers focused follow-up questions about an existing result. It decomposes a parent result into bounded evidence slices, records slice-level interpretations before campaign-level claims, and routes from the updated claim boundary.
 
-Placeholder definitions live in `migrate/placeholders.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.
+Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.
 
 ## When to Use
 
