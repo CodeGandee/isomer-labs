@@ -35,7 +35,7 @@ When this subcommand is selected, execute the following steps in order.
    - The Topic Workspace, semantic setup paths, and binding target must be inside the Project root.
    - Pixi's resolved manifest path and selected environment prefix must be confined to the selected Topic Workspace, with the prefix under `<topic-workspace>/.pixi/`.
 8. **Run read-only project validation when available** before direct setup mutation:
-   - Example commands are `pixi run isomer-cli --print-json project validate` and `pixi run isomer-cli --print-json project doctor --topic <research_topic_id>`.
+   - Example commands are `isomer-cli --print-json project validate` and `isomer-cli --print-json project doctor --topic <research_topic_id>`.
    - Treat diagnostics about missing `team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instances, Agent Workspaces, roles, role counts, or launch readiness as non-blocking for this subcommand.
    - Diagnostics about launch-facing material are non-blocking for this subcommand unless they also prevent Topic Workspace discovery, semantic path resolution, Pixi binding resolution, source gate reading, dependency setup, repo checks, or Pixi-scoped verification.
 9. **Report workspace context** using the parent skill's output fields:

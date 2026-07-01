@@ -170,6 +170,18 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_skillset(target, root)
         self.assertEqual([], messages(diagnostics))
 
+    def test_research_validator_rejects_repo_local_isomer_cli_wrapper(self) -> None:
+        root, target = self.make_valid_skillset()
+        write(
+            target / "v2" / "isomer-rsch-scout-v2" / "placeholder-bindings.md",
+            "# Placeholder Bindings\n\nRun `pixi run isomer-cli ext research records list`.\n",
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS013", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("global isomer-cli directly" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_expected_inventory_includes_expanded_v2_contract(self) -> None:
         self.assertIn("isomer-rsch-intake-v1", validator.EXPECTED_V1_SKILLS)
         self.assertIn("isomer-rsch-write-v1", validator.EXPECTED_V1_SKILLS)

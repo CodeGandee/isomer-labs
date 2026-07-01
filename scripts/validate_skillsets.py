@@ -48,6 +48,7 @@ ACTIVE_REF_ROOTS = (
 )
 ACTIVE_REF_FILES = ("AGENTS.md", "ROADMAP.md", "pyproject.toml")
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
+FORBIDDEN_REPO_LOCAL_ISOMER_CLI = "pixi run isomer-cli"
 
 TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "Default help mode",
@@ -1207,6 +1208,32 @@ def add(
     diagnostics.append(Diagnostic(relpath(path, repo_root), max(line, 1), code, message))
 
 
+def validate_global_isomer_cli_invocation(repo_root: Path, roots: tuple[Path, ...], *, code: str) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skillset_root = repo_root / "skillset"
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in sorted(candidate for candidate in root.rglob("*") if candidate.is_file() and candidate.suffix in ACTIVE_REF_SUFFIXES):
+            try:
+                rel_to_skillset = path.resolve().relative_to(skillset_root.resolve())
+            except ValueError:
+                rel_to_skillset = None
+            if rel_to_skillset is not None and rel_to_skillset.parts and rel_to_skillset.parts[0] == "dev":
+                continue
+            for line_number, line in enumerate(read_lines(path), start=1):
+                if FORBIDDEN_REPO_LOCAL_ISOMER_CLI in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        line_number,
+                        code,
+                        "non-dev skills must call global isomer-cli directly instead of 'pixi run isomer-cli'",
+                    )
+    return diagnostics
+
+
 def clean_reference(raw: str) -> str | None:
     value = raw.strip().strip("<>").strip()
     if "://" in value or value.startswith("#"):
@@ -1986,6 +2013,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_topic_workspace_manager_module(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
     diagnostics.extend(validate_split_output_contract_docs(repo_root, (repo_root / "skillset" / "operator",), code="OPS007"))
+    diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "operator",), code="OPS010"))
     return sorted(set(diagnostics))
 
 
@@ -2129,6 +2157,7 @@ def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
             code="SVS004",
         )
     )
+    diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "service",), code="SVS005"))
     return sorted(set(diagnostics))
 
 
@@ -2140,6 +2169,7 @@ def validate_all(repo_root: Path) -> list[Diagnostic]:
     )
     diagnostics.extend(validate_operator_skillset(repo_root))
     diagnostics.extend(validate_service_skillset(repo_root))
+    diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "misc",), code="SKL004"))
     return sorted(set(diagnostics))
 
 

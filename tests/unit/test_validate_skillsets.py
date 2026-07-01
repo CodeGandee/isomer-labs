@@ -832,6 +832,23 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS007", codes(diagnostics))
         self.assertTrue(any("Complete Output" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_global_cli_validator_rejects_non_dev_pixi_isomer_cli_wrapper(self) -> None:
+        root = self.make_root()
+        write(root / "skillset" / "misc" / "isomer-misc-example" / "SKILL.md", "Run `pixi run isomer-cli project validate`.\n")
+
+        diagnostics = validator.validate_global_isomer_cli_invocation(root, (root / "skillset",), code="SKL004")
+
+        self.assertIn("SKL004", codes(diagnostics))
+        self.assertTrue(any("global isomer-cli directly" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_global_cli_validator_exempts_dev_skills(self) -> None:
+        root = self.make_root()
+        write(root / "skillset" / "dev" / "isomer-dev-example" / "SKILL.md", "Run `pixi run isomer-cli project validate`.\n")
+
+        diagnostics = validator.validate_global_isomer_cli_invocation(root, (root / "skillset",), code="SKL004")
+
+        self.assertEqual([], messages(diagnostics))
+
     def test_operator_validator_rejects_core_owned_heavy_operation_lists(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -1278,7 +1295,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Workflow
 
-            1. Run `pixi run isomer-cli --project <project-root> validate`.
+            1. Run `isomer-cli --project <project-root> validate`.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
             """,
@@ -1288,6 +1305,19 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS005", codes(diagnostics))
         self.assertTrue(any("isomer-cli project ..." in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_repo_local_isomer_cli_wrapper(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_project_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        skill_path = root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / "check-project.md"
+        skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nRun `pixi run isomer-cli project validate`.\n", encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS010", codes(diagnostics))
+        self.assertTrue(any("global isomer-cli directly" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_topic_workspace_manager(self) -> None:
         root = self.make_root()
@@ -1528,6 +1558,18 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("SVS002", codes(diagnostics))
         self.assertTrue(any("delegate heavy-operation classification" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_rejects_repo_local_isomer_cli_wrapper(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
+        skill_path = root / "skillset" / "service" / "isomer-srv-topic-env-setup" / "references" / "resolve-topic-workspace.md"
+        skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nRun `pixi run isomer-cli project paths get`.\n", encoding="utf-8")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS005", codes(diagnostics))
+        self.assertTrue(any("global isomer-cli directly" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_requires_complete_checklist_readiness_terms(self) -> None:
         root = self.make_root()

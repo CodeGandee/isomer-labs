@@ -6,8 +6,8 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the Project root and requested destination generated content root from the user's prompt.
 2. Start with a dry-run command:
-   - Use `pixi run isomer-cli --print-json project content-root move --to <content-dir> --dry-run` from the Project root.
-   - Use `pixi run isomer-cli --print-json project --root <project-root> content-root move --to <content-dir> --dry-run` when operating from another directory.
+   - Use `isomer-cli --print-json project content-root move --to <content-dir> --dry-run` from the Project root.
+   - Use `isomer-cli --print-json project --root <project-root> content-root move --to <content-dir> --dry-run` when operating from another directory.
 3. Explain the relocation plan in plain text:
    - Old generated content root and new generated content root.
    - Managed moves, manifest updates, skipped entries, unmanaged leftovers, diagnostics, and warnings.

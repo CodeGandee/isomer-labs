@@ -25,6 +25,8 @@ MIGRATION_PLACEHOLDER_CELL_RE = re.compile(r"^<?([A-Z][A-Z0-9_]*)>?$")
 PLACEHOLDER_PATH_SEGMENT_RE = re.compile(r"<[A-Za-z0-9_-]+>")
 REGISTRY_ROW_ID_RE = re.compile(r"^(?:path|api|schema|policy|provider)-[a-z0-9-]+$")
 SEMANTIC_PLACEHOLDER_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+FORBIDDEN_REPO_LOCAL_ISOMER_CLI = "pixi run isomer-cli"
+ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
 
 EXPECTED_V1_SKILLS = frozenset(
     {
@@ -1084,6 +1086,20 @@ def validate_coupling_patterns(
                 )
 
 
+def validate_global_isomer_cli_invocation(target: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
+    for path in sorted(candidate for candidate in target.rglob("*") if candidate.is_file() and candidate.suffix in ACTIVE_REF_SUFFIXES):
+        for line_number, line in enumerate(read_lines(path), start=1):
+            if FORBIDDEN_REPO_LOCAL_ISOMER_CLI in line:
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "RPS013",
+                    "research skills must call global isomer-cli directly instead of 'pixi run isomer-cli'",
+                )
+
+
 def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagnostic]:
     target = target.resolve()
     repo_root = (repo_root or find_repo_root(target)).resolve()
@@ -1163,6 +1179,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_v2_support_section_intros(document, repo_root, diagnostics)
     validate_v2_placeholder_bindings(skill_dirs, repo_root, diagnostics)
     validate_registry_mirrors(documents, canonical_rows, repo_root, diagnostics)
+    validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     return sorted(set(diagnostics))
 
 

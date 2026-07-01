@@ -5,9 +5,9 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the Project root from the user-provided path or current working directory.
-2. Run `pixi run isomer-cli --print-json project topics list` through the selected Project root.
-3. Run `pixi run isomer-cli --print-json project workspaces list` through the selected Project root.
-4. If the user asks to inspect one topic, run `pixi run isomer-cli --print-json project topics show <topic-id>`.
+2. Run `isomer-cli --print-json project topics list` through the selected Project root.
+3. Run `isomer-cli --print-json project workspaces list` through the selected Project root.
+4. If the user asks to inspect one topic, run `isomer-cli --print-json project topics show <topic-id>`.
 5. If the user asks how to mutate topic lifecycle state, report the authoritative surfaces:
    - Use `project topics create <topic-id> --statement "<research topic>"` to create a topic.
    - Use `project topics update <topic-id>` to update topic metadata.

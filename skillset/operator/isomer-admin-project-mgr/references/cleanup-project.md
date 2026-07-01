@@ -11,7 +11,7 @@ When this subcommand is selected, execute the following steps in order.
    - Optional generated content root.
    - Whether the user wants dry-run review or confirmed deletion.
 2. Start with a dry-run command:
-   - Base command: `pixi run isomer-cli --print-json project cleanup --part <part> --dry-run`.
+   - Base command: `isomer-cli --print-json project cleanup --part <part> --dry-run`.
    - Add repeated `--part <part>`, `--topic <topic-id>`, `--all-topics`, or `--content-dir <content-dir>` when needed.
 3. Explain the cleanup plan in plain text: selected parts, authority source, planned targets, absent targets, refused targets, warnings, and diagnostics.
 4. Apply cleanup only after review:

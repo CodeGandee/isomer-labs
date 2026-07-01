@@ -15,7 +15,7 @@ If the user's task does not map cleanly to these steps, create a partial start-p
 ## Authoritative Record Command Shape
 
 ```bash
-pixi run isomer-cli --print-json ext research records create \
+isomer-cli --print-json ext research records create \
   --topic <topic> \
   --record-kind artifact \
   --semantic-label topic.records.artifacts \
