@@ -177,10 +177,10 @@ Before finishing, validate both provenance layout and migrated skill structure.
 6. Confirm every source artifact mention outside `<target-skill-dir>/org/` has been replaced by a placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
 7. Confirm every migrated skill page that uses placeholders references `<target-skill-dir>/migrate/placeholders.md`.
 8. Confirm every source-skill route without a matching Isomer skill has been replaced by a missing skill-route placeholder listed in `<target-skill-dir>/migrate/placeholders.md`.
-9. Run the skill validator when available:
+9. Run repository skillset validation, and optionally run an external skill-creator quick validator when available:
 
 ```bash
-python /home/huangzhe/.codex/skills/.system/skill-creator/scripts/quick_validate.py <target-skill-dir>
+pixi run validate-skills
 ```
 
 10. Inspect leftovers outside audit material:

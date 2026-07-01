@@ -197,11 +197,11 @@ The module skill SHALL produce human-readable specialization artifacts that can 
 - **THEN** it does not claim that the topic team is launched, launchable, attached to an Agent Team Instance, registered in Workspace Runtime, or ready for adapter execution
 
 ### Requirement: Skill Validation
-The implementation SHALL validate the module skill with skill-creator and repository validation surfaces.
+The implementation SHALL validate the module skill with repository validation surfaces.
 
-#### Scenario: Skill creator validation runs
+#### Scenario: Repository operator validation runs
 - **WHEN** the module skill bundle is ready for review
-- **THEN** a developer or agent can run `pixi run python /home/huangzhe/.codex/skills/.system/skill-creator/scripts/quick_validate.py skillset/operator/isomer-admin-topic-team-specialize` or the repo-local equivalent and receive a passing result
+- **THEN** a developer or agent can run `pixi run validate-operator-skills` and receive a passing result
 
 #### Scenario: Operator skillset validation runs
 - **WHEN** `pixi run validate-operator-skills` runs
@@ -937,4 +937,3 @@ The Topic Team Specialization skill SHALL keep Topic Actor bindings and formal t
 #### Scenario: Actor preparation does not create team material
 - **WHEN** common topic preparation or human-orchestrated actor preparation runs
 - **THEN** Topic Team Specialization requirements for Domain Agent Team Template adaptation, Topic Agent Team Profile Bundle materialization, formal per-Agent Workspace setup, and launch approval remain unsatisfied until the team specialization workflow runs
-

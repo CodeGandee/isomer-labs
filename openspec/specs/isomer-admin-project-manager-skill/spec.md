@@ -111,11 +111,11 @@ The project manager skill SHALL keep required support knowledge inside its own s
 - **THEN** they do not reference `.imsight-arts/`, `docs/`, `extern/`, or absolute local support paths for information needed to execute the skill
 
 ### Requirement: Project Manager Skill Validation
-The implementation SHALL validate the project manager skill with skill-creator and repository validation surfaces.
+The implementation SHALL validate the project manager skill with repository validation surfaces.
 
-#### Scenario: Skill creator validation runs
+#### Scenario: Repository operator validation runs
 - **WHEN** the project manager skill bundle is ready for review
-- **THEN** a developer or agent can run `pixi run python /home/huangzhe/.codex/skills/.system/skill-creator/scripts/quick_validate.py skillset/operator/isomer-admin-project-mgr` or the repo-local equivalent and receive a passing result
+- **THEN** a developer or agent can run `pixi run validate-operator-skills` and receive a passing result
 
 #### Scenario: Operator skillset validation runs
 - **WHEN** `pixi run validate-operator-skills` runs
@@ -330,4 +330,3 @@ The Project Manager skill SHALL route manual or human-orchestrated Research Topi
 #### Scenario: Project manager help distinguishes actor and team paths
 - **WHEN** the Project Manager skill lists topic-oriented operations
 - **THEN** it distinguishes common topic preparation, Topic Workspace Manager actor management, human-orchestrated research sessions, and Topic Agent Team specialization while keeping runtime initialization or preparation as explicit prerequisites or delegated steps
-
