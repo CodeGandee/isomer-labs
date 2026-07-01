@@ -9,7 +9,7 @@ When this subcommand is selected, execute the following steps in order.
 3. Validate or derive `topic.env.topic_setup_target_spec` from the topic env source gate when topic environment setup is needed.
 4. Delegate topic environment setup to `isomer-srv-topic-env-setup`, including dependency, Pixi, Topic Main Development Repository, projection, and topic-root verification work.
 5. Validate `topic.repos.main` readiness, projection predecessor evidence, topic environment status, and semantic labels needed by manual research.
-6. Report topic environment status, topic env source gate path, derived target spec path, `topic.repos.main` path, projection evidence, blockers, and next subcommand.
+6. Report topic environment status, topic env source gate path, derived target spec path, `topic.repos.main` path, projection evidence, blockers, and readiness state.
 
 If the user's task does not map cleanly to these steps, report whether the missing evidence is topic overview, verified topic env requirements, target spec, service setup output, or topic-main readiness.
 

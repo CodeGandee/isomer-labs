@@ -8,7 +8,7 @@ When this subcommand is selected, execute the following steps in order.
 2. Invoke or validate `isomer-rsch-workspace-mgr-v2` for base topic readiness and selected Topic Actor readiness.
 3. Validate selected v2 skill `placeholder-bindings.md` files, topic-level placeholder binding index or readiness report, actor recording metadata, and accepted-artifact command guidance.
 4. Treat missing actor or formal team layer checks as topology-specific blockers, not as proof that the whole topic is unusable.
-5. Report bootstrap status, placeholder binding entrypoints, storage recording command shapes, blockers, and next subcommand.
+5. Report bootstrap status, placeholder binding entrypoints, storage recording command shapes, blockers, and whether `finalize` can consume the bootstrap evidence.
 
 If the user's task does not map cleanly to these steps, name whether the blocker is base topic readiness, Topic Actor readiness, v2 binding readiness, or optional formal team readiness.
 

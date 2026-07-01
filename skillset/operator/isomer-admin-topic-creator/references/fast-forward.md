@@ -15,11 +15,11 @@ When this subcommand is selected, execute the following steps in order.
 9. Run `define-actors` when `topic.intent.actor_definitions` is missing or stale; create the default `operator` actor definition unless explicitly opted out or a richer actor roster is supplied.
 10. Run `setup-actors` for actors from `topic.intent.actor_definitions`, including the default `operator` Topic Actor unless explicitly opted out, and verify derived actor env gates from actor cwd.
 11. Run `bootstrap-research` to validate base topic readiness, Topic Actor readiness, selected v2 placeholder bindings, and storage recording guidance.
-12. Run `start-manual-research` to write start-pack records, actor-local pointers, cwd instructions, and next actions.
-13. Report Essential Output by default, including the next incomplete stage if any stage blocked.
+12. Run `finalize` to validate Topic Workspace preparation, write `topic.workspace.summary`, and print ready/verified/blocked state.
+13. Report Essential Output by default, including the blocked stage and missing evidence if any stage blocked.
 
 If the user's task does not map cleanly to these steps, inspect readiness first, then run only the safe subset of stage subcommands that match the user's request and approval.
 
 ## Idempotence
 
-`fast-forward` must validate and reuse ready evidence. It must not rerun ready destructive or expensive stages unless the user explicitly asks. It stops at the first blocker that prevents later stages from being meaningful and reports the next subcommand to resume.
+`fast-forward` must validate and reuse ready evidence. It must not rerun ready destructive or expensive stages unless the user explicitly asks. It stops at the first blocker that prevents later stages from being meaningful and reports the blocked stage and missing evidence without prescribing a next research command.

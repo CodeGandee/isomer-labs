@@ -81,14 +81,16 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
         actor_defs = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/define-actors.md")
         actors = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/setup-actors.md")
         bootstrap = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/bootstrap-research.md")
-        start = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/start-manual-research.md")
-        combined = "\n".join((skill, help_page, fast_forward, research_intent, topic_env, actor_defs, actors, bootstrap, start))
+        finalize = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/finalize.md")
+        step_by_step = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/step-by-step.md")
+        run_to = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/run-to.md")
+        combined = "\n".join((skill, help_page, fast_forward, research_intent, topic_env, actor_defs, actors, bootstrap, finalize, step_by_step, run_to))
 
         self.assertContainsAll(
             combined,
             (
                 "isomer-admin-topic-creator",
-                "manual-research-ready Topic Workspace",
+                "prepared Topic Workspace",
                 "Default help mode",
                 "`ensure-project`",
                 "`resolve-topic-input`",
@@ -100,21 +102,31 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "`define-actors`",
                 "`setup-actors`",
                 "`bootstrap-research`",
-                "`start-manual-research`",
+                "`finalize`",
+                "`step-by-step`",
+                "`run-to`",
                 "`status`",
                 "`repair`",
                 "isomer-admin-project-mgr",
                 "isomer-srv-topic-env-setup",
                 "isomer-admin-topic-workspace-mgr",
                 "isomer-rsch-workspace-mgr-v2",
-                "isomer-admin-manual-research-session",
                 "Topic Actor roster",
                 "each selected actor cwd",
                 "v2 bootstrap status",
-                "start-pack record refs",
+                "topic.workspace.summary",
+                "ready/verified/blocked",
                 "placeholder-bindings.md",
+                "same main workflow order as `fast-forward`",
+                "option table",
+                "acknowledgement",
+                "excluded by default",
+                "inclusive",
             ),
         )
+        self.assertNotIn("`start-manual-research`", combined)
+        self.assertNotIn("start-pack record refs", combined)
+        self.assertNotIn("recommends a next v2 research skill", combined)
 
     def test_team_specialization_documents_common_preparation_composition_and_actor_preservation(self) -> None:
         skill = read_repo_file("skillset/operator/isomer-admin-topic-team-specialize/SKILL.md")

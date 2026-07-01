@@ -9,7 +9,7 @@ When this subcommand is selected, execute the following steps in order.
 3. Create or refine actor definitions with each actor's name, duty, intended usage, expected cwd label, actor kind, runtime kind, role kind, controller kind, source env gate requirements, selected v2 skills when known, and open actor setup questions.
 4. If invoked without further actor information, create or refine a default `operator` actor definition.
 5. Treat requests such as "create the operator actor" as the same default `operator` actor definition path.
-6. Report actor definitions path, actor roster, default-operator opt-out status, assumptions, open questions, blockers, and next subcommand.
+6. Report actor definitions path, actor roster, default-operator opt-out status, assumptions, open questions, blockers, and readiness state.
 
 If the user's task does not map cleanly to these steps, ask for actor names or confirm that the default `operator` actor is enough.
 

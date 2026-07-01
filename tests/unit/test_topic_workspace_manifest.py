@@ -120,6 +120,7 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual("topic.intent.actor_definitions", compatibility_aliases()["topic_intent_actor_definitions"])
         self.assertEqual("topic.env.topic_setup_target_spec", compatibility_aliases()["topic_env_topic_setup_target_spec"])
         self.assertEqual("topic.env.actor_env_gates", compatibility_aliases()["topic_env_actor_env_gates"])
+        self.assertEqual("topic.workspace.summary", compatibility_aliases()["topic_workspace_summary"])
         private_surface = catalog()["agent.private_artifacts"]
         self.assertEqual("agent", private_surface.owner)
         self.assertEqual("private", private_surface.sharing)
@@ -139,6 +140,11 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         target_surface = catalog()["topic.env.agent_setup_target_spec"]
         self.assertEqual("topic_env_target_spec_file", target_surface.storage_profile)
         self.assertEqual("file", target_surface.path_kind)
+        summary_surface = catalog()["topic.workspace.summary"]
+        self.assertEqual("topic_workspace_summary_file", summary_surface.storage_profile)
+        self.assertEqual("file", summary_surface.path_kind)
+        self.assertEqual("topic", summary_surface.owner)
+        self.assertEqual("durable", summary_surface.durability)
         readonly_projection = catalog()["topic.repos.main.projections.readonly"]
         self.assertEqual("topic_repo_readonly_projection_dir", readonly_projection.storage_profile)
         self.assertEqual("topic_read", readonly_projection.sharing)
@@ -317,34 +323,40 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         actor_definitions, actor_definition_diagnostics = resolve_semantic_binding(context, "topic.intent.actor_definitions", env={})
         actor_gates, actor_gate_diagnostics = resolve_semantic_binding(context, "topic.env.actor_env_gates", env={})
         agent_target, agent_target_diagnostics = resolve_semantic_binding(context, "topic.env.agent_setup_target_spec", env={})
+        summary, summary_diagnostics = resolve_semantic_binding(context, "topic.workspace.summary", env={})
 
         self.assertEqual([], overview_diagnostics)
         self.assertEqual([], topic_gate_diagnostics)
         self.assertEqual([], actor_definition_diagnostics)
         self.assertEqual([], actor_gate_diagnostics)
         self.assertEqual([], agent_target_diagnostics)
+        self.assertEqual([], summary_diagnostics)
         self.assertIsNotNone(overview)
         self.assertIsNotNone(topic_gate)
         self.assertIsNotNone(actor_definitions)
         self.assertIsNotNone(actor_gates)
         self.assertIsNotNone(agent_target)
+        self.assertIsNotNone(summary)
+        assert summary is not None
         self.assertEqual(context.topic_workspace_path / "intent" / "src" / "topic-overview.md", overview.path)
         self.assertEqual(context.topic_workspace_path / "intent" / "src" / "topic-env-gate.md", topic_gate.path)
         self.assertEqual(context.topic_workspace_path / "intent" / "src" / "actor-definitions.md", actor_definitions.path)
         self.assertEqual(context.topic_workspace_path / "intent" / "derived" / "actor-env-gates.md", actor_gates.path)
         self.assertEqual(context.topic_workspace_path / "intent" / "derived" / "isomer-agent-env-gate.md", agent_target.path)
+        self.assertEqual(context.topic_workspace_path / "isomer-topic-workspace-summary.md", summary.path)
         self.assertEqual("default_profile", overview.source)
         self.assertEqual("topic_intent_source_file", topic_gate.catalog.storage_profile)
         self.assertEqual("topic_intent_source_file", actor_definitions.catalog.storage_profile)
         self.assertEqual("topic_env_target_spec_file", actor_gates.catalog.storage_profile)
         self.assertEqual("topic_env_target_spec_file", agent_target.catalog.storage_profile)
+        self.assertEqual("topic_workspace_summary_file", summary.catalog.storage_profile)
 
     def test_materialize_default_intent_file_labels_creates_parent_only(self) -> None:
         context = self.make_context()
 
         manifest, created, diagnostics = materialize_default_manifest(
             context,
-            labels=("topic.intent.overview", "topic.env.topic_setup_target_spec"),
+            labels=("topic.intent.overview", "topic.env.topic_setup_target_spec", "topic.workspace.summary"),
             agent_name=None,
         )
 
@@ -352,10 +364,31 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertIsNotNone(manifest)
         self.assertIn(context.topic_workspace_path / "intent" / "src", created)
         self.assertIn(context.topic_workspace_path / "intent" / "derived", created)
+        self.assertIn(context.topic_workspace_path, created)
         self.assertTrue((context.topic_workspace_path / "intent" / "src").is_dir())
         self.assertTrue((context.topic_workspace_path / "intent" / "derived").is_dir())
         self.assertFalse((context.topic_workspace_path / "intent" / "src" / "topic-overview.md").exists())
         self.assertFalse((context.topic_workspace_path / "intent" / "derived" / "isomer-env-gate.md").exists())
+        self.assertFalse((context.topic_workspace_path / "isomer-topic-workspace-summary.md").exists())
+
+    def test_summary_label_supports_env_override_and_rejects_unknown_sibling(self) -> None:
+        context = self.make_context()
+
+        overridden, override_diagnostics = resolve_semantic_binding(
+            context,
+            "topic.workspace.summary",
+            env={"ISOMER_PATH__TOPIC__WORKSPACE__SUMMARY": "custom-summary.md"},
+        )
+        self.assertEqual([], override_diagnostics)
+        self.assertIsNotNone(overridden)
+        assert overridden is not None
+        self.assertEqual(context.project.root / "custom-summary.md", overridden.path)
+        self.assertEqual("env", overridden.source)
+        self.assertEqual("ISOMER_PATH__TOPIC__WORKSPACE__SUMMARY", overridden.source_detail)
+
+        missing, missing_diagnostics = resolve_semantic_binding(context, "topic.workspace.missing", env={})
+        self.assertIsNone(missing)
+        self.assertTrue(any("Unknown or reserved Isomer-owned semantic label" in diagnostic.message for diagnostic in missing_diagnostics), missing_diagnostics)
 
     def test_manifest_rejects_wrong_intent_storage_profile(self) -> None:
         context = self.make_context()

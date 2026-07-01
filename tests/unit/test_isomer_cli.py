@@ -2232,15 +2232,34 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual("disposable", data["path"]["durability"])
         self.assertEqual("private", data["path"]["sharing"])
 
+        status, output = self.run_cli(["project", "paths", "get", "topic.workspace.summary", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual("topic.workspace.summary", data["path"]["semantic_label"])
+        self.assertEqual("topic_workspace_summary", data["path"]["compatibility_surface"])
+        self.assertEqual("topic_workspace_summary_file", data["path"]["storage_profile"])
+        self.assertEqual("file", data["path"]["path_kind"])
+        self.assertEqual(str(topic_workspace / "isomer-topic-workspace-summary.md"), data["path"]["path"])
+
         status, output = self.run_cli(["project", "paths", "list", "--topic", "default", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertFalse(data["mutated"])
         listed = {item["semantic_label"]: item for item in data["paths"]}
         self.assertTrue(listed["topic.records.artifacts"]["resolved"])
+        self.assertTrue(listed["topic.workspace.summary"]["resolved"])
+        self.assertEqual("topic_workspace_summary_file", listed["topic.workspace.summary"]["storage_profile"])
+        self.assertEqual("file", listed["topic.workspace.summary"]["path_kind"])
         self.assertFalse(listed["agent.private_artifacts"]["resolved"])
         self.assertFalse(manifest_path.exists())
         self.assertFalse(records_artifacts.exists())
+
+        status, output = self.run_cli(["project", "paths", "explain", "topic.workspace.summary", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("topic.workspace.summary", data["explanation"]["semantic_label"])
+        self.assertEqual("topic_workspace_summary_file", data["explanation"]["selected"]["storage_profile"])
 
         status, output = self.run_cli(
             ["project", "paths", "materialize-default", "--topic", "default", "--label", "agent.private_artifacts", "--json"],
@@ -2262,6 +2281,17 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(manifest_path.is_file())
         self.assertTrue(records_artifacts.is_dir())
         self.assertIn('label = "topic.records.artifacts"', manifest_path.read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
+            ["project", "paths", "materialize-default", "--topic", "default", "--label", "topic.workspace.summary", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertIn(str(topic_workspace), data["materialization"]["created_paths"])
+        self.assertFalse((topic_workspace / "isomer-topic-workspace-summary.md").exists())
+        self.assertIn('label = "topic.workspace.summary"', manifest_path.read_text(encoding="utf-8"))
 
         status, output = self.run_cli(
             ["project", "paths", "materialize-default", "--topic", "default", "--label", "topic.tmp", "--json"],
