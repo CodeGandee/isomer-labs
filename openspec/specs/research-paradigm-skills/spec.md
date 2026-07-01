@@ -6,13 +6,26 @@ Define the reusable Isomer Labs research-paradigm skillset, including portable r
 ### Requirement: Research Paradigm Skillset Layout
 The project SHALL provide a reusable research-paradigm skillset under `skillset/research-paradigm/` using Codex skill folder layout and the `isomer-rsch-<purpose>` naming convention for research-stage method skills only.
 
-#### Scenario: Core skill folders exist
+#### Scenario: Version roots exist
 - **WHEN** the research-paradigm skillset is inspected
-- **THEN** it contains `isomer-rsch-shared` and core research skill folders for intake, scout, baseline, idea, optimize, experiment, analysis, decision, finalize, write, review, rebuttal, paper-outline, paper-plot, figure-polish, and science
+- **THEN** it contains versioned skill roots for preserved v1 skills and current v2 skills under `v1/` and `v2/`
+
+#### Scenario: Preserved v1 skill folders exist
+- **WHEN** the preserved v1 research-paradigm skillset is inspected
+- **THEN** it contains `isomer-rsch-shared-v1` and v1 folders for intake, scout, baseline, idea, optimize, experiment, analysis, decision, finalize, write, review, rebuttal, paper-outline, paper-plot, figure-polish, and science
+
+#### Scenario: Current v2 skill folders exist
+- **WHEN** the current v2 research-paradigm skillset is inspected
+- **THEN** it contains `isomer-rsch-shared-v2` and v2 folders for scout, baseline, idea, optimize, experiment, analysis, decision, finalize, science, write, review, rebuttal, paper-outline, paper-plot, figure-polish, nature-data, nature-figure, nature-paper2ppt, and nature-polishing
+
+#### Scenario: Migrated v2 companion skills keep bounded traceability material
+- **WHEN** a refactor-migrated v2 companion skill is inspected
+- **THEN** it MAY contain `migrate/`, `org/analysis/`, `org/src/`, and passive `templates/` material for migration review and provenance
+- **AND** active execution guidance remains in `SKILL.md`, `agents/openai.yaml`, directly linked `references/`, active `assets/`, and active `scripts/`
 
 #### Scenario: Skill frontmatter is valid
 - **WHEN** each extracted research-stage skill's `SKILL.md` is inspected
-- **THEN** the YAML frontmatter contains `name` and `description` fields, and the `name` field matches the `isomer-rsch-<purpose>` folder name
+- **THEN** the YAML frontmatter contains `name` and `description` fields, and the `name` field matches the `isomer-rsch-<purpose>-vN` folder name for versioned bundles
 
 #### Scenario: Skill manifest exists when a skill is packaged independently
 - **WHEN** an extracted research-stage skill is packaged as a standalone skill bundle
@@ -20,7 +33,7 @@ The project SHALL provide a reusable research-paradigm skillset under `skillset/
 
 #### Scenario: Standalone skill bundle is self-contained
 - **WHEN** an extracted research-stage skill is packaged as a standalone skill bundle
-- **THEN** its `SKILL.md` and directly linked references do not require files outside that skill's directory
+- **THEN** its active `SKILL.md` and directly linked active resources do not require files outside that skill's directory
 
 #### Scenario: Old active skill names are removed
 - **WHEN** active research-paradigm skill folders and docs are inspected
@@ -31,137 +44,114 @@ The project SHALL provide a reusable research-paradigm skillset under `skillset/
 - **THEN** Project Operator Session and Operator Agent orchestration skills are not stored or named as `isomer-rsch-*` skills and instead use the operator admin skillset
 
 ### Requirement: Generic Research Vocabulary
-The extracted skills SHALL describe portable research behavior using established Isomer Labs concepts and without requiring DeepScientist workspace APIs or DeepScientist-specific runtime surfaces.
+The generationed skillset SHALL distinguish research-method semantics from Isomer platform implementation terms.
 
-#### Scenario: DeepScientist API terms are mapped to Isomer concepts
-- **WHEN** an extracted skill describes artifacts, memory, terminal execution, paper search, execution isolation, workflow progress, lifecycle state, route branching, scheduler behavior, Skill Binding, baseline waiver, or cost/privacy policy
-- **THEN** it uses Isomer concepts such as Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Topic Workspace, Workspace Runtime, Agent Workspace, Artifact, Evidence Item, Finding, Research Claim, Decision Record, Gate, Provenance Record, Workflow Stage Cursor, Operator Agent, Agent Role, Agent Instance, Agent Team Instance, Agent Team Instance lifecycle state, Capability Binding, Skill Binding projection, Research Operation Extension Point, Execution Adapter, Execution Adapter Command Request, Coordination Policy, Gate policy, scheduler policy, literature provider binding, and baseline-waiver policy
+#### Scenario: V2 uses research-process terms
+- **WHEN** a v2 core skill describes the method it performs
+- **THEN** it uses research-process terms such as frame, comparator, metric, hypothesis, route, experiment, result, analysis, claim, decision, blocker, limitation, and final summary
 
-#### Scenario: Source-specific terms are bounded
-- **WHEN** an extracted skill mentions a source-specific or stale term such as DeepScientist, `artifact.*`, `memory.*`, `bash_exec(...)`, DeepXiv, quest, Research Goal, Research Thread, Research Branch, Isomer Workspace, branch, worktree, `workspace_mode`, `continuation_policy`, `auto_continue`, or `wait_for_user_or_resume`
-- **THEN** the mention is limited to provenance, adaptation notes, source-term mapping, or migration notes and is not a required runtime operation or active Isomer domain term
+#### Scenario: V2 uses semantic placeholders for research objects
+- **WHEN** a v2 core skill needs to name a durable or reusable research object
+- **THEN** it uses a registered semantic placeholder of the form `[[rsch-object:<id>]]`
+- **AND** it does not require that placeholder to be stored as an Artifact, Evidence Item, Run, Gate, Decision Record, Provenance Record, database row, workspace path, or storage label
 
-#### Scenario: Continuation policy is not ported
-- **WHEN** an extracted skill preserves DeepScientist behavior about continuing, pausing, resuming, or monitoring long-running work
-- **THEN** it describes the behavior through Agent Team Instance lifecycle state under Coordination Policy, paused waiting for Operator Agent instruction, Workflow Stage Cursor recommendations, Gates, Decision Records, Completion Watcher Contracts, Signal Observations, or accepted scheduler policy refs, and does not require an Isomer `continuation_policy` field
+#### Scenario: V2 storage-facing terms are bounded
+- **WHEN** a v2 skill mentions storage-facing terms such as Artifact, Evidence Item, Run, Gate, Decision Record, Provenance Record, Workspace Path Resolution, Topic Workspace records, lifecycle rows, execution adapters, or database state
+- **THEN** the mention is confined to provenance, migration notes, rejected-storage-binding notes, or explicit statements that storage binding is deferred
 
-### Requirement: Unsettled Concrete Surfaces Are Explicit
-The extracted skills SHALL mark concrete commands, runtime APIs, providers, schemas, policies, storage roots, and generated layouts as `yet-to-be-determined` only when they are not settled by accepted Isomer designs such as Workspace Path Resolution, Research Recording Contracts, Research Lifecycle State, CLI Topic Context Resolution, or Research Execution and Extension Contract.
+#### Scenario: V1 may retain translated implementation vocabulary
+- **WHEN** a v1 preserved skill is inspected
+- **THEN** it may retain the existing Isomer translation of DeepScientist storage, runtime, lifecycle, and recording terms
+- **AND** v1 documentation identifies the content as preserved historical generation material rather than the concise v2 methodology contract
 
-#### Scenario: Path surface is covered by workspace path resolution
-- **WHEN** a skill needs an ordinary Topic Workspace, Workspace Runtime, Agent Workspace, Run log, experiment output, analysis output, paper output, figure output, or Artifact class location covered by the Workspace Path Resolution contract
-- **THEN** the skill names the semantic workspace scope or Artifact kind and relies on the resolver instead of emitting a path TBD placeholder
-
-#### Scenario: Recording surface is covered by research recording contracts
-- **WHEN** a skill needs to record or query Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, or Gates covered by the Research Recording Contracts
-- **THEN** the skill names the accepted record type or recording API instead of emitting `api-artifact-record`, `api-finding-query`, `api-gate`, `schema-decision-record`, `schema-evidence-item`, `schema-research-claim`, or `schema-gate` TBD placeholders
-
-#### Scenario: Lifecycle surface is covered by research lifecycle state
-- **WHEN** a skill needs Workflow Stage Cursor fields, Agent Team Instance lifecycle state, or Research Inquiry Relationship branching behavior covered by Research Lifecycle State
-- **THEN** the skill names the accepted lifecycle object, state, relationship, or policy instead of emitting `schema-stage-cursor`, `schema-agent-team-state`, or `policy-branching` TBD placeholders
-
-#### Scenario: Execution and extension surfaces are covered by research execution extension contract
-- **WHEN** a skill needs command execution, repository inspection, package management, notebook execution, HPC jobs, document builds, figure rendering, scheduler behavior, Skill Binding projection, literature search, baseline-waiver policy, cost/privacy Gate policy, credential use, data export, service requests, or agent launch behavior covered by Research Execution and Extension Contract
-- **THEN** the skill names the accepted Research Operation Extension Point, Capability Binding, Skill Binding projection, Execution Adapter Command Request, provider binding, scheduler policy, baseline-waiver policy, or Gate policy ref instead of emitting `api-execution-command`, `provider-literature-search`, `schema-skill-binding`, `policy-scheduler`, `policy-baseline-waiver`, or `policy-cost-privacy-gate` TBD placeholders
-
-#### Scenario: Path surface remains unsettled outside the resolver
-- **WHEN** a source skill uses a concrete path or filename that is not covered by the Workspace Path Resolution contract and no Isomer equivalent is settled by existing domain concepts or ADRs
-- **THEN** the extracted skill marks that path or filename as `yet-to-be-determined` and states the missing design decision
-
-#### Scenario: Provider-specific implementation remains external
-- **WHEN** a skill depends on a provider-specific command body, scheduler queue, package manager invocation, credential backend, literature API, baseline registry, renderer, exporter, service backend, or agent launch mechanism that is not part of accepted Isomer contracts
-- **THEN** the skill names the accepted extension point and leaves the provider-specific implementation to user-filled topic config, Capability Binding refs, provider binding refs, Gate policy refs, opaque adapter payload refs, or Execution Adapter implementation
+#### Scenario: Source-specific terms remain bounded
+- **WHEN** any generation mentions a source-specific or stale term such as DeepScientist, quest, artifact operation, memory operation, command wrapper, source provider name, continuation scheduling, or source-local path
+- **THEN** the mention is limited to provenance, adaptation notes, source-term mapping, rejected-runtime notes, or migration notes and is not a required active v2 operation
 
 ### Requirement: Shared Research Contract
-The skillset SHALL include a shared research contract skill that defines common evidence, artifact, handoff, and validation rules for all research-stage skills.
+The skillset SHALL include generation-specific shared research contracts, with v1 preserving the current contract and v2 defining the concise methodology and semantic-placeholder contract.
 
-#### Scenario: Shared contract covers common surfaces
-- **WHEN** `isomer-rsch-shared/SKILL.md` is inspected
-- **THEN** it defines truth-source order, Isomer concept mapping, durable Artifact vocabulary, handoff expectations, claim and evidence boundaries, source provenance, `yet-to-be-determined` handling, and validation discipline
+#### Scenario: V1 shared contract is preserved
+- **WHEN** the v1 generation is inspected
+- **THEN** it contains `isomer-rsch-shared-v1/SKILL.md` migrated from the previous `isomer-rsch-shared` skill with generation-suffixed names
 
-#### Scenario: Stage skills reference shared rules
-- **WHEN** a stage or companion skill needs common research discipline
-- **THEN** it references the shared research contract instead of duplicating long common instructions
+#### Scenario: V2 shared contract defines semantic placeholders
+- **WHEN** `skillset/research-paradigm/v2/isomer-rsch-shared-v2/SKILL.md` and its directly linked references are inspected
+- **THEN** they define the v2 research loop, placeholder syntax, placeholder registry location, and rule that placeholders are not storage bindings
+
+#### Scenario: V2 stage skills reference v2 shared rules
+- **WHEN** a v2 core skill needs common placeholder, handoff, evidence, or process discipline
+- **THEN** it references `isomer-rsch-shared-v2` instead of duplicating long shared rules or referencing v1 shared rules
+
+#### Scenario: V2 shared registry defines placeholder semantics
+- **WHEN** the v2 semantic-placeholder registry is inspected
+- **THEN** each placeholder entry defines id, meaning, minimum content, producer skills, consumer skills, and storage-binding status
 
 ### Requirement: DeepScientist Methodology Preservation
-The extracted skills SHALL preserve reusable research-stage logic from the corresponding DeepScientist source skill directories, including source `SKILL.md` content and directly supporting source references, templates, scripts, or assets when those materials contain portable research method.
+The skillset SHALL preserve DeepScientist-derived material in v1 while distilling v2 to the core research process described by the local DeepScientist skill analysis.
 
-#### Scenario: Stage gate behavior is preserved
-- **WHEN** a stage skill is inspected
-- **THEN** it includes the corresponding stage purpose, entry signals, exit criteria, route taxonomy, durable outputs, key pitfalls, and source-derived gates needed to perform the stage without reading DeepScientist source files
+#### Scenario: V1 preserves existing source-derived material
+- **WHEN** v1 skill folders are inspected
+- **THEN** they retain the existing DeepScientist-derived method, references, provenance, and license context except for generation-suffix renames required by this change
 
-#### Scenario: Companion behavior is preserved
-- **WHEN** a companion skill such as review, rebuttal, paper-outline, paper-plot, figure-polish, or science is inspected
-- **THEN** it includes the companion's bounded purpose, expected inputs, durable outputs, validation rules, source-derived templates or examples, and handoff behavior needed to perform the companion task without reading DeepScientist source files
+#### Scenario: V2 preserves core process rather than bookkeeping
+- **WHEN** a v2 core skill is inspected
+- **THEN** it preserves the corresponding stage purpose, entry signals, central research actions, exit criteria, and route guardrails from the core process analysis
+- **AND** it omits nonessential storage, runtime, provider, scheduler, lifecycle, and path bookkeeping from active instructions
 
-#### Scenario: Rich source details are preserved locally
-- **WHEN** a source skill contains reusable route taxonomies, playbooks, templates, checklists, examples, boundary cases, failure handling, or operational guidance
-- **THEN** the extracted skill preserves that detail in its `SKILL.md`, local `references/`, local `assets/`, or local `scripts/`, or records an explicit implementation rationale for deferring the detail
+#### Scenario: V2 does not require source analysis at runtime
+- **WHEN** a v2 skill is executed by an agent
+- **THEN** the skill contains enough local methodology guidance to run without reading `context/explore/...`, `extern/orphan/...`, archived OpenSpec files, or local absolute paths
 
-#### Scenario: Source concepts are translated correctly
-- **WHEN** preserved source material mentions DeepScientist-specific concepts such as quest, artifact operations, memory operations, command wrappers, literature providers, workspace paths, branch/worktree assumptions, continuation scheduling, or generated artifact layouts
-- **THEN** the extracted skill maps the concept to accepted Isomer terms, marks unsettled concrete surfaces with `[[tbd-surface:<id>]]`, or confines the source term to provenance or explicit mapping text
+#### Scenario: Source lineage remains traceable
+- **WHEN** a reader wants to understand why a v2 skill has its process shape
+- **THEN** the research-paradigm README or nearby provenance material points to the local DeepScientist skill analysis and source lineage without making those paths active runtime dependencies
 
 ### Requirement: Progressive Disclosure
-The skillset SHALL keep skill entrypoints concise, move long reusable detail into one-level local resources, and avoid active dependencies on files outside the skill bundle.
+The skillset SHALL keep active skill entrypoints concise, move long reusable method detail into one-level local active resources, and keep migration or source-copy material bounded from active execution guidance.
 
-#### Scenario: Long methodology detail is moved to references
-- **WHEN** a skill needs templates, checklists, long playbooks, route examples, operational notes, or boundary cases
-- **THEN** the skill stores them under that skill's `references/`, `assets/`, or `scripts/` directory and links them directly from `SKILL.md`
+#### Scenario: Long methodology detail is moved to active resources
+- **WHEN** a skill needs templates, checklists, long playbooks, route examples, operational notes, or boundary cases for active use
+- **THEN** the skill stores them under that skill's active `references/`, `assets/`, or `scripts/` directory and links them directly from `SKILL.md`
 
 #### Scenario: Active skill bundle is self-contained
-- **WHEN** an enriched skill's active `SKILL.md` and directly linked references are inspected
+- **WHEN** an enriched skill's active `SKILL.md` and directly linked active references are inspected
 - **THEN** they do not require `context/explore/...`, `extern/orphan/...`, archived OpenSpec files, local absolute paths, or other files outside that skill's directory to execute the skill
 
 #### Scenario: Source provenance remains traceable
 - **WHEN** source text, templates, scripts, assets, or reference files are copied or materially adapted
 - **THEN** the target skill includes nearby provenance that identifies the DeepScientist source skill and applicable license context without making the source tree a runtime dependency
 
-#### Scenario: Scripts and assets are sanitized before import
-- **WHEN** source scripts or assets are imported into an enriched skill
+#### Scenario: Migration notes and source copies are non-active traceability material
+- **WHEN** a refactor-migrated skill contains `migrate/`, `org/analysis/`, `org/src/`, passive `templates/`, license notices, or deferred-resource notes
+- **THEN** those files are classified as migration, provenance, passive template, or source-copy material and are not required runtime inputs for invoking the skill
+
+#### Scenario: Scripts and assets are sanitized before active import
+- **WHEN** source scripts or assets are imported into an active `scripts/` or `assets/` directory
 - **THEN** they are directly useful for the skill and do not contain source-local user paths, demo-output defaults, private paths, unsatisfied hard dependencies, or DeepScientist runtime assumptions as active behavior
 
-#### Scenario: No extraneous documentation is added
-- **WHEN** a skill folder is inspected
-- **THEN** it contains only files that directly support skill use, such as `SKILL.md`, `agents/openai.yaml`, `references/`, `assets/`, or `scripts/`
+#### Scenario: No extraneous active documentation is added
+- **WHEN** a skill folder's active runtime surface is inspected
+- **THEN** it contains only files that directly support skill use, such as `SKILL.md`, `agents/openai.yaml`, `references/`, `assets/`, `scripts/`, and explicitly bounded non-active traceability directories
 
 ### Requirement: Imsight Workflow Entrypoints
-Each enriched `isomer-rsch-*` skill SHALL use the Imsight skill-entrypoint structure for its `SKILL.md` while preserving the skill's trigger behavior and research guardrails.
+Each v2 `isomer-rsch-*-v2` skill SHALL use a concise Imsight-compatible skill entrypoint structure while preserving trigger behavior and research guardrails.
 
 #### Scenario: Workflow section is near the top
-- **WHEN** an enriched `SKILL.md` is inspected
-- **THEN** it has a near-top `## Workflow` section before detailed procedure, contract, guardrail, or reference sections
+- **WHEN** a v2 `SKILL.md` is inspected
+- **THEN** it has a near-top `## Workflow` section before detailed guardrail, placeholder, or provenance sections
 
-#### Scenario: Workflow steps are actionable and concise
-- **WHEN** an enriched `## Workflow` section is inspected
-- **THEN** it uses numbered steps that name the action to take and point to detailed sections or local references rather than embedding long procedures inline
+#### Scenario: Workflow steps are methodology actions
+- **WHEN** a v2 `## Workflow` section is inspected
+- **THEN** it uses numbered steps that name research-method actions rather than storage, path, adapter, scheduler, or database actions
 
 #### Scenario: Workflow includes freeform fallback
-- **WHEN** an enriched `## Workflow` section is inspected
-- **THEN** it tells the agent to use its native planning tool to build and execute a step-by-step plan from the skill's constraints, references, and user request when the task does not map cleanly to the default steps
+- **WHEN** a v2 `## Workflow` section is inspected
+- **THEN** it tells the agent to use its native planning tool to build and execute a step-by-step plan from the skill's constraints and user request when the task does not map cleanly to the default steps
 
 #### Scenario: Reference routing is explicit
-- **WHEN** an enriched skill has local references
-- **THEN** its entrypoint states which references to read first and which references to read for route-specific, template-specific, operational, validation, or writing-facing needs
-
-### Requirement: Parallelized Skill Enrichment
-The implementation SHALL use subagents to parallelize enrichment work across disjoint skill folders and centralize integration and validation in the main agent.
-
-#### Scenario: Worker scopes are disjoint
-- **WHEN** subagents are launched for implementation
-- **THEN** each subagent receives an explicit non-overlapping write scope and instructions not to revert or overwrite unrelated edits from other workers
-
-#### Scenario: Source and target context is provided
-- **WHEN** a subagent enriches a skill folder
-- **THEN** it is directed to inspect the target skill, `isomer-rsch-analysis`, the corresponding DeepScientist source skill directory, the migration contract, the shared TBD registry, and the Imsight formatting guidance before editing
-
-#### Scenario: Main agent integrates shared files
-- **WHEN** subagents complete their assigned work
-- **THEN** the main agent reviews and integrates their changes, owns shared files such as the TBD registry and suite README, resolves conflicts, and runs final validation
-
-#### Scenario: Large resources are bounded
-- **WHEN** a source skill contains large generated catalogs, plotting scripts, style assets, or venue templates
-- **THEN** the implementation either imports sanitized directly useful resources in the assigned skill folder or records a deferred task for a follow-up resource-focused change
+- **WHEN** a v2 skill has local references
+- **THEN** its entrypoint states which references to read first and which references to read for route-specific, placeholder-specific, validation, or provenance needs
 
 ### Requirement: Generic Agent Mapping
 The team documentation SHALL map generic research agents to the extracted `isomer-rsch-*` skills without making the skills depend on one team topology.
@@ -175,46 +165,62 @@ The team documentation SHALL map generic research agents to the extracted `isome
 - **THEN** it does not require a specific Houmao specialist name, mailbox route, gateway, credential, or agent topology to perform its research operation
 
 ### Requirement: Provenance and Licensing
-The implementation SHALL preserve source provenance and license notices for copied or adapted DeepScientist-derived material.
+The implementation SHALL preserve source provenance and license notices for copied, moved, or adapted DeepScientist-derived material across both generations.
 
-#### Scenario: Copied materials include license notices
-- **WHEN** source text, templates, scripts, assets, or reference files are copied or materially adapted from DeepScientist or upstream helper skills
-- **THEN** the new skillset includes the applicable Apache 2.0 or upstream MIT notice in a nearby license or provenance file
+#### Scenario: V1 moved materials keep license notices
+- **WHEN** existing research-paradigm skills are moved into v1
+- **THEN** the v1 generation retains nearby Apache 2.0 or upstream license notices and provenance files that applied before the move
 
-#### Scenario: Source analysis remains traceable
-- **WHEN** a reviewer wants to trace an extracted skill back to its source behavior
-- **THEN** the skill or its references identify the source analysis file or DeepScientist source skill used during extraction
+#### Scenario: V2 adapted materials identify source lineage
+- **WHEN** a v2 skill materially adapts DeepScientist-derived process content
+- **THEN** the v2 skill, v2 shared reference, or research-paradigm provenance file identifies the corresponding source-analysis file or DeepScientist source skill used during distillation
+
+#### Scenario: Source checkout is not a runtime dependency
+- **WHEN** v1 or v2 skill instructions are executed
+- **THEN** they do not require the local `extern/orphan` source checkout to be present, except as optional provenance context for maintainers
 
 ### Requirement: Validation
-The implementation SHALL include a repository-runnable validation harness that checks skill structure, naming consistency, Imsight entrypoint formatting, self-containment, placeholder registration, stale terminology, resolved TBD placeholders, local reference integrity, manifest consistency, and removal of runtime-specific coupling.
+The implementation SHALL include a repository-runnable validation harness that checks skill structure, naming consistency, Imsight entrypoint formatting, self-containment, placeholder registration, stale terminology, resolved TBD placeholders, local reference integrity, manifest consistency, and removal of runtime-specific coupling with file-role-aware rules.
 
 #### Scenario: Structural validation runs
 - **WHEN** the validation harness inspects the research-paradigm skillset
-- **THEN** validation confirms each `isomer-rsch-*` skill folder has a valid `SKILL.md`, valid frontmatter, expected supporting resources, and directly linked one-level references
+- **THEN** validation confirms each expected `isomer-rsch-*` skill folder has a valid `SKILL.md`, valid frontmatter, expected supporting resources, and directly linked one-level active references
+
+#### Scenario: Expected versioned inventory is validated
+- **WHEN** the validation harness inspects `skillset/research-paradigm/v1` and `skillset/research-paradigm/v2`
+- **THEN** validation confirms the v1 inventory contains the preserved v1 skills and the v2 inventory contains the current core, companion, and Nature-facing v2 skills listed in the skillset layout requirement
 
 #### Scenario: Naming validation runs
 - **WHEN** the validation harness inspects the research-paradigm skillset
-- **THEN** validation confirms every skill folder, `SKILL.md` frontmatter `name:`, manifest `interface.display_name`, manifest `default_prompt`, and active role mapping uses `isomer-rsch-*` names consistently
+- **THEN** validation confirms every active skill folder, `SKILL.md` frontmatter `name:`, manifest `interface.display_name`, manifest `default_prompt`, and active role mapping uses `isomer-rsch-*` versioned names consistently
 
 #### Scenario: Imsight workflow formatting is validated
-- **WHEN** the validation harness inspects an enriched `SKILL.md`
+- **WHEN** the validation harness inspects an enriched active `SKILL.md`
 - **THEN** validation confirms it has a near-top `## Workflow`, numbered workflow steps, concise reference routing, and a fallback for tasks that do not map cleanly to the default steps
+
+#### Scenario: File roles are classified before strict checks
+- **WHEN** the validation harness runs against `skillset/research-paradigm`
+- **THEN** validation classifies Markdown, YAML, scripts, assets, templates, migration notes, provenance notes, source-analysis files, and source-copy files by role before applying active-guidance checks or rule-specific allow zones
 
 #### Scenario: Coupling validation runs
 - **WHEN** the validation harness inspects active research-paradigm skill text
-- **THEN** validation searches the research-paradigm skillset for DeepScientist-specific runtime terms, including artifact APIs, memory APIs, command wrappers, provider names, workspace terms, continuation scheduling terms, and concrete source paths, and confirms any remaining matches are provenance, adaptation notes, explicit mappings, deferred-resource notes, or explicit rejection notes
+- **THEN** validation searches for DeepScientist-specific runtime terms, including artifact APIs, memory APIs, command wrappers, provider names, workspace terms, continuation scheduling terms, and concrete source paths, and confirms any remaining matches are provenance, adaptation notes, explicit mappings, deferred-resource notes, explicit rejection notes, or clearly optional compatibility bridges through accepted Isomer extension points
 
 #### Scenario: Placeholder registry validation runs
-- **WHEN** the validation harness finds a `[[tbd-surface:<id>]]` placeholder in active research-paradigm skill text
-- **THEN** validation confirms the placeholder id is listed in a directly linked TBD registry and is not one of the resolved workspace, recording, lifecycle, CLI topic-context, or execution-extension placeholder ids
+- **WHEN** the validation harness finds a `[[tbd-surface:<id>]]`, `[[rsch-object:<id>]]`, or angle-bracket migration placeholder in active research-paradigm skill text
+- **THEN** validation confirms the placeholder id is listed in the directly linked shared registry or skill-local migration placeholder registry, and confirms unresolved storage binding is not treated as a concrete runtime API
+
+#### Scenario: V2 storage binding remains deferred
+- **WHEN** the validation harness inspects active v2 skill text
+- **THEN** validation reports active requirements to create concrete Artifact storage, concrete host API records, or source-runtime storage paths unless they are explicitly framed as unsettled, optional source-compatible bridges, provenance, or migration notes
 
 #### Scenario: Self-containment validation runs
-- **WHEN** the validation harness inspects enriched skill entrypoints and linked references
+- **WHEN** the validation harness inspects enriched skill entrypoints and linked active references
 - **THEN** validation confirms they do not actively depend on files outside their own skill directory, except for intentional shared-skill references when the bundle is installed as part of the research-paradigm subtree
 
 #### Scenario: Guessed concrete surfaces are checked
 - **WHEN** the validation harness inspects active research-paradigm skill text
-- **THEN** validation searches for concrete DeepScientist-style paths, command wrappers, runner homes, and API calls, and confirms unsettled equivalents are marked `yet-to-be-determined` or represented by registered unresolved TBD-surface placeholders
+- **THEN** validation searches for concrete DeepScientist-style paths, command wrappers, runner homes, and API calls, and confirms unsettled equivalents are marked `yet-to-be-determined`, represented by registered unresolved TBD-surface placeholders, or confined to non-active traceability material
 
 #### Scenario: Repository command runs the harness
 - **WHEN** a developer or agent runs the repository skillset validation command
@@ -222,10 +228,10 @@ The implementation SHALL include a repository-runnable validation harness that c
 
 #### Scenario: Whole bundle validation surface is scanned
 - **WHEN** the validation harness runs against `skillset/research-paradigm`
-- **THEN** validation inspects every Markdown and YAML file in the subtree and classifies files or sections by role before applying strict checks or rule-specific allow zones
+- **THEN** validation inspects Markdown, YAML, active scripts, active assets, passive templates, migration notes, provenance notes, source-analysis files, and source-copy files in the subtree with role-aware rule application
 
 #### Scenario: Allow zones preserve explanatory mapping text
-- **WHEN** stale source terms, former TBD ids, or source-runtime names appear inside configured provenance files, license notices, deferred-resource notes, source-term mapping sections, rejected-runtime sections, or resolved-surface mapping tables
+- **WHEN** stale source terms, former TBD ids, source-runtime names, or source-local paths appear inside configured provenance files, license notices, deferred-resource notes, source-term mapping sections, rejected-runtime sections, resolved-surface mapping tables, migration notes, source-analysis files, source-copy files, or passive templates
 - **THEN** validation allows those occurrences only for the matching rule and continues to reject the same terms when they appear as active skill guidance
 
 #### Scenario: Stale lifecycle and workspace terms are reported
@@ -241,7 +247,7 @@ The implementation SHALL include a repository-runnable validation harness that c
 - **THEN** validation reports the unregistered id and identifies the file and line that emitted it
 
 #### Scenario: Shared TBD registry is canonical
-- **WHEN** the validation harness validates `[[tbd-surface:<id>]]` placeholders or resolved former IDs anywhere in the research-paradigm subtree
+- **WHEN** the validation harness validates `[[tbd-surface:<id>]]` placeholders or resolved former IDs anywhere in active research-paradigm guidance
 - **THEN** validation treats `isomer-rsch-shared/references/tbd-surface-registry.md` as the canonical registry for the subtree
 
 #### Scenario: Local TBD registry mirror drift is reported
@@ -249,39 +255,24 @@ The implementation SHALL include a repository-runnable validation harness that c
 - **THEN** validation confirms the local mirror has exact resolved-ID coverage and normalized resolution text matching the shared registry, and reports missing IDs, extra IDs, or changed resolution meaning
 
 #### Scenario: Hard-coded local and source-analysis paths are reported
-- **WHEN** active research-paradigm skill text depends on local absolute paths, source-analysis paths, archived OpenSpec change paths, `extern/orphan` paths, DeepScientist runtime paths, or concrete runner homes outside an allowed provenance or deferred-resource zone
+- **WHEN** active research-paradigm skill text depends on local absolute paths, source-analysis paths, archived OpenSpec change paths, `extern/orphan` paths, DeepScientist runtime paths, or concrete runner homes outside an allowed provenance, migration, source-copy, passive-template, or deferred-resource zone
 - **THEN** validation reports the hard-coded path and directs the skill text to use self-contained references, accepted Isomer contracts, or registered unresolved TBD-surface placeholders
 
-#### Scenario: Broken local reference is reported
-- **WHEN** a `SKILL.md` references a local `references/`, `assets/`, or `scripts/` path that does not exist inside the same skill directory
+#### Scenario: Concrete broken local reference is reported
+- **WHEN** a `SKILL.md` references a concrete local `references/`, `assets/`, or `scripts/` path that does not exist inside the same skill directory
 - **THEN** validation reports the broken reference with the referring `SKILL.md` file and line
+
+#### Scenario: Pattern reference is not treated as a concrete broken path
+- **WHEN** a `SKILL.md` describes a placeholder path pattern such as `references/packages/<package_id>.md` or `scripts/<script>.py`
+- **THEN** validation treats the pattern as documentation of a route-specific resource shape rather than a literal required local file
 
 #### Scenario: Manifest mismatch is reported
 - **WHEN** a skill's `agents/openai.yaml` `interface.display_name` does not equal the skill folder and `SKILL.md` frontmatter name, or `interface.default_prompt` does not invoke the same `$isomer-rsch-*` skill
 - **THEN** validation reports the manifest mismatch and identifies the affected manifest field
 
-### Requirement: Workspace Path Resolution Consumption
-The research-paradigm skillset SHALL consume the Workspace Path Resolution contract for ordinary files, workspaces, logs, and Artifact class locations.
-
-#### Scenario: Shared registry reflects resolved path surfaces
-- **WHEN** `isomer-rsch-shared/references/tbd-surface-registry.md` is inspected after this change
-- **THEN** ordinary path surfaces for Topic Workspace, Workspace Runtime, Agent Workspace, Artifact layout, Run logs, experiment output, analysis output, paper layout, and figure output are removed as open TBDs or explicitly mapped to the Workspace Path Resolution contract
-
-#### Scenario: Skill references request semantic outputs
-- **WHEN** a research-stage skill needs to create intake notes, baseline records, experiment outputs, analysis results, figures, paper drafts, decisions, evidence, findings, handoffs, logs, or agent scratch files
-- **THEN** the skill names the semantic Artifact kind or workspace scope rather than prescribing a concrete path
-
-#### Scenario: Local contract copies stay consistent
-- **WHEN** a local `isomer-research-contract.md` copy is inspected in an `isomer-rsch-*` skill directory
-- **THEN** its path guidance matches the shared workspace path resolution contract and does not reintroduce ordinary path TBD placeholders
-
-#### Scenario: Non-path TBD surfaces remain explicit
-- **WHEN** a research-stage skill needs an unsettled runtime API, command surface, provider, schema, or policy
-- **THEN** the skill continues to use the appropriate non-path TBD placeholder until that surface has its own accepted Isomer contract
-
-#### Scenario: Validation checks resolved and unresolved surfaces
-- **WHEN** implementation validation runs
-- **THEN** it confirms ordinary workspace path TBDs were removed or mapped to the path resolver, non-path TBDs remain registered, and no skill reference depends on hard-coded DeepScientist paths or local absolute paths
+#### Scenario: Validator tests cover active and non-active zones
+- **WHEN** unit tests exercise the research-paradigm validation harness
+- **THEN** they include fixtures for expanded v2 inventory, migrated companion-skill traceability directories, passive templates, active stale-term failures, allow-zone acceptance, concrete broken references, pattern references, placeholder registration, storage-binding deferral, and deterministic CLI output
 
 ### Requirement: Isomer Project Operator and Topic Service Skills
 The repository SHALL include provider-neutral skill instructions for Project Operator Sessions, Operator Agents, and Topic Service Agents to perform Topic Team Specialization and instantiate topic teams from Domain Agent Team Templates.
@@ -340,87 +331,193 @@ Research-paradigm documentation SHALL distinguish research-stage skills from ope
 - **WHEN** generic research agent role mappings are inspected
 - **THEN** ordinary research roles such as scout, baseline, experiment, analysis, writer, reviewer, or synthesis reviewer do not install `isomer-admin-*` skills unless the role is explicitly an Operator Agent role
 
-### Requirement: Research Recording Contract Consumption
-The research-paradigm skillset SHALL consume the Research Recording Contracts for durable record and validation surfaces.
+### Requirement: V2 Semantic Placeholder Contract
+The v2 research-paradigm skillset SHALL define semantic placeholders before binding research objects to Isomer storage.
 
-#### Scenario: Shared registry reflects resolved recording surfaces
-- **WHEN** `isomer-rsch-shared/references/tbd-surface-registry.md` is inspected after this change
-- **THEN** `api-artifact-record`, `api-finding-query`, `api-gate`, `schema-decision-record`, `schema-evidence-item`, `schema-research-claim`, and `schema-gate` are removed as open TBDs or explicitly mapped to Research Recording Contracts
+#### Scenario: Placeholder syntax is stable
+- **WHEN** a v2 skill names a research object whose storage binding is deferred
+- **THEN** it uses the syntax `[[rsch-object:<id>]]`
 
-#### Scenario: Skill references use accepted record names
-- **WHEN** a research-stage skill needs durable Artifacts, Provenance Records, Evidence Items, Findings, Research Claims, Decision Records, or Gates
-- **THEN** the skill names those accepted record types and the accepted recording APIs instead of a TBD placeholder
+#### Scenario: Placeholder ids are semantic
+- **WHEN** a placeholder id is defined
+- **THEN** the id names research meaning rather than storage mechanism, for example `research-frame`, `comparator-contract`, `selected-hypothesis`, `experiment-result`, `analysis-finding`, `route-decision`, or `final-summary`
 
-#### Scenario: Local contract copies stay consistent
-- **WHEN** a local `isomer-research-contract.md` copy is inspected in an `isomer-rsch-*` skill directory
-- **THEN** its recording guidance matches the shared Research Recording Contracts and does not reintroduce resolved recording TBD placeholders
+#### Scenario: Placeholder registry is authoritative for v2
+- **WHEN** v2 placeholder meaning is inspected
+- **THEN** the authoritative definitions live in `skillset/research-paradigm/v2/isomer-rsch-shared-v2/references/semantic-placeholders.md`
 
-#### Scenario: Non-recording TBD surfaces remain explicit
-- **WHEN** a research-stage skill needs unsettled command execution, literature provider, scheduler policy, Skill Binding, Agent Team State, Stage Cursor, branching policy, baseline-waiver policy, or cost/privacy Gate policy
-- **THEN** the skill continues to use the appropriate TBD placeholder until that surface has its own accepted Isomer contract
+#### Scenario: Placeholder entry has minimum semantic fields
+- **WHEN** a placeholder entry is inspected
+- **THEN** it defines id, plain-language meaning, required semantic content, typical producer skills, typical consumer skills, and storage-binding status
 
-#### Scenario: Validation checks resolved and unresolved recording surfaces
-- **WHEN** implementation validation runs
-- **THEN** it confirms resolved recording TBDs were removed or mapped to the Research Recording Contracts, remaining TBDs are registered, and skill references do not invent concrete host APIs outside accepted contracts
+#### Scenario: Placeholder entry rejects premature storage binding
+- **WHEN** a placeholder entry is inspected
+- **THEN** it states that the placeholder is not yet bound to Artifact, Evidence Item, Run, Gate, Decision Record, Provenance Record, path, storage label, or database schema
 
-### Requirement: Research Lifecycle State Consumption
-The research-paradigm skillset SHALL consume Research Lifecycle State for execution levels, route relationships, Workflow Stage Cursor, Agent Team Instance lifecycle state, and branching policy.
+### Requirement: V2 Core Research Process
+The v2 core skillset SHALL organize research conduction around the core process rather than around implementation bookkeeping.
 
-#### Scenario: Shared registry reflects resolved lifecycle surfaces
-- **WHEN** `isomer-rsch-shared/references/tbd-surface-registry.md` is inspected after this change
-- **THEN** `schema-stage-cursor`, `schema-agent-team-state`, and `policy-branching` are removed as open TBDs or explicitly mapped to Research Lifecycle State
+#### Scenario: Core loop is documented
+- **WHEN** `isomer-rsch-shared-v2` is inspected
+- **THEN** it documents the loop `Frame -> Comparator -> Hypothesis -> Experiment -> Analysis -> Decision -> Finalize`
 
-#### Scenario: Skill references use accepted lifecycle terms
-- **WHEN** a research-stage skill needs Research Topic, Research Inquiry, Research Inquiry Relationship, Research Task, Run, Workflow Stage Cursor, or Agent Team Instance lifecycle state
-- **THEN** the skill names those accepted lifecycle terms instead of stale terms or lifecycle TBD placeholders
+#### Scenario: Optimize is an overlay
+- **WHEN** `isomer-rsch-optimize-v2` is inspected
+- **THEN** it describes optimization as an overlay on hypothesis, experiment, and analysis work rather than as a separate storage model
 
-#### Scenario: Research Inquiry is not parallel execution scope
-- **WHEN** a research-stage skill describes parallel execution
-- **THEN** it describes Topic-level parallelism across Agent Team Instances or Task-level parallelism across Agent Instances and does not assign parallel execution scope to Research Inquiry
+#### Scenario: Science is a computation-validity companion
+- **WHEN** `isomer-rsch-science-v2` is inspected
+- **THEN** it describes scientific computation, package checks, simulations, dataset analysis, and validation as support for the core research loop rather than as a separate storage model
 
-#### Scenario: Local contract copies stay consistent
-- **WHEN** a local `isomer-research-contract.md` copy is inspected in an `isomer-rsch-*` skill directory
-- **THEN** its lifecycle guidance matches Research Lifecycle State and does not reintroduce Research Goal, Research Thread, Research Branch, Isomer Workspace, or resolved lifecycle TBD placeholders as active terms
+#### Scenario: Each v2 stage declares semantic handoff
+- **WHEN** any v2 core skill is inspected
+- **THEN** it declares the semantic inputs it expects and the semantic outputs it produces using registered placeholders
 
-#### Scenario: Non-lifecycle TBD surfaces remain explicit
-- **WHEN** a research-stage skill needs unsettled command execution, scheduler behavior, literature provider, Skill Binding, baseline-waiver policy, cost/privacy Gate policy, or concrete Capability Binding behavior
-- **THEN** the skill continues to use the appropriate TBD placeholder until that surface has its own accepted Isomer contract
+#### Scenario: V2 guardrails preserve research judgment
+- **WHEN** a v2 core skill is inspected
+- **THEN** it includes guardrails for false progress, missing comparator or metric, unsupported claims, non-comparable experiments, failed or null results, and premature finalization where relevant to that stage
 
-#### Scenario: Validation checks stale and resolved lifecycle surfaces
-- **WHEN** implementation validation runs
-- **THEN** it confirms stale lifecycle terms are removed or confined to provenance and mapping notes, resolved lifecycle TBDs are removed or mapped to Research Lifecycle State, and remaining TBD placeholders are still registered
+### Requirement: V2 Research Workspace Manager Skill
+The research-paradigm skillset SHALL include an `isomer-rsch-workspace-mgr-v2` skill that performs research-specific Topic Workspace bootstrap after Topic Team Specialization and full Topic Workspace initialization.
 
-### Requirement: Research Execution Extension Contract Consumption
-The research-paradigm skillset SHALL consume the Research Execution and Extension Contract for executable operations, provider-backed operations, scheduler boundaries, policy preflight, and user-fillable topic-specific details.
+#### Scenario: Workspace manager skill exists
+- **WHEN** the v2 research-paradigm skillset is inspected
+- **THEN** it contains `skillset/research-paradigm/v2/isomer-rsch-workspace-mgr-v2/SKILL.md` with valid frontmatter, workflow, reference routing, fallback guidance, and an `agents/openai.yaml` manifest that invokes `$isomer-rsch-workspace-mgr-v2`
 
-#### Scenario: Skills declare required extension points
-- **WHEN** a research-paradigm skill requires executable or provider-backed behavior
-- **THEN** it declares the required Research Operation Extension Points, expected inputs, expected outputs, expected Artifact kinds, policy refs, and recording obligations instead of relying on implicit host behavior
+#### Scenario: Workspace manager runs after specialization
+- **WHEN** the skill explains its entry conditions
+- **THEN** it requires a selected Research Topic, a fully initialized Topic Workspace, completed Topic Team Specialization material, Workspace Runtime readiness, and Agent Workspace context before ordinary v2 research skills rely on its bootstrap outputs
 
-#### Scenario: Skills do not embed topic-specific implementations
-- **WHEN** a skill mentions research-specific details such as datasets, metrics, package managers, CUDA tools, venue templates, literature providers, queue names, credentialed services, repository commands, notebook runners, or render/export tools
-- **THEN** it treats those details as topic-specific extension refs or user-provided inputs rather than mandatory generic skill behavior
+#### Scenario: Workspace manager is distinct from operator topology management
+- **WHEN** the skill describes its boundary
+- **THEN** it states that `isomer-admin-topic-workspace-mgr` remains the operator topology helper while `isomer-rsch-workspace-mgr-v2` owns research placeholder binding and v2 storage bootstrap guidance
 
-#### Scenario: Command-heavy skills use execution command requests
-- **WHEN** intake, baseline, optimize, experiment, analysis, science, paper-plot, figure-polish, write, review, rebuttal, or finalize needs command, repository, package, notebook, HPC, build, render, export, or service execution
-- **THEN** it routes the work through an Execution Adapter Command Request with accepted extension refs, expected Artifacts, Run linkage, policy preflight, and Provenance obligations
+#### Scenario: Topic Service Master is optional
+- **WHEN** the skill describes the actor that performs bootstrap
+- **THEN** it names the Topic Service Master as the preferred topic-workspace manager when started and states that the Project Operator Session or Operator Agent performs the same bounded work when no Topic Service Master is running
 
-#### Scenario: Literature-facing skills use provider extension refs
-- **WHEN** scout, idea, write, review, rebuttal, paper-outline, baseline, or decision needs external literature, paper metadata, citation metadata, benchmark lookup, repository lookup, or adjacent-work scouting
-- **THEN** it names the literature provider extension point and records results as Artifacts, Findings, or Evidence Items according to evidence-use intent
+### Requirement: V2 Research Storage Bootstrap Contract
+The `isomer-rsch-workspace-mgr-v2` skill SHALL define consistent placeholders and outputs for research storage bootstrap, using the same placeholder registry style as the other v2 research skills.
 
-#### Scenario: Baseline-facing skills use waiver policy refs
-- **WHEN** baseline, decision, optimize, experiment, analysis, review, rebuttal, or write would proceed without an accepted active baseline
-- **THEN** it requires a baseline-waiver policy ref or an explicit Gate/Decision Record before treating the route as valid
+#### Scenario: Manager placeholder registry exists
+- **WHEN** `isomer-rsch-workspace-mgr-v2/migrate/placeholders.md` is inspected
+- **THEN** it defines placeholders for workspace context, storage label planning, placeholder binding registry, storage bootstrap record, agent access plan, bootstrap validation report, and workspace blocker record
 
-#### Scenario: Shared registry removes resolved extension placeholders
-- **WHEN** the shared TBD registry is inspected after this change
-- **THEN** `api-execution-command`, `provider-literature-search`, `schema-skill-binding`, `policy-scheduler`, `policy-baseline-waiver`, and `policy-cost-privacy-gate` are mapped to accepted Research Execution and Extension Contract terms or removed as open placeholders
+#### Scenario: Placeholder kinds use existing v2 storage mapping
+- **WHEN** the manager placeholder registry is inspected
+- **THEN** every placeholder has a `Kind` value from the existing v2 placeholder kind set and maps to the storage item mapping for evidence, report, handoff, decision, runtime state, or related accepted kinds
 
-#### Scenario: Local contract copies stay consistent
-- **WHEN** a local `isomer-research-contract.md` copy is inspected in an `isomer-rsch-*` skill directory
-- **THEN** its execution, provider, scheduler, Skill Binding, baseline-waiver, and cost/privacy guidance matches the shared Research Execution and Extension Contract and does not reintroduce resolved placeholders as active open TBDs
+#### Scenario: Storage bootstrap names semantic labels
+- **WHEN** the manager describes storage preparation
+- **THEN** it names existing labels such as `topic.records.artifacts`, `topic.records.tasks`, `topic.records.runs`, `topic.records.views`, and `topic.records.logs`, planned labels such as `topic.records.evidence`, `topic.records.provenance`, and `topic.records.packages`, and custom labels such as `custom.datasets.*` only when a placeholder needs distinct storage behavior
 
-#### Scenario: Validation checks extension contract consumption
-- **WHEN** implementation validation runs
-- **THEN** it confirms active research-paradigm skill text uses accepted extension-point terms for the six formerly open surfaces, leaves provider-specific implementation bodies outside generic skills, and keeps only genuinely unsettled surfaces registered in the TBD registry
+#### Scenario: Missing storage support becomes a blocker
+- **WHEN** a required semantic label, directory, runtime record, or command surface is unavailable
+- **THEN** the manager records a blocker placeholder instead of inventing a hard-coded path or claiming a missing storage surface exists
+
+#### Scenario: Agent access plan preserves storage authority
+- **WHEN** the manager prepares guidance for working agents
+- **THEN** it uses `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, and `agent.links` as pre-promotion or convenience surfaces while preserving semantic labels and typed refs as the durable storage authority
+
+### Requirement: Research Workspace Manager Validation
+The research-paradigm validation harness SHALL recognize `isomer-rsch-workspace-mgr-v2` as an expected v2 skill and apply the normal v2 structure and placeholder checks to it.
+
+#### Scenario: Validator expects workspace manager
+- **WHEN** the research-paradigm validation harness runs against the repository skillset
+- **THEN** it treats `isomer-rsch-workspace-mgr-v2` as part of the expected v2 skill set
+
+#### Scenario: Validator checks manager placeholders
+- **WHEN** active manager skill text uses migration placeholders
+- **THEN** validation confirms those placeholders are registered in `isomer-rsch-workspace-mgr-v2/migrate/placeholders.md`
+
+### Requirement: V2 Skills Read Placeholder Bindings
+Active v2 research skills SHALL read local placeholder binding pages before writing durable placeholder outputs.
+
+#### Scenario: Skill entrypoint names binding page
+- **WHEN** an active v2 research skill has placeholder definitions
+- **THEN** its `SKILL.md` tells the agent that placeholder definitions live in `migrate/placeholders.md` and storage bindings live in `placeholder-bindings.md`
+
+#### Scenario: Durable output uses binding page
+- **WHEN** a v2 skill step produces a durable placeholder output
+- **THEN** the skill instructs the agent to use the corresponding `placeholder-bindings.md` row rather than inventing a path or directly editing Workspace Runtime
+
+#### Scenario: Compatibility fallback remains bounded
+- **WHEN** a v2 skill still needs a source-shaped DeepScientist compatibility call
+- **THEN** the skill allows `isomer-cli ext deepsci call ...` only as a compatibility fallback and still summarizes durable meaning through the placeholder binding
+
+### Requirement: Binding Pages Preserve Workflow Flexibility
+The v2 research skills SHALL keep placeholders in workflow prose and bind them through local binding pages.
+
+#### Scenario: Workflow placeholders are not replaced
+- **WHEN** placeholder binding pages are added to v2 skills
+- **THEN** the existing workflow steps keep semantic placeholders such as `<MAIN_RUN_RECORD>` and `<NEXT_ROUTE_DECISION>` instead of replacing them with concrete paths or record ids
+
+#### Scenario: Binding updates do not rewrite method prose
+- **WHEN** a storage target changes from extension-backed CRUD to a future native command
+- **THEN** the binding page can change without requiring workflow prose to rename the placeholder
+
+### Requirement: Writing Artifacts Use Paper-Line Placeholder Bindings
+The research-paradigm v2 skillset SHALL map writing-related placeholders to paper-line storage profiles through local `placeholder-bindings.md` pages while preserving placeholders in workflow prose.
+
+#### Scenario: Paper contract binding uses a paper contract view
+- **WHEN** a v2 skill binds a placeholder that represents the active paper contract, selected outline, evidence view, paper view, section writing plan, or claim-evidence boundary
+- **THEN** the binding maps it to an Isomer record kind and profile that preserves its paper-line role, such as `view_manifest` with `paper.contract.selected-outline`, `artifact` with `paper.outline.*`, or `view_manifest` with `paper.claim-evidence-map`
+
+#### Scenario: Paper control surfaces use view records
+- **WHEN** a v2 skill binds a placeholder that represents the paper evidence ledger, experiment matrix, manuscript validation, outline validation, paper-line state, or other paper control surface
+- **THEN** the binding uses `topic.records.views` with a paper-specific profile such as `paper.evidence-ledger`, `paper.experiment-matrix`, `paper.validation.*`, or `paper.line-state`
+
+#### Scenario: Paper bodies use artifact records
+- **WHEN** a v2 skill binds a placeholder that represents manuscript drafts, LaTeX material, bibliography files, compile reports, PDFs, review reports, rebuttal packets, response letters, final summaries, or paper bundle manifests
+- **THEN** the binding uses `topic.records.artifacts` with a paper, review, rebuttal, figure, release, or package profile rather than a generic report or handoff profile when a more precise profile exists
+
+#### Scenario: Paper work queues use task records when resumable
+- **WHEN** a v2 skill binds a placeholder that represents a resumable writing plan, reviewer-linked evidence TODO, or paper-facing work queue
+- **THEN** the binding uses `research_task` under `topic.records.tasks` when the item must be resumed, assigned, or queried as work, and may use `view_manifest` only when the item is a read-only board
+
+#### Scenario: Binding commands include queryable paper metadata
+- **WHEN** a v2 skill binding provides an `isomer-cli ext research records` create or update command for a writing-related placeholder
+- **THEN** the command includes explicit `--semantic-label`, `--profile`, `--placeholder`, `--skill`, producer, consumer, and any natural query metadata such as `selected_outline_ref`, `paper_surface`, `package_type`, `section_id`, `claim_id`, or `reviewer_item_id`
+
+#### Scenario: Binding convention avoids paper-specific semantic labels
+- **WHEN** writing-related v2 binding pages are updated
+- **THEN** they use existing semantic labels such as `topic.records.views`, `topic.records.artifacts`, `topic.records.tasks`, `topic.records.runs`, and `topic.records.logs`
+- **AND** they do not introduce paper-specific top-level semantic labels as required storage surfaces
+
+#### Scenario: Workflow placeholders remain stable
+- **WHEN** writing-related binding rows are updated
+- **THEN** `SKILL.md` workflow prose keeps the existing placeholder tokens and relies on `placeholder-bindings.md` for storage mapping
+
+#### Scenario: Placeholder registries change only for real drift
+- **WHEN** implementation inspects `migrate/placeholders.md` for writing-related skills
+- **THEN** it changes placeholder definitions only when a placeholder is missing or its kind conflicts with the durable storage role that the binding page must express
+
+### Requirement: Research Workspace Bootstrap Supports Actor Topology
+The v2 research workspace bootstrap SHALL support base topic readiness, Topic Actor readiness, and optional formal team readiness as composable topology layers.
+
+#### Scenario: Bootstrap accepts Topic Actor readiness
+- **WHEN** `isomer-rsch-workspace-mgr-v2` or its successor runs for human-orchestrated research
+- **THEN** it validates the selected Topic Workspace, Workspace Runtime, Research Topic overview, topic environment readiness, ready `topic.repos.main`, available research record labels, skill-local placeholder binding files, the topic-level placeholder binding index or readiness report, selected Topic Actor bindings, and selected Topic Actor Workspaces
+- **AND** it does not require Topic Agent Team Profile material, formal Agent Workspace access plans, per-Agent Instance cwd proof, Agent Instance records, or Agent Team Instance records unless the selected topology includes a formal team layer
+
+#### Scenario: Placeholder binding index points to skill-local authority
+- **WHEN** research workspace bootstrap creates or validates a topic-level placeholder binding index
+- **THEN** the index references relevant skill-local `placeholder-bindings.md` files and their selected placeholder groups
+- **AND** the bootstrap treats skill-local files as authoritative when the index and skill-local binding content disagree
+
+#### Scenario: Bootstrap keeps formal team checks when present
+- **WHEN** the research workspace bootstrap runs in a Topic Workspace with formal team material selected for use
+- **THEN** it keeps the existing post-specialization checks for topic team summary, profile material, formal Agent Workspace access, and worker-visible storage boundaries
+
+### Requirement: V2 Skills Read Placeholder Bindings from Actor Workspaces
+The v2 research skills SHALL use skill-local placeholder binding guidance to map workflow placeholders to Topic Workspace records from Topic Actor Workspaces, topic-main, or formal Agent Workspaces.
+
+#### Scenario: Actor skill run resolves placeholders through bindings
+- **WHEN** a Topic Actor runs a v2 research skill from its Topic Actor Workspace
+- **THEN** the skill reads its `placeholder-bindings.md` and uses the listed record kind, semantic label, profile, topic actor metadata, and `isomer-cli ext research records` command shape for accepted research artifacts
+- **AND** it does not replace workflow placeholders with hard-coded Topic Actor Workspace paths in `SKILL.md`
+
+#### Scenario: Missing binding blocks accepted record write
+- **WHEN** a v2 skill needs to write an accepted artifact but no binding exists for the placeholder
+- **THEN** the skill reports the missing binding as a blocker instead of writing the artifact only to local scratch, a Topic Actor Workspace, a formal Agent Workspace, or an untracked repo path
+
