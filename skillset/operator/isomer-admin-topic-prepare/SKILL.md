@@ -11,11 +11,12 @@ Use this operator skill when a Project Operator Session or Operator Agent needs 
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Resolve topic intent**. Resolve or create the Research Topic and registered Topic Workspace through Project Manifest-backed Isomer context. Read [references/topic-preparation-workflow.md](references/topic-preparation-workflow.md).
-2. **Prepare common topic state**. Ensure Workspace Runtime exists or is valid, ensure topic intent and topic environment requirements exist when setup is requested, delegate topic environment setup, and report `topic.repos.main` as the Git anchor and integration surface. Read [references/topic-preparation-workflow.md](references/topic-preparation-workflow.md).
-3. **Ensure the operator actor by default**. Unless the user explicitly says not to create it, delegate registration and materialization of the reserved `operator` Topic Actor and its `topic.actors.workspace` cwd to `isomer-admin-topic-workspace-mgr`. Read [references/operator-topic-actor.md](references/operator-topic-actor.md).
-4. **Record preparation evidence**. Produce a topic operation summary with registered refs, runtime status, topic-main readiness, Topic Actor roster, storage bootstrap status, blockers, and next actions. Read [references/output-templates.md](references/output-templates.md).
-5. **Return the handoff route**. Route manual or human-orchestrated research to `isomer-admin-manual-research-session`; route formal team setup to `isomer-admin-topic-team-specialize`; route pure actor CRUD or repair to `isomer-admin-topic-workspace-mgr`.
+1. **Default help mode**. If invoked without a prompt, run `help` and print what this skill does, required inputs, and subcommand functionalities. Read [references/help.md](references/help.md).
+2. **Resolve topic intent**. Resolve or create the Research Topic and registered Topic Workspace through Project Manifest-backed Isomer context. Read [references/topic-preparation-workflow.md](references/topic-preparation-workflow.md).
+3. **Prepare common topic state**. Ensure Workspace Runtime exists or is valid, ensure topic intent and topic environment requirements exist when setup is requested, delegate topic environment setup, and report `topic.repos.main` as the Git anchor and integration surface. Read [references/topic-preparation-workflow.md](references/topic-preparation-workflow.md).
+4. **Ensure the operator actor by default**. Unless the user explicitly says not to create it, delegate registration and materialization of the reserved `operator` Topic Actor and its `topic.actors.workspace` cwd to `isomer-admin-topic-workspace-mgr`. Read [references/operator-topic-actor.md](references/operator-topic-actor.md).
+5. **Record preparation evidence**. Produce a topic operation summary with registered refs, runtime status, topic-main readiness, Topic Actor roster, storage bootstrap status, blockers, and next actions. Read [references/output-templates.md](references/output-templates.md).
+6. **Return the handoff route**. Route manual or human-orchestrated research to `isomer-admin-manual-research-session`; route formal team setup to `isomer-admin-topic-team-specialize`; route pure actor CRUD or repair to `isomer-admin-topic-workspace-mgr`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded preparation plan from Project context, topic registration, runtime state, semantic path evidence, and the user's requested next workflow.
 
