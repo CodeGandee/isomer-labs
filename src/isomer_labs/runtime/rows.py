@@ -21,6 +21,10 @@ from isomer_labs.runtime.models import (
     HandoffNormalizationRecord,
     HandoffRecord,
     PathPlanRecord,
+    ResetCheckpointRecord,
+    ResetOutcomeRecord,
+    ResetPlanActionRecord,
+    ResetPlanRecord,
     RuntimeLifecycleRecord,
     SignalObservationRecord,
     StructuredResearchPayloadRecord,
@@ -116,6 +120,86 @@ def _row_to_structured_payload(row: sqlite3.Row) -> StructuredResearchPayloadRec
         rendered_markdown_digest=row["rendered_markdown_digest"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_reset_checkpoint(row: sqlite3.Row) -> ResetCheckpointRecord:
+    return ResetCheckpointRecord(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        status=row["status"],
+        payload_json=_loads_object_dict(row["payload_json"]),
+        payload_digest=row["payload_digest"],
+        checkpoint_digest=row["checkpoint_digest"],
+        actor_ref=row["actor_ref"],
+        source_record_id=row["source_record_id"],
+        rendered_markdown_path=row["rendered_markdown_path"],
+        rendered_markdown_digest=row["rendered_markdown_digest"],
+        diagnostics=_loads_json_list(row["diagnostics_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_reset_plan(row: sqlite3.Row) -> ResetPlanRecord:
+    return ResetPlanRecord(
+        id=row["id"],
+        checkpoint_id=row["checkpoint_id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        status=row["status"],
+        payload_json=_loads_object_dict(row["payload_json"]),
+        payload_digest=row["payload_digest"],
+        checkpoint_digest=row["checkpoint_digest"],
+        precondition_digest=row["precondition_digest"],
+        actor_ref=row["actor_ref"],
+        rendered_markdown_path=row["rendered_markdown_path"],
+        rendered_markdown_digest=row["rendered_markdown_digest"],
+        diagnostics=_loads_json_list(row["diagnostics_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_reset_plan_action(row: sqlite3.Row) -> ResetPlanActionRecord:
+    return ResetPlanActionRecord(
+        id=row["id"],
+        plan_id=row["plan_id"],
+        action=row["action"],
+        target_kind=row["target_kind"],
+        target_ref=row["target_ref"],
+        target_path=row["target_path"],
+        semantic_label=row["semantic_label"],
+        source_kind=row["source_kind"],
+        status=row["status"],
+        details=_loads_object_dict(row["details_json"]),
+        created_at=row["created_at"],
+    )
+
+
+def _row_to_reset_outcome(row: sqlite3.Row) -> ResetOutcomeRecord:
+    return ResetOutcomeRecord(
+        id=row["id"],
+        checkpoint_id=row["checkpoint_id"],
+        plan_id=row["plan_id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        status=row["status"],
+        payload_json=_loads_object_dict(row["payload_json"]),
+        payload_digest=row["payload_digest"],
+        applied_actions=_loads_json_list(row["applied_actions_json"]),
+        skipped_actions=_loads_json_list(row["skipped_actions_json"]),
+        failed_actions=_loads_json_list(row["failed_actions_json"]),
+        diagnostics=_loads_json_list(row["diagnostics_json"]),
+        actor_ref=row["actor_ref"],
+        started_at=row["started_at"],
+        finished_at=row["finished_at"],
+        rendered_markdown_path=row["rendered_markdown_path"],
+        rendered_markdown_digest=row["rendered_markdown_digest"],
         provenance_refs=_loads_list(row["provenance_refs_json"]),
     )
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+import re
 import subprocess
 from typing import Iterable, Mapping
 
@@ -676,6 +677,240 @@ def _validate_structured_research_payloads(
                         )
                     )
     return diagnostics
+
+
+def _validate_reset_records(
+    context: EffectiveTopicContext,
+    store: WorkspaceRuntimeStore,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    lifecycle_records = {record.id: record for record in store.list_lifecycle_records()}
+    structured_payloads = {record.record_id: record for record in store.list_structured_payloads()}
+    artifact_format_registrations = {record.id: record for record in store.list_artifact_format_registrations()}
+    readiness_records = {record.id: record for record in store.list_readiness_records()}
+    checkpoints = {record.id: record for record in store.list_reset_checkpoints()}
+    plans = {record.id: record for record in store.list_reset_plans()}
+
+    for checkpoint in checkpoints.values():
+        diagnostics.extend(
+            _owner_diagnostics(context, store.db_path, checkpoint.id, checkpoint.research_topic_id, checkpoint.topic_workspace_id)
+        )
+        diagnostics.extend(
+            _forbidden_git_payload_diagnostics(
+                checkpoint.payload_json,
+                concept="Topic Reset Checkpoint",
+                record_id=checkpoint.id,
+                path=store.db_path,
+            )
+        )
+        payload = checkpoint.payload_json
+        diagnostics.extend(
+            _missing_preserved_targets(
+                store,
+                checkpoint.id,
+                payload,
+                lifecycle_records=lifecycle_records,
+                structured_payloads=structured_payloads,
+                artifact_format_registrations=artifact_format_registrations,
+                readiness_records=readiness_records,
+            )
+        )
+        for field in ("preserved_generated_view_paths", "preserved_support_paths", "summary_paths"):
+            for path_text in _payload_string_list(payload, field):
+                if not Path(path_text).exists():
+                    diagnostics.append(
+                        Diagnostic(
+                            code="ISO220",
+                            severity="warning",
+                            concept="Topic Reset Checkpoint",
+                            path=Path(path_text),
+                            field=f"{checkpoint.id}.{field}",
+                            message="Reset checkpoint preserves a path that no longer exists; regenerate the checkpoint before applying a reset.",
+                        )
+                    )
+
+    for plan in plans.values():
+        diagnostics.extend(_owner_diagnostics(context, store.db_path, plan.id, plan.research_topic_id, plan.topic_workspace_id))
+        diagnostics.extend(
+            _forbidden_git_payload_diagnostics(
+                plan.payload_json,
+                concept="Topic Reset Plan",
+                record_id=plan.id,
+                path=store.db_path,
+            )
+        )
+        plan_checkpoint = checkpoints.get(plan.checkpoint_id)
+        if plan_checkpoint is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO221",
+                    severity="error",
+                    concept="Topic Reset Plan",
+                    path=store.db_path,
+                    field=plan.id,
+                    message="Reset plan references a missing checkpoint.",
+                )
+            )
+        elif plan_checkpoint.checkpoint_digest != plan.checkpoint_digest:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO221",
+                    severity="error",
+                    concept="Topic Reset Plan",
+                    path=store.db_path,
+                    field=plan.id,
+                    message="Reset plan checkpoint digest is stale; generate a new reset plan.",
+                )
+            )
+        for action in store.list_reset_plan_actions(plan_id=plan.id):
+            diagnostics.extend(
+                _forbidden_git_payload_diagnostics(
+                    action.details,
+                    concept="Topic Reset Plan Action",
+                    record_id=action.id,
+                    path=store.db_path,
+                )
+            )
+
+    for outcome in store.list_reset_outcomes():
+        diagnostics.extend(
+            _owner_diagnostics(context, store.db_path, outcome.id, outcome.research_topic_id, outcome.topic_workspace_id)
+        )
+        diagnostics.extend(
+            _forbidden_git_payload_diagnostics(
+                outcome.payload_json,
+                concept="Topic Reset Outcome",
+                record_id=outcome.id,
+                path=store.db_path,
+            )
+        )
+        if outcome.checkpoint_id not in checkpoints:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO222",
+                    severity="error",
+                    concept="Topic Reset Outcome",
+                    path=store.db_path,
+                    field=outcome.id,
+                    message="Reset outcome references a missing checkpoint.",
+                )
+            )
+        if outcome.plan_id not in plans:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO222",
+                    severity="error",
+                    concept="Topic Reset Outcome",
+                    path=store.db_path,
+                    field=outcome.id,
+                    message="Reset outcome references a missing reset plan.",
+                )
+            )
+    return diagnostics
+
+
+def _missing_preserved_targets(
+    store: WorkspaceRuntimeStore,
+    checkpoint_id: str,
+    payload: dict[str, object],
+    *,
+    lifecycle_records: Mapping[str, object],
+    structured_payloads: Mapping[str, object],
+    artifact_format_registrations: Mapping[str, object],
+    readiness_records: Mapping[str, object],
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    target_sets = (
+        ("preserved_record_ids", lifecycle_records, "lifecycle record"),
+        ("preserved_structured_payload_ids", structured_payloads, "structured payload"),
+        ("preserved_artifact_format_registration_ids", artifact_format_registrations, "Artifact Format registration"),
+        ("preserved_readiness_record_ids", readiness_records, "Topic Environment Readiness record"),
+    )
+    for field, existing, label in target_sets:
+        for target_id in _payload_string_list(payload, field):
+            if target_id not in existing:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO220",
+                        severity="error",
+                        concept="Topic Reset Checkpoint",
+                        path=store.db_path,
+                        field=f"{checkpoint_id}.{field}",
+                        message=f"Reset checkpoint preserves a missing {label}: {target_id}.",
+                    )
+                )
+    return diagnostics
+
+
+def _payload_string_list(payload: dict[str, object], field: str) -> list[str]:
+    value = payload.get(field)
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if isinstance(item, str)]
+
+
+def _forbidden_git_payload_diagnostics(
+    payload: object,
+    *,
+    concept: str,
+    record_id: str,
+    path: Path,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for field_path, value in _walk_payload(payload):
+        key = field_path[-1] if field_path else ""
+        key_text = str(key).lower().replace("-", "_")
+        value_text = str(value)
+        if key_text == "no_git_operations":
+            continue
+        if key_text in _FORBIDDEN_GIT_FIELDS or any(fragment in key_text for fragment in _FORBIDDEN_GIT_KEY_FRAGMENTS):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO223",
+                    severity="error",
+                    concept=concept,
+                    path=path,
+                    field=f"{record_id}.{'.'.join(str(part) for part in field_path)}",
+                    message="Reset payload contains forbidden Git operation metadata.",
+                )
+            )
+        elif isinstance(value, str) and _GIT_COMMAND_RE.search(value_text):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO223",
+                    severity="error",
+                    concept=concept,
+                    path=path,
+                    field=f"{record_id}.{'.'.join(str(part) for part in field_path)}",
+                    message="Reset payload contains a command string that invokes Git.",
+                )
+            )
+    return diagnostics
+
+
+def _walk_payload(payload: object, prefix: tuple[object, ...] = ()) -> Iterable[tuple[tuple[object, ...], object]]:
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            yield from _walk_payload(value, (*prefix, key))
+    elif isinstance(payload, list):
+        for index, value in enumerate(payload):
+            yield from _walk_payload(value, (*prefix, index))
+    else:
+        yield prefix, payload
+
+
+_FORBIDDEN_GIT_FIELDS = {
+    "git_stash_id",
+    "git_ref",
+    "git_branch",
+    "git_tag",
+    "git_commit",
+    "git_command",
+    "git_operation",
+    "project_root_git_tracking",
+}
+_FORBIDDEN_GIT_KEY_FRAGMENTS = ("git_stash", "git_ref", "git_branch", "git_commit", "git_command", "git_operation")
+_GIT_COMMAND_RE = re.compile(r"(^|[;&|]\s*)git\s+[A-Za-z0-9_-]+")
 
 
 def _validate_agent_team_instances(

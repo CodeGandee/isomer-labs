@@ -1,11 +1,11 @@
 ---
 name: isomer-admin-topic-mgr
-description: "Manage an initialized Isomer Research Topic after Topic Creator handoff, including topic storage, Topic Actors, topic agent team topology, environment package mutation, environment verification, boundary notes, and diagnostics."
+description: "Manage an initialized Isomer Research Topic after Topic Creator handoff, including topic storage, Topic Actors, topic agent team topology, environment package mutation, environment verification, reset checkpoints, boundary notes, and diagnostics."
 ---
 
 # Isomer Admin Topic Mgr
 
-Use this command-style operator skill after `isomer-admin-topic-creator` has created or resumed a Research Topic and registered a Topic Workspace. `isomer-admin-topic-mgr` manages initialized-topic storage, Topic Actors, topic agent team topology, environment mutation, environment verification, and diagnostics. It works through the Topic Workspace Manifest, Project Manifest-backed Isomer context, and semantic workspace labels such as `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.actors_root`, `topic.actors.workspace`, `topic.actors.tmp`, `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `topic.records.*`, and `topic.runtime`. Additional non-main topic repositories use grouped `topic.repos.*` labels and helper-created paths under `repos/extern/...`, while user-owned nonreserved storage uses `custom.*`; register those bindings through `project paths register` or `project repos create` with explicit `storage_profile` rather than editing `topic-workspace.toml` by hand.
+Use this command-style operator skill after `isomer-admin-topic-creator` has created or resumed a Research Topic and registered a Topic Workspace. `isomer-admin-topic-mgr` manages initialized-topic storage, Topic Actors, topic agent team topology, environment mutation, environment verification, reset checkpoint inspection and application, and diagnostics. It works through the Topic Workspace Manifest, Project Manifest-backed Isomer context, and semantic workspace labels such as `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.actors_root`, `topic.actors.workspace`, `topic.actors.tmp`, `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `topic.records.*`, and `topic.runtime`. Additional non-main topic repositories use grouped `topic.repos.*` labels and helper-created paths under `repos/extern/...`, while user-owned nonreserved storage uses `custom.*`; register those bindings through `project paths register` or `project repos create` with explicit `storage_profile` rather than editing `topic-workspace.toml` by hand.
 
 The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`, and canonical per-agent worktree creation plus cwd proof belong to `isomer-srv-agent-env-setup`. This skill performs mutation only for explicitly requested actor topology, explicitly requested storage registration, explicitly requested package mutation, explicit environment verification, or manual topology operations after confirming predecessor evidence or manual acceptance. It does not derive topic ids, register new Research Topics, create Topic Workspaces from blank state, create research-paradigm v2 bootstrap outputs owned by `isomer-rsch-workspace-mgr-v2`, create Agent Instances, launch Houmao agents, run Execution Adapters, or replace topic or agent env setup services.
 
@@ -22,6 +22,7 @@ When this skill is invoked, execute the following steps in order.
    - If the prompt asks to update packages for a selected Topic Workspace and does not name a subcommand, select `env-update-packages`.
    - If the prompt asks to remove packages from a selected Topic Workspace and does not name a subcommand, select `env-remove-packages`.
    - If the prompt asks to verify topic, actor, or agent environment readiness and does not name a subcommand, select the matching `env-verify-*` subcommand.
+   - If the prompt asks to reset, restart research from the initialized boundary, inspect reset checkpoints, or apply a reset plan and does not name a subcommand, select `reset-plan`, `reset-inspect`, or `reset-apply` according to the requested action.
    - Select that subcommand from the **Subcommands** tables.
    - Load only its detail page, execute that page's `## Workflow`, and report its output.
 3. **Initialized-topic guard**:
@@ -97,6 +98,14 @@ Load only the selected reference page before executing a subcommand.
 | `env-verify-actors` | Verify selected Topic Actor cwd gates, actor support labels, and per-actor blockers | [references/env-verify-actors.md](references/env-verify-actors.md) |
 | `env-verify-agents` | Route formal Agent Workspace cwd proof to `isomer-srv-agent-env-setup` and report returned evidence | [references/env-verify-agents.md](references/env-verify-agents.md) |
 
+### Reset Subcommands
+
+| Subcommand | Use For | Detail |
+| --- | --- | --- |
+| `reset-plan` | Create a read-only structured reset plan for an initialized Topic Workspace checkpoint | [references/reset-plan.md](references/reset-plan.md) |
+| `reset-inspect` | List, show, and inspect reset checkpoints, reset plans, blockers, and review views | [references/reset-inspect.md](references/reset-inspect.md) |
+| `reset-apply` | Apply an approved reset plan with explicit confirmation and report the reset outcome | [references/reset-apply.md](references/reset-apply.md) |
+
 ## Output Contract
 
 Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
@@ -112,6 +121,7 @@ Report:
 - `topic_actors`: Topic Actor roster, actor cwd summary, actor support labels, and actor blockers when relevant.
 - `agent_workspaces`: Agent Workspace path summary and unsafe topology problems when relevant.
 - `environment`: package request, selected install/update/remove route, verification summary, service handoff, or blockers when relevant.
+- `reset`: selected checkpoint id, reset plan id, blocker summary, generated review view, and reset outcome when relevant.
 - `changed_paths`: package environment files, boundary material, generated links, or actor support material when created or changed.
 - `blockers`: unsafe repo state, unsafe path, branch conflict, missing initialized-topic context, failed verification, missing input, or unapproved mutation.
 - `next_action`: the next safe operator step.
@@ -127,6 +137,7 @@ When requested, include grouped handoff and audit fields:
 - **Topic actors**: `topic_actor_bindings`, `topic_actor_workspace_paths`, `topic_actor_branch_plan`, actor-scoped semantic labels, materialization status, runtime audit refs when available, and actor blockers.
 - **Agent workspaces**: `agent_workspace_paths`, `agent_workspace_refs`, branch plan, boundary material, and validation status.
 - **Environment**: `package_request_source`, `package_mutation_plan`, selected Pixi route, verification commands, verification evidence, service output, failed checks, skipped heavy checks, blockers, and next action.
+- **Reset**: reset checkpoint summaries, reset plan action summaries, approved plan id, generated Markdown review paths, applied/skipped/failed actions, and outcome diagnostics when relevant.
 - **Boundary and validation**: `boundary_material_paths`, `validation_status`, optional `agent_environment_service_output`, blockers, and `next_operator_action`.
 
 ## Guardrails
@@ -160,3 +171,5 @@ Do not create local `venv`, `.venv`, or `virtualenv` environments, run ambient `
 Do not create Agent Instances, mutate Workspace Runtime records as live team truth, launch Houmao agents, run Execution Adapters, claim runtime readiness, or create v2 research placeholder binding outputs from this skill. Validated topology evidence becomes runtime truth only when later Workspace Runtime creation consumes validated actor or Agent Workspace plans.
 
 Workspace Boundaries and Peer Read Access are advisory collaboration contracts, not filesystem-grade security isolation.
+
+Reset checkpoint, reset plan, and reset apply workflows use structured records and Workspace Runtime state only. Use `isomer-cli project topic-reset ...` commands, require selected Research Topic and Topic Workspace context, inspect blockers before mutation, and never depend on project-root Git state for reset behavior.

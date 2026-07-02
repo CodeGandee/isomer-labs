@@ -12,6 +12,7 @@ from isomer_labs.artifact_formats import (
     validate_format_ref,
     validate_payload,
 )
+from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
 
 
 PROFILE_REF = "isomer:test/record-format/profile/run/main-run-record/v1"
@@ -100,6 +101,68 @@ class ArtifactFormatApiTests(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertEqual("error", result.status)
         self.assertEqual("ISO205", result.diagnostics[0].code)
+
+    def test_topic_reset_profiles_resolve_validate_and_render(self) -> None:
+        registry = ArtifactFormatRegistry()
+        register_deepsci_record_format_provider(registry)
+        profile_ref = "isomer:deepsci/record-format/profile/control/topic-reset-checkpoint/v1"
+        payload = {
+            "title": "Topic Reset Checkpoint",
+            "summary": "Checkpoint summary",
+            "status": "ready",
+            "research_topic_id": "alpha",
+            "topic_workspace_id": "alpha",
+            "checkpoint_id": "topic-reset-checkpoint-alpha",
+            "created_at": "2026-07-02T00:00:00Z",
+            "workspace_runtime_schema_version": "isomer-workspace-runtime.v1",
+            "source_readiness_evidence": None,
+            "topic_workspace_summary_ref": None,
+            "summary_paths": [],
+            "semantic_path_inventory": [],
+            "preserved_record_ids": ["research-topic:alpha"],
+            "preserved_structured_payload_ids": [],
+            "preserved_generated_view_paths": [],
+            "preserved_artifact_format_registration_ids": [],
+            "preserved_readiness_record_ids": [],
+            "preserved_semantic_labels": [],
+            "preserved_support_paths": [],
+            "runtime_high_watermarks": {},
+            "blockers": [],
+            "extensions": [],
+            "no_git_operations": True,
+        }
+        validation = validate_payload(payload, registry=registry, format_profile_ref=profile_ref)
+        self.assertTrue(validation.ok, [diagnostic.message for diagnostic in validation.diagnostics])
+        rendered = render_artifact(payload, registry=registry, format_profile_ref=profile_ref)
+        self.assertTrue(rendered.ok, [diagnostic.message for diagnostic in rendered.diagnostics])
+        self.assertIn("Topic Reset Checkpoint", str(rendered.content))
+
+    def test_topic_reset_schema_rejects_git_operation_fields(self) -> None:
+        registry = ArtifactFormatRegistry()
+        register_deepsci_record_format_provider(registry)
+        payload = {
+            "title": "Topic Reset Checkpoint",
+            "summary": "Checkpoint summary",
+            "status": "ready",
+            "research_topic_id": "alpha",
+            "topic_workspace_id": "alpha",
+            "checkpoint_id": "topic-reset-checkpoint-alpha",
+            "workspace_runtime_schema_version": "isomer-workspace-runtime.v1",
+            "semantic_path_inventory": [],
+            "preserved_record_ids": [],
+            "preserved_structured_payload_ids": [],
+            "runtime_high_watermarks": {},
+            "blockers": [],
+            "no_git_operations": True,
+            "git_stash_id": "stash@{0}",
+        }
+        validation = validate_payload(
+            payload,
+            registry=registry,
+            format_profile_ref="isomer:deepsci/record-format/profile/control/topic-reset-checkpoint/v1",
+        )
+        self.assertFalse(validation.ok)
+        self.assertEqual("invalid", validation.status)
 
 
 if __name__ == "__main__":

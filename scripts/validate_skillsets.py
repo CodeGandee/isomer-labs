@@ -369,6 +369,7 @@ TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
     "topic.intent.actor_definitions",
     "topic.env.actor_env_gates",
     "topic.workspace.summary",
+    "structured reset checkpoint",
     "Workspace Runtime",
     "Topic Actor roster",
     "actor cwd",
@@ -450,6 +451,9 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
     ),
     "finalize.md": (
         "topic.workspace.summary",
+        "isomer-cli project topic-reset checkpoint",
+        "structured reset checkpoint",
+        "operator-level readiness evidence",
         "ready",
         "verified",
         "blocked",
@@ -489,6 +493,7 @@ TOPIC_MANAGER_REQUIRED_SKILL_TERMS = (
     "Team Subcommands",
     "Environment Mutation Subcommands",
     "Environment Verification Subcommands",
+    "Reset Subcommands",
     "references/status.md",
     "status",
     "doctor",
@@ -511,6 +516,12 @@ TOPIC_MANAGER_REQUIRED_SKILL_TERMS = (
     "env-verify-topic",
     "env-verify-actors",
     "env-verify-agents",
+    "reset-plan",
+    "reset-inspect",
+    "reset-apply",
+    "isomer-cli project topic-reset",
+    "structured records",
+    "reset checkpoint",
     "canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`",
     "canonical per-agent worktree creation plus cwd proof belong to `isomer-srv-agent-env-setup`",
     "isomer-rsch-workspace-mgr-v2",
@@ -581,11 +592,17 @@ TOPIC_MANAGER_SUBCOMMANDS = (
     "env-verify-topic.md",
     "env-verify-actors.md",
     "env-verify-agents.md",
+    "reset-plan.md",
+    "reset-inspect.md",
+    "reset-apply.md",
 )
 
 TOPIC_MANAGER_HELP_TABLE_TERMS = (
     "| Subcommand | Purpose | Produces |",
     "| --- | --- | --- |",
+    "`reset-plan`",
+    "`reset-inspect`",
+    "`reset-apply`",
 )
 
 TOPIC_MANAGER_NAMING_EXCEPTIONS = {"help", "status", "doctor"}
@@ -707,6 +724,28 @@ TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "diagnostic",
         "storage diagnostics",
         "retired-skill",
+    ),
+    "reset-plan.md": (
+        "isomer-cli project topic-reset plan",
+        "structured reset plan",
+        "Workspace Runtime",
+        "read-only",
+        "Git operations",
+    ),
+    "reset-inspect.md": (
+        "isomer-cli project topic-reset list",
+        "isomer-cli project topic-reset show",
+        "isomer-cli project topic-reset show-plan",
+        "structured records",
+        "Workspace Runtime",
+    ),
+    "reset-apply.md": (
+        "isomer-cli project topic-reset apply",
+        "--yes",
+        "approved structured reset plan",
+        "destructive",
+        "Workspace Runtime",
+        "Git operations",
     ),
 }
 
@@ -1119,6 +1158,25 @@ DEEPSCI_MINI_GUIDE_REQUIRED_TERMS = (
     "<topic-workspace>/team-profile/execplan/",
 )
 
+RESET_GUIDANCE_TERMS = (
+    "topic-reset",
+    "reset checkpoint",
+    "structured reset checkpoint",
+    "reset plan",
+    "reset apply",
+    "Topic Workspace reset",
+)
+
+RESET_FORBIDDEN_RESEARCH_TERMS = (
+    "skillset/research-paradigm",
+    "research-paradigm",
+    "isomer-rsch-",
+)
+
+RESET_FORBIDDEN_GIT_COMMAND_RE = re.compile(r"\bgit\s+(?:stash|reset|checkout|branch|commit|tag)\b", re.IGNORECASE)
+RESET_FORBIDDEN_GIT_REF_RE = re.compile(r"stash@\{", re.IGNORECASE)
+RESET_RESEARCH_COUPLING_RE = re.compile(r"\b(?:route|depend|require|use|delegate|load|call|inspect)\w*\b", re.IGNORECASE)
+
 
 @dataclass(frozen=True, order=True)
 class Diagnostic:
@@ -1196,6 +1254,51 @@ def add_forbidden_heavy_operation_diagnostics(
                 code,
                 f"{path.name} must delegate heavy-operation classification to isomer-misc-bounded-run-tips instead of using fixed core-owned lists",
             )
+
+
+def _line_has_reset_context(path: Path, line: str) -> bool:
+    line_lower = line.lower()
+    if path.name.startswith("reset-"):
+        return True
+    return any(term.lower() in line_lower for term in RESET_GUIDANCE_TERMS)
+
+
+def _line_is_negated_git_boundary(line: str) -> bool:
+    line_lower = line.lower()
+    return any(marker in line_lower for marker in ("do not", "does not", "must not", "never", " no git", "without git"))
+
+
+def add_forbidden_reset_guidance_diagnostics(
+    diagnostics: list[Diagnostic],
+    repo_root: Path,
+    path: Path,
+    lines: tuple[str, ...],
+    *,
+    code: str,
+) -> None:
+    for line_number, line in enumerate(lines, start=1):
+        if not _line_has_reset_context(path, line):
+            continue
+        if (RESET_FORBIDDEN_GIT_COMMAND_RE.search(line) or RESET_FORBIDDEN_GIT_REF_RE.search(line)) and not _line_is_negated_git_boundary(line):
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                line_number,
+                code,
+                "reset checkpoint workflows must not recommend Git reset, stash, branch, commit, tag, or ref commands",
+            )
+        line_lower = line.lower()
+        for forbidden_term in RESET_FORBIDDEN_RESEARCH_TERMS:
+            if forbidden_term.lower() in line_lower and RESET_RESEARCH_COUPLING_RE.search(line) and not _line_is_negated_git_boundary(line):
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    code,
+                    "operator reset guidance must not route to or depend on research-paradigm skills",
+                )
 
 
 def output_contract_section(lines: tuple[str, ...]) -> tuple[int, str] | None:
@@ -1883,6 +1986,7 @@ def validate_topic_creator_module(repo_root: Path) -> list[Diagnostic]:
     lines = read_lines(skill_md)
     text = "\n".join(lines)
     add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS008", require_contract=True)
+    add_forbidden_reset_guidance_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS008")
     for term in TOPIC_CREATOR_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
@@ -1924,6 +2028,7 @@ def validate_topic_creator_module(repo_root: Path) -> list[Diagnostic]:
             add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "OPS008", f"{TOPIC_CREATOR_SKILL} must link references/{command_file_name}")
         command_lines = read_lines(command_path)
         command_text = "\n".join(command_lines)
+        add_forbidden_reset_guidance_diagnostics(diagnostics, repo_root, command_path, command_lines, code="OPS008")
         command_workflow_index = line_index_containing(command_lines, "## Workflow")
         if command_workflow_index is None:
             add(diagnostics, repo_root, command_path, 1, "OPS008", f"references/{command_file_name} must include a ## Workflow section")
@@ -1952,6 +2057,7 @@ def validate_topic_manager_module(repo_root: Path) -> list[Diagnostic]:
     lines = read_lines(skill_md)
     text = "\n".join(lines)
     add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS006", require_contract=True)
+    add_forbidden_reset_guidance_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS006")
     for term in TOPIC_MANAGER_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
@@ -1986,6 +2092,7 @@ def validate_topic_manager_module(repo_root: Path) -> list[Diagnostic]:
             )
     for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
         skill_file_lines = read_lines(skill_file)
+        add_forbidden_reset_guidance_diagnostics(diagnostics, repo_root, skill_file, skill_file_lines, code="OPS006")
         for line_number, line in enumerate(skill_file_lines, start=1):
             for forbidden_term in TOPIC_MANAGER_FORBIDDEN_PUBLIC_TERMS:
                 if forbidden_term in line:

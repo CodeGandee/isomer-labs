@@ -1,0 +1,23 @@
+# Topic Reset Outcome
+
+Research Topic: `{{ payload.research_topic_id }}`
+Topic Workspace: `{{ payload.topic_workspace_id }}`
+Checkpoint: `{{ payload.checkpoint_id }}`
+Plan: `{{ payload.plan_id }}`
+Outcome: `{{ payload.outcome_id }}`
+Status: `{{ payload.status }}`
+
+{{ payload.summary }}
+
+## Action Summary
+
+- Applied: {{ payload.applied_actions | length }}
+- Skipped: {{ payload.skipped_actions | length }}
+- Failed: {{ payload.failed_actions | length }}
+- Diagnostics: {{ payload.diagnostics | length }}
+
+No Git operations were used by this reset outcome.
+
+```json
+{{ payload | tojson(indent=2) }}
+```

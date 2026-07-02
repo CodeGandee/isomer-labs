@@ -17,6 +17,7 @@ from isomer_labs.runtime.models import (
     RuntimeLifecycleRecord,
     WorkspaceRuntimeMetadata,
 )
+from isomer_labs.runtime.reset_schema import create_reset_schema
 from isomer_labs.runtime.serialization import _dumps
 
 
@@ -27,6 +28,10 @@ CORE_RUNTIME_SCHEMA_TABLES = (
     "lifecycle_transitions",
     "artifact_format_registrations",
     "structured_research_payloads",
+    "topic_reset_checkpoints",
+    "topic_reset_plans",
+    "topic_reset_plan_actions",
+    "topic_reset_outcomes",
     "readiness_records",
     "agent_team_instances",
     "agent_instances",
@@ -474,6 +479,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
         );
         """
     )
+    create_reset_schema(connection)
     _ensure_path_plan_semantic_columns(connection)
     _ensure_agent_team_instance_provenance_columns(connection)
     _ensure_agent_workspace_metadata_columns(connection)

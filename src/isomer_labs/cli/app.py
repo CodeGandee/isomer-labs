@@ -159,6 +159,13 @@ Command surface:
   project runtime prepare
   project runtime inspect
   project runtime validate
+  project topic-reset checkpoint
+  project topic-reset update-checkpoint
+  project topic-reset list
+  project topic-reset show
+  project topic-reset plan
+  project topic-reset show-plan
+  project topic-reset apply
   project artifact-formats validate
   project artifact-formats render
   project artifact-formats register
@@ -2741,11 +2748,13 @@ def _register_commands() -> None:
     from isomer_labs.cli.commands.team_instances import register_team_instance_commands
     from isomer_labs.cli.commands.team_profiles import register_team_profile_commands
     from isomer_labs.cli.commands.team_templates import register_team_template_commands
+    from isomer_labs.cli.commands.topic_reset import register_topic_reset_commands
 
     register_project_commands(project_group)
     register_doctor_commands(project_group)
     register_runtime_commands(project_group)
     register_artifact_format_commands(project_group)
+    register_topic_reset_commands(project_group)
     register_team_instance_commands(project_group)
     register_handoff_commands(project_group)
     register_team_template_commands(project_group)

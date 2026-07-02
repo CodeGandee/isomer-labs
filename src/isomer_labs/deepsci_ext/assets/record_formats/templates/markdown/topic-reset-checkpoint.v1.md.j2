@@ -1,0 +1,36 @@
+# Topic Reset Checkpoint
+
+Research Topic: `{{ payload.research_topic_id }}`
+Topic Workspace: `{{ payload.topic_workspace_id }}`
+Checkpoint: `{{ payload.checkpoint_id }}`
+Status: `{{ payload.status }}`
+Created: `{{ payload.created_at }}`
+
+{{ payload.summary }}
+
+## Preserved State
+
+- Lifecycle records: {{ payload.preserved_record_ids | length }}
+- Structured payloads: {{ payload.preserved_structured_payload_ids | length }}
+- Generated views: {{ payload.preserved_generated_view_paths | length }}
+- Artifact format registrations: {{ payload.preserved_artifact_format_registration_ids | length }}
+- Readiness records: {{ payload.preserved_readiness_record_ids | length }}
+
+## Readiness Evidence
+
+{% if payload.topic_workspace_summary_ref -%}
+- Topic Workspace summary: `{{ payload.topic_workspace_summary_ref }}`
+{% endif -%}
+{% if payload.source_readiness_evidence -%}
+- Latest readiness: `{{ payload.source_readiness_evidence.status }}`
+{% else -%}
+- Latest readiness: none recorded
+{% endif %}
+
+## Reset Boundary
+
+No Git operations are permitted by this checkpoint. Later preparation must update this checkpoint to survive reset.
+
+```json
+{{ payload | tojson(indent=2) }}
+```

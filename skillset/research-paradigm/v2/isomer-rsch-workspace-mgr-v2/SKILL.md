@@ -11,6 +11,8 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Workspace manager prepares the research-facing contract that v2 skills use after topic setup is ready. It validates readiness as composable topology layers: base Topic Workspace readiness, Topic Actor readiness for human-orchestrated workers, selected v2 skill readiness, placeholder binding readiness, and optional formal team readiness when a Topic Agent Team is selected. It first consumes Topic Creator summaries, Topic Manager topology evidence, Topic Workspace registration evidence, or final topic-team summary when present, then verifies that the selected Research Topic, Topic Workspace, Workspace Runtime, topic-main, record labels, placeholder bindings, selected Topic Actor Workspaces, and optional Agent Workspace context are ready enough for accepted research artifacts to land in durable topic-owned surfaces or become explicit blockers.
 
+When v2 bootstrap creates setup records, generated views, support files, or semantic label evidence that should survive a later Topic Workspace reset, this skill must call the checkpoint update API through `isomer-cli project topic-reset update-checkpoint` with its preserved record ids, structured payload ids, generated view paths, support paths, semantic labels, source label, actor refs, and provenance refs. If this skill does not update the selected reset checkpoint, those v2 bootstrap outputs are ordinary post-checkpoint preparation state; a destructive reset can clear them and v2 bootstrap must be redone after reset.
+
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.
 
 ## When to Use
@@ -41,7 +43,8 @@ When this skill is invoked, execute the following steps in order.
 3. **Bind v2 placeholders by kind**. Produce <RSCH_PLACEHOLDER_BINDING_REGISTRY> from the v2 placeholder kind table and the active skill set, preserving exact placeholder names as metadata. Read `references/placeholder-binding-registry.md`.
 4. **Prepare worker access**. Produce <RSCH_AGENT_ACCESS_PLAN> for Topic Actor or formal Agent Workspace pre-promotion surfaces, generated conveniences, actor metadata, accepted research artifact guidance, and promotion boundaries. Read `references/agent-access-plan.md`.
 5. **Record bootstrap result**. Produce <RSCH_STORAGE_BOOTSTRAP_RECORD> when the contract is usable, <RSCH_BOOTSTRAP_VALIDATION_REPORT> for readiness checks, or <RSCH_WORKSPACE_BLOCKER_RECORD> when required support is missing. Read `references/validation-and-blockers.md`.
-6. **Return next route**. Hand control to the selected v2 research skill only after the bootstrap outputs name durable semantic targets or explicit blockers.
+6. **Update reset checkpoint when bootstrap should survive reset**. If the selected reset checkpoint should preserve v2 bootstrap records, call `isomer-cli project topic-reset update-checkpoint --topic <research-topic-id> <checkpoint-id>` with the bootstrap record ids, structured payload ids, generated view paths, semantic labels, support paths, source label, actor refs, and provenance refs.
+7. **Return next route**. Hand control to the selected v2 research skill only after the bootstrap outputs name durable semantic targets or explicit blockers, and after reset-survival intent has either been recorded in the checkpoint or explicitly left as redo-after-reset behavior.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 
@@ -71,6 +74,7 @@ Read these gates before claiming the skill output is ready for handoff. Use `Met
 - Binding check: <RSCH_PLACEHOLDER_BINDING_REGISTRY> maps v2 placeholder kinds to semantic targets while preserving exact placeholder names as metadata.
 - Access check: <RSCH_AGENT_ACCESS_PLAN> tells Topic Actors or formal agents where pre-promotion outputs belong, what metadata to preserve, and how accepted research artifacts should cite durable semantic refs.
 - Validation check: <RSCH_BOOTSTRAP_VALIDATION_REPORT> states whether the v2 research loop can start, or <RSCH_WORKSPACE_BLOCKER_RECORD> names what must be prepared first.
+- Reset-survival check: v2 bootstrap outputs that should survive Topic Workspace reset are added to the selected reset checkpoint; unrecorded bootstrap output is treated as redo-after-reset behavior.
 - Route check: the next v2 research skill is invoked only after durable semantic targets or explicit blockers are recorded.
 
 ## Exit Criteria

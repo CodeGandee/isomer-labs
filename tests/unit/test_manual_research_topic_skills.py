@@ -48,6 +48,9 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "`repair`",
                 "actor onboarding",
                 "topic.workspace.summary",
+                "structured reset checkpoint",
+                "isomer-cli project topic-reset checkpoint",
+                "operator-level readiness evidence",
                 "ready/verified/blocked",
                 "topic.repos.main` as the Git anchor and integration surface",
                 "startup convenience",
@@ -59,6 +62,35 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
         self.assertNotIn("isomer-cli ext research records", combined)
         self.assertNotIn("`start-manual-research`", combined)
         self.assertNotIn("start-pack record refs", combined)
+
+    def test_topic_manager_owns_reset_plan_inspect_and_apply_guidance(self) -> None:
+        skill = read_repo_file("skillset/operator/isomer-admin-topic-mgr/SKILL.md")
+        help_page = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/help.md")
+        status = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/status.md")
+        reset_plan = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/reset-plan.md")
+        reset_inspect = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/reset-inspect.md")
+        reset_apply = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/reset-apply.md")
+        combined = "\n".join((skill, help_page, status, reset_plan, reset_inspect, reset_apply))
+        reset_only = "\n".join((reset_plan, reset_inspect, reset_apply))
+
+        self.assertContainsAll(
+            combined,
+            (
+                "Reset Subcommands",
+                "`reset-plan`",
+                "`reset-inspect`",
+                "`reset-apply`",
+                "isomer-cli project topic-reset plan",
+                "isomer-cli project topic-reset show",
+                "isomer-cli project topic-reset show-plan",
+                "isomer-cli project topic-reset apply",
+                "structured records and Workspace Runtime state",
+                "approved structured reset plan",
+                "generated Markdown review path",
+            ),
+        )
+        self.assertNotIn("skillset/research-paradigm", reset_only)
+        self.assertNotIn("isomer-rsch-", reset_only)
 
     def test_team_specialization_consumes_current_topic_readiness_evidence(self) -> None:
         skill = read_repo_file("skillset/operator/isomer-admin-topic-team-specialize/SKILL.md")
@@ -101,6 +133,8 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "Topic Manager topology evidence",
                 "actor metadata for v2 records",
                 "accepted research artifact",
+                "isomer-cli project topic-reset update-checkpoint",
+                "redo-after-reset behavior",
                 "--topic-actor <topic-actor-name>",
                 "--actor-kind",
                 "--runtime-kind",

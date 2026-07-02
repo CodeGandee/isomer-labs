@@ -29,6 +29,11 @@ from isomer_labs.runtime.models import (
     HANDOFF_NORMALIZATION_STATUSES,
     HANDOFF_STATUSES,
     READINESS_STATUSES,
+    RESET_CHECKPOINT_STATUSES,
+    RESET_OUTCOME_STATUSES,
+    RESET_PLAN_ACTIONS,
+    RESET_PLAN_ACTION_STATUSES,
+    RESET_PLAN_STATUSES,
     RUNTIME_PATH_SURFACES,
     SIGNAL_OBSERVATION_STATUSES,
     WORKSPACE_RUNTIME_SCHEMA_VERSION,
@@ -48,6 +53,10 @@ from isomer_labs.runtime.models import (
     HandoffNormalizationRecord,
     HandoffRecord,
     PathPlanRecord,
+    ResetCheckpointRecord,
+    ResetOutcomeRecord,
+    ResetPlanActionRecord,
+    ResetPlanRecord,
     RuntimeLifecycleRecord,
     SignalObservationRecord,
     STRUCTURED_PAYLOAD_RENDER_STATUSES,
@@ -79,6 +88,10 @@ from isomer_labs.runtime.rows import (
     _row_to_lifecycle_record,
     _row_to_path_plan,
     _row_to_readiness,
+    _row_to_reset_checkpoint,
+    _row_to_reset_outcome,
+    _row_to_reset_plan,
+    _row_to_reset_plan_action,
     _row_to_signal_observation,
     _row_to_structured_payload,
 )
@@ -633,6 +646,287 @@ class WorkspaceRuntimeStore:
             query += " LIMIT ?"
             params.append(limit)
         return [_row_to_structured_payload(row) for row in self.connection.execute(query, params)]
+
+    def delete_structured_payload(self, record_id: str) -> None:
+        self.connection.execute("DELETE FROM structured_research_payloads WHERE record_id = ?", (record_id,))
+
+    def delete_lifecycle_record(self, record_id: str) -> None:
+        self.connection.execute("DELETE FROM lifecycle_records WHERE id = ?", (record_id,))
+
+    def delete_artifact_format_registration(self, registration_id: str) -> None:
+        self.connection.execute("DELETE FROM artifact_format_registrations WHERE id = ?", (registration_id,))
+
+    def delete_readiness_record(self, record_id: str) -> None:
+        self.connection.execute("DELETE FROM readiness_records WHERE id = ?", (record_id,))
+
+    def upsert_reset_checkpoint(self, record: ResetCheckpointRecord) -> None:
+        if record.status not in RESET_CHECKPOINT_STATUSES:
+            raise ValueError(f"Unsupported reset checkpoint status: {record.status}")
+        self.connection.execute(
+            """
+            INSERT INTO topic_reset_checkpoints
+                (
+                    id, research_topic_id, topic_workspace_id, status, payload_json,
+                    payload_digest, checkpoint_digest, actor_ref, source_record_id,
+                    rendered_markdown_path, rendered_markdown_digest, diagnostics_json,
+                    created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                status = excluded.status,
+                payload_json = excluded.payload_json,
+                payload_digest = excluded.payload_digest,
+                checkpoint_digest = excluded.checkpoint_digest,
+                actor_ref = excluded.actor_ref,
+                source_record_id = excluded.source_record_id,
+                rendered_markdown_path = excluded.rendered_markdown_path,
+                rendered_markdown_digest = excluded.rendered_markdown_digest,
+                diagnostics_json = excluded.diagnostics_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.status,
+                _dumps(record.payload_json),
+                record.payload_digest,
+                record.checkpoint_digest,
+                record.actor_ref,
+                record.source_record_id,
+                record.rendered_markdown_path,
+                record.rendered_markdown_digest,
+                _dumps(record.diagnostics),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_reset_checkpoint(self, checkpoint_id: str) -> ResetCheckpointRecord | None:
+        if not _table_exists(self.connection, "topic_reset_checkpoints"):
+            return None
+        row = self.connection.execute(
+            "SELECT * FROM topic_reset_checkpoints WHERE id = ?",
+            (checkpoint_id,),
+        ).fetchone()
+        return _row_to_reset_checkpoint(row) if row is not None else None
+
+    def latest_reset_checkpoint(self, *, topic_workspace_id: str) -> ResetCheckpointRecord | None:
+        if not _table_exists(self.connection, "topic_reset_checkpoints"):
+            return None
+        row = self.connection.execute(
+            """
+            SELECT * FROM topic_reset_checkpoints
+            WHERE topic_workspace_id = ?
+            ORDER BY updated_at DESC, created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (topic_workspace_id,),
+        ).fetchone()
+        return _row_to_reset_checkpoint(row) if row is not None else None
+
+    def list_reset_checkpoints(self, *, topic_workspace_id: str | None = None) -> list[ResetCheckpointRecord]:
+        if not _table_exists(self.connection, "topic_reset_checkpoints"):
+            return []
+        if topic_workspace_id is None:
+            rows = self.connection.execute("SELECT * FROM topic_reset_checkpoints ORDER BY updated_at DESC, id")
+        else:
+            rows = self.connection.execute(
+                "SELECT * FROM topic_reset_checkpoints WHERE topic_workspace_id = ? ORDER BY updated_at DESC, id",
+                (topic_workspace_id,),
+            )
+        return [_row_to_reset_checkpoint(row) for row in rows]
+
+    def upsert_reset_plan(self, record: ResetPlanRecord, actions: list[ResetPlanActionRecord] | None = None) -> None:
+        if record.status not in RESET_PLAN_STATUSES:
+            raise ValueError(f"Unsupported reset plan status: {record.status}")
+        self.connection.execute(
+            """
+            INSERT INTO topic_reset_plans
+                (
+                    id, checkpoint_id, research_topic_id, topic_workspace_id, status,
+                    payload_json, payload_digest, checkpoint_digest, precondition_digest,
+                    actor_ref, rendered_markdown_path, rendered_markdown_digest,
+                    diagnostics_json, created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                status = excluded.status,
+                payload_json = excluded.payload_json,
+                payload_digest = excluded.payload_digest,
+                checkpoint_digest = excluded.checkpoint_digest,
+                precondition_digest = excluded.precondition_digest,
+                actor_ref = excluded.actor_ref,
+                rendered_markdown_path = excluded.rendered_markdown_path,
+                rendered_markdown_digest = excluded.rendered_markdown_digest,
+                diagnostics_json = excluded.diagnostics_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.checkpoint_id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.status,
+                _dumps(record.payload_json),
+                record.payload_digest,
+                record.checkpoint_digest,
+                record.precondition_digest,
+                record.actor_ref,
+                record.rendered_markdown_path,
+                record.rendered_markdown_digest,
+                _dumps(record.diagnostics),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+        if actions is not None:
+            self.connection.execute("DELETE FROM topic_reset_plan_actions WHERE plan_id = ?", (record.id,))
+            for action in actions:
+                self.upsert_reset_plan_action(action)
+
+    def get_reset_plan(self, plan_id: str) -> ResetPlanRecord | None:
+        if not _table_exists(self.connection, "topic_reset_plans"):
+            return None
+        row = self.connection.execute(
+            "SELECT * FROM topic_reset_plans WHERE id = ?",
+            (plan_id,),
+        ).fetchone()
+        return _row_to_reset_plan(row) if row is not None else None
+
+    def list_reset_plans(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        checkpoint_id: str | None = None,
+    ) -> list[ResetPlanRecord]:
+        if not _table_exists(self.connection, "topic_reset_plans"):
+            return []
+        query = "SELECT * FROM topic_reset_plans"
+        clauses: list[str] = []
+        params: list[object] = []
+        if topic_workspace_id is not None:
+            clauses.append("topic_workspace_id = ?")
+            params.append(topic_workspace_id)
+        if checkpoint_id is not None:
+            clauses.append("checkpoint_id = ?")
+            params.append(checkpoint_id)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY created_at DESC, id"
+        return [_row_to_reset_plan(row) for row in self.connection.execute(query, params)]
+
+    def upsert_reset_plan_action(self, record: ResetPlanActionRecord) -> None:
+        if record.action not in RESET_PLAN_ACTIONS:
+            raise ValueError(f"Unsupported reset plan action: {record.action}")
+        if record.status not in RESET_PLAN_ACTION_STATUSES:
+            raise ValueError(f"Unsupported reset plan action status: {record.status}")
+        self.connection.execute(
+            """
+            INSERT OR REPLACE INTO topic_reset_plan_actions
+                (
+                    id, plan_id, action, target_kind, target_ref, target_path,
+                    semantic_label, source_kind, status, details_json, created_at
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                record.id,
+                record.plan_id,
+                record.action,
+                record.target_kind,
+                record.target_ref,
+                record.target_path,
+                record.semantic_label,
+                record.source_kind,
+                record.status,
+                _dumps(record.details),
+                record.created_at,
+            ),
+        )
+
+    def list_reset_plan_actions(self, *, plan_id: str) -> list[ResetPlanActionRecord]:
+        if not _table_exists(self.connection, "topic_reset_plan_actions"):
+            return []
+        return [
+            _row_to_reset_plan_action(row)
+            for row in self.connection.execute(
+                "SELECT * FROM topic_reset_plan_actions WHERE plan_id = ? ORDER BY action, target_kind, target_ref, target_path, id",
+                (plan_id,),
+            )
+        ]
+
+    def upsert_reset_outcome(self, record: ResetOutcomeRecord) -> None:
+        if record.status not in RESET_OUTCOME_STATUSES:
+            raise ValueError(f"Unsupported reset outcome status: {record.status}")
+        self.connection.execute(
+            """
+            INSERT OR REPLACE INTO topic_reset_outcomes
+                (
+                    id, checkpoint_id, plan_id, research_topic_id, topic_workspace_id,
+                    status, payload_json, payload_digest, applied_actions_json,
+                    skipped_actions_json, failed_actions_json, diagnostics_json,
+                    actor_ref, started_at, finished_at, rendered_markdown_path,
+                    rendered_markdown_digest, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                record.id,
+                record.checkpoint_id,
+                record.plan_id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.status,
+                _dumps(record.payload_json),
+                record.payload_digest,
+                _dumps(record.applied_actions),
+                _dumps(record.skipped_actions),
+                _dumps(record.failed_actions),
+                _dumps(record.diagnostics),
+                record.actor_ref,
+                record.started_at,
+                record.finished_at,
+                record.rendered_markdown_path,
+                record.rendered_markdown_digest,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_reset_outcome(self, outcome_id: str) -> ResetOutcomeRecord | None:
+        if not _table_exists(self.connection, "topic_reset_outcomes"):
+            return None
+        row = self.connection.execute(
+            "SELECT * FROM topic_reset_outcomes WHERE id = ?",
+            (outcome_id,),
+        ).fetchone()
+        return _row_to_reset_outcome(row) if row is not None else None
+
+    def list_reset_outcomes(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        plan_id: str | None = None,
+    ) -> list[ResetOutcomeRecord]:
+        if not _table_exists(self.connection, "topic_reset_outcomes"):
+            return []
+        query = "SELECT * FROM topic_reset_outcomes"
+        clauses: list[str] = []
+        params: list[object] = []
+        if topic_workspace_id is not None:
+            clauses.append("topic_workspace_id = ?")
+            params.append(topic_workspace_id)
+        if plan_id is not None:
+            clauses.append("plan_id = ?")
+            params.append(plan_id)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY finished_at DESC, id"
+        return [_row_to_reset_outcome(row) for row in self.connection.execute(query, params)]
 
     def ensure_run_record(
         self,

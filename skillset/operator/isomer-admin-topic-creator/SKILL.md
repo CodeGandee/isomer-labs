@@ -5,7 +5,7 @@ description: Create or resume an Isomer Research Topic from empty or partial Pro
 
 # Isomer Admin Topic Creator
 
-Use this command-style operator skill when the user wants one front door for creating, initializing, preparing, or repairing a Research Topic for manual or human-orchestrated research. This skill owns the user-facing ladder from blank or partial Project state to prepared Topic Workspace, while delegating lower-level mutation to `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, and `isomer-admin-topic-mgr`.
+Use this command-style operator skill when the user wants one front door for creating, initializing, preparing, or repairing a Research Topic for manual or human-orchestrated research. This skill owns the user-facing ladder from blank or partial Project state to prepared Topic Workspace, while delegating lower-level mutation to `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, and `isomer-admin-topic-mgr`. Its `finalize` boundary writes `topic.workspace.summary` and creates or refreshes the first structured reset checkpoint from operator-level readiness evidence.
 
 Concrete Research Topic substance is a hard gate. The topic can come from the prompt, a Markdown brief, selected context, or a registered concrete topic statement, but missing or generic topic material such as `default` must block before deriving a topic id, choosing or creating a Topic Workspace, registering a topic, or writing `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, or derived env gates.
 
@@ -36,7 +36,7 @@ When this skill is invoked, execute the following steps in order.
    - Topic environment and `topic.repos.main` readiness through `setup-topic-env`.
    - Actor definitions through `define-actors`.
    - Topic Actor workspace, derived actor env gate readiness, and actor onboarding context through `setup-actors`.
-   - Topic Workspace readiness summary through `finalize`.
+   - Topic Workspace readiness summary and first structured reset checkpoint through `finalize`.
 5. **Report topic creation output** using **Essential Output** by default and **Complete Output** when requested.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded topic-creation plan from Project Manifest-backed context, selected Research Topic refs, Topic Workspace refs, semantic path evidence, delegated owner boundaries, blockers, and the user's intended first research action.
@@ -56,7 +56,7 @@ Procedural subcommands are user-facing setup and finalization operations in topi
 | `setup-topic-env` | Prepare topic environment readiness and `topic.repos.main` evidence | [references/setup-topic-env.md](references/setup-topic-env.md) |
 | `define-actors` | Create or refine Topic Actor definitions, defaulting to the `operator` actor when no actor details are supplied | [references/define-actors.md](references/define-actors.md) |
 | `setup-actors` | Create or validate selected Topic Actors, Topic Actor Workspaces, derived actor env gates, and actor onboarding context | [references/setup-actors.md](references/setup-actors.md) |
-| `finalize` | Validate Topic Workspace preparation, write `topic.workspace.summary`, and print ready/verified/blocked state | [references/finalize.md](references/finalize.md) |
+| `finalize` | Validate Topic Workspace preparation, write `topic.workspace.summary`, create or refresh the first structured reset checkpoint, and print ready/verified/blocked state | [references/finalize.md](references/finalize.md) |
 
 ### Helper Subcommands
 
@@ -94,11 +94,11 @@ Default to **Essential Output** in chat. Print **Complete Output** only when the
 
 ### Essential Output
 
-Report `status`, Project root, Research Topic ref, Topic Workspace ref, `topic.repos.main` readiness, Workspace Runtime status, Topic Actor roster, each selected actor cwd, actor onboarding status, `topic.workspace.summary` path and freshness, ready surfaces, verified checks, skipped stages, and blockers.
+Report `status`, Project root, Research Topic ref, Topic Workspace ref, `topic.repos.main` readiness, Workspace Runtime status, Topic Actor roster, each selected actor cwd, actor onboarding status, `topic.workspace.summary` path and freshness, reset checkpoint id when created or refreshed, ready surfaces, verified checks, skipped stages, and blockers.
 
 ### Complete Output
 
-Include commands run, semantic labels, path sources, Project lifecycle evidence, topic registration evidence, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, runtime validation output, topic environment setup evidence, `topic.repos.main` evidence, actor binding JSON, actor-scoped semantic paths, actor onboarding evidence, delegated owner evidence, summary evidence, skipped stages, and blockers.
+Include commands run, semantic labels, path sources, Project lifecycle evidence, topic registration evidence, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, runtime validation output, topic environment setup evidence, `topic.repos.main` evidence, actor binding JSON, actor-scoped semantic paths, actor onboarding evidence, delegated owner evidence, summary evidence, reset checkpoint payload or review path when requested, skipped stages, and blockers.
 
 ## Guardrails
 

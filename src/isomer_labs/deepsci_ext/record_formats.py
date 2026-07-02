@@ -14,6 +14,20 @@ CATALOG_RESOURCE = "assets/record_formats/profiles/catalog.v1.json"
 SCHEMA_RESOURCE = "assets/record_formats/schemas/structured-record.v1.schema.json"
 TEMPLATE_RESOURCE = "assets/record_formats/templates/markdown/structured-record.v1.md.j2"
 PROVIDER_ID = "isomer.deepsci.record-formats"
+PROFILE_ASSETS = {
+    "control.topic-reset-checkpoint": (
+        "assets/record_formats/schemas/topic-reset-checkpoint.v1.schema.json",
+        "assets/record_formats/templates/markdown/topic-reset-checkpoint.v1.md.j2",
+    ),
+    "control.topic-reset-plan": (
+        "assets/record_formats/schemas/topic-reset-plan.v1.schema.json",
+        "assets/record_formats/templates/markdown/topic-reset-plan.v1.md.j2",
+    ),
+    "report.topic-reset-outcome": (
+        "assets/record_formats/schemas/topic-reset-outcome.v1.schema.json",
+        "assets/record_formats/templates/markdown/topic-reset-outcome.v1.md.j2",
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -32,7 +46,7 @@ class DeepScientistRecordFormatProvider:
                 "markdown": canonical_record_format_ref(legacy_profile, "template"),
             },
             "media_type": "application/json",
-            "schema_version": "deepsci-structured-record.v1",
+            "schema_version": "topic-reset.v1" if legacy_profile in PROFILE_ASSETS else "deepsci-structured-record.v1",
             "compatibility_version": "v1",
             "status": "active",
             "metadata": {
@@ -47,13 +61,15 @@ class DeepScientistRecordFormatProvider:
         legacy_profile = legacy_profile_from_ref(ref, expected_kind="schema")
         if legacy_profile is None or legacy_profile not in active_profile_names():
             return None
-        return _resolution(ref, "schema", _resource_text(SCHEMA_RESOURCE), media_type="application/schema+json")
+        resource = PROFILE_ASSETS.get(legacy_profile, (SCHEMA_RESOURCE, TEMPLATE_RESOURCE))[0]
+        return _resolution(ref, "schema", _resource_text(resource), media_type="application/schema+json")
 
     def resolve_template(self, ref: str) -> ArtifactFormatResolution | None:
         legacy_profile = legacy_profile_from_ref(ref, expected_kind="template")
         if legacy_profile is None or legacy_profile not in active_profile_names():
             return None
-        return _resolution(ref, "template", _resource_text(TEMPLATE_RESOURCE), media_type="text/markdown")
+        resource = PROFILE_ASSETS.get(legacy_profile, (SCHEMA_RESOURCE, TEMPLATE_RESOURCE))[1]
+        return _resolution(ref, "template", _resource_text(resource), media_type="text/markdown")
 
 
 def register_deepsci_record_format_provider(registry: ArtifactFormatRegistry | None = None) -> DeepScientistRecordFormatProvider:
@@ -66,11 +82,17 @@ def register_deepsci_record_format_provider(registry: ArtifactFormatRegistry | N
 
 
 def active_profile_names() -> tuple[str, ...]:
-    """Return active v2 legacy profile names covered by this provider."""
+    """Return active legacy profile names covered by this provider."""
 
     catalog = json.loads(_resource_text(CATALOG_RESOURCE))
     profiles = catalog.get("profiles", [])
     return tuple(str(profile) for profile in profiles)
+
+
+def active_v2_binding_profile_names() -> tuple[str, ...]:
+    """Return active profile names expected in v2 placeholder bindings."""
+
+    return tuple(profile for profile in active_profile_names() if profile not in PROFILE_ASSETS)
 
 
 def canonical_record_format_ref(legacy_profile: str, kind: str) -> str:

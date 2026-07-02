@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "isomer:deepsci/record-format/schema/report/topic-reset-outcome/v1",
+  "title": "Topic reset outcome payload",
+  "type": "object",
+  "required": [
+    "title",
+    "summary",
+    "status",
+    "research_topic_id",
+    "topic_workspace_id",
+    "checkpoint_id",
+    "plan_id",
+    "outcome_id",
+    "applied_actions",
+    "skipped_actions",
+    "failed_actions",
+    "diagnostics",
+    "started_at",
+    "finished_at",
+    "no_git_operations"
+  ],
+  "properties": {
+    "title": {"type": "string"},
+    "summary": {"type": "string"},
+    "status": {"type": "string", "enum": ["succeeded", "partial", "failed"]},
+    "research_topic_id": {"type": "string"},
+    "topic_workspace_id": {"type": "string"},
+    "checkpoint_id": {"type": "string"},
+    "plan_id": {"type": "string"},
+    "outcome_id": {"type": "string"},
+    "applied_actions": {"type": "array", "items": {"type": "object"}},
+    "skipped_actions": {"type": "array", "items": {"type": "object"}},
+    "failed_actions": {"type": "array", "items": {"type": "object"}},
+    "diagnostics": {"type": "array", "items": {"type": "object"}},
+    "started_at": {"type": "string"},
+    "finished_at": {"type": "string"},
+    "actor_ref": {"type": ["string", "null"]},
+    "no_git_operations": {"const": true}
+  },
+  "additionalProperties": false
+}

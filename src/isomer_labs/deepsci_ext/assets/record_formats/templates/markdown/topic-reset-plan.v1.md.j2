@@ -1,0 +1,30 @@
+# Topic Reset Plan
+
+Research Topic: `{{ payload.research_topic_id }}`
+Topic Workspace: `{{ payload.topic_workspace_id }}`
+Checkpoint: `{{ payload.checkpoint_id }}`
+Plan: `{{ payload.plan_id }}`
+Status: `{{ payload.status }}`
+
+{{ payload.summary }}
+
+## Action Summary
+
+- Total actions: {{ payload.actions | length }}
+- Blockers: {{ payload.blockers | length }}
+
+{% if payload.blockers | length %}
+## Blockers
+
+{% for blocker in payload.blockers -%}
+- `{{ blocker.target_kind }}` {% if blocker.target_ref is defined %}`{{ blocker.target_ref }}`{% elif blocker.target_path is defined %}`{{ blocker.target_path }}`{% endif %}: {{ blocker.details.message | default("blocked") }}
+{% endfor %}
+{% endif %}
+
+## Reset Boundary
+
+Apply deletes only targets named by this plan. No Git operations are permitted.
+
+```json
+{{ payload | tojson(indent=2) }}
+```

@@ -4,12 +4,12 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Print a concise description: `isomer-admin-topic-mgr` manages initialized-topic storage, Topic Actors, topic agent team topology, environment mutation, environment verification, and diagnostics after `isomer-admin-topic-creator` has initialized a Research Topic.
+1. Print a concise description: `isomer-admin-topic-mgr` manages initialized-topic storage, Topic Actors, topic agent team topology, environment mutation, environment verification, reset checkpoints, and diagnostics after `isomer-admin-topic-creator` has initialized a Research Topic.
 2. Explain that invoking the skill without a prompt defaults to `status`, while explicit help prints this usage surface.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
 4. Name the required inputs: Project Manifest context, initialized Research Topic, Topic Workspace, optional Topic Actor names, optional packet/profile material, requested Agent Name mapping, package mutation request, or environment verification target.
 5. State the output contract: Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
-6. State the key guardrails: no blank-state topic initialization, no directory-scanning selection, no silent Git repair, no cross-topic refs, no local virtualenv or ambient package mutation, no Agent Instance creation, no Houmao launch, no Execution Adapter operation, and no v2 research bootstrap ownership.
+6. State the key guardrails: no blank-state topic initialization, no directory-scanning selection, no silent Git repair, no Git-based reset behavior, no cross-topic refs, no local virtualenv or ambient package mutation, no Agent Instance creation, no Houmao launch, no Execution Adapter operation, and no v2 research bootstrap ownership.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which usage details to print, then execute the plan.
 
@@ -37,6 +37,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 | `env-verify-topic` | Verify Topic Workspace environment readiness or route full gate-driven verification to `isomer-srv-topic-env-setup`. | Topic env verification evidence, service handoff, skipped checks, blockers. |
 | `env-verify-actors` | Verify selected Topic Actor cwd gates and actor support labels. | Per-actor readiness, commands run, support-label evidence, blockers. |
 | `env-verify-agents` | Route formal Agent Workspace cwd proof to `isomer-srv-agent-env-setup`. | Agent env service evidence, Agent Workspace readiness by Agent Name, blockers. |
+| `reset-plan` | Create a read-only structured reset plan for an initialized Topic Workspace checkpoint. | Reset plan id, action summary, generated review path, and blockers. |
+| `reset-inspect` | List and inspect reset checkpoints, reset plans, blockers, and review views. | Checkpoint or plan status, preserved setup evidence, generated review paths, and stale-plan guidance. |
+| `reset-apply` | Apply an approved reset plan with explicit confirmation. | Reset outcome id, applied/skipped/failed action counts, diagnostics, and generated review path. |
 | `help` | Print this usage information. | Public subcommand table, required inputs, outputs, guardrails. |
 
 ## Boundary Notes
@@ -48,3 +51,5 @@ If the user's task does not map cleanly to these steps, use your native planning
 `isomer-srv-agent-env-setup` owns formal Agent Workspace cwd proof. Use `env-verify-agents` when a caller asks the topic manager for that proof, and report returned service evidence without claiming runtime launch readiness.
 
 `isomer-rsch-workspace-mgr-v2` owns v2 research placeholder binding and storage bootstrap. This topic manager does not create research records, v2 bootstrap outputs, accepted artifact instructions, Agent Instances, Houmao launch material, or Execution Adapter state.
+
+Topic Workspace reset operations are initialized-topic management operations owned here: use `project topic-reset plan`, `project topic-reset show`, `project topic-reset show-plan`, and `project topic-reset apply` through structured records and Workspace Runtime state, not Git state.

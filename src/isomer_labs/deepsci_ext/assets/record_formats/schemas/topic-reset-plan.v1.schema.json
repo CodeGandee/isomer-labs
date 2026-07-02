@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "isomer:deepsci/record-format/schema/control/topic-reset-plan/v1",
+  "title": "Topic reset plan payload",
+  "type": "object",
+  "required": [
+    "title",
+    "summary",
+    "status",
+    "research_topic_id",
+    "topic_workspace_id",
+    "checkpoint_id",
+    "plan_id",
+    "checkpoint_digest",
+    "precondition_digest",
+    "preconditions",
+    "actions",
+    "blockers",
+    "no_git_operations"
+  ],
+  "properties": {
+    "title": {"type": "string"},
+    "summary": {"type": "string"},
+    "status": {"type": "string", "enum": ["ready", "blocked", "stale", "applied", "failed"]},
+    "research_topic_id": {"type": "string"},
+    "topic_workspace_id": {"type": "string"},
+    "checkpoint_id": {"type": "string"},
+    "plan_id": {"type": "string"},
+    "checkpoint_digest": {"type": "string"},
+    "precondition_digest": {"type": "string"},
+    "preconditions": {"type": "object"},
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "plan_id", "action", "target_kind", "status", "created_at"],
+        "properties": {
+          "id": {"type": "string"},
+          "plan_id": {"type": "string"},
+          "action": {"type": "string", "enum": ["preserve", "delete_record", "delete_file", "delete_generated_view", "regenerate", "skip", "blocked"]},
+          "target_kind": {"type": "string"},
+          "target_ref": {"type": "string"},
+          "target_path": {"type": "string"},
+          "semantic_label": {"type": "string"},
+          "source_kind": {"type": "string"},
+          "status": {"type": "string", "enum": ["planned", "applied", "skipped", "failed"]},
+          "created_at": {"type": "string"},
+          "details": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "blockers": {"type": "array", "items": {"type": "object"}},
+    "created_at": {"type": "string"},
+    "actor_ref": {"type": ["string", "null"]},
+    "no_git_operations": {"const": true}
+  },
+  "additionalProperties": false
+}

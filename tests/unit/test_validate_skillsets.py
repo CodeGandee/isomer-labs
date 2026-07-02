@@ -368,7 +368,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Creator
 
-            Create a prepared Topic Workspace through Project Manifest-backed context, `topic.repos.main`, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, `topic.workspace.summary`, Workspace Runtime, Topic Actor roster, actor cwd, and actor onboarding.
+            Create a prepared Topic Workspace through Project Manifest-backed context, `topic.repos.main`, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, `topic.workspace.summary`, structured reset checkpoint, Workspace Runtime, Topic Actor roster, actor cwd, and actor onboarding.
 
             ## Workflow
 
@@ -416,7 +416,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 "setup-topic-env.md": "Delegate to `isomer-srv-topic-env-setup`, read `topic.intent.topic_env_requirements`, derive `topic.env.topic_setup_target_spec`, and report `topic.repos.main` readiness.",
                 "define-actors.md": "Create `topic.intent.actor_definitions` for the default `operator` and each actor source env gate.",
                 "setup-actors.md": "Delegate to `isomer-admin-topic-mgr`, consume `topic.intent.actor_definitions`, report `topic.actors.workspace`, and verify `topic.env.actor_env_gates`.",
-                "finalize.md": "Resolve `topic.workspace.summary`, report ready, verified, blocked, and skipped state. Do not recommend a next research step.",
+                "finalize.md": "Resolve `topic.workspace.summary`, run `isomer-cli project topic-reset checkpoint`, create a structured reset checkpoint from operator-level readiness evidence, report ready, verified, blocked, and skipped state. Do not recommend a next research step.",
                 "step-by-step.md": "Follow the same main workflow order as `fast-forward`, show an option table with Recommended choices, and require acknowledgement.",
                 "run-to.md": "Valid targets are procedural. The target is excluded by default, can be inclusive on request, and stops on missing user input.",
                 "status.md": "Report ready, blocked, skipped, and `topic.workspace.summary` state.",
@@ -451,7 +451,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         subcommand_links = ", ".join(
             f"`references/{subcommand_name}`" for subcommand_name in validator.TOPIC_MANAGER_SUBCOMMANDS
         )
-        skill_terms = " ".join(validator.TOPIC_MANAGER_REQUIRED_SKILL_TERMS)
+        skill_terms = "\n".join(f"            {term}" for term in validator.TOPIC_MANAGER_REQUIRED_SKILL_TERMS)
         skill_text = f"""
             ---
             name: isomer-admin-topic-mgr
@@ -460,7 +460,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Mgr
 
-            Manage an initialized-topic after `isomer-admin-topic-creator` handoff. This fixture covers storage, actors, team topology, environment mutation, environment verification, diagnostics, and blocker reporting. {skill_terms}
+            Manage an initialized-topic after `isomer-admin-topic-creator` handoff. This fixture covers storage, actors, team topology, environment mutation, environment verification, reset checkpoint handling, diagnostics, and blocker reporting.
 
             ## Workflow
 
@@ -477,8 +477,13 @@ class SkillsetValidatorTests(unittest.TestCase):
             Team Subcommands: `team-plan`, `team-materialize-workspaces`, `team-write-boundaries`, `team-create-branch`, and `team-validate-workspaces`.
             Environment Mutation Subcommands: `env-install-packages`, `env-update-packages`, and `env-remove-packages`.
             Environment Verification Subcommands: `env-verify-topic`, `env-verify-actors`, and `env-verify-agents`.
+            Reset Subcommands: `reset-plan`, `reset-inspect`, and `reset-apply`.
 
             Use {subcommand_links}.
+
+            ## Required Terms
+
+{skill_terms}
 
             {OUTPUT_CONTRACT_FIXTURE}
             """
@@ -534,6 +539,9 @@ class SkillsetValidatorTests(unittest.TestCase):
                     | `env-verify-topic` | Verify topic env. | Service evidence and blockers. |
                     | `env-verify-actors` | Verify actor env. | Actor cwd readiness blockers. |
                     | `env-verify-agents` | Verify agent env. | Service evidence and blockers. |
+                    | `reset-plan` | Plan reset. | Reset plan blockers. |
+                    | `reset-inspect` | Inspect reset. | Reset checkpoint blockers. |
+                    | `reset-apply` | Apply reset. | Reset outcome blockers. |
                     """,
                 )
                 continue
@@ -1473,6 +1481,32 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("isomer-managed/" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_git_reset_guidance_in_reset_workflows(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        reset_path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "reset-plan.md"
+        reset_path.write_text(reset_path.read_text(encoding="utf-8") + "\nWhen topic-reset is stale, run `git stash` before planning.\n", encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("must not recommend Git reset" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_research_paradigm_routing_in_reset_guidance(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        reset_path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "reset-inspect.md"
+        reset_path.write_text(reset_path.read_text(encoding="utf-8") + "\nFor reset checkpoint inspection, route to skillset/research-paradigm/v2 first.\n", encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("must not route to or depend on research-paradigm" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_topic_manager_agent_key_wording(self) -> None:
         root = self.make_root()

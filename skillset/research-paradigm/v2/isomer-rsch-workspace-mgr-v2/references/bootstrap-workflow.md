@@ -9,8 +9,9 @@
 5. Confirm Workspace Runtime readiness with fresh inspection or validation output before trusting old state.
 6. Confirm the minimal semantic labels needed for v2 research bootstrap through Workspace Path Resolution.
 7. Identify the bootstrap actor. Prefer Topic Service Master when it is running; otherwise use Project Operator Session or Operator Agent as the fallback actor.
-8. Build <RSCH_WORKSPACE_CONTEXT> with topic refs, Topic Creator summary refs or Topic Manager evidence, selected v2 skill set, selected Topic Actors, actor workspace readiness, optional topic-team summary path, optional topic-team validation status, runtime readiness, topic-team profile material signal when selected, formal Agent Workspace context when selected, actor identity, and any setup blockers.
-9. Continue to semantic-surface planning only when the context is concrete enough for later v2 skills to avoid guessing.
+8. Build <RSCH_WORKSPACE_CONTEXT> with topic refs, Topic Creator summary refs or Topic Manager evidence, selected v2 skill set, selected Topic Actors, actor workspace readiness, optional topic-team summary path, optional topic-team validation status, runtime readiness, topic-team profile material signal when selected, formal Agent Workspace context when selected, actor identity, selected reset checkpoint id when available, and any setup blockers.
+9. Decide whether v2 bootstrap outputs should survive Topic Workspace reset. If they should, plan a checkpoint update with `isomer-cli project topic-reset update-checkpoint --topic <research-topic-id> <checkpoint-id>` after bootstrap records and generated views exist; if not, record that those outputs are redo-after-reset behavior.
+10. Continue to semantic-surface planning only when the context is concrete enough for later v2 skills to avoid guessing.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded bootstrap plan from the selected Topic Workspace, available runtime output, and the user's request.
 
@@ -26,6 +27,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 - The minimal semantic labels needed for bootstrap resolve or produce explicit blockers: `topic.workspace`, `topic.runtime`, `topic.records.artifacts`, `topic.records.tasks`, `topic.records.runs`, `topic.records.views`, `topic.records.logs`, selected `topic.actors.workspace` labels when actors are selected, optional `topic.team_profile_bundle` when formal team material is selected, and optional `agent.workspace`, `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, and `agent.links` when formal agents will write pre-promotion material.
 - Topic Actor Workspace context exists for selected Topic Actors, or formal Agent Workspace context exists for formal agents that will write pre-promotion material.
 - The actor performing bootstrap is named in the result.
+- Reset-survival intent is explicit: selected v2 bootstrap outputs either update the reset checkpoint after creation or are documented as redo-after-reset behavior.
 
 ## Minimal Readiness Signals
 

@@ -71,6 +71,19 @@ LIFECYCLE_STATUSES = (
 STRUCTURED_PAYLOAD_VALIDATION_STATUSES = ("valid", "invalid", "error")
 STRUCTURED_PAYLOAD_RENDER_STATUSES = ("rendered", "not_requested", "error")
 ARTIFACT_FORMAT_REGISTRATION_SOURCE_KINDS = ("runtime_registration", "file_snapshot")
+RESET_CHECKPOINT_STATUSES = ("ready", "blocked", "stale")
+RESET_PLAN_STATUSES = ("ready", "blocked", "stale", "applied", "failed")
+RESET_PLAN_ACTIONS = (
+    "preserve",
+    "delete_record",
+    "delete_file",
+    "delete_generated_view",
+    "regenerate",
+    "skip",
+    "blocked",
+)
+RESET_PLAN_ACTION_STATUSES = ("planned", "applied", "skipped", "failed")
+RESET_OUTCOME_STATUSES = ("succeeded", "partial", "failed")
 AGENT_TEAM_INSTANCE_STATUSES = ("planned", "ready", "running", "blocked", "failed", "stale", "stopped", "cancelled", "superseded", "archived")
 AGENT_INSTANCE_STATUSES = (
     "planned",
@@ -345,6 +358,193 @@ class StructuredResearchPayloadRecord:
         if include_diagnostics:
             data["validation_diagnostics"] = self.validation_diagnostics
             data["render_diagnostics"] = self.render_diagnostics
+        return data
+
+    def to_summary_json(self) -> dict[str, object]:
+        return self.to_json(include_payload=False, include_diagnostics=False)
+
+
+@dataclass(frozen=True)
+class ResetCheckpointRecord:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    status: str
+    payload_json: dict[str, object]
+    payload_digest: str
+    checkpoint_digest: str
+    created_at: str
+    updated_at: str
+    actor_ref: str | None = None
+    source_record_id: str | None = None
+    rendered_markdown_path: str | None = None
+    rendered_markdown_digest: str | None = None
+    diagnostics: list[dict[str, object]] = field(default_factory=list)
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self, *, include_payload: bool = True, include_diagnostics: bool = True) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "status": self.status,
+            "payload_digest": self.payload_digest,
+            "checkpoint_digest": self.checkpoint_digest,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("actor_ref", self.actor_ref),
+            ("source_record_id", self.source_record_id),
+            ("rendered_markdown_path", self.rendered_markdown_path),
+            ("rendered_markdown_digest", self.rendered_markdown_digest),
+        ):
+            if value is not None:
+                data[key] = value
+        if include_payload:
+            data["payload"] = self.payload_json
+        if include_diagnostics:
+            data["diagnostics"] = self.diagnostics
+        return data
+
+    def to_summary_json(self) -> dict[str, object]:
+        return self.to_json(include_payload=False, include_diagnostics=False)
+
+
+@dataclass(frozen=True)
+class ResetPlanRecord:
+    id: str
+    checkpoint_id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    status: str
+    payload_json: dict[str, object]
+    payload_digest: str
+    checkpoint_digest: str
+    precondition_digest: str
+    created_at: str
+    updated_at: str
+    actor_ref: str | None = None
+    rendered_markdown_path: str | None = None
+    rendered_markdown_digest: str | None = None
+    diagnostics: list[dict[str, object]] = field(default_factory=list)
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self, *, include_payload: bool = True, include_diagnostics: bool = True) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "checkpoint_id": self.checkpoint_id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "status": self.status,
+            "payload_digest": self.payload_digest,
+            "checkpoint_digest": self.checkpoint_digest,
+            "precondition_digest": self.precondition_digest,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("actor_ref", self.actor_ref),
+            ("rendered_markdown_path", self.rendered_markdown_path),
+            ("rendered_markdown_digest", self.rendered_markdown_digest),
+        ):
+            if value is not None:
+                data[key] = value
+        if include_payload:
+            data["payload"] = self.payload_json
+        if include_diagnostics:
+            data["diagnostics"] = self.diagnostics
+        return data
+
+    def to_summary_json(self) -> dict[str, object]:
+        return self.to_json(include_payload=False, include_diagnostics=False)
+
+
+@dataclass(frozen=True)
+class ResetPlanActionRecord:
+    id: str
+    plan_id: str
+    action: str
+    target_kind: str
+    status: str
+    created_at: str
+    target_ref: str | None = None
+    target_path: str | None = None
+    semantic_label: str | None = None
+    source_kind: str | None = None
+    details: dict[str, object] = field(default_factory=dict)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "plan_id": self.plan_id,
+            "action": self.action,
+            "target_kind": self.target_kind,
+            "status": self.status,
+            "created_at": self.created_at,
+            "details": self.details,
+        }
+        for key, value in (
+            ("target_ref", self.target_ref),
+            ("target_path", self.target_path),
+            ("semantic_label", self.semantic_label),
+            ("source_kind", self.source_kind),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class ResetOutcomeRecord:
+    id: str
+    checkpoint_id: str
+    plan_id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    status: str
+    payload_json: dict[str, object]
+    payload_digest: str
+    applied_actions: list[dict[str, object]]
+    skipped_actions: list[dict[str, object]]
+    failed_actions: list[dict[str, object]]
+    diagnostics: list[dict[str, object]]
+    actor_ref: str | None
+    started_at: str
+    finished_at: str
+    rendered_markdown_path: str | None = None
+    rendered_markdown_digest: str | None = None
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self, *, include_payload: bool = True, include_diagnostics: bool = True) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "checkpoint_id": self.checkpoint_id,
+            "plan_id": self.plan_id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "status": self.status,
+            "payload_digest": self.payload_digest,
+            "applied_actions": self.applied_actions,
+            "skipped_actions": self.skipped_actions,
+            "failed_actions": self.failed_actions,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("actor_ref", self.actor_ref),
+            ("rendered_markdown_path", self.rendered_markdown_path),
+            ("rendered_markdown_digest", self.rendered_markdown_digest),
+        ):
+            if value is not None:
+                data[key] = value
+        if include_payload:
+            data["payload"] = self.payload_json
+        if include_diagnostics:
+            data["diagnostics"] = self.diagnostics
         return data
 
     def to_summary_json(self) -> dict[str, object]:

@@ -30,6 +30,7 @@ MODULE_SIZE_EXEMPTIONS = {
     "doctor.py",
     "paths.py",
     "research_records.py",
+    "topic_reset.py",
     "topic_workspace_manifest.py",
     "runtime/models.py",
     "runtime/store.py",
