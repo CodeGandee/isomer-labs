@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-status`. Refuse to run if any value is missing, and tell the user to run `resolve-status` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
 | Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`, whether derived from source intent or supplied as an explicit manual target spec. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
 | Dependency plan, resource check plan, enclosure strategy, and Pixi install commands | Read from the target spec's `## Dependency Plan`, `## Resource Check Plan`, and `## Pixi Install Commands` sections, including Python version evidence, enclosure classification, operation classification evidence, bounded-run guidance source when required, generic best-effort fallback evidence when used, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, missing classification evidence for a resource-relevant setup command, missing bounded guidance for `heavy` or `unknown-risk`, or missing enclosure strategy for a required dependency or runtime need. |
 | Package-source override or resolution evidence | Optional. Use only when the prompt or derived gate explicitly names a package source override, when package-specific rules from `isomer-misc-pkg-specifics` apply, or when `isomer-srv-resolve-pkg-repo` evidence is needed because repository, mirror, registry, or channel reachability is uncertain. Otherwise follow **Package Installation Routing** in this page. |
@@ -18,7 +18,7 @@ Recover these before asking the user:
 When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**:
-   - Require workspace context from `resolve-status` and resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`.
+   - Require workspace context from `resolve-topic-workspace` and resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`.
    - If the caller supplied only a package install, update, remove, or package verification request without a derived target spec or full environment setup intent, stop and route to the matching `$isomer-admin-topic-mgr env-install-packages`, `$isomer-admin-topic-mgr env-update-packages`, `$isomer-admin-topic-mgr env-remove-packages`, or verification command.
 2. **Read the target spec** and stop with blockers when its `## Blockers` section contains unresolved install blockers.
 3. **Check enclosure classification** from the target spec's `## Dependency Plan`:
@@ -29,7 +29,7 @@ When this subcommand is selected, execute the following steps in order.
    - Update the target spec with the selected version and evidence.
 5. **Confirm the resolved Topic Workspace Pixi manifest exists** at `manifest_path`:
    - Do not create a missing manifest in this subcommand.
-   - `resolve-status` must have already used Pixi to resolve an explicit file target, explicit directory target, or the implicit Topic Workspace directory default.
+   - `resolve-topic-workspace` must have already used Pixi to resolve an explicit file target, explicit directory target, or the implicit Topic Workspace directory default.
 6. **Ensure Topic Workspace VCS ignores**:
    - Create or update `<topic-workspace-dir>/.gitignore` with `.pixi/`, `tmp/`, and `.git/`.
    - Add `.isomer-user-env/` only when topic-local fallback is used.

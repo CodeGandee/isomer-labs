@@ -7,6 +7,8 @@ description: Use when a Nature-family or high-impact journal figure must be crea
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Nature Figure starts with backend selection and figure contract before plotting. It asks for Python or R when the backend is not clear, keeps all drawing and QA in the selected backend, maps every panel to evidence, chooses a figure archetype, enforces journal export requirements, previews the actual render, and revises until scientific and visual QA pass.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.

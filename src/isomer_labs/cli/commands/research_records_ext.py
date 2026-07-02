@@ -25,8 +25,10 @@ from isomer_labs.research_records import (
     list_records,
     parse_json_object,
     parse_string_map,
+    render_record,
     show_record,
     update_record,
+    validate_record_payload,
 )
 
 
@@ -58,13 +60,35 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--include-body", is_flag=True, help="Include body text when the record has a readable local content path.")
+    @click.option("--include-payload", is_flag=True, help="Include structured payload JSON when present.")
+    @click.option("--include-validation-diagnostics", is_flag=True, help="Include structured validation diagnostics.")
+    @click.option("--include-render-diagnostics", is_flag=True, help="Include structured render diagnostics.")
+    @click.option("--include-rendered-body", is_flag=True, help="Include generated Markdown body when present.")
     @click.argument("record_id")
     @click.pass_context
-    def show_command(ctx: click.Context, record_id: str, include_body: bool = False, **kwargs: Any) -> int:
+    def show_command(
+        ctx: click.Context,
+        record_id: str,
+        include_body: bool = False,
+        include_payload: bool = False,
+        include_validation_diagnostics: bool = False,
+        include_render_diagnostics: bool = False,
+        include_rendered_body: bool = False,
+        **kwargs: Any,
+    ) -> int:
         return _with_context(
             ctx,
             kwargs,
-            lambda context, _request: show_record(context, record_id, env=os.environ, include_body=include_body),
+            lambda context, _request: show_record(
+                context,
+                record_id,
+                env=os.environ,
+                include_body=include_body,
+                include_payload=include_payload,
+                include_validation_diagnostics=include_validation_diagnostics,
+                include_render_diagnostics=include_render_diagnostics,
+                include_rendered_body=include_rendered_body,
+            ),
         )
 
     @records_group.command(name="list", help="List topic-scoped research records.")
@@ -82,6 +106,12 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     @click.option("--runtime-kind", default=None, help="Filter by Topic Actor runtime kind metadata.")
     @click.option("--controller-kind", default=None, help="Filter by Topic Actor controller kind metadata.")
     @click.option("--adapter-ref", default=None, help="Filter by Topic Actor adapter ref metadata.")
+    @click.option("--format-profile", "format_profile_ref", default=None, help="Filter by Artifact Format Profile ref.")
+    @click.option("--schema-ref", default=None, help="Filter by structured schema ref.")
+    @click.option("--template-ref", default=None, help="Filter by structured template ref.")
+    @click.option("--validation-status", default=None, help="Filter by structured validation status.")
+    @click.option("--render-status", default=None, help="Filter by structured render status.")
+    @click.option("--limit", type=int, default=None, help="Maximum records to return.")
     @click.pass_context
     def list_command(ctx: click.Context, **kwargs: Any) -> int:
         filters = dict(kwargs)
@@ -103,6 +133,12 @@ def register_research_record_ext_commands(app: click.Group) -> None:
                 runtime_kind=filters.get("runtime_kind"),
                 controller_kind=filters.get("controller_kind"),
                 adapter_ref=filters.get("adapter_ref"),
+                format_profile_ref=filters.get("format_profile_ref"),
+                schema_ref=filters.get("schema_ref"),
+                template_ref=filters.get("template_ref"),
+                validation_status=filters.get("validation_status"),
+                render_status=filters.get("render_status"),
+                limit=filters.get("limit"),
             ),
             build_request=False,
         )
@@ -134,12 +170,48 @@ def register_research_record_ext_commands(app: click.Group) -> None:
             build_request=False,
         )
 
+    @records_group.command(name="validate", help="Validate a structured research record payload without mutation.")
+    @_common_options
+    @_topic_selection_options
+    @_record_request_options(require_kind=False, include_id=False)
+    @click.pass_context
+    def validate_command(ctx: click.Context, **kwargs: Any) -> int:
+        values = dict(kwargs)
+        if values.get("record_kind") is None:
+            values["record_kind"] = "artifact"
+        return _with_context(
+            ctx,
+            values,
+            lambda context, request: validate_record_payload(context, request, env=os.environ, cwd=Path.cwd()),
+        )
+
+    @records_group.command(name="render", help="Render a stored structured research record without changing its locator.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--output-file", type=click.Path(path_type=Path), default=None, help="Optional file path for rendered Markdown.")
+    @click.argument("record_id")
+    @click.pass_context
+    def render_command(ctx: click.Context, record_id: str, output_file: Path | None = None, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            kwargs,
+            lambda context, _request: render_record(context, record_id, env=os.environ, output_file=output_file),
+            build_request=False,
+        )
+
 
 def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
     def decorator(command: Any) -> Any:
         command = click.option("--lifecycle-refs-json", default=None, help="Additional lifecycle refs as a JSON object.")(command)
         command = click.option("--metadata-json", default=None, help="Additional transition metadata as a JSON object.")(command)
         command = click.option("--content-name", default=None, help="Stored body filename.")(command)
+        command = click.option("--render", "render_format", default=None, help="Render a generated view, for example markdown.")(command)
+        command = click.option("--template-file", type=click.Path(path_type=Path), default=None, help="Plain Jinja2 template file for structured payloads.")(command)
+        command = click.option("--schema-file", type=click.Path(path_type=Path), default=None, help="Plain JSON Schema file for structured payloads.")(command)
+        command = click.option("--template-ref", default=None, help="Artifact Format template ref for structured payloads.")(command)
+        command = click.option("--schema-ref", default=None, help="Artifact Format schema ref for structured payloads.")(command)
+        command = click.option("--format-profile", "format_profile_ref", default=None, help="Artifact Format Profile ref for structured payloads.")(command)
+        command = click.option("--payload-file", type=click.Path(path_type=Path), default=None, help="JSON payload file for structured records.")(command)
         command = click.option("--body-file", type=click.Path(path_type=Path), default=None, help="File to copy as the record body.")(command)
         command = click.option("--body", default=None, help="Inline UTF-8 body to store for the record.")(command)
         command = click.option("--semantic-label", default=None, help="Semantic label used for optional body storage.")(command)
@@ -238,6 +310,13 @@ def _request_from_values(values: dict[str, Any]) -> ResearchRecordRequest:
         body=values.get("body"),
         body_file=values.get("body_file"),
         content_name=values.get("content_name"),
+        payload_file=values.get("payload_file"),
+        format_profile_ref=values.get("format_profile_ref"),
+        schema_ref=values.get("schema_ref"),
+        template_ref=values.get("template_ref"),
+        schema_file=values.get("schema_file"),
+        template_file=values.get("template_file"),
+        render_format=values.get("render_format"),
         metadata=parse_json_object(values.get("metadata_json"), field_name="metadata-json"),
         lifecycle_refs=parse_string_map(values.get("lifecycle_refs_json"), field_name="lifecycle-refs-json"),
     )

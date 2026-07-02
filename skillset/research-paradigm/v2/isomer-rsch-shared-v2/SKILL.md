@@ -7,6 +7,8 @@ description: Use when a v2 Isomer research skill needs shared coordination rules
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Shared defines the coordination contract for v2 research skills. It is not migrated from one upstream source skill; it exists to keep v2 skill handoffs, route decisions, placeholder usage, and storage-binding cautions consistent across the refactor-migrated skills.
 
 ## When to Use

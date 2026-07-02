@@ -159,6 +159,9 @@ Command surface:
   project runtime prepare
   project runtime inspect
   project runtime validate
+  project artifact-formats validate
+  project artifact-formats render
+  project artifact-formats register
   project team-instances create
   project team-instances list
   project team-instances show
@@ -2728,6 +2731,7 @@ def _output_format(options: CliOptions) -> str:
 
 
 def _register_commands() -> None:
+    from isomer_labs.cli.commands.artifact_formats import register_artifact_format_commands
     from isomer_labs.cli.commands.deepsci_ext import register_deepsci_ext_commands
     from isomer_labs.cli.commands.doctor import register_doctor_commands
     from isomer_labs.cli.commands.handoffs import register_handoff_commands
@@ -2741,6 +2745,7 @@ def _register_commands() -> None:
     register_project_commands(project_group)
     register_doctor_commands(project_group)
     register_runtime_commands(project_group)
+    register_artifact_format_commands(project_group)
     register_team_instance_commands(project_group)
     register_handoff_commands(project_group)
     register_team_template_commands(project_group)

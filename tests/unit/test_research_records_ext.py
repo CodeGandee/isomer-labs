@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from isomer_labs import cli
+from isomer_labs.deepsci_ext.record_formats import canonical_record_format_ref
 
 
 def write(path: Path, content: str) -> None:
@@ -244,6 +245,160 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         status, listed = self.run_records(root, ["list", "--topic-actor", "operator", "--runtime-kind", "codex"])
         self.assertEqual(0, status, listed)
         self.assertEqual(1, listed["count"])
+
+    def test_structured_payload_create_show_list_and_update(self) -> None:
+        root = self.make_project()
+        profile_ref = canonical_record_format_ref("run.main-run-record", "profile")
+        payload_file = root / "main-run-payload.json"
+        payload_file.write_text('{"title":"Main run","summary":"initial"}', encoding="utf-8")
+        status, validated = self.run_records(
+            root,
+            [
+                "validate",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(payload_file),
+            ],
+        )
+        self.assertEqual(0, status, validated)
+        self.assertEqual("valid", validated["validation"]["status"])
+
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "artifact-structured-main-run",
+                "--record-kind",
+                "artifact",
+                "--placeholder",
+                "<MAIN_RUN_RECORD>",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(payload_file),
+                "--render",
+                "markdown",
+                "--content-name",
+                "structured-main-run.md",
+            ],
+        )
+        self.assertEqual(0, status, created)
+        structured = created["structured_payload"]
+        assert isinstance(structured, dict)
+        self.assertEqual("valid", structured["validation_status"])
+        self.assertEqual("rendered", structured["render_status"])
+        self.assertEqual(profile_ref, structured["format_profile_ref"])
+        rendered_path = Path(str(structured["rendered_markdown_path"]))
+        self.assertTrue(rendered_path.exists())
+        self.assertIn("Main run", rendered_path.read_text(encoding="utf-8"))
+
+        status, shown = self.run_records(
+            root,
+            [
+                "show",
+                "artifact-structured-main-run",
+                "--include-payload",
+                "--include-rendered-body",
+            ],
+        )
+        self.assertEqual(0, status, shown)
+        shown_payload = shown["structured_payload"]
+        assert isinstance(shown_payload, dict)
+        self.assertEqual({"summary": "initial", "title": "Main run"}, shown_payload["payload"])
+        self.assertIn("Main run", shown["rendered_body"])
+
+        status, listed = self.run_records(root, ["list", "--format-profile", profile_ref, "--limit", "5"])
+        self.assertEqual(0, status, listed)
+        self.assertEqual(1, listed["count"])
+        listed_record = listed["records"][0]
+        assert isinstance(listed_record, dict)
+        listed_structured = listed_record["structured_payload"]
+        assert isinstance(listed_structured, dict)
+        self.assertNotIn("payload", listed_structured)
+
+        payload_file.write_text('{"title":"Main run","summary":"updated"}', encoding="utf-8")
+        status, updated = self.run_records(
+            root,
+            [
+                "update",
+                "artifact-structured-main-run",
+                "--record-kind",
+                "artifact",
+                "--status",
+                "complete",
+                "--placeholder",
+                "<MAIN_RUN_RECORD>",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(payload_file),
+                "--render",
+                "markdown",
+                "--content-name",
+                "structured-main-run.md",
+            ],
+        )
+        self.assertEqual(0, status, updated)
+        updated_record = updated["record"]
+        assert isinstance(updated_record, dict)
+        self.assertEqual("artifact-structured-main-run", updated_record["id"])
+        self.assertEqual("complete", updated_record["status"])
+        self.assertIn("updated", Path(str(updated["structured_payload"]["rendered_markdown_path"])).read_text(encoding="utf-8"))
+
+    def test_structured_create_rejects_direct_body_source(self) -> None:
+        root = self.make_project()
+        profile_ref = canonical_record_format_ref("run.main-run-record", "profile")
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--record-kind",
+                "artifact",
+                "--format-profile",
+                profile_ref,
+                "--body",
+                "markdown body",
+            ],
+        )
+        self.assertEqual(1, status, created)
+        self.assertEqual("structured_payload_requires_json", created["error"]["code"])
+
+    def test_structured_create_snapshots_plain_schema_and_template(self) -> None:
+        root = self.make_project()
+        schema_file = root / "schema.json"
+        template_file = root / "record.md.j2"
+        payload_file = root / "payload.json"
+        schema_file.write_text(
+            '{"type":"object","required":["title"],"properties":{"title":{"type":"string"}}}',
+            encoding="utf-8",
+        )
+        template_file.write_text("# {{ payload.title }}\n", encoding="utf-8")
+        payload_file.write_text('{"title":"Snapshot record"}', encoding="utf-8")
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "artifact-snapshot",
+                "--record-kind",
+                "artifact",
+                "--schema-file",
+                str(schema_file),
+                "--template-file",
+                str(template_file),
+                "--payload-file",
+                str(payload_file),
+                "--render",
+                "markdown",
+            ],
+        )
+        self.assertEqual(0, status, created)
+        structured = created["structured_payload"]
+        assert isinstance(structured, dict)
+        self.assertEqual("file_snapshot", structured["schema_source_kind"])
+        self.assertTrue(str(structured["schema_ref"]).startswith("custom:alpha/record-format/schema/snapshot/"))
 
     def test_context_resolution_failure_is_deterministic(self) -> None:
         root = self.make_root()

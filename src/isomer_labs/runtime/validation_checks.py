@@ -8,6 +8,8 @@ from pathlib import Path
 import subprocess
 from typing import Iterable, Mapping
 
+from isomer_labs.artifact_formats import digest_bytes, digest_json, validate_payload
+from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
 from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.local_tmp_surfaces import TmpSurfaceIgnorePolicy, tmp_surface_ignore_policy
 from isomer_labs.models import EffectiveTopicContext
@@ -546,6 +548,133 @@ def _validate_lifecycle_records(
                     message="Provenance Record is stale.",
                 )
             )
+    return diagnostics
+
+
+def _validate_structured_research_payloads(
+    context: EffectiveTopicContext,
+    store: WorkspaceRuntimeStore,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    register_deepsci_record_format_provider()
+    lifecycle_records = {record.id: record for record in store.list_lifecycle_records()}
+    for registration in store.list_artifact_format_registrations(topic_workspace_id=context.topic_workspace_id):
+        if registration.research_topic_id != context.research_topic.id:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO206",
+                    severity="error",
+                    concept="Artifact Format Registration",
+                    path=store.db_path,
+                    field=registration.format_profile_ref,
+                    message="Artifact Format registration belongs to another Research Topic.",
+                )
+            )
+        for field, snapshot_path in (
+            ("schema_snapshot_path", registration.schema_snapshot_path),
+            ("template_snapshot_path", registration.template_snapshot_path),
+        ):
+            if snapshot_path is not None and not Path(snapshot_path).exists():
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO206",
+                        severity="error",
+                        concept="Artifact Format Registration",
+                        path=Path(snapshot_path),
+                        field=field,
+                        message="Artifact Format managed snapshot is missing.",
+                    )
+                )
+    for payload in store.list_structured_payloads(topic_workspace_id=context.topic_workspace_id):
+        if payload.research_topic_id != context.research_topic.id:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO207",
+                    severity="error",
+                    concept="Structured Research Payload",
+                    path=store.db_path,
+                    field=payload.record_id,
+                    message="Structured payload belongs to another Research Topic.",
+                )
+            )
+        lifecycle_record = lifecycle_records.get(payload.record_id)
+        if lifecycle_record is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO207",
+                    severity="error",
+                    concept="Structured Research Payload",
+                    path=store.db_path,
+                    field=payload.record_id,
+                    message="Structured payload points to a missing lifecycle record.",
+                )
+            )
+        elif (
+            lifecycle_record.research_topic_id != payload.research_topic_id
+            or lifecycle_record.topic_workspace_id != payload.topic_workspace_id
+        ):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO207",
+                    severity="error",
+                    concept="Structured Research Payload",
+                    path=store.db_path,
+                    field=payload.record_id,
+                    message="Structured payload owner does not match the linked lifecycle record.",
+                )
+            )
+        observed_payload_digest = digest_json(payload.payload_json)
+        if observed_payload_digest != payload.payload_digest:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO208",
+                    severity="error",
+                    concept="Structured Research Payload",
+                    path=store.db_path,
+                    field=payload.record_id,
+                    message="Structured payload digest does not match stored payload JSON.",
+                )
+            )
+        if payload.schema_ref.startswith("isomer:"):
+            validation = validate_payload(payload.payload_json, schema_ref=payload.schema_ref)
+            if not validation.ok:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO208",
+                        severity="error",
+                        concept="Structured Research Payload",
+                        path=store.db_path,
+                        field=payload.record_id,
+                        message="Stored structured payload no longer validates against its recorded schema ref.",
+                    )
+                )
+                diagnostics.extend(validation.diagnostics)
+        if payload.rendered_markdown_path is not None:
+            rendered_path = Path(payload.rendered_markdown_path)
+            if not rendered_path.exists():
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO209",
+                        severity="error",
+                        concept="Structured Research Payload",
+                        path=rendered_path,
+                        field=payload.record_id,
+                        message="Structured payload generated Markdown locator is missing.",
+                    )
+                )
+            elif payload.rendered_markdown_digest is not None:
+                observed_render_digest = digest_bytes(rendered_path.read_bytes())
+                if observed_render_digest != payload.rendered_markdown_digest:
+                    diagnostics.append(
+                        Diagnostic(
+                            code="ISO209",
+                            severity="warning",
+                            concept="Structured Research Payload",
+                            path=rendered_path,
+                            field=payload.record_id,
+                            message="Generated Markdown digest is stale for the stored structured payload.",
+                        )
+                    )
     return diagnostics
 
 

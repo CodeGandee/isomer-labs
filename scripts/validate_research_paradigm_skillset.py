@@ -278,6 +278,7 @@ V2_SUPPORT_SECTION_HEADINGS = frozenset(
 )
 SUPPORT_INTRO_DISALLOWED_PREFIXES = tuple(f"{number}. " for number in range(1, 10)) + ("- ", "##", "###")
 SENTENCE_END_RE = re.compile(r"[.!?](?:\s|$)")
+DEEPSCI_FORMAT_PROFILE_RE = re.compile(r"^isomer:deepsci/record-format/profile/[A-Za-z0-9._/-]+/v1$")
 
 
 @dataclass(frozen=True, order=True)
@@ -912,6 +913,109 @@ def validate_v2_placeholder_bindings(
             )
 
 
+def validate_v2_payload_first_bindings(
+    skill_dirs: list[tuple[Path, str]],
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    for skill_dir, generation in skill_dirs:
+        if generation != "v2":
+            continue
+        binding_path = skill_dir / "placeholder-bindings.md"
+        if not binding_path.exists():
+            continue
+        lines = read_lines(binding_path)
+        has_structured_row = False
+        has_validation_guidance = any(
+            "ext research records validate" in line
+            and "--format-profile" in line
+            and "--payload-file" in line
+            for line in lines
+        )
+        for line_number, line in enumerate(lines, start=1):
+            if not line.startswith("| <"):
+                continue
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            if len(cells) < 7:
+                continue
+            profile_ref = cells[5].strip("`")
+            command = cells[6].strip("`")
+            if profile_ref.startswith("isomer:deepsci/record-format/profile/"):
+                has_structured_row = True
+                if DEEPSCI_FORMAT_PROFILE_RE.match(profile_ref) is None:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        binding_path,
+                        line_number,
+                        "RPS014",
+                        "structured binding profile must use an explicit isomer:deepsci/record-format/profile/.../v1 ref",
+                    )
+                if "--format-profile" not in command:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        binding_path,
+                        line_number,
+                        "RPS014",
+                        "structured binding command must use --format-profile",
+                    )
+                if "--profile " in command:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        binding_path,
+                        line_number,
+                        "RPS014",
+                        "structured binding command must not use bare --profile",
+                    )
+                if "--payload-file" not in command:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        binding_path,
+                        line_number,
+                        "RPS014",
+                        "structured binding command must use --payload-file",
+                    )
+                if "--body-file" in command or "--body " in command:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        binding_path,
+                        line_number,
+                        "RPS014",
+                        "structured binding command must not use direct Markdown body authoring",
+                    )
+                if "--render markdown" in command and "--content-name" not in command:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        binding_path,
+                        line_number,
+                        "RPS014",
+                        "structured binding command that renders Markdown must name the generated content or document an override",
+                    )
+            elif "." in profile_ref and " " not in profile_ref:
+                add(
+                    diagnostics,
+                    repo_root,
+                    binding_path,
+                    line_number,
+                    "RPS014",
+                    "structured binding profile must be promoted from legacy dotted profile names to --format-profile refs",
+                )
+        if has_structured_row and not has_validation_guidance:
+            add(
+                diagnostics,
+                repo_root,
+                binding_path,
+                1,
+                "RPS014",
+                "structured binding page must include an ext research records validate step with --format-profile and --payload-file",
+            )
+
+
 def validate_v2_storage_binding(
     document: Document,
     repo_root: Path,
@@ -1178,6 +1282,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_v2_storage_binding(document, repo_root, diagnostics, allow_zones)
         validate_v2_support_section_intros(document, repo_root, diagnostics)
     validate_v2_placeholder_bindings(skill_dirs, repo_root, diagnostics)
+    validate_v2_payload_first_bindings(skill_dirs, repo_root, diagnostics)
     validate_registry_mirrors(documents, canonical_rows, repo_root, diagnostics)
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     return sorted(set(diagnostics))

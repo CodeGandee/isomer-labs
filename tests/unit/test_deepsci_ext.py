@@ -12,7 +12,13 @@ from pathlib import Path
 from unittest.mock import patch
 
 from isomer_labs import cli
+from isomer_labs.artifact_formats import ArtifactFormatResolver, ArtifactFormatRegistry
 from isomer_labs.deepsci_ext.registry import ARTIFACT_TOOLS, BASH_EXEC_TOOLS, MEMORY_TOOLS, TOOL_ARGUMENT_KEYS
+from isomer_labs.deepsci_ext.record_formats import (
+    active_profile_names,
+    canonical_record_format_ref,
+    register_deepsci_record_format_provider,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -121,6 +127,26 @@ class DeepScientistCompatibilityExtensionTests(unittest.TestCase):
         assert isinstance(expected_args, dict)
         for tool_name, keys in expected_args.items():
             self.assertEqual(keys, list(TOOL_ARGUMENT_KEYS[str(tool_name)]))
+
+    def test_record_format_provider_covers_active_v2_binding_profiles(self) -> None:
+        registry = ArtifactFormatRegistry()
+        register_deepsci_record_format_provider(registry)
+        resolver = ArtifactFormatResolver(registry)
+        active = {canonical_record_format_ref(profile_name, "profile") for profile_name in active_profile_names()}
+        discovered: set[str] = set()
+        for binding in sorted((REPO_ROOT / "skillset" / "research-paradigm" / "v2").glob("*/placeholder-bindings.md")):
+            for line in binding.read_text(encoding="utf-8").splitlines():
+                if not line.startswith("| <"):
+                    continue
+                cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+                if len(cells) >= 6:
+                    discovered.add(cells[5].strip("`"))
+        self.assertTrue(discovered)
+        self.assertEqual(discovered, active)
+        for profile_ref in sorted(discovered):
+            profile, _resolution, diagnostics = resolver.resolve_profile(profile_ref)
+            self.assertEqual([], diagnostics, profile_ref)
+            self.assertIsNotNone(profile, profile_ref)
 
     def test_tools_command_lists_memory_tools(self) -> None:
         root = self.make_project()

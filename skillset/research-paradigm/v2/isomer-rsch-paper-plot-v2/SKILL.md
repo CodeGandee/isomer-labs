@@ -7,6 +7,8 @@ description: Use when structured numeric data should become a first-pass publica
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Paper Plot is a template-adaptation skill for standard bar, line, scatter, and radar figures. It clarifies the chart question, chooses the closest bundled style, copies the template script into the active Topic Workspace or Agent Workspace, changes only the data and labels needed, renders, inspects, and hands durable paper-facing figures to figure polish.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.

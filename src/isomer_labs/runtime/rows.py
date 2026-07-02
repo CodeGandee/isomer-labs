@@ -8,6 +8,7 @@ from isomer_labs.runtime.models import (
     AgentInstanceRecord,
     AgentTeamInstanceRecord,
     AgentWorkspaceRecord,
+    ArtifactFormatRegistrationRecord,
     AdapterHandoffDispatchRecord,
     AdapterCommandRunRecord,
     AdapterInspectionSnapshotRecord,
@@ -22,6 +23,7 @@ from isomer_labs.runtime.models import (
     PathPlanRecord,
     RuntimeLifecycleRecord,
     SignalObservationRecord,
+    StructuredResearchPayloadRecord,
     TopicEnvironmentReadinessRecord,
 )
 from isomer_labs.runtime.serialization import (
@@ -62,6 +64,58 @@ def _row_to_lifecycle_record(row: sqlite3.Row) -> RuntimeLifecycleRecord:
         lifecycle_refs=_loads_dict(row["lifecycle_refs_json"]),
         transition_metadata=_loads_object_dict(row["transition_metadata_json"]),
         content_path=row["content_path"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_artifact_format_registration(row: sqlite3.Row) -> ArtifactFormatRegistrationRecord:
+    return ArtifactFormatRegistrationRecord(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        format_profile_ref=row["format_profile_ref"],
+        schema_ref=row["schema_ref"],
+        template_ref=row["template_ref"],
+        output_format=row["output_format"],
+        source_kind=row["source_kind"],
+        profile_json=_loads_object_dict(row["profile_json"]),
+        schema_snapshot_path=row["schema_snapshot_path"],
+        template_snapshot_path=row["template_snapshot_path"],
+        original_schema_path=row["original_schema_path"],
+        original_template_path=row["original_template_path"],
+        profile_digest=row["profile_digest"],
+        schema_digest=row["schema_digest"],
+        template_digest=row["template_digest"],
+        diagnostics=_loads_json_list(row["diagnostics_json"]),
+        actor_ref=row["actor_ref"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_structured_payload(row: sqlite3.Row) -> StructuredResearchPayloadRecord:
+    return StructuredResearchPayloadRecord(
+        id=row["id"],
+        record_id=row["record_id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        format_profile_ref=row["format_profile_ref"],
+        schema_ref=row["schema_ref"],
+        schema_version=row["schema_version"],
+        schema_source_kind=row["schema_source_kind"],
+        template_ref=row["template_ref"],
+        template_source_kind=row["template_source_kind"],
+        payload_json=_loads_object_dict(row["payload_json"]),
+        payload_digest=row["payload_digest"],
+        validation_status=row["validation_status"],
+        validation_diagnostics=_loads_json_list(row["validation_diagnostics_json"]),
+        render_status=row["render_status"],
+        render_diagnostics=_loads_json_list(row["render_diagnostics_json"]),
+        rendered_markdown_path=row["rendered_markdown_path"],
+        rendered_markdown_digest=row["rendered_markdown_digest"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
         provenance_refs=_loads_list(row["provenance_refs_json"]),
     )
 

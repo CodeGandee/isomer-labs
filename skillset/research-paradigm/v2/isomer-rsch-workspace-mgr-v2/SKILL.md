@@ -7,6 +7,8 @@ description: Use after Topic Workspace and Topic Actor preparation, and optional
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Workspace manager prepares the research-facing contract that v2 skills use after topic setup is ready. It validates readiness as composable topology layers: base Topic Workspace readiness, Topic Actor readiness for human-orchestrated workers, selected v2 skill readiness, placeholder binding readiness, and optional formal team readiness when a Topic Agent Team is selected. It first consumes Topic Creator summaries, Topic Manager topology evidence, Topic Workspace registration evidence, or final topic-team summary when present, then verifies that the selected Research Topic, Topic Workspace, Workspace Runtime, topic-main, record labels, placeholder bindings, selected Topic Actor Workspaces, and optional Agent Workspace context are ready enough for accepted research artifacts to land in durable topic-owned surfaces or become explicit blockers.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.

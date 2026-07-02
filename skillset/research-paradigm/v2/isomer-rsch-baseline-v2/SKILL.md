@@ -7,6 +7,8 @@ description: Use when research work needs a trustworthy comparator, metric contr
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Baseline secures one trustworthy comparator and comparison contract, then gets out of the way. It chooses the lightest route that can support downstream comparison, verifies evidence before acceptance, and closes the gate through confirmation, waiver, or blocker.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.

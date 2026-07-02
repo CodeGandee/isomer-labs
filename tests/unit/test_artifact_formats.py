@@ -1,0 +1,106 @@
+from __future__ import annotations
+
+import json
+import unittest
+
+from isomer_labs.artifact_formats import (
+    ArtifactFormatRegistry,
+    ArtifactFormatResolver,
+    StaticArtifactFormatProvider,
+    parse_format_ref,
+    render_artifact,
+    validate_format_ref,
+    validate_payload,
+)
+
+
+PROFILE_REF = "isomer:test/record-format/profile/run/main-run-record/v1"
+SCHEMA_REF = "isomer:test/record-format/schema/run/main-run-record/v1"
+TEMPLATE_REF = "isomer:test/record-format/template/markdown/run/main-run-record/v1"
+
+
+def make_registry(*, broken_template: bool = False) -> ArtifactFormatRegistry:
+    registry = ArtifactFormatRegistry()
+    profile = {
+        "schema_ref": SCHEMA_REF,
+        "templates": {"markdown": TEMPLATE_REF},
+        "media_type": "application/json",
+        "schema_version": "v1",
+        "status": "active",
+    }
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "required": ["title", "score"],
+        "properties": {
+            "title": {"type": "string"},
+            "score": {"type": "number"},
+        },
+        "additionalProperties": False,
+    }
+    template = "# {{ payload.title }}\n\nScore: {{ payload.score }}\n"
+    if broken_template:
+        template = "{{ payload.missing.required }}"
+    registry.register_provider(
+        StaticArtifactFormatProvider(
+            "test",
+            profiles={PROFILE_REF: json.dumps(profile, sort_keys=True)},
+            schemas={SCHEMA_REF: json.dumps(schema, sort_keys=True)},
+            templates={TEMPLATE_REF: template},
+        )
+    )
+    return registry
+
+
+class ArtifactFormatApiTests(unittest.TestCase):
+    def test_ref_parsing_accepts_canonical_shape(self) -> None:
+        parsed = parse_format_ref(PROFILE_REF)
+        self.assertEqual("isomer", parsed.origin)
+        self.assertEqual("test", parsed.owner_slug)
+        self.assertEqual(PROFILE_REF, parsed.text)
+
+    def test_ref_validation_rejects_missing_origin(self) -> None:
+        diagnostics = validate_format_ref("test/record-format/profile/run")
+        self.assertEqual(1, len(diagnostics))
+        self.assertEqual("ISO200", diagnostics[0].code)
+
+    def test_provider_resolution_returns_profile_schema_and_template(self) -> None:
+        resolver = ArtifactFormatResolver(make_registry())
+        profile, profile_resolution, diagnostics = resolver.resolve_profile(PROFILE_REF)
+        self.assertEqual([], diagnostics)
+        self.assertIsNotNone(profile)
+        self.assertIsNotNone(profile_resolution)
+        assert profile is not None
+        self.assertEqual(SCHEMA_REF, profile.schema_ref)
+        self.assertEqual(TEMPLATE_REF, profile.templates["markdown"])
+
+    def test_payload_validation_succeeds(self) -> None:
+        result = validate_payload({"title": "Run", "score": 1.5}, registry=make_registry(), format_profile_ref=PROFILE_REF)
+        self.assertTrue(result.ok)
+        self.assertEqual("valid", result.status)
+        self.assertEqual(SCHEMA_REF, result.schema_ref)
+        self.assertEqual(PROFILE_REF, result.profile_ref)
+
+    def test_payload_validation_failure_is_deterministic(self) -> None:
+        result = validate_payload({"title": "Run"}, registry=make_registry(), format_profile_ref=PROFILE_REF)
+        self.assertFalse(result.ok)
+        self.assertEqual("invalid", result.status)
+        self.assertEqual("ISO204", result.diagnostics[0].code)
+        self.assertIn("required", result.diagnostics[0].message)
+
+    def test_render_succeeds(self) -> None:
+        result = render_artifact({"title": "Run", "score": 1.5}, registry=make_registry(), format_profile_ref=PROFILE_REF)
+        self.assertTrue(result.ok)
+        self.assertEqual("rendered", result.status)
+        self.assertEqual("# Run\n\nScore: 1.5", str(result.content).strip())
+        self.assertEqual(TEMPLATE_REF, result.template_ref)
+
+    def test_render_failure_is_deterministic(self) -> None:
+        result = render_artifact({"title": "Run", "score": 1.5}, registry=make_registry(broken_template=True), format_profile_ref=PROFILE_REF)
+        self.assertFalse(result.ok)
+        self.assertEqual("error", result.status)
+        self.assertEqual("ISO205", result.diagnostics[0].code)
+
+
+if __name__ == "__main__":
+    unittest.main()

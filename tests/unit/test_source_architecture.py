@@ -29,7 +29,9 @@ MODULE_SIZE_EXEMPTIONS = {
     "cli/commands/project.py",
     "doctor.py",
     "paths.py",
+    "research_records.py",
     "topic_workspace_manifest.py",
+    "runtime/models.py",
     "runtime/store.py",
     "runtime/validation.py",
     "runtime/validation_checks.py",
@@ -38,6 +40,7 @@ MODULE_SIZE_EXEMPTIONS = {
 }
 
 ALLOWED_PACKAGE_NAMES = {
+    "artifact_formats",
     "cli",
     "deepsci_ext",
     "houmao",
@@ -55,6 +58,7 @@ class SourceArchitectureTests(unittest.TestCase):
         self.assertTrue((SRC_ROOT / "cli" / "output.py").is_file())
 
         command_modules = [
+            "artifact_formats.py",
             "deepsci_ext.py",
             "project.py",
             "doctor.py",

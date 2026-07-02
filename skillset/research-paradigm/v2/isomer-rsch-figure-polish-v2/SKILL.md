@@ -7,6 +7,8 @@ description: Use when an already meaningful figure needs durable academic stylin
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Figure Polish makes figures durable. It classifies the surface, states the one message, chooses a chart form that matches the research question, applies a restrained academic style, renders, inspects the actual output, revises until the check passes, exports the right formats, and records the figure against its evidence or claim.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.

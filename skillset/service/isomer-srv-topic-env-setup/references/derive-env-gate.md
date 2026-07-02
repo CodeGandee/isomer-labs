@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-status`. Refuse to run if any value is missing, and tell the user to run `resolve-status` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
 | Source intent summary | Require the extracted `topic.intent.topic_env_requirements` summary from `read-env-gate` when deriving from source intent. Refuse to run if source-intent derivation was requested and the summary is missing. |
 | Explicit target spec | Optional. A manual file, prompt, or context may supply the operational target spec directly. When supplied, validate it against this page's fixed sections and enclosure policy instead of requiring source intent. |
 | Topic env target spec | Resolve `topic.env.topic_setup_target_spec` through Workspace Path Resolution. Under `isomer-default.v1`, this defaults to `<topic-workspace-dir>/intent/derived/isomer-env-gate.md`; create the parent directory when writing the target spec. |
@@ -18,7 +18,7 @@ Recover these before asking the user:
 When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**:
-   - Require workspace context from `resolve-status`.
+   - Require workspace context from `resolve-topic-workspace`.
    - Require source intent summary from `read-env-gate` when deriving from source intent.
    - Require explicit target spec input when manual mode is used.
 2. **Resolve the target spec label** `topic.env.topic_setup_target_spec`:

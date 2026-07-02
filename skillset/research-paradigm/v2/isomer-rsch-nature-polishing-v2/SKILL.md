@@ -7,6 +7,8 @@ description: Use when academic prose needs Nature-leaning polishing, restructuri
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Nature Polishing edits argument before wording. It identifies paper type, diagnoses the failure mode, checks claim boundaries, exposes unsupported claims, rebuilds section logic, applies section-specific moves, polishes sentences, and returns revised text plus cautions when evidence is insufficient.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.

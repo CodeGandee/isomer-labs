@@ -7,6 +7,8 @@ description: Use when a Research Inquiry or Research Task needs bounded follow-u
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Analysis answers focused follow-up questions about an existing result. It decomposes a parent result into bounded evidence slices, records slice-level interpretations before campaign-level claims, and routes from the updated claim boundary.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.

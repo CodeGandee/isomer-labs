@@ -48,7 +48,7 @@ Procedural subcommands are the public single-step workflow API. Call them direct
 
 | Subcommand | Use For | Reference |
 | --- | --- | --- |
-| `resolve-status` | Resolve Project root, Research Topic, Topic Workspace, active Pixi binding, and setup preconditions. | [references/resolve-status.md](references/resolve-status.md) |
+| `resolve-topic-workspace` | Resolve Project root, Research Topic, Topic Workspace, active Pixi binding, and setup preconditions. | [references/resolve-topic-workspace.md](references/resolve-topic-workspace.md) |
 | `read-env-gate` | Resolve and read `topic.intent.topic_env_requirements` and identify the runnable target. | [references/read-env-gate.md](references/read-env-gate.md) |
 | `derive-env-gate` | Generate or update `topic.env.topic_setup_target_spec`, or validate an explicit manual target spec. | [references/derive-env-gate.md](references/derive-env-gate.md) |
 | `ensure-topic-main-repository` | Create, reuse, configure, and verify the Topic Main Development Repository resolved by `topic.repos.main`. | [references/ensure-topic-main-repository.md](references/ensure-topic-main-repository.md) |
@@ -82,7 +82,7 @@ Procedural subcommands:
 
 | Subcommand | Purpose | Produces |
 | --- | --- | --- |
-| `resolve-status` | Resolve the Project root, Research Topic, Topic Workspace, Pixi manifest, and selected Pixi environment. | Resolved setup refs and blockers; no environment mutation. |
+| `resolve-topic-workspace` | Resolve the Project root, Research Topic, Topic Workspace, Pixi manifest, and selected Pixi environment. | Resolved setup refs and blockers; no environment mutation. |
 | `read-env-gate` | Read the source gate and extract the runnable target, repo hints, commands, and success criteria. | Source gate summary and readiness blockers. |
 | `derive-env-gate` | Write the fixed-section operational target spec, including the enclosure strategy for each dependency or runtime need. | `topic.env.topic_setup_target_spec`, defaulting to `<topic-workspace-dir>/intent/derived/isomer-env-gate.md`. |
 | `ensure-topic-main-repository` | Prepare the topic-owned development repository resolved by `topic.repos.main`. | Git state, owner branch posture, Isomer-managed namespace posture, changed files, commands run, and blockers. |

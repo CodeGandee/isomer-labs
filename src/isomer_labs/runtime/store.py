@@ -25,6 +25,7 @@ from isomer_labs.runtime.models import (
     ADAPTER_MATERIALIZATION_STATUSES,
     ADAPTER_RECONCILIATION_STATES,
     ADAPTER_STOP_OUTCOME_STATUSES,
+    ARTIFACT_FORMAT_REGISTRATION_SOURCE_KINDS,
     HANDOFF_NORMALIZATION_STATUSES,
     HANDOFF_STATUSES,
     READINESS_STATUSES,
@@ -34,6 +35,7 @@ from isomer_labs.runtime.models import (
     AgentInstanceRecord,
     AgentTeamInstanceRecord,
     AgentWorkspaceRecord,
+    ArtifactFormatRegistrationRecord,
     AdapterCommandRunRecord,
     AdapterHandoffDispatchRecord,
     AdapterInspectionSnapshotRecord,
@@ -48,6 +50,9 @@ from isomer_labs.runtime.models import (
     PathPlanRecord,
     RuntimeLifecycleRecord,
     SignalObservationRecord,
+    STRUCTURED_PAYLOAD_RENDER_STATUSES,
+    STRUCTURED_PAYLOAD_VALIDATION_STATUSES,
+    StructuredResearchPayloadRecord,
     TopicEnvironmentReadinessRecord,
     ValidationIssueRecord,
     WorkspaceRuntimeMetadata,
@@ -68,12 +73,14 @@ from isomer_labs.runtime.rows import (
     _row_to_agent_instance,
     _row_to_agent_team_instance,
     _row_to_agent_workspace,
+    _row_to_artifact_format_registration,
     _row_to_handoff,
     _row_to_handoff_normalization,
     _row_to_lifecycle_record,
     _row_to_path_plan,
     _row_to_readiness,
     _row_to_signal_observation,
+    _row_to_structured_payload,
 )
 from isomer_labs.runtime.schema import (
     RUNTIME_SCHEMA_TABLES,
@@ -430,6 +437,202 @@ class WorkspaceRuntimeStore:
             (record_id,),
         ).fetchone()
         return _row_to_lifecycle_record(row) if row is not None else None
+
+    def upsert_artifact_format_registration(self, record: ArtifactFormatRegistrationRecord) -> None:
+        if record.source_kind not in ARTIFACT_FORMAT_REGISTRATION_SOURCE_KINDS:
+            raise ValueError(f"Unsupported Artifact Format registration source kind: {record.source_kind}")
+        self.connection.execute(
+            """
+            INSERT INTO artifact_format_registrations
+                (
+                    id, research_topic_id, topic_workspace_id, format_profile_ref,
+                    schema_ref, template_ref, output_format, source_kind, profile_json,
+                    schema_snapshot_path, template_snapshot_path, original_schema_path,
+                    original_template_path, profile_digest, schema_digest, template_digest,
+                    diagnostics_json, actor_ref, created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                schema_ref = excluded.schema_ref,
+                template_ref = excluded.template_ref,
+                output_format = excluded.output_format,
+                source_kind = excluded.source_kind,
+                profile_json = excluded.profile_json,
+                schema_snapshot_path = excluded.schema_snapshot_path,
+                template_snapshot_path = excluded.template_snapshot_path,
+                original_schema_path = excluded.original_schema_path,
+                original_template_path = excluded.original_template_path,
+                profile_digest = excluded.profile_digest,
+                schema_digest = excluded.schema_digest,
+                template_digest = excluded.template_digest,
+                diagnostics_json = excluded.diagnostics_json,
+                actor_ref = excluded.actor_ref,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.format_profile_ref,
+                record.schema_ref,
+                record.template_ref,
+                record.output_format,
+                record.source_kind,
+                _dumps(record.profile_json),
+                record.schema_snapshot_path,
+                record.template_snapshot_path,
+                record.original_schema_path,
+                record.original_template_path,
+                record.profile_digest,
+                record.schema_digest,
+                record.template_digest,
+                _dumps(record.diagnostics),
+                record.actor_ref,
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_artifact_format_registration(
+        self,
+        *,
+        topic_workspace_id: str,
+        format_profile_ref: str,
+    ) -> ArtifactFormatRegistrationRecord | None:
+        row = self.connection.execute(
+            """
+            SELECT * FROM artifact_format_registrations
+            WHERE topic_workspace_id = ? AND format_profile_ref = ?
+            """,
+            (topic_workspace_id, format_profile_ref),
+        ).fetchone()
+        return _row_to_artifact_format_registration(row) if row is not None else None
+
+    def list_artifact_format_registrations(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+    ) -> list[ArtifactFormatRegistrationRecord]:
+        if topic_workspace_id is None:
+            rows = self.connection.execute("SELECT * FROM artifact_format_registrations ORDER BY format_profile_ref")
+        else:
+            rows = self.connection.execute(
+                """
+                SELECT * FROM artifact_format_registrations
+                WHERE topic_workspace_id = ?
+                ORDER BY format_profile_ref
+                """,
+                (topic_workspace_id,),
+            )
+        return [_row_to_artifact_format_registration(row) for row in rows]
+
+    def upsert_structured_payload(self, record: StructuredResearchPayloadRecord) -> None:
+        if record.validation_status not in STRUCTURED_PAYLOAD_VALIDATION_STATUSES:
+            raise ValueError(f"Unsupported structured payload validation status: {record.validation_status}")
+        if record.render_status not in STRUCTURED_PAYLOAD_RENDER_STATUSES:
+            raise ValueError(f"Unsupported structured payload render status: {record.render_status}")
+        lifecycle_record = self.get_lifecycle_record(record.record_id)
+        if lifecycle_record is not None and (
+            lifecycle_record.research_topic_id != record.research_topic_id
+            or lifecycle_record.topic_workspace_id != record.topic_workspace_id
+        ):
+            raise ValueError("Structured payload owner does not match the linked lifecycle record.")
+        self.connection.execute(
+            """
+            INSERT INTO structured_research_payloads
+                (
+                    id, record_id, research_topic_id, topic_workspace_id,
+                    format_profile_ref, schema_ref, schema_version, schema_source_kind,
+                    template_ref, template_source_kind, payload_json, payload_digest,
+                    validation_status, validation_diagnostics_json, render_status,
+                    render_diagnostics_json, rendered_markdown_path, rendered_markdown_digest,
+                    created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(record_id) DO UPDATE SET
+                format_profile_ref = excluded.format_profile_ref,
+                schema_ref = excluded.schema_ref,
+                schema_version = excluded.schema_version,
+                schema_source_kind = excluded.schema_source_kind,
+                template_ref = excluded.template_ref,
+                template_source_kind = excluded.template_source_kind,
+                payload_json = excluded.payload_json,
+                payload_digest = excluded.payload_digest,
+                validation_status = excluded.validation_status,
+                validation_diagnostics_json = excluded.validation_diagnostics_json,
+                render_status = excluded.render_status,
+                render_diagnostics_json = excluded.render_diagnostics_json,
+                rendered_markdown_path = excluded.rendered_markdown_path,
+                rendered_markdown_digest = excluded.rendered_markdown_digest,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.record_id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.format_profile_ref,
+                record.schema_ref,
+                record.schema_version,
+                record.schema_source_kind,
+                record.template_ref,
+                record.template_source_kind,
+                _dumps(record.payload_json),
+                record.payload_digest,
+                record.validation_status,
+                _dumps(record.validation_diagnostics),
+                record.render_status,
+                _dumps(record.render_diagnostics),
+                record.rendered_markdown_path,
+                record.rendered_markdown_digest,
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_structured_payload(self, record_id: str) -> StructuredResearchPayloadRecord | None:
+        row = self.connection.execute(
+            "SELECT * FROM structured_research_payloads WHERE record_id = ?",
+            (record_id,),
+        ).fetchone()
+        return _row_to_structured_payload(row) if row is not None else None
+
+    def list_structured_payloads(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        format_profile_ref: str | None = None,
+        schema_ref: str | None = None,
+        template_ref: str | None = None,
+        validation_status: str | None = None,
+        render_status: str | None = None,
+        limit: int | None = None,
+    ) -> list[StructuredResearchPayloadRecord]:
+        query = "SELECT * FROM structured_research_payloads"
+        clauses: list[str] = []
+        params: list[object] = []
+        for column, value in (
+            ("topic_workspace_id", topic_workspace_id),
+            ("format_profile_ref", format_profile_ref),
+            ("schema_ref", schema_ref),
+            ("template_ref", template_ref),
+            ("validation_status", validation_status),
+            ("render_status", render_status),
+        ):
+            if value is not None:
+                clauses.append(f"{column} = ?")
+                params.append(value)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY updated_at DESC, created_at DESC, record_id"
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(limit)
+        return [_row_to_structured_payload(row) for row in self.connection.execute(query, params)]
 
     def ensure_run_record(
         self,

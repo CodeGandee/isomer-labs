@@ -7,6 +7,8 @@ description: Use when a Research Topic or Research Inquiry lacks enough framing,
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Scout makes an unclear research situation concrete enough to choose the next route. It resolves only the framing unknowns that can change downstream work, records the result as semantic handoff material, and stops once baseline, idea, Decision Record, Gate, or blocker routing is clear.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.

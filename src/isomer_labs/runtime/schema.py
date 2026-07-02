@@ -25,6 +25,8 @@ CORE_RUNTIME_SCHEMA_TABLES = (
     "path_plans",
     "lifecycle_records",
     "lifecycle_transitions",
+    "artifact_format_registrations",
+    "structured_research_payloads",
     "readiness_records",
     "agent_team_instances",
     "agent_instances",
@@ -96,6 +98,73 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             rationale TEXT,
             created_at TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS artifact_format_registrations (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            format_profile_ref TEXT NOT NULL,
+            schema_ref TEXT NOT NULL,
+            template_ref TEXT,
+            output_format TEXT NOT NULL,
+            source_kind TEXT NOT NULL,
+            profile_json TEXT NOT NULL,
+            schema_snapshot_path TEXT,
+            template_snapshot_path TEXT,
+            original_schema_path TEXT,
+            original_template_path TEXT,
+            profile_digest TEXT NOT NULL,
+            schema_digest TEXT NOT NULL,
+            template_digest TEXT,
+            diagnostics_json TEXT NOT NULL,
+            actor_ref TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, format_profile_ref)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_artifact_format_registrations_topic
+            ON artifact_format_registrations (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_artifact_format_registrations_schema_ref
+            ON artifact_format_registrations (schema_ref);
+        CREATE INDEX IF NOT EXISTS idx_artifact_format_registrations_template_ref
+            ON artifact_format_registrations (template_ref);
+
+        CREATE TABLE IF NOT EXISTS structured_research_payloads (
+            id TEXT PRIMARY KEY,
+            record_id TEXT NOT NULL UNIQUE,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            format_profile_ref TEXT,
+            schema_ref TEXT NOT NULL,
+            schema_version TEXT,
+            schema_source_kind TEXT NOT NULL,
+            template_ref TEXT,
+            template_source_kind TEXT,
+            payload_json TEXT NOT NULL,
+            payload_digest TEXT NOT NULL,
+            validation_status TEXT NOT NULL,
+            validation_diagnostics_json TEXT NOT NULL,
+            render_status TEXT NOT NULL,
+            render_diagnostics_json TEXT NOT NULL,
+            rendered_markdown_path TEXT,
+            rendered_markdown_digest TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_structured_research_payloads_topic
+            ON structured_research_payloads (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_structured_research_payloads_format_profile
+            ON structured_research_payloads (format_profile_ref);
+        CREATE INDEX IF NOT EXISTS idx_structured_research_payloads_schema_ref
+            ON structured_research_payloads (schema_ref);
+        CREATE INDEX IF NOT EXISTS idx_structured_research_payloads_template_ref
+            ON structured_research_payloads (template_ref);
+        CREATE INDEX IF NOT EXISTS idx_structured_research_payloads_status
+            ON structured_research_payloads (validation_status, render_status);
 
         CREATE TABLE IF NOT EXISTS readiness_records (
             sequence INTEGER PRIMARY KEY AUTOINCREMENT,

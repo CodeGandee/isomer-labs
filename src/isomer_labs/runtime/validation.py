@@ -24,6 +24,7 @@ from isomer_labs.runtime.validation_checks import (
     _validate_metadata,
     _validate_path_plans,
     _validate_readiness,
+    _validate_structured_research_payloads,
     _resolved_tmp_surfaces,
 )
 from isomer_labs.runtime.workspace_visibility import validate_topic_workspace_visibility_layout
@@ -119,5 +120,6 @@ def validate_workspace_runtime(
     diagnostics.extend(_validate_adapter_records(context, store, tmp_surfaces_tuple))
     diagnostics.extend(_validate_handoffs(context, store, tmp_surfaces_tuple))
     diagnostics.extend(_validate_lifecycle_transitions(store))
+    diagnostics.extend(_validate_structured_research_payloads(context, store))
     store.close()
     return inspection, diagnostics

@@ -7,6 +7,8 @@ description: Use when a selected hypothesis or route, accepted comparator basis,
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Experiment turns one selected route into one interpretable measured result. It locks a run contract, changes only what the hypothesis needs, preserves command and metric evidence, records the result, and routes from the evidence.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.

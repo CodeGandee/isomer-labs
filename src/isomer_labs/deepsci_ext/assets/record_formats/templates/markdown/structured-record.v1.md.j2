@@ -1,0 +1,12 @@
+{% set heading = payload.title | default(payload.summary | default("Structured Research Record")) -%}
+# {{ heading }}
+
+{% if payload.summary is defined and payload.title is defined -%}
+{{ payload.summary }}
+{% elif payload.summary is not defined -%}
+Generated from a structured JSON payload.
+{% endif %}
+
+```json
+{{ payload | tojson(indent=2) }}
+```

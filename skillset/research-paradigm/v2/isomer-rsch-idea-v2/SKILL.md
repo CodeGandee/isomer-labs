@@ -7,6 +7,8 @@ description: Use when a framed Research Topic and comparator basis need one fals
 
 ## Overview
 
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+
 Idea selects a research direction by grounding the objective, current board, literature, bottleneck, and candidate frontier. It promotes one falsifiable route to experiment, records a blocker, or hands an algorithm-first frontier to optimize.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.

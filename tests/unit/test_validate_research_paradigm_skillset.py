@@ -182,6 +182,47 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("RPS013", codes(diagnostics), messages(diagnostics))
         self.assertTrue(any("global isomer-cli directly" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_payload_first_placeholder_binding_is_allowed(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_dir = target / "v2" / "isomer-rsch-scout-v2"
+        write(skill_dir / "migrate" / "placeholders.md", "| Placeholder | Meaning |\n| --- | --- |\n| <SCOUT_CONTEXT_BRIEF> | Context. |\n")
+        write(
+            skill_dir / "placeholder-bindings.md",
+            """
+            # Placeholder Bindings
+
+            For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext research records validate --topic <topic> --format-profile <format-profile-ref> --payload-file <payload-file>`, then create the record.
+
+            | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
+            | --- | --- | --- | --- | --- | --- | --- |
+            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1 --payload-file <payload-file> --render markdown --content-name scout-context-brief.md` |
+            """,
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertNotIn("RPS014", codes(diagnostics), messages(diagnostics))
+
+    def test_payload_first_placeholder_binding_rejects_body_file_and_bare_profile(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_dir = target / "v2" / "isomer-rsch-scout-v2"
+        write(skill_dir / "migrate" / "placeholders.md", "| Placeholder | Meaning |\n| --- | --- |\n| <SCOUT_CONTEXT_BRIEF> | Context. |\n")
+        write(
+            skill_dir / "placeholder-bindings.md",
+            """
+            # Placeholder Bindings
+
+            | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
+            | --- | --- | --- | --- | --- | --- | --- |
+            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --profile evidence.scout-context-brief --body-file <body-file>` |
+            """,
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS014", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("--format-profile" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_expected_inventory_includes_expanded_v2_contract(self) -> None:
         self.assertIn("isomer-rsch-intake-v1", validator.EXPECTED_V1_SKILLS)
         self.assertIn("isomer-rsch-write-v1", validator.EXPECTED_V1_SKILLS)

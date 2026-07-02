@@ -68,6 +68,9 @@ LIFECYCLE_STATUSES = (
     "candidate",
     "supported",
 )
+STRUCTURED_PAYLOAD_VALIDATION_STATUSES = ("valid", "invalid", "error")
+STRUCTURED_PAYLOAD_RENDER_STATUSES = ("rendered", "not_requested", "error")
+ARTIFACT_FORMAT_REGISTRATION_SOURCE_KINDS = ("runtime_registration", "file_snapshot")
 AGENT_TEAM_INSTANCE_STATUSES = ("planned", "ready", "running", "blocked", "failed", "stale", "stopped", "cancelled", "superseded", "archived")
 AGENT_INSTANCE_STATUSES = (
     "planned",
@@ -231,6 +234,121 @@ class RuntimeLifecycleRecord:
         if self.content_path is not None:
             data["content_path"] = self.content_path
         return data
+
+
+@dataclass(frozen=True)
+class ArtifactFormatRegistrationRecord:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    format_profile_ref: str
+    schema_ref: str
+    template_ref: str | None
+    output_format: str
+    source_kind: str
+    profile_json: dict[str, object]
+    schema_snapshot_path: str | None
+    template_snapshot_path: str | None
+    original_schema_path: str | None
+    original_template_path: str | None
+    profile_digest: str
+    schema_digest: str
+    template_digest: str | None
+    diagnostics: list[dict[str, object]]
+    actor_ref: str | None
+    created_at: str
+    updated_at: str
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "format_profile_ref": self.format_profile_ref,
+            "schema_ref": self.schema_ref,
+            "output_format": self.output_format,
+            "source_kind": self.source_kind,
+            "profile": self.profile_json,
+            "profile_digest": self.profile_digest,
+            "schema_digest": self.schema_digest,
+            "diagnostics": self.diagnostics,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("template_ref", self.template_ref),
+            ("schema_snapshot_path", self.schema_snapshot_path),
+            ("template_snapshot_path", self.template_snapshot_path),
+            ("original_schema_path", self.original_schema_path),
+            ("original_template_path", self.original_template_path),
+            ("template_digest", self.template_digest),
+            ("actor_ref", self.actor_ref),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class StructuredResearchPayloadRecord:
+    id: str
+    record_id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    format_profile_ref: str | None
+    schema_ref: str
+    schema_version: str | None
+    schema_source_kind: str
+    template_ref: str | None
+    template_source_kind: str | None
+    payload_json: dict[str, object]
+    payload_digest: str
+    validation_status: str
+    validation_diagnostics: list[dict[str, object]]
+    render_status: str
+    render_diagnostics: list[dict[str, object]]
+    rendered_markdown_path: str | None
+    rendered_markdown_digest: str | None
+    created_at: str
+    updated_at: str
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self, *, include_payload: bool = True, include_diagnostics: bool = True) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "record_id": self.record_id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "schema_ref": self.schema_ref,
+            "schema_source_kind": self.schema_source_kind,
+            "payload_digest": self.payload_digest,
+            "validation_status": self.validation_status,
+            "render_status": self.render_status,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("format_profile_ref", self.format_profile_ref),
+            ("schema_version", self.schema_version),
+            ("template_ref", self.template_ref),
+            ("template_source_kind", self.template_source_kind),
+            ("rendered_markdown_path", self.rendered_markdown_path),
+            ("rendered_markdown_digest", self.rendered_markdown_digest),
+        ):
+            if value is not None:
+                data[key] = value
+        if include_payload:
+            data["payload"] = self.payload_json
+        if include_diagnostics:
+            data["validation_diagnostics"] = self.validation_diagnostics
+            data["render_diagnostics"] = self.render_diagnostics
+        return data
+
+    def to_summary_json(self) -> dict[str, object]:
+        return self.to_json(include_payload=False, include_diagnostics=False)
 
 
 @dataclass(frozen=True)
