@@ -672,7 +672,7 @@ If one of these roles is missing, do not merely mention it in prose. Either prom
 
 Before stopping, check:
 
-- Can a reviewer summarize the paper after one read?
+- Can a reviewer status the paper after one read?
 - Is the central idea anchored early in both text and visuals?
 - Does each main-text page or section have one dominant job?
 - Is there at least one memorable figure or case study?
@@ -741,7 +741,7 @@ Use prose for:
 - why that pattern appears
 - what reviewer concern the display resolves
 
-When the display is a benchmark block, the prose may summarize the headline pattern, but it should not be the only place where the comparison surface exists.
+When the display is a benchmark block, the prose may status the headline pattern, but it should not be the only place where the comparison surface exists.
 
 ### Claims should stay inside the strongest evidence zone
 

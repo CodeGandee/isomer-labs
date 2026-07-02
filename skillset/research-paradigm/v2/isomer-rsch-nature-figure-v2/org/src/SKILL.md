@@ -54,7 +54,7 @@ change the final visual appearance.
 runtime early (`Rscript`/R for R; Python and required plotting packages for Python).
 If the selected runtime or required packages are unavailable, stop before rendering
 and report the exact blocker. You may provide a selected-backend script and a
-natural-language package request for `$isomer-admin-topic-workspace-mgr install-packages`,
+natural-language package request for `$isomer-admin-topic-mgr env-install-packages`,
 but you must not perform package setup here or fall back to the other language to
 make a substitute figure.
 
@@ -93,7 +93,7 @@ ComplexHeatmap, patchwork, or any R graphics device to create a temporary previe
 fallback export, or layout approximation. If Python or required Python plotting
 packages are missing, stop before rendering and report the missing dependency. You
 may still write the Python script and a natural-language package request for
-`$isomer-admin-topic-workspace-mgr install-packages`, but do not perform package
+`$isomer-admin-topic-mgr env-install-packages`, but do not perform package
 setup here or cross-render the figure in R.
 
 ```python

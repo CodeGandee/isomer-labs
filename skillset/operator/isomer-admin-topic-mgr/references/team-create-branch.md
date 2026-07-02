@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Require selected Topic Workspace context, a usable `topic.repos.main` path, an `agent-name`, and a requested branch segment.
-2. Normalize and validate the agent name using the same rules as `plan-agents`.
+2. Normalize and validate the agent name using the same rules as `team-plan`.
 3. Validate the requested branch segment and compute `per-agent/<agent-name>/<branch-name>`.
 4. Reject branch names outside `per-agent/<agent-name>/`, empty segments, `..`, leading slash, trailing slash, `.lock` endings, and branch names already checked out in another worktree.
 5. Create the branch from the requested safe base ref, the agent's default branch, or the repository's base branch according to operator intent.

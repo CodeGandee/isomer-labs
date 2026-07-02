@@ -200,7 +200,7 @@ The final paper should feel like:
 - the authors know exactly what the contribution is
 - the evidence is in the right order
 - the reader is being guided, not tested
-- the paper is easy to summarize after one read
+- the paper is easy to status after one read
 
 That is what often separates a strong draft from an oral-quality paper.
 

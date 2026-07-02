@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-status`. Refuse to run if any value is missing, and tell the user to run `resolve-status` first. |
 | Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
 | Topic-main and projection evidence | Require `ensure-topic-main-repository`, `ensure-topic-repos`, and `project-extern-repos` outputs when the target spec names topic-main, canonical external repos, or projected external repos. |
 | Installed dependencies | Require an `install-topic-deps` result unless the prompt explicitly asks to verify an existing environment. In either case, check Pixi files before running verification commands. |
@@ -20,7 +20,7 @@ Recover these before asking the user:
 When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**:
-   - Require workspace context from `resolve-topic-workspace`, resolved `topic.env.topic_setup_target_spec`, topic-main/repo/projection predecessor outputs when required, and installed dependencies from `install-topic-deps`.
+   - Require workspace context from `resolve-status`, resolved `topic.env.topic_setup_target_spec`, topic-main/repo/projection predecessor outputs when required, and installed dependencies from `install-topic-deps`.
 2. **Read the target spec**:
    - Extract `## Gate Checklist`, `## Verification Commands`, `## Expected Results`, `## Resource Check Plan`, `## Blockers`, `## Repo Requirements`, `## Projection Requirements`, any `## Inferred Source Warnings`, and enclosure records for Pixi-managed dependencies, external runtime wiring, and topic-local fallbacks.
    - Treat every item under `## Gate Checklist` as required readiness work unless the target spec explicitly moved the item to a non-readiness diagnostic section.

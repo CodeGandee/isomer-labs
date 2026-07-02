@@ -12,4 +12,4 @@
 
 Agent Team Instance creation, Houmao launch materialization, live launch, inspection, handoff, and stop operations are later explicit commands. Do not run them from Project initialization or read-only Project checks.
 
-Per-agent worktree preparation belongs to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Project manager guidance should hand off cwd readiness to that service, and use `isomer-admin-topic-workspace-mgr` only for optional topology inspection, branch helper operations, boundary summaries, manual compatibility operations, and legacy diagnostics.
+Per-agent worktree preparation belongs to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Project manager guidance should hand off cwd readiness to that service, and use `isomer-admin-topic-mgr` only for optional topology inspection, branch helper operations, boundary summaries, manual compatibility operations, and legacy diagnostics.

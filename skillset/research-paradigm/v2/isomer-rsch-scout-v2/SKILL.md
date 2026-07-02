@@ -82,7 +82,7 @@ If this context already yields a stable `<EVALUATION_CONTRACT>`, `<BASELINE_SHOR
 
 Use discovery only for unresolved questions that can change the next route. Prefer primary papers, official repositories, benchmark documentation, and provider-bound literature results over recollection or broad web summaries.
 
-When current literature, repository state, or benchmark details may have changed, use available search or Literature Provider Binding surfaces. For source-compatible harness behavior, route legacy state, evidence, and shell-tool calls through `isomer-cli ext deepsci call ... --input-json <json-object>` or the corresponding Execution Adapter Command Request, then summarize durable meaning with the placeholders in `migrate/placeholders.md`.
+When current literature, repository state, or benchmark details may have changed, use available search or Literature Provider Binding surfaces. For source-compatible harness behavior, route legacy state, evidence, and shell-tool calls through `isomer-cli ext deepsci call ... --input-json <json-object>` or the corresponding Execution Adapter Command Request, then status durable meaning with the placeholders in `migrate/placeholders.md`.
 
 Search for disconfirming evidence as well as supportive evidence. Stop when the next route is clear, not when every adjacent paper has been collected.
 

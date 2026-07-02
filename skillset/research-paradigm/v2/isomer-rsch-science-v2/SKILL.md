@@ -54,7 +54,7 @@ Read these constraints as global validity boundaries for the skill. A result tha
 
 - Package metadata must not override task-specific evidence.
 - Runtime availability must be checked before computed work when package, executable, module, container, license, or backend availability matters.
-- Desired package installation after a failed availability check must route to `$isomer-admin-topic-workspace-mgr install-packages`; this skill records package checks and blockers but does not install packages directly.
+- Desired package installation after a failed availability check must route to `$isomer-admin-topic-mgr env-install-packages`; this skill records package checks and blockers but does not install packages directly.
 - Computed claims must link to run, analysis, sweep, package-check, validation, or evidence paths.
 - Digitized or parsed evidence must not be relabeled as computed.
 - Scientific tolerances, filters, physical models, convergence criteria, and validation checks must not be weakened merely to make a run pass.
@@ -98,7 +98,7 @@ This skill can end only when package availability is checked or blocked, scienti
 ## Common Mistakes
 
 - Do not treat this skill as a solver installation or package manager.
-- Do not run direct package installation from this skill; route desired Topic Workspace package setup to `$isomer-admin-topic-workspace-mgr install-packages`.
+- Do not run direct package installation from this skill; route desired Topic Workspace package setup to `$isomer-admin-topic-mgr env-install-packages`.
 - Do not call a result computed from a plot redraw, paper figure reading, or guess.
 - Do not create science evidence only in chat.
 - Do not let package-card metadata override task-specific evidence.

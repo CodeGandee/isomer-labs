@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Domain-level dependency graph for isomer-admin-topic-team-specialize. This manifest describes expected procedural step dependencies and recovery paths; it does not verify that workspace artifacts exist. Prepared-topic evidence from isomer-admin-topic-creator summaries and Topic Workspace Manager topology evidence can satisfy reusable topic prerequisites while team-specific steps still run through this graph.",
+  "description": "Domain-level dependency graph for isomer-admin-topic-team-specialize. This manifest describes expected procedural step dependencies and recovery paths; it does not verify that workspace artifacts exist. Prepared-topic evidence from isomer-admin-topic-creator summaries and Topic Manager topology evidence can satisfy reusable topic prerequisites while team-specific steps still run through this graph.",
   "canonical_order": [
     "init-topic",
     "resolve-topic-intent",
@@ -69,7 +69,7 @@
         "Writes or updates user-editable topic overview source intent."
       ],
       "unrecoverable_blockers": [
-        "Topic substance is missing or too generic to summarize without guessing."
+        "Topic substance is missing or too generic to status without guessing."
       ]
     },
     "clarify-topic": {

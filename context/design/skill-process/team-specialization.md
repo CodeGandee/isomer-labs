@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This note records the intended process for **Topic Team Specialization** skill orchestration. It is a design-level process contract for aligning `isomer-admin-topic-team-specialize`, `isomer-admin-topic-workspace-mgr`, `isomer-srv-topic-env-setup`, and `isomer-srv-agent-env-setup`.
+This note records the intended process for **Topic Team Specialization** skill orchestration. It is a design-level process contract for aligning `isomer-admin-topic-team-specialize`, `isomer-admin-topic-mgr`, `isomer-srv-topic-env-setup`, and `isomer-srv-agent-env-setup`.
 
-The key rule is that `isomer-admin-topic-team-specialize` is the only orchestrator across topic workspace setup, topic environment setup, and agent environment setup. Service skills and workspace-manager skills return bounded evidence; they do not decide the next cross-skill process step.
+The key rule is that `isomer-admin-topic-team-specialize` is the only orchestrator across topic workspace setup, topic environment setup, and agent environment setup. Service skills and the topic manager return bounded evidence; they do not decide the next cross-skill process step.
 
 ## Concepts
 
@@ -64,7 +64,7 @@ flowchart TD
 
     PM["isomer-admin<br/>project-mgr"]:::skill
     TTS["isomer-admin<br/>topic-team-specialize"]:::skill
-    TWM["isomer-admin<br/>topic-workspace-mgr"]:::skill
+    TM["isomer-admin<br/>topic-mgr"]:::skill
     TENV["isomer-srv<br/>topic-env-setup"]:::skill
     AENV["isomer-srv<br/>agent-env-setup"]:::skill
 
@@ -74,7 +74,7 @@ flowchart TD
     S3["S3<br/>resolve-agent-env-gate<br/>create target spec<br/>then setup-agent-env"]:::route
 
     PM -.-> S0 -.-> TTS
-    TTS --> S1 --> TWM
+    TTS --> S1 --> TM
     TTS --> S2 --> TENV
     TTS --> S3 --> AENV
 ```
@@ -82,7 +82,7 @@ flowchart TD
 | ID | Caller | Route | Callee | Calling condition |
 | --- | --- | --- | --- | --- |
 | S0 | `isomer-admin-project-mgr` | `specialize-team` handoff to `fast-forward` | `isomer-admin-topic-team-specialize` | Project-level work needs full **Topic Team Specialization** for one **Research Topic**. This is an optional entry route into the same process and should not call the internal `adapt-team-template` stage directly. |
-| S1 | `isomer-admin-topic-team-specialize` | optional topology inspection or branch helper | `isomer-admin-topic-workspace-mgr` | The operator asks for read-only topology inspection, branch helper operations, boundary summaries, or legacy compatibility diagnostics. The workspace manager is not the canonical creator of the Topic Main Development Repository in the normal setup path. |
+| S1 | `isomer-admin-topic-team-specialize` | optional topology inspection or branch helper | `isomer-admin-topic-mgr` | The operator asks for read-only topology inspection, branch helper operations, boundary summaries, stale topology repair, or legacy compatibility diagnostics. The topic manager is not the canonical creator of the Topic Main Development Repository in the normal setup path. |
 | S2 | `isomer-admin-topic-team-specialize` | `resolve-topic-env-gate`, create `topic.env.topic_setup_target_spec`, then `setup-topic-env` | `isomer-srv-topic-env-setup` | `topic.intent.topic_env_requirements` exists, can be created from a clear runnable target, or an explicit topic env target spec is provided. The service materializes the Topic Workspace environment, Topic Main Development Repository, canonical external repositories, external repository projections, Pixi dependencies, and verification evidence, and must not claim per-agent readiness. |
 | S3 | `isomer-admin-topic-team-specialize` | `resolve-agent-env-gate`, create `topic.env.agent_setup_target_spec`, then `setup-agent-env` | `isomer-srv-agent-env-setup` | `topic.intent.agent_env_requirements` exists, can be created from requested cwd proof, or an explicit agent env target spec is provided. The service consumes topic env readiness, Topic Main Development Repository predecessor evidence, external projection evidence when needed, and authoritative **Agent Names** before creating worktrees or verifying cwd readiness. |
 
@@ -151,12 +151,12 @@ def specialize_topic_team(project_root: Path, user_request: str) -> StageResult:
         # Condition matched when the operator asks for optional topology inspection, branch helpers, boundary summaries, or legacy diagnostics.
         # Example output: StageResult(status="ready", evidence=["semantic path summary", "worktree state", "projection roots"])
         return agent_invoke(
-            "isomer-admin-topic-workspace-mgr",
+            "isomer-admin-topic-mgr",
             task="Inspect prepared topic-main and Agent Workspace topology without becoming the canonical topic-main creator.",
             context={"project_topic": project_topic, "topic_intent": topic_intent, "user_request": user_request},
             returns=StageResult,
             params={
-                "subcommand": "topic-workspace",
+                "subcommand": "status",
                 "expect": ["semantic paths", "Git state", "projection roots", "blockers", "next actions"],
                 "must_not_create": ["topic.repos.main"],
                 "must_not_call": ["isomer-srv-agent-env-setup"],
@@ -379,7 +379,7 @@ The process is a chain of readable intent and bounded service evidence. `isomer-
   - `isomer-srv-agent-env-setup` consumes topic env readiness, <u>*Topic Main Development Repository*</u> predecessor evidence, required <u>*External Repository Projection*</u> evidence, and authoritative <u>*Agent Names*</u>.
   - The service creates or validates <u>*Agent Workspace*</u> worktrees and reports readiness by <u>*Agent Name*</u> and overall readiness.
 - Inspect optional topology:
-  - `isomer-admin-topic-workspace-mgr` remains available for read-only topology inspection, branch helper operations, boundary summaries, and legacy compatibility diagnostics.
+  - `isomer-admin-topic-mgr` remains available for read-only topology inspection, branch helper operations, boundary summaries, stale topology repair, and legacy compatibility diagnostics.
   - It is not the normal creator of the <u>*Topic Main Development Repository*</u> and should not replace topic env or agent env setup.
 - Validate and finalize:
   - Team specialization validates topic overview, topic env evidence, topic-main/projection evidence, and agent env evidence as separate streams.
@@ -395,4 +395,4 @@ The process is a chain of readable intent and bounded service evidence. `isomer-
 | `isomer-srv-topic-env-setup` | `topic.env.topic_setup_target_spec`, Pixi binding, Topic Main Development Repository Git state, projection metadata, dependency/enclosure evidence, verification commands, `per_agent_readiness_status: not checked` when relevant | `resolve-agent-env-gate`, `isomer-srv-agent-env-setup require-topic-env-ready`, `isomer-srv-agent-env-setup require-topic-main-ready`, validation, finalization |
 | `isomer-admin-topic-team-specialize` | `topic.intent.agent_env_requirements` | `isomer-srv-agent-env-setup setup-agent-env` |
 | `isomer-srv-agent-env-setup` | `topic.env.agent_setup_target_spec`, Agent Workspace worktrees, projection predecessor evidence consumed when required, readiness by **Agent Name**, selected-agent partial evidence, overall readiness | `isomer-admin-topic-team-specialize validate-topic-team`, finalization, later runtime handoff |
-| `isomer-admin-topic-workspace-mgr` | optional topology inspection, branch helper output, boundary summaries, legacy compatibility diagnostics | operator troubleshooting and validation context only |
+| `isomer-admin-topic-mgr` | optional topology inspection, branch helper output, boundary summaries, stale topology repair, legacy compatibility diagnostics | operator troubleshooting and validation context only |

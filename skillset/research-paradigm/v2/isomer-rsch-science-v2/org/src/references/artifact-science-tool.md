@@ -8,7 +8,7 @@ anything.
 - `record_node`: create a new science node artifact
 - `update_node`: append an update artifact for an existing node id
 - `link_nodes`: append relationship metadata between nodes
-- `status`: summarize existing science artifacts
+- `status`: status existing science artifacts
 - `focus`: ask Canvas to focus a science node
 
 `record_node` is for the first record of a stable `node_id`. Do not call

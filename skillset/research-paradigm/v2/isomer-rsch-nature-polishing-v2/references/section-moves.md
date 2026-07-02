@@ -14,7 +14,7 @@ Questions this section must answer:
 Preferred move order:
 
 1. establish importance
-2. summarize what is known
+2. status what is known
 3. identify a gap, limitation, or controversy
 4. state the study aim
 5. indicate value or approach
@@ -169,7 +169,7 @@ Questions this section must answer:
 Preferred move order:
 
 1. return to the aim
-2. summarize the decisive finding
+2. status the decisive finding
 3. state contribution or significance
 4. give a boundary or forward look
 

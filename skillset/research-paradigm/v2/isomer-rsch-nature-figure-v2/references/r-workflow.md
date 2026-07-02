@@ -11,7 +11,7 @@ visual QA in R. Do not call Python/matplotlib/seaborn/plotly to create a tempora
 preview, fallback export, or layout approximation. If R, `Rscript`, or required R
 packages are missing, stop before rendering and report the missing dependency. You
 may still write the R script and a natural-language package request for
-`$isomer-admin-topic-workspace-mgr install-packages`, but do not perform package
+`$isomer-admin-topic-mgr env-install-packages`, but do not perform package
 setup from this research skill or cross-render the figure in another language.
 
 Allowed non-R utilities are limited to non-visual tasks such as shell file inspection,

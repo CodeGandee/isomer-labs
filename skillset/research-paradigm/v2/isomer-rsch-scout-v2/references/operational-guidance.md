@@ -57,4 +57,4 @@ Read these gates after producing the step output and before handoff or completio
 
 ## Compatibility Harness
 
-Use Workspace Runtime, Artifact, Literature Provider Binding, repository inspection, and Execution Adapter Command Request surfaces when available. When a source-compatible call is still the only binding, route it through `isomer-cli ext deepsci call <namespace.tool> --input-json <json-object>` and summarize the durable meaning with the placeholders in `../migrate/placeholders.md`.
+Use Workspace Runtime, Artifact, Literature Provider Binding, repository inspection, and Execution Adapter Command Request surfaces when available. When a source-compatible call is still the only binding, route it through `isomer-cli ext deepsci call <namespace.tool> --input-json <json-object>` and status the durable meaning with the placeholders in `../migrate/placeholders.md`.

@@ -22,7 +22,7 @@ If the user's task does not map cleanly to these steps, print the closest subcom
 | `define-topic-env` | Create or refine `topic.intent.topic_env_requirements`, wait for user verification unless in `fast-forward`, and report assumptions before setup. |
 | `setup-topic-env` | Read the verified or fast-forward accepted topic env gate, derive `topic.env.topic_setup_target_spec`, and prepare topic environment readiness, `topic.repos.main`, and projection predecessor evidence through service setup. |
 | `define-actors` | Create or refine `topic.intent.actor_definitions`, including each actor's duty, intended usage, and source env gate; default to the `operator` actor when details are absent. |
-| `setup-actors` | Create or validate Topic Actors and Topic Actor Workspaces through Topic Workspace Manager actor topology, generate `topic.env.actor_env_gates`, verify derived actor env gates from actor cwd, and report actor onboarding context. |
+| `setup-actors` | Create or validate Topic Actors and Topic Actor Workspaces through Topic Manager actor topology, generate `topic.env.actor_env_gates`, verify derived actor env gates from actor cwd, and report actor onboarding context. |
 | `finalize` | Validate Topic Workspace preparation, write `topic.workspace.summary`, and print ready, verified, blocked, and skipped state. |
 
 ### Helper Subcommands
@@ -55,4 +55,4 @@ Complete Output adds commands run, semantic labels, path sources, delegated owne
 
 ## Guardrails
 
-This skill orchestrates existing owners rather than replacing them. Project lifecycle belongs to `isomer-admin-project-mgr`, topic environment setup belongs to `isomer-srv-topic-env-setup`, Topic Actor topology belongs to `isomer-admin-topic-workspace-mgr`, and formal team specialization belongs to `isomer-admin-topic-team-specialize`. Terminal Topic Creator output reports readiness and blockers without routing to a next research command.
+This skill orchestrates existing owners rather than replacing them. Project lifecycle belongs to `isomer-admin-project-mgr`, topic environment setup belongs to `isomer-srv-topic-env-setup`, Topic Actor topology belongs to `isomer-admin-topic-mgr`, and formal team specialization belongs to `isomer-admin-topic-team-specialize`. Terminal Topic Creator output reports readiness and blockers without routing to a next research command.

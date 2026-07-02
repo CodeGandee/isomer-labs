@@ -19,7 +19,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 - Prefer the original paper's evaluation protocol as the starting point (if the user specifies another comparator, otherwise record that route).
 - Prefer a core contract for comparison-ready baselines (if paper claims, registry publication, or variant-heavy comparison need more coverage, otherwise expand).
-- Prefer richer existing structured results over a thinner hand-written scalar (if a leaderboard, result file, or metric contract exists, otherwise summarize minimally).
+- Prefer richer existing structured results over a thinner hand-written scalar (if a leaderboard, result file, or metric contract exists, otherwise status minimally).
 - Prefer preserving both aggregate and per-dataset or per-task metrics when the source reports both (if feasible, otherwise record the missing coverage).
 
 ## Constraints

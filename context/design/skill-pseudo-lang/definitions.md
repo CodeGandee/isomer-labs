@@ -396,12 +396,12 @@ def setup_topic_team(project_root: Path, user_request: str) -> StageResult:
         return agent_env_intent
 
     workspace = agent_invoke(
-        "isomer-admin-topic-workspace-mgr",
+        "isomer-admin-topic-mgr",
         task="Prepare Topic Main Development Repository and Agent Workspace Git topology for the specialized topic team.",
         context={"topic": topic, "user_request": user_request},
         returns=StageResult,
         params={
-            "subcommand": "topic-workspace",
+            "subcommand": "team-validate-workspaces",
             "expect": ["Topic Main Development Repository", "Agent Workspace paths", "branch plan", "Git topology validation"],
             "must_not_call": ["isomer-srv-agent-env-setup"],
         },
@@ -477,7 +477,7 @@ Example extracted shape:
     },
     {
       "primitive": "agent_invoke",
-      "skill_name": "isomer-admin-topic-workspace-mgr",
+      "skill_name": "isomer-admin-topic-mgr",
       "returns": "StageResult",
       "assigned_to": "workspace"
     },
@@ -501,7 +501,7 @@ Example extracted shape:
     }
   ],
   "call_edges": [
-    ["isomer-admin-topic-team-specialize", "isomer-admin-topic-workspace-mgr"],
+    ["isomer-admin-topic-team-specialize", "isomer-admin-topic-mgr"],
     ["isomer-admin-topic-team-specialize", "isomer-srv-topic-env-setup"],
     ["isomer-admin-topic-team-specialize", "isomer-srv-agent-env-setup"]
   ]
@@ -611,7 +611,7 @@ def test_setup_topic_team_blocks_when_agent_env_inputs_are_not_ready(fake_agent,
         returns=StageResult(status="ready", evidence=["topic ready"]),
     )
     fake_agent.when_invoke(
-        "isomer-admin-topic-workspace-mgr",
+        "isomer-admin-topic-mgr",
         returns=StageResult(status="ready", evidence=["workspace ready"]),
     )
     fake_agent.when_invoke(

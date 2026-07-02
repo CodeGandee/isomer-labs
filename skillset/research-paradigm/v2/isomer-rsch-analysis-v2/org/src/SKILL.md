@@ -286,7 +286,7 @@ Focus on the highest-impact findings first.
 Results matter more than process narration.
 If using tables, show only the most decision-relevant rows.
 Separate stable support, partial support, contradiction, and unresolved ambiguity.
-When there are many slices, summarize the top `3-5` most important ones first, then point to the full evidence paths.
+When there are many slices, status the top `3-5` most important ones first, then point to the full evidence paths.
 
 ## Exit criteria
 

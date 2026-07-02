@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `semantic_paths`, `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `semantic_paths`, `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-status`. |
 | Topic env target spec | Require `topic.env.topic_setup_target_spec` from `derive-env-gate` or an explicit validated target spec. |
 | Mutation confirmation | Require direct Project Operator Session mutation confirmation or equivalent service authorization before creating or changing files. |
 | Optional modifiers | None for this step. |

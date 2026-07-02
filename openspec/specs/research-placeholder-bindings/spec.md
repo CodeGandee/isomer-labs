@@ -33,8 +33,8 @@ The system SHALL validate that active v2 placeholder binding pages cover the pla
 - **WHEN** validation finds a placeholder in `placeholder-bindings.md` that is not registered in `migrate/placeholders.md`
 - **THEN** validation reports the extra binding so migration drift can be repaired
 
-### Requirement: Workspace Manager Binding Aggregation
-The workspace manager skill SHALL treat local placeholder binding pages as the source material for the post-specialization binding registry.
+### Requirement: Research Workspace Manager Binding Aggregation
+The research workspace manager skill SHALL treat local placeholder binding pages as the source material for the post-specialization binding registry.
 
 #### Scenario: Workspace manager reads binding pages
 - **WHEN** `isomer-rsch-workspace-mgr-v2` builds `<RSCH_PLACEHOLDER_BINDING_REGISTRY>`
@@ -56,4 +56,3 @@ Active non-dev placeholder binding pages SHALL present record CRUD commands usin
 #### Scenario: Binding metadata is preserved
 - **WHEN** implementation removes the Pixi prefix from placeholder binding command rows
 - **THEN** it preserves placeholders, record kinds, semantic labels, profiles, skill names, producer and consumer fields, metadata JSON, body flags, and content names
-

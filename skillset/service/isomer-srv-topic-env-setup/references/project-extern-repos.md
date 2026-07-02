@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, path sources, and blockers from `resolve-topic-workspace`. |
+| Workspace context | Require `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, path sources, and blockers from `resolve-status`. |
 | Topic Main Development Repository evidence | Require `ensure-topic-main-repository` output showing a usable topic-main repository and Isomer-managed namespace. |
 | Canonical external repo evidence | Require `ensure-topic-repos` output for each non-main `topic.repos.*` repository named by the target spec. |
 | Topic env target spec | Require projection access intent from `topic.env.topic_setup_target_spec` or an explicit validated target spec. |

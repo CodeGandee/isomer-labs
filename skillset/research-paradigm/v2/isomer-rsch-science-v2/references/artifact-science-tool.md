@@ -6,7 +6,7 @@ Use this reference to record science evidence graph updates. It describes eviden
 
 When performing this step, execute these substeps in order.
 
-1. **Choose record action**. Create a new stable node, append an update to an existing node, link related nodes, summarize graph status, or request UI focus.
+1. **Choose record action**. Create a new stable node, append an update to an existing node, link related nodes, status graph status, or request UI focus.
 2. **Choose node type**. Use package check, computational run, dataset analysis, parameter sweep, validation result, or claim.
 3. **Use stable node ids**. Create once for a new logical node id; append later status, evidence, validation, or interpretation updates instead of rewriting history.
 4. **Fill common fields**. Record title, summary, status, domain, package id, task type, key results, inputs, logs, outputs, evidence paths, parent nodes, related nodes, metadata, and canvas hints when useful.

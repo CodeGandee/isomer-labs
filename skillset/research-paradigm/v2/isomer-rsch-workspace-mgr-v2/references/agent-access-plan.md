@@ -2,7 +2,7 @@
 
 ## Workflow
 
-1. Start from the selected Topic Actors and optional formal Agent Names reported in Topic Creator summaries, Topic Workspace Manager evidence, actor onboarding context, or `isomer-topic-summary.md`.
+1. Start from the selected Topic Actors and optional formal Agent Names reported in Topic Creator summaries, Topic Manager evidence, actor onboarding context, or `isomer-topic-summary.md`.
 2. Resolve Topic Actor Workspace context for human-orchestrated workers and Agent Workspace context for formal team agents that will participate in the v2 research loop.
 3. Confirm pre-promotion surfaces for each Topic Actor: `topic.actors.workspace`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, and `topic.actors.tmp`.
 4. Confirm pre-promotion surfaces for each formal agent when selected: `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, and `agent.links`.

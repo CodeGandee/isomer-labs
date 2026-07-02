@@ -6,7 +6,7 @@ Use this subcommand for inspection, validation, or an explicitly requested manua
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Require successful `resolve-workspace` output:
+1. Require successful `storage-resolve` output:
    - Include selected Topic Workspace path.
    - Include resolved `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, projection root labels, and `topic.repos.main.projections.manifest` with sources.
 2. Inspect whether the resolved `topic.repos.main` path exists. If it exists, validate that it is a usable normal non-bare Git repository for worktree inspection and report predecessor evidence.

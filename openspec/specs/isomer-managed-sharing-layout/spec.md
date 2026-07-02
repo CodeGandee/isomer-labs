@@ -42,7 +42,7 @@ The system SHALL separate tracked Isomer-injected material, untracked agent-owne
 - **THEN** those links are placed under `isomer-managed/links/`
 
 #### Scenario: Ignore policy is local to namespace
-- **WHEN** the topic workspace manager prepares `isomer-managed/`
+- **WHEN** the topic manager prepares `isomer-managed/`
 - **THEN** it creates or validates an `isomer-managed/.gitignore` policy that ignores `agent-owned/`, `topic-owned/`, and `links/` while keeping `.gitignore` and `tracked/` eligible for Git tracking
 
 ### Requirement: Tracked Isomer Material
@@ -110,11 +110,11 @@ The system SHALL define `isomer-managed/topic-owned/` as the worker-visible proj
 The system SHALL keep generated convenience links under `isomer-managed/links/` and validate their targets.
 
 #### Scenario: Peer public link target is standard
-- **WHEN** the topic workspace manager creates a peer-readable link from Alice's worktree to Bob's public share
+- **WHEN** the topic manager creates a peer-readable link from Alice's worktree to Bob's public share
 - **THEN** the link is under `agents/alice/isomer-managed/links/peers/bob/` and targets Bob's `isomer-managed/agent-owned/public/`
 
 #### Scenario: Topic link target is standard
-- **WHEN** the topic workspace manager creates a link for topic-owned material
+- **WHEN** the topic manager creates a link for topic-owned material
 - **THEN** the link is under `isomer-managed/links/topic/` and targets an approved `isomer-managed/topic-owned/readonly/` or `isomer-managed/topic-owned/writable/` projection
 
 #### Scenario: Unsafe links are diagnostics

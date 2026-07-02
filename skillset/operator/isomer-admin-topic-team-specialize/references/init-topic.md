@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Check **Prerequisite Artifacts**. `init-topic` has no predecessor artifact requirement, so do not refuse to run because earlier flow artifacts are missing.
-2. Read the user's Research Topic prompt, source material, or explicitly supplied topic ref, and decide whether it contains enough topic substance to summarize.
+2. Read the user's Research Topic prompt, source material, or explicitly supplied topic ref, and decide whether it contains enough topic substance to status.
 3. If the user did not supply a Research Topic, stop before creating files:
    - Ask for the concrete research topic before creating any directory or topic overview file.
    - Do not infer the topic from Project Manifest defaults, the registered id `default`, current directory, existing Topic Workspace names, or a generic placeholder statement.

@@ -12,7 +12,7 @@ When a Topic Actor creates or updates an accepted research artifact record, add 
 - Choose the binding row with the exact placeholder token; do not infer a nearby row by name similarity.
 - Store exact placeholder, skill, producer, consumer, kind, and profile metadata on created records.
 - Resolve body locations through the listed semantic label; do not invent hard-coded paths under the Topic Workspace.
-- Use `isomer-cli ext deepsci call ...` only for source-shaped compatibility behavior, then summarize the durable meaning through the binding row here.
+- Use `isomer-cli ext deepsci call ...` only for source-shaped compatibility behavior, then status the durable meaning through the binding row here.
 
 ## Kind Defaults
 

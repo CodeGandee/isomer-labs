@@ -358,6 +358,32 @@ The service environment setup skill SHALL present the Topic Workspace setup work
 - **WHEN** the source gate indicates that runnable repo code is needed
 - **THEN** the skill resolves required repositories through semantic non-main `topic.repos.*` labels before finalizing `<topic-workspace-dir>/user-intent/derived/isomer-env-gate.md`
 - **AND** the skill infers dependencies from inspected repo files before finalizing the derived gate
+
+### Requirement: Service Routes Ad Hoc Environment Requests to Topic Manager
+The service environment setup skill SHALL route ad hoc package mutation and package verification requests to `isomer-admin-topic-mgr` while preserving full gate-driven setup in the service.
+
+#### Scenario: Ad hoc package install routes to topic manager
+- **WHEN** a user, operator skill, or research skill asks only to add or repair packages for a selected Topic Workspace
+- **THEN** service guidance routes the request to `$isomer-admin-topic-mgr env-install-packages`
+- **AND** it does not treat `install-topic-deps` as a competing public package-add entrypoint
+
+#### Scenario: Ad hoc package update routes to topic manager
+- **WHEN** a user, operator skill, or research skill asks only to update packages for a selected Topic Workspace
+- **THEN** service guidance routes the request to `$isomer-admin-topic-mgr env-update-packages`
+
+#### Scenario: Ad hoc package removal routes to topic manager
+- **WHEN** a user, operator skill, or research skill asks only to remove packages from a selected Topic Workspace
+- **THEN** service guidance routes the request to `$isomer-admin-topic-mgr env-remove-packages`
+
+#### Scenario: Topic environment verification remains service compatible
+- **WHEN** `isomer-admin-topic-mgr env-verify-topic` routes full gate-driven verification to this service
+- **THEN** the service accepts the selected Research Topic, Topic Workspace, topic env target spec, semantic path expectations, and verification intent as ordinary setup or verification context
+- **AND** it returns command evidence, changed paths, blockers, and next action without claiming actor, formal agent, or runtime launch readiness
+
+#### Scenario: Full setup still uses install-topic-deps
+- **WHEN** the service is executing the complete topic env setup workflow from source gate through derived gate verification
+- **THEN** it may still run `install-topic-deps` as an internal procedural step
+- **AND** it records Pixi install commands, Pixi run commands, setup evidence, verification evidence, skipped heavy checks, blockers, and next action as service output
 - **AND** the derived gate may use inspected repo files to choose concrete Pixi install commands, Pixi run commands, scripts, imports, tools, and expected outputs
 - **AND** any repo acquired from an inferred source is warning-labeled in the derived gate before readiness is reported
 
@@ -643,4 +669,3 @@ Non-dev service skills SHALL use direct `isomer-cli` command examples for Isomer
 - **WHEN** a service skill describes installing or verifying a Topic Workspace Pixi environment
 - **THEN** it may keep Pixi environment commands for the user's workspace
 - **AND** it still must call Isomer control-plane operations through global `isomer-cli`
-

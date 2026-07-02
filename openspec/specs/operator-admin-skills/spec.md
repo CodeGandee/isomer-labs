@@ -105,30 +105,46 @@ The repository SHALL validate operator/admin skill structure, command surfaces, 
 - **AND** it requires target exclusion by default, explicit inclusive execution behavior, invalid-target diagnostics, and missing-input blocker behavior
 - **AND** it fails if `run-to` accepts helper, misc, unknown, or non-main-workflow targets as executable targets
 
-### Requirement: Topic Workspace Manager Operator Skill
-The operator/admin skillset SHALL include `isomer-admin-topic-workspace-mgr` as the operator surface for Git-backed Topic Workspace repository and Agent Workspace worktree preparation, and it SHALL describe non-main topic repositories as supporting repositories resolved through the semantic storage contract.
+### Requirement: Topic Manager Operator Skill
+The operator/admin skillset SHALL include `isomer-admin-topic-mgr` as the only operator skill surface for managing initialized Research Topics after Topic Creator handoff.
 
-#### Scenario: Topic workspace manager skill is active
+#### Scenario: Topic manager skill is active
 - **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-admin-topic-workspace-mgr/` as an active operator skill folder
+- **THEN** it contains `skillset/operator/isomer-admin-topic-mgr/` as an active operator skill folder
+- **AND** it does not contain `skillset/operator/isomer-admin-topic-workspace-mgr/`
 
-#### Scenario: Operator docs list topic workspace manager
+#### Scenario: Operator docs list only topic manager
 - **WHEN** a developer reads `skillset/operator/README.md`
-- **THEN** it lists `isomer-admin-topic-workspace-mgr` and describes it as the skill for preparing and validating `repos/topic-main` plus per-agent Agent Workspace worktrees
+- **THEN** it lists `isomer-admin-topic-mgr`
+- **AND** it describes the skill as the initialized-topic manager for storage, Topic Actors, topic agent team topology, environment mutation, environment verification, and diagnostics
+- **AND** it does not describe `isomer-admin-topic-workspace-mgr` as a compatibility wrapper or active fallback
 
-#### Scenario: Operator validation covers topic workspace manager
+#### Scenario: Operator validation covers topic manager and rejects old folder
 - **WHEN** operator skill validation runs
-- **THEN** it validates the topic workspace manager skill with the same frontmatter, UI metadata, local-reference, workflow, and naming checks used for other active operator skills
+- **THEN** it validates the topic manager skill with frontmatter, UI metadata, local reference, workflow, scoped subcommand, output-contract, and guardrail checks
+- **AND** it fails if `skillset/operator/isomer-admin-topic-workspace-mgr/` exists
+- **AND** it fails if active operator docs, manifests, or routing guidance present `isomer-admin-topic-workspace-mgr` as invokable
 
-#### Scenario: Topic workspace manager stays bounded
-- **WHEN** the topic workspace manager skill reports prepared workspaces
-- **THEN** it does not claim Agent Team Instance creation, Workspace Runtime mutation, Houmao launch, adapter launch material readiness, or runtime team readiness
+#### Scenario: Topic manager stays bounded
+- **WHEN** the topic manager reports initialized-topic management results
+- **THEN** it does not claim Research Topic initialization, research-paradigm v2 bootstrap, Agent Team Instance creation, Workspace Runtime mutation, Houmao launch, adapter launch material readiness, or runtime team readiness
 
-#### Scenario: Additional topic repositories are external support surfaces
-- **WHEN** the topic workspace manager skill documents or registers an additional non-main topic repository
-- **THEN** it uses `topic.repos.<group...>.<repo-name>` semantic labels with `storage_profile = "topic_repo"`
-- **AND** it describes `repos/extern/...` as the default physical location for helper-created non-main topic repositories
-- **AND** it does not describe non-main repositories as Agent Workspace worktree sources
+### Requirement: Retired Workspace Manager Is Excluded From Operator Inventory
+The operator/admin skillset SHALL exclude the retired `isomer-admin-topic-workspace-mgr` skill from active manifests, generated skill lists, and validation fixtures.
+
+#### Scenario: Manifest excludes retired skill
+- **WHEN** `skillset/manifest.toml` is inspected
+- **THEN** it includes `operator/isomer-admin-topic-mgr`
+- **AND** it does not include `operator/isomer-admin-topic-workspace-mgr`
+
+#### Scenario: Validation fixtures do not recreate retired wrapper
+- **WHEN** unit tests build valid operator skill fixtures
+- **THEN** the fixtures include `isomer-admin-topic-mgr`
+- **AND** they do not create a valid `isomer-admin-topic-workspace-mgr` wrapper fixture
+
+#### Scenario: Revived old folder is rejected
+- **WHEN** a test or real repository contains `skillset/operator/isomer-admin-topic-workspace-mgr/`
+- **THEN** operator skill validation reports that the skill is retired and must not be a standalone skill
 
 ### Requirement: Topic Creator Operator Skill Inventory
 The operator/admin skillset SHALL include `isomer-admin-topic-creator` as the canonical user-facing skill for topic initialization to manual-research readiness.
@@ -145,24 +161,6 @@ The operator/admin skillset SHALL include `isomer-admin-topic-creator` as the ca
 #### Scenario: Operator validation covers topic creator
 - **WHEN** operator skill validation runs
 - **THEN** it validates the topic creator skill with the same frontmatter, UI metadata, local-reference, workflow, and naming checks used for other active operator skills
-
-### Requirement: Deprecated Compatibility Operator Skills
-The operator/admin skillset SHALL keep selected compatibility skills available while marking them deprecated for direct user invocation.
-
-#### Scenario: Topic prepare is compatibility-only
-- **WHEN** `isomer-admin-topic-prepare` is inspected
-- **THEN** its frontmatter marks it deprecated for direct user invocation and names `isomer-admin-topic-creator` as its replacement
-- **AND** operator documentation describes it as retained for compatibility and delegated common preparation
-
-#### Scenario: Manual research session is compatibility-only
-- **WHEN** `isomer-admin-manual-research-session` is inspected
-- **THEN** its frontmatter marks it deprecated for direct user invocation and names `isomer-admin-topic-creator` as its replacement
-- **AND** operator documentation describes it as retained for compatibility and delegated start-pack finalization
-
-#### Scenario: Deprecated compatibility skills remain installable during transition
-- **WHEN** the core operator skill group is installed
-- **THEN** deprecated compatibility skills may remain installed with visible replacement guidance
-- **AND** their presence does not make them the recommended front door for new topic initialization
 
 ### Requirement: Operator Skills Use Global Isomer CLI
 Operator skills SHALL assume they are installed into agents outside the `isomer-labs` repository and SHALL invoke Isomer CLI commands through the globally installed `isomer-cli` executable.
@@ -210,4 +208,3 @@ The operator admin skillset SHALL retire the deprecated `isomer-admin-topic-prep
 - **WHEN** operator docs route topic creation, topic preparation, manual-research-ready setup, or human-orchestrated Topic Actor preparation
 - **THEN** they use actual `isomer-admin-topic-creator` subcommands such as `fast-forward`, `step-by-step`, `run-to`, `status`, or `repair`
 - **AND** they do not reference nonexistent `create`, `plan`, or `start-manual-research` Topic Creator subcommands
-

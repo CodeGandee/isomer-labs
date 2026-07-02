@@ -13,7 +13,7 @@ When this subcommand is selected, execute the following steps in order.
 4. Write or update the resolved `topic.intent.overview` path with a concise user-editable topic overview:
    - Include the Research Topic, goal, success metrics, required datasets, explicitly mentioned repositories, explicitly mentioned libraries or tools, assumptions, open questions, and source material.
    - Avoid dependency versions unless the topic context explicitly says them.
-5. If the topic is too vague to summarize without guessing:
+5. If the topic is too vague to status without guessing:
    - Write the known facts and open questions only when safe.
    - Report `topic_intent_status: blocked`, and name the missing topic substance.
 

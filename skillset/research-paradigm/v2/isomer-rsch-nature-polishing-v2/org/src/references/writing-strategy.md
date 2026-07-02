@@ -56,7 +56,7 @@ The Introduction should answer four questions:
 3. What exact question does this study ask?
 4. How does the study address it?
 
-Do not summarize results or conclusions here.
+Do not status results or conclusions here.
 
 ### Results
 

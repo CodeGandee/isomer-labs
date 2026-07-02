@@ -13,7 +13,7 @@ When a Topic Actor creates or updates a record, add `--topic-actor <topic-actor-
 - Store exact placeholder, skill, producer, consumer, kind, and profile metadata on created records.
 - Resolve body locations through the listed semantic label; do not invent hard-coded paths under the Topic Workspace.
 - For paper-line outputs, use paper-specific profiles such as `rebuttal.reviewer-item-matrix`, `rebuttal.action-plan`, `rebuttal.reviewer-linked-evidence-todo`, `rebuttal.response-letter`, and `package.paper.revision-handoff-bundle` on existing generic semantic labels; do not add paper-specific top-level labels.
-- Use `isomer-cli ext deepsci call ...` only for source-shaped compatibility behavior, then summarize the durable meaning through the binding row here.
+- Use `isomer-cli ext deepsci call ...` only for source-shaped compatibility behavior, then status the durable meaning through the binding row here.
 
 ## Kind Defaults
 

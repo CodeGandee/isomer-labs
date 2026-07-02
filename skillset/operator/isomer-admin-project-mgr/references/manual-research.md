@@ -6,7 +6,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the Project root, Research Topic, Topic Workspace, and requested Topic Actor names.
 2. Hand off to `isomer-admin-topic-creator fast-forward`, `isomer-admin-topic-creator step-by-step`, or `isomer-admin-topic-creator run-to setup-actors` when topic setup, actor topology, or actor onboarding context may be missing.
-3. If an advanced operator explicitly requests a lower-level actor operation, route Topic Actor CRUD, Topic Actor Workspace materialization, actor repair, and actor diagnostics to `isomer-admin-topic-workspace-mgr`.
+3. If an advanced operator explicitly requests a lower-level actor operation, route Topic Actor CRUD, Topic Actor Workspace materialization, actor repair, and actor diagnostics to `isomer-admin-topic-mgr`.
 4. Report selected actor cwd targets, optional formal team coexistence material, blockers, and next operator action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to classify whether the user is asking for Project setup, common topic preparation, actor topology management, human-orchestrated research, or formal Topic Team Specialization.

@@ -5,7 +5,7 @@ description: Create or resume an Isomer Research Topic from empty or partial Pro
 
 # Isomer Admin Topic Creator
 
-Use this command-style operator skill when the user wants one front door for creating, initializing, preparing, or repairing a Research Topic for manual or human-orchestrated research. This skill owns the user-facing ladder from blank or partial Project state to prepared Topic Workspace, while delegating lower-level mutation to `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, and `isomer-admin-topic-workspace-mgr`.
+Use this command-style operator skill when the user wants one front door for creating, initializing, preparing, or repairing a Research Topic for manual or human-orchestrated research. This skill owns the user-facing ladder from blank or partial Project state to prepared Topic Workspace, while delegating lower-level mutation to `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, and `isomer-admin-topic-mgr`.
 
 Concrete Research Topic substance is a hard gate. The topic can come from the prompt, a Markdown brief, selected context, or a registered concrete topic statement, but missing or generic topic material such as `default` must block before deriving a topic id, choosing or creating a Topic Workspace, registering a topic, or writing `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, or derived env gates.
 
@@ -102,7 +102,7 @@ Include commands run, semantic labels, path sources, Project lifecycle evidence,
 
 ## Guardrails
 
-Do not make this skill the authority for lower-level mutation. Delegate Project lifecycle work to `isomer-admin-project-mgr` or supported `isomer-cli project ...` commands, topic environment setup to `isomer-srv-topic-env-setup`, and Topic Actor topology to `isomer-admin-topic-workspace-mgr` or `project topic-actors ...`.
+Do not make this skill the authority for lower-level mutation. Delegate Project lifecycle work to `isomer-admin-project-mgr` or supported `isomer-cli project ...` commands, topic environment setup to `isomer-srv-topic-env-setup`, and Topic Actor topology to `isomer-admin-topic-mgr` or `project topic-actors ...`.
 
 Do not infer Research Topics or Topic Workspaces by scanning sibling directories. Use Project Manifest-backed CLI/API surfaces and semantic path resolution.
 

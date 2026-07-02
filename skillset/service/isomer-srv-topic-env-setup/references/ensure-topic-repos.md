@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `semantic_paths`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `semantic_paths`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-status`. Refuse to run if any value is missing, and tell the user to run `resolve-status` first. |
 | Source gate or target spec summary | Require the extracted source gate summary from `read-env-gate` and the repository requirements from `derive-env-gate`, including runnable target, desired commands, success criteria, repo hints, projection access intent, dependency hints, and blockers. Refuse to run if both are missing, and tell the user to run `read-env-gate` and `derive-env-gate` first. |
 | Repo semantic path | For each required repository, resolve or register a non-main `topic.repos.*` label. Under `isomer-default.v1`, `project repos create <repo-label>` creates the default target under `<topic-workspace-dir>/repos/extern/<repo-label-path>`. Create the resolved path only when this step needs to materialize or inspect that repo, and record the semantic label, path, and path source. |
 | Explicit repo source | Optional. Use a URL, local path, package source, or repo name from the prompt or source gate only when the expected repo path is missing. |
@@ -18,7 +18,7 @@ Recover these before asking the user:
 When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**:
-   - Require workspace context from `resolve-topic-workspace` and source gate summary from `read-env-gate`.
+   - Require workspace context from `resolve-status` and source gate summary from `read-env-gate`.
 2. **Identify required repos**:
    - Use the source gate, target spec, desired commands, repo URLs, package names, import paths, build instructions, README references, projection access intent, and common project files already present at resolved `topic.repos.*` paths.
 3. **Use semantic repo paths**. Place every independent repo at a resolved non-main `topic.repos.*` path. The default helper location is `repos/extern/<repo-label-path>`, but explicit safe manifest bindings remain valid.

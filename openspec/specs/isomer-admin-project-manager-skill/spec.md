@@ -298,9 +298,9 @@ The project manager skill SHALL explain the standard Topic Workspace visibility 
 - **WHEN** project-manager diagnostics see legacy root collaboration directories in a Topic Workspace
 - **THEN** the skill reports migration guidance and directs repair through explicit operator action instead of telling the user to delete the directories by hand
 
-#### Scenario: Topic workspace manager handoff is named
-- **WHEN** the user asks the project manager skill to prepare per-agent worktrees or validate worker visibility boundaries
-- **THEN** it hands off to `isomer-admin-topic-workspace-mgr` rather than duplicating Git worktree setup instructions
+#### Scenario: Topic manager handoff is named
+- **WHEN** the user asks the project manager skill to prepare per-agent worktrees, validate worker visibility boundaries, or inspect initialized-topic storage topology
+- **THEN** it hands off to `isomer-admin-topic-mgr` rather than duplicating Topic Workspace or Agent Workspace setup instructions
 
 ### Requirement: Project Manager Uses Essential and Complete Output
 The Project Manager operator skill SHALL split its output contract into Essential Output and Complete Output.
@@ -324,13 +324,13 @@ The Project Manager skill SHALL route manual or human-orchestrated Research Topi
 #### Scenario: Human-orchestrated research request is handed off
 - **WHEN** the user asks the Project Manager skill to prepare, start, create, or set up a Research Topic for manual research, multiple manually controlled agents, or human-orchestrated work
 - **THEN** the Project Manager skill hands off to `isomer-admin-topic-creator` with the selected Project, Research Topic, requested actor context, and any known Project lifecycle state
-- **AND** Topic Actor CRUD or Topic Actor Workspace materialization requests are still routed by the creator or direct advanced users to the Topic Workspace Manager actor-management workflow
+- **AND** Topic Actor CRUD or Topic Actor Workspace materialization requests are still routed by the creator or direct advanced users to `isomer-admin-topic-mgr` actor commands
 - **AND** it does not route the request to `isomer-admin-topic-team-specialize fast-forward` unless the user explicitly asks for Topic Agent Team specialization
 
 #### Scenario: Project manager help distinguishes actor and team paths
 - **WHEN** the Project Manager skill lists topic-oriented operations
 - **THEN** it names `isomer-admin-topic-creator` as the front door for topic creation and manual-research readiness
-- **AND** it distinguishes Topic Workspace Manager actor management, deprecated compatibility preparation/session skills, and Topic Agent Team specialization while keeping runtime initialization or preparation as explicit prerequisites or delegated steps
+- **AND** it distinguishes `isomer-admin-topic-mgr` actor management, deprecated compatibility preparation/session skills, and Topic Agent Team specialization while keeping runtime initialization or preparation as explicit prerequisites or delegated steps
 
 ### Requirement: Project Manager Uses Global Isomer CLI Invocation
 The Project Manager skill SHALL present `isomer-cli` as a globally installed executable, not as a repo-local Pixi task.
@@ -343,4 +343,3 @@ The Project Manager skill SHALL present `isomer-cli` as a globally installed exe
 #### Scenario: Project Manager still preserves project namespace
 - **WHEN** the Pixi prefix is removed from examples
 - **THEN** the command still preserves the canonical `isomer-cli project ...` namespace and existing flags
-

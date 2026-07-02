@@ -7,9 +7,9 @@ Use this subcommand only for optional manual worktree support or compatibility d
 When this subcommand is selected, execute the following steps in order.
 
 1. Require predecessor outputs:
-   - Successful `resolve-workspace`.
-   - Usable prepared Topic Main Development Repository predecessor evidence from topic env setup, or explicit manual topology operation acceptance plus usable `ensure-main-repo` inspection output.
-   - A `plan-agents` result with role ids, agent names, resolved semantic paths, path sources, branches, and `agent.tmp` posture when available.
+   - Successful `storage-resolve`.
+   - Usable prepared Topic Main Development Repository predecessor evidence from topic env setup, or explicit manual topology operation acceptance plus usable `storage-inspect-main` inspection output.
+   - A `team-plan` result with role ids, agent names, resolved semantic paths, path sources, branches, and `agent.tmp` posture when available.
 2. For each planned agent name, inspect existing Git worktrees for the resolved `topic.repos.main` path.
 3. If the resolved `agent.workspace` path already exists as a worktree of `topic.repos.main` on `per-agent/<agent-name>/main`, report it as ready.
 4. If the Agent Workspace path exists but is not the expected worktree, report a blocker and do not overwrite it.

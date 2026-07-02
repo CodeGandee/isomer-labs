@@ -59,7 +59,7 @@ Read these constraints as global validity boundaries for the skill. A result tha
 - Every placeholder used by runtime instructions must be listed in `migrate/placeholders.md`.
 - Concrete source paths, source harness outputs, and source storage assumptions must not become final Isomer storage contracts.
 - Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
-- Missing Python packages for PPTX construction or verification must be routed to `$isomer-admin-topic-workspace-mgr install-packages`; do not perform package setup inside this research skill.
+- Missing Python packages for PPTX construction or verification must be routed to `$isomer-admin-topic-mgr env-install-packages`; do not perform package setup inside this research skill.
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
 ## Cross-Step Quality Gates

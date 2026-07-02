@@ -27,7 +27,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 - `project-config`: `.isomer-labs/`.
 - `houmao-overlay`: Isomer-managed `.isomer-labs/.houmao/`; root `.houmao/` is external and preserved.
 - `content-policy`: selected content root `README.md` and `.gitignore`.
-- `topic-workspace`: selected registered Topic Workspace directories.
+- `status`: selected registered Topic Workspace directories.
 - `runtime`: `state.sqlite`, runtime-owned directories, and adapter runtime material under selected Topic Workspaces.
 - `content-root`: the selected generated content root, only with `--purge-content-root`.
 

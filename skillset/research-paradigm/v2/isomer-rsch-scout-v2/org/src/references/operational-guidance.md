@@ -70,7 +70,7 @@ Use external search actively when local evidence is not enough.
 For papers that survive triage and need real reading, switch from discovery to reading:
 
 - use web search to find the paper
-- then use `artifact.arxiv(paper_id=..., full_text=False)` to read or summarize it
+- then use `artifact.arxiv(paper_id=..., full_text=False)` to read or status it
 - only switch to `full_text=True` or the raw PDF when the shorter view does not cover the needed detail
 
 Search only the unresolved neighborhood that still changes framing, evaluation, or baseline choice.

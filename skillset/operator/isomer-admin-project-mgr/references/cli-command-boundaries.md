@@ -73,7 +73,7 @@ isomer-cli --print-json project topic-actors diagnose --topic <topic-id> --topic
 isomer-cli --print-json project topic-actors archive <topic-actor-name> --topic <topic-id> --reason <reason>
 ```
 
-Use these operations through `isomer-admin-topic-workspace-mgr`. They mutate or inspect Topic Workspace Manifest actor bindings and Topic Actor Workspace materialization. They do not create Agent Team Instance records, Agent Instance records, formal Agent Workspaces, Houmao launch material, or research records.
+Use these operations through `isomer-admin-topic-mgr`. They mutate or inspect Topic Workspace Manifest actor bindings and Topic Actor Workspace materialization. They do not create Agent Team Instance records, Agent Instance records, formal Agent Workspaces, Houmao launch material, or research records.
 
 Explicit Workspace Runtime mutations:
 

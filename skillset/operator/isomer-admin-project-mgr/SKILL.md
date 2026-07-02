@@ -23,7 +23,7 @@ When this skill is invoked, execute the following steps in order.
 5. **Report the Project lifecycle output** using **Essential Output** by default and **Complete Output** when requested, and preserve the **Guardrails**.
 6. **Hand off topic-oriented work** to the narrow owner:
    - Use `isomer-admin-topic-creator` for blank-state topic creation, topic initialization, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation.
-   - Use `isomer-admin-topic-workspace-mgr` for Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped path diagnostics, branch helpers, and topology repair.
+   - Use `isomer-admin-topic-mgr` for initialized-topic storage inspection, Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped path diagnostics, branch helpers, package mutation, environment verification routing, and topology repair.
    - Use `isomer-admin-topic-team-specialize` only when the user explicitly asks to adapt or instantiate a Domain Agent Team Template.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project context, subcommands, CLI boundaries, output contract, and guardrails in this skill, then execute the plan.
@@ -87,11 +87,11 @@ Use read-only commands for checks unless the user explicitly requests initializa
 
 Keep Workspace Runtime creation explicit through `isomer-cli project runtime init`, and keep launch-facing readiness explicit through `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness`. When explaining runtime initialization, distinguish worker-facing `repos/topic-main` and `agents/<agent-name>` from owner-preserved `records/*`, runtime-internal `runtime/*`, and `state.sqlite`.
 
-Hand off blank-state topic creation, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation to `isomer-admin-topic-creator`. Hand off per-agent worktree setup and cwd proof to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Use `isomer-admin-topic-workspace-mgr` for optional topology inspection, branch helper operations, boundary summaries, diagnostics, and Topic Actor CRUD or Topic Actor Workspace materialization.
+Hand off blank-state topic creation, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation to `isomer-admin-topic-creator`. Hand off per-agent worktree setup and cwd proof to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Use `isomer-admin-topic-mgr` for initialized-topic storage inspection, optional topology inspection, branch helper operations, boundary summaries, package mutation, environment verification routing, diagnostics, and Topic Actor CRUD or Topic Actor Workspace materialization.
 
 Do not scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
 
-Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly asks for a Domain Agent Team Template. Use `isomer-admin-topic-creator`, with Topic Workspace Manager actor management underneath, for those requests.
+Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly asks for a Domain Agent Team Template. Use `isomer-admin-topic-creator`, with Topic Manager actor management underneath, for those requests.
 
 Do not duplicate Topic Team Specialization. When the user asks to adapt or instantiate a Domain Agent Team Template for a Research Topic, use `specialize-team` to hand off to `isomer-admin-topic-team-specialize fast-forward`.
 

@@ -21,8 +21,8 @@ When this subcommand is selected, execute the following steps in order.
    - For `setup-agent-workspace`, explain that it creates or validates `topic.env.agent_setup_target_spec`.
    - For `setup-agent-workspace`, also explain that it delegates per-agent worktree creation and readiness proof to `$isomer-srv-agent-env-setup setup-agent-env <research_topic_id>` after source intent, Topic Main Development Repository predecessor evidence, required projection predecessor evidence, and authoritative Agent Names exist.
 4. Ask the user to confirm before running the step. Continue only after explicit confirmation; if the user declines or asks to stop, report progress, blockers, and the next safe step.
-5. Execute exactly one confirmed step, then summarize what changed, what was deferred, and whether the next step is safe.
-6. Ask the user to confirm before moving to the next step, repeating the confirm-execute-summarize cycle until `finalize-topic-team` creates or updates `isomer-topic-summary.md`.
+5. Execute exactly one confirmed step, then status what changed, what was deferred, and whether the next step is safe.
+6. Ask the user to confirm before moving to the next step, repeating the confirm-execute-status cycle until `finalize-topic-team` creates or updates `isomer-topic-summary.md`.
 7. Stop at final topic-team summary output:
    - Run `approve-profile` or `materialize-profile` only when the user explicitly asks for that static profile-material boundary.
    - Require the needed validation or approval inputs before crossing that boundary.

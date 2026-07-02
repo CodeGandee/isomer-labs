@@ -7,7 +7,7 @@ description: Use after Topic Workspace and Topic Actor preparation, and optional
 
 ## Overview
 
-Workspace manager prepares the research-facing contract that v2 skills use after topic setup is ready. It validates readiness as composable topology layers: base Topic Workspace readiness, Topic Actor readiness for human-orchestrated workers, selected v2 skill readiness, placeholder binding readiness, and optional formal team readiness when a Topic Agent Team is selected. It first consumes Topic Creator summaries, Topic Workspace Manager topology evidence, Topic Workspace registration evidence, or final topic-team summary when present, then verifies that the selected Research Topic, Topic Workspace, Workspace Runtime, topic-main, record labels, placeholder bindings, selected Topic Actor Workspaces, and optional Agent Workspace context are ready enough for accepted research artifacts to land in durable topic-owned surfaces or become explicit blockers.
+Workspace manager prepares the research-facing contract that v2 skills use after topic setup is ready. It validates readiness as composable topology layers: base Topic Workspace readiness, Topic Actor readiness for human-orchestrated workers, selected v2 skill readiness, placeholder binding readiness, and optional formal team readiness when a Topic Agent Team is selected. It first consumes Topic Creator summaries, Topic Manager topology evidence, Topic Workspace registration evidence, or final topic-team summary when present, then verifies that the selected Research Topic, Topic Workspace, Workspace Runtime, topic-main, record labels, placeholder bindings, selected Topic Actor Workspaces, and optional Agent Workspace context are ready enough for accepted research artifacts to land in durable topic-owned surfaces or become explicit blockers.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.
 
@@ -15,7 +15,7 @@ Placeholder definitions live in `migrate/placeholders.md`; storage bindings live
 
 Use this skill when:
 
-- Topic Creator, Topic Workspace Manager, or Topic Team Specialization has produced enough base topic readiness for ordinary v2 research work.
+- Topic Creator, Topic Manager, or Topic Team Specialization has produced enough base topic readiness for ordinary v2 research work.
 - A human-orchestrated Topic Actor research session needs v2 bootstrap records, actor cwd guidance, and accepted-artifact command guidance.
 - Topic Team Specialization has produced `isomer-topic-summary.md` and the team is about to start ordinary v2 research work.
 - A Topic Service Master, Project Operator Session, or Operator Agent needs to verify where v2 placeholder outputs should be routed.
@@ -24,10 +24,10 @@ Use this skill when:
 
 Do not use this skill when:
 
-- The task is only operator topology inspection, branch helper work, or legacy diagnostics. Use `isomer-admin-topic-workspace-mgr` for that boundary.
-- The selected Topic Workspace lacks base topic readiness, has only provisional registration evidence, or has missing topic environment, topic-main, runtime, or record-label readiness. Route back to `isomer-admin-topic-creator`, `isomer-admin-topic-workspace-mgr`, or the relevant setup service first.
+- The task is only operator topology inspection, branch helper work, or legacy diagnostics. Use `isomer-admin-topic-mgr` for that boundary.
+- The selected Topic Workspace lacks base topic readiness, has only provisional registration evidence, or has missing topic environment, topic-main, runtime, or record-label readiness. Route back to `isomer-admin-topic-creator`, `isomer-admin-topic-mgr`, or the relevant setup service first.
 - Formal team material is selected but `isomer-topic-summary.md` is missing, blocked, stale, or not checked. Route back to `isomer-admin-topic-team-specialize` or the relevant setup service first.
-- Topic Actor Workspace readiness or formal Agent Workspace cwd proof has not completed for the selected topology. Route Topic Actor topology to `isomer-admin-topic-workspace-mgr` and formal Agent Workspace cwd proof to `isomer-srv-agent-env-setup`.
+- Topic Actor Workspace readiness or formal Agent Workspace cwd proof has not completed for the selected topology. Route Topic Actor topology to `isomer-admin-topic-mgr` and formal Agent Workspace cwd proof to `isomer-srv-agent-env-setup`.
 - The user is asking for domain research work such as scouting, baseline selection, idea generation, experiment execution, analysis, writing, review, rebuttal, or finalization.
 
 ## Workflow
@@ -47,7 +47,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 Read these pages as needed:
 
-- `references/bootstrap-workflow.md` for minimal Topic Workspace readiness detection from Topic Creator and Topic Workspace Manager evidence, entry conditions, Topic Actor fallback, optional formal team checks, and the post-preparation sequence.
+- `references/bootstrap-workflow.md` for minimal Topic Workspace readiness detection from Topic Creator and Topic Manager evidence, entry conditions, Topic Actor fallback, optional formal team checks, and the post-preparation sequence.
 - `references/semantic-surface-plan.md` for existing topic record labels, planned evidence/provenance/package labels, and `custom.*` escalation.
 - `references/placeholder-binding-registry.md`, `references/placeholder-binding-index.md`, and each relevant skill's `placeholder-bindings.md` for mapping v2 placeholder kinds to semantic targets while preserving placeholder names.
 - `references/agent-access-plan.md` for Topic Actor Workspace and Agent Workspace pre-promotion surfaces, generated links, and promotion boundaries.
@@ -75,7 +75,7 @@ Read these gates before claiming the skill output is ready for handoff. Use `Met
 
 This skill can end only when all applicable checks are true:
 
-- <RSCH_WORKSPACE_CONTEXT> identifies the Topic Workspace, Topic Creator summary or Topic Workspace Manager evidence, selected v2 skill set, selected Topic Actors, actor workspace readiness, optional formal team material, runtime readiness, and worker context used for bootstrap.
+- <RSCH_WORKSPACE_CONTEXT> identifies the Topic Workspace, Topic Creator summary or Topic Manager evidence, selected v2 skill set, selected Topic Actors, actor workspace readiness, optional formal team material, runtime readiness, and worker context used for bootstrap.
 - <RSCH_STORAGE_LABEL_PLAN> distinguishes existing semantic labels, planned labels, optional `custom.*` labels, and missing support.
 - <RSCH_PLACEHOLDER_BINDING_REGISTRY> maps v2 placeholder kinds to semantic targets without forcing hard-coded paths.
 - <RSCH_AGENT_ACCESS_PLAN> tells working Topic Actors or formal agents where pre-promotion outputs belong, which actor metadata to preserve, and how durable refs should be cited after accepted research artifacts are promoted.
@@ -84,7 +84,7 @@ This skill can end only when all applicable checks are true:
 ## Common Mistakes
 
 - Treating this skill as a replacement for Topic Team Specialization or environment setup.
-- Treating `isomer-admin-topic-workspace-mgr` as the owner of v2 placeholder binding.
+- Treating `isomer-admin-topic-mgr` as the owner of v2 placeholder binding.
 - Requiring a Topic Service Master when the Project Operator Session or Operator Agent can perform the same bounded bootstrap work.
 - Requiring formal Topic Team material for a human-orchestrated Topic Actor session.
 - Treating a Topic Actor Workspace as an Agent Workspace or fabricating Agent Instance refs for Topic Actor records.

@@ -8,7 +8,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
+| Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-status`. Refuse to run if any value is missing, and tell the user to run `resolve-status` first. |
 | Topic env source intent | Resolve `topic.intent.topic_env_requirements` through Workspace Path Resolution. Under `isomer-default.v1`, this defaults to `<topic-workspace-dir>/intent/src/topic-env-gate.md`. If it is missing or unreadable, report a blocker asking the user to create or repair the resolved source intent file. |
 | Optional modifiers | None for this step. |
 
@@ -16,7 +16,7 @@ Recover these before asking the user:
 
 When this subcommand is selected, execute the following steps in order.
 
-1. **Require workspace context** from `resolve-topic-workspace`:
+1. **Require workspace context** from `resolve-status`:
    - Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment`.
 2. **Resolve the source intent label** `topic.intent.topic_env_requirements`:
    - Record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.

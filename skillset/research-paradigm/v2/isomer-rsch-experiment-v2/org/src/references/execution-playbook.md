@@ -116,7 +116,7 @@ The normal experiment workspace is the current active idea worktree returned by 
 - if the idea package changes materially before execution, submit a new durable idea branch with `artifact.submit_idea(mode='create', lineage_intent='continue_line'|'branch_alternative', ...)` instead of silently mutating the old node
 - after a real main run finishes, record it with `artifact.record_main_experiment(...)` before moving to analysis or writing
 - once that durable main result exists, treat the branch as a fixed round node; a later new optimization round should usually compare foundations and create a new `continue_line` child branch or `branch_alternative` sibling-like branch
-- after `artifact.record_main_experiment(...)`, if QQ milestone media is enabled and the metrics are stable enough to summarize honestly, prefer one concise summary PNG over multiple attachments
+- after `artifact.record_main_experiment(...)`, if QQ milestone media is enabled and the metrics are stable enough to status honestly, prefer one concise summary PNG over multiple attachments
 
 ## 4. Implement the minimum required change
 

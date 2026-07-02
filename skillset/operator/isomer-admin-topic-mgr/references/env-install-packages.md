@@ -7,7 +7,7 @@ Use this subcommand to infer, install, and verify packages for the selected Topi
 When this subcommand is selected, execute the following steps in order.
 
 1. **Resolve workspace and Pixi target**:
-   - Run or reuse `resolve-workspace` evidence for the selected Project, Research Topic, Topic Workspace, and semantic paths.
+   - Run or reuse `storage-resolve` evidence for the selected Project, Research Topic, Topic Workspace, and semantic paths.
    - Resolve the active Topic Workspace Pixi manifest and environment from the Topic Workspace binding or explicit operator input.
    - Stop if mutation would target the Project-root Pixi environment, an Agent Workspace-specific environment, an ambient virtual environment, or an unresolved manifest.
 2. **Load package request input**:
@@ -47,7 +47,7 @@ Recover these before asking the user:
 
 | Input | Resolution |
 | --- | --- |
-| Workspace context | Require `project_root`, `research_topic_ref`, `topic_workspace_ref`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment`. Resolve through `resolve-workspace` and the active Topic Workspace Pixi binding; refuse to mutate when the selected Topic Workspace or Pixi target is ambiguous. |
+| Workspace context | Require `project_root`, `research_topic_ref`, `topic_workspace_ref`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment`. Resolve through `storage-resolve` and the active Topic Workspace Pixi binding; refuse to mutate when the selected Topic Workspace or Pixi target is ambiguous. |
 | Package request | Accept a direct prompt, Markdown file, YAML, JSON, TOML, requirements-style list, or copied blocker text. Treat structured files as an input convenience, not as a required schema. If no package request is present, ask for the packages or description to install. |
 | Mutation intent | Require clear operator intent to install or repair packages in the selected Topic Workspace. Read-only package availability checks may report an install plan without mutation when the prompt asks to inspect only. |
 

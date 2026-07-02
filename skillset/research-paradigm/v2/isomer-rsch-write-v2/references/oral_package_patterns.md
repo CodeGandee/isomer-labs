@@ -206,7 +206,7 @@ Main text should point to the appendix deliberately, not apologetically.
 - `Analysis paraphrases the display` -> keep only the few anchoring facts needed, then explain why the pattern appears
 - `Analysis lists numbers but not the trend` -> name the stable pattern, the tradeoff, and the likely mechanism
 - `Analysis feels optional` -> promote at least one interpretive block into the main text
-- `Figures summarize but do not teach` -> add or redesign an intuition figure and a case-study figure
+- `Figures status but do not teach` -> add or redesign an intuition figure and a case-study figure
 - `Main text is crowded` -> move exhaustive material to appendix
 - `Method defense is too thick` -> compress repeated formal defense and spend that budget on objection handling
 - `Appendix is just tables` -> organize it around protocol, full results, stress tests, examples, failure cases, and reproducibility

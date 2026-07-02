@@ -502,45 +502,47 @@ The module skill SHALL focus on static Topic Team material and durable setup pre
 - **THEN** the skill validates or summarizes topic overview material, copied specialization material, setup evidence, Agent Workspace layout, profile material, blockers, deferrals, and next actions without claiming Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or live launch readiness
 
 ### Requirement: Git-Backed Agent Workspace Delegation
-The Topic Team Specialization module skill SHALL delegate Git-backed Agent Workspace repository, worktree, and `isomer-managed/` preparation to `isomer-admin-topic-workspace-mgr` when a specialized topic team needs the `repos/topic-main` layout.
+The Topic Team Specialization module skill SHALL delegate Git-backed Agent Workspace repository, worktree, and `isomer-managed/` preparation to the appropriate topic setup owner instead of creating worktrees itself.
 
 #### Scenario: Setup agent workspace delegates Git worktree setup
-- **WHEN** `setup-agent-workspace` determines that the selected topic team needs Git-backed Agent Workspaces under `<topic-workspace-dir>/agents/<agent-name>`
-- **THEN** it routes or instructs the operator to use `isomer-admin-topic-workspace-mgr` rather than creating the worktrees itself
+- **WHEN** `setup-agent-workspace` determines that the selected topic team needs Git-backed Agent Workspaces under resolved `agent.workspace` paths
+- **THEN** it routes per-agent worktree creation and cwd verification through `isomer-srv-agent-env-setup` after Topic Main Development Repository predecessor evidence exists
+- **AND** it does not create the worktrees itself
 
-#### Scenario: Setup agent workspace delegates Isomer-managed setup
-- **WHEN** `setup-agent-workspace` determines that per-agent worker-facing support paths, peer-readable large artifact paths, generated links, or boundary material are needed
-- **THEN** it routes or instructs the operator to use `isomer-admin-topic-workspace-mgr` for `isomer-managed/` preparation rather than creating `.isomer-agent/` or top-level `topic-main` collaboration directories itself
+#### Scenario: Optional topology support routes to topic manager
+- **WHEN** the operator asks for read-only topology inspection, branch helper operations, boundary summaries, stale topology repair, manual compatibility operations, or legacy diagnostics
+- **THEN** the skill may route that bounded work to `isomer-admin-topic-mgr` storage or team commands
+- **AND** it records that evidence separately from topic env materialization and agent env readiness evidence
 
 #### Scenario: Static setup records delegated workspace refs
 - **WHEN** delegated Git-backed workspace setup has completed
 - **THEN** `setup-agent-workspace`, `validate-topic-team`, or `finalize-topic-team` may report the returned Agent Workspace paths, branch names, `isomer-managed/` paths, boundary docs, validation refs, blockers, and next actions as static setup evidence
 
 #### Scenario: Delegation preserves static boundary
-- **WHEN** Topic Team Specialization delegates Git-backed workspace setup
+- **WHEN** Topic Team Specialization delegates Git-backed workspace setup, topology inspection, or environment verification
 - **THEN** it still does not create Agent Instances, mutate Workspace Runtime records, launch agents, or invoke Execution Adapters
 
 #### Scenario: Missing delegated setup blocks static readiness
-- **WHEN** the specialized topic team requires Git-backed Agent Workspaces and no successful topic workspace manager output exists
+- **WHEN** the specialized topic team requires Git-backed Agent Workspaces and no successful delegated setup or verification output exists
 - **THEN** `validate-topic-team` reports an Agent Workspace setup blocker rather than claiming static material readiness
 
 #### Scenario: Legacy support setup is not accepted as new readiness
 - **WHEN** the only available workspace setup evidence names `.isomer-agent/` or top-level `repos/topic-main/{shared,artifacts,tasks,runs,views,logs,tools}` as the current standard layout
-- **THEN** `validate-topic-team` reports stale workspace setup evidence and asks for `isomer-admin-topic-workspace-mgr` validation of the `isomer-managed/` layout
+- **THEN** `validate-topic-team` reports stale workspace setup evidence and asks for `isomer-admin-topic-mgr team-validate-workspaces` or the appropriate service verification
 
-#### Scenario: Topic-main setup is not workspace-manager work in the canonical path
+#### Scenario: Topic-main setup is not topic-manager work in the canonical path
 - **WHEN** the normal topic-team setup path needs `topic.repos.main`
 - **THEN** `isomer-admin-topic-team-specialize` gets that evidence through `setup-topic-env` and `isomer-srv-topic-env-setup`
-- **AND** it does not route canonical Topic Main Development Repository creation to `isomer-admin-topic-workspace-mgr`
+- **AND** it does not route canonical Topic Main Development Repository creation to `isomer-admin-topic-mgr`
 
 #### Scenario: Setup agent workspace delegates agent worktree setup
 - **WHEN** `setup-agent-workspace` determines that the selected topic team needs Git-backed Agent Workspaces under resolved `agent.workspace` paths
 - **THEN** it routes per-agent worktree creation and cwd verification through `isomer-srv-agent-env-setup` after Topic Main Development Repository predecessor evidence exists
 - **AND** it does not create the worktrees itself
 
-#### Scenario: Workspace manager remains optional
+#### Scenario: Topic manager remains optional
 - **WHEN** the operator asks for read-only topology inspection, branch helper operations, boundary summaries, or legacy compatibility diagnostics
-- **THEN** the skill may route that bounded work to `isomer-admin-topic-workspace-mgr`
+- **THEN** the skill may route that bounded work to `isomer-admin-topic-mgr`
 - **AND** it records that evidence separately from topic env materialization and agent env readiness evidence
 
 ### Requirement: Clarification Option Loop
@@ -586,7 +588,7 @@ The Topic Team Specialization module skill SHALL consume and report workspace se
 
 #### Scenario: Setup agent workspace requests semantic setup
 - **WHEN** `setup-agent-workspace` determines that a specialized topic team needs Git-backed Agent Workspaces
-- **THEN** it delegates to `isomer-admin-topic-workspace-mgr` with semantic surface expectations for Topic Main Repository and Agent Workspace preparation
+- **THEN** it delegates to `isomer-srv-agent-env-setup` for per-agent cwd verification and may use `isomer-admin-topic-mgr` for bounded topology inspection with semantic surface expectations
 
 #### Scenario: Delegated output records labels
 - **WHEN** delegated Agent Workspace setup completes
@@ -677,7 +679,7 @@ The Topic Team Specialization module skill SHALL include service-produced agent 
 The Topic Team Specialization skill SHALL require delegated Git-backed workspace setup evidence to preserve the local tmp-label non-sharing contract.
 
 #### Scenario: Setup evidence includes tmp contract
-- **WHEN** `setup-agent-workspace` records delegated topic workspace manager evidence for Git-backed worktrees
+- **WHEN** `setup-agent-workspace` records delegated topic manager or agent-env service evidence for Git-backed worktrees
 - **THEN** the evidence includes whether `topic.repos.main.tmp` and `agent.tmp` surfaces are ignored and local-only
 - **AND** it reports blockers when delegated setup found tracked tmp contents or missing ignore policy
 
@@ -703,10 +705,10 @@ The Topic Team Specialization module skill SHALL own the decision to invoke Topi
 - **THEN** it ensures a usable `user-intent/src/agent-env-gate.md` exists or asks for the missing per-agent readiness target
 - **AND** after Topic Workspace environment readiness and Git topology evidence exist, it delegates gate-driven Agent Workspace environment setup to `isomer-srv-agent-env-setup`
 
-#### Scenario: Git topology remains workspace manager work
+#### Scenario: Git topology remains topic manager or service work
 - **WHEN** Git-backed `topic.repos.main`, per-agent `agent.workspace` worktrees, branch plans, worker-facing support paths, or Workspace Boundary material are needed
-- **THEN** Topic Team Specialization delegates that topology to `isomer-admin-topic-workspace-mgr`
-- **AND** it records the workspace manager evidence separately from topic env setup evidence and agent env setup evidence
+- **THEN** Topic Team Specialization delegates that topology to `isomer-admin-topic-mgr` or the appropriate environment setup service
+- **AND** it records the delegated topology evidence separately from topic env setup evidence and agent env setup evidence
 
 #### Scenario: Topic setup is delegated only after derived topic target spec exists
 - **WHEN** `isomer-admin-topic-team-specialize setup-topic-env` runs after registration and Topic Workspace Pixi binding evidence exists
@@ -932,7 +934,7 @@ The Topic Team Specialization skill SHALL keep Topic Actor bindings and formal t
 
 #### Scenario: Existing actors are not removed by team specialization
 - **WHEN** Topic Team Specialization runs in a Topic Workspace with active Topic Actor bindings
-- **THEN** the flow preserves those bindings and Topic Actor Workspace refs unless the user explicitly asks to remove or archive them through the Topic Workspace Manager actor-management workflow
+- **THEN** the flow preserves those bindings and Topic Actor Workspace refs unless the user explicitly asks to remove or archive them through `isomer-admin-topic-mgr` actor commands
 
 #### Scenario: Actor preparation does not create team material
 - **WHEN** common topic preparation or human-orchestrated actor preparation runs

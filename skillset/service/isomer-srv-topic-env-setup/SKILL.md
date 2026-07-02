@@ -15,7 +15,7 @@ description: Use when an Isomer Labs agent needs gate-driven enclosed Pixi devel
 - **Scope**: Topic environment setup is independent of Topic Agent Team structure. Do not require `<topic-workspace>/team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Workspace plans, roles, or agent count.
 - **Ownership**: this skill owns Topic Main Development Repository setup, Topic Main Development Repository Git state evidence, canonical external repo acquisition, and external repo projections when the target spec requires them; it does not read `topic.intent.agent_env_requirements`, create `topic.env.agent_setup_target_spec`, prepare Agent Workspace worktrees, or prove every `agent.workspace` cwd.
 - **Enclosure**: prefer Pixi-managed dependencies, use explicit Pixi-run runtime wiring only when needed, use topic-local user-space fallback only as a secondary option, and block privileged or machine-global mutation.
-- **Package-add routing**: when a user or another skill asks only to install, add, repair, or verify packages for a selected Topic Workspace, route that request to `$isomer-admin-topic-workspace-mgr install-packages` instead of treating this service as a competing ad hoc package-add entrypoint.
+- **Ad hoc package routing**: when a user or another skill asks only to install, add, repair, update, remove, or verify packages for a selected Topic Workspace, route that request to the matching `$isomer-admin-topic-mgr env-*` command instead of treating this service as a competing ad hoc package mutation entrypoint.
 - **Routing**: keep the entrypoint lean, choose one subcommand, then load that subcommand's reference page.
 
 ## Workflow
@@ -26,7 +26,7 @@ When this skill is invoked, execute the following steps in order.
    - If the invocation has no prompt, or if the user asks for help, usage, or available functionality, answer from **Help**.
    - Stop unless they also ask for a concrete setup task.
 2. **Route package-add intent**:
-   - If the prompt asks only to install, add, repair, or verify packages for a selected Topic Workspace, route to `$isomer-admin-topic-workspace-mgr install-packages`.
+   - If the prompt asks only to install, add, repair, update, remove, or verify packages for a selected Topic Workspace, route to the matching `$isomer-admin-topic-mgr env-install-packages`, `$isomer-admin-topic-mgr env-update-packages`, `$isomer-admin-topic-mgr env-remove-packages`, or verification command.
    - Continue in this service only when the user asks for full gate-driven Topic Workspace environment setup, source-gate derivation, dependency installation from an existing target spec, or environment verification.
 3. **Select one subcommand** from the **Subcommands** tables:
    - Prefer procedural or misc subcommands.
@@ -48,7 +48,7 @@ Procedural subcommands are the public single-step workflow API. Call them direct
 
 | Subcommand | Use For | Reference |
 | --- | --- | --- |
-| `resolve-topic-workspace` | Resolve Project root, Research Topic, Topic Workspace, active Pixi binding, and setup preconditions. | [references/resolve-topic-workspace.md](references/resolve-topic-workspace.md) |
+| `resolve-status` | Resolve Project root, Research Topic, Topic Workspace, active Pixi binding, and setup preconditions. | [references/resolve-status.md](references/resolve-status.md) |
 | `read-env-gate` | Resolve and read `topic.intent.topic_env_requirements` and identify the runnable target. | [references/read-env-gate.md](references/read-env-gate.md) |
 | `derive-env-gate` | Generate or update `topic.env.topic_setup_target_spec`, or validate an explicit manual target spec. | [references/derive-env-gate.md](references/derive-env-gate.md) |
 | `ensure-topic-main-repository` | Create, reuse, configure, and verify the Topic Main Development Repository resolved by `topic.repos.main`. | [references/ensure-topic-main-repository.md](references/ensure-topic-main-repository.md) |
@@ -76,19 +76,19 @@ Each executable reference page owns its `## Required Inputs` contract. Use the s
 
 ## Help
 
-`isomer-srv-topic-env-setup` prepares a Topic Workspace Pixi development environment so the user-specified target in `topic.intent.topic_env_requirements` or an explicit manual target spec can run. It assumes a single capable agent or operator needs to execute research commands in the selected Topic Workspace; it does not need a topic team profile, live Agent Team Instance, role list, or agent count. It produces Topic Workspace predecessor evidence for later workflows, including Agent Workspace setup when a different caller requests that. It preserves environment enclosure by preferring Pixi-managed dependencies, recording any external runtime wiring that must be routed through Pixi-run commands, limiting fallback installs to topic-local user space, and refusing sudo or machine-global mutation. For ad hoc package-add requests from users or research skills, route to `$isomer-admin-topic-workspace-mgr install-packages`; use this service for full gate-driven setup and verification. Public subcommands are grouped below.
+`isomer-srv-topic-env-setup` prepares a Topic Workspace Pixi development environment so the user-specified target in `topic.intent.topic_env_requirements` or an explicit manual target spec can run. It assumes a single capable agent or operator needs to execute research commands in the selected Topic Workspace; it does not need a topic team profile, live Agent Team Instance, role list, or agent count. It produces Topic Workspace predecessor evidence for later workflows, including Agent Workspace setup when a different caller requests that. It preserves environment enclosure by preferring Pixi-managed dependencies, recording any external runtime wiring that must be routed through Pixi-run commands, limiting fallback installs to topic-local user space, and refusing sudo or machine-global mutation. For ad hoc package install, update, remove, or package verification requests from users or research skills, route to `$isomer-admin-topic-mgr env-install-packages`, `$isomer-admin-topic-mgr env-update-packages`, `$isomer-admin-topic-mgr env-remove-packages`, or the matching verification command; use this service for full gate-driven setup and verification. Public subcommands are grouped below.
 
 Procedural subcommands:
 
 | Subcommand | Purpose | Produces |
 | --- | --- | --- |
-| `resolve-topic-workspace` | Resolve the Project root, Research Topic, Topic Workspace, Pixi manifest, and selected Pixi environment. | Resolved setup refs and blockers; no environment mutation. |
+| `resolve-status` | Resolve the Project root, Research Topic, Topic Workspace, Pixi manifest, and selected Pixi environment. | Resolved setup refs and blockers; no environment mutation. |
 | `read-env-gate` | Read the source gate and extract the runnable target, repo hints, commands, and success criteria. | Source gate summary and readiness blockers. |
 | `derive-env-gate` | Write the fixed-section operational target spec, including the enclosure strategy for each dependency or runtime need. | `topic.env.topic_setup_target_spec`, defaulting to `<topic-workspace-dir>/intent/derived/isomer-env-gate.md`. |
 | `ensure-topic-main-repository` | Prepare the topic-owned development repository resolved by `topic.repos.main`. | Git state, owner branch posture, Isomer-managed namespace posture, changed files, commands run, and blockers. |
 | `ensure-topic-repos` | Find existing required repos or materialize missing canonical external repos at resolved non-main `topic.repos.*` paths, defaulting helper-created repos under `repos/extern/...`. | Repo inventory and inspection notes; acquired topic repos and inferred-source warnings only for missing repos. |
 | `project-extern-repos` | Expose canonical external repos inside topic-main when the target spec requires agent-readable or writable projections. | Projection paths, projection access intent, projection mode, manifest entries, changed files, and blockers. |
-| `install-topic-deps` | Install inferred dependencies from an existing topic env target spec during full gate-driven setup; ad hoc package-add requests route to `$isomer-admin-topic-workspace-mgr install-packages`. | Updated Topic Workspace Pixi environment files, `.gitignore`, dependency plan, enclosure records, and blockers. |
+| `install-topic-deps` | Install inferred dependencies from an existing topic env target spec during full gate-driven setup; ad hoc package install, update, remove, or package verification requests route to `isomer-admin-topic-mgr env-*` commands. | Updated Topic Workspace Pixi environment files, `.gitignore`, dependency plan, enclosure records, and blockers. |
 | `verify-env-gate` | Run the desired command through recorded Pixi-scoped commands and report Topic Workspace readiness. | Gate execution results, readiness status, enclosure warnings, and blockers; per-Agent Workspace readiness remains not checked. |
 
 Misc subcommands:
@@ -151,7 +151,7 @@ When requested, include grouped handoff and audit fields:
 - Do not modify an existing canonical external repository at the resolved non-main `topic.repos.*` path during `ensure-topic-repos`; inspect it as read-only evidence and report blockers if it is unsuitable unless the target spec explicitly authorizes that repository mutation.
 - Do not infer a binding from directory names or Research Topic ids. Use the Project Manifest for explicit bindings and the registered Topic Workspace directory only as the defined implicit default target.
 - Do not choose repos, dependencies, Pixi install commands, setup commands, or verification commands before resolving `topic.intent.topic_env_requirements` or accepting an explicit operational target spec.
-- Do not use this service as the public bypass for ad hoc package-add requests. Route user-facing or research-skill package installation handoffs to `$isomer-admin-topic-workspace-mgr install-packages` unless the user explicitly requests the full gate-driven setup workflow.
+- Do not use this service as the public bypass for ad hoc package mutation requests. Route user-facing or research-skill package install, update, remove, or package verification handoffs to the matching `$isomer-admin-topic-mgr env-*` command unless the user explicitly requests the full gate-driven setup workflow.
 - Apply the enclosure ladder before dependency mutation or verification: Pixi-managed install first, Pixi-mediated external runtime wiring second, topic-local user-space fallback under `<topic-workspace-dir>/.isomer-user-env/` third, and blockers for privileged or machine-global mutation.
 - When mutating dependencies, use `pixi add --manifest-path <manifest_path> ...` or `pixi install --manifest-path <manifest_path> --environment <pixi_environment>` so changes target the selected Topic Workspace manifest.
 - When running Topic Workspace setup, inspection, or verification commands inside the prepared environment, use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>` instead of relying on the ambient shell environment. Explicitly sourced scripts and exported runtime paths are allowed only when recorded in `topic.env.topic_setup_target_spec` and the execution log.

@@ -221,7 +221,7 @@ Rewrite if the appendix:
 
 Before considering the rewrite complete, ask:
 
-- Can someone summarize the paper after one read?
+- Can someone status the paper after one read?
 - Is the central idea visually and verbally anchored early?
 - Does each main-text page or section have a clear dominant job?
 - Are the strongest figures and analyses in the main text?

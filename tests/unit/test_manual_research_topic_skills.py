@@ -72,7 +72,7 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
             combined,
             (
                 "isomer-admin-topic-creator",
-                "Topic Workspace Manager topology evidence",
+                "Topic Manager topology evidence",
                 "current Topic Actor roster",
                 "Topic Actor Workspace refs",
                 "Preserve active Topic Actor bindings",
@@ -98,7 +98,7 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "selected v2 skill readiness",
                 "placeholder binding readiness",
                 "Topic Creator summaries",
-                "Topic Workspace Manager topology evidence",
+                "Topic Manager topology evidence",
                 "actor metadata for v2 records",
                 "accepted research artifact",
                 "--topic-actor <topic-actor-name>",

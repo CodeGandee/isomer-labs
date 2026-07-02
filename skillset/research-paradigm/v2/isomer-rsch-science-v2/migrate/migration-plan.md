@@ -27,8 +27,8 @@
 
 | Source Harness or Tool Rule | Isomer Labs Treatment |
 | --- | --- |
-| `memory.*` | Prefer Workspace Runtime-backed retrieval or recording. When compatibility is required, use `isomer-cli ext deepsci call memory.<tool> --input-json <json-object>` and summarize the result with the local placeholders. |
-| `artifact.science(...)` and `artifact.*` | Prefer Isomer Evidence Items, Findings, Provenance Records, Gates, Decision Records, and science evidence graph placeholders. When compatibility is required, use `isomer-cli ext deepsci call artifact.<tool> --input-json <json-object>` and summarize semantic meaning with placeholders. |
+| `memory.*` | Prefer Workspace Runtime-backed retrieval or recording. When compatibility is required, use `isomer-cli ext deepsci call memory.<tool> --input-json <json-object>` and status the result with the local placeholders. |
+| `artifact.science(...)` and `artifact.*` | Prefer Isomer Evidence Items, Findings, Provenance Records, Gates, Decision Records, and science evidence graph placeholders. When compatibility is required, use `isomer-cli ext deepsci call artifact.<tool> --input-json <json-object>` and status semantic meaning with placeholders. |
 | `bash_exec(...)` | Use an Execution Adapter Command Request or the DeepScientist-compatible extension call for shell, CLI, Python, git, package, scheduler, SSH, or environment work. Do not describe native shell calls as the final skill contract. |
 | FermiLink runner, CLI, UI, backend, and HPC profile manager | Not migrated as runtime dependencies. Only generated package catalog material is copied. |
 

@@ -22,7 +22,7 @@ LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/"
 TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-admin-topic-team-specialize"
 PROJECT_MANAGER_SKILL = "isomer-admin-project-mgr"
 TOPIC_CREATOR_SKILL = "isomer-admin-topic-creator"
-TOPIC_WORKSPACE_MANAGER_SKILL = "isomer-admin-topic-workspace-mgr"
+TOPIC_MANAGER_SKILL = "isomer-admin-topic-mgr"
 
 MIGRATED_OPERATOR_SKILLS = (
     "isomer-rsch-project-aware",
@@ -292,7 +292,7 @@ PROJECT_MANAGER_REQUIRED_SKILL_TERMS = (
     "isomer-cli project runtime init",
     "isomer-cli project runtime prepare",
     "isomer-admin-topic-creator",
-    "isomer-admin-topic-workspace-mgr",
+    "isomer-admin-topic-mgr",
     "isomer-admin-topic-team-specialize",
 )
 
@@ -375,7 +375,7 @@ TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
     "actor onboarding",
     "isomer-admin-project-mgr",
     "isomer-srv-topic-env-setup",
-    "isomer-admin-topic-workspace-mgr",
+    "isomer-admin-topic-mgr",
     "isomer-admin-topic-team-specialize",
     "Essential Output",
     "Complete Output",
@@ -443,7 +443,7 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
         "topic.env.topic_setup_target_spec",
     ),
     "setup-actors.md": (
-        "isomer-admin-topic-workspace-mgr",
+        "isomer-admin-topic-mgr",
         "topic.actors.workspace",
         "topic.intent.actor_definitions",
         "topic.env.actor_env_gates",
@@ -478,29 +478,45 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
     ),
 }
 
-TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
-    "topic-workspace",
+TOPIC_MANAGER_REQUIRED_SKILL_TERMS = (
+    "isomer-admin-topic-creator",
+    "initialized-topic",
     "Default subcommand",
     "## Subcommands",
-    "Procedural Subcommands",
-    "Helper Subcommands",
-    "Misc Subcommands",
-    "references/topic-workspace.md",
-    "resolve-workspace",
-    "ensure-main-repo",
-    "manage-actors",
-    "plan-agents",
-    "create-worktrees",
-    "write-boundaries",
-    "create-agent-branch",
-    "validate-worktrees",
-    "summarize",
+    "Status Subcommands",
+    "Storage Subcommands",
+    "Actor Subcommands",
+    "Team Subcommands",
+    "Environment Mutation Subcommands",
+    "Environment Verification Subcommands",
+    "references/status.md",
+    "status",
+    "doctor",
     "help",
-    "optional topology inspection",
+    "storage-resolve",
+    "storage-inspect-main",
+    "storage-validate",
+    "storage-register-repo",
+    "actors-manage",
+    "actors-materialize",
+    "actors-diagnose",
+    "team-plan",
+    "team-materialize-workspaces",
+    "team-write-boundaries",
+    "team-create-branch",
+    "team-validate-workspaces",
+    "env-install-packages",
+    "env-update-packages",
+    "env-remove-packages",
+    "env-verify-topic",
+    "env-verify-actors",
+    "env-verify-agents",
     "canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`",
+    "canonical per-agent worktree creation plus cwd proof belong to `isomer-srv-agent-env-setup`",
+    "isomer-rsch-workspace-mgr-v2",
     "semantic workspace labels",
     "Topic Workspace Manifest",
-    "isomer-default.v1",
+    "topic-workspace.toml",
     "project paths register",
     "project repos create",
     "project topic-actors",
@@ -510,14 +526,12 @@ TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
     "topic.repos.main",
     "topic.repos.main.tmp",
     "topic.repos.main.isomer_managed",
-    "topic.actors_root",
     "topic.actors.workspace",
     "topic.actors.tmp",
     "topic.actors.isomer_managed",
     "topic.actors.private_artifacts",
     "topic.actors.logs",
     "topic.actors.links",
-    "topic.agents_root",
     "agent.workspace",
     "agent.tmp",
     "agent.private_artifacts",
@@ -534,12 +548,7 @@ TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
     "agent_branch",
     "agent_workspace_ref",
     "isomer-managed/",
-    "tracked/",
-    "agent-owned/",
-    "topic-owned/",
-    "links/",
     "topic.records.*",
-    "projection roots",
     "Agent Instance",
     "Workspace Runtime",
     "Houmao",
@@ -550,41 +559,50 @@ TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
     "next_operator_action",
 )
 
-TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS = (
-    "resolve-workspace.md",
-    "ensure-main-repo.md",
-    "manage-actors.md",
-    "plan-agents.md",
-    "create-worktrees.md",
-    "write-boundaries.md",
-    "create-agent-branch.md",
-    "validate-worktrees.md",
-    "install-packages.md",
-    "summarize.md",
+TOPIC_MANAGER_SUBCOMMANDS = (
+    "status.md",
+    "doctor.md",
     "help.md",
-    "topic-workspace.md",
+    "storage-resolve.md",
+    "storage-inspect-main.md",
+    "storage-validate.md",
+    "storage-register-repo.md",
+    "actors-manage.md",
+    "actors-materialize.md",
+    "actors-diagnose.md",
+    "team-plan.md",
+    "team-materialize-workspaces.md",
+    "team-write-boundaries.md",
+    "team-create-branch.md",
+    "team-validate-workspaces.md",
+    "env-install-packages.md",
+    "env-update-packages.md",
+    "env-remove-packages.md",
+    "env-verify-topic.md",
+    "env-verify-actors.md",
+    "env-verify-agents.md",
 )
 
-TOPIC_WORKSPACE_MANAGER_HELP_TABLE_TERMS = (
+TOPIC_MANAGER_HELP_TABLE_TERMS = (
     "| Subcommand | Purpose | Produces |",
     "| --- | --- | --- |",
 )
 
-TOPIC_WORKSPACE_MANAGER_NAMING_EXCEPTIONS = {"help", "summarize", "topic-workspace"}
+TOPIC_MANAGER_NAMING_EXCEPTIONS = {"help", "status", "doctor"}
 
-TOPIC_WORKSPACE_MANAGER_REFERENCE_REQUIRED_TERMS = (
+TOPIC_MANAGER_REFERENCE_REQUIRED_TERMS = (
     "blocker",
 )
 
-TOPIC_WORKSPACE_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
-    "resolve-workspace.md": (
+TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
+    "storage-resolve.md": (
         "isomer-cli project paths get",
         "project paths explain",
         "semantic_paths",
         "topic.repos.main",
         "agent.workspace",
     ),
-    "ensure-main-repo.md": (
+    "storage-inspect-main.md": (
         "topic.repos.main",
         "topic.repos.main.tmp",
         "topic.repos.main.isomer_managed",
@@ -592,7 +610,19 @@ TOPIC_WORKSPACE_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "predecessor evidence",
         "manual topology operation",
     ),
-    "manage-actors.md": (
+    "storage-validate.md": (
+        "Workspace Path Resolution",
+        "topic.repos.main.tmp",
+        "custom.*",
+        "path source",
+    ),
+    "storage-register-repo.md": (
+        "topic.repos.*",
+        "storage_profile",
+        "project repos create",
+        "project paths register",
+    ),
+    "actors-manage.md": (
         "project topic-actors",
         "topic.actors.workspace",
         "topic.actors.tmp",
@@ -602,12 +632,22 @@ TOPIC_WORKSPACE_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "alternate source repositories",
         "blocker",
     ),
-    "plan-agents.md": (
+    "actors-materialize.md": (
+        "topic.actors.workspace",
+        "per-topic-actor/<topic-actor-name>/main",
+        "Topic Actor names separate from Agent Names",
+    ),
+    "actors-diagnose.md": (
+        "topic.actors.workspace",
+        "runtime audit refs",
+        "actor readiness",
+    ),
+    "team-plan.md": (
         "agent.workspace",
         "Workspace Path Resolution",
         "path sources",
     ),
-    "create-worktrees.md": (
+    "team-materialize-workspaces.md": (
         "agent.workspace",
         "agent.tmp",
         "topic.repos.main",
@@ -615,46 +655,69 @@ TOPIC_WORKSPACE_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "path sources",
         "semantic support paths",
     ),
-    "write-boundaries.md": (
+    "team-write-boundaries.md": (
         "topic.repos.main",
         "agent.workspace",
         "path source",
         "without passing Agent Name",
     ),
-    "validate-worktrees.md": (
+    "team-validate-workspaces.md": (
         "semantic label bindings",
         "topic.repos.main.tmp",
         "agent.tmp",
         "tracked tmp contents",
         "hard-coded default-only evidence",
     ),
-    "summarize.md": (
-        "semantic_paths",
-        "local_tmp_path_status",
-        "agent.tmp",
-        "cwd-friendly guidance",
-        "without passing Agent Name",
+    "env-install-packages.md": (
+        "pixi add --manifest-path <manifest_path>",
+        "Do not require a formal package request schema",
+        "Do not use local `venv`",
     ),
-    "topic-workspace.md": (
-        "project repos create",
-        "storage_profile",
-        "topic.repos.main.tmp",
-        "agent.tmp",
-        "`agent.workspace` path plans",
-        "Missing semantic label evidence",
-        "optional topology inspection",
-        "does not create topic-main",
+    "env-update-packages.md": (
+        "Pixi-scoped",
+        "broad environment upgrades",
+        "verification",
+    ),
+    "env-remove-packages.md": (
+        "dependency",
+        "post-removal verification",
+        "blocker",
+    ),
+    "env-verify-topic.md": (
+        "isomer-srv-topic-env-setup",
+        "topic.env.topic_setup_target_spec",
+        "not prove per-Topic Actor cwd readiness",
+    ),
+    "env-verify-actors.md": (
+        "topic.intent.actor_definitions",
+        "topic.env.actor_env_gates",
+        "actor cwd",
+    ),
+    "env-verify-agents.md": (
+        "isomer-srv-agent-env-setup",
+        "agent.workspace",
+        "runtime launch readiness",
+    ),
+    "status.md": (
+        "semantic_paths",
+        "Topic Manager evidence",
+        "read-only",
+    ),
+    "doctor.md": (
+        "diagnostic",
+        "storage diagnostics",
+        "retired-skill",
     ),
 }
 
-TOPIC_WORKSPACE_MANAGER_FORBIDDEN_PUBLIC_TERMS = (
+TOPIC_MANAGER_FORBIDDEN_PUBLIC_TERMS = (
     "agent-key",
     "agent key",
     "<agent-key>",
     ".isomer-agent/",
 )
 
-TOPIC_WORKSPACE_MANAGER_FORBIDDEN_SUPPORT_REFS = tuple(
+TOPIC_MANAGER_FORBIDDEN_SUPPORT_REFS = tuple(
     ref for ref in TOPIC_TEAM_SPECIALIZATION_FORBIDDEN_SUPPORT_REFS if ref != "extern/"
 )
 
@@ -1041,6 +1104,7 @@ REMOVED_OPERATOR_SKILLS = (
     "isomer-admin-team-launch-orchestrate",
     "isomer-admin-topic-prepare",
     "isomer-admin-manual-research-session",
+    "isomer-admin-topic-workspace-mgr",
 )
 
 DEEPSCI_MINI_GUIDE_REQUIRED_TERMS = (
@@ -1876,19 +1940,19 @@ def validate_topic_creator_module(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
-def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]:
+def validate_topic_manager_module(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    skill_dir = repo_root / "skillset" / "operator" / TOPIC_WORKSPACE_MANAGER_SKILL
+    skill_dir = repo_root / "skillset" / "operator" / TOPIC_MANAGER_SKILL
     skill_md = skill_dir / "SKILL.md"
     if not skill_md.exists():
-        add(diagnostics, repo_root, skill_md, 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} is required")
+        add(diagnostics, repo_root, skill_md, 1, "OPS006", f"{TOPIC_MANAGER_SKILL} is required")
         return diagnostics
     if (skill_dir / "evals").exists():
-        add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must not contain evals/")
+        add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS006", f"{TOPIC_MANAGER_SKILL} must not contain evals/")
     lines = read_lines(skill_md)
     text = "\n".join(lines)
     add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS006", require_contract=True)
-    for term in TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS:
+    for term in TOPIC_MANAGER_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
                 diagnostics,
@@ -1896,20 +1960,20 @@ def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]
                 skill_md,
                 first_line_containing(lines, "# Isomer"),
                 "OPS006",
-                f"{TOPIC_WORKSPACE_MANAGER_SKILL} must document '{term}'",
+                f"{TOPIC_MANAGER_SKILL} must document '{term}'",
             )
     skill_workflow_index = line_index_containing(lines, "## Workflow")
     if skill_workflow_index is None:
-        add(diagnostics, repo_root, skill_md, 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must include a ## Workflow section")
+        add(diagnostics, repo_root, skill_md, 1, "OPS006", f"{TOPIC_MANAGER_SKILL} must include a ## Workflow section")
     else:
         if skill_workflow_index > 24:
-            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must place ## Workflow near the top")
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS006", f"{TOPIC_MANAGER_SKILL} must place ## Workflow near the top")
         if not has_numbered_step_after(lines, skill_workflow_index):
-            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} workflow must use numbered steps")
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS006", f"{TOPIC_MANAGER_SKILL} workflow must use numbered steps")
         if "does not map cleanly" not in text:
-            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must include a freeform fallback")
+            add(diagnostics, repo_root, skill_md, skill_workflow_index + 1, "OPS006", f"{TOPIC_MANAGER_SKILL} must include a freeform fallback")
     references_dir = skill_dir / "references"
-    allowed_reference_names = set(TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS)
+    allowed_reference_names = set(TOPIC_MANAGER_SUBCOMMANDS)
     for reference_path in sorted(references_dir.glob("*.md")):
         if reference_path.name not in allowed_reference_names:
             add(
@@ -1918,12 +1982,12 @@ def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]
                 reference_path,
                 1,
                 "OPS006",
-                f"{TOPIC_WORKSPACE_MANAGER_SKILL} has unexpected reference page references/{reference_path.name}",
+                f"{TOPIC_MANAGER_SKILL} has unexpected reference page references/{reference_path.name}",
             )
     for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
         skill_file_lines = read_lines(skill_file)
         for line_number, line in enumerate(skill_file_lines, start=1):
-            for forbidden_term in TOPIC_WORKSPACE_MANAGER_FORBIDDEN_PUBLIC_TERMS:
+            for forbidden_term in TOPIC_MANAGER_FORBIDDEN_PUBLIC_TERMS:
                 if forbidden_term in line:
                     add(
                         diagnostics,
@@ -1931,9 +1995,9 @@ def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]
                         skill_file,
                         line_number,
                         "OPS006",
-                        f"{TOPIC_WORKSPACE_MANAGER_SKILL} must use agent-name public wording instead of stale '{forbidden_term}'",
+                        f"{TOPIC_MANAGER_SKILL} must use agent-name public wording instead of stale '{forbidden_term}'",
                     )
-            for forbidden_ref in TOPIC_WORKSPACE_MANAGER_FORBIDDEN_SUPPORT_REFS:
+            for forbidden_ref in TOPIC_MANAGER_FORBIDDEN_SUPPORT_REFS:
                 if forbidden_ref in line:
                     add(
                         diagnostics,
@@ -1941,20 +2005,18 @@ def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]
                         skill_file,
                         line_number,
                         "OPS006",
-                        f"{TOPIC_WORKSPACE_MANAGER_SKILL} must keep required support references inside its skill directory; found '{forbidden_ref}'",
+                        f"{TOPIC_MANAGER_SKILL} must keep required support references inside its skill directory; found '{forbidden_ref}'",
                     )
-    for subcommand_file_name in TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS:
+    for subcommand_file_name in TOPIC_MANAGER_SUBCOMMANDS:
         subcommand_name = subcommand_file_name.removesuffix(".md")
         subcommand_path = references_dir / subcommand_file_name
-        if subcommand_name not in TOPIC_WORKSPACE_MANAGER_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+(?:-[a-z]+)+$", subcommand_name):
+        if subcommand_name not in TOPIC_MANAGER_NAMING_EXCEPTIONS and not re.match(r"^[a-z]+(?:-[a-z]+)+$", subcommand_name):
             add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"subcommand '{subcommand_name}' must be a short verb-object name or an allowed command")
-        if len(subcommand_name) > 24:
-            add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"subcommand '{subcommand_name}' must be short")
         if not subcommand_path.exists():
-            add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must include references/{subcommand_file_name}")
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"{TOPIC_MANAGER_SKILL} must include references/{subcommand_file_name}")
             continue
         if f"references/{subcommand_file_name}" not in text:
-            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "OPS006", f"{TOPIC_WORKSPACE_MANAGER_SKILL} must link references/{subcommand_file_name}")
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "OPS006", f"{TOPIC_MANAGER_SKILL} must link references/{subcommand_file_name}")
         subcommand_lines = read_lines(subcommand_path)
         workflow_index = line_index_containing(subcommand_lines, "## Workflow")
         if workflow_index is None:
@@ -1967,17 +2029,17 @@ def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]
         subcommand_text = "\n".join(subcommand_lines)
         if "does not map cleanly" not in subcommand_text:
             add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS006", f"references/{subcommand_file_name} must include a freeform fallback")
-        for required_term in TOPIC_WORKSPACE_MANAGER_REFERENCE_REQUIRED_TERMS:
+        for required_term in TOPIC_MANAGER_REFERENCE_REQUIRED_TERMS:
             if required_term not in subcommand_text:
                 add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"references/{subcommand_file_name} must document '{required_term}'")
-        for required_term in TOPIC_WORKSPACE_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
+        for required_term in TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
             if required_term not in subcommand_text:
                 add(diagnostics, repo_root, subcommand_path, 1, "OPS006", f"references/{subcommand_file_name} must document '{required_term}'")
     help_path = references_dir / "help.md"
     if help_path.exists():
         help_lines = read_lines(help_path)
         help_text = "\n".join(help_lines)
-        for table_term in TOPIC_WORKSPACE_MANAGER_HELP_TABLE_TERMS:
+        for table_term in TOPIC_MANAGER_HELP_TABLE_TERMS:
             if table_term not in help_text:
                 add(
                     diagnostics,
@@ -2023,7 +2085,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_topic_team_specialization_module(repo_root))
     diagnostics.extend(validate_project_manager_module(repo_root))
     diagnostics.extend(validate_topic_creator_module(repo_root))
-    diagnostics.extend(validate_topic_workspace_manager_module(repo_root))
+    diagnostics.extend(validate_topic_manager_module(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
     diagnostics.extend(validate_split_output_contract_docs(repo_root, (repo_root / "skillset" / "operator",), code="OPS007"))
     diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "operator",), code="OPS010"))

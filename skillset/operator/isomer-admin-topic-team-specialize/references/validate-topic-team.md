@@ -20,7 +20,7 @@ When this subcommand is selected, execute the following steps in order.
 6. Check Topic Actor coexistence:
    - Preserve active Topic Actor bindings and Topic Actor Workspace refs as predecessor context.
    - Do not require Topic Actor bindings for formal team readiness, and do not treat Topic Actor readiness as Agent Workspace readiness.
-   - If actor topology is stale or blocked, report it separately and route repair to `isomer-admin-topic-workspace-mgr` without deleting or converting actor bindings.
+   - If actor topology is stale or blocked, report it separately and route repair to `isomer-admin-topic-mgr` without deleting or converting actor bindings.
 7. Check setup streams separately:
    - Confirm topic environment setup and Agent Workspace setup are ready, not requested, or blocked with named next actions. If an env gate exists and names runnable targets, missing bounded real-path verification is a blocker, not a deferral.
    - Topic environment setup evidence should include `topic_environment_status`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, its `## Gate Checklist`, resolved path metadata, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, Isomer-managed namespace posture, projection metadata, operation classification evidence from bounded-run tips, resource check status for commands classified as `heavy` or `unknown-risk`, setup commands, changed files, environment binding status, `per_agent_readiness_status: not checked` when reported, and blockers from `isomer-srv-topic-env-setup`.
@@ -34,7 +34,7 @@ When this subcommand is selected, execute the following steps in order.
    - If delegated agent env evidence contains an unchecked, failed, blocked, partial, or not-checked checklist item, report the exact Agent Name, checklist item, reason, and next action.
 9. Reject stale Agent Workspace setup evidence:
    - Reject legacy support roots, top-level Topic Main Development Repository collaboration directories, tmp contents as readiness evidence, or hard-coded default-only paths without semantic labels as the current standard layout.
-   - Ask for `isomer-srv-agent-env-setup` verification when worktree or cwd readiness is missing, or for optional `isomer-admin-topic-workspace-mgr` inspection when the user only needs topology diagnostics.
+   - Ask for `isomer-srv-agent-env-setup` verification when worktree or cwd readiness is missing, or for optional `isomer-admin-topic-mgr` inspection when the user only needs topology diagnostics.
 10. Report `topic_team_validation_status` as ready, ready-with-deferrals, blocked, or not checked for static material readiness, and name the next safe subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step static-material validation plan from the available topic-team artifacts, setup outputs, and guardrails, then execute the plan.

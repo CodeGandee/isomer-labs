@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Resolve Project, Research Topic, Topic Workspace, Workspace Runtime, and `topic.workspace.summary` through Workspace Path Resolution. The default summary path is `<topic-workspace>/isomer-topic-workspace-summary.md`.
+1. Resolve Project, Research Topic, Topic Workspace, Workspace Runtime, and `topic.workspace.summary` through Workspace Path Resolution. The default summary path is `<topic-workspace>/isomer-status-summary.md`.
 2. Validate required readiness signals: Project readiness, Research Topic registration, Topic Workspace registration, Workspace Runtime initialization, `topic.intent.overview`, topic environment readiness evidence, ready `topic.repos.main`, actor readiness when in scope, and semantic path resolution evidence.
 3. Resolve actor scope. If actor setup was requested, or the default `operator` Topic Actor was not explicitly opted out, require `topic.intent.actor_definitions`, selected Topic Actor bindings, selected Topic Actor Workspace readiness, `topic.env.actor_env_gates`, and actor cwd verification evidence. If no actors were requested and the default `operator` Topic Actor was explicitly opted out, record actor readiness as skipped with the opt-out reason.
 4. Build the Topic Workspace readiness summary with identity, generated-at timestamp, overall status, ready surfaces, verified checks, blocked signals, skipped optional work, installed or materialized surfaces, semantic labels and resolved paths, delegated owner evidence, command evidence when available, and durable-versus-editable distinctions.

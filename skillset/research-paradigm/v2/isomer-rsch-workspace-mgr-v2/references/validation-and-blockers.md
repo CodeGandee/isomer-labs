@@ -2,7 +2,7 @@
 
 ## Workflow
 
-1. Validate <RSCH_WORKSPACE_CONTEXT> for selected topic refs, Topic Creator or Topic Workspace Manager evidence, selected v2 skill set, final topic summary signal when formal team material is selected, topic-team validation status, topic-team profile material signal, runtime readiness, Agent Workspace context, and actor identity.
+1. Validate <RSCH_WORKSPACE_CONTEXT> for selected topic refs, Topic Creator or Topic Manager evidence, selected v2 skill set, final topic summary signal when formal team material is selected, topic-team validation status, topic-team profile material signal, runtime readiness, Agent Workspace context, and actor identity.
 2. Validate <RSCH_STORAGE_LABEL_PLAN> for available labels, planned labels, optional `custom.*` needs, and blocked support.
 3. Validate <RSCH_PLACEHOLDER_BINDING_REGISTRY> for kind coverage, producer and consumer clarity, and missing binding status.
 4. Validate <RSCH_AGENT_ACCESS_PLAN> for pre-promotion surfaces, generated conveniences, and promotion boundaries.

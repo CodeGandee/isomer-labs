@@ -16,7 +16,7 @@ When this subcommand is selected, execute the following steps in order.
    - Accept a concrete Research Topic, an explicit registered topic ref with concrete topic material, or enough source material to seed a topic.
    - If no topic substance is supplied, ask for the actual research topic and stop before running `init-topic`.
 3. Check for prepared-topic evidence:
-   - If reusable evidence from `isomer-admin-topic-creator`, Topic Workspace registration, or Topic Workspace Manager topology exists, consume the Research Topic ref, Topic Workspace ref, topic overview, Workspace Runtime readiness, topic environment readiness, `topic.repos.main` readiness, current Topic Actor roster, and Topic Actor Workspace refs instead of recreating those common artifacts.
+   - If reusable evidence from `isomer-admin-topic-creator`, Topic Workspace registration, or Topic Manager topology exists, consume the Research Topic ref, Topic Workspace ref, topic overview, Workspace Runtime readiness, topic environment readiness, `topic.repos.main` readiness, current Topic Actor roster, and Topic Actor Workspace refs instead of recreating those common artifacts.
    - If common preparation is missing and the request is full `fast-forward`, create or delegate topic setup before team-specific stages.
    - Preserve active Topic Actor bindings and Topic Actor Workspace refs. Do not archive, delete, or convert them into Agent Workspace material.
 4. Execute the returned path in order:

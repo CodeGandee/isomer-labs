@@ -220,7 +220,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_dependency_contract(root)
         self.write_project_manager_skill(root)
         self.write_topic_creator_skill(root)
-        self.write_topic_workspace_manager_skill(root)
+        self.write_topic_manager_skill(root)
 
     def write_topic_team_dependency_contract(self, root: Path) -> None:
         skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize"
@@ -304,7 +304,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             1. **Default help mode**: If invoked without a prompt, run `help`.
             2. Select one subcommand and load only the selected subcommand page.
-            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, `isomer-admin-topic-creator`, `isomer-admin-topic-workspace-mgr`, and `isomer-admin-topic-team-specialize` boundaries.
+            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, `isomer-admin-topic-creator`, `isomer-admin-topic-mgr`, and `isomer-admin-topic-team-specialize` boundaries.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -374,7 +374,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             1. **Default help mode**: If invoked without a prompt, run `help`.
             2. Select one subcommand and load only that subcommand page.
-            3. Preserve lower-level owner boundaries for `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, `isomer-admin-topic-workspace-mgr`, and `isomer-admin-topic-team-specialize`.
+            3. Preserve lower-level owner boundaries for `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, `isomer-admin-topic-mgr`, and `isomer-admin-topic-team-specialize`.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -415,7 +415,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 "define-topic-env.md": "Create `topic.intent.topic_env_requirements`, wait for user verification, and report `fast-forward` assumptions.",
                 "setup-topic-env.md": "Delegate to `isomer-srv-topic-env-setup`, read `topic.intent.topic_env_requirements`, derive `topic.env.topic_setup_target_spec`, and report `topic.repos.main` readiness.",
                 "define-actors.md": "Create `topic.intent.actor_definitions` for the default `operator` and each actor source env gate.",
-                "setup-actors.md": "Delegate to `isomer-admin-topic-workspace-mgr`, consume `topic.intent.actor_definitions`, report `topic.actors.workspace`, and verify `topic.env.actor_env_gates`.",
+                "setup-actors.md": "Delegate to `isomer-admin-topic-mgr`, consume `topic.intent.actor_definitions`, report `topic.actors.workspace`, and verify `topic.env.actor_env_gates`.",
                 "finalize.md": "Resolve `topic.workspace.summary`, report ready, verified, blocked, and skipped state. Do not recommend a next research step.",
                 "step-by-step.md": "Follow the same main workflow order as `fast-forward`, show an option table with Recommended choices, and require acknowledgement.",
                 "run-to.md": "Valid targets are procedural. The target is excluded by default, can be inclusive on request, and stops on missing user input.",
@@ -437,7 +437,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 """,
             )
 
-    def write_topic_workspace_manager_skill(
+    def write_topic_manager_skill(
         self,
         root: Path,
         *,
@@ -445,36 +445,38 @@ class SkillsetValidatorTests(unittest.TestCase):
         omit_skill_term: str | None = None,
         omit_subcommand_fallback: bool = False,
     ) -> None:
-        skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr"
+        skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-mgr"
         if skill_dir.exists():
             shutil.rmtree(skill_dir)
         subcommand_links = ", ".join(
-            f"`references/{subcommand_name}`" for subcommand_name in validator.TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS
+            f"`references/{subcommand_name}`" for subcommand_name in validator.TOPIC_MANAGER_SUBCOMMANDS
         )
+        skill_terms = " ".join(validator.TOPIC_MANAGER_REQUIRED_SKILL_TERMS)
         skill_text = f"""
             ---
-            name: isomer-admin-topic-workspace-mgr
-            description: Valid fixture topic workspace manager skill.
+            name: isomer-admin-topic-mgr
+            description: Valid fixture topic manager skill.
             ---
 
-            # Isomer Admin Topic Workspace Mgr
+            # Isomer Admin Topic Mgr
 
-            Prepare optional topology inspection, branch helpers, boundary summaries, and legacy compatibility diagnostics through semantic workspace labels, Topic Workspace Manifest bindings, and `isomer-default.v1`, including `project paths register`, `project repos create`, `project topic-actors`, explicit `storage_profile`, `custom.*`, grouped `topic.repos.*`, `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.actors_root`, `topic.actors.workspace`, `topic.actors.tmp`, `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `semantic_paths`, `local_tmp_path_status`, `topic-owner/main`, `per-topic-actor/<topic-actor-name>/main`, `per-agent/<agent-name>/main`, `isomer-managed/`, `tracked/`, `agent-owned/`, `topic-owned/`, `links/`, `topic.records.*`, projection roots, and `per-agent/<agent-name>/<branch-name>` while planning `topic_actor`, `agent_name`, `agent_branch`, and derived compatibility `agent_workspace_ref` values, and preserving Agent Instance, Workspace Runtime, Houmao, Execution Adapter, Workspace Boundary, Peer Read Access, blockers, and `next_operator_action` boundaries. The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`.
+            Manage an initialized-topic after `isomer-admin-topic-creator` handoff. This fixture covers storage, actors, team topology, environment mutation, environment verification, diagnostics, and blocker reporting. {skill_terms}
 
             ## Workflow
 
-            1. **Default subcommand**: Run `topic-workspace`.
+            1. **Default subcommand**: Run `status`.
             2. Select one subcommand and load only its detail page.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
             ## Subcommands
 
-            Procedural Subcommands: `resolve-workspace`, `ensure-main-repo`, `manage-actors`, `plan-agents`, `create-worktrees`, `write-boundaries`, `create-agent-branch`, `validate-worktrees`, and `summarize`.
-
-            Helper Subcommands: `resolve-workspace`, `ensure-main-repo`, `manage-actors`, `plan-agents`, `create-worktrees`, and `validate-worktrees`.
-
-            Misc Subcommands: `help` and `topic-workspace`.
+            Status Subcommands: `status`, `doctor`, and `help`.
+            Storage Subcommands: `storage-resolve`, `storage-inspect-main`, `storage-validate`, and `storage-register-repo`.
+            Actor Subcommands: `actors-manage`, `actors-materialize`, and `actors-diagnose`.
+            Team Subcommands: `team-plan`, `team-materialize-workspaces`, `team-write-boundaries`, `team-create-branch`, and `team-validate-workspaces`.
+            Environment Mutation Subcommands: `env-install-packages`, `env-update-packages`, and `env-remove-packages`.
+            Environment Verification Subcommands: `env-verify-topic`, `env-verify-actors`, and `env-verify-agents`.
 
             Use {subcommand_links}.
 
@@ -482,22 +484,22 @@ class SkillsetValidatorTests(unittest.TestCase):
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
-        write(root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "SKILL.md", skill_text)
+        write(root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "SKILL.md", skill_text)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "agents" / "openai.yaml",
+            root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "agents" / "openai.yaml",
             """
             interface:
-              display_name: "isomer-admin-topic-workspace-mgr"
+              display_name: "isomer-admin-topic-mgr"
               short_description: "Valid fixture"
-              default_prompt: "Use $isomer-admin-topic-workspace-mgr to validate this fixture."
+              default_prompt: "Use $isomer-admin-topic-mgr to validate this fixture."
             """,
         )
-        for subcommand_name in validator.TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS:
+        for subcommand_name in validator.TOPIC_MANAGER_SUBCOMMANDS:
             if subcommand_name == omit_subcommand:
                 continue
             if subcommand_name == "help.md":
                 write(
-                    root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "references" / subcommand_name,
+                    root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / subcommand_name,
                     """
                     # Help
 
@@ -511,34 +513,34 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                     | Subcommand | Purpose | Produces |
                     | --- | --- | --- |
-                    | `resolve-workspace` | Resolve Project context. | `semantic_paths`, `topic.repos.main`, `agent.workspace`. |
-                    | `ensure-main-repo` | Prepare repo. | Repo readiness. |
-                    | `manage-actors` | Manage Topic Actors. | `topic.actors.workspace` and actor blockers. |
-                    | `plan-agents` | Plan agents. | Agent name plans. |
-                    | `create-worktrees` | Create worktrees. | Worktree readiness. |
-                    | `write-boundaries` | Write boundaries. | Boundary paths. |
-                    | `create-agent-branch` | Create branch. | Branch result. |
-                    | `validate-worktrees` | Validate worktrees. | Validation status. |
-                    | `summarize` | Summarize results. | Next operator action. |
-                    | `topic-workspace` | Run full flow. | Full setup result. |
-                    | `help` | Print usage. | Help output. |
+                    | `status` | Inspect initialized topic state. | `semantic_paths`, Topic Manager evidence, read-only blocker report. |
+                    | `doctor` | Run diagnostic checks. | diagnostic storage diagnostics and retired-skill blockers. |
+                    | `help` | Print usage. | Help output and blocker guidance. |
+                    | `storage-resolve` | Resolve Project context. | `semantic_paths`, `topic.repos.main`, `agent.workspace`. |
+                    | `storage-inspect-main` | Inspect main repo. | Repo readiness and blocker state. |
+                    | `storage-validate` | Validate storage labels. | Storage validation blockers. |
+                    | `storage-register-repo` | Register a topic repo. | `topic.repos.*`, `storage_profile`, `project repos create`, and `project paths register`. |
+                    | `actors-manage` | Manage Topic Actors. | `topic.actors.workspace` and actor blockers. |
+                    | `actors-materialize` | Materialize actors. | Topic Actor workspace blockers. |
+                    | `actors-diagnose` | Diagnose actor readiness. | Actor diagnostic blockers. |
+                    | `team-plan` | Plan agents. | Agent workspace path-source blockers. |
+                    | `team-materialize-workspaces` | Materialize team workspaces. | Worktree readiness blockers. |
+                    | `team-write-boundaries` | Write boundaries. | Boundary paths and blocker state. |
+                    | `team-create-branch` | Create branch. | Branch result and blockers. |
+                    | `team-validate-workspaces` | Validate workspaces. | Validation status and blockers. |
+                    | `env-install-packages` | Install packages. | Pixi install plan and blockers. |
+                    | `env-update-packages` | Update packages. | Pixi update plan and blockers. |
+                    | `env-remove-packages` | Remove packages. | Pixi removal plan and blockers. |
+                    | `env-verify-topic` | Verify topic env. | Service evidence and blockers. |
+                    | `env-verify-actors` | Verify actor env. | Actor cwd readiness blockers. |
+                    | `env-verify-agents` | Verify agent env. | Service evidence and blockers. |
                     """,
                 )
                 continue
-            fallback = "" if omit_subcommand_fallback and subcommand_name == "plan-agents.md" else "If the user's task does not map cleanly to these steps, use your native planning tool."
-            extra_terms = {
-                "resolve-workspace.md": "Use `isomer-cli project paths get`, `project paths explain`, `semantic_paths`, `topic.repos.main`, and `agent.workspace` before mutation.",
-                "ensure-main-repo.md": "Use `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, and `isomer-default.v1` examples only after semantic resolution. Require predecessor evidence or an explicit manual topology operation.",
-                "manage-actors.md": "Use `project topic-actors`, `topic.actors.workspace`, `topic.actors.tmp`, `per-topic-actor/<topic-actor-name>/main`, Topic Workspace Manifest, Workspace Runtime, alternate source repositories, and blocker reporting.",
-                "plan-agents.md": "Resolve `agent.workspace` through Workspace Path Resolution and report path sources.",
-                "create-worktrees.md": "Create worktrees at `agent.workspace` from `topic.repos.main`, with `agent.tmp`, prepared Topic Main Development Repository predecessor evidence, path sources, and semantic support paths.",
-                "write-boundaries.md": "Write boundary notes for `topic.repos.main`, `agent.workspace`, each path source, and self-query guidance without passing Agent Name.",
-                "validate-worktrees.md": "Validate semantic label bindings, `topic.repos.main.tmp`, `agent.tmp`, tracked tmp contents, and reject hard-coded default-only evidence.",
-                "summarize.md": "Report `semantic_paths`, `local_tmp_path_status`, `agent.tmp`, cwd-friendly guidance, and self-query guidance without passing Agent Name.",
-                "topic-workspace.md": "Use `project repos create` with explicit `storage_profile`. Prepare `topic.repos.main.tmp` and `agent.tmp`. Runtime later consumes `agent.workspace` path plans. Missing semantic label evidence is a blocker. This is optional topology inspection and does not create topic-main.",
-            }.get(subcommand_name, "")
+            fallback = "" if omit_subcommand_fallback and subcommand_name == "team-plan.md" else "If the user's task does not map cleanly to these steps, use your native planning tool."
+            extra_terms = " ".join(validator.TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS.get(subcommand_name, ()))
             write(
-                root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "references" / subcommand_name,
+                root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / subcommand_name,
                 f"""
                 # {subcommand_name}
 
@@ -1283,16 +1285,16 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS010", codes(diagnostics))
         self.assertTrue(any("global isomer-cli directly" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_operator_validator_requires_topic_workspace_manager(self) -> None:
+    def test_operator_validator_requires_topic_manager(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        shutil.rmtree(root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr")
+        shutil.rmtree(root / "skillset" / "operator" / "isomer-admin-topic-mgr")
 
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS006", codes(diagnostics))
-        self.assertTrue(any("isomer-admin-topic-workspace-mgr is required" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("isomer-admin-topic-mgr is required" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_topic_creator(self) -> None:
         root = self.make_root()
@@ -1394,21 +1396,42 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("isomer-admin-topic-prepare is no longer part of the active operator skillset" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_operator_validator_requires_topic_workspace_subcommands(self) -> None:
+    def test_operator_validator_rejects_retired_topic_workspace_manager_folder(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
-        self.write_topic_workspace_manager_skill(root, omit_subcommand="create-worktrees.md")
+        self.write_deepsci_mini_guide(root)
+        write(
+            root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "SKILL.md",
+            """
+            ---
+            name: isomer-admin-topic-workspace-mgr
+            description: Retired fixture.
+            ---
+
+            # Retired
+            """,
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("isomer-admin-topic-workspace-mgr is no longer part of the active operator skillset" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_manager_subcommands(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_manager_skill(root, omit_subcommand="team-materialize-workspaces.md")
         self.write_deepsci_mini_guide(root)
 
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS006", codes(diagnostics))
-        self.assertTrue(any("create-worktrees.md" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("team-materialize-workspaces.md" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_operator_validator_requires_topic_workspace_guardrail_terms(self) -> None:
+    def test_operator_validator_requires_topic_manager_guardrail_terms(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
-        self.write_topic_workspace_manager_skill(root, omit_skill_term="Workspace Runtime")
+        self.write_topic_manager_skill(root, omit_skill_term="Workspace Runtime")
         self.write_deepsci_mini_guide(root)
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1416,10 +1439,10 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("Workspace Runtime" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_operator_validator_requires_topic_workspace_semantic_terms(self) -> None:
+    def test_operator_validator_requires_topic_manager_semantic_terms(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
-        self.write_topic_workspace_manager_skill(root, omit_skill_term="semantic workspace labels")
+        self.write_topic_manager_skill(root, omit_skill_term="semantic workspace labels")
         self.write_deepsci_mini_guide(root)
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1427,12 +1450,12 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("semantic workspace labels" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_operator_validator_requires_topic_workspace_semantic_reference_terms(self) -> None:
+    def test_operator_validator_requires_topic_manager_semantic_reference_terms(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
-        self.write_topic_workspace_manager_skill(root)
+        self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        path = root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "references" / "validate-worktrees.md"
+        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "team-validate-workspaces.md"
         path.write_text(path.read_text(encoding="utf-8").replace("hard-coded default-only evidence", ""), encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1440,10 +1463,10 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("hard-coded default-only evidence" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_operator_validator_requires_topic_workspace_isomer_managed_terms(self) -> None:
+    def test_operator_validator_requires_topic_manager_isomer_managed_terms(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
-        self.write_topic_workspace_manager_skill(root, omit_skill_term="isomer-managed/")
+        self.write_topic_manager_skill(root, omit_skill_term="isomer-managed/")
         self.write_deepsci_mini_guide(root)
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1451,12 +1474,12 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("isomer-managed/" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_operator_validator_rejects_topic_workspace_agent_key_wording(self) -> None:
+    def test_operator_validator_rejects_topic_manager_agent_key_wording(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
-        self.write_topic_workspace_manager_skill(root)
+        self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "SKILL.md"
+        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "SKILL.md"
         skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nUse `<agent-key>` for public examples.\n", encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1464,12 +1487,12 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("agent-name public wording" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_operator_validator_rejects_topic_workspace_legacy_support_root_wording(self) -> None:
+    def test_operator_validator_rejects_topic_manager_legacy_support_root_wording(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
-        self.write_topic_workspace_manager_skill(root)
+        self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "SKILL.md"
+        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "SKILL.md"
         skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nUse `.isomer-agent/` for current support.\n", encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)

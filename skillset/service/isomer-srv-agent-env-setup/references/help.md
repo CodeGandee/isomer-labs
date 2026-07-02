@@ -53,4 +53,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Boundary Notes
 
-This service complements `isomer-srv-topic-env-setup`, which produces Topic Workspace, topic-main, and projection predecessor evidence, and `isomer-admin-topic-workspace-mgr`, which remains optional topology inspection and branch-helper support. It is the env-gate-aware service for per-agent Agent Workspace cwd verification.
+This service complements `isomer-srv-topic-env-setup`, which produces Topic Workspace, topic-main, and projection predecessor evidence, and `isomer-admin-topic-mgr`, which handles optional topology inspection, branch-helper support, boundary summaries, and `env-verify-agents` routing. It is the env-gate-aware service for per-agent Agent Workspace cwd verification.

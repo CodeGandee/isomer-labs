@@ -15,5 +15,5 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 - Do not duplicate topic creation or common topic preparation logic in this skill.
 - Do not imply Topic Team Specialization from a manual research or human-orchestrated request.
-- Do not create Topic Actor bindings here; route normal setup through `isomer-admin-topic-creator` and let it delegate Topic Actor work to `isomer-admin-topic-workspace-mgr`.
+- Do not create Topic Actor bindings here; route normal setup through `isomer-admin-topic-creator` and let it delegate Topic Actor work to `isomer-admin-topic-mgr`.
 - Do not create `topic.repos.main` or repair topic environment readiness from this subcommand.

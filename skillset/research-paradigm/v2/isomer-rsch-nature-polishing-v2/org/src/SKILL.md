@@ -144,7 +144,7 @@ The Introduction should:
 - state what question the paper asks
 - indicate how the study addresses it
 
-Do not summarize the Results section here. Do not summarize the Conclusion here.
+Do not status the Results section here. Do not status the Conclusion here.
 
 ### Results
 
@@ -180,7 +180,7 @@ Short rule:
 Use the three-part close:
 
 1. restate the central contribution
-2. summarize the key evidence or outcome
+2. status the key evidence or outcome
 3. state the implication with a boundary
 
 Do not introduce new data in the conclusion. Always run an overclaim check here.
@@ -352,7 +352,7 @@ Always verify:
 - improve grammar, clarity, concision, or tone
 - generate outline options or paragraph structures
 - produce alternative titles or abstract phrasings
-- summarize literature for categorization, not as a substitute for reading
+- status literature for categorization, not as a substitute for reading
 - translate with terminology and hedging checks
 
 `Yellow`: allowed only with strong human control

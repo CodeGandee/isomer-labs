@@ -235,7 +235,7 @@ Launch-facing profile bundle validation SHALL report unresolved or mismatched Gi
 - **THEN** validation confirms each active role binding has a resolved topic-scoped agent name, expected branch namespace, and Agent Workspace path or reports a launch blocker
 
 #### Scenario: Mismatched prepared workspace is diagnostic
-- **WHEN** profile or packet material names `agent_name = "alice"` but topic workspace manager validation reports that `<topic-workspace-dir>/agents/alice` is missing or bound to the wrong branch
+- **WHEN** profile or packet material names `agent_name = "alice"` but topic manager or agent-env service validation reports that `<topic-workspace-dir>/agents/alice` is missing or bound to the wrong branch
 - **THEN** launch-facing validation reports a blocker instead of treating the profile as ready for Agent Team Instance creation
 
 #### Scenario: Legacy workspace ref without agent name is diagnostic

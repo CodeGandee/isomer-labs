@@ -24,7 +24,7 @@ When this subcommand is selected, execute the following steps in order.
    - Relocation does not rewrite Workspace Runtime records or Pixi environments.
    - Checks stay read-only, Workspace Runtime creation is explicit, and readiness preparation is explicit.
    - Topic creation and Topic Actor-ready setup belong to `isomer-admin-topic-creator`.
-   - Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped diagnostics, optional topology inspection, and branch helpers belong to `isomer-admin-topic-workspace-mgr`.
+   - Initialized-topic storage inspection, Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped diagnostics, optional topology inspection, branch helpers, package mutation, and environment verification routing belong to `isomer-admin-topic-mgr`.
    - Human-orchestrated manual research setup is fronted by `isomer-admin-topic-creator`.
    - Topic Team Specialization belongs to `isomer-admin-topic-team-specialize` only when the user explicitly asks for a Domain Agent Team Template.
 
