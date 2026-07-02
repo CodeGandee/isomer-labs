@@ -10,8 +10,9 @@ When the user has selected R, do all figure drawing, previewing, exporting, and
 visual QA in R. Do not call Python/matplotlib/seaborn/plotly to create a temporary
 preview, fallback export, or layout approximation. If R, `Rscript`, or required R
 packages are missing, stop before rendering and report the missing dependency. You
-may still write the R script, provide `install.packages()` commands, or ask permission
-to install dependencies, but do not cross-render the figure in another language.
+may still write the R script and a natural-language package request for
+`$isomer-admin-topic-workspace-mgr install-packages`, but do not perform package
+setup here or cross-render the figure in another language.
 
 Allowed non-R utilities are limited to non-visual tasks such as shell file inspection,
 CSV line counts, checksums, archive extraction, or text search. They must not create

@@ -6,6 +6,7 @@ skills = [
   "misc/isomer-misc-bounded-run-tips",
   "misc/isomer-misc-nvidia-tools",
   "misc/isomer-misc-pkg-specifics",
+  "misc/isomer-misc-tool-packs",
   "operator/isomer-admin-houmao-interop",
   "operator/isomer-admin-manual-research-session",
   "operator/isomer-admin-project-mgr",

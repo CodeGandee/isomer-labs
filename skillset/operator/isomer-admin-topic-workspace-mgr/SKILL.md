@@ -1,11 +1,11 @@
 ---
 name: isomer-admin-topic-workspace-mgr
-description: "Inspect, validate, and summarize Topic Workspace topology, including Topic Actor CRUD, Topic Actor Workspace materialization or repair, actor-scoped path diagnostics, optional Git-backed topology inspection, branch helpers, boundary notes, and topology diagnostics."
+description: "Inspect, validate, and summarize Topic Workspace topology, including Topic Actor CRUD, Topic Actor Workspace materialization or repair, actor-scoped path diagnostics, optional Git-backed topology inspection, branch helpers, package installation into the selected Topic Workspace Pixi environment, boundary notes, and topology diagnostics."
 ---
 
 # Isomer Admin Topic Workspace Mgr
 
-Use this command-style operator skill when a Project Operator Session needs Topic Actor CRUD, Topic Actor Workspace materialization or repair, actor-scoped path diagnostics, optional topology inspection, branch helper operations, advisory Workspace Boundary summaries, manual topology operations, or diagnostics for a Topic Workspace. It works through semantic workspace labels such as `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.actors_root`, `topic.actors.workspace`, `topic.actors.tmp`, `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, and `agent.links`. Additional non-main topic repositories use grouped `topic.repos.*` labels and helper-created paths under `repos/extern/...`, while user-owned nonreserved storage uses `custom.*`; register those bindings through `project paths register` or `project repos create` with explicit `storage_profile` rather than editing `topic-workspace.toml` by hand. The `isomer-default.v1` layout binds collaboration labels to paths such as `<topic-workspace-dir>/repos/topic-main`, `<resolved topic.repos.main>/tmp/`, `<resolved topic.repos.main>/isomer-managed/topic-owned/readonly/extern/`, `<resolved topic.repos.main>/isomer-managed/topic-owned/writable/extern/`, `<topic-workspace-dir>/actors/<topic-actor-name>`, `<resolved topic.actors.workspace>/tmp/`, `<topic-workspace-dir>/agents/<agent-name>`, and `<resolved agent.workspace>/tmp/`, but safe Topic Workspace Manifest bindings may differ. This skill inspects and summarizes static filesystem and Git topology, manages Topic Actor bindings as Topic Workspace Manifest topology authority, plans topic-local `agent_name` values, derives compatibility `agent_workspace_ref` values when older material needs them, writes advisory Workspace Boundary notes, and reports blockers. The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`, and canonical per-agent worktree creation plus cwd proof belong to `isomer-srv-agent-env-setup`. This skill performs mutation only for explicitly requested actor topology or manual topology operations after confirming predecessor evidence or manual acceptance. Topic Actor registration and materialization may write Workspace Runtime mutation or provenance audit records when runtime is available, but the Topic Workspace Manifest remains the topology and path-resolution authority. It does not treat non-main topic repositories as Topic Actor Workspace or Agent Workspace worktree sources, claim per-Agent Workspace environment readiness, own `topic.intent.agent_env_requirements` or `topic.env.agent_setup_target_spec`, or verify per-agent cwd commands. It does not create Agent Instances, launch Houmao agents, run Execution Adapters, or replace topic or agent env setup services.
+Use this command-style operator skill when a Project Operator Session needs Topic Actor CRUD, Topic Actor Workspace materialization or repair, actor-scoped path diagnostics, optional topology inspection, branch helper operations, package installation into the selected Topic Workspace Pixi environment, advisory Workspace Boundary summaries, manual topology operations, or diagnostics for a Topic Workspace. It works through semantic workspace labels such as `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.actors_root`, `topic.actors.workspace`, `topic.actors.tmp`, `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, and `agent.links`. Additional non-main topic repositories use grouped `topic.repos.*` labels and helper-created paths under `repos/extern/...`, while user-owned nonreserved storage uses `custom.*`; register those bindings through `project paths register` or `project repos create` with explicit `storage_profile` rather than editing `topic-workspace.toml` by hand. The `isomer-default.v1` layout binds collaboration labels to paths such as `<topic-workspace-dir>/repos/topic-main`, `<resolved topic.repos.main>/tmp/`, `<resolved topic.repos.main>/isomer-managed/topic-owned/readonly/extern/`, `<resolved topic.repos.main>/isomer-managed/topic-owned/writable/extern/`, `<topic-workspace-dir>/actors/<topic-actor-name>`, `<resolved topic.actors.workspace>/tmp/`, `<topic-workspace-dir>/agents/<agent-name>`, and `<resolved agent.workspace>/tmp/`, but safe Topic Workspace Manifest bindings may differ. This skill inspects and summarizes static filesystem and Git topology, manages Topic Actor bindings as Topic Workspace Manifest topology authority, plans topic-local `agent_name` values, derives compatibility `agent_workspace_ref` values when older material needs them, installs requested packages through the selected Topic Workspace Pixi environment, writes advisory Workspace Boundary notes, and reports blockers. The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`, and canonical per-agent worktree creation plus cwd proof belong to `isomer-srv-agent-env-setup`. This skill performs mutation only for explicitly requested actor topology, explicitly requested package installation, or manual topology operations after confirming predecessor evidence or manual acceptance. Topic Actor registration and materialization may write Workspace Runtime mutation or provenance audit records when runtime is available, but the Topic Workspace Manifest remains the topology and path-resolution authority. It does not treat non-main topic repositories as Topic Actor Workspace or Agent Workspace worktree sources, claim per-Agent Workspace environment readiness, own `topic.intent.agent_env_requirements` or `topic.env.agent_setup_target_spec`, or verify per-agent cwd commands. It does not create Agent Instances, launch Houmao agents, run Execution Adapters, or replace topic or agent env setup services.
 
 ## Workflow
 
@@ -16,6 +16,7 @@ When this skill is invoked, execute the following steps in order.
    - Select `topic-workspace`, load [references/topic-workspace.md](references/topic-workspace.md), and execute the full inspection and optional support workflow.
 2. **Manual subcommand**:
    - Match when the user names one subcommand, asks for help, or asks for one bounded operation.
+   - If the prompt asks to install, add, repair, or verify packages for a Topic Workspace and does not name a subcommand, select `install-packages`.
    - Select that subcommand from the **Subcommands** tables.
    - Load only its detail page, execute that page's `## Workflow`, and report its output.
 3. **Helper subcommand**:
@@ -31,7 +32,7 @@ When this skill is invoked, execute the following steps in order.
 - A selected Research Topic and selected Topic Workspace resolved through Isomer context, not directory scanning.
 - A role binding source when planning agents: Topic Team Instantiation Packet, Topic Agent Team Profile material, or an explicit operator-provided role-to-agent-name map.
 - Topic env predecessor evidence when the operator asks this skill to inspect a prepared Topic Main Development Repository, projection roots, or existing Agent Workspace topology.
-- Operator intent for mutation before any manual topology operation, including registering Topic Workspace Manifest bindings with `label`/`path`/`storage_profile`, creating or repairing topology outside the normal service path, adding worktrees, writing Workspace Boundary material, or editing packet/profile `agent_name`, `agent_branch`, or compatibility `agent_workspace_ref` fields.
+- Operator intent for mutation before any manual topology operation or package installation, including registering Topic Workspace Manifest bindings with `label`/`path`/`storage_profile`, creating or repairing topology outside the normal service path, adding worktrees, adding packages to the selected Topic Workspace Pixi environment, writing Workspace Boundary material, or editing packet/profile `agent_name`, `agent_branch`, or compatibility `agent_workspace_ref` fields.
 
 ## Subcommands
 
@@ -49,11 +50,12 @@ Load only the selected reference page before executing a subcommand.
 | `write-boundaries` | Write advisory Workspace Boundary and Peer Read Access notes for the topic repo and Agent Workspaces | [references/write-boundaries.md](references/write-boundaries.md) |
 | `create-agent-branch` | Create a future per-agent branch under `per-agent/<agent-name>/<branch-name>` | [references/create-agent-branch.md](references/create-agent-branch.md) |
 | `validate-worktrees` | Validate Git topology, branch namespace, duplicate checkout state, and packet/profile workspace refs | [references/validate-worktrees.md](references/validate-worktrees.md) |
+| `install-packages` | Infer, install, and verify packages requested for the selected Topic Workspace Pixi environment from a prompt or description file | [references/install-packages.md](references/install-packages.md) |
 | `summarize` | Report inspected layout, refs, validation status, blockers, and next operator action | [references/summarize.md](references/summarize.md) |
 
 ### Helper Subcommands
 
-Helper subcommands are callable when the operator wants one implementation stage: `resolve-workspace`, `ensure-main-repo`, `manage-actors`, `plan-agents`, `create-worktrees`, and `validate-worktrees`.
+Helper subcommands are callable when the operator wants one implementation stage: `resolve-workspace`, `ensure-main-repo`, `manage-actors`, `plan-agents`, `create-worktrees`, `install-packages`, and `validate-worktrees`.
 
 ### Misc Subcommands
 
@@ -74,6 +76,7 @@ Report:
 - `topic`: selected `research_topic_ref` and `topic_workspace_ref`.
 - `topic_main`: `topic.repos.main` path and readiness summary.
 - `agent_workspaces`: Agent Workspace path summary and any unsafe topology problem.
+- `packages`: package installation request, selected install route, verification summary, or package blockers when `install-packages` runs.
 - `tmp_posture`: local tmp readiness summary for `topic.repos.main.tmp` and `agent.tmp`.
 - `changed_paths`: boundary material or generated links when created or changed.
 - `blockers`: unsafe repo state, unsafe path, branch conflict, missing input, or unapproved mutation.
@@ -89,6 +92,7 @@ When requested, include grouped handoff and audit fields:
 - **Tmp posture**: `local_tmp_path_status`, ignored posture, tracked-content diagnostics, and non-durable evidence notes.
 - **Topic actors**: `topic_actor_bindings`, `topic_actor_workspace_paths`, `topic_actor_branch_plan`, actor-scoped semantic labels, materialization status, runtime audit refs when available, and actor blockers.
 - **Agent workspaces**: `agent_workspace_paths`, `agent_workspace_refs`, and `branch_plan`.
+- **Packages**: `package_request_source`, `package_install_plan`, `package_install_routes`, `package_verification`, `already_present_packages`, `package_blockers`, and `package_execution_log` when package installation is requested.
 - **Boundary and validation**: `boundary_material_paths`, `validation_status`, optional `agent_environment_service_output`, blockers, and `next_operator_action`.
 
 ## Guardrails
@@ -98,6 +102,8 @@ Resolve Project, Research Topic, and Topic Workspace through Project Manifest-ba
 Use Workspace Path Resolution commands for storage answers. Use `project paths get` for selected paths, `project paths explain` for source diagnostics, `project paths register` for explicit `label`/`path`/`storage_profile` bindings, `project repos create` for additional non-main grouped `topic.repos.*` repository labels that default under `repos/extern/...`, and `project topic-actors ...` for Topic Actor binding and Topic Actor Workspace operations.
 
 Do not present this skill as the canonical creator of `topic.repos.main`, projection roots, or per-agent worktrees in the normal topic-team setup path. Route canonical Topic Main Development Repository setup and projection materialization to `isomer-srv-topic-env-setup`; route canonical Agent Workspace worktree creation and cwd verification to `isomer-srv-agent-env-setup`.
+
+Use `install-packages` as the operator-owned package-add surface for the selected Topic Workspace. Accept plain prompts, Markdown files, YAML, JSON, requirements-style lists, and copied blocker text as package requests; infer a concrete install plan without requiring a fixed schema-constrained request file.
 
 Keep the resolved `topic.repos.main` path as a normal non-bare Git repository, each resolved `topic.actors.workspace` path as a Topic Actor Workspace worktree of that repository when materialized as a worktree, and each resolved `agent.workspace` path as an Agent Workspace worktree of that repository.
 
@@ -112,6 +118,8 @@ Keep worker-visible Isomer material under the resolved `topic.repos.main.isomer_
 Report blockers instead of silently repairing unsafe existing paths, non-Git repositories, branch conflicts, dirty or ambiguous repo state, missing base branches, or packet/profile refs outside the selected Topic Workspace.
 
 Do not delete, replace, pull, reset, reinitialize, or overwrite existing repositories or Agent Workspace paths without explicit user instruction.
+
+Do not create local `venv`, `.venv`, or `virtualenv` environments, run ambient `pip`, use unrecorded user R libraries, mutate system package managers, run `sudo`, edit global shell profiles, install daemons, change kernel drivers, or perform machine-global package setup from `install-packages`. Convert the request to the selected Topic Workspace Pixi environment when safe, or report a blocker.
 
 Do not create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, or claim runtime readiness from this skill. Validated topology evidence becomes runtime truth only when later Workspace Runtime creation consumes validated `agent_name`, branch, and Agent Workspace path plans.
 

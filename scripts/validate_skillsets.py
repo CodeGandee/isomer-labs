@@ -559,6 +559,7 @@ TOPIC_WORKSPACE_MANAGER_SUBCOMMANDS = (
     "write-boundaries.md",
     "create-agent-branch.md",
     "validate-worktrees.md",
+    "install-packages.md",
     "summarize.md",
     "help.md",
     "topic-workspace.md",

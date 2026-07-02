@@ -53,9 +53,10 @@ change the final visual appearance.
 **Missing runtime/package rule.** After the backend is selected, check the selected
 runtime early (`Rscript`/R for R; Python and required plotting packages for Python).
 If the selected runtime or required packages are unavailable, stop before rendering
-and report the exact blocker. You may provide a selected-backend script and installation
-commands, or ask permission to install dependencies, but you must not fall back to the
-other language to make a substitute figure.
+and report the exact blocker. You may provide a selected-backend script and a
+natural-language package request for `$isomer-admin-topic-workspace-mgr install-packages`,
+but you must not perform package setup here or fall back to the other language to
+make a substitute figure.
 
 Only recommend a backend when the user explicitly asks you to choose or recommend one.
 In that case, use `references/backend-selection.md`, state the reason, and then proceed
@@ -91,8 +92,9 @@ drawing, previewing, exporting, and visual QA in Python. Do not call R/ggplot2,
 ComplexHeatmap, patchwork, or any R graphics device to create a temporary preview,
 fallback export, or layout approximation. If Python or required Python plotting
 packages are missing, stop before rendering and report the missing dependency. You
-may still write the Python script, provide `pip`/environment install commands, or
-ask permission to install dependencies, but do not cross-render the figure in R.
+may still write the Python script and a natural-language package request for
+`$isomer-admin-topic-workspace-mgr install-packages`, but do not perform package
+setup here or cross-render the figure in R.
 
 ```python
 import matplotlib as mpl

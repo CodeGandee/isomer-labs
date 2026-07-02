@@ -25,7 +25,7 @@ Do not use this skill when:
 - The user has not chosen Python or R and no input makes the backend obvious; ask and stop.
 - The task needs a quick first-pass standard ML plot; use `isomer-rsch-paper-plot-v2` unless Nature-grade composition is required.
 - The requested figure would require mock data or invented statistics.
-- The runtime for the selected backend is unavailable and the user has not approved setup or downscope.
+- The runtime for the selected backend is unavailable and the user has not routed setup through `$isomer-admin-topic-workspace-mgr install-packages` or downscoped the task.
 
 ## Workflow
 
@@ -33,7 +33,7 @@ When this skill is invoked, execute the following steps in order.
 
 1. **Check backend selection**. Produce `<NATURE_FIGURE_BACKEND_CHOICE>` as Python or R. If missing and not obvious, ask "Python or R?" and stop. Read `references/backend-selection.md` when a recommendation is requested.
 2. **Define the figure contract**. Produce `<NATURE_FIGURE_CONTRACT>` with one-sentence conclusion, evidence chain, panel roles, dimensions, source data, statistics, integrity notes, and export formats. Read `references/figure-contract.md`.
-3. **Check selected runtime**. Produce `<NATURE_FIGURE_RUNTIME_CHECK>` for packages, fonts, device, renderer, and export capability in the selected backend only. Do not silently switch backends.
+3. **Check selected runtime**. Produce `<NATURE_FIGURE_RUNTIME_CHECK>` for packages, fonts, device, renderer, and export capability in the selected backend only. If selected-backend packages are missing, stop before rendering and route a natural-language package request to `$isomer-admin-topic-workspace-mgr install-packages`; do not silently switch backends.
 4. **Map the evidence chain**. Produce `<NATURE_PANEL_EVIDENCE_MAP>` linking each panel to unique evidence, source data, statistics, and claim. Drop panels that do not carry unique evidence.
 5. **Choose archetype and design system**. Produce `<NATURE_FIGURE_ARCHETYPE>` and read `references/nature-2026-observations.md`, `references/common-patterns.md`, `references/chart-types.md`, or `references/design-theory.md` as needed.
 6. **Set journal export contract**. Produce `<NATURE_EXPORT_CONTRACT>` covering SVG/PDF/TIFF/PNG, editable text, dimensions, color, line weights, image-integrity notes, and source-data expectations.
@@ -59,6 +59,7 @@ Read these constraints as global validity boundaries for the skill. A result tha
 - Every placeholder used by runtime instructions must be listed in `migrate/placeholders.md`.
 - Concrete source paths, source harness outputs, and source storage assumptions must not become final Isomer storage contracts.
 - Routes to other research stages must use existing v2 skill names when an Isomer counterpart exists.
+- Missing backend packages must be routed to `$isomer-admin-topic-workspace-mgr install-packages`; do not perform package setup inside this research skill.
 - Blocked states must name the missing evidence, author input, runtime capability, or route decision rather than hiding the blocker behind polished prose.
 
 ## Cross-Step Quality Gates

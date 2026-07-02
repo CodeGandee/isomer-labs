@@ -1,6 +1,6 @@
 # Install Topic Deps
 
-Use this subcommand to install dependencies for the derived gate through the Topic Workspace Pixi environment.
+Use this subcommand to install dependencies for the derived gate through the Topic Workspace Pixi environment. For an ad hoc package-add request from a user or research skill, route to `$isomer-admin-topic-workspace-mgr install-packages` instead of calling this page directly.
 
 ## Required Inputs
 
@@ -19,6 +19,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**:
    - Require workspace context from `resolve-topic-workspace` and resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`.
+   - If the caller supplied only a package-add request without a derived target spec or full environment setup intent, stop and route to `$isomer-admin-topic-workspace-mgr install-packages`.
 2. **Read the target spec** and stop with blockers when its `## Blockers` section contains unresolved install blockers.
 3. **Check enclosure classification** from the target spec's `## Dependency Plan`:
    - Every required dependency or runtime need must be classified as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked.
