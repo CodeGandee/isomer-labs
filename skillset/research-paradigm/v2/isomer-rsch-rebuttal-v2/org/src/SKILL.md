@@ -89,8 +89,8 @@ First decide whether the issue is actually:
     - trust the current baseline/results unless you find concrete inconsistency, corruption, or missing-evidence problems
   - `skip_unless_blocking`
     - do not spend time rerunning baselines unless a named reviewer item truly depends on a missing comparator
-- If `startup_contract.manuscript_edit_mode = latex_required`, treat the provided LaTeX tree or `paper/latex/` as the preferred writing surface when manuscript revision is needed.
-- If LaTeX source is unavailable while `latex_required` is requested, do not pretend the manuscript was edited; produce LaTeX-ready replacement text and an explicit blocker note instead.
+- If `startup_contract.manuscript_edit_mode = latex_required`, treat the provided LaTeX/TeX tree or `paper/latex/` as the preferred writing surface when manuscript revision is needed, and prefer Tectonic for compile validation.
+- If LaTeX/TeX source is unavailable while `latex_required` is requested, do not pretend the manuscript was edited; produce Tectonic-preferred LaTeX-ready replacement text and an explicit blocker note instead.
 - Accept review inputs from URLs, local file paths, local directories, or current-turn attachments; do not assume the review packet must already be neatly structured.
 
 ## Primary inputs
@@ -375,7 +375,7 @@ Drafting style rules for the actual author reply body:
 - Do not narrate rebuttal strategy inside the author reply.
 - Do not rely on future edits alone when you can already give the clarification, argument, or wording now.
 - When pushing back, lead with evidence, scope, or feasibility constraints before intuition.
-- If `startup_contract.manuscript_edit_mode = latex_required`, keep manuscript-facing replacement text LaTeX-ready.
+- If `startup_contract.manuscript_edit_mode = latex_required`, keep manuscript-facing replacement text Tectonic-preferred and LaTeX-ready.
 
 If details are still genuinely unknown, use explicit placeholders such as `[[AUTHOR TO FILL]]` rather than inventing specifics.
 

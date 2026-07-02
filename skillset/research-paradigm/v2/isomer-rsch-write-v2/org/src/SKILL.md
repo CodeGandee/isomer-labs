@@ -144,7 +144,9 @@ For ordinary active work, prefer a concise progress update once work has crossed
 - A user-specified analysis count should stay visible: if the user asked for 4-8 analyses, explicitly report the current count and any waiver instead of relying on a generic green coverage result.
 - Use `memory.write(...)` only for reusable writing, citation, or search lessons, not one-off local edits.
 - For paper-like deliverables, aim for roughly `30-50` verified references unless the scope clearly justifies fewer.
-- Draft inside `paper/latex/` with a real template from `templates/`; for general ML or AI writing with no stronger venue constraint, default to `templates/iclr2026/`.
+- Draft inside `paper/latex/` with a real LaTeX/TeX template from `templates/`; for general ML or AI writing with no stronger venue constraint, default to `templates/iclr2026/`.
+- Compile LaTeX/TeX manuscripts with Tectonic first, for example `tectonic -X compile main.tex`; use TeX Live, `latexmk`, `pdflatex`, `xelatex`, `lualatex`, BibTeX, or Biber only when Tectonic is unavailable, blocked by the template, or the venue requires that exact workflow.
+- Record the compile engine, command, PDF path, warnings, and fallback reason, if any, before claiming the paper bundle is build-ready.
 - Keep the narrative arc explicit: motivation -> challenge -> resolution.
 - Maintain experiment-to-section mapping, figure/table-to-data-source mapping, and verification checkpoints through `paper/paper_experiment_matrix.md`, `paper/paper_experiment_matrix.json`, and `paper/evidence_ledger.json` / `paper/evidence_ledger.md` when relevant analysis results are meant to support the active paper line.
 - Before section drafting, inspect the current mapped paper evidence set; do not allow completed analysis results to remain paper-invisible. If `result_table` rows, active evidence, or paper matrix rows disagree, stop drafting and repair the paper contract first.

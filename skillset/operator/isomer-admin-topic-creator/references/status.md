@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Resolve Project, Research Topic, Topic Workspace, `topic.intent.overview`, `topic.intent.topic_env_requirements`, runtime, topic environment, `topic.repos.main`, `topic.intent.actor_definitions`, Topic Actors, `topic.env.actor_env_gates`, bootstrap, and `topic.workspace.summary` evidence through read-only context.
+1. Resolve Project, Research Topic, Topic Workspace, `topic.intent.overview`, `topic.intent.topic_env_requirements`, runtime, topic environment, `topic.repos.main`, `topic.intent.actor_definitions`, Topic Actors, `topic.env.actor_env_gates`, actor onboarding context, and `topic.workspace.summary` evidence through read-only context.
 2. Classify each ladder stage as `ready`, `blocked`, `skipped`, or `not-started`.
 3. Preserve explicit opt-outs, especially the default `operator` Topic Actor opt-out.
 4. Treat `topic.workspace.summary` as stale when predecessor evidence changed after it was written.

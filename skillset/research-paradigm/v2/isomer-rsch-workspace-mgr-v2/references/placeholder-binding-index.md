@@ -2,11 +2,11 @@
 
 ## Workflow
 
-1. Discover the selected v2 skill set from the user's requested route, prepared Topic Actor start packs, Topic Team Profile skill bindings, or operator-provided skill list.
+1. Discover the selected v2 skill set from the user's requested route, Topic Creator summary, actor onboarding context, Topic Team Profile skill bindings, or operator-provided skill list.
 2. For each selected skill, locate the skill-local `placeholder-bindings.md` file and verify that it has command guidance for `isomer-cli ext research records`.
 3. Build a topic-level index that lists the skill name, binding file path or skill ref, placeholder groups, default semantic labels, profiles, and whether Topic Actor or formal agent metadata should be supplied when records are created.
 4. Treat the topic-level index as navigation and readiness evidence only. When an index row conflicts with a skill-local binding page, the skill-local `placeholder-bindings.md` file wins.
-5. Store or update the index through the workspace manager placeholder binding row when a durable record is needed, and include the index ref in Topic Actor start packs and formal agent bootstrap material.
+5. Store or update the index through the workspace manager placeholder binding row when a durable record is needed, and include the index ref in Topic Actor onboarding context and formal agent bootstrap material.
 6. Report blockers for missing binding pages, missing command guidance, or missing semantic labels. Do not write accepted artifacts to local scratch as a fallback.
 
 If the user's task does not map cleanly to these steps, build a partial index for the selected skills and mark unchecked skills as blockers or deferrals.

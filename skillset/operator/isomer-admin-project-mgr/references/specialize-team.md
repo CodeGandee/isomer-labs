@@ -7,7 +7,7 @@ When this subcommand is selected, execute the following steps in order.
 1. Resolve the Project root, Research Topic, Topic Workspace, and requested Domain Agent Team Template ref.
 2. Check Project validity and context with `check-project` and `show-context` when refs are unclear.
 3. Confirm that the request is about adapting or instantiating a Domain Agent Team Template for one Research Topic, not manual Topic Actor research.
-4. If reusable topic preparation evidence is missing, note that `isomer-admin-topic-team-specialize fast-forward` will consume or delegate common topic preparation before team-specific stages, or hand off to `isomer-admin-topic-prepare` first when the user asked only for preparation.
+4. If reusable topic preparation evidence is missing, note that `isomer-admin-topic-team-specialize fast-forward` will create or consume the required topic setup evidence before team-specific stages, or hand off to `isomer-admin-topic-creator` when the user asked only for topic preparation.
 5. Hand off to `isomer-admin-topic-team-specialize fast-forward` with the resolved Research Topic and Domain Agent Team Template refs.
 6. Report the handoff target, resolved refs, preserved Topic Actor context when present, blockers, and any Project readiness steps still needed before specialization can proceed.
 

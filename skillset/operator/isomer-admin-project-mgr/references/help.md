@@ -7,7 +7,7 @@ When this subcommand is selected, execute the following steps in order.
 1. Print a concise description of `isomer-admin-project-mgr`:
    - It initializes, checks, cleans up, and manages an Isomer Project.
    - It coordinates Project config, Research Topics, Topic Workspaces, Workspace Runtime preparation, and the Isomer-managed Houmao overlay under `.isomer-labs/`.
-   - It routes blank-state topic creation and manual-research-ready setup to `isomer-admin-topic-creator`.
+   - It routes blank-state topic creation and Topic Actor-ready setup to `isomer-admin-topic-creator`.
 2. Explain that invoking this skill without a prompt defaults to this `help` output.
 3. List the available subcommands: `help`, `init-project`, `cleanup-project`, `move-content`, `check-project`, `list-topics`, `show-context`, `init-runtime`, `prep-runtime`, `prepare-topic`, `manual-research`, and `specialize-team`.
 4. Explain the main outputs:
@@ -23,10 +23,9 @@ When this subcommand is selected, execute the following steps in order.
    - Generated content-root relocation starts with `isomer-cli project content-root move --to <content-dir> --dry-run`; use `--yes` only after review.
    - Relocation does not rewrite Workspace Runtime records or Pixi environments.
    - Checks stay read-only, Workspace Runtime creation is explicit, and readiness preparation is explicit.
-   - Topic creation and manual-research-ready setup belong to `isomer-admin-topic-creator`.
-   - Common topic preparation through `isomer-admin-topic-prepare` is deprecated for direct user invocation and remains available for compatibility or delegated use.
+   - Topic creation and Topic Actor-ready setup belong to `isomer-admin-topic-creator`.
    - Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped diagnostics, optional topology inspection, and branch helpers belong to `isomer-admin-topic-workspace-mgr`.
-   - Human-orchestrated manual research sessions and per-actor start packs are fronted by `isomer-admin-topic-creator`; `isomer-admin-manual-research-session` is deprecated for direct user invocation and remains available for compatibility or delegated start-pack finalization.
+   - Human-orchestrated manual research setup is fronted by `isomer-admin-topic-creator`.
    - Topic Team Specialization belongs to `isomer-admin-topic-team-specialize` only when the user explicitly asks for a Domain Agent Team Template.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which parts of the skill usage information to print, then execute the plan.

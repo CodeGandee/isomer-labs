@@ -52,6 +52,7 @@ Read these preferences as defaults that apply across the whole skill. They shoul
 - Prefer the smallest route that preserves downstream trust, and route missing evidence to the skill that can actually produce it.
 - Prefer source-compatible `isomer-cli ext deepsci call ... --input-json '{...}'` only when the source harness behavior matters; otherwise use native Isomer topic context, provider, and execution-adapter surfaces without binding storage prematurely.
 - Prefer paper-facing language that names claims, evidence, limits, and next routes without exposing operator, agent, prompt, worktree, or local runtime details.
+- Prefer Tectonic for LaTeX/TeX manuscript compilation. Use TeX Live, `latexmk`, `pdflatex`, `xelatex`, `lualatex`, BibTeX, or Biber only when Tectonic is unavailable, blocked by the template, or required by the venue, and record the fallback reason in the compile report.
 
 ## Cross-Step Constraints
 

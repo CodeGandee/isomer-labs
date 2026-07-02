@@ -84,8 +84,8 @@ Apply the publishability stop-loss rule during review: when novelty, evidence su
     - do not stop at the audit if the next route is already clear; continue into the required experiments and manuscript deltas
   - `user_gated_followups`
     - finish the audit first, then package the next expensive follow-up step into one structured decision
-- If `startup_contract.manuscript_edit_mode = latex_required`, treat the provided LaTeX tree or `paper/latex/` as the writing surface when manuscript revision is needed.
-- If LaTeX source is unavailable while `latex_required` is requested, do not pretend the manuscript was edited; produce LaTeX-ready replacement text and an explicit blocker note instead.
+- If `startup_contract.manuscript_edit_mode = latex_required`, treat the provided LaTeX/TeX tree or `paper/latex/` as the writing surface when manuscript revision is needed, and prefer Tectonic for compile validation.
+- If LaTeX/TeX source is unavailable while `latex_required` is requested, do not pretend the manuscript was edited; produce Tectonic-preferred LaTeX-ready replacement text and an explicit blocker note instead.
 - Accept manuscript and review inputs from URLs, local file paths, local directories, or current-turn attachments; do not assume the draft is already perfectly normalized.
 
 ## Evidence Authenticity & Manuscript Coverage Gate
@@ -125,7 +125,7 @@ Explicitly assess unsupported-claim or fabrication risk using these labels:
 - contradiction between manuscript and artifacts
 - likely false or fabricated claim
 
-A paper cannot be called submission-ready unless compile/PDF, evidence provenance, manuscript coverage, citation sufficiency, language hygiene, and experiment-matrix consistency all pass.
+A paper cannot be called submission-ready unless compile/PDF, evidence provenance, manuscript coverage, citation sufficiency, language hygiene, and experiment-matrix consistency all pass. For LaTeX/TeX manuscripts, the compile check should prefer Tectonic and document any fallback engine or bibliography workflow.
 
 ## Primary inputs
 
@@ -275,7 +275,7 @@ For each serious issue, record:
 - whether the fix is writing-only, evidence-only, or experiment-dependent
 - whether the issue blocks `finalize`
 - one copy-ready replacement sentence / paragraph when feasible
-- one LaTeX-ready replacement block when `startup_contract.manuscript_edit_mode = latex_required`
+- one Tectonic-preferred LaTeX-ready replacement block when `startup_contract.manuscript_edit_mode = latex_required`
 
 ### 5. Produce the follow-up experiment TODO list
 
@@ -427,8 +427,8 @@ If `startup_contract.manuscript_edit_mode = copy_ready_text`:
 
 If `startup_contract.manuscript_edit_mode = latex_required`:
 
-- prefer editing the actual LaTeX sources when they are available
-- otherwise provide LaTeX-ready replacement text blocks with explicit insertion targets
+- prefer editing the actual LaTeX/TeX sources when they are available
+- otherwise provide Tectonic-preferred LaTeX-ready replacement text blocks with explicit insertion targets
 - preserve labels, citations, figure/table refs, and section structure in the suggested replacements
 
 ## Companion skill routing

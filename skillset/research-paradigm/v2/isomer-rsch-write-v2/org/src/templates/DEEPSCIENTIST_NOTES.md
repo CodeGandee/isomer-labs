@@ -15,6 +15,8 @@ Usage rule:
 2. Copy the chosen template directory into the active paper workspace's `paper/latex/`.
 3. Keep the template's main `.tex` file as the build root unless there is a concrete reason to rename it.
 4. Draft the paper inside that `paper/latex/` tree and keep `paper/` for supporting notes, plans, figures, and bundle metadata.
+5. Compile with Tectonic first, for example `tectonic -X compile main.tex`, and record the engine, command, PDF path, and warnings in the compile report.
+6. Use TeX Live, `latexmk`, `pdflatex`, `xelatex`, `lualatex`, BibTeX, or Biber only when Tectonic is unavailable, fails for a template-specific reason, or the venue requires that exact workflow; record the fallback reason.
 
 License:
 

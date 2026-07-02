@@ -4,6 +4,7 @@
 
 - review_followup_policy:
 - manuscript_edit_mode:
+- source_compile_preference: Tectonic first; LaTeX engine fallback only when required or blocked.
 - manuscript_source_status:
 
 ## Summary
@@ -43,7 +44,7 @@
 - actionable fix:
 - acceptance criterion:
 - copy-ready revision text:
-- latex-ready revision text:
+- Tectonic-preferred LaTeX-ready revision text:
 
 ## Storyline Options + Writing Outlines
 
@@ -63,7 +64,7 @@
 - old wording / weakness:
 - new wording:
 - evidence basis:
-- latex-ready replacement block:
+- Tectonic-preferred LaTeX-ready replacement block:
 
 ## Experiment Inventory & Research Experiment Plan
 

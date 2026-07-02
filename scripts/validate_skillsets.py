@@ -292,8 +292,6 @@ PROJECT_MANAGER_REQUIRED_SKILL_TERMS = (
     "isomer-cli project runtime init",
     "isomer-cli project runtime prepare",
     "isomer-admin-topic-creator",
-    "isomer-admin-topic-prepare",
-    "isomer-admin-manual-research-session",
     "isomer-admin-topic-workspace-mgr",
     "isomer-admin-topic-team-specialize",
 )
@@ -358,7 +356,6 @@ TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
     "setup-topic-env",
     "define-actors",
     "setup-actors",
-    "bootstrap-research",
     "finalize",
     "step-by-step",
     "run-to",
@@ -375,11 +372,10 @@ TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
     "Workspace Runtime",
     "Topic Actor roster",
     "actor cwd",
-    "v2 bootstrap status",
+    "actor onboarding",
     "isomer-admin-project-mgr",
     "isomer-srv-topic-env-setup",
     "isomer-admin-topic-workspace-mgr",
-    "isomer-rsch-workspace-mgr-v2",
     "isomer-admin-topic-team-specialize",
     "Essential Output",
     "Complete Output",
@@ -397,7 +393,6 @@ TOPIC_CREATOR_COMMANDS = (
     "setup-topic-env.md",
     "define-actors.md",
     "setup-actors.md",
-    "bootstrap-research.md",
     "finalize.md",
     "step-by-step.md",
     "run-to.md",
@@ -453,10 +448,6 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
         "topic.intent.actor_definitions",
         "topic.env.actor_env_gates",
     ),
-    "bootstrap-research.md": (
-        "isomer-rsch-workspace-mgr-v2",
-        "placeholder-bindings.md",
-    ),
     "finalize.md": (
         "topic.workspace.summary",
         "ready",
@@ -485,11 +476,6 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
         "first blocked",
         "without rerunning ready",
     ),
-}
-
-DEPRECATED_COMPATIBILITY_SKILLS = {
-    "isomer-admin-topic-prepare": "common-preparation",
-    "isomer-admin-manual-research-session": "start-pack",
 }
 
 TOPIC_WORKSPACE_MANAGER_REQUIRED_SKILL_TERMS = (
@@ -1052,6 +1038,8 @@ REMOVED_OPERATOR_SKILLS = (
     "isomer-admin-profile-review-approval",
     "isomer-admin-profile-materialize",
     "isomer-admin-team-launch-orchestrate",
+    "isomer-admin-topic-prepare",
+    "isomer-admin-manual-research-session",
 )
 
 DEEPSCI_MINI_GUIDE_REQUIRED_TERMS = (
@@ -1887,36 +1875,6 @@ def validate_topic_creator_module(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
-def validate_deprecated_compatibility_operator_skills(repo_root: Path) -> list[Diagnostic]:
-    diagnostics: list[Diagnostic] = []
-    for skill_name, compatibility_scope in DEPRECATED_COMPATIBILITY_SKILLS.items():
-        skill_md = repo_root / "skillset" / "operator" / skill_name / "SKILL.md"
-        if not skill_md.exists():
-            add(diagnostics, repo_root, skill_md, 1, "OPS009", f"{skill_name} compatibility skill is required")
-            continue
-        lines = read_lines(skill_md)
-        text = "\n".join(lines)
-        frontmatter = parse_frontmatter(lines)
-        if frontmatter.get("deprecated") != "true":
-            add(diagnostics, repo_root, skill_md, 1, "OPS009", f"{skill_name} must set deprecated: true")
-        for term in (
-            "deprecation:",
-            "replaced_by: isomer-admin-topic-creator",
-            "scope: direct-user-invocation",
-            compatibility_scope,
-            "Use isomer-admin-topic-creator",
-        ):
-            if term not in text:
-                add(diagnostics, repo_root, skill_md, first_line_containing(lines, "deprecation"), "OPS009", f"{skill_name} must document deprecation term '{term}'")
-        help_path = repo_root / "skillset" / "operator" / skill_name / "references" / "help.md"
-        if help_path.exists():
-            help_text = "\n".join(read_lines(help_path))
-            for term in ("Deprecation Warning", "Use `isomer-admin-topic-creator", "compatibility"):
-                if term not in help_text:
-                    add(diagnostics, repo_root, help_path, 1, "OPS009", f"{skill_name} help must document '{term}'")
-    return diagnostics
-
-
 def validate_topic_workspace_manager_module(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     skill_dir = repo_root / "skillset" / "operator" / TOPIC_WORKSPACE_MANAGER_SKILL
@@ -2064,7 +2022,6 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_topic_team_specialization_module(repo_root))
     diagnostics.extend(validate_project_manager_module(repo_root))
     diagnostics.extend(validate_topic_creator_module(repo_root))
-    diagnostics.extend(validate_deprecated_compatibility_operator_skills(repo_root))
     diagnostics.extend(validate_topic_workspace_manager_module(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
     diagnostics.extend(validate_split_output_contract_docs(repo_root, (repo_root / "skillset" / "operator",), code="OPS007"))

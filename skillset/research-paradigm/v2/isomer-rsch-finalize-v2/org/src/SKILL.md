@@ -177,6 +177,7 @@ When a paper bundle exists, verify the manifest inventory explicitly, including:
 - referenced `compile_report_path`
 - referenced `pdf_path`
 - referenced `latex_root_path`
+- for LaTeX/TeX manuscripts, the compile report should name the engine and command, prefer Tectonic, and justify any fallback to TeX Live, `latexmk`, `pdflatex`, `xelatex`, `lualatex`, BibTeX, or Biber
 - `release/open_source/manifest.json` when open-source preparation has started
 - `release/open_source/cleanup_plan.md` when the paper line is being prepared for a public code release
 

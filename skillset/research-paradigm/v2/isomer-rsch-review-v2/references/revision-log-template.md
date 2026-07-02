@@ -5,6 +5,7 @@
 - current draft state:
 - review_followup_policy:
 - manuscript_edit_mode:
+- source_compile_preference: Tectonic first; LaTeX engine fallback only when required or blocked.
 - highest-priority fixes:
 - blockers:
 
@@ -23,7 +24,7 @@
   - claim downgrade
 - concrete change:
 - copy-ready revision text:
-- latex-ready revision text:
+- Tectonic-preferred LaTeX-ready revision text:
 - status:
 - blocks finalize:
 

@@ -521,3 +521,34 @@ The v2 research skills SHALL use skill-local placeholder binding guidance to map
 - **WHEN** a v2 skill needs to write an accepted artifact but no binding exists for the placeholder
 - **THEN** the skill reports the missing binding as a blocker instead of writing the artifact only to local scratch, a Topic Actor Workspace, a formal Agent Workspace, or an untracked repo path
 
+### Requirement: Research Skills Use Global Isomer CLI
+Non-dev research paradigm skills SHALL call Isomer CLI surfaces through direct `isomer-cli` commands.
+
+#### Scenario: Research skill CLI examples omit pixi prefix
+- **WHEN** validation scans `skillset/research-paradigm/**`
+- **THEN** it reports `pixi run isomer-cli` as invalid command guidance
+- **AND** accepted Isomer extension calls use direct shapes such as `isomer-cli ext deepsci call ...` and `isomer-cli ext research records ...`
+
+#### Scenario: Research environment commands remain separate
+- **WHEN** a research skill describes commands to run inside a user Topic Workspace environment
+- **THEN** it may describe that environment's own package or task runner when relevant
+- **AND** it still must not use that runner to invoke Isomer's global CLI
+
+### Requirement: V2 Research Workspace Manager Owns V2 Bootstrap
+The v2 research-paradigm skillset SHALL make `isomer-rsch-workspace-mgr-v2` the owner of v2-specific research workspace bootstrap.
+
+#### Scenario: V2 bootstrap consumes operator readiness
+- **WHEN** `isomer-rsch-workspace-mgr-v2` prepares v2 research workspace readiness for a Topic Workspace
+- **THEN** it consumes Topic Workspace and Topic Actor readiness evidence produced by operator skills as input
+- **AND** it does not require operator skills to validate selected v2 skills, v2 placeholder binding files, v2 placeholder binding registries, or accepted research artifact command shapes
+
+#### Scenario: V2 bootstrap reports research recording guidance
+- **WHEN** `isomer-rsch-workspace-mgr-v2` completes v2 bootstrap
+- **THEN** it reports selected v2 skill readiness, placeholder binding entrypoints, research storage or record guidance, actor access plans, and accepted research artifact recording instructions when those are in scope
+- **AND** it treats those outputs as research-paradigm material rather than operator Topic Actor topology material
+
+#### Scenario: V2 actor access plan preserves actor metadata
+- **WHEN** v2 bootstrap includes human-orchestrated Topic Actors
+- **THEN** it preserves Topic Actor names, actor kind, runtime kind, role kind, controller kind, and cwd labels from operator readiness evidence
+- **AND** it adds v2-specific recording metadata only inside v2 research workspace outputs
+

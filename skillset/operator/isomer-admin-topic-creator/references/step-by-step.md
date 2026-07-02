@@ -4,7 +4,7 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Establish the same main workflow order as `fast-forward`: `ensure-project`, `resolve-topic-input`, `register-topic`, `create-research-intent`, `init-runtime`, `define-topic-env`, `setup-topic-env`, `define-actors`, `setup-actors`, `bootstrap-research`, and `finalize`.
+1. Establish the same main workflow order as `fast-forward`: `ensure-project`, `resolve-topic-input`, `register-topic`, `create-research-intent`, `init-runtime`, `define-topic-env`, `setup-topic-env`, `define-actors`, `setup-actors`, and `finalize`.
 2. Before each step, print a pre-step preview with the step name, planned action, inputs to read, artifacts or semantic labels that may be written or updated, whether the step may mutate state, and blockers that can stop the step.
 3. If the step has multiple valid choices, unresolved decisions, or open questions, show a Markdown option table with option IDs such as `A`, `B`, and `C`.
 4. In each option row, include what the option means, pros, cons, related open questions, whether it is recommended, and the recommendation rationale.
@@ -26,7 +26,7 @@ Use this table shape whenever choices affect execution.
 
 ## Guardrails
 
-Do not mutate Project, Topic Workspace, runtime, repository, actor, bootstrap, or summary state before the user acknowledges the current step preview or selects an option that authorizes proceeding.
+Do not mutate Project, Topic Workspace, runtime, repository, actor, actor onboarding, or summary state before the user acknowledges the current step preview or selects an option that authorizes proceeding.
 
 Keep `step-by-step` aligned with `fast-forward`; interaction changes, but stage order and readiness rules do not.
 

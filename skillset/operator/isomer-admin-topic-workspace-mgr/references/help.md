@@ -5,7 +5,7 @@
 When this subcommand is selected, execute the following steps in order.
 
 1. Print a concise description:
-   - `isomer-admin-topic-workspace-mgr` provides Topic Actor CRUD, Topic Actor Workspace materialization or repair, actor-scoped path diagnostics, optional topology inspection, branch helpers, Workspace Boundary summaries, manual compatibility operations, and legacy diagnostics through semantic labels such as `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.actors.workspace`, `topic.actors.tmp`, `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, and `agent.links`.
+   - `isomer-admin-topic-workspace-mgr` provides Topic Actor CRUD, Topic Actor Workspace materialization or repair, actor-scoped path diagnostics, optional topology inspection, branch helpers, Workspace Boundary summaries, manual topology operations, and diagnostics through semantic labels such as `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.actors.workspace`, `topic.actors.tmp`, `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, and `agent.links`.
 2. Explain that invoking the skill without a prompt defaults to `topic-workspace`, while explicit help prints this usage surface.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
 4. Name the required inputs: Project Manifest context, Research Topic, Topic Workspace, optional Topic Actor names, optional packet/profile material, and any requested agent-name mapping.
@@ -37,7 +37,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Boundary Notes
 
-This skill complements `isomer-admin-topic-prepare`, `isomer-admin-manual-research-session`, and `isomer-admin-topic-team-specialize`: common preparation resolves reusable topic state, manual sessions choose research actors and write start packs, specialization defines topic-team material and static setup evidence, while this skill owns Topic Actor topology operations plus optional topology inspection, branch helpers, boundary summaries, manual compatibility operations, and legacy diagnostics.
+This skill complements `isomer-admin-topic-creator` and `isomer-admin-topic-team-specialize`: Topic Creator resolves reusable topic state and actor onboarding context, specialization defines topic-team material and static setup evidence, while this skill owns Topic Actor topology operations plus optional topology inspection, branch helpers, boundary summaries, manual topology operations, and diagnostics.
 
 This skill also stays separate from `isomer-srv-topic-env-setup`, which owns gate-driven topic environment setup, Topic Main Development Repository setup, canonical external repository acquisition, and external repo projection materialization.
 

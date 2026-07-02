@@ -2,7 +2,7 @@
 
 ## Workflow
 
-1. Validate <RSCH_WORKSPACE_CONTEXT> for selected topic refs, final topic summary signal, topic-team validation status, topic-team profile material signal, runtime readiness, Agent Workspace context, and actor identity.
+1. Validate <RSCH_WORKSPACE_CONTEXT> for selected topic refs, Topic Creator or Topic Workspace Manager evidence, selected v2 skill set, final topic summary signal when formal team material is selected, topic-team validation status, topic-team profile material signal, runtime readiness, Agent Workspace context, and actor identity.
 2. Validate <RSCH_STORAGE_LABEL_PLAN> for available labels, planned labels, optional `custom.*` needs, and blocked support.
 3. Validate <RSCH_PLACEHOLDER_BINDING_REGISTRY> for kind coverage, producer and consumer clarity, and missing binding status.
 4. Validate <RSCH_AGENT_ACCESS_PLAN> for pre-promotion surfaces, generated conveniences, and promotion boundaries.
@@ -20,6 +20,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 - setup-blocker-in-summary
 - missing-profile-bundle
 - missing-runtime-readiness
+- missing-topic-creator-summary
+- missing-topic-actor-readiness
+- missing-selected-v2-skill-set
 - missing-agent-workspace-context
 - missing-semantic-label
 - planned-label-not-implemented
@@ -34,6 +37,7 @@ The validation report should include:
 
 - status: ready, ready-with-deferrals, blocked, or stale
 - checked topic and actor
+- selected v2 skill set
 - final topic summary path and topic-team validation status
 - semantic label summary
 - placeholder binding summary

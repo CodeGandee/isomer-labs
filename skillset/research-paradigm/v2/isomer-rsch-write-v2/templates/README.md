@@ -1,21 +1,50 @@
 # LaTeX Templates for ML/AI & Systems Conferences
-# ML/AI LaTeX 
+# ML/AI LaTeX
 
 This directory contains official LaTeX templates for major machine learning, AI, and systems conferences.
-AI LaTeX 
+AI LaTeX
 
 ## Compiling LaTeX to PDF
 
-### Option 1: VS Code with LaTeX Workshop (Recommended)
+### Option 1: Tectonic CLI (Recommended)
 
 **Setup:**
-1. Install [TeX Live](https://www.tug.org/texlive/) (full distribution recommended)
-   - macOS: `brew install --cask mactex`
-   - Ubuntu: `sudo apt install texlive-full`
-   - Windows: Download from [tug.org/texlive](https://www.tug.org/texlive/)
+1. Install [Tectonic](https://tectonic-typesetting.github.io/).
+2. Keep the venue's `.tex`, `.sty`, `.bst`, `.bib`, and figure files together in the chosen template directory or active `paper/latex/` tree.
 
-2. Install VS Code extension: **LaTeX Workshop** by James Yu
-   - Open VS Code → Extensions (Cmd/Ctrl+Shift+X) → Search "LaTeX Workshop" → Install
+**Usage:**
+```bash
+# Preferred one-shot build
+tectonic -X compile main.tex
+
+# Use the actual template root when it is not main.tex
+tectonic -X compile example_paper.tex
+```
+
+Record the command, engine, output PDF path, and any warnings in the paper compile report. If Tectonic fails because a venue template requires a TeX Live-only package, a specific engine, or an explicit bibliography workflow, record that reason and use the fallback command-line path below.
+
+### Option 2: Command Line LaTeX Fallback
+
+Use this path when the venue requires PDFLaTeX, LuaLaTeX, XeLaTeX, BibTeX, Biber, `latexmk`, or a TeX Live package that Tectonic cannot resolve.
+
+```bash
+# Basic PDFLaTeX compilation
+pdflatex main.tex
+
+# With bibliography (full BibTeX workflow)
+pdflatex main.tex
+bibtex main
+pdflatex main.tex
+pdflatex main.tex
+
+# Using latexmk when dependencies or venue instructions require it
+latexmk -pdf main.tex
+
+# Continuous compilation for manual editing sessions
+latexmk -pdf -pvc main.tex
+```
+
+### Option 3: VS Code with LaTeX Workshop
 
 **Usage:**
 - Open any `.tex` file in VS Code
@@ -38,33 +67,14 @@ AI LaTeX
 }
 ```
 
-### Option 2: Command Line
-
-```bash
-# Basic compilation
-pdflatex main.tex
-
-# With bibliography (full workflow)
-pdflatex main.tex
-bibtex main
-pdflatex main.tex
-pdflatex main.tex
-
-# Using latexmk (handles dependencies automatically)
-latexmk -pdf main.tex
-
-# Continuous compilation (watches for changes)
-latexmk -pdf -pvc main.tex
-```
-
-### Option 3: Overleaf (Online)
+### Option 4: Overleaf (Online)
 
 1. Go to [overleaf.com](https://www.overleaf.com)
 2. New Project → Upload Project → Upload the template folder as ZIP
 3. Edit online with real-time PDF preview
 4. No local installation needed
 
-### Option 4: Other IDEs
+### Option 5: Other IDEs
 
 | IDE | Extension/Plugin | Notes |
 |-----|------------------|-------|
@@ -81,12 +91,15 @@ latexmk -pdf -pvc main.tex
 ```bash
 # Ensure you're in the template directory
 cd templates/icml2026
-pdflatex example_paper.tex
+tectonic -X compile example_paper.tex
 ```
 
 **Bibliography not appearing:**
 ```bash
-# Run bibtex after first pdflatex
+# Prefer a Tectonic rebuild first
+tectonic -X compile main.tex
+
+# If the venue template needs an explicit BibTeX workflow, use the fallback
 pdflatex main.tex
 bibtex main        # Uses main.aux to find citations
 pdflatex main.tex  # Incorporates bibliography

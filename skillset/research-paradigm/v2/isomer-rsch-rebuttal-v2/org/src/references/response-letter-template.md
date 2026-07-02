@@ -27,6 +27,7 @@ We thank the reviewers for the careful reading and constructive feedback. Below 
 - baseline handling decision:
 - response strategy:
 - manuscript_edit_mode:
+- source_compile_preference: Tectonic first; LaTeX engine fallback only when required or blocked.
 
 ## Overall Response
 
@@ -78,7 +79,7 @@ Then explain the evidence, manuscript rationale, and the exact clarification or 
 - evidence basis:
 - claim-scope effect:
 - remaining limitation:
-- latex-ready manuscript text:
+- Tectonic-preferred LaTeX-ready manuscript text:
 
 **If an experiment is still pending**
 

@@ -7,7 +7,7 @@ Use this reference to prevent premature finalization. Placeholder definitions li
 When performing this step, execute these substeps in order.
 
 1. **Gather closure context**. Build <FINALIZE_CONTEXT_BRIEF> from latest baseline state, accepted runs, analysis reports, writing state, decisions, blockers, package manifests, review state, proofing state, submission state, and current topic documents.
-2. **Inventory paper-like deliverables**. If a paper or report bundle exists, check manifest, outline, draft, references, claim-evidence map, evidence ledger, compile report, PDF or export state, and open-source release material when present.
+2. **Inventory paper-like deliverables**. If a paper or report bundle exists, check manifest, outline, draft, references, claim-evidence map, evidence ledger, compile report, PDF or export state, and open-source release material when present. For LaTeX/TeX manuscripts, the compile report should name the engine and command, prefer Tectonic, and explain any fallback to TeX Live, `latexmk`, `pdflatex`, `xelatex`, `lualatex`, BibTeX, or Biber.
 3. **Validate closure gates**. Confirm required evidence, writing, review, proofing, submission, outline, coverage, language, and package gates before treating the line as final.
 4. **Route failed gates**. If a required gate fails, create <FINALIZE_BLOCKER_RECORD> and route through decision or the proper upstream skill instead of forcing closure.
 5. **Record legitimacy**. State why finalization is legitimate now or which blocker prevents it.

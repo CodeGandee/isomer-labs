@@ -5,7 +5,7 @@ description: Initialize, inspect, validate, clean up, move generated content, an
 
 # Isomer Admin Project Mgr
 
-Use this as the operator workflow for Isomer Project lifecycle management. It helps an operator create, check, clean up, and move generated content for the Isomer Project config, Isomer-managed Houmao overlay, Research Topic and Topic Workspace registrations, Effective Topic Context, explicit Workspace Runtime readiness steps, and routing before topic work. Use `isomer-admin-topic-creator` as the front door for blank-state topic creation, manual-research-ready setup, and human-orchestrated Topic Actor research preparation.
+Use this as the operator workflow for Isomer Project lifecycle management. It helps an operator create, check, clean up, and move generated content for the Isomer Project config, Isomer-managed Houmao overlay, Research Topic and Topic Workspace registrations, Effective Topic Context, explicit Workspace Runtime readiness steps, and routing before topic work. Use `isomer-admin-topic-creator` as the front door for blank-state topic creation, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation.
 
 ## Workflow
 
@@ -22,10 +22,8 @@ When this skill is invoked, execute the following steps in order.
    - Execute that workflow for one bounded manual operation.
 5. **Report the Project lifecycle output** using **Essential Output** by default and **Complete Output** when requested, and preserve the **Guardrails**.
 6. **Hand off topic-oriented work** to the narrow owner:
-   - Use `isomer-admin-topic-creator` for blank-state topic creation, topic initialization, manual-research-ready setup, and human-orchestrated Topic Actor research preparation.
-   - Use `isomer-admin-topic-prepare` only as a deprecated compatibility/common-preparation workflow when delegated by the creator or when an advanced operator explicitly requests it.
+   - Use `isomer-admin-topic-creator` for blank-state topic creation, topic initialization, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation.
    - Use `isomer-admin-topic-workspace-mgr` for Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped path diagnostics, branch helpers, and topology repair.
-   - Use `isomer-admin-manual-research-session` only as a deprecated compatibility/start-pack workflow when delegated by the creator or when an advanced operator explicitly requests it.
    - Use `isomer-admin-topic-team-specialize` only when the user explicitly asks to adapt or instantiate a Domain Agent Team Template.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project context, subcommands, CLI boundaries, output contract, and guardrails in this skill, then execute the plan.
@@ -89,7 +87,7 @@ Use read-only commands for checks unless the user explicitly requests initializa
 
 Keep Workspace Runtime creation explicit through `isomer-cli project runtime init`, and keep launch-facing readiness explicit through `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness`. When explaining runtime initialization, distinguish worker-facing `repos/topic-main` and `agents/<agent-name>` from owner-preserved `records/*`, runtime-internal `runtime/*`, and `state.sqlite`.
 
-Hand off blank-state topic creation, manual-research-ready setup, and human-orchestrated Topic Actor research preparation to `isomer-admin-topic-creator`. Hand off per-agent worktree setup and cwd proof to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Use `isomer-admin-topic-workspace-mgr` for optional topology inspection, branch helper operations, boundary summaries, manual compatibility operations, legacy diagnostics, and Topic Actor CRUD or Topic Actor Workspace materialization.
+Hand off blank-state topic creation, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation to `isomer-admin-topic-creator`. Hand off per-agent worktree setup and cwd proof to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Use `isomer-admin-topic-workspace-mgr` for optional topology inspection, branch helper operations, boundary summaries, diagnostics, and Topic Actor CRUD or Topic Actor Workspace materialization.
 
 Do not scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
 
