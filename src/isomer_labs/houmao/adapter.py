@@ -12,7 +12,7 @@ import subprocess
 from time import monotonic
 from typing import Any, Iterable, Literal, Mapping, Protocol
 
-from isomer_labs.diagnostics import Diagnostic, has_errors
+from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.houmao.manifests import (
     HOUMAO_ADAPTER_ID,
     AgentBinding,

@@ -11,6 +11,9 @@ isomer-cli = "isomer_labs.cli:main"
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/isomer_labs"]
+
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["linux-aarch64"]
@@ -37,7 +40,16 @@ validate-skills = "python scripts/validate_skillsets.py --scope all"
 docs-validate = "python scripts/validate_docs.py"
 
 [tool.ruff]
-extend-exclude = ["teams/lfeng-team", "skillset/research-paradigm/deepsci/*/org/src/**"]
+extend-exclude = [
+  "teams/lfeng-team",
+  "skillset/research-paradigm/deepsci/*/org/src/**",
+  "src/isomer_labs/assets/system_skills/**",
+]
+
+[tool.mypy]
+exclude = [
+  "^src/isomer_labs/assets/system_skills/",
+]
 
 [tool.pixi.dependencies]
 python = "3.11.*"

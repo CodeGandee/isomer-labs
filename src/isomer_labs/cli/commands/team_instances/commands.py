@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import click
 
-from isomer_labs.cli.app import (
+from isomer_labs.cli.handlers.team_instances import (
     _cmd_team_instances_adapter_link_export,
     _cmd_team_instances_create,
     _cmd_team_instances_launch,

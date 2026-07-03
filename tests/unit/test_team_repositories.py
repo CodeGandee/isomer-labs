@@ -13,8 +13,8 @@ from click.testing import CliRunner
 
 from isomer_labs import cli
 from isomer_labs.project import discover_project
-from isomer_labs.team_repositories import TEAM_REPOSITORIES_ENV, load_team_repository
-from isomer_labs.team_templates import discover_domain_agent_team_templates
+from isomer_labs.teams.repositories import TEAM_REPOSITORIES_ENV, load_team_repository
+from isomer_labs.teams.templates import discover_domain_agent_team_templates
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

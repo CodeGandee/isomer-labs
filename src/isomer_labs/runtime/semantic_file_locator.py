@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from isomer_labs.path_utils import canonicalize, is_within
+from isomer_labs.core.path_utils import canonicalize, is_within
 from isomer_labs.runtime.models import (
     AdapterManifestRefRecord,
     AdapterPayloadRefRecord,

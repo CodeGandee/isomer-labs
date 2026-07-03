@@ -7,7 +7,7 @@ import re
 import sqlite3
 from typing import Any
 
-from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.runtime.identifiers import _provenance_ref
 from isomer_labs.runtime.models import (

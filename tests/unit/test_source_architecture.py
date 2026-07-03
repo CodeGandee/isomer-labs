@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import importlib
 import re
+import tomllib
 import unittest
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = REPO_ROOT / "src" / "isomer_labs"
+PACKAGE_ASSET_CODE_ROOTS = {
+    Path("assets/system_skills"),
+}
 
 REMOVED_SHIM_FILES = {
     "houmao_cli_adapter.py",
@@ -25,40 +29,69 @@ REMOVED_MODULE_PATHS = {
     "isomer_labs.runtime_validation",
 }
 
-MODULE_SIZE_EXEMPTIONS = {
-    "cli/app.py",
+ROOT_FILE_ALLOWLIST = {
+    "__init__.py",
+    "__main__.py",
+}
+
+PACKAGE_SIZE_TRANSITIONS = {
     "cli/commands/project.py",
-    "doctor.py",
-    "models.py",
-    "paths.py",
-    "research_records.py",
-    "topic_reset.py",
-    "topic_workspace_manifest.py",
+    "models/__init__.py",
+    "project/doctor.py",
+    "records/store.py",
     "runtime/models.py",
     "runtime/store.py",
     "runtime/validation.py",
     "runtime/validation_checks.py",
     "houmao/adapter.py",
     "houmao/manifests.py",
+    "workspace/manifest.py",
+    "workspace/paths.py",
+    "workspace/reset.py",
 }
 
 ALLOWED_PACKAGE_NAMES = {
     "artifact_formats",
     "cli",
+    "core",
     "deepsci_ext",
     "houmao",
+    "models",
+    "project",
+    "records",
     "runtime",
+    "skills",
+    "teams",
+    "workspace",
     "__pycache__",
 }
 
 
 class SourceArchitectureTests(unittest.TestCase):
+    def _is_package_asset_path(self, relative: Path) -> bool:
+        return any(relative == root or root in relative.parents for root in PACKAGE_ASSET_CODE_ROOTS)
+
     def test_cli_is_package_backed_and_command_groups_have_modules(self) -> None:
         self.assertFalse((SRC_ROOT / "cli.py").exists())
         self.assertTrue((SRC_ROOT / "cli" / "__init__.py").is_file())
         self.assertTrue((SRC_ROOT / "cli" / "app.py").is_file())
+        self.assertTrue((SRC_ROOT / "cli" / "handlers" / "main.py").is_file())
         self.assertTrue((SRC_ROOT / "cli" / "options.py").is_file())
         self.assertTrue((SRC_ROOT / "cli" / "output.py").is_file())
+        handler_modules = [
+            "project.py",
+            "workspace.py",
+            "workspace_paths.py",
+            "teams.py",
+            "runtime.py",
+            "team_instances.py",
+            "team_instance_support.py",
+            "records.py",
+            "self.py",
+            "schemas.py",
+        ]
+        for relative in handler_modules:
+            self.assertTrue((SRC_ROOT / "cli" / "handlers" / relative).is_file(), relative)
 
         command_modules = [
             "artifact_formats.py",
@@ -87,10 +120,38 @@ class SourceArchitectureTests(unittest.TestCase):
             "isomer_labs.runtime.models",
             "isomer_labs.runtime.store",
             "isomer_labs.runtime.validation",
-            "isomer_labs.team_repositories",
+            "isomer_labs.teams.repositories",
+            "isomer_labs.project.context",
+            "isomer_labs.workspace.paths",
+            "isomer_labs.records.store",
+            "isomer_labs.core.diagnostics",
+            "isomer_labs.skills.system_assets",
         ]
         for module_name in modules:
             self.assertIsNotNone(importlib.import_module(module_name), module_name)
+
+    def test_system_skill_assets_are_package_owned(self) -> None:
+        asset_root = SRC_ROOT / "assets" / "system_skills"
+        self.assertTrue(asset_root.is_dir())
+        self.assertTrue((asset_root / "manifest.toml").is_file())
+        self.assertTrue((asset_root / "README.md").is_file())
+        for name in ("misc", "operator", "research-paradigm", "service"):
+            self.assertTrue((asset_root / name).is_dir(), name)
+        self.assertFalse((asset_root / "dev").exists())
+
+    def test_skillset_authoring_view_points_to_package_assets(self) -> None:
+        skillset_root = REPO_ROOT / "skillset"
+        self.assertTrue((skillset_root / "dev").is_dir())
+        self.assertFalse((skillset_root / "dev").is_symlink())
+        for name in ("README.md", "manifest.toml", "misc", "operator", "research-paradigm", "service"):
+            path = skillset_root / name
+            self.assertTrue(path.is_symlink(), name)
+            self.assertTrue(path.resolve(strict=True).is_relative_to((SRC_ROOT / "assets" / "system_skills").resolve()))
+
+    def test_hatch_wheel_targets_isomer_package(self) -> None:
+        pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        wheel = pyproject["tool"]["hatch"]["build"]["targets"]["wheel"]
+        self.assertEqual(["src/isomer_labs"], wheel["packages"])
 
     def test_repository_import_surface_uses_canonical_package_paths(self) -> None:
         scanned_roots = [REPO_ROOT / name for name in ("src", "tests", "scripts", "docs")]
@@ -109,12 +170,18 @@ class SourceArchitectureTests(unittest.TestCase):
                         violations.append(f"{relative}: {module_path}")
         self.assertEqual([], violations)
 
-    def test_large_implementation_files_are_package_scoped_or_exempt(self) -> None:
+    def test_package_root_only_contains_bootstrap_files(self) -> None:
+        root_files = {path.name for path in SRC_ROOT.iterdir() if path.is_file() and path.suffix == ".py"}
+        self.assertEqual(set(), root_files - ROOT_FILE_ALLOWLIST)
+
+    def test_large_implementation_files_are_package_scoped_or_transition_tracked(self) -> None:
         threshold = 800
         oversized: list[str] = []
         for path in sorted(SRC_ROOT.rglob("*.py")):
             relative = path.relative_to(SRC_ROOT).as_posix()
-            if relative in MODULE_SIZE_EXEMPTIONS:
+            if self._is_package_asset_path(Path(relative)):
+                continue
+            if relative in PACKAGE_SIZE_TRANSITIONS:
                 continue
             line_count = len(path.read_text(encoding="utf-8").splitlines())
             if line_count > threshold:
@@ -123,8 +190,13 @@ class SourceArchitectureTests(unittest.TestCase):
 
     def test_command_registration_does_not_return_to_cli_app_monolith(self) -> None:
         app_source = (SRC_ROOT / "cli" / "app.py").read_text(encoding="utf-8")
+        handler_main_source = (SRC_ROOT / "cli" / "handlers" / "main.py").read_text(encoding="utf-8")
         self.assertNotIn("@app.command(", app_source)
         self.assertNotIn("@app.group(name=\"team-instances\"", app_source)
+        self.assertNotIn("def _cmd_", app_source)
+        self.assertNotIn("def _cmd_", handler_main_source)
+        self.assertLessEqual(len(app_source.splitlines()), 300)
+        self.assertLessEqual(len(handler_main_source.splitlines()), 80)
 
     def test_new_package_names_keep_expected_domain_boundaries(self) -> None:
         package_names = {
@@ -141,6 +213,8 @@ class SourceArchitectureTests(unittest.TestCase):
         violations: list[str] = []
         for path in sorted(SRC_ROOT.rglob("*.py")):
             relative = path.relative_to(SRC_ROOT)
+            if self._is_package_asset_path(relative):
+                continue
             parts = {Path(part).stem for part in relative.parts}
             if "workflows" in relative.parts or parts & forbidden_names:
                 violations.append(relative.as_posix())
@@ -153,6 +227,8 @@ class SourceArchitectureTests(unittest.TestCase):
         )
         for path in sorted(SRC_ROOT.rglob("*.py")):
             relative = path.relative_to(SRC_ROOT).as_posix()
+            if self._is_package_asset_path(Path(relative)):
+                continue
             content = path.read_text(encoding="utf-8")
             for pattern in patterns:
                 if pattern.search(content):
@@ -175,11 +251,13 @@ class SourceArchitectureTests(unittest.TestCase):
             "'extern/",
         )
         allowed_fragments = {
-            "cli/app.py": ('"repos/extern/"',),
+            "cli/handlers/workspace_paths.py": ('"repos/extern/"',),
         }
         violations: list[str] = []
         for path in sorted(SRC_ROOT.rglob("*.py")):
             relative = path.relative_to(SRC_ROOT).as_posix()
+            if self._is_package_asset_path(Path(relative)):
+                continue
             content = path.read_text(encoding="utf-8")
             for fragment in forbidden_fragments:
                 if fragment in allowed_fragments.get(relative, ()):

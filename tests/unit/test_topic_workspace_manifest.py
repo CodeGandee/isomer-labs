@@ -5,11 +5,11 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from isomer_labs.context import resolve_effective_topic_context
+from isomer_labs.project.context import resolve_effective_topic_context
 from isomer_labs.models import EffectiveTopicContext, SelectionRequest
-from isomer_labs.paths import resolve_effective_agent_context, resolve_effective_topic_actor_context, resolve_semantic_path
+from isomer_labs.workspace.paths import resolve_effective_agent_context, resolve_effective_topic_actor_context, resolve_semantic_path
 from isomer_labs.project import discover_project
-from isomer_labs.topic_workspace_manifest import (
+from isomer_labs.workspace.manifest import (
     DEFAULT_LAYOUT_PROFILE,
     TOPIC_WORKSPACE_MANIFEST_SCHEMA_VERSION,
     catalog,
@@ -21,7 +21,7 @@ from isomer_labs.topic_workspace_manifest import (
     resolve_semantic_binding,
     resolve_worker_output_policy,
 )
-from isomer_labs.validation import build_project_state
+from isomer_labs.project.validation import build_project_state
 
 
 def write(path: Path, content: str) -> None:

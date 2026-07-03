@@ -735,7 +735,7 @@ class IsomerCliTests(unittest.TestCase):
 
     def test_doctor_dependency_only_reports_missing_and_found_pixi(self) -> None:
         root = self.make_root()
-        with patch("isomer_labs.doctor.shutil.which", return_value=None):
+        with patch("isomer_labs.project.doctor.shutil.which", return_value=None):
             status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)

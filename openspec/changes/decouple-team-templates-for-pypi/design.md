@@ -1,6 +1,6 @@
 ## Context
 
-`src/isomer_labs/team_templates.py` currently derives the repository root from `Path(__file__).resolve().parents[2]` and registers `teams/deepsci-org/execplan` and `teams/deepsci-mini/execplan` as built-in Domain Agent Team Templates. That works in an editable checkout, but it is the wrong boundary for a PyPI package: installed source code should not require repository-local `teams/`, `skillset/`, `tests/`, `openspec/`, or other development-tree material.
+`src/isomer_labs/teams/templates.py` used to derive the repository root from `Path(__file__).resolve().parents[2]` and register `teams/deepsci-org/execplan` and `teams/deepsci-mini/execplan` as built-in Domain Agent Team Templates. That works in an editable checkout, but it is the wrong boundary for a PyPI package: installed source code should not require repository-local `teams/`, `skillset/`, `tests/`, `openspec/`, or other development-tree material.
 
 The desired product shape is that Isomer core is the reusable platform package and Agent Team definitions are plugins. A future Team Repository can contain many team templates with a manifest, and `isomer-cli` can list, select, register, and specialize those teams without bundling the team source into `src/`.
 

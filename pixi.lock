@@ -270,7 +270,7 @@ packages:
 - pypi: ./
   name: isomer-labs
   version: 0.1.0
-  sha256: 94ebad7c01848e9f932595b422359cd0af6243bd24a3a986d585851fa4e147e3
+  sha256: a503cdea06aa9d11f062d989068de3c78806d701ce3b158c5cedceacd9ff555a
   requires_dist:
   - jinja2>=3.1.6,<4
   - jsonschema>=4.26.0,<5

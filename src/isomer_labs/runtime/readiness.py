@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from isomer_labs.diagnostics import Diagnostic
-from isomer_labs.doctor import DoctorCheck
+from isomer_labs.core.diagnostics import Diagnostic
+from isomer_labs.project.doctor import DoctorCheck
 from isomer_labs.models import EffectiveTopicContext
 
 

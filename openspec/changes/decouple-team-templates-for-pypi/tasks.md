@@ -6,7 +6,7 @@
 
 ## 2. Template Discovery Refactor
 
-- [x] 2.1 Remove `_REPO_ROOT`, `_BUILT_IN_DEEPSCI_ORG_SOURCE`, `_BUILT_IN_DEEPSCI_MINI_SOURCE`, and implicit built-in registrations from `src/isomer_labs/team_templates.py`.
+- [x] 2.1 Remove `_REPO_ROOT`, `_BUILT_IN_DEEPSCI_ORG_SOURCE`, `_BUILT_IN_DEEPSCI_MINI_SOURCE`, and implicit built-in registrations from `src/isomer_labs/teams/templates.py`.
 - [x] 2.2 Refactor template discovery to merge Project-local registrations and explicitly configured Team Repository templates.
 - [x] 2.3 Preserve validation for Project-local template registrations and allow Team Repository templates to resolve outside the Project root only through configured repository provenance.
 - [x] 2.4 Update profile specialization and profile bundle materialization to consume resolved Project-local or Team Repository template sources without requiring core built-ins.

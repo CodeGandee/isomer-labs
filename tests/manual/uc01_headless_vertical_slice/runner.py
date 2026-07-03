@@ -13,8 +13,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 
-from isomer_labs.context import resolve_effective_topic_context
-from isomer_labs.diagnostics import Diagnostic, has_errors
+from isomer_labs.project.context import resolve_effective_topic_context
+from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import (
     TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION,
     DomainAgentTeamTemplate,
@@ -24,7 +24,7 @@ from isomer_labs.models import (
     TopicAgentTeamProfileRegistration,
 )
 from isomer_labs.project import discover_project
-from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
+from isomer_labs.teams.profile_bundles import materialize_topic_agent_team_profile_bundle
 from isomer_labs.runtime.models import RuntimeLifecycleRecord
 from isomer_labs.runtime.store import (
     WorkspaceRuntimeStore,
@@ -33,15 +33,15 @@ from isomer_labs.runtime.store import (
     prepare_topic_environment_readiness,
 )
 from isomer_labs.runtime.validation import validate_workspace_runtime
-from isomer_labs.team_profiles import parse_topic_agent_team_profile, validate_topic_agent_team_profile
-from isomer_labs.team_templates import (
+from isomer_labs.teams.profiles import parse_topic_agent_team_profile, validate_topic_agent_team_profile
+from isomer_labs.teams.templates import (
     DEEPSCI_MINI_TEMPLATE_ID,
     find_domain_agent_team_template,
     validate_domain_agent_team_template,
 )
-from isomer_labs.toml_loader import load_toml
-from isomer_labs.topic_team_instantiation import parse_topic_team_instantiation_packet
-from isomer_labs.validation import build_project_state
+from isomer_labs.core.toml_loader import load_toml
+from isomer_labs.teams.instantiation import parse_topic_team_instantiation_packet
+from isomer_labs.project.validation import build_project_state
 
 from uc01_headless_vertical_slice.constants import (
     UC01_LIVE_GATE_ENV,

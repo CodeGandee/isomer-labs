@@ -9,15 +9,15 @@ from typing import Any
 
 import click
 
-from isomer_labs.cli.app import _context_for_options
+from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import (
     common_options as _common_options,
     merge_options as _merge_options,
     topic_selection_options as _topic_selection_options,
 )
 from isomer_labs.deepsci_ext.rendering import dumps_raw_json
-from isomer_labs.diagnostics import has_errors
-from isomer_labs.research_records import (
+from isomer_labs.core.diagnostics import has_errors
+from isomer_labs.records.store import (
     ResearchRecordError,
     ResearchRecordRequest,
     archive_record,

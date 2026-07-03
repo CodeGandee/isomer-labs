@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Mapping
 
-from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
 from isomer_labs.runtime.validation_utils import missing_ref_diagnostics, owner_diagnostics

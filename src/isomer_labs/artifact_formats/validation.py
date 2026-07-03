@@ -17,7 +17,7 @@ from isomer_labs.artifact_formats.models import (
 )
 from isomer_labs.artifact_formats.registry import ArtifactFormatRegistry
 from isomer_labs.artifact_formats.resolver import ArtifactFormatResolver
-from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.core.diagnostics import Diagnostic
 
 
 def validate_payload(

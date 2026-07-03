@@ -8,12 +8,11 @@ from typing import Any
 
 import click
 
-from isomer_labs.cli.app import (
+from isomer_labs.cli.handlers.team_instance_support import (
     _agent_team_summary_or_diagnostic,
-    _context_for_options,
-    _emit,
     _unsupported_adapter_diagnostic,
 )
+from isomer_labs.cli.handlers.shared import _context_for_options, _emit
 from isomer_labs.cli.options import (
     CliOptions,
     common_options as _common_options,
@@ -21,7 +20,7 @@ from isomer_labs.cli.options import (
     topic_selection_options as _topic_selection_options,
     value as _value,
 )
-from isomer_labs.diagnostics import Diagnostic, has_errors
+from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.houmao.adapter import HoumaoAdapterFacade
 from isomer_labs.houmao.manifests import HOUMAO_ADAPTER_ID
 from isomer_labs.runtime.models import HandoffRecord

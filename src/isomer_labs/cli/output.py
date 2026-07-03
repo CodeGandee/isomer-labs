@@ -7,8 +7,8 @@ from typing import Any
 
 import click
 
-from isomer_labs.diagnostics import Diagnostic, has_errors
-from isomer_labs.rendering import render_diagnostics, render_json
+from isomer_labs.core.diagnostics import Diagnostic, has_errors
+from isomer_labs.core.rendering import render_diagnostics, render_json
 
 
 @dataclass(frozen=True)

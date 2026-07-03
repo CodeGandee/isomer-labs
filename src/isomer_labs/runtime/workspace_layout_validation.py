@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Mapping
 
-from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.path_utils import is_within
+from isomer_labs.core.path_utils import is_within
 from isomer_labs.runtime.models import AgentWorkspaceRecord, PathPlanRecord
 
 

@@ -7,14 +7,14 @@ from pathlib import Path
 import sqlite3
 from typing import Callable, Mapping
 
-from isomer_labs.diagnostics import Diagnostic, has_errors
-from isomer_labs.doctor import DoctorCheck, find_project_pixi_manifest, inspect_topic_pixi
+from isomer_labs.core.diagnostics import Diagnostic, has_errors
+from isomer_labs.project.doctor import DoctorCheck, find_project_pixi_manifest, inspect_topic_pixi
 from isomer_labs.models import (
     DomainAgentTeamTemplate,
     EffectiveTopicContext,
     TopicAgentTeamProfile,
 )
-from isomer_labs.paths import preview_paths, resolve_semantic_path
+from isomer_labs.workspace.paths import preview_paths, resolve_semantic_path
 from isomer_labs.runtime.agent_identity import project_agent_instance_id_locations
 from isomer_labs.runtime.models import (
     ADAPTER_MANIFEST_KINDS,
@@ -109,9 +109,9 @@ from isomer_labs.runtime.transactions import (
     _table_names,
     run_runtime_transaction as _run_runtime_transaction,
 )
-from isomer_labs.local_tmp_surfaces import ensure_tmp_surface_ignore_policy
-from isomer_labs.workspace_refs import AgentWorkspacePlan, resolve_role_binding_agent_workspace_plan
-from isomer_labs.topic_workspace_manifest import (
+from isomer_labs.workspace.tmp import ensure_tmp_surface_ignore_policy
+from isomer_labs.workspace.refs import AgentWorkspacePlan, resolve_role_binding_agent_workspace_plan
+from isomer_labs.workspace.manifest import (
     EffectiveAgentContext,
     SemanticPathResult,
     compatibility_surface_for_label,
@@ -119,7 +119,7 @@ from isomer_labs.topic_workspace_manifest import (
     resolve_semantic_binding,
     semantic_label_for_surface,
 )
-from isomer_labs.semantic_surfaces import storage_profile_by_id
+from isomer_labs.workspace.semantic_surfaces import storage_profile_by_id
 
 
 AGENT_TEAM_INSTANCE_PATH_LABELS = (

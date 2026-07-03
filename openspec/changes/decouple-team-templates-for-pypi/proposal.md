@@ -26,7 +26,7 @@ We want Isomer core to publish cleanly as a Python package while treating Agent 
 
 ## Impact
 
-- Affected code includes `src/isomer_labs/team_templates.py`, CLI team-template commands, Project Manifest registration parsing, package metadata, and source architecture tests.
+- Affected code includes `src/isomer_labs/teams/templates.py`, CLI team-template commands, Project Manifest registration parsing, package metadata, and source architecture tests.
 - Tests that expect `deepsci-org` or `deepsci-mini` to be globally built in must create or configure a fixture Team Repository instead.
 - Existing Project-local template registration remains supported.
 - The current repository-local `teams/` content can remain in the repository as source material for a future or fixture Team Repository, but it must not be required by `src/` at package runtime.

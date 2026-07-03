@@ -8,7 +8,7 @@ from typing import Any
 
 import click
 
-from isomer_labs.cli.app import _context_for_options
+from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import (
     common_options as _common_options,
     merge_options as _merge_options,
@@ -17,7 +17,7 @@ from isomer_labs.cli.options import (
 from isomer_labs.deepsci_ext.registry import split_tool_name, tool_listing
 from isomer_labs.deepsci_ext.rendering import dumps_raw_json, load_input_json, unsupported_tool_payload
 from isomer_labs.deepsci_ext.service import DeepSciCompatError, call_tool
-from isomer_labs.diagnostics import has_errors
+from isomer_labs.core.diagnostics import has_errors
 
 
 def register_deepsci_ext_commands(app: click.Group) -> None:

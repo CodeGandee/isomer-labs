@@ -16,7 +16,7 @@ from isomer_labs.artifact_formats import (
     validate_payload,
 )
 from isomer_labs.artifact_formats.validation import load_payload_file
-from isomer_labs.cli.app import _context_for_options
+from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import (
     common_options as _common_options,
     merge_options as _merge_options,
@@ -24,7 +24,7 @@ from isomer_labs.cli.options import (
 )
 from isomer_labs.cli.output import emit_output, output_format
 from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
-from isomer_labs.diagnostics import Diagnostic, has_errors
+from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.runtime.store import open_workspace_runtime
 
 

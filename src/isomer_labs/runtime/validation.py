@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping
 
-from isomer_labs.diagnostics import Diagnostic, has_errors
+from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.paths import preview_paths
+from isomer_labs.workspace.paths import preview_paths
 from isomer_labs.runtime.agent_identity import (
     validate_global_agent_instance_id_uniqueness as _validate_global_agent_instance_id_uniqueness,
 )

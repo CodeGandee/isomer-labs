@@ -8,7 +8,7 @@ import re
 from typing import Any, Mapping
 import uuid
 
-from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.runtime.models import utc_timestamp
 from isomer_labs.runtime.store import open_workspace_runtime

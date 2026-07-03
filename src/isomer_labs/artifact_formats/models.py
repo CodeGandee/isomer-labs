@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 from typing import Any, Literal, Mapping
 
-from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.core.diagnostics import Diagnostic
 
 
 FORMAT_REF_ORIGINS = ("isomer", "custom")

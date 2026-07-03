@@ -12,7 +12,7 @@ from isomer_labs.artifact_formats.models import (
     validate_format_ref,
 )
 from isomer_labs.artifact_formats.registry import ArtifactFormatRegistry, default_registry
-from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.core.diagnostics import Diagnostic
 
 
 class ArtifactFormatResolver:

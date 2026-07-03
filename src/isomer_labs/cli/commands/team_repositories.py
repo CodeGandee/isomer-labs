@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import click
 
-from isomer_labs.cli.app import (
+from isomer_labs.cli.handlers.teams import (
     _cmd_team_repositories_inspect,
     _cmd_team_repositories_list,
 )

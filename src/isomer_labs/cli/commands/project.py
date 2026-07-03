@@ -6,31 +6,28 @@ from typing import Any
 
 import click
 
-from isomer_labs.cli.app import (
+from isomer_labs.cli.handlers.project import (
     _cmd_cleanup,
     _cmd_content_root_move,
     _cmd_context_show,
-    _cmd_paths_default,
-    _cmd_paths_explain,
     _cmd_init,
-    _cmd_outputs_policy,
-    _cmd_paths_get,
-    _cmd_paths_list,
-    _cmd_paths_materialize,
-    _cmd_paths_materialize_default,
-    _cmd_paths_preview,
-    _cmd_paths_register,
-    _cmd_paths_reset,
-    _cmd_paths_unregister,
-    _cmd_paths_update,
-    _cmd_repos_create,
-    _cmd_schemas_list,
+    _cmd_topics_create,
+    _cmd_topics_delete,
+    _cmd_topics_list,
+    _cmd_topics_show,
+    _cmd_topics_update,
+    _cmd_validate,
+)
+from isomer_labs.cli.handlers.schemas import _cmd_schemas_list
+from isomer_labs.cli.handlers.self import (
     _cmd_self_env,
     _cmd_self_identity,
     _cmd_self_paths,
     _cmd_self_pixi,
     _cmd_self_queries,
     _cmd_self_show,
+)
+from isomer_labs.cli.handlers.workspace import (
     _cmd_topic_actors_archive,
     _cmd_topic_actors_diagnose,
     _cmd_topic_actors_list,
@@ -41,20 +38,29 @@ from isomer_labs.cli.app import (
     _cmd_topic_main_guidance_ensure,
     _cmd_topic_main_guidance_inspect,
     _cmd_topic_main_guidance_render,
-    _cmd_topics_create,
-    _cmd_topics_delete,
-    _cmd_topics_list,
-    _cmd_topics_show,
-    _cmd_topics_update,
-    _cmd_validate,
     _cmd_workspaces_list,
+)
+from isomer_labs.cli.handlers.workspace_paths import (
+    _cmd_outputs_policy,
+    _cmd_paths_default,
+    _cmd_paths_explain,
+    _cmd_paths_get,
+    _cmd_paths_list,
+    _cmd_paths_materialize,
+    _cmd_paths_materialize_default,
+    _cmd_paths_preview,
+    _cmd_paths_register,
+    _cmd_paths_reset,
+    _cmd_paths_unregister,
+    _cmd_paths_update,
+    _cmd_repos_create,
 )
 from isomer_labs.cli.options import (
     common_options as _common_options,
     merge_options as _merge_options,
     topic_selection_options as _topic_selection_options,
 )
-from isomer_labs.project_cleanup import CLEANUP_PARTS
+from isomer_labs.project.cleanup import CLEANUP_PARTS
 
 
 def _self_selection_options(command: Any) -> Any:

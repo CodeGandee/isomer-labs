@@ -11,11 +11,11 @@ from typing import Iterable, Mapping
 
 from isomer_labs.artifact_formats import digest_bytes, digest_json, validate_payload
 from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
-from isomer_labs.diagnostics import Diagnostic
-from isomer_labs.local_tmp_surfaces import TmpSurfaceIgnorePolicy, tmp_surface_ignore_policy
+from isomer_labs.core.diagnostics import Diagnostic
+from isomer_labs.workspace.tmp import TmpSurfaceIgnorePolicy, tmp_surface_ignore_policy
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.path_utils import canonicalize, is_within
-from isomer_labs.paths import preview_paths, resolve_semantic_path
+from isomer_labs.core.path_utils import canonicalize, is_within
+from isomer_labs.workspace.paths import preview_paths, resolve_semantic_path
 from isomer_labs.runtime.semantic_file_locator import locate_semantic_file
 from isomer_labs.runtime.adapter_handoff_validation import validate_adapter_handoff_records
 from isomer_labs.runtime.models import AgentWorkspaceRecord, PathPlanRecord
@@ -30,11 +30,11 @@ from isomer_labs.runtime.workspace_layout_validation import (
     unsafe_generated_link_diagnostics as _unsafe_generated_link_diagnostics,
     workspace_isomer_managed_path as _workspace_isomer_managed_path,
 )
-from isomer_labs.topic_workspace_manifest import (
+from isomer_labs.workspace.manifest import (
     EffectiveAgentContext,
     resolve_semantic_binding,
 )
-from isomer_labs.workspace_refs import validate_agent_name_value
+from isomer_labs.workspace.refs import validate_agent_name_value
 
 
 @dataclass(frozen=True)

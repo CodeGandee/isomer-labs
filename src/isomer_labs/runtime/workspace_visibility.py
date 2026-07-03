@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Mapping
 
-from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.paths import preview_paths
+from isomer_labs.workspace.paths import preview_paths
 
 
 def validate_topic_workspace_visibility_layout(

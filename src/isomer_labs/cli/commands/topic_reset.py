@@ -7,16 +7,16 @@ from typing import Any, Callable
 
 import click
 
-from isomer_labs.cli.app import _context_for_options
+from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import (
     common_options as _common_options,
     merge_options as _merge_options,
     topic_selection_options as _topic_selection_options,
 )
 from isomer_labs.cli.output import emit_output
-from isomer_labs.diagnostics import Diagnostic, has_errors
+from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.topic_reset import (
+from isomer_labs.workspace.reset import (
     apply_topic_reset,
     create_reset_checkpoint,
     list_reset_checkpoints,

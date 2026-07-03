@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Mapping
 
-from isomer_labs.diagnostics import Diagnostic
+from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
 
 

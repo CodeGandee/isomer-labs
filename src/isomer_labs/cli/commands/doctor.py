@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import click
 
-from isomer_labs.cli.app import _cmd_doctor
+from isomer_labs.cli.handlers.project import _cmd_doctor
 from isomer_labs.cli.options import (
     common_options as _common_options,
     merge_options as _merge_options,
