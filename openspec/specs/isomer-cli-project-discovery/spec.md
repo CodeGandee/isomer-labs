@@ -733,3 +733,96 @@ The system SHALL expose `isomer-cli ext research records` commands as part of th
 - **WHEN** a user invokes a mutating or reading research record command without a resolvable Topic Workspace
 - **THEN** the command returns a deterministic error rather than creating implicit Project or Topic Workspace state
 
+### Requirement: Topic Main Guidance CLI
+The `isomer-cli project` command surface SHALL expose topic-main guidance rendering, inspection, and ensure commands backed by a packaged Jinja2 template asset.
+
+#### Scenario: Guidance commands appear in command surface
+- **WHEN** a user runs `isomer-cli --help` or `isomer-cli project --help`
+- **THEN** the command surface includes `project topic-main-guidance render`, `project topic-main-guidance inspect`, and `project topic-main-guidance ensure`
+
+#### Scenario: Render uses packaged template
+- **WHEN** a user runs `isomer-cli project topic-main-guidance render`
+- **THEN** the command renders the current Isomer topic-main guidance block from a packaged `.j2` template asset
+- **AND** Python source code does not own the large guidance prose as a multiline string
+- **AND** the rendered text includes the current begin marker, end marker, and `isomer-labs-topic-main-guidance` fenced block tag
+
+#### Scenario: Render is topic independent
+- **WHEN** `project topic-main-guidance render` runs from any directory
+- **THEN** it does not require a selected Research Topic, Topic Workspace, Topic Main Development Repository, or Project Manifest
+- **AND** it does not include resolved Research Topic ids, topic statements, Topic Workspace paths, Topic Actor names, Agent Names, runtime paths, credentials, external repository paths, resolved `manifest_path`, or resolved `pixi_environment`
+
+#### Scenario: Inspect reports target statuses
+- **WHEN** `isomer-cli --print-json project topic-main-guidance inspect --topic <topic>` runs with a resolvable `topic.repos.main`
+- **THEN** the output reports one target entry for root `AGENTS.md` and one target entry for root `CLAUDE.md`
+- **AND** each target reports a status such as `missing`, `current`, `stale`, `duplicate`, `malformed`, `unknown_version`, or `unsafe`
+- **AND** the command does not create or modify files
+
+#### Scenario: Ensure requires explicit write confirmation
+- **WHEN** `project topic-main-guidance ensure` is invoked without `--yes`
+- **THEN** the command reports a deterministic blocker or usage diagnostic
+- **AND** it does not create or modify `AGENTS.md` or `CLAUDE.md`
+
+#### Scenario: Ensure upserts guidance idempotently
+- **WHEN** `isomer-cli --print-json project topic-main-guidance ensure --topic <topic> --yes` runs with a safe normal non-bare `topic.repos.main`
+- **THEN** it creates missing root `AGENTS.md` or `CLAUDE.md`
+- **AND** it appends the rendered guidance block when absent
+- **AND** it updates a recognized stale block in place
+- **AND** it preserves all content outside the Isomer-managed guidance block
+- **AND** a second ensure run reports no changed files when the files are already current
+
+#### Scenario: Ensure blocks unsafe repositories
+- **WHEN** `project topic-main-guidance ensure --yes` resolves a missing, non-Git, bare, corrupt, ambiguous, or otherwise unsafe `topic.repos.main`
+- **THEN** the command reports a blocker
+- **AND** it does not create or repair `topic.repos.main`
+- **AND** it directs repository preparation to the topic-main setup workflow
+
+#### Scenario: JSON output includes guidance metadata
+- **WHEN** any `project topic-main-guidance` command runs with `--print-json`
+- **THEN** the payload includes guidance version, template resource id, begin marker, end marker, target file statuses when applicable, changed files when applicable, mutation status, and blockers or diagnostics
+
+### Requirement: Agent Self Query CLI Family
+The CLI SHALL expose `project self` as a read-only Project command family whose subcommands return small, deterministic text and JSON responses for selected self-query concerns.
+
+#### Scenario: Command surface includes self query subcommands
+- **WHEN** a user runs `isomer-cli --help`, `isomer-cli project --help`, or `isomer-cli project self --help`
+- **THEN** the command surface includes `project self show`, `project self identity`, `project self pixi`, `project self env`, `project self paths`, and `project self queries`
+- **AND** the help text describes them as read-only agent self query commands
+
+#### Scenario: Self show supports small JSON output
+- **WHEN** a user runs `isomer-cli --print-json project self show`
+- **THEN** the output is deterministic JSON with `command`, `output_schema_version`, `ok`, `mutated`, `summary`, `available_queries`, and `diagnostics` fields
+- **AND** `mutated` is always `false`
+- **AND** the output does not include detailed `identity`, `environment`, `semantic_paths`, `pixi`, or full query catalog fields
+
+#### Scenario: Specific self subcommands support JSON output
+- **WHEN** a user runs `isomer-cli --print-json project self identity`, `project self pixi`, `project self env`, `project self paths <label>...`, or `project self queries`
+- **THEN** the output is deterministic JSON with `command`, `output_schema_version`, `ok`, `mutated=false`, the subcommand-specific payload field, and `diagnostics`
+- **AND** each subcommand omits payload fields owned by the other self subcommands
+
+#### Scenario: Self show supports concise text output
+- **WHEN** a user runs `isomer-cli project self show`
+- **THEN** the text output summarizes the selected Research Topic, Topic Workspace, Topic Actor or Agent headline when resolved, diagnostic count, and the available self subcommands
+- **AND** it does not print a broad environment, path, Pixi, or query detail block
+
+#### Scenario: Self subcommands accept existing selectors
+- **WHEN** a user invokes any `project self` subcommand with existing topic, topic-workspace, lifecycle, agent-team-instance, agent-instance, topic-agent-team-profile, agent, or topic-actor selectors
+- **THEN** the command applies the same selection and conflict rules used by Effective Topic Context, Effective Agent Context, and Topic Actor context resolution
+
+#### Scenario: Self query commands are side-effect free
+- **WHEN** any `project self` subcommand runs in text or JSON mode
+- **THEN** it does not create or modify Topic Workspace directories, Workspace Runtime records, Path Plans, Topic Workspace Manifests, Project Manifests, Pixi manifests, lockfiles, agent guidance files, launch material, or external adapter state
+
+### Requirement: Topic Main Guidance Recommends Progressive Self Queries
+The topic-main guidance renderer SHALL direct coding agents to start with the small self summary and query only the self details they need.
+
+#### Scenario: Rendered guidance includes self show first
+- **WHEN** `isomer-cli project topic-main-guidance render` emits the guidance block
+- **THEN** the first recommended Isomer query command is `isomer-cli --print-json project self show`
+- **AND** the guidance says to query only the needed slice with commands such as `project self identity`, `project self pixi`, `project self env`, and `project self paths <semantic-label>`
+- **AND** the lower-level `project context show`, `project paths get <semantic-label>`, and `project paths explain <semantic-label>` examples remain available
+
+#### Scenario: Guidance avoids broad self dumps
+- **WHEN** topic-main guidance is injected into `AGENTS.md` or `CLAUDE.md`
+- **THEN** the guidance does not recommend a broad `project self --all`, `project self show --all`, or equivalent all-fields dump
+- **AND** it does not embed a concrete Research Topic id, Topic Workspace path, Agent Name, Agent Instance id, manifest path, Pixi environment, credential, or external repository path
+

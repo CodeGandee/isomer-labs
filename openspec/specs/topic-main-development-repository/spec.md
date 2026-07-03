@@ -108,3 +108,53 @@ The system SHALL define `topic.repos.main` as the topic-owned Git anchor and int
 - **THEN** the material is limited to small coordination files, pointer manifests, bootstrap notes, start packs, or boundary documents
 - **AND** large outputs and accepted research artifacts are directed to Topic Workspace records
 
+### Requirement: Tracked Topic Main Agent Rule Files
+The system SHALL treat root-level `AGENTS.md` and `CLAUDE.md` in Topic Main Development Repository as tracked worker-facing guidance files.
+
+#### Scenario: Topic main has rule files
+- **WHEN** Topic Workspace environment setup prepares `topic.repos.main`
+- **THEN** the repository contains root-level `AGENTS.md` and `CLAUDE.md`
+- **AND** those files are normal topic-main files eligible for Git tracking
+- **AND** they are not placed under `topic.repos.main.isomer_managed`, tmp paths, runtime paths, or external projection roots
+
+#### Scenario: Existing repository content is not overwritten
+- **WHEN** `topic.repos.main` already contains `AGENTS.md` or `CLAUDE.md`
+- **THEN** Isomer preserves existing content outside the Isomer-managed guidance block
+- **AND** Isomer does not reorder, normalize, delete, or rewrite unrelated rule-file sections
+
+### Requirement: Isomer-Managed Topic Main Guidance Block
+The system SHALL store Isomer-specific topic-main guidance in a fenced block with stable markers so the block can be updated idempotently.
+
+#### Scenario: Guidance block uses stable boundaries
+- **WHEN** Isomer writes topic-main guidance into `AGENTS.md` or `CLAUDE.md`
+- **THEN** the guidance is bounded by `<!-- BEGIN isomer-labs-topic-main-guidance v1 -->` and `<!-- END isomer-labs-topic-main-guidance v1 -->`
+- **AND** the guidance body is stored in a fenced block tagged `isomer-labs-topic-main-guidance`
+
+#### Scenario: Guidance block is not duplicated
+- **WHEN** Isomer updates `AGENTS.md` or `CLAUDE.md` and the file already contains a recognized Isomer-managed topic-main guidance block
+- **THEN** Isomer updates the recognized block in place
+- **AND** it does not append a duplicate block
+
+#### Scenario: Guidance block avoids topic-specific values
+- **WHEN** Isomer writes the topic-main guidance block
+- **THEN** the block does not contain concrete Research Topic ids, topic statements, Topic Workspace paths, Topic Actor names, Agent Names, runtime file paths, credentials, external repository paths, resolved `manifest_path`, or resolved `pixi_environment`
+- **AND** the block points agents to `isomer-cli` queries for those values
+
+### Requirement: Topic Main Guidance Source of Truth
+The system SHALL treat the `isomer-cli project topic-main-guidance` renderer, backed by a packaged `.j2` template asset, as the source of truth for root `AGENTS.md` and `CLAUDE.md` Isomer guidance in Topic Main Development Repository.
+
+#### Scenario: Rule files use CLI-rendered content
+- **WHEN** Topic Workspace environment setup or Topic Manager repair writes topic-main agent guidance
+- **THEN** the written block is produced by `isomer-cli project topic-main-guidance` behavior
+- **AND** skill documentation does not own a separate full copy of the guidance prose
+
+#### Scenario: Template remains topic independent
+- **WHEN** the packaged guidance template is rendered
+- **THEN** rendered content contains placeholders or command forms for `manifest_path`, `pixi_environment`, and semantic labels
+- **AND** rendered content does not contain concrete selected-topic values
+
+#### Scenario: Topic main stores rendered files only
+- **WHEN** root `AGENTS.md` or `CLAUDE.md` contains the Isomer-managed guidance block
+- **THEN** the repository stores rendered Markdown files
+- **AND** the canonical editable template remains in the installed Isomer package assets, not inside the Topic Main Development Repository
+

@@ -2,7 +2,6 @@
 
 ## Purpose
 Define the operator skill that manages initialized Research Topics after Topic Creator handoff.
-
 ## Requirements
 ### Requirement: Topic Manager Skill Bundle
 The repository SHALL provide a command-style operator skill named `isomer-admin-topic-mgr` for managing an initialized Research Topic after Topic Creator handoff.
@@ -143,3 +142,87 @@ The Topic Manager skill SHALL split initialized-topic results into Essential Out
 #### Scenario: Complete output preserves audit detail
 - **WHEN** complete output is requested from `isomer-admin-topic-mgr`
 - **THEN** it reports semantic path sources, Topic Workspace Manifest evidence, Topic Actor bindings, Agent Workspace plans, package request source, package mutation plan, verification commands, service evidence, boundary material, validation status, blockers, and next action when those fields apply
+
+### Requirement: Topic Manager Package Mutation Uses Package Specifics First
+The Topic Manager environment mutation commands SHALL consult `isomer-misc-pkg-specifics` for every named package before applying generic install, update, remove, source-selection, or verification rules.
+
+#### Scenario: Package install checks package-specific guidance first
+- **WHEN** `env-install-packages` receives a named package request
+- **THEN** it checks `isomer-misc-pkg-specifics` before choosing a generic PyPI, Pixi, Conda, R, CLI, runtime-wiring, or verification route
+- **AND** it records selected package-specific evidence or `no package-specific rule` in the install plan
+
+#### Scenario: Package update checks package-specific guidance first
+- **WHEN** `env-update-packages` receives a named package update, downgrade, or constraint request
+- **THEN** it checks `isomer-misc-pkg-specifics` before choosing a generic update route
+- **AND** it preserves package-specific variant, accelerator, runtime, compatibility, and verification expectations in the update plan
+
+#### Scenario: Package removal checks package-specific risk first
+- **WHEN** `env-remove-packages` receives a named package removal request
+- **THEN** it checks `isomer-misc-pkg-specifics` for known runtime, accelerator, or companion-package caveats before planning removal
+- **AND** it reports package-specific breakage risks, verification checks, or blockers before mutation
+
+#### Scenario: Package-specific verification outranks generic import checks
+- **WHEN** an environment mutation command verifies a package with package-specific runtime guidance
+- **THEN** it uses the package-specific verification expectation
+- **AND** it does not report ready from solver success, package metadata, or generic import success alone when the package-specific rule requires stronger evidence
+
+### Requirement: Topic Manager Package Mutation Keeps Topic Workspace Pixi Ownership
+The Topic Manager package mutation commands SHALL continue to mutate only the selected Topic Workspace Pixi environment and SHALL NOT route ad hoc package mutation to full topic env setup unless the user asks for full gate-driven setup.
+
+#### Scenario: Ad hoc package request stays in topic manager
+- **WHEN** a user asks only to install, update, remove, repair, or verify named packages for an initialized Topic Workspace
+- **THEN** Topic Manager handles the request through the matching `env-*` command
+- **AND** it uses package-specific guidance as a preflight before generic package planning
+
+#### Scenario: Full gate setup still routes to topic env service
+- **WHEN** a package request requires deriving or repairing `topic.env.topic_setup_target_spec` from `topic.intent.topic_env_requirements`
+- **THEN** Topic Manager routes full gate-driven setup or repair to `isomer-srv-topic-env-setup`
+- **AND** it does not derive the operational topic env target spec itself
+
+### Requirement: Topic Main Guidance Inspection
+The Topic Manager skill SHALL report Topic Main Development Repository agent guidance posture during storage inspection.
+
+#### Scenario: Storage inspection reports rule-file posture
+- **WHEN** `isomer-admin-topic-mgr storage-inspect-main` inspects a usable normal non-bare `topic.repos.main`
+- **THEN** it reports whether root-level `AGENTS.md` and `CLAUDE.md` exist
+- **AND** it reports whether each file contains the current Isomer-managed topic-main guidance block
+- **AND** it reports missing, stale, duplicated, malformed, or unknown-version guidance blocks as blockers or next actions
+
+#### Scenario: Storage inspection remains non-destructive
+- **WHEN** `storage-inspect-main` detects missing or stale topic-main guidance without an explicit repair request
+- **THEN** it reports the condition and the recommended repair route
+- **AND** it does not create, append, update, delete, reset, or rewrite rule files
+
+### Requirement: Topic Main Guidance Repair Route
+The Topic Manager skill SHALL provide an explicit storage-scoped route for refreshing topic-main agent guidance after topic initialization.
+
+#### Scenario: Explicit repair refreshes guidance
+- **WHEN** the operator explicitly requests topic-main agent guidance repair or refresh for an initialized topic
+- **THEN** the Topic Manager resolves `topic.repos.main` through `storage-resolve`
+- **AND** it creates missing root-level `AGENTS.md` or `CLAUDE.md`
+- **AND** it appends or updates the Isomer-managed topic-main guidance block without changing unrelated rule-file content
+- **AND** it reports changed files, guidance block version, blockers, and next action
+
+#### Scenario: Repair blocks on unsafe repository state
+- **WHEN** the resolved `topic.repos.main` is missing, not a normal Git repository, bare, corrupt, ambiguous, or otherwise unsafe for bounded rule-file mutation
+- **THEN** the Topic Manager reports a blocker
+- **AND** it routes canonical repository repair to `isomer-srv-topic-env-setup` when repository preparation is needed
+
+### Requirement: Topic Manager Uses CLI Topic Main Guidance Source
+The Topic Manager skill SHALL use `isomer-cli project topic-main-guidance` as the source of truth for topic-main agent guidance inspection and repair.
+
+#### Scenario: Storage inspection routes guidance checks to CLI
+- **WHEN** `storage-inspect-main` reports root `AGENTS.md` and `CLAUDE.md` guidance posture
+- **THEN** it routes the read-only check through `isomer-cli --print-json project topic-main-guidance inspect --topic <topic>` or an equivalent CLI-backed API
+- **AND** it reports target statuses, guidance version, blockers, and next action from that command
+
+#### Scenario: Storage repair routes guidance mutation to CLI
+- **WHEN** the operator explicitly requests topic-main agent guidance repair or refresh
+- **THEN** the Topic Manager routes mutation through `isomer-cli --print-json project topic-main-guidance ensure --topic <topic> --yes` or an equivalent CLI-backed API
+- **AND** it does not carry the full guidance body in the skill instructions
+
+#### Scenario: Topic Manager does not duplicate template text
+- **WHEN** operator skillset validation inspects Topic Manager documentation
+- **THEN** it accepts concise references to the CLI command, marker names, and `.j2` template source of truth
+- **AND** it reports diagnostics if Topic Manager docs reintroduce the full guidance block body as copied prose
+

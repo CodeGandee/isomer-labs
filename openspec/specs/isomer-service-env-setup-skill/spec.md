@@ -669,3 +669,110 @@ Non-dev service skills SHALL use direct `isomer-cli` command examples for Isomer
 - **WHEN** a service skill describes installing or verifying a Topic Workspace Pixi environment
 - **THEN** it may keep Pixi environment commands for the user's workspace
 - **AND** it still must call Isomer control-plane operations through global `isomer-cli`
+
+### Requirement: Topic Env Derivation Uses Package Specifics First
+The topic environment setup service SHALL consult `isomer-misc-pkg-specifics` for every named package before applying generic package-source, Pixi, PyPI, Conda, runtime-wiring, or verification rules during operational topic env target-spec derivation.
+
+#### Scenario: Named package has package-specific rule
+- **WHEN** `derive-env-gate` converts source intent or an explicit target spec into `topic.env.topic_setup_target_spec`
+- **AND** the dependency plan names a package listed by `isomer-misc-pkg-specifics`
+- **THEN** `derive-env-gate` applies the selected package-specific source, variant, verification, warning, and blocker guidance before generic package routing
+- **AND** the generated target spec records the selected package-specific evidence
+
+#### Scenario: Named package has no package-specific rule
+- **WHEN** `derive-env-gate` considers a named package that is not listed by `isomer-misc-pkg-specifics`
+- **THEN** it records `no package-specific rule`
+- **AND** it continues with the generic package-source ladder, enclosure strategy, bounded-run policy, and verification rules
+
+#### Scenario: Generic PyPI preference is subordinate to package specifics
+- **WHEN** a named Python package can satisfy a gate through PyPI in the generic ladder
+- **AND** `isomer-misc-pkg-specifics` provides a package-specific rule that selects another source, variant, verification, warning, or blocker
+- **THEN** the package-specific rule takes precedence over the generic PyPI preference
+
+### Requirement: Topic Env Install and Verification Use Recorded Package Evidence
+The topic environment setup service SHALL use package-specific evidence recorded in `topic.env.topic_setup_target_spec` when installing dependencies or verifying package-specific runtime readiness.
+
+#### Scenario: Install uses package-specific source decision
+- **WHEN** `install-topic-deps` installs a named package whose target spec entry includes package-specific source or variant evidence
+- **THEN** it uses that recorded package-specific evidence for the Pixi, PyPI, Conda, runtime-wiring, fallback, or blocker decision
+- **AND** it does not replace that evidence with a generic package-source choice
+
+#### Scenario: Verification uses package-specific runtime expectation
+- **WHEN** `verify-env-gate` verifies readiness for a named package whose target spec entry includes package-specific runtime checks
+- **THEN** it runs or reports the recorded package-specific verification expectation
+- **AND** it does not claim readiness from generic import success or solver success alone when the package-specific evidence requires a stronger check
+
+### Requirement: Topic Env Service Owns Operational Topic Gate Derivation
+The topic environment setup service SHALL remain the owner of operational `topic.env.topic_setup_target_spec` derivation from high-level topic env source intent.
+
+#### Scenario: Operator source intent remains high level
+- **WHEN** an operator skill writes or updates `topic.intent.topic_env_requirements`
+- **THEN** it may name desired libraries, tools, repositories, runtimes, datasets, commands, or capabilities
+- **AND** operational package-source choices, Pixi install commands, runtime-wiring commands, package-specific verification commands, and dependency blockers are derived by `isomer-srv-topic-env-setup`
+
+#### Scenario: Full setup routes through service derivation
+- **WHEN** a caller needs operational topic env target-spec derivation from source intent
+- **THEN** it routes to `isomer-srv-topic-env-setup derive-env-gate` or the full `setup-topic-env` flow
+- **AND** it does not hand-roll `topic.env.topic_setup_target_spec` in operator guidance unless the user supplied an explicit manual target spec for service validation
+
+### Requirement: Topic Main Agent Guidance Injection
+The service environment setup skill SHALL ensure Topic Main Development Repository agent rule guidance during `ensure-topic-main-repository`.
+
+#### Scenario: Topic main setup creates missing rule files
+- **WHEN** `ensure-topic-main-repository` prepares a newly initialized or safe empty `topic.repos.main`
+- **THEN** it creates root-level `AGENTS.md` and `CLAUDE.md` when either file is missing
+- **AND** each created file contains the Isomer-managed topic-main guidance block
+- **AND** the files are eligible for normal Git tracking in topic-main
+
+#### Scenario: Existing rule files are preserved
+- **WHEN** `ensure-topic-main-repository` runs against an existing normal non-bare Topic Main Development Repository with an existing `AGENTS.md` or `CLAUDE.md`
+- **THEN** it preserves existing user-authored content in those files
+- **AND** it appends the Isomer-managed topic-main guidance block when the block is absent
+- **AND** it updates the existing Isomer-managed block in place when the block is present but stale
+
+#### Scenario: Guidance injection is bounded by mutation authorization
+- **WHEN** `ensure-topic-main-repository` lacks direct Project Operator Session mutation confirmation or equivalent service authorization
+- **THEN** it reports missing or stale topic-main guidance as a blocker or next action
+- **AND** it does not create or modify `AGENTS.md` or `CLAUDE.md`
+
+#### Scenario: Setup output reports guidance posture
+- **WHEN** `ensure-topic-main-repository` creates, appends, updates, validates, or blocks agent guidance
+- **THEN** it reports the posture of `AGENTS.md`, `CLAUDE.md`, the Isomer-managed block version, changed files, commands run, blockers, and next action
+
+### Requirement: Topic Main Guidance Content
+The service environment setup skill SHALL write topic-independent guidance that makes Pixi and Isomer CLI usage explicit.
+
+#### Scenario: Guidance declares Pixi as primary
+- **WHEN** the Isomer-managed topic-main guidance block is created or updated
+- **THEN** the block states that the repository uses Pixi as the primary package manager and execution environment
+- **AND** it states that Python should be invoked through Pixi with `pixi run --manifest-path <manifest_path> --environment <pixi_environment> python ...`
+- **AND** it tells agents to avoid system Python, ambient virtualenvs, plain `python`, plain `pip`, shell activation, and local `.venv` environments as the source of truth for topic work
+
+#### Scenario: Guidance prefers CLI queries over embedded facts
+- **WHEN** the Isomer-managed topic-main guidance block is created or updated
+- **THEN** the block tells agents to query topic-specific context, paths, and actor information with `isomer-cli`
+- **AND** it includes read-only command forms for `project context show`, `project paths get <semantic-label>`, `project paths explain <semantic-label>`, `project topics list`, and `project topic-actors list`
+- **AND** it tells agents not to hardcode or guess Research Topic ids, Topic Workspace paths, Topic Actor names, Agent Names, runtime paths, credentials, external repository paths, `manifest_path`, or `pixi_environment`
+
+#### Scenario: Guidance names semantic labels without resolving them
+- **WHEN** the Isomer-managed topic-main guidance block is created or updated
+- **THEN** it may name semantic labels such as `topic.repos.main`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.records`, `topic.runtime`, `topic.actors.workspace`, and `agent.workspace`
+- **AND** it does not include resolved values for those labels
+
+### Requirement: Service Uses CLI Topic Main Guidance Source
+The service environment setup skill SHALL use `isomer-cli project topic-main-guidance` as the source of truth for topic-main agent guidance content and file mutation.
+
+#### Scenario: Ensure topic main routes to CLI
+- **WHEN** `ensure-topic-main-repository` needs to create, inspect, append, or update root `AGENTS.md` or `CLAUDE.md` guidance
+- **THEN** the skill instructions route that operation through `isomer-cli --print-json project topic-main-guidance ensure --topic <topic> --yes` or an equivalent CLI-backed API
+- **AND** the skill documentation does not include the full injected guidance body
+
+#### Scenario: Service reports CLI output
+- **WHEN** topic env setup carries topic-main guidance posture into predecessor evidence
+- **THEN** it reports the CLI guidance version, target statuses, changed files, blockers, and next action returned by the guidance command
+
+#### Scenario: Service does not duplicate template text
+- **WHEN** service skillset validation inspects topic env setup documentation
+- **THEN** it accepts concise references to the CLI command, marker names, and `.j2` template source of truth
+- **AND** it reports diagnostics if the service docs reintroduce the full guidance block body as copied prose
+
