@@ -218,8 +218,19 @@ Use dotted semantic labels such as `topic.repos.main`, `topic.records.artifacts`
 ```bash
 pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
 pixi run isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured
-pixi run isomer-cli --print-json project paths get topic.actors.workspace --topic my-topic --topic-actor operator
-pixi run isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent alice
+pixi run isomer-cli --print-json project paths get topic.actors.output_root --topic my-topic --topic-actor operator
+pixi run isomer-cli --print-json project paths get agent.output_root --topic my-topic --agent alice
+```
+
+### `project outputs policy`
+
+Resolve the user-customizable worker output root and post-operation commit preference for one Topic Actor or Agent. The JSON result includes the absolute root, worker-relative root, worker identity, source metadata, operation-set pattern, and `commit_after_operation`. `.gitignore` and Git status control whether files under the root are tracked or committable.
+
+**Side effects:** none. This command does not create directories, write manifests, write runtime records, launch agents, or commit files.
+
+```bash
+pixi run isomer-cli --print-json project outputs policy --topic my-topic --topic-actor operator
+pixi run isomer-cli --print-json project outputs policy --topic my-topic --agent alice
 ```
 
 ### `project paths default`
@@ -727,6 +738,7 @@ pixi run isomer-cli project --root tests/fixtures/projects/deepsci-profile-use-c
 | `project workspaces list` | no | no | no | no |
 | `project context show` | no | no | no | no |
 | `project self show/identity/pixi/env/paths/queries` | no | no | no | no |
+| `project outputs policy` | no | no | no | no |
 | `project paths preview` | no | no | no | no |
 | `project paths default` | no | no | no | no |
 | `project paths explain` | no | no | no | no |

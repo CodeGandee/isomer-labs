@@ -25,6 +25,7 @@ TOPIC_ACTOR_WORKSPACE_LABELS = (
     "topic.actors.workspace",
     "topic.actors.tmp",
     "topic.actors.isomer_managed",
+    "topic.actors.output_root",
     "topic.actors.private_artifacts",
     "topic.actors.logs",
     "topic.actors.links",

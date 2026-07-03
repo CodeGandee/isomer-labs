@@ -221,6 +221,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_project_manager_skill(root)
         self.write_topic_creator_skill(root)
         self.write_topic_manager_skill(root)
+        self.write_welcome_skill(root)
 
     def write_topic_team_dependency_contract(self, root: Path) -> None:
         skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize"
@@ -561,6 +562,193 @@ class SkillsetValidatorTests(unittest.TestCase):
                 """,
             )
 
+    def write_welcome_skill(
+        self,
+        root: Path,
+        *,
+        omit_skill_term: str | None = None,
+        omit_reference_term: str | None = None,
+        omit_direct_owner: str | None = None,
+        active_retired_route: bool = False,
+        automatic_tool_pack_route: bool = False,
+    ) -> None:
+        skill_dir = root / "skillset" / "operator" / "isomer-admin-welcome"
+        skill_text = """
+            ---
+            name: isomer-admin-welcome
+            description: Manual invocation only; use when an Isomer Labs Project Operator Session needs welcome routing and visible usage paths.
+            ---
+
+            # Isomer Admin Welcome
+
+            ## Overview
+
+            Manual invocation only. This fixture shows the action-oriented welcome menu and keeps mutation inside owner skills.
+
+            ## When to Use
+
+            Use this skill for Isomer Labs option menus, path choice, visible usage paths, and read-only next-step recommendations.
+
+            ## Workflow
+
+            1. **Default option mode**: Select `show-options`.
+            2. **Visible usage path mode**: Select `start-research-manually` or `start-research-by-agent-team`.
+            3. **Routing and support mode**: Select `help`, `choose-path`, `show-skill-map`, or `next-step`.
+            4. **Read-only context mode**: Use read-only context checks only.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Usage Path Subcommands
+
+            These typical use cases are visible. Do not hide them inside `choose-path`.
+
+            | Subcommand | Intent | Owner Skill | Safe First Command | Detail |
+            | --- | --- | --- | --- | --- |
+            | `start-research-manually` | Manual research. | `isomer-admin-topic-creator` | `Use $isomer-admin-topic-creator fast-forward`. | [references/start-research-manually.md](references/start-research-manually.md) |
+            | `start-research-by-agent-team` | Team research. | `isomer-admin-topic-team-specialize` | `Use $isomer-admin-topic-team-specialize fast-forward`. | [references/start-research-by-agent-team.md](references/start-research-by-agent-team.md) |
+
+            ## Routing and Support Subcommands
+
+            | Subcommand | Use For | Detail |
+            | --- | --- | --- |
+            | `help` | Help. | [references/help.md](references/help.md) |
+            | `show-options` | Options. | [references/show-options.md](references/show-options.md) |
+            | `choose-path` | Path choice. | [references/choose-path.md](references/choose-path.md) |
+            | `show-skill-map` | Skill map. | [references/show-skill-map.md](references/show-skill-map.md) |
+            | `next-step` | Read-only next step. | [references/next-step.md](references/next-step.md) |
+
+            ## Output Contract
+
+            Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+            ### Essential Output
+
+            Report `status`, `interpreted_goal`, `recommended_workflow`, `owner_skill`, `safe_first_command`, `blockers`, and `next_action`.
+
+            ### Complete Output
+
+            Include `context_evidence`, `read_only_commands_run`, `alternate_owner_workflows`, `routing_rationale`, and `retired_route_exclusions`.
+
+            ## Guardrails
+
+            The skill is read-only and uses `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, and `isomer-cli project context show` only for inspection.
+            Route Project checks to `isomer-admin-project-mgr`, topic creation to `isomer-admin-topic-creator`, initialized-topic work to `isomer-admin-topic-mgr`, Topic Team work to `isomer-admin-topic-team-specialize`, and Houmao work to `isomer-admin-houmao-interop`.
+            Do not ask users or agents to invoke `isomer-admin-topic-workspace-mgr`, `isomer-admin-topic-prepare`, or `isomer-admin-manual-research-session`; they are retired.
+            Do not automatically route to `isomer-misc-tool-packs`; mention `isomer-misc-tool-packs` only as a manual skill when explicitly relevant.
+            """
+        if omit_skill_term is not None:
+            skill_text = skill_text.replace(omit_skill_term, "")
+        write(skill_dir / "SKILL.md", skill_text)
+        write(
+            skill_dir / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-admin-welcome"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-admin-welcome show-options to validate this fixture."
+            policy:
+              allow_implicit_invocation: false
+            """,
+        )
+        reference_texts = {
+            "help.md": """
+                # Help
+
+                ## Workflow
+
+                1. List usage paths and owner routes.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                | Subcommand | Purpose | Produces |
+                | --- | --- | --- |
+                | `start-research-manually` | Manual research. | Owner route. |
+                | `start-research-by-agent-team` | Agent Team research. | Owner route. |
+                | `show-options` | Options. | Menu. |
+                | `choose-path` | Choose. | Recommendation. |
+                | `show-skill-map` | Map. | Map. |
+                | `next-step` | Next step. | Read-only recommendation. |
+            """,
+            "show-options.md": """
+                # Show Options
+
+                ## Workflow
+
+                1. Print visible usage paths first and invite the user to invoke the named owner skill directly.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                Project setup or checks, Research Topic setup, Topic Team work, and Houmao interop all name owner skills.
+            """,
+            "choose-path.md": """
+                # Choose Path
+
+                ## Workflow
+
+                1. Interpret manual research or Domain Agent Team Template intent.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                This command recommends visible paths and reports `status`, `interpreted_goal`, `recommended_workflow`, `owner_skill`, `safe_first_command`, `blockers`, and `next_action`.
+            """,
+            "show-skill-map.md": """
+                # Show Skill Map
+
+                ## Workflow
+
+                1. Print Direct Invocation guidance.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                Use $isomer-admin-project-mgr, Use $isomer-admin-topic-creator, Use $isomer-admin-topic-mgr, Use $isomer-admin-topic-team-specialize, and Use $isomer-admin-houmao-interop.
+            """,
+            "next-step.md": """
+                # Next Step
+
+                ## Workflow
+
+                1. Run read-only Project inspection only.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                Use `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, and `isomer-cli project context show`. Do not run mutating commands.
+            """,
+            "start-research-manually.md": """
+                # Start Research Manually
+
+                ## Workflow
+
+                1. Recommend human-orchestrated research through `isomer-admin-topic-creator`.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                Use $isomer-admin-topic-creator fast-forward or Use $isomer-admin-topic-creator step-by-step. Report the mutation boundary.
+            """,
+            "start-research-by-agent-team.md": """
+                # Start Research by Agent Team
+
+                ## Workflow
+
+                1. Recommend Domain Agent Team Template specialization through `isomer-admin-topic-team-specialize`.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                Use $isomer-admin-topic-team-specialize fast-forward. Report the mutation boundary and route Houmao questions to `isomer-admin-houmao-interop`.
+            """,
+        }
+        for reference_name, reference_text in reference_texts.items():
+            if omit_reference_term is not None:
+                reference_text = reference_text.replace(omit_reference_term, "")
+            if omit_direct_owner is not None:
+                reference_text = reference_text.replace(f"Use ${omit_direct_owner}", f"Use {omit_direct_owner}")
+            write(skill_dir / "references" / reference_name, reference_text)
+        if active_retired_route:
+            help_path = skill_dir / "references" / "help.md"
+            help_path.write_text(help_path.read_text(encoding="utf-8") + "\nInvoke `isomer-admin-topic-prepare` as an active route.\n", encoding="utf-8")
+        if automatic_tool_pack_route:
+            help_path = skill_dir / "references" / "help.md"
+            help_path.write_text(help_path.read_text(encoding="utf-8") + "\nUse `isomer-misc-tool-packs` for tool setup.\n", encoding="utf-8")
+
     def write_deepsci_mini_guide(self, root: Path, *, omit_contract: bool = False) -> None:
         contract = "" if omit_contract else "contract"
         write(
@@ -868,6 +1056,100 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_global_isomer_cli_invocation(root, (root / "skillset",), code="SKL004")
 
         self.assertEqual([], messages(diagnostics))
+
+    def test_operator_validator_accepts_welcome_contract(self) -> None:
+        root = self.make_root()
+        self.write_welcome_skill(root)
+
+        diagnostics = validator.validate_welcome_module(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_operator_validator_requires_welcome_usage_paths_in_skill_md(self) -> None:
+        root = self.make_root()
+        self.write_welcome_skill(root, omit_skill_term="start-research-by-agent-team")
+
+        diagnostics = validator.validate_welcome_module(root)
+
+        self.assertIn("OPS011", codes(diagnostics))
+        self.assertTrue(any("start-research-by-agent-team" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_welcome_manual_invocation_policy(self) -> None:
+        root = self.make_root()
+        self.write_welcome_skill(root)
+        manifest_path = root / "skillset" / "operator" / "isomer-admin-welcome" / "agents" / "openai.yaml"
+        manifest_path.write_text(
+            manifest_path.read_text(encoding="utf-8").replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"),
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_welcome_module(root)
+
+        self.assertIn("OPS011", codes(diagnostics))
+        self.assertTrue(any("allow_implicit_invocation: false" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_welcome_direct_owner_invocation_language(self) -> None:
+        root = self.make_root()
+        self.write_welcome_skill(root, omit_direct_owner="isomer-admin-topic-mgr")
+
+        diagnostics = validator.validate_welcome_module(root)
+
+        self.assertIn("OPS011", codes(diagnostics))
+        self.assertTrue(any("direct invocation language for $isomer-admin-topic-mgr" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_welcome_active_retired_route(self) -> None:
+        root = self.make_root()
+        self.write_welcome_skill(root, active_retired_route=True)
+
+        diagnostics = validator.validate_welcome_module(root)
+
+        self.assertIn("OPS011", codes(diagnostics))
+        self.assertTrue(any("retired skill 'isomer-admin-topic-prepare'" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_welcome_automatic_tool_pack_route(self) -> None:
+        root = self.make_root()
+        self.write_welcome_skill(root, automatic_tool_pack_route=True)
+
+        diagnostics = validator.validate_welcome_module(root)
+
+        self.assertIn("OPS011", codes(diagnostics))
+        self.assertTrue(any("isomer-misc-tool-packs only as manual explicit routing" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_manifest_inventory_accepts_welcome_and_rejects_retired_entries(self) -> None:
+        root = self.make_root()
+        write(
+            root / "skillset" / "manifest.toml",
+            """
+            [groups.core]
+            skills = [
+              "operator/isomer-admin-welcome",
+              "operator/isomer-admin-project-mgr",
+            ]
+            """,
+        )
+
+        diagnostics = validator.validate_operator_manifest_inventory(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+        write(
+            root / "skillset" / "manifest.toml",
+            """
+            [groups.core]
+            skills = [
+              "operator/isomer-admin-topic-prepare",
+              "operator/isomer-admin-manual-research-session",
+            ]
+            """,
+        )
+
+        diagnostics = validator.validate_operator_manifest_inventory(root)
+
+        self.assertIn("OPS011", codes(diagnostics))
+        rendered = "\n".join(messages(diagnostics))
+        self.assertIn("operator/isomer-admin-welcome", rendered)
+        self.assertIn("operator/isomer-admin-topic-prepare", rendered)
+        self.assertIn("operator/isomer-admin-manual-research-session", rendered)
 
     def test_operator_validator_rejects_core_owned_heavy_operation_lists(self) -> None:
         root = self.make_root()
@@ -1633,6 +1915,59 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("copying the rendered block body" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_research_validator_requires_worker_output_policy_for_plain_file_guidance(self) -> None:
+        root = self.make_root()
+        skill_path = root / "skillset" / "research-paradigm" / "v2" / "isomer-rsch-write-v2" / "SKILL.md"
+        write(
+            skill_path,
+            """
+            # Isomer Research Write V2
+
+            ## Workflow
+
+            Write Markdown drafts, reports, local summaries, and paper builds.
+            """,
+        )
+        document = validator.research_validator.Document(
+            path=skill_path,
+            rel_repo="skillset/research-paradigm/v2/isomer-rsch-write-v2/SKILL.md",
+            rel_target="v2/isomer-rsch-write-v2/SKILL.md",
+            lines=tuple(skill_path.read_text(encoding="utf-8").splitlines()),
+            sections_by_line=(),
+            roles=frozenset({"v2", "active"}),
+        )
+        diagnostics: list[object] = []
+
+        validator.research_validator.validate_v2_worker_output_policy(document, root, diagnostics)
+
+        self.assertIn("RPS015", codes(diagnostics))
+        self.assertTrue(any("project outputs policy" in message for message in messages(diagnostics)), messages(diagnostics))
+
+        fixed_path = root / "skillset" / "research-paradigm" / "v2" / "isomer-rsch-paper-plot-v2" / "SKILL.md"
+        write(
+            fixed_path,
+            """
+            # Isomer Research Paper Plot V2
+
+            ## Workflow
+
+            Write CSVs and figures only after resolving `project outputs policy`; use an operation-specific child set and check `commit_after_operation`.
+            """,
+        )
+        fixed_document = validator.research_validator.Document(
+            path=fixed_path,
+            rel_repo="skillset/research-paradigm/v2/isomer-rsch-paper-plot-v2/SKILL.md",
+            rel_target="v2/isomer-rsch-paper-plot-v2/SKILL.md",
+            lines=tuple(fixed_path.read_text(encoding="utf-8").splitlines()),
+            sections_by_line=(),
+            roles=frozenset({"v2", "active"}),
+        )
+        fixed_diagnostics: list[object] = []
+
+        validator.research_validator.validate_v2_worker_output_policy(fixed_document, root, fixed_diagnostics)
+
+        self.assertEqual([], fixed_diagnostics)
 
     def test_service_validator_accepts_topic_env_setup_contract(self) -> None:
         root = self.make_root()

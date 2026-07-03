@@ -9,6 +9,8 @@ description: Use when a manuscript needs a Nature-ready Data Availability statem
 
 Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
 
+Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-rsch-shared-v2` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
+
 Nature Data maps every result-supporting dataset to an availability route before drafting prose. It inventories generated, processed, reused, restricted, source-data, software-output, model, table, image, and statistical-analysis materials, chooses repository and identifier strategy, drafts explicit statement text, and records missing fields without inventing accession details.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step references and copied source support files preserve the source skill's operative guidance while using native Isomer Research Topic, Research Inquiry, Research Task, Topic Workspace, and runtime-neutral handoff language.

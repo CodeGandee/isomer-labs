@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 import re
 from typing import Any, Mapping
@@ -47,6 +47,10 @@ TOPIC_ACTOR_ROLE_KINDS = ("operator", "scout", "coder", "experimenter", "analyst
 TOPIC_ACTOR_CONTROLLER_KINDS = ("project_operator_session", "operator_agent", "human_user", "houmao")
 TOPIC_ACTOR_STATUSES = ("planned", "ready", "active", "blocked", "stale", "archived")
 DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL = "topic.actors.workspace"
+TOPIC_ACTOR_OUTPUT_ROOT_LABEL = "topic.actors.output_root"
+AGENT_OUTPUT_ROOT_LABEL = "agent.output_root"
+WORKER_OUTPUT_OPERATION_SET_PATTERN = "sets/{timestamp}-{operation}-{shortid}"
+WORKER_OUTPUT_TRACKING_AUTHORITY = ".gitignore and Git status"
 _PATH_SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 
 
@@ -88,6 +92,9 @@ class TopicActorBinding:
     default_cwd_label: str = DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL
     workspace_label: str | None = DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL
     workspace_path: str | None = None
+    output_root: str | None = None
+    commit_after_operation: bool | None = None
+    allow_shared_output_root: bool = False
     branch: str | None = None
     controller_ref: str | None = None
     adapter_ref: str | None = None
@@ -120,6 +127,12 @@ class TopicActorBinding:
         }
         if self.workspace_path is not None:
             data["workspace_path"] = self.workspace_path
+        if self.output_root is not None:
+            data["output_root"] = self.output_root
+        if self.commit_after_operation is not None:
+            data["commit_after_operation"] = self.commit_after_operation
+        if self.allow_shared_output_root:
+            data["allow_shared_output_root"] = self.allow_shared_output_root
         if self.controller_ref is not None:
             data["controller_ref"] = self.controller_ref
         if self.adapter_ref is not None:
@@ -128,6 +141,36 @@ class TopicActorBinding:
             data["source_detail"] = self.source_detail
         if self.unsupported_fields:
             data["unsupported_fields"] = list(self.unsupported_fields)
+        return data
+
+
+@dataclass(frozen=True)
+class WorkerOutputPolicyConfig:
+    output_root: str | None = None
+    commit_after_operation: bool | None = None
+    allow_shared_output_root: bool = False
+    source_detail: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {}
+        if self.output_root is not None:
+            data["output_root"] = self.output_root
+        if self.commit_after_operation is not None:
+            data["commit_after_operation"] = self.commit_after_operation
+        if self.allow_shared_output_root:
+            data["allow_shared_output_root"] = self.allow_shared_output_root
+        if self.source_detail is not None:
+            data["source_detail"] = self.source_detail
+        return data
+
+
+@dataclass(frozen=True)
+class AgentOutputPolicyOverride(WorkerOutputPolicyConfig):
+    agent_name: str = ""
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {"agent_name": self.agent_name}
+        data.update(super().to_json())
         return data
 
 
@@ -141,6 +184,8 @@ class TopicWorkspaceManifest:
     bindings: tuple[TopicWorkspaceBinding, ...]
     exists: bool
     topic_actor_bindings: tuple[TopicActorBinding, ...] = ()
+    agent_output_defaults: WorkerOutputPolicyConfig = field(default_factory=WorkerOutputPolicyConfig)
+    agent_output_overrides: tuple[AgentOutputPolicyOverride, ...] = ()
 
     def active_bindings(self) -> tuple[TopicWorkspaceBinding, ...]:
         return tuple(binding for binding in self.bindings if binding.status == "active")
@@ -161,6 +206,9 @@ class TopicWorkspaceManifest:
             None,
         )
 
+    def agent_output_override_for(self, agent_name: str) -> AgentOutputPolicyOverride | None:
+        return next((override for override in self.agent_output_overrides if override.agent_name == agent_name), None)
+
     def to_json(self) -> dict[str, object]:
         return {
             "path": str(self.path),
@@ -171,6 +219,8 @@ class TopicWorkspaceManifest:
             "exists": self.exists,
             "bindings": [binding.to_json() for binding in self.bindings],
             "topic_actors": [binding.to_json() for binding in self.topic_actor_bindings],
+            "agent_output_defaults": self.agent_output_defaults.to_json(),
+            "agent_output_overrides": [override.to_json() for override in self.agent_output_overrides],
         }
 
 
@@ -221,6 +271,32 @@ class SemanticPathResult:
         if self.topic_actor_context_source is not None:
             data["topic_actor_context_source"] = self.topic_actor_context_source
         return data
+
+
+@dataclass(frozen=True)
+class WorkerOutputPolicyResult:
+    worker_kind: str
+    worker_name: str
+    output_root: SemanticPathResult
+    worker_relative_root: str
+    operation_set_pattern: str
+    commit_after_operation: bool
+    commit_after_operation_source: str
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "worker_kind": self.worker_kind,
+            "worker_name": self.worker_name,
+            "semantic_label": self.output_root.label,
+            "absolute_root": str(self.output_root.path),
+            "worker_relative_root": self.worker_relative_root,
+            "output_root": self.output_root.to_json(),
+            "operation_set_pattern": self.operation_set_pattern,
+            "commit_after_operation": self.commit_after_operation,
+            "commit_after_operation_source": self.commit_after_operation_source,
+            "tracking_authority": WORKER_OUTPUT_TRACKING_AUTHORITY,
+            "tracking_note": ".gitignore and Git status control whether output files are tracked or committable.",
+        }
 
 
 @dataclass(frozen=True)
@@ -365,11 +441,30 @@ def parse_topic_workspace_manifest(path: Path, raw: Mapping[str, Any]) -> TopicW
                     default_cwd_label=_string(item.get("default_cwd_label")) or DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL,
                     workspace_label=_string(item.get("workspace_label")) or DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL,
                     workspace_path=_string(item.get("workspace_path") or item.get("path")),
+                    output_root=_string(item.get("output_root")),
+                    commit_after_operation=_bool_or_none(item.get("commit_after_operation")),
+                    allow_shared_output_root=bool(item.get("allow_shared_output_root")) if isinstance(item.get("allow_shared_output_root"), bool) else False,
                     branch=_string(item.get("branch")),
                     controller_ref=_string(item.get("controller_ref")),
                     adapter_ref=_string(item.get("adapter_ref")),
                     source_detail=f"{path.name}:{table_name}[{index}]",
                     unsupported_fields=unsupported_fields,
+                )
+            )
+    agent_output_defaults = _parse_worker_output_policy_config(path, raw.get("agent_output_defaults"), "agent_output_defaults")
+    agent_output_overrides: list[AgentOutputPolicyOverride] = []
+    for table_name in ("agent_output_overrides", "agent_output_bindings"):
+        for index, item in enumerate(_table_items(raw.get(table_name))):
+            agent_name = _string(item.get("agent_name") or item.get("name"))
+            if agent_name is None:
+                continue
+            agent_output_overrides.append(
+                AgentOutputPolicyOverride(
+                    agent_name=agent_name,
+                    output_root=_string(item.get("output_root")),
+                    commit_after_operation=_bool_or_none(item.get("commit_after_operation")),
+                    allow_shared_output_root=bool(item.get("allow_shared_output_root")) if isinstance(item.get("allow_shared_output_root"), bool) else False,
+                    source_detail=f"{path.name}:{table_name}[{index}]",
                 )
             )
     return TopicWorkspaceManifest(
@@ -380,6 +475,8 @@ def parse_topic_workspace_manifest(path: Path, raw: Mapping[str, Any]) -> TopicW
         layout_profile=_string(raw.get("layout_profile")) or DEFAULT_LAYOUT_PROFILE,
         bindings=tuple(bindings),
         topic_actor_bindings=tuple(topic_actor_bindings),
+        agent_output_defaults=agent_output_defaults,
+        agent_output_overrides=tuple(agent_output_overrides),
         exists=True,
     )
 
@@ -514,6 +611,7 @@ def validate_topic_workspace_manifest(
                 )
             )
         seen_actor_names.add(actor.topic_actor_name)
+    diagnostics.extend(_validate_agent_output_policy(context, manifest))
     return diagnostics
 
 
@@ -601,7 +699,7 @@ def _validate_topic_actor_binding(
                 message="Topic Actor name must be path-safe and contain only letters, numbers, dots, underscores, or hyphens.",
             )
         )
-    for field, value, allowed in (
+    for field_name, value, allowed in (
         ("actor_kind", binding.actor_kind, TOPIC_ACTOR_KINDS),
         ("runtime_kind", binding.runtime_kind, TOPIC_ACTOR_RUNTIME_KINDS),
         ("role_kind", binding.role_kind, TOPIC_ACTOR_ROLE_KINDS),
@@ -615,8 +713,8 @@ def _validate_topic_actor_binding(
                     severity="error",
                     concept="Topic Workspace Manifest",
                     path=manifest_path,
-                    field=field,
-                    message=f"Unsupported Topic Actor {field}: {value}. Use a supported value or a custom.* extension.",
+                    field=field_name,
+                    message=f"Unsupported Topic Actor {field_name}: {value}. Use a supported value or a custom.* extension.",
                 )
             )
     if binding.unsupported_fields:
@@ -659,6 +757,21 @@ def _validate_topic_actor_binding(
     if binding.workspace_path is not None:
         workspace_path = resolve_project_path(context.project.root, binding.workspace_path)
         diagnostics.extend(_path_safety_diagnostics(context, workspace_path, "topic_actor.workspace_path", manifest_path, scope="topic_actor"))
+    if binding.output_root is not None:
+        workspace_path = _topic_actor_workspace_path_from_binding(context, binding)
+        diagnostics.extend(
+            _validate_worker_output_root(
+                context,
+                manifest_path,
+                field=f"topic_actors.{binding.topic_actor_name}.output_root",
+                output_root=binding.output_root,
+                workspace_path=workspace_path,
+                scope="topic_actor",
+                identity_placeholder="{topic_actor_name}",
+                identity_value=binding.topic_actor_name,
+                allow_shared=binding.allow_shared_output_root,
+            )
+        )
     branch = binding.effective_branch
     branch_prefix = f"per-topic-actor/{binding.topic_actor_name}/"
     if not branch.startswith(branch_prefix):
@@ -673,6 +786,138 @@ def _validate_topic_actor_binding(
             )
         )
     return diagnostics
+
+
+def _validate_agent_output_policy(context: EffectiveTopicContext, manifest: TopicWorkspaceManifest) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    defaults = manifest.agent_output_defaults
+    if defaults.output_root is not None:
+        default_workspace = default_path_for_label(context, "agent.workspace", agent_name="agent-name-required")
+        diagnostics.extend(
+            _validate_worker_output_root(
+                context,
+                manifest.path,
+                field="agent_output_defaults.output_root",
+                output_root=defaults.output_root,
+                workspace_path=default_workspace,
+                scope="agent",
+                identity_placeholder="{agent_name}",
+                identity_value=None,
+                allow_shared=defaults.allow_shared_output_root,
+            )
+        )
+    seen_agents: set[str] = set()
+    for override in manifest.agent_output_overrides:
+        if not _PATH_SAFE_NAME_RE.match(override.agent_name):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO060",
+                    severity="error",
+                    concept="Topic Workspace Manifest",
+                    path=manifest.path,
+                    field="agent_output_overrides.agent_name",
+                    message="Agent output override agent_name must be path-safe and contain only letters, numbers, dots, underscores, or hyphens.",
+                )
+            )
+        if override.agent_name in seen_agents:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO060",
+                    severity="error",
+                    concept="Topic Workspace Manifest",
+                    path=manifest.path,
+                    field=override.agent_name,
+                    message="Duplicate active Agent output override.",
+                )
+            )
+        seen_agents.add(override.agent_name)
+        if override.output_root is not None:
+            workspace_path = default_path_for_label(context, "agent.workspace", agent_name=override.agent_name)
+            diagnostics.extend(
+                _validate_worker_output_root(
+                    context,
+                    manifest.path,
+                    field=f"agent_output_overrides.{override.agent_name}.output_root",
+                    output_root=override.output_root,
+                    workspace_path=workspace_path,
+                    scope="agent",
+                    identity_placeholder="{agent_name}",
+                    identity_value=override.agent_name,
+                    allow_shared=override.allow_shared_output_root,
+                )
+            )
+    return diagnostics
+
+
+def _topic_actor_workspace_path_from_binding(context: EffectiveTopicContext, binding: TopicActorBinding) -> Path:
+    if binding.workspace_path is not None:
+        return resolve_project_path(context.project.root, binding.workspace_path)
+    return default_path_for_label(context, DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL, agent_name=None, topic_actor_name=binding.topic_actor_name)
+
+
+def _validate_worker_output_root(
+    context: EffectiveTopicContext,
+    manifest_path: Path,
+    *,
+    field: str,
+    output_root: str,
+    workspace_path: Path,
+    scope: str,
+    identity_placeholder: str,
+    identity_value: str | None,
+    allow_shared: bool,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    candidate = Path(output_root).expanduser()
+    if candidate.is_absolute():
+        diagnostics.append(_worker_output_root_error(manifest_path, field, "Worker output root must be relative to the worker private workspace."))
+        return diagnostics
+    if any(part == ".." for part in candidate.parts):
+        diagnostics.append(_worker_output_root_error(manifest_path, field, "Worker output root must not contain parent traversal."))
+        return diagnostics
+    resolved = _resolve_worker_relative_template(
+        workspace_path,
+        output_root,
+        agent_name=identity_value if identity_placeholder == "{agent_name}" else None,
+        topic_actor_name=identity_value if identity_placeholder == "{topic_actor_name}" else None,
+    )
+    diagnostics.extend(_path_safety_diagnostics(context, resolved, field, manifest_path, scope=scope))
+    if not is_within(resolved, workspace_path):
+        diagnostics.append(_worker_output_root_error(manifest_path, field, "Worker output root must stay inside the selected worker workspace."))
+    if not allow_shared and not _output_root_names_worker(output_root, identity_placeholder, identity_value):
+        diagnostics.append(
+            Diagnostic(
+                code="ISO060",
+                severity="warning",
+                concept="Topic Workspace Manifest",
+                path=manifest_path,
+                field=field,
+                message=(
+                    "Configured worker output root omits the worker identity; include "
+                    f"`{identity_placeholder}` or the concrete worker name, or set allow_shared_output_root = true."
+                ),
+            )
+        )
+    return diagnostics
+
+
+def _worker_output_root_error(path: Path, field: str, message: str) -> Diagnostic:
+    return Diagnostic(
+        code="ISO060",
+        severity="error",
+        concept="Topic Workspace Manifest",
+        path=path,
+        field=field,
+        message=message,
+    )
+
+
+def _output_root_names_worker(output_root: str, identity_placeholder: str, identity_value: str | None) -> bool:
+    if identity_placeholder in output_root:
+        return True
+    if identity_value is None:
+        return False
+    return identity_value in Path(output_root).parts
 
 
 def resolve_semantic_binding(
@@ -752,6 +997,26 @@ def resolve_semantic_binding(
         diagnostics.extend(_path_safety_diagnostics(context, result.path, label, None, scope=surface.scope))
         diagnostics.extend(_tmp_surface_boundary_diagnostics(context, label, result.path, env=env, agent_context=agent_context, topic_actor_context=topic_actor_context))
         return result if not any(d.is_error for d in diagnostics) else None, diagnostics
+    configured_worker_output = _configured_worker_output_result(
+        context,
+        manifest,
+        surface,
+        label,
+        agent_context=agent_context,
+        topic_actor_context=topic_actor_context,
+    )
+    if configured_worker_output is not None:
+        result = configured_worker_output
+        diagnostics.extend(_path_safety_diagnostics(context, result.path, label, manifest.path, scope=surface.scope))
+        diagnostics.extend(
+            _worker_output_scope_diagnostics(
+                result.path,
+                label,
+                agent_context=agent_context,
+                topic_actor_context=topic_actor_context,
+            )
+        )
+        return result if not any(d.is_error for d in diagnostics) else None, diagnostics
     if binding is not None:
         path = resolve_binding_path(
             context,
@@ -768,6 +1033,70 @@ def resolve_semantic_binding(
     diagnostics.extend(_path_safety_diagnostics(context, result.path, label, None, scope=surface.scope))
     diagnostics.extend(_tmp_surface_boundary_diagnostics(context, label, result.path, env=env, agent_context=agent_context, topic_actor_context=topic_actor_context))
     return result if not any(d.is_error for d in diagnostics) else None, diagnostics
+
+
+def resolve_worker_output_policy(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    agent_context: EffectiveAgentContext | None = None,
+    topic_actor_context: EffectiveTopicActorContext | None = None,
+) -> tuple[WorkerOutputPolicyResult | None, list[Diagnostic]]:
+    diagnostics: list[Diagnostic] = []
+    if (agent_context is None) == (topic_actor_context is None):
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Worker Output Policy",
+                message="Resolve worker output policy with exactly one Agent or Topic Actor context.",
+            )
+        )
+        return None, diagnostics
+    manifest, manifest_diagnostics = load_topic_workspace_manifest(context)
+    diagnostics.extend(manifest_diagnostics)
+    if any(d.is_error for d in diagnostics):
+        return None, diagnostics
+    if topic_actor_context is not None:
+        label = TOPIC_ACTOR_OUTPUT_ROOT_LABEL
+        root, root_diagnostics = resolve_semantic_binding(context, label, env=env, topic_actor_context=topic_actor_context)
+        diagnostics.extend(root_diagnostics)
+        if root is None:
+            return None, diagnostics
+        workspace_path = topic_actor_context.topic_actor_workspace_path
+        relative_root = _relative_to_worker_workspace(root.path, workspace_path)
+        commit, commit_source = _effective_topic_actor_commit_after_operation(manifest, topic_actor_context.topic_actor_name)
+        return (
+            WorkerOutputPolicyResult(
+                worker_kind="topic_actor",
+                worker_name=topic_actor_context.topic_actor_name,
+                output_root=root,
+                worker_relative_root=relative_root,
+                operation_set_pattern=WORKER_OUTPUT_OPERATION_SET_PATTERN,
+                commit_after_operation=commit,
+                commit_after_operation_source=commit_source,
+            ),
+            diagnostics,
+        )
+    assert agent_context is not None
+    root, root_diagnostics = resolve_semantic_binding(context, AGENT_OUTPUT_ROOT_LABEL, env=env, agent_context=agent_context)
+    diagnostics.extend(root_diagnostics)
+    if root is None:
+        return None, diagnostics
+    relative_root = _relative_to_worker_workspace(root.path, agent_context.agent_workspace_path)
+    commit, commit_source = _effective_agent_commit_after_operation(manifest, agent_context.agent_name)
+    return (
+        WorkerOutputPolicyResult(
+            worker_kind="agent",
+            worker_name=agent_context.agent_name,
+            output_root=root,
+            worker_relative_root=relative_root,
+            operation_set_pattern=WORKER_OUTPUT_OPERATION_SET_PATTERN,
+            commit_after_operation=commit,
+            commit_after_operation_source=commit_source,
+        ),
+        diagnostics,
+    )
 
 
 def default_path_for_label(
@@ -790,6 +1119,88 @@ def resolve_binding_path(
 ) -> Path:
     path = _resolve_template(context.topic_workspace_path, binding.path_template, agent_name=agent_name, topic_actor_name=topic_actor_name)
     return path
+
+
+def _configured_worker_output_result(
+    context: EffectiveTopicContext,
+    manifest: TopicWorkspaceManifest,
+    surface: SemanticSurface,
+    label: str,
+    *,
+    agent_context: EffectiveAgentContext | None,
+    topic_actor_context: EffectiveTopicActorContext | None,
+) -> SemanticPathResult | None:
+    if label == TOPIC_ACTOR_OUTPUT_ROOT_LABEL and topic_actor_context is not None:
+        binding = topic_actor_context.binding or manifest.topic_actor_binding_for(topic_actor_context.topic_actor_name)
+        if binding is None or binding.output_root is None:
+            return None
+        path = _resolve_worker_relative_template(
+            topic_actor_context.topic_actor_workspace_path,
+            binding.output_root,
+            agent_name=None,
+            topic_actor_name=topic_actor_context.topic_actor_name,
+        )
+        return _result(context, surface, path, "worker_output_policy", binding.source_detail or str(manifest.path), None, topic_actor_context)
+    if label == AGENT_OUTPUT_ROOT_LABEL and agent_context is not None:
+        policy = manifest.agent_output_override_for(agent_context.agent_name) or manifest.agent_output_defaults
+        if policy.output_root is None:
+            return None
+        path = _resolve_worker_relative_template(
+            agent_context.agent_workspace_path,
+            policy.output_root,
+            agent_name=agent_context.agent_name,
+            topic_actor_name=None,
+        )
+        return _result(context, surface, path, "worker_output_policy", policy.source_detail or str(manifest.path), agent_context, None)
+    return None
+
+
+def _effective_topic_actor_commit_after_operation(manifest: TopicWorkspaceManifest, topic_actor_name: str) -> tuple[bool, str]:
+    binding = manifest.topic_actor_binding_for(topic_actor_name)
+    if binding is not None and binding.commit_after_operation is not None:
+        return binding.commit_after_operation, binding.source_detail or str(manifest.path)
+    return False, DEFAULT_PROFILE_SOURCE
+
+
+def _effective_agent_commit_after_operation(manifest: TopicWorkspaceManifest, agent_name: str) -> tuple[bool, str]:
+    override = manifest.agent_output_override_for(agent_name)
+    if override is not None and override.commit_after_operation is not None:
+        return override.commit_after_operation, override.source_detail or str(manifest.path)
+    if manifest.agent_output_defaults.commit_after_operation is not None:
+        return manifest.agent_output_defaults.commit_after_operation, manifest.agent_output_defaults.source_detail or str(manifest.path)
+    return False, DEFAULT_PROFILE_SOURCE
+
+
+def _relative_to_worker_workspace(path: Path, workspace_path: Path) -> str:
+    try:
+        return path.relative_to(workspace_path).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _worker_output_scope_diagnostics(
+    path: Path,
+    label: str,
+    *,
+    agent_context: EffectiveAgentContext | None,
+    topic_actor_context: EffectiveTopicActorContext | None,
+) -> list[Diagnostic]:
+    workspace_path = None
+    if agent_context is not None:
+        workspace_path = agent_context.agent_workspace_path
+    if topic_actor_context is not None:
+        workspace_path = topic_actor_context.topic_actor_workspace_path
+    if workspace_path is None or is_within(path, workspace_path):
+        return []
+    return [
+        Diagnostic(
+            code="ISO005",
+            severity="error",
+            concept="Workspace Path Resolution",
+            field=label,
+            message="Resolved worker output root points outside the selected worker workspace.",
+        )
+    ]
 
 
 def _default_path_for_result(
@@ -1283,10 +1694,34 @@ def render_topic_workspace_manifest(manifest: TopicWorkspaceManifest) -> str:
         )
         if actor.workspace_path is not None:
             lines.append(f"workspace_path = {_toml_string(actor.workspace_path)}")
+        if actor.output_root is not None:
+            lines.append(f"output_root = {_toml_string(actor.output_root)}")
+        if actor.commit_after_operation is not None:
+            lines.append(f"commit_after_operation = {_toml_bool(actor.commit_after_operation)}")
+        if actor.allow_shared_output_root:
+            lines.append("allow_shared_output_root = true")
         if actor.controller_ref is not None:
             lines.append(f"controller_ref = {_toml_string(actor.controller_ref)}")
         if actor.adapter_ref is not None:
             lines.append(f"adapter_ref = {_toml_string(actor.adapter_ref)}")
+        lines.append("")
+    if manifest.agent_output_defaults.to_json():
+        lines.extend(["[agent_output_defaults]"])
+        if manifest.agent_output_defaults.output_root is not None:
+            lines.append(f"output_root = {_toml_string(manifest.agent_output_defaults.output_root)}")
+        if manifest.agent_output_defaults.commit_after_operation is not None:
+            lines.append(f"commit_after_operation = {_toml_bool(manifest.agent_output_defaults.commit_after_operation)}")
+        if manifest.agent_output_defaults.allow_shared_output_root:
+            lines.append("allow_shared_output_root = true")
+        lines.append("")
+    for override in sorted(manifest.agent_output_overrides, key=lambda item: item.agent_name):
+        lines.extend(["[[agent_output_overrides]]", f"agent_name = {_toml_string(override.agent_name)}"])
+        if override.output_root is not None:
+            lines.append(f"output_root = {_toml_string(override.output_root)}")
+        if override.commit_after_operation is not None:
+            lines.append(f"commit_after_operation = {_toml_bool(override.commit_after_operation)}")
+        if override.allow_shared_output_root:
+            lines.append("allow_shared_output_root = true")
         lines.append("")
     return "\n".join(lines)
 
@@ -1413,6 +1848,24 @@ def _resolve_template(
     if candidate.is_absolute():
         return candidate.resolve(strict=False)
     return (topic_workspace_path / candidate).resolve(strict=False)
+
+
+def _resolve_worker_relative_template(
+    workspace_path: Path,
+    template: str,
+    *,
+    agent_name: str | None,
+    topic_actor_name: str | None,
+) -> Path:
+    value = template
+    if agent_name is not None:
+        value = value.replace("{agent_name}", agent_name)
+    if topic_actor_name is not None:
+        value = value.replace("{topic_actor_name}", topic_actor_name)
+    candidate = Path(value).expanduser()
+    if candidate.is_absolute():
+        return candidate.resolve(strict=False)
+    return (workspace_path / candidate).resolve(strict=False)
 
 
 def _path_safety_diagnostics(
@@ -1563,7 +2016,10 @@ def _tmp_boundary_diagnostic(path: Path | None, label: str, message: str) -> Dia
 
 
 def _validate_agent_workspace_template(binding: TopicWorkspaceBinding, path: Path) -> list[Diagnostic]:
-    _, _, issue = match_agent_name_from_template(Path("/topic-workspace"), binding.path_template, Path("/topic-workspace/agents/example"))
+    if binding.label == "agent.workspace":
+        _, _, issue = match_agent_name_from_template(Path("/topic-workspace"), binding.path_template, Path("/topic-workspace/agents/example"))
+    else:
+        issue = _agent_scoped_template_issue(binding.path_template)
     if issue is None:
         return []
     return [
@@ -1578,15 +2034,43 @@ def _validate_agent_workspace_template(binding: TopicWorkspaceBinding, path: Pat
     ]
 
 
+def _agent_scoped_template_issue(template: str) -> str | None:
+    parts = Path(template).parts
+    if "{agent_name}" not in parts:
+        return "agent-scoped semantic path template must contain {agent_name} as a path segment."
+    if any("{agent_name}" in part and part != "{agent_name}" for part in parts):
+        return "{agent_name} must occupy a whole path segment."
+    return None
+
+
 def _table_items(value: object) -> list[Mapping[str, Any]]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, Mapping)]
 
 
+def _parse_worker_output_policy_config(path: Path, value: object, table_name: str) -> WorkerOutputPolicyConfig:
+    if not isinstance(value, Mapping):
+        return WorkerOutputPolicyConfig()
+    return WorkerOutputPolicyConfig(
+        output_root=_string(value.get("output_root")),
+        commit_after_operation=_bool_or_none(value.get("commit_after_operation")),
+        allow_shared_output_root=bool(value.get("allow_shared_output_root")) if isinstance(value.get("allow_shared_output_root"), bool) else False,
+        source_detail=f"{path.name}:{table_name}",
+    )
+
+
 def _string(value: object) -> str | None:
     return value if isinstance(value, str) and value else None
 
 
+def _bool_or_none(value: object) -> bool | None:
+    return value if isinstance(value, bool) else None
+
+
 def _toml_string(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _toml_bool(value: bool) -> str:
+    return "true" if value else "false"

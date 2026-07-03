@@ -125,6 +125,7 @@ from isomer_labs.semantic_surfaces import storage_profile_by_id
 AGENT_TEAM_INSTANCE_PATH_LABELS = (
     "agent.workspace",
     "agent.isomer_managed",
+    "agent.output_root",
     "agent.owned",
     "agent.runtime",
     "agent.private_artifacts",

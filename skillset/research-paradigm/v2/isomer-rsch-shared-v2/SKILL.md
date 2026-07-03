@@ -11,6 +11,16 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Shared defines the coordination contract for v2 research skills. It is not migrated from one upstream source skill; it exists to keep v2 skill handoffs, route decisions, placeholder usage, and storage-binding cautions consistent across the refactor-migrated skills.
 
+## Worker Output Policy
+
+Before a v2 research skill writes plain generated files, resolve the current worker output policy with `isomer-cli --print-json project outputs policy --topic <research-topic-id> --agent <agent-name>` for a formal Agent Workspace or `isomer-cli --print-json project outputs policy --topic <research-topic-id> --topic-actor <topic-actor-name>` for a Topic Actor Workspace. Use the returned `absolute_root`, `worker_relative_root`, `operation_set_pattern`, `tracking_authority`, and `commit_after_operation`.
+
+Write operation-local plain text outputs under an operation-specific child set of the resolved root, using the operation-set pattern, for example `<absolute_root>/sets/<timestamp>-<operation>-<shortid>/`. This applies to JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, and other plain files that are not yet accepted durable records.
+
+Do not invent a separate tracking policy. `.gitignore` and Git status control whether files under the output root are tracked or committable. After a file-writing research operation, check `commit_after_operation`; when it is true, commit the changed worker workspace according to the current Git status, and when it is false, leave the files uncommitted and report their paths.
+
+Preserve durable record guidance: accepted Artifacts, Evidence Items, Runs, Decision Records, View Manifests, Provenance Records, and other structured research records still use their record bindings, `topic.records.*`, or the skill's placeholder-binding instructions. Worker output roots are for pre-promotion or operation-local plain files, not a replacement for durable semantic records.
+
 ## When to Use
 
 Use this skill when:

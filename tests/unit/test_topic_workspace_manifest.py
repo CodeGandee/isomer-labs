@@ -7,7 +7,7 @@ from pathlib import Path
 
 from isomer_labs.context import resolve_effective_topic_context
 from isomer_labs.models import EffectiveTopicContext, SelectionRequest
-from isomer_labs.paths import resolve_semantic_path
+from isomer_labs.paths import resolve_effective_agent_context, resolve_effective_topic_actor_context, resolve_semantic_path
 from isomer_labs.project import discover_project
 from isomer_labs.topic_workspace_manifest import (
     DEFAULT_LAYOUT_PROFILE,
@@ -19,6 +19,7 @@ from isomer_labs.topic_workspace_manifest import (
     parse_topic_workspace_manifest,
     render_topic_workspace_manifest,
     resolve_semantic_binding,
+    resolve_worker_output_policy,
 )
 from isomer_labs.validation import build_project_state
 
@@ -246,6 +247,131 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         _, diagnostics = load_topic_workspace_manifest(context)
 
         self.assertTrue(any("Unsupported Topic Actor actor_kind" in diagnostic.message for diagnostic in diagnostics), diagnostics)
+
+    def test_worker_output_policy_resolves_actor_and_agent_overrides(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[topic_actors]]
+            topic_actor_name = "operator"
+            actor_kind = "operator"
+            runtime_kind = "codex"
+            role_kind = "operator"
+            controller_kind = "project_operator_session"
+            output_root = "isomer-managed/worker-output/topic-actors/operator"
+            commit_after_operation = true
+            status = "ready"
+
+            [agent_output_defaults]
+            output_root = "isomer-managed/worker-output/agents/{agent_name}"
+            commit_after_operation = false
+
+            [[agent_output_overrides]]
+            agent_name = "alice"
+            output_root = "custom-output/{agent_name}"
+            commit_after_operation = true
+            """,
+        )
+
+        manifest, diagnostics = load_topic_workspace_manifest(context)
+        self.assertEqual([], diagnostics)
+        actor = manifest.topic_actor_binding_for("operator")
+        self.assertIsNotNone(actor)
+        assert actor is not None
+        self.assertEqual("isomer-managed/worker-output/topic-actors/operator", actor.output_root)
+        self.assertTrue(actor.commit_after_operation)
+
+        actor_root, actor_root_diagnostics = resolve_semantic_path(
+            context,
+            "topic.actors.output_root",
+            env={},
+            cwd=context.topic_workspace_path,
+            topic_actor_name="operator",
+            use_path_plan=False,
+        )
+        self.assertEqual([], actor_root_diagnostics)
+        self.assertIsNotNone(actor_root)
+        assert actor_root is not None
+        self.assertEqual(context.topic_workspace_path / "actors" / "operator" / "isomer-managed" / "worker-output" / "topic-actors" / "operator", actor_root.path)
+        self.assertEqual("worker_output_policy", actor_root.source)
+
+        agent_root, agent_root_diagnostics = resolve_semantic_path(
+            context,
+            "agent.output_root",
+            env={},
+            cwd=context.topic_workspace_path,
+            agent_name="alice",
+            use_path_plan=False,
+        )
+        self.assertEqual([], agent_root_diagnostics)
+        self.assertIsNotNone(agent_root)
+        assert agent_root is not None
+        self.assertEqual(context.topic_workspace_path / "agents" / "alice" / "custom-output" / "alice", agent_root.path)
+        self.assertEqual("worker_output_policy", agent_root.source)
+
+        actor_context, actor_context_diagnostics = resolve_effective_topic_actor_context(
+            context,
+            env={},
+            cwd=context.topic_workspace_path,
+            explicit_topic_actor_name="operator",
+        )
+        self.assertEqual([], actor_context_diagnostics)
+        assert actor_context is not None
+        actor_policy, actor_policy_diagnostics = resolve_worker_output_policy(context, env={}, topic_actor_context=actor_context)
+        self.assertEqual([], actor_policy_diagnostics)
+        self.assertIsNotNone(actor_policy)
+        assert actor_policy is not None
+        self.assertTrue(actor_policy.commit_after_operation)
+        self.assertEqual("isomer-managed/worker-output/topic-actors/operator", actor_policy.worker_relative_root)
+
+        agent_context, agent_context_diagnostics = resolve_effective_agent_context(
+            context,
+            env={},
+            cwd=context.topic_workspace_path,
+            explicit_agent_name="alice",
+        )
+        self.assertEqual([], agent_context_diagnostics)
+        assert agent_context is not None
+        agent_policy, agent_policy_diagnostics = resolve_worker_output_policy(context, env={}, agent_context=agent_context)
+        self.assertEqual([], agent_policy_diagnostics)
+        self.assertIsNotNone(agent_policy)
+        assert agent_policy is not None
+        self.assertTrue(agent_policy.commit_after_operation)
+        self.assertEqual("custom-output/alice", agent_policy.worker_relative_root)
+
+    def test_worker_output_root_validation_rejects_escape_and_warns_on_shared_root(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[topic_actors]]
+            topic_actor_name = "operator"
+            actor_kind = "operator"
+            runtime_kind = "codex"
+            role_kind = "operator"
+            controller_kind = "project_operator_session"
+            output_root = "../shared"
+            status = "ready"
+
+            [[agent_output_overrides]]
+            agent_name = "alice"
+            output_root = "shared-output"
+            """,
+        )
+
+        _, diagnostics = load_topic_workspace_manifest(context)
+
+        self.assertTrue(any("must not contain parent traversal" in diagnostic.message for diagnostic in diagnostics), diagnostics)
+        self.assertTrue(any(diagnostic.severity == "warning" and "omits the worker identity" in diagnostic.message for diagnostic in diagnostics), diagnostics)
 
     def test_default_profile_resolves_topic_main_projection_labels(self) -> None:
         context = self.make_context()

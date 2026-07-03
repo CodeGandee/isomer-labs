@@ -104,6 +104,14 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             if v2
             else "2. **Record output**. Use Research Topic, Artifacts, and Decision Records."
         )
+        shared_worker_policy = (
+            (
+                "## Worker Output Policy\n\n"
+                "            Resolve `project outputs policy`, write plain generated files under an operation-specific child set, respect `.gitignore`, and check `commit_after_operation`.\n"
+            )
+            if name == "isomer-rsch-shared-v2"
+            else ""
+        )
         routing_line = f"- `{reference}` for local terminology." if reference else "- Read `isomer-rsch-shared-v2` for placeholder semantics."
         write(
             target / name / "SKILL.md",
@@ -118,6 +126,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             ## Overview
 
             Use this fixture for validator tests.
+
+            {shared_worker_policy}
 
             ## Workflow
 

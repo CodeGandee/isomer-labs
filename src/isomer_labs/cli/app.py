@@ -55,8 +55,10 @@ from isomer_labs.paths import (
     resolve_semantic_path,
 )
 from isomer_labs.topic_workspace_manifest import (
+    WORKER_OUTPUT_TRACKING_AUTHORITY,
     register_manifest_binding,
     reset_manifest_binding,
+    resolve_worker_output_policy,
     unregister_manifest_binding,
     update_manifest_binding,
 )
@@ -168,6 +170,7 @@ Command surface:
   project self paths
   project self queries
   project repos create
+  project outputs policy
   project paths default
   project paths explain
   project paths get
@@ -1054,6 +1057,60 @@ def _cmd_paths_get(options: CliOptions, semantic_label: str) -> int:
         if result.topic_actor_name is not None:
             lines.append(f"Topic Actor: {result.topic_actor_name}")
     return _emit("paths get", options, payload, diagnostics, lines)
+
+
+def _cmd_outputs_policy(options: CliOptions) -> int:
+    context, diagnostics = _context_for_path_options(options, "agent.output_root")
+    policy = None
+    if context is not None:
+        agent_name = _value(options, "agent_name")
+        topic_actor_name = _value(options, "topic_actor_name")
+        if bool(agent_name) == bool(topic_actor_name):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO061",
+                    severity="error",
+                    concept="Worker Output Policy",
+                    message="Use exactly one of `--agent` or `--topic-actor`.",
+                )
+            )
+        elif agent_name:
+            agent_context, agent_diagnostics = resolve_effective_agent_context(
+                context,
+                env=os.environ,
+                cwd=Path.cwd(),
+                explicit_agent_name=agent_name,
+            )
+            diagnostics.extend(agent_diagnostics)
+            if agent_context is not None:
+                policy, policy_diagnostics = resolve_worker_output_policy(context, env=os.environ, agent_context=agent_context)
+                diagnostics.extend(policy_diagnostics)
+        elif topic_actor_name:
+            topic_actor_context, actor_diagnostics = resolve_effective_topic_actor_context(
+                context,
+                env=os.environ,
+                cwd=Path.cwd(),
+                explicit_topic_actor_name=topic_actor_name,
+            )
+            diagnostics.extend(actor_diagnostics)
+            if topic_actor_context is not None:
+                policy, policy_diagnostics = resolve_worker_output_policy(context, env=os.environ, topic_actor_context=topic_actor_context)
+                diagnostics.extend(policy_diagnostics)
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": False,
+        "output_policy": policy.to_json() if policy is not None else None,
+    }
+    lines: list[str] = []
+    if policy is not None:
+        lines = [
+            f"{policy.worker_kind} {policy.worker_name}: {policy.output_root.path}",
+            f"Relative root: {policy.worker_relative_root}",
+            f"Operation sets: {policy.operation_set_pattern}",
+            f"Commit after operation: {str(policy.commit_after_operation).lower()}",
+            f"Tracking authority: {WORKER_OUTPUT_TRACKING_AUTHORITY}",
+        ]
+    return _emit("outputs policy", options, payload, diagnostics, lines)
 
 
 def _resolve_topic_main_guidance_repo(options: CliOptions) -> tuple[Path | None, list[Diagnostic]]:

@@ -13,6 +13,7 @@ from isomer_labs.cli.app import (
     _cmd_paths_default,
     _cmd_paths_explain,
     _cmd_init,
+    _cmd_outputs_policy,
     _cmd_paths_get,
     _cmd_paths_list,
     _cmd_paths_materialize,
@@ -1231,6 +1232,53 @@ def register_project_commands(app: click.Group) -> None:
     @app.group(name="paths", help="Workspace Path Resolution commands.")
     def paths_group() -> None:
         pass
+
+    @app.group(name="outputs", help="Worker output policy commands.")
+    def outputs_group() -> None:
+        pass
+
+    @outputs_group.command(name="policy", help="Resolve a worker output root and post-operation commit preference.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name.")
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name.")
+    @click.pass_context
+    def outputs_policy_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_actor_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_outputs_policy(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
 
 
     @paths_group.command(name="preview", help="Preview workspace paths without creating them.")

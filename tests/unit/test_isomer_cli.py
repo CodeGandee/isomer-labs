@@ -2324,6 +2324,41 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIn('label = "agent.private_artifacts"', manifest_path.read_text(encoding="utf-8"))
 
         status, output = self.run_cli(
+            ["project", "paths", "materialize-default", "--topic", "default", "--agent", "alice", "--label", "agent.output_root", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        agent_output_root = topic_workspace / "agents" / "alice" / "isomer-managed" / "worker-output" / "agents" / "alice"
+        self.assertTrue(agent_output_root.is_dir())
+        self.assertFalse((agent_output_root / ".gitkeep").exists())
+        self.assertIn('label = "agent.output_root"', manifest_path.read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "paths",
+                "materialize-default",
+                "--topic",
+                "default",
+                "--topic-actor",
+                "operator",
+                "--label",
+                "topic.actors.output_root",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        actor_output_root = topic_workspace / "actors" / "operator" / "isomer-managed" / "worker-output" / "topic-actors" / "operator"
+        self.assertTrue(actor_output_root.is_dir())
+        self.assertFalse((actor_output_root / ".gitkeep").exists())
+        self.assertIn('label = "topic.actors.output_root"', manifest_path.read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
             ["project", "paths", "materialize-default", "--topic", "default", "--agent", "alice", "--label", "agent.tmp", "--json"],
             cwd=root,
         )
@@ -2332,6 +2367,63 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(data["mutated"])
         self.assertTrue((topic_workspace / "agents" / "alice" / "tmp").is_dir())
         self.assertIn("tmp/\n", (topic_workspace / "repos" / "topic-main" / ".gitignore").read_text(encoding="utf-8"))
+
+    def test_outputs_policy_reports_root_tracking_authority_and_commit_preference(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        write(
+            topic_workspace / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [agent_output_defaults]
+            output_root = "isomer-managed/worker-output/agents/{agent_name}"
+            commit_after_operation = false
+
+            [[agent_output_overrides]]
+            agent_name = "alice"
+            output_root = "plain-output/{agent_name}"
+            commit_after_operation = true
+
+            [[topic_actors]]
+            topic_actor_name = "operator"
+            actor_kind = "operator"
+            runtime_kind = "codex"
+            role_kind = "operator"
+            controller_kind = "project_operator_session"
+            output_root = "plain-output/topic-actors/operator"
+            commit_after_operation = false
+            status = "ready"
+            """,
+        )
+
+        status, output = self.run_cli(["project", "outputs", "policy", "--topic", "default", "--agent", "alice", "--json"], cwd=root)
+        data = json.loads(output)
+
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        policy = data["output_policy"]
+        self.assertEqual("agent", policy["worker_kind"])
+        self.assertEqual("alice", policy["worker_name"])
+        self.assertEqual(str(topic_workspace / "agents" / "alice" / "plain-output" / "alice"), policy["absolute_root"])
+        self.assertEqual("plain-output/alice", policy["worker_relative_root"])
+        self.assertEqual("sets/{timestamp}-{operation}-{shortid}", policy["operation_set_pattern"])
+        self.assertTrue(policy["commit_after_operation"])
+        self.assertEqual(".gitignore and Git status", policy["tracking_authority"])
+        self.assertIn(".gitignore and Git status", policy["tracking_note"])
+
+        status, output = self.run_cli(["project", "outputs", "policy", "--topic", "default", "--topic-actor", "operator", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        actor_policy = data["output_policy"]
+        self.assertEqual("topic_actor", actor_policy["worker_kind"])
+        self.assertEqual("operator", actor_policy["worker_name"])
+        self.assertEqual(str(topic_workspace / "actors" / "operator" / "plain-output" / "topic-actors" / "operator"), actor_policy["absolute_root"])
+        self.assertEqual("plain-output/topic-actors/operator", actor_policy["worker_relative_root"])
+        self.assertFalse(actor_policy["commit_after_operation"])
 
     def test_semantic_path_binding_lifecycle_and_custom_env_overrides(self) -> None:
         root = self.make_root()

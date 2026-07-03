@@ -279,6 +279,30 @@ V2_SUPPORT_SECTION_HEADINGS = frozenset(
 SUPPORT_INTRO_DISALLOWED_PREFIXES = tuple(f"{number}. " for number in range(1, 10)) + ("- ", "##", "###")
 SENTENCE_END_RE = re.compile(r"[.!?](?:\s|$)")
 DEEPSCI_FORMAT_PROFILE_RE = re.compile(r"^isomer:deepsci/record-format/profile/[A-Za-z0-9._/-]+/v1$")
+V2_PLAIN_OUTPUT_TERMS = (
+    "json payload staging",
+    "markdown draft",
+    "csvs",
+    "figures",
+    "paper build",
+    "previews",
+    "reports",
+    "local summar",
+    "deck asset",
+    "plain generated file",
+)
+V2_WORKER_OUTPUT_REQUIRED_TERMS = (
+    "project outputs policy",
+    "operation-specific",
+    "commit_after_operation",
+)
+V2_SHARED_WORKER_OUTPUT_REQUIRED_TERMS = (
+    "## Worker Output Policy",
+    "project outputs policy",
+    "operation-specific child set",
+    ".gitignore",
+    "commit_after_operation",
+)
 
 
 @dataclass(frozen=True, order=True)
@@ -1050,6 +1074,39 @@ def validate_v2_storage_binding(
                 )
 
 
+def validate_v2_worker_output_policy(document: Document, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
+    if "v2" not in document.roles or not is_active_guidance(document):
+        return
+    if not document.rel_target.endswith("/SKILL.md"):
+        return
+    text = "\n".join(document.lines)
+    lowered = text.casefold()
+    if document.rel_target == "v2/isomer-rsch-shared-v2/SKILL.md":
+        for term in V2_SHARED_WORKER_OUTPUT_REQUIRED_TERMS:
+            if term.casefold() not in lowered:
+                add(
+                    diagnostics,
+                    repo_root,
+                    document.path,
+                    1,
+                    "RPS015",
+                    f"shared v2 Worker Output Policy must mention {term}",
+                )
+        return
+    if not any(term in lowered for term in V2_PLAIN_OUTPUT_TERMS):
+        return
+    for term in V2_WORKER_OUTPUT_REQUIRED_TERMS:
+        if term not in lowered:
+            add(
+                diagnostics,
+                repo_root,
+                document.path,
+                1,
+                "RPS015",
+                f"active v2 skill guidance that writes plain files must mention {term}",
+            )
+
+
 def validate_v2_support_section_intros(
     document: Document,
     repo_root: Path,
@@ -1280,6 +1337,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_stale_terms(document, repo_root, diagnostics, allow_zones)
         validate_coupling_patterns(document, repo_root, diagnostics, allow_zones)
         validate_v2_storage_binding(document, repo_root, diagnostics, allow_zones)
+        validate_v2_worker_output_policy(document, repo_root, diagnostics)
         validate_v2_support_section_intros(document, repo_root, diagnostics)
     validate_v2_placeholder_bindings(skill_dirs, repo_root, diagnostics)
     validate_v2_payload_first_bindings(skill_dirs, repo_root, diagnostics)

@@ -21,7 +21,11 @@ COMMAND_EXAMPLES: dict[str, tuple[str, ...]] = {
     "project paths get": (
         "pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic",
         "pixi run isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured",
-        "pixi run isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent alice",
+        "pixi run isomer-cli --print-json project paths get agent.output_root --topic my-topic --agent alice",
+    ),
+    "project outputs policy": (
+        "pixi run isomer-cli --print-json project outputs policy --topic my-topic --agent alice",
+        "pixi run isomer-cli --print-json project outputs policy --topic my-topic --topic-actor operator",
     ),
     "project paths register": (
         "pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create",
