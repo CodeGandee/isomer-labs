@@ -8,6 +8,7 @@ import json
 import re
 import subprocess
 import sys
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -23,6 +24,7 @@ TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-admin-topic-team-specialize"
 PROJECT_MANAGER_SKILL = "isomer-admin-project-mgr"
 TOPIC_CREATOR_SKILL = "isomer-admin-topic-creator"
 TOPIC_MANAGER_SKILL = "isomer-admin-topic-mgr"
+WELCOME_SKILL = "isomer-admin-welcome"
 PACKAGE_SPECIFICS_SKILL = "isomer-misc-pkg-specifics"
 
 MIGRATED_OPERATOR_SKILLS = (
@@ -615,6 +617,147 @@ TOPIC_MANAGER_NAMING_EXCEPTIONS = {"help", "status", "doctor"}
 
 TOPIC_MANAGER_REFERENCE_REQUIRED_TERMS = (
     "blocker",
+)
+
+WELCOME_USAGE_PATHS = (
+    "start-research-manually",
+    "start-research-by-agent-team",
+)
+
+WELCOME_ACTIVE_OWNER_SKILLS = (
+    PROJECT_MANAGER_SKILL,
+    TOPIC_CREATOR_SKILL,
+    TOPIC_MANAGER_SKILL,
+    TOPIC_TEAM_SPECIALIZATION_SKILL,
+    "isomer-admin-houmao-interop",
+)
+
+WELCOME_RETIRED_ROUTE_SKILLS = (
+    "isomer-admin-topic-workspace-mgr",
+    "isomer-admin-topic-prepare",
+    "isomer-admin-manual-research-session",
+)
+
+WELCOME_REQUIRED_SKILL_TERMS = (
+    "## Overview",
+    "## When to Use",
+    "Manual invocation only",
+    "Default option mode",
+    "Visible usage path mode",
+    "Routing and support mode",
+    "Read-only context mode",
+    "## Usage Path Subcommands",
+    "## Routing and Support Subcommands",
+    "Do not hide them inside `choose-path`",
+    "references/show-options.md",
+    "references/choose-path.md",
+    "references/show-skill-map.md",
+    "references/next-step.md",
+    "references/start-research-manually.md",
+    "references/start-research-by-agent-team.md",
+    "isomer-cli project validate",
+    "isomer-cli project doctor",
+    "isomer-cli project topics list",
+    "isomer-cli project context show",
+    "Default to **Essential Output** in chat.",
+    "Complete Output",
+    "status",
+    "interpreted_goal",
+    "recommended_workflow",
+    "owner_skill",
+    "safe_first_command",
+    "blockers",
+    "next_action",
+    "isomer-misc-tool-packs",
+)
+
+WELCOME_SUBCOMMANDS = (
+    "help.md",
+    "show-options.md",
+    "choose-path.md",
+    "show-skill-map.md",
+    "next-step.md",
+    "start-research-manually.md",
+    "start-research-by-agent-team.md",
+)
+
+WELCOME_REFERENCE_REQUIRED_TERMS = {
+    "help.md": (
+        "| Subcommand | Purpose | Produces |",
+        "start-research-manually",
+        "start-research-by-agent-team",
+        "show-options",
+        "choose-path",
+        "show-skill-map",
+        "next-step",
+    ),
+    "show-options.md": (
+        "visible usage paths first",
+        "Project setup or checks",
+        "Research Topic",
+        "Topic Team",
+        "Houmao",
+        "invoke the named owner skill directly",
+    ),
+    "choose-path.md": (
+        "recommends visible paths",
+        "manual research",
+        "Domain Agent Team Template",
+        "status",
+        "interpreted_goal",
+        "recommended_workflow",
+        "owner_skill",
+        "safe_first_command",
+        "blockers",
+        "next_action",
+    ),
+    "show-skill-map.md": (
+        "Direct Invocation",
+        "Use $isomer-admin-project-mgr",
+        "Use $isomer-admin-topic-creator",
+        "Use $isomer-admin-topic-mgr",
+        "Use $isomer-admin-topic-team-specialize",
+        "Use $isomer-admin-houmao-interop",
+    ),
+    "next-step.md": (
+        "read-only Project inspection",
+        "isomer-cli project validate",
+        "isomer-cli project doctor",
+        "isomer-cli project topics list",
+        "isomer-cli project context show",
+        "Do not run",
+    ),
+    "start-research-manually.md": (
+        "human-orchestrated research",
+        "isomer-admin-topic-creator",
+        "Use $isomer-admin-topic-creator fast-forward",
+        "Use $isomer-admin-topic-creator step-by-step",
+        "mutation boundary",
+    ),
+    "start-research-by-agent-team.md": (
+        "Domain Agent Team Template",
+        "isomer-admin-topic-team-specialize",
+        "Use $isomer-admin-topic-team-specialize fast-forward",
+        "mutation boundary",
+        "isomer-admin-houmao-interop",
+    ),
+}
+
+WELCOME_ALLOWED_RETIRED_ROUTE_MARKERS = (
+    "do not",
+    "not active",
+    "not list",
+    "not ask",
+    "not active routes",
+    "retired",
+    "exclude",
+)
+
+WELCOME_TOOL_PACK_ALLOWED_MARKERS = (
+    "do not automatically",
+    "manual",
+    "manually",
+    "explicitly",
 )
 
 TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
@@ -2251,6 +2394,166 @@ def validate_topic_manager_module(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_welcome_module(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skill_dir = repo_root / "skillset" / "operator" / WELCOME_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "OPS011", f"{WELCOME_SKILL} is required")
+        return diagnostics
+    if (skill_dir / "evals").exists():
+        add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS011", f"{WELCOME_SKILL} must not contain evals/")
+
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    frontmatter = parse_frontmatter(lines)
+    if frontmatter.get("name") != WELCOME_SKILL:
+        add(diagnostics, repo_root, skill_md, 2, "OPS011", f"{WELCOME_SKILL} frontmatter name must match the skill folder")
+    if not frontmatter.get("description"):
+        add(diagnostics, repo_root, skill_md, 3, "OPS011", f"{WELCOME_SKILL} frontmatter description is required")
+    elif "manual invocation only" not in frontmatter["description"].lower():
+        add(diagnostics, repo_root, skill_md, 3, "OPS011", f"{WELCOME_SKILL} description must state Manual invocation only")
+    validate_manifest(skill_dir, repo_root, diagnostics, "OPS011", manifest_required=True)
+    manifest_path = skill_dir / "agents" / "openai.yaml"
+    if manifest_path.exists() and "allow_implicit_invocation: false" not in "\n".join(read_lines(manifest_path)):
+        add(diagnostics, repo_root, manifest_path, 1, "OPS011", f"{WELCOME_SKILL} agents/openai.yaml must set allow_implicit_invocation: false")
+    validate_local_references(skill_dir, repo_root, diagnostics, "OPS011")
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS011", require_contract=True)
+
+    for term in WELCOME_REQUIRED_SKILL_TERMS:
+        if term not in text:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(lines, "# Isomer"),
+                "OPS011",
+                f"{WELCOME_SKILL} must document '{term}'",
+            )
+    for usage_path in WELCOME_USAGE_PATHS:
+        if usage_path not in text:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(lines, "## Usage Path Subcommands"),
+                "OPS011",
+                f"{WELCOME_SKILL} must expose visible usage path '{usage_path}' in SKILL.md",
+            )
+
+    workflow_index = line_index_containing(lines, "## Workflow")
+    if workflow_index is None:
+        add(diagnostics, repo_root, skill_md, 1, "OPS011", f"{WELCOME_SKILL} must include a ## Workflow section")
+    else:
+        if workflow_index > 24:
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS011", f"{WELCOME_SKILL} must place ## Workflow near the top")
+        if not has_numbered_step_after(lines, workflow_index):
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS011", f"{WELCOME_SKILL} workflow must use numbered steps")
+        if "does not map cleanly" not in text:
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS011", f"{WELCOME_SKILL} must include a freeform fallback")
+
+    references_dir = skill_dir / "references"
+    allowed_reference_names = set(WELCOME_SUBCOMMANDS)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_reference_names:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "OPS011",
+                f"{WELCOME_SKILL} has unexpected reference page references/{reference_path.name}",
+            )
+
+    reference_texts: list[str] = []
+    for subcommand_file_name in WELCOME_SUBCOMMANDS:
+        subcommand_path = references_dir / subcommand_file_name
+        if not subcommand_path.exists():
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS011", f"{WELCOME_SKILL} must include references/{subcommand_file_name}")
+            continue
+        if f"references/{subcommand_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "OPS011", f"{WELCOME_SKILL} must link references/{subcommand_file_name}")
+        subcommand_lines = read_lines(subcommand_path)
+        subcommand_text = "\n".join(subcommand_lines)
+        reference_texts.append(subcommand_text)
+        workflow_index = line_index_containing(subcommand_lines, "## Workflow")
+        if workflow_index is None:
+            add(diagnostics, repo_root, subcommand_path, 1, "OPS011", f"references/{subcommand_file_name} must include a ## Workflow section")
+            continue
+        if workflow_index > 8:
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS011", f"references/{subcommand_file_name} must place ## Workflow near the top")
+        if not has_numbered_step_after(subcommand_lines, workflow_index):
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS011", f"references/{subcommand_file_name} workflow must use numbered steps")
+        if "does not map cleanly" not in subcommand_text:
+            add(diagnostics, repo_root, subcommand_path, workflow_index + 1, "OPS011", f"references/{subcommand_file_name} must include a freeform fallback")
+        for required_term in WELCOME_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
+            if required_term not in subcommand_text:
+                add(diagnostics, repo_root, subcommand_path, 1, "OPS011", f"references/{subcommand_file_name} must document '{required_term}'")
+
+    combined_text = "\n".join([text, *reference_texts])
+    for owner_skill in WELCOME_ACTIVE_OWNER_SKILLS:
+        if owner_skill not in combined_text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Guardrails"), "OPS011", f"{WELCOME_SKILL} must route to active owner skill '{owner_skill}'")
+        if f"${owner_skill}" not in combined_text:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(lines, "## Usage Path Subcommands"),
+                "OPS011",
+                f"{WELCOME_SKILL} must include direct invocation language for ${owner_skill}",
+            )
+
+    for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
+        for line_number, line in enumerate(read_lines(skill_file), start=1):
+            lower_line = line.lower()
+            for retired_skill in WELCOME_RETIRED_ROUTE_SKILLS:
+                if retired_skill in line and not any(marker in lower_line for marker in WELCOME_ALLOWED_RETIRED_ROUTE_MARKERS):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_file,
+                        line_number,
+                        "OPS011",
+                        f"{WELCOME_SKILL} must not present retired skill '{retired_skill}' as an active route",
+                    )
+            if "isomer-misc-tool-packs" in line and not any(marker in lower_line for marker in WELCOME_TOOL_PACK_ALLOWED_MARKERS):
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_file,
+                    line_number,
+                    "OPS011",
+                    f"{WELCOME_SKILL} must mention isomer-misc-tool-packs only as manual explicit routing, not an automatic welcome path",
+                )
+
+    return diagnostics
+
+
+def validate_operator_manifest_inventory(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    manifest_path = repo_root / "skillset" / "manifest.toml"
+    if not manifest_path.exists():
+        return diagnostics
+    try:
+        manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError as exc:
+        add(diagnostics, repo_root, manifest_path, exc.lineno, "OPS011", "skillset manifest must be valid TOML")
+        return diagnostics
+    core = manifest.get("groups", {}).get("core", {})
+    skills = core.get("skills")
+    if not isinstance(skills, list) or not all(isinstance(skill, str) for skill in skills):
+        add(diagnostics, repo_root, manifest_path, 1, "OPS011", "skillset manifest groups.core.skills must be a string list")
+        return diagnostics
+    if f"operator/{WELCOME_SKILL}" not in skills:
+        add(diagnostics, repo_root, manifest_path, 1, "OPS011", f"skillset manifest must include operator/{WELCOME_SKILL}")
+    for retired_skill in WELCOME_RETIRED_ROUTE_SKILLS:
+        retired_entry = f"operator/{retired_skill}"
+        if retired_entry in skills:
+            add(diagnostics, repo_root, manifest_path, 1, "OPS011", f"skillset manifest must not include retired {retired_entry}")
+    return diagnostics
+
+
 def validate_deepsci_mini_specialization_guide(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     guide = repo_root / "teams" / "deepsci-mini" / "execplan" / "team-specialization-guide.md"
@@ -2285,6 +2588,8 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_project_manager_module(repo_root))
     diagnostics.extend(validate_topic_creator_module(repo_root))
     diagnostics.extend(validate_topic_manager_module(repo_root))
+    diagnostics.extend(validate_welcome_module(repo_root))
+    diagnostics.extend(validate_operator_manifest_inventory(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
     diagnostics.extend(validate_split_output_contract_docs(repo_root, (repo_root / "skillset" / "operator",), code="OPS007"))
     diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "operator",), code="OPS010"))

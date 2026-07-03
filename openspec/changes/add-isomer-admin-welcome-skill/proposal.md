@@ -6,6 +6,7 @@ New Isomer users need a concise way to see what the system can do and choose the
 
 - Add a new command-style operator skill, `isomer-admin-welcome`, as the action-oriented entrypoint for users who ask what Isomer Labs can do or which path they should choose.
 - Make the welcome skill present supported operator workflows as options, name the owner skill for each option, and invite the user to choose a path or invoke an owner skill directly.
+- Publish typical usage paths directly in `SKILL.md`, including paths such as `start-research-manually` and `start-research-by-agent-team`, so common workflows are visible before any goal interpretation by `choose-path`.
 - Keep the welcome skill read-only by default: it may inspect current Project context for recommendations, but it must not initialize projects, create topics, mutate topic environments, install packages, specialize teams, launch agents, or perform v2 research bootstrap.
 - Update operator skill inventory and validation so `isomer-admin-welcome` is listed, validated, and installed with the core operator skillset.
 - Preserve retired-skill boundaries: the welcome skill must not route users to `isomer-admin-topic-workspace-mgr`, `isomer-admin-topic-prepare`, or `isomer-admin-manual-research-session`.

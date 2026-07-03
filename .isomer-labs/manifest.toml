@@ -9,25 +9,12 @@ schema_version = "isomer-research-topic-registration.v1"
 config_path = ".isomer-labs/research-topics/flash-attention-gb10-peak-performance-optimization.toml"
 topic_workspace_id = "flash-attention-gb10-peak-performance-optimization"
 status = "active"
-[[research_topics]]
-id = "flashmla-gb10-hardware-aware-performance-model"
-schema_version = "isomer-research-topic-registration.v1"
-config_path = ".isomer-labs/research-topics/flashmla-gb10-hardware-aware-performance-model.toml"
-topic_workspace_id = "flashmla-gb10-hardware-aware-performance-model"
-status = "active"
 [[topic_workspaces]]
 id = "flash-attention-gb10-peak-performance-optimization"
 schema_version = "isomer-topic-workspace.v1"
 research_topic_id = "flash-attention-gb10-peak-performance-optimization"
 path = "isomer-content/topic-ws/flash-attention-gb10-peak-performance-optimization"
 status = "active"
-
-[[topic_workspaces]]
-id = "flashmla-gb10-hardware-aware-performance-model"
-schema_version = "isomer-topic-workspace.v1"
-research_topic_id = "flashmla-gb10-hardware-aware-performance-model"
-path = "isomer-content/topic-ws/flashmla-gb10-hardware-aware-performance-model"
-status = "active"
 [defaults]
-research_topic_id = "flashmla-gb10-hardware-aware-performance-model"
-topic_workspace_id = "flashmla-gb10-hardware-aware-performance-model"
+research_topic_id = "flash-attention-gb10-peak-performance-optimization"
+topic_workspace_id = "flash-attention-gb10-peak-performance-optimization"

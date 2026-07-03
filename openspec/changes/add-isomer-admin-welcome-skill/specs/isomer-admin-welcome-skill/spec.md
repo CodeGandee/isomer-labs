@@ -5,7 +5,8 @@ The `isomer-admin-welcome` skill SHALL present an action-oriented menu of suppor
 
 #### Scenario: Default invocation prints option menu
 - **WHEN** the welcome skill is invoked without a specific subcommand or with a broad onboarding request
-- **THEN** it lists supported actions such as Project setup or checks, Research Topic creation or preparation, initialized-topic management, Topic Team Specialization, and Houmao interop
+- **THEN** it lists visible usage paths such as `start-research-manually` and `start-research-by-agent-team`
+- **AND** it lists supported actions such as Project setup or checks, Research Topic creation or preparation, initialized-topic management, Topic Team Specialization, and Houmao interop
 - **AND** each listed action names the direct owner skill to invoke
 - **AND** it asks the user to choose an option, describe their goal, or invoke the named skill directly
 
@@ -45,11 +46,17 @@ The `isomer-admin-welcome` skill SHALL be read-only by default and SHALL NOT per
 - **AND** it reports blockers and the recommended owner workflow without running mutating commands
 
 ### Requirement: Welcome Skill Exposes Focused Subcommands
-The `isomer-admin-welcome` skill SHALL expose focused public subcommands for option display, path choice, direct skill mapping, context-aware next-step recommendation, and help.
+The `isomer-admin-welcome` skill SHALL expose focused public subcommands for visible usage paths, option display, path choice, direct skill mapping, context-aware next-step recommendation, and help.
+
+#### Scenario: Typical usage paths are first-class
+- **WHEN** the welcome skill `SKILL.md` is inspected
+- **THEN** it documents typical usage-path subcommands including `start-research-manually` and `start-research-by-agent-team`
+- **AND** those paths are visible in `SKILL.md` rather than existing only as hidden branches inside `choose-path`
+- **AND** each usage path names the owner skill, intent, safe first command, mutation boundary, and next action
 
 #### Scenario: Public subcommands are documented
 - **WHEN** the welcome skill help is inspected
-- **THEN** it documents `help`, `show-options`, `choose-path`, `show-skill-map`, and `next-step`
+- **THEN** it documents `start-research-manually`, `start-research-by-agent-team`, `help`, `show-options`, `choose-path`, `show-skill-map`, and `next-step`
 - **AND** each subcommand has a bounded purpose and a local reference page
 
 ### Requirement: Welcome Skill Output Contract

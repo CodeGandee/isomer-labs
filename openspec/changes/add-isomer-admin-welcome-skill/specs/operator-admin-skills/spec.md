@@ -11,7 +11,7 @@ The operator/admin skillset SHALL include `isomer-admin-welcome` as the user-fac
 #### Scenario: Operator docs list welcome entrypoint
 - **WHEN** a developer reads `skillset/operator/README.md`
 - **THEN** it lists `isomer-admin-welcome`
-- **AND** it describes the skill as the action-oriented menu and path chooser that tells users what Isomer Labs can do and which owner skill to invoke directly
+- **AND** it describes the skill as the action-oriented menu and path chooser that tells users what Isomer Labs can do, shows typical usage paths such as `start-research-manually` and `start-research-by-agent-team`, and names which owner skill to invoke directly
 
 #### Scenario: Manifest includes welcome and excludes retired compatibility entries
 - **WHEN** `skillset/manifest.toml` is inspected

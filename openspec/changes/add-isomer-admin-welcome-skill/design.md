@@ -31,9 +31,11 @@ The design must also respect recent operator-surface cleanup. `isomer-admin-topi
 
    Alternative considered: default to a conceptual introduction. That makes the skill verbose and does not solve the user's immediate routing problem.
 
-2. Keep subcommands narrow.
+2. Make typical usage paths first-class in `SKILL.md`.
 
-   The skill should expose `help`, `show-options`, `choose-path`, `show-skill-map`, and `next-step`. `choose-path` interprets the user's goal without mutating state. `show-skill-map` is a compact direct-invocation table. `next-step` can use read-only context checks when a Project is available.
+   The skill should expose visible usage-path subcommands for common user goals, starting with `start-research-manually` and `start-research-by-agent-team`. These are not hidden branches inside `choose-path`; they should appear in the `SKILL.md` subcommand table with the owner skill, intent, safe first command, and mutation boundary for each path.
+
+   The skill should also expose routing and support subcommands: `help`, `show-options`, `choose-path`, `show-skill-map`, and `next-step`. `choose-path` interprets ambiguous user goals and recommends one visible usage path without mutating state. `show-skill-map` is a compact direct-invocation table. `next-step` can use read-only context checks when a Project is available.
 
    Alternative considered: include `explain-concepts` as a public route. That can become a second documentation system, so concept explanations should remain brief supporting text inside options or help.
 
