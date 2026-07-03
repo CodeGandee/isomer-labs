@@ -69,6 +69,12 @@ from isomer_labs.topic_actors import (
     show_topic_actor,
     update_topic_actor,
 )
+from isomer_labs.topic_main_guidance import (
+    ensure_topic_main_guidance,
+    guidance_metadata,
+    inspect_topic_main_guidance,
+    render_topic_main_guidance_block,
+)
 from isomer_labs.profile_bundles import materialize_topic_agent_team_profile_bundle
 from isomer_labs.project import (
     discover_project,
@@ -101,6 +107,15 @@ from isomer_labs.runtime.store import (
 )
 from isomer_labs.runtime.models import AdapterManifestRefRecord, AdapterReconciliationRecord, utc_timestamp
 from isomer_labs.runtime.validation import inspect_workspace_runtime, validate_workspace_runtime
+from isomer_labs.self_query import (
+    build_self_env_payload,
+    build_self_identity_payload,
+    build_self_paths_payload,
+    build_self_pixi_payload,
+    build_self_queries_payload,
+    build_self_show_payload,
+    resolve_self_identity_contexts,
+)
 from isomer_labs.team_profiles import (
     parse_topic_agent_team_profile,
     profile_to_toml,
@@ -141,8 +156,17 @@ Command surface:
   project topic-actors materialize
   project topic-actors repair
   project topic-actors diagnose
+  project topic-main-guidance render
+  project topic-main-guidance inspect
+  project topic-main-guidance ensure
   project workspaces list
   project context show
+  project self show
+  project self identity
+  project self pixi
+  project self env
+  project self paths
+  project self queries
   project repos create
   project paths default
   project paths explain
@@ -740,6 +764,75 @@ def _cmd_topic_actors_diagnose(options: CliOptions, topic_actor_name: str | None
     return _emit("topic-actors diagnose", options, payload, diagnostics, lines)
 
 
+def _cmd_topic_main_guidance_render(options: CliOptions) -> int:
+    rendered = render_topic_main_guidance_block()
+    payload = {
+        "ok": True,
+        "mutated": False,
+        "guidance": guidance_metadata(),
+        "rendered": rendered,
+    }
+    return _emit("topic-main-guidance render", options, payload, [], [rendered.rstrip()])
+
+
+def _cmd_topic_main_guidance_inspect(options: CliOptions) -> int:
+    repo_path, diagnostics = _resolve_topic_main_guidance_repo(options)
+    if repo_path is None:
+        payload: dict[str, Any] = {
+            "ok": False,
+            "mutated": False,
+            "guidance": guidance_metadata(),
+            "topic_main_repo": None,
+            "targets": [],
+            "changed_files": [],
+        }
+    else:
+        payload, guidance_diagnostics = inspect_topic_main_guidance(repo_path)
+        diagnostics.extend(guidance_diagnostics)
+        payload["ok"] = not has_errors(diagnostics)
+    lines = _render_topic_main_guidance_summary("Topic Main Guidance", payload)
+    return _emit("topic-main-guidance inspect", options, payload, diagnostics, lines)
+
+
+def _cmd_topic_main_guidance_ensure(options: CliOptions, *, approved: bool) -> int:
+    if not approved:
+        diagnostics = [
+            Diagnostic(
+                code="ISO087",
+                severity="error",
+                concept="Topic Main Guidance",
+                field="--yes",
+                message="Guidance ensure requires explicit --yes confirmation before writing AGENTS.md or CLAUDE.md.",
+                usage="isomer-cli project topic-main-guidance ensure --topic <topic> --yes",
+            )
+        ]
+        payload: dict[str, Any] = {
+            "ok": False,
+            "mutated": False,
+            "guidance": guidance_metadata(),
+            "topic_main_repo": None,
+            "targets": [],
+            "changed_files": [],
+        }
+        return _emit("topic-main-guidance ensure", options, payload, diagnostics, [])
+    repo_path, diagnostics = _resolve_topic_main_guidance_repo(options)
+    if repo_path is None:
+        payload = {
+            "ok": False,
+            "mutated": False,
+            "guidance": guidance_metadata(),
+            "topic_main_repo": None,
+            "targets": [],
+            "changed_files": [],
+        }
+    else:
+        payload, guidance_diagnostics = ensure_topic_main_guidance(repo_path)
+        diagnostics.extend(guidance_diagnostics)
+        payload["ok"] = not has_errors(diagnostics)
+    lines = _render_topic_main_guidance_summary("Topic Main Guidance Ensure", payload)
+    return _emit("topic-main-guidance ensure", options, payload, diagnostics, lines)
+
+
 def _cmd_context_show(options: CliOptions) -> int:
     context, diagnostics = _context_for_options(options)
     agent_context = None
@@ -789,6 +882,147 @@ def _cmd_context_show(options: CliOptions) -> int:
     return _emit("context show", options, payload, diagnostics, lines)
 
 
+def _cmd_self_show(options: CliOptions) -> int:
+    context, topic_actor_context, agent_context, diagnostics = _self_identity_inputs(options)
+    payload = build_self_show_payload(
+        context,
+        diagnostics=diagnostics,
+        topic_actor_context=topic_actor_context,
+        agent_context=agent_context,
+    )
+    summary = payload.get("summary", {})
+    lines = ["Self Summary"]
+    if isinstance(summary, dict):
+        topic = summary.get("topic")
+        actor = summary.get("topic_actor")
+        agent = summary.get("agent")
+        counts = summary.get("diagnostic_counts")
+        if isinstance(topic, dict):
+            lines.append(f"Research Topic: {topic.get('research_topic_id', 'unresolved')}")
+            lines.append(f"Topic Workspace: {topic.get('topic_workspace_id', 'unresolved')}")
+        if isinstance(actor, dict):
+            lines.append(f"Topic Actor: {_resolved_name(actor, 'topic_actor_name')}")
+        if isinstance(agent, dict):
+            lines.append(f"Agent: {_resolved_name(agent, 'agent_name')}")
+        if isinstance(counts, dict):
+            lines.append(f"Diagnostics: {counts.get('errors', 0)} errors, {counts.get('warnings', 0)} warnings")
+    lines.append("Available: self identity, self pixi, self env, self paths <label>, self queries")
+    return _emit("self show", options, payload, diagnostics, lines)
+
+
+def _cmd_self_identity(options: CliOptions) -> int:
+    context, topic_actor_context, agent_context, diagnostics = _self_identity_inputs(options)
+    payload = build_self_identity_payload(
+        context,
+        diagnostics=diagnostics,
+        topic_actor_context=topic_actor_context,
+        agent_context=agent_context,
+    )
+    if agent_context is None:
+        payload["agent_resolution_help"] = (
+            "Provide --agent, --agent-instance, ISOMER_AGENT_NAME, or ISOMER_AGENT_INSTANCE_ID."
+        )
+    lines = ["Self Identity"]
+    if context is not None:
+        lines.extend(
+            [
+                f"Research Topic: {context.research_topic.id}",
+                f"Topic Workspace: {context.topic_workspace_id}",
+                f"Topic Actor: {topic_actor_context.topic_actor_name if topic_actor_context is not None else 'unresolved'}",
+                f"Agent: {agent_context.agent_name if agent_context is not None else 'unresolved'}",
+            ]
+        )
+    return _emit("self identity", options, payload, diagnostics, lines)
+
+
+def _cmd_self_pixi(options: CliOptions) -> int:
+    context, diagnostics = _context_for_options(options)
+    payload = build_self_pixi_payload(context, diagnostics=diagnostics)
+    pixi = payload.get("pixi", {})
+    lines = ["Self Pixi"]
+    if isinstance(pixi, dict):
+        selected = pixi.get("selected")
+        command = pixi.get("python_command")
+        if isinstance(selected, dict):
+            lines.append(f"Manifest: {selected.get('manifest_path_display', selected.get('manifest_path'))}")
+            lines.append(f"Environment: {selected.get('pixi_environment')}")
+        else:
+            lines.append("Selected Pixi binding: unresolved")
+        if command is not None:
+            lines.append(f"Python: {command}")
+    return _emit("self pixi", options, payload, diagnostics, lines)
+
+
+def _cmd_self_env(options: CliOptions, *, include_values: bool) -> int:
+    context, diagnostics = _context_for_options(options)
+    payload = build_self_env_payload(context, diagnostics=diagnostics, env=os.environ, include_values=include_values)
+    environment = payload.get("environment", {})
+    lines = ["Self Environment"]
+    if isinstance(environment, dict):
+        recognized = environment.get("recognized", [])
+        present = 0
+        total = 0
+        if isinstance(recognized, list):
+            total = len(recognized)
+            present = sum(1 for entry in recognized if isinstance(entry, dict) and bool(entry.get("present")))
+        lines.append(f"Recognized inputs present: {present}/{total}")
+        lines.append(f"Values included: {bool(environment.get('values_included'))}")
+    return _emit("self env", options, payload, diagnostics, lines)
+
+
+def _cmd_self_paths(options: CliOptions, semantic_labels: tuple[str, ...]) -> int:
+    if not semantic_labels:
+        diagnostics = [
+            Diagnostic(
+                code="ISO088",
+                severity="error",
+                concept="Agent Self Paths Query",
+                field="semantic_label",
+                message="project self paths requires at least one semantic label.",
+                usage="isomer-cli --print-json project self paths topic.repos.main",
+            )
+        ]
+        payload = {"ok": False, "mutated": False, "semantic_paths": []}
+        return _emit("self paths", options, payload, diagnostics, [])
+
+    guard_label = None if any(_path_label_requires_selected_topic(label) for label in semantic_labels) else semantic_labels[0]
+    context, diagnostics = _context_for_path_options(options, guard_label)
+    payload = build_self_paths_payload(
+        context,
+        diagnostics=diagnostics,
+        env=os.environ,
+        cwd=Path.cwd(),
+        semantic_labels=semantic_labels,
+        agent_name=_value(options, "agent_name"),
+        agent_instance_id=_value(options, "agent_instance_id"),
+        topic_actor_name=_value(options, "topic_actor_name"),
+    )
+    lines = ["Self Paths"]
+    semantic_paths = payload.get("semantic_paths", [])
+    if isinstance(semantic_paths, list):
+        for entry in semantic_paths:
+            if not isinstance(entry, dict):
+                continue
+            path_data = entry.get("path")
+            if isinstance(path_data, dict):
+                lines.append(f"{entry.get('semantic_label')}: {path_data.get('path')}")
+            else:
+                lines.append(f"{entry.get('semantic_label')}: unresolved")
+    return _emit("self paths", options, payload, diagnostics, lines)
+
+
+def _cmd_self_queries(options: CliOptions) -> int:
+    context, diagnostics = _context_for_options(options)
+    payload = build_self_queries_payload(context, diagnostics=diagnostics)
+    lines = ["Self Queries"]
+    queries = payload.get("queries", [])
+    if isinstance(queries, list):
+        for entry in queries:
+            if isinstance(entry, dict) and entry.get("command"):
+                lines.append(f"- {entry['command']}")
+    return _emit("self queries", options, payload, diagnostics, lines)
+
+
 def _cmd_paths_get(options: CliOptions, semantic_label: str) -> int:
     context, diagnostics = _context_for_path_options(options, semantic_label)
     result = None
@@ -820,6 +1054,45 @@ def _cmd_paths_get(options: CliOptions, semantic_label: str) -> int:
         if result.topic_actor_name is not None:
             lines.append(f"Topic Actor: {result.topic_actor_name}")
     return _emit("paths get", options, payload, diagnostics, lines)
+
+
+def _resolve_topic_main_guidance_repo(options: CliOptions) -> tuple[Path | None, list[Diagnostic]]:
+    context, diagnostics = _context_for_path_options(options, "topic.repos.main")
+    if context is None:
+        return None, diagnostics
+    result, path_diagnostics = resolve_semantic_path(
+        context,
+        "topic.repos.main",
+        env=os.environ,
+        cwd=Path.cwd(),
+    )
+    diagnostics.extend(path_diagnostics)
+    if result is None:
+        return None, diagnostics
+    return result.path, diagnostics
+
+
+def _render_topic_main_guidance_summary(title: str, payload: dict[str, Any]) -> list[str]:
+    lines = [title]
+    repo_path = payload.get("topic_main_repo")
+    if repo_path is not None:
+        lines.append(f"Topic Main Repository: {repo_path}")
+    targets = payload.get("targets", [])
+    if isinstance(targets, list):
+        for target in targets:
+            if isinstance(target, dict):
+                action = target.get("action")
+                status = target.get("status")
+                filename = target.get("filename")
+                if action and action != "unchanged":
+                    lines.append(f"- {filename}: {status} ({action})")
+                else:
+                    lines.append(f"- {filename}: {status}")
+    changed_files = payload.get("changed_files", [])
+    if isinstance(changed_files, list) and changed_files:
+        lines.append("Changed files:")
+        lines.extend(f"- {path}" for path in changed_files)
+    return lines
 
 
 def _cmd_paths_default(options: CliOptions, semantic_label: str) -> int:
@@ -2536,6 +2809,29 @@ def _context_for_options(options: CliOptions) -> tuple[EffectiveTopicContext | N
     )
     diagnostics.extend(context_diagnostics)
     return context, diagnostics
+
+
+def _self_identity_inputs(options: CliOptions) -> tuple[Any, Any, Any, list[Diagnostic]]:
+    context, diagnostics = _context_for_options(options)
+    topic_actor_context = None
+    agent_context = None
+    if context is not None:
+        topic_actor_context, agent_context, identity_diagnostics = resolve_self_identity_contexts(
+            context,
+            env=os.environ,
+            cwd=Path.cwd(),
+            explicit_agent_name=_value(options, "agent_name"),
+            explicit_agent_instance_id=_value(options, "agent_instance_id"),
+            explicit_topic_actor_name=_value(options, "topic_actor_name"),
+        )
+        diagnostics.extend(identity_diagnostics)
+    return context, topic_actor_context, agent_context, diagnostics
+
+
+def _resolved_name(data: dict[str, object], key: str) -> object:
+    if data.get("resolved") is True:
+        return data.get(key, "resolved")
+    return "unresolved"
 
 
 _IMPLICIT_TOPIC_SELECTION_SOURCES = {

@@ -9,13 +9,14 @@ description: Use when an Isomer Labs agent needs package-specific installation c
 
 - **Purpose**: provide a compact index of package-specific installation caveats for Isomer Labs.
 - **Ownership**: keep library-specific preferences, traps, source-routing rules, and verification expectations here.
+- **First lookup**: operational env gate derivation, package mutation, and package-specific runtime verification callers check this skill before applying generic PyPI, Pixi, Conda, local-package, system-Python, or generic verification rules for a named package.
 - **Boundary**: core environment setup skills stay generic and route named-package caveats to this skill.
 
 ## When to Use
 
 Use this skill when a task depends on a specific library whose package source, platform support, accelerator variant, build backend, or runtime check can change whether the environment is actually usable. Callers should check this skill before applying a generic PyPI, Conda, local-package, or system-Python source ladder.
 
-Do not use this skill for generic Pixi mechanics, generic Python dependency installation, CUDA compiler preferences, or package-resolution policy that is not tied to a named package or library.
+Do not use this skill for generic Pixi mechanics, generic Python dependency installation, package-source reachability checks, bounded-run classification, CUDA compiler preferences, or package-resolution policy that is not tied to a named package or library.
 
 ## Workflow
 
@@ -33,7 +34,7 @@ When this skill is invoked, execute the following steps in order.
 4. **Report evidence back to the caller**:
    - Include package name, selected source or unresolved source, required variant, verification expectation, warnings, and blockers.
 
-If the package is not listed, use your native planning tool to inspect official package docs or local package metadata, then report a concise package-specific note that can later become a new reference page.
+If the package is not listed, do not invent a package-specific rule inside the caller's workflow. Report `no package-specific rule`; the caller remains responsible for generic package routing, Pixi mutation, package-source reachability checks, bounded-run handling, env gate writing, and final readiness reporting.
 
 ## Packages
 
@@ -47,3 +48,4 @@ If the package is not listed, use your native planning tool to inspect official 
 - Installing an unqualified package name when the task requires a specific CPU, CUDA, ROCm, MPI, or platform variant.
 - Recording a package as ready from solver success alone instead of checking the package's runtime metadata.
 - Putting package-specific caveats in core service skills instead of this package-specific index.
+- Turning this skill into a generic environment setup, package-source reachability, or bounded-run guide.

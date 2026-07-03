@@ -15,6 +15,7 @@ Recover these before asking the user:
 | Gate checklist | Require `## Gate Checklist` from the agent env target spec; treat every item in that section as required readiness work unless the target spec explicitly moved the item to a non-readiness diagnostic section. |
 | Worktree evidence | Require `create-agent-worktrees` output or read-only equivalent showing valid worktrees, support paths, and path evidence. |
 | Verification matrix and resource check plan | Read `## Verification Matrix`, `## Resource Check Plan`, and `## Expected Results` from the target spec. Refuse to claim readiness when a resource-relevant matrix command lacks bounded-run tips classification evidence, or when a command classified as `heavy` or `unknown-risk` lacks a bounded-run guidance source, generic best-effort fallback evidence when used, affected Agent Name scope, bounded command, expected result, or blocker condition. |
+| Package-specific runtime evidence | Require selected `isomer-misc-pkg-specifics` evidence or `no package-specific rule` when a verification matrix item depends on a named package's variant, accelerator, build, or runtime behavior. Route missing topic-level dependency planning back to `isomer-srv-topic-env-setup`. |
 | Optional selected agent | Optional. It must be one authoritative Agent Name and reports selected-agent partial readiness evidence only. |
 
 ## Workflow
@@ -33,6 +34,8 @@ When this subcommand is selected, execute the following steps in order.
 5. **Confirm commands are replayable**:
    - Each verification command must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
    - Set cwd to the resolved `agent.workspace` for the target Agent Name.
+   - When a matrix command depends on package-specific runtime behavior, use the selected verification expectation from `isomer-misc-pkg-specifics`, or require `no package-specific rule` before using generic verification.
+   - If the agent target spec needs package dependency planning that is missing, stale, or ambiguous in `topic.env.topic_setup_target_spec`, report a blocker and route repair to `isomer-srv-topic-env-setup` instead of inventing per-agent install commands.
 6. **Verify cwd-friendly semantic path query evidence**:
    - Include or record a check that an agent-scoped semantic label can be resolved from inside each target Agent Workspace without passing Agent Name.
 7. **Verify projected external repo evidence when commands depend on it**:
@@ -71,6 +74,8 @@ Selected-agent direct verification updates that agent's evidence but does not ma
 
 - Do not claim readiness from topic-root-only success.
 - Treat Topic Workspace readiness as prerequisite evidence only; every requested Agent Workspace cwd must be verified by this subcommand before reporting per-agent readiness.
+- Do not claim package-specific runtime readiness from solver success, package metadata, or generic import success when `isomer-misc-pkg-specifics` requires stronger evidence.
+- Do not write or run independent PyPI, Pixi, Conda, or runtime-wiring package install commands for dependencies that belong to topic env setup.
 - Do not create external repo projections or Agent Workspace-local substitute projections. Missing, stale, blocked, or inconsistent projection evidence routes repair to `isomer-srv-topic-env-setup`.
 - Report `gate-cwd-incompatible` or equivalent when a topic env command cannot run from Agent Workspace cwd.
 - Do not create Agent Instances, Workspace Runtime records, Houmao launch material, or Execution Adapter material.

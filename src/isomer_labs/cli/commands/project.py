@@ -24,6 +24,12 @@ from isomer_labs.cli.app import (
     _cmd_paths_update,
     _cmd_repos_create,
     _cmd_schemas_list,
+    _cmd_self_env,
+    _cmd_self_identity,
+    _cmd_self_paths,
+    _cmd_self_pixi,
+    _cmd_self_queries,
+    _cmd_self_show,
     _cmd_topic_actors_archive,
     _cmd_topic_actors_diagnose,
     _cmd_topic_actors_list,
@@ -31,6 +37,9 @@ from isomer_labs.cli.app import (
     _cmd_topic_actors_register,
     _cmd_topic_actors_show,
     _cmd_topic_actors_update,
+    _cmd_topic_main_guidance_ensure,
+    _cmd_topic_main_guidance_inspect,
+    _cmd_topic_main_guidance_render,
     _cmd_topics_create,
     _cmd_topics_delete,
     _cmd_topics_list,
@@ -45,6 +54,13 @@ from isomer_labs.cli.options import (
     topic_selection_options as _topic_selection_options,
 )
 from isomer_labs.project_cleanup import CLEANUP_PARTS
+
+
+def _self_selection_options(command: Any) -> Any:
+    command = click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name for self context.")(command)
+    command = click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for self context.")(command)
+    command = _topic_selection_options(command)
+    return command
 
 
 def register_project_commands(app: click.Group) -> None:
@@ -758,6 +774,111 @@ def register_project_commands(app: click.Group) -> None:
         )
 
 
+    @app.group(name="topic-main-guidance", help="Topic Main Development Repository agent guidance commands.")
+    def topic_main_guidance_group() -> None:
+        pass
+
+
+    @topic_main_guidance_group.command(name="render", help="Render the canonical topic-main agent guidance block.")
+    @_common_options
+    @click.pass_context
+    def topic_main_guidance_render_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_topic_main_guidance_render(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+            )
+        )
+
+
+    @topic_main_guidance_group.command(name="inspect", help="Inspect topic-main AGENTS.md and CLAUDE.md guidance posture.")
+    @_common_options
+    @_topic_selection_options
+    @click.pass_context
+    def topic_main_guidance_inspect_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_topic_main_guidance_inspect(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
+
+
+    @topic_main_guidance_group.command(name="ensure", help="Create or update topic-main AGENTS.md and CLAUDE.md guidance.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--yes", "approved", is_flag=True, help="Confirm writing AGENTS.md and CLAUDE.md guidance.")
+    @click.pass_context
+    def topic_main_guidance_ensure_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        approved: bool = False,
+    ) -> int:
+        return _cmd_topic_main_guidance_ensure(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            approved=approved,
+        )
+
+
     @app.group(name="context", help="Effective Topic Context commands.")
     def context_group() -> None:
         pass
@@ -788,6 +909,306 @@ def register_project_commands(app: click.Group) -> None:
     ) -> int:
         return _cmd_context_show(
             _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
+
+
+    def _merge_self_options(
+        ctx: click.Context,
+        *,
+        project: str | None,
+        manifest: str | None,
+        output_format: str | None,
+        json_output: bool,
+        research_topic_id: str | None,
+        topic_workspace_id: str | None,
+        research_inquiry_id: str | None,
+        research_task_id: str | None,
+        run_id: str | None,
+        agent_team_instance_id: str | None,
+        agent_instance_id: str | None,
+        agent_name: str | None,
+        topic_actor_name: str | None,
+        topic_agent_team_profile_id: str | None,
+    ) -> Any:
+        return _merge_options(
+            ctx,
+            project=project,
+            manifest=manifest,
+            output_format=output_format,
+            json_output=json_output,
+            research_topic_id=research_topic_id,
+            topic_workspace_id=topic_workspace_id,
+            research_inquiry_id=research_inquiry_id,
+            research_task_id=research_task_id,
+            run_id=run_id,
+            agent_team_instance_id=agent_team_instance_id,
+            agent_instance_id=agent_instance_id,
+            agent_name=agent_name,
+            topic_actor_name=topic_actor_name,
+            topic_agent_team_profile_id=topic_agent_team_profile_id,
+        )
+
+
+    @app.group(name="self", help="Read-only agent self query commands.")
+    def self_group() -> None:
+        pass
+
+
+    @self_group.command(name="show", help="Show a small self summary and available self query slices.")
+    @_common_options
+    @_self_selection_options
+    @click.pass_context
+    def self_show_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_actor_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_self_show(
+            _merge_self_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
+
+
+    @self_group.command(name="identity", help="Show resolved topic, Topic Actor, and Agent identity.")
+    @_common_options
+    @_self_selection_options
+    @click.pass_context
+    def self_identity_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_actor_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_self_identity(
+            _merge_self_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
+
+
+    @self_group.command(name="pixi", help="Show the selected Pixi binding and Python command hint.")
+    @_common_options
+    @_self_selection_options
+    @click.pass_context
+    def self_pixi_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_actor_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_self_pixi(
+            _merge_self_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
+
+
+    @self_group.command(name="env", help="Show recognized Isomer environment inputs.")
+    @_common_options
+    @_self_selection_options
+    @click.option("--values", "include_values", is_flag=True, help="Include allowlisted non-secret values.")
+    @click.pass_context
+    def self_env_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_actor_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        include_values: bool = False,
+    ) -> int:
+        return _cmd_self_env(
+            _merge_self_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            include_values=include_values,
+        )
+
+
+    @self_group.command(name="paths", help="Resolve requested semantic path labels for this process.")
+    @_common_options
+    @_self_selection_options
+    @click.argument("semantic_labels", nargs=-1)
+    @click.pass_context
+    def self_paths_command(
+        ctx: click.Context,
+        semantic_labels: tuple[str, ...],
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_actor_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_self_paths(
+            _merge_self_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            semantic_labels,
+        )
+
+
+    @self_group.command(name="queries", help="List safe follow-up self and context query commands.")
+    @_common_options
+    @_self_selection_options
+    @click.pass_context
+    def self_queries_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_actor_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_self_queries(
+            _merge_self_options(
                 ctx,
                 project=project,
                 manifest=manifest,

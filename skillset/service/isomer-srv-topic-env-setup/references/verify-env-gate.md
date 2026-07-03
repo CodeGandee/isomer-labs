@@ -33,6 +33,7 @@ When this subcommand is selected, execute the following steps in order.
    - Each command must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
    - When a command needs external runtime wiring, the target spec must record the exact variables, paths, sourced scripts, or activation commands before the command runs.
    - When the gate depends on package-specific runtime behavior, use the verification expectations recorded from `isomer-misc-pkg-specifics`.
+   - When a named package has no package-specific page, require the target spec to record `no package-specific rule` before using generic import, CLI, metadata, or smoke verification.
 5. **Check resources before classified risky verification commands**:
    - Apply this when bounded-run tips classified a verification command as `heavy` or `unknown-risk`.
    - Treat the generated `## Resource Check Plan` and matching checklist item as the execution contract.
@@ -65,7 +66,7 @@ When `ready` depends on Pixi-mediated external runtime wiring or `.isomer-user-e
 ## Guardrails
 
 - Do not claim readiness merely because `pixi install` succeeded.
-- Do not claim package-specific runtime readiness from generic install success. Use the relevant package-specific checks from `isomer-misc-pkg-specifics` when the target spec names them.
+- Do not claim package-specific runtime readiness from generic install success, solver success, package metadata, or generic import success. Use the relevant package-specific checks from `isomer-misc-pkg-specifics` when the target spec names them, or require explicit `no package-specific rule` evidence before falling back to generic verification.
 - Do not claim per-agent cwd readiness from a topic-root command. If every `agent.workspace` cwd must prove a gate, report that per-agent readiness is not checked and name the Topic Workspace predecessor evidence produced by this verification.
 - Do not claim readiness from ambient shell success. If a command only passes because of an already activated environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script, report `blocked` or `failed` and name the missing enclosure record.
 - Do not require or verify `team-profile/`, Topic Agent Team Profile material, Agent Team Instance records, roles, or agent count before reporting environment readiness.

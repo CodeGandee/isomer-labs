@@ -35,7 +35,8 @@ When this subcommand is selected, execute the following steps in order.
    - Include Python as the Topic Workspace glue language.
    - Select a Python version with **Python Version Policy**.
    - Include the starter Python dependencies from **Starter Python Dependencies**.
-   - Apply **Package Installation Routing** before choosing package sources or writing install commands.
+   - Apply **Package Installation Routing** before choosing package sources, writing install commands, writing runtime-wiring commands, or writing package-specific verification commands.
+   - For every named package, consult `isomer-misc-pkg-specifics` first and record either the selected package-specific evidence or `no package-specific rule` before generic package-source, Pixi, PyPI, Conda, runtime-wiring, enclosure, or verification rules.
    - Use Pixi/Conda for native tools and binary/runtime dependencies.
    - Record package source evidence.
    - Consult `isomer-srv-resolve-pkg-repo` when repository, mirror, registry, or channel reachability is a material decision.
@@ -135,7 +136,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - For every non-Pixi-managed choice, record why Pixi-managed installation was not used.
 - Record package source evidence, NVIDIA channel decisions, and `isomer-srv-resolve-pkg-repo` evidence when repository, mirror, registry, channel, local package store, or source reachability is uncertain or policy-relevant.
 - Record CUDA architecture, CUDA/C++ build environment, and build parallelism preference evidence when those choices affect the gate.
-- For named packages with package-specific caveats, consult `isomer-misc-pkg-specifics`, record the selected package-specific evidence, and keep those caveats out of this core service workflow.
+- For every named package, consult `isomer-misc-pkg-specifics` before the generic source ladder. Record selected package-specific evidence when a page exists, or record `no package-specific rule` before continuing with generic routing.
+- Keep package-specific caveats out of this core service workflow; record only the selected package-specific source, variant, verification expectation, warning, or blocker evidence needed by this gate.
 
 ### Resource Check Plan
 
@@ -203,10 +205,11 @@ Include these starter packages in the dependency plan as PyPI packages unless an
 
 Apply this route before writing package sources or install commands:
 
-1. **Package-specific rules**: if `isomer-misc-pkg-specifics` exists and lists the package, load the selected package page and follow it. These rules override the generic source ladder.
-2. **NVIDIA official packages**: when no package-specific rule overrides the choice, prefer the `nvidia` Conda channel, then PyPI, then `conda-forge`.
-3. **Other Python libraries**: when no package-specific rule overrides the choice, try PyPI first. Use `conda-forge` only after PyPI cannot satisfy the requirement. If `conda-forge` cannot satisfy it, scan the Project and Topic Workspace for an installable Python package store. If that fails, inspect system Python and introduce it into Pixi only through explicit fallback wiring or a local artifact.
-4. **Native tools and runtime dependencies**: use Pixi/Conda, package-specific guidance, or explicit runtime wiring according to **Environment Enclosure Strategy**.
+1. **Package-specific rules**: for every named package, check whether `isomer-misc-pkg-specifics` exists and lists the package. If it does, load the selected package page and follow it before generic source, variant, runtime-wiring, or verification choices. These rules override the generic source ladder.
+2. **No package-specific rule evidence**: when no package page exists for the named package, record `no package-specific rule` in `## Dependency Plan`, then continue with the generic source ladder.
+3. **NVIDIA official packages**: when no package-specific rule overrides the choice, prefer the `nvidia` Conda channel, then PyPI, then `conda-forge`.
+4. **Other Python libraries**: when no package-specific rule overrides the choice, try PyPI first. Use `conda-forge` only after PyPI cannot satisfy the requirement. If `conda-forge` cannot satisfy it, scan the Project and Topic Workspace for an installable Python package store. If that fails, inspect system Python and introduce it into Pixi only through explicit fallback wiring or a local artifact.
+5. **Native tools and runtime dependencies**: use Pixi/Conda, package-specific guidance, or explicit runtime wiring according to **Environment Enclosure Strategy**.
 
 Record evidence for every skipped ladder step in `## Dependency Plan` before writing a lower-preference source into `## Pixi Install Commands`.
 

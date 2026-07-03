@@ -11,7 +11,7 @@ Recover these before asking the user:
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
 | Topic env target spec | Require resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`, whether derived from source intent or supplied as an explicit manual target spec. Refuse to run if it is missing, and tell the user to run `derive-env-gate` first. |
 | Dependency plan, resource check plan, enclosure strategy, and Pixi install commands | Read from the target spec's `## Dependency Plan`, `## Resource Check Plan`, and `## Pixi Install Commands` sections, including Python version evidence, enclosure classification, operation classification evidence, bounded-run guidance source when required, generic best-effort fallback evidence when used, and command style. Stop with blockers when the plan is missing, contradictory, still blocked, missing classification evidence for a resource-relevant setup command, missing bounded guidance for `heavy` or `unknown-risk`, or missing enclosure strategy for a required dependency or runtime need. |
-| Package-source override or resolution evidence | Optional. Use only when the prompt or derived gate explicitly names a package source override, when package-specific rules from `isomer-misc-pkg-specifics` apply, or when `isomer-srv-resolve-pkg-repo` evidence is needed because repository, mirror, registry, or channel reachability is uncertain. Otherwise follow **Package Installation Routing** in this page. |
+| Package-source override or resolution evidence | Optional. Use only when the prompt or derived gate explicitly names a package source override, when package-specific rules from `isomer-misc-pkg-specifics` apply, when the derived gate records `no package-specific rule`, or when `isomer-srv-resolve-pkg-repo` evidence is needed because repository, mirror, registry, or channel reachability is uncertain. Otherwise follow **Package Installation Routing** in this page. |
 
 ## Workflow
 
@@ -38,7 +38,9 @@ When this subcommand is selected, execute the following steps in order.
 8. **Install Pixi-managed starter Python dependencies** through PyPI when missing or not already satisfied:
    - Use `pixi add --manifest-path <manifest_path> --pypi scipy mdutils ruff mkdocs-material mypy attrs omegaconf imageio matplotlib jsonschema jinja2`.
 9. **Route package installation decisions**:
-   - For each named package or library, first check whether `isomer-misc-pkg-specifics` is available in the skillset. If it exists and lists specific rules for that package, follow those rules before applying this page's generic source ladder.
+   - For each named package or library, first use the package-specific evidence recorded in `topic.env.topic_setup_target_spec`.
+   - If the target spec lacks selected package-specific evidence or `no package-specific rule` for a named package, stop and ask `derive-env-gate` to repair the target spec before mutation.
+   - If `isomer-misc-pkg-specifics` selected a package page, follow that source, variant, warning, verification, or blocker evidence before applying this page's generic source ladder.
    - If package-specific rules do not apply and the package concerns NVIDIA official packages, prefer the `nvidia` Conda channel, then PyPI, then `conda-forge`. Record evidence for each skipped source.
    - If package-specific rules do not apply and the dependency is a Python library, try PyPI first. Only use `conda-forge` after PyPI cannot satisfy the requirement. If `conda-forge` cannot satisfy it, scan the Project and Topic Workspace for an installable Python package source. If no project-local source can satisfy it, inspect system Python and introduce it into the Pixi environment only through explicit, recorded fallback wiring or a local artifact.
    - Do not skip a source-ladder step without evidence in `topic.env.topic_setup_target_spec`.
@@ -55,8 +57,8 @@ When this subcommand is selected, execute the following steps in order.
    - If CUDA architecture targets, `nvcc` flags, or build parallelism need interpretation, use `isomer-misc-bounded-run-tips` subcommand `cuda-compile` evidence before converting them into setup commands.
    - If CUDA/C++ Pixi environment choices or NVIDIA package/runtime wiring need interpretation, use `isomer-misc-nvidia-tools` evidence.
 13. **Record package-specific installation evidence when needed**:
-   - Use the selected `isomer-misc-pkg-specifics` page when a named library has known package-source choices, CPU/GPU variants, platform constraints, accelerator runtimes, or runtime checks.
-   - Record the selected package-specific reference and evidence in the target spec.
+   - Use the selected `isomer-misc-pkg-specifics` page when the target spec names known package-source choices, CPU/GPU variants, platform constraints, accelerator runtimes, or runtime checks.
+   - Record the selected package-specific reference and evidence, or the existing `no package-specific rule` evidence, in the target spec execution log.
    - If the package-specific reference reports that the installed variant cannot satisfy the gate, report a blocker instead of accepting generic install success.
 14. **Install editable repo packages when needed**:
    - Use a PyPI editable requirement such as `pixi add --manifest-path <manifest_path> --pypi --editable '<package-name> @ file://<absolute-repo-path>'` when the repo is Python-installable and the gate needs it importable.
@@ -102,6 +104,7 @@ If multiple sources conflict, choose the highest Python minor version mentioned 
 | Python runtime | Selected Python minor version from **Python Version Policy** |
 | Starter Python dependencies | PyPI through `pixi add --manifest-path <manifest_path> --pypi scipy mdutils ruff mkdocs-material mypy attrs omegaconf imageio matplotlib jsonschema jinja2` |
 | Named package with package-specific rules | Follow `isomer-misc-pkg-specifics` first; record the selected package page and evidence |
+| Named package without package-specific rules | Record `no package-specific rule`, then continue with the generic source ladder |
 | NVIDIA official package | `nvidia` Conda channel, then PyPI, then `conda-forge`, with evidence for each skipped source |
 | Normal Python package | PyPI through `pixi add --manifest-path <manifest_path> --pypi <requirement>` |
 | Python package unsuitable or unavailable on PyPI | `conda-forge` with PyPI failure evidence recorded |
@@ -116,10 +119,11 @@ If multiple sources conflict, choose the highest Python minor version mentioned 
 
 Apply this route before mutating the Pixi manifest for any package installation task:
 
-1. **Package-specific rules**: if `isomer-misc-pkg-specifics` exists and lists the package, load the selected package page and follow it. These rules override the generic source ladder.
-2. **NVIDIA official packages**: when no package-specific rule overrides the choice, prefer the `nvidia` Conda channel, then PyPI, then `conda-forge`.
-3. **Other Python libraries**: when no package-specific rule overrides the choice, try PyPI first. Use `conda-forge` only after PyPI cannot satisfy the requirement. If `conda-forge` cannot satisfy it, scan the Project and Topic Workspace for an installable Python package store. If that fails, inspect system Python and introduce it into Pixi only through explicit fallback wiring or a local artifact.
-4. **Native tools and runtime dependencies**: use Pixi/Conda, package-specific guidance, or explicit runtime wiring according to **Environment Enclosure Ladder**.
+1. **Package-specific rules**: for every named package, use selected `isomer-misc-pkg-specifics` evidence from the target spec before generic source, variant, runtime-wiring, or verification choices. These rules override the generic source ladder.
+2. **No package-specific rule evidence**: when no package page exists for the named package, require `no package-specific rule` evidence in the target spec before continuing with the generic source ladder.
+3. **NVIDIA official packages**: when no package-specific rule overrides the choice, prefer the `nvidia` Conda channel, then PyPI, then `conda-forge`.
+4. **Other Python libraries**: when no package-specific rule overrides the choice, try PyPI first. Use `conda-forge` only after PyPI cannot satisfy the requirement. If `conda-forge` cannot satisfy it, scan the Project and Topic Workspace for an installable Python package store. If that fails, inspect system Python and introduce it into Pixi only through explicit fallback wiring or a local artifact.
+5. **Native tools and runtime dependencies**: use Pixi/Conda, package-specific guidance, or explicit runtime wiring according to **Environment Enclosure Ladder**.
 
 When source reachability is uncertain, a local mirror or private registry is likely configured, a local package store may exist, or NVIDIA channel choice is policy-relevant, use `isomer-srv-resolve-pkg-repo` to choose the reachable repository, registry, channel, or local source before dependency mutation. If the environment gate or manifest already fixes the source and no reachability concern exists, record that fixed source instead of adding a separate resolution step.
 
@@ -188,6 +192,7 @@ Report `blocked` when:
 - Python version conflicts cannot be adapted within the service-safe environment setup boundary;
 - a starter Python dependency cannot be resolved or installed;
 - a dependency cannot be inferred, resolved, or installed;
+- a named package lacks selected package-specific evidence or `no package-specific rule` evidence in `topic.env.topic_setup_target_spec`;
 - a required dependency or runtime need lacks an enclosure strategy in `topic.env.topic_setup_target_spec`;
 - a resource-relevant setup command lacks bounded-run tips classification evidence;
 - a setup command classified as `heavy` or `unknown-risk` lacks a resource check plan, lacks a bounded-run guidance source, lacks generic best-effort fallback evidence when no recipe applies, lacks a bounded real-path setup command, or would overload the host even in bounded form;

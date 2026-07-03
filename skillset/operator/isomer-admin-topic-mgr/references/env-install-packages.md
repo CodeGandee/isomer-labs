@@ -19,9 +19,10 @@ When this subcommand is selected, execute the following steps in order.
    - Classify each entry with **Package Kind Inference**.
    - If a name is ambiguous, a package could map to incompatible ecosystems, or the requested target is unclear, report a blocker or ask a targeted clarification before mutation.
 4. **Build the install plan**:
+   - For every named package, consult `isomer-misc-pkg-specifics` before generic source, variant, runtime-wiring, or verification choices; record selected package-specific evidence or `no package-specific rule`.
    - Choose a Pixi-scoped route for each package using **Install Route Policy**.
    - Generate verification commands with **Verification Policy** when the request does not provide them.
-   - Consult package-specific, NVIDIA, package-source, or bounded-run helper skills when the package route needs those policies.
+   - Consult NVIDIA, package-source, or bounded-run helper skills when the package route needs those policies.
    - Record any privileged, system-global, local-venv, ambient-pip, unrecorded user-library, or external-runtime requirement as a blocker.
 5. **Check existing availability**:
    - Run lightweight Pixi-scoped checks for packages that may already be present.
@@ -69,7 +70,7 @@ Classify each requested item before installation:
 
 | Kind | Signals | Default route |
 | --- | --- | --- |
-| `python-library` | Python import, PyPI package, notebook/script dependency, `import <name>` check | Topic Workspace Pixi environment through PyPI first unless package-specific evidence says otherwise |
+| `python-library` | Python import, PyPI package, notebook/script dependency, `import <name>` check | Package-specific lookup first, then Topic Workspace Pixi environment through PyPI unless package-specific evidence says otherwise |
 | `r-package` | R backend, `library(<name>)`, CRAN/Bioconductor-style package, R plotting package | Topic Workspace Pixi/R route; block if only unrecorded user-library or system R mutation is available |
 | `native-conda` | binary, compiler, shared library, native CLI, Conda package, system runtime | Pixi/Conda package in Topic Workspace environment |
 | `cli-tool` | command executable, `--version` check, document or build CLI | Pixi/Conda in Topic Workspace environment by default; block or ask before any user-global tool route |
@@ -84,9 +85,9 @@ When a package could fit multiple kinds, choose the route that satisfies the tas
 Apply these routes before mutation:
 
 1. **Already present**: if the Pixi-scoped verification check passes, report `already_present` and skip mutation.
-2. **Python PyPI route**: use `pixi add --manifest-path <manifest_path> --pypi <requirement>` for importable Python libraries that PyPI can satisfy.
-3. **Pixi/Conda route**: use `pixi add --manifest-path <manifest_path> <matchspec>` for native tools, Conda-preferred packages, R packages available through channels, binary runtimes, and CLI tools that should live in the Topic Workspace environment.
-4. **Package-specific route**: when known package guidance exists, follow the selected helper skill or package-specific page before generic source choices.
+2. **Package-specific route**: for every named package, check `isomer-misc-pkg-specifics` before generic source choices. Follow the selected package page when it exists, or record `no package-specific rule` before continuing.
+3. **Python PyPI route**: use `pixi add --manifest-path <manifest_path> --pypi <requirement>` for importable Python libraries that PyPI can satisfy and have no overriding package-specific rule.
+4. **Pixi/Conda route**: use `pixi add --manifest-path <manifest_path> <matchspec>` for native tools, Conda-preferred packages, R packages available through channels, binary runtimes, and CLI tools that should live in the Topic Workspace environment.
 5. **External runtime blocker**: if the requested package requires privileged host mutation, unavailable licenses, driver changes, daemons, system package managers, or unrecorded host state, report a blocker.
 
 Do not use local `venv`, `.venv`, `virtualenv`, ambient `pip`, unrecorded user R library installs, `sudo`, system package managers, global shell profile edits, daemons, kernel driver changes, `/etc` mutation, or machine-global package setup from this subcommand.
@@ -95,7 +96,7 @@ Do not use local `venv`, `.venv`, `virtualenv`, ambient `pip`, unrecorded user R
 
 Generate the smallest verification that proves the package is usable for the request:
 
-- Python library: `python -c "import <module>; print(getattr(<module>, '__version__', 'ok'))"` or a task-specific import/render/export check.
+- Python library: package-specific verification expectation when selected, otherwise `python -c "import <module>; print(getattr(<module>, '__version__', 'ok'))"` or a task-specific import/render/export check after recording `no package-specific rule`.
 - R package: `Rscript -e "library(<package>); cat('ok\\n')"` through the selected Topic Workspace Pixi environment.
 - CLI tool: `<command> --version`, `--help`, or a minimal no-output task command.
 - Document tool: version check plus a minimal compile/export check when the request needs real build readiness.
@@ -117,6 +118,7 @@ Report:
 - `pixi`: `manifest_path`, `pixi_environment`, and whether mutation ran.
 - `request`: source prompt or file, requester skill when known, task purpose, and assumptions.
 - `plan`: packages, inferred kinds, selected routes, verification checks, and blockers before mutation.
+- `package_specifics`: selected `isomer-misc-pkg-specifics` evidence or `no package-specific rule` for each named package.
 - `commands_run`: Pixi mutation and verification commands.
 - `changed_files`: Pixi manifest, lockfile, or workspace files changed.
 - `verification`: per-package result and evidence.

@@ -28,6 +28,8 @@ When this subcommand is selected, execute the following steps in order.
 3. **Translate or validate source requirements** into a per-agent operational target spec:
    - Use the Topic Workspace predecessor as evidence.
    - Do not duplicate dependency planning from `topic.env.topic_setup_target_spec`.
+   - If package dependency planning is absent, stale, or ambiguous in `topic.env.topic_setup_target_spec`, report a blocker and route repair to `isomer-srv-topic-env-setup`; do not invent a separate per-agent package install plan.
+   - When a per-agent cwd command depends on named-package runtime behavior, consume the package-specific runtime verification evidence from `topic.env.topic_setup_target_spec` or consult `isomer-misc-pkg-specifics`; record selected package-specific verification evidence or `no package-specific rule`.
    - Preserve every source-agent required cwd command as either a verification matrix entry or a named blocker; do not replace a requested build, inference, dataset, or benchmark path with an unrelated smoke test.
 4. **Derive the per-agent verification matrix**:
    - For every authoritative Agent Name, record cwd as the resolved `agent.workspace`.
@@ -105,6 +107,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Reference `topic.env.topic_setup_target_spec` as Topic Workspace predecessor evidence.
 - State the predecessor readiness status and any relevant blockers.
 - Keep topic-root success as prerequisite evidence only; it is not Agent Workspace cwd readiness.
+- Use topic-level package-source and dependency decisions from `topic.env.topic_setup_target_spec`; do not write independent PyPI, Pixi, Conda, runtime-wiring, or package install commands for dependencies that belong to topic env setup.
+- When package-specific runtime checks matter for Agent Workspace cwd readiness, reference selected `isomer-misc-pkg-specifics` evidence or record `no package-specific rule`.
 
 ### Topic Pixi Binding
 
@@ -145,6 +149,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 - List each Agent Name, source requirement, cwd, exact Pixi command, and expected result.
 - Use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`.
+- Include package-specific runtime verification expectations from `isomer-misc-pkg-specifics` when a matrix item depends on a named package's variant, accelerator, build, or runtime behavior.
 - For commands classified as `heavy` or `unknown-risk`, selected-agent partial coverage or bounded inputs are allowed, but the command must still exercise the source-agent required path and align with the `## Resource Check Plan` guidance source.
 
 ### Resource Check Plan
@@ -189,6 +194,7 @@ Example for per-agent CUDA cwd verification:
 ## Guardrails
 
 - Do not create per-agent dependency plans, reinterpret Topic Workspace dependency policy, or ask this service to repair topic-main/projection predecessors.
+- Do not duplicate topic-level package source routing. Missing or stale package dependency planning routes back to `isomer-srv-topic-env-setup`.
 - Do not use tmp paths as durable readiness evidence.
 - Do not claim verification has run before `verify-agent-env-gate`.
 - Do not create Workspace Runtime records or Agent Team Instance records.

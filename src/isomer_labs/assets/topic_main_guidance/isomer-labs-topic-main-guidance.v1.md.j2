@@ -1,0 +1,20 @@
+{{ begin_marker }}
+```{{ fence_tag }}
+This repository is an Isomer Topic Main Development Repository.
+
+This repository uses Pixi as the primary package manager and execution environment. Invoke Python through Pixi, for example: `{{ pixi_python_command }}`.
+
+Avoid system Python, ambient virtualenvs, plain `python`, plain `pip`, shell activation, and local `.venv` environments as the source of truth for topic work. Query Isomer for the correct `manifest_path` and `pixi_environment` instead of hardcoding them.
+
+Use `isomer-cli` for topic-specific facts. Start with the small self summary, then query only the slice you need before acting:
+{% for command in query_commands -%}
+- `{{ command }}`
+{% endfor %}
+
+Do not hardcode or guess Research Topic ids, Topic Workspace paths, Topic Actor names, Agent Names, runtime paths, credentials, external repository paths, `manifest_path`, or `pixi_environment` from this file.
+
+Prefer semantic labels over remembered paths, especially {% for label in semantic_labels -%}`{{ label }}`{% if not loop.last %}, {% endif %}{%- endfor %}.
+
+Do not edit Isomer runtime databases, credentials, generated path manifests, or owner-preserved records unless the operator explicitly asks.
+```
+{{ end_marker }}

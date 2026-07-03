@@ -179,6 +179,23 @@ Show resolved Effective Topic Context.
 pixi run isomer-cli --print-json project context show --topic my-topic
 ```
 
+### `project self`
+
+Query small, read-only slices of the caller's process-local Isomer identity from an initialized Project or Topic Main Development Repository cwd.
+
+**Side effects:** none. These commands do not create Topic Workspace directories, Workspace Runtime records, Path Plans, manifests, Pixi files, guidance files, launch material, adapter files, or live Houmao state.
+
+Start with `project self show` for a tiny index, then ask for only the needed slice. Use `identity` for resolved topic, Topic Actor, and Agent refs; `pixi` for the selected manifest, environment, and `pixi run --manifest-path ... --environment ... python ...` hint; `env` for recognized Isomer environment input names without values by default; `paths <label>...` for requested semantic labels only; and `queries` for follow-up command examples. `project self env --values` may print allowlisted non-secret identity/path/config values, but secret-like names remain omitted.
+
+```bash
+pixi run isomer-cli --print-json project self show
+pixi run isomer-cli --print-json project self identity
+pixi run isomer-cli --print-json project self pixi
+pixi run isomer-cli --print-json project self env
+pixi run isomer-cli --print-json project self paths topic.repos.main agent.workspace --agent alice
+pixi run isomer-cli --print-json project self queries
+```
+
 ### `project paths preview`
 
 Preview workspace paths, including semantic labels, compatibility surface ids, path sources, and the generated content root, without creating them.
@@ -709,6 +726,7 @@ pixi run isomer-cli project --root tests/fixtures/projects/deepsci-profile-use-c
 | `project topics delete` | yes with `--yes`; `--dry-run` is read-only | no | no | no |
 | `project workspaces list` | no | no | no | no |
 | `project context show` | no | no | no | no |
+| `project self show/identity/pixi/env/paths/queries` | no | no | no | no |
 | `project paths preview` | no | no | no | no |
 | `project paths default` | no | no | no | no |
 | `project paths explain` | no | no | no | no |

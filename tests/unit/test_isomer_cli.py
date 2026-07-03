@@ -512,6 +512,15 @@ class IsomerCliTests(unittest.TestCase):
             "project topics list",
             "project workspaces list",
             "project context show",
+            "project self show",
+            "project self identity",
+            "project self pixi",
+            "project self env",
+            "project self paths",
+            "project self queries",
+            "project topic-main-guidance render",
+            "project topic-main-guidance inspect",
+            "project topic-main-guidance ensure",
             "project paths preview",
             "schemas list",
             "project team-templates",
@@ -2777,6 +2786,108 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertTrue(any("Unknown or reserved Topic Main Development Repository semantic label" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
 
+    def test_topic_main_guidance_render_is_topic_independent(self) -> None:
+        root = self.make_root()
+
+        status, output = self.run_cli(["project", "topic-main-guidance", "render", "--json"], cwd=root)
+        data = json.loads(output)
+
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual("v1", data["guidance"]["version"])
+        self.assertEqual(
+            "assets/topic_main_guidance/isomer-labs-topic-main-guidance.v1.md.j2",
+            data["guidance"]["template_resource"],
+        )
+        rendered = data["rendered"]
+        self.assertIn("<!-- BEGIN isomer-labs-topic-main-guidance v1 -->", rendered)
+        self.assertIn("```isomer-labs-topic-main-guidance", rendered)
+        self.assertIn("pixi run --manifest-path <manifest_path> --environment <pixi_environment> python ...", rendered)
+        self.assertLess(
+            rendered.index("isomer-cli --print-json project self show"),
+            rendered.index("isomer-cli --print-json project self identity"),
+        )
+        self.assertLess(
+            rendered.index("isomer-cli --print-json project self show"),
+            rendered.index("isomer-cli --print-json project context show"),
+        )
+        self.assertIn("isomer-cli --print-json project self pixi", rendered)
+        self.assertIn("isomer-cli --print-json project self env", rendered)
+        self.assertIn("isomer-cli --print-json project self paths <semantic-label>", rendered)
+        self.assertIn("isomer-cli --print-json project paths get <semantic-label>", rendered)
+        self.assertIn("isomer-cli --print-json project paths explain <semantic-label>", rendered)
+        self.assertIn("topic.repos.main", rendered)
+        self.assertNotIn("project self --all", rendered)
+        self.assertNotIn("project self show --all", rendered)
+        self.assertNotIn(str(root), rendered)
+
+    def test_topic_main_guidance_inspect_and_ensure_are_idempotent(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_main = self.default_topic_workspace(root) / "repos" / "topic-main"
+        topic_main.mkdir(parents=True)
+        subprocess.run(["git", "init"], cwd=topic_main, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        status, output = self.run_cli(
+            ["project", "topic-main-guidance", "inspect", "--topic", "default", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual(["missing", "missing"], [target["status"] for target in data["targets"]])
+
+        status, output = self.run_cli(
+            ["project", "topic-main-guidance", "ensure", "--topic", "default", "--yes", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual(["AGENTS.md", "CLAUDE.md"], data["changed_files"])
+        self.assertEqual(["created", "created"], [target["action"] for target in data["targets"]])
+        self.assertTrue((topic_main / "AGENTS.md").is_file())
+        self.assertTrue((topic_main / "CLAUDE.md").is_file())
+
+        status, output = self.run_cli(
+            ["project", "topic-main-guidance", "ensure", "--topic", "default", "--yes", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual([], data["changed_files"])
+        self.assertEqual(["current", "current"], [target["status"] for target in data["targets"]])
+        self.assertEqual(["unchanged", "unchanged"], [target["action"] for target in data["targets"]])
+
+    def test_topic_main_guidance_ensure_requires_confirmation(self) -> None:
+        root = self.make_root()
+
+        status, output = self.run_cli(["project", "topic-main-guidance", "ensure", "--json"], cwd=root)
+        data = json.loads(output)
+
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertTrue(any(diagnostic["field"] == "--yes" for diagnostic in data["diagnostics"]))
+
+    def test_topic_main_guidance_ensure_blocks_unsafe_repo(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_main = self.default_topic_workspace(root) / "repos" / "topic-main"
+        topic_main.mkdir(parents=True)
+
+        status, output = self.run_cli(
+            ["project", "topic-main-guidance", "ensure", "--topic", "default", "--yes", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+
+        self.assertEqual(1, status)
+        self.assertFalse(data["mutated"])
+        self.assertEqual([], data["changed_files"])
+        self.assertFalse((topic_main / "AGENTS.md").exists())
+        self.assertTrue(any(diagnostic["field"] == "topic.repos.main" for diagnostic in data["diagnostics"]))
+
     def test_cwd_derived_agent_context_and_selector_conflicts(self) -> None:
         root = self.make_root()
         self.init_project(root)
@@ -2859,6 +2970,186 @@ class IsomerCliTests(unittest.TestCase):
             any("another Research Topic" in diagnostic["message"] for diagnostic in data["diagnostics"]),
             data["diagnostics"],
         )
+
+    def test_self_show_from_topic_main_cwd_is_small(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_main_cwd = self.default_topic_workspace(root) / "repos" / "topic-main" / "src"
+        topic_main_cwd.mkdir(parents=True)
+
+        status, output = self.run_cli(
+            ["project", "self", "show", "--json"],
+            cwd=topic_main_cwd,
+            env={"ISOMER_AGENT_NAME": "alice"},
+        )
+
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual("default", data["summary"]["topic"]["research_topic_id"])
+        self.assertEqual("alice", data["summary"]["agent"]["agent_name"])
+        self.assertIn("available_queries", data)
+        for omitted in ("identity", "environment", "semantic_paths", "pixi", "queries"):
+            self.assertNotIn(omitted, data)
+
+    def test_self_identity_reports_agent_topic_actor_missing_and_conflicts(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        topic_main_cwd = topic_workspace / "repos" / "topic-main" / "src"
+        topic_main_cwd.mkdir(parents=True)
+        write(
+            topic_workspace / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[topic_actors]]
+            topic_actor_name = "operator"
+            runtime_kind = "codex"
+            """,
+        )
+
+        status, output = self.run_cli(
+            ["project", "self", "identity", "--topic-actor", "operator", "--json"],
+            cwd=topic_main_cwd,
+            env={"ISOMER_AGENT_NAME": "alice"},
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("default", data["identity"]["context"]["research_topic_id"])
+        self.assertEqual("operator", data["identity"]["topic_actor"]["topic_actor_name"])
+        self.assertEqual("alice", data["identity"]["agent"]["agent_name"])
+        self.assertEqual("environment", data["identity"]["agent"]["source"])
+        self.assertNotIn("environment", data)
+        self.assertNotIn("pixi", data)
+
+        status, output = self.run_cli(["project", "self", "identity", "--json"], cwd=topic_main_cwd)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["identity"]["agent"]["resolved"])
+        self.assertIn("--agent", data["agent_resolution_help"])
+
+        bob_cwd = topic_workspace / "agents" / "bob"
+        bob_cwd.mkdir(parents=True)
+        status, output = self.run_cli(
+            ["project", "self", "identity", "--json"],
+            cwd=bob_cwd,
+            env={"ISOMER_AGENT_NAME": "alice"},
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(any("conflicts" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+
+    def test_self_env_reports_allowlist_and_redacts_values(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+
+        env = {
+            "ISOMER_AGENT_NAME": "alice",
+            "ISOMER_PATH__CUSTOM_DATA": str(root / "data"),
+            "ISOMER_API_KEY": "super-secret",
+            "UNRELATED_VALUE": "visible-nowhere",
+        }
+        status, output = self.run_cli(["project", "self", "env", "--json"], cwd=root, env=env)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        names = {entry["name"]: entry for entry in data["environment"]["recognized"]}
+        self.assertTrue(names["ISOMER_AGENT_NAME"]["present"])
+        self.assertNotIn("value", names["ISOMER_AGENT_NAME"])
+        self.assertIn("ISOMER_PATH__CUSTOM_DATA", names)
+        self.assertIn("ISOMER_API_KEY", data["environment"]["omitted_secret_like"])
+        self.assertNotIn("super-secret", output)
+        self.assertNotIn("visible-nowhere", output)
+
+        status, output = self.run_cli(["project", "self", "env", "--values", "--json"], cwd=root, env=env)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        names = {entry["name"]: entry for entry in data["environment"]["recognized"]}
+        self.assertEqual("alice", names["ISOMER_AGENT_NAME"]["value"])
+        self.assertNotIn("super-secret", output)
+
+    def test_self_paths_requires_labels_and_resolves_requested_only(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_main_cwd = self.default_topic_workspace(root) / "repos" / "topic-main" / "src"
+        topic_main_cwd.mkdir(parents=True)
+
+        status, output = self.run_cli(["project", "self", "paths", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual([], data["semantic_paths"])
+        self.assertTrue(any(diagnostic["field"] == "semantic_label" for diagnostic in data["diagnostics"]))
+
+        status, output = self.run_cli(
+            ["project", "self", "paths", "topic.repos.main", "agent.workspace", "--json"],
+            cwd=topic_main_cwd,
+            env={"ISOMER_AGENT_NAME": "alice"},
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["topic.repos.main", "agent.workspace"], [entry["semantic_label"] for entry in data["semantic_paths"]])
+        self.assertNotIn("paths", data)
+        self.assertNotIn("queries", data)
+
+    def test_self_pixi_project_standalone_ambiguous_and_missing(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        self.add_project_pixi_manifest(root, environments=("default",), lockfile=True)
+        self.add_topic_pixi_binding(root, "default", "default")
+
+        status, output = self.run_cli(["project", "self", "pixi", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("project", data["pixi"]["selected"]["kind"])
+        self.assertEqual("default", data["pixi"]["selected"]["pixi_environment"])
+        self.assertIn("pixi run --manifest-path", data["pixi"]["python_command"])
+
+        standalone_root = self.make_root()
+        self.init_project(standalone_root)
+        self.append_manifest(
+            standalone_root,
+            """
+            [[topic_standalone_pixi_bindings]]
+            research_topic_id = "default"
+            manifest_path_or_dir = "isomer-content/topic-ws/default/pixi.toml"
+            pixi_environment = "default"
+            """,
+        )
+        write(
+            self.default_topic_workspace(standalone_root) / "pixi.toml",
+            """
+            [workspace]
+            channels = ["conda-forge"]
+            platforms = ["linux-64"]
+            """,
+        )
+        which_patch, run_patch = self.patch_pixi()
+        with which_patch, run_patch:
+            status, output = self.run_cli(["project", "self", "pixi", "--json"], cwd=standalone_root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("standalone", data["pixi"]["selected"]["kind"])
+
+        ambiguous_root = self.make_root()
+        self.init_project(ambiguous_root)
+        self.add_project_pixi_manifest(ambiguous_root, environments=("main", "analysis"), lockfile=True)
+        self.add_topic_pixi_binding(ambiguous_root, "default", "main")
+        self.add_topic_pixi_binding(ambiguous_root, "default", "analysis")
+        status, output = self.run_cli(["project", "self", "pixi", "--json"], cwd=ambiguous_root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual(2, len(data["pixi"]["candidates"]))
+        self.assertIsNone(data["pixi"]["python_command"])
+
+        missing_root = self.make_root()
+        self.init_project(missing_root)
+        status, output = self.run_cli(["project", "self", "pixi", "--json"], cwd=missing_root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIsNone(data["pixi"]["selected"])
+        self.assertTrue(any(diagnostic["code"] == "ISO032" for diagnostic in data["diagnostics"]))
 
     def test_paths_preview_derives_topic_workspace_base_from_manifest_content_root(self) -> None:
         root = self.make_root()

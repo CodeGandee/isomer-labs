@@ -1,0 +1,4 @@
+schema_version = "isomer-research-topic-config.v1"
+research_topic_id = "flashmla-gb10-hardware-aware-performance-model"
+topic_statement = "Derive a mathematical model to predict how FlashInfer’s MLA kernel performs on this host, specifically for GB10 GPU (sm121a). The model must not be a blackbox profile-and-fit predictor. It should model how the GPU executes the kernel, decompose execution into stages, map each stage to hardware components, and predict stage execution time from kernel inputs. Profiling feedback may adjust the system model, but accuracy must come primarily from the fidelity of the system model rather than from complex function fitting."
+measurable_objectives = []

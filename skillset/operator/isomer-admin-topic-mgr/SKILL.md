@@ -60,7 +60,7 @@ Load only the selected reference page before executing a subcommand.
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
 | `storage-resolve` | Resolve Project, Research Topic, Topic Workspace, semantic paths, custom labels, and existing workspace material through Project Manifest-backed context | [references/storage-resolve.md](references/storage-resolve.md) |
-| `storage-inspect-main` | Inspect or validate the resolved `topic.repos.main` path, with manual topology creation only when explicitly requested | [references/storage-inspect-main.md](references/storage-inspect-main.md) |
+| `storage-inspect-main` | Inspect or validate the resolved `topic.repos.main` path and route root agent guidance inspection or repair through `isomer-cli project topic-main-guidance`, with manual topology creation only when explicitly requested | [references/storage-inspect-main.md](references/storage-inspect-main.md) |
 | `storage-validate` | Validate initialized-topic storage bindings, semantic label evidence, tmp posture, projection roots, custom surfaces, and unsafe path blockers | [references/storage-validate.md](references/storage-validate.md) |
 | `storage-register-repo` | Register or inspect additional non-main `topic.repos.*` repositories through semantic storage labels and `storage_profile` | [references/storage-register-repo.md](references/storage-register-repo.md) |
 
@@ -148,7 +148,7 @@ Route missing or uninitialized Research Topic context to `isomer-admin-topic-cre
 
 Use Workspace Path Resolution commands for storage answers. Use `project paths get` for selected paths, `project paths explain` for source diagnostics, `project paths register` for explicit `label`/`path`/`storage_profile` bindings, `project repos create` for additional non-main grouped `topic.repos.*` repository labels that default under `repos/extern/...`, and `project topic-actors ...` for Topic Actor binding and Topic Actor Workspace operations.
 
-Do not present this skill as the canonical creator of `topic.repos.main`, projection roots, or per-agent worktrees in the normal topic-team setup path. Route canonical Topic Main Development Repository setup and projection materialization to `isomer-srv-topic-env-setup`; route canonical Agent Workspace worktree creation and cwd verification to `isomer-srv-agent-env-setup`.
+Do not present this skill as the canonical creator of `topic.repos.main`, projection roots, or per-agent worktrees in the normal topic-team setup path. Route canonical Topic Main Development Repository setup and projection materialization to `isomer-srv-topic-env-setup`; route canonical Agent Workspace worktree creation and cwd verification to `isomer-srv-agent-env-setup`. `storage-inspect-main` may inspect or explicitly repair the root `AGENTS.md` and `CLAUDE.md` Isomer topic-main guidance block after initialization only through `isomer-cli project topic-main-guidance`; it does not own the packaged `.j2` template body and does not replace canonical topic-main setup.
 
 Use `env-install-packages`, `env-update-packages`, and `env-remove-packages` as the operator-owned package mutation surfaces for the selected Topic Workspace. Accept plain prompts, Markdown files, YAML, JSON, TOML, requirements-style lists, and copied blocker text as package requests; infer a concrete install, update, remove, and verification plan without requiring a fixed schema-constrained request file.
 

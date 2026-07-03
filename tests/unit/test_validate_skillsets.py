@@ -629,14 +629,14 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         reference_terms = {
             "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, and each path source.",
-            "ensure-topic-main-repository.md": "Prepare the Topic Main Development Repository at `topic.repos.main` as a normal non-bare repo, with `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, and `topic.repos.main.projections.manifest`.",
+            "ensure-topic-main-repository.md": "Prepare the Topic Main Development Repository at `topic.repos.main` as a normal non-bare repo, with `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, and `topic.repos.main.projections.manifest`. Route root `AGENTS.md` and `CLAUDE.md` guidance mutation through `isomer-cli --print-json project topic-main-guidance ensure --topic <topic> --yes`, use `isomer-cli --print-json project topic-main-guidance inspect --topic <topic>` for checks, and use `isomer-cli project topic-main-guidance render` for rendering. Treat `isomer-labs-topic-main-guidance.v1.md.j2` as the `.j2` canonical large-text template asset, must not duplicate the full rendered prose, and report guidance block version.",
             "ensure-topic-repos.md": "Use resolved non-main `topic.repos.*` paths from `semantic_paths`; report semantic label, path, and path source. Keep existing canonical external repos read-only by default. Do not place task repos outside the resolved semantic path, and default helper-created repos under `repos/extern/...`.",
             "project-extern-repos.md": "Create external repo projection entries under `topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`, track metadata in `topic.repos.main.projections.manifest`, and distinguish read-only projections from writable projections.",
             "read-env-gate.md": "Resolve and read `topic.intent.topic_env_requirements`. Interpret the runnable target as what one agent or operator must run.",
-            "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec. Include `## Gate Checklist`, `- [ ]`, and `- [x]`. Define the required readiness work contract with a pass condition, evidence source, optional diagnostics outside the checklist, and blocker condition. Preserve every source-intent runnable target and use bounded real-path verification; consult `isomer-misc-bounded-run-tips`, record `classification_source`, `classification_result`, `classification_reason`, `resource_dimensions`, `unknown-risk`, the bounded-run guidance source, and use generic best-effort judgment only when no recipe applies. A simple smoke test that misses the source path is insufficient unless the user explicitly records a downgrade.",
-            "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy plus classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, and bounded real setup path decisions.",
-            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `topic.intent.agent_env_requirements`. Use bounded real-path verification; a generic smoke test is not enough.",
-            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, projection evidence, bounded real-path coverage, operation classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, source-intent runnable target coverage, every required `## Gate Checklist` item checked with supporting evidence, the exact checklist item when blocked, failed, or not checked, any weaker smoke test limitation, and any user downgrade.",
+            "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec. Include `## Gate Checklist`, `- [ ]`, and `- [x]`. Define the required readiness work contract with a pass condition, evidence source, optional diagnostics outside the checklist, and blocker condition. Preserve every source-intent runnable target and use bounded real-path verification; consult `isomer-misc-bounded-run-tips`, record `classification_source`, `classification_result`, `classification_reason`, `resource_dimensions`, `unknown-risk`, the bounded-run guidance source, and use generic best-effort judgment only when no recipe applies. A simple smoke test that misses the source path is insufficient unless the user explicitly records a downgrade. Consult `isomer-misc-pkg-specifics` before generic package routing and record `no package-specific rule` when no page exists.",
+            "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy plus classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, and bounded real setup path decisions. Use `isomer-misc-pkg-specifics` evidence or `no package-specific rule` from the target spec before package mutation.",
+            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `AGENTS.md`, `CLAUDE.md`, agent guidance posture, guidance block version, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `topic.intent.agent_env_requirements`. Use bounded real-path verification; a generic smoke test is not enough.",
+            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, projection evidence, bounded real-path coverage, operation classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, source-intent runnable target coverage, every required `## Gate Checklist` item checked with supporting evidence, the exact checklist item when blocked, failed, or not checked, any weaker smoke test limitation, any user downgrade, `isomer-misc-pkg-specifics`, and `no package-specific rule`.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
             term = reference_terms.get(subcommand_name, "Topic Workspace environment setup reference.")
@@ -666,6 +666,52 @@ class SkillsetValidatorTests(unittest.TestCase):
                 # Legacy
                 """,
             )
+
+    def write_package_specifics_skill(self, root: Path, *, omit_term: str | None = None) -> None:
+        skill_text = """
+            ---
+            name: isomer-misc-pkg-specifics
+            description: Valid fixture package specifics skill.
+            ---
+
+            # Isomer Misc Package Specifics
+
+            ## Overview
+
+            - **First lookup**: operational env gate derivation, package mutation, and package-specific runtime verification callers check this skill before applying generic package rules.
+
+            ## When to Use
+
+            Use this skill before applying a generic PyPI, Conda, local-package, or system-Python source ladder.
+
+            ## Workflow
+
+            1. Select a package page.
+            2. Report `no package-specific rule` when no package page exists.
+            3. Report selected source or unresolved source, required variant, verification expectation, warnings, and blockers.
+
+            Do not replace generic Pixi mechanics, package-source reachability checks, bounded-run classification, env gate writing, or final readiness reporting.
+            """
+        if omit_term is not None:
+            skill_text = skill_text.replace(omit_term, "")
+        write(root / "skillset" / "misc" / "isomer-misc-pkg-specifics" / "SKILL.md", skill_text)
+        write(
+            root / "skillset" / "misc" / "isomer-misc-pkg-specifics" / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-misc-pkg-specifics"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-misc-pkg-specifics to validate this fixture."
+            """,
+        )
+        write(
+            root / "skillset" / "misc" / "isomer-misc-pkg-specifics" / "references" / "pytorch.md",
+            """
+            # PyTorch
+
+            Package source evidence, variant evidence, verification expectation, and blocker guidance.
+            """,
+        )
 
     def write_agent_env_setup_service(
         self,
@@ -1471,6 +1517,32 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any("hard-coded default-only evidence" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_requires_topic_manager_package_specific_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "env-install-packages.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("isomer-misc-pkg-specifics", ""), encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("isomer-misc-pkg-specifics" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_topic_manager_package_specific_evidence_output(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_topic_manager_skill(root)
+        self.write_deepsci_mini_guide(root)
+        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "env-update-packages.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("package_specifics", ""), encoding="utf-8")
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("package_specifics" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_requires_topic_manager_isomer_managed_terms(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -1533,6 +1605,34 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS006", codes(diagnostics))
         self.assertTrue(any(".isomer-agent/" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_topic_manager_validator_requires_topic_main_agent_guidance_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_manager_skill(root)
+        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "storage-inspect-main.md"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace("isomer-labs-topic-main-guidance", ""),
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("isomer-labs-topic-main-guidance" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_topic_manager_validator_rejects_copied_topic_main_guidance_body(self) -> None:
+        root = self.make_root()
+        self.write_topic_manager_skill(root)
+        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "storage-inspect-main.md"
+        path.write_text(
+            path.read_text(encoding="utf-8") + "\nThis repository is an Isomer Topic Main Development Repository.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS006", codes(diagnostics))
+        self.assertTrue(any("copying the rendered block body" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_accepts_topic_env_setup_contract(self) -> None:
         root = self.make_root()
@@ -1642,6 +1742,31 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("SVS002", codes(diagnostics))
         self.assertTrue(any("bounded real-path" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_service_validator_requires_topic_main_agent_guidance_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="isomer-labs-topic-main-guidance")
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("isomer-labs-topic-main-guidance" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_rejects_copied_topic_main_guidance_body(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
+        path = root / "skillset" / "service" / "isomer-srv-topic-env-setup" / "references" / "ensure-topic-main-repository.md"
+        path.write_text(
+            path.read_text(encoding="utf-8") + "\nThis repository is an Isomer Topic Main Development Repository.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("copying the rendered block body" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_service_validator_rejects_core_owned_heavy_operation_lists(self) -> None:
         root = self.make_root()
         self.write_topic_env_setup_service(root)
@@ -1698,6 +1823,52 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("SVS002", codes(diagnostics))
         self.assertTrue(any("weaker smoke test" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_package_specifics_validator_accepts_contract(self) -> None:
+        root = self.make_root()
+        self.write_package_specifics_skill(root)
+
+        diagnostics = validator.validate_package_specifics_skill(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_package_specifics_validator_requires_first_lookup_contract(self) -> None:
+        root = self.make_root()
+        self.write_package_specifics_skill(root, omit_term="First lookup")
+
+        diagnostics = validator.validate_package_specifics_skill(root)
+
+        self.assertIn("SKL005", codes(diagnostics))
+        self.assertTrue(any("First lookup" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_package_specifics_validator_requires_no_rule_evidence(self) -> None:
+        root = self.make_root()
+        self.write_package_specifics_skill(root, omit_term="no package-specific rule")
+
+        diagnostics = validator.validate_package_specifics_skill(root)
+
+        self.assertIn("SKL005", codes(diagnostics))
+        self.assertTrue(any("no package-specific rule" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_topic_env_package_specific_first_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="isomer-misc-pkg-specifics")
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("isomer-misc-pkg-specifics" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_topic_env_no_package_specific_rule_evidence(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root, omit_reference_term="no package-specific rule")
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS002", codes(diagnostics))
+        self.assertTrue(any("no package-specific rule" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_accepts_agent_env_setup_contract(self) -> None:
         root = self.make_root()
@@ -1787,3 +1958,23 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("SVS003", codes(diagnostics))
         self.assertTrue(any("mutate Workspace Runtime records" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_agent_env_package_repair_route(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root, omit_reference_term="do not invent a separate per-agent package install plan")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS003", codes(diagnostics))
+        self.assertTrue(any("separate per-agent package install plan" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_requires_agent_env_package_specific_verification_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root, omit_reference_term="isomer-misc-pkg-specifics")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS003", codes(diagnostics))
+        self.assertTrue(any("isomer-misc-pkg-specifics" in message for message in messages(diagnostics)), messages(diagnostics))

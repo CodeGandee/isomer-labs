@@ -23,6 +23,7 @@ TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-admin-topic-team-specialize"
 PROJECT_MANAGER_SKILL = "isomer-admin-project-mgr"
 TOPIC_CREATOR_SKILL = "isomer-admin-topic-creator"
 TOPIC_MANAGER_SKILL = "isomer-admin-topic-mgr"
+PACKAGE_SPECIFICS_SKILL = "isomer-misc-pkg-specifics"
 
 MIGRATED_OPERATOR_SKILLS = (
     "isomer-rsch-project-aware",
@@ -49,6 +50,11 @@ ACTIVE_REF_ROOTS = (
 ACTIVE_REF_FILES = ("AGENTS.md", "ROADMAP.md", "pyproject.toml")
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
 FORBIDDEN_REPO_LOCAL_ISOMER_CLI = "pixi run isomer-cli"
+COPIED_TOPIC_MAIN_GUIDANCE_TERMS = (
+    "This repository is an Isomer Topic Main Development Repository.",
+    "This repository uses Pixi as the primary package manager and execution environment. Invoke Python through Pixi",
+    "Avoid system Python, ambient virtualenvs, plain `python`, plain `pip`, shell activation, and local `.venv` environments",
+)
 
 TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "Default help mode",
@@ -626,6 +632,15 @@ TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "isomer-default.v1",
         "predecessor evidence",
         "manual topology operation",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "isomer-cli --print-json project topic-main-guidance inspect --topic <topic>",
+        "isomer-cli --print-json project topic-main-guidance ensure --topic <topic> --yes",
+        "isomer-cli project topic-main-guidance",
+        "isomer-labs-topic-main-guidance.v1.md.j2",
+        ".j2",
+        "canonical large-text template asset",
+        "must not carry a duplicate full copy",
     ),
     "storage-validate.md": (
         "Workspace Path Resolution",
@@ -689,16 +704,25 @@ TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "pixi add --manifest-path <manifest_path>",
         "Do not require a formal package request schema",
         "Do not use local `venv`",
+        "isomer-misc-pkg-specifics",
+        "no package-specific rule",
+        "package_specifics",
     ),
     "env-update-packages.md": (
         "Pixi-scoped",
         "broad environment upgrades",
         "verification",
+        "isomer-misc-pkg-specifics",
+        "no package-specific rule",
+        "package_specifics",
     ),
     "env-remove-packages.md": (
         "dependency",
         "post-removal verification",
         "blocker",
+        "isomer-misc-pkg-specifics",
+        "no package-specific rule",
+        "package_specifics",
     ),
     "env-verify-topic.md": (
         "isomer-srv-topic-env-setup",
@@ -828,6 +852,16 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "topic.repos.main.projections.writable",
         "topic.repos.main.projections.manifest",
         "normal non-bare",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "isomer-cli --print-json project topic-main-guidance ensure --topic <topic> --yes",
+        "isomer-cli --print-json project topic-main-guidance inspect --topic <topic>",
+        "isomer-cli project topic-main-guidance render",
+        "isomer-labs-topic-main-guidance.v1.md.j2",
+        ".j2",
+        "canonical large-text template asset",
+        "must not duplicate the full rendered prose",
+        "guidance block version",
     ),
     "ensure-topic-repos.md": (
         "semantic_paths",
@@ -850,6 +884,10 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "topic.repos.main",
         "ensure-topic-main-repository",
         "project-extern-repos",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "agent guidance posture",
+        "guidance block version",
         "topic.tmp",
         "resolved `topic.tmp`",
         "local, ignored, disposable, not shared, and not durable evidence",
@@ -883,6 +921,8 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "generic best-effort judgment",
         "simple smoke test",
         "user explicitly records a downgrade",
+        "isomer-misc-pkg-specifics",
+        "no package-specific rule",
     ),
     "install-topic-deps.md": (
         "topic.env.topic_setup_target_spec",
@@ -892,6 +932,8 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "bounded-run guidance source",
         "generic best-effort",
         "bounded real setup path",
+        "isomer-misc-pkg-specifics",
+        "no package-specific rule",
     ),
     "verify-env-gate.md": (
         "per-Agent Workspace cwd verification is not checked here",
@@ -909,6 +951,8 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "exact checklist item",
         "weaker smoke test",
         "user downgrade",
+        "isomer-misc-pkg-specifics",
+        "no package-specific rule",
     ),
 }
 
@@ -1056,6 +1100,10 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "bounded-run guidance source",
         "generic best-effort judgment",
         "simple smoke test",
+        "isomer-srv-topic-env-setup",
+        "isomer-misc-pkg-specifics",
+        "no package-specific rule",
+        "do not invent a separate per-agent package install plan",
     ),
     "require-topic-main-ready.md": (
         "Topic Main Development Repository predecessor evidence",
@@ -1089,6 +1137,10 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "checked with cwd evidence",
         "exact checklist item",
         "user downgrade",
+        "isomer-srv-topic-env-setup",
+        "isomer-misc-pkg-specifics",
+        "no package-specific rule",
+        "Do not write or run independent PyPI, Pixi, Conda, or runtime-wiring package install commands",
     ),
     "setup-agent-env.md": (
         "resolve-agent-env-context",
@@ -1171,6 +1223,23 @@ RESET_FORBIDDEN_RESEARCH_TERMS = (
     "skillset/research-paradigm",
     "research-paradigm",
     "isomer-rsch-",
+)
+
+PACKAGE_SPECIFICS_REQUIRED_TERMS = (
+    "First lookup",
+    "operational env gate derivation",
+    "package mutation",
+    "package-specific runtime verification",
+    "before applying a generic PyPI, Conda, local-package, or system-Python source ladder",
+    "no package-specific rule",
+    "selected source or unresolved source",
+    "required variant",
+    "verification expectation",
+    "generic Pixi mechanics",
+    "package-source reachability checks",
+    "bounded-run classification",
+    "env gate writing",
+    "final readiness reporting",
 )
 
 RESET_FORBIDDEN_GIT_COMMAND_RE = re.compile(r"\bgit\s+(?:stash|reset|checkout|branch|commit|tag)\b", re.IGNORECASE)
@@ -1298,6 +1367,27 @@ def add_forbidden_reset_guidance_diagnostics(
                     line_number,
                     code,
                     "operator reset guidance must not route to or depend on research-paradigm skills",
+                )
+
+
+def add_copied_topic_main_guidance_diagnostics(
+    diagnostics: list[Diagnostic],
+    repo_root: Path,
+    path: Path,
+    lines: tuple[str, ...],
+    *,
+    code: str,
+) -> None:
+    for line_number, line in enumerate(lines, start=1):
+        for copied_term in COPIED_TOPIC_MAIN_GUIDANCE_TERMS:
+            if copied_term in line:
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    code,
+                    "topic-main guidance docs must route to `isomer-cli project topic-main-guidance` and the packaged .j2 template instead of copying the rendered block body",
                 )
 
 
@@ -2058,6 +2148,7 @@ def validate_topic_manager_module(repo_root: Path) -> list[Diagnostic]:
     text = "\n".join(lines)
     add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS006", require_contract=True)
     add_forbidden_reset_guidance_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS006")
+    add_copied_topic_main_guidance_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS006")
     for term in TOPIC_MANAGER_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
@@ -2093,6 +2184,7 @@ def validate_topic_manager_module(repo_root: Path) -> list[Diagnostic]:
     for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
         skill_file_lines = read_lines(skill_file)
         add_forbidden_reset_guidance_diagnostics(diagnostics, repo_root, skill_file, skill_file_lines, code="OPS006")
+        add_copied_topic_main_guidance_diagnostics(diagnostics, repo_root, skill_file, skill_file_lines, code="OPS006")
         for line_number, line in enumerate(skill_file_lines, start=1):
             for forbidden_term in TOPIC_MANAGER_FORBIDDEN_PUBLIC_TERMS:
                 if forbidden_term in line:
@@ -2213,6 +2305,7 @@ def validate_topic_env_setup_service(repo_root: Path) -> list[Diagnostic]:
     text = "\n".join(lines)
     add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="SVS002", require_contract=True)
     add_forbidden_heavy_operation_diagnostics(diagnostics, repo_root, skill_md, lines, code="SVS002")
+    add_copied_topic_main_guidance_diagnostics(diagnostics, repo_root, skill_md, lines, code="SVS002")
     for term in TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS:
         if term not in text:
             add(
@@ -2248,6 +2341,7 @@ def validate_topic_env_setup_service(repo_root: Path) -> list[Diagnostic]:
             add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "SVS002", f"{TOPIC_ENV_SETUP_SERVICE_SKILL} must link references/{subcommand_file_name}")
         subcommand_lines = read_lines(subcommand_path)
         add_forbidden_heavy_operation_diagnostics(diagnostics, repo_root, subcommand_path, subcommand_lines, code="SVS002")
+        add_copied_topic_main_guidance_diagnostics(diagnostics, repo_root, subcommand_path, subcommand_lines, code="SVS002")
         subcommand_text = "\n".join(subcommand_lines)
         for required_term in TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
             if required_term not in subcommand_text:
@@ -2343,6 +2437,45 @@ def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
     return sorted(set(diagnostics))
 
 
+def validate_package_specifics_skill(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skill_dir = repo_root / "skillset" / "misc" / PACKAGE_SPECIFICS_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "SKL005", f"{PACKAGE_SPECIFICS_SKILL} is required")
+        return diagnostics
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    for term in PACKAGE_SPECIFICS_REQUIRED_TERMS:
+        if term not in text:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(lines, "# Isomer"),
+                "SKL005",
+                f"{PACKAGE_SPECIFICS_SKILL} must document '{term}'",
+            )
+    references_dir = skill_dir / "references"
+    if not references_dir.exists():
+        add(diagnostics, repo_root, references_dir, 1, "SKL005", f"{PACKAGE_SPECIFICS_SKILL} must include references/")
+    else:
+        for reference_path in sorted(references_dir.glob("*.md")):
+            reference_lines = read_lines(reference_path)
+            reference_text = "\n".join(reference_lines)
+            for term in ("package source", "variant", "verification", "blocker"):
+                if term not in reference_text.lower():
+                    add(
+                        diagnostics,
+                        repo_root,
+                        reference_path,
+                        first_line_containing(reference_lines, "#"),
+                        "SKL005",
+                        f"references/{reference_path.name} must document package-specific {term} evidence",
+                    )
+    return diagnostics
+
+
 def validate_all(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     diagnostics.extend(
@@ -2351,6 +2484,7 @@ def validate_all(repo_root: Path) -> list[Diagnostic]:
     )
     diagnostics.extend(validate_operator_skillset(repo_root))
     diagnostics.extend(validate_service_skillset(repo_root))
+    diagnostics.extend(validate_package_specifics_skill(repo_root))
     diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "misc",), code="SKL004"))
     return sorted(set(diagnostics))
 
