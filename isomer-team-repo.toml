@@ -1,0 +1,15 @@
+schema_version = "isomer-team-repository.v1"
+id = "isomer-local-teams"
+status = "active"
+
+[[domain_agent_team_templates]]
+id = "deepsci-mini"
+path = "teams/deepsci-mini/execplan"
+schema_version = "isomer-domain-agent-team-template-ref.v1"
+status = "active"
+
+[[domain_agent_team_templates]]
+id = "deepsci-org"
+path = "teams/deepsci-org/execplan"
+schema_version = "isomer-domain-agent-team-template-ref.v1"
+status = "active"

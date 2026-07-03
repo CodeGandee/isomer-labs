@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import re
 import unittest
 from pathlib import Path
 
@@ -28,6 +29,7 @@ MODULE_SIZE_EXEMPTIONS = {
     "cli/app.py",
     "cli/commands/project.py",
     "doctor.py",
+    "models.py",
     "paths.py",
     "research_records.py",
     "topic_reset.py",
@@ -66,6 +68,7 @@ class SourceArchitectureTests(unittest.TestCase):
             "runtime.py",
             "handoffs.py",
             "team_templates.py",
+            "team_repositories.py",
             "team_profiles.py",
             "team_instances/commands.py",
         ]
@@ -84,6 +87,7 @@ class SourceArchitectureTests(unittest.TestCase):
             "isomer_labs.runtime.models",
             "isomer_labs.runtime.store",
             "isomer_labs.runtime.validation",
+            "isomer_labs.team_repositories",
         ]
         for module_name in modules:
             self.assertIsNotNone(importlib.import_module(module_name), module_name)
@@ -140,6 +144,48 @@ class SourceArchitectureTests(unittest.TestCase):
             parts = {Path(part).stem for part in relative.parts}
             if "workflows" in relative.parts or parts & forbidden_names:
                 violations.append(relative.as_posix())
+        self.assertEqual([], violations)
+
+    def test_src_does_not_derive_checkout_root(self) -> None:
+        violations: list[str] = []
+        patterns = (
+            re.compile(r"Path\(__file__\)\.resolve\(\)\.parents\[[0-9]+\]"),
+        )
+        for path in sorted(SRC_ROOT.rglob("*.py")):
+            relative = path.relative_to(SRC_ROOT).as_posix()
+            content = path.read_text(encoding="utf-8")
+            for pattern in patterns:
+                if pattern.search(content):
+                    violations.append(f"{relative}: {pattern.pattern}")
+        self.assertEqual([], violations)
+
+    def test_src_does_not_reference_checkout_only_dirs_at_runtime(self) -> None:
+        forbidden_fragments = (
+            '"teams/',
+            "'teams/",
+            '"skillset/',
+            "'skillset/",
+            '"tests/',
+            "'tests/",
+            '"openspec/',
+            "'openspec/",
+            '".imsight-arts/',
+            "'.imsight-arts/",
+            '"extern/',
+            "'extern/",
+        )
+        allowed_fragments = {
+            "cli/app.py": ('"repos/extern/"',),
+        }
+        violations: list[str] = []
+        for path in sorted(SRC_ROOT.rglob("*.py")):
+            relative = path.relative_to(SRC_ROOT).as_posix()
+            content = path.read_text(encoding="utf-8")
+            for fragment in forbidden_fragments:
+                if fragment in allowed_fragments.get(relative, ()):
+                    continue
+                if fragment in content:
+                    violations.append(f"{relative}: {fragment}")
         self.assertEqual([], violations)
 
 

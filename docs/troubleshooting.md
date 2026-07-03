@@ -232,7 +232,7 @@ Symptom: the UC-01 manual harness reports the fixture is incomplete, skips live 
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project --root tests/fixtures/projects/uc01-headless-gb10 validate
+pixi run isomer-cli --print-json project --root /path/to/project validate
 pixi run python tests/manual/uc01_headless_vertical_slice
 ```
 

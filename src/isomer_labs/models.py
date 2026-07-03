@@ -15,6 +15,7 @@ RESEARCH_TOPIC_CONFIG_SCHEMA_VERSION = "isomer-research-topic-config.v1"
 LOCAL_ACTIVE_CONTEXT_SCHEMA_VERSION = "isomer-local-active-context.v1"
 DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION = "isomer-domain-agent-team-template-ref.v1"
 TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION = "isomer-topic-agent-team-profile.v1"
+TEAM_REPOSITORY_MANIFEST_SCHEMA_VERSION = "isomer-team-repository.v1"
 
 
 @dataclass(frozen=True)
@@ -25,12 +26,36 @@ class DomainAgentTeamTemplateRegistration:
     schema_version: str
     status: str
     source_path: Path
+    team_repository_id: str | None = None
+    team_repository_source_path: Path | None = None
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "source_path": self.source_path_input,
+            "source_kind": self.source_kind,
+            "schema_version": self.schema_version,
+            "status": self.status,
+        }
+        if self.team_repository_id is not None:
+            data["team_repository_id"] = self.team_repository_id
+        if self.team_repository_source_path is not None:
+            data["team_repository_source_path"] = str(self.team_repository_source_path)
+        return data
+
+
+@dataclass(frozen=True)
+class TeamRepositoryRegistration:
+    id: str
+    path_input: str
+    schema_version: str
+    status: str
+    source_path: Path
 
     def to_json(self) -> dict[str, object]:
         return {
             "id": self.id,
-            "source_path": self.source_path_input,
-            "source_kind": self.source_kind,
+            "path": self.path_input,
             "schema_version": self.schema_version,
             "status": self.status,
         }
@@ -465,6 +490,7 @@ class ProjectManifest:
     topic_workspaces: list[TopicWorkspaceRegistration]
     topic_pixi_environment_bindings: list[TopicPixiEnvironmentBinding] = field(default_factory=list)
     topic_standalone_pixi_bindings: list[TopicStandalonePixiBinding] = field(default_factory=list)
+    team_repositories: list[TeamRepositoryRegistration] = field(default_factory=list)
     domain_agent_team_templates: list[DomainAgentTeamTemplateRegistration] = field(default_factory=list)
     topic_agent_team_profiles: list[TopicAgentTeamProfileRegistration] = field(default_factory=list)
     defaults: dict[str, Any] = field(default_factory=dict)
@@ -564,6 +590,7 @@ class ProjectManifest:
             "topic_standalone_pixi_bindings": [
                 binding.to_json() for binding in self.topic_standalone_pixi_bindings
             ],
+            "team_repositories": [repository.to_json() for repository in self.team_repositories],
             "domain_agent_team_templates": [template.to_json() for template in self.domain_agent_team_templates],
             "topic_agent_team_profiles": [profile.to_json() for profile in self.topic_agent_team_profiles],
             "defaults": self.defaults,

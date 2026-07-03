@@ -9,10 +9,12 @@ from isomer_labs.diagnostics import Diagnostic
 from isomer_labs.models import (
     DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION,
     PROJECT_MANIFEST_SCHEMA_VERSION,
+    TEAM_REPOSITORY_MANIFEST_SCHEMA_VERSION,
     TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION,
     DomainAgentTeamTemplateRegistration,
     ProjectManifest,
     ResearchTopicRegistration,
+    TeamRepositoryRegistration,
     TopicAgentTeamProfileRegistration,
     TopicPixiEnvironmentBinding,
     TopicStandalonePixiBinding,
@@ -34,6 +36,7 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
     workspaces = _parse_topic_workspaces(path, raw, schema_version, diagnostics)
     pixi_environment_bindings = _parse_topic_pixi_environment_bindings(path, raw, diagnostics)
     standalone_pixi_bindings = _parse_topic_standalone_pixi_bindings(path, raw, diagnostics)
+    team_repositories = _parse_team_repositories(path, raw, diagnostics)
     templates = _parse_domain_agent_team_templates(path, raw, diagnostics)
     profiles = _parse_topic_agent_team_profiles(path, raw, diagnostics)
     artifact_format_profiles = _registration_ids(raw.get("artifact_format_profiles"))
@@ -46,6 +49,7 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
         topic_workspaces=workspaces,
         topic_pixi_environment_bindings=pixi_environment_bindings,
         topic_standalone_pixi_bindings=standalone_pixi_bindings,
+        team_repositories=team_repositories,
         domain_agent_team_templates=templates,
         topic_agent_team_profiles=profiles,
         defaults=defaults,
@@ -260,6 +264,7 @@ def _parse_domain_agent_team_templates(
         template_id = _first_string(item, ("id", "domain_agent_team_template_id", "template_id", "ref"))
         source_kind = _first_string(item, ("source_kind", "kind")) or "project"
         source_path = _first_string(item, ("source_path", "path", "template_path", "execplan_path", "source"))
+        team_repository_id = _first_string(item, ("team_repository_id", "team_repo_id", "repository_id"))
         if template_id is None:
             diagnostics.append(
                 Diagnostic(
@@ -272,7 +277,7 @@ def _parse_domain_agent_team_templates(
                 )
             )
             continue
-        if source_path is None and source_kind != "built-in":
+        if source_path is None:
             diagnostics.append(
                 Diagnostic(
                     code="ISO003",
@@ -280,7 +285,7 @@ def _parse_domain_agent_team_templates(
                     concept="Domain Agent Team Template registration",
                     path=path,
                     field=f"{field}.source_path",
-                    message="Domain Agent Team Template registration must include a source path unless it is built-in.",
+                    message="Domain Agent Team Template registration must include a source path.",
                 )
             )
             continue
@@ -290,6 +295,53 @@ def _parse_domain_agent_team_templates(
                 source_path_input=source_path,
                 source_kind=source_kind,
                 schema_version=_first_string(item, ("schema_version",)) or DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION,
+                status=_first_string(item, ("status",)) or "active",
+                source_path=path,
+                team_repository_id=team_repository_id,
+            )
+        )
+    return registrations
+
+
+def _parse_team_repositories(
+    path: Path,
+    raw: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> list[TeamRepositoryRegistration]:
+    registrations: list[TeamRepositoryRegistration] = []
+    for index, item in enumerate(_table_items(raw.get("team_repositories"))):
+        field = f"team_repositories[{index}]"
+        repository_id = _first_string(item, ("id", "team_repository_id", "repository_id", "ref"))
+        repository_path = _first_string(item, ("path", "root", "source_path", "repository_path"))
+        if repository_id is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Team Repository registration",
+                    path=path,
+                    field=f"{field}.id",
+                    message="Team Repository registration must include an id.",
+                )
+            )
+            continue
+        if repository_path is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO003",
+                    severity="error",
+                    concept="Team Repository registration",
+                    path=path,
+                    field=f"{field}.path",
+                    message="Team Repository registration must include a path.",
+                )
+            )
+            continue
+        registrations.append(
+            TeamRepositoryRegistration(
+                id=repository_id,
+                path_input=repository_path,
+                schema_version=_first_string(item, ("schema_version",)) or TEAM_REPOSITORY_MANIFEST_SCHEMA_VERSION,
                 status=_first_string(item, ("status",)) or "active",
                 source_path=path,
             )

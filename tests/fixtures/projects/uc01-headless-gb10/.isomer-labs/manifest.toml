@@ -24,6 +24,11 @@ pixi_environment = "default"
 purpose = "uc01-headless-runtime"
 status = "active"
 
+[[team_repositories]]
+id = "isomer-local-teams"
+path = "../../../.."
+status = "active"
+
 [[topic_agent_team_profiles]]
 id = "uc-01-gb10-deepsci-mini"
 path = ".isomer-labs/team-profiles/uc-01-gb10-deepsci-mini.toml"

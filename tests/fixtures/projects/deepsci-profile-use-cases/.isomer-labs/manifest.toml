@@ -36,6 +36,11 @@ source_path = ".isomer-labs/domain-agent-team-templates/fixture-method-team/exec
 source_kind = "project"
 status = "active"
 
+[[team_repositories]]
+id = "isomer-local-teams"
+path = "../../../.."
+status = "active"
+
 [[topic_agent_team_profiles]]
 id = "uc-01-novel-biomarker"
 path = ".isomer-labs/team-profiles/uc-01-novel-biomarker.toml"

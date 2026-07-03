@@ -35,7 +35,7 @@ from isomer_labs.runtime.store import (
 from isomer_labs.runtime.validation import validate_workspace_runtime
 from isomer_labs.team_profiles import parse_topic_agent_team_profile, validate_topic_agent_team_profile
 from isomer_labs.team_templates import (
-    BUILT_IN_DEEPSCI_MINI_ID,
+    DEEPSCI_MINI_TEMPLATE_ID,
     find_domain_agent_team_template,
     validate_domain_agent_team_template,
 )
@@ -142,6 +142,7 @@ def run_manual_validation(*, live_houmao: bool = False) -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="isomer-uc01-") as tmp:
         root = Path(tmp) / "project"
         shutil.copytree(FIXTURE_PROJECT, root)
+        _rewrite_fixture_team_repository_path(root)
         env = _validation_env()
 
         project_validation = _run_json(root, env, ["project", "--root", str(root), "validate"])
@@ -353,7 +354,7 @@ def summarize_uc01_records(store: WorkspaceRuntimeStore) -> dict[str, object]:
         (
             record
             for record in store.list_agent_team_instances()
-            if record.research_topic_id == UC01_RESEARCH_TOPIC_ID and record.domain_agent_team_template_id == BUILT_IN_DEEPSCI_MINI_ID
+            if record.research_topic_id == UC01_RESEARCH_TOPIC_ID and record.domain_agent_team_template_id == DEEPSCI_MINI_TEMPLATE_ID
         ),
         None,
     )
@@ -474,7 +475,7 @@ def load_uc01_profile_and_template(
     context: EffectiveTopicContext,
 ) -> tuple[TopicAgentTeamProfile | None, DomainAgentTeamTemplate | None, list[Diagnostic]]:
     diagnostics: list[Diagnostic] = []
-    template_registration = find_domain_agent_team_template(BUILT_IN_DEEPSCI_MINI_ID, context.project)
+    template_registration = find_domain_agent_team_template(DEEPSCI_MINI_TEMPLATE_ID, context.project)
     template = None
     if template_registration is not None:
         template_report = validate_domain_agent_team_template(context.project, template_registration, include_harness=False)
@@ -755,6 +756,7 @@ def _validate_live_mode(requested: bool, env: Mapping[str, str]) -> dict[str, ob
     with tempfile.TemporaryDirectory(prefix="isomer-uc01-live-") as tmp:
         root = Path(tmp) / "project"
         shutil.copytree(FIXTURE_PROJECT, root)
+        _rewrite_fixture_team_repository_path(root)
         context, diagnostics = resolve_fixture_context(root, env)
         _require(context is not None and not has_errors(diagnostics), "live fixture context failed", [item.to_json() for item in diagnostics])
         assert context is not None
@@ -804,7 +806,7 @@ def _fixture_diagnostics(context: EffectiveTopicContext) -> list[Diagnostic]:
                 message=f"UC-01 requires Research Topic {UC01_RESEARCH_TOPIC_ID}.",
             )
         )
-    if context.domain_agent_team_template_id not in {None, BUILT_IN_DEEPSCI_MINI_ID}:
+    if context.domain_agent_team_template_id not in {None, DEEPSCI_MINI_TEMPLATE_ID}:
         diagnostics.append(
             Diagnostic(
                 code="ISO080",
@@ -927,6 +929,13 @@ def _validation_env() -> dict[str, str]:
     env = dict(os.environ)
     env["PYTHONPATH"] = str(REPO_ROOT / "src") + os.pathsep + str(REPO_ROOT / "tests" / "manual") + os.pathsep + env.get("PYTHONPATH", "")
     return env
+
+
+def _rewrite_fixture_team_repository_path(root: Path) -> None:
+    manifest_path = root / ".isomer-labs" / "manifest.toml"
+    manifest_text = manifest_path.read_text(encoding="utf-8")
+    manifest_text = manifest_text.replace('path = "../../../.."', f'path = "{REPO_ROOT.as_posix()}"')
+    manifest_path.write_text(manifest_text, encoding="utf-8")
 
 
 def _run_json(root: Path, env: Mapping[str, str], args: list[str]) -> dict[str, Any]:

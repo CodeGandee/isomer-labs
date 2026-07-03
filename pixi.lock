@@ -269,17 +269,9 @@ packages:
   requires_python: '>=3.10'
 - pypi: ./
   name: isomer-labs
-  version: 0.1.0+local
-  sha256: 4d01740a35b971fb2ccbaf414e2d954c1487ea7a5c079c4a3ae4e2667fa4c600
+  version: 0.1.0
+  sha256: 94ebad7c01848e9f932595b422359cd0af6243bd24a3a986d585851fa4e147e3
   requires_dist:
-  - scipy>=1.17.1,<2
-  - mdutils>=1.8.1,<2
-  - ruff>=0.15.16,<0.16
-  - mkdocs-material>=9.7.6,<10
-  - mypy>=2.1.0,<3
-  - attrs>=26.1.0,<27
-  - omegaconf>=2.3.1,<3
-  - imageio>=2.37.3,<3
   - jinja2>=3.1.6,<4
   - jsonschema>=4.26.0,<5
   - click>=8.4.1,<9

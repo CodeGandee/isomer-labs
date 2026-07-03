@@ -46,7 +46,7 @@ COMMAND_EXAMPLES: dict[str, tuple[str, ...]] = {
     ),
     "project validate": (
         "pixi run isomer-cli --print-json project validate",
-        "pixi run isomer-cli --print-json project --root tests/fixtures/projects/deepsci-profile-use-cases validate",
+        "pixi run isomer-cli --print-json project --root /path/to/project validate",
     ),
     "schemas": (
         "pixi run isomer-cli --print-json schemas list",

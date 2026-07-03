@@ -12,8 +12,7 @@ from isomer_labs.path_utils import is_within, resolve_project_path
 from isomer_labs.project import root_houmao_overlay_dir_for_root
 from isomer_labs.team_profiles import parse_topic_agent_team_profile, validate_topic_agent_team_profile
 from isomer_labs.team_templates import (
-    BUILT_IN_DEEPSCI_MINI_ID,
-    BUILT_IN_DEEPSCI_ORG_ID,
+    discover_domain_agent_team_templates,
     find_domain_agent_team_template,
     resolve_template_source_path,
     validate_domain_agent_team_template,
@@ -420,7 +419,7 @@ def _validate_template_registrations(project: Project) -> list[Diagnostic]:
         if template.status == "archived":
             continue
         source_path = resolve_template_source_path(project, template)
-        if template.source_kind != "built-in" and not is_within(source_path, project.root):
+        if template.source_kind != "team-repository" and not is_within(source_path, project.root):
             diagnostics.append(
                 Diagnostic(
                     code="ISO016",
@@ -629,9 +628,7 @@ def _validate_profile_files(project: Project) -> list[Diagnostic]:
 
 
 def _registered_template_ids(project: Project) -> set[str]:
-    return {BUILT_IN_DEEPSCI_ORG_ID, BUILT_IN_DEEPSCI_MINI_ID} | {
-        template.id for template in project.manifest.domain_agent_team_templates if template.status != "archived"
-    }
+    return {template.id for template in discover_domain_agent_team_templates(project)}
 
 
 def _is_under_topic_workspace_teams(project: Project, path: Path) -> bool:

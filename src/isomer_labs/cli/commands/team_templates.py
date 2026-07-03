@@ -7,6 +7,7 @@ import click
 from isomer_labs.cli.app import (
     _cmd_team_templates_inspect,
     _cmd_team_templates_list,
+    _cmd_team_templates_register,
     _cmd_team_templates_validate,
 )
 from isomer_labs.cli.options import common_options as _common_options, merge_options as _merge_options
@@ -84,4 +85,33 @@ def register_team_template_commands(app: click.Group) -> None:
                 json_output=json_output,
             ),
             template_id,
+        )
+
+    @team_templates_group.command(name="register", help="Register a Team Repository template in the Project Manifest.")
+    @_common_options
+    @click.argument("template_id")
+    @click.option("--from-repository", "repository_id", default=None, help="Team Repository id to select from.")
+    @click.option("--write", "write_registration", is_flag=True, help="Write the registration to the Project Manifest.")
+    @click.pass_context
+    def team_templates_register_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        template_id: str = "",
+        repository_id: str | None = None,
+        write_registration: bool = False,
+    ) -> int:
+        return _cmd_team_templates_register(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+            ),
+            template_id,
+            repository_id=repository_id,
+            write_registration=write_registration,
         )

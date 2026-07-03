@@ -141,12 +141,20 @@ class IsomerCliTests(unittest.TestCase):
     def copy_fixture_project(self, name: str = "fixture-project") -> Path:
         root = self.make_root() / name
         shutil.copytree(FIXTURE_PROJECT, root)
+        self._append_local_team_repository_registration(root)
         return root
 
     def copy_uc01_fixture_project(self, name: str = "uc01-fixture-project") -> Path:
         root = self.make_root() / name
         shutil.copytree(UC01_FIXTURE_PROJECT, root)
+        self._append_local_team_repository_registration(root)
         return root
+
+    def _append_local_team_repository_registration(self, root: Path) -> None:
+        manifest_path = root / ".isomer-labs" / "manifest.toml"
+        manifest_text = manifest_path.read_text(encoding="utf-8")
+        manifest_text = manifest_text.replace('path = "../../../.."', f'path = "{REPO_ROOT.as_posix()}"')
+        manifest_path.write_text(manifest_text, encoding="utf-8")
 
     def make_two_topic_project(self, root: Path) -> None:
         write(
@@ -181,7 +189,12 @@ class IsomerCliTests(unittest.TestCase):
             research_topic_id = "beta"
             path = "topic-workspaces/beta"
             status = "active"
-            """,
+
+            [[team_repositories]]
+            id = "isomer-local-teams"
+            path = "{repo_root}"
+            status = "active"
+            """.format(repo_root=REPO_ROOT.as_posix()),
         )
         write(
             root / ".isomer-labs" / "research-topics" / "alpha.toml",
@@ -3818,6 +3831,11 @@ class IsomerCliTests(unittest.TestCase):
             research_topic_id = "beta"
             path = "topic-workspaces/beta"
 
+            [[team_repositories]]
+            id = "isomer-local-teams"
+            path = "{repo_root}"
+            status = "active"
+
             [[topic_agent_team_profiles]]
             id = "uc-01-alpha"
             path = ".isomer-labs/team-profiles/uc-01-alpha.toml"
@@ -3841,7 +3859,7 @@ class IsomerCliTests(unittest.TestCase):
             path = ".isomer-labs/team-profiles/uc-05-beta.toml"
             domain_agent_team_template_id = "deepsci-org"
             research_topic_id = "beta"
-            """,
+            """.format(repo_root=REPO_ROOT.as_posix()),
         )
         write(
             root / ".isomer-labs" / "research-topics" / "alpha.toml",
@@ -3990,10 +4008,17 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["project", "team-templates", "list", "--json"])
         data = json.loads(output)
         self.assertEqual(0, status, output)
+        self.assertEqual([], [template["id"] for template in data["templates"]])
+
+        team_repo_env = {"ISOMER_TEAM_REPOSITORIES": str(REPO_ROOT)}
+        status, output = self.run_cli(["project", "team-templates", "list", "--json"], env=team_repo_env)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
         self.assertEqual(["deepsci-mini", "deepsci-org"], [template["id"] for template in data["templates"]])
+        self.assertEqual({"team-repository"}, {template["source_kind"] for template in data["templates"]})
         self.assertTrue(all(template["validation_status"] == "valid" for template in data["templates"]))
 
-        status, output = self.run_cli(["project", "team-templates", "inspect", "deepsci-mini", "--json"])
+        status, output = self.run_cli(["project", "team-templates", "inspect", "deepsci-mini", "--json"], env=team_repo_env)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(3, len(data["template"]["roles"]))
@@ -4002,13 +4027,13 @@ class IsomerCliTests(unittest.TestCase):
             {role["id"] for role in data["template"]["roles"]},
         )
 
-        status, output = self.run_cli(["project", "team-templates", "inspect", "deepsci-org", "--json"])
+        status, output = self.run_cli(["project", "team-templates", "inspect", "deepsci-org", "--json"], env=team_repo_env)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(7, len(data["template"]["roles"]))
         self.assertIn("deepsci-org-reviewer", {role["id"] for role in data["template"]["roles"]})
 
-        status, output = self.run_cli(["project", "--root", str(FIXTURE_PROJECT), "team-templates", "list", "--json"])
+        status, output = self.run_cli(["project", "--root", str(FIXTURE_PROJECT), "team-templates", "list", "--json"], env=team_repo_env)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(["deepsci-mini", "deepsci-org", "fixture-method-team"], [template["id"] for template in data["templates"]])
@@ -4022,7 +4047,10 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(data["ok"])
         self.assertEqual({"fixture-coordinator", "fixture-researcher"}, {role["id"] for role in data["template"]["roles"]})
 
-        status, output = self.run_cli(["project", "--root", str(FIXTURE_PROJECT), "team-templates", "validate", "deepsci-org", "--json"])
+        status, output = self.run_cli(
+            ["project", "--root", str(FIXTURE_PROJECT), "team-templates", "validate", "deepsci-org", "--json"],
+            env=team_repo_env,
+        )
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["ok"])

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import click
+import tomlkit
 
 from isomer_labs.builtins import list_built_in_schemas
 from isomer_labs.cli.errors import (
@@ -124,8 +125,8 @@ from isomer_labs.team_profiles import (
     specialize_topic_agent_team_profile,
     validate_topic_agent_team_profile,
 )
+from isomer_labs.team_repositories import discover_team_repositories
 from isomer_labs.team_templates import (
-    BUILT_IN_DEEPSCI_ORG_ID,
     discover_domain_agent_team_templates,
     find_domain_agent_team_template,
     resolve_template_source_path,
@@ -212,6 +213,9 @@ Command surface:
   project team-templates list
   project team-templates inspect
   project team-templates validate
+  project team-templates register
+  project team-repositories list
+  project team-repositories inspect
   project team-profiles specialize
   project team-profiles materialize
   project team-profiles validate
@@ -1463,11 +1467,14 @@ def _cmd_team_templates_list(options: CliOptions) -> int:
                 "id": registration.id,
                 "source_kind": registration.source_kind,
                 "source_path": str(resolve_template_source_path(project, registration)),
+                "team_repository_id": registration.team_repository_id,
                 "validation_status": "valid" if report.ok else "invalid",
             }
         )
     payload = {"templates": sorted(templates, key=lambda item: str(item["id"]))}
     lines = ["Domain Agent Team Templates"]
+    if not payload["templates"]:
+        lines.append("No Domain Agent Team Templates are configured. Add Project registrations or configure Team Repositories.")
     lines.extend(
         f"- {template['id']} ({template['source_kind']}, {template['validation_status']}) {template['source_path']}"
         for template in payload["templates"]
@@ -1513,6 +1520,104 @@ def _cmd_team_templates_validate(options: CliOptions, template_id: str) -> int:
     return _emit("team-templates validate", options, payload, diagnostics, lines)
 
 
+def _cmd_team_templates_register(
+    options: CliOptions,
+    template_id: str,
+    *,
+    repository_id: str | None,
+    write_registration: bool,
+) -> int:
+    project, diagnostics = _discover(options)
+    if project is None:
+        return _emit("team-templates register", options, {"registration": None, "mutated": False}, diagnostics, [])
+    repositories = discover_team_repositories(project, os.environ)
+    for repository in repositories:
+        diagnostics.extend(repository.diagnostics)
+    candidate = None
+    for repository in repositories:
+        if repository_id is not None and repository.id != repository_id:
+            continue
+        for template in repository.templates:
+            if template.id == template_id:
+                candidate = (repository, template)
+                break
+        if candidate is not None:
+            break
+    if candidate is None:
+        diagnostics.append(_unknown_template_diagnostic(template_id))
+        return _emit("team-templates register", options, {"registration": None, "mutated": False}, diagnostics, [])
+    repository, template = candidate
+    registration = {
+        "id": template.id,
+        "source_path": template.source_path_input or str(resolve_template_source_path(project, template)),
+        "source_kind": "team-repository",
+        "team_repository_id": repository.id,
+        "status": "active",
+    }
+    mutated = False
+    if write_registration and not has_errors(diagnostics):
+        if any(item.id == template.id and item.status != "archived" for item in project.manifest.domain_agent_team_templates):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO004",
+                    severity="error",
+                    concept="Domain Agent Team Template registration",
+                    path=project.manifest_path,
+                    field="domain_agent_team_templates.id",
+                    message=f"Domain Agent Team Template is already registered in the Project Manifest: {template.id}.",
+                )
+            )
+        else:
+            _append_template_registration(project.manifest_path, registration)
+            mutated = True
+    payload = {"registration": registration, "mutated": mutated}
+    lines = [f"Domain Agent Team Template registration: {template.id} from {repository.id}"]
+    if mutated:
+        lines.append(f"Updated: {project.manifest_path}")
+    return _emit("team-templates register", options, payload, diagnostics, lines)
+
+
+def _cmd_team_repositories_list(options: CliOptions) -> int:
+    project, diagnostics = _discover_optional(options)
+    repositories = discover_team_repositories(project, os.environ)
+    payload = {"team_repositories": [repository.to_json() for repository in repositories]}
+    for repository in repositories:
+        diagnostics.extend(repository.diagnostics)
+    lines = ["Team Repositories"]
+    if not repositories:
+        lines.append("No Team Repositories are configured.")
+    lines.extend(
+        f"- {repository.id} ({repository.status}, templates={len(repository.templates)}) {repository.root}"
+        for repository in repositories
+    )
+    return _emit("team-repositories list", options, payload, diagnostics, lines)
+
+
+def _cmd_team_repositories_inspect(options: CliOptions, repository_id: str) -> int:
+    project, diagnostics = _discover_optional(options)
+    repositories = discover_team_repositories(project, os.environ)
+    repository = next((item for item in repositories if item.id == repository_id), None)
+    if repository is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO016",
+                severity="error",
+                concept="Team Repository",
+                field="team_repository_id",
+                message=f"Unknown Team Repository: {repository_id}.",
+            )
+        )
+        return _emit("team-repositories inspect", options, {"team_repository": None}, diagnostics, [])
+    diagnostics.extend(repository.diagnostics)
+    lines = [
+        f"Team Repository: {repository.id}",
+        f"Root: {repository.root}",
+        "Templates",
+        *[f"- {template.id}: {template.source_path_input}" for template in repository.templates],
+    ]
+    return _emit("team-repositories inspect", options, {"team_repository": repository.to_json()}, diagnostics, lines)
+
+
 def _cmd_team_profiles_specialize(
     options: CliOptions,
     *,
@@ -1526,7 +1631,10 @@ def _cmd_team_profiles_specialize(
     context, diagnostics = _context_for_options(options)
     if context is None:
         return _emit("team-profiles specialize", options, {"profile": None}, diagnostics, [])
-    selected_template_id = template_id or context.domain_agent_team_template_id or BUILT_IN_DEEPSCI_ORG_ID
+    selected_template_id = template_id or context.domain_agent_team_template_id
+    if selected_template_id is None:
+        diagnostics.append(_missing_template_diagnostic())
+        return _emit("team-profiles specialize", options, {"profile": None}, diagnostics, [])
     registration = find_domain_agent_team_template(selected_template_id, context.project)
     if registration is None:
         diagnostics.append(_unknown_template_diagnostic(selected_template_id))
@@ -1595,7 +1703,10 @@ def _cmd_team_profiles_materialize(
     if raw is not None:
         packet, parse_diagnostics = parse_topic_team_instantiation_packet(packet_file, raw)
         diagnostics.extend(parse_diagnostics)
-    selected_template_id = template_id or (packet.source_template_ref if packet is not None else None) or context.domain_agent_team_template_id or BUILT_IN_DEEPSCI_ORG_ID
+    selected_template_id = template_id or (packet.source_template_ref if packet is not None else None) or context.domain_agent_team_template_id
+    if selected_template_id is None:
+        diagnostics.append(_missing_template_diagnostic())
+        return _emit("team-profiles materialize", options, {"materialization": None, "ok": False}, diagnostics, [])
     registration = find_domain_agent_team_template(selected_template_id, context.project)
     if registration is None:
         diagnostics.append(_unknown_template_diagnostic(selected_template_id))
@@ -1646,7 +1757,17 @@ def _cmd_team_profiles_validate(
     if raw is not None:
         profile, parse_diagnostics = parse_topic_agent_team_profile(path, raw)
         diagnostics.extend(parse_diagnostics)
-    selected_template_id = template_id or (profile.domain_agent_team_template_id if profile is not None else None) or BUILT_IN_DEEPSCI_ORG_ID
+    selected_template_id = template_id or (profile.domain_agent_team_template_id if profile is not None else None)
+    if selected_template_id is None:
+        diagnostics.append(_missing_template_diagnostic())
+        report = validate_topic_agent_team_profile(profile, None, project=project, source_path=path)
+        diagnostics.extend(report.diagnostics)
+        payload = {
+            "ok": False,
+            "profile": profile.to_json() if profile is not None else None,
+            "validation": report.to_json(),
+        }
+        return _emit("team-profiles validate", options, payload, diagnostics, [])
     registration = find_domain_agent_team_template(selected_template_id, project)
     template = None
     if registration is None:
@@ -2992,6 +3113,19 @@ def _unknown_template_diagnostic(template_id: str) -> Diagnostic:
     )
 
 
+def _missing_template_diagnostic() -> Diagnostic:
+    return Diagnostic(
+        code="ISO020",
+        severity="error",
+        concept="Domain Agent Team Template",
+        field="template_id",
+        message=(
+            "No Domain Agent Team Template was selected. Pass --template, set a Project or Topic default, "
+            "or configure a Team Repository template before running this command."
+        ),
+    )
+
+
 def _resolve_profile_cli_path(
     project: Project | None,
     profile_path: str | None,
@@ -3060,6 +3194,19 @@ def _profile_registration_suggestion(project_root: Path, profile: TopicAgentTeam
     }
 
 
+def _append_template_registration(manifest_path: Path, registration: dict[str, str]) -> None:
+    document = tomlkit.parse(manifest_path.read_text(encoding="utf-8"))
+    templates = document.get("domain_agent_team_templates")
+    if templates is None:
+        templates = tomlkit.aot()
+        document["domain_agent_team_templates"] = templates
+    item = tomlkit.table()
+    for key, value in registration.items():
+        item[key] = value
+    templates.append(item)
+    manifest_path.write_text(tomlkit.dumps(document), encoding="utf-8")
+
+
 def _project_relative_path(project_root: Path, path: Path) -> str:
     try:
         return path.resolve(strict=False).relative_to(project_root.resolve(strict=False)).as_posix()
@@ -3100,6 +3247,7 @@ def _register_commands() -> None:
     from isomer_labs.cli.commands.runtime import register_runtime_commands
     from isomer_labs.cli.commands.team_instances import register_team_instance_commands
     from isomer_labs.cli.commands.team_profiles import register_team_profile_commands
+    from isomer_labs.cli.commands.team_repositories import register_team_repository_commands
     from isomer_labs.cli.commands.team_templates import register_team_template_commands
     from isomer_labs.cli.commands.topic_reset import register_topic_reset_commands
 
@@ -3110,6 +3258,7 @@ def _register_commands() -> None:
     register_topic_reset_commands(project_group)
     register_team_instance_commands(project_group)
     register_handoff_commands(project_group)
+    register_team_repository_commands(project_group)
     register_team_template_commands(project_group)
     register_team_profile_commands(project_group)
     register_deepsci_ext_commands(app)

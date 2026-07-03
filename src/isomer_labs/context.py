@@ -18,7 +18,6 @@ from isomer_labs.models import (
     TopicWorkspaceRegistration,
 )
 from isomer_labs.path_utils import canonicalize, is_within, resolve_project_path
-from isomer_labs.team_templates import BUILT_IN_DEEPSCI_ORG_ID
 
 
 IDENTITY_ENV_FIELDS = {
@@ -470,8 +469,4 @@ def _select_template_and_profile(
         template_id = state.project.manifest.default_domain_agent_team_template_id()
         if template_id is not None and profile_id is None:
             source = "Project Manifest default"
-    if template_id is None:
-        template_id = BUILT_IN_DEEPSCI_ORG_ID
-        if profile_id is None:
-            source = "template default"
     return template_id, profile_id, source, profile_refs

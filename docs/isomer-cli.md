@@ -100,7 +100,7 @@ Validate the Project Manifest and registered configs.
 
 ```bash
 pixi run isomer-cli --print-json project validate
-pixi run isomer-cli --print-json project --root tests/fixtures/projects/deepsci-profile-use-cases validate
+pixi run isomer-cli --print-json project --root /path/to/project validate
 ```
 
 ### `project topics list`
@@ -681,7 +681,7 @@ Validate a registered Domain Agent Team Template.
 
 ```bash
 pixi run isomer-cli project team-templates validate deepsci-org
-pixi run isomer-cli project --root tests/fixtures/projects/deepsci-profile-use-cases team-templates validate fixture-method-team
+pixi run isomer-cli project --root /path/to/project team-templates validate fixture-method-team
 ```
 
 ### `project team-profiles specialize`
@@ -720,7 +720,7 @@ Validate a Topic Agent Team Profile file or a `profile.toml` file inside a Topic
 
 ```bash
 pixi run isomer-cli project team-profiles validate isomer-content/topic-ws/my-topic/team-profile/profile.toml
-pixi run isomer-cli project --root tests/fixtures/projects/deepsci-profile-use-cases team-profiles validate topic-workspaces/novel-biomarker/team-profile/profile.toml
+pixi run isomer-cli project --root /path/to/project team-profiles validate topic-workspaces/my-topic/team-profile/profile.toml
 ```
 
 ## Side-effect Summary

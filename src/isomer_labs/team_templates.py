@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
-from pathlib import Path
 from typing import Any
+from pathlib import Path
 
 from isomer_labs.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import (
-    DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION,
     AgentRoleDefinition,
     DomainAgentTeamTemplate,
     DomainAgentTeamTemplateRegistration,
@@ -21,11 +20,12 @@ from isomer_labs.models import (
 )
 from isomer_labs.path_utils import canonicalize, is_within, resolve_project_path
 from isomer_labs.team_template_harness import harness_diagnostics, validate_workspace_contract
+from isomer_labs.team_repositories import discover_team_repository_templates
 from isomer_labs.toml_loader import load_toml
 
 
-BUILT_IN_DEEPSCI_ORG_ID = "deepsci-org"
-BUILT_IN_DEEPSCI_MINI_ID = "deepsci-mini"
+DEEPSCI_ORG_TEMPLATE_ID = "deepsci-org"
+DEEPSCI_MINI_TEMPLATE_ID = "deepsci-mini"
 EXPECTED_DEEPSCI_ORG_ROLES = (
     "deepsci-org-master",
     "deepsci-org-framer",
@@ -41,9 +41,6 @@ EXPECTED_DEEPSCI_MINI_ROLES = (
     "deepsci-mini-synth-reviewer",
 )
 SCALABLE_DEEPSCI_ORG_ROLES = {"deepsci-org-experimenter", "deepsci-org-analyzer"}
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_BUILT_IN_DEEPSCI_ORG_SOURCE = _REPO_ROOT / "teams" / "deepsci-org" / "execplan"
-_BUILT_IN_DEEPSCI_MINI_SOURCE = _REPO_ROOT / "teams" / "deepsci-mini" / "execplan"
 
 _BOUNDARY_KEYS = {
     "research_topic_id",
@@ -95,37 +92,17 @@ class SourceDocument:
     data: dict[str, Any]
 
 
-def built_in_deepsci_org_registration() -> DomainAgentTeamTemplateRegistration:
-    return DomainAgentTeamTemplateRegistration(
-        id=BUILT_IN_DEEPSCI_ORG_ID,
-        source_path_input=str(_BUILT_IN_DEEPSCI_ORG_SOURCE),
-        source_kind="built-in",
-        schema_version=DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION,
-        status="active",
-        source_path=_BUILT_IN_DEEPSCI_ORG_SOURCE,
-    )
-
-
-def built_in_deepsci_mini_registration() -> DomainAgentTeamTemplateRegistration:
-    return DomainAgentTeamTemplateRegistration(
-        id=BUILT_IN_DEEPSCI_MINI_ID,
-        source_path_input=str(_BUILT_IN_DEEPSCI_MINI_SOURCE),
-        source_kind="built-in",
-        schema_version=DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION,
-        status="active",
-        source_path=_BUILT_IN_DEEPSCI_MINI_SOURCE,
-    )
-
-
 def discover_domain_agent_team_templates(project: Project | None = None) -> list[DomainAgentTeamTemplateRegistration]:
-    registrations = [built_in_deepsci_org_registration(), built_in_deepsci_mini_registration()]
-    if project is None:
-        return registrations
-    seen = {BUILT_IN_DEEPSCI_ORG_ID, BUILT_IN_DEEPSCI_MINI_ID}
-    for registration in project.manifest.domain_agent_team_templates:
-        if registration.status == "archived":
-            continue
-        if registration.id in seen:
+    registrations: list[DomainAgentTeamTemplateRegistration] = []
+    seen: set[str] = set()
+    if project is not None:
+        for registration in project.manifest.domain_agent_team_templates:
+            if registration.status == "archived" or registration.id in seen:
+                continue
+            seen.add(registration.id)
+            registrations.append(registration)
+    for registration in discover_team_repository_templates(project):
+        if registration.status == "archived" or registration.id in seen:
             continue
         seen.add(registration.id)
         registrations.append(registration)
@@ -143,13 +120,15 @@ def find_domain_agent_team_template(
 
 
 def resolve_template_source_path(project: Project | None, registration: DomainAgentTeamTemplateRegistration) -> Path:
-    if registration.source_kind == "built-in" or (
-        registration.id in {BUILT_IN_DEEPSCI_ORG_ID, BUILT_IN_DEEPSCI_MINI_ID}
-        and registration.source_path_input is None
-    ):
-        return canonicalize(registration.source_path)
     if registration.source_path_input is None:
         return canonicalize(registration.source_path)
+    if registration.source_kind == "team-repository":
+        candidate = Path(registration.source_path_input)
+        if candidate.is_absolute():
+            return canonicalize(candidate)
+        if registration.team_repository_source_path is not None:
+            return canonicalize(registration.team_repository_source_path / candidate)
+        return canonicalize(candidate)
     if project is None:
         return canonicalize(Path(registration.source_path_input))
     return resolve_project_path(project.root, registration.source_path_input)
@@ -163,7 +142,20 @@ def validate_domain_agent_team_template(
 ) -> TemplateValidationReport:
     diagnostics: list[Diagnostic] = []
     source_path = resolve_template_source_path(project, registration)
-    if registration.source_kind != "built-in" and project is not None and not is_within(source_path, project.root):
+    if registration.source_kind == "team-repository":
+        if registration.team_repository_source_path is not None and not is_within(source_path, registration.team_repository_source_path):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO016",
+                    severity="error",
+                    concept="Domain Agent Team Template",
+                    path=registration.source_path,
+                    field="source_path",
+                    message="Domain Agent Team Template source path resolves outside the Team Repository root.",
+                )
+            )
+            return TemplateValidationReport(registration.id, source_path, False, diagnostics, None)
+    elif project is not None and not is_within(source_path, project.root):
         diagnostics.append(
             Diagnostic(
                 code="ISO016",
@@ -516,7 +508,7 @@ def _validate_manifest_metadata(
                 message="Template manifest must identify the domain_agent_team_template layer.",
             )
         )
-    if registration.id == BUILT_IN_DEEPSCI_ORG_ID and raw.get("loop_slug") != BUILT_IN_DEEPSCI_ORG_ID:
+    if registration.id == DEEPSCI_ORG_TEMPLATE_ID and raw.get("loop_slug") != DEEPSCI_ORG_TEMPLATE_ID:
         diagnostics.append(
             Diagnostic(
                 code="ISO017",
@@ -524,10 +516,10 @@ def _validate_manifest_metadata(
                 concept="Domain Agent Team Template manifest",
                 path=manifest.path,
                 field="loop_slug",
-                message="Built-in deepsci-org template manifest must keep loop_slug deepsci-org.",
+                message="deepsci-org template manifest must keep loop_slug deepsci-org.",
             )
         )
-    if registration.id == BUILT_IN_DEEPSCI_MINI_ID and raw.get("loop_slug") != BUILT_IN_DEEPSCI_MINI_ID:
+    if registration.id == DEEPSCI_MINI_TEMPLATE_ID and raw.get("loop_slug") != DEEPSCI_MINI_TEMPLATE_ID:
         diagnostics.append(
             Diagnostic(
                 code="ISO017",
@@ -535,7 +527,7 @@ def _validate_manifest_metadata(
                 concept="Domain Agent Team Template manifest",
                 path=manifest.path,
                 field="loop_slug",
-                message="Built-in deepsci-mini template manifest must keep loop_slug deepsci-mini.",
+                message="deepsci-mini template manifest must keep loop_slug deepsci-mini.",
             )
         )
 
@@ -545,7 +537,7 @@ def _validate_deepsci_role_contract(
     roles: list[AgentRoleDefinition],
     diagnostics: list[Diagnostic],
 ) -> None:
-    if template_id == BUILT_IN_DEEPSCI_MINI_ID:
+    if template_id == DEEPSCI_MINI_TEMPLATE_ID:
         role_ids = [role.id for role in roles]
         missing = [role_id for role_id in EXPECTED_DEEPSCI_MINI_ROLES if role_id not in role_ids]
         if missing:
@@ -579,7 +571,7 @@ def _validate_deepsci_role_contract(
                         message="deepsci-mini Agent Roles must stay non-scalable for the compact seed template.",
                     )
                 )
-    if template_id != BUILT_IN_DEEPSCI_ORG_ID:
+    if template_id != DEEPSCI_ORG_TEMPLATE_ID:
         return
     role_ids = [role.id for role in roles]
     missing = [role_id for role_id in EXPECTED_DEEPSCI_ORG_ROLES if role_id not in role_ids]

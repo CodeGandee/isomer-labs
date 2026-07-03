@@ -9,6 +9,7 @@ The canonical Isomer domain language lives in `.imsight-arts/project-explore/dom
 - [Getting Started](getting-started.md) — initialize a Project, validate it, prepare a Topic Workspace, and create an Agent Team Instance record.
 - [Concepts](concepts.md) — a concise guide to Project, Topic Workspace, Workspace Runtime, Agent Team Instance, and other canonical terms.
 - [Topic Workspace Definition](topic-workspace-definition.md) — the standard Topic Workspace and Agent Workspace directory structure.
+- [Team Repositories](team-repositories.md) — local plugin roots for Domain Agent Team Templates and migration from implicit checkout teams.
 - [System Design](system-design.md) — how Project discovery, Effective Topic Context, Workspace Path Resolution, Workspace Runtime, and team execution fit together.
 
 ## Operating Isomer
@@ -34,6 +35,7 @@ These pages are plain Markdown files in `docs/`. Relative links connect them; no
 | `getting-started.md` | Smallest useful operator path | Project, Research Topic, Topic Workspace, Agent Team Instance |
 | `concepts.md` | Canonical concept summary | domain language, execution layers, state ownership |
 | `topic-workspace-definition.md` | Topic and agent workspace structure standard | Topic Workspace, Agent Workspace, Agent Name, Topic Main Development Repository |
+| `team-repositories.md` | Team Repository manifest and migration guide | Team Repository, Domain Agent Team Template |
 | `system-design.md` | Architecture and boundaries | discovery, context, path resolution, runtime, adapter boundary |
 | `isomer-cli.md` | Command reference | commands, side effects, JSON output, examples |
 | `workflows.md` | Task-oriented operating guides | inspection, init, prepare, launch, stop, reconcile, adopt |

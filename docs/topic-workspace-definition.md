@@ -199,7 +199,7 @@ Not every directory must exist before the workflow that owns it runs. Mutating c
   - Meaning: Houmao adapter material.
   - Notes: Stores adapter manifests, command payloads, launch material, snapshots, stop outcomes, handoff payloads, observations, and normalizations.
 
-The Topic Workspace must not contain a workspace-local `teams/` directory. Domain Agent Team Templates live as built-in or Project Config references. The one topic-specialized profile bundle lives under `team-profile/`, and runtime Agent Team Instance state lives in Workspace Runtime records plus adapter material.
+The Topic Workspace must not contain a workspace-local `teams/` directory. Domain Agent Team Templates come from Project registrations or configured Team Repositories. The one topic-specialized profile bundle lives under `team-profile/`, and runtime Agent Team Instance state lives in Workspace Runtime records plus adapter material.
 
 ## Topic Main Development Repository
 
