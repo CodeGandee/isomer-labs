@@ -2,6 +2,10 @@
 
 Use this reference when the decision route needs longer tactical notes than the entrypoint. Placeholder definitions live in `../migrate/placeholders.md`.
 
+## Latest Context Freshness
+
+Before producing or refreshing `<DECISION_CONTEXT_BRIEF>` or a route-bearing decision record, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, decision-relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when active durable records conflict. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+
 ## Guidance
 
 When performing this step, execute these substeps in order.

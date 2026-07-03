@@ -2,6 +2,10 @@
 
 Use this reference to fix one measured run before code or compute work starts. This page distills the source entrypoint's run-contract, planning, and readiness rules into native Isomer language. Placeholder definitions live in `../migrate/placeholders.md`.
 
+## Latest Context Freshness
+
+Before producing or refreshing `<EXPERIMENT_CONTEXT_BRIEF>`, `<EXPERIMENT_CONTRACT>`, or run-facing durable records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, hypothesis, comparator, metric, route, and blocker records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the selected hypothesis, comparator basis, dataset, split, metric contract, execution route, or paper target changed. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+
 ## Guidance
 
 When performing this step, execute these substeps in order.

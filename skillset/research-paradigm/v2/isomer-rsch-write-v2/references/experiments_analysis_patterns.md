@@ -4,6 +4,10 @@ Use this reference when strengthening the `experiments` and `analysis` sections 
 
 The main objective is not to report more numbers. It is to make the empirical package reviewer-auditable, interpretable, and memorable.
 
+## Latest Context Freshness
+
+Before producing or refreshing `<PAPER_CONTROL_STATE>`, `<PAPER_CONTRACT>`, or paper-facing durable records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, paper contract, outline, evidence ledger, experiment matrix, figure, citation, blocker, and route records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the paper target, claim boundary, or evidence state no longer matches durable topic state. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+
 ## 1. Separate empirical proof from interpretation
 
 When the staged package is rich enough, keep `experiments` and `analysis` as distinct jobs.

@@ -2,6 +2,10 @@
 
 Use this reference at the start of an `isomer-rsch-idea-v2` pass whenever the real target might differ from the easiest available surrogate. Placeholder definitions live in `../migrate/placeholders.md`.
 
+## Latest Context Freshness
+
+Before producing or refreshing `<OBJECTIVE_CONTRACT>` or `<CURRENT_BOARD_PACKET>`, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, objective and board placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the Research Topic scope, comparator basis, metric contract, evaluation contract, paper target, or claim boundary changed. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+
 ## Guidance
 
 When performing this step, execute these substeps in order.

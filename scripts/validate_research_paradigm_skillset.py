@@ -27,6 +27,7 @@ REGISTRY_ROW_ID_RE = re.compile(r"^(?:path|api|schema|policy|provider)-[a-z0-9-]
 SEMANTIC_PLACEHOLDER_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 FORBIDDEN_REPO_LOCAL_ISOMER_CLI = "pixi run isomer-cli"
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
+MAX_V2_WORKFLOW_LINE = 45
 
 EXPECTED_V1_SKILLS = frozenset(
     {
@@ -302,6 +303,18 @@ V2_SHARED_WORKER_OUTPUT_REQUIRED_TERMS = (
     "operation-specific child set",
     ".gitignore",
     "commit_after_operation",
+)
+V2_LATEST_CONTEXT_REQUIRED_TERMS = (
+    "latest context preflight",
+    "latest-context-snapshot",
+)
+V2_LATEST_CONTEXT_FRESHNESS_TERMS = (
+    "prompt memory",
+    "chat memory",
+    "prior prose",
+    "remembered research state",
+    "older rendered records",
+    "worker-local files",
 )
 
 
@@ -598,7 +611,9 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
     if workflow_line is None:
         add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must contain ## Workflow")
     else:
-        if workflow_line > 40:
+        if generation == "v2" and workflow_line > MAX_V2_WORKFLOW_LINE:
+            add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
+        elif generation != "v2" and workflow_line > 40:
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
         numbers = workflow_step_numbers(lines, workflow_line)
         if len(numbers) < 2 or numbers[0] != 1:
@@ -1107,6 +1122,30 @@ def validate_v2_worker_output_policy(document: Document, repo_root: Path, diagno
             )
 
 
+def validate_v2_latest_context_preflight(document: Document, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
+    if "v2" not in document.roles or not is_active_guidance(document):
+        return
+    if not document.rel_target.endswith("/SKILL.md"):
+        return
+    if document.rel_target == "v2/isomer-rsch-shared-v2/SKILL.md":
+        return
+    if not (document.path.parent / "placeholder-bindings.md").exists():
+        return
+    text = "\n".join(document.lines)
+    lowered = text.casefold()
+    missing_required = [term for term in V2_LATEST_CONTEXT_REQUIRED_TERMS if term not in lowered]
+    has_freshness_intent = any(term in lowered for term in V2_LATEST_CONTEXT_FRESHNESS_TERMS)
+    if not missing_required and has_freshness_intent:
+        return
+    if "worker-output reminder" in lowered and "latest context preflight" not in lowered:
+        message = "worker-output guidance does not satisfy the latest-context preflight requirement for durable record work"
+    elif missing_required:
+        message = "active v2 durable-record-writing entrypoint must mention Latest Context Preflight and latest-context-snapshot"
+    else:
+        message = "active v2 durable-record-writing entrypoint must include freshness-intent wording before trusting prompt memory or prior prose"
+    add(diagnostics, repo_root, document.path, 1, "RPS016", message)
+
+
 def validate_v2_support_section_intros(
     document: Document,
     repo_root: Path,
@@ -1338,6 +1377,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_coupling_patterns(document, repo_root, diagnostics, allow_zones)
         validate_v2_storage_binding(document, repo_root, diagnostics, allow_zones)
         validate_v2_worker_output_policy(document, repo_root, diagnostics)
+        validate_v2_latest_context_preflight(document, repo_root, diagnostics)
         validate_v2_support_section_intros(document, repo_root, diagnostics)
     validate_v2_placeholder_bindings(skill_dirs, repo_root, diagnostics)
     validate_v2_payload_first_bindings(skill_dirs, repo_root, diagnostics)

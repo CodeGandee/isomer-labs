@@ -192,6 +192,46 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("RPS013", codes(diagnostics), messages(diagnostics))
         self.assertTrue(any("global isomer-cli directly" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_latest_context_preflight_required_for_v2_record_binding_skill(self) -> None:
+        root, target = self.make_valid_skillset()
+        self.write_placeholder_bindings(target / "v2" / "isomer-rsch-scout-v2", [])
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS016", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("latest-context" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_latest_context_preflight_accepts_concise_shared_import(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_dir = target / "v2" / "isomer-rsch-scout-v2"
+        self.write_placeholder_bindings(skill_dir, [])
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text(
+            skill_md.read_text(encoding="utf-8")
+            + "\nLatest-context reminder: before accepted durable record writes, follow `isomer-rsch-shared-v2` Latest Context Preflight, capture `latest-context-snapshot`, and do not trust prompt memory, chat memory, prior prose, older rendered records, remembered research state, or worker-local files until checked.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertNotIn("RPS016", codes(diagnostics), messages(diagnostics))
+
+    def test_worker_output_guidance_does_not_satisfy_latest_context_preflight(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_dir = target / "v2" / "isomer-rsch-scout-v2"
+        self.write_placeholder_bindings(skill_dir, [])
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text(
+            skill_md.read_text(encoding="utf-8")
+            + "\nWorker-output reminder: resolve `project outputs policy`, write plain generated files under an operation-specific child set, and check `commit_after_operation`.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS016", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("worker-output guidance does not satisfy" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_payload_first_placeholder_binding_is_allowed(self) -> None:
         root, target = self.make_valid_skillset()
         skill_dir = target / "v2" / "isomer-rsch-scout-v2"

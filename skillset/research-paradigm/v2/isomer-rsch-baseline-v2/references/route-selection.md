@@ -2,6 +2,10 @@
 
 Use this reference to choose the cheapest route that can make comparator trust real. Placeholder definitions live in `../migrate/placeholders.md`.
 
+## Latest Context Freshness
+
+Before producing or refreshing `<BASELINE_CONTEXT_BRIEF>` or `<COMPARATOR_ROUTE_RECORD>`, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, comparator-relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the current comparator basis, metric contract, accepted waiver, or baseline target no longer matches durable topic state. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+
 ## Guidance
 
 When performing this step, execute these substeps in order.

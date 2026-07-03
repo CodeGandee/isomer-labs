@@ -2,6 +2,10 @@
 
 Use this reference to design the smallest analysis campaign that can change a parent claim or route. Placeholder definitions live in `../migrate/placeholders.md`.
 
+## Latest Context Freshness
+
+Before producing or refreshing `<ANALYSIS_CONTEXT_BRIEF>` or analysis route records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, parent result, claim, route, paper gap, reviewer item, and blocker records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the parent boundary is stale or conflicting. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+
 ## Guidance
 
 When performing this step, execute these substeps in order.
