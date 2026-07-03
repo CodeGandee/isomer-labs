@@ -6,9 +6,10 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Print what `isomer-admin-topic-creator` does: it is the front door for creating, initializing, resuming, or repairing a Research Topic until the Topic Workspace readiness summary is written or blockers are reported.
 2. Print required inputs: Project root or init permission, concrete Research Topic statement or registered ref, mutation approval, requested Topic Actors beyond `operator`, and optional default-operator opt-out.
-3. Print the subcommand tables with each public subcommand's functionality.
-4. Explain the readiness ladder: Project, topic input resolution, topic registration, `topic.intent.overview`, Workspace Runtime, `topic.intent.topic_env_requirements`, topic environment and `topic.repos.main`, `topic.intent.actor_definitions`, Topic Actors and `topic.env.actor_env_gates`, actor onboarding context, and `finalize` writing `topic.workspace.summary`.
-5. State the output contract and lower-level delegation guardrails.
+3. State the mode default: if the user asks to create, initialize, prepare, or start a topic without saying `fast-forward`, fully automatic, `step-by-step`, manual lower-level control, `run-to`, a stop-before/exclusion phrase, or another named mode, route to `run-to finalize` with the `finalize` target included by default.
+4. Print the subcommand tables with each public subcommand's functionality.
+5. Explain the readiness ladder: Project, topic input resolution, topic registration, `topic.intent.overview`, Workspace Runtime, `topic.intent.topic_env_requirements`, topic environment and `topic.repos.main`, `topic.intent.actor_definitions`, Topic Actors and `topic.env.actor_env_gates`, actor onboarding context, and `finalize` writing `topic.workspace.summary`.
+6. State the output contract and lower-level delegation guardrails.
 
 If the user's task does not map cleanly to these steps, print the closest subcommand names and ask for the missing topic statement, Project root, actor roster, or mutation approval.
 
@@ -39,9 +40,9 @@ If the user's task does not map cleanly to these steps, print the closest subcom
 | Subcommand | Functionality |
 | --- | --- |
 | `help` | Print what this skill does, required inputs, subcommand functionalities, outputs, and guardrails. |
-| `fast-forward` | Run the end-to-end path from empty or partial Project state to `finalize`. |
-| `step-by-step` | Run the same main workflow as `fast-forward`, preview every step, show option tables for choices, and wait for user acknowledgement. |
-| `run-to` | Run the main workflow up to a selected procedural subcommand; exclude the target by default and include it only on explicit inclusive request. |
+| `fast-forward` | Run the end-to-end path from empty or partial Project state to `finalize` only when the user explicitly asks for fully automatic or fast-forward execution. |
+| `step-by-step` | Guided mode for explicit step-by-step requests. Run the same main workflow as `fast-forward`, preview every step, show option tables for choices, and wait for user acknowledgement. |
+| `run-to` | Run the main workflow through a selected procedural subcommand by default; stop before it only on explicit wording such as `before <target>`, `stop before <target>`, `excluding <target>`, or `up to but not including <target>`. |
 | `status` | Report current readiness stage, ready evidence, summary freshness, blockers, and skipped stages. |
 | `repair` | Resume from the first blocked or stale stage without rerunning ready destructive or expensive work. |
 

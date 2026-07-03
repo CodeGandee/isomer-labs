@@ -46,6 +46,15 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "`run-to`",
                 "`status`",
                 "`repair`",
+                "default to `run-to finalize`",
+                "default bare topic-creation dispatch",
+                "Use `fast-forward` only when the user explicitly asks",
+                "with the `finalize` target included by default",
+                "include the target by default",
+                "`before <target>`",
+                "`stop before <target>`",
+                "`excluding <target>`",
+                "`up to but not including <target>`",
                 "actor onboarding",
                 "topic.workspace.summary",
                 "structured reset checkpoint",
@@ -62,6 +71,9 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
         self.assertNotIn("isomer-cli ext research records", combined)
         self.assertNotIn("`start-manual-research`", combined)
         self.assertNotIn("start-pack record refs", combined)
+        self.assertNotIn("normal exclusive mode", combined)
+        self.assertNotIn("excluded by default", combined)
+        self.assertNotIn("explicit inclusive", combined)
 
     def test_topic_manager_owns_reset_plan_inspect_and_apply_guidance(self) -> None:
         skill = read_repo_file("skillset/operator/isomer-admin-topic-mgr/SKILL.md")

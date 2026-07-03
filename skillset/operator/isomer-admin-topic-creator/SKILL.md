@@ -17,9 +17,10 @@ When this skill is invoked, execute the following steps in order.
    - Match when this skill is invoked without a prompt.
    - Select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
 2. **Select one subcommand** from the **Subcommands** tables that best matches the user's request:
-   - Use `fast-forward` for the end-to-end happy path.
+   - If the user asks to create, initialize, prepare, or start a topic without explicitly asking for `fast-forward`, fully automatic execution, `step-by-step`, manual lower-level control, `run-to`, a stop-before/exclusion phrase, or another named mode, default to `run-to finalize` with the `finalize` target included by default.
    - Use `step-by-step` for the guided happy path with per-step acknowledgement.
-   - Use `run-to` to run automatically up to, but not including, a selected procedural step unless the user explicitly asks for inclusive execution.
+   - Use `fast-forward` only when the user explicitly asks for fully automatic, fast-forward, no-stop, or equivalent end-to-end execution.
+   - Use `run-to` to run automatically through a selected procedural step by default; stop before the selected target only when the user explicitly says `before`, `stop before`, `excluding`, or `up to but not including`.
    - Use `status` to inspect progress and `repair` to resume from blockers.
    - Use a procedural subcommand for bounded user-facing setup or finalization work.
    - Use a helper subcommand only when the user explicitly names a lower-level stage or `fast-forward`/`repair` needs it.
@@ -76,7 +77,7 @@ Helper subcommands are lower-level ladder stages normally called by `fast-forwar
 | `help` | Print what this skill does, required inputs, subcommands, outputs, and guardrails | [references/help.md](references/help.md) |
 | `fast-forward` | Run the end-to-end path to Topic Workspace readiness summary | [references/fast-forward.md](references/fast-forward.md) |
 | `step-by-step` | Run the same main workflow as `fast-forward`, but preview each step and wait for acknowledgement before proceeding | [references/step-by-step.md](references/step-by-step.md) |
-| `run-to` | Run the main workflow up to a selected procedural subcommand, excluding it by default and including it only on explicit request | [references/run-to.md](references/run-to.md) |
+| `run-to` | Run the main workflow through a selected procedural subcommand by default, or stop before it when exclusion is explicit | [references/run-to.md](references/run-to.md) |
 | `status` | Report current ladder progress, readiness evidence, summary freshness, blockers, and skipped stages | [references/status.md](references/status.md) |
 | `repair` | Resume from the first blocked or stale stage without rerunning ready stages | [references/repair.md](references/repair.md) |
 

@@ -475,8 +475,8 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
     ),
     "run-to.md": (
         "Valid targets",
-        "excluded by default",
-        "inclusive",
+        "included by default",
+        "explicit exclusion",
         "missing user input",
     ),
     "status.md": (

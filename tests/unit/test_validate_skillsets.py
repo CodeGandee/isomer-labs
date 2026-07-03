@@ -419,7 +419,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 "setup-actors.md": "Delegate to `isomer-admin-topic-mgr`, consume `topic.intent.actor_definitions`, report `topic.actors.workspace`, and verify `topic.env.actor_env_gates`.",
                 "finalize.md": "Resolve `topic.workspace.summary`, run `isomer-cli project topic-reset checkpoint`, create a structured reset checkpoint from operator-level readiness evidence, report ready, verified, blocked, and skipped state. Do not recommend a next research step.",
                 "step-by-step.md": "Follow the same main workflow order as `fast-forward`, show an option table with Recommended choices, and require acknowledgement.",
-                "run-to.md": "Valid targets are procedural. The target is excluded by default, can be inclusive on request, and stops on missing user input.",
+                "run-to.md": "Valid targets are procedural. The target is included by default, explicit exclusion stops before it, and the command stops on missing user input.",
                 "status.md": "Report ready, blocked, skipped, and `topic.workspace.summary` state.",
                 "repair.md": "Repair the first blocked stage without rerunning ready destructive work.",
             }.get(command_name, "Report blocker state and next subcommand.")
