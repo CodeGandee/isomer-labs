@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-optimize"
+  short_description: "Manage algorithm-first candidate frontiers."
+  default_prompt: "Use $isomer-rsch-optimize to rank candidates, promote one route, or decide whether optimization should stop."

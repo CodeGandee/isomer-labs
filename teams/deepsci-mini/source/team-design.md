@@ -37,13 +37,13 @@ Follow-up Research Inquiry Gate, Decision Record, View Manifests, durable Artifa
 
 ## Skill Binding Projection
 
-Install `isomer-rsch-shared-v2` for every team role. It carries common evidence, handoff, terminology, provenance, and unsettled-surface rules.
+Install `isomer-rsch-shared` for every team role. It carries common evidence, handoff, terminology, provenance, and unsettled-surface rules.
 
 | Agent Role | Required Skills | Optional Skills |
 | --- | --- | --- |
-| `deepsci-mini-lead` | `isomer-rsch-shared-v2`, `isomer-rsch-intake-v1`, `isomer-rsch-decision-v2`, `isomer-rsch-finalize-v2` | `isomer-rsch-review-v1` when a final skeptical check is needed before a Gate. |
-| `deepsci-mini-scout` | `isomer-rsch-shared-v2`, `isomer-rsch-scout-v2` | `isomer-rsch-baseline-v2`, `isomer-rsch-science-v2`, `isomer-rsch-paper-outline-v1` when topic context requires them. |
-| `deepsci-mini-synth-reviewer` | `isomer-rsch-shared-v2`, `isomer-rsch-idea-v2`, `isomer-rsch-analysis-v2`, `isomer-rsch-review-v1` | `isomer-rsch-science-v2`, `isomer-rsch-paper-plot-v1` for lightweight domain validation or diagnostic displays. |
+| `deepsci-mini-lead` | `isomer-rsch-shared`, `isomer-rsch-decision`, `isomer-rsch-finalize` | `isomer-rsch-review` when a final skeptical check is needed before a Gate. |
+| `deepsci-mini-scout` | `isomer-rsch-shared`, `isomer-rsch-scout` | `isomer-rsch-baseline`, `isomer-rsch-science`, `isomer-rsch-paper-outline` when topic context requires them. |
+| `deepsci-mini-synth-reviewer` | `isomer-rsch-shared`, `isomer-rsch-idea`, `isomer-rsch-analysis`, `isomer-rsch-review` | `isomer-rsch-science`, `isomer-rsch-paper-plot` for lightweight domain validation or diagnostic displays. |
 
 ## Manual Mode
 

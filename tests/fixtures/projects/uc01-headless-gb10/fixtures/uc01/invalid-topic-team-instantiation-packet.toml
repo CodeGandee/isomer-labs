@@ -19,7 +19,7 @@ active = true
 agent_profile_ref = "{unresolved_agent_profile_ref}"
 capability_binding_ref = "other-topic:capability"
 skill_binding_projection_ref = "other-topic:skill-projection"
-required_skills = ["isomer-rsch-shared-v2"]
+required_skills = ["isomer-rsch-shared"]
 
 [approval]
 state = "draft"

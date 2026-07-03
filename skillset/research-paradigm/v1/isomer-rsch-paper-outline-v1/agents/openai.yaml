@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-paper-outline-v1"
-  short_description: "Paper-native outline repair"
-  default_prompt: "Use $isomer-rsch-paper-outline-v1 to build or repair a paper-native outline with scoped claims and evidence boundaries."

@@ -9,7 +9,7 @@ When this subcommand is selected, execute the following steps in order.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
 4. Name the required inputs: Project Manifest context, initialized Research Topic, Topic Workspace, optional Topic Actor names, optional packet/profile material, requested Agent Name mapping, package mutation request, or environment verification target.
 5. State the output contract: Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
-6. State the key guardrails: no blank-state topic initialization, no directory-scanning selection, no silent Git repair, no Git-based reset behavior, no cross-topic refs, no local virtualenv or ambient package mutation, no Agent Instance creation, no Houmao launch, no Execution Adapter operation, and no v2 research bootstrap ownership.
+6. State the key guardrails: no blank-state topic initialization, no directory-scanning selection, no silent Git repair, no Git-based reset behavior, no cross-topic refs, no local virtualenv or ambient package mutation, no Agent Instance creation, no Houmao launch, no Execution Adapter operation, and no production DeepSci research bootstrap ownership.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which usage details to print, then execute the plan.
 
@@ -50,6 +50,6 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `isomer-srv-agent-env-setup` owns formal Agent Workspace cwd proof. Use `env-verify-agents` when a caller asks the topic manager for that proof, and report returned service evidence without claiming runtime launch readiness.
 
-`isomer-rsch-workspace-mgr-v2` owns v2 research placeholder binding and storage bootstrap. This topic manager does not create research records, v2 bootstrap outputs, accepted artifact instructions, Agent Instances, Houmao launch material, or Execution Adapter state.
+`isomer-rsch-workspace-mgr` owns production DeepSci research placeholder binding and storage bootstrap. This topic manager does not create research records, production DeepSci bootstrap outputs, accepted artifact instructions, Agent Instances, Houmao launch material, or Execution Adapter state.
 
 Topic Workspace reset operations are initialized-topic management operations owned here: use `project topic-reset plan`, `project topic-reset show`, `project topic-reset show-plan`, and `project topic-reset apply` through structured records and Workspace Runtime state, not Git state.

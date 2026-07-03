@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-nature-polishing"
+  short_description: "Polish academic prose without hiding evidence gaps."
+  default_prompt: "Use $isomer-rsch-nature-polishing to polish, restructure, or translate academic prose into Nature-leaning English while respecting evidence boundaries."

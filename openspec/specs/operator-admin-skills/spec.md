@@ -91,7 +91,7 @@ The repository SHALL validate operator/admin skill structure, command surfaces, 
 - **WHEN** operator skill validation scans `skillset/operator/isomer-admin-topic-creator`
 - **THEN** it requires local `references/finalize.md`, `references/step-by-step.md`, and `references/run-to.md` subcommand pages, user-facing command guidance for `finalize`, `step-by-step`, and `run-to`, and references to `topic.workspace.summary`
 - **AND** it rejects active Topic Creator command guidance that lists `start-manual-research` as a subcommand
-- **AND** it rejects terminal Topic Creator guidance that includes next-step routing, manual research start-pack handoff, or v2 research skill recommendations
+- **AND** it rejects terminal Topic Creator guidance that includes next-step routing, manual research start-pack handoff, or production DeepSci research skill recommendations
 
 #### Scenario: Operator validation checks Topic Creator guided execution
 - **WHEN** operator skill validation scans Topic Creator `step-by-step` guidance
@@ -127,7 +127,7 @@ The operator/admin skillset SHALL include `isomer-admin-topic-mgr` as the only o
 
 #### Scenario: Topic manager stays bounded
 - **WHEN** the topic manager reports initialized-topic management results
-- **THEN** it does not claim Research Topic initialization, research-paradigm v2 bootstrap, Agent Team Instance creation, Workspace Runtime mutation, Houmao launch, adapter launch material readiness, or runtime team readiness
+- **THEN** it does not claim Research Topic initialization, research-paradigm production DeepSci bootstrap, Agent Team Instance creation, Workspace Runtime mutation, Houmao launch, adapter launch material readiness, or runtime team readiness
 
 ### Requirement: Retired Workspace Manager Is Excluded From Operator Inventory
 The operator/admin skillset SHALL exclude the retired `isomer-admin-topic-workspace-mgr` skill from active manifests, generated skill lists, and validation fixtures.
@@ -182,14 +182,14 @@ Operator skills SHALL assume they are installed into agents outside the `isomer-
 ### Requirement: Operator Skills Exclude Research-Paradigm Bootstrap
 Operator admin skills SHALL prepare Project, Topic Workspace, Topic Actor, topology, readiness-summary, approval, materialization, and launch orchestration surfaces without owning research-paradigm-specific bootstrap.
 
-#### Scenario: Operator topic creation does not invoke v2 bootstrap
+#### Scenario: Operator topic creation does not invoke production DeepSci bootstrap
 - **WHEN** active operator skill guidance for topic creation or manual research preparation is inspected
-- **THEN** it does not instruct the operator to invoke `isomer-rsch-workspace-mgr-v2`
-- **AND** it does not require selected v2 skill sets, v2 `placeholder-bindings.md` files, v2 placeholder binding registries, or accepted research artifact command shapes before reporting Topic Workspace or Topic Actor readiness
+- **THEN** it does not instruct the operator to invoke `isomer-rsch-workspace-mgr`
+- **AND** it does not require selected production DeepSci skill sets, production DeepSci `placeholder-bindings.md` files, production DeepSci placeholder binding registries, or accepted research artifact command shapes before reporting Topic Workspace or Topic Actor readiness
 
-#### Scenario: Operator docs route v2 bootstrap to research skills
-- **WHEN** operator docs mention research-paradigm-specific bootstrap, placeholder bindings, selected v2 research skills, or accepted research artifact recording
-- **THEN** they identify that work as belonging to `skillset/research-paradigm/v2/isomer-rsch-workspace-mgr-v2` or later research-stage skills rather than operator skills
+#### Scenario: Operator docs route production DeepSci bootstrap to research skills
+- **WHEN** operator docs mention research-paradigm-specific bootstrap, placeholder bindings, selected production DeepSci research skills, or accepted research artifact recording
+- **THEN** they identify that work as belonging to `skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr` or later research-stage skills rather than operator skills
 
 ### Requirement: Retired Operator Compatibility Skills Are Removed
 The operator admin skillset SHALL retire the deprecated `isomer-admin-topic-prepare` and `isomer-admin-manual-research-session` compatibility skills from active operator inventory.

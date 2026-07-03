@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-baseline"
+  short_description: "Establish the comparator and metric basis."
+  default_prompt: "Use $isomer-rsch-baseline to establish the comparator contract, metric basis, waiver, or blocker."

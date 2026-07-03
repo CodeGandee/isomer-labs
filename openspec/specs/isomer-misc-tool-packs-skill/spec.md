@@ -93,16 +93,16 @@ The tool-pack skill SHALL define an initial catalog for the recurring Isomer set
 - **AND** it may list common optional scientific plotting helpers such as `pandas`, `seaborn`, `statsmodels`, `scikit-image`, and `tifffile`
 
 ### Requirement: Tool Pack Skill Stays Independent of Research Paradigm Versions
-The tool-pack skill SHALL describe task-level setup needs without depending on research-paradigm v2 skill internals.
+The tool-pack skill SHALL describe task-level setup needs without depending on research-paradigm production DeepSci skill internals.
 
-#### Scenario: Tool-pack guidance avoids research v2 coupling
+#### Scenario: Tool-pack guidance avoids research production DeepSci coupling
 - **WHEN** the tool-pack skill and its active references are inspected
-- **THEN** they do not require or reference `skillset/research-paradigm/v2/*` paths as consumers or dependencies
+- **THEN** they do not require or reference `skillset/research-paradigm/deepsci/*` paths as consumers or dependencies
 - **AND** they describe packs through task-level names such as paper writing, figures, decks, CUDA builds, and PyTorch GPU execution
 
 #### Scenario: Operator skills are not made responsible for research tool packs
 - **WHEN** the implementation is inspected
-- **THEN** operator skills do not gain references to research-paradigm v2 paper-writing skills as the source of tool-pack definitions
+- **THEN** operator skills do not gain references to research-paradigm production DeepSci paper-writing skills as the source of tool-pack definitions
 - **AND** setup-independent tool-pack knowledge remains in the misc skillset
 
 ### Requirement: Tool Pack Skill Is Manual-Only Initially
@@ -115,4 +115,4 @@ The tool-pack skill SHALL be registered for manual invocation without automatic 
 #### Scenario: Existing workflow skills do not route automatically
 - **WHEN** service, operator, and research workflow skills are inspected
 - **THEN** they do not route named toolset requests to `isomer-misc-tool-packs`
-- **AND** they do not require the tool-pack skill as part of normal environment setup, operator setup, or research-paradigm v2 workflows
+- **AND** they do not require the tool-pack skill as part of normal environment setup, operator setup, or research-paradigm production DeepSci workflows

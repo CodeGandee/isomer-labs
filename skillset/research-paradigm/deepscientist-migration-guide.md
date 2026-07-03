@@ -4,7 +4,7 @@ This guide defines the general rules for migrating the upstream research skills 
 
 ## Migration Goals
 
-Migrate each skill from the source skill, not from the current v1 adaptation. The v1 skills remain useful historical references, but a new migration must recover the original core logic directly.
+Migrate each skill from the source skill, not from an earlier Isomer adaptation. Earlier generationed skills remain useful historical references in git history, but a new migration must recover the original core logic directly.
 
 Keep the first migration faithful and complete enough to execute the research process. Trimming, merging, and Isomer-specific simplification come after we can see the full source-derived process in the new skill.
 
@@ -34,7 +34,7 @@ For handoffs and output artifacts, use semantic placeholders instead of real sto
 
 Use placeholders when a skill needs to hand off a research frame, comparator, hypothesis, result, analysis, route choice, final summary, or other reusable research object. Do not bind these objects to the storage system during the first migration pass.
 
-Centralize placeholders in `skillset/research-paradigm/v2/isomer-rsch-shared-v2/references/semantic-placeholders.md`. That registry should list each placeholder, explain what it means, name the producer skill, name the consumer skills, and state that storage binding is pending. This lets us bind stable semantics to the Isomer Labs storage layer later without rewriting every skill again.
+Centralize placeholders in `skillset/research-paradigm/deepsci/isomer-rsch-shared/references/semantic-placeholders.md`. That registry should list each placeholder, explain what it means, name the producer skill, name the consumer skills, and state that storage binding is pending. This lets us bind stable semantics to the Isomer Labs storage layer later without rewriting every skill again.
 
 ## Internal Page Rule
 

@@ -32,7 +32,7 @@ PROFILE_ASSETS = {
 
 @dataclass(frozen=True)
 class DeepScientistRecordFormatProvider:
-    """Provider for active v2 DeepScientist record-format refs."""
+    """Provider for active DeepSci record-format refs."""
 
     provider_id: str = PROVIDER_ID
 
@@ -89,8 +89,8 @@ def active_profile_names() -> tuple[str, ...]:
     return tuple(str(profile) for profile in profiles)
 
 
-def active_v2_binding_profile_names() -> tuple[str, ...]:
-    """Return active profile names expected in v2 placeholder bindings."""
+def active_deepsci_binding_profile_names() -> tuple[str, ...]:
+    """Return active profile names expected in DeepSci placeholder bindings."""
 
     return tuple(profile for profile in active_profile_names() if profile not in PROFILE_ASSETS)
 

@@ -288,7 +288,7 @@ Update an existing manifest binding's `path`, `storage_profile`, or both after t
 **Side effects:** writes `<topic-workspace>/topic-workspace.toml`; with `--create`, creates the new target path. It preserves previous filesystem targets and historical Path Plans.
 
 ```bash
-pixi run isomer-cli --print-json project paths update custom.datasets.raw --topic my-topic --path data/raw-v2 --create
+pixi run isomer-cli --print-json project paths update custom.datasets.raw --topic my-topic --path data/raw-production DeepSci --create
 ```
 
 ### `project paths unregister`
@@ -591,7 +591,7 @@ pixi run isomer-cli ext deepsci tools artifact
 
 Call one DeepScientist compatibility tool against the selected Topic Workspace.
 
-**Side effects:** depends on the tool. Compatibility calls may write extension-owned records inside the Workspace Runtime database and may return durable references that later v2 skills summarize through normal Isomer placeholder bindings. Use this surface only for source-shaped compatibility behavior while the native research record APIs are still incomplete.
+**Side effects:** depends on the tool. Compatibility calls may write extension-owned records inside the Workspace Runtime database and may return durable references that later production DeepSci skills summarize through normal Isomer placeholder bindings. Use this surface only for source-shaped compatibility behavior while the native research record APIs are still incomplete.
 
 ```bash
 pixi run isomer-cli ext deepsci call artifact.record \
@@ -601,11 +601,11 @@ pixi run isomer-cli ext deepsci call artifact.record \
 
 ### `ext research records create/show/list/update/delete`
 
-Create, inspect, query, update, or archive transitional topic-scoped research records for v2 research skill placeholder bindings.
+Create, inspect, query, update, or archive transitional topic-scoped research records for production DeepSci research skill placeholder bindings.
 
 **Side effects:** `create` and `update` write or update a Workspace Runtime lifecycle record and, when `--body` or `--body-file` is supplied, write a durable body under the resolved semantic label, defaulting to `topic.records.artifacts` except for runs, tasks, and views. `delete` archives the lifecycle record by setting its status to `archived`; it does not remove stored body files. `show` and `list` are read-only.
 
-**Use:** these commands are the current extension-backed bridge for `skillset/research-paradigm/v2/*/placeholder-bindings.md`. Prefer the exact placeholder token, profile, skill, producer, and consumer metadata from the binding page. Future native `project records ...` commands may replace this extension surface.
+**Use:** these commands are the current extension-backed bridge for `skillset/research-paradigm/deepsci/*/placeholder-bindings.md`. Prefer the exact placeholder token, profile, skill, producer, and consumer metadata from the binding page. Future native `project records ...` commands may replace this extension surface.
 
 When a Topic Actor creates or updates an accepted research record, include `--topic-actor <topic-actor-name>` and known actor metadata such as `--actor-kind`, `--runtime-kind`, `--controller-kind`, and `--adapter-ref`. Include formal Agent Team Instance, Agent Instance, or Agent Workspace refs only when the record was actually produced inside that formal context; do not fabricate those refs for Topic Actor work.
 
@@ -615,9 +615,9 @@ pixi run isomer-cli --print-json ext research records create \
   --record-kind artifact \
   --placeholder '<LITERATURE_SCOUTING_REPORT>' \
   --profile report.literature-scouting-report \
-  --skill isomer-rsch-scout-v2 \
-  --producer isomer-rsch-scout-v2 \
-  --consumer isomer-rsch-idea-v2 \
+  --skill isomer-rsch-scout \
+  --producer isomer-rsch-scout \
+  --consumer isomer-rsch-idea \
   --topic-actor claude-scout \
   --actor-kind manual_worker \
   --runtime-kind claude_code \
@@ -636,7 +636,7 @@ pixi run isomer-cli --print-json ext research records update <record-id> \
   --record-kind artifact \
   --status complete \
   --placeholder '<LITERATURE_SCOUTING_REPORT>' \
-  --body-file scouting-report-v2.md
+  --body-file scouting-report-production DeepSci.md
 
 pixi run isomer-cli --print-json ext research records delete <record-id> \
   --topic my-topic \

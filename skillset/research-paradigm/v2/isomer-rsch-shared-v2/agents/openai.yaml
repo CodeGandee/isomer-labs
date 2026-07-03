@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-shared-v2"
-  short_description: "Shared v2 research loop and semantic placeholder contract."
-  default_prompt: "Use $isomer-rsch-shared-v2 to apply the v2 research loop and semantic placeholder rules."

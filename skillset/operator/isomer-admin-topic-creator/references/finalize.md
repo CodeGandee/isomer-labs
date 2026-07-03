@@ -30,7 +30,7 @@ Write `topic.workspace.summary` as Markdown with these sections when information
 
 ## Guardrails
 
-`finalize` finalizes Topic Workspace preparation only. It does not finalize research findings and does not replace `isomer-rsch-finalize-v2`.
+`finalize` finalizes Topic Workspace preparation only. It does not finalize research findings and does not replace `isomer-rsch-finalize`.
 
 Do not recommend a next research step, research-stage skill, Houmao launch, formal team specialization, or manual session route. Name blockers and evidence, but do not prescribe what to run next.
 

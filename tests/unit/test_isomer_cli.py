@@ -3906,13 +3906,13 @@ class IsomerCliTests(unittest.TestCase):
         launch_line = 'launch_ref = "houmao-launch:test"\nhoumao_managed_agent_id = "managed-agent:test"\n' if launch_truth else ""
         secret_line = 'api_key = "SHOULD_NOT_LEAK"\n' if secret_like else ""
         roles = [
-            ("deepsci-org-master", ["isomer-rsch-shared-v2", "isomer-rsch-intake-v1", "isomer-rsch-decision-v2", "isomer-rsch-finalize-v2"], ["isomer-rsch-review-v1"]),
-            ("deepsci-org-framer", ["isomer-rsch-shared-v2", "isomer-rsch-scout-v2", "isomer-rsch-baseline-v2"], ["isomer-rsch-science-v2", "isomer-rsch-paper-outline-v1"]),
-            ("deepsci-org-designer", ["isomer-rsch-shared-v2", "isomer-rsch-idea-v2", "isomer-rsch-optimize-v2"], ["isomer-rsch-scout-v2"]),
-            ("deepsci-org-experimenter", ["isomer-rsch-shared-v2", "isomer-rsch-experiment-v2", "isomer-rsch-science-v2"], ["isomer-rsch-analysis-v2"]),
-            ("deepsci-org-analyzer", ["isomer-rsch-shared-v2", "isomer-rsch-analysis-v2", "isomer-rsch-science-v2"], ["isomer-rsch-paper-plot-v1", "isomer-rsch-figure-polish-v1"]),
-            ("deepsci-org-publisher", ["isomer-rsch-shared-v2", "isomer-rsch-paper-outline-v1", "isomer-rsch-write-v1", "isomer-rsch-paper-plot-v1", "isomer-rsch-figure-polish-v1"], ["nature-data", "nature-figure", "nature-paper2ppt", "nature-polishing"]),
-            ("deepsci-org-reviewer", ["isomer-rsch-shared-v2", "isomer-rsch-review-v1", "isomer-rsch-rebuttal-v1", "isomer-rsch-analysis-v2"], ["isomer-rsch-scout-v2"]),
+            ("deepsci-org-master", ["isomer-rsch-shared", "isomer-rsch-decision", "isomer-rsch-finalize"], ["isomer-rsch-review"]),
+            ("deepsci-org-framer", ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"], ["isomer-rsch-science", "isomer-rsch-paper-outline"]),
+            ("deepsci-org-designer", ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"], ["isomer-rsch-scout"]),
+            ("deepsci-org-experimenter", ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"], ["isomer-rsch-analysis"]),
+            ("deepsci-org-analyzer", ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"], ["isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]),
+            ("deepsci-org-publisher", ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"], ["isomer-rsch-nature-data", "isomer-rsch-nature-figure", "isomer-rsch-nature-paper2ppt", "isomer-rsch-nature-polishing"]),
+            ("deepsci-org-reviewer", ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"], ["isomer-rsch-scout"]),
         ]
         role_blocks = []
         for role_id, required, optional in roles:
@@ -6157,8 +6157,8 @@ status = "active"
             (
                 "missing-required-skill",
                 valid_profile.replace(
-                    'required_skills = ["isomer-rsch-shared-v2", "isomer-rsch-scout-v2", "isomer-rsch-baseline-v2"]',
-                    'required_skills = ["isomer-rsch-shared-v2", "isomer-rsch-baseline-v2"]',
+                    'required_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]',
+                    'required_skills = ["isomer-rsch-shared", "isomer-rsch-baseline"]',
                     1,
                 ),
                 "role_bindings.deepsci-org-framer.required_skills",

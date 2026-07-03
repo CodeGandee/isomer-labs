@@ -27,53 +27,31 @@ REGISTRY_ROW_ID_RE = re.compile(r"^(?:path|api|schema|policy|provider)-[a-z0-9-]
 SEMANTIC_PLACEHOLDER_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 FORBIDDEN_REPO_LOCAL_ISOMER_CLI = "pixi run isomer-cli"
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
-MAX_V2_WORKFLOW_LINE = 45
+MAX_DEEPSCI_WORKFLOW_LINE = 45
 
-EXPECTED_V1_SKILLS = frozenset(
+EXPECTED_DEEPSCI_SKILLS = frozenset(
     {
-        "isomer-rsch-analysis-v1",
-        "isomer-rsch-baseline-v1",
-        "isomer-rsch-decision-v1",
-        "isomer-rsch-experiment-v1",
-        "isomer-rsch-figure-polish-v1",
-        "isomer-rsch-finalize-v1",
-        "isomer-rsch-idea-v1",
-        "isomer-rsch-intake-v1",
-        "isomer-rsch-optimize-v1",
-        "isomer-rsch-paper-outline-v1",
-        "isomer-rsch-paper-plot-v1",
-        "isomer-rsch-rebuttal-v1",
-        "isomer-rsch-review-v1",
-        "isomer-rsch-science-v1",
-        "isomer-rsch-scout-v1",
-        "isomer-rsch-shared-v1",
-        "isomer-rsch-write-v1",
-    }
-)
-
-EXPECTED_V2_SKILLS = frozenset(
-    {
-        "isomer-rsch-analysis-v2",
-        "isomer-rsch-baseline-v2",
-        "isomer-rsch-decision-v2",
-        "isomer-rsch-experiment-v2",
-        "isomer-rsch-figure-polish-v2",
-        "isomer-rsch-finalize-v2",
-        "isomer-rsch-idea-v2",
-        "isomer-rsch-nature-data-v2",
-        "isomer-rsch-nature-figure-v2",
-        "isomer-rsch-nature-paper2ppt-v2",
-        "isomer-rsch-nature-polishing-v2",
-        "isomer-rsch-optimize-v2",
-        "isomer-rsch-paper-outline-v2",
-        "isomer-rsch-paper-plot-v2",
-        "isomer-rsch-rebuttal-v2",
-        "isomer-rsch-review-v2",
-        "isomer-rsch-science-v2",
-        "isomer-rsch-scout-v2",
-        "isomer-rsch-shared-v2",
-        "isomer-rsch-workspace-mgr-v2",
-        "isomer-rsch-write-v2",
+        "isomer-rsch-analysis",
+        "isomer-rsch-baseline",
+        "isomer-rsch-decision",
+        "isomer-rsch-experiment",
+        "isomer-rsch-figure-polish",
+        "isomer-rsch-finalize",
+        "isomer-rsch-idea",
+        "isomer-rsch-nature-data",
+        "isomer-rsch-nature-figure",
+        "isomer-rsch-nature-paper2ppt",
+        "isomer-rsch-nature-polishing",
+        "isomer-rsch-optimize",
+        "isomer-rsch-paper-outline",
+        "isomer-rsch-paper-plot",
+        "isomer-rsch-rebuttal",
+        "isomer-rsch-review",
+        "isomer-rsch-science",
+        "isomer-rsch-scout",
+        "isomer-rsch-shared",
+        "isomer-rsch-workspace-mgr",
+        "isomer-rsch-write",
     }
 )
 
@@ -178,7 +156,6 @@ DEFAULT_ALLOW_ZONES = {
         "Source Lineage",
     ),
     "resolved_id_file_globs": (
-        "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md",
         "deepscientist-migration-guide.md",
         "ds-analysis/**",
         "*/migrate/**",
@@ -197,14 +174,14 @@ DEFAULT_ALLOW_ZONES = {
         "Resolved Surfaces",
         "Resolved Extension Surfaces",
     ),
-    "v2_storage_binding_file_globs": (
-        "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md",
+    "deepsci_storage_binding_file_globs": (
+        "deepsci/isomer-rsch-shared/references/semantic-placeholders.md",
         "*/placeholder-bindings.md",
         "*/migrate/**",
         "*/org/**",
         "*/templates/**",
     ),
-    "v2_storage_binding_section_headings": (
+    "deepsci_storage_binding_section_headings": (
         "Source Lineage",
         "Placeholder Rule",
         "Storage Binding Status",
@@ -245,7 +222,7 @@ NON_ACTIVE_ROLES = frozenset(
 
 LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/")
 
-V2_STORAGE_BINDING_PATTERNS = (
+DEEPSCI_STORAGE_BINDING_PATTERNS = (
     (
         "storage-bound research record",
         re.compile(r"\b(?:Artifact|Evidence Item|Gate|Decision Record|Provenance Record)s?\b|\bRun records?\b"),
@@ -260,12 +237,12 @@ V2_STORAGE_BINDING_PATTERNS = (
     ),
 )
 
-V2_STORAGE_BINDING_VERB_RE = re.compile(
+DEEPSCI_STORAGE_BINDING_VERB_RE = re.compile(
     r"\b(?:create|emit|persist|register|store|submit|update|write)\b",
     re.I,
 )
 
-V2_SUPPORT_SECTION_HEADINGS = frozenset(
+DEEPSCI_SUPPORT_SECTION_HEADINGS = frozenset(
     {
         "Guidance",
         "Preferences",
@@ -280,7 +257,7 @@ V2_SUPPORT_SECTION_HEADINGS = frozenset(
 SUPPORT_INTRO_DISALLOWED_PREFIXES = tuple(f"{number}. " for number in range(1, 10)) + ("- ", "##", "###")
 SENTENCE_END_RE = re.compile(r"[.!?](?:\s|$)")
 DEEPSCI_FORMAT_PROFILE_RE = re.compile(r"^isomer:deepsci/record-format/profile/[A-Za-z0-9._/-]+/v1$")
-V2_PLAIN_OUTPUT_TERMS = (
+DEEPSCI_PLAIN_OUTPUT_TERMS = (
     "json payload staging",
     "markdown draft",
     "csvs",
@@ -292,23 +269,23 @@ V2_PLAIN_OUTPUT_TERMS = (
     "deck asset",
     "plain generated file",
 )
-V2_WORKER_OUTPUT_REQUIRED_TERMS = (
+DEEPSCI_WORKER_OUTPUT_REQUIRED_TERMS = (
     "project outputs policy",
     "operation-specific",
     "commit_after_operation",
 )
-V2_SHARED_WORKER_OUTPUT_REQUIRED_TERMS = (
+DEEPSCI_SHARED_WORKER_OUTPUT_REQUIRED_TERMS = (
     "## Worker Output Policy",
     "project outputs policy",
     "operation-specific child set",
     ".gitignore",
     "commit_after_operation",
 )
-V2_LATEST_CONTEXT_REQUIRED_TERMS = (
+DEEPSCI_LATEST_CONTEXT_REQUIRED_TERMS = (
     "latest context preflight",
     "latest-context-snapshot",
 )
-V2_LATEST_CONTEXT_FRESHNESS_TERMS = (
+DEEPSCI_LATEST_CONTEXT_FRESHNESS_TERMS = (
     "prompt memory",
     "chat memory",
     "prior prose",
@@ -434,10 +411,8 @@ def classify_document(
     file_roles: dict[str, tuple[str, ...]],
 ) -> frozenset[str]:
     roles: set[str] = set()
-    if rel_target.startswith("v1/"):
-        roles.add("v1")
-    if rel_target.startswith("v2/"):
-        roles.add("v2")
+    if rel_target.startswith("deepsci/"):
+        roles.add("deepsci")
     for role_key, role_name in (
         ("migration_file_globs", "migration"),
         ("source_analysis_file_globs", "source-analysis"),
@@ -458,9 +433,7 @@ def classify_document(
         roles.add("deferred-resource")
     if rel_target.endswith("references/source-term-mapping.md"):
         roles.add("source-term-mapping")
-    if rel_target == "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md":
-        roles.add("canonical-registry")
-    if rel_target == "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md":
+    if rel_target == "deepsci/isomer-rsch-shared/references/semantic-placeholders.md":
         roles.add("semantic-placeholder-registry")
     if rel_target.endswith("/placeholder-bindings.md"):
         roles.add("placeholder-binding")
@@ -585,16 +558,6 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
     skill_name = skill_dir.name
     if not SKILL_NAME_RE.match(skill_name):
         add(diagnostics, repo_root, skill_dir, 1, "RPS007", f"skill folder '{skill_name}' must match isomer-rsch-*")
-    if generation in {"v1", "v2"} and not skill_name.endswith(f"-{generation}"):
-        add(
-            diagnostics,
-            repo_root,
-            skill_dir,
-            1,
-            "RPS007",
-            f"skill folder '{skill_name}' must end with -{generation}",
-        )
-
     skill_md = skill_dir / "SKILL.md"
     if not skill_md.exists():
         add(diagnostics, repo_root, skill_dir, 1, "RPS007", "skill folder is missing SKILL.md")
@@ -611,9 +574,9 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
     if workflow_line is None:
         add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must contain ## Workflow")
     else:
-        if generation == "v2" and workflow_line > MAX_V2_WORKFLOW_LINE:
+        if generation == "deepsci" and workflow_line > MAX_DEEPSCI_WORKFLOW_LINE:
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
-        elif generation != "v2" and workflow_line > 40:
+        elif generation != "deepsci" and workflow_line > 40:
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
         numbers = workflow_step_numbers(lines, workflow_line)
         if len(numbers) < 2 or numbers[0] != 1:
@@ -787,7 +750,7 @@ def validate_registry_mirrors(
     diagnostics: list[Diagnostic],
 ) -> None:
     expected = {row_id: row for row_id, row in canonical_rows.items() if row_id in RESOLVED_TBD_IDS}
-    canonical_path = "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md"
+    canonical_path = "deepsci/isomer-rsch-shared/references/tbd-surface-registry.md"
     for document in documents:
         if document.rel_target == canonical_path or "registry-mirror" not in document.roles:
             continue
@@ -862,7 +825,7 @@ def validate_rsch_object_placeholders(
     diagnostics: list[Diagnostic],
     registered_ids: set[str],
 ) -> None:
-    if "v2" not in document.roles or not is_active_guidance(document):
+    if "deepsci" not in document.roles or not is_active_guidance(document):
         return
     for line_number, line in enumerate(document.lines, start=1):
         for match in RSCH_OBJECT_PLACEHOLDER_RE.finditer(line):
@@ -874,7 +837,7 @@ def validate_rsch_object_placeholders(
                     document.path,
                     line_number,
                     "RPS009",
-                    f"research object placeholder '{placeholder_id}' is not registered in the v2 semantic-placeholder registry",
+                    f"research object placeholder '{placeholder_id}' is not registered in the production DeepSci semantic-placeholder registry",
                 )
 
 
@@ -889,7 +852,7 @@ def validate_migration_placeholders(
     if "placeholder-binding" in document.roles:
         return
     parts = document.rel_target.split("/")
-    if len(parts) < 3 or parts[0] not in {"v1", "v2"}:
+    if len(parts) < 3 or parts[0] != "deepsci":
         return
     skill_rel = "/".join(parts[:2])
     registered_ids = registered_by_skill.get(skill_rel, set())
@@ -907,13 +870,13 @@ def validate_migration_placeholders(
                 )
 
 
-def validate_v2_placeholder_bindings(
+def validate_deepsci_placeholder_bindings(
     skill_dirs: list[tuple[Path, str]],
     repo_root: Path,
     diagnostics: list[Diagnostic],
 ) -> None:
     for skill_dir, generation in skill_dirs:
-        if generation != "v2":
+        if generation != "deepsci":
             continue
         placeholder_path = skill_dir / "migrate" / "placeholders.md"
         if not placeholder_path.exists():
@@ -927,7 +890,7 @@ def validate_v2_placeholder_bindings(
                 skill_dir,
                 1,
                 "RPS012",
-                "v2 skill with migrate/placeholders.md must include placeholder-bindings.md",
+                "production DeepSci skill with migrate/placeholders.md must include placeholder-bindings.md",
             )
             continue
         actual = parse_placeholder_binding_ids(read_lines(binding_path))
@@ -952,13 +915,13 @@ def validate_v2_placeholder_bindings(
             )
 
 
-def validate_v2_payload_first_bindings(
+def validate_deepsci_payload_first_bindings(
     skill_dirs: list[tuple[Path, str]],
     repo_root: Path,
     diagnostics: list[Diagnostic],
 ) -> None:
     for skill_dir, generation in skill_dirs:
-        if generation != "v2":
+        if generation != "deepsci":
             continue
         binding_path = skill_dir / "placeholder-bindings.md"
         if not binding_path.exists():
@@ -1055,16 +1018,16 @@ def validate_v2_payload_first_bindings(
             )
 
 
-def validate_v2_storage_binding(
+def validate_deepsci_storage_binding(
     document: Document,
     repo_root: Path,
     diagnostics: list[Diagnostic],
     allow_zones: dict[str, tuple[str, ...]],
 ) -> None:
-    if "v2" not in document.roles or not is_active_guidance(document):
+    if "deepsci" not in document.roles or not is_active_guidance(document):
         return
     for line_index, line in enumerate(document.lines):
-        if allowed_by_rule("v2_storage_binding", document, line_index, allow_zones):
+        if allowed_by_rule("deepsci_storage_binding", document, line_index, allow_zones):
             continue
         lowered = line.casefold()
         if (
@@ -1075,9 +1038,9 @@ def validate_v2_storage_binding(
             or "placeholder" in lowered
         ):
             continue
-        for label, pattern in V2_STORAGE_BINDING_PATTERNS:
+        for label, pattern in DEEPSCI_STORAGE_BINDING_PATTERNS:
             if pattern.search(line):
-                if label == "storage-bound research record" and not V2_STORAGE_BINDING_VERB_RE.search(line):
+                if label == "storage-bound research record" and not DEEPSCI_STORAGE_BINDING_VERB_RE.search(line):
                     continue
                 add(
                     diagnostics,
@@ -1085,19 +1048,19 @@ def validate_v2_storage_binding(
                     document.path,
                     line_index + 1,
                     "RPS010",
-                    f"active v2 guidance contains {label}",
+                    f"active production DeepSci guidance contains {label}",
                 )
 
 
-def validate_v2_worker_output_policy(document: Document, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
-    if "v2" not in document.roles or not is_active_guidance(document):
+def validate_deepsci_worker_output_policy(document: Document, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
+    if "deepsci" not in document.roles or not is_active_guidance(document):
         return
     if not document.rel_target.endswith("/SKILL.md"):
         return
     text = "\n".join(document.lines)
     lowered = text.casefold()
-    if document.rel_target == "v2/isomer-rsch-shared-v2/SKILL.md":
-        for term in V2_SHARED_WORKER_OUTPUT_REQUIRED_TERMS:
+    if document.rel_target == "deepsci/isomer-rsch-shared/SKILL.md":
+        for term in DEEPSCI_SHARED_WORKER_OUTPUT_REQUIRED_TERMS:
             if term.casefold() not in lowered:
                 add(
                     diagnostics,
@@ -1105,12 +1068,12 @@ def validate_v2_worker_output_policy(document: Document, repo_root: Path, diagno
                     document.path,
                     1,
                     "RPS015",
-                    f"shared v2 Worker Output Policy must mention {term}",
+                    f"shared production DeepSci Worker Output Policy must mention {term}",
                 )
         return
-    if not any(term in lowered for term in V2_PLAIN_OUTPUT_TERMS):
+    if not any(term in lowered for term in DEEPSCI_PLAIN_OUTPUT_TERMS):
         return
-    for term in V2_WORKER_OUTPUT_REQUIRED_TERMS:
+    for term in DEEPSCI_WORKER_OUTPUT_REQUIRED_TERMS:
         if term not in lowered:
             add(
                 diagnostics,
@@ -1118,47 +1081,47 @@ def validate_v2_worker_output_policy(document: Document, repo_root: Path, diagno
                 document.path,
                 1,
                 "RPS015",
-                f"active v2 skill guidance that writes plain files must mention {term}",
+                f"active production DeepSci skill guidance that writes plain files must mention {term}",
             )
 
 
-def validate_v2_latest_context_preflight(document: Document, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
-    if "v2" not in document.roles or not is_active_guidance(document):
+def validate_deepsci_latest_context_preflight(document: Document, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
+    if "deepsci" not in document.roles or not is_active_guidance(document):
         return
     if not document.rel_target.endswith("/SKILL.md"):
         return
-    if document.rel_target == "v2/isomer-rsch-shared-v2/SKILL.md":
+    if document.rel_target == "deepsci/isomer-rsch-shared/SKILL.md":
         return
     if not (document.path.parent / "placeholder-bindings.md").exists():
         return
     text = "\n".join(document.lines)
     lowered = text.casefold()
-    missing_required = [term for term in V2_LATEST_CONTEXT_REQUIRED_TERMS if term not in lowered]
-    has_freshness_intent = any(term in lowered for term in V2_LATEST_CONTEXT_FRESHNESS_TERMS)
+    missing_required = [term for term in DEEPSCI_LATEST_CONTEXT_REQUIRED_TERMS if term not in lowered]
+    has_freshness_intent = any(term in lowered for term in DEEPSCI_LATEST_CONTEXT_FRESHNESS_TERMS)
     if not missing_required and has_freshness_intent:
         return
     if "worker-output reminder" in lowered and "latest context preflight" not in lowered:
         message = "worker-output guidance does not satisfy the latest-context preflight requirement for durable record work"
     elif missing_required:
-        message = "active v2 durable-record-writing entrypoint must mention Latest Context Preflight and latest-context-snapshot"
+        message = "active production DeepSci durable-record-writing entrypoint must mention Latest Context Preflight and latest-context-snapshot"
     else:
-        message = "active v2 durable-record-writing entrypoint must include freshness-intent wording before trusting prompt memory or prior prose"
+        message = "active production DeepSci durable-record-writing entrypoint must include freshness-intent wording before trusting prompt memory or prior prose"
     add(diagnostics, repo_root, document.path, 1, "RPS016", message)
 
 
-def validate_v2_support_section_intros(
+def validate_deepsci_support_section_intros(
     document: Document,
     repo_root: Path,
     diagnostics: list[Diagnostic],
 ) -> None:
-    if "v2" not in document.roles or not is_active_guidance(document):
+    if "deepsci" not in document.roles or not is_active_guidance(document):
         return
     for line_index, line in enumerate(document.lines):
         match = HEADING_RE.match(line)
         if not match:
             continue
         heading = normalize_heading(match.group(2))
-        if heading not in V2_SUPPORT_SECTION_HEADINGS:
+        if heading not in DEEPSCI_SUPPORT_SECTION_HEADINGS:
             continue
         content_index = line_index + 1
         while content_index < len(document.lines) and not document.lines[content_index].strip():
@@ -1170,7 +1133,7 @@ def validate_v2_support_section_intros(
                 document.path,
                 line_index + 1,
                 "RPS011",
-                f"active v2 {heading} section must start with a one-to-three-sentence interpretive paragraph",
+                f"active production DeepSci {heading} section must start with a one-to-three-sentence interpretive paragraph",
             )
             continue
         first_content = document.lines[content_index].strip()
@@ -1181,7 +1144,7 @@ def validate_v2_support_section_intros(
                 document.path,
                 content_index + 1,
                 "RPS011",
-                f"active v2 {heading} section must start with a one-to-three-sentence interpretive paragraph",
+                f"active production DeepSci {heading} section must start with a one-to-three-sentence interpretive paragraph",
             )
             continue
         paragraph_lines: list[str] = []
@@ -1200,7 +1163,7 @@ def validate_v2_support_section_intros(
                 document.path,
                 content_index + 1,
                 "RPS011",
-                f"active v2 {heading} section intro must be one to three sentences",
+                f"active production DeepSci {heading} section intro must be one to three sentences",
             )
         if paragraph_end < len(document.lines):
             next_line = document.lines[paragraph_end].strip()
@@ -1211,7 +1174,7 @@ def validate_v2_support_section_intros(
                     document.path,
                     paragraph_end + 1,
                     "RPS011",
-                    f"active v2 {heading} section intro must be separated from following content by a blank line",
+                    f"active production DeepSci {heading} section intro must be separated from following content by a blank line",
                 )
 
 
@@ -1318,46 +1281,49 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
             skill_dir,
             1,
             "RPS007",
-            "active flat root research skill folders are not allowed; use v1/ or v2/",
+            "active flat root research skill folders are not allowed; use deepsci/",
         )
 
     skill_dirs: list[tuple[Path, str]] = []
-    for generation, expected in (("v1", EXPECTED_V1_SKILLS), ("v2", EXPECTED_V2_SKILLS)):
-        generation_root = target / generation
-        if not generation_root.exists():
-            add(diagnostics, repo_root, generation_root, 1, "RPS007", f"{generation}/ generation directory is missing")
-            continue
-        generation_skill_dirs = sorted(
-            path for path in generation_root.iterdir() if path.is_dir() and path.name.startswith("isomer-rsch-")
+    for retired_root in ("v1", "v2"):
+        root_path = target / retired_root
+        if root_path.exists():
+            add(diagnostics, repo_root, root_path, 1, "RPS007", f"{retired_root}/ retired skill root must be absent")
+
+    deepsci_root = target / "deepsci"
+    if not deepsci_root.exists():
+        add(diagnostics, repo_root, deepsci_root, 1, "RPS007", "deepsci/ production skill directory is missing")
+    else:
+        deepsci_skill_dirs = sorted(
+            path for path in deepsci_root.iterdir() if path.is_dir() and path.name.startswith("isomer-rsch-")
         )
-        actual_names = {path.name for path in generation_skill_dirs}
-        for missing in sorted(expected - actual_names):
-            add(diagnostics, repo_root, generation_root / missing, 1, "RPS007", f"expected {generation} skill is missing")
-        for skill_dir in generation_skill_dirs:
-            skill_dirs.append((skill_dir, generation))
+        actual_names = {path.name for path in deepsci_skill_dirs}
+        for missing in sorted(EXPECTED_DEEPSCI_SKILLS - actual_names):
+            add(diagnostics, repo_root, deepsci_root / missing, 1, "RPS007", "expected deepsci skill is missing")
+        for skill_dir in deepsci_skill_dirs:
+            skill_dirs.append((skill_dir, "deepsci"))
 
     if not skill_dirs:
-        add(diagnostics, repo_root, target, 1, "RPS007", "no generationed isomer-rsch-* skill folders were found")
+        add(diagnostics, repo_root, target, 1, "RPS007", "no production deepsci isomer-rsch-* skill folders were found")
     for skill_dir, generation in skill_dirs:
         validate_skill_layout(skill_dir, repo_root, diagnostics, generation)
         validate_manifest(skill_dir, repo_root, diagnostics)
         validate_local_references(skill_dir, repo_root, diagnostics)
 
     documents = collect_documents(target, repo_root, file_roles)
-    registry_path = target / "v1" / "isomer-rsch-shared-v1" / "references" / "tbd-surface-registry.md"
+    registry_path = target / "deepsci" / "isomer-rsch-shared" / "references" / "tbd-surface-registry.md"
     if registry_path.exists():
         canonical_rows = parse_registry_rows(read_lines(registry_path))
     else:
         canonical_rows = {}
-        add(diagnostics, repo_root, registry_path, 1, "RPS003", "canonical v1 shared TBD registry is missing")
     registered_ids = set(canonical_rows)
 
-    semantic_registry_path = target / "v2" / "isomer-rsch-shared-v2" / "references" / "semantic-placeholders.md"
+    semantic_registry_path = target / "deepsci" / "isomer-rsch-shared" / "references" / "semantic-placeholders.md"
     if semantic_registry_path.exists():
         semantic_placeholder_ids = set(parse_semantic_placeholder_ids(read_lines(semantic_registry_path)))
     else:
         semantic_placeholder_ids = set()
-        add(diagnostics, repo_root, semantic_registry_path, 1, "RPS009", "v2 semantic-placeholder registry is missing")
+        add(diagnostics, repo_root, semantic_registry_path, 1, "RPS009", "production DeepSci semantic-placeholder registry is missing")
 
     migration_placeholder_ids_by_skill: dict[str, set[str]] = {}
     for skill_dir, _generation in skill_dirs:
@@ -1375,12 +1341,12 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_resolved_id_text(document, repo_root, diagnostics, allow_zones)
         validate_stale_terms(document, repo_root, diagnostics, allow_zones)
         validate_coupling_patterns(document, repo_root, diagnostics, allow_zones)
-        validate_v2_storage_binding(document, repo_root, diagnostics, allow_zones)
-        validate_v2_worker_output_policy(document, repo_root, diagnostics)
-        validate_v2_latest_context_preflight(document, repo_root, diagnostics)
-        validate_v2_support_section_intros(document, repo_root, diagnostics)
-    validate_v2_placeholder_bindings(skill_dirs, repo_root, diagnostics)
-    validate_v2_payload_first_bindings(skill_dirs, repo_root, diagnostics)
+        validate_deepsci_storage_binding(document, repo_root, diagnostics, allow_zones)
+        validate_deepsci_worker_output_policy(document, repo_root, diagnostics)
+        validate_deepsci_latest_context_preflight(document, repo_root, diagnostics)
+        validate_deepsci_support_section_intros(document, repo_root, diagnostics)
+    validate_deepsci_placeholder_bindings(skill_dirs, repo_root, diagnostics)
+    validate_deepsci_payload_first_bindings(skill_dirs, repo_root, diagnostics)
     validate_registry_mirrors(documents, canonical_rows, repo_root, diagnostics)
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     return sorted(set(diagnostics))

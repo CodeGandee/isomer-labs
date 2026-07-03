@@ -21,22 +21,22 @@ This file describes the default Agent Roles in the `deepsci-mini` Domain Agent T
 ## `deepsci-mini-lead`
 
 - Purpose: own the mini team after launch, interpret the Research Topic, route UC-01 handoffs, normalize results, open the follow-up Research Inquiry Gate, and record the Decision Record through the Operator Agent path.
-- Required skills: `isomer-rsch-shared-v2`, `isomer-rsch-intake-v1`, `isomer-rsch-decision-v2`, `isomer-rsch-finalize-v2`.
-- Optional skills: `isomer-rsch-review-v1` for a final skeptical pass when `deepsci-mini-synth-reviewer` flags a serious evidence boundary.
+- Required skills: `isomer-rsch-shared`, `isomer-rsch-decision`, `isomer-rsch-finalize`.
+- Optional skills: `isomer-rsch-review` for a final skeptical pass when `deepsci-mini-synth-reviewer` flags a serious evidence boundary.
 - Hot context: `{research_topic_id}`, `{research_inquiry_id}`, `{workflow_stage_cursor_ref}`, `{gate_state_ref}`, `{decision_record_refs}`, `{handoff_refs}`, `{completion_watcher_contract_ref}`, and closeout state.
 
 ## `deepsci-mini-scout`
 
 - Purpose: collect and bound the external context for UC-01 without turning scouting into an open-ended literature survey.
-- Required skills: `isomer-rsch-shared-v2`, `isomer-rsch-scout-v2`.
-- Optional skills: `isomer-rsch-baseline-v2`, `isomer-rsch-science-v2`, and `isomer-rsch-paper-outline-v1` when the topic needs comparator context, scientific package checks, or early paper-facing evidence boundaries.
+- Required skills: `isomer-rsch-shared`, `isomer-rsch-scout`.
+- Optional skills: `isomer-rsch-baseline`, `isomer-rsch-science`, and `isomer-rsch-paper-outline` when the topic needs comparator context, scientific package checks, or early paper-facing evidence boundaries.
 - Hot context: seed sources, literature neighborhood, dataset or benchmark notes, source identity, limitation notes, claim candidates, and Evidence Item candidates.
 - Expected outputs: seed-source summaries, literature notes, candidate claims, Evidence Item candidates, unresolved source caveats, and recommended next synthesis focus.
 
 ## `deepsci-mini-synth-reviewer`
 
 - Purpose: combine lightweight analysis and skeptical review so UC-01 can produce defensible follow-up Research Inquiry options with only three agents.
-- Required skills: `isomer-rsch-shared-v2`, `isomer-rsch-idea-v2`, `isomer-rsch-analysis-v2`, `isomer-rsch-review-v1`.
-- Optional skills: `isomer-rsch-science-v2` for domain validation and `isomer-rsch-paper-plot-v1` when a lightweight diagnostic view is needed.
+- Required skills: `isomer-rsch-shared`, `isomer-rsch-idea`, `isomer-rsch-analysis`, `isomer-rsch-review`.
+- Optional skills: `isomer-rsch-science` for domain validation and `isomer-rsch-paper-plot` when a lightweight diagnostic view is needed.
 - Hot context: source summaries, Evidence Item candidates, claim candidates, factor clusters, disagreement points, weak-claim notes, and follow-up inquiry options.
 - Expected outputs: factor map, inquiry comparison, weak-claim review notes, accepted Evidence Item refs, rejected or downgraded claim candidates, and Gate-ready follow-up inquiry options.

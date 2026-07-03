@@ -8,5 +8,5 @@ capability_binding_placeholder = "{deepsci_org_publisher_capability_binding_ref}
 skill_projection_placeholder = "{deepsci_org_publisher_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_publisher_agent_workspace_ref}"
 generated_skills = ["deepsci-org-shared-template", "deepsci-org-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared-v2", "isomer-rsch-paper-outline-v1", "isomer-rsch-write-v1", "isomer-rsch-paper-plot-v1", "isomer-rsch-figure-polish-v1"]
+required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
 optional_isomer_skills = ["nature-data", "nature-figure", "nature-paper2ppt", "nature-polishing"]

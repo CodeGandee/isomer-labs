@@ -532,7 +532,7 @@ TOPIC_MANAGER_REQUIRED_SKILL_TERMS = (
     "reset checkpoint",
     "canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`",
     "canonical per-agent worktree creation plus cwd proof belong to `isomer-srv-agent-env-setup`",
-    "isomer-rsch-workspace-mgr-v2",
+    "isomer-rsch-workspace-mgr",
     "semantic workspace labels",
     "Topic Workspace Manifest",
     "topic-workspace.toml",

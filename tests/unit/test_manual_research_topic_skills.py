@@ -57,7 +57,7 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
             ),
         )
         self.assertNotIn("`bootstrap-research`", combined)
-        self.assertNotIn("isomer-rsch-workspace-mgr-v2", combined)
+        self.assertNotIn("isomer-rsch-workspace-mgr", combined)
         self.assertNotIn("placeholder-bindings.md", combined)
         self.assertNotIn("isomer-cli ext research records", combined)
         self.assertNotIn("`start-manual-research`", combined)
@@ -117,21 +117,21 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
         self.assertNotIn("isomer-admin-topic-prepare", combined)
 
     def test_v2_workspace_manager_owns_research_bootstrap_contract(self) -> None:
-        skill = read_repo_file("skillset/research-paradigm/v2/isomer-rsch-workspace-mgr-v2/SKILL.md")
-        bootstrap = read_repo_file("skillset/research-paradigm/v2/isomer-rsch-workspace-mgr-v2/references/bootstrap-workflow.md")
-        access = read_repo_file("skillset/research-paradigm/v2/isomer-rsch-workspace-mgr-v2/references/agent-access-plan.md")
-        bindings = read_repo_file("skillset/research-paradigm/v2/isomer-rsch-workspace-mgr-v2/placeholder-bindings.md")
+        skill = read_repo_file("skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/SKILL.md")
+        bootstrap = read_repo_file("skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/references/bootstrap-workflow.md")
+        access = read_repo_file("skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/references/agent-access-plan.md")
+        bindings = read_repo_file("skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/placeholder-bindings.md")
         combined = "\n".join((skill, bootstrap, access, bindings))
 
         self.assertContainsAll(
             combined,
             (
-                "own v2 research workspace bootstrap",
-                "selected v2 skill readiness",
+                "own production DeepSci research workspace bootstrap",
+                "selected production DeepSci skill readiness",
                 "placeholder binding readiness",
                 "Topic Creator summaries",
                 "Topic Manager topology evidence",
-                "actor metadata for v2 records",
+                "actor metadata for production DeepSci records",
                 "accepted research artifact",
                 "isomer-cli project topic-reset update-checkpoint",
                 "redo-after-reset behavior",

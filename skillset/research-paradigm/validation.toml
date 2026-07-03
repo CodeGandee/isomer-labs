@@ -37,8 +37,7 @@ runtime_coupling_section_headings = [
   "Source Lineage",
 ]
 resolved_id_file_globs = [
-  "v1/isomer-rsch-shared-v1/references/tbd-surface-registry.md",
-  "deepscientist-migration-guide.md",
+    "deepscientist-migration-guide.md",
   "ds-analysis/**",
   "*/migrate/**",
   "*/org/**",
@@ -56,14 +55,14 @@ resolved_id_section_headings = [
   "Resolved Surfaces",
   "Resolved Extension Surfaces",
 ]
-v2_storage_binding_file_globs = [
-  "v2/isomer-rsch-shared-v2/references/semantic-placeholders.md",
+deepsci_storage_binding_file_globs = [
+  "deepsci/isomer-rsch-shared/references/semantic-placeholders.md",
   "*/placeholder-bindings.md",
   "*/migrate/**",
   "*/org/**",
   "*/templates/**",
 ]
-v2_storage_binding_section_headings = [
+deepsci_storage_binding_section_headings = [
   "Source Lineage",
   "Placeholder Rule",
   "Storage Binding Status",

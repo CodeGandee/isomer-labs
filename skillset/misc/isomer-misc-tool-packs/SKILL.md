@@ -13,7 +13,7 @@ This manually invoked skill maps user-facing toolset names to setup contracts. I
 
 Use this skill when the user explicitly invokes `isomer-misc-tool-packs` or directly asks to install, prepare, resolve, or inspect a named toolset, including prompts like `install toolset paper-writing`, `prepare paper figures`, `what does paper2ppt need`, `install torch-gpu tools`, or `resolve cuda-build tool pack`.
 
-Do not route to this skill automatically from service, operator, or research workflow skills yet. Do not use this skill to install packages directly, mutate a Topic Workspace Pixi manifest, choose package mirrors, verify GPU runtime readiness, or inspect research-paradigm v2 skills. Route those concerns to the owning service or misc skill named in the resolved contract only after the user chooses to act on the returned contract.
+Do not route to this skill automatically from service, operator, or research workflow skills yet. Do not use this skill to install packages directly, mutate a Topic Workspace Pixi manifest, choose package mirrors, verify GPU runtime readiness, or inspect production DeepSci research-paradigm skills. Route those concerns to the owning service or misc skill named in the resolved contract only after the user chooses to act on the returned contract.
 
 ## Workflow
 
@@ -91,5 +91,5 @@ When requested, include:
 - Treating a CLI tool distributed on PyPI as an importable project library.
 - Installing importable Python libraries with `uv tool install` or `pixi global install` instead of the Topic Workspace Pixi environment.
 - Including the R figure stack in `paper-writing` by default.
-- Copying research-paradigm v2 skill paths into this tool-pack catalog.
+- Copying production DeepSci skill paths into this tool-pack catalog.
 - Treating a successful package install as readiness without running the verification checks from the contract.

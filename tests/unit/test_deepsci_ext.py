@@ -15,7 +15,7 @@ from isomer_labs import cli
 from isomer_labs.artifact_formats import ArtifactFormatResolver, ArtifactFormatRegistry
 from isomer_labs.deepsci_ext.registry import ARTIFACT_TOOLS, BASH_EXEC_TOOLS, MEMORY_TOOLS, TOOL_ARGUMENT_KEYS
 from isomer_labs.deepsci_ext.record_formats import (
-    active_v2_binding_profile_names,
+    active_deepsci_binding_profile_names,
     canonical_record_format_ref,
     register_deepsci_record_format_provider,
 )
@@ -128,13 +128,13 @@ class DeepScientistCompatibilityExtensionTests(unittest.TestCase):
         for tool_name, keys in expected_args.items():
             self.assertEqual(keys, list(TOOL_ARGUMENT_KEYS[str(tool_name)]))
 
-    def test_record_format_provider_covers_active_v2_binding_profiles(self) -> None:
+    def test_record_format_provider_covers_active_deepsci_binding_profiles(self) -> None:
         registry = ArtifactFormatRegistry()
         register_deepsci_record_format_provider(registry)
         resolver = ArtifactFormatResolver(registry)
-        active = {canonical_record_format_ref(profile_name, "profile") for profile_name in active_v2_binding_profile_names()}
+        active = {canonical_record_format_ref(profile_name, "profile") for profile_name in active_deepsci_binding_profile_names()}
         discovered: set[str] = set()
-        for binding in sorted((REPO_ROOT / "skillset" / "research-paradigm" / "v2").glob("*/placeholder-bindings.md")):
+        for binding in sorted((REPO_ROOT / "skillset" / "research-paradigm" / "deepsci").glob("*/placeholder-bindings.md")):
             for line in binding.read_text(encoding="utf-8").splitlines():
                 if not line.startswith("| <"):
                     continue

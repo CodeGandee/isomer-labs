@@ -243,7 +243,7 @@ class TopicResetTests(unittest.TestCase):
                 "--preserve-semantic-label",
                 "topic.records.views",
                 "--source-label",
-                "isomer-rsch-workspace-mgr-v2",
+                "isomer-rsch-workspace-mgr",
                 "--provenance-ref",
                 "test:v2-bootstrap",
                 "--render",

@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-paper-outline"
+  short_description: "Turn evidence into a paper-native outline."
+  default_prompt: "Use $isomer-rsch-paper-outline to build or repair a paper-native outline, scoped claims, method abstraction, and evidence boundaries."

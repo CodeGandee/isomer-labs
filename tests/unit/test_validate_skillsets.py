@@ -1855,7 +1855,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
         reset_path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "reset-inspect.md"
-        reset_path.write_text(reset_path.read_text(encoding="utf-8") + "\nFor reset checkpoint inspection, route to skillset/research-paradigm/v2 first.\n", encoding="utf-8")
+        reset_path.write_text(reset_path.read_text(encoding="utf-8") + "\nFor reset checkpoint inspection, route to skillset/research-paradigm/deepsci first.\n", encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
 
@@ -1918,11 +1918,11 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_research_validator_requires_worker_output_policy_for_plain_file_guidance(self) -> None:
         root = self.make_root()
-        skill_path = root / "skillset" / "research-paradigm" / "v2" / "isomer-rsch-write-v2" / "SKILL.md"
+        skill_path = root / "skillset" / "research-paradigm" / "v2" / "isomer-rsch-write" / "SKILL.md"
         write(
             skill_path,
             """
-            # Isomer Research Write V2
+            # Isomer Research Write
 
             ## Workflow
 
@@ -1931,24 +1931,24 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         document = validator.research_validator.Document(
             path=skill_path,
-            rel_repo="skillset/research-paradigm/v2/isomer-rsch-write-v2/SKILL.md",
-            rel_target="v2/isomer-rsch-write-v2/SKILL.md",
+            rel_repo="skillset/research-paradigm/deepsci/isomer-rsch-write/SKILL.md",
+            rel_target="deepsci/isomer-rsch-write/SKILL.md",
             lines=tuple(skill_path.read_text(encoding="utf-8").splitlines()),
             sections_by_line=(),
-            roles=frozenset({"v2", "active"}),
+            roles=frozenset({"deepsci", "active"}),
         )
         diagnostics: list[object] = []
 
-        validator.research_validator.validate_v2_worker_output_policy(document, root, diagnostics)
+        validator.research_validator.validate_deepsci_worker_output_policy(document, root, diagnostics)
 
         self.assertIn("RPS015", codes(diagnostics))
         self.assertTrue(any("project outputs policy" in message for message in messages(diagnostics)), messages(diagnostics))
 
-        fixed_path = root / "skillset" / "research-paradigm" / "v2" / "isomer-rsch-paper-plot-v2" / "SKILL.md"
+        fixed_path = root / "skillset" / "research-paradigm" / "deepsci" / "isomer-rsch-paper-plot" / "SKILL.md"
         write(
             fixed_path,
             """
-            # Isomer Research Paper Plot V2
+            # Isomer Research Paper Plot
 
             ## Workflow
 
@@ -1957,15 +1957,15 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         fixed_document = validator.research_validator.Document(
             path=fixed_path,
-            rel_repo="skillset/research-paradigm/v2/isomer-rsch-paper-plot-v2/SKILL.md",
-            rel_target="v2/isomer-rsch-paper-plot-v2/SKILL.md",
+            rel_repo="skillset/research-paradigm/deepsci/isomer-rsch-paper-plot/SKILL.md",
+            rel_target="deepsci/isomer-rsch-paper-plot/SKILL.md",
             lines=tuple(fixed_path.read_text(encoding="utf-8").splitlines()),
             sections_by_line=(),
-            roles=frozenset({"v2", "active"}),
+            roles=frozenset({"deepsci", "active"}),
         )
         fixed_diagnostics: list[object] = []
 
-        validator.research_validator.validate_v2_worker_output_policy(fixed_document, root, fixed_diagnostics)
+        validator.research_validator.validate_deepsci_worker_output_policy(fixed_document, root, fixed_diagnostics)
 
         self.assertEqual([], fixed_diagnostics)
 

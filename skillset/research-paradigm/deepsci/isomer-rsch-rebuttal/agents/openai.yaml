@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-rsch-rebuttal"
+  short_description: "Turn reviewer feedback into response and revision work."
+  default_prompt: "Use $isomer-rsch-rebuttal to normalize reviewer feedback, route required fixes, and assemble a point-by-point response."

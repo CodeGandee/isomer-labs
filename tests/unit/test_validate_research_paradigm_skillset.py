@@ -44,18 +44,21 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def make_valid_skillset(self) -> tuple[Path, Path]:
         root = self.make_root()
         target = root / "skillset" / "research-paradigm"
-        v1_root = target / "v1"
-        v2_root = target / "v2"
-        for name in sorted(validator.EXPECTED_V1_SKILLS):
-            reference = "references/tbd-surface-registry.md" if name == "isomer-rsch-shared-v1" else "references/isomer-research-contract.md"
-            self.write_skill(v1_root, name, reference=reference, v2=False)
-            if reference == "references/isomer-research-contract.md":
-                write(
-                    v1_root / name / "references" / "isomer-research-contract.md",
-                    "# Contract\n\nUse Research Topic, Research Inquiry, Artifacts, and Decision Records.\n",
-                )
+        deepsci_root = target / "deepsci"
+        for name in sorted(validator.EXPECTED_DEEPSCI_SKILLS):
+            self.write_skill(deepsci_root, name, v2=True)
         write(
-            v1_root / "isomer-rsch-shared-v1" / "references" / "tbd-surface-registry.md",
+            deepsci_root / "isomer-rsch-shared" / "references" / "semantic-placeholders.md",
+            """
+            # V2 Semantic Placeholders
+
+            | ID | Meaning | Required semantic content | Typical producers | Typical consumers | Storage-binding status |
+            | --- | --- | --- | --- | --- | --- |
+            | `research-frame` | Research frame. | Objective, metric, constraints, and next route. | `isomer-rsch-scout` | Any production DeepSci skill | Not storage-bound yet. |
+            """,
+        )
+        write(
+            deepsci_root / "isomer-rsch-shared" / "references" / "tbd-surface-registry.md",
             """
             # TBD Surface Registry
 
@@ -72,18 +75,6 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             | provider-new | Use a registered provider binding. |
             """,
         )
-        for name in sorted(validator.EXPECTED_V2_SKILLS):
-            self.write_skill(v2_root, name, v2=True)
-        write(
-            v2_root / "isomer-rsch-shared-v2" / "references" / "semantic-placeholders.md",
-            """
-            # V2 Semantic Placeholders
-
-            | ID | Meaning | Required semantic content | Typical producers | Typical consumers | Storage-binding status |
-            | --- | --- | --- | --- | --- | --- |
-            | `research-frame` | Research frame. | Objective, metric, constraints, and next route. | `isomer-rsch-scout-v2` | Any v2 skill | Not storage-bound yet. |
-            """,
-        )
         return root, target
 
     def write_skill(
@@ -98,7 +89,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         prompt_skill: str | None = None,
         v2: bool,
     ) -> None:
-        load_step = f"1. **Load context**. Read `{reference}` first." if reference else "1. **Load context**. Read `isomer-rsch-shared-v2` first."
+        load_step = f"1. **Load context**. Read `{reference}` first." if reference else "1. **Load context**. Read `isomer-rsch-shared` first."
         output_step = (
             "2. **Produce semantics**. Produce [[rsch-object:research-frame]] with enough content for the next method step."
             if v2
@@ -109,10 +100,10 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
                 "## Worker Output Policy\n\n"
                 "            Resolve `project outputs policy`, write plain generated files under an operation-specific child set, respect `.gitignore`, and check `commit_after_operation`.\n"
             )
-            if name == "isomer-rsch-shared-v2"
+            if name == "isomer-rsch-shared"
             else ""
         )
-        routing_line = f"- `{reference}` for local terminology." if reference else "- Read `isomer-rsch-shared-v2` for placeholder semantics."
+        routing_line = f"- `{reference}` for local terminology." if reference else "- Read `isomer-rsch-shared` for placeholder semantics."
         write(
             target / name / "SKILL.md",
             f"""
@@ -183,7 +174,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_research_validator_rejects_repo_local_isomer_cli_wrapper(self) -> None:
         root, target = self.make_valid_skillset()
         write(
-            target / "v2" / "isomer-rsch-scout-v2" / "placeholder-bindings.md",
+            target / "deepsci" / "isomer-rsch-scout" / "placeholder-bindings.md",
             "# Placeholder Bindings\n\nRun `pixi run isomer-cli ext research records list`.\n",
         )
 
@@ -194,7 +185,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
     def test_latest_context_preflight_required_for_v2_record_binding_skill(self) -> None:
         root, target = self.make_valid_skillset()
-        self.write_placeholder_bindings(target / "v2" / "isomer-rsch-scout-v2", [])
+        self.write_placeholder_bindings(target / "deepsci" / "isomer-rsch-scout", [])
 
         diagnostics = validator.validate_skillset(target, root)
 
@@ -203,12 +194,12 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
     def test_latest_context_preflight_accepts_concise_shared_import(self) -> None:
         root, target = self.make_valid_skillset()
-        skill_dir = target / "v2" / "isomer-rsch-scout-v2"
+        skill_dir = target / "deepsci" / "isomer-rsch-scout"
         self.write_placeholder_bindings(skill_dir, [])
         skill_md = skill_dir / "SKILL.md"
         skill_md.write_text(
             skill_md.read_text(encoding="utf-8")
-            + "\nLatest-context reminder: before accepted durable record writes, follow `isomer-rsch-shared-v2` Latest Context Preflight, capture `latest-context-snapshot`, and do not trust prompt memory, chat memory, prior prose, older rendered records, remembered research state, or worker-local files until checked.\n",
+            + "\nLatest-context reminder: before accepted durable record writes, follow `isomer-rsch-shared` Latest Context Preflight, capture `latest-context-snapshot`, and do not trust prompt memory, chat memory, prior prose, older rendered records, remembered research state, or worker-local files until checked.\n",
             encoding="utf-8",
         )
 
@@ -218,7 +209,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
     def test_worker_output_guidance_does_not_satisfy_latest_context_preflight(self) -> None:
         root, target = self.make_valid_skillset()
-        skill_dir = target / "v2" / "isomer-rsch-scout-v2"
+        skill_dir = target / "deepsci" / "isomer-rsch-scout"
         self.write_placeholder_bindings(skill_dir, [])
         skill_md = skill_dir / "SKILL.md"
         skill_md.write_text(
@@ -234,7 +225,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
     def test_payload_first_placeholder_binding_is_allowed(self) -> None:
         root, target = self.make_valid_skillset()
-        skill_dir = target / "v2" / "isomer-rsch-scout-v2"
+        skill_dir = target / "deepsci" / "isomer-rsch-scout"
         write(skill_dir / "migrate" / "placeholders.md", "| Placeholder | Meaning |\n| --- | --- |\n| <SCOUT_CONTEXT_BRIEF> | Context. |\n")
         write(
             skill_dir / "placeholder-bindings.md",
@@ -255,7 +246,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
     def test_payload_first_placeholder_binding_rejects_body_file_and_bare_profile(self) -> None:
         root, target = self.make_valid_skillset()
-        skill_dir = target / "v2" / "isomer-rsch-scout-v2"
+        skill_dir = target / "deepsci" / "isomer-rsch-scout"
         write(skill_dir / "migrate" / "placeholders.md", "| Placeholder | Meaning |\n| --- | --- |\n| <SCOUT_CONTEXT_BRIEF> | Context. |\n")
         write(
             skill_dir / "placeholder-bindings.md",
@@ -273,35 +264,33 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("RPS014", codes(diagnostics), messages(diagnostics))
         self.assertTrue(any("--format-profile" in message for message in messages(diagnostics)), messages(diagnostics))
 
-    def test_expected_inventory_includes_expanded_v2_contract(self) -> None:
-        self.assertIn("isomer-rsch-intake-v1", validator.EXPECTED_V1_SKILLS)
-        self.assertIn("isomer-rsch-write-v1", validator.EXPECTED_V1_SKILLS)
-        self.assertIn("isomer-rsch-write-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-paper-outline-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-paper-plot-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-figure-polish-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-review-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-rebuttal-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-nature-data-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-nature-figure-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-nature-paper2ppt-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-nature-polishing-v2", validator.EXPECTED_V2_SKILLS)
-        self.assertIn("isomer-rsch-workspace-mgr-v2", validator.EXPECTED_V2_SKILLS)
+    def test_expected_inventory_includes_expanded_deepsci_contract(self) -> None:
+        self.assertIn("isomer-rsch-write", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-paper-outline", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-paper-plot", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-figure-polish", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-review", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-rebuttal", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-nature-data", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-nature-figure", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-nature-paper2ppt", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-nature-polishing", validator.EXPECTED_DEEPSCI_SKILLS)
+        self.assertIn("isomer-rsch-workspace-mgr", validator.EXPECTED_DEEPSCI_SKILLS)
 
     def test_reports_core_failure_fixtures(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
-            target / "v1",
-            "isomer-rsch-valid-v1",
+            target / "deepsci",
+            "isomer-rsch-valid",
             reference="references/isomer-research-contract.md",
             workflow_extra=(
                 "3. **Break rules**. Use Research Goal, /data/source/run, "
                 "[[tbd-surface:path-topic-workspace]], [[tbd-surface:missing-id]], "
                 "and `references/missing.md`."
             ),
-            display_name="isomer-rsch-other-v1",
-            prompt_skill="isomer-rsch-other-v1",
-            v2=False,
+            display_name="isomer-rsch-other",
+            prompt_skill="isomer-rsch-other",
+            v2=True,
         )
         diagnostics = validator.validate_skillset(target, root)
         self.assertTrue({"RPS001", "RPS002", "RPS003", "RPS004", "RPS005", "RPS006"} <= codes(diagnostics))
@@ -316,10 +305,10 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         """
         write(target / "deepscientist-migration-guide.md", non_active_text)
         write(target / "ds-analysis" / "write.md", non_active_text)
-        write(target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "migration-plan.md", non_active_text)
-        write(target / "v2" / "isomer-rsch-valid-v2" / "org" / "analysis" / "analysis-of-valid.md", non_active_text)
-        write(target / "v2" / "isomer-rsch-valid-v2" / "org" / "src" / "SKILL.md", non_active_text)
-        write(target / "v2" / "isomer-rsch-valid-v2" / "templates" / "README.md", non_active_text)
+        write(target / "deepsci" / "isomer-rsch-valid" / "migrate" / "migration-plan.md", non_active_text)
+        write(target / "deepsci" / "isomer-rsch-valid" / "org" / "analysis" / "analysis-of-valid.md", non_active_text)
+        write(target / "deepsci" / "isomer-rsch-valid" / "org" / "src" / "SKILL.md", non_active_text)
+        write(target / "deepsci" / "isomer-rsch-valid" / "templates" / "README.md", non_active_text)
 
         diagnostics = validator.validate_skillset(target, root)
 
@@ -330,11 +319,11 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         write(target / "PROVENANCE.md", "DeepScientist source notes mention Research Goal.\n")
         write(target / "licenses" / "NOTICE.md", "DeepScientist source license notice.\n")
         write(
-            target / "v1" / "isomer-rsch-valid-v1" / "references" / "deferred-resources.md",
+            target / "deepsci" / "isomer-rsch-valid" / "references" / "deferred-resources.md",
             "DeepScientist source scripts and /data/source copies were not imported.\n",
         )
         write(
-            target / "v1" / "isomer-rsch-valid-v1" / "references" / "isomer-research-contract.md",
+            target / "deepsci" / "isomer-rsch-valid" / "references" / "isomer-research-contract.md",
             """
             # Contract
 
@@ -366,7 +355,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_rejects_same_terms_outside_allow_zones(self) -> None:
         root, target = self.make_valid_skillset()
         write(
-            target / "v1" / "isomer-rsch-valid-v1" / "references" / "unlinked-active.md",
+            target / "deepsci" / "isomer-rsch-valid" / "references" / "unlinked-active.md",
             """
             # Active Note
 
@@ -379,8 +368,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_active_guidance_still_rejects_runtime_and_storage_terms(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
-            target / "v2",
-            "isomer-rsch-valid-v2",
+            target / "deepsci",
+            "isomer-rsch-valid",
             workflow_extra=(
                 "3. **Break active guidance**. Use Research Goal, DeepScientist, /data/source/run, "
                 "[[tbd-surface:path-topic-workspace]], and Create an Artifact for this output."
@@ -393,11 +382,11 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_accepts_registered_unresolved_tbd_placeholder(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
-            target / "v1",
-            "isomer-rsch-valid-v1",
+            target / "deepsci",
+            "isomer-rsch-valid",
             reference="references/isomer-research-contract.md",
             workflow_extra="3. **Mark unsettled provider**. Emit [[tbd-surface:provider-new]] when provider details remain open.",
-            v2=False,
+            v2=True,
         )
         diagnostics = validator.validate_skillset(target, root)
         self.assert_no_codes(diagnostics, {"RPS002", "RPS003"})
@@ -405,8 +394,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_rejects_unregistered_v2_research_placeholder(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
-            target / "v2",
-            "isomer-rsch-valid-v2",
+            target / "deepsci",
+            "isomer-rsch-valid",
             workflow_extra="3. **Break placeholder**. Produce [[rsch-object:missing-object]].",
             v2=True,
         )
@@ -416,13 +405,13 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_accepts_registered_migration_placeholder(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
-            target / "v2",
-            "isomer-rsch-valid-v2",
+            target / "deepsci",
+            "isomer-rsch-valid",
             workflow_extra="3. **Use local placeholder**. Produce `<VALID_HANDOFF>` for the next route.",
             v2=True,
         )
         write(
-            target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "placeholders.md",
+            target / "deepsci" / "isomer-rsch-valid" / "migrate" / "placeholders.md",
             """
             # Migration Placeholders
 
@@ -431,15 +420,15 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             | <VALID_HANDOFF> | Fixture handoff. |
             """,
         )
-        self.write_placeholder_bindings(target / "v2" / "isomer-rsch-valid-v2", ["VALID_HANDOFF"])
+        self.write_placeholder_bindings(target / "deepsci" / "isomer-rsch-valid", ["VALID_HANDOFF"])
         diagnostics = validator.validate_skillset(target, root)
         self.assert_no_codes(diagnostics, {"RPS009", "RPS012"})
 
     def test_rejects_unregistered_migration_placeholder(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
-            target / "v2",
-            "isomer-rsch-valid-v2",
+            target / "deepsci",
+            "isomer-rsch-valid",
             workflow_extra="3. **Break local placeholder**. Produce `<MISSING_HANDOFF>` for the next route.",
             v2=True,
         )
@@ -449,7 +438,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_rejects_missing_v2_placeholder_binding_page(self) -> None:
         root, target = self.make_valid_skillset()
         write(
-            target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "placeholders.md",
+            target / "deepsci" / "isomer-rsch-valid" / "migrate" / "placeholders.md",
             """
             # Migration Placeholders
 
@@ -464,7 +453,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_rejects_missing_v2_placeholder_binding_row(self) -> None:
         root, target = self.make_valid_skillset()
         write(
-            target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "placeholders.md",
+            target / "deepsci" / "isomer-rsch-valid" / "migrate" / "placeholders.md",
             """
             # Migration Placeholders
 
@@ -474,7 +463,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             | <SECOND_HANDOFF> | Fixture handoff. |
             """,
         )
-        self.write_placeholder_bindings(target / "v2" / "isomer-rsch-valid-v2", ["VALID_HANDOFF"])
+        self.write_placeholder_bindings(target / "deepsci" / "isomer-rsch-valid", ["VALID_HANDOFF"])
         diagnostics = validator.validate_skillset(target, root)
         self.assertIn("RPS012", codes(diagnostics), messages(diagnostics))
         self.assertTrue(any("<SECOND_HANDOFF>" in message for message in messages(diagnostics)), messages(diagnostics))
@@ -482,7 +471,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_rejects_extra_v2_placeholder_binding_row(self) -> None:
         root, target = self.make_valid_skillset()
         write(
-            target / "v2" / "isomer-rsch-valid-v2" / "migrate" / "placeholders.md",
+            target / "deepsci" / "isomer-rsch-valid" / "migrate" / "placeholders.md",
             """
             # Migration Placeholders
 
@@ -492,7 +481,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             """,
         )
         self.write_placeholder_bindings(
-            target / "v2" / "isomer-rsch-valid-v2",
+            target / "deepsci" / "isomer-rsch-valid",
             ["VALID_HANDOFF", "EXTRA_HANDOFF"],
         )
         diagnostics = validator.validate_skillset(target, root)
@@ -502,8 +491,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_rejects_v2_storage_binding(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
-            target / "v2",
-            "isomer-rsch-valid-v2",
+            target / "deepsci",
+            "isomer-rsch-valid",
             workflow_extra="3. **Bind too early**. Create an Artifact for this output.",
             v2=True,
         )
@@ -512,8 +501,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
     def test_rejects_v2_support_section_without_intro(self) -> None:
         root, target = self.make_valid_skillset()
-        self.write_skill(target / "v2", "isomer-rsch-valid-v2", v2=True)
-        skill_md = target / "v2" / "isomer-rsch-valid-v2" / "SKILL.md"
+        self.write_skill(target / "deepsci", "isomer-rsch-valid", v2=True)
+        skill_md = target / "deepsci" / "isomer-rsch-valid" / "SKILL.md"
         skill_md.write_text(
             skill_md.read_text(encoding="utf-8")
             + "\n## Preferences\n\n- Prefer fixture behavior (if the fixture applies, otherwise explain why).\n",
@@ -531,8 +520,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_allows_pattern_references_but_reports_concrete_missing_references(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
-            target / "v2",
-            "isomer-rsch-valid-v2",
+            target / "deepsci",
+            "isomer-rsch-valid",
             routing_extra=(
                 "- `references/packages/<package_id>.md` documents package-specific reference shape.\n"
                 "- `scripts/<script>.py` documents script-specific reference shape.\n"
@@ -584,7 +573,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         if extra_row:
             rows += "| schema-extra-surface | Extra resolution. |\n"
         write(
-            target / "v1" / "isomer-rsch-valid-v1" / "references" / "isomer-research-contract.md",
+            target / "deepsci" / "isomer-rsch-valid" / "references" / "isomer-research-contract.md",
             (
                 "# Contract\n\n"
                 "## TBD Surface Registry\n\n"
@@ -598,11 +587,11 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_whole_subtree_scan_checks_unlinked_markdown_and_yaml(self) -> None:
         root, target = self.make_valid_skillset()
         write(
-            target / "v1" / "isomer-rsch-valid-v1" / "references" / "unlinked.md",
+            target / "deepsci" / "isomer-rsch-valid" / "references" / "unlinked.md",
             "# Unlinked\n\nResearch Goal appears outside linked references.\n",
         )
         write(
-            target / "v1" / "isomer-rsch-valid-v1" / "agents" / "extra.yaml",
+            target / "deepsci" / "isomer-rsch-valid" / "agents" / "extra.yaml",
             "runtime_path: /data/local/source\n",
         )
         diagnostics = validator.validate_skillset(target, root)
@@ -611,11 +600,11 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_cli_reports_deterministic_format_and_nonzero_exit(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
-            target / "v1",
-            "isomer-rsch-valid-v1",
+            target / "deepsci",
+            "isomer-rsch-valid",
             reference="references/isomer-research-contract.md",
             workflow_extra="3. **Break term**. Use Research Goal as active guidance.",
-            v2=False,
+            v2=True,
         )
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -625,5 +614,5 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertTrue(rendered)
         self.assertRegex(
             rendered[0],
-            r"^skillset/research-paradigm/v1/isomer-rsch-valid-v1/SKILL\.md:\d+: RPS001 ",
+            r"^skillset/research-paradigm/deepsci/isomer-rsch-valid/SKILL\.md:\d+: RPS001 ",
         )

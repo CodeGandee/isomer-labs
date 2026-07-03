@@ -45,7 +45,7 @@ Manual Mode is the default for first launch because it lets the user inspect the
 2. The master performs intake, chooses the next Workflow Stage Cursor, and dispatches the smallest useful Research Task.
 3. `{completion_watcher_contract_ref}` observes candidate completion through Agent Instance replies, inspected Agent Artifacts, adapter events, file observations, validation rules, correlation keys, or staleness rules.
 4. When a specialist completes, the master records the handoff, runs the required validation or decision skill, and dispatches the next Research Task if no Gate is required.
-5. Routine route choices can proceed through `isomer-rsch-decision-v2` without user interruption when `{gate_policy_ref}` allows it.
+5. Routine route choices can proceed through `isomer-rsch-decision` without user interruption when `{gate_policy_ref}` allows it.
 6. Governed actions still open Gates for cost, credentials, private data, data export, destructive mutation, long compute, baseline waiver, publication-facing finality, and final completion.
 7. When state is blocked, stale, contradictory, or repeatedly unchanged, the master records the blocker and parks `{agent_team_instance_id}` with a resume packet.
 

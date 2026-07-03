@@ -270,7 +270,7 @@ packages:
 - pypi: ./
   name: isomer-labs
   version: 0.1.0+local
-  sha256: ac0c32e5604ba60da6765c5fbee391dc7408eb7a7059e0aa1bdf14a3a345a26b
+  sha256: 4d01740a35b971fb2ccbaf414e2d954c1487ea7a5c079c4a3ae4e2667fa4c600
   requires_dist:
   - scipy>=1.17.1,<2
   - mdutils>=1.8.1,<2

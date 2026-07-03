@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-write-v2"
-  short_description: "Draft evidence-bounded paper or report text."
-  default_prompt: "Use $isomer-rsch-write-v2 to draft or revise manuscript, report, or summary text from existing evidence without inventing support."

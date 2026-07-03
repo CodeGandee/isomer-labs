@@ -96,7 +96,7 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     @_topic_selection_options
     @click.option("--record-kind", default=None, help="Filter by Workspace Runtime lifecycle record kind.")
     @click.option("--status", default=None, help="Filter by lifecycle status.")
-    @click.option("--placeholder", default=None, help="Filter by exact v2 placeholder token.")
+    @click.option("--placeholder", default=None, help="Filter by exact research placeholder token.")
     @click.option("--profile", default=None, help="Filter by artifact or record profile.")
     @click.option("--skill", default=None, help="Filter by producing skill name.")
     @click.option("--producer", default=None, help="Filter by producer metadata.")
@@ -219,7 +219,7 @@ def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
         command = click.option("--producer", default=None, help="Producer metadata.")(command)
         command = click.option("--skill", default=None, help="Producing or owning skill name.")(command)
         command = click.option("--profile", default=None, help="Artifact or record profile.")(command)
-        command = click.option("--placeholder", default=None, help="Exact v2 placeholder token.")(command)
+        command = click.option("--placeholder", default=None, help="Exact research placeholder token.")(command)
         command = click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name metadata.")(command)
         command = click.option("--actor-kind", default=None, help="Topic Actor kind metadata.")(command)
         command = click.option("--runtime-kind", default=None, help="Topic Actor runtime kind metadata.")(command)
