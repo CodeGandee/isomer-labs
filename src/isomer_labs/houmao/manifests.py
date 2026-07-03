@@ -14,7 +14,7 @@ from typing import Iterable, Mapping
 
 from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.project import houmao_project_dir_for_root
-from isomer_labs.runtime.models import utc_timestamp
+from isomer_labs.runtime.records import utc_timestamp
 
 
 HOUMAO_ADAPTER_ID = "houmao"

@@ -16,7 +16,7 @@ from isomer_labs.project.context import resolve_effective_topic_context
 from isomer_labs.core.diagnostics import has_errors
 from isomer_labs.models import SelectionRequest
 from isomer_labs.project import discover_project
-from isomer_labs.runtime.models import ResetCheckpointRecord, utc_timestamp
+from isomer_labs.runtime.records import ResetCheckpointRecord, utc_timestamp
 from isomer_labs.runtime.store import open_workspace_runtime
 from isomer_labs.runtime.validation import validate_workspace_runtime
 from isomer_labs.workspace.reset import apply_topic_reset, plan_topic_reset

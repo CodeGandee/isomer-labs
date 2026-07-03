@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping
 
-from isomer_labs.workspace.layout import topic_workspace_path as default_topic_workspace_path
+from isomer_labs.workspace.surfaces import topic_workspace_path as default_topic_workspace_path
 from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import (
     EffectiveTopicContext,

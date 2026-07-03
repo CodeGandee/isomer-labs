@@ -15,7 +15,7 @@ from isomer_labs.artifact_formats import (
     render_artifact,
     validate_payload,
 )
-from isomer_labs.artifact_formats.validation import load_payload_file
+from isomer_labs.artifact_formats.processing import load_payload_file
 from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import (
     common_options as _common_options,

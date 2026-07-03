@@ -23,7 +23,7 @@ from isomer_labs.cli.options import (
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.houmao.adapter import HoumaoAdapterFacade
 from isomer_labs.houmao.manifests import HOUMAO_ADAPTER_ID
-from isomer_labs.runtime.models import HandoffRecord
+from isomer_labs.runtime.records import HandoffRecord
 from isomer_labs.runtime.store import open_workspace_runtime
 
 

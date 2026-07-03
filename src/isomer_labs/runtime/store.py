@@ -8,15 +8,18 @@ import sqlite3
 from typing import Callable, Mapping
 
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
+from isomer_labs.core.path_utils import is_within, resolve_project_path
 from isomer_labs.project.doctor import DoctorCheck, find_project_pixi_manifest, inspect_topic_pixi
 from isomer_labs.models import (
     DomainAgentTeamTemplate,
     EffectiveTopicContext,
+    Project,
     TopicAgentTeamProfile,
+    TopicWorkspaceRegistration,
 )
-from isomer_labs.workspace.paths import preview_paths, resolve_semantic_path
-from isomer_labs.runtime.agent_identity import project_agent_instance_id_locations
-from isomer_labs.runtime.models import (
+from isomer_labs.workspace.path_resolution import preview_paths, resolve_semantic_path
+from isomer_labs.runtime import records as runtime_records
+from isomer_labs.runtime.records import (
     ADAPTER_MANIFEST_KINDS,
     ADAPTER_COMMAND_RUN_STATUSES,
     ADAPTER_INSPECTION_STATUSES,
@@ -37,6 +40,9 @@ from isomer_labs.runtime.models import (
     RUNTIME_PATH_SURFACES,
     SIGNAL_OBSERVATION_STATUSES,
     WORKSPACE_RUNTIME_SCHEMA_VERSION,
+    _path_plan_id,
+    _provenance_ref,
+    _slug,
     AgentInstanceRecord,
     AgentTeamInstanceRecord,
     AgentWorkspaceRecord,
@@ -67,9 +73,12 @@ from isomer_labs.runtime.models import (
     WorkspaceRuntimeMetadata,
     utc_timestamp,
 )
-from isomer_labs.runtime.identifiers import _agent_instance_id, _path_plan_id, _provenance_ref, _slug
-from isomer_labs.runtime.readiness import _readiness_diagnostic
-from isomer_labs.runtime.rows import (
+from isomer_labs.runtime.sqlite import (
+    RUNTIME_SCHEMA_TABLES,
+    _create_schema,
+    _dumps,
+    _ensure_runtime_directories,
+    _loads_list,
     _row_to_adapter_command_run,
     _row_to_adapter_handoff_dispatch,
     _row_to_adapter_inspection_snapshot,
@@ -94,23 +103,16 @@ from isomer_labs.runtime.rows import (
     _row_to_reset_plan_action,
     _row_to_signal_observation,
     _row_to_structured_payload,
-)
-from isomer_labs.runtime.schema import (
-    RUNTIME_SCHEMA_TABLES,
-    _create_schema,
-    _ensure_runtime_directories,
+    _table_exists,
+    _table_names,
     _validate_open_schema,
     _write_initial_lifecycle_records,
     _write_metadata,
-)
-from isomer_labs.runtime.serialization import _dumps, _loads_list
-from isomer_labs.runtime.transactions import (
-    _table_exists,
-    _table_names,
     run_runtime_transaction as _run_runtime_transaction,
 )
-from isomer_labs.workspace.tmp import ensure_tmp_surface_ignore_policy
-from isomer_labs.workspace.refs import AgentWorkspacePlan, resolve_role_binding_agent_workspace_plan
+from isomer_labs.workspace.surfaces import ensure_tmp_surface_ignore_policy
+from isomer_labs.workspace.path_resolution import AgentWorkspacePlan, resolve_role_binding_agent_workspace_plan
+from isomer_labs.workspace.surfaces import topic_workspace_path as default_topic_workspace_path
 from isomer_labs.workspace.manifest import (
     EffectiveAgentContext,
     SemanticPathResult,
@@ -119,7 +121,153 @@ from isomer_labs.workspace.manifest import (
     resolve_semantic_binding,
     semantic_label_for_surface,
 )
-from isomer_labs.workspace.semantic_surfaces import storage_profile_by_id
+from isomer_labs.workspace.surfaces import storage_profile_by_id
+
+
+def _readiness_diagnostic(check: DoctorCheck, context: EffectiveTopicContext) -> Diagnostic:
+    return Diagnostic(
+        code="ISO043",
+        severity="error",
+        concept=check.concept,
+        path=context.project.manifest_path,
+        field=check.id,
+        message=f"{check.summary} Use a Service Request for environment setup or compatibility repair.",
+    )
+
+
+@dataclass(frozen=True)
+class AgentInstanceIdLocation:
+    agent_id: str
+    db_path: Path
+    agent_team_instance_id: str
+    agent_role_id: str
+    research_topic_id: str
+    topic_workspace_id: str
+
+    def record_ref(self) -> str:
+        return (
+            f"{self.db_path}:{self.topic_workspace_id}:"
+            f"{self.agent_team_instance_id}:{self.agent_role_id}"
+        )
+
+
+def project_agent_instance_id_locations(
+    project: Project,
+) -> tuple[dict[str, list[AgentInstanceIdLocation]], list[tuple[Path, str]]]:
+    locations: dict[str, list[AgentInstanceIdLocation]] = {}
+    issues: list[tuple[Path, str]] = []
+
+    for db_path in project_runtime_db_paths(project):
+        if not db_path.exists():
+            continue
+        try:
+            connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            connection.row_factory = sqlite3.Row
+            try:
+                rows = connection.execute(
+                    """
+                    SELECT id, agent_team_instance_id, agent_role_id, research_topic_id, topic_workspace_id
+                    FROM agent_instances
+                    ORDER BY id, agent_team_instance_id, agent_role_id
+                    """
+                ).fetchall()
+            finally:
+                connection.close()
+        except sqlite3.Error as exc:
+            issues.append((db_path, str(exc)))
+            continue
+        for row in rows:
+            location = AgentInstanceIdLocation(
+                agent_id=row["id"],
+                db_path=db_path,
+                agent_team_instance_id=row["agent_team_instance_id"],
+                agent_role_id=row["agent_role_id"],
+                research_topic_id=row["research_topic_id"],
+                topic_workspace_id=row["topic_workspace_id"],
+            )
+            locations.setdefault(location.agent_id, []).append(location)
+
+    return locations, issues
+
+
+def validate_global_agent_instance_id_uniqueness(
+    context: EffectiveTopicContext,
+    db_path: Path,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    id_locations, scan_issues = project_agent_instance_id_locations(context.project)
+    for scan_db_path, message in scan_issues:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO040",
+                severity="warning",
+                concept="Agent Instance Identity",
+                path=scan_db_path,
+                message=f"Could not read Agent Instance ids for duplicate scan: {message}.",
+            )
+        )
+
+    for agent_id, locations in id_locations.items():
+        if len(locations) > 1:
+            records = ", ".join(location.record_ref() for location in locations)
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO041",
+                    severity="error",
+                    concept="Agent Instance Identity",
+                    path=db_path,
+                    field=agent_id,
+                    message=(
+                        f"Agent Instance id {agent_id} appears in multiple Project runtime records: "
+                        f"{records}."
+                    ),
+                )
+            )
+
+    return diagnostics
+
+
+def project_runtime_db_paths(project: Project) -> list[Path]:
+    paths: list[Path] = []
+    seen: set[Path] = set()
+
+    for workspace in project.manifest.topic_workspaces:
+        workspace_path = _workspace_path(project, workspace)
+        if workspace_path is None:
+            continue
+        db_path = workspace_path / "state.sqlite"
+        if db_path not in seen:
+            paths.append(db_path)
+            seen.add(db_path)
+
+    registered_topic_ids = {
+        workspace.research_topic_id
+        for workspace in project.manifest.topic_workspaces
+        if workspace.research_topic_id is not None
+    }
+    for topic in project.manifest.research_topics:
+        if topic.id in registered_topic_ids:
+            continue
+        workspace_path = _default_workspace_path(project, topic.id)
+        db_path = workspace_path / "state.sqlite"
+        if db_path not in seen:
+            paths.append(db_path)
+            seen.add(db_path)
+
+    return paths
+
+
+def _workspace_path(project: Project, workspace: TopicWorkspaceRegistration) -> Path | None:
+    if workspace.path_input is not None:
+        path = resolve_project_path(project.root, workspace.path_input)
+    else:
+        workspace_id = workspace.research_topic_id or workspace.id
+        path = _default_workspace_path(project, workspace_id)
+    return path if is_within(path, project.root) else None
+
+
+def _default_workspace_path(project: Project, workspace_id: str) -> Path:
+    return default_topic_workspace_path(project.root, workspace_id, project.manifest.path_defaults)
 
 
 AGENT_TEAM_INSTANCE_PATH_LABELS = (
@@ -1139,7 +1287,7 @@ class WorkspaceRuntimeStore:
         agent_instance_ids: list[str] = []
         agent_workspace_ids: list[str] = []
         generated_ids = [
-            (binding, _agent_instance_id(context.topic_workspace_id, team_id, binding.role_id))
+            (binding, runtime_records._agent_instance_id(context.topic_workspace_id, team_id, binding.role_id))
             for binding in active_bindings
         ]
         diagnostics.extend(

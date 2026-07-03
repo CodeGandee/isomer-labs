@@ -25,7 +25,7 @@ from isomer_labs.models import (
 )
 from isomer_labs.project import discover_project
 from isomer_labs.teams.profile_bundles import materialize_topic_agent_team_profile_bundle
-from isomer_labs.runtime.models import RuntimeLifecycleRecord
+from isomer_labs.runtime.records import RuntimeLifecycleRecord
 from isomer_labs.runtime.store import (
     WorkspaceRuntimeStore,
     initialize_workspace_runtime,

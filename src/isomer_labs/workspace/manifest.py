@@ -8,10 +8,10 @@ import re
 from typing import Any, Mapping
 
 from isomer_labs.core.diagnostics import Diagnostic
-from isomer_labs.workspace.tmp import ensure_tmp_surface_ignore_policy
+from isomer_labs.workspace.surfaces import ensure_tmp_surface_ignore_policy
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.core.path_utils import canonicalize, is_within, resolve_project_path
-from isomer_labs.workspace.semantic_surfaces import (
+from isomer_labs.workspace.surfaces import (
     CUSTOM_LABEL_ROOT,
     GROUPED_TOPIC_REPO_PREFIX,
     ISOMER_RESERVED_LABEL_ROOTS,

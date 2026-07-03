@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from pathlib import Path
 
-from isomer_labs.workspace.layout import topic_workspace_path as default_topic_workspace_path
+from isomer_labs.workspace.surfaces import topic_workspace_path as default_topic_workspace_path
 from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import Project, ProjectState, ResearchTopicConfig, TemplateValidationReport
 from isomer_labs.core.path_utils import is_within, resolve_project_path

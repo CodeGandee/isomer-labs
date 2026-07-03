@@ -17,8 +17,8 @@ from isomer_labs.artifact_formats.models import (
 )
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.runtime.identifiers import _provenance_ref, _slug
-from isomer_labs.runtime.models import ArtifactFormatRegistrationRecord, utc_timestamp
+from isomer_labs.runtime.records import _provenance_ref, _slug
+from isomer_labs.runtime.records import ArtifactFormatRegistrationRecord, utc_timestamp
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
 
 

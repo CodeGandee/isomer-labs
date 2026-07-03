@@ -14,7 +14,7 @@ import tomlkit
 from isomer_labs.core.builtins import list_built_in_schemas
 from isomer_labs.cli.options import CliOptions, value as _value
 from isomer_labs.cli.output import emit_output, output_format
-from isomer_labs.workspace.layout import topic_workspace_path as default_topic_workspace_path
+from isomer_labs.workspace.surfaces import topic_workspace_path as default_topic_workspace_path
 from isomer_labs.project.context import resolve_effective_topic_context
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.project.doctor import build_doctor_report, render_doctor_text
@@ -37,7 +37,7 @@ from isomer_labs.houmao.adapter import HoumaoAdapterFacade
 from isomer_labs.project.init import initialize_project
 from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, SelectionRequest, TopicAgentTeamProfile
 from isomer_labs.core.path_utils import display_path
-from isomer_labs.workspace.paths import (
+from isomer_labs.workspace.path_resolution import (
     default_semantic_path,
     explain_semantic_path,
     list_semantic_paths,
@@ -101,7 +101,7 @@ from isomer_labs.runtime.store import (
     open_workspace_runtime,
     prepare_topic_environment_readiness,
 )
-from isomer_labs.runtime.models import AdapterManifestRefRecord, AdapterReconciliationRecord, utc_timestamp
+from isomer_labs.runtime.records import AdapterManifestRefRecord, AdapterReconciliationRecord, utc_timestamp
 from isomer_labs.runtime.validation import inspect_workspace_runtime, validate_workspace_runtime
 from isomer_labs.workspace.self_query import (
     build_self_env_payload,

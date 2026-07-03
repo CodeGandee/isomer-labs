@@ -7,7 +7,7 @@ from pathlib import Path
 
 from isomer_labs.project.context import resolve_effective_topic_context
 from isomer_labs.models import EffectiveTopicContext, SelectionRequest
-from isomer_labs.workspace.paths import resolve_effective_agent_context, resolve_effective_topic_actor_context, resolve_semantic_path
+from isomer_labs.workspace.path_resolution import resolve_effective_agent_context, resolve_effective_topic_actor_context, resolve_semantic_path
 from isomer_labs.project import discover_project
 from isomer_labs.workspace.manifest import (
     DEFAULT_LAYOUT_PROFILE,

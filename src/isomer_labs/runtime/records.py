@@ -1,18 +1,157 @@
-"""Workspace Runtime record models."""
+"""Workspace Runtime records and constants."""
 
 from __future__ import annotations
+
+import re
+import uuid
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from isomer_labs.runtime.adapter_handoffs import (
-    ADAPTER_HANDOFF_DISPATCH_STATUSES as ADAPTER_HANDOFF_DISPATCH_STATUSES,
-    HANDOFF_NORMALIZATION_STATUSES as HANDOFF_NORMALIZATION_STATUSES,
-    SIGNAL_OBSERVATION_STATUSES as SIGNAL_OBSERVATION_STATUSES,
-    AdapterHandoffDispatchRecord as AdapterHandoffDispatchRecord,
-    HandoffNormalizationRecord as HandoffNormalizationRecord,
-    SignalObservationRecord as SignalObservationRecord,
-)
+
+ADAPTER_HANDOFF_DISPATCH_STATUSES = ("sent", "failed", "blocked")
+SIGNAL_OBSERVATION_STATUSES = ("observed", "candidate_completion", "failed", "stale")
+HANDOFF_NORMALIZATION_STATUSES = ("accepted", "rejected", "blocked", "superseded", "repair_routed", "follow_up")
+
+
+@dataclass(frozen=True)
+class AdapterHandoffDispatchRecord:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    handoff_id: str
+    agent_team_instance_id: str
+    source_agent_instance_id: str
+    target_agent_instance_id: str
+    adapter_id: str
+    status: str
+    command_run_ids: list[str]
+    payload_ref_ids: list[str]
+    diagnostics: list[dict[str, object]]
+    created_at: str
+    updated_at: str
+    research_task_id: str | None = None
+    run_id: str | None = None
+    actor_ref: str | None = None
+    expected_output_refs: list[str] = field(default_factory=list)
+    completion_watcher_contract_refs: list[str] = field(default_factory=list)
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "handoff_id": self.handoff_id,
+            "agent_team_instance_id": self.agent_team_instance_id,
+            "source_agent_instance_id": self.source_agent_instance_id,
+            "target_agent_instance_id": self.target_agent_instance_id,
+            "adapter_id": self.adapter_id,
+            "status": self.status,
+            "command_run_ids": self.command_run_ids,
+            "payload_ref_ids": self.payload_ref_ids,
+            "diagnostics": self.diagnostics,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "expected_output_refs": self.expected_output_refs,
+            "completion_watcher_contract_refs": self.completion_watcher_contract_refs,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("research_task_id", self.research_task_id),
+            ("run_id", self.run_id),
+            ("actor_ref", self.actor_ref),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class SignalObservationRecord:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    handoff_id: str
+    agent_team_instance_id: str
+    adapter_id: str
+    observation_kind: str
+    status: str
+    summary: str
+    command_run_ids: list[str]
+    payload_ref_ids: list[str]
+    diagnostics: list[dict[str, object]]
+    observed_at: str
+    run_id: str | None = None
+    source_agent_instance_id: str | None = None
+    target_agent_instance_id: str | None = None
+    actor_ref: str | None = None
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "handoff_id": self.handoff_id,
+            "agent_team_instance_id": self.agent_team_instance_id,
+            "adapter_id": self.adapter_id,
+            "observation_kind": self.observation_kind,
+            "status": self.status,
+            "summary": self.summary,
+            "command_run_ids": self.command_run_ids,
+            "payload_ref_ids": self.payload_ref_ids,
+            "diagnostics": self.diagnostics,
+            "observed_at": self.observed_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("run_id", self.run_id),
+            ("source_agent_instance_id", self.source_agent_instance_id),
+            ("target_agent_instance_id", self.target_agent_instance_id),
+            ("actor_ref", self.actor_ref),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class HandoffNormalizationRecord:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    handoff_id: str
+    status: str
+    rationale: str
+    signal_observation_ids: list[str]
+    output_artifact_refs: list[str]
+    corrective_refs: list[str]
+    payload_ref_ids: list[str]
+    created_at: str
+    run_id: str | None = None
+    actor_ref: str | None = None
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "handoff_id": self.handoff_id,
+            "status": self.status,
+            "rationale": self.rationale,
+            "signal_observation_ids": self.signal_observation_ids,
+            "output_artifact_refs": self.output_artifact_refs,
+            "corrective_refs": self.corrective_refs,
+            "payload_ref_ids": self.payload_ref_ids,
+            "created_at": self.created_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (("run_id", self.run_id), ("actor_ref", self.actor_ref)):
+            if value is not None:
+                data[key] = value
+        return data
 
 
 WORKSPACE_RUNTIME_SCHEMA_VERSION = "isomer-workspace-runtime.v1"
@@ -136,6 +275,29 @@ ADAPTER_STOP_OUTCOME_STATUSES = ("stopped", "failed", "partial", "stale")
 
 def utc_timestamp() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _path_plan_id(topic_workspace_id: str, surface: str) -> str:
+    return f"path-plan-{_slug(topic_workspace_id)}-{_slug(surface)}"
+
+
+def _provenance_ref(record_kind: str, record_id: str) -> str:
+    return f"provenance:{record_kind}:{record_id}"
+
+
+def _slug(value: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9_.-]+", "-", value).strip("-") or "record"
+
+
+def _agent_instance_id(topic_workspace_id: str, team_id: str, role_id: str) -> str:
+    """Return a globally unique Agent Instance id.
+
+    The id embeds the owning Topic Workspace, Agent Team Instance, and Agent
+    Role for readability, and appends a short random suffix so that ids are
+    unique across the whole Project.
+    """
+    short_uuid = uuid.uuid4().hex[:8]
+    return f"agent-{_slug(topic_workspace_id)}-{_slug(team_id)}-{_slug(role_id)}-{short_uuid}"
 
 
 @dataclass(frozen=True)

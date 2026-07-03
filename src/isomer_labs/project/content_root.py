@@ -9,7 +9,7 @@ from typing import Any
 
 import tomlkit  # type: ignore[import-untyped]
 
-from isomer_labs.workspace.layout import (
+from isomer_labs.workspace.surfaces import (
     TOPIC_WORKSPACE_BASE_NAME,
     content_root_path,
 )
@@ -25,7 +25,7 @@ from isomer_labs.project import (
     project_root_for_manifest,
     root_houmao_overlay_dir_for_root,
 )
-from isomer_labs.runtime.models import RUNTIME_DIRECTORIES
+from isomer_labs.runtime.records import RUNTIME_DIRECTORIES
 from isomer_labs.core.toml_loader import load_toml
 
 

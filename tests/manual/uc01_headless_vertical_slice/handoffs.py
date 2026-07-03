@@ -8,8 +8,8 @@ from pathlib import Path
 
 from isomer_labs.houmao.manifests import HOUMAO_ADAPTER_ID
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.runtime.identifiers import _provenance_ref, _slug
-from isomer_labs.runtime.models import (
+from isomer_labs.runtime.records import _provenance_ref, _slug
+from isomer_labs.runtime.records import (
     AdapterCommandRunRecord,
     AdapterHandoffDispatchRecord,
     AdapterPayloadRefRecord,

@@ -18,9 +18,7 @@ from isomer_labs.artifact_formats.registry import (
     default_registry,
     register_provider,
 )
-from isomer_labs.artifact_formats.rendering import render_artifact
-from isomer_labs.artifact_formats.resolver import ArtifactFormatResolver
-from isomer_labs.artifact_formats.validation import validate_payload
+from isomer_labs.artifact_formats.processing import ArtifactFormatResolver, render_artifact, validate_payload
 from isomer_labs.artifact_formats.workspace_provider import (
     WorkspaceRuntimeArtifactFormatProvider,
     register_custom_artifact_format,

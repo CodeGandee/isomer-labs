@@ -8,9 +8,9 @@ from typing import Any, Mapping
 
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.workspace.paths import materialize_semantic_path, resolve_semantic_path
-from isomer_labs.runtime.identifiers import _provenance_ref, _slug
-from isomer_labs.runtime.models import RuntimeLifecycleRecord, utc_timestamp
+from isomer_labs.workspace.path_resolution import materialize_semantic_path, resolve_semantic_path
+from isomer_labs.runtime.records import _provenance_ref, _slug
+from isomer_labs.runtime.records import RuntimeLifecycleRecord, utc_timestamp
 from isomer_labs.runtime.store import open_workspace_runtime
 from isomer_labs.workspace.manifest import (
     DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL,

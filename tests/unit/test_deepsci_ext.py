@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from isomer_labs import cli
 from isomer_labs.artifact_formats import ArtifactFormatResolver, ArtifactFormatRegistry
-from isomer_labs.deepsci_ext.registry import ARTIFACT_TOOLS, BASH_EXEC_TOOLS, MEMORY_TOOLS, TOOL_ARGUMENT_KEYS
+from isomer_labs.deepsci_ext.tools import ARTIFACT_TOOLS, BASH_EXEC_TOOLS, MEMORY_TOOLS, TOOL_ARGUMENT_KEYS
 from isomer_labs.deepsci_ext.record_formats import (
     active_deepsci_binding_profile_names,
     canonical_record_format_ref,

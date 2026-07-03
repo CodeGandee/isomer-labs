@@ -31,7 +31,7 @@ from isomer_labs.houmao.manifests import (
     write_json_manifest,
 )
 from isomer_labs.models import EffectiveTopicContext, TopicAgentTeamProfile
-from isomer_labs.runtime.models import (
+from isomer_labs.runtime.records import (
     AdapterHandoffDispatchRecord,
     AdapterCommandRunRecord,
     HandoffNormalizationRecord,
@@ -2139,7 +2139,7 @@ def _adapter_reconciliation_record(
     *,
     operator_provenance: Mapping[str, object] | None = None,
 ) -> Any:
-    from isomer_labs.runtime.models import AdapterReconciliationRecord
+    from isomer_labs.runtime.records import AdapterReconciliationRecord
 
     timestamp = utc_timestamp()
     state = str(result.state)

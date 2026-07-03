@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
 
-from isomer_labs.workspace.layout import (
+from isomer_labs.workspace.surfaces import (
     CONTENT_ROOT_GITIGNORE_TEXT,
     CONTENT_ROOT_README_TEXT,
     content_path_defaults_for_init,

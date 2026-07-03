@@ -28,7 +28,7 @@ from isomer_labs.teams.instantiation import (
     topic_profile_bundle_path,
     topic_profile_bundle_profile_path,
 )
-from isomer_labs.teams.packet_validation import validate_topic_team_instantiation_packet
+from isomer_labs.teams.instantiation import validate_topic_team_instantiation_packet
 
 
 @dataclass(frozen=True)

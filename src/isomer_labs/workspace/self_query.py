@@ -10,7 +10,7 @@ from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.project.doctor import find_project_pixi_manifest
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.core.path_utils import display_path
-from isomer_labs.workspace.paths import (
+from isomer_labs.workspace.path_resolution import (
     PATH_ENV_VARS,
     resolve_effective_agent_context,
     resolve_effective_topic_actor_context,

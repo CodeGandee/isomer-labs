@@ -4945,7 +4945,7 @@ status = "active"
         def forced_id(topic_workspace_id: str, team_id: str, role_id: str) -> str:
             return f"agent-forced-{role_id}"
 
-        with patch("isomer_labs.runtime.store._agent_instance_id", side_effect=forced_id):
+        with patch("isomer_labs.runtime.records._agent_instance_id", side_effect=forced_id):
             status, output = self.run_cli(
                 [
                     "project",
@@ -5030,7 +5030,7 @@ status = "active"
                 return existing_agent_id
             return f"agent-alpha-{role_id}-candidate"
 
-        with patch("isomer_labs.runtime.store._agent_instance_id", side_effect=generated_id):
+        with patch("isomer_labs.runtime.records._agent_instance_id", side_effect=generated_id):
             status, output = self.run_cli(
                 [
                     "project",

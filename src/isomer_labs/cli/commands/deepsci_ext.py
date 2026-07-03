@@ -14,9 +14,15 @@ from isomer_labs.cli.options import (
     merge_options as _merge_options,
     topic_selection_options as _topic_selection_options,
 )
-from isomer_labs.deepsci_ext.registry import split_tool_name, tool_listing
-from isomer_labs.deepsci_ext.rendering import dumps_raw_json, load_input_json, unsupported_tool_payload
-from isomer_labs.deepsci_ext.service import DeepSciCompatError, call_tool
+from isomer_labs.deepsci_ext.tools import (
+    DeepSciCompatError,
+    call_tool,
+    dumps_raw_json,
+    load_input_json,
+    split_tool_name,
+    tool_listing,
+    unsupported_tool_payload,
+)
 from isomer_labs.core.diagnostics import has_errors
 
 

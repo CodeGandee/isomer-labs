@@ -15,7 +15,7 @@ from isomer_labs.cli.options import (
     merge_options as _merge_options,
     topic_selection_options as _topic_selection_options,
 )
-from isomer_labs.deepsci_ext.rendering import dumps_raw_json
+from isomer_labs.deepsci_ext.tools import dumps_raw_json
 from isomer_labs.core.diagnostics import has_errors
 from isomer_labs.records.store import (
     ResearchRecordError,

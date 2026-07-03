@@ -39,15 +39,104 @@ PACKAGE_SIZE_TRANSITIONS = {
     "models/__init__.py",
     "project/doctor.py",
     "records/store.py",
-    "runtime/models.py",
-    "runtime/store.py",
-    "runtime/validation.py",
-    "runtime/validation_checks.py",
     "houmao/adapter.py",
     "houmao/manifests.py",
+    "deepsci_ext/tools.py",
+    "teams/instantiation.py",
+    "teams/profiles.py",
+    "teams/templates.py",
     "workspace/manifest.py",
-    "workspace/paths.py",
+    "workspace/path_resolution.py",
     "workspace/reset.py",
+}
+
+CANONICAL_RUNTIME_FILES = {
+    "__init__.py",
+    "records.py",
+    "sqlite.py",
+    "store.py",
+    "validation.py",
+}
+
+CANONICAL_LARGE_RUNTIME_FILES = {
+    f"runtime/{name}"
+    for name in ("records.py", "sqlite.py", "store.py", "validation.py")
+}
+
+OBSOLETE_RUNTIME_FILES = {
+    "adapter_handoff_validation.py",
+    "adapter_handoffs.py",
+    "agent_identity.py",
+    "identifiers.py",
+    "models.py",
+    "readiness.py",
+    "reset_schema.py",
+    "rows.py",
+    "schema.py",
+    "semantic_file_locator.py",
+    "serialization.py",
+    "transactions.py",
+    "validation_checks.py",
+    "validation_utils.py",
+    "workspace_layout_validation.py",
+    "workspace_visibility.py",
+}
+
+REMOVED_RUNTIME_MODULE_PATHS = {
+    f"isomer_labs.runtime.{Path(name).stem}"
+    for name in OBSOLETE_RUNTIME_FILES
+}
+
+CANONICAL_DOMAIN_PACKAGE_FILES = {
+    "artifact_formats": {
+        "__init__.py",
+        "models.py",
+        "processing.py",
+        "registry.py",
+        "workspace_provider.py",
+    },
+    "deepsci_ext": {
+        "__init__.py",
+        "record_formats.py",
+        "store.py",
+        "tools.py",
+    },
+    "teams": {
+        "__init__.py",
+        "instantiation.py",
+        "profile_bundles.py",
+        "profiles.py",
+        "repositories.py",
+        "templates.py",
+    },
+    "workspace": {
+        "__init__.py",
+        "actors.py",
+        "guidance.py",
+        "manifest.py",
+        "path_resolution.py",
+        "pixi.py",
+        "reset.py",
+        "self_query.py",
+        "surfaces.py",
+    },
+}
+
+OBSOLETE_DOMAIN_HELPER_MODULES = {
+    "isomer_labs.artifact_formats.resolver",
+    "isomer_labs.artifact_formats.validation",
+    "isomer_labs.artifact_formats.rendering",
+    "isomer_labs.deepsci_ext.registry",
+    "isomer_labs.deepsci_ext.rendering",
+    "isomer_labs.deepsci_ext.service",
+    "isomer_labs.teams.template_harness",
+    "isomer_labs.teams.packet_validation",
+    "isomer_labs.teams.profile_bundle_validation",
+    "isomer_labs.workspace.layout",
+    "isomer_labs.workspace.semantic_surfaces",
+    "isomer_labs.workspace.tmp",
+    "isomer_labs.workspace.paths",
+    "isomer_labs.workspace.refs",
 }
 
 ALLOWED_PACKAGE_NAMES = {
@@ -117,12 +206,18 @@ class SourceArchitectureTests(unittest.TestCase):
             "isomer_labs.deepsci_ext",
             "isomer_labs.houmao.adapter",
             "isomer_labs.houmao.manifests",
-            "isomer_labs.runtime.models",
+            "isomer_labs.runtime.records",
             "isomer_labs.runtime.store",
             "isomer_labs.runtime.validation",
+            "isomer_labs.artifact_formats.processing",
+            "isomer_labs.deepsci_ext.tools",
             "isomer_labs.teams.repositories",
+            "isomer_labs.teams.instantiation",
+            "isomer_labs.teams.profiles",
+            "isomer_labs.teams.templates",
             "isomer_labs.project.context",
-            "isomer_labs.workspace.paths",
+            "isomer_labs.workspace.path_resolution",
+            "isomer_labs.workspace.surfaces",
             "isomer_labs.records.store",
             "isomer_labs.core.diagnostics",
             "isomer_labs.skills.system_assets",
@@ -153,6 +248,17 @@ class SourceArchitectureTests(unittest.TestCase):
         wheel = pyproject["tool"]["hatch"]["build"]["targets"]["wheel"]
         self.assertEqual(["src/isomer_labs"], wheel["packages"])
 
+    def test_runtime_package_uses_canonical_internal_modules(self) -> None:
+        runtime_root = SRC_ROOT / "runtime"
+        runtime_files = {
+            path.name
+            for path in runtime_root.iterdir()
+            if path.is_file() and path.suffix == ".py"
+        }
+        self.assertEqual(CANONICAL_RUNTIME_FILES, runtime_files)
+        for name in OBSOLETE_RUNTIME_FILES:
+            self.assertFalse((runtime_root / name).exists(), name)
+
     def test_repository_import_surface_uses_canonical_package_paths(self) -> None:
         scanned_roots = [REPO_ROOT / name for name in ("src", "tests", "scripts", "docs")]
         ignored_paths = {Path(__file__).resolve()}
@@ -164,11 +270,25 @@ class SourceArchitectureTests(unittest.TestCase):
                 if path.suffix not in {".py", ".md"}:
                     continue
                 content = path.read_text(encoding="utf-8")
-                for module_path in REMOVED_MODULE_PATHS:
+                for module_path in (*REMOVED_MODULE_PATHS, *REMOVED_RUNTIME_MODULE_PATHS, *OBSOLETE_DOMAIN_HELPER_MODULES):
                     if module_path in content:
                         relative = path.relative_to(REPO_ROOT).as_posix()
                         violations.append(f"{relative}: {module_path}")
         self.assertEqual([], violations)
+
+    def test_consolidated_domain_packages_use_canonical_internal_modules(self) -> None:
+        for package_name, expected_files in CANONICAL_DOMAIN_PACKAGE_FILES.items():
+            package_root = SRC_ROOT / package_name
+            package_files = {
+                path.name
+                for path in package_root.iterdir()
+                if path.is_file() and path.suffix == ".py"
+            }
+            self.assertEqual(expected_files, package_files, package_name)
+
+        for module_path in OBSOLETE_DOMAIN_HELPER_MODULES:
+            relative = Path(*module_path.removeprefix("isomer_labs.").split(".")).with_suffix(".py")
+            self.assertFalse((SRC_ROOT / relative).exists(), module_path)
 
     def test_package_root_only_contains_bootstrap_files(self) -> None:
         root_files = {path.name for path in SRC_ROOT.iterdir() if path.is_file() and path.suffix == ".py"}
@@ -180,6 +300,8 @@ class SourceArchitectureTests(unittest.TestCase):
         for path in sorted(SRC_ROOT.rglob("*.py")):
             relative = path.relative_to(SRC_ROOT).as_posix()
             if self._is_package_asset_path(Path(relative)):
+                continue
+            if relative in CANONICAL_LARGE_RUNTIME_FILES:
                 continue
             if relative in PACKAGE_SIZE_TRANSITIONS:
                 continue

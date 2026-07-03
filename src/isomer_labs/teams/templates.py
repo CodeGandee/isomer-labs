@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
-from typing import Any
 from pathlib import Path
+import subprocess
+from typing import Any
 
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
+from isomer_labs.core.path_utils import canonicalize, is_within, resolve_project_path
+from isomer_labs.core.toml_loader import load_toml
 from isomer_labs.models import (
     AgentRoleDefinition,
     DomainAgentTeamTemplate,
@@ -18,10 +21,7 @@ from isomer_labs.models import (
     TemplateValidationReport,
     WorkflowStageRoute,
 )
-from isomer_labs.core.path_utils import canonicalize, is_within, resolve_project_path
-from isomer_labs.teams.template_harness import harness_diagnostics, validate_workspace_contract
 from isomer_labs.teams.repositories import discover_team_repository_templates
-from isomer_labs.core.toml_loader import load_toml
 
 
 DEEPSCI_ORG_TEMPLATE_ID = "deepsci-org"
@@ -256,6 +256,68 @@ def validate_domain_agent_team_template(
             raw_metadata=manifest_data,
         )
     return TemplateValidationReport(registration.id, source_path, not has_errors(diagnostics), diagnostics, template)
+
+
+def validate_workspace_contract(source_path: Path, raw: dict[str, Any], diagnostics: list[Diagnostic]) -> None:
+    rules = _dict_items(raw.get("read_write_rules"))
+    if "no-workspace-local-teams" not in {_string(item.get("id")) for item in rules}:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO017",
+                severity="error",
+                concept="Domain Agent Team Template workspace contract",
+                path=source_path / "specs/workspace/workspace.toml",
+                field="read_write_rules",
+                message="Workspace contract must prohibit a workspace-local teams directory.",
+            )
+        )
+
+
+def harness_diagnostics(source_path: Path) -> list[Diagnostic]:
+    harness = source_path / "harness/bin/deepsci-org"
+    if not harness.exists():
+        return []
+    try:
+        result = subprocess.run(
+            [str(harness), "validate"],
+            cwd=source_path,
+            text=True,
+            capture_output=True,
+            timeout=15,
+            check=False,
+        )
+    except OSError as exc:
+        return [
+            Diagnostic(
+                code="ISO021",
+                severity="warning",
+                concept="Domain Agent Team Template harness",
+                path=harness,
+                message=f"Generated harness validation could not be run: {exc}.",
+            )
+        ]
+    except subprocess.TimeoutExpired:
+        return [
+            Diagnostic(
+                code="ISO021",
+                severity="warning",
+                concept="Domain Agent Team Template harness",
+                path=harness,
+                message="Generated harness validation timed out.",
+            )
+        ]
+    if result.returncode == 0:
+        return []
+    message = (result.stderr or result.stdout or "Generated harness validation failed.").strip().splitlines()[0]
+    return [
+        Diagnostic(
+            code="ISO021",
+            severity="error",
+            concept="Domain Agent Team Template harness",
+            path=harness,
+            message=message,
+        )
+    ]
 
 
 def _load_execplan_toml(

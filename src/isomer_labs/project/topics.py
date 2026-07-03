@@ -10,14 +10,14 @@ from typing import Any
 
 import tomlkit  # type: ignore[import-untyped]
 
-from isomer_labs.workspace.layout import topic_workspace_path as default_topic_workspace_path
-from isomer_labs.workspace.layout import topic_workspace_path_input_from_defaults
+from isomer_labs.workspace.surfaces import topic_workspace_path as default_topic_workspace_path
+from isomer_labs.workspace.surfaces import topic_workspace_path_input_from_defaults
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.houmao.manifests import ADAPTER_MANIFEST_ROOT
 from isomer_labs.models import Project, ProjectState, TopicWorkspaceRegistration
 from isomer_labs.core.path_utils import display_path, is_within, resolve_project_path
 from isomer_labs.project import houmao_overlay_dir_for_root, root_houmao_overlay_dir_for_root
-from isomer_labs.runtime.models import RUNTIME_DIRECTORIES
+from isomer_labs.runtime.records import RUNTIME_DIRECTORIES
 
 
 TOPIC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")

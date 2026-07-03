@@ -8,7 +8,7 @@ import sqlite3
 from typing import Any, Iterable
 
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.runtime.models import utc_timestamp
+from isomer_labs.runtime.records import utc_timestamp
 from isomer_labs.runtime.store import WorkspaceRuntimeStore
 
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 import shutil
 from pathlib import Path
 
-from isomer_labs.workspace.layout import content_root_path, selected_content_root_path
+from isomer_labs.workspace.surfaces import content_root_path, selected_content_root_path
 from isomer_labs.project.context import resolve_topic_workspace
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.houmao.manifests import ADAPTER_MANIFEST_ROOT
@@ -21,7 +21,7 @@ from isomer_labs.project import (
     project_root_for_manifest,
     root_houmao_overlay_dir_for_root,
 )
-from isomer_labs.runtime.models import RUNTIME_DIRECTORIES
+from isomer_labs.runtime.records import RUNTIME_DIRECTORIES
 from isomer_labs.core.toml_loader import load_toml
 
 

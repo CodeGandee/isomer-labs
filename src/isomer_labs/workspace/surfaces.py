@@ -1,9 +1,92 @@
-"""Semantic workspace surface catalog."""
+"""Semantic Workspace Surface Labels, default layout helpers, and tmp policy."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 import re
+from typing import TYPE_CHECKING, Mapping
+
+from isomer_labs.core.diagnostics import Diagnostic
+from isomer_labs.core.path_utils import display_path, is_within, resolve_project_path
+from isomer_labs.models import EffectiveTopicContext
+
+if TYPE_CHECKING:
+    from isomer_labs.workspace.manifest import EffectiveAgentContext, EffectiveTopicActorContext
+
+
+ISOMER_CONTENT_ROOT_DIR = "isomer-content"
+TOPIC_WORKSPACE_BASE_DIR = f"{ISOMER_CONTENT_ROOT_DIR}/topic-ws"
+TOPIC_WORKSPACE_BASE_NAME = "topic-ws"
+
+CONTENT_ROOT_README_TEXT = """# Isomer Content
+
+This directory is the default Project-local home for Isomer-generated content.
+
+Fresh Projects ignore generated content under this root by default. The generated `.gitignore` keeps this `README.md` and the `.gitignore` policy file trackable, while Topic Workspaces and other generated files stay local unless you intentionally track selected files.
+
+Default Topic Workspaces live under `topic-ws/<topic-id>/`.
+"""
+
+CONTENT_ROOT_GITIGNORE_TEXT = """*
+!.gitignore
+!/README.md
+"""
+
+
+def content_path_defaults_for_init(project_root: Path, content_dir: str | None = None) -> dict[str, str]:
+    content_root = selected_content_root_path(project_root, content_dir)
+    content_root_input = display_path(content_root, project_root)
+    return {
+        "isomer_content_root": content_root_input,
+        "topic_workspace_base_dir": f"{content_root_input}/{TOPIC_WORKSPACE_BASE_NAME}",
+    }
+
+
+def selected_content_root_path(project_root: Path, content_dir: str | None = None) -> Path:
+    if content_dir is not None and content_dir:
+        return resolve_project_path(project_root, content_dir)
+    return project_root / ISOMER_CONTENT_ROOT_DIR
+
+
+def content_root_path(project_root: Path, path_defaults: Mapping[str, object] | None = None) -> Path:
+    value = _path_default(path_defaults, "isomer_content_root")
+    if value is not None:
+        return resolve_project_path(project_root, value)
+    return project_root / ISOMER_CONTENT_ROOT_DIR
+
+
+def topic_workspace_base_path(project_root: Path, path_defaults: Mapping[str, object] | None = None) -> Path:
+    value = _path_default(path_defaults, "topic_workspace_base_dir")
+    if value is not None:
+        return resolve_project_path(project_root, value)
+    return content_root_path(project_root, path_defaults) / TOPIC_WORKSPACE_BASE_NAME
+
+
+def topic_workspace_path(
+    project_root: Path,
+    topic_id: str,
+    path_defaults: Mapping[str, object] | None = None,
+) -> Path:
+    return topic_workspace_base_path(project_root, path_defaults) / topic_id
+
+
+def topic_workspace_path_input(topic_id: str) -> str:
+    return f"{TOPIC_WORKSPACE_BASE_DIR}/{topic_id}"
+
+
+def topic_workspace_path_input_from_defaults(topic_id: str, path_defaults: Mapping[str, object]) -> str:
+    base = _path_default(path_defaults, "topic_workspace_base_dir") or TOPIC_WORKSPACE_BASE_DIR
+    return f"{base}/{topic_id}"
+
+
+def _path_default(path_defaults: Mapping[str, object] | None, key: str) -> str | None:
+    if path_defaults is None:
+        return None
+    value = path_defaults.get(key)
+    if isinstance(value, str) and value:
+        return value
+    return None
 
 
 @dataclass(frozen=True)
@@ -76,6 +159,24 @@ class SemanticSurface:
         if self.grouped_family is not None:
             data["grouped_family"] = self.grouped_family
         return data
+
+
+@dataclass(frozen=True)
+class TmpSurfaceIgnorePolicy:
+    label: str
+    gitignore_path: Path
+    ignored_path: Path
+    relative_root: Path
+    entry: str
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "semantic_label": self.label,
+            "gitignore_path": str(self.gitignore_path),
+            "ignored_path": str(self.ignored_path),
+            "relative_root": str(self.relative_root),
+            "entry": self.entry,
+        }
 
 
 STORAGE_PROFILES = (
@@ -376,3 +477,146 @@ def dynamic_surface_for_label(label: str, storage_profile: str) -> SemanticSurfa
             grouped_family="topic.repos",
         )
     return None
+
+
+def tmp_surface_ignore_policy(
+    context: EffectiveTopicContext,
+    label: str,
+    tmp_path: Path,
+    *,
+    env: Mapping[str, str],
+    agent_context: EffectiveAgentContext | None = None,
+    topic_actor_context: EffectiveTopicActorContext | None = None,
+) -> tuple[TmpSurfaceIgnorePolicy | None, list[Diagnostic]]:
+    diagnostics = _tmp_surface_boundary_diagnostics(
+        context,
+        label,
+        tmp_path,
+        env=env,
+        agent_context=agent_context,
+        topic_actor_context=topic_actor_context,
+    )
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, diagnostics
+    if label == "topic.tmp":
+        entry = _gitignore_entry(context.topic_workspace_path, tmp_path)
+        if entry is None:
+            return None, diagnostics
+        return (
+            TmpSurfaceIgnorePolicy(label, context.topic_workspace_path / ".gitignore", tmp_path, context.topic_workspace_path, entry),
+            diagnostics,
+        )
+    if label == "topic.repos.main.tmp":
+        topic_main, topic_main_diagnostics = _resolve_topic_main(context, env)
+        diagnostics.extend(topic_main_diagnostics)
+        if topic_main is None or any(diagnostic.is_error for diagnostic in diagnostics):
+            return None, diagnostics
+        entry = _gitignore_entry(topic_main, tmp_path)
+        if entry is None:
+            return None, diagnostics
+        return TmpSurfaceIgnorePolicy(label, topic_main / ".gitignore", tmp_path, topic_main, entry), diagnostics
+    if label == "agent.tmp" and agent_context is not None:
+        topic_main, topic_main_diagnostics = _resolve_topic_main(context, env)
+        diagnostics.extend(topic_main_diagnostics)
+        if topic_main is None or any(diagnostic.is_error for diagnostic in diagnostics):
+            return None, diagnostics
+        entry = _gitignore_entry(agent_context.agent_workspace_path, tmp_path)
+        if entry is None:
+            return None, diagnostics
+        return (
+            TmpSurfaceIgnorePolicy(label, topic_main / ".gitignore", tmp_path, agent_context.agent_workspace_path, entry),
+            diagnostics,
+        )
+    if label == "topic.actors.tmp" and topic_actor_context is not None:
+        entry = _gitignore_entry(topic_actor_context.topic_actor_workspace_path, tmp_path)
+        if entry is None:
+            return None, diagnostics
+        return (
+            TmpSurfaceIgnorePolicy(
+                label,
+                topic_actor_context.topic_actor_workspace_path / ".gitignore",
+                tmp_path,
+                topic_actor_context.topic_actor_workspace_path,
+                entry,
+            ),
+            diagnostics,
+        )
+    return None, diagnostics
+
+
+def ensure_tmp_surface_ignore_policy(
+    context: EffectiveTopicContext,
+    label: str,
+    tmp_path: Path,
+    *,
+    env: Mapping[str, str],
+    agent_context: EffectiveAgentContext | None = None,
+    topic_actor_context: EffectiveTopicActorContext | None = None,
+) -> list[Diagnostic]:
+    policy, diagnostics = tmp_surface_ignore_policy(
+        context,
+        label,
+        tmp_path,
+        env=env,
+        agent_context=agent_context,
+        topic_actor_context=topic_actor_context,
+    )
+    if policy is None or any(diagnostic.is_error for diagnostic in diagnostics):
+        return diagnostics
+    policy.gitignore_path.parent.mkdir(parents=True, exist_ok=True)
+    existing = policy.gitignore_path.read_text(encoding="utf-8") if policy.gitignore_path.exists() else ""
+    entries = {line.strip() for line in existing.splitlines() if line.strip() and not line.lstrip().startswith("#")}
+    if policy.entry not in entries:
+        prefix = "" if not existing or existing.endswith("\n") else "\n"
+        with policy.gitignore_path.open("a", encoding="utf-8") as stream:
+            stream.write(f"{prefix}{policy.entry}\n")
+    return diagnostics
+
+
+def _tmp_surface_boundary_diagnostics(
+    context: EffectiveTopicContext,
+    label: str,
+    path: Path,
+    *,
+    env: Mapping[str, str],
+    agent_context: EffectiveAgentContext | None,
+    topic_actor_context: EffectiveTopicActorContext | None,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    if label == "topic.tmp":
+        if not is_within(path, context.topic_workspace_path):
+            diagnostics.append(_tmp_boundary_diagnostic(label, "Local Tmp Surface must stay inside the selected Topic Workspace."))
+        return diagnostics
+    if label == "topic.repos.main.tmp":
+        topic_main, topic_main_diagnostics = _resolve_topic_main(context, env)
+        diagnostics.extend(topic_main_diagnostics)
+        if topic_main is not None and not is_within(path, topic_main):
+            diagnostics.append(_tmp_boundary_diagnostic(label, "`topic.repos.main.tmp` must stay inside `topic.repos.main`."))
+        return diagnostics
+    if label == "agent.tmp" and agent_context is not None and not is_within(path, agent_context.agent_workspace_path):
+        diagnostics.append(_tmp_boundary_diagnostic(label, "`agent.tmp` must stay inside the resolved `agent.workspace`."))
+    if label == "topic.actors.tmp" and topic_actor_context is not None and not is_within(path, topic_actor_context.topic_actor_workspace_path):
+        diagnostics.append(_tmp_boundary_diagnostic(label, "`topic.actors.tmp` must stay inside the resolved `topic.actors.workspace`."))
+    return diagnostics
+
+
+def _resolve_topic_main(context: EffectiveTopicContext, env: Mapping[str, str]) -> tuple[Path | None, list[Diagnostic]]:
+    from isomer_labs.workspace.manifest import resolve_semantic_binding
+
+    result, diagnostics = resolve_semantic_binding(context, "topic.repos.main", env=env, agent_context=None)
+    return (result.path if result is not None else None), diagnostics
+
+
+def _tmp_boundary_diagnostic(label: str, message: str) -> Diagnostic:
+    return Diagnostic(code="ISO005", severity="error", concept="Workspace Path Resolution", field=label, message=message)
+
+
+def _gitignore_entry(root: Path, ignored_path: Path) -> str | None:
+    try:
+        relative = ignored_path.resolve(strict=False).relative_to(root.resolve(strict=False))
+    except ValueError:
+        return None
+    value = relative.as_posix().rstrip("/")
+    if value in ("", "."):
+        return None
+    return f"{value}/"

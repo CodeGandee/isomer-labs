@@ -17,13 +17,13 @@ from isomer_labs.artifact_formats import (
     render_artifact,
     validate_payload,
 )
-from isomer_labs.artifact_formats.validation import load_payload_file
+from isomer_labs.artifact_formats.processing import load_payload_file
 from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.workspace.paths import resolve_semantic_path
-from isomer_labs.runtime.identifiers import _provenance_ref, _slug
-from isomer_labs.runtime.models import (
+from isomer_labs.workspace.path_resolution import resolve_semantic_path
+from isomer_labs.runtime.records import _provenance_ref, _slug
+from isomer_labs.runtime.records import (
     LIFECYCLE_RECORD_KINDS,
     LIFECYCLE_STATUSES,
     RuntimeLifecycleRecord,

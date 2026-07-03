@@ -21,9 +21,9 @@ from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_forma
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.core.path_utils import canonicalize, is_within
-from isomer_labs.workspace.paths import preview_paths, resolve_semantic_path
-from isomer_labs.runtime.identifiers import _provenance_ref, _slug
-from isomer_labs.runtime.models import (
+from isomer_labs.workspace.path_resolution import preview_paths, resolve_semantic_path
+from isomer_labs.runtime.records import _provenance_ref, _slug
+from isomer_labs.runtime.records import (
     ArtifactFormatRegistrationRecord,
     ResetCheckpointRecord,
     ResetOutcomeRecord,
