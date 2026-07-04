@@ -26,15 +26,13 @@ Before asking the user anything, inspect `topic-overview.md` and classify each c
 | Category | What to Check |
 | --- | --- |
 | Research Topic | Is the concrete research question or investigation intent specific enough to guide later work? |
-| Abstract | Does the overview summarize what the topic studies, why it matters, how the work will proceed, and what kind of result counts as useful? |
-| Introduction and Background | Is the practical or scientific context clear enough for an unfamiliar reader to understand why the problem is worth investigating? |
-| Research Objective | Are the primary and supporting objectives observable, and is the unresolved problem or research gap explicit? |
-| Literature and Prior Work | Are the anchoring papers, repositories, benchmarks, datasets, systems, or standards named? |
-| Methodology and Research Design | Is the planned approach, evidence source, tools, comparison targets, validation method, and expected analysis path described enough to start setup? |
-| Expected Outcomes | Are the expected outputs and why they matter stated? |
-| Additional Requirements | Are topic-specific preferences and constraints (`should`/`must`) captured, or are they still placeholder text? |
+| Motivation | Is it clear why the topic matters and what uncertainty makes it worth investigating? |
+| Topic Breakdown | Are the working boundaries stated clearly enough that another agent can follow them without guessing? |
+| Do's | Are the actions, evidence, outputs, and constraints the research should honor listed with concrete bullets? |
+| Don'ts | Are the non-goals and forbidden shortcuts stated as clear boundaries? |
+| Expected Outcome | Are the concrete outputs and any caveats or follow-up inquiries stated? |
 | Related Links | Are relevant references listed when known? |
-| Open Questions | Do open questions affect scope, methodology, or setup rather than minor prose polish? |
+| Open Questions | Do open questions affect scope, boundaries, expected outcomes, or setup rather than minor prose polish? |
 
 Add a candidate clarification question for each **Partial** or **Missing** category only when the answer would materially change `topic-overview.md` or determine whether `define-topic-env` and later stages can proceed. Exclude questions already answered by the file, trivial style preferences, and implementation details that belong to later subcommands.
 
@@ -74,15 +72,14 @@ Update the resolved `topic.intent.overview` path directly after each accepted an
 | Answer Type | Update Target |
 | --- | --- |
 | Research topic wording | `## Research Topic` |
-| Abstract text | `## Abstract` |
-| Background or motivation | `## Introduction and Background` |
-| Objective or research gap | `## Research Objective` |
-| Prior work or references | `## Literature and Prior Work` or `## Related Links` |
-| Method, tools, validation | `## Methodology and Research Design` |
-| Expected outputs | `## Expected Outcomes` |
-| Preference or constraint | `## Additional Requirements` (`### Preferences` or `### Constraints`) |
+| Motivation or why it matters | `## Motivation` |
+| Working boundaries or scope | `## Topic Breakdown` |
+| Actions, evidence, outputs, constraints | `## Topic Breakdown` → `### Do's` |
+| Non-goals or forbidden shortcuts | `## Topic Breakdown` → `### Don'ts` |
+| Expected outputs or caveats | `## Expected Outcome` |
+| Prior work or references | `## Related Links` |
 | Resolved uncertainty | `## Open Questions` |
-| Source clarification | `## Related Links` or `## Literature and Prior Work` |
+| Source clarification | `## Related Links` |
 
 Replace obsolete or contradicted text instead of duplicating it. Preserve earlier assumptions unless the user corrects them; when corrected, mark them as revised or rewrite them so the current document has one clear source of truth. Remove resolved questions from `## Open Questions`, and leave unresolved lower-priority questions there with enough context for later `clarify-research-intent` runs.
 

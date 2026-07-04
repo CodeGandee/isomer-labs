@@ -9,10 +9,10 @@ When this subcommand is selected, execute the following steps in order.
 3. Resolve `topic.intent.overview`; in the default layout it is `<topic-workspace>/intent/src/topic-overview.md`.
 4. Load the canonical template from `templates/topic-overview.md` in this skill bundle.
 5. Create or update only the resolved topic overview file from the template:
-   - Fill sections that can be inferred from the source material: Research Topic, Abstract, Introduction and Background, Research Objective, Literature and Prior Work, Methodology and Research Design, Expected Outcomes, and Related Links.
+   - Fill sections that can be inferred from the source material: `Research Topic`, `Motivation`, `Topic Breakdown` with `Do's` and `Don'ts`, `Expected Outcome`, and `Related Links`.
    - Keep sections without available substance as empty headings rather than omitting them.
-   - Leave `## Additional Requirements` and its `### Preferences` and `### Constraints` subsections in a placeholder state for the user to fill in later.
-   - Strip the template's `> Example:` blocks from the written file.
+   - Leave `## Topic Breakdown` subsections (`Do's`, `Don'ts`) and `## Related Links` in a placeholder state when no substance is available.
+   - Strip any template `>` example blocks from the written file.
    - Record uncertainty as assumptions or open questions instead of inventing missing details.
 6. Report `topic_overview_label`, resolved path metadata, created or reused status, assumptions, open questions, blockers, and readiness state.
 

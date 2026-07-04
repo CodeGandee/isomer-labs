@@ -19,7 +19,7 @@ If the user's task does not map cleanly to these steps, print the closest subcom
 
 | Subcommand | Functionality |
 | --- | --- |
-| `create-research-intent` | Create or update `topic.intent.overview` from the canonical template in `templates/topic-overview.md`; strip example blocks and leave `## Additional Requirements` as a placeholder for the user. The file resolves by default to `<topic-workspace>/intent/src/topic-overview.md`. |
+| `create-research-intent` | Create or update `topic.intent.overview` from the canonical template in `templates/topic-overview.md`; strip `>` example blocks and leave empty `Topic Breakdown` subsections for the user. The template uses `Research Topic`, `Motivation`, `Topic Breakdown` (`Do's`/`Don'ts`), `Expected Outcome`, and `Related Links`. The file resolves by default to `<topic-workspace>/intent/src/topic-overview.md`. |
 | `define-topic-env` | Create or refine `topic.intent.topic_env_requirements`, wait for user verification unless in `fast-forward`, and report assumptions before setup. |
 | `setup-topic-env` | Read the verified or fast-forward accepted topic env gate, derive `topic.env.topic_setup_target_spec`, and prepare topic environment readiness, `topic.repos.main`, and projection predecessor evidence through service setup. |
 | `define-actors` | Create or refine `topic.intent.actor_definitions`, including each actor's duty, intended usage, and source env gate; default to the `operator` actor when details are absent. |
@@ -45,7 +45,7 @@ If the user's task does not map cleanly to these steps, print the closest subcom
 | `run-to` | Run the main workflow through a selected procedural subcommand by default; stop before it only on explicit wording such as `before <target>`, `stop before <target>`, `excluding <target>`, or `up to but not including <target>`. |
 | `status` | Report current readiness stage, ready evidence, summary freshness, blockers, and skipped stages. |
 | `repair` | Resume from the first blocked or stale stage without rerunning ready destructive or expensive work. |
-| `clarify-research-intent` | Interactively refine an existing `topic.intent.overview` by walking the template sections with the user and integrating answers directly into the file. |
+| `clarify-research-intent` | Interactively refine an existing `topic.intent.overview` by walking the `Research Topic`, `Motivation`, `Topic Breakdown` (`Do's`/`Don'ts`), `Expected Outcome`, and `Related Links` sections with the user and integrating answers directly into the file. |
 
 ## Output Contract
 
