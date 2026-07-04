@@ -5,7 +5,7 @@ description: Create or resume an Isomer Research Topic from empty or partial Pro
 
 # Isomer Admin Topic Creator
 
-Use this command-style operator skill when the user wants one front door for creating, initializing, preparing, or repairing a Research Topic for manual or human-orchestrated research. This skill owns the user-facing ladder from blank or partial Project state to prepared Topic Workspace, while delegating lower-level mutation to `isomer-op-project-mgr`, `isomer-srv-topic-env-setup`, and `isomer-op-topic-mgr`. Its `finalize` boundary writes `topic.workspace.summary` and creates or refreshes the first structured reset checkpoint from operator-level readiness evidence.
+Use this command-style operator skill when the user wants one front door for creating, initializing, preparing, or repairing a Research Topic for manual or human-orchestrated research. This skill owns the user-facing ladder from blank or partial Project state to prepared Topic Workspace, while delegating lower-level mutation to `isomer-op-project-mgr`, `isomer-srv-topic-env-setup`, and `isomer-op-topic-mgr`. Its `create-research-intent` boundary writes `topic.intent.overview` from a canonical template, and `clarify-research-intent` offers an interactive human-in-the-loop refinement path. Its `finalize` boundary writes `topic.workspace.summary` and creates or refreshes the first structured reset checkpoint from operator-level readiness evidence.
 
 Concrete Research Topic substance is a hard gate. The topic can come from the prompt, a Markdown brief, selected context, or a registered concrete topic statement, but missing or generic topic material such as `default` must block before deriving a topic id, choosing or creating a Topic Workspace, registering a topic, or writing `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, or derived env gates.
 
@@ -17,7 +17,7 @@ When this skill is invoked, execute the following steps in order.
    - Match when this skill is invoked without a prompt.
    - Select `help`, load [references/help.md](references/help.md), execute its workflow, and report its output.
 2. **Select one subcommand** from the **Subcommands** tables that best matches the user's request:
-   - If the user asks to create, initialize, prepare, or start a topic without explicitly asking for `fast-forward`, fully automatic execution, `step-by-step`, manual lower-level control, `run-to`, a stop-before/exclusion phrase, or another named mode, default to `run-to finalize` with the `finalize` target included by default.
+   - If the user asks to create, initialize, prepare, or start a topic without explicitly asking for `fast-forward`, fully automatic execution, `step-by-step`, manual lower-level control, `run-to`, a stop-before/exclusion phrase, or another named mode, default to `run-to define-topic-env` with the `define-topic-env` target included by default.
    - Use `step-by-step` for the guided happy path with per-step acknowledgement.
    - Use `fast-forward` only when the user explicitly asks for fully automatic, fast-forward, no-stop, or equivalent end-to-end execution.
    - Use `run-to` to run automatically through a selected procedural step by default; stop before the selected target only when the user explicitly says `before`, `stop before`, `excluding`, or `up to but not including`.
@@ -52,7 +52,7 @@ Procedural subcommands are user-facing setup and finalization operations in topi
 
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
-| `create-research-intent` | Create or update only the topic overview intent surface | [references/create-research-intent.md](references/create-research-intent.md) |
+| `create-research-intent` | Create or update `topic.intent.overview` from the canonical template in `templates/topic-overview.md` | [references/create-research-intent.md](references/create-research-intent.md) |
 | `define-topic-env` | Create or refine the topic env source gate and pause for user verification unless running under `fast-forward` | [references/define-topic-env.md](references/define-topic-env.md) |
 | `setup-topic-env` | Prepare topic environment readiness and `topic.repos.main` evidence | [references/setup-topic-env.md](references/setup-topic-env.md) |
 | `define-actors` | Create or refine Topic Actor definitions, defaulting to the `operator` actor when no actor details are supplied | [references/define-actors.md](references/define-actors.md) |
@@ -80,6 +80,7 @@ Helper subcommands are lower-level ladder stages normally called by `fast-forwar
 | `run-to` | Run the main workflow through a selected procedural subcommand by default, or stop before it when exclusion is explicit | [references/run-to.md](references/run-to.md) |
 | `status` | Report current ladder progress, readiness evidence, summary freshness, blockers, and skipped stages | [references/status.md](references/status.md) |
 | `repair` | Resume from the first blocked or stale stage without rerunning ready stages | [references/repair.md](references/repair.md) |
+| `clarify-research-intent` | Interactively refine an existing `topic.intent.overview` by walking the template sections with the user | [references/clarify-research-intent.md](references/clarify-research-intent.md) |
 
 ## Required Inputs
 

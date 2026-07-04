@@ -8,7 +8,7 @@ When this subcommand is selected, execute the following steps in order.
 2. Run `ensure-project` when the Project is missing, invalid, or not selected.
 3. Run `resolve-topic-input` when the topic statement, topic id, or Topic Workspace candidate is missing or unclear.
 4. Run `register-topic` when the Research Topic or Topic Workspace is not Project Manifest-backed.
-5. Run `create-research-intent` when `topic.intent.overview` is missing, stale, or unclear.
+5. Run `create-research-intent` when `topic.intent.overview` is missing, stale, or unclear. Do not run `clarify-research-intent`; if the overview is too vague for automatic stages, stop and recommend `clarify-research-intent` for interactive refinement.
 6. Run `init-runtime` when Workspace Runtime is absent or invalid for the selected topic.
 7. Run `define-topic-env` when `topic.intent.topic_env_requirements` is missing or stale; in fast-forward mode, report generated assumptions and continue without an interactive verification stop.
 8. Run `setup-topic-env` when topic environment readiness, `topic.env.topic_setup_target_spec`, `topic.repos.main`, or projection predecessor evidence is missing.

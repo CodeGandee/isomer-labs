@@ -4,8 +4,8 @@
 
 When this subcommand is selected, execute the following steps in order.
 
-1. Parse the requested target procedural subcommand. Valid targets are `create-research-intent`, `define-topic-env`, `setup-topic-env`, `define-actors`, `setup-actors`, and `finalize`.
-2. If `run-to` was selected by the default bare topic-creation dispatch and the user did not name a target, use target `finalize` with the `finalize` target included by default.
+1. Parse the requested target procedural subcommand. Valid targets are `create-research-intent`, `define-topic-env`, `setup-topic-env`, `define-actors`, `setup-actors`, and `finalize`. `clarify-research-intent` is interactive and is not a valid `run-to` target.
+2. If `run-to` was selected by the default bare topic-creation dispatch and the user did not name a target, use target `define-topic-env` with the `define-topic-env` target included by default.
 3. Reject missing, unknown, helper, misc, or non-main-workflow targets. Report that `run-to` only accepts procedural main workflow targets and list the valid targets.
 4. Detect explicit exclusion wording such as `before <target>`, `stop before <target>`, `excluding <target>`, or `up to but not including <target>`. Without explicit exclusion wording, include the target by default.
 5. Use the same readiness ladder and reuse rules as `fast-forward`: `ensure-project`, `resolve-topic-input`, `register-topic`, `create-research-intent`, `init-runtime`, `define-topic-env`, `setup-topic-env`, `define-actors`, `setup-actors`, and `finalize`.

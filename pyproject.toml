@@ -16,7 +16,7 @@ packages = ["src/isomer_labs"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
-platforms = ["linux-aarch64"]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64"]
 
 [tool.pixi.pypi-dependencies]
 isomer_labs = { path = ".", editable = true }
@@ -28,11 +28,13 @@ mypy = ">=2.1.0,<3"
 attrs = ">=26.1.0,<27"
 omegaconf = ">=2.3.1,<3"
 imageio = ">=2.37.3,<3"
+pytest = ">=8.0.0,<9"
+pytest-xdist = ">=3.6.0,<4"
 
 [tool.pixi.tasks]
 lint = "ruff check ."
 typecheck = "mypy src"
-test = "python -m unittest discover -s tests/unit"
+test = "python -m pytest -n $(python -c 'import os; print(max(1, os.cpu_count() // 2))') tests/unit"
 validate-research-skills = "python scripts/validate_research_paradigm_skillset.py skillset/research-paradigm"
 validate-operator-skills = "python scripts/validate_skillsets.py --scope operator"
 validate-service-skills = "python scripts/validate_skillsets.py --scope service"
