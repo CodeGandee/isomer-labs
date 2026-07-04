@@ -199,6 +199,14 @@ CORE_RUNTIME_SCHEMA_TABLES = (
     "lifecycle_transitions",
     "artifact_format_registrations",
     "structured_research_payloads",
+    "research_record_index",
+    "research_record_edges",
+    "research_record_files",
+    "research_record_ideas",
+    "research_record_routes",
+    "research_record_metrics",
+    "research_record_claims",
+    "research_record_json_facts",
     "topic_reset_checkpoints",
     "topic_reset_plans",
     "topic_reset_plan_actions",
@@ -341,6 +349,183 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             ON structured_research_payloads (template_ref);
         CREATE INDEX IF NOT EXISTS idx_structured_research_payloads_status
             ON structured_research_payloads (validation_status, render_status);
+
+        CREATE TABLE IF NOT EXISTS research_record_index (
+            record_id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            record_kind TEXT NOT NULL,
+            status TEXT NOT NULL,
+            placeholder TEXT,
+            profile TEXT,
+            skill TEXT,
+            producer TEXT,
+            consumer TEXT,
+            format_profile_ref TEXT,
+            profile_family TEXT,
+            profile_name TEXT,
+            title TEXT,
+            summary TEXT,
+            content_path TEXT,
+            rendered_markdown_path TEXT,
+            validation_status TEXT,
+            render_status TEXT,
+            payload_digest TEXT,
+            source_classification TEXT NOT NULL,
+            stale INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            indexed_at TEXT NOT NULL,
+            metadata_json TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_index_topic
+            ON research_record_index (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_record_index_kind_status
+            ON research_record_index (record_kind, status);
+        CREATE INDEX IF NOT EXISTS idx_research_record_index_profile
+            ON research_record_index (format_profile_ref, profile_family, profile_name);
+
+        CREATE TABLE IF NOT EXISTS research_record_edges (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            source_record_id TEXT NOT NULL,
+            target_record_id TEXT NOT NULL,
+            relation_kind TEXT NOT NULL,
+            relation_role TEXT,
+            source_field TEXT,
+            source_classification TEXT NOT NULL,
+            confidence REAL,
+            status TEXT NOT NULL,
+            rationale TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_edges_topic
+            ON research_record_edges (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_record_edges_source
+            ON research_record_edges (source_record_id, relation_kind);
+        CREATE INDEX IF NOT EXISTS idx_research_record_edges_target
+            ON research_record_edges (target_record_id, relation_kind);
+
+        CREATE TABLE IF NOT EXISTS research_record_files (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            path TEXT NOT NULL,
+            file_role TEXT NOT NULL,
+            semantic_label TEXT,
+            operation_set_id TEXT,
+            digest TEXT,
+            size_bytes INTEGER,
+            media_type TEXT,
+            exists_flag INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            source_field TEXT,
+            source_classification TEXT NOT NULL,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_files_topic
+            ON research_record_files (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_record_files_record
+            ON research_record_files (record_id, file_role);
+        CREATE INDEX IF NOT EXISTS idx_research_record_files_status
+            ON research_record_files (status, exists_flag);
+
+        CREATE TABLE IF NOT EXISTS research_record_ideas (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            idea_id TEXT,
+            family TEXT,
+            one_liner TEXT,
+            status TEXT,
+            selected INTEGER NOT NULL,
+            source_json_path TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_ideas_record
+            ON research_record_ideas (record_id, selected);
+
+        CREATE TABLE IF NOT EXISTS research_record_routes (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            decision TEXT,
+            next_route TEXT,
+            reason TEXT,
+            selected_hypothesis_id TEXT,
+            source_json_path TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_routes_record
+            ON research_record_routes (record_id);
+
+        CREATE TABLE IF NOT EXISTS research_record_metrics (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            metric_key TEXT NOT NULL,
+            metric_value TEXT,
+            unit TEXT,
+            comparator TEXT,
+            scope TEXT,
+            source_json_path TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_metrics_record
+            ON research_record_metrics (record_id, metric_key);
+
+        CREATE TABLE IF NOT EXISTS research_record_claims (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            claim TEXT,
+            metric_key TEXT,
+            observed_value TEXT,
+            expected TEXT,
+            verdict TEXT,
+            caveat TEXT,
+            source_json_path TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_claims_record
+            ON research_record_claims (record_id, verdict);
+
+        CREATE TABLE IF NOT EXISTS research_record_json_facts (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            json_path TEXT NOT NULL,
+            value_type TEXT NOT NULL,
+            value_text TEXT,
+            source_classification TEXT NOT NULL,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_json_facts_record
+            ON research_record_json_facts (record_id, json_path);
 
         CREATE TABLE IF NOT EXISTS readiness_records (
             sequence INTEGER PRIMARY KEY AUTOINCREMENT,

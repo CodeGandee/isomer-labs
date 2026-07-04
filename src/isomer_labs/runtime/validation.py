@@ -14,6 +14,7 @@ from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.core.path_utils import canonicalize, is_within
 from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
 from isomer_labs.models import EffectiveTopicContext
+from isomer_labs.records.index import query_index_diagnostics_for_store
 from isomer_labs.runtime.records import (
     AdapterManifestRefRecord,
     AdapterPayloadRefRecord,
@@ -2195,6 +2196,29 @@ def validate_workspace_runtime(
     diagnostics.extend(_validate_handoffs(context, store, tmp_surfaces_tuple))
     diagnostics.extend(_validate_lifecycle_transitions(store))
     diagnostics.extend(_validate_structured_research_payloads(context, store))
+    diagnostics.extend(_validate_research_record_query_index(context, store))
     diagnostics.extend(_validate_reset_records(context, store))
     store.close()
     return inspection, diagnostics
+
+
+def _validate_research_record_query_index(
+    context: EffectiveTopicContext,
+    store: WorkspaceRuntimeStore,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for item in query_index_diagnostics_for_store(context, store):
+        raw_severity = str(item.get("severity") or "warning")
+        severity = "warning" if raw_severity == "warn" else raw_severity
+        code = str(item.get("code") or "query_index_issue")
+        message = str(item.get("message") or "Research record query index issue.")
+        diagnostics.append(
+            Diagnostic(
+                code=f"ISOQ-{code}",
+                severity="error" if severity == "error" else "warning",
+                concept="Research Record Query Index",
+                message=message,
+                field=str(item.get("record_id")) if item.get("record_id") is not None else None,
+            )
+        )
+    return diagnostics

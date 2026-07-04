@@ -23,12 +23,23 @@ from isomer_labs.records.store import (
     archive_record,
     create_record,
     list_records,
+    parse_json_object_list,
     parse_json_object,
     parse_string_map,
     render_record,
     show_record,
     update_record,
     validate_record_payload,
+)
+from isomer_labs.records.index import (
+    cleanup_query_index,
+    query_index_export,
+    query_index_facets,
+    query_index_files,
+    query_index_lineage,
+    query_index_list,
+    rebuild_query_index,
+    validate_query_index,
 )
 
 
@@ -199,10 +210,172 @@ def register_research_record_ext_commands(app: click.Group) -> None:
             build_request=False,
         )
 
+    @records_group.group(name="index", help="Maintain the research record query index.")
+    def index_group() -> None:
+        pass
+
+    @index_group.command(name="rebuild", help="Refresh derived query-index rows from canonical records.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--record-id", default=None, help="Refresh one record id instead of the whole Topic Workspace.")
+    @click.option("--include-operation-set-files", is_flag=True, help="Include accepted operation-set files when extractors can resolve them.")
+    @click.option("--dry-run", is_flag=True, help="Report the rebuild plan without mutating query-index rows.")
+    @click.pass_context
+    def index_rebuild_command(ctx: click.Context, record_id: str | None = None, include_operation_set_files: bool = False, dry_run: bool = False, **kwargs: Any) -> int:
+        values = dict(kwargs)
+        return _with_context(
+            ctx,
+            values,
+            lambda context, _request: rebuild_query_index(
+                context,
+                env=os.environ,
+                record_id=record_id,
+                include_operation_set_files=include_operation_set_files,
+                dry_run=dry_run,
+            ),
+            build_request=False,
+        )
+
+    @index_group.command(name="validate", help="Validate query-index consistency without mutating runtime state.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--record-id", default=None, help="Validate one indexed record id.")
+    @click.pass_context
+    def index_validate_command(ctx: click.Context, record_id: str | None = None, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: validate_query_index(context, env=os.environ, record_id=record_id),
+            build_request=False,
+        )
+
+    @index_group.command(name="cleanup", help="Preview or apply safe query-index cleanup.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--stale-derived", is_flag=True, help="Select stale derived index rows.")
+    @click.option("--orphaned", is_flag=True, help="Select index rows whose canonical record is missing.")
+    @click.option("--missing-files", is_flag=True, help="Select missing indexed file attachment rows.")
+    @click.option("--dry-run", "dry_run", is_flag=True, help="Preview cleanup without mutating query-index rows.")
+    @click.option("--apply", "apply_cleanup", is_flag=True, help="Apply selected cleanup to query-index rows only.")
+    @click.pass_context
+    def index_cleanup_command(
+        ctx: click.Context,
+        stale_derived: bool = False,
+        orphaned: bool = False,
+        missing_files: bool = False,
+        dry_run: bool = False,
+        apply_cleanup: bool = False,
+        **kwargs: Any,
+    ) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: cleanup_query_index(
+                context,
+                env=os.environ,
+                stale_derived=stale_derived,
+                orphaned=orphaned,
+                missing_files=missing_files,
+                apply=apply_cleanup and not dry_run,
+            ),
+            build_request=False,
+        )
+
+    @records_group.group(name="query", help="Read the research record query index.")
+    def query_group() -> None:
+        pass
+
+    @query_group.command(name="list", help="List indexed research records.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--record-kind", default=None, help="Filter by Workspace Runtime lifecycle record kind.")
+    @click.option("--status", default=None, help="Filter by lifecycle status.")
+    @click.option("--profile", default=None, help="Filter by profile or Artifact Format Profile ref.")
+    @click.option("--facet", default=None, help="Filter to records that have a normalized facet.")
+    @click.option("--limit", type=int, default=None, help="Maximum records to return.")
+    @click.pass_context
+    def query_list_command(ctx: click.Context, **kwargs: Any) -> int:
+        values = dict(kwargs)
+        return _with_context(
+            ctx,
+            values,
+            lambda context, _request: query_index_list(
+                context,
+                env=os.environ,
+                record_kind=values.get("record_kind"),
+                status=values.get("status"),
+                profile=values.get("profile"),
+                facet=values.get("facet"),
+                limit=values.get("limit"),
+            ),
+            build_request=False,
+        )
+
+    @query_group.command(name="export", help="Export indexed research records for GUI or operator views.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--view", default="graph", show_default=True, help="Export view: graph, dashboard, timeline, ideas, experiments, or claims.")
+    @click.option("--format", "export_format", default="json", show_default=True, help="Export format. Only json is currently supported.")
+    @click.pass_context
+    def query_export_command(ctx: click.Context, view: str = "graph", export_format: str = "json", **kwargs: Any) -> int:
+        if export_format != "json":
+            click.echo(dumps_raw_json({"ok": False, "mutated": False, "error": {"code": "unsupported_export_format", "message": "Research record query export currently supports only json."}}))
+            return 1
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: query_index_export(context, env=os.environ, view=view),
+            build_request=False,
+        )
+
+    @query_group.command(name="lineage", help="Show indexed lineage for one record.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--direction", default="both", show_default=True, help="Lineage direction: upstream, downstream, or both.")
+    @click.argument("record_id")
+    @click.pass_context
+    def query_lineage_command(ctx: click.Context, record_id: str, direction: str = "both", **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: query_index_lineage(context, record_id, env=os.environ, direction=direction),
+            build_request=False,
+        )
+
+    @query_group.command(name="files", help="Show indexed files for one record.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("record_id")
+    @click.pass_context
+    def query_files_command(ctx: click.Context, record_id: str, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: query_index_files(context, record_id, env=os.environ),
+            build_request=False,
+        )
+
+    @query_group.command(name="facets", help="Show indexed normalized facets for one record.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--facet", default=None, help="Facet to return: ideas, routes, metrics, claims, or facts.")
+    @click.argument("record_id")
+    @click.pass_context
+    def query_facets_command(ctx: click.Context, record_id: str, facet: str | None = None, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: query_index_facets(context, record_id, env=os.environ, facet=facet),
+            build_request=False,
+        )
+
 
 def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
     def decorator(command: Any) -> Any:
         command = click.option("--lifecycle-refs-json", default=None, help="Additional lifecycle refs as a JSON object.")(command)
+        command = click.option("--index-hints-json", default=None, help="Query-index hints as a JSON object.")(command)
+        command = click.option("--files-json", default=None, help="Query-index file attachments as a JSON array of objects.")(command)
+        command = click.option("--relationships-json", default=None, help="Query-index relationship refs as a JSON array of objects.")(command)
         command = click.option("--metadata-json", default=None, help="Additional transition metadata as a JSON object.")(command)
         command = click.option("--content-name", default=None, help="Stored body filename.")(command)
         command = click.option("--render", "render_format", default=None, help="Render a generated view, for example markdown.")(command)
@@ -319,6 +492,9 @@ def _request_from_values(values: dict[str, Any]) -> ResearchRecordRequest:
         render_format=values.get("render_format"),
         metadata=parse_json_object(values.get("metadata_json"), field_name="metadata-json"),
         lifecycle_refs=parse_string_map(values.get("lifecycle_refs_json"), field_name="lifecycle-refs-json"),
+        relationships=parse_json_object_list(values.get("relationships_json"), field_name="relationships-json"),
+        file_attachments=parse_json_object_list(values.get("files_json"), field_name="files-json"),
+        index_hints=parse_json_object(values.get("index_hints_json"), field_name="index-hints-json"),
     )
 
 

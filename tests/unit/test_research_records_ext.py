@@ -347,6 +347,118 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual("complete", updated_record["status"])
         self.assertIn("updated", Path(str(updated["structured_payload"]["rendered_markdown_path"])).read_text(encoding="utf-8"))
 
+    def test_query_index_refresh_query_validate_and_cleanup_preview(self) -> None:
+        root = self.make_project()
+        workspace = root / "topic-workspaces" / "alpha"
+        output_file = workspace / "outputs" / "metrics.json"
+        output_file.parent.mkdir(parents=True)
+        output_file.write_text('{"runtime_ms": 12.5}', encoding="utf-8")
+        status, target = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "input-record",
+                "--record-kind",
+                "artifact",
+                "--body",
+                "input",
+            ],
+        )
+        self.assertEqual(0, status, target)
+        profile_ref = canonical_record_format_ref("run.main-run-record", "profile")
+        payload_file = root / "indexed-payload.json"
+        payload_file.write_text(
+            json.dumps(
+                {
+                    "title": "Indexed main run",
+                    "summary": "Query index payload",
+                    "sections": {
+                        "metrics": {"runtime_ms": 12.5},
+                        "claims": [
+                            {
+                                "claim": "Runtime is predictable",
+                                "metric_key": "runtime_ms",
+                                "observed_value": 12.5,
+                                "expected": "stable",
+                                "verdict": "supported",
+                            }
+                        ],
+                        "raw_ideas": [{"idea_id": "idea-1", "one_liner": "Model host runtime path"}],
+                        "decision": {
+                            "decision": "continue",
+                            "next_route": "analysis",
+                            "reason": "metrics stable",
+                            "selected_hypothesis_id": "idea-1",
+                        },
+                        "artifact_list": [{"path": "outputs/metrics.json", "file_role": "raw_results"}],
+                    },
+                    "evidence_refs": ["input-record"],
+                }
+            ),
+            encoding="utf-8",
+        )
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "indexed-main-run",
+                "--record-kind",
+                "run",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(payload_file),
+                "--render",
+                "markdown",
+                "--relationships-json",
+                '[{"target_record_id":"input-record","relation_kind":"uses_input","relation_role":"baseline"}]',
+                "--files-json",
+                '[{"path":"outputs/metrics.json","file_role":"raw_results","semantic_label":"topic.records.runs"}]',
+            ],
+        )
+        self.assertEqual(0, status, created)
+        self.assertEqual(True, created["query_index"]["ok"])
+
+        status, listed = self.run_records(root, ["query", "list", "--record-kind", "run", "--facet", "metrics"])
+        self.assertEqual(0, status, listed)
+        self.assertEqual(1, listed["count"])
+        indexed = listed["records"][0]
+        self.assertEqual("indexed-main-run", indexed["record_id"])
+        self.assertEqual("Indexed main run", indexed["title"])
+
+        status, facets = self.run_records(root, ["query", "facets", "indexed-main-run"])
+        self.assertEqual(0, status, facets)
+        self.assertEqual("runtime_ms", facets["metrics"][0]["metric_key"])
+        self.assertEqual("Runtime is predictable", facets["claims"][0]["claim"])
+        self.assertEqual("Model host runtime path", facets["ideas"][0]["one_liner"])
+        self.assertEqual("continue", facets["routes"][0]["decision"])
+
+        status, files = self.run_records(root, ["query", "files", "indexed-main-run"])
+        self.assertEqual(0, status, files)
+        self.assertTrue(any(item["file_role"] == "raw_results" and item["exists"] for item in files["files"]))
+
+        status, lineage = self.run_records(root, ["query", "lineage", "indexed-main-run", "--direction", "downstream"])
+        self.assertEqual(0, status, lineage)
+        self.assertTrue(any(edge["target_record_id"] == "input-record" for edge in lineage["edges"]))
+
+        status, exported = self.run_records(root, ["query", "export", "--view", "dashboard"])
+        self.assertEqual(0, status, exported)
+        self.assertTrue(any(node["record_id"] == "indexed-main-run" for node in exported["nodes"]))
+
+        status, rebuilt = self.run_records(root, ["index", "rebuild"])
+        self.assertEqual(0, status, rebuilt)
+        self.assertEqual(True, rebuilt["mutated"])
+
+        status, validated = self.run_records(root, ["index", "validate"])
+        self.assertEqual(0, status, validated)
+        self.assertEqual([], validated["diagnostics"])
+
+        status, cleanup = self.run_records(root, ["index", "cleanup", "--missing-files"])
+        self.assertEqual(0, status, cleanup)
+        self.assertEqual(False, cleanup["mutated"])
+
     def test_structured_create_rejects_direct_body_source(self) -> None:
         root = self.make_project()
         profile_ref = canonical_record_format_ref("run.main-run-record", "profile")

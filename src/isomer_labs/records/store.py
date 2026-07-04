@@ -31,6 +31,7 @@ from isomer_labs.runtime.records import (
     utc_timestamp,
 )
 from isomer_labs.runtime.store import WorkspaceRuntimeStore, open_workspace_runtime
+from isomer_labs.records.index import refresh_query_index_for_record
 
 
 RESEARCH_RECORD_DEFAULT_LABELS = {
@@ -91,6 +92,9 @@ class ResearchRecordRequest:
     render_format: str | None = None
     metadata: dict[str, object] | None = None
     lifecycle_refs: dict[str, str] | None = None
+    relationships: list[dict[str, object]] | None = None
+    file_attachments: list[dict[str, object]] | None = None
+    index_hints: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -178,6 +182,7 @@ def create_record(
                         provenance_refs=[_provenance_ref("structured-payload", record_id)],
                     )
                 )
+        index_payload = refresh_query_index_for_record(context, runtime_store, record_id)
         stored = runtime_store.get_lifecycle_record(record_id) or record
         stored_payload = runtime_store.get_structured_payload(record_id)
         return {
@@ -187,6 +192,7 @@ def create_record(
             "record": stored.to_json(),
             "structured_payload": stored_payload.to_json() if stored_payload is not None else None,
             "content_path": str(content_path) if content_path is not None else None,
+            "query_index": index_payload,
         }, diagnostics
     finally:
         runtime_store.close()
@@ -396,6 +402,7 @@ def update_record(
                         ],
                     )
                 )
+        index_payload = refresh_query_index_for_record(context, runtime_store, record_id)
         stored = runtime_store.get_lifecycle_record(record_id) or updated
         stored_payload = runtime_store.get_structured_payload(record_id)
         return {
@@ -405,6 +412,7 @@ def update_record(
             "record": stored.to_json(),
             "structured_payload": stored_payload.to_json() if stored_payload is not None else None,
             "content_path": stored.content_path,
+            "query_index": index_payload,
         }, diagnostics
     finally:
         runtime_store.close()
@@ -447,6 +455,7 @@ def archive_record(
         )
         with runtime_store.connection:
             runtime_store.upsert_lifecycle_record(archived)
+        index_payload = refresh_query_index_for_record(context, runtime_store, record_id)
         stored = runtime_store.get_lifecycle_record(record_id) or archived
         return {
             "ok": True,
@@ -454,6 +463,7 @@ def archive_record(
             "operation": "delete",
             "delete_mode": "archive",
             "record": stored.to_json(),
+            "query_index": index_payload,
         }, diagnostics
     finally:
         runtime_store.close()
@@ -827,6 +837,15 @@ def _record_metadata(request: ResearchRecordRequest) -> dict[str, object]:
     ):
         if value is not None:
             metadata[key] = value
+    query_index: dict[str, object] = {}
+    if request.relationships:
+        query_index["relationships"] = request.relationships
+    if request.file_attachments:
+        query_index["files"] = request.file_attachments
+    if request.index_hints:
+        query_index["hints"] = request.index_hints
+    if query_index:
+        metadata["query_index"] = query_index
     return metadata
 
 
@@ -1027,3 +1046,17 @@ def parse_json_object(raw: str | None, *, field_name: str) -> dict[str, object]:
 
 def parse_string_map(raw: str | None, *, field_name: str) -> dict[str, str]:
     return {key: str(value) for key, value in parse_json_object(raw, field_name=field_name).items()}
+
+
+def parse_json_object_list(raw: str | None, *, field_name: str) -> list[dict[str, object]]:
+    if raw is None or not raw.strip():
+        return []
+    loaded = json.loads(raw)
+    if not isinstance(loaded, list):
+        raise ResearchRecordError(f"{field_name} must be a JSON array.", code="invalid_json_array")
+    result: list[dict[str, object]] = []
+    for index, item in enumerate(loaded):
+        if not isinstance(item, dict):
+            raise ResearchRecordError(f"{field_name}[{index}] must be a JSON object.", code="invalid_json_object")
+        result.append({str(key): value for key, value in item.items()})
+    return result

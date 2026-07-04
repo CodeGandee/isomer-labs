@@ -113,6 +113,14 @@ Command surface:
   ext research records list
   ext research records update
   ext research records delete
+  ext research records index rebuild
+  ext research records index validate
+  ext research records index cleanup
+  ext research records query list
+  ext research records query export
+  ext research records query lineage
+  ext research records query files
+  ext research records query facets
   schemas list
 """
 
