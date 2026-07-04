@@ -1,194 +1,157 @@
 ## Context
 
-Workspace Runtime already stores research lifecycle records in `state.sqlite`, and `isomer-cli ext research records` can create file-backed records for Artifacts, Evidence Items, Decision Records, Runs, Research Tasks, and View Manifests. The current model is intentionally generic: a row has `record_kind`, status, lifecycle refs, transition metadata, optional `content_path`, and provenance refs. That gives durable identity, but it does not make record relationships queryable.
+Workspace Runtime already stores DeepSci research records in `state.sqlite` and renders structured payloads to Markdown files under topic record surfaces. A representative FlashAttention topic workspace contains lifecycle records, structured payload rows, rendered bodies, and operation-set outputs for ideas, decisions, runs, metrics, claims, and artifact manifests.
 
-The FlashAttention GB10 topic workspace shows the failure mode clearly. The records form a meaningful research chain from scout to baseline, idea, optimize, experiment, analysis, paper, review, and finalization. The important edges are present in body prose, for example "contract reference", "parent object", "linked records", and "next route". They are not stored as normalized refs. As a result, a Topic Actor, Operator Agent, validator, or GUI cannot reliably answer lineage questions without reading Markdown bodies and guessing.
-
-The design must preserve existing Topic Workspace ownership rules. The graph belongs in Workspace Runtime, rich content remains file-backed under semantic record labels, and v2 research skills should continue to write readable Markdown or JSON bodies. The graph index adds structured relationship metadata beside those bodies.
+Those artifacts are structured enough to index, but not queryable enough for a GUI. The durable source of truth is already present; the missing layer is a topic-scoped SQL query index that turns payload fields, record metadata, relationships, and files into predictable tables.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Add a topic-scoped graph index for relationships between existing Workspace Runtime lifecycle records.
-- Add a file attachment index for durable files produced or cited by records.
-- Keep lifecycle records as the node authority instead of introducing parallel record identity.
-- Make graph writes available through the existing research records extension surface.
-- Make common inspection questions deterministic: lineage, children, route, attached files, and export.
-- Validate graph refs, file refs, cross-topic leakage, and claim/evidence consistency.
-- Keep existing body files and current generic record rows valid.
+- Keep `lifecycle_records`, `structured_research_payloads`, rendered Markdown, and operation-set files as canonical storage.
+- Add a query index for GUI and operator reads: timeline, ideas, decisions, experiments, claims, files, and lineage.
+- Support deterministic rebuild from existing structured payloads and known operation-set files.
+- Distinguish authored metadata from payload-derived metadata and low-confidence body inference.
+- Use Artifact Format Profile refs and DeepSci placeholder bindings to drive facet extraction.
+- Keep record create/update payload-first and allow optional relationship, file, and index-hint metadata at write time.
 
 **Non-Goals:**
 
-- Do not replace `lifecycle_records` with one table per record kind in this change.
-- Do not infer graph truth by scraping Markdown as an authoritative write path.
-- Do not make `producer` and `consumer` strings into graph edges automatically.
-- Do not design a scheduler, workflow engine, or task router.
-- Do not require every result file, log, PDF, or script to become a top-level lifecycle record.
-- Do not define implementation tasks in this change artifact.
+- Do not replace durable record storage with GUI-specific tables.
+- Do not require every file, metric, or JSON scalar to become a lifecycle record.
+- Do not treat Markdown scraping as authoritative research truth.
+- Do not implement the GUI in this change.
+- Do not define a workflow scheduler, task router, or research planner.
+
+## Data Model
+
+```text
+lifecycle_records
+structured_research_payloads
+rendered markdown
+operation-set files
+        |
+        v
+research_record_index
+research_record_edges
+research_record_files
+research_record_ideas
+research_record_routes
+research_record_metrics
+research_record_claims
+research_record_json_facts
+```
+
+`research_record_index` is the read entry point. It stores stable record ids, kind, status, profile refs, title, summary, content paths, rendered paths, producer/consumer hints, timestamps, validation/render status, and topic/workspace ownership.
+
+`research_record_edges` stores typed relationships between records. Each edge carries relation kind, role, source field, source classification (`authored`, `derived_from_payload`, or `inferred_from_body`), confidence, status, rationale, and metadata.
+
+`research_record_files` stores files attached to, produced by, or materialized from records. Paths remain workspace-relative or project-local locators validated through existing path rules; operation-set outputs can be indexed without becoming lifecycle records.
+
+Facet tables store data the GUI naturally needs: ideas, routes, metrics, claims, and generic scalar JSON facts. Each facet row records the source JSON path or source file locator so the UI can trace extracted data back to the payload.
+
+## Write Responsibility
+
+Producer agents, Topic Actors, Project Operators, and GUI clients do not write query-index SQL tables directly. They write canonical research records through the research recording API or CLI, including structured payloads and optional relationship, file, or index hints when they know them.
+
+Workspace Runtime owns the database mutation. The record store writes `lifecycle_records`, `structured_research_payloads`, rendered locators, and authored metadata, then invokes the query-index service to refresh affected index rows in the same transaction when practical.
+
+The query-index service owns derived rows. It runs profile extractors, records file attachments, classifies edge/facet sources, and marks stale rows when a synchronous refresh cannot finish. An explicit rebuild command can regenerate derived rows for a whole Topic Workspace.
+
+The GUI is a reader of the export/query API, not a table writer. If a GUI creates or edits a record, it does so through the same recording API, so validation and indexing stay centralized.
+
+## CLI/API Shape
+
+Index maintenance commands live under the existing research records extension surface. Mutating maintenance is explicit:
+
+```text
+isomer-cli ext research records index rebuild [--record-id <record-id>] [--include-operation-set-files] [--dry-run]
+isomer-cli ext research records index validate [--record-id <record-id>]
+isomer-cli ext research records index cleanup [--stale-derived] [--orphaned] [--missing-files] [--dry-run|--apply]
+```
+
+`index rebuild` refreshes derived rows from canonical runtime records, structured payloads, rendered locators, and accepted operation-set files. `index validate` is read-only and reports stale rows, broken refs, missing files, unsupported relation kinds, and extractor failures. `index cleanup` previews by default; it mutates only with `--apply`, removes or marks only query-index rows, and never deletes lifecycle records, structured payloads, rendered Markdown, operation-set files, or accepted artifacts.
+
+Read-only query commands live under a separate `records query` group:
+
+```text
+isomer-cli ext research records query list [--record-kind <kind>] [--status <status>] [--profile <profile-ref>] [--facet <facet>] [--limit <n>]
+isomer-cli ext research records query export [--view graph|dashboard|timeline|ideas|experiments|claims] [--format json]
+isomer-cli ext research records query lineage <record-id> [--direction upstream|downstream|both]
+isomer-cli ext research records query files <record-id>
+isomer-cli ext research records query facets <record-id> [--facet ideas|routes|metrics|claims|facts]
+```
+
+These query commands open the runtime read-only, read only query-index tables and canonical locators, and return deterministic JSON. If the index is missing or stale, they report diagnostics and recommend `index rebuild`; they do not repair or backfill during the query.
 
 ## Decisions
 
-### Store Graph Edges in Workspace Runtime
+### Refresh the Index Only from Explicit Mutations
 
-Add a normalized runtime table for record-to-record edges. Each edge links two existing lifecycle record ids inside the selected Topic Workspace and carries a small relation kind, optional role, status, rationale, metadata JSON, timestamps, actor refs, and provenance refs.
+Query-index refresh is part of explicit mutating operations. `records create`, `records update`, `records delete` or archive, and an explicit index rebuild can write query-index rows. Runtime initialization or schema preparation can create missing query-index tables, but ordinary read operations must not create, refresh, repair, or backfill index data.
 
-Conceptual shape:
+Read-only operations include list, show, validate, render, export, and GUI query paths. If they detect stale or missing index rows, they should report diagnostics or ask the caller to run rebuild; they should not silently mutate `state.sqlite`.
 
-```text
-research_record_edges
-  id
-  research_topic_id
-  topic_workspace_id
-  source_record_id
-  target_record_id
-  relation_kind
-  relation_role
-  status
-  rationale
-  metadata_json
-  created_at
-  updated_at
-  actor_ref
-  provenance_refs_json
-```
+Alternative considered: opportunistically refresh stale index rows during read/export. That would make query output feel fresher, but it would blur command semantics and surprise agents by writing topic-owned state during inspection.
 
-This table should reference `lifecycle_records` by id at the application validation layer. SQLite foreign keys are optional because existing runtime code already performs scoped validation and because archived or corrective records must remain visible for repair.
+### Use a Query Index, Not a New Source of Truth
 
-Alternative considered: store edges only in `lifecycle_refs_json`. That would be simpler to write, but it leaves edge queries as JSON scans and makes validation weak. A normalized edge table is the cleaner index while preserving the generic lifecycle record envelope.
+The index is a denormalized read layer over existing runtime records and structured payloads. Mutating record operations write canonical records first, then refresh affected index rows in the same transaction when practical. Rebuild can recreate derived index rows from canonical storage.
 
-### Use a Small Relation Vocabulary with Custom Escape Hatch
+Alternative considered: make the graph tables authoritative. That would hide the existing payload-first contract and make Markdown/payload records second-class, so the design keeps the index disposable and rebuildable.
 
-Use a compact vocabulary that matches research recording needs:
+### Keep Graph Edges as One Layer of the Index
 
-```text
-uses_input
-produces
-derived_from
-validates
-updates_claim
-routes_to
-supersedes
-blocks
-cites
-summarizes
-materializes_file
-```
+Lineage remains important, but it is one part of the GUI read model. Relation kinds should cover observed research flows: `uses_input`, `evidence_basis`, `routes_to`, `supports_claim`, `derived_from`, `supersedes`, `produces`, `materializes_file`, `blocks`, `cites`, `summarizes`, and `custom.*`.
 
-Allow `custom.*` relation kinds only when the user or a later accepted spec needs a domain-specific edge. Validation should accept `custom.*` but report unknown non-custom relation kinds.
+Edges must distinguish source. Authored edges come from explicit create/update metadata. Payload-derived edges come from structured payload fields such as `evidence_refs`, `artifact_refs`, `selected_hypothesis_id`, or known profile sections. Body-inferred edges are allowed only as low-confidence repair hints.
 
-Alternative considered: use unrestricted freeform relation strings. That would avoid early vocabulary debate, but it would recreate the current mess at the graph layer.
+### Extract GUI Facets from Structured Payloads
 
-### Keep Files as Attachments, Not Always Records
+Facet extraction should be profile-driven. The existing DeepSci record profiles already shape payloads for ideas, route decisions, run records, result summaries, artifact manifests, and claim validation records. An extractor registry can map profile refs to facet extractors without asking each skill to write every SQL row manually.
 
-Add a file attachment index for files that belong to, support, or are materialized by a lifecycle record. This covers harness scripts, raw JSON, TXT tables, logs, figures, patches, TeX, PDFs, and package manifests without forcing each file to become an Artifact lifecycle record.
+Unknown scalar JSON values can be stored in `research_record_json_facts` when they are useful for inspection but do not deserve a dedicated table yet. This keeps the first schema practical while allowing future GUI panels to discover data.
 
-Conceptual shape:
+### Index Operation-Set Files as Attachments
 
-```text
-research_record_files
-  id
-  research_topic_id
-  topic_workspace_id
-  record_id
-  semantic_label
-  path
-  file_role
-  media_type
-  digest
-  size_bytes
-  status
-  metadata_json
-  created_at
-  updated_at
-  provenance_refs_json
-```
+Worker output directories contain result JSON, CSV, configs, metrics, and other files that matter to experiments. The file index should record those paths, roles, operation-set ids when known, digests when available, existence status, media type, and semantic labels.
 
-`path` should be stored as the resolved project-local path or as a stable workspace-relative locator, with path resolution and validation still governed by Workspace Path Resolution. `file_role` should use practical values such as `body`, `harness`, `raw_results`, `summary`, `log`, `figure`, `patch`, `paper`, `manifest`, and `custom.*`.
+The file table should not force every output file to become an Artifact record. Artifact records remain useful for accepted durable outputs; file rows handle denser experiment folders and UI drill-down.
 
-Alternative considered: represent every file as an Artifact record and only use record edges. That is too heavy for generated logs and result shards, and it makes ordinary experiment folders noisy.
+### Provide Rebuild and Export Commands
 
-### Extend Research Record CRUD Instead of Adding a Separate Indexer API First
+The implementation should provide an idempotent rebuild for one Topic Workspace. It reads lifecycle records, structured payloads, rendered Markdown refs, and accepted operation-set files, then recreates derived index rows while preserving authored rows.
 
-The primary write path should remain `isomer-cli ext research records create` and `update`. Add structured options or JSON input for:
+The implementation should also provide cleanup for stale derived rows, orphaned index rows, and missing-file attachment rows. Cleanup is an index maintenance operation only; canonical research records and files remain visible for repair, supersession, or withdrawal.
 
-- relationship edges created with the record
-- file attachments created with the record
-- lifecycle refs that point to Research Topic, Research Inquiry, Research Task, Run, Agent Team Instance, Agent Instance, Agent Workspace, or Topic Actor context
+The GUI-facing export should return nodes, edges, files, facets, diagnostics, and detail locators for a selected topic. The export is a query contract, not a web API commitment; CLI JSON and Python APIs can share the same shape.
 
-The command can expose simple repeatable flags for common cases and a JSON option for complex batches. Python APIs should receive typed request objects and write the record, edges, and files in one transaction.
+### Update Skills Through Binding Guidance
 
-Alternative considered: create a separate `graph add-edge` command as the only write path. Separate edge writes are useful for repair, but relying on them for normal record creation would make agents forget edges. The default record write path should capture relationships at the moment the author knows them.
+DeepSci placeholder bindings should describe expected relationship, file, and facet metadata per placeholder/profile. Skills should still author structured payload JSON and readable generated Markdown; the record system and extractor registry should handle repetitive index rows.
 
-### Add Graph Query Commands for Human and GUI Inspection
+This avoids the anti-pattern of making every skill workflow hand-maintain a graph while still teaching agents what relationships and files are worth preserving at write time.
 
-Add deterministic read commands under the research extension surface, such as:
+## Validation
 
-```text
-isomer-cli ext research graph lineage <record-id>
-isomer-cli ext research graph children <record-id>
-isomer-cli ext research graph route <record-id>
-isomer-cli ext research graph files <record-id>
-isomer-cli ext research graph export --format json
-```
+Runtime validation should report missing indexed records, broken edges, cross-topic refs, missing files, stale derived rows, unsupported claim links, and profile extractor failures. It should not delete canonical records or silently rewrite payloads.
 
-The JSON output should include nodes, edges, attached files, diagnostics, and enough record metadata for a GUI or text UI to render the graph without reopening every body file.
-
-Alternative considered: overload `records list` with graph traversal options. That keeps the command count smaller, but graph traversal and record filtering are different mental models. A small `graph` group is clearer.
-
-### Validation Should Report Graph Breakage Without Deleting Records
-
-Runtime validation should check that graph source and target records exist, belong to the same Topic Workspace, and do not point across topics unless a future cross-topic contract permits it. File attachment validation should check that project-local files exist, remain under allowed semantic surfaces, and do not depend on unpromoted Agent Workspace private material as accepted truth.
-
-Validation should also add focused semantic checks:
-
-- supported Research Claims must cite valid Evidence Items through graph edges or accepted metadata
-- `supersedes` edges should not leave multiple ready records claiming to be the active version for the same placeholder without an explicit rationale
-- `routes_to` edges should point from a Decision Record or route-bearing record to a plausible next record, cursor, task, or planned lifecycle object
-- open Gates and blocking edges should remain visible as blockers
-
-Alternative considered: enforce all graph constraints at insert time. Some research work is partial or corrective, so strict insert-time rejection would make repair harder. Write-time checks should prevent obvious errors; validation should carry the fuller audit.
-
-### Migrate by Adding Index Tables, Then Backfill Opportunistically
-
-Existing workspaces should remain readable. Runtime initialization or schema preparation should create the new tables when opening a current supported schema, or use the repository's existing schema-version path if the change requires a version bump.
-
-Existing `lifecycle_records` can be left as-is. A later repair or bootstrap command may do best-effort backfill from known metadata and body patterns, but scraped edges must be marked as inferred and lower confidence. New writes should be authoritative because agents provide structured refs at creation time.
-
-Alternative considered: require a full migration that parses all existing Markdown before validation passes. That would make adoption fragile and would turn prose parsing into a source of truth.
-
-### Update V2 Placeholder Binding Guidance
-
-Each active v2 skill placeholder binding page should describe the relationship and file refs that its records normally provide. For example, an experiment `MAIN_RUN_RECORD` should link to its `EXPERIMENT_CONTRACT`, produce its artifact manifest, result summary, and route decision, and attach raw output files. An analysis slice should derive from a parent result and update a claim or route boundary.
-
-This is guidance for write-time metadata, not a new skill workflow. The skill remains responsible for readable body content; the record API becomes responsible for durable graph structure.
-
-Alternative considered: centralize all relationship rules only in the workspace manager skill. That would keep per-skill pages smaller, but the producer skill knows the real parents and outputs when it writes the record. Central-only guidance would become stale.
-
-## Risks / Trade-offs
-
-- [Risk] Agents may still omit edges when writing records. Mitigation: make common edges part of placeholder binding command examples and add validation warnings for edge-free records whose profile normally requires lineage.
-- [Risk] The relation vocabulary may be too small. Mitigation: allow `custom.*` while keeping core queries focused on accepted relations.
-- [Risk] Backfilled edges from old Markdown may be wrong. Mitigation: mark inferred edges distinctly and do not treat them as authoritative support for claims without human or agent confirmation.
-- [Risk] Graph tables duplicate information that also appears in body files. Mitigation: treat body prose as explanation and graph rows as indexable refs; validation can report disagreement when a structured ref is stale.
-- [Risk] The CLI could become awkward if complex edges are passed through many flags. Mitigation: support both simple repeatable flags and JSON batch input.
-- [Risk] File attachments can point at transient logs or private Agent Workspace material. Mitigation: validate paths through semantic labels and report unpromoted private material as not accepted research truth.
+Validation diagnostics should name whether an issue comes from authored metadata, derived payload extraction, file scanning, or low-confidence body inference. That distinction lets operators repair the right layer.
 
 ## Migration Plan
 
-1. Extend Workspace Runtime schema preparation to create graph edge and file attachment tables without altering existing lifecycle records.
-2. Add runtime model and store APIs for creating, listing, validating, and deleting or archiving graph edges and file attachments.
-3. Extend research record create and update operations so a record, its edges, and its file attachments can be written transactionally.
-4. Add read-only graph query commands and include graph diagnostics in runtime validation output.
-5. Update v2 placeholder binding pages and workspace manager bootstrap guidance to include structured graph and file-ref metadata for future records.
-6. Optionally add a best-effort repair/index command that proposes inferred edges for existing records, clearly marking them as inferred.
+1. Add additive query-index tables through Workspace Runtime schema preparation.
+2. Add store APIs for refreshing one record, rebuilding one topic index, validating the index, cleaning stale derived index rows, listing indexed records, and exporting indexed records with facets.
+3. Add profile-driven extractors for the first observed DeepSci payload families: ideas, route decisions, run records, result summaries, artifact manifests, and claim validation.
+4. Extend record create/update request objects and CLI JSON input with optional relationship, file, and index-hint metadata.
+5. Update DeepSci placeholder binding guidance with expected relationship, file, and facet metadata.
+6. Validate against an existing FlashAttention topic workspace by rebuilding the index, validating/cleaning stale derived rows in preview mode, and exporting ideas, decision path, experiment results, files, and claims.
 
-Rollback is straightforward for new code paths: keep reading existing `lifecycle_records` and ignore graph tables if absent. If a runtime has graph tables but the feature is disabled, existing record CRUD remains valid because body files and lifecycle records still carry the durable record identity.
+Rollback is straightforward: ignore or drop query-index tables and continue reading canonical lifecycle records, payload rows, and rendered files.
 
 ## Open Questions
 
-- Should graph tables require a Workspace Runtime schema version bump, or can they be introduced as idempotent additive tables under the current version?
-- Should graph query commands live under `ext research graph`, or should they eventually move to a native `project records graph` surface?
-- Which placeholder profiles should require at least one structured edge at validation time in the first release?
-- Should file digests be mandatory for all attached files, or optional for large logs and generated binaries?
-- How much inferred backfill should the first implementation attempt for existing FlashAttention GB10 records?
+- Should authored index metadata be stored in separate append-only source tables, or can authored rows live in the same index tables with source classification?
+- Which profile families should get dedicated facet tables after the first GUI panels are chosen?
+- Should operation-set file scanning include every file under worker output, or only files named by artifact manifests and known result profiles?
+- Which query export views should the first GUI consume first: graph, dashboard, timeline, ideas, experiments, or claims?

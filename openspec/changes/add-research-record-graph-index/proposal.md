@@ -1,31 +1,37 @@
 ## Why
 
-V2 research skills now produce many durable records and body files, but the relationships between records live mostly in Markdown prose, broad `producer` or `consumer` strings, and weak JSON metadata. Topic owners therefore cannot reliably answer what produced a record, which files belong to a Run, which Decision followed which Evidence Item, or how a paper claim traces back to experiments without manually reading the whole `records/` tree.
+DeepSci topics already produce structured research records in Workspace Runtime: lifecycle rows, JSON payloads, rendered Markdown, operation-set files, decisions, ideas, metrics, evidence, and run outputs. Future GUI and operator views need to query those records without opening every Markdown body or guessing structure from prose.
+
+The current change was too graph-first. Lineage matters, but the GUI needs a broader SQL-backed query index: record summaries, profile metadata, typed edges, file attachments, and normalized facets such as ideas, routes, metrics, and claims.
 
 ## What Changes
 
-- Add a runtime-backed research record graph index that stores typed edges between existing Workspace Runtime lifecycle records.
-- Add file attachment indexing for durable files under topic record surfaces, including harnesses, raw results, summaries, logs, figures, patches, papers, and manifests.
-- Extend research record CRUD so record creation and update can attach structured relationships and file refs instead of hiding them in prose.
-- Add graph query behavior for lineage, children, route, files, and export views so Topic Actors and future GUIs can inspect what leads to what.
-- Extend runtime validation to report broken graph edges, missing attached files, cross-topic links, stale supersession edges, and unsupported claim/evidence links.
-- Update v2 research placeholder binding guidance so skills preserve structured relationship metadata at write time.
+- Add a SQL-backed research record query index in Workspace Runtime, with `lifecycle_records` and `structured_research_payloads` remaining the source of truth.
+- Make Workspace Runtime responsible for writing and rebuilding query-index rows; agents, skills, and GUI clients provide canonical payloads and optional hints through the record API instead of writing SQL tables directly.
+- Refresh the query index by default during explicit mutating record operations such as create, update, and archive; keep list, show, validate, render, and export operations read-only with respect to the DB.
+- Add a `research_record_index` table that denormalizes topic-scoped record metadata for fast list, filter, timeline, and detail-entry queries.
+- Add typed edge and file index tables for lineage, decision paths, operation-set files, generated outputs, and record attachments.
+- Add normalized facet tables for GUI-ready ideas, routes, metrics, claims, and future scalar JSON facts extracted from structured payloads.
+- Add deterministic index maintenance commands for rebuild, validation, and cleanup so existing topic workspaces can be indexed from stored payloads and operation-set files.
+- Add deterministic query commands for indexed lists, graph/dashboard/timeline exports, lineage, files, and facets.
+- Extend record create/update contracts with optional relationship, file, and index-hint metadata while keeping payload-first structured records as the normal write path.
+- Update DeepSci placeholder binding guidance so skills describe expected relationship, file, and facet metadata without forcing agents to hand-author every derived index row.
 
 ## Capabilities
 
 ### New Capabilities
 
-None.
+- `research-record-query-index`: Provide a topic-scoped SQL query index for research records, facets, files, and graph export.
 
 ### Modified Capabilities
 
-- `research-recording-contracts`: Add first-class recording graph behavior for record-to-record relationships, file attachments, graph queries, and validation.
-- `workspace-runtime-persistence`: Persist graph edge and file attachment indexes in Workspace Runtime, keep them topic scoped, and include graph diagnostics in runtime validation and inspection.
-- `research-placeholder-bindings`: Require v2 placeholder binding guidance to describe structured relationship and file-ref metadata for accepted research records.
+- `research-recording-contracts`: Extend record CRUD and validation contracts with optional relationship, file, and index-hint metadata while preserving payload-first records.
+- `workspace-runtime-persistence`: Persist additive query-index tables in Workspace Runtime and make rebuild/validation idempotent.
+- `research-placeholder-bindings`: Require DeepSci placeholder binding guidance to describe expected relationship, file, and GUI facet metadata for structured records.
 
 ## Impact
 
-- Affects Workspace Runtime schema, model/store APIs, migration or idempotent schema preparation, runtime validation, and inspection output.
-- Affects `isomer-cli ext research records` create/update/list/show behavior and adds or extends graph query commands.
-- Affects v2 research skill `placeholder-bindings.md` guidance and workspace manager bootstrap/index guidance.
-- Existing record body files remain valid; the change adds structured links for new writes and can support a later best-effort indexer for existing topic records.
+- Affects Workspace Runtime schema preparation, record store APIs, index rebuild, index cleanup, validation, and inspection/export behavior.
+- Affects `isomer-cli ext research records` create/update/list/show and adds `records index` and `records query` command groups for GUI and operator consumers.
+- Affects DeepSci `placeholder-bindings.md` guidance and profile-driven extraction metadata.
+- Existing record bodies, lifecycle rows, and structured payload rows remain valid; older topic workspaces can be indexed by deterministic rebuild with derived rows marked by source.
