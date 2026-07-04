@@ -37,16 +37,16 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-User Skill Callback reminder: after mandatory context checks and before step 1, resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-figure-polish --stage begin`. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-figure-polish --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-
 1. **Classify the figure surface**. Produce `<FIGURE_SURFACE_CLASS>` as milestone, paper main figure, appendix figure, internal review figure, or another justified surface.
-2. **Define the figure message**. Produce `<FIGURE_MESSAGE>` with the one comparison or claim the figure must communicate.
-3. **Choose the chart form**. Select the chart form by research question, not visual taste, and remove panels that do not carry unique evidence.
-4. **Apply the style contract**. Produce `<FIGURE_STYLE_CONTRACT>` with restrained academic styling, readable labels, muted palette, clear hierarchy, and surface-appropriate dimensions. Use the copied source style file or an Isomer alias only after checking it fits the figure.
-5. **Render the first draft**. Generate an actual image output through the selected execution route and record the script, input data, and output targets semantically.
-6. **Inspect and revise the render**. Inspect the rendered output and produce `<FIGURE_RENDER_REVIEW>`. Revise and re-export until readability, composition, label, legend, color, and claim-message checks pass.
-7. **Export final formats**. Produce `<FINAL_FIGURE_EXPORT>` in the surface-appropriate formats, usually PNG for milestones and PDF/SVG plus PNG preview for paper-facing figures.
-8. **Record durable provenance**. Produce `<FIGURE_PROVENANCE_RECORD>` linking the figure to source data, script, claim, paper section, review item, or downstream handoff placeholder.
+2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-figure-polish --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
+3. **Define the figure message**. Produce `<FIGURE_MESSAGE>` with the one comparison or claim the figure must communicate.
+4. **Choose the chart form**. Select the chart form by research question, not visual taste, and remove panels that do not carry unique evidence.
+5. **Apply the style contract**. Produce `<FIGURE_STYLE_CONTRACT>` with restrained academic styling, readable labels, muted palette, clear hierarchy, and surface-appropriate dimensions. Use the copied source style file or an Isomer alias only after checking it fits the figure.
+6. **Render the first draft**. Generate an actual image output through the selected execution route and record the script, input data, and output targets semantically.
+7. **Inspect and revise the render**. Inspect the rendered output and produce `<FIGURE_RENDER_REVIEW>`. Revise and re-export until readability, composition, label, legend, color, and claim-message checks pass.
+8. **Export final formats**. Produce `<FINAL_FIGURE_EXPORT>` in the surface-appropriate formats, usually PNG for milestones and PDF/SVG plus PNG preview for paper-facing figures.
+9. **Record durable provenance**. Produce `<FIGURE_PROVENANCE_RECORD>` linking the figure to source data, script, claim, paper section, review item, or downstream handoff placeholder.
+10. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-figure-polish --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 

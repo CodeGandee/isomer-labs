@@ -37,16 +37,16 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-User Skill Callback reminder: after mandatory context checks and before step 1, resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-paper2ppt --stage begin`. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-paper2ppt --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-
 1. **Extract source material**. Produce `<PAPER_PRESENTATION_SOURCE_PACKET>` with metadata, abstract, headings, figure legends, table captions, claims, methods, results, and limitations from available source material.
-2. **Classify the paper type**. Produce `<PAPER_TYPE_CLASSIFICATION>` before slide planning: discovery, mechanism, method, resource, clinical, materials/engineering, review, or another justified type.
-3. **Choose presentation logic**. Select claim-first, question-to-evidence, problem-to-solution, workflow-to-validation, evidence-map, or another suited logic.
-4. **Build the Chinese plan**. Produce `<CHINESE_PRESENTATION_PLAN>` with 10-16 slide sequence, story spine, section flow, and audience-facing emphasis.
-5. **Select evidence figures**. Produce `<PRESENTATION_FIGURE_SELECTION>` with only figures and panels that carry the argument. Prefer fewer readable key panels over many cramped graphics.
-6. **Extract and prepare assets**. Produce `<PRESENTATION_ASSET_MANIFEST>` for figure crops, rendered pages, provenance, captions, and local asset quality.
-7. **Write slide content**. Produce `<CHINESE_SLIDE_CONTENT>` with Chinese titles, bullets, captions, takeaways, and speaker notes, preserving evidence limits and citation/attribution needs.
-8. **Build and verify the PPTX**. Create `<PPTX_DECK>`, reopen or inspect package structure, render previews when a renderer is available, revise defects, and produce `<PPTX_QA_REPORT>` plus `<PPTX_REVISION_LOG>` when revisions occur.
+2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-paper2ppt --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
+3. **Classify the paper type**. Produce `<PAPER_TYPE_CLASSIFICATION>` before slide planning: discovery, mechanism, method, resource, clinical, materials/engineering, review, or another justified type.
+4. **Choose presentation logic**. Select claim-first, question-to-evidence, problem-to-solution, workflow-to-validation, evidence-map, or another suited logic.
+5. **Build the Chinese plan**. Produce `<CHINESE_PRESENTATION_PLAN>` with 10-16 slide sequence, story spine, section flow, and audience-facing emphasis.
+6. **Select evidence figures**. Produce `<PRESENTATION_FIGURE_SELECTION>` with only figures and panels that carry the argument. Prefer fewer readable key panels over many cramped graphics.
+7. **Extract and prepare assets**. Produce `<PRESENTATION_ASSET_MANIFEST>` for figure crops, rendered pages, provenance, captions, and local asset quality.
+8. **Write slide content**. Produce `<CHINESE_SLIDE_CONTENT>` with Chinese titles, bullets, captions, takeaways, and speaker notes, preserving evidence limits and citation/attribution needs.
+9. **Build and verify the PPTX**. Create `<PPTX_DECK>`, reopen or inspect package structure, render previews when a renderer is available, revise defects, and produce `<PPTX_QA_REPORT>` plus `<PPTX_REVISION_LOG>` when revisions occur.
+10. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-paper2ppt --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 

@@ -37,15 +37,15 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-User Skill Callback reminder: after mandatory context checks and before step 1, resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-review --stage begin`. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-review --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-
 1. **Plan the audit**. Produce `<REVIEW_AUDIT_PLAN>` with claim set, strongest and weakest evidence, likely rejection reasons, experiment/analysis inventory, comparator papers, language hygiene risks, and likely routes.
-2. **Run literature and benchmark checks**. Produce `<LITERATURE_BENCHMARK_NOTE>` from nearby strong papers, official venue expectations, existing literature notes, and verified sources when novelty or positioning is uncertain.
-3. **Write the review report**. Produce `<REVIEW_REPORT>` using `references/review-report-template.md`, naming strengths, weaknesses, key issues, actionable suggestions, storyline advice, experiment inventory, novelty verification, and comparison to strong papers.
-4. **Produce the revision log**. Produce `<REVISION_LOG>` using `references/revision-log-template.md`, turning review findings into concrete text, evidence, figure, analysis, baseline, literature, and decision items.
-5. **Create evidence TODOs only when needed**. If real evidence is missing, produce `<REVIEW_EXPERIMENT_TODO>` with concrete follow-up work using `references/experiment-todo-template.md`; otherwise avoid fake experiments.
-6. **Update paper experiment planning**. When experiment planning changes, produce `<PAPER_EXPERIMENT_MATRIX_UPDATE>` so writing and rebuttal-facing work remain aligned.
-7. **Route the next step**. Produce `<REVIEW_ROUTE_DECISION>` to write, scout, baseline, analysis, decision, rebuttal, or finalize with evidence and priority ordering.
+2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-review --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
+3. **Run literature and benchmark checks**. Produce `<LITERATURE_BENCHMARK_NOTE>` from nearby strong papers, official venue expectations, existing literature notes, and verified sources when novelty or positioning is uncertain.
+4. **Write the review report**. Produce `<REVIEW_REPORT>` using `references/review-report-template.md`, naming strengths, weaknesses, key issues, actionable suggestions, storyline advice, experiment inventory, novelty verification, and comparison to strong papers.
+5. **Produce the revision log**. Produce `<REVISION_LOG>` using `references/revision-log-template.md`, turning review findings into concrete text, evidence, figure, analysis, baseline, literature, and decision items.
+6. **Create evidence TODOs only when needed**. If real evidence is missing, produce `<REVIEW_EXPERIMENT_TODO>` with concrete follow-up work using `references/experiment-todo-template.md`; otherwise avoid fake experiments.
+7. **Update paper experiment planning**. When experiment planning changes, produce `<PAPER_EXPERIMENT_MATRIX_UPDATE>` so writing and rebuttal-facing work remain aligned.
+8. **Route the next step**. Produce `<REVIEW_ROUTE_DECISION>` to write, scout, baseline, analysis, decision, rebuttal, or finalize with evidence and priority ordering.
+9. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-review --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 

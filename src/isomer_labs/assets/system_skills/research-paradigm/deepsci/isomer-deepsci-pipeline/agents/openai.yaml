@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-deepsci-pipeline"
+  short_description: "Execute a named single-pass sequence of production DeepSci skills with automatic artifact handoffs."
+  default_prompt: "Use $isomer-deepsci-pipeline to run a named linear research procedure and produce a terminal report for external control."

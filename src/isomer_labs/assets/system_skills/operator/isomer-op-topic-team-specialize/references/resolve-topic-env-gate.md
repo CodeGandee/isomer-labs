@@ -13,6 +13,7 @@ When this subcommand is selected, execute the following steps in order.
 3. Read the topic overview, user prompt, explicitly mentioned repositories, required datasets, tools, libraries, runtimes, and runnable goals.
 4. Write or update the resolved `topic.intent.topic_env_requirements` path with concise high-level Topic Workspace requirements:
    - State what must be available or runnable for the topic.
+   - State whether any Git repository needs full history instead of a shallow source snapshot, and why.
    - Keep this source intent user-editable.
    - Avoid concrete install commands, package-source choices, cwd matrices, execution logs, or verification command detail unless the user explicitly supplied them as intent.
 5. If the topic environment needs are too vague to derive a service target spec later:
@@ -78,6 +79,8 @@ Default to **Essential Output** in chat. Print **Complete Output** only when the
 ## Guardrails
 
 Do not derive `topic.env.topic_setup_target_spec` here. The topic env service owns operational target-spec generation, dependency plans, Pixi commands, repo acquisition decisions, expected outputs, and execution logs.
+
+Do not request full Git history by default. Mention full history only when the prompt, Research Topic, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies it; otherwise the topic env service should default to a shallow clone with `--depth=1`.
 
 Do not write canonical source intent to `<topic-workspace>/user-intent/src/env-gate.md`. If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.topic_env_requirements` plus its resolved default-layout path.
 

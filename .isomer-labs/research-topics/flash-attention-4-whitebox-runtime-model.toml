@@ -1,0 +1,4 @@
+schema_version = "isomer-research-topic-config.v1"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+topic_statement = "Develop a white-box math model of Flash Attention 4 runtime that predicts kernel runtime in milliseconds from input configuration. The model must follow the GPU's internal execution model rather than fitting a black-box function to measurements. The goal is to identify bottlenecks without executing the kernel on real hardware, while grounding the analysis in hardware characteristics."
+measurable_objectives = []

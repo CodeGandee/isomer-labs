@@ -37,7 +37,7 @@
 - [x] 6.1 Run `pixi run lint`.
 - [x] 6.2 Run `pixi run typecheck`.
 - [x] 6.3 Run `pixi run test`.
-- [ ] 6.4 Run `openspec verify-change add-topic-overview-template-and-clarify-research-intent`.
+- [x] 6.4 Confirm `openspec verify-change` is unavailable in this OpenSpec installation and use `openspec validate add-topic-overview-template-and-clarify-research-intent --strict` as the supported verification path.
 - [x] 6.5 Run `openspec validate add-topic-overview-template-and-clarify-research-intent --strict` if available.
 
 Note: `openspec verify-change` is not a recognized CLI command in this OpenSpec installation. `openspec validate --strict` passed and the full unit-test suite passes.

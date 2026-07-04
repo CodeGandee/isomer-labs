@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 import subprocess
 from typing import Any, Mapping
@@ -30,6 +31,54 @@ TOPIC_ACTOR_WORKSPACE_LABELS = (
     "topic.actors.logs",
     "topic.actors.links",
 )
+
+
+@dataclass(frozen=True)
+class _GitWorktreeEntry:
+    path: Path
+    branch: str | None
+
+
+@dataclass(frozen=True)
+class _ActorWorktreeReadiness:
+    source_repo_path: Path
+    workspace_path: Path
+    expected_branch: str
+    status: str
+    observed_branch: str | None = None
+    observed_source_repo_path: Path | None = None
+    matching_worktree_path: Path | None = None
+    duplicate_branch_path: Path | None = None
+    blocker: str | None = None
+    next_action: str = "none"
+
+    @property
+    def ready(self) -> bool:
+        return self.status == "ready"
+
+    @property
+    def can_create(self) -> bool:
+        return self.status == "missing"
+
+    def to_json(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "source_repo_path": str(self.source_repo_path),
+            "workspace_path": str(self.workspace_path),
+            "expected_branch": self.expected_branch,
+            "observed_branch": self.observed_branch,
+            "status": self.status,
+            "ready": self.ready,
+            "can_create": self.can_create,
+            "blocker": self.blocker,
+            "next_action": self.next_action,
+        }
+        if self.observed_source_repo_path is not None:
+            payload["observed_source_repo_path"] = str(self.observed_source_repo_path)
+        if self.matching_worktree_path is not None:
+            payload["matching_worktree_path"] = str(self.matching_worktree_path)
+        if self.duplicate_branch_path is not None:
+            payload["duplicate_branch_path"] = str(self.duplicate_branch_path)
+        return payload
 
 
 def list_topic_actors(context: EffectiveTopicContext) -> tuple[dict[str, Any], list[Diagnostic]]:
@@ -222,7 +271,11 @@ def diagnose_topic_actor(
     if topic_actor_name is not None and not selected_actors:
         diagnostics.append(_missing_actor_diagnostic(topic_actor_name))
     actor_paths: list[dict[str, object]] = []
+    worktree_status_by_actor: dict[str, dict[str, object]] = {}
+    topic_main, topic_main_diagnostics = resolve_semantic_path(context, "topic.repos.main", env=env, cwd=context.topic_workspace_path, use_path_plan=False)
+    diagnostics.extend(topic_main_diagnostics)
     for actor in selected_actors:
+        workspace_result = None
         for label in TOPIC_ACTOR_WORKSPACE_LABELS:
             result, result_diagnostics = resolve_semantic_path(
                 context,
@@ -235,14 +288,19 @@ def diagnose_topic_actor(
             diagnostics.extend(result_diagnostics)
             if result is not None:
                 actor_paths.append(result.to_json())
-    topic_main, topic_main_diagnostics = resolve_semantic_path(context, "topic.repos.main", env=env, cwd=context.topic_workspace_path, use_path_plan=False)
-    diagnostics.extend(topic_main_diagnostics)
+                if label == "topic.actors.workspace":
+                    workspace_result = result
+        if topic_main is not None and workspace_result is not None:
+            readiness, readiness_diagnostics = _inspect_actor_worktree_readiness(topic_main.path, workspace_result.path, actor.effective_branch)
+            diagnostics.extend(readiness_diagnostics)
+            worktree_status_by_actor[actor.topic_actor_name] = readiness.to_json()
     return {
         "ok": not has_errors(diagnostics),
         "mutated": False,
         "topic_main": topic_main.to_json() if topic_main is not None else None,
         "topic_actors": [actor.to_json() for actor in selected_actors],
         "actor_paths": actor_paths,
+        "worktree_status_by_actor": worktree_status_by_actor,
         "manifest": manifest.to_json(),
     }, diagnostics
 
@@ -270,35 +328,34 @@ def _materialize_actor_workspace(
 
     created_paths: list[str] = []
     worktree_mode = "existing"
-    if not workspace.path.exists():
-        if _looks_like_git_repo(topic_main.path):
-            command = ["git", "-C", str(topic_main.path), "worktree", "add", "-B", actor.effective_branch, str(workspace.path)]
-            completed = subprocess.run(command, check=False, capture_output=True, text=True)
-            if completed.returncode != 0:
-                diagnostics.append(
-                    Diagnostic(
-                        code="ISO061",
-                        severity="error",
-                        concept="Topic Actor Workspace",
-                        field="topic.repos.main",
-                        message=f"Git worktree creation failed from topic.repos.main: {completed.stderr.strip() or completed.stdout.strip()}",
-                    )
-                )
-                return None, diagnostics
-            worktree_mode = "git-worktree"
+    readiness, readiness_diagnostics = _inspect_actor_worktree_readiness(topic_main.path, workspace.path, actor.effective_branch)
+    diagnostics.extend(readiness_diagnostics)
+    if readiness.can_create and not has_errors(diagnostics):
+        if _git_branch_exists(topic_main.path, actor.effective_branch):
+            command = ["git", "-C", str(topic_main.path), "worktree", "add", str(workspace.path), actor.effective_branch]
         else:
-            workspace.path.mkdir(parents=True, exist_ok=True)
-            worktree_mode = "directory-placeholder"
+            command = ["git", "-C", str(topic_main.path), "worktree", "add", "-b", actor.effective_branch, str(workspace.path)]
+        completed = subprocess.run(command, check=False, capture_output=True, text=True)
+        if completed.returncode != 0:
             diagnostics.append(
                 Diagnostic(
                     code="ISO061",
-                    severity="warning",
+                    severity="error",
                     concept="Topic Actor Workspace",
                     field="topic.repos.main",
-                    message="topic.repos.main is not a Git repository yet; created the Topic Actor Workspace directory as a placeholder.",
+                    message=f"Git worktree creation failed from topic.repos.main: {completed.stderr.strip() or completed.stdout.strip()}",
                 )
             )
+            return None, diagnostics
         created_paths.append(str(workspace.path))
+        readiness, readiness_diagnostics = _inspect_actor_worktree_readiness(topic_main.path, workspace.path, actor.effective_branch)
+        diagnostics.extend(readiness_diagnostics)
+        worktree_mode = "git-worktree"
+    elif readiness.ready:
+        worktree_mode = "git-worktree"
+
+    if not readiness.ready or has_errors(diagnostics):
+        return None, diagnostics
 
     support_paths: list[dict[str, object]] = [workspace.to_json()]
     for label in TOPIC_ACTOR_WORKSPACE_LABELS[1:]:
@@ -332,6 +389,7 @@ def _materialize_actor_workspace(
         "created_paths": created_paths,
         "branch": actor.effective_branch,
         "worktree_mode": worktree_mode,
+        "worktree_status": readiness.to_json(),
         "audit_record_id": audit_record_id,
     }, diagnostics
 
@@ -426,8 +484,176 @@ def _record_actor_path_plans(
     return diagnostics
 
 
+def _inspect_actor_worktree_readiness(topic_main_path: Path, workspace_path: Path, expected_branch: str) -> tuple[_ActorWorktreeReadiness, list[Diagnostic]]:
+    diagnostics: list[Diagnostic] = []
+    source_repo_path = topic_main_path.resolve(strict=False)
+    resolved_workspace_path = workspace_path.resolve(strict=False)
+    if not _looks_like_git_repo(source_repo_path):
+        readiness = _ActorWorktreeReadiness(
+            source_repo_path=source_repo_path,
+            workspace_path=resolved_workspace_path,
+            expected_branch=expected_branch,
+            status="blocked_topic_main_not_git",
+            blocker="topic.repos.main is missing or is not a Git repository.",
+            next_action="Prepare topic.repos.main before materializing Topic Actor Workspaces.",
+        )
+        diagnostics.append(_worktree_blocker_diagnostic(readiness))
+        return readiness, diagnostics
+
+    entries, list_diagnostics = _list_git_worktrees(source_repo_path)
+    diagnostics.extend(list_diagnostics)
+    if has_errors(diagnostics):
+        readiness = _ActorWorktreeReadiness(
+            source_repo_path=source_repo_path,
+            workspace_path=resolved_workspace_path,
+            expected_branch=expected_branch,
+            status="blocked_worktree_inspection_failed",
+            blocker="Unable to inspect topic.repos.main worktrees.",
+            next_action="Repair topic.repos.main Git metadata, then retry actor materialization.",
+        )
+        return readiness, diagnostics
+
+    expected_branch_ref = f"refs/heads/{expected_branch}"
+    matching_path_entry = next((entry for entry in entries if entry.path.resolve(strict=False) == resolved_workspace_path), None)
+    duplicate_branch_entry = next(
+        (
+            entry
+            for entry in entries
+            if entry.branch in {expected_branch, expected_branch_ref} and entry.path.resolve(strict=False) != resolved_workspace_path
+        ),
+        None,
+    )
+    if matching_path_entry is not None and matching_path_entry.branch in {expected_branch, expected_branch_ref}:
+        return (
+            _ActorWorktreeReadiness(
+                source_repo_path=source_repo_path,
+                workspace_path=resolved_workspace_path,
+                expected_branch=expected_branch,
+                observed_branch=_short_branch(matching_path_entry.branch),
+                observed_source_repo_path=source_repo_path,
+                matching_worktree_path=matching_path_entry.path.resolve(strict=False),
+                status="ready",
+                next_action="none",
+            ),
+            diagnostics,
+        )
+
+    if matching_path_entry is not None:
+        readiness = _ActorWorktreeReadiness(
+            source_repo_path=source_repo_path,
+            workspace_path=resolved_workspace_path,
+            expected_branch=expected_branch,
+            observed_branch=_short_branch(matching_path_entry.branch),
+            observed_source_repo_path=source_repo_path,
+            matching_worktree_path=matching_path_entry.path.resolve(strict=False),
+            status="blocked_existing_nonmatching_path",
+            blocker="The actor workspace path exists as a topic-main worktree, but not on the expected actor branch.",
+            next_action="Move, archive, or repair the existing actor workspace path before retrying.",
+        )
+        diagnostics.append(_worktree_blocker_diagnostic(readiness))
+        return readiness, diagnostics
+
+    if resolved_workspace_path.exists():
+        readiness = _ActorWorktreeReadiness(
+            source_repo_path=source_repo_path,
+            workspace_path=resolved_workspace_path,
+            expected_branch=expected_branch,
+            status="blocked_existing_nonmatching_path",
+            blocker="The actor workspace path exists but is not a worktree of topic.repos.main.",
+            next_action="Move or archive the existing path, then rerun actor materialization.",
+        )
+        diagnostics.append(_worktree_blocker_diagnostic(readiness))
+        return readiness, diagnostics
+
+    if duplicate_branch_entry is not None:
+        readiness = _ActorWorktreeReadiness(
+            source_repo_path=source_repo_path,
+            workspace_path=resolved_workspace_path,
+            expected_branch=expected_branch,
+            observed_branch=_short_branch(duplicate_branch_entry.branch),
+            observed_source_repo_path=source_repo_path,
+            duplicate_branch_path=duplicate_branch_entry.path.resolve(strict=False),
+            status="blocked_duplicate_branch_checkout",
+            blocker="The expected actor branch is already checked out in another topic-main worktree.",
+            next_action="Use that existing worktree or free the branch before creating this actor workspace.",
+        )
+        diagnostics.append(_worktree_blocker_diagnostic(readiness))
+        return readiness, diagnostics
+
+    return (
+        _ActorWorktreeReadiness(
+            source_repo_path=source_repo_path,
+            workspace_path=resolved_workspace_path,
+            expected_branch=expected_branch,
+            status="missing",
+            next_action="Create the actor workspace as a topic-main worktree.",
+        ),
+        diagnostics,
+    )
+
+
+def _list_git_worktrees(topic_main_path: Path) -> tuple[list[_GitWorktreeEntry], list[Diagnostic]]:
+    completed = subprocess.run(
+        ["git", "-C", str(topic_main_path), "worktree", "list", "--porcelain"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        return [], [
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Topic Actor Workspace",
+                field="topic.repos.main",
+                message=f"Git worktree inspection failed from topic.repos.main: {completed.stderr.strip() or completed.stdout.strip()}",
+            )
+        ]
+    entries: list[_GitWorktreeEntry] = []
+    current_path: Path | None = None
+    current_branch: str | None = None
+    for line in completed.stdout.splitlines():
+        if line.startswith("worktree "):
+            if current_path is not None:
+                entries.append(_GitWorktreeEntry(path=current_path, branch=current_branch))
+            current_path = Path(line.removeprefix("worktree ")).resolve(strict=False)
+            current_branch = None
+        elif line.startswith("branch "):
+            current_branch = line.removeprefix("branch ")
+    if current_path is not None:
+        entries.append(_GitWorktreeEntry(path=current_path, branch=current_branch))
+    return entries, []
+
+
 def _looks_like_git_repo(path: Path) -> bool:
     return (path / ".git").exists()
+
+
+def _git_branch_exists(topic_main_path: Path, branch: str) -> bool:
+    completed = subprocess.run(
+        ["git", "-C", str(topic_main_path), "show-ref", "--verify", "--quiet", f"refs/heads/{branch}"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return completed.returncode == 0
+
+
+def _short_branch(branch: str | None) -> str | None:
+    if branch is None:
+        return None
+    return branch.removeprefix("refs/heads/")
+
+
+def _worktree_blocker_diagnostic(readiness: _ActorWorktreeReadiness) -> Diagnostic:
+    detail = readiness.blocker or "Topic Actor Workspace worktree readiness is blocked."
+    return Diagnostic(
+        code="ISO061",
+        severity="error",
+        concept="Topic Actor Workspace",
+        field="topic.actors.workspace",
+        message=f"{detail} Expected {readiness.workspace_path} to be a worktree of {readiness.source_repo_path} on {readiness.expected_branch}.",
+    )
 
 
 def _missing_actor_diagnostic(topic_actor_name: str) -> Diagnostic:

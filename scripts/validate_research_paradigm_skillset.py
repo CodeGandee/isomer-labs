@@ -294,11 +294,8 @@ DEEPSCI_LATEST_CONTEXT_FRESHNESS_TERMS = (
     "older rendered records",
     "worker-local files",
 )
-DEEPSCI_CALLBACK_SHARED_TERMS = (
-    "User Skill Callback reminder",
-    "mandatory context checks",
-    "before step 1",
-    "tentative outputs",
+DEEPSCI_CALLBACK_ANTI_PATTERN = "User Skill Callback reminder"
+DEEPSCI_CALLBACK_REQUIRED_TERMS = (
     "empty callback results continue normally",
     "conflicts must be reported",
 )
@@ -563,6 +560,18 @@ def workflow_step_numbers(lines: tuple[str, ...], workflow_line: int) -> list[in
     return numbers
 
 
+def workflow_numbered_steps(lines: tuple[str, ...], workflow_line: int) -> list[tuple[int, int, str]]:
+    steps: list[tuple[int, int, str]] = []
+    for line_number, line in enumerate(lines[workflow_line:], start=workflow_line + 1):
+        match = HEADING_RE.match(line)
+        if match and len(match.group(1)) <= 2:
+            break
+        number_match = re.match(r"^(\d+)\.\s+", line)
+        if number_match:
+            steps.append((line_number, int(number_match.group(1)), line))
+    return steps
+
+
 def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic], generation: str | None) -> None:
     skill_name = skill_dir.name
     if not SKILL_NAME_RE.match(skill_name):
@@ -580,6 +589,7 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
         add(diagnostics, repo_root, skill_md, 3, "RPS007", "frontmatter description is required")
 
     workflow_line = find_h2(lines, "Workflow")
+    workflow_steps: list[tuple[int, int, str]] = []
     if workflow_line is None:
         add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must contain ## Workflow")
     else:
@@ -587,7 +597,8 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
         elif generation != "deepsci" and workflow_line > 40:
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
-        numbers = workflow_step_numbers(lines, workflow_line)
+        workflow_steps = workflow_numbered_steps(lines, workflow_line)
+        numbers = [number for _, number, _ in workflow_steps]
         if len(numbers) < 2 or numbers[0] != 1:
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must contain numbered steps")
 
@@ -598,21 +609,36 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
         add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must include fallback guidance")
 
     if generation == "deepsci":
-        content = "\n".join(lines)
-        required_terms = (
-            *DEEPSCI_CALLBACK_SHARED_TERMS,
-            f"isomer-cli --print-json project skill-callbacks resolve --skill {skill_name} --stage begin",
-            f"isomer-cli --print-json project skill-callbacks resolve --skill {skill_name} --stage end",
+        reminder_line = next(
+            (line_number for line_number, line in enumerate(lines, start=1) if DEEPSCI_CALLBACK_ANTI_PATTERN in line),
+            None,
         )
-        missing = [term for term in required_terms if term not in content]
-        if missing:
+        begin_command = f"isomer-cli --print-json project skill-callbacks resolve --skill {skill_name} --stage begin"
+        end_command = f"isomer-cli --print-json project skill-callbacks resolve --skill {skill_name} --stage end"
+        begin_steps = [
+            (line_number, number, line)
+            for line_number, number, line in workflow_steps
+            if begin_command in line and "Apply begin callbacks" in line
+        ]
+        end_steps = [
+            (line_number, number, line)
+            for line_number, number, line in workflow_steps
+            if end_command in line and "Apply end callbacks" in line
+        ]
+        begin_ok = any(
+            number > 1 and all(term in line for term in DEEPSCI_CALLBACK_REQUIRED_TERMS)
+            for _, number, line in begin_steps
+        )
+        end_ok = any(all(term in line for term in DEEPSCI_CALLBACK_REQUIRED_TERMS) for _, _, line in end_steps)
+        ordered_ok = bool(begin_steps and end_steps and min(number for _, number, _ in begin_steps) < max(number for _, number, _ in end_steps))
+        if reminder_line is not None or not begin_ok or not end_ok or not ordered_ok:
             add(
                 diagnostics,
                 repo_root,
                 skill_md,
-                workflow_line or 1,
+                reminder_line or workflow_line or 1,
                 "RPS017",
-                "production DeepSci SKILL.md must include User Skill Callback begin/end resolution guidance",
+                "production DeepSci SKILL.md must express User Skill Callback begin/end resolution as numbered workflow steps",
             )
 
 

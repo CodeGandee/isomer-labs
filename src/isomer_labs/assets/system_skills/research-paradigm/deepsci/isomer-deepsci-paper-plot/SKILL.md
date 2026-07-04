@@ -37,15 +37,15 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-User Skill Callback reminder: after mandatory context checks and before step 1, resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-paper-plot --stage begin`. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-paper-plot --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-
 1. **Confirm the chart question**. Produce `<CHART_QUESTION>` with comparison, units, grouping, key message, required labels, and output target.
-2. **Choose the bundled style**. Select `<PLOT_STYLE_SELECTION>` from the available style table: paired delta bar, grouped hatch bar, confidence-band line, training curve line, loss with inset, t-SNE scatter, broken-axis scatter, or radar dual series.
-3. **Read the style reference**. Read the matching reference page before editing code, including colors, rcParams, layout, legend, width, tick, and annotation expectations.
-4. **Copy the template script**. Create `<PLOT_TEMPLATE_COPY>` by copying the matching script from `scripts/` into a Research Task figure area in the active Topic Workspace or Agent Workspace. Do not mutate the bundled template.
-5. **Replace data and labels only**. Record `<PLOT_DATA_SUBSTITUTION_RECORD>` for changed data arrays, labels, units, category names, legend text, and output filenames. Avoid unrelated style rewrites.
-6. **Run and inspect the copied script**. Generate `<FIRST_PASS_FIGURE>` through the selected execution route, then inspect the actual render and record `<PLOT_RENDER_INSPECTION>`.
-7. **Route durable figures**. If the figure is paper-facing, appendix-facing, milestone-facing, or final, create `<FIGURE_POLISH_HANDOFF>` for `isomer-deepsci-figure-polish`; otherwise stop with the first-pass figure and substitution record.
+2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-paper-plot --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
+3. **Choose the bundled style**. Select `<PLOT_STYLE_SELECTION>` from the available style table: paired delta bar, grouped hatch bar, confidence-band line, training curve line, loss with inset, t-SNE scatter, broken-axis scatter, or radar dual series.
+4. **Read the style reference**. Read the matching reference page before editing code, including colors, rcParams, layout, legend, width, tick, and annotation expectations.
+5. **Copy the template script**. Create `<PLOT_TEMPLATE_COPY>` by copying the matching script from `scripts/` into a Research Task figure area in the active Topic Workspace or Agent Workspace. Do not mutate the bundled template.
+6. **Replace data and labels only**. Record `<PLOT_DATA_SUBSTITUTION_RECORD>` for changed data arrays, labels, units, category names, legend text, and output filenames. Avoid unrelated style rewrites.
+7. **Run and inspect the copied script**. Generate `<FIRST_PASS_FIGURE>` through the selected execution route, then inspect the actual render and record `<PLOT_RENDER_INSPECTION>`.
+8. **Route durable figures**. If the figure is paper-facing, appendix-facing, milestone-facing, or final, create `<FIGURE_POLISH_HANDOFF>` for `isomer-deepsci-figure-polish`; otherwise stop with the first-pass figure and substitution record.
+9. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-paper-plot --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
 

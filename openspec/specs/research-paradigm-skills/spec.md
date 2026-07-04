@@ -18,7 +18,7 @@ The project SHALL provide a reusable production DeepSci research-paradigm skills
 
 #### Scenario: Production DeepSci skill folders exist
 - **WHEN** the production DeepSci research-paradigm skillset is inspected
-- **THEN** it contains `isomer-deepsci-shared` and folders for scout, baseline, idea, optimize, experiment, analysis, decision, finalize, science, write, review, rebuttal, paper-outline, paper-plot, figure-polish, nature-data, nature-figure, nature-paper2ppt, nature-polishing, and workspace-mgr
+- **THEN** it contains `isomer-deepsci-shared` and folders for scout, baseline, idea, optimize, experiment, analysis, decision, finalize, science, write, review, rebuttal, paper-outline, paper-plot, figure-polish, nature-data, nature-figure, nature-paper2ppt, nature-polishing, workspace-mgr, and pipeline
 
 #### Scenario: Migrated production DeepSci companion skills keep bounded traceability material
 - **WHEN** a refactor-migrated production DeepSci companion skill is inspected
@@ -757,19 +757,20 @@ The research-paradigm validation harness SHALL check that active non-shared v2 s
 - **AND** the latest-context preflight rule does not replace the worker-output-root policy, operation output set, or `commit_after_operation` requirements for plain file writes
 
 ### Requirement: Production DeepSci User Skill Callback Participation
-The production `isomer-deepsci-*` skill family SHALL participate in the User Skill Callback mechanism at the beginning and end of each top-level workflow while preserving DeepSci methodology guardrails.
+The production `isomer-deepsci-*` skill family SHALL participate in the User Skill Callback mechanism through explicit numbered workflow steps at the beginning and end of each top-level workflow while preserving DeepSci methodology guardrails.
 
-#### Scenario: Top-level workflow mentions callback stages
+#### Scenario: Top-level workflow includes callback steps
 - **WHEN** a production `isomer-deepsci-*` `SKILL.md` is inspected
-- **THEN** its top-level workflow guidance includes concise instructions to resolve `begin` and `end` User Skill Callbacks for that skill name
+- **THEN** its `## Workflow` numbered step list includes explicit `begin` and `end` User Skill Callback resolution steps for that skill name
+- **AND** callback participation is not represented only as unnumbered reminder prose outside the step list
 
 #### Scenario: Begin callback runs before primary workflow action
 - **WHEN** an agent invokes a production `isomer-deepsci-*` top-level workflow
-- **THEN** the skill instructs the agent to resolve `begin` callbacks through `isomer-cli project skill-callbacks resolve --skill <skill-name> --stage begin` after mandatory context checks and before the first workflow-specific research action
+- **THEN** the skill instructs the agent in a numbered workflow step to resolve `begin` callbacks through `isomer-cli project skill-callbacks resolve --skill <skill-name> --stage begin` after mandatory context checks and before the first workflow-specific research action
 
 #### Scenario: End callback runs before final completion
 - **WHEN** an agent reaches the end of a production `isomer-deepsci-*` top-level workflow
-- **THEN** the skill instructs the agent to resolve `end` callbacks through `isomer-cli project skill-callbacks resolve --skill <skill-name> --stage end` after tentative outputs exist and before final response, handoff, or treating the workflow as complete
+- **THEN** the skill instructs the agent in a numbered workflow step to resolve `end` callbacks through `isomer-cli project skill-callbacks resolve --skill <skill-name> --stage end` after tentative outputs exist and before final response, handoff, or treating the workflow as complete
 
 #### Scenario: Empty callback resolution does not block workflow
 - **WHEN** `isomer-cli project skill-callbacks resolve` returns no active callbacks for a production DeepSci skill and stage
@@ -779,7 +780,7 @@ The production `isomer-deepsci-*` skill family SHALL participate in the User Ski
 - **WHEN** resolved callback instructions conflict with `isomer-deepsci-shared`, the skill's own guardrails, required placeholder discipline, evidence discipline, validation gates, or the current user request
 - **THEN** the skill preserves the owning DeepSci requirements and reports any callback conflict that affects the workflow
 
-#### Scenario: DeepSci validation checks callback reminder
+#### Scenario: DeepSci validation checks callback workflow steps
 - **WHEN** the repository DeepSci skill validation harness inspects production `isomer-deepsci-*` skills
-- **THEN** it confirms each participating skill includes the required User Skill Callback resolution guidance for the `begin` and `end` stages
-
+- **THEN** it confirms each participating skill includes the required User Skill Callback resolution guidance for the `begin` and `end` stages as numbered workflow steps
+- **AND** it reports callback guidance that appears only as a free-floating reminder under `## Workflow`

@@ -26,7 +26,7 @@ When this subcommand is selected, execute the following steps in order.
    - Create the parent directory when writing the target spec.
 3. **Translate or validate operations**:
    - Preserve every source-intent runnable target as either a verification target or a named blocker; do not narrow a requested build, inference, dataset, or benchmark target into an unrelated smoke test.
-   - Convert source intent into concrete topic-main requirements, canonical external repo requirements, projection access intent, dependency plan, enclosure strategy, operation classification evidence, bounded real-path resource check plan when needed, Pixi install commands, verification commands, expected results, and blockers.
+   - Convert source intent into concrete topic-main requirements, canonical external repo requirements, Git clone-depth decisions, projection access intent, dependency plan, enclosure strategy, operation classification evidence, bounded real-path resource check plan when needed, Pixi install commands, verification commands, expected results, and blockers.
    - Ask `isomer-misc-bounded-run-tips` to classify each setup or verification item whose resource cost affects readiness planning.
    - Record `classification_source`, `classification_result`, `classification_reason`, `resource_dimensions`, and whether bounded guidance is required.
    - For `heavy` or `unknown-risk`, apply bounded-run tips guidance. If no recipe matches, write explicit generic best-effort bounded guidance that still exercises the source-intent path.
@@ -114,6 +114,10 @@ If the user's task does not map cleanly to these steps, use your native planning
 - List repo names, semantic `topic.repos.*` labels, expected resolved paths, source hints, and inspection notes.
 - Use `repos/extern/<repo-label-path>` for helper-created non-main topic repos unless a safe explicit binding exists.
 - Treat existing canonical external repos as read-only evidence unless this target spec explicitly authorizes mutation.
+- For each Git source, decide whether the work needs full Git history or only a source snapshot.
+- Default to `clone_mode: shallow` and `clone_depth: 1` unless the prompt, Research Topic, source intent, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies full history.
+- Use `clone_mode: full-history` only when a shallow snapshot is insufficient, and record the evidence.
+- Record clone mode, clone depth, branch or tag hints, and the reason for the decision so `ensure-topic-repos` can clone without guessing.
 
 ### Inferred Source Warnings
 

@@ -22,7 +22,7 @@ When this subcommand is selected, execute the following steps in order.
    - Record semantic label, resolved path, storage profile, source, source detail, diagnostics, and blockers.
 3. **Read the source intent**. If it is missing or unreadable, stop and report a blocker asking the user to create or repair the resolved source intent file.
 4. **Extract setup intent**:
-   - Include topic-level source intent, runnable target, desired command or commands, expected outputs, success criteria, repo hints, dependency hints, native tool requirements, and any out-of-scope requests.
+   - Include topic-level source intent, runnable target, desired command or commands, expected outputs, success criteria, repo hints, any full-history Git requirements or shallow-snapshot assumptions, dependency hints, native tool requirements, and any out-of-scope requests.
    - Interpret the runnable target as the commands one agent or operator must be able to run from the selected Topic Workspace, not as proof that a multi-agent team can launch.
 5. **Defer repo and dependency choices**. Do not choose repos, dependency sources, Pixi install commands, or verification commands in this subcommand.
 6. **Report the source gate summary** using the parent skill's output fields.
@@ -40,4 +40,4 @@ Report `blocked` when:
 
 ## Output Notes
 
-The extracted source intent summary should be carried to `ensure-topic-repos` and `derive-env-gate`. Preserve uncertainty instead of pretending a vague source intent is precise. Include `topic_env_source_label`, `topic_env_source_path`, storage profile, source, source detail, diagnostics, and blockers in the output.
+The extracted source intent summary should be carried to `ensure-topic-repos` and `derive-env-gate`. Preserve uncertainty instead of pretending a vague source intent is precise. Include repo history needs when stated or implied, `topic_env_source_label`, `topic_env_source_path`, storage profile, source, source detail, diagnostics, and blockers in the output.

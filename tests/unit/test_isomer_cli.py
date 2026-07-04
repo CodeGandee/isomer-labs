@@ -269,6 +269,17 @@ class IsomerCliTests(unittest.TestCase):
     def default_topic_workspace(self, root: Path, topic_id: str = "default") -> Path:
         return root / "isomer-content" / "topic-ws" / topic_id
 
+    def prepare_topic_main_repo(self, root: Path, topic_id: str = "default") -> Path:
+        topic_main = self.default_topic_workspace(root, topic_id) / "repos" / "topic-main"
+        topic_main.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["git", "init"], cwd=topic_main, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=topic_main, check=True)
+        subprocess.run(["git", "config", "user.name", "Isomer Test"], cwd=topic_main, check=True)
+        write(topic_main / "README.md", "# Topic Main\n")
+        subprocess.run(["git", "add", "README.md"], cwd=topic_main, check=True)
+        subprocess.run(["git", "commit", "-m", "init topic main"], cwd=topic_main, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return topic_main
+
     def patch_pixi(
         self,
         *,
@@ -2783,6 +2794,7 @@ class IsomerCliTests(unittest.TestCase):
         root = self.make_root()
         self.init_project(root)
         topic_workspace = self.default_topic_workspace(root)
+        topic_main = self.prepare_topic_main_repo(root)
 
         status, output = self.run_cli(["project", "runtime", "init", "--topic", "default", "--json"], cwd=root)
         data = json.loads(output)
@@ -2812,10 +2824,19 @@ class IsomerCliTests(unittest.TestCase):
         actor = data["topic_actor"]
         self.assertEqual("operator", actor["topic_actor_name"])
         self.assertEqual("per-topic-actor/operator/main", actor["branch"])
-        self.assertEqual("directory-placeholder", data["materialization"]["worktree_mode"])
+        self.assertEqual("git-worktree", data["materialization"]["worktree_mode"])
+        self.assertEqual("ready", data["materialization"]["worktree_status"]["status"])
+        self.assertEqual(str(topic_main.resolve()), data["materialization"]["worktree_status"]["source_repo_path"])
         self.assertTrue((topic_workspace / "actors" / "operator").is_dir())
+        self.assertTrue((topic_workspace / "actors" / "operator" / ".git").is_file())
         self.assertTrue((topic_workspace / "actors" / "operator" / "tmp").is_dir())
         self.assertIn("tmp/\n", (topic_workspace / "actors" / "operator" / ".gitignore").read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(["project", "topic-actors", "materialize", "operator", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("ready", data["materialization"]["worktree_status"]["status"])
+        self.assertNotIn(str((topic_workspace / "actors" / "operator").resolve()), data["materialization"]["created_paths"])
 
         status, output = self.run_cli(
             ["project", "paths", "get", "topic.actors.workspace", "--topic", "default", "--topic-actor", "operator", "--json"],
@@ -2833,6 +2854,8 @@ class IsomerCliTests(unittest.TestCase):
         labels = {item["semantic_label"] for item in data["actor_paths"]}
         self.assertIn("topic.actors.workspace", labels)
         self.assertIn("topic.actors.private_artifacts", labels)
+        self.assertEqual("ready", data["worktree_status_by_actor"]["operator"]["status"])
+        self.assertEqual("per-topic-actor/operator/main", data["worktree_status_by_actor"]["operator"]["expected_branch"])
 
         with sqlite3.connect(topic_workspace / "state.sqlite") as connection:
             actor_records = connection.execute(
@@ -2846,10 +2869,80 @@ class IsomerCliTests(unittest.TestCase):
         self.assertGreaterEqual(actor_records, 1)
         self.assertIsNotNone(actor_plan)
 
+    def test_topic_actor_materialization_blocks_existing_nonmatching_path(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        self.prepare_topic_main_repo(root)
+        actor_workspace = topic_workspace / "actors" / "operator"
+        write(actor_workspace / "local.txt", "keep me\n")
+
+        status, output = self.run_cli(["project", "topic-actors", "register", "operator", "--topic", "default", "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(["project", "topic-actors", "materialize", "operator", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertFalse(data["ok"])
+        self.assertIsNone(data["materialization"])
+        self.assertEqual("keep me\n", (actor_workspace / "local.txt").read_text(encoding="utf-8"))
+        self.assertFalse((actor_workspace / ".git").exists())
+        self.assertTrue(any("not a worktree of topic.repos.main" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+
+        status, output = self.run_cli(["project", "topic-actors", "diagnose", "--topic", "default", "--topic-actor", "operator", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("blocked_existing_nonmatching_path", data["worktree_status_by_actor"]["operator"]["status"])
+
+    def test_topic_actor_materialization_blocks_duplicate_branch_checkout(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        topic_main = self.prepare_topic_main_repo(root)
+        duplicate_path = topic_workspace / "actors" / "operator-other"
+        subprocess.run(
+            ["git", "-C", str(topic_main), "worktree", "add", "-b", "per-topic-actor/operator/main", str(duplicate_path)],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        status, output = self.run_cli(["project", "topic-actors", "register", "operator", "--topic", "default", "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(["project", "topic-actors", "materialize", "operator", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIsNone(data["materialization"])
+        self.assertTrue(any("already checked out in another topic-main worktree" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+
+        status, output = self.run_cli(["project", "topic-actors", "diagnose", "--topic", "default", "--topic-actor", "operator", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        worktree_status = data["worktree_status_by_actor"]["operator"]
+        self.assertEqual("blocked_duplicate_branch_checkout", worktree_status["status"])
+        self.assertEqual(str(duplicate_path.resolve()), worktree_status["duplicate_branch_path"])
+
+    def test_topic_actor_materialization_requires_git_topic_main(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+
+        status, output = self.run_cli(["project", "topic-actors", "register", "operator", "--topic", "default", "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(["project", "topic-actors", "materialize", "operator", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIsNone(data["materialization"])
+        self.assertFalse((topic_workspace / "actors" / "operator").exists())
+        self.assertTrue(any("topic.repos.main is missing or is not a Git repository" in diagnostic["message"] for diagnostic in data["diagnostics"]), data["diagnostics"])
+
     def test_topic_actor_roster_supports_manual_and_houmao_workers_without_team_membership(self) -> None:
         root = self.make_root()
         self.init_project(root)
         topic_workspace = self.default_topic_workspace(root)
+        self.prepare_topic_main_repo(root)
 
         status, output = self.run_cli(["project", "runtime", "init", "--topic", "default", "--json"], cwd=root)
         self.assertEqual(0, status, output)

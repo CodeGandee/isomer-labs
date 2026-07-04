@@ -90,10 +90,18 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         v2: bool,
     ) -> None:
         load_step = f"1. **Load context**. Read `{reference}` first." if reference else "1. **Load context**. Read `isomer-deepsci-shared` first."
+        begin_step = (
+            f"2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill {name} --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. "
+            "Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow."
+        )
         output_step = (
-            "2. **Produce semantics**. Produce [[rsch-object:research-frame]] with enough content for the next method step."
+            "3. **Produce semantics**. Produce [[rsch-object:research-frame]] with enough content for the next method step."
             if v2
-            else "2. **Record output**. Use Research Topic, Artifacts, and Decision Records."
+            else "3. **Record output**. Use Research Topic, Artifacts, and Decision Records."
+        )
+        end_step = (
+            f"4. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill {name} --stage end`. "
+            "Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow."
         )
         shared_worker_policy = (
             (
@@ -104,11 +112,6 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             else ""
         )
         routing_line = f"- `{reference}` for local terminology." if reference else "- Read `isomer-deepsci-shared` for placeholder semantics."
-        callback_reminder = (
-            f"User Skill Callback reminder: after mandatory context checks and before step 1, resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill {name} --stage begin`. "
-            f"After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill {name} --stage end`. "
-            "Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow."
-        )
         write(
             target / name / "SKILL.md",
             f"""
@@ -129,11 +132,11 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             When this skill is invoked, execute the following steps in order.
 
-            {callback_reminder}
-
             {load_step}
+            {begin_step}
             {output_step}
             {workflow_extra}
+            {end_step}
 
             If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
 
@@ -178,12 +181,25 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_skillset(target, root)
         self.assertEqual([], messages(diagnostics))
 
-    def test_deepsci_callback_reminder_is_required(self) -> None:
+    def test_deepsci_callback_steps_are_required(self) -> None:
         root, target = self.make_valid_skillset()
         skill_md = target / "deepsci" / "isomer-deepsci-scout" / "SKILL.md"
         text = skill_md.read_text(encoding="utf-8")
-        text = "\n".join(line for line in text.splitlines() if "User Skill Callback reminder" not in line)
+        text = "\n".join(line for line in text.splitlines() if "Apply begin callbacks" not in line)
         skill_md.write_text(text + "\n", encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS017", codes(diagnostics), messages(diagnostics))
+
+    def test_deepsci_callback_reminder_antipattern_is_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_md = target / "deepsci" / "isomer-deepsci-scout" / "SKILL.md"
+        skill_md.write_text(
+            skill_md.read_text(encoding="utf-8")
+            + "\nUser Skill Callback reminder: resolve begin and end callbacks from outside the numbered workflow.\n",
+            encoding="utf-8",
+        )
 
         diagnostics = validator.validate_skillset(target, root)
 

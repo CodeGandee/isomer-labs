@@ -25,6 +25,11 @@ The system SHALL provide an operator workflow that prepares a Research Topic for
 - **WHEN** human-orchestrated preparation runs in a Topic Workspace that already has Topic Agent Team Profile or Agent Team Instance material
 - **THEN** the workflow preserves and reports that material instead of treating it as mutually exclusive with Topic Actors
 
+#### Scenario: Manual actors use topic-main worktree workspaces
+- **WHEN** human-orchestrated preparation creates or validates a Topic Actor Workspace
+- **THEN** the workspace is a worktree of `topic.repos.main` on a Topic Actor branch even though the actor is controlled manually rather than launched by Isomer
+- **AND** the workflow treats controller provenance, not Git workspace topology, as the distinction between a Topic Actor and a formal Agent Workspace
+
 ### Requirement: Manual Workflow Consumes Topic Manager Actor Topology
 The human-orchestrated research workflow SHALL consume Topic Actor topology prepared by the Topic Manager rather than owning Topic Actor CRUD.
 
@@ -37,6 +42,10 @@ The human-orchestrated research workflow SHALL consume Topic Actor topology prep
 - **WHEN** multiple Topic Actors are prepared for one Research Topic
 - **THEN** the manual workflow receives each actor's resolved Topic Actor Workspace cwd from `isomer-op-topic-mgr`
 - **AND** `topic.repos.main` remains the integration surface and Git anchor rather than the required cwd for every actor
+
+#### Scenario: Actor workspace blockers stop manual bootstrap
+- **WHEN** `isomer-op-topic-mgr` reports that a selected Topic Actor Workspace path is missing valid worktree evidence or collides with a nonmatching path
+- **THEN** the manual workflow reports the blocker and does not write onboarding material that claims the actor cwd is ready
 
 ### Requirement: Actor Readiness Signals
 The system SHALL define v2-independent readiness signals for human-orchestrated Topic Actor research.

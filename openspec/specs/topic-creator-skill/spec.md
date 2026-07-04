@@ -115,6 +115,70 @@ The Topic Creator skill SHALL require concrete user-given Research Topic substan
 - **THEN** the skill treats the topic as missing
 - **AND** it blocks before creating or overwriting topic workspace or intent material
 
+### Requirement: Topic Creator Provides a Canonical Topic Overview Template
+The Topic Creator skill SHALL include a template file that defines the canonical Markdown structure for `topic.intent.overview`.
+
+#### Scenario: Template file exists in skill bundle
+- **WHEN** the `isomer-op-topic-creator` skill bundle is inspected
+- **THEN** it contains `skillset/operator/isomer-op-topic-creator/templates/topic-overview.md`
+- **AND** the template defines the sections used by `create-research-intent` and `clarify-research-intent`
+
+#### Scenario: Packaged assets include the template
+- **WHEN** packaged system skills are materialized
+- **THEN** `templates/topic-overview.md` is copied alongside the rest of the `isomer-op-topic-creator` skill
+
+### Requirement: Skill Overview Template Tracks Source Template
+The Topic Creator skill SHALL keep its bundled `templates/topic-overview.md` identical to `tests/topics/topic-template.md` so that `topic.intent.overview` always follows the current project convention.
+
+#### Scenario: Template matches the source file
+- **WHEN** the skill bundle is inspected or `create-research-intent` loads the canonical template
+- **THEN** `skillset/operator/isomer-op-topic-creator/templates/topic-overview.md` contains the same sections and guidance as `tests/topics/topic-template.md`
+- **AND** those sections are `Research Topic`, `Motivation`, `Topic Breakdown` with `Do's` and `Don'ts`, `Expected Outcome`, and `Related Links`
+
+### Requirement: Topic Creator Exposes a Clarify Research Intent Subcommand
+The Topic Creator skill SHALL expose a user-facing interactive subcommand named `clarify-research-intent` that refines an existing `topic.intent.overview` by asking focused questions and updating the file directly.
+
+#### Scenario: Clarify research intent is listed as a misc subcommand
+- **WHEN** `isomer-op-topic-creator help` is printed
+- **THEN** it lists `clarify-research-intent` under Misc Subcommands
+- **AND** it describes the subcommand as interactive and scoped to refining the existing topic overview
+
+#### Scenario: Clarify research intent loads existing intent
+- **WHEN** the user invokes `clarify-research-intent`
+- **THEN** it resolves `topic.intent.overview`
+- **AND** it reports a blocker if the overview is missing instead of guessing content
+
+#### Scenario: Clarify research intent scans template coverage
+- **WHEN** `clarify-research-intent` runs with an existing overview
+- **THEN** it scores each template section as Clear, Partial, or Missing
+- **AND** it builds a ranked queue of clarification questions from sections that materially affect topic scope, objectives, assumptions, open questions, or later setup
+- **AND** it asks the user to resolve open questions rather than inferring missing substance
+
+#### Scenario: Clarify research intent asks one question at a time
+- **WHEN** `clarify-research-intent` has a non-empty question queue
+- **THEN** it asks exactly one focused question per turn
+- **AND** it presents an option table when there are two to five meaningful alternatives
+- **AND** every question includes Motivation, Example, Proposed, and Implication
+- **AND** it waits for user input before mutating the overview
+
+#### Scenario: Clarify research intent updates the overview directly
+- **WHEN** the user answers a clarification question
+- **THEN** the answer is written to the relevant section of `topic.intent.overview`
+- **AND** obsolete or contradicted text is replaced rather than duplicated
+- **AND** resolved questions are removed from `## Open Questions`
+- **AND** unresolved lower-priority questions remain in `## Open Questions` with enough context for later runs
+
+#### Scenario: Clarify research intent is not automatic
+- **WHEN** `fast-forward` or `run-to` runs
+- **THEN** neither workflow invokes `clarify-research-intent`
+- **AND** if the overview is too vague for automatic stages, the workflow stops and recommends `clarify-research-intent`
+
+#### Scenario: Clarify research intent reference page follows clarify-topic style
+- **WHEN** `references/clarify-research-intent.md` is inspected
+- **THEN** it contains `## Workflow`, `## Coverage and Clarity Scan`, `## Question Format`, `## Sequential Clarification Loop`, `## Direct Topic Overview Integration`, `## Prerequisite Artifacts`, and `## Guardrails` sections
+- **AND** its structure matches `isomer-op-topic-team-specialize/references/clarify-topic.md`
+- **AND** its coverage categories reflect the Topic Creator template sections rather than team-specialization concerns
+
 ### Requirement: Topic Creator Separates Topic Input from Research Intent Creation
 The Topic Creator skill SHALL separate lower-level topic input resolution from the user-facing `create-research-intent` subcommand, and `create-research-intent` SHALL only own the topic overview.
 
@@ -127,6 +191,8 @@ The Topic Creator skill SHALL separate lower-level topic input resolution from t
 - **WHEN** `create-research-intent` runs with concrete topic source material and a registered or candidate Topic Workspace
 - **THEN** it creates or updates `topic.intent.overview`
 - **AND** the default-layout resolved file is `<topic-workspace>/intent/src/topic-overview.md`
+- **AND** it populates the file from `templates/topic-overview.md`
+- **AND** it strips the template's `> Example:` blocks from the written file
 - **AND** it does not write `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.topic_setup_target_spec`, or `topic.env.actor_env_gates`
 
 #### Scenario: Create research intent requires a resolvable Topic Workspace
@@ -136,7 +202,8 @@ The Topic Creator skill SHALL separate lower-level topic input resolution from t
 
 #### Scenario: Create research intent output is user-editable
 - **WHEN** `create-research-intent` writes `topic.intent.overview`
-- **THEN** the file includes the Research Topic, goal or objectives, scope, success metrics when known, required datasets when known, explicitly mentioned repositories, explicitly mentioned libraries or tools, assumptions, open questions, and source material
+- **THEN** the file includes the Research Topic, Motivation, Topic Breakdown with `Do's` and `Don'ts`, Expected Outcome, and Related Links
+- **AND** it strips any template `>` example blocks from the written file
 - **AND** it records uncertainty as assumptions or open questions instead of inventing missing details
 
 ### Requirement: Topic Creator Defines Topic Environment Before Setup
@@ -164,7 +231,7 @@ The Topic Creator skill SHALL use `define-topic-env` to create or refine topic e
 - **AND** it reports blockers instead of inventing a missing topic env gate or claiming readiness without derived gate evidence
 
 ### Requirement: Topic Creator Defines Actors Before Actor Setup
-The Topic Creator skill SHALL use `define-actors` to create actor intent before `setup-actors` materializes actor workspaces or verifies actor env gates.
+The Topic Creator skill SHALL use `define-actors` to create actor intent before `setup-actors` materializes actor workspaces or verifies actor env gates, and SHALL require actor worktree readiness evidence before claiming actor readiness.
 
 #### Scenario: Define actors writes actor definitions
 - **WHEN** `define-actors` runs with requested actor information
@@ -182,6 +249,11 @@ The Topic Creator skill SHALL use `define-actors` to create actor intent before 
 - **THEN** it delegates actor registration and workspace materialization to `isomer-op-topic-mgr`, creates or validates derived actor env gates at `topic.env.actor_env_gates`, and verifies the gates from each actor's resolved `topic.actors.workspace`
 - **AND** the default-layout derived gate file is `<topic-workspace>/intent/derived/actor-env-gates.md`
 - **AND** it reports blockers instead of claiming actor readiness when workspace material, derived gates, or gate verification evidence is missing
+
+#### Scenario: Setup actors requires topic-main worktree evidence
+- **WHEN** `setup-actors` evaluates whether a selected Topic Actor is ready
+- **THEN** it treats the actor workspace as ready only when delegated Topic Manager evidence shows the resolved `topic.actors.workspace` is a worktree of the resolved `topic.repos.main` on the expected actor branch
+- **AND** it reports the delegated blocker instead of continuing to actor env gate verification when that worktree evidence is missing or invalid
 
 ### Requirement: Topic Creator Fast-Forward Uses Research Intent Step
 The Topic Creator `fast-forward` workflow SHALL run topic input resolution, `create-research-intent`, `define-topic-env`, `setup-topic-env`, `define-actors`, and `setup-actors` in staged order before bootstrap or handoff stages depend on their outputs.
@@ -203,12 +275,17 @@ The Topic Creator `fast-forward` workflow SHALL run topic input resolution, `cre
 - **AND** it routes repair through `create-research-intent` after user confirmation rather than silently overwriting the file
 
 ### Requirement: Topic Creator Help Presents Research Intent Flow
-The Topic Creator skill SHALL present `create-research-intent`, `define-topic-env`, and `define-actors` as separate user-facing subcommands, and SHALL not present `define-topic` as the owner of research intent material.
+The Topic Creator skill SHALL present `create-research-intent`, `define-topic-env`, `define-actors`, and `clarify-research-intent` as separate user-facing subcommands, and SHALL not present `define-topic` as the owner of research intent material.
 
 #### Scenario: Help lists create research intent
 - **WHEN** Topic Creator help is printed
-- **THEN** it lists `create-research-intent` with wording that says it creates or updates `topic.intent.overview`
+- **THEN** it lists `create-research-intent` with wording that says it creates or updates `topic.intent.overview` from the canonical template
 - **AND** it explains that `topic.intent.overview` resolves by default to `<topic-workspace>/intent/src/topic-overview.md`
+- **AND** it mentions the new template sections `Research Topic`, `Motivation`, `Topic Breakdown`, `Expected Outcome`, and `Related Links`
+
+#### Scenario: Help lists clarify research intent
+- **WHEN** Topic Creator help is printed
+- **THEN** it lists `clarify-research-intent` with wording that says it interactively refines an existing `topic.intent.overview`
 
 #### Scenario: Help lists env and actor definition steps
 - **WHEN** Topic Creator help is printed
@@ -222,5 +299,7 @@ The Topic Creator skill SHALL present `create-research-intent`, `define-topic-en
 
 #### Scenario: Validator rejects stale command surface
 - **WHEN** operator skill validation scans `isomer-op-topic-creator`
-- **THEN** it requires `create-research-intent`, `define-topic-env`, `define-actors`, the topic-input gate wording, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, and `topic.env.actor_env_gates`
+- **THEN** it requires `create-research-intent`, `clarify-research-intent`, `define-topic-env`, `define-actors`, the topic-input gate wording, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, and `topic.env.actor_env_gates`
+- **AND** `create-research-intent.md` required terms cover `Research Topic`, `Motivation`, `Topic Breakdown`, `Do's`, `Don'ts`, `Expected Outcome`, `Related Links`, and stripping of `>` example blocks
+- **AND** `clarify-research-intent.md` required terms cover the new coverage categories: `Research Topic`, `Motivation`, `Topic Breakdown`, `Do's`, `Don'ts`, `Expected Outcome`, and `Related Links`
 - **AND** it reports stale command guidance that treats `define-topic` as the research intent writer

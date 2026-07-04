@@ -31,6 +31,8 @@ When this subcommand is selected, execute the following steps in order.
 4. **Prepare writable projections**:
    - Place writable projections under `topic.repos.main.projections.writable`.
    - Use a copy, dedicated clone, dedicated worktree, or another isolated writable materialization unless the user explicitly authorizes writes to the canonical external repository.
+   - When using a dedicated clone from a Git source, default to a shallow clone with `--depth=1` unless the target spec or projection intent records a full-history need.
+   - Record clone mode, clone depth, and the evidence for any full-history dedicated clone.
 5. **Validate projection targets**:
    - For symlink projections, resolve the canonical `topic.repos.*` source path from `ensure-topic-repos` to an absolute real path with `realpath -e`, then confirm `readlink -f <projection-path>` equals that source real path.
    - Do not create relative symlink targets for these projections. Relative targets are easy to miscalculate from the nested `isomer-managed/topic-owned/{readonly,writable}/extern/` roots and can silently point outside `repos/`.
@@ -51,5 +53,6 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Do not report a symlink projection as ready until `readlink -f <projection-path>` equals `realpath -e <canonical-source-path>`.
 - Do not store absolute symlink targets as durable metadata. Projection metadata should keep semantic labels and project- or topic-relative paths; absolute symlink targets are local materialization details that may need repair after relocation.
 - Do not mutate an existing canonical external repository unless the target spec explicitly authorizes source mutation.
+- Do not create a full-history dedicated clone for a writable projection unless the target spec, prompt, or projection intent explains why a shallow snapshot is insufficient.
 - Do not hide projection blockers behind generic readiness language.
 - Do not create Agent Workspace-local substitute projections; missing or stale projection evidence must be repaired through topic env setup.

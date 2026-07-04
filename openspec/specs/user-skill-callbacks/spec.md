@@ -104,7 +104,7 @@ The system SHALL expose a generic `isomer-cli project skill-callbacks` command g
 - **THEN** the command validates reachable callback registries, source paths, target system skill names, stages, duplicate active ids, status values, priority values, and redaction-sensitive fields
 
 ### Requirement: Callback Resolution and Merge Order
-The system SHALL resolve User Skill Callbacks deterministically from the active Project and topic context before a participating skill applies them.
+The system SHALL resolve User Skill Callbacks deterministically from the active Project and topic context before a participating skill applies them through explicit owning-skill workflow steps.
 
 #### Scenario: Exact skill and stage match
 - **WHEN** callbacks are resolved for a participating system skill
@@ -124,11 +124,16 @@ The system SHALL resolve User Skill Callbacks deterministically from the active 
 
 #### Scenario: Begin stage applies before workflow work
 - **WHEN** a participating skill resolves `begin` callbacks
-- **THEN** the skill applies the resolved instructions after mandatory skill identity and context checks and before the first top-level workflow action
+- **THEN** the skill applies the resolved instructions from an explicit numbered workflow step after mandatory skill identity and context checks and before the first skill-specific workflow action
 
 #### Scenario: End stage applies before completion
 - **WHEN** a participating skill resolves `end` callbacks
-- **THEN** the skill applies the resolved instructions after producing tentative workflow outputs and before final response, handoff, or marking the top-level workflow complete
+- **THEN** the skill applies the resolved instructions from an explicit numbered workflow step after producing tentative workflow outputs and before final response, handoff, or marking the top-level workflow complete
+
+#### Scenario: Callback resolution is not implicit hook injection
+- **WHEN** a participating skill documents callback participation
+- **THEN** callback resolution is described as explicit workflow work owned by that skill
+- **AND** the system does not rely on ambient reminder prose or implicit hook injection to make agents run callbacks
 
 ### Requirement: Callback Authority and Safety
 The system SHALL preserve system, developer, owning-skill, current user request, and Isomer domain constraints when applying User Skill Callbacks.
@@ -148,4 +153,3 @@ The system SHALL preserve system, developer, owning-skill, current user request,
 #### Scenario: Callback cannot bypass gates
 - **WHEN** callback instructions ask the agent to bypass required Gates, validation steps, recording obligations, or permission checks
 - **THEN** the participating skill refuses the bypass and continues through the owning workflow's required controls
-
