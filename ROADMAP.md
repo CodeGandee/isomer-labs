@@ -18,7 +18,7 @@ The use cases in `.imsight-arts/project-explore/use-cases/` are roadmap acceptan
 - **UC-03 Plan and Execute a Paper Revision** verifies multi-task planning, claim-risk mapping, targeted analysis Runs, response drafting, final approval Gates, and reviewer audit records.
 - **UC-04 Generate a Task-Specific GUI Component** verifies GUI Backend, View Manifest, GUI Component Registry, AG-UI Event Envelope, and gated executable component behavior.
 - **UC-05 Mix Manual and Automatic Runs** verifies automatic baseline work, single-stage manual repair, automatic candidate Runs, multi-step manual handoffs, Completion Watcher Contracts, Signal Observations, and durable closeout.
-- **UC-06 Capstone Roadmap Verification with Flash Attention 4 Runtime Prediction on DGX Spark GB10** is the final complete acceptance test. It stays at the end because it combines Project discovery, Pixi readiness, `deepsci-org` template validation, Topic Agent Team Profile specialization, Workspace Runtime, Houmao-backed Agent Team Instance launch, parallel topics, task-level fanout, Operator Agent handoffs, Service Requests, Gates, Artifacts, Evidence Items, Research Claims, CUDA/PTX/SASS-backed white-box execution-model records, component-time prediction views, model report packaging, GUI paths, mixed control, and a pass/fail roadmap verification verdict.
+- **UC-06 Capstone Roadmap Verification with Flash Attention 4 Runtime Prediction on the Host GPU** is the final complete acceptance test. It stays at the end because it combines Project discovery, Pixi readiness, host GPU discovery during topic materialization, `deepsci-org` template validation, Topic Agent Team Profile specialization, Workspace Runtime, Houmao-backed Agent Team Instance launch, parallel topics, task-level fanout, Operator Agent handoffs, Service Requests, Gates, Artifacts, Evidence Items, Research Claims, CUDA/PTX/SASS-backed white-box execution-model records, component-time prediction views, model report packaging, GUI paths, mixed control, and a pass/fail roadmap verification verdict.
 
 ## Milestone 1: Platform Skeleton and Project Discovery
 
@@ -218,7 +218,7 @@ Goal: run Use Case 6 as the complete final test for the roadmap after the smalle
 
 Major steps:
 
-- [ ] Build the UC-06 fixture Project with primary Research Topic `flash-attention-gb10-runtime-prediction`, at least one companion topic, explicit Pixi environment bindings, `deepsci-org` Domain Agent Team Template registration, and topic-specific Topic Agent Team Profiles.
+- [ ] Build the UC-06 fixture Project with primary Research Topic `flash-attention-host-gpu-runtime-prediction`, at least one companion topic, explicit Pixi environment bindings, `deepsci-org` Domain Agent Team Template registration, and topic-specific Topic Agent Team Profiles.
 - [ ] Verify Project discovery, doctor diagnostics, template validation, profile validation, Workspace Runtime creation, Houmao-backed launch, handoff normalization, topic-level parallelism, and task-level fanout in one Project.
 - [ ] Record CUDA source, PTX, SASS, compiler flags, target architecture, calibration splits, held-out validation inputs, profiler traces, correctness outputs, component-time model Artifacts, uncertainty records, Evidence Items, Findings, Research Claims, Gates, Decision Records, View Manifests, GUI Component records, and Provenance Records.
 - [ ] Produce a white-box Flash Attention 4 runtime-prediction model that returns `predicted_runtime_ms`, uncertainty or validity scope, and a component-time explanation without measuring the exact prediction-query input.
@@ -227,7 +227,7 @@ Major steps:
 Exit criteria:
 
 - UC-06 proves the whole system works together: `deepsci-org`, multiple topics, Houmao, manual and automatic control, service requests, Gates, Artifacts, Evidence Items, Research Claims, View Manifests, GUI, project-specific components, and a final report package.
-- The capstone can fail honestly when white-box traceability, GB10 evidence, topic isolation, model validity, GUI state, or Gate policy evidence is missing.
+- The capstone can fail honestly when white-box traceability, host GPU discovery evidence, topic isolation, model validity, GUI state, or Gate policy evidence is missing.
 
 ## Cross-Cutting Work
 

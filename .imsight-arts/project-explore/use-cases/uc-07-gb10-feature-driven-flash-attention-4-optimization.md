@@ -233,5 +233,5 @@ UC-07 passes only when all of the following are true:
 
 - `tests/topics/flash-attention-gb10-peak-performance-optimization.md` defines the Research Topic and its do's and don'ts.
 - `teams/deepsci-mini/README.md` and `teams/deepsci-mini/source/team-design.md` define the `deepsci-mini` Domain Agent Team Template boundary and the three Agent Roles.
-- `.imsight-arts/project-explore/use-cases/uc-06-flash-attention-gb10-runtime-prediction.md` provides the capstone-style use-case structure adapted here for a smaller team and a simpler topic.
+- `.imsight-arts/project-explore/use-cases/uc-06-flash-attention-host-gpu-runtime-prediction.md` provides the capstone-style use-case structure adapted here for a smaller team and a simpler topic.
 - `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md` defines the canonical Isomer terms used here.
