@@ -114,3 +114,16 @@ The placeholder binding validation harness SHALL check payload-first guidance fo
 #### Scenario: Missing validation step is reported
 - **WHEN** an active production DeepSci binding page provides structured payload create or update guidance without a validation step or validation command reference
 - **THEN** validation reports the missing validation guidance for that skill
+
+### Requirement: Placeholder Binding Metadata Uses Active DeepSci Names
+Active production DeepSci placeholder binding pages SHALL use `isomer-deepsci-*` skill names in binding metadata and example commands.
+
+#### Scenario: Binding command skill flag uses DeepSci namespace
+- **WHEN** a non-dev `placeholder-bindings.md` row gives an `isomer-cli ext research records` create, list, show, update, or delete command for a production DeepSci skill
+- **THEN** the command uses the active `isomer-deepsci-<purpose>` value in `--skill`
+- **AND** it does not use an old `isomer-rsch-<purpose>` value
+
+#### Scenario: Producer and consumer metadata uses active DeepSci namespace
+- **WHEN** a binding row names producer or consumer skill fields for production DeepSci skills
+- **THEN** those fields use `isomer-deepsci-*` names for skill-specific producers and consumers
+- **AND** historical `isomer-rsch-*` names appear only in passive provenance or migration context

@@ -776,3 +776,14 @@ The service environment setup skill SHALL use `isomer-cli project topic-main-gui
 - **THEN** it accepts concise references to the CLI command, marker names, and `.j2` template source of truth
 - **AND** it reports diagnostics if the service docs reintroduce the full guidance block body as copied prose
 
+### Requirement: Topic Environment Service Keeps Protected Namespace
+The topic environment setup service SHALL keep the `isomer-srv-topic-env-setup` active skill name while routing user-facing control through operator skills.
+
+#### Scenario: Service name remains stable
+- **WHEN** the service skill bundle is inspected after the namespace rename
+- **THEN** the folder name, `SKILL.md` frontmatter, agent metadata, and manifest path continue to use `isomer-srv-topic-env-setup`
+
+#### Scenario: Service guidance avoids user-facing operator claims
+- **WHEN** service guidance describes ordinary user-facing package mutation or verification requests
+- **THEN** it routes those requests through `isomer-op-topic-mgr`
+- **AND** it treats direct service invocation as protected or delegated operational support

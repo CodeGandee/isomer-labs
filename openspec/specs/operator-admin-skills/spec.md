@@ -9,6 +9,7 @@ The repository SHALL provide Project Operator Session and Operator Agent skills 
 #### Scenario: Operator skill folders exist
 - **WHEN** the operator skillset is inspected
 - **THEN** it contains active skill folders for project awareness, service request routing, template inspection, topic context resolution, placeholder reconciliation, topic profile drafting, profile review and approval, profile materialization, and team launch orchestration
+- **AND** it does not contain an active `isomer-op-houmao-interop` folder
 
 #### Scenario: Operator skill names are consistent
 - **WHEN** an operator skill folder is inspected
@@ -17,6 +18,12 @@ The repository SHALL provide Project Operator Session and Operator Agent skills 
 #### Scenario: Operator skillset is documented
 - **WHEN** a developer reads skillset documentation
 - **THEN** it identifies `skillset/operator/` as the installation source for Project Operator Session and Operator Agent skills and lists the supported `isomer-op-*` skills
+- **AND** it does not list `isomer-op-houmao-interop` as a user-facing operator owner skill
+
+#### Scenario: Houmao interop is routed to service
+- **WHEN** operator guidance describes Houmao loop, runtime, launch profile, mailbox, gateway, or template-mapping support
+- **THEN** it routes bounded support to `isomer-srv-houmao-interop`
+- **AND** it keeps the visible first command on the appropriate user-facing operator workflow such as `isomer-op-project-mgr` or `isomer-op-topic-team-specialize`
 
 ### Requirement: Operator Skill Migration Mapping
 The system SHALL migrate existing project-operator orchestration skills from previous research-prefixed operator names to `isomer-op-*` names without keeping duplicate active skill shims.
@@ -73,19 +80,21 @@ Operator skills SHALL describe project operation, approval, materialization, Ser
 - **THEN** it does not install `isomer-op-*` skills unless the role is explicitly an Operator Agent role
 
 ### Requirement: Operator Skill Validation
-The repository SHALL validate operator skill structure, command surfaces, and naming separately from research-paradigm skill validation.
+The repository SHALL validate operator skill structure, command surfaces, and naming separately from research-paradigm and service skill validation.
 
 #### Scenario: Operator validation checks structure
 - **WHEN** the operator skill validation runs
 - **THEN** it confirms each `skillset/operator/isomer-op-*` folder has a valid `SKILL.md`, valid frontmatter, expected manifest metadata, and directly linked local references when present
+- **AND** it does not require or accept `skillset/operator/isomer-op-houmao-interop` as part of the active operator inventory
 
 #### Scenario: Operator validation checks old active names
 - **WHEN** the operator skill validation scans active docs, team profiles, fixtures, and skill manifests
 - **THEN** it fails if a migrated operator skill is still referenced by its old active `isomer-deepsci-*` name outside historical provenance or archived change text
+- **AND** it fails if current operator guidance presents `isomer-op-houmao-interop` as an active invokable skill outside historical provenance or migration-only text
 
 #### Scenario: Repository skill validation covers operator skills
 - **WHEN** a developer or agent runs the repository skill validation command
-- **THEN** validation covers the research, operator, and service skillsets or clearly prints the separate commands required to validate each skillset
+- **THEN** validation covers the research, operator, service, and misc skillsets or clearly prints the separate commands required to validate each skillset
 
 #### Scenario: Operator validation checks Topic Creator finalization surface
 - **WHEN** operator skill validation scans `skillset/operator/isomer-op-topic-creator`
@@ -208,3 +217,41 @@ The operator skillset SHALL retire the deprecated `isomer-op-topic-prepare` and 
 - **WHEN** operator docs route topic creation, topic preparation, manual-research-ready setup, or human-orchestrated Topic Actor preparation
 - **THEN** they use actual `isomer-op-topic-creator` subcommands such as `fast-forward`, `step-by-step`, `run-to`, `status`, or `repair`
 - **AND** they do not reference nonexistent `create`, `plan`, or `start-manual-research` Topic Creator subcommands
+
+### Requirement: Welcome Operator Skill Inventory
+The operator/admin skillset SHALL include `isomer-admin-welcome` as the user-facing action menu and path chooser for supported Isomer Labs operator workflows.
+
+#### Scenario: Welcome skill is active
+- **WHEN** the operator skillset is inspected
+- **THEN** it contains `skillset/operator/isomer-admin-welcome/` as an active operator skill folder
+- **AND** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-admin-welcome`
+
+#### Scenario: Operator docs list welcome entrypoint
+- **WHEN** a developer reads `skillset/operator/README.md`
+- **THEN** it lists `isomer-admin-welcome`
+- **AND** it describes the skill as the action-oriented menu and path chooser that tells users what Isomer Labs can do, shows typical usage paths such as `start-research-manually` and `start-research-by-agent-team`, and names which owner skill to invoke directly
+
+#### Scenario: Manifest includes welcome and excludes retired compatibility entries
+- **WHEN** `skillset/manifest.toml` is inspected
+- **THEN** it includes `operator/isomer-admin-welcome`
+- **AND** it does not include `operator/isomer-admin-topic-prepare`
+- **AND** it does not include `operator/isomer-admin-manual-research-session`
+
+#### Scenario: Operator validation covers welcome
+- **WHEN** operator skill validation runs
+- **THEN** it validates the welcome skill with frontmatter, UI metadata, local-reference, workflow, subcommand, output-contract, read-only posture, active-owner routing, and retired-skill exclusion checks
+
+### Requirement: Operator Namespace Rename Inventory
+The operator skillset SHALL expose the renamed active operator inventory without duplicate active compatibility wrappers.
+
+#### Scenario: Active operator inventory uses op names
+- **WHEN** the operator skillset is inspected
+- **THEN** it contains `isomer-op-project-mgr`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, and `isomer-op-welcome`
+- **AND** it does not contain active `isomer-admin-project-mgr`, `isomer-admin-topic-creator`, `isomer-admin-topic-mgr`, `isomer-admin-topic-team-specialize`, `isomer-admin-welcome`, or `isomer-admin-houmao-interop` folders
+- **AND** it does not contain active `isomer-op-houmao-interop`
+
+#### Scenario: Active routing uses op names
+- **WHEN** active operator guidance routes between operator skills
+- **THEN** it invokes the renamed `isomer-op-*` skill names
+- **AND** it routes bounded Houmao interop support to `isomer-srv-houmao-interop`
+- **AND** it treats old `isomer-admin-*` names as historical or migration-only references
