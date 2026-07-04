@@ -1,7 +1,5 @@
 # isomer-labs
 
-艾索幕实验室
-
 Isomer Labs is a private research platform that uses multi-agent teams as a research engine while a human operator sets goals and steers work at critical steps.
 
 The same base capabilities can form different research teams, workflows, and feedback loops. One Research Topic may need discovery, synthesis, and review agents; another may need planning, data analysis, and report-writing agents. The platform makes those structures easy to create, run, observe, and improve.
