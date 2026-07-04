@@ -704,12 +704,12 @@ Active non-shared v2 research-paradigm skills with durable record bindings SHALL
 
 #### Scenario: Durable-record-writing skill entrypoints reference preflight
 - **WHEN** an active non-shared v2 research skill `SKILL.md` with durable record bindings is inspected
-- **THEN** its workflow or entry guidance references the shared latest-context preflight from `isomer-rsch-shared-v2`
+- **THEN** its workflow or entry guidance references the shared latest-context preflight from `isomer-deepsci-shared`
 - **AND** it places the preflight before accepted record writes, record refreshes, or durable stage decisions that select routes, accept comparator state, generate ideas, run experiments, analyze evidence, write claims, review manuscripts, create figures, polish prose, prepare data availability, rebut reviewers, or finalize a topic
 - **AND** standalone source-only reading may skip the preflight until the skill writes or refreshes accepted Isomer records
 
 #### Scenario: Shared skill owns the reference
-- **WHEN** `isomer-rsch-shared-v2` is inspected
+- **WHEN** `isomer-deepsci-shared` is inspected
 - **THEN** it contains the latest-context preflight reference and semantic registry entry
 - **AND** other v2 skills reference that shared material instead of duplicating the full command ladder
 
@@ -744,7 +744,7 @@ The research-paradigm validation harness SHALL check that active non-shared v2 s
 - **THEN** validation reports the skill and explains that v2 durable-record-writing entrypoints must resolve current topic context before accepted record work
 
 #### Scenario: Shared and non-active material are not false positives
-- **WHEN** validation inspects `isomer-rsch-shared-v2`, migration notes, source-copy material under `org/`, passive templates, or non-active provenance material
+- **WHEN** validation inspects `isomer-deepsci-shared`, migration notes, source-copy material under `org/`, passive templates, or non-active provenance material
 - **THEN** it does not require those files to consume the latest-context preflight as a stage entrypoint
 
 #### Scenario: Validation accepts concise imports

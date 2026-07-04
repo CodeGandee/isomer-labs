@@ -5,7 +5,7 @@
 1. Print a concise description of `isomer-op-welcome` as the action-oriented menu and path chooser for Isomer Labs operator workflows.
 2. List the visible usage paths `start-research-manually` and `start-research-by-agent-team`.
 3. List the routing and support subcommands `help`, `show-options`, `choose-path`, `show-skill-map`, and `next-step`.
-4. Name the active owner skills: `isomer-op-project-mgr`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`.
+4. Name the active owner skills: `isomer-op-project-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`.
 5. State that the welcome skill is read-only by default and does not initialize Projects, create Research Topics, mutate Topic Workspaces, install packages, specialize teams, launch agents, or bootstrap research-paradigm v2 artifacts.
 6. Invite the user to choose a visible usage path, describe their goal, or invoke the named owner skill directly. State that Houmao-specific support is routed by the owning operator workflow to `isomer-srv-houmao-interop` when needed.
 

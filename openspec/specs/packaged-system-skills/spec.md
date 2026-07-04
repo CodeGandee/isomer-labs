@@ -35,9 +35,8 @@ The system SHALL support copying manifest-selected packaged system skills to a f
 #### Scenario: Materialize selected group
 - **WHEN** a caller materializes the `core` group to an empty target directory
 - **THEN** the target receives `manifest.toml` and only the skill directories listed for that group
-- **AND** each copied skill keeps its manifest-relative path such as `operator/isomer-admin-project-mgr`
+- **AND** each copied skill keeps its manifest-relative path such as `operator/isomer-op-project-mgr`
 
 #### Scenario: Development skills are never materialized from package assets
 - **WHEN** a caller materializes any packaged system-skill group
 - **THEN** no `dev/` directory or `isomer-dev-*` skill is copied from package assets
-

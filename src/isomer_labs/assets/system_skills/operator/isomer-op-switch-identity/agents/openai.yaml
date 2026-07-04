@@ -1,0 +1,6 @@
+interface:
+  display_name: "isomer-op-switch-identity"
+  short_description: "Switch operator identity posture to a Topic Actor or Agent workspace cwd."
+  default_prompt: "Use $isomer-op-switch-identity help to switch, act as, inspect, or reset an operator identity posture."
+policy:
+  allow_implicit_invocation: true

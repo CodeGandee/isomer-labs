@@ -19,9 +19,10 @@ import validate_research_paradigm_skillset as research_validator
 FRONTMATTER_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*?)\s*$")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 CODE_SPAN_RE = re.compile(r"`([^`]+)`")
-LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/")
+LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/", "commands/")
 TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-op-topic-team-specialize"
 PROJECT_MANAGER_SKILL = "isomer-op-project-mgr"
+SWITCH_IDENTITY_SKILL = "isomer-op-switch-identity"
 TOPIC_CREATOR_SKILL = "isomer-op-topic-creator"
 TOPIC_MANAGER_SKILL = "isomer-op-topic-mgr"
 WELCOME_SKILL = "isomer-op-welcome"
@@ -777,6 +778,97 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "isomer-srv-houmao-interop",
     ),
 }
+
+SWITCH_IDENTITY_COMMANDS = (
+    "switch.md",
+    "act-as.md",
+    "status.md",
+    "reset.md",
+    "help.md",
+)
+
+SWITCH_IDENTITY_REQUIRED_SKILL_TERMS = (
+    "## Overview",
+    "## When to Use",
+    "## Workflow",
+    "## Commands",
+    "Use when",
+    "Topic Actor",
+    "Agent",
+    "topic.actors.workspace",
+    "agent.workspace",
+    "isomer-cli --print-json project paths get topic.actors.workspace",
+    "isomer-cli --print-json project paths get agent.workspace",
+    "does not map cleanly",
+    "one-task",
+    "persistent",
+    "act-as",
+    "restore",
+    "resolved cwd",
+    "Project Operator acted as or on behalf",
+    "Do not infer a target by scanning workspace directories",
+    "Do not use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd",
+    "OS-level impersonation",
+    "launched Agent Instance",
+    "Houmao",
+    "Execution Adapter",
+)
+
+SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS = {
+    "switch.md": (
+        "target kind",
+        "target name",
+        "one-task",
+        "persistent",
+        "isomer-cli --print-json project paths get topic.actors.workspace",
+        "isomer-cli --print-json project paths get agent.workspace",
+        "resolved `topic.actors.workspace` or `agent.workspace`",
+        "Do not infer the target by scanning workspace directories",
+    ),
+    "act-as.md": (
+        "following prompt",
+        "Save the previous Project Operator identity posture",
+        "Restore the previous Project Operator identity posture",
+        "temporary one-time execution",
+        "Do not leave a switched posture active",
+        "resolved `topic.actors.workspace` or `agent.workspace`",
+    ),
+    "status.md": (
+        "persistent",
+        "temporary",
+        "unknown",
+        "re-resolve before running commands",
+        "target workspace cwd",
+        "normal Project Operator cwd",
+    ),
+    "reset.md": (
+        "Clear the active switched posture",
+        "normal Project Operator identity",
+        "future commands no longer default",
+        "does not delete workspace files",
+    ),
+    "help.md": (
+        "| Command | Purpose | Produces |",
+        "`switch`",
+        "`act-as`",
+        "`status`",
+        "`reset`",
+        "one-prompt restore",
+        "cwd discipline",
+    ),
+}
+
+SWITCH_IDENTITY_FORBIDDEN_CLAIM_TERMS = (
+    "OS-level impersonation",
+    "independent Topic Actor process",
+    "launched Agent Instance",
+    "Agent Instance execution",
+    "Houmao launch",
+    "Execution Adapter execution",
+    "Execution Adapter produced",
+    "scanning workspace directories",
+    "scan workspace directories",
+)
 
 WELCOME_ALLOWED_RETIRED_ROUTE_MARKERS = (
     "do not",
@@ -1871,6 +1963,36 @@ def is_passive_stale_ref_file(path: Path) -> bool:
     return any(part in PASSIVE_STALE_REF_PARTS for part in path.parts)
 
 
+def is_passive_stale_ref_line(line: str) -> bool:
+    lower_line = line.lower()
+    return any(
+        marker in lower_line
+        for marker in (
+            "do not",
+            "does not",
+            "must not",
+            "shall not",
+            "no active",
+            "no alias",
+            "not contain",
+            "not include",
+            "not present",
+            "not list",
+            "not use",
+            "rather than old",
+            "old `",
+            "old isomer-",
+            "retired",
+            "historical",
+            "migration-only",
+            "passive provenance",
+            "passive templates",
+            "passive.",
+            "previous `",
+        )
+    )
+
+
 def validate_migrated_operator_refs(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     pattern = re.compile("|".join(re.escape(name) for name in MIGRATED_OPERATOR_SKILLS))
@@ -1882,6 +2004,8 @@ def validate_migrated_operator_refs(repo_root: Path) -> list[Diagnostic]:
             continue
         lines = read_lines(path)
         for line_number, line in enumerate(lines, start=1):
+            if is_passive_stale_ref_line(line):
+                continue
             match = pattern.search(line)
             if match:
                 add(
@@ -2657,10 +2781,104 @@ def validate_operator_manifest_inventory(repo_root: Path) -> list[Diagnostic]:
         return diagnostics
     if f"operator/{WELCOME_SKILL}" not in skills:
         add(diagnostics, repo_root, manifest_path, 1, "OPS011", f"skillset manifest must include operator/{WELCOME_SKILL}")
+    if f"operator/{SWITCH_IDENTITY_SKILL}" not in skills:
+        add(diagnostics, repo_root, manifest_path, 1, "OPS012", f"skillset manifest must include operator/{SWITCH_IDENTITY_SKILL}")
     for retired_skill in WELCOME_RETIRED_ROUTE_SKILLS:
         retired_entry = f"operator/{retired_skill}"
         if retired_entry in skills:
             add(diagnostics, repo_root, manifest_path, 1, "OPS011", f"skillset manifest must not include retired {retired_entry}")
+    return diagnostics
+
+
+def _line_is_negated_identity_boundary(line: str) -> bool:
+    lower_line = line.lower()
+    return any(marker in lower_line for marker in ("do not", "does not", "must not", "not ", "not-", "no ", "without", "avoid", "prevent", "forbid"))
+
+
+def validate_switch_identity_module(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skill_dir = repo_root / "skillset" / "operator" / SWITCH_IDENTITY_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "OPS012", f"{SWITCH_IDENTITY_SKILL} is required")
+        return diagnostics
+
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    frontmatter = parse_frontmatter(lines)
+    if frontmatter.get("name") != SWITCH_IDENTITY_SKILL:
+        add(diagnostics, repo_root, skill_md, 2, "OPS012", f"{SWITCH_IDENTITY_SKILL} frontmatter name must match the skill folder")
+    description = frontmatter.get("description", "")
+    if not description:
+        add(diagnostics, repo_root, skill_md, 3, "OPS012", f"{SWITCH_IDENTITY_SKILL} frontmatter description is required")
+    elif not description.startswith("Use when"):
+        add(diagnostics, repo_root, skill_md, 3, "OPS012", f"{SWITCH_IDENTITY_SKILL} description must start with 'Use when'")
+
+    validate_manifest(skill_dir, repo_root, diagnostics, "OPS012", manifest_required=True)
+    validate_local_references(skill_dir, repo_root, diagnostics, "OPS012")
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS012", require_contract=True)
+
+    workflow_index = line_index_containing(lines, "## Workflow")
+    if workflow_index is None:
+        add(diagnostics, repo_root, skill_md, 1, "OPS012", f"{SWITCH_IDENTITY_SKILL} must include a ## Workflow section")
+    else:
+        if workflow_index > 30:
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS012", f"{SWITCH_IDENTITY_SKILL} must place ## Workflow near the top")
+        if not has_numbered_step_after(lines, workflow_index):
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS012", f"{SWITCH_IDENTITY_SKILL} workflow must use numbered steps")
+        if "does not map cleanly" not in text:
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS012", f"{SWITCH_IDENTITY_SKILL} must include a freeform fallback")
+
+    for term in SWITCH_IDENTITY_REQUIRED_SKILL_TERMS:
+        if term not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "# Isomer"), "OPS012", f"{SWITCH_IDENTITY_SKILL} must document '{term}'")
+
+    for optional_dir_name in ("references", "assets", "scripts"):
+        optional_dir = skill_dir / optional_dir_name
+        if optional_dir.exists() and not any(optional_dir.iterdir()):
+            add(diagnostics, repo_root, optional_dir, 1, "OPS012", f"{SWITCH_IDENTITY_SKILL} must not create empty {optional_dir_name}/ for symmetry")
+
+    commands_dir = skill_dir / "commands"
+    allowed_command_names = set(SWITCH_IDENTITY_COMMANDS)
+    for command_path in sorted(commands_dir.glob("*.md")):
+        if command_path.name not in allowed_command_names:
+            add(diagnostics, repo_root, command_path, 1, "OPS012", f"{SWITCH_IDENTITY_SKILL} has unexpected command page commands/{command_path.name}")
+
+    command_texts: list[str] = []
+    for command_file_name in SWITCH_IDENTITY_COMMANDS:
+        command_path = commands_dir / command_file_name
+        if not command_path.exists():
+            add(diagnostics, repo_root, command_path, 1, "OPS012", f"{SWITCH_IDENTITY_SKILL} must include commands/{command_file_name}")
+            continue
+        if f"commands/{command_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Commands"), "OPS012", f"{SWITCH_IDENTITY_SKILL} must link commands/{command_file_name}")
+        command_lines = read_lines(command_path)
+        command_text = "\n".join(command_lines)
+        command_texts.append(command_text)
+        command_workflow_index = line_index_containing(command_lines, "## Workflow")
+        if command_workflow_index is None:
+            add(diagnostics, repo_root, command_path, 1, "OPS012", f"commands/{command_file_name} must include a ## Workflow section")
+            continue
+        if command_workflow_index > 8:
+            add(diagnostics, repo_root, command_path, command_workflow_index + 1, "OPS012", f"commands/{command_file_name} must place ## Workflow near the top")
+        if not has_numbered_step_after(command_lines, command_workflow_index):
+            add(diagnostics, repo_root, command_path, command_workflow_index + 1, "OPS012", f"commands/{command_file_name} workflow must use numbered steps")
+        if "does not map cleanly" not in command_text:
+            add(diagnostics, repo_root, command_path, command_workflow_index + 1, "OPS012", f"commands/{command_file_name} must include a freeform fallback")
+        for required_term in SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS.get(command_file_name, ()):
+            if required_term not in command_text:
+                add(diagnostics, repo_root, command_path, 1, "OPS012", f"commands/{command_file_name} must document '{required_term}'")
+
+    for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
+        for line_number, line in enumerate(read_lines(skill_file), start=1):
+            for forbidden_term in SWITCH_IDENTITY_FORBIDDEN_CLAIM_TERMS:
+                if forbidden_term in line and not _line_is_negated_identity_boundary(line):
+                    add(diagnostics, repo_root, skill_file, line_number, "OPS012", f"{SWITCH_IDENTITY_SKILL} must not claim or use '{forbidden_term}' as active switch behavior")
+
+    combined_text = "\n".join([text, *command_texts])
+    for required_term in ("one-task", "persistent", "one-prompt", "restore", "cwd", "provenance"):
+        if required_term not in combined_text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Workflow"), "OPS012", f"{SWITCH_IDENTITY_SKILL} must document switch behavior term '{required_term}'")
     return diagnostics
 
 
@@ -2699,6 +2917,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_topic_creator_module(repo_root))
     diagnostics.extend(validate_topic_manager_module(repo_root))
     diagnostics.extend(validate_welcome_module(repo_root))
+    diagnostics.extend(validate_switch_identity_module(repo_root))
     diagnostics.extend(validate_operator_manifest_inventory(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
     diagnostics.extend(validate_split_output_contract_docs(repo_root, (repo_root / "skillset" / "operator",), code="OPS007"))

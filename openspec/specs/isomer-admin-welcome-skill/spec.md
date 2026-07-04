@@ -1,10 +1,10 @@
-# isomer-admin-welcome-skill Specification
+# isomer-op-welcome-skill Specification
 
 ## Purpose
-TBD - created by archiving change add-isomer-admin-welcome-skill. Update Purpose after archive.
+TBD - created by archiving change add-isomer-op-welcome-skill. Update Purpose after archive.
 ## Requirements
 ### Requirement: Welcome Skill Presents Operator Workflow Options
-The `isomer-admin-welcome` skill SHALL present an action-oriented menu of supported Isomer Labs operator workflows, name the owner skill for each workflow, and invite the user to choose a path, describe their goal, or invoke an owner skill directly.
+The `isomer-op-welcome` skill SHALL present an action-oriented menu of supported Isomer Labs operator workflows, name the owner skill for each workflow, and invite the user to choose a path, describe their goal, or invoke an owner skill directly.
 
 #### Scenario: Default invocation prints option menu
 - **WHEN** the welcome skill is invoked without a specific subcommand or with a broad onboarding request
@@ -19,24 +19,24 @@ The `isomer-admin-welcome` skill SHALL present an action-oriented menu of suppor
 - **AND** it does not primarily present a conceptual introduction to the Isomer system model
 
 ### Requirement: Welcome Skill Routes Only to Active Owner Skills
-The `isomer-admin-welcome` skill SHALL route users only to active owner skills and SHALL NOT route users to retired operator compatibility skills.
+The `isomer-op-welcome` skill SHALL route users only to active owner skills and SHALL NOT route users to retired operator compatibility skills.
 
 #### Scenario: Supported paths name active skills
 - **WHEN** the welcome skill presents direct invocation guidance
-- **THEN** Project lifecycle work routes to `isomer-admin-project-mgr`
-- **AND** blank or partial Research Topic creation and manual-research-ready topic preparation route to `isomer-admin-topic-creator`
-- **AND** initialized-topic storage, Topic Actors, environment package mutation, environment verification, reset checkpoints, and diagnostics route to `isomer-admin-topic-mgr`
-- **AND** Topic Team Specialization routes to `isomer-admin-topic-team-specialize`
-- **AND** Houmao loop, runtime, launch profile, mailbox, gateway, or template-mapping explanation routes to `isomer-admin-houmao-interop`
+- **THEN** Project lifecycle work routes to `isomer-op-project-mgr`
+- **AND** blank or partial Research Topic creation and manual-research-ready topic preparation route to `isomer-op-topic-creator`
+- **AND** initialized-topic storage, Topic Actors, environment package mutation, environment verification, reset checkpoints, and diagnostics route to `isomer-op-topic-mgr`
+- **AND** Topic Team Specialization routes to `isomer-op-topic-team-specialize`
+- **AND** Houmao loop, runtime, launch profile, mailbox, gateway, or template-mapping explanation routes through the owning operator workflow to `isomer-srv-houmao-interop`
 
 #### Scenario: Retired skills are not active routes
 - **WHEN** welcome skill guidance is inspected
-- **THEN** it does not ask users or agents to invoke `isomer-admin-topic-workspace-mgr`
-- **AND** it does not ask users or agents to invoke `isomer-admin-topic-prepare`
-- **AND** it does not ask users or agents to invoke `isomer-admin-manual-research-session`
+- **THEN** it does not ask users or agents to invoke old retired topic workspace manager skills
+- **AND** it does not ask users or agents to invoke old retired topic preparation skills
+- **AND** it does not ask users or agents to invoke old retired manual research session skills
 
 ### Requirement: Welcome Skill Stays Read-Only by Default
-The `isomer-admin-welcome` skill SHALL be read-only by default and SHALL NOT perform owner workflow mutation from the welcome surface.
+The `isomer-op-welcome` skill SHALL be read-only by default and SHALL NOT perform owner workflow mutation from the welcome surface.
 
 #### Scenario: Welcome option selection does not mutate state
 - **WHEN** a user asks the welcome skill what path to choose
@@ -49,7 +49,7 @@ The `isomer-admin-welcome` skill SHALL be read-only by default and SHALL NOT per
 - **AND** it reports blockers and the recommended owner workflow without running mutating commands
 
 ### Requirement: Welcome Skill Exposes Focused Subcommands
-The `isomer-admin-welcome` skill SHALL expose focused public subcommands for visible usage paths, option display, path choice, direct skill mapping, context-aware next-step recommendation, and help.
+The `isomer-op-welcome` skill SHALL expose focused public subcommands for visible usage paths, option display, path choice, direct skill mapping, context-aware next-step recommendation, and help.
 
 #### Scenario: Typical usage paths are first-class
 - **WHEN** the welcome skill `SKILL.md` is inspected
@@ -63,7 +63,7 @@ The `isomer-admin-welcome` skill SHALL expose focused public subcommands for vis
 - **AND** each subcommand has a bounded purpose and a local reference page
 
 ### Requirement: Welcome Skill Output Contract
-The `isomer-admin-welcome` skill SHALL report concise default output and provide complete output only when requested.
+The `isomer-op-welcome` skill SHALL report concise default output and provide complete output only when requested.
 
 #### Scenario: Essential output names route and next action
 - **WHEN** the welcome skill recommends a path
@@ -72,4 +72,3 @@ The `isomer-admin-welcome` skill SHALL report concise default output and provide
 #### Scenario: Complete output adds evidence and alternatives
 - **WHEN** the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output
 - **THEN** the skill includes context evidence, read-only commands run, alternate owner workflows, routing rationale, and retired-route exclusions when relevant
-

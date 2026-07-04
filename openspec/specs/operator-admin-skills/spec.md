@@ -219,23 +219,23 @@ The operator skillset SHALL retire the deprecated `isomer-op-topic-prepare` and 
 - **AND** they do not reference nonexistent `create`, `plan`, or `start-manual-research` Topic Creator subcommands
 
 ### Requirement: Welcome Operator Skill Inventory
-The operator/admin skillset SHALL include `isomer-admin-welcome` as the user-facing action menu and path chooser for supported Isomer Labs operator workflows.
+The operator/admin skillset SHALL include `isomer-op-welcome` as the user-facing action menu and path chooser for supported Isomer Labs operator workflows.
 
 #### Scenario: Welcome skill is active
 - **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-admin-welcome/` as an active operator skill folder
-- **AND** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-admin-welcome`
+- **THEN** it contains `skillset/operator/isomer-op-welcome/` as an active operator skill folder
+- **AND** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-op-welcome`
 
 #### Scenario: Operator docs list welcome entrypoint
 - **WHEN** a developer reads `skillset/operator/README.md`
-- **THEN** it lists `isomer-admin-welcome`
+- **THEN** it lists `isomer-op-welcome`
 - **AND** it describes the skill as the action-oriented menu and path chooser that tells users what Isomer Labs can do, shows typical usage paths such as `start-research-manually` and `start-research-by-agent-team`, and names which owner skill to invoke directly
 
 #### Scenario: Manifest includes welcome and excludes retired compatibility entries
 - **WHEN** `skillset/manifest.toml` is inspected
-- **THEN** it includes `operator/isomer-admin-welcome`
-- **AND** it does not include `operator/isomer-admin-topic-prepare`
-- **AND** it does not include `operator/isomer-admin-manual-research-session`
+- **THEN** it includes `operator/isomer-op-welcome`
+- **AND** it excludes retired topic preparation compatibility entries
+- **AND** it excludes retired manual research session compatibility entries
 
 #### Scenario: Operator validation covers welcome
 - **WHEN** operator skill validation runs

@@ -222,6 +222,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_creator_skill(root)
         self.write_topic_manager_skill(root)
         self.write_welcome_skill(root)
+        self.write_switch_identity_skill(root)
 
     def write_topic_team_dependency_contract(self, root: Path) -> None:
         skill_dir = root / "skillset" / "operator" / "isomer-op-topic-team-specialize"
@@ -750,6 +751,100 @@ class SkillsetValidatorTests(unittest.TestCase):
             help_path = skill_dir / "references" / "help.md"
             help_path.write_text(help_path.read_text(encoding="utf-8") + "\nUse `isomer-misc-tool-packs` for tool setup.\n", encoding="utf-8")
 
+    def write_switch_identity_skill(
+        self,
+        root: Path,
+        *,
+        omit_command: str | None = None,
+        omit_skill_term: str | None = None,
+        omit_command_term: str | None = None,
+        active_directory_scanning: bool = False,
+        active_fabricated_claim: bool = False,
+    ) -> None:
+        skill_dir = root / "skillset" / "operator" / "isomer-op-switch-identity"
+        command_links = ", ".join(f"`commands/{command_name}`" for command_name in validator.SWITCH_IDENTITY_COMMANDS)
+        skill_text = f"""
+            ---
+            name: isomer-op-switch-identity
+            description: Use when a Project Operator needs to switch identity posture to a selected Topic Actor or Agent workspace cwd.
+            ---
+
+            # Isomer Operator Switch Identity
+
+            ## Overview
+
+            Use when switching identity posture for a Topic Actor or Agent. Resolve `topic.actors.workspace`, `agent.workspace`, and the resolved cwd through `isomer-cli --print-json project paths get topic.actors.workspace --topic <topic> --topic-actor <topic-actor-name>` or `isomer-cli --print-json project paths get agent.workspace --topic <topic> --agent <agent-name>`.
+
+            ## When to Use
+
+            Use this for `act-as`, one-task, persistent, status, and reset work. The Project Operator acted as or on behalf of the selected identity and must avoid OS-level impersonation, launched Agent Instance claims, Houmao launch claims, and Execution Adapter claims.
+
+            ## Workflow
+
+            1. Select `switch`, `act-as`, `status`, `reset`, or `help`.
+            2. Resolve target kind and name for a Topic Actor or Agent.
+            3. Use semantic path resolution and do not infer a target by scanning workspace directories.
+            4. Use one-task mode by default, persistent mode only when explicit, and restore after one-prompt `act-as`.
+            5. Run from cwd and preserve provenance.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Commands
+
+            Use {command_links}.
+
+            ## Guardrails
+
+            Do not infer a target by scanning workspace directories. Do not use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd.
+
+            {OUTPUT_CONTRACT_FIXTURE}
+            """
+        if omit_skill_term is not None:
+            skill_text = skill_text.replace(omit_skill_term, "")
+        write(skill_dir / "SKILL.md", skill_text)
+        write(
+            skill_dir / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-op-switch-identity"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-op-switch-identity help to validate this fixture."
+            """,
+        )
+        command_terms = {
+            "switch.md": "target kind target name one-task persistent isomer-cli --print-json project paths get topic.actors.workspace isomer-cli --print-json project paths get agent.workspace resolved `topic.actors.workspace` or `agent.workspace`. Do not infer the target by scanning workspace directories.",
+            "act-as.md": "following prompt. Save the previous Project Operator identity posture. Restore the previous Project Operator identity posture. temporary one-time execution. Do not leave a switched posture active. resolved `topic.actors.workspace` or `agent.workspace`.",
+            "status.md": "persistent temporary unknown re-resolve before running commands target workspace cwd normal Project Operator cwd.",
+            "reset.md": "Clear the active switched posture. normal Project Operator identity. future commands no longer default. does not delete workspace files.",
+            "help.md": "| Command | Purpose | Produces |; | --- | --- | --- |; `switch` `act-as` `status` `reset` one-prompt restore cwd discipline.",
+        }
+        for command_name in validator.SWITCH_IDENTITY_COMMANDS:
+            if command_name == omit_command:
+                continue
+            terms = command_terms[command_name]
+            if omit_command_term is not None:
+                terms = terms.replace(omit_command_term, "")
+            extra = ""
+            if active_directory_scanning and command_name == "switch.md":
+                extra += "\nInfer the target by scanning workspace directories.\n"
+            if active_fabricated_claim and command_name == "act-as.md":
+                extra += "\nClaim launched Agent Instance execution and Houmao launch produced the work.\n"
+            write(
+                skill_dir / "commands" / command_name,
+                f"""
+                # {command_name}
+
+                ## Workflow
+
+                1. Run the command fixture step.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                {terms}
+                {extra}
+                """,
+            )
+
     def write_deepsci_mini_guide(self, root: Path, *, omit_contract: bool = False) -> None:
         contract = "" if omit_contract else "contract"
         write(
@@ -1214,6 +1309,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             [groups.core]
             skills = [
               "operator/isomer-op-welcome",
+              "operator/isomer-op-switch-identity",
               "operator/isomer-op-project-mgr",
             ]
             """,
@@ -1239,8 +1335,71 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS011", codes(diagnostics))
         rendered = "\n".join(messages(diagnostics))
         self.assertIn("operator/isomer-op-welcome", rendered)
+        self.assertIn("operator/isomer-op-switch-identity", rendered)
         self.assertIn("operator/isomer-op-topic-prepare", rendered)
         self.assertIn("operator/isomer-op-manual-research-session", rendered)
+
+    def test_operator_validator_accepts_switch_identity_contract(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root)
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_operator_validator_requires_switch_identity_command_pages(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, omit_command="act-as.md")
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("commands/act-as.md" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_switch_identity_act_as_restore_guidance(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, omit_command_term="Restore the previous Project Operator identity posture")
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("Restore the previous Project Operator identity posture" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_switch_identity_persistent_guidance(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, omit_skill_term="persistent")
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("persistent" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_switch_identity_cwd_discipline(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, omit_skill_term="Do not use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd")
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("Project root" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_switch_identity_directory_scanning_resolution(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, active_directory_scanning=True)
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("scanning workspace directories" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_switch_identity_fabricated_runtime_claims(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, active_fabricated_claim=True)
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("launched Agent Instance" in message or "Houmao launch" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_core_owned_heavy_operation_lists(self) -> None:
         root = self.make_root()

@@ -8,6 +8,7 @@ skills = [
   "misc/isomer-misc-pkg-specifics",
   "misc/isomer-misc-tool-packs",
   "operator/isomer-op-project-mgr",
+  "operator/isomer-op-switch-identity",
   "operator/isomer-op-topic-creator",
   "operator/isomer-op-topic-mgr",
   "operator/isomer-op-topic-team-specialize",

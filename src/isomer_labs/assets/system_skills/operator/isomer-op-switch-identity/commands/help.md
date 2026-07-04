@@ -1,0 +1,28 @@
+# Help
+
+## Workflow
+
+1. Print the public commands `switch`, `act-as`, `status`, `reset`, and `help`.
+2. Explain that Topic Actor targets resolve to `topic.actors.workspace` and Agent targets resolve to `agent.workspace`.
+3. Explain persistence modes: one-task by default, one-prompt restore for `act-as`, persistent session switch only when explicit, and `reset` to clear persistence.
+4. Explain cwd discipline: run commands from the resolved target workspace cwd while switched, and state why before using any other semantic path.
+5. Explain provenance: the Project Operator acts as or on behalf of the selected identity and must not claim OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution without verified runtime evidence.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to print the smallest useful command map and identify the missing target fields.
+
+## Public Commands
+
+| Command | Purpose | Produces |
+| --- | --- | --- |
+| `switch` | Switch to a Topic Actor or Agent identity posture for one task or the current session | Target, cwd, persistence mode, blockers, and provenance |
+| `act-as` | Execute the following prompt once as a selected identity | One-prompt result, restore confirmation, cwd, blockers, and provenance |
+| `status` | Inspect active switched posture | Active identity, cwd, persistence mode, uncertainty, and next action |
+| `reset` | Clear persistent switched posture | Restore confirmation and previous identity summary |
+| `help` | Show usage and guardrails | Command map and examples |
+
+## Examples
+
+- `Use $isomer-op-switch-identity switch to Topic Actor codex-exp-a for topic flash-attention and persist.`
+- `Use $isomer-op-switch-identity act-as Agent deepsci-scout for topic flash-attention: inspect the failing benchmark and summarize blockers.`
+- `Use $isomer-op-switch-identity status.`
+- `Use $isomer-op-switch-identity reset.`
