@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-experiment"
-  short_description: "Test one selected hypothesis and interpret the result."
-  default_prompt: "Use $isomer-rsch-experiment to lock one bounded test and produce an interpretable experiment result."

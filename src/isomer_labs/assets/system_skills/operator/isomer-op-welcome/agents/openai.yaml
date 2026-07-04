@@ -1,0 +1,6 @@
+interface:
+  display_name: "isomer-op-welcome"
+  short_description: "Shows Isomer Labs operator workflow options and routes users to the active owner skill."
+  default_prompt: "Use $isomer-op-welcome show-options to choose an Isomer Labs operator workflow."
+policy:
+  allow_implicit_invocation: false

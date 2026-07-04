@@ -524,6 +524,12 @@ class IsomerCliTests(unittest.TestCase):
             "project validate",
             "project topics list",
             "project workspaces list",
+            "project skill-callbacks register",
+            "project skill-callbacks resolve",
+            "project skill-callbacks list",
+            "project skill-callbacks show",
+            "project skill-callbacks disable",
+            "project skill-callbacks validate",
             "project context show",
             "project self show",
             "project self identity",
@@ -554,6 +560,7 @@ class IsomerCliTests(unittest.TestCase):
             ["project", "handoffs", "dispatch", "--help"],
             ["project", "handoffs", "observe", "--help"],
             ["project", "handoffs", "normalize", "--help"],
+            ["project", "skill-callbacks", "--help"],
         ):
             help_result = runner.invoke(cli.app, help_args)
             self.assertEqual(0, help_result.exit_code, help_result.output)
@@ -2066,6 +2073,193 @@ class IsomerCliTests(unittest.TestCase):
             any(diagnostic["field"] == "paths.topic_workspace_base_dir" for diagnostic in data["diagnostics"]),
             data["diagnostics"],
         )
+
+    def test_skill_callbacks_register_resolve_show_disable_validate_and_context_refs(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "register",
+                "--topic",
+                "default",
+                "--id",
+                "scout-begin-domain",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--prompt",
+                "Prefer the local benchmark contract before broad discovery.",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual("scout-begin-domain", data["callback"]["id"])
+        self.assertEqual("prompt", data["callback"]["source"]["source_type"])
+        registry_path = root / ".isomer-labs" / "user-skill-callbacks" / "topics" / "default" / "registry.toml"
+        self.assertTrue(registry_path.is_file())
+        prompt_path = root / ".isomer-labs" / "user-skill-callbacks" / "topics" / "default" / "prompts" / "scout-begin-domain.md"
+        self.assertTrue(prompt_path.is_file())
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "resolve",
+                "--topic",
+                "default",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["scout-begin-domain"], [callback["id"] for callback in data["callbacks"]])
+
+        for command in ("list", "show", "validate"):
+            args = ["project", "skill-callbacks", command, "--topic", "default", "--json"]
+            if command == "show":
+                args.insert(3, "scout-begin-domain")
+            status, output = self.run_cli(args, cwd=root)
+            data = json.loads(output)
+            self.assertEqual(0, status, output)
+            self.assertTrue(data["ok"])
+
+        status, output = self.run_cli(["project", "context", "show", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(
+            [".isomer-labs/user-skill-callbacks/topics/default/registry.toml"],
+            data["context"]["user_skill_callback_registry_refs"]["research_topic"],
+        )
+
+        status, output = self.run_cli(
+            ["project", "skill-callbacks", "disable", "scout-begin-domain", "--topic", "default", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("active", data["previous_status"])
+        self.assertEqual("inactive", data["new_status"])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "resolve",
+                "--topic",
+                "default",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual([], data["callbacks"])
+
+    def test_skill_callbacks_project_scope_external_skill_dir_requires_explicit_flag(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        external_root = self.make_root() / "external-skill"
+        write(
+            external_root / "SKILL.md",
+            """
+            ---
+            name: callback-extension
+            description: External callback fixture.
+            ---
+
+            # Callback Extension
+            """,
+        )
+
+        base_args = [
+            "project",
+            "skill-callbacks",
+            "register",
+            "--scope",
+            "project",
+            "--id",
+            "project-end-callback",
+            "--skill",
+            "isomer-deepsci-scout",
+            "--stage",
+            "end",
+            "--skill-dir",
+            str(external_root),
+            "--json",
+        ]
+        status, output = self.run_cli(base_args, cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO005", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        status, output = self.run_cli([*base_args[:-1], "--allow-external-source", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["callback"]["source"]["external"])
+        self.assertEqual("skill_dir", data["callback"]["source"]["source_type"])
+
+    def test_skill_callbacks_missing_project_is_rejected_without_creating_registry(self) -> None:
+        root = self.make_root()
+
+        status, output = self.run_cli(["project", "skill-callbacks", "list", "--json"], cwd=root)
+
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("ISO001", data["diagnostics"][0]["code"])
+        self.assertFalse((root / ".isomer-labs" / "user-skill-callbacks").exists())
+
+    def test_config_accepts_callback_registry_refs_and_rejects_inline_callback_bodies(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        write(
+            root / ".isomer-labs" / "user-skill-callbacks" / "registry.toml",
+            """
+            schema_version = "isomer-user-skill-callback-registry.v1"
+            """,
+        )
+        manifest_path = root / ".isomer-labs" / "manifest.toml"
+        manifest_text = manifest_path.read_text(encoding="utf-8")
+        manifest_text = manifest_text.replace(
+            "\n\n[paths]\n",
+            '\nuser_skill_callback_registry_refs = [".isomer-labs/user-skill-callbacks/registry.toml"]\n\n[paths]\n',
+            1,
+        )
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual([".isomer-labs/user-skill-callbacks/registry.toml"], data["manifest"]["user_skill_callback_registry_refs"])
+
+        manifest_path.write_text(
+            manifest_path.read_text(encoding="utf-8").replace(
+                "\n\n[paths]\n",
+                '\ncallback_prompt = "Do this inline."\n\n[paths]\n',
+                1,
+            ),
+            encoding="utf-8",
+        )
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO009", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+        self.assertTrue(any("User Skill Callback instruction bodies" in diagnostic["message"] for diagnostic in data["diagnostics"]))
 
     def test_context_selection_precedence_and_conflicts_are_reported(self) -> None:
         root = self.make_root()
@@ -3924,13 +4118,13 @@ class IsomerCliTests(unittest.TestCase):
         launch_line = 'launch_ref = "houmao-launch:test"\nhoumao_managed_agent_id = "managed-agent:test"\n' if launch_truth else ""
         secret_line = 'api_key = "SHOULD_NOT_LEAK"\n' if secret_like else ""
         roles = [
-            ("deepsci-org-master", ["isomer-rsch-shared", "isomer-rsch-decision", "isomer-rsch-finalize"], ["isomer-rsch-review"]),
-            ("deepsci-org-framer", ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"], ["isomer-rsch-science", "isomer-rsch-paper-outline"]),
-            ("deepsci-org-designer", ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"], ["isomer-rsch-scout"]),
-            ("deepsci-org-experimenter", ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"], ["isomer-rsch-analysis"]),
-            ("deepsci-org-analyzer", ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"], ["isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]),
-            ("deepsci-org-publisher", ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"], ["isomer-rsch-nature-data", "isomer-rsch-nature-figure", "isomer-rsch-nature-paper2ppt", "isomer-rsch-nature-polishing"]),
-            ("deepsci-org-reviewer", ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"], ["isomer-rsch-scout"]),
+            ("deepsci-org-master", ["isomer-deepsci-shared", "isomer-deepsci-decision", "isomer-deepsci-finalize"], ["isomer-deepsci-review"]),
+            ("deepsci-org-framer", ["isomer-deepsci-shared", "isomer-deepsci-scout", "isomer-deepsci-baseline"], ["isomer-deepsci-science", "isomer-deepsci-paper-outline"]),
+            ("deepsci-org-designer", ["isomer-deepsci-shared", "isomer-deepsci-idea", "isomer-deepsci-optimize"], ["isomer-deepsci-scout"]),
+            ("deepsci-org-experimenter", ["isomer-deepsci-shared", "isomer-deepsci-experiment", "isomer-deepsci-science"], ["isomer-deepsci-analysis"]),
+            ("deepsci-org-analyzer", ["isomer-deepsci-shared", "isomer-deepsci-analysis", "isomer-deepsci-science"], ["isomer-deepsci-paper-plot", "isomer-deepsci-figure-polish"]),
+            ("deepsci-org-publisher", ["isomer-deepsci-shared", "isomer-deepsci-paper-outline", "isomer-deepsci-write", "isomer-deepsci-paper-plot", "isomer-deepsci-figure-polish"], ["isomer-deepsci-nature-data", "isomer-deepsci-nature-figure", "isomer-deepsci-nature-paper2ppt", "isomer-deepsci-nature-polishing"]),
+            ("deepsci-org-reviewer", ["isomer-deepsci-shared", "isomer-deepsci-review", "isomer-deepsci-rebuttal", "isomer-deepsci-analysis"], ["isomer-deepsci-scout"]),
         ]
         role_blocks = []
         for role_id, required, optional in roles:
@@ -6185,8 +6379,8 @@ status = "active"
             (
                 "missing-required-skill",
                 valid_profile.replace(
-                    'required_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]',
-                    'required_skills = ["isomer-rsch-shared", "isomer-rsch-baseline"]',
+                    'required_skills = ["isomer-deepsci-shared", "isomer-deepsci-scout", "isomer-deepsci-baseline"]',
+                    'required_skills = ["isomer-deepsci-shared", "isomer-deepsci-baseline"]',
                     1,
                 ),
                 "role_bindings.deepsci-org-framer.required_skills",

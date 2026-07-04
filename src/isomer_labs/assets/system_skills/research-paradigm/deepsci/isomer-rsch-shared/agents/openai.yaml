@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-shared"
-  short_description: "Shared production DeepSci research loop and semantic placeholder contract."
-  default_prompt: "Use $isomer-rsch-shared to apply the production DeepSci research loop and semantic placeholder rules."

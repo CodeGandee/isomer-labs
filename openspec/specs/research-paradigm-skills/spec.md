@@ -4,7 +4,7 @@
 Define the reusable Isomer Labs research-paradigm skillset, including portable research-stage skills, shared evidence vocabulary, generic agent mappings, provenance handling, Imsight skill-entrypoint structure, and validation rules that prevent DeepScientist runtime coupling from becoming an Isomer requirement.
 ## Requirements
 ### Requirement: Research Paradigm Skillset Layout
-The project SHALL provide a reusable production DeepSci research-paradigm skillset under `skillset/research-paradigm/deepsci/` using Codex skill folder layout and the `isomer-rsch-<purpose>` naming convention for research-stage method skills only.
+The project SHALL provide a reusable production DeepSci research-paradigm skillset under `skillset/research-paradigm/deepsci/` using Codex skill folder layout and the `isomer-deepsci-<purpose>` naming convention for research-stage method skills only.
 
 #### Scenario: Production DeepSci root exists
 - **WHEN** the research-paradigm skillset is inspected
@@ -14,11 +14,11 @@ The project SHALL provide a reusable production DeepSci research-paradigm skills
 #### Scenario: Retired v1 skill folders are absent
 - **WHEN** the active research-paradigm skillset is inspected
 - **THEN** retired first-generation research skill folders are absent
-- **AND** active docs do not route users to `isomer-rsch-*-v1` skills
+- **AND** active docs do not route users to `isomer-deepsci-*-v1` skills
 
 #### Scenario: Production DeepSci skill folders exist
 - **WHEN** the production DeepSci research-paradigm skillset is inspected
-- **THEN** it contains `isomer-rsch-shared` and folders for scout, baseline, idea, optimize, experiment, analysis, decision, finalize, science, write, review, rebuttal, paper-outline, paper-plot, figure-polish, nature-data, nature-figure, nature-paper2ppt, nature-polishing, and workspace-mgr
+- **THEN** it contains `isomer-deepsci-shared` and folders for scout, baseline, idea, optimize, experiment, analysis, decision, finalize, science, write, review, rebuttal, paper-outline, paper-plot, figure-polish, nature-data, nature-figure, nature-paper2ppt, nature-polishing, and workspace-mgr
 
 #### Scenario: Migrated production DeepSci companion skills keep bounded traceability material
 - **WHEN** a refactor-migrated production DeepSci companion skill is inspected
@@ -28,7 +28,7 @@ The project SHALL provide a reusable production DeepSci research-paradigm skills
 #### Scenario: Skill frontmatter is valid
 - **WHEN** each production DeepSci research-stage skill's `SKILL.md` is inspected
 - **THEN** the YAML frontmatter contains `name` and `description` fields
-- **AND** the `name` field matches the suffixless `isomer-rsch-<purpose>` folder name
+- **AND** the `name` field matches the suffixless `isomer-deepsci-<purpose>` folder name
 
 #### Scenario: Skill manifest exists when a skill is packaged independently
 - **WHEN** an extracted research-stage skill is packaged as a standalone skill bundle
@@ -42,9 +42,9 @@ The project SHALL provide a reusable production DeepSci research-paradigm skills
 - **WHEN** active research-paradigm skill folders and docs are inspected
 - **THEN** they do not use `isomer-labs-research-*` as active skill folder names, frontmatter names, manifests, or role mappings
 
-#### Scenario: Operator admin skills are excluded
+#### Scenario: Operator skills are excluded
 - **WHEN** active research-paradigm skill folders and docs are inspected
-- **THEN** Project Operator Session and Operator Agent orchestration skills are not stored or named as `isomer-rsch-*` skills and instead use the operator admin skillset
+- **THEN** Project Operator Session and Operator Agent orchestration skills are not stored or named as `isomer-deepsci-*` skills and instead use the operator skillset
 
 ### Requirement: Generic Research Vocabulary
 The generationed skillset SHALL distinguish research-method semantics from Isomer platform implementation terms.
@@ -76,15 +76,15 @@ The skillset SHALL include generation-specific shared research contracts, with v
 
 #### Scenario: V1 shared contract is preserved
 - **WHEN** the v1 generation is inspected
-- **THEN** it contains `isomer-rsch-shared/SKILL.md` migrated from the previous `isomer-rsch-shared` skill with generation-suffixed names
+- **THEN** it contains `isomer-deepsci-shared/SKILL.md` migrated from the previous `isomer-deepsci-shared` skill with generation-suffixed names
 
 #### Scenario: Production DeepSci shared contract defines semantic placeholders
-- **WHEN** `skillset/research-paradigm/deepsci/isomer-rsch-shared/SKILL.md` and its directly linked references are inspected
+- **WHEN** `skillset/research-paradigm/deepsci/isomer-deepsci-shared/SKILL.md` and its directly linked references are inspected
 - **THEN** they define the production DeepSci research loop, placeholder syntax, placeholder registry location, and rule that placeholders are not storage bindings
 
 #### Scenario: Production DeepSci stage skills reference production DeepSci shared rules
 - **WHEN** a production DeepSci core skill needs common placeholder, handoff, evidence, or process discipline
-- **THEN** it references `isomer-rsch-shared` instead of duplicating long shared rules or referencing v1 shared rules
+- **THEN** it references `isomer-deepsci-shared` instead of duplicating long shared rules or referencing v1 shared rules
 
 #### Scenario: Production DeepSci shared registry defines placeholder semantics
 - **WHEN** the production DeepSci semantic-placeholder registry is inspected
@@ -138,7 +138,7 @@ The skillset SHALL keep active skill entrypoints concise, move long reusable met
 - **THEN** it contains only files that directly support skill use, such as `SKILL.md`, `agents/openai.yaml`, `references/`, `assets/`, `scripts/`, and explicitly bounded non-active traceability directories
 
 ### Requirement: Imsight Workflow Entrypoints
-Each production DeepSci `isomer-rsch-*-production DeepSci` skill SHALL use a concise Imsight-compatible skill entrypoint structure while preserving trigger behavior and research guardrails.
+Each production DeepSci `isomer-deepsci-*-production DeepSci` skill SHALL use a concise Imsight-compatible skill entrypoint structure while preserving trigger behavior and research guardrails.
 
 #### Scenario: Workflow section is near the top
 - **WHEN** a production DeepSci `SKILL.md` is inspected
@@ -157,11 +157,11 @@ Each production DeepSci `isomer-rsch-*-production DeepSci` skill SHALL use a con
 - **THEN** its entrypoint states which references to read first and which references to read for route-specific, placeholder-specific, validation, or provenance needs
 
 ### Requirement: Generic Agent Mapping
-The team documentation SHALL map generic research agents to the extracted `isomer-rsch-*` skills without making the skills depend on one team topology.
+The team documentation SHALL map generic research agents to the extracted `isomer-deepsci-*` skills without making the skills depend on one team topology.
 
 #### Scenario: Generic role map exists
 - **WHEN** the updated team documentation is inspected
-- **THEN** it defines generic research roles and lists the `isomer-rsch-*` research-paradigm skills installed for each role
+- **THEN** it defines generic research roles and lists the `isomer-deepsci-*` research-paradigm skills installed for each role
 
 #### Scenario: Skill bundles are topology-neutral
 - **WHEN** an extracted skill is inspected
@@ -187,7 +187,7 @@ The implementation SHALL include a repository-runnable validation harness that c
 
 #### Scenario: Structural validation runs
 - **WHEN** the validation harness inspects the research-paradigm skillset
-- **THEN** validation confirms each expected `isomer-rsch-*` skill folder has a valid `SKILL.md`, valid frontmatter, expected supporting resources, and directly linked one-level active references
+- **THEN** validation confirms each expected `isomer-deepsci-*` skill folder has a valid `SKILL.md`, valid frontmatter, expected supporting resources, and directly linked one-level active references
 
 #### Scenario: Expected production inventory is validated
 - **WHEN** the validation harness inspects `skillset/research-paradigm/deepsci`
@@ -196,7 +196,7 @@ The implementation SHALL include a repository-runnable validation harness that c
 
 #### Scenario: Naming validation runs
 - **WHEN** the validation harness inspects the research-paradigm skillset
-- **THEN** validation confirms every active skill folder, `SKILL.md` frontmatter `name:`, manifest `interface.display_name`, manifest `default_prompt`, and active role mapping uses `isomer-rsch-*` versioned names consistently
+- **THEN** validation confirms every active skill folder, `SKILL.md` frontmatter `name:`, manifest `interface.display_name`, manifest `default_prompt`, and active role mapping uses `isomer-deepsci-*` versioned names consistently
 
 #### Scenario: Imsight workflow formatting is validated
 - **WHEN** the validation harness inspects an enriched active `SKILL.md`
@@ -252,7 +252,7 @@ The implementation SHALL include a repository-runnable validation harness that c
 
 #### Scenario: Shared TBD registry is canonical
 - **WHEN** the validation harness validates `[[tbd-surface:<id>]]` placeholders or resolved former IDs anywhere in active research-paradigm guidance
-- **THEN** validation treats `isomer-rsch-shared/references/tbd-surface-registry.md` as the canonical registry for the subtree
+- **THEN** validation treats `isomer-deepsci-shared/references/tbd-surface-registry.md` as the canonical registry for the subtree
 
 #### Scenario: Local TBD registry mirror drift is reported
 - **WHEN** a directly loaded local contract file contains a `## TBD Surface Registry` mirror section
@@ -271,7 +271,7 @@ The implementation SHALL include a repository-runnable validation harness that c
 - **THEN** validation treats the pattern as documentation of a route-specific resource shape rather than a literal required local file
 
 #### Scenario: Manifest mismatch is reported
-- **WHEN** a skill's `agents/openai.yaml` `interface.display_name` does not equal the skill folder and `SKILL.md` frontmatter name, or `interface.default_prompt` does not invoke the same `$isomer-rsch-*` skill
+- **WHEN** a skill's `agents/openai.yaml` `interface.display_name` does not equal the skill folder and `SKILL.md` frontmatter name, or `interface.default_prompt` does not invoke the same `$isomer-deepsci-*` skill
 - **THEN** validation reports the manifest mismatch and identifies the affected manifest field
 
 #### Scenario: Validator tests cover active and non-active zones
@@ -325,15 +325,15 @@ Project operator and Topic Service Agent skills SHALL describe orchestration and
 - **THEN** it uses the canonical Isomer domain terms and does not collapse template, profile, runtime team, service team, and Houmao managed-agent concepts
 
 ### Requirement: Research Paradigm Skillset References Operator Skills by Boundary
-Research-paradigm documentation SHALL distinguish research-stage skills from operator/admin skills instead of presenting Project Operator Session orchestration as research method.
+Research-paradigm documentation SHALL distinguish research-stage skills from operator skills instead of presenting Project Operator Session orchestration as research method.
 
 #### Scenario: Research docs point to operator skillset
 - **WHEN** research-paradigm README or role mapping documentation mentions project operation, Topic Team Specialization orchestration, Service Request routing, profile materialization, approval, or team launch
-- **THEN** it points to the `isomer-admin-*` operator skillset rather than listing those capabilities as `isomer-rsch-*` research-stage skills
+- **THEN** it points to the `isomer-op-*` operator skillset rather than listing those capabilities as `isomer-deepsci-*` research-stage skills
 
-#### Scenario: Research role mappings avoid admin skills
+#### Scenario: Research role mappings avoid operator skills
 - **WHEN** generic research agent role mappings are inspected
-- **THEN** ordinary research roles such as scout, baseline, experiment, analysis, writer, reviewer, or synthesis reviewer do not install `isomer-admin-*` skills unless the role is explicitly an Operator Agent role
+- **THEN** ordinary research roles such as scout, baseline, experiment, analysis, writer, reviewer, or synthesis reviewer do not install `isomer-op-*` skills unless the role is explicitly an Operator Agent role
 
 ### Requirement: Production DeepSci Semantic Placeholder Contract
 The production DeepSci research-paradigm skillset SHALL define semantic placeholders before binding research objects to Isomer storage.
@@ -348,7 +348,7 @@ The production DeepSci research-paradigm skillset SHALL define semantic placehol
 
 #### Scenario: Placeholder registry is authoritative for production DeepSci
 - **WHEN** production DeepSci placeholder meaning is inspected
-- **THEN** the authoritative definitions live in `skillset/research-paradigm/deepsci/isomer-rsch-shared/references/semantic-placeholders.md`
+- **THEN** the authoritative definitions live in `skillset/research-paradigm/deepsci/isomer-deepsci-shared/references/semantic-placeholders.md`
 
 #### Scenario: Placeholder entry has minimum semantic fields
 - **WHEN** a placeholder entry is inspected
@@ -362,15 +362,15 @@ The production DeepSci research-paradigm skillset SHALL define semantic placehol
 The production DeepSci core skillset SHALL organize research conduction around the core process rather than around implementation bookkeeping.
 
 #### Scenario: Core loop is documented
-- **WHEN** `isomer-rsch-shared` is inspected
+- **WHEN** `isomer-deepsci-shared` is inspected
 - **THEN** it documents the loop `Frame -> Comparator -> Hypothesis -> Experiment -> Analysis -> Decision -> Finalize`
 
 #### Scenario: Optimize is an overlay
-- **WHEN** `isomer-rsch-optimize` is inspected
+- **WHEN** `isomer-deepsci-optimize` is inspected
 - **THEN** it describes optimization as an overlay on hypothesis, experiment, and analysis work rather than as a separate storage model
 
 #### Scenario: Science is a computation-validity companion
-- **WHEN** `isomer-rsch-science` is inspected
+- **WHEN** `isomer-deepsci-science` is inspected
 - **THEN** it describes scientific computation, package checks, simulations, dataset analysis, and validation as support for the core research loop rather than as a separate storage model
 
 #### Scenario: Each production DeepSci stage declares semantic handoff
@@ -382,11 +382,11 @@ The production DeepSci core skillset SHALL organize research conduction around t
 - **THEN** it includes guardrails for false progress, missing comparator or metric, unsupported claims, non-comparable experiments, failed or null results, and premature finalization where relevant to that stage
 
 ### Requirement: Production DeepSci Research Workspace Manager Skill
-The research-paradigm skillset SHALL include an `isomer-rsch-workspace-mgr` skill that performs research-specific Topic Workspace bootstrap after Topic Team Specialization and full Topic Workspace initialization.
+The research-paradigm skillset SHALL include an `isomer-deepsci-workspace-mgr` skill that performs research-specific Topic Workspace bootstrap after Topic Team Specialization and full Topic Workspace initialization.
 
 #### Scenario: Workspace manager skill exists
 - **WHEN** the production DeepSci research-paradigm skillset is inspected
-- **THEN** it contains `skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/SKILL.md` with valid frontmatter, workflow, reference routing, fallback guidance, and an `agents/openai.yaml` manifest that invokes `$isomer-rsch-workspace-mgr`
+- **THEN** it contains `skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/SKILL.md` with valid frontmatter, workflow, reference routing, fallback guidance, and an `agents/openai.yaml` manifest that invokes `$isomer-deepsci-workspace-mgr`
 
 #### Scenario: Workspace manager runs after specialization
 - **WHEN** the skill explains its entry conditions
@@ -394,17 +394,17 @@ The research-paradigm skillset SHALL include an `isomer-rsch-workspace-mgr` skil
 
 #### Scenario: Workspace manager is distinct from operator topic management
 - **WHEN** the skill describes its boundary
-- **THEN** it states that `isomer-admin-topic-mgr` remains the operator initialized-topic manager while `isomer-rsch-workspace-mgr` owns research placeholder binding and production DeepSci storage bootstrap guidance
+- **THEN** it states that `isomer-op-topic-mgr` remains the operator initialized-topic manager while `isomer-deepsci-workspace-mgr` owns research placeholder binding and production DeepSci storage bootstrap guidance
 
 #### Scenario: Topic Service Master is optional
 - **WHEN** the skill describes the actor that performs bootstrap
 - **THEN** it names the Topic Service Master as the preferred topic-workspace manager when started and states that the Project Operator Session or Operator Agent performs the same bounded work when no Topic Service Master is running
 
 ### Requirement: Production DeepSci Research Storage Bootstrap Contract
-The `isomer-rsch-workspace-mgr` skill SHALL define consistent placeholders and outputs for research storage bootstrap, using the same placeholder registry style as the other production DeepSci research skills.
+The `isomer-deepsci-workspace-mgr` skill SHALL define consistent placeholders and outputs for research storage bootstrap, using the same placeholder registry style as the other production DeepSci research skills.
 
 #### Scenario: Manager placeholder registry exists
-- **WHEN** `isomer-rsch-workspace-mgr/migrate/placeholders.md` is inspected
+- **WHEN** `isomer-deepsci-workspace-mgr/migrate/placeholders.md` is inspected
 - **THEN** it defines placeholders for workspace context, storage label planning, placeholder binding registry, storage bootstrap record, agent access plan, bootstrap validation report, and workspace blocker record
 
 #### Scenario: Placeholder kinds use existing production DeepSci storage mapping
@@ -424,15 +424,15 @@ The `isomer-rsch-workspace-mgr` skill SHALL define consistent placeholders and o
 - **THEN** it uses `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, and `agent.links` as pre-promotion or convenience surfaces while preserving semantic labels and typed refs as the durable storage authority
 
 ### Requirement: Research Workspace Manager Validation
-The research-paradigm validation harness SHALL recognize `isomer-rsch-workspace-mgr` as an expected production DeepSci skill and apply the normal production DeepSci structure and placeholder checks to it.
+The research-paradigm validation harness SHALL recognize `isomer-deepsci-workspace-mgr` as an expected production DeepSci skill and apply the normal production DeepSci structure and placeholder checks to it.
 
 #### Scenario: Validator expects workspace manager
 - **WHEN** the research-paradigm validation harness runs against the repository skillset
-- **THEN** it treats `isomer-rsch-workspace-mgr` as part of the expected production DeepSci skill set
+- **THEN** it treats `isomer-deepsci-workspace-mgr` as part of the expected production DeepSci skill set
 
 #### Scenario: Validator checks manager placeholders
 - **WHEN** active manager skill text uses migration placeholders
-- **THEN** validation confirms those placeholders are registered in `isomer-rsch-workspace-mgr/migrate/placeholders.md`
+- **THEN** validation confirms those placeholders are registered in `isomer-deepsci-workspace-mgr/migrate/placeholders.md`
 
 ### Requirement: Production DeepSci Skills Read Placeholder Bindings
 Active production DeepSci research skills SHALL read local placeholder binding pages before writing durable placeholder outputs.
@@ -500,7 +500,7 @@ The research-paradigm production DeepSci skillset SHALL map writing-related plac
 The production DeepSci research workspace bootstrap SHALL support base topic readiness, Topic Actor readiness, and optional formal team readiness as composable topology layers.
 
 #### Scenario: Bootstrap accepts Topic Actor readiness
-- **WHEN** `isomer-rsch-workspace-mgr` or its successor runs for human-orchestrated research
+- **WHEN** `isomer-deepsci-workspace-mgr` or its successor runs for human-orchestrated research
 - **THEN** it validates the selected Topic Workspace, Workspace Runtime, Research Topic overview, topic environment readiness, ready `topic.repos.main`, available research record labels, skill-local placeholder binding files, the topic-level placeholder binding index or readiness report, selected Topic Actor bindings, and selected Topic Actor Workspaces
 - **AND** it does not require Topic Agent Team Profile material, formal Agent Workspace access plans, per-Agent Instance cwd proof, Agent Instance records, or Agent Team Instance records unless the selected topology includes a formal team layer
 
@@ -539,15 +539,15 @@ Non-dev research paradigm skills SHALL call Isomer CLI surfaces through direct `
 - **AND** it still must not use that runner to invoke Isomer's global CLI
 
 ### Requirement: Production DeepSci Research Workspace Manager Owns Production DeepSci Bootstrap
-The production DeepSci research-paradigm skillset SHALL make `isomer-rsch-workspace-mgr` the owner of production DeepSci-specific research workspace bootstrap.
+The production DeepSci research-paradigm skillset SHALL make `isomer-deepsci-workspace-mgr` the owner of production DeepSci-specific research workspace bootstrap.
 
 #### Scenario: Production DeepSci bootstrap consumes operator readiness
-- **WHEN** `isomer-rsch-workspace-mgr` prepares production DeepSci research workspace readiness for a Topic Workspace
+- **WHEN** `isomer-deepsci-workspace-mgr` prepares production DeepSci research workspace readiness for a Topic Workspace
 - **THEN** it consumes Topic Workspace and Topic Actor readiness evidence produced by operator skills as input
 - **AND** it does not require operator skills to validate selected production DeepSci skills, production DeepSci placeholder binding files, production DeepSci placeholder binding registries, or accepted research artifact command shapes
 
 #### Scenario: Production DeepSci bootstrap reports research recording guidance
-- **WHEN** `isomer-rsch-workspace-mgr` completes production DeepSci bootstrap
+- **WHEN** `isomer-deepsci-workspace-mgr` completes production DeepSci bootstrap
 - **THEN** it reports selected production DeepSci skill readiness, placeholder binding entrypoints, research storage or record guidance, actor access plans, and accepted research artifact recording instructions when those are in scope
 - **AND** it treats those outputs as research-paradigm material rather than operator Topic Actor topology material
 
@@ -557,11 +557,11 @@ The production DeepSci research-paradigm skillset SHALL make `isomer-rsch-worksp
 - **AND** it adds production DeepSci-specific recording metadata only inside production DeepSci research workspace outputs
 
 ### Requirement: Production DeepSci Research Workspace Manager Skill
-The research-paradigm skillset SHALL include an `isomer-rsch-workspace-mgr` skill that performs research-specific Topic Workspace bootstrap after Topic Team Specialization and full Topic Workspace initialization.
+The research-paradigm skillset SHALL include an `isomer-deepsci-workspace-mgr` skill that performs research-specific Topic Workspace bootstrap after Topic Team Specialization and full Topic Workspace initialization.
 
 #### Scenario: Workspace manager skill exists
 - **WHEN** the production DeepSci research-paradigm skillset is inspected
-- **THEN** it contains `skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/SKILL.md` with valid frontmatter, workflow, reference routing, fallback guidance, and an `agents/openai.yaml` manifest that invokes `$isomer-rsch-workspace-mgr`
+- **THEN** it contains `skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/SKILL.md` with valid frontmatter, workflow, reference routing, fallback guidance, and an `agents/openai.yaml` manifest that invokes `$isomer-deepsci-workspace-mgr`
 
 #### Scenario: Workspace manager runs after specialization
 - **WHEN** the skill explains its entry conditions
@@ -569,31 +569,31 @@ The research-paradigm skillset SHALL include an `isomer-rsch-workspace-mgr` skil
 
 #### Scenario: Workspace manager is distinct from operator topic management
 - **WHEN** the skill describes its boundary
-- **THEN** it states that `isomer-admin-topic-mgr` remains the operator initialized-topic manager while `isomer-rsch-workspace-mgr` owns research placeholder binding and production DeepSci storage bootstrap guidance
+- **THEN** it states that `isomer-op-topic-mgr` remains the operator initialized-topic manager while `isomer-deepsci-workspace-mgr` owns research placeholder binding and production DeepSci storage bootstrap guidance
 
 #### Scenario: Topic Service Master is optional
 - **WHEN** the skill describes the actor that performs bootstrap
 - **THEN** it names the Topic Service Master as the preferred topic-workspace manager when started and states that the Project Operator Session or Operator Agent performs the same bounded work when no Topic Service Master is running
 
 ### Requirement: Production DeepSci Package Setup Routes to Topic Manager
-Active research-paradigm production DeepSci skills SHALL route package installation, package update, package removal, and package verification needs to `isomer-admin-topic-mgr` environment commands instead of installing packages directly.
+Active research-paradigm production DeepSci skills SHALL route package installation, package update, package removal, and package verification needs to `isomer-op-topic-mgr` environment commands instead of installing packages directly.
 
 #### Scenario: Missing Python package routes to topic manager
 - **WHEN** a production DeepSci research skill detects that a required Python package is missing from the selected Topic Workspace environment
-- **THEN** it stops before the dependent research action and routes a natural-language package request to `$isomer-admin-topic-mgr env-install-packages`
+- **THEN** it stops before the dependent research action and routes a natural-language package request to `$isomer-op-topic-mgr env-install-packages`
 - **AND** it does not create a local virtual environment, run ambient `pip`, or mutate machine-global Python state
 
 #### Scenario: Missing R package routes to topic manager
 - **WHEN** a production DeepSci research skill detects that a required R package is missing from the selected Topic Workspace environment
-- **THEN** it stops before the dependent render, analysis, or verification action and routes a natural-language package request to `$isomer-admin-topic-mgr env-install-packages`
+- **THEN** it stops before the dependent render, analysis, or verification action and routes a natural-language package request to `$isomer-op-topic-mgr env-install-packages`
 
 #### Scenario: Package update or removal request routes to topic manager
 - **WHEN** a production DeepSci research skill needs a package update, package downgrade, or package removal to proceed safely
-- **THEN** it routes the request to `$isomer-admin-topic-mgr env-update-packages` or `$isomer-admin-topic-mgr env-remove-packages`
+- **THEN** it routes the request to `$isomer-op-topic-mgr env-update-packages` or `$isomer-op-topic-mgr env-remove-packages`
 - **AND** it includes the research purpose and desired verification evidence in the request
 
 #### Scenario: Package readiness evidence is consumed after verification
-- **WHEN** `isomer-admin-topic-mgr` reports package mutation or verification evidence with passing checks
+- **WHEN** `isomer-op-topic-mgr` reports package mutation or verification evidence with passing checks
 - **THEN** the production DeepSci research skill may continue the blocked workflow from the same selected Topic Workspace context
 - **AND** it treats failed or skipped verification as a blocker rather than silently switching environments
 

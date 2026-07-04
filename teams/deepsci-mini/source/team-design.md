@@ -37,13 +37,13 @@ Follow-up Research Inquiry Gate, Decision Record, View Manifests, durable Artifa
 
 ## Skill Binding Projection
 
-Install `isomer-rsch-shared` for every team role. It carries common evidence, handoff, terminology, provenance, and unsettled-surface rules.
+Install `isomer-deepsci-shared` for every team role. It carries common evidence, handoff, terminology, provenance, and unsettled-surface rules.
 
 | Agent Role | Required Skills | Optional Skills |
 | --- | --- | --- |
-| `deepsci-mini-lead` | `isomer-rsch-shared`, `isomer-rsch-decision`, `isomer-rsch-finalize` | `isomer-rsch-review` when a final skeptical check is needed before a Gate. |
-| `deepsci-mini-scout` | `isomer-rsch-shared`, `isomer-rsch-scout` | `isomer-rsch-baseline`, `isomer-rsch-science`, `isomer-rsch-paper-outline` when topic context requires them. |
-| `deepsci-mini-synth-reviewer` | `isomer-rsch-shared`, `isomer-rsch-idea`, `isomer-rsch-analysis`, `isomer-rsch-review` | `isomer-rsch-science`, `isomer-rsch-paper-plot` for lightweight domain validation or diagnostic displays. |
+| `deepsci-mini-lead` | `isomer-deepsci-shared`, `isomer-deepsci-decision`, `isomer-deepsci-finalize` | `isomer-deepsci-review` when a final skeptical check is needed before a Gate. |
+| `deepsci-mini-scout` | `isomer-deepsci-shared`, `isomer-deepsci-scout` | `isomer-deepsci-baseline`, `isomer-deepsci-science`, `isomer-deepsci-paper-outline` when topic context requires them. |
+| `deepsci-mini-synth-reviewer` | `isomer-deepsci-shared`, `isomer-deepsci-idea`, `isomer-deepsci-analysis`, `isomer-deepsci-review` | `isomer-deepsci-science`, `isomer-deepsci-paper-plot` for lightweight domain validation or diagnostic displays. |
 
 ## Manual Mode
 

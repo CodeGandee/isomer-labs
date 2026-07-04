@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-nature-data"
-  short_description: "Prepare Nature-style data availability material."
-  default_prompt: "Use $isomer-rsch-nature-data to prepare or audit a Nature-ready Data Availability statement, repository plan, dataset citations, and FAIR metadata."

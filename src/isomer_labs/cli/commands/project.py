@@ -11,6 +11,12 @@ from isomer_labs.cli.handlers.project import (
     _cmd_content_root_move,
     _cmd_context_show,
     _cmd_init,
+    _cmd_skill_callbacks_disable,
+    _cmd_skill_callbacks_list,
+    _cmd_skill_callbacks_register,
+    _cmd_skill_callbacks_resolve,
+    _cmd_skill_callbacks_show,
+    _cmd_skill_callbacks_validate,
     _cmd_topics_create,
     _cmd_topics_delete,
     _cmd_topics_list,
@@ -382,6 +388,285 @@ def register_project_commands(app: click.Group) -> None:
                 manifest=manifest,
                 output_format=output_format,
                 json_output=json_output,
+            )
+        )
+
+
+    @app.group(name="skill-callbacks", help="User Skill Callback commands.")
+    def skill_callbacks_group() -> None:
+        pass
+
+
+    @skill_callbacks_group.command(name="register", help="Register a User Skill Callback.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--id", "callback_id", default=None, help="Stable callback id. Generated when omitted.")
+    @click.option("--skill", "callback_skill", required=True, help="Target packaged system skill name.")
+    @click.option("--stage", "callback_stage", type=click.Choice(["begin", "end"]), required=True, help="Callback stage.")
+    @click.option(
+        "--scope",
+        "callback_scope",
+        type=click.Choice(["project", "research_topic"]),
+        default="research_topic",
+        show_default=True,
+        help="Callback registry scope.",
+    )
+    @click.option("--prompt", "callback_prompt", default=None, help="Inline callback prompt to materialize.")
+    @click.option("--prompt-file", "callback_prompt_file", default=None, help="Prompt file source.")
+    @click.option("--skill-dir", "callback_skill_dir", default=None, help="External skill directory source containing SKILL.md.")
+    @click.option("--priority", "callback_priority", default=100, show_default=True, type=int, help="Lower values resolve first within one scope.")
+    @click.option("--allow-external-source", "callback_allow_external_source", is_flag=True, help="Allow a callback source path outside the Project root.")
+    @click.pass_context
+    def skill_callbacks_register_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        callback_id: str | None = None,
+        callback_skill: str | None = None,
+        callback_stage: str | None = None,
+        callback_scope: str | None = None,
+        callback_prompt: str | None = None,
+        callback_prompt_file: str | None = None,
+        callback_skill_dir: str | None = None,
+        callback_priority: int | None = None,
+        callback_allow_external_source: bool = False,
+    ) -> int:
+        return _cmd_skill_callbacks_register(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+                callback_id=callback_id,
+                callback_skill=callback_skill,
+                callback_stage=callback_stage,
+                callback_scope=callback_scope,
+                callback_prompt=callback_prompt,
+                callback_prompt_file=callback_prompt_file,
+                callback_skill_dir=callback_skill_dir,
+                callback_priority=callback_priority,
+                callback_allow_external_source=callback_allow_external_source,
+            )
+        )
+
+
+    @skill_callbacks_group.command(name="resolve", help="Resolve User Skill Callbacks for one system skill stage.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--skill", "callback_skill", required=True, help="Target packaged system skill name.")
+    @click.option("--stage", "callback_stage", type=click.Choice(["begin", "end"]), required=True, help="Callback stage.")
+    @click.pass_context
+    def skill_callbacks_resolve_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        callback_skill: str | None = None,
+        callback_stage: str | None = None,
+    ) -> int:
+        return _cmd_skill_callbacks_resolve(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+                callback_skill=callback_skill,
+                callback_stage=callback_stage,
+            )
+        )
+
+
+    @skill_callbacks_group.command(name="list", help="List visible User Skill Callbacks.")
+    @_common_options
+    @_topic_selection_options
+    @click.pass_context
+    def skill_callbacks_list_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_skill_callbacks_list(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
+
+
+    @skill_callbacks_group.command(name="show", help="Show one User Skill Callback.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("callback_id")
+    @click.pass_context
+    def skill_callbacks_show_command(
+        ctx: click.Context,
+        callback_id: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_skill_callbacks_show(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+                callback_id=callback_id,
+            )
+        )
+
+
+    @skill_callbacks_group.command(name="disable", help="Disable one User Skill Callback.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("callback_id")
+    @click.pass_context
+    def skill_callbacks_disable_command(
+        ctx: click.Context,
+        callback_id: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_skill_callbacks_disable(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+                callback_id=callback_id,
+            )
+        )
+
+
+    @skill_callbacks_group.command(name="validate", help="Validate visible User Skill Callback registries.")
+    @_common_options
+    @_topic_selection_options
+    @click.pass_context
+    def skill_callbacks_validate_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_skill_callbacks_validate(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
             )
         )
 

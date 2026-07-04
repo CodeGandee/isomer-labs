@@ -7,7 +7,7 @@ TBD - created by archiving change add-topic-creator-finalize-summary. Update Pur
 The Topic Creator skill SHALL expose `step-by-step` as a guided execution mode that runs the same main workflow as `fast-forward` while pausing for user understanding, option resolution, and acknowledgement before each step.
 
 #### Scenario: Help lists step-by-step as guided counterpart
-- **WHEN** `isomer-admin-topic-creator help` runs or the skill is invoked without a prompt
+- **WHEN** `isomer-op-topic-creator help` runs or the skill is invoked without a prompt
 - **THEN** the command list includes `step-by-step`
 - **AND** the help text describes `step-by-step` as the guided counterpart to `fast-forward`
 - **AND** it explains that `step-by-step` proceeds through the main workflow one acknowledged step at a time

@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-admin-topic-creator"
-  short_description: "Create Topic Actor-ready Isomer topics"
-  default_prompt: "Use $isomer-admin-topic-creator to create or resume a Research Topic for manual research."

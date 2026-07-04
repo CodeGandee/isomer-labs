@@ -15,7 +15,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Print a concise description:
    - `isomer-srv-agent-env-setup` prepares service-safe Agent Workspace cwd readiness from Topic Workspace and Topic Main Development Repository predecessor evidence.
-   - It owns selected-agent partial evidence, Agent Workspace worktrees, and overall Agent Workspace readiness; in the normal operator flow, `isomer-admin-topic-team-specialize` owns the derived target specs.
+   - It owns selected-agent partial evidence, Agent Workspace worktrees, and overall Agent Workspace readiness; in the normal operator flow, `isomer-op-topic-team-specialize` owns the derived target specs.
 2. Explain that concrete setup defaults to `setup-agent-env`, while direct subcommands are available for manual setup, inspection, or partial repair.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
 4. Name the required inputs:
@@ -53,4 +53,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Boundary Notes
 
-This service complements `isomer-srv-topic-env-setup`, which produces Topic Workspace, topic-main, and projection predecessor evidence, and `isomer-admin-topic-mgr`, which handles optional topology inspection, branch-helper support, boundary summaries, and `env-verify-agents` routing. It is the env-gate-aware service for per-agent Agent Workspace cwd verification.
+This service complements `isomer-srv-topic-env-setup`, which produces Topic Workspace, topic-main, and projection predecessor evidence, and `isomer-op-topic-mgr`, which handles optional topology inspection, branch-helper support, boundary summaries, and `env-verify-agents` routing. It is the env-gate-aware service for per-agent Agent Workspace cwd verification.

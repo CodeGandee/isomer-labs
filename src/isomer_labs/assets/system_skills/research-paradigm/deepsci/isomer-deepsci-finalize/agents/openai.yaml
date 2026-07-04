@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-deepsci-finalize"
+  short_description: "Summarize final claims, limits, and next action."
+  default_prompt: "Use $isomer-deepsci-finalize to produce a responsible final summary or route away from premature closure."

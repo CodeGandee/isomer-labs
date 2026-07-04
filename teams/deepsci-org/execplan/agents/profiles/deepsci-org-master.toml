@@ -8,5 +8,5 @@ capability_binding_placeholder = "{deepsci_org_master_capability_binding_ref}"
 skill_projection_placeholder = "{deepsci_org_master_skill_projection_ref}"
 workspace_placeholder = "{deepsci_org_master_agent_workspace_ref}"
 generated_skills = ["deepsci-org-shared-template", "deepsci-org-on-team-start", "deepsci-org-on-handoff-result", "deepsci-org-on-tick", "deepsci-org-operator-control"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-decision", "isomer-rsch-finalize"]
-optional_isomer_skills = ["isomer-rsch-review"]
+required_isomer_skills = ["isomer-deepsci-shared", "isomer-deepsci-decision", "isomer-deepsci-finalize"]
+optional_isomer_skills = ["isomer-deepsci-review"]

@@ -37,7 +37,7 @@ The system SHALL validate that active production DeepSci placeholder binding pag
 The research workspace manager skill SHALL treat local placeholder binding pages as the source material for the post-specialization binding registry.
 
 #### Scenario: Workspace manager reads binding pages
-- **WHEN** `isomer-rsch-workspace-mgr` builds `<RSCH_PLACEHOLDER_BINDING_REGISTRY>`
+- **WHEN** `isomer-deepsci-workspace-mgr` builds `<RSCH_PLACEHOLDER_BINDING_REGISTRY>`
 - **THEN** it reads each relevant skill's `migrate/placeholders.md` and `placeholder-bindings.md`
 
 #### Scenario: Binding registry records status

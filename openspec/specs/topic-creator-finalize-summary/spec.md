@@ -7,7 +7,7 @@ TBD - created by archiving change add-topic-creator-finalize-summary. Update Pur
 The Topic Creator skill SHALL expose `finalize` as the terminal workspace-preparation subcommand for validating Topic Workspace readiness, writing a durable readiness summary, and printing final readiness status.
 
 #### Scenario: Help lists finalize and omits stale handoff command
-- **WHEN** `isomer-admin-topic-creator help` runs or the skill is invoked without a prompt
+- **WHEN** `isomer-op-topic-creator help` runs or the skill is invoked without a prompt
 - **THEN** the command list includes `finalize`
 - **AND** the command list includes `step-by-step`
 - **AND** the command list includes `run-to`
@@ -84,7 +84,7 @@ The Topic Creator finalization path SHALL report workspace preparation state wit
 - **AND** any blocker text names the blocked condition without prescribing the next command to run
 
 #### Scenario: Validator rejects stale Topic Creator handoff guidance
-- **WHEN** operator skill validation scans `isomer-admin-topic-creator`
+- **WHEN** operator skill validation scans `isomer-op-topic-creator`
 - **THEN** it fails if the active Topic Creator command surface includes `start-manual-research`
 - **AND** it fails if Topic Creator final output claims to create manual start packs, recommends a next v2 research skill, or routes to a manual research start command
 

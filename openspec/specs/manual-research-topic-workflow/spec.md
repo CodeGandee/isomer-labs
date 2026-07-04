@@ -8,13 +8,13 @@ The system SHALL provide an operator workflow that prepares a Research Topic for
 
 #### Scenario: Direct human-orchestrated request prepares topic and actors
 - **WHEN** a Project Operator asks to prepare a topic for manual or human-orchestrated research with zero or more named workers
-- **THEN** the workflow resolves or creates the Research Topic, ensures Project Manifest-backed Topic Workspace registration, initializes or validates Workspace Runtime, delegates Topic Workspace environment setup, validates Topic Main Development Repository readiness, delegates missing Topic Actor or Topic Actor Workspace work to `isomer-admin-topic-mgr`, writes or reports Topic Actor onboarding material, and reports blockers
+- **THEN** the workflow resolves or creates the Research Topic, ensures Project Manifest-backed Topic Workspace registration, initializes or validates Workspace Runtime, delegates Topic Workspace environment setup, validates Topic Main Development Repository readiness, delegates missing Topic Actor or Topic Actor Workspace work to `isomer-op-topic-mgr`, writes or reports Topic Actor onboarding material, and reports blockers
 - **AND** it does not require a Topic Agent Team Profile, Agent Team Instance, formal Agent Workspace, Houmao launch dossier, Houmao-managed agent launch, selected v2 research skills, or v2 placeholder binding readiness
 
 #### Scenario: Operator Topic Actor Workspace is created by default
 - **WHEN** common topic preparation runs without an explicit user opt-out
-- **THEN** it asks `isomer-admin-topic-mgr` to create or reuse a Topic Actor named `operator`
-- **AND** it asks `isomer-admin-topic-mgr` to materialize that actor's Topic Actor Workspace with `default_cwd_label` set to `topic.actors.workspace`
+- **THEN** it asks `isomer-op-topic-mgr` to create or reuse a Topic Actor named `operator`
+- **AND** it asks `isomer-op-topic-mgr` to materialize that actor's Topic Actor Workspace with `default_cwd_label` set to `topic.actors.workspace`
 
 #### Scenario: User can opt out of operator Topic Actor Workspace
 - **WHEN** the user explicitly says not to create the `operator` Topic Actor or its Topic Actor Workspace
@@ -30,12 +30,12 @@ The human-orchestrated research workflow SHALL consume Topic Actor topology prep
 
 #### Scenario: Requested actors are delegated to topic manager
 - **WHEN** a manual research request names additional manually controlled workers
-- **THEN** the workflow routes Topic Actor registration, reuse, update, materialization, repair, or archive work to `isomer-admin-topic-mgr actors-manage`, `actors-materialize`, or `actors-diagnose`
+- **THEN** the workflow routes Topic Actor registration, reuse, update, materialization, repair, or archive work to `isomer-op-topic-mgr actors-manage`, `actors-materialize`, or `actors-diagnose`
 - **AND** it resumes research bootstrap only after the selected Topic Actor bindings and Topic Actor Workspaces are ready or reported as blocked
 
 #### Scenario: Actors do not share topic-main as required cwd
 - **WHEN** multiple Topic Actors are prepared for one Research Topic
-- **THEN** the manual workflow receives each actor's resolved Topic Actor Workspace cwd from `isomer-admin-topic-mgr`
+- **THEN** the manual workflow receives each actor's resolved Topic Actor Workspace cwd from `isomer-op-topic-mgr`
 - **AND** `topic.repos.main` remains the integration surface and Git anchor rather than the required cwd for every actor
 
 ### Requirement: Actor Readiness Signals
@@ -62,7 +62,7 @@ The system SHALL write or update a topic operation summary that reports the acti
 The human-orchestrated topic preparation workflow SHALL produce v2-independent Topic Actor onboarding material as part of actor setup.
 
 #### Scenario: Setup actors records actor onboarding material
-- **WHEN** `isomer-admin-topic-creator setup-actors` creates or validates a selected Topic Actor
+- **WHEN** `isomer-op-topic-creator setup-actors` creates or validates a selected Topic Actor
 - **THEN** it reports or writes actor onboarding material that includes the actor name, actor kind, runtime kind, role kind, controller kind, resolved `topic.actors.workspace` cwd, branch, integration surface, support labels, boundary notes, verification evidence, and blockers
 - **AND** it does not include selected v2 skills, v2 placeholder binding files, v2 bootstrap records, or accepted research artifact command shapes
 

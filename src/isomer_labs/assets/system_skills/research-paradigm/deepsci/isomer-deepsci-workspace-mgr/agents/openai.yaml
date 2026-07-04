@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-deepsci-workspace-mgr"
+  short_description: "Prepare production DeepSci research workspace storage bootstrap."
+  default_prompt: "Use $isomer-deepsci-workspace-mgr to prepare production DeepSci research placeholder binding, semantic record surfaces, agent access posture, and bootstrap readiness."

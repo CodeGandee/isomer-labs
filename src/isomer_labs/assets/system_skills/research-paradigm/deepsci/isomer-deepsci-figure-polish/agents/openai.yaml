@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-deepsci-figure-polish"
+  short_description: "Render, inspect, revise, and finalize figures."
+  default_prompt: "Use $isomer-deepsci-figure-polish to turn a meaningful figure into a durable paper, appendix, milestone, or review figure through render-inspect-revise."

@@ -125,6 +125,8 @@ def _collect_refs(raw: dict[str, Any]) -> dict[str, Any]:
         "artifact_format_profile_defaults",
         "artifact_extension_refs",
         "topic_statement_artifact_refs",
+        "user_skill_callback_registry_ref",
+        "user_skill_callback_registry_refs",
         "default_refs",
         "extension_refs",
         "policy_refs",

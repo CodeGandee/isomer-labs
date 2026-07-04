@@ -77,7 +77,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         skill_text = f"""
             ---
-            name: isomer-admin-topic-team-specialize
+            name: isomer-op-topic-team-specialize
             description: Valid fixture skill.
             ---
 
@@ -117,22 +117,22 @@ class SkillsetValidatorTests(unittest.TestCase):
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "SKILL.md",
+            root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "SKILL.md",
             skill_text,
         )
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "agents" / "openai.yaml",
+            root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "agents" / "openai.yaml",
             """
             interface:
-              display_name: "isomer-admin-topic-team-specialize"
+              display_name: "isomer-op-topic-team-specialize"
               short_description: "Valid fixture"
-              default_prompt: "Use $isomer-admin-topic-team-specialize to validate this fixture."
+              default_prompt: "Use $isomer-op-topic-team-specialize to validate this fixture."
             """,
         )
         for subcommand_name in validator.TOPIC_TEAM_SPECIALIZATION_SUBCOMMANDS:
             if subcommand_name == "help.md":
                 write(
-                    root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subcommand_name,
+                    root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / subcommand_name,
                     """
                     # Help
 
@@ -194,7 +194,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 Use `scripts/query_step_dependencies.py` and `references/step-dependencies.json` to compute full and targeted fast-forward paths.
                 """
             write(
-                root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / subcommand_name,
+                root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / subcommand_name,
                 f"""
                 # {subcommand_name}
 
@@ -210,7 +210,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             )
         for support_reference_name in validator.TOPIC_TEAM_SPECIALIZATION_SUPPORT_REFERENCES:
             write(
-                root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / support_reference_name,
+                root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / support_reference_name,
                 f"""
                 # {support_reference_name}
 
@@ -224,7 +224,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_welcome_skill(root)
 
     def write_topic_team_dependency_contract(self, root: Path) -> None:
-        skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize"
+        skill_dir = root / "skillset" / "operator" / "isomer-op-topic-team-specialize"
         step_ids = [subcommand.removesuffix(".md") for subcommand in validator.TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS]
         steps = {}
         edges = []
@@ -292,10 +292,10 @@ class SkillsetValidatorTests(unittest.TestCase):
         omit_subcommand_fallback: bool = False,
     ) -> None:
         write(
-            root / "skillset" / "operator" / "isomer-admin-project-mgr" / "SKILL.md",
+            root / "skillset" / "operator" / "isomer-op-project-mgr" / "SKILL.md",
             f"""
             ---
-            name: isomer-admin-project-mgr
+            name: isomer-op-project-mgr
             description: Valid fixture project manager skill.
             ---
 
@@ -305,7 +305,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             1. **Default help mode**: If invoked without a prompt, run `help`.
             2. Select one subcommand and load only the selected subcommand page.
-            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, `isomer-admin-topic-creator`, `isomer-admin-topic-mgr`, and `isomer-admin-topic-team-specialize` boundaries.
+            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize` boundaries.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -317,12 +317,12 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
         write(
-            root / "skillset" / "operator" / "isomer-admin-project-mgr" / "agents" / "openai.yaml",
+            root / "skillset" / "operator" / "isomer-op-project-mgr" / "agents" / "openai.yaml",
             """
             interface:
-              display_name: "isomer-admin-project-mgr"
+              display_name: "isomer-op-project-mgr"
               short_description: "Valid fixture"
-              default_prompt: "Use $isomer-admin-project-mgr to validate this fixture."
+              default_prompt: "Use $isomer-op-project-mgr to validate this fixture."
             """,
         )
         for subcommand_name in validator.PROJECT_MANAGER_SUBCOMMANDS:
@@ -331,7 +331,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             fallback = "" if omit_subcommand_fallback and subcommand_name == "help.md" else "If the user's task does not map cleanly to these steps, use your native planning tool."
             external = "Read `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`." if external_ref and subcommand_name == "check-project.md" else ""
             write(
-                root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / subcommand_name,
+                root / "skillset" / "operator" / "isomer-op-project-mgr" / "references" / subcommand_name,
                 f"""
                 # {subcommand_name}
 
@@ -344,7 +344,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             )
         for support_reference_name in validator.PROJECT_MANAGER_SUPPORT_REFERENCES:
             write(
-                root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / support_reference_name,
+                root / "skillset" / "operator" / "isomer-op-project-mgr" / "references" / support_reference_name,
                 f"""
                 # {support_reference_name}
 
@@ -359,11 +359,11 @@ class SkillsetValidatorTests(unittest.TestCase):
         omit_command: str | None = None,
         omit_skill_term: str | None = None,
     ) -> None:
-        skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-creator"
+        skill_dir = root / "skillset" / "operator" / "isomer-op-topic-creator"
         command_links = ", ".join(f"`references/{command_name}`" for command_name in validator.TOPIC_CREATOR_COMMANDS)
         skill_text = f"""
             ---
-            name: isomer-admin-topic-creator
+            name: isomer-op-topic-creator
             description: Valid fixture topic creator skill.
             ---
 
@@ -375,7 +375,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             1. **Default help mode**: If invoked without a prompt, run `help`.
             2. Select one subcommand and load only that subcommand page.
-            3. Preserve lower-level owner boundaries for `isomer-admin-project-mgr`, `isomer-srv-topic-env-setup`, `isomer-admin-topic-mgr`, and `isomer-admin-topic-team-specialize`.
+            3. Preserve lower-level owner boundaries for `isomer-op-project-mgr`, `isomer-srv-topic-env-setup`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -400,9 +400,9 @@ class SkillsetValidatorTests(unittest.TestCase):
             skill_dir / "agents" / "openai.yaml",
             """
             interface:
-              display_name: "isomer-admin-topic-creator"
+              display_name: "isomer-op-topic-creator"
               short_description: "Valid fixture"
-              default_prompt: "Use $isomer-admin-topic-creator to validate this fixture."
+              default_prompt: "Use $isomer-op-topic-creator to validate this fixture."
             """,
         )
         for command_name in validator.TOPIC_CREATOR_COMMANDS:
@@ -416,7 +416,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 "define-topic-env.md": "Create `topic.intent.topic_env_requirements`, wait for user verification, and report `fast-forward` assumptions.",
                 "setup-topic-env.md": "Delegate to `isomer-srv-topic-env-setup`, read `topic.intent.topic_env_requirements`, derive `topic.env.topic_setup_target_spec`, and report `topic.repos.main` readiness.",
                 "define-actors.md": "Create `topic.intent.actor_definitions` for the default `operator` and each actor source env gate.",
-                "setup-actors.md": "Delegate to `isomer-admin-topic-mgr`, consume `topic.intent.actor_definitions`, report `topic.actors.workspace`, and verify `topic.env.actor_env_gates`.",
+                "setup-actors.md": "Delegate to `isomer-op-topic-mgr`, consume `topic.intent.actor_definitions`, report `topic.actors.workspace`, and verify `topic.env.actor_env_gates`.",
                 "finalize.md": "Resolve `topic.workspace.summary`, run `isomer-cli project topic-reset checkpoint`, create a structured reset checkpoint from operator-level readiness evidence, report ready, verified, blocked, and skipped state. Do not recommend a next research step.",
                 "step-by-step.md": "Follow the same main workflow order as `fast-forward`, show an option table with Recommended choices, and require acknowledgement.",
                 "run-to.md": "Valid targets are procedural. The target is included by default, explicit exclusion stops before it, and the command stops on missing user input.",
@@ -446,7 +446,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         omit_skill_term: str | None = None,
         omit_subcommand_fallback: bool = False,
     ) -> None:
-        skill_dir = root / "skillset" / "operator" / "isomer-admin-topic-mgr"
+        skill_dir = root / "skillset" / "operator" / "isomer-op-topic-mgr"
         if skill_dir.exists():
             shutil.rmtree(skill_dir)
         subcommand_links = ", ".join(
@@ -455,13 +455,13 @@ class SkillsetValidatorTests(unittest.TestCase):
         skill_terms = "\n".join(f"            {term}" for term in validator.TOPIC_MANAGER_REQUIRED_SKILL_TERMS)
         skill_text = f"""
             ---
-            name: isomer-admin-topic-mgr
+            name: isomer-op-topic-mgr
             description: Valid fixture topic manager skill.
             ---
 
             # Isomer Admin Topic Mgr
 
-            Manage an initialized-topic after `isomer-admin-topic-creator` handoff. This fixture covers storage, actors, team topology, environment mutation, environment verification, reset checkpoint handling, diagnostics, and blocker reporting.
+            Manage an initialized-topic after `isomer-op-topic-creator` handoff. This fixture covers storage, actors, team topology, environment mutation, environment verification, reset checkpoint handling, diagnostics, and blocker reporting.
 
             ## Workflow
 
@@ -490,14 +490,14 @@ class SkillsetValidatorTests(unittest.TestCase):
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
-        write(root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "SKILL.md", skill_text)
+        write(root / "skillset" / "operator" / "isomer-op-topic-mgr" / "SKILL.md", skill_text)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "agents" / "openai.yaml",
+            root / "skillset" / "operator" / "isomer-op-topic-mgr" / "agents" / "openai.yaml",
             """
             interface:
-              display_name: "isomer-admin-topic-mgr"
+              display_name: "isomer-op-topic-mgr"
               short_description: "Valid fixture"
-              default_prompt: "Use $isomer-admin-topic-mgr to validate this fixture."
+              default_prompt: "Use $isomer-op-topic-mgr to validate this fixture."
             """,
         )
         for subcommand_name in validator.TOPIC_MANAGER_SUBCOMMANDS:
@@ -505,7 +505,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 continue
             if subcommand_name == "help.md":
                 write(
-                    root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / subcommand_name,
+                    root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / subcommand_name,
                     """
                     # Help
 
@@ -549,7 +549,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             fallback = "" if omit_subcommand_fallback and subcommand_name == "team-plan.md" else "If the user's task does not map cleanly to these steps, use your native planning tool."
             extra_terms = " ".join(validator.TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS.get(subcommand_name, ()))
             write(
-                root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / subcommand_name,
+                root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / subcommand_name,
                 f"""
                 # {subcommand_name}
 
@@ -572,10 +572,10 @@ class SkillsetValidatorTests(unittest.TestCase):
         active_retired_route: bool = False,
         automatic_tool_pack_route: bool = False,
     ) -> None:
-        skill_dir = root / "skillset" / "operator" / "isomer-admin-welcome"
+        skill_dir = root / "skillset" / "operator" / "isomer-op-welcome"
         skill_text = """
             ---
-            name: isomer-admin-welcome
+            name: isomer-op-welcome
             description: Manual invocation only; use when an Isomer Labs Project Operator Session needs welcome routing and visible usage paths.
             ---
 
@@ -604,8 +604,8 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             | Subcommand | Intent | Owner Skill | Safe First Command | Detail |
             | --- | --- | --- | --- | --- |
-            | `start-research-manually` | Manual research. | `isomer-admin-topic-creator` | `Use $isomer-admin-topic-creator fast-forward`. | [references/start-research-manually.md](references/start-research-manually.md) |
-            | `start-research-by-agent-team` | Team research. | `isomer-admin-topic-team-specialize` | `Use $isomer-admin-topic-team-specialize fast-forward`. | [references/start-research-by-agent-team.md](references/start-research-by-agent-team.md) |
+            | `start-research-manually` | Manual research. | `isomer-op-topic-creator` | `Use $isomer-op-topic-creator fast-forward`. | [references/start-research-manually.md](references/start-research-manually.md) |
+            | `start-research-by-agent-team` | Team research. | `isomer-op-topic-team-specialize` | `Use $isomer-op-topic-team-specialize fast-forward`. | [references/start-research-by-agent-team.md](references/start-research-by-agent-team.md) |
 
             ## Routing and Support Subcommands
 
@@ -632,8 +632,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             ## Guardrails
 
             The skill is read-only and uses `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, and `isomer-cli project context show` only for inspection.
-            Route Project checks to `isomer-admin-project-mgr`, topic creation to `isomer-admin-topic-creator`, initialized-topic work to `isomer-admin-topic-mgr`, Topic Team work to `isomer-admin-topic-team-specialize`, and Houmao work to `isomer-admin-houmao-interop`.
-            Do not ask users or agents to invoke `isomer-admin-topic-workspace-mgr`, `isomer-admin-topic-prepare`, or `isomer-admin-manual-research-session`; they are retired.
+            Route Project checks to `isomer-op-project-mgr`, topic creation to `isomer-op-topic-creator`, initialized-topic work to `isomer-op-topic-mgr`, and Topic Team work to `isomer-op-topic-team-specialize`. Route bounded Houmao adapter support through the owning operator workflow to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
+            Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; they are retired.
             Do not automatically route to `isomer-misc-tool-packs`; mention `isomer-misc-tool-packs` only as a manual skill when explicitly relevant.
             """
         if omit_skill_term is not None:
@@ -643,9 +643,9 @@ class SkillsetValidatorTests(unittest.TestCase):
             skill_dir / "agents" / "openai.yaml",
             """
             interface:
-              display_name: "isomer-admin-welcome"
+              display_name: "isomer-op-welcome"
               short_description: "Valid fixture"
-              default_prompt: "Use $isomer-admin-welcome show-options to validate this fixture."
+              default_prompt: "Use $isomer-op-welcome show-options to validate this fixture."
             policy:
               allow_implicit_invocation: false
             """,
@@ -678,7 +678,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Project setup or checks, Research Topic setup, Topic Team work, and Houmao interop all name owner skills.
+                Project setup or checks, Research Topic setup, Topic Team work, and Houmao support all name owner workflows.
             """,
             "choose-path.md": """
                 # Choose Path
@@ -700,7 +700,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use $isomer-admin-project-mgr, Use $isomer-admin-topic-creator, Use $isomer-admin-topic-mgr, Use $isomer-admin-topic-team-specialize, and Use $isomer-admin-houmao-interop.
+                Use $isomer-op-project-mgr, Use $isomer-op-topic-creator, Use $isomer-op-topic-mgr, and Use $isomer-op-topic-team-specialize. Route bounded support to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
             """,
             "next-step.md": """
                 # Next Step
@@ -718,22 +718,22 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 ## Workflow
 
-                1. Recommend human-orchestrated research through `isomer-admin-topic-creator`.
+                1. Recommend human-orchestrated research through `isomer-op-topic-creator`.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use $isomer-admin-topic-creator fast-forward or Use $isomer-admin-topic-creator step-by-step. Report the mutation boundary.
+                Use $isomer-op-topic-creator fast-forward or Use $isomer-op-topic-creator step-by-step. Report the mutation boundary.
             """,
             "start-research-by-agent-team.md": """
                 # Start Research by Agent Team
 
                 ## Workflow
 
-                1. Recommend Domain Agent Team Template specialization through `isomer-admin-topic-team-specialize`.
+                1. Recommend Domain Agent Team Template specialization through `isomer-op-topic-team-specialize`.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use $isomer-admin-topic-team-specialize fast-forward. Report the mutation boundary and route Houmao questions to `isomer-admin-houmao-interop`.
+                Use $isomer-op-topic-team-specialize fast-forward. Report the mutation boundary and route Houmao questions to bounded service support through `isomer-srv-houmao-interop`.
             """,
         }
         for reference_name, reference_text in reference_texts.items():
@@ -744,7 +744,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             write(skill_dir / "references" / reference_name, reference_text)
         if active_retired_route:
             help_path = skill_dir / "references" / "help.md"
-            help_path.write_text(help_path.read_text(encoding="utf-8") + "\nInvoke `isomer-admin-topic-prepare` as an active route.\n", encoding="utf-8")
+            help_path.write_text(help_path.read_text(encoding="utf-8") + "\nInvoke `isomer-op-topic-prepare` as an active route.\n", encoding="utf-8")
         if automatic_tool_pack_route:
             help_path = skill_dir / "references" / "help.md"
             help_path.write_text(help_path.read_text(encoding="utf-8") + "\nUse `isomer-misc-tool-packs` for tool setup.\n", encoding="utf-8")
@@ -978,6 +978,96 @@ class SkillsetValidatorTests(unittest.TestCase):
                 {terms}
                 """,
             )
+        self.write_houmao_interop_service(root)
+
+    def write_houmao_interop_service(
+        self,
+        root: Path,
+        *,
+        omit_skill_term: str | None = None,
+        omit_reference_term: str | None = None,
+        omit_subcommand: str | None = None,
+        include_legacy_operator_folder: bool = False,
+    ) -> None:
+        skill_dir = root / "skillset" / "service" / "isomer-srv-houmao-interop"
+        subcommand_links = ", ".join(
+            f"`references/{subcommand_name}`" for subcommand_name in validator.HOUMAO_INTEROP_SERVICE_SUBCOMMANDS
+        )
+        skill_text = f"""
+            ---
+            name: isomer-srv-houmao-interop
+            description: Valid fixture Houmao interop service.
+            ---
+
+            # Isomer Service Houmao Interop
+
+            Use this skill as bounded Service Team support for Houmao adapter questions from a Project Operator Session, Operator Agent, Topic Service Agent, Topic Service Master, or Service Request.
+
+            ## Workflow
+
+            1. **Default help mode**: If invoked without a prompt, run `help`.
+            2. **Explain-loop mode**: Explain the Houmao loop.
+            3. **Customize-loop mode**: Identify adapter customization points.
+            4. **Map-template mode**: Map Domain Agent Team Templates onto Houmao concepts.
+            5. **Inspect-runtime mode**: Inspect runtime state.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool.
+
+            ## Subcommands
+
+            Use {subcommand_links}.
+
+            Route user-facing Project lifecycle back to `isomer-op-project-mgr` and Topic Team Specialization back to `isomer-op-topic-team-specialize`. Include `next_action` in output.
+
+            {OUTPUT_CONTRACT_FIXTURE}
+
+            ## Guardrails
+
+            Do not own Project lifecycle, Research Topic creation, Topic Team Specialization, approval provenance, Agent Team Instance launch orchestration, Gate decisions, Research Claims, or research task routing.
+            """
+        if omit_skill_term is not None:
+            skill_text = skill_text.replace(omit_skill_term, "")
+        write(skill_dir / "SKILL.md", skill_text)
+        write(
+            skill_dir / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-srv-houmao-interop"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-srv-houmao-interop to validate this fixture."
+            """,
+        )
+        for subcommand_name in validator.HOUMAO_INTEROP_SERVICE_SUBCOMMANDS:
+            if subcommand_name == omit_subcommand:
+                continue
+            terms = "\n".join(validator.HOUMAO_INTEROP_SERVICE_REFERENCE_REQUIRED_TERMS.get(subcommand_name, ()))
+            if omit_reference_term is not None:
+                terms = terms.replace(omit_reference_term, "")
+            write(
+                skill_dir / "references" / subcommand_name,
+                f"""
+                # {subcommand_name}
+
+                ## Workflow
+
+                1. Run the Houmao interop service fixture step.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                {terms}
+                """,
+            )
+        if include_legacy_operator_folder:
+            old_skill_name = "isomer-op-" + "houmao-interop"
+            write(
+                root / "skillset" / "operator" / old_skill_name / "SKILL.md",
+                f"""
+                ---
+                name: {old_skill_name}
+                description: Legacy fixture.
+                ---
+                """,
+            )
 
     def test_operator_validator_accepts_topic_team_specialization_contract(self) -> None:
         root = self.make_root()
@@ -992,7 +1082,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "SKILL.md"
+        skill_path = root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "SKILL.md"
         skill_path.write_text(
             skill_path.read_text(encoding="utf-8").replace(
                 "complete, verbose, audit, debug, full handoff, JSON, or full output",
@@ -1010,7 +1100,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "SKILL.md"
+        skill_path = root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "SKILL.md"
         skill_path.write_text(
             skill_path.read_text(encoding="utf-8").replace(
                 "Default to **Essential Output** in chat.",
@@ -1028,7 +1118,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        reference_path = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "help.md"
+        reference_path = root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "help.md"
         reference_path.write_text(
             reference_path.read_text(encoding="utf-8")
             + "\n## Output Contract\n\nDefault to **Essential Output** in chat.\n\n### Essential Output\n\n- Fixture summary.\n",
@@ -1077,7 +1167,7 @@ class SkillsetValidatorTests(unittest.TestCase):
     def test_operator_validator_requires_welcome_manual_invocation_policy(self) -> None:
         root = self.make_root()
         self.write_welcome_skill(root)
-        manifest_path = root / "skillset" / "operator" / "isomer-admin-welcome" / "agents" / "openai.yaml"
+        manifest_path = root / "skillset" / "operator" / "isomer-op-welcome" / "agents" / "openai.yaml"
         manifest_path.write_text(
             manifest_path.read_text(encoding="utf-8").replace("allow_implicit_invocation: false", "allow_implicit_invocation: true"),
             encoding="utf-8",
@@ -1090,12 +1180,12 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_operator_validator_requires_welcome_direct_owner_invocation_language(self) -> None:
         root = self.make_root()
-        self.write_welcome_skill(root, omit_direct_owner="isomer-admin-topic-mgr")
+        self.write_welcome_skill(root, omit_direct_owner="isomer-op-topic-mgr")
 
         diagnostics = validator.validate_welcome_module(root)
 
         self.assertIn("OPS011", codes(diagnostics))
-        self.assertTrue(any("direct invocation language for $isomer-admin-topic-mgr" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("direct invocation language for $isomer-op-topic-mgr" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_welcome_active_retired_route(self) -> None:
         root = self.make_root()
@@ -1104,7 +1194,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_welcome_module(root)
 
         self.assertIn("OPS011", codes(diagnostics))
-        self.assertTrue(any("retired skill 'isomer-admin-topic-prepare'" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("retired skill 'isomer-op-topic-prepare'" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_welcome_automatic_tool_pack_route(self) -> None:
         root = self.make_root()
@@ -1122,8 +1212,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             """
             [groups.core]
             skills = [
-              "operator/isomer-admin-welcome",
-              "operator/isomer-admin-project-mgr",
+              "operator/isomer-op-welcome",
+              "operator/isomer-op-project-mgr",
             ]
             """,
         )
@@ -1137,8 +1227,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             """
             [groups.core]
             skills = [
-              "operator/isomer-admin-topic-prepare",
-              "operator/isomer-admin-manual-research-session",
+              "operator/isomer-op-topic-prepare",
+              "operator/isomer-op-manual-research-session",
             ]
             """,
         )
@@ -1147,9 +1237,9 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS011", codes(diagnostics))
         rendered = "\n".join(messages(diagnostics))
-        self.assertIn("operator/isomer-admin-welcome", rendered)
-        self.assertIn("operator/isomer-admin-topic-prepare", rendered)
-        self.assertIn("operator/isomer-admin-manual-research-session", rendered)
+        self.assertIn("operator/isomer-op-welcome", rendered)
+        self.assertIn("operator/isomer-op-topic-prepare", rendered)
+        self.assertIn("operator/isomer-op-manual-research-session", rendered)
 
     def test_operator_validator_rejects_core_owned_heavy_operation_lists(self) -> None:
         root = self.make_root()
@@ -1159,7 +1249,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             root
             / "skillset"
             / "operator"
-            / "isomer-admin-topic-team-specialize"
+            / "isomer-op-topic-team-specialize"
             / "references"
             / "setup-topic-env.md"
         )
@@ -1182,7 +1272,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             root
             / "skillset"
             / "operator"
-            / "isomer-admin-topic-team-specialize"
+            / "isomer-op-topic-team-specialize"
             / "references"
             / "step-dependencies.json"
         ).unlink()
@@ -1200,7 +1290,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             root
             / "skillset"
             / "operator"
-            / "isomer-admin-topic-team-specialize"
+            / "isomer-op-topic-team-specialize"
             / "scripts"
             / "query_step_dependencies.py"
         ).unlink()
@@ -1218,7 +1308,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             root
             / "skillset"
             / "operator"
-            / "isomer-admin-topic-team-specialize"
+            / "isomer-op-topic-team-specialize"
             / "references"
             / "step-dependencies.json"
         )
@@ -1240,7 +1330,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             root
             / "skillset"
             / "operator"
-            / "isomer-admin-topic-team-specialize"
+            / "isomer-op-topic-team-specialize"
             / "references"
             / "validate-topic-team.md"
         )
@@ -1307,7 +1397,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        path = root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "validate-topic-team.md"
+        path = root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "validate-topic-team.md"
         path.write_text(path.read_text(encoding="utf-8").replace("hard-coded default-only paths without semantic labels", ""), encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1329,7 +1419,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        (root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "resolve-project.md").unlink()
+        (root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "resolve-project.md").unlink()
 
         diagnostics = validator.validate_operator_skillset(root)
 
@@ -1340,7 +1430,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        (root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "init-topic.md").unlink()
+        (root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "init-topic.md").unlink()
 
         diagnostics = validator.validate_operator_skillset(root)
 
@@ -1362,7 +1452,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "help.md",
+            root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "help.md",
             """
             # Help
 
@@ -1384,7 +1474,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "help.md",
+            root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "help.md",
             """
             # Help
 
@@ -1412,7 +1502,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "help.md",
+            root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "help.md",
             """
             # Help
 
@@ -1438,7 +1528,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "route-service.md",
+            root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "route-service.md",
             """
             # Route Service
 
@@ -1460,7 +1550,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "launch-team.md",
+            root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "launch-team.md",
             """
             # Launch Team
 
@@ -1481,7 +1571,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        write(root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "evals" / "evals.json", "{}")
+        write(root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "evals" / "evals.json", "{}")
 
         diagnostics = validator.validate_operator_skillset(root)
 
@@ -1493,10 +1583,10 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-project-aware" / "SKILL.md",
+            root / "skillset" / "operator" / "isomer-op-project-aware" / "SKILL.md",
             """
             ---
-            name: isomer-admin-project-aware
+            name: isomer-op-project-aware
             description: Duplicated fixture skill.
             ---
 
@@ -1509,12 +1599,39 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS003", codes(diagnostics))
         self.assertTrue(any("must not be a standalone skill" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_rejects_stale_skill_namespaces(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(root)
+        self.write_deepsci_mini_guide(root)
+        stale_admin = "isomer-" + "admin-project-mgr"
+        stale_rsch = "isomer-" + "rsch-scout"
+        write(
+            root / "docs" / "routes.md",
+            f"""
+            # Routes
+
+            Use ${stale_admin} for project checks and ${stale_rsch} for research framing.
+            """,
+        )
+        write(
+            root / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "deepsci" / "example" / "migrate" / "notes.md",
+            f"Historical reference to ${stale_admin} and ${stale_rsch} is passive.\n",
+        )
+
+        diagnostics = validator.validate_operator_skillset(root)
+
+        self.assertIn("OPS002", codes(diagnostics))
+        rendered = "\n".join(messages(diagnostics))
+        self.assertIn("stale skill namespace 'isomer-" + "admin-'", rendered)
+        self.assertIn("stale skill namespace 'isomer-" + "rsch-'", rendered)
+        self.assertNotIn("migrate/notes.md", rendered)
+
     def test_operator_validator_rejects_external_topic_team_support_refs(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-team-specialize" / "references" / "resolve-project.md",
+            root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "references" / "resolve-project.md",
             """
             # Resolve Project
 
@@ -1545,7 +1662,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        (root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / "list-topics.md").unlink()
+        (root / "skillset" / "operator" / "isomer-op-project-mgr" / "references" / "list-topics.md").unlink()
 
         diagnostics = validator.validate_operator_skillset(root)
 
@@ -1578,7 +1695,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        write(root / "skillset" / "operator" / "isomer-admin-project-mgr" / "evals" / "evals.json", "{}")
+        write(root / "skillset" / "operator" / "isomer-op-project-mgr" / "evals" / "evals.json", "{}")
 
         diagnostics = validator.validate_operator_skillset(root)
 
@@ -1591,7 +1708,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_project_manager_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / "check-project.md",
+            root / "skillset" / "operator" / "isomer-op-project-mgr" / "references" / "check-project.md",
             """
             # Check Project
 
@@ -1613,7 +1730,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_project_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        skill_path = root / "skillset" / "operator" / "isomer-admin-project-mgr" / "references" / "check-project.md"
+        skill_path = root / "skillset" / "operator" / "isomer-op-project-mgr" / "references" / "check-project.md"
         skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nRun `pixi run isomer-cli project validate`.\n", encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1625,23 +1742,23 @@ class SkillsetValidatorTests(unittest.TestCase):
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        shutil.rmtree(root / "skillset" / "operator" / "isomer-admin-topic-mgr")
+        shutil.rmtree(root / "skillset" / "operator" / "isomer-op-topic-mgr")
 
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS006", codes(diagnostics))
-        self.assertTrue(any("isomer-admin-topic-mgr is required" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("isomer-op-topic-mgr is required" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_topic_creator(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
-        shutil.rmtree(root / "skillset" / "operator" / "isomer-admin-topic-creator")
+        shutil.rmtree(root / "skillset" / "operator" / "isomer-op-topic-creator")
 
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS008", codes(diagnostics))
-        self.assertTrue(any("isomer-admin-topic-creator is required" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("isomer-op-topic-creator is required" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_topic_creator_staged_flow_terms(self) -> None:
         root = self.make_root()
@@ -1671,7 +1788,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_creator_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-creator" / "references" / "define-topic.md",
+            root / "skillset" / "operator" / "isomer-op-topic-creator" / "references" / "define-topic.md",
             """
             # Define Topic
 
@@ -1694,7 +1811,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_creator_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-creator" / "references" / "start-manual-research.md",
+            root / "skillset" / "operator" / "isomer-op-topic-creator" / "references" / "start-manual-research.md",
             """
             # Start Manual Research
 
@@ -1716,10 +1833,10 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-prepare" / "SKILL.md",
+            root / "skillset" / "operator" / "isomer-op-topic-prepare" / "SKILL.md",
             """
             ---
-            name: isomer-admin-topic-prepare
+            name: isomer-op-topic-prepare
             description: Retired fixture.
             ---
 
@@ -1730,17 +1847,17 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS003", codes(diagnostics))
-        self.assertTrue(any("isomer-admin-topic-prepare is no longer part of the active operator skillset" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("isomer-op-topic-prepare is no longer part of the active operator skillset" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_retired_topic_workspace_manager_folder(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
         self.write_deepsci_mini_guide(root)
         write(
-            root / "skillset" / "operator" / "isomer-admin-topic-workspace-mgr" / "SKILL.md",
+            root / "skillset" / "operator" / "isomer-op-topic-workspace-mgr" / "SKILL.md",
             """
             ---
-            name: isomer-admin-topic-workspace-mgr
+            name: isomer-op-topic-workspace-mgr
             description: Retired fixture.
             ---
 
@@ -1751,7 +1868,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS003", codes(diagnostics))
-        self.assertTrue(any("isomer-admin-topic-workspace-mgr is no longer part of the active operator skillset" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("isomer-op-topic-workspace-mgr is no longer part of the active operator skillset" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_topic_manager_subcommands(self) -> None:
         root = self.make_root()
@@ -1791,7 +1908,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "team-validate-workspaces.md"
+        path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / "team-validate-workspaces.md"
         path.write_text(path.read_text(encoding="utf-8").replace("hard-coded default-only evidence", ""), encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1804,7 +1921,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "env-install-packages.md"
+        path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / "env-install-packages.md"
         path.write_text(path.read_text(encoding="utf-8").replace("isomer-misc-pkg-specifics", ""), encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1817,7 +1934,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "env-update-packages.md"
+        path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / "env-update-packages.md"
         path.write_text(path.read_text(encoding="utf-8").replace("package_specifics", ""), encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1841,7 +1958,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        reset_path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "reset-plan.md"
+        reset_path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / "reset-plan.md"
         reset_path.write_text(reset_path.read_text(encoding="utf-8") + "\nWhen topic-reset is stale, run `git stash` before planning.\n", encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1854,7 +1971,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        reset_path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "reset-inspect.md"
+        reset_path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / "reset-inspect.md"
         reset_path.write_text(reset_path.read_text(encoding="utf-8") + "\nFor reset checkpoint inspection, route to skillset/research-paradigm/deepsci first.\n", encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1867,7 +1984,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "SKILL.md"
+        skill_path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "SKILL.md"
         skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nUse `<agent-key>` for public examples.\n", encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1880,7 +1997,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_team_specialization_skill(root)
         self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
-        skill_path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "SKILL.md"
+        skill_path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "SKILL.md"
         skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nUse `.isomer-agent/` for current support.\n", encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
@@ -1891,7 +2008,7 @@ class SkillsetValidatorTests(unittest.TestCase):
     def test_topic_manager_validator_requires_topic_main_agent_guidance_terms(self) -> None:
         root = self.make_root()
         self.write_topic_manager_skill(root)
-        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "storage-inspect-main.md"
+        path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / "storage-inspect-main.md"
         path.write_text(
             path.read_text(encoding="utf-8").replace("isomer-labs-topic-main-guidance", ""),
             encoding="utf-8",
@@ -1905,7 +2022,7 @@ class SkillsetValidatorTests(unittest.TestCase):
     def test_topic_manager_validator_rejects_copied_topic_main_guidance_body(self) -> None:
         root = self.make_root()
         self.write_topic_manager_skill(root)
-        path = root / "skillset" / "operator" / "isomer-admin-topic-mgr" / "references" / "storage-inspect-main.md"
+        path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / "storage-inspect-main.md"
         path.write_text(
             path.read_text(encoding="utf-8") + "\nThis repository is an Isomer Topic Main Development Repository.\n",
             encoding="utf-8",
@@ -1918,7 +2035,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_research_validator_requires_worker_output_policy_for_plain_file_guidance(self) -> None:
         root = self.make_root()
-        skill_path = root / "skillset" / "research-paradigm" / "v2" / "isomer-rsch-write" / "SKILL.md"
+        skill_path = root / "skillset" / "research-paradigm" / "v2" / "isomer-deepsci-write" / "SKILL.md"
         write(
             skill_path,
             """
@@ -1931,8 +2048,8 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         document = validator.research_validator.Document(
             path=skill_path,
-            rel_repo="skillset/research-paradigm/deepsci/isomer-rsch-write/SKILL.md",
-            rel_target="deepsci/isomer-rsch-write/SKILL.md",
+            rel_repo="skillset/research-paradigm/deepsci/isomer-deepsci-write/SKILL.md",
+            rel_target="deepsci/isomer-deepsci-write/SKILL.md",
             lines=tuple(skill_path.read_text(encoding="utf-8").splitlines()),
             sections_by_line=(),
             roles=frozenset({"deepsci", "active"}),
@@ -1944,7 +2061,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("RPS015", codes(diagnostics))
         self.assertTrue(any("project outputs policy" in message for message in messages(diagnostics)), messages(diagnostics))
 
-        fixed_path = root / "skillset" / "research-paradigm" / "deepsci" / "isomer-rsch-paper-plot" / "SKILL.md"
+        fixed_path = root / "skillset" / "research-paradigm" / "deepsci" / "isomer-deepsci-paper-plot" / "SKILL.md"
         write(
             fixed_path,
             """
@@ -1957,8 +2074,8 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         fixed_document = validator.research_validator.Document(
             path=fixed_path,
-            rel_repo="skillset/research-paradigm/deepsci/isomer-rsch-paper-plot/SKILL.md",
-            rel_target="deepsci/isomer-rsch-paper-plot/SKILL.md",
+            rel_repo="skillset/research-paradigm/deepsci/isomer-deepsci-paper-plot/SKILL.md",
+            rel_target="deepsci/isomer-deepsci-paper-plot/SKILL.md",
             lines=tuple(fixed_path.read_text(encoding="utf-8").splitlines()),
             sections_by_line=(),
             roles=frozenset({"deepsci", "active"}),
@@ -2213,6 +2330,37 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_service_skillset(root)
 
         self.assertEqual([], messages(diagnostics))
+
+    def test_service_validator_accepts_houmao_interop_contract(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_service_validator_requires_houmao_interop_terms(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
+        self.write_houmao_interop_service(root, omit_skill_term="bounded Service Team support")
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS006", codes(diagnostics))
+        self.assertTrue(any("bounded Service Team support" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_service_validator_rejects_legacy_houmao_interop_operator_folder(self) -> None:
+        root = self.make_root()
+        self.write_topic_env_setup_service(root)
+        self.write_agent_env_setup_service(root)
+        self.write_houmao_interop_service(root, include_legacy_operator_folder=True)
+
+        diagnostics = validator.validate_service_skillset(root)
+
+        self.assertIn("SVS006", codes(diagnostics))
+        self.assertTrue(any("legacy" in message and "operator skill folder" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_requires_agent_env_setup_subcommands(self) -> None:
         root = self.make_root()

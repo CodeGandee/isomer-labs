@@ -26,8 +26,8 @@ capability_binding_placeholder = "{deepsci_mini_lead_capability_binding_ref}"
 skill_projection_placeholder = "{deepsci_mini_lead_skill_projection_ref}"
 workspace_placeholder = "{deepsci_mini_lead_agent_workspace_ref}"
 generated_skill_names = ["deepsci-mini-shared-template", "deepsci-mini-on-team-start", "deepsci-mini-on-handoff-result", "deepsci-mini-on-tick", "deepsci-mini-operator-control"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-decision", "isomer-rsch-finalize"]
-optional_isomer_skills = ["isomer-rsch-review"]
+required_isomer_skills = ["isomer-deepsci-shared", "isomer-deepsci-decision", "isomer-deepsci-finalize"]
+optional_isomer_skills = ["isomer-deepsci-review"]
 
 [[participants]]
 role_id = "deepsci-mini-scout"
@@ -39,8 +39,8 @@ capability_binding_placeholder = "{deepsci_mini_scout_capability_binding_ref}"
 skill_projection_placeholder = "{deepsci_mini_scout_skill_projection_ref}"
 workspace_placeholder = "{deepsci_mini_scout_agent_workspace_ref}"
 generated_skill_names = ["deepsci-mini-shared-template", "deepsci-mini-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-scout"]
-optional_isomer_skills = ["isomer-rsch-baseline", "isomer-rsch-science", "isomer-rsch-paper-outline"]
+required_isomer_skills = ["isomer-deepsci-shared", "isomer-deepsci-scout"]
+optional_isomer_skills = ["isomer-deepsci-baseline", "isomer-deepsci-science", "isomer-deepsci-paper-outline"]
 
 [[participants]]
 role_id = "deepsci-mini-synth-reviewer"
@@ -52,5 +52,5 @@ capability_binding_placeholder = "{deepsci_mini_synth_reviewer_capability_bindin
 skill_projection_placeholder = "{deepsci_mini_synth_reviewer_skill_projection_ref}"
 workspace_placeholder = "{deepsci_mini_synth_reviewer_agent_workspace_ref}"
 generated_skill_names = ["deepsci-mini-shared-template", "deepsci-mini-on-handoff-request"]
-required_isomer_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-analysis", "isomer-rsch-review"]
-optional_isomer_skills = ["isomer-rsch-science", "isomer-rsch-paper-plot"]
+required_isomer_skills = ["isomer-deepsci-shared", "isomer-deepsci-idea", "isomer-deepsci-analysis", "isomer-deepsci-review"]
+optional_isomer_skills = ["isomer-deepsci-science", "isomer-deepsci-paper-plot"]

@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-deepsci-decision"
+  short_description: "Make one evidence-backed route choice."
+  default_prompt: "Use $isomer-deepsci-decision to choose the next research route from available semantic evidence."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-deepsci-idea"
+  short_description: "Select one falsifiable research route."
+  default_prompt: "Use $isomer-deepsci-idea to turn the current frame and comparator into one selected falsifiable hypothesis."

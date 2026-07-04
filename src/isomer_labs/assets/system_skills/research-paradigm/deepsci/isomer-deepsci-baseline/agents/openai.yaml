@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-deepsci-baseline"
+  short_description: "Establish the comparator and metric basis."
+  default_prompt: "Use $isomer-deepsci-baseline to establish the comparator contract, metric basis, waiver, or blocker."

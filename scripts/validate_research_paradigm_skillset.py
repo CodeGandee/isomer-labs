@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Iterable
 
 
-SKILL_NAME_RE = re.compile(r"^isomer-rsch-[a-z0-9]+(?:-[a-z0-9]+)*$")
+SKILL_NAME_RE = re.compile(r"^isomer-deepsci-[a-z0-9]+(?:-[a-z0-9]+)*$")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 FRONTMATTER_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*?)\s*$")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
@@ -31,31 +31,32 @@ MAX_DEEPSCI_WORKFLOW_LINE = 45
 
 EXPECTED_DEEPSCI_SKILLS = frozenset(
     {
-        "isomer-rsch-analysis",
-        "isomer-rsch-baseline",
-        "isomer-rsch-decision",
-        "isomer-rsch-experiment",
-        "isomer-rsch-figure-polish",
-        "isomer-rsch-finalize",
-        "isomer-rsch-idea",
-        "isomer-rsch-nature-data",
-        "isomer-rsch-nature-figure",
-        "isomer-rsch-nature-paper2ppt",
-        "isomer-rsch-nature-polishing",
-        "isomer-rsch-optimize",
-        "isomer-rsch-paper-outline",
-        "isomer-rsch-paper-plot",
-        "isomer-rsch-rebuttal",
-        "isomer-rsch-review",
-        "isomer-rsch-science",
-        "isomer-rsch-scout",
-        "isomer-rsch-shared",
-        "isomer-rsch-workspace-mgr",
-        "isomer-rsch-write",
+        "isomer-deepsci-analysis",
+        "isomer-deepsci-baseline",
+        "isomer-deepsci-decision",
+        "isomer-deepsci-experiment",
+        "isomer-deepsci-figure-polish",
+        "isomer-deepsci-finalize",
+        "isomer-deepsci-idea",
+        "isomer-deepsci-nature-data",
+        "isomer-deepsci-nature-figure",
+        "isomer-deepsci-nature-paper2ppt",
+        "isomer-deepsci-nature-polishing",
+        "isomer-deepsci-optimize",
+        "isomer-deepsci-paper-outline",
+        "isomer-deepsci-paper-plot",
+        "isomer-deepsci-rebuttal",
+        "isomer-deepsci-review",
+        "isomer-deepsci-science",
+        "isomer-deepsci-scout",
+        "isomer-deepsci-shared",
+        "isomer-deepsci-workspace-mgr",
+        "isomer-deepsci-write",
     }
 )
 
 STALE_TERMS = {
+    "isomer-rsch-": "isomer-deepsci-",
     "Research Goal": "Research Topic",
     "Research Thread": "Research Inquiry",
     "Research Branch": "Research Inquiry Relationship",
@@ -175,7 +176,7 @@ DEFAULT_ALLOW_ZONES = {
         "Resolved Extension Surfaces",
     ),
     "deepsci_storage_binding_file_globs": (
-        "deepsci/isomer-rsch-shared/references/semantic-placeholders.md",
+        "deepsci/isomer-deepsci-shared/references/semantic-placeholders.md",
         "*/placeholder-bindings.md",
         "*/migrate/**",
         "*/org/**",
@@ -292,6 +293,14 @@ DEEPSCI_LATEST_CONTEXT_FRESHNESS_TERMS = (
     "remembered research state",
     "older rendered records",
     "worker-local files",
+)
+DEEPSCI_CALLBACK_SHARED_TERMS = (
+    "User Skill Callback reminder",
+    "mandatory context checks",
+    "before step 1",
+    "tentative outputs",
+    "empty callback results continue normally",
+    "conflicts must be reported",
 )
 
 
@@ -433,7 +442,7 @@ def classify_document(
         roles.add("deferred-resource")
     if rel_target.endswith("references/source-term-mapping.md"):
         roles.add("source-term-mapping")
-    if rel_target == "deepsci/isomer-rsch-shared/references/semantic-placeholders.md":
+    if rel_target == "deepsci/isomer-deepsci-shared/references/semantic-placeholders.md":
         roles.add("semantic-placeholder-registry")
     if rel_target.endswith("/placeholder-bindings.md"):
         roles.add("placeholder-binding")
@@ -557,7 +566,7 @@ def workflow_step_numbers(lines: tuple[str, ...], workflow_line: int) -> list[in
 def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic], generation: str | None) -> None:
     skill_name = skill_dir.name
     if not SKILL_NAME_RE.match(skill_name):
-        add(diagnostics, repo_root, skill_dir, 1, "RPS007", f"skill folder '{skill_name}' must match isomer-rsch-*")
+        add(diagnostics, repo_root, skill_dir, 1, "RPS007", f"skill folder '{skill_name}' must match isomer-deepsci-*")
     skill_md = skill_dir / "SKILL.md"
     if not skill_md.exists():
         add(diagnostics, repo_root, skill_dir, 1, "RPS007", "skill folder is missing SKILL.md")
@@ -587,6 +596,24 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
 
     if not any("does not map cleanly" in line for line in lines):
         add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must include fallback guidance")
+
+    if generation == "deepsci":
+        content = "\n".join(lines)
+        required_terms = (
+            *DEEPSCI_CALLBACK_SHARED_TERMS,
+            f"isomer-cli --print-json project skill-callbacks resolve --skill {skill_name} --stage begin",
+            f"isomer-cli --print-json project skill-callbacks resolve --skill {skill_name} --stage end",
+        )
+        missing = [term for term in required_terms if term not in content]
+        if missing:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                workflow_line or 1,
+                "RPS017",
+                "production DeepSci SKILL.md must include User Skill Callback begin/end resolution guidance",
+            )
 
 
 def validate_manifest(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
@@ -750,7 +777,7 @@ def validate_registry_mirrors(
     diagnostics: list[Diagnostic],
 ) -> None:
     expected = {row_id: row for row_id, row in canonical_rows.items() if row_id in RESOLVED_TBD_IDS}
-    canonical_path = "deepsci/isomer-rsch-shared/references/tbd-surface-registry.md"
+    canonical_path = "deepsci/isomer-deepsci-shared/references/tbd-surface-registry.md"
     for document in documents:
         if document.rel_target == canonical_path or "registry-mirror" not in document.roles:
             continue
@@ -1059,7 +1086,7 @@ def validate_deepsci_worker_output_policy(document: Document, repo_root: Path, d
         return
     text = "\n".join(document.lines)
     lowered = text.casefold()
-    if document.rel_target == "deepsci/isomer-rsch-shared/SKILL.md":
+    if document.rel_target == "deepsci/isomer-deepsci-shared/SKILL.md":
         for term in DEEPSCI_SHARED_WORKER_OUTPUT_REQUIRED_TERMS:
             if term.casefold() not in lowered:
                 add(
@@ -1090,7 +1117,7 @@ def validate_deepsci_latest_context_preflight(document: Document, repo_root: Pat
         return
     if not document.rel_target.endswith("/SKILL.md"):
         return
-    if document.rel_target == "deepsci/isomer-rsch-shared/SKILL.md":
+    if document.rel_target == "deepsci/isomer-deepsci-shared/SKILL.md":
         return
     if not (document.path.parent / "placeholder-bindings.md").exists():
         return
@@ -1273,7 +1300,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
 
     allow_zones = load_allow_zones(target)
     file_roles = load_file_roles(target)
-    flat_skill_dirs = sorted(path for path in target.iterdir() if path.is_dir() and path.name.startswith("isomer-rsch-"))
+    flat_skill_dirs = sorted(path for path in target.iterdir() if path.is_dir() and path.name.startswith("isomer-deepsci-"))
     for skill_dir in flat_skill_dirs:
         add(
             diagnostics,
@@ -1294,8 +1321,13 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
     if not deepsci_root.exists():
         add(diagnostics, repo_root, deepsci_root, 1, "RPS007", "deepsci/ production skill directory is missing")
     else:
-        deepsci_skill_dirs = sorted(
+        legacy_deepsci_skill_dirs = sorted(
             path for path in deepsci_root.iterdir() if path.is_dir() and path.name.startswith("isomer-rsch-")
+        )
+        for skill_dir in legacy_deepsci_skill_dirs:
+            add(diagnostics, repo_root, skill_dir, 1, "RPS007", "legacy isomer-rsch-* skill folder must be renamed to isomer-deepsci-*")
+        deepsci_skill_dirs = sorted(
+            path for path in deepsci_root.iterdir() if path.is_dir() and path.name.startswith("isomer-deepsci-")
         )
         actual_names = {path.name for path in deepsci_skill_dirs}
         for missing in sorted(EXPECTED_DEEPSCI_SKILLS - actual_names):
@@ -1304,21 +1336,21 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
             skill_dirs.append((skill_dir, "deepsci"))
 
     if not skill_dirs:
-        add(diagnostics, repo_root, target, 1, "RPS007", "no production deepsci isomer-rsch-* skill folders were found")
+        add(diagnostics, repo_root, target, 1, "RPS007", "no production deepsci isomer-deepsci-* skill folders were found")
     for skill_dir, generation in skill_dirs:
         validate_skill_layout(skill_dir, repo_root, diagnostics, generation)
         validate_manifest(skill_dir, repo_root, diagnostics)
         validate_local_references(skill_dir, repo_root, diagnostics)
 
     documents = collect_documents(target, repo_root, file_roles)
-    registry_path = target / "deepsci" / "isomer-rsch-shared" / "references" / "tbd-surface-registry.md"
+    registry_path = target / "deepsci" / "isomer-deepsci-shared" / "references" / "tbd-surface-registry.md"
     if registry_path.exists():
         canonical_rows = parse_registry_rows(read_lines(registry_path))
     else:
         canonical_rows = {}
     registered_ids = set(canonical_rows)
 
-    semantic_registry_path = target / "deepsci" / "isomer-rsch-shared" / "references" / "semantic-placeholders.md"
+    semantic_registry_path = target / "deepsci" / "isomer-deepsci-shared" / "references" / "semantic-placeholders.md"
     if semantic_registry_path.exists():
         semantic_placeholder_ids = set(parse_semantic_placeholder_ids(read_lines(semantic_registry_path)))
     else:

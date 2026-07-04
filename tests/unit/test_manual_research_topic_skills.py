@@ -18,19 +18,19 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 self.assertIn(term, text)
 
     def test_topic_creator_documents_operator_owned_topic_and_actor_setup(self) -> None:
-        skill = read_repo_file("skillset/operator/isomer-admin-topic-creator/SKILL.md")
-        help_page = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/help.md")
-        fast_forward = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/fast-forward.md")
-        actors = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/setup-actors.md")
-        finalize = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/finalize.md")
-        step_by_step = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/step-by-step.md")
-        run_to = read_repo_file("skillset/operator/isomer-admin-topic-creator/references/run-to.md")
+        skill = read_repo_file("skillset/operator/isomer-op-topic-creator/SKILL.md")
+        help_page = read_repo_file("skillset/operator/isomer-op-topic-creator/references/help.md")
+        fast_forward = read_repo_file("skillset/operator/isomer-op-topic-creator/references/fast-forward.md")
+        actors = read_repo_file("skillset/operator/isomer-op-topic-creator/references/setup-actors.md")
+        finalize = read_repo_file("skillset/operator/isomer-op-topic-creator/references/finalize.md")
+        step_by_step = read_repo_file("skillset/operator/isomer-op-topic-creator/references/step-by-step.md")
+        run_to = read_repo_file("skillset/operator/isomer-op-topic-creator/references/run-to.md")
         combined = "\n".join((skill, help_page, fast_forward, actors, finalize, step_by_step, run_to))
 
         self.assertContainsAll(
             combined,
             (
-                "isomer-admin-topic-creator",
+                "isomer-op-topic-creator",
                 "prepared Topic Workspace",
                 "`ensure-project`",
                 "`resolve-topic-input`",
@@ -66,7 +66,7 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
             ),
         )
         self.assertNotIn("`bootstrap-research`", combined)
-        self.assertNotIn("isomer-rsch-workspace-mgr", combined)
+        self.assertNotIn("isomer-deepsci-workspace-mgr", combined)
         self.assertNotIn("placeholder-bindings.md", combined)
         self.assertNotIn("isomer-cli ext research records", combined)
         self.assertNotIn("`start-manual-research`", combined)
@@ -76,12 +76,12 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
         self.assertNotIn("explicit inclusive", combined)
 
     def test_topic_manager_owns_reset_plan_inspect_and_apply_guidance(self) -> None:
-        skill = read_repo_file("skillset/operator/isomer-admin-topic-mgr/SKILL.md")
-        help_page = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/help.md")
-        status = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/status.md")
-        reset_plan = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/reset-plan.md")
-        reset_inspect = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/reset-inspect.md")
-        reset_apply = read_repo_file("skillset/operator/isomer-admin-topic-mgr/references/reset-apply.md")
+        skill = read_repo_file("skillset/operator/isomer-op-topic-mgr/SKILL.md")
+        help_page = read_repo_file("skillset/operator/isomer-op-topic-mgr/references/help.md")
+        status = read_repo_file("skillset/operator/isomer-op-topic-mgr/references/status.md")
+        reset_plan = read_repo_file("skillset/operator/isomer-op-topic-mgr/references/reset-plan.md")
+        reset_inspect = read_repo_file("skillset/operator/isomer-op-topic-mgr/references/reset-inspect.md")
+        reset_apply = read_repo_file("skillset/operator/isomer-op-topic-mgr/references/reset-apply.md")
         combined = "\n".join((skill, help_page, status, reset_plan, reset_inspect, reset_apply))
         reset_only = "\n".join((reset_plan, reset_inspect, reset_apply))
 
@@ -102,20 +102,20 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
             ),
         )
         self.assertNotIn("skillset/research-paradigm", reset_only)
-        self.assertNotIn("isomer-rsch-", reset_only)
+        self.assertNotIn("isomer-deepsci-", reset_only)
 
     def test_team_specialization_consumes_current_topic_readiness_evidence(self) -> None:
-        skill = read_repo_file("skillset/operator/isomer-admin-topic-team-specialize/SKILL.md")
-        fast_forward = read_repo_file("skillset/operator/isomer-admin-topic-team-specialize/references/fast-forward.md")
-        validate = read_repo_file("skillset/operator/isomer-admin-topic-team-specialize/references/validate-topic-team.md")
-        finalize = read_repo_file("skillset/operator/isomer-admin-topic-team-specialize/references/finalize-topic-team.md")
-        dependency = read_repo_file("skillset/operator/isomer-admin-topic-team-specialize/references/step-dependencies.json")
+        skill = read_repo_file("skillset/operator/isomer-op-topic-team-specialize/SKILL.md")
+        fast_forward = read_repo_file("skillset/operator/isomer-op-topic-team-specialize/references/fast-forward.md")
+        validate = read_repo_file("skillset/operator/isomer-op-topic-team-specialize/references/validate-topic-team.md")
+        finalize = read_repo_file("skillset/operator/isomer-op-topic-team-specialize/references/finalize-topic-team.md")
+        dependency = read_repo_file("skillset/operator/isomer-op-topic-team-specialize/references/step-dependencies.json")
         combined = "\n".join((skill, fast_forward, validate, finalize, dependency))
 
         self.assertContainsAll(
             combined,
             (
-                "isomer-admin-topic-creator",
+                "isomer-op-topic-creator",
                 "Topic Manager topology evidence",
                 "current Topic Actor roster",
                 "Topic Actor Workspace refs",
@@ -126,13 +126,13 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "isomer-topic-summary.md",
             ),
         )
-        self.assertNotIn("isomer-admin-topic-prepare", combined)
+        self.assertNotIn("isomer-op-topic-prepare", combined)
 
     def test_v2_workspace_manager_owns_research_bootstrap_contract(self) -> None:
-        skill = read_repo_file("skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/SKILL.md")
-        bootstrap = read_repo_file("skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/references/bootstrap-workflow.md")
-        access = read_repo_file("skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/references/agent-access-plan.md")
-        bindings = read_repo_file("skillset/research-paradigm/deepsci/isomer-rsch-workspace-mgr/placeholder-bindings.md")
+        skill = read_repo_file("skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/SKILL.md")
+        bootstrap = read_repo_file("skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/references/bootstrap-workflow.md")
+        access = read_repo_file("skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/references/agent-access-plan.md")
+        bindings = read_repo_file("skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/placeholder-bindings.md")
         combined = "\n".join((skill, bootstrap, access, bindings))
 
         self.assertContainsAll(
@@ -153,7 +153,7 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "--controller-kind",
             ),
         )
-        self.assertNotIn("isomer-admin-topic-prepare", combined)
+        self.assertNotIn("isomer-op-topic-prepare", combined)
 
 
 if __name__ == "__main__":

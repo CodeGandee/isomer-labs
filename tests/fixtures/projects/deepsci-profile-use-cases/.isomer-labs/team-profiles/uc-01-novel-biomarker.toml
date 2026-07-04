@@ -22,8 +22,8 @@ skill_binding_projection_ref = "skill-projection:novel-biomarker:master"
 agent_name = "deepsci-org-master"
 agent_branch = "per-agent/deepsci-org-master/main"
 agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-master"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-decision", "isomer-rsch-finalize"]
-optional_skills = ["isomer-rsch-review"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-decision", "isomer-deepsci-finalize"]
+optional_skills = ["isomer-deepsci-review"]
 
 [[role_bindings]]
 role_id = "deepsci-org-framer"
@@ -34,8 +34,8 @@ skill_binding_projection_ref = "skill-projection:novel-biomarker:framer"
 agent_name = "deepsci-org-framer"
 agent_branch = "per-agent/deepsci-org-framer/main"
 agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-framer"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-scout", "isomer-rsch-baseline"]
-optional_skills = ["isomer-rsch-science"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-scout", "isomer-deepsci-baseline"]
+optional_skills = ["isomer-deepsci-science"]
 
 [[role_bindings]]
 role_id = "deepsci-org-designer"
@@ -46,8 +46,8 @@ skill_binding_projection_ref = "skill-projection:novel-biomarker:designer"
 agent_name = "deepsci-org-designer"
 agent_branch = "per-agent/deepsci-org-designer/main"
 agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-designer"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-optimize"]
-optional_skills = ["isomer-rsch-scout"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-idea", "isomer-deepsci-optimize"]
+optional_skills = ["isomer-deepsci-scout"]
 
 [[role_bindings]]
 role_id = "deepsci-org-experimenter"
@@ -58,8 +58,8 @@ skill_binding_projection_ref = "skill-projection:novel-biomarker:experimenter"
 agent_name = "deepsci-org-experimenter"
 agent_branch = "per-agent/deepsci-org-experimenter/main"
 agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-experimenter"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-experiment", "isomer-rsch-science"]
-optional_skills = ["isomer-rsch-analysis"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-experiment", "isomer-deepsci-science"]
+optional_skills = ["isomer-deepsci-analysis"]
 
 [[role_bindings]]
 role_id = "deepsci-org-analyzer"
@@ -70,8 +70,8 @@ skill_binding_projection_ref = "skill-projection:novel-biomarker:analyzer"
 agent_name = "deepsci-org-analyzer"
 agent_branch = "per-agent/deepsci-org-analyzer/main"
 agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-analyzer"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-analysis", "isomer-rsch-science"]
-optional_skills = ["isomer-rsch-paper-plot"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-analysis", "isomer-deepsci-science"]
+optional_skills = ["isomer-deepsci-paper-plot"]
 
 [[role_bindings]]
 role_id = "deepsci-org-publisher"
@@ -82,7 +82,7 @@ skill_binding_projection_ref = "skill-projection:novel-biomarker:publisher"
 agent_name = "deepsci-org-publisher"
 agent_branch = "per-agent/deepsci-org-publisher/main"
 agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-publisher"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-paper-outline", "isomer-rsch-write", "isomer-rsch-paper-plot", "isomer-rsch-figure-polish"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-paper-outline", "isomer-deepsci-write", "isomer-deepsci-paper-plot", "isomer-deepsci-figure-polish"]
 optional_skills = ["nature-polishing"]
 
 [[role_bindings]]
@@ -94,8 +94,8 @@ skill_binding_projection_ref = "skill-projection:novel-biomarker:reviewer"
 agent_name = "deepsci-org-reviewer"
 agent_branch = "per-agent/deepsci-org-reviewer/main"
 agent_workspace_ref = "topic-workspaces/novel-biomarker/agents/deepsci-org-reviewer"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-review", "isomer-rsch-rebuttal", "isomer-rsch-analysis"]
-optional_skills = ["isomer-rsch-scout"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-review", "isomer-deepsci-rebuttal", "isomer-deepsci-analysis"]
+optional_skills = ["isomer-deepsci-scout"]
 
 [[fanout_policies]]
 role_id = "deepsci-org-experimenter"

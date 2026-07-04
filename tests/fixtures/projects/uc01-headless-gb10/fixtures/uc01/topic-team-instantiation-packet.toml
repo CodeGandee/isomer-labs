@@ -38,8 +38,8 @@ skill_binding_projection_ref = "uc01-topic-team:deepsci-mini-lead:skill-binding-
 agent_name = "deepsci-mini-lead"
 agent_branch = "per-agent/deepsci-mini-lead/main"
 agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agents/deepsci-mini-lead"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-decision", "isomer-rsch-finalize"]
-optional_skills = ["isomer-rsch-review"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-decision", "isomer-deepsci-finalize"]
+optional_skills = ["isomer-deepsci-review"]
 
 [[role_bindings]]
 role_id = "deepsci-mini-scout"
@@ -50,8 +50,8 @@ skill_binding_projection_ref = "uc01-topic-team:deepsci-mini-scout:skill-binding
 agent_name = "deepsci-mini-scout"
 agent_branch = "per-agent/deepsci-mini-scout/main"
 agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agents/deepsci-mini-scout"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-scout"]
-optional_skills = ["isomer-rsch-baseline", "isomer-rsch-science", "isomer-rsch-paper-outline"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-scout"]
+optional_skills = ["isomer-deepsci-baseline", "isomer-deepsci-science", "isomer-deepsci-paper-outline"]
 
 [[role_bindings]]
 role_id = "deepsci-mini-synth-reviewer"
@@ -62,8 +62,8 @@ skill_binding_projection_ref = "uc01-topic-team:deepsci-mini-synth-reviewer:skil
 agent_name = "deepsci-mini-synth-reviewer"
 agent_branch = "per-agent/deepsci-mini-synth-reviewer/main"
 agent_workspace_ref = "topic-workspaces/flash-attention-gb10-peak-performance-optimization/agents/deepsci-mini-synth-reviewer"
-required_skills = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-analysis", "isomer-rsch-review"]
-optional_skills = ["isomer-rsch-science", "isomer-rsch-paper-plot"]
+required_skills = ["isomer-deepsci-shared", "isomer-deepsci-idea", "isomer-deepsci-analysis", "isomer-deepsci-review"]
+optional_skills = ["isomer-deepsci-science", "isomer-deepsci-paper-plot"]
 
 [[copied_material]]
 source_path = "execplan/"

@@ -4,26 +4,26 @@
 Define the module-level operator skill for Topic Team Specialization, including local subcommands, copied-template workflow, guide and plan artifacts, and validation boundaries.
 ## Requirements
 ### Requirement: Skill Creator Bundle Layout
-The repository SHALL provide a lean operator skill bundle named `isomer-admin-topic-team-specialize` for Topic Team Specialization.
+The repository SHALL provide a lean operator skill bundle named `isomer-op-topic-team-specialize` for Topic Team Specialization.
 
 #### Scenario: Skill bundle exists
 - **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-admin-topic-team-specialize/SKILL.md` and `skillset/operator/isomer-admin-topic-team-specialize/agents/openai.yaml`
+- **THEN** it contains `skillset/operator/isomer-op-topic-team-specialize/SKILL.md` and `skillset/operator/isomer-op-topic-team-specialize/agents/openai.yaml`
 
 #### Scenario: Frontmatter is minimal
-- **WHEN** `skillset/operator/isomer-admin-topic-team-specialize/SKILL.md` is inspected
-- **THEN** its YAML frontmatter contains `name: isomer-admin-topic-team-specialize` and a trigger-oriented `description`, with no extra frontmatter fields
+- **WHEN** `skillset/operator/isomer-op-topic-team-specialize/SKILL.md` is inspected
+- **THEN** its YAML frontmatter contains `name: isomer-op-topic-team-specialize` and a trigger-oriented `description`, with no extra frontmatter fields
 
 #### Scenario: UI metadata is present
-- **WHEN** `skillset/operator/isomer-admin-topic-team-specialize/agents/openai.yaml` is inspected
-- **THEN** it contains `interface.display_name`, `interface.short_description`, and `interface.default_prompt`, and the default prompt names `$isomer-admin-topic-team-specialize`
+- **WHEN** `skillset/operator/isomer-op-topic-team-specialize/agents/openai.yaml` is inspected
+- **THEN** it contains `interface.display_name`, `interface.short_description`, and `interface.default_prompt`, and the default prompt names `$isomer-op-topic-team-specialize`
 
 #### Scenario: Eval scaffolding is absent
-- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
 - **THEN** it does not contain an `evals/` directory or auxiliary docs that are not needed to execute the skill
 
 #### Scenario: Local subcommands exist
-- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
 - **THEN** it contains local subcommand pages named `help`, `init-topic`, `clarify-topic`, `ensure-topic-registration`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `fast-forward`, and `step-by-step` under `references/`
 
 #### Scenario: Subcommands are grouped by contract
@@ -44,7 +44,7 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 
 #### Scenario: Help subcommand prints usage
 - **WHEN** the user invokes the local `help` subcommand
-- **THEN** the skill prints what `isomer-admin-topic-team-specialize` does, how to invoke it, available modes, public subcommands, outputs, and guardrails
+- **THEN** the skill prints what `isomer-op-topic-team-specialize` does, how to invoke it, available modes, public subcommands, outputs, and guardrails
 
 #### Scenario: Empty invocation defaults to help
 - **WHEN** the skill is invoked without a prompt
@@ -55,24 +55,24 @@ The repository SHALL provide a lean operator skill bundle named `isomer-admin-to
 - **THEN** the module skill executes `step-by-step`, follows the same required static-material path as `fast-forward`, explains the current step, and waits for user confirmation before continuing to the next step
 
 #### Scenario: Service routing subcommand is absent
-- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
 - **THEN** it does not contain `references/route-service.md`
 
 #### Scenario: Required support references are local
-- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
 - **THEN** it contains local support references for Isomer domain language and static/runtime file boundaries under `references/`
 
 #### Scenario: External support refs are absent
-- **WHEN** the `isomer-admin-topic-team-specialize` skill entrypoint and local references are inspected
+- **WHEN** the `isomer-op-topic-team-specialize` skill entrypoint and local references are inspected
 - **THEN** they do not reference `.imsight-arts/`, `docs/`, `extern/`, or absolute local support paths for information needed to execute the skill
 
 #### Scenario: Runtime launch subcommand is absent
-- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
 - **THEN** it does not contain `references/launch-team.md`
 
 #### Scenario: Incorporated standalone skills are absent
 - **WHEN** the operator skillset is inspected
-- **THEN** it does not contain standalone `isomer-admin-project-aware`, `isomer-admin-template-inspect`, `isomer-admin-topic-context-resolve`, `isomer-admin-service-request-route`, `isomer-admin-placeholder-reconcile`, `isomer-admin-topic-profile-draft`, `isomer-admin-profile-review-approval`, `isomer-admin-profile-materialize`, or `isomer-admin-team-launch-orchestrate` skill folders
+- **THEN** it does not contain standalone `isomer-op-project-aware`, `isomer-op-template-inspect`, `isomer-op-topic-context-resolve`, `isomer-op-service-request-route`, `isomer-op-placeholder-reconcile`, `isomer-op-topic-profile-draft`, `isomer-op-profile-review-approval`, `isomer-op-profile-materialize`, or `isomer-op-team-launch-orchestrate` skill folders
 
 ### Requirement: Imsight Workflow Entrypoint
 The module skill SHALL follow the Imsight skill-entrypoint structure.
@@ -494,7 +494,7 @@ The module skill SHALL focus on static Topic Team material and durable setup pre
 - **THEN** the skill creates or reports only static Agent Workspace directories, ownership notes, boundary notes, skipped actions, blockers, and validation refs, and does not create Agent Instances, register Workspace Runtime state, or launch agents
 
 #### Scenario: Runtime launch subcommand is absent
-- **WHEN** the `isomer-admin-topic-team-specialize` skill folder is inspected
+- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
 - **THEN** it does not contain `references/launch-team.md`, does not list `launch-team` as a local subcommand, and does not include live launch as a `fast-forward` or `step-by-step` stage
 
 #### Scenario: Static validation stops before live operation
@@ -511,7 +511,7 @@ The Topic Team Specialization module skill SHALL delegate Git-backed Agent Works
 
 #### Scenario: Optional topology support routes to topic manager
 - **WHEN** the operator asks for read-only topology inspection, branch helper operations, boundary summaries, stale topology repair, manual compatibility operations, or legacy diagnostics
-- **THEN** the skill may route that bounded work to `isomer-admin-topic-mgr` storage or team commands
+- **THEN** the skill may route that bounded work to `isomer-op-topic-mgr` storage or team commands
 - **AND** it records that evidence separately from topic env materialization and agent env readiness evidence
 
 #### Scenario: Static setup records delegated workspace refs
@@ -528,12 +528,12 @@ The Topic Team Specialization module skill SHALL delegate Git-backed Agent Works
 
 #### Scenario: Legacy support setup is not accepted as new readiness
 - **WHEN** the only available workspace setup evidence names `.isomer-agent/` or top-level `repos/topic-main/{shared,artifacts,tasks,runs,views,logs,tools}` as the current standard layout
-- **THEN** `validate-topic-team` reports stale workspace setup evidence and asks for `isomer-admin-topic-mgr team-validate-workspaces` or the appropriate service verification
+- **THEN** `validate-topic-team` reports stale workspace setup evidence and asks for `isomer-op-topic-mgr team-validate-workspaces` or the appropriate service verification
 
 #### Scenario: Topic-main setup is not topic-manager work in the canonical path
 - **WHEN** the normal topic-team setup path needs `topic.repos.main`
-- **THEN** `isomer-admin-topic-team-specialize` gets that evidence through `setup-topic-env` and `isomer-srv-topic-env-setup`
-- **AND** it does not route canonical Topic Main Development Repository creation to `isomer-admin-topic-mgr`
+- **THEN** `isomer-op-topic-team-specialize` gets that evidence through `setup-topic-env` and `isomer-srv-topic-env-setup`
+- **AND** it does not route canonical Topic Main Development Repository creation to `isomer-op-topic-mgr`
 
 #### Scenario: Setup agent workspace delegates agent worktree setup
 - **WHEN** `setup-agent-workspace` determines that the selected topic team needs Git-backed Agent Workspaces under resolved `agent.workspace` paths
@@ -542,7 +542,7 @@ The Topic Team Specialization module skill SHALL delegate Git-backed Agent Works
 
 #### Scenario: Topic manager remains optional
 - **WHEN** the operator asks for read-only topology inspection, branch helper operations, boundary summaries, or legacy compatibility diagnostics
-- **THEN** the skill may route that bounded work to `isomer-admin-topic-mgr`
+- **THEN** the skill may route that bounded work to `isomer-op-topic-mgr`
 - **AND** it records that evidence separately from topic env materialization and agent env readiness evidence
 
 ### Requirement: Clarification Option Loop
@@ -588,7 +588,7 @@ The Topic Team Specialization module skill SHALL consume and report workspace se
 
 #### Scenario: Setup agent workspace requests semantic setup
 - **WHEN** `setup-agent-workspace` determines that a specialized topic team needs Git-backed Agent Workspaces
-- **THEN** it delegates to `isomer-srv-agent-env-setup` for per-agent cwd verification and may use `isomer-admin-topic-mgr` for bounded topology inspection with semantic surface expectations
+- **THEN** it delegates to `isomer-srv-agent-env-setup` for per-agent cwd verification and may use `isomer-op-topic-mgr` for bounded topology inspection with semantic surface expectations
 
 #### Scenario: Delegated output records labels
 - **WHEN** delegated Agent Workspace setup completes
@@ -695,36 +695,36 @@ The Topic Team Specialization skill SHALL require delegated Git-backed workspace
 The Topic Team Specialization module skill SHALL own the decision to invoke Topic Workspace environment setup, Git-backed Agent Workspace topology setup, and Agent Workspace environment readiness setup.
 
 #### Scenario: Topic setup is delegated only from operator topic setup
-- **WHEN** `isomer-admin-topic-team-specialize setup-topic-env` runs after registration and Topic Workspace Pixi binding evidence exists
+- **WHEN** `isomer-op-topic-team-specialize setup-topic-env` runs after registration and Topic Workspace Pixi binding evidence exists
 - **THEN** it delegates Topic Workspace dependency, repo acquisition, Pixi mutation, and topic-root verification work to `isomer-srv-topic-env-setup`
 - **AND** it records topic env setup evidence as Topic Workspace predecessor evidence
 - **AND** it does not treat that evidence as per-Agent Workspace cwd readiness
 
 #### Scenario: Agent setup is delegated only from operator agent workspace setup
-- **WHEN** `isomer-admin-topic-team-specialize setup-agent-workspace` receives a request for `agent-env-gate.md`, per-Agent Workspace cwd verification, selected-agent repair, or launch-facing Agent Workspace readiness
+- **WHEN** `isomer-op-topic-team-specialize setup-agent-workspace` receives a request for `agent-env-gate.md`, per-Agent Workspace cwd verification, selected-agent repair, or launch-facing Agent Workspace readiness
 - **THEN** it ensures a usable `user-intent/src/agent-env-gate.md` exists or asks for the missing per-agent readiness target
 - **AND** after Topic Workspace environment readiness and Git topology evidence exist, it delegates gate-driven Agent Workspace environment setup to `isomer-srv-agent-env-setup`
 
 #### Scenario: Git topology remains topic manager or service work
 - **WHEN** Git-backed `topic.repos.main`, per-agent `agent.workspace` worktrees, branch plans, worker-facing support paths, or Workspace Boundary material are needed
-- **THEN** Topic Team Specialization delegates that topology to `isomer-admin-topic-mgr` or the appropriate environment setup service
+- **THEN** Topic Team Specialization delegates that topology to `isomer-op-topic-mgr` or the appropriate environment setup service
 - **AND** it records the delegated topology evidence separately from topic env setup evidence and agent env setup evidence
 
 #### Scenario: Topic setup is delegated only after derived topic target spec exists
-- **WHEN** `isomer-admin-topic-team-specialize setup-topic-env` runs after registration and Topic Workspace Pixi binding evidence exists
+- **WHEN** `isomer-op-topic-team-specialize setup-topic-env` runs after registration and Topic Workspace Pixi binding evidence exists
 - **THEN** it ensures `topic.intent.topic_env_requirements` and `topic.env.topic_setup_target_spec` exist or reports blockers
 - **AND** it delegates Topic Main Development Repository setup, external repo acquisition, external projection materialization, Pixi mutation, and topic-root or repo-specific verification work to `isomer-srv-topic-env-setup`
 - **AND** it records topic env setup evidence as Topic Workspace predecessor evidence
 - **AND** it does not treat that evidence as per-Agent Workspace cwd readiness
 
 #### Scenario: Agent setup is delegated after topic-main readiness exists
-- **WHEN** `isomer-admin-topic-team-specialize setup-agent-workspace` receives a request for per-Agent Workspace cwd verification, selected-agent repair, or launch-facing Agent Workspace readiness
+- **WHEN** `isomer-op-topic-team-specialize setup-agent-workspace` receives a request for per-Agent Workspace cwd verification, selected-agent repair, or launch-facing Agent Workspace readiness
 - **THEN** it ensures `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, Topic Workspace env readiness, authoritative Agent Names, and Topic Main Development Repository predecessor evidence exist or reports blockers
 - **AND** it delegates gate-driven Agent Workspace environment setup to `isomer-srv-agent-env-setup`
 
 #### Scenario: Derived gates are orchestrator-owned in normal flow
 - **WHEN** the normal topic-team setup flow creates operational target specs
-- **THEN** `isomer-admin-topic-team-specialize` owns the creation or update of `topic.env.topic_setup_target_spec` and `topic.env.agent_setup_target_spec`
+- **THEN** `isomer-op-topic-team-specialize` owns the creation or update of `topic.env.topic_setup_target_spec` and `topic.env.agent_setup_target_spec`
 - **AND** direct service invocation may still accept explicit target specs outside the normal operator flow
 
 ### Requirement: Validation Distinguishes Topic and Agent Readiness Evidence
@@ -848,12 +848,12 @@ The Topic Team Specialization module skill SHALL provide `resolve-topic-intent`,
 The Topic Team Specialization operator skill SHALL split its output contract into Essential Output and Complete Output.
 
 #### Scenario: Essential specialization output reports user-facing progress
-- **WHEN** `isomer-admin-topic-team-specialize` reports a result without a complete-output request
+- **WHEN** `isomer-op-topic-team-specialize` reports a result without a complete-output request
 - **THEN** it reports the selected Research Topic and Topic Workspace, registration status, selected Domain Agent Team Template, topic-team material status, topic environment status, agent environment status when checked, validation status, blockers, and next action
 - **AND** it names important created or changed paths such as topic overview, copied team material, environment gates, and final summary when those paths exist
 
 #### Scenario: Complete specialization output preserves handoff detail
-- **WHEN** complete output is requested from `isomer-admin-topic-team-specialize`
+- **WHEN** complete output is requested from `isomer-op-topic-team-specialize`
 - **THEN** it reports registration evidence, environment binding evidence, copied material paths, placeholder resolutions, source and target intent paths, delegated service outputs, semantic path evidence, Agent Workspace paths, tmp posture, validation details, deferrals, packet/profile inputs, blockers, and next action
 
 #### Scenario: Delegated service output remains summarized by default
@@ -877,7 +877,7 @@ The Topic Team Specialization module skill SHALL present the revised setup order
 The Topic Team Specialization module skill SHALL centralize procedural step dependencies, recovery paths, produced artifacts, and blocker metadata in a machine-readable dependency manifest and SHALL provide a local script for querying that manifest.
 
 #### Scenario: Dependency manifest and query script exist
-- **WHEN** the `isomer-admin-topic-team-specialize` skill bundle is inspected
+- **WHEN** the `isomer-op-topic-team-specialize` skill bundle is inspected
 - **THEN** it contains `references/step-dependencies.json`
 - **AND** it contains `scripts/query_step_dependencies.py`
 
@@ -887,14 +887,14 @@ The Topic Team Specialization module skill SHALL centralize procedural step depe
 - **AND** each recorded step includes a step id, display name, kind, required predecessor artifacts or inputs, produced artifacts or outputs, dependency edges or predecessor steps, recovery conditions, mutation notes, and unrecoverable blockers when applicable
 
 #### Scenario: Query script validates graph
-- **WHEN** `python skillset/operator/isomer-admin-topic-team-specialize/scripts/query_step_dependencies.py validate` runs from the repository root
+- **WHEN** `python skillset/operator/isomer-op-topic-team-specialize/scripts/query_step_dependencies.py validate` runs from the repository root
 - **THEN** it validates that all referenced step ids exist
 - **AND** it validates that dependency paths are acyclic
 - **AND** it reports an error for missing required fields, unknown targets, invalid edges, or malformed manifest data
 
 #### Scenario: Query script returns targeted recovery paths
 - **WHEN** an agent needs a targeted fast-forward recovery path for a selected subcommand
-- **THEN** it can run `python skillset/operator/isomer-admin-topic-team-specialize/scripts/query_step_dependencies.py path --target <subcommand> --include-target`
+- **THEN** it can run `python skillset/operator/isomer-op-topic-team-specialize/scripts/query_step_dependencies.py path --target <subcommand> --include-target`
 - **AND** the output includes the canonical predecessor path plus the selected subcommand
 - **AND** it can run the same command with `--exclude-target` to stop before the selected subcommand
 
@@ -934,7 +934,7 @@ The Topic Team Specialization skill SHALL keep Topic Actor bindings and formal t
 
 #### Scenario: Existing actors are not removed by team specialization
 - **WHEN** Topic Team Specialization runs in a Topic Workspace with active Topic Actor bindings
-- **THEN** the flow preserves those bindings and Topic Actor Workspace refs unless the user explicitly asks to remove or archive them through `isomer-admin-topic-mgr` actor commands
+- **THEN** the flow preserves those bindings and Topic Actor Workspace refs unless the user explicitly asks to remove or archive them through `isomer-op-topic-mgr` actor commands
 
 #### Scenario: Actor preparation does not create team material
 - **WHEN** common topic preparation or human-orchestrated actor preparation runs

@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-op-project-mgr"
+  short_description: "Manage Isomer Project setup and checks"
+  default_prompt: "Use $isomer-op-project-mgr to initialize or check an Isomer Project."

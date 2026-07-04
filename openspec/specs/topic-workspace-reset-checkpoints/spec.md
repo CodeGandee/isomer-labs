@@ -145,12 +145,12 @@ The system SHALL validate reset checkpoint, plan, and outcome records as part of
 The operator skillset SHALL guide agents to create and consume structured reset checkpoints at the research restart boundary without depending on research-paradigm skill knowledge.
 
 #### Scenario: Topic Creator creates first checkpoint
-- **WHEN** `isomer-admin-topic-creator finalize` completes Topic Workspace readiness summary work
+- **WHEN** `isomer-op-topic-creator finalize` completes Topic Workspace readiness summary work
 - **THEN** it creates or refreshes the first reset checkpoint from operator-level readiness evidence
 - **AND** it does not require or mention research-paradigm skill bootstrap records
 
 #### Scenario: Topic Manager owns reset inspection and apply
-- **WHEN** `isomer-admin-topic-mgr` describes initialized-topic management commands
+- **WHEN** `isomer-op-topic-mgr` describes initialized-topic management commands
 - **THEN** it includes reset plan, inspect, and apply guidance as operator-owned initialized-topic operations
 - **AND** it states that reset operations use structured records and Workspace Runtime state, not Git
 

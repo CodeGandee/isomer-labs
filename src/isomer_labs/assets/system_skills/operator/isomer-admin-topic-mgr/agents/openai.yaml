@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-admin-topic-mgr"
-  short_description: "Manage initialized Isomer Research Topics."
-  default_prompt: "Use $isomer-admin-topic-mgr to manage an initialized Research Topic."

@@ -19,6 +19,7 @@ from isomer_labs.teams.templates import (
 )
 from isomer_labs.core.toml_loader import load_toml
 from isomer_labs.project.topic_config import parse_local_active_context, parse_research_topic_config
+from isomer_labs.project.skill_callbacks import validate_callback_registry_refs
 
 
 SECRET_TERMS = (
@@ -68,6 +69,23 @@ RUNTIME_TRUTH_KEYS = {
     "agent_team_instance_state",
     "adapter_launch_ref",
     "launch_dossier_ref",
+}
+INLINE_CALLBACK_BODY_KEYS = {
+    "callback_prompt",
+    "callback_prompts",
+    "callback_body",
+    "callback_bodies",
+    "callback_instruction",
+    "callback_instructions",
+    "user_skill_callback_prompt",
+    "user_skill_callback_prompts",
+    "user_skill_callback_body",
+    "user_skill_callback_bodies",
+    "user_skill_callback_instruction",
+    "user_skill_callback_instructions",
+    "external_skill_body",
+    "external_skill_bodies",
+    "external_skill_body_text",
 }
 
 
@@ -119,6 +137,7 @@ def build_project_state(project: Project) -> ProjectState:
         topic_configs.setdefault(topic.id, config)
 
     diagnostics.extend(_validate_topic_config_profile_defaults(project, topic_configs))
+    diagnostics.extend(validate_callback_registry_refs(project, topic_configs))
     diagnostics.extend(_validate_profile_files(project))
 
     local_context = None
@@ -707,6 +726,17 @@ def _scan_for_forbidden_fields(
                         path=path,
                         field=field,
                         message="Runtime truth belongs in future Workspace Runtime records or file-backed Artifacts, not configuration.",
+                    )
+                )
+            if normalized_key in INLINE_CALLBACK_BODY_KEYS:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO009",
+                        severity="error",
+                        concept=concept,
+                        path=path,
+                        field=field,
+                        message="User Skill Callback instruction bodies belong in managed callback registry content, not Project or Research Topic configuration.",
                     )
                 )
             _scan_for_forbidden_fields(item, concept, path, field_path, diagnostics)

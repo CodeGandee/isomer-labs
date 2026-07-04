@@ -4,43 +4,43 @@
 Define the operator skill that manages initialized Research Topics after Topic Creator handoff.
 ## Requirements
 ### Requirement: Topic Manager Skill Bundle
-The repository SHALL provide a command-style operator skill named `isomer-admin-topic-mgr` for managing an initialized Research Topic after Topic Creator handoff.
+The repository SHALL provide a command-style operator skill named `isomer-op-topic-mgr` for managing an initialized Research Topic after Topic Creator handoff.
 
 #### Scenario: Topic manager bundle exists
 - **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-admin-topic-mgr/SKILL.md` and `skillset/operator/isomer-admin-topic-mgr/agents/openai.yaml`
+- **THEN** it contains `skillset/operator/isomer-op-topic-mgr/SKILL.md` and `skillset/operator/isomer-op-topic-mgr/agents/openai.yaml`
 
 #### Scenario: Topic manager metadata is consistent
 - **WHEN** the topic manager skill bundle is inspected
-- **THEN** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-admin-topic-mgr`
+- **THEN** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-op-topic-mgr`
 
 #### Scenario: Topic manager is initialized-topic scoped
 - **WHEN** the skill entrypoint describes its purpose
-- **THEN** it states that `isomer-admin-topic-creator` owns topic initialization
-- **AND** it states that `isomer-admin-topic-mgr` manages initialized-topic storage, Topic Actors, topic agent team topology, environment mutation, environment verification, and diagnostics
+- **THEN** it states that `isomer-op-topic-creator` owns topic initialization
+- **AND** it states that `isomer-op-topic-mgr` manages initialized-topic storage, Topic Actors, topic agent team topology, environment mutation, environment verification, and diagnostics
 
 ### Requirement: Initialized Topic Guard
 The Topic Manager skill SHALL require Project Manifest-backed selected Research Topic and Topic Workspace context before managing topic state.
 
 #### Scenario: Initialized topic is available
-- **WHEN** `isomer-admin-topic-mgr` resolves a selected initialized Research Topic and Topic Workspace
+- **WHEN** `isomer-op-topic-mgr` resolves a selected initialized Research Topic and Topic Workspace
 - **THEN** it may run the selected management subcommand against that topic
 - **AND** it reports the Research Topic ref, Topic Workspace ref, semantic path evidence, blockers, and next action
 
 #### Scenario: Initialized topic is missing
-- **WHEN** `isomer-admin-topic-mgr` cannot resolve an initialized Research Topic or Topic Workspace
-- **THEN** it reports a blocker and routes initialization to `isomer-admin-topic-creator`
+- **WHEN** `isomer-op-topic-mgr` cannot resolve an initialized Research Topic or Topic Workspace
+- **THEN** it reports a blocker and routes initialization to `isomer-op-topic-creator`
 - **AND** it does not derive a topic id, register a topic, create a Topic Workspace, or write topic intent material itself
 
 ### Requirement: Scope-Prefixed Command Structure
 The Topic Manager skill SHALL use grouped, one-level, scope-prefixed kebab-case subcommands with one executable reference page per subcommand.
 
 #### Scenario: Entrypoint routes by subcommand
-- **WHEN** an agent invokes `isomer-admin-topic-mgr`
+- **WHEN** an agent invokes `isomer-op-topic-mgr`
 - **THEN** the top-level `SKILL.md` selects one subcommand from grouped subcommand tables and loads only the selected reference page before executing that page's `## Workflow`
 
 #### Scenario: Default command reports status
-- **WHEN** the user invokes `isomer-admin-topic-mgr` without a subcommand and does not ask for help
+- **WHEN** the user invokes `isomer-op-topic-mgr` without a subcommand and does not ask for help
 - **THEN** the skill selects `status` as the default initialized-topic inspection flow
 
 #### Scenario: Public subcommands are grouped by scope
@@ -75,7 +75,7 @@ The Topic Manager skill SHALL manage Topic Actor CRUD, materialization, repair, 
 
 #### Scenario: Actor management uses topic manager
 - **WHEN** a user or operator asks to list, show, register, update, archive, materialize, repair, or diagnose Topic Actors
-- **THEN** `isomer-admin-topic-mgr actors-manage`, `actors-materialize`, or `actors-diagnose` performs or guides the operation through the supported `project topic-actors ...` CLI surface
+- **THEN** `isomer-op-topic-mgr actors-manage`, `actors-materialize`, or `actors-diagnose` performs or guides the operation through the supported `project topic-actors ...` CLI surface
 - **AND** Topic Workspace Manifest actor bindings remain the topology and path-resolution authority
 
 #### Scenario: Actor workspace materialization stays actor scoped
@@ -136,11 +136,11 @@ The Topic Manager skill SHALL expose explicit verification commands for topic, a
 The Topic Manager skill SHALL split initialized-topic results into Essential Output and Complete Output.
 
 #### Scenario: Essential output reports initialized-topic state
-- **WHEN** `isomer-admin-topic-mgr` reports a result without a complete-output request
+- **WHEN** `isomer-op-topic-mgr` reports a result without a complete-output request
 - **THEN** it reports status, Research Topic ref, Topic Workspace ref, relevant semantic paths, actor or team workspace summaries when relevant, environment mutation or verification summary when relevant, changed paths, blockers, and next action
 
 #### Scenario: Complete output preserves audit detail
-- **WHEN** complete output is requested from `isomer-admin-topic-mgr`
+- **WHEN** complete output is requested from `isomer-op-topic-mgr`
 - **THEN** it reports semantic path sources, Topic Workspace Manifest evidence, Topic Actor bindings, Agent Workspace plans, package request source, package mutation plan, verification commands, service evidence, boundary material, validation status, blockers, and next action when those fields apply
 
 ### Requirement: Topic Manager Package Mutation Uses Package Specifics First
@@ -183,7 +183,7 @@ The Topic Manager package mutation commands SHALL continue to mutate only the se
 The Topic Manager skill SHALL report Topic Main Development Repository agent guidance posture during storage inspection.
 
 #### Scenario: Storage inspection reports rule-file posture
-- **WHEN** `isomer-admin-topic-mgr storage-inspect-main` inspects a usable normal non-bare `topic.repos.main`
+- **WHEN** `isomer-op-topic-mgr storage-inspect-main` inspects a usable normal non-bare `topic.repos.main`
 - **THEN** it reports whether root-level `AGENTS.md` and `CLAUDE.md` exist
 - **AND** it reports whether each file contains the current Isomer-managed topic-main guidance block
 - **AND** it reports missing, stale, duplicated, malformed, or unknown-version guidance blocks as blockers or next actions

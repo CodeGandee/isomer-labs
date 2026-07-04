@@ -497,6 +497,7 @@ class ProjectManifest:
     path_defaults: dict[str, Any] = field(default_factory=dict)
     artifact_format_profiles: list[str] = field(default_factory=list)
     artifact_extensions: list[str] = field(default_factory=list)
+    user_skill_callback_registry_refs: list[str] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict)
 
     def first_topic(self, topic_id: str) -> ResearchTopicRegistration | None:
@@ -597,6 +598,7 @@ class ProjectManifest:
             "path_defaults": self.path_defaults,
             "artifact_format_profiles": self.artifact_format_profiles,
             "artifact_extensions": self.artifact_extensions,
+            "user_skill_callback_registry_refs": self.user_skill_callback_registry_refs,
         }
 
 
@@ -723,6 +725,7 @@ class EffectiveTopicContext:
     domain_agent_team_template_id: str | None = None
     topic_agent_team_profile_id: str | None = None
     profile_refs: dict[str, object] = field(default_factory=dict)
+    user_skill_callback_registry_refs: dict[str, list[str]] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -740,6 +743,7 @@ class EffectiveTopicContext:
             "domain_agent_team_template_id": self.domain_agent_team_template_id,
             "topic_agent_team_profile_id": self.topic_agent_team_profile_id,
             "profile_refs": self.profile_refs,
+            "user_skill_callback_registry_refs": self.user_skill_callback_registry_refs,
         }
 
 

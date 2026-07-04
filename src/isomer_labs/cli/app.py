@@ -44,6 +44,12 @@ Command surface:
   project topic-main-guidance inspect
   project topic-main-guidance ensure
   project workspaces list
+  project skill-callbacks register
+  project skill-callbacks resolve
+  project skill-callbacks list
+  project skill-callbacks show
+  project skill-callbacks disable
+  project skill-callbacks validate
   project context show
   project self show
   project self identity

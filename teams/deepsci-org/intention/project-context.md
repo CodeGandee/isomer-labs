@@ -25,7 +25,7 @@
 - `tests/unit/`, `tests/integration/`, `tests/manual/`: unit, integration, and manual checks.
 - `context/`: design notes, plans, and exploratory analysis.
 - `.imsight-arts/project-explore/`: project-explore ADRs, domain concepts, use cases, and accepted design material.
-- `skillset/research-paradigm/`: Isomer-native research skills named `isomer-rsch-*`.
+- `skillset/research-paradigm/`: Isomer-native research skills named `isomer-deepsci-*`.
 - `teams/`: domain-level team definition packages, including `teams/deepsci-org` and `teams/deepsci-lite`.
 - `extern/orphan/DeepScientist`: local-only DeepScientist reference checkout; do not assume it is committed.
 
@@ -34,7 +34,7 @@
 - Canonical domain language: `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`.
 - Workspace design: `context/design/rough-architecture.md`, especially Project Config Directory, Project Manifest, Research Topic Config, Topic Workspace, Workspace Runtime, Agent Workspace, Domain Agent Team Template, Topic Agent Team Profile, and Agent Team Instance boundaries.
 - Research execution examples: `context/design/research-execution-extension-examples.md`, which shows topic-level refs for Research Topic Configs, Topic Agent Team Profiles, Capability Bindings, Skill Binding projections, Gate policies, Scheduler policies, provider bindings, and Execution Adapter Command Requests.
-- Research method skills: `skillset/research-paradigm/README.md` and the `isomer-rsch-*` skill folders.
+- Research method skills: `skillset/research-paradigm/README.md` and the `isomer-deepsci-*` skill folders.
 - DeepScientist migration context: `context/explore/deepscientist-skill-analysis/` plus local source under `extern/orphan/DeepScientist`.
 - Writing constraints: keep Markdown prose on logical lines, preserve Isomer domain terms, and avoid hard-wrapping prose unless syntax or readability requires it.
 

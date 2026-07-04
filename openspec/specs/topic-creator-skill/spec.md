@@ -4,23 +4,23 @@
 TBD - created by archiving change add-topic-creator-skill. Update Purpose after archive.
 ## Requirements
 ### Requirement: Topic Creator Operator Skill
-The repository SHALL provide a command-style operator skill named `isomer-admin-topic-creator` as the canonical user-facing workflow for initializing a Research Topic from empty or partial Project state to manual-research-ready Topic Workspace.
+The repository SHALL provide a command-style operator skill named `isomer-op-topic-creator` as the canonical user-facing workflow for initializing a Research Topic from empty or partial Project state to manual-research-ready Topic Workspace.
 
 #### Scenario: Topic creator skill bundle exists
 - **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-admin-topic-creator/SKILL.md` and `skillset/operator/isomer-admin-topic-creator/agents/openai.yaml`
-- **AND** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-admin-topic-creator`
+- **THEN** it contains `skillset/operator/isomer-op-topic-creator/SKILL.md` and `skillset/operator/isomer-op-topic-creator/agents/openai.yaml`
+- **AND** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-op-topic-creator`
 
 #### Scenario: Topic creator is the user-facing topic initialization entrypoint
 - **WHEN** a user asks to create, initialize, prepare, or start a Research Topic for manual research from empty or partial Project state
-- **THEN** the operator routes to `isomer-admin-topic-creator`
+- **THEN** the operator routes to `isomer-op-topic-creator`
 - **AND** the user does not need to know the separate project manager, topic manager, service setup, or research bootstrap skill sequence
 
 ### Requirement: Topic Creator Command Surface
 The Topic Creator skill SHALL expose a command-style workflow with stage commands that can plan, run, resume, inspect, and repair topic initialization.
 
 #### Scenario: Public commands are listed
-- **WHEN** `isomer-admin-topic-creator help` runs or the skill is invoked without a prompt
+- **WHEN** `isomer-op-topic-creator help` runs or the skill is invoked without a prompt
 - **THEN** it lists `help`, `plan`, `create`, `ensure-project`, `define-topic`, `register-topic`, `init-runtime`, `setup-topic-env`, `setup-actors`, `bootstrap-research`, `start-manual-research`, `status`, and `repair`
 - **AND** it prints what the skill does, required inputs, command functionalities, outputs, and guardrails
 
@@ -67,7 +67,7 @@ The Topic Creator skill SHALL orchestrate existing owners rather than duplicatin
 
 #### Scenario: Project lifecycle remains delegated
 - **WHEN** Project initialization, validation, cleanup, content-root relocation, topic listing, or generic Project diagnostics are needed
-- **THEN** the Topic Creator delegates or routes that work to `isomer-admin-project-mgr` or supported `isomer-cli project ...` surfaces
+- **THEN** the Topic Creator delegates or routes that work to `isomer-op-project-mgr` or supported `isomer-cli project ...` surfaces
 
 #### Scenario: Topic environment remains delegated
 - **WHEN** topic environment requirements, topic env target specs, Topic Main Development Repository setup, projection materialization, or topic-root verification are needed
@@ -75,16 +75,16 @@ The Topic Creator skill SHALL orchestrate existing owners rather than duplicatin
 
 #### Scenario: Initialized topic management remains delegated
 - **WHEN** Topic Actor registration, update, archive, materialization, repair, diagnostics, branch validation, Topic Actor Workspace worktree setup, storage inspection, environment package mutation, or environment verification is needed after topic registration
-- **THEN** the Topic Creator delegates that work to `isomer-admin-topic-mgr` or the backed CLI and service surfaces selected by that manager
+- **THEN** the Topic Creator delegates that work to `isomer-op-topic-mgr` or the backed CLI and service surfaces selected by that manager
 
 #### Scenario: Topic Creator finalization can consume topic manager evidence
 - **WHEN** Topic Creator finalization summarizes initialized-topic readiness
-- **THEN** it may consume `isomer-admin-topic-mgr` status, actor, storage, environment, or validation evidence as delegated owner evidence
+- **THEN** it may consume `isomer-op-topic-mgr` status, actor, storage, environment, or validation evidence as delegated owner evidence
 - **AND** it does not prescribe a next research command or claim research-paradigm v2 bootstrap readiness from topic-manager evidence alone
 
 #### Scenario: Formal team specialization is separate
 - **WHEN** the user asks to adapt or instantiate a Domain Agent Team Template
-- **THEN** the Topic Creator hands off to `isomer-admin-topic-team-specialize`
+- **THEN** the Topic Creator hands off to `isomer-op-topic-team-specialize`
 - **AND** it does not treat manual Topic Actor readiness as formal Topic Agent Team Profile material, Agent Workspace readiness, or Agent Team Instance creation
 
 ### Requirement: Topic Creator Requires Concrete Research Topic Input
@@ -179,7 +179,7 @@ The Topic Creator skill SHALL use `define-actors` to create actor intent before 
 
 #### Scenario: Setup actors derives gates and verifies workspaces
 - **WHEN** `setup-actors` runs after `topic.intent.actor_definitions` exists
-- **THEN** it delegates actor registration and workspace materialization to `isomer-admin-topic-mgr`, creates or validates derived actor env gates at `topic.env.actor_env_gates`, and verifies the gates from each actor's resolved `topic.actors.workspace`
+- **THEN** it delegates actor registration and workspace materialization to `isomer-op-topic-mgr`, creates or validates derived actor env gates at `topic.env.actor_env_gates`, and verifies the gates from each actor's resolved `topic.actors.workspace`
 - **AND** the default-layout derived gate file is `<topic-workspace>/intent/derived/actor-env-gates.md`
 - **AND** it reports blockers instead of claiming actor readiness when workspace material, derived gates, or gate verification evidence is missing
 
@@ -221,6 +221,6 @@ The Topic Creator skill SHALL present `create-research-intent`, `define-topic-en
 - **AND** any compatibility mention of `define-topic` routes users to `create-research-intent`
 
 #### Scenario: Validator rejects stale command surface
-- **WHEN** operator skill validation scans `isomer-admin-topic-creator`
+- **WHEN** operator skill validation scans `isomer-op-topic-creator`
 - **THEN** it requires `create-research-intent`, `define-topic-env`, `define-actors`, the topic-input gate wording, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, and `topic.env.actor_env_gates`
 - **AND** it reports stale command guidance that treats `define-topic` as the research intent writer

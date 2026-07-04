@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-op-topic-creator"
+  short_description: "Create Topic Actor-ready Isomer topics"
+  default_prompt: "Use $isomer-op-topic-creator to create or resume a Research Topic for manual research."

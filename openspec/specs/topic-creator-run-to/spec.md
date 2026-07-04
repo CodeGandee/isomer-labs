@@ -7,7 +7,7 @@ TBD - created by archiving change add-topic-creator-finalize-summary. Update Pur
 The Topic Creator skill SHALL expose `run-to` as a targeted fast-forward mode that runs the main workflow until the predecessor of a user-specified procedural subcommand by default, and includes the target only on explicit inclusive request.
 
 #### Scenario: Help lists run-to as targeted fast-forward
-- **WHEN** `isomer-admin-topic-creator help` runs or the skill is invoked without a prompt
+- **WHEN** `isomer-op-topic-creator help` runs or the skill is invoked without a prompt
 - **THEN** the command list includes `run-to`
 - **AND** the help text describes `run-to <procedural-subcommand>` as targeted fast-forward execution
 - **AND** it explains that the target step is excluded by default unless the user explicitly asks for inclusive execution

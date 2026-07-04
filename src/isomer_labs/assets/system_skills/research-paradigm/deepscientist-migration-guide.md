@@ -34,7 +34,7 @@ For handoffs and output artifacts, use semantic placeholders instead of real sto
 
 Use placeholders when a skill needs to hand off a research frame, comparator, hypothesis, result, analysis, route choice, final summary, or other reusable research object. Do not bind these objects to the storage system during the first migration pass.
 
-Centralize placeholders in `skillset/research-paradigm/deepsci/isomer-rsch-shared/references/semantic-placeholders.md`. That registry should list each placeholder, explain what it means, name the producer skill, name the consumer skills, and state that storage binding is pending. This lets us bind stable semantics to the Isomer Labs storage layer later without rewriting every skill again.
+Centralize placeholders in `skillset/research-paradigm/deepsci/isomer-deepsci-shared/references/semantic-placeholders.md`. That registry should list each placeholder, explain what it means, name the producer skill, name the consumer skills, and state that storage binding is pending. This lets us bind stable semantics to the Isomer Labs storage layer later without rewriting every skill again.
 
 ## Internal Page Rule
 

@@ -267,7 +267,7 @@ topic_env = agent_invoke(
     returns=StageResult,
     params={
         "subcommand": "setup-topic-env",
-        "orchestrator": "isomer-admin-topic-team-specialize",
+        "orchestrator": "isomer-op-topic-team-specialize",
         "must_not_read": ["topic.intent.agent_env_requirements"],
         "must_not_write": ["topic.env.agent_setup_target_spec"],
     },
@@ -339,7 +339,7 @@ from pathlib import Path
 
 
 @skill(
-    name="isomer-admin-topic-team-specialize",
+    name="isomer-op-topic-team-specialize",
     description="Specialize a Research Topic team and orchestrate workspace, topic env, and agent env setup.",
 )
 def setup_topic_team(project_root: Path, user_request: str) -> StageResult:
@@ -396,7 +396,7 @@ def setup_topic_team(project_root: Path, user_request: str) -> StageResult:
         return agent_env_intent
 
     workspace = agent_invoke(
-        "isomer-admin-topic-mgr",
+        "isomer-op-topic-mgr",
         task="Prepare Topic Main Development Repository and Agent Workspace Git topology for the specialized topic team.",
         context={"topic": topic, "user_request": user_request},
         returns=StageResult,
@@ -461,7 +461,7 @@ Example extracted shape:
 
 ```json
 {
-  "skill": "isomer-admin-topic-team-specialize",
+  "skill": "isomer-op-topic-team-specialize",
   "python_branches": [
     "if topic.status in {'blocked', 'failed'}",
     "if topic_env.status in {'blocked', 'failed'}",
@@ -477,7 +477,7 @@ Example extracted shape:
     },
     {
       "primitive": "agent_invoke",
-      "skill_name": "isomer-admin-topic-mgr",
+      "skill_name": "isomer-op-topic-mgr",
       "returns": "StageResult",
       "assigned_to": "workspace"
     },
@@ -501,9 +501,9 @@ Example extracted shape:
     }
   ],
   "call_edges": [
-    ["isomer-admin-topic-team-specialize", "isomer-admin-topic-mgr"],
-    ["isomer-admin-topic-team-specialize", "isomer-srv-topic-env-setup"],
-    ["isomer-admin-topic-team-specialize", "isomer-srv-agent-env-setup"]
+    ["isomer-op-topic-team-specialize", "isomer-op-topic-mgr"],
+    ["isomer-op-topic-team-specialize", "isomer-srv-topic-env-setup"],
+    ["isomer-op-topic-team-specialize", "isomer-srv-agent-env-setup"]
   ]
 }
 ```
@@ -611,7 +611,7 @@ def test_setup_topic_team_blocks_when_agent_env_inputs_are_not_ready(fake_agent,
         returns=StageResult(status="ready", evidence=["topic ready"]),
     )
     fake_agent.when_invoke(
-        "isomer-admin-topic-mgr",
+        "isomer-op-topic-mgr",
         returns=StageResult(status="ready", evidence=["workspace ready"]),
     )
     fake_agent.when_invoke(

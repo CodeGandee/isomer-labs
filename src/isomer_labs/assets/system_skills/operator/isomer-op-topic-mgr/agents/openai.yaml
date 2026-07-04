@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-op-topic-mgr"
+  short_description: "Manage initialized Isomer Research Topics."
+  default_prompt: "Use $isomer-op-topic-mgr to manage an initialized Research Topic."

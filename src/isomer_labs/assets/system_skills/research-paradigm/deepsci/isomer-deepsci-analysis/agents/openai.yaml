@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-deepsci-analysis"
+  short_description: "Run focused follow-up analysis for a result."
+  default_prompt: "Use $isomer-deepsci-analysis to answer the smallest follow-up question that changes a result's interpretation."

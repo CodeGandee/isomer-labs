@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-review"
-  short_description: "Audit a draft or paper-like report skeptically."
-  default_prompt: "Use $isomer-rsch-review to audit a substantial draft or paper-like report and route concrete fixes."

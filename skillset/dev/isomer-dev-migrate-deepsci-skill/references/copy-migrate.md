@@ -30,7 +30,7 @@ Use `<repo>/...` for paths relative to the Isomer Labs repository root. Use `<so
 - Target root for research-paradigm migrations: `<repo>/skillset/research-paradigm/`.
 - Canonical Isomer Labs domain language: `<repo>/.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`.
 - Existing migration guide, if present: `<repo>/skillset/research-paradigm/deepscientist-migration-guide.md`.
-- Placeholder registry, if present: `<repo>/skillset/research-paradigm/deepsci/isomer-rsch-shared/references/semantic-placeholders.md`.
+- Placeholder registry, if present: `<repo>/skillset/research-paradigm/deepsci/isomer-deepsci-shared/references/semantic-placeholders.md`.
 - Source copy: `<target-skill-dir>/org/src/`.
 - Runtime support copy: `<target-skill-dir>/...`, excluding the source entrypoint and `agents/openai.yaml`.
 - Source analysis: `<target-skill-dir>/org/analysis/analysis-of-<source-skill-name>.md`.
@@ -162,7 +162,7 @@ The target skill must include:
 The `default_prompt` in `<target-skill-dir>/agents/openai.yaml` must explicitly mention the migrated skill token, for example:
 
 ```yaml
-default_prompt: "Use $isomer-rsch-scout to scout the Research Topic."
+default_prompt: "Use $isomer-deepsci-scout to scout the Research Topic."
 ```
 
 ## Validation

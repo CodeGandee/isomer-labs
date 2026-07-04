@@ -20,12 +20,13 @@ FRONTMATTER_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*?)\s*$")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/")
-TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-admin-topic-team-specialize"
-PROJECT_MANAGER_SKILL = "isomer-admin-project-mgr"
-TOPIC_CREATOR_SKILL = "isomer-admin-topic-creator"
-TOPIC_MANAGER_SKILL = "isomer-admin-topic-mgr"
-WELCOME_SKILL = "isomer-admin-welcome"
+TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-op-topic-team-specialize"
+PROJECT_MANAGER_SKILL = "isomer-op-project-mgr"
+TOPIC_CREATOR_SKILL = "isomer-op-topic-creator"
+TOPIC_MANAGER_SKILL = "isomer-op-topic-mgr"
+WELCOME_SKILL = "isomer-op-welcome"
 PACKAGE_SPECIFICS_SKILL = "isomer-misc-pkg-specifics"
+HOUMAO_INTEROP_SERVICE_SKILL = "isomer-srv-houmao-interop"
 
 MIGRATED_OPERATOR_SKILLS = (
     "isomer-rsch-project-aware",
@@ -39,6 +40,14 @@ MIGRATED_OPERATOR_SKILLS = (
     "isomer-rsch-team-launch-orchestrate",
     "isomer-rsch-topic-service-agent-support",
 )
+STALE_SKILL_NAMESPACE_REPLACEMENTS = {
+    "isomer-admin-": "isomer-op-",
+    "isomer-rsch-": "isomer-deepsci-",
+}
+STALE_EXACT_SKILL_REPLACEMENTS = {
+    "isomer-op-houmao-interop": HOUMAO_INTEROP_SERVICE_SKILL,
+}
+PASSIVE_STALE_REF_PARTS = frozenset({"migrate", "org"})
 
 ACTIVE_REF_ROOTS = (
     ".imsight-arts",
@@ -299,9 +308,9 @@ PROJECT_MANAGER_REQUIRED_SKILL_TERMS = (
     "isomer-cli project doctor",
     "isomer-cli project runtime init",
     "isomer-cli project runtime prepare",
-    "isomer-admin-topic-creator",
-    "isomer-admin-topic-mgr",
-    "isomer-admin-topic-team-specialize",
+    "isomer-op-topic-creator",
+    "isomer-op-topic-mgr",
+    "isomer-op-topic-team-specialize",
 )
 
 PROJECT_MANAGER_FORBIDDEN_CLI_TERMS = (
@@ -382,10 +391,10 @@ TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
     "Topic Actor roster",
     "actor cwd",
     "actor onboarding",
-    "isomer-admin-project-mgr",
+    "isomer-op-project-mgr",
     "isomer-srv-topic-env-setup",
-    "isomer-admin-topic-mgr",
-    "isomer-admin-topic-team-specialize",
+    "isomer-op-topic-mgr",
+    "isomer-op-topic-team-specialize",
     "Essential Output",
     "Complete Output",
 )
@@ -452,7 +461,7 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
         "topic.env.topic_setup_target_spec",
     ),
     "setup-actors.md": (
-        "isomer-admin-topic-mgr",
+        "isomer-op-topic-mgr",
         "topic.actors.workspace",
         "topic.intent.actor_definitions",
         "topic.env.actor_env_gates",
@@ -491,7 +500,7 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
 }
 
 TOPIC_MANAGER_REQUIRED_SKILL_TERMS = (
-    "isomer-admin-topic-creator",
+    "isomer-op-topic-creator",
     "initialized-topic",
     "Default subcommand",
     "## Subcommands",
@@ -532,7 +541,7 @@ TOPIC_MANAGER_REQUIRED_SKILL_TERMS = (
     "reset checkpoint",
     "canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`",
     "canonical per-agent worktree creation plus cwd proof belong to `isomer-srv-agent-env-setup`",
-    "isomer-rsch-workspace-mgr",
+    "isomer-deepsci-workspace-mgr",
     "semantic workspace labels",
     "Topic Workspace Manifest",
     "topic-workspace.toml",
@@ -629,13 +638,12 @@ WELCOME_ACTIVE_OWNER_SKILLS = (
     TOPIC_CREATOR_SKILL,
     TOPIC_MANAGER_SKILL,
     TOPIC_TEAM_SPECIALIZATION_SKILL,
-    "isomer-admin-houmao-interop",
 )
 
 WELCOME_RETIRED_ROUTE_SKILLS = (
-    "isomer-admin-topic-workspace-mgr",
-    "isomer-admin-topic-prepare",
-    "isomer-admin-manual-research-session",
+    "isomer-op-topic-workspace-mgr",
+    "isomer-op-topic-prepare",
+    "isomer-op-manual-research-session",
 )
 
 WELCOME_REQUIRED_SKILL_TERMS = (
@@ -713,11 +721,12 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
     ),
     "show-skill-map.md": (
         "Direct Invocation",
-        "Use $isomer-admin-project-mgr",
-        "Use $isomer-admin-topic-creator",
-        "Use $isomer-admin-topic-mgr",
-        "Use $isomer-admin-topic-team-specialize",
-        "Use $isomer-admin-houmao-interop",
+        "Use $isomer-op-project-mgr",
+        "Use $isomer-op-topic-creator",
+        "Use $isomer-op-topic-mgr",
+        "Use $isomer-op-topic-team-specialize",
+        "isomer-srv-houmao-interop",
+        "not first-click owner routes",
     ),
     "next-step.md": (
         "read-only Project inspection",
@@ -729,17 +738,17 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
     ),
     "start-research-manually.md": (
         "human-orchestrated research",
-        "isomer-admin-topic-creator",
-        "Use $isomer-admin-topic-creator fast-forward",
-        "Use $isomer-admin-topic-creator step-by-step",
+        "isomer-op-topic-creator",
+        "Use $isomer-op-topic-creator fast-forward",
+        "Use $isomer-op-topic-creator step-by-step",
         "mutation boundary",
     ),
     "start-research-by-agent-team.md": (
         "Domain Agent Team Template",
-        "isomer-admin-topic-team-specialize",
-        "Use $isomer-admin-topic-team-specialize fast-forward",
+        "isomer-op-topic-team-specialize",
+        "Use $isomer-op-topic-team-specialize fast-forward",
         "mutation boundary",
-        "isomer-admin-houmao-interop",
+        "isomer-srv-houmao-interop",
     ),
 }
 
@@ -1131,6 +1140,52 @@ TOPIC_ENV_SETUP_INDEPENDENCE_TERMS = (
 
 AGENT_ENV_SETUP_SERVICE_SKILL = "isomer-srv-agent-env-setup"
 
+HOUMAO_INTEROP_SERVICE_SUBCOMMANDS = (
+    "help.md",
+    "explain-loop.md",
+    "customize-loop.md",
+    "map-template-to-houmao.md",
+    "inspect-runtime.md",
+)
+
+HOUMAO_INTEROP_SERVICE_REQUIRED_SKILL_TERMS = (
+    "bounded Service Team support",
+    "Service Request",
+    "Default help mode",
+    "Explain-loop mode",
+    "Customize-loop mode",
+    "Map-template mode",
+    "Inspect-runtime mode",
+    "isomer-op-project-mgr",
+    "isomer-op-topic-team-specialize",
+    "next_action",
+    "Do not own Project lifecycle",
+)
+
+HOUMAO_INTEROP_SERVICE_REFERENCE_REQUIRED_TERMS = {
+    "help.md": (
+        "Project Operator Session",
+        "Service Request",
+        "next_action",
+    ),
+    "explain-loop.md": (
+        "gateway-driven request queue",
+        "TUI-tracking lifecycle kernel",
+    ),
+    "customize-loop.md": (
+        "Main Houmao CLI",
+        "project overlay",
+    ),
+    "map-template-to-houmao.md": (
+        "Domain Agent Team Templates",
+        "single-agent",
+    ),
+    "inspect-runtime.md": (
+        "Houmao CLI",
+        "Execution Adapter boundary",
+    ),
+}
+
 AGENT_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "setup-agent-env",
     "resolve-agent-env-context",
@@ -1327,18 +1382,18 @@ AGENT_ENV_SETUP_SUBCOMMANDS = (
 )
 
 REMOVED_OPERATOR_SKILLS = (
-    "isomer-admin-project-aware",
-    "isomer-admin-template-inspect",
-    "isomer-admin-topic-context-resolve",
-    "isomer-admin-service-request-route",
-    "isomer-admin-placeholder-reconcile",
-    "isomer-admin-topic-profile-draft",
-    "isomer-admin-profile-review-approval",
-    "isomer-admin-profile-materialize",
-    "isomer-admin-team-launch-orchestrate",
-    "isomer-admin-topic-prepare",
-    "isomer-admin-manual-research-session",
-    "isomer-admin-topic-workspace-mgr",
+    "isomer-op-project-aware",
+    "isomer-op-template-inspect",
+    "isomer-op-topic-context-resolve",
+    "isomer-op-service-request-route",
+    "isomer-op-placeholder-reconcile",
+    "isomer-op-topic-profile-draft",
+    "isomer-op-profile-review-approval",
+    "isomer-op-profile-materialize",
+    "isomer-op-team-launch-orchestrate",
+    "isomer-op-topic-prepare",
+    "isomer-op-manual-research-session",
+    "isomer-op-topic-workspace-mgr",
 )
 
 DEEPSCI_MINI_GUIDE_REQUIRED_TERMS = (
@@ -1365,7 +1420,7 @@ RESET_GUIDANCE_TERMS = (
 RESET_FORBIDDEN_RESEARCH_TERMS = (
     "skillset/research-paradigm",
     "research-paradigm",
-    "isomer-rsch-",
+    "isomer-deepsci-",
 )
 
 PACKAGE_SPECIFICS_REQUIRED_TERMS = (
@@ -1786,10 +1841,19 @@ def iter_active_ref_files(repo_root: Path) -> Iterable[Path]:
             yield path
 
 
+def is_passive_stale_ref_file(path: Path) -> bool:
+    return any(part in PASSIVE_STALE_REF_PARTS for part in path.parts)
+
+
 def validate_migrated_operator_refs(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     pattern = re.compile("|".join(re.escape(name) for name in MIGRATED_OPERATOR_SKILLS))
+    validator_path = Path(__file__).resolve()
     for path in sorted(set(iter_active_ref_files(repo_root))):
+        if path.resolve() == validator_path:
+            continue
+        if is_passive_stale_ref_file(path):
+            continue
         lines = read_lines(path)
         for line_number, line in enumerate(lines, start=1):
             match = pattern.search(line)
@@ -1802,6 +1866,26 @@ def validate_migrated_operator_refs(repo_root: Path) -> list[Diagnostic]:
                     "OPS002",
                     f"migrated operator skill '{match.group(0)}' must use the new operator or service skill name",
                 )
+            for old_prefix, new_prefix in STALE_SKILL_NAMESPACE_REPLACEMENTS.items():
+                if old_prefix in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        line_number,
+                        "OPS002",
+                        f"stale skill namespace '{old_prefix}' must use '{new_prefix}' in active guidance",
+                    )
+            for old_skill, new_skill in STALE_EXACT_SKILL_REPLACEMENTS.items():
+                if old_skill in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        line_number,
+                        "OPS002",
+                        f"stale skill '{old_skill}' must use '{new_skill}' in active guidance",
+                    )
     return diagnostics
 
 
@@ -2579,7 +2663,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics = validate_simple_skill_layout(
         repo_root / "skillset" / "operator",
         repo_root,
-        prefix="isomer-admin-",
+        prefix="isomer-op-",
         code="OPS001",
         manifest_required=True,
     )
@@ -2721,6 +2805,75 @@ def validate_agent_env_setup_service(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_houmao_interop_service(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    old_operator_dir = repo_root / "skillset" / "operator" / "isomer-op-houmao-interop"
+    old_service_dir = repo_root / "skillset" / "service" / "isomer-op-houmao-interop"
+    if old_operator_dir.exists():
+        add(diagnostics, repo_root, old_operator_dir, 1, "SVS006", "legacy isomer-op-houmao-interop operator skill folder must be moved to service/isomer-srv-houmao-interop")
+    if old_service_dir.exists():
+        add(diagnostics, repo_root, old_service_dir, 1, "SVS006", "legacy isomer-op-houmao-interop service folder must be renamed to isomer-srv-houmao-interop")
+
+    skill_dir = repo_root / "skillset" / "service" / HOUMAO_INTEROP_SERVICE_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "SVS006", f"{HOUMAO_INTEROP_SERVICE_SKILL} is required")
+        return diagnostics
+
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="SVS006", require_contract=True)
+    for term in HOUMAO_INTEROP_SERVICE_REQUIRED_SKILL_TERMS:
+        if term not in text:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(lines, "# Isomer"),
+                "SVS006",
+                f"{HOUMAO_INTEROP_SERVICE_SKILL} must document '{term}'",
+            )
+
+    references_dir = skill_dir / "references"
+    allowed_reference_names = set(HOUMAO_INTEROP_SERVICE_SUBCOMMANDS)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_reference_names:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "SVS006",
+                f"{HOUMAO_INTEROP_SERVICE_SKILL} has unexpected reference page references/{reference_path.name}",
+            )
+
+    for subcommand_file_name in HOUMAO_INTEROP_SERVICE_SUBCOMMANDS:
+        subcommand_path = references_dir / subcommand_file_name
+        if not subcommand_path.exists():
+            add(diagnostics, repo_root, subcommand_path, 1, "SVS006", f"{HOUMAO_INTEROP_SERVICE_SKILL} must include references/{subcommand_file_name}")
+            continue
+        if f"references/{subcommand_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Subcommands"), "SVS006", f"{HOUMAO_INTEROP_SERVICE_SKILL} must link references/{subcommand_file_name}")
+        subcommand_lines = read_lines(subcommand_path)
+        subcommand_text = "\n".join(subcommand_lines)
+        for required_term in HOUMAO_INTEROP_SERVICE_REFERENCE_REQUIRED_TERMS.get(subcommand_file_name, ()):
+            if required_term not in subcommand_text:
+                add(diagnostics, repo_root, subcommand_path, 1, "SVS006", f"references/{subcommand_file_name} must document '{required_term}'")
+
+    for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
+        for line_number, line in enumerate(read_lines(skill_file), start=1):
+            if "isomer-op-houmao-interop" in line:
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_file,
+                    line_number,
+                    "SVS006",
+                    "service Houmao interop guidance must use isomer-srv-houmao-interop",
+                )
+    return diagnostics
+
+
 def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics = validate_simple_skill_layout(
         repo_root / "skillset" / "service",
@@ -2730,6 +2883,7 @@ def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
         manifest_required=False,
     )
     diagnostics.extend(validate_agent_env_setup_service(repo_root))
+    diagnostics.extend(validate_houmao_interop_service(repo_root))
     diagnostics.extend(validate_topic_env_setup_service(repo_root))
     diagnostics.extend(
         validate_split_output_contract_docs(

@@ -48,6 +48,15 @@ class CliOptions:
     content_root_move_dry_run: bool = False
     content_root_move_yes: bool = False
     paths_configured: bool = False
+    callback_id: str | None = None
+    callback_skill: str | None = None
+    callback_stage: str | None = None
+    callback_scope: str | None = None
+    callback_prompt: str | None = None
+    callback_prompt_file: str | None = None
+    callback_skill_dir: str | None = None
+    callback_priority: int | None = None
+    callback_allow_external_source: bool = False
 
 
 def common_options(command: Any) -> Any:

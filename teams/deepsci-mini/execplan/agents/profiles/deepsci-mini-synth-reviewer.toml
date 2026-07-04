@@ -11,8 +11,8 @@ workspace_policy_ref = "../../specs/workspace/workspace.toml"
 
 [skills]
 generated = ["deepsci-mini-shared-template", "deepsci-mini-on-handoff-request"]
-required_isomer = ["isomer-rsch-shared", "isomer-rsch-idea", "isomer-rsch-analysis", "isomer-rsch-review"]
-optional_isomer = ["isomer-rsch-science", "isomer-rsch-paper-plot"]
+required_isomer = ["isomer-deepsci-shared", "isomer-deepsci-idea", "isomer-deepsci-analysis", "isomer-deepsci-review"]
+optional_isomer = ["isomer-deepsci-science", "isomer-deepsci-paper-plot"]
 
 [boundaries]
 may_dispatch = []

@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-deepsci-experiment"
+  short_description: "Test one selected hypothesis and interpret the result."
+  default_prompt: "Use $isomer-deepsci-experiment to lock one bounded test and produce an interpretable experiment result."

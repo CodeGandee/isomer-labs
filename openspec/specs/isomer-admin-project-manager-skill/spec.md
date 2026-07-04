@@ -1,25 +1,25 @@
-# isomer-admin-project-manager-skill Specification
+# isomer-op-project-manager-skill Specification
 
 ## Purpose
 Define the lean operator skill bundle for Isomer Project initialization, inspection, validation, runtime preparation guidance, and Project-level Houmao bootstrap.
 ## Requirements
 ### Requirement: Project Manager Skill Bundle
-The repository SHALL provide a lean operator skill bundle named `isomer-admin-project-mgr` for Isomer Project initialization, inspection, validation, and runtime preparation guidance.
+The repository SHALL provide a lean operator skill bundle named `isomer-op-project-mgr` for Isomer Project initialization, inspection, validation, and runtime preparation guidance.
 
 #### Scenario: Skill bundle exists
 - **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-admin-project-mgr/SKILL.md` and `skillset/operator/isomer-admin-project-mgr/agents/openai.yaml`
+- **THEN** it contains `skillset/operator/isomer-op-project-mgr/SKILL.md` and `skillset/operator/isomer-op-project-mgr/agents/openai.yaml`
 
 #### Scenario: Frontmatter is minimal
-- **WHEN** `skillset/operator/isomer-admin-project-mgr/SKILL.md` is inspected
-- **THEN** its YAML frontmatter contains `name: isomer-admin-project-mgr` and a trigger-oriented `description`, with no extra frontmatter fields
+- **WHEN** `skillset/operator/isomer-op-project-mgr/SKILL.md` is inspected
+- **THEN** its YAML frontmatter contains `name: isomer-op-project-mgr` and a trigger-oriented `description`, with no extra frontmatter fields
 
 #### Scenario: UI metadata is present
-- **WHEN** `skillset/operator/isomer-admin-project-mgr/agents/openai.yaml` is inspected
-- **THEN** it contains `interface.display_name`, `interface.short_description`, and `interface.default_prompt`, and the default prompt names `$isomer-admin-project-mgr`
+- **WHEN** `skillset/operator/isomer-op-project-mgr/agents/openai.yaml` is inspected
+- **THEN** it contains `interface.display_name`, `interface.short_description`, and `interface.default_prompt`, and the default prompt names `$isomer-op-project-mgr`
 
 #### Scenario: Eval scaffolding is absent
-- **WHEN** the `isomer-admin-project-mgr` skill folder is inspected
+- **WHEN** the `isomer-op-project-mgr` skill folder is inspected
 - **THEN** it does not contain an `evals/` directory or auxiliary docs that are not needed to execute the skill
 
 ### Requirement: Project Manager Skill Workflow
@@ -38,7 +38,7 @@ The project manager skill SHALL follow the Imsight skill-entrypoint structure an
 - **THEN** the skill tells the agent to use its native planning tool to build and execute a step-by-step plan from the project context, subcommands, CLI boundaries, output contract, and guardrails
 
 #### Scenario: Local subcommands exist
-- **WHEN** the `isomer-admin-project-mgr` skill folder is inspected
+- **WHEN** the `isomer-op-project-mgr` skill folder is inspected
 - **THEN** it contains local subcommand pages named `help`, `init-project`, `check-project`, `list-topics`, `show-context`, `init-runtime`, `prep-runtime`, and `specialize-team` under `references/`
 
 #### Scenario: Subcommand names are short
@@ -54,7 +54,7 @@ The project manager skill SHALL explain its purpose and usage when invoked for h
 
 #### Scenario: Help subcommand prints usage
 - **WHEN** the user invokes the local `help` subcommand
-- **THEN** the skill prints what `isomer-admin-project-mgr` does, how to invoke it, available subcommands, expected outputs, and guardrails
+- **THEN** the skill prints what `isomer-op-project-mgr` does, how to invoke it, available subcommands, expected outputs, and guardrails
 
 #### Scenario: Empty invocation defaults to help
 - **WHEN** the skill is invoked without a prompt
@@ -97,17 +97,17 @@ The project manager skill SHALL guide Project lifecycle commands without bypassi
 
 #### Scenario: Topic team specialization is handed off
 - **WHEN** the user asks to adapt, instantiate, or specialize a Domain Agent Team Template for a Research Topic
-- **THEN** the skill routes to `specialize-team`, resolves enough Project context with `isomer-cli project ...` command surfaces, and hands off to `isomer-admin-topic-team-specialize fast-forward` instead of duplicating Topic Team Specialization logic
+- **THEN** the skill routes to `specialize-team`, resolves enough Project context with `isomer-cli project ...` command surfaces, and hands off to `isomer-op-topic-team-specialize fast-forward` instead of duplicating Topic Team Specialization logic
 
 ### Requirement: Project Manager Support References
 The project manager skill SHALL keep required support knowledge inside its own skill directory.
 
 #### Scenario: Required support references are local
-- **WHEN** the `isomer-admin-project-mgr` skill folder is inspected
-- **THEN** any required Isomer domain, runtime boundary, Houmao bootstrap, or CLI usage reference needed to execute the skill is stored under `skillset/operator/isomer-admin-project-mgr/references/`
+- **WHEN** the `isomer-op-project-mgr` skill folder is inspected
+- **THEN** any required Isomer domain, runtime boundary, Houmao bootstrap, or CLI usage reference needed to execute the skill is stored under `skillset/operator/isomer-op-project-mgr/references/`
 
 #### Scenario: External support refs are absent
-- **WHEN** the `isomer-admin-project-mgr` skill entrypoint and local references are inspected
+- **WHEN** the `isomer-op-project-mgr` skill entrypoint and local references are inspected
 - **THEN** they do not reference `.imsight-arts/`, `docs/`, `extern/`, or absolute local support paths for information needed to execute the skill
 
 ### Requirement: Project Manager Skill Validation
@@ -122,7 +122,7 @@ The implementation SHALL validate the project manager skill with repository vali
 - **THEN** it accepts the project manager skill, detects missing required support-reference or subcommand terms, verifies local subcommand workflow structure and naming, rejects external support refs, and does not require `evals/`
 
 #### Scenario: OpenSpec validation runs
-- **WHEN** `openspec validate add-isomer-admin-project-manager-skill --strict` runs
+- **WHEN** `openspec validate add-isomer-op-project-manager-skill --strict` runs
 - **THEN** the change artifacts validate without schema or scenario-format errors
 
 ### Requirement: Project Manager Generated Content Layout Guidance
@@ -219,7 +219,7 @@ The project manager skill SHALL guide explicit Project cleanup through the suppo
 The project manager skill SHALL expose a short local cleanup subcommand for Project cleanup workflows.
 
 #### Scenario: Cleanup project subcommand exists
-- **WHEN** the `isomer-admin-project-mgr` skill folder is inspected
+- **WHEN** the `isomer-op-project-mgr` skill folder is inspected
 - **THEN** it contains a local subcommand page named `cleanup-project` under `references/`
 
 #### Scenario: Help lists cleanup project
@@ -257,7 +257,7 @@ The project manager skill SHALL guide generated content-root relocation through 
 The project manager skill SHALL expose a short local subcommand for generated content-root relocation workflows.
 
 #### Scenario: Move content subcommand exists
-- **WHEN** the `isomer-admin-project-mgr` skill folder is inspected
+- **WHEN** the `isomer-op-project-mgr` skill folder is inspected
 - **THEN** it contains a local subcommand page named `move-content` under `references/`
 
 #### Scenario: Help lists move content
@@ -300,17 +300,17 @@ The project manager skill SHALL explain the standard Topic Workspace visibility 
 
 #### Scenario: Topic manager handoff is named
 - **WHEN** the user asks the project manager skill to prepare per-agent worktrees, validate worker visibility boundaries, or inspect initialized-topic storage topology
-- **THEN** it hands off to `isomer-admin-topic-mgr` rather than duplicating Topic Workspace or Agent Workspace setup instructions
+- **THEN** it hands off to `isomer-op-topic-mgr` rather than duplicating Topic Workspace or Agent Workspace setup instructions
 
 ### Requirement: Project Manager Uses Essential and Complete Output
 The Project Manager operator skill SHALL split its output contract into Essential Output and Complete Output.
 
 #### Scenario: Essential project output reports lifecycle status
-- **WHEN** `isomer-admin-project-mgr` reports a result without a complete-output request
+- **WHEN** `isomer-op-project-mgr` reports a result without a complete-output request
 - **THEN** it reports Project root, Project manifest status, selected Research Topic or Topic Workspace when relevant, operation result, important changed paths, blockers or diagnostics, and next action
 
 #### Scenario: Complete project output preserves lifecycle bookkeeping
-- **WHEN** complete output is requested from `isomer-admin-project-mgr`
+- **WHEN** complete output is requested from `isomer-op-project-mgr`
 - **THEN** it reports Project Manifest path, Houmao project and overlay paths, Research Topic refs, Topic Workspace refs, effective topic context, runtime status, cleanup plan, relocation plan, commands run, diagnostics, and next action when those fields apply
 
 #### Scenario: Cleanup and relocation stay understandable by default
@@ -319,18 +319,18 @@ The Project Manager operator skill SHALL split its output contract into Essentia
 - **AND** Complete Output carries the full target list, warnings, unmanaged leftovers, and command evidence
 
 ### Requirement: Project Manager Routes Human-Orchestrated Research Preparation
-The Project Manager skill SHALL route manual or human-orchestrated Research Topic preparation to `isomer-admin-topic-creator` without implying topic team specialization.
+The Project Manager skill SHALL route manual or human-orchestrated Research Topic preparation to `isomer-op-topic-creator` without implying topic team specialization.
 
 #### Scenario: Human-orchestrated research request is handed off
 - **WHEN** the user asks the Project Manager skill to prepare, start, create, or set up a Research Topic for manual research, multiple manually controlled agents, or human-orchestrated work
-- **THEN** the Project Manager skill hands off to `isomer-admin-topic-creator` with the selected Project, Research Topic, requested actor context, and any known Project lifecycle state
-- **AND** Topic Actor CRUD or Topic Actor Workspace materialization requests are still routed by the creator or direct advanced users to `isomer-admin-topic-mgr` actor commands
-- **AND** it does not route the request to `isomer-admin-topic-team-specialize fast-forward` unless the user explicitly asks for Topic Agent Team specialization
+- **THEN** the Project Manager skill hands off to `isomer-op-topic-creator` with the selected Project, Research Topic, requested actor context, and any known Project lifecycle state
+- **AND** Topic Actor CRUD or Topic Actor Workspace materialization requests are still routed by the creator or direct advanced users to `isomer-op-topic-mgr` actor commands
+- **AND** it does not route the request to `isomer-op-topic-team-specialize fast-forward` unless the user explicitly asks for Topic Agent Team specialization
 
 #### Scenario: Project manager help distinguishes actor and team paths
 - **WHEN** the Project Manager skill lists topic-oriented operations
-- **THEN** it names `isomer-admin-topic-creator` as the front door for topic creation and manual-research readiness
-- **AND** it distinguishes `isomer-admin-topic-mgr` actor management, deprecated compatibility preparation/session skills, and Topic Agent Team specialization while keeping runtime initialization or preparation as explicit prerequisites or delegated steps
+- **THEN** it names `isomer-op-topic-creator` as the front door for topic creation and manual-research readiness
+- **AND** it distinguishes `isomer-op-topic-mgr` actor management, deprecated compatibility preparation/session skills, and Topic Agent Team specialization while keeping runtime initialization or preparation as explicit prerequisites or delegated steps
 
 ### Requirement: Project Manager Uses Global Isomer CLI Invocation
 The Project Manager skill SHALL present `isomer-cli` as a globally installed executable, not as a repo-local Pixi task.

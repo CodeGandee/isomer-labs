@@ -139,6 +139,15 @@ from isomer_labs.cli.handlers.shared import (
     _unknown_template_diagnostic,
     _value,
 )
+from isomer_labs.project.skill_callback_commands import (
+    CallbackCommandResult,
+    disable_user_skill_callback,
+    list_user_skill_callbacks,
+    register_user_skill_callback,
+    resolve_user_skill_callbacks,
+    show_user_skill_callback,
+    validate_user_skill_callbacks,
+)
 
 
 def _cmd_init(options: CliOptions) -> int:
@@ -443,6 +452,160 @@ def _cmd_context_show(options: CliOptions) -> int:
         )
     return _emit("context show", options, payload, diagnostics, lines)
 
+
+def _cmd_skill_callbacks_register(options: CliOptions) -> int:
+    state, context, diagnostics = _callback_state_and_context(
+        options,
+        require_topic=_value(options, "callback_scope") == "research_topic",
+    )
+    if state is None or has_errors(diagnostics):
+        payload = {"ok": False, "mutated": False}
+        return _emit("skill-callbacks register", options, payload, diagnostics, [])
+    result = register_user_skill_callback(
+        state,
+        context,
+        callback_id=_value(options, "callback_id"),
+        skill=_value(options, "callback_skill"),
+        stage=_value(options, "callback_stage"),
+        scope=_value(options, "callback_scope") or "research_topic",
+        priority=_value(options, "callback_priority"),
+        prompt=_value(options, "callback_prompt"),
+        prompt_file=_value(options, "callback_prompt_file"),
+        skill_dir=_value(options, "callback_skill_dir"),
+        allow_external_source=bool(_value(options, "callback_allow_external_source")),
+    )
+    return _emit(
+        "skill-callbacks register",
+        options,
+        result.to_json(),
+        list(result.diagnostics),
+        _render_callback_result("Registered User Skill Callback", result),
+    )
+
+
+def _cmd_skill_callbacks_resolve(options: CliOptions) -> int:
+    state, context, diagnostics = _callback_state_and_context(options, require_topic=False)
+    if state is None:
+        payload = {"ok": False, "mutated": False, "callbacks": []}
+        return _emit("skill-callbacks resolve", options, payload, diagnostics, [])
+    result = resolve_user_skill_callbacks(
+        state,
+        context,
+        skill=_value(options, "callback_skill"),
+        stage=_value(options, "callback_stage"),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit(
+        "skill-callbacks resolve",
+        options,
+        result.to_json(),
+        diagnostics,
+        _render_callback_result("Resolved User Skill Callbacks", result),
+    )
+
+
+def _cmd_skill_callbacks_list(options: CliOptions) -> int:
+    state, context, diagnostics = _callback_state_and_context(options, require_topic=False)
+    if state is None:
+        payload = {"ok": False, "mutated": False, "callbacks": []}
+        return _emit("skill-callbacks list", options, payload, diagnostics, [])
+    result = list_user_skill_callbacks(state, context)
+    diagnostics.extend(result.diagnostics)
+    return _emit(
+        "skill-callbacks list",
+        options,
+        result.to_json(),
+        diagnostics,
+        _render_callback_result("User Skill Callbacks", result),
+    )
+
+
+def _cmd_skill_callbacks_show(options: CliOptions) -> int:
+    state, context, diagnostics = _callback_state_and_context(options, require_topic=False)
+    if state is None:
+        payload = {"ok": False, "mutated": False, "callbacks": []}
+        return _emit("skill-callbacks show", options, payload, diagnostics, [])
+    result = show_user_skill_callback(state, context, callback_id=_value(options, "callback_id"))
+    diagnostics.extend(result.diagnostics)
+    return _emit(
+        "skill-callbacks show",
+        options,
+        result.to_json(),
+        diagnostics,
+        _render_callback_result("User Skill Callback", result),
+    )
+
+
+def _cmd_skill_callbacks_disable(options: CliOptions) -> int:
+    state, context, diagnostics = _callback_state_and_context(options, require_topic=False)
+    if state is None or has_errors(diagnostics):
+        payload = {"ok": False, "mutated": False, "callbacks": []}
+        return _emit("skill-callbacks disable", options, payload, diagnostics, [])
+    result = disable_user_skill_callback(state, context, callback_id=_value(options, "callback_id"))
+    diagnostics.extend(result.diagnostics)
+    return _emit(
+        "skill-callbacks disable",
+        options,
+        result.to_json(),
+        diagnostics,
+        _render_callback_result("Disabled User Skill Callback", result),
+    )
+
+
+def _cmd_skill_callbacks_validate(options: CliOptions) -> int:
+    state, context, diagnostics = _callback_state_and_context(options, require_topic=False)
+    if state is None:
+        payload = {"ok": False, "mutated": False, "callbacks": []}
+        return _emit("skill-callbacks validate", options, payload, diagnostics, [])
+    result = validate_user_skill_callbacks(state, context)
+    diagnostics.extend(result.diagnostics)
+    return _emit(
+        "skill-callbacks validate",
+        options,
+        result.to_json(),
+        diagnostics,
+        _render_callback_result("Validated User Skill Callbacks", result),
+    )
+
+
+def _callback_state_and_context(
+    options: CliOptions,
+    *,
+    require_topic: bool,
+) -> tuple[ProjectState | None, EffectiveTopicContext | None, list[Diagnostic]]:
+    project, diagnostics = _discover(options)
+    if project is None:
+        return None, None, diagnostics
+    state = build_project_state(project)
+    diagnostics.extend(state.diagnostics)
+    context, context_diagnostics = resolve_effective_topic_context(
+        state,
+        _selection_request_from_options(options),
+        cwd=Path.cwd(),
+        env=os.environ,
+    )
+    if context is None:
+        if require_topic or _topic_selector_requested(options):
+            diagnostics.extend(context_diagnostics)
+    else:
+        diagnostics.extend(context_diagnostics)
+    return state, context, diagnostics
+
+
+def _render_callback_result(title: str, result: CallbackCommandResult) -> list[str]:
+    lines = [title]
+    if not result.callbacks:
+        lines.append("- none")
+    for callback in result.callbacks:
+        data = callback.to_json(result.project_root)
+        source = data["source_summary"]
+        lines.append(
+            f"- {callback.id} ({callback.scope} {callback.skill} {callback.stage}, status={callback.status}, priority={callback.priority}, source={source})"
+        )
+    if result.previous_status is not None and result.new_status is not None:
+        lines.append(f"Status: {result.previous_status} -> {result.new_status}")
+    return lines
+
 __all__ = [
     "_cmd_init",
     "_cmd_validate",
@@ -455,4 +618,10 @@ __all__ = [
     "_cmd_topics_update",
     "_cmd_topics_delete",
     "_cmd_context_show",
+    "_cmd_skill_callbacks_register",
+    "_cmd_skill_callbacks_resolve",
+    "_cmd_skill_callbacks_list",
+    "_cmd_skill_callbacks_show",
+    "_cmd_skill_callbacks_disable",
+    "_cmd_skill_callbacks_validate",
 ]

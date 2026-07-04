@@ -1,4 +1,0 @@
-interface:
-  display_name: "isomer-rsch-nature-figure"
-  short_description: "Create or polish Nature-grade figures in Python or R."
-  default_prompt: "Use $isomer-rsch-nature-figure to create, revise, audit, or polish a Nature/high-impact journal figure with one selected backend: Python or R."

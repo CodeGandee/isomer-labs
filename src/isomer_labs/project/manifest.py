@@ -41,6 +41,7 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
     profiles = _parse_topic_agent_team_profiles(path, raw, diagnostics)
     artifact_format_profiles = _registration_ids(raw.get("artifact_format_profiles"))
     artifact_extensions = _registration_ids(raw.get("artifact_extensions"))
+    user_skill_callback_registry_refs = _callback_registry_ref_values(raw)
 
     manifest = ProjectManifest(
         schema_version=schema_version,
@@ -56,6 +57,7 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
         path_defaults=path_defaults,
         artifact_format_profiles=artifact_format_profiles,
         artifact_extensions=artifact_extensions,
+        user_skill_callback_registry_refs=user_skill_callback_registry_refs,
         raw=raw,
     )
     return manifest, diagnostics
@@ -436,6 +438,25 @@ def _registration_ids(value: object) -> list[str]:
         return ids
     if isinstance(value, dict):
         return sorted(str(key) for key in value)
+    return []
+
+
+def _callback_registry_ref_values(raw: dict[str, Any]) -> list[str]:
+    values: list[str] = []
+    values.extend(_string_refs(raw.get("user_skill_callback_registry_ref")))
+    values.extend(_string_refs(raw.get("user_skill_callback_registry_refs")))
+    nested_refs = raw.get("refs")
+    if isinstance(nested_refs, dict):
+        values.extend(_string_refs(nested_refs.get("user_skill_callback_registry_ref")))
+        values.extend(_string_refs(nested_refs.get("user_skill_callback_registry_refs")))
+    return list(dict.fromkeys(values))
+
+
+def _string_refs(value: object) -> list[str]:
+    if isinstance(value, str) and value:
+        return [value]
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, str) and item]
     return []
 
 

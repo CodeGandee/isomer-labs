@@ -1,6 +1,6 @@
 # Install Topic Deps
 
-Use this subcommand to install dependencies for the derived gate through the Topic Workspace Pixi environment. For an ad hoc package install, update, remove, or package verification request from a user or research skill, route to the matching `$isomer-admin-topic-mgr env-*` command instead of calling this page directly.
+Use this subcommand to install dependencies for the derived gate through the Topic Workspace Pixi environment. For an ad hoc package install, update, remove, or package verification request from a user or research skill, route to the matching `$isomer-op-topic-mgr env-*` command instead of calling this page directly.
 
 ## Required Inputs
 
@@ -19,7 +19,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. **Require predecessor artifacts**:
    - Require workspace context from `resolve-topic-workspace` and resolved `topic.env.topic_setup_target_spec` from `derive-env-gate`.
-   - If the caller supplied only a package install, update, remove, or package verification request without a derived target spec or full environment setup intent, stop and route to the matching `$isomer-admin-topic-mgr env-install-packages`, `$isomer-admin-topic-mgr env-update-packages`, `$isomer-admin-topic-mgr env-remove-packages`, or verification command.
+   - If the caller supplied only a package install, update, remove, or package verification request without a derived target spec or full environment setup intent, stop and route to the matching `$isomer-op-topic-mgr env-install-packages`, `$isomer-op-topic-mgr env-update-packages`, `$isomer-op-topic-mgr env-remove-packages`, or verification command.
 2. **Read the target spec** and stop with blockers when its `## Blockers` section contains unresolved install blockers.
 3. **Check enclosure classification** from the target spec's `## Dependency Plan`:
    - Every required dependency or runtime need must be classified as Pixi-managed, Pixi-mediated external runtime wiring, topic-local user-space fallback, or blocked.

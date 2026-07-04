@@ -144,6 +144,10 @@ def resolve_effective_topic_context(
         domain_agent_team_template_id=template_id,
         topic_agent_team_profile_id=profile_id,
         profile_refs=profile_refs,
+        user_skill_callback_registry_refs={
+            "project": list(state.project.manifest.user_skill_callback_registry_refs),
+            "research_topic": _topic_callback_registry_refs(topic_config),
+        },
     )
     return context, diagnostics
 
@@ -470,3 +474,16 @@ def _select_template_and_profile(
         if template_id is not None and profile_id is None:
             source = "Project Manifest default"
     return template_id, profile_id, source, profile_refs
+
+
+def _topic_callback_registry_refs(topic_config: ResearchTopicConfig | None) -> list[str]:
+    if topic_config is None:
+        return []
+    values: list[str] = []
+    for key in ("user_skill_callback_registry_ref", "user_skill_callback_registry_refs"):
+        value = topic_config.refs.get(key)
+        if isinstance(value, str) and value:
+            values.append(value)
+        elif isinstance(value, list):
+            values.extend(item for item in value if isinstance(item, str) and item)
+    return list(dict.fromkeys(values))

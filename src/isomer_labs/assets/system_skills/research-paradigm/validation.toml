@@ -56,7 +56,7 @@ resolved_id_section_headings = [
   "Resolved Extension Surfaces",
 ]
 deepsci_storage_binding_file_globs = [
-  "deepsci/isomer-rsch-shared/references/semantic-placeholders.md",
+  "deepsci/isomer-deepsci-shared/references/semantic-placeholders.md",
   "*/placeholder-bindings.md",
   "*/migrate/**",
   "*/org/**",
