@@ -23,6 +23,7 @@ from isomer_labs.records.store import (
     archive_record,
     create_record,
     list_records,
+    migrate_structured_payload_files,
     parse_json_object_list,
     parse_json_object,
     parse_string_map,
@@ -74,7 +75,7 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     @click.option("--include-payload", is_flag=True, help="Include structured payload JSON when present.")
     @click.option("--include-validation-diagnostics", is_flag=True, help="Include structured validation diagnostics.")
     @click.option("--include-render-diagnostics", is_flag=True, help="Include structured render diagnostics.")
-    @click.option("--include-rendered-body", is_flag=True, help="Include generated Markdown body when present.")
+    @click.option("--include-rendered-body", is_flag=True, help="Include legacy rendered Markdown body when present.")
     @click.argument("record_id")
     @click.pass_context
     def show_command(
@@ -207,6 +208,18 @@ def register_research_record_ext_commands(app: click.Group) -> None:
             ctx,
             kwargs,
             lambda context, _request: render_record(context, record_id, env=os.environ, output_file=output_file),
+            build_request=False,
+        )
+
+    @records_group.command(name="migrate-payload-files", help="Export legacy structured payload rows into managed JSON payload files.")
+    @_common_options
+    @_topic_selection_options
+    @click.pass_context
+    def migrate_payload_files_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: migrate_structured_payload_files(context, env=os.environ, cwd=Path.cwd()),
             build_request=False,
         )
 
@@ -378,7 +391,7 @@ def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
         command = click.option("--relationships-json", default=None, help="Query-index relationship refs as a JSON array of objects.")(command)
         command = click.option("--metadata-json", default=None, help="Additional transition metadata as a JSON object.")(command)
         command = click.option("--content-name", default=None, help="Stored body filename.")(command)
-        command = click.option("--render", "render_format", default=None, help="Render a generated view, for example markdown.")(command)
+        command = click.option("--render", "render_format", default=None, help="Validate an on-demand render, for example markdown.")(command)
         command = click.option("--template-file", type=click.Path(path_type=Path), default=None, help="Plain Jinja2 template file for structured payloads.")(command)
         command = click.option("--schema-file", type=click.Path(path_type=Path), default=None, help="Plain JSON Schema file for structured payloads.")(command)
         command = click.option("--template-ref", default=None, help="Artifact Format template ref for structured payloads.")(command)

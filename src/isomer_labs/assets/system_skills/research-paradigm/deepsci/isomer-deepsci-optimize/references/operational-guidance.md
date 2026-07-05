@@ -4,7 +4,7 @@ Use this reference when the optimize route needs the longer execution notes rath
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<OPTIMIZATION_CONTEXT_BRIEF>`, `<OPTIMIZATION_FRONTIER>`, `<CANDIDATE_BOARD>`, or route-bearing optimize records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, frontier and result placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the active line, measured result, route recommendation, or blocker state no longer matches durable topic state. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+Before producing or refreshing `<OPTIMIZATION_CONTEXT_BRIEF>`, `<OPTIMIZATION_FRONTIER>`, `<CANDIDATE_BOARD>`, or route-bearing optimize records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, frontier and result placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the active line, measured result, route recommendation, or blocker state no longer matches durable topic state. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 

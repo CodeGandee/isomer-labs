@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -1208,20 +1209,91 @@ def _validate_structured_research_payloads(
                     message="Structured payload owner does not match the linked lifecycle record.",
                 )
             )
-        observed_payload_digest = digest_json(payload.payload_json)
-        if observed_payload_digest != payload.payload_digest:
+        payload_json = payload.payload_json
+        payload_path = Path(payload.payload_file_path) if payload.payload_file_path is not None else None
+        if payload_path is not None:
+            if not payload_path.exists() or not payload_path.is_file():
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO208",
+                        severity="error",
+                        concept="Structured Research Payload",
+                        path=payload_path,
+                        field=payload.record_id,
+                        message="Structured payload file is missing.",
+                    )
+                )
+                payload_json = {}
+            else:
+                try:
+                    loaded_payload = json.loads(payload_path.read_text(encoding="utf-8"))
+                except json.JSONDecodeError as exc:
+                    diagnostics.append(
+                        Diagnostic(
+                            code="ISO208",
+                            severity="error",
+                            concept="Structured Research Payload",
+                            path=payload_path,
+                            field=payload.record_id,
+                            message=f"Structured payload file is not valid JSON: {exc.msg}.",
+                        )
+                    )
+                    payload_json = {}
+                else:
+                    if not isinstance(loaded_payload, dict):
+                        diagnostics.append(
+                            Diagnostic(
+                                code="ISO208",
+                                severity="error",
+                                concept="Structured Research Payload",
+                                path=payload_path,
+                                field=payload.record_id,
+                                message="Structured payload file must contain a JSON object.",
+                            )
+                        )
+                        payload_json = {}
+                    else:
+                        payload_json = {str(key): value for key, value in loaded_payload.items()}
+        observed_payload_digest = digest_json(payload_json)
+        if payload_json and observed_payload_digest != payload.payload_digest:
             diagnostics.append(
                 Diagnostic(
                     code="ISO208",
                     severity="error",
                     concept="Structured Research Payload",
-                    path=store.db_path,
+                    path=payload_path or store.db_path,
                     field=payload.record_id,
-                    message="Structured payload digest does not match stored payload JSON.",
+                    message="Structured payload digest does not match the recorded payload digest.",
                 )
             )
+        if payload.payload_manifest_path is not None and not Path(payload.payload_manifest_path).exists():
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO208",
+                    severity="warning",
+                    concept="Structured Research Payload",
+                    path=Path(payload.payload_manifest_path),
+                    field=payload.record_id,
+                    message="Structured payload manifest file is missing.",
+                )
+            )
+        for ref_field, ref_value in (
+            ("revision_of_record_id", payload.revision_of_record_id),
+            ("supersedes_record_id", payload.supersedes_record_id),
+        ):
+            if ref_value is not None and ref_value not in lifecycle_records:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO208",
+                        severity="warning",
+                        concept="Structured Research Payload",
+                        path=store.db_path,
+                        field=ref_field,
+                        message=f"Structured payload revision ref points to a missing lifecycle record: {ref_value}.",
+                    )
+                )
         if payload.schema_ref.startswith("isomer:"):
-            validation = validate_payload(payload.payload_json, schema_ref=payload.schema_ref)
+            validation = validate_payload(payload_json, schema_ref=payload.schema_ref)
             if not validation.ok:
                 diagnostics.append(
                     Diagnostic(
@@ -1244,7 +1316,7 @@ def _validate_structured_research_payloads(
                         concept="Structured Research Payload",
                         path=rendered_path,
                         field=payload.record_id,
-                        message="Structured payload generated Markdown locator is missing.",
+                        message="Structured payload legacy rendered Markdown locator is missing.",
                     )
                 )
             elif payload.rendered_markdown_digest is not None:

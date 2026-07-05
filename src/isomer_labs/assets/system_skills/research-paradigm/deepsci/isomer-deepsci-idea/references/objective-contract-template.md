@@ -4,7 +4,7 @@ Use this reference at the start of an `isomer-deepsci-idea` pass whenever the re
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<OBJECTIVE_CONTRACT>` or `<CURRENT_BOARD_PACKET>`, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, objective and board placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the Research Topic scope, comparator basis, metric contract, evaluation contract, paper target, or claim boundary changed. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+Before producing or refreshing `<OBJECTIVE_CONTRACT>` or `<CURRENT_BOARD_PACKET>`, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, objective and board placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the Research Topic scope, comparator basis, metric contract, evaluation contract, paper target, or claim boundary changed. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 

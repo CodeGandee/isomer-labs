@@ -7,7 +7,7 @@ description: Use when a Research Inquiry has enough evidence to draft or revise 
 
 ## Overview
 
-Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`, and request `--render markdown` only for the generated review view.
+Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`; render Markdown later with `ext research records render` only when a human-readable view or explicit export is needed.
 
 Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
@@ -46,7 +46,7 @@ When this skill is invoked, execute the following steps in order.
 7. **Refresh citations and references**. Create `<CITATION_LEDGER>` from verified sources before citing. Do not hand-write BibTeX, metrics, or literature claims from memory.
 8. **Plan displays before prose**. Create `<DISPLAY_PLAN>` for figures, tables, and appendix displays. Route first-pass standard plots to `isomer-deepsci-paper-plot` and durable paper-facing figures to `isomer-deepsci-figure-polish`.
 9. **Draft or revise sections**. Produce `<DRAFT_SECTION_SET>` from the section jobs, using `references/section_rewrite_checklist.md` before treating a section as stable.
-10. **Validate the manuscript state**. Produce `<MANUSCRIPT_VALIDATION_REPORT>` covering claim support, citation legitimacy, figure readiness, section coverage, language hygiene, bundle readiness, and remaining blockers.
+10. **Validate the manuscript state**. Produce `<MANUSCRIPT_VALIDATION_REPORT>` covering claim support, citation legitimacy, figure readiness, section coverage, language hygiene, bundle readiness, and remaining blockers. For LaTeX/TeX manuscripts, validate compilation with Tectonic first; use LaTeX engine workflows only after a real Tectonic attempt fails or a concrete Tectonic blocker is recorded.
 11. **Checkpoint or route next**. Submit `<PAPER_BUNDLE_CHECKPOINT>` when the draft, review package, or submission package is coherent; otherwise produce `<WRITING_ROUTE_DECISION>` to analysis, review, finalize, paper-outline, or a Nature companion skill as justified.
 12. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-write --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
@@ -60,7 +60,7 @@ Read these preferences as defaults that apply across the whole skill. They shoul
 - Prefer the smallest route that preserves downstream trust, and route missing evidence to the skill that can actually produce it.
 - Prefer source-compatible `isomer-cli ext deepsci call ... --input-json '{...}'` only when the source harness behavior matters; otherwise use native Isomer topic context, provider, and execution-adapter surfaces without binding storage prematurely.
 - Prefer paper-facing language that names claims, evidence, limits, and next routes without exposing operator, agent, prompt, worktree, or local runtime details.
-- Prefer Tectonic for LaTeX/TeX manuscript compilation. Use TeX Live, `latexmk`, `pdflatex`, `xelatex`, `lualatex`, BibTeX, or Biber only when Tectonic is unavailable, blocked by the template, or required by the venue, and record the fallback reason in the compile report.
+- Prefer Tectonic first for LaTeX/TeX manuscript compilation. Do not skip directly to TeX Live, `latexmk`, `pdflatex`, `xelatex`, `lualatex`, BibTeX, or Biber unless Tectonic was attempted and failed, Tectonic is unavailable, the template blocks Tectonic, or the venue requires a specific LaTeX engine or bibliography workflow. Record the Tectonic command or the concrete blocker, then record any fallback command and reason in the compile report.
 
 ## Cross-Step Constraints
 
@@ -88,6 +88,7 @@ Read these gates before claiming the skill output is ready for handoff. Use `Met
 - Placeholder check: all handoff objects in the workflow appear in `migrate/placeholders.md`.
 - Source-preservation check: source logic remains auditable in `org/src/` and `org/analysis/analysis-of-write.md`.
 - Paper-hygiene check: manuscript-facing output excludes route-control wording, local runtime details, and unsupported certainty.
+- Compile-order check: for LaTeX/TeX manuscripts, the compile report records a Tectonic attempt or a concrete Tectonic blocker before any LaTeX engine fallback.
 
 ## Reference Routing
 

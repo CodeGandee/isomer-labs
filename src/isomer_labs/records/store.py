@@ -13,6 +13,7 @@ from isomer_labs.artifact_formats import (
     ArtifactFormatRegistry,
     WorkspaceRuntimeArtifactFormatProvider,
     digest_bytes,
+    digest_json,
     register_custom_artifact_format,
     render_artifact,
     validate_payload,
@@ -100,6 +101,15 @@ class ResearchRecordRequest:
 @dataclass(frozen=True)
 class StructuredPayloadPreparation:
     payload: dict[str, object]
+    payload_file_path: Path | None
+    payload_manifest_path: Path | None
+    payload_source_path: str | None
+    payload_media_type: str
+    revision_of_record_id: str | None
+    supersedes_record_id: str | None
+    latest_for_semantic_id: str | None
+    legacy_rendered_markdown_path: str | None
+    legacy_rendered_markdown_digest: str | None
     validation_status: str
     validation_diagnostics: list[dict[str, object]]
     schema_ref: str
@@ -227,9 +237,14 @@ def show_record(
         structured_payload = runtime_store.get_structured_payload(record_id)
         if structured_payload is not None:
             payload["structured_payload"] = structured_payload.to_json(
-                include_payload=include_payload,
+                include_payload=False,
                 include_diagnostics=include_validation_diagnostics or include_render_diagnostics,
             )
+            if include_payload:
+                payload_json, payload_diagnostics = _read_structured_payload_json(structured_payload)
+                diagnostics.extend(payload_diagnostics)
+                if payload_json is not None:
+                    payload["structured_payload"]["payload"] = payload_json  # type: ignore[index]
             if not include_validation_diagnostics:
                 payload["structured_payload"].pop("validation_diagnostics", None)  # type: ignore[index]
             if not include_render_diagnostics:
@@ -520,7 +535,7 @@ def render_record(
 ) -> tuple[dict[str, Any], list[Diagnostic]]:
     """Render a stored structured research record without mutating its locator."""
 
-    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=output_file is None)
     if runtime_store is None:
         return _runtime_missing_payload("render", diagnostics), diagnostics
     try:
@@ -530,9 +545,13 @@ def render_record(
         structured_payload = runtime_store.get_structured_payload(record_id)
         if structured_payload is None:
             raise ResearchRecordError(f"Research record is not structured: {record_id}", code="structured_payload_missing")
+        payload_json, payload_diagnostics = _read_structured_payload_json(structured_payload)
+        diagnostics.extend(payload_diagnostics)
+        if payload_json is None:
+            return _diagnostic_payload("render", diagnostics), diagnostics
         registry = _artifact_format_registry(context, runtime_store)
         render = render_artifact(
-            structured_payload.payload_json,
+            payload_json,
             registry=registry,
             output_format="markdown",
             format_profile_ref=structured_payload.format_profile_ref,
@@ -540,16 +559,177 @@ def render_record(
             template_ref=None if structured_payload.format_profile_ref is not None else structured_payload.template_ref,
         )
         diagnostics.extend(render.diagnostics)
+        output_digest = None
+        output_path = None
+        index_payload: dict[str, object] | None = None
+        response_record = record
         if render.ok and output_file is not None and render.content is not None:
             output_file.parent.mkdir(parents=True, exist_ok=True)
             output_file.write_text(render.content, encoding="utf-8")
+            output_path = output_file.resolve(strict=False)
+            output_digest = digest_bytes(output_path.read_bytes())
+            export_record = {
+                "path": str(output_path),
+                "format": "markdown",
+                "file_role": "generated_markdown_export",
+                "source_record_id": record.id,
+                "payload_digest": structured_payload.payload_digest,
+                "template_ref": render.template_ref,
+                "template_digest": render.template_digest,
+                "output_digest": output_digest,
+                "exported_at": utc_timestamp(),
+                "provenance_refs": [_provenance_ref("structured-record-render-export", record.id)],
+            }
+            metadata = dict(record.transition_metadata)
+            generated_exports = metadata.get("generated_exports")
+            exports = [item for item in generated_exports if isinstance(item, dict)] if isinstance(generated_exports, list) else []
+            exports.append({key: value for key, value in export_record.items() if value is not None})
+            metadata["generated_exports"] = exports
+            updated = RuntimeLifecycleRecord(
+                **{
+                    **record.__dict__,
+                    "updated_at": str(export_record["exported_at"]),
+                    "transition_metadata": metadata,
+                    "provenance_refs": [*record.provenance_refs, _provenance_ref("structured-record-render-export", record.id)],
+                }
+            )
+            with runtime_store.connection:
+                runtime_store.upsert_lifecycle_record(updated)
+            response_record = runtime_store.get_lifecycle_record(record.id) or updated
+            index_payload = refresh_query_index_for_record(context, runtime_store, record.id)
         return {
             "ok": render.ok,
-            "mutated": False,
+            "mutated": output_file is not None and render.ok,
             "operation": "render",
-            "record": record.to_json(),
+            "record": response_record.to_json(),
             "render": render.to_json(include_content=True),
-            "output_file": str(output_file) if output_file is not None else None,
+            "output_file": str(output_path or output_file) if output_file is not None else None,
+            "output_digest": output_digest,
+            "query_index": index_payload,
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def migrate_structured_payload_files(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    cwd: Path,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    """Export legacy SQLite structured payload rows into managed JSON files."""
+
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
+    if runtime_store is None:
+        return _runtime_missing_payload("migrate-payload-files", diagnostics), diagnostics
+    migrated: list[dict[str, object]] = []
+    skipped: list[dict[str, object]] = []
+    try:
+        for structured_payload in runtime_store.list_structured_payloads(topic_workspace_id=context.topic_workspace_id):
+            if structured_payload.payload_file_path is not None and Path(structured_payload.payload_file_path).exists():
+                skipped.append({"record_id": structured_payload.record_id, "reason": "payload_file_exists"})
+                continue
+            record = runtime_store.get_lifecycle_record(structured_payload.record_id)
+            if record is None or not _belongs_to_context(record, context):
+                skipped.append({"record_id": structured_payload.record_id, "reason": "missing_lifecycle_record"})
+                continue
+            payload = structured_payload.payload_json
+            if not isinstance(payload, dict):
+                skipped.append({"record_id": structured_payload.record_id, "reason": "payload_not_object"})
+                continue
+            request = ResearchRecordRequest(
+                record_kind=record.record_kind,
+                record_id=record.id,
+                status=record.status,
+                placeholder=_optional_metadata_string(record.transition_metadata.get("placeholder")),
+                profile=_optional_metadata_string(record.transition_metadata.get("profile")),
+                semantic_label=_optional_metadata_string(record.transition_metadata.get("semantic_label")),
+                format_profile_ref=structured_payload.format_profile_ref,
+                schema_ref=structured_payload.schema_ref,
+                template_ref=structured_payload.template_ref,
+                metadata=dict(record.transition_metadata),
+            )
+            payload_path, manifest_path, write_diagnostics = _write_payload_snapshot(
+                context,
+                request,
+                payload,
+                validation_payload={
+                    "payload_digest": structured_payload.payload_digest,
+                    "format_profile_ref": structured_payload.format_profile_ref,
+                    "schema_ref": structured_payload.schema_ref,
+                    "schema_version": structured_payload.schema_version,
+                    "status": structured_payload.validation_status,
+                },
+                env=env,
+                cwd=cwd,
+            )
+            diagnostics.extend(write_diagnostics)
+            if payload_path is None:
+                skipped.append({"record_id": structured_payload.record_id, "reason": "payload_path_unresolved"})
+                continue
+            revision_of, supersedes, latest_for = _payload_revision_refs(request)
+            migrated_payload = replace(
+                structured_payload,
+                payload_json={},
+                payload_file_path=str(payload_path),
+                payload_media_type="application/json",
+                payload_manifest_path=str(manifest_path) if manifest_path is not None else None,
+                payload_source_path=None,
+                revision_of_record_id=structured_payload.revision_of_record_id or revision_of,
+                supersedes_record_id=structured_payload.supersedes_record_id or supersedes,
+                latest_for_semantic_id=structured_payload.latest_for_semantic_id or latest_for,
+                legacy_rendered_markdown_path=structured_payload.legacy_rendered_markdown_path or structured_payload.rendered_markdown_path,
+                legacy_rendered_markdown_digest=structured_payload.legacy_rendered_markdown_digest or structured_payload.rendered_markdown_digest,
+                rendered_markdown_path=None,
+                rendered_markdown_digest=None,
+                updated_at=utc_timestamp(),
+                provenance_refs=[
+                    *structured_payload.provenance_refs,
+                    _provenance_ref("structured-payload-file-migration", structured_payload.record_id),
+                ],
+            )
+            metadata = dict(record.transition_metadata)
+            metadata.update(
+                {
+                    "payload_file_path": str(payload_path),
+                    "payload_media_type": "application/json",
+                    "payload_manifest_path": str(manifest_path) if manifest_path is not None else None,
+                    "payload_digest": structured_payload.payload_digest,
+                    "legacy_rendered_markdown_path": structured_payload.rendered_markdown_path,
+                }
+            )
+            updated_record = RuntimeLifecycleRecord(
+                **{
+                    **record.__dict__,
+                    "content_path": str(payload_path),
+                    "updated_at": migrated_payload.updated_at,
+                    "transition_metadata": {key: value for key, value in metadata.items() if value is not None},
+                    "provenance_refs": [
+                        *record.provenance_refs,
+                        _provenance_ref("structured-payload-file-migration", record.id),
+                    ],
+                }
+            )
+            with runtime_store.connection:
+                runtime_store.upsert_lifecycle_record(updated_record)
+                runtime_store.upsert_structured_payload(migrated_payload)
+            refresh_payload = refresh_query_index_for_record(context, runtime_store, record.id)
+            migrated.append(
+                {
+                    "record_id": record.id,
+                    "payload_file_path": str(payload_path),
+                    "payload_manifest_path": str(manifest_path) if manifest_path is not None else None,
+                    "query_index": refresh_payload,
+                }
+            )
+        return {
+            "ok": not has_errors(diagnostics),
+            "mutated": bool(migrated),
+            "operation": "migrate-payload-files",
+            "migrated_count": len(migrated),
+            "skipped_count": len(skipped),
+            "migrated": migrated,
+            "skipped": skipped,
         }, diagnostics
     finally:
         runtime_store.close()
@@ -657,7 +837,9 @@ def _prepare_structured_payload(
 
     render_result = None
     content_path = None
-    rendered_markdown_digest = None
+    payload_file_path = None
+    payload_manifest_path = None
+    payload_source_path = str(request.payload_file.resolve(strict=False)) if request.payload_file is not None else None
     if selected_request.render_format is not None:
         render_result = render_artifact(
             payload,
@@ -672,23 +854,34 @@ def _prepare_structured_payload(
         diagnostics.extend(render_result.diagnostics)
         if not render_result.ok or render_result.content is None:
             return None, None, diagnostics
-        content_path, write_diagnostics = _write_generated_markdown(
+
+    if durable:
+        payload_file_path, payload_manifest_path, write_diagnostics = _write_payload_snapshot(
             context,
             selected_request,
-            render_result.content,
+            {str(key): value for key, value in payload.items()},
             validation_payload=validation.to_json(),
             env=env,
             cwd=cwd,
         )
         diagnostics.extend(write_diagnostics)
-        if content_path is not None:
-            rendered_markdown_digest = digest_bytes(content_path.read_bytes())
+        content_path = payload_file_path
 
     template_ref = render_result.template_ref if render_result is not None else selected_request.template_ref
     template_source_kind = render_result.template_source_kind if render_result is not None else None
+    revision_of_record_id, supersedes_record_id, latest_for_semantic_id = _payload_revision_refs(selected_request)
     return (
         StructuredPayloadPreparation(
             payload={str(key): value for key, value in payload.items()},
+            payload_file_path=payload_file_path,
+            payload_manifest_path=payload_manifest_path,
+            payload_source_path=payload_source_path,
+            payload_media_type="application/json",
+            revision_of_record_id=revision_of_record_id,
+            supersedes_record_id=supersedes_record_id,
+            latest_for_semantic_id=latest_for_semantic_id,
+            legacy_rendered_markdown_path=None,
+            legacy_rendered_markdown_digest=None,
             validation_status=validation.status,
             validation_diagnostics=[diagnostic.to_json() for diagnostic in validation.diagnostics],
             schema_ref=str(validation.schema_ref or selected_request.schema_ref or selected_request.schema_file),
@@ -699,8 +892,8 @@ def _prepare_structured_payload(
             template_source_kind=template_source_kind,
             render_status=render_result.status if render_result is not None else "not_requested",
             render_diagnostics=[diagnostic.to_json() for diagnostic in (render_result.diagnostics if render_result is not None else [])],
-            rendered_markdown_path=content_path,
-            rendered_markdown_digest=rendered_markdown_digest,
+            rendered_markdown_path=None,
+            rendered_markdown_digest=None,
             payload_digest=validation.payload_digest,
         ),
         content_path,
@@ -722,7 +915,7 @@ def _snapshot_plain_format_inputs(
                 severity="error",
                 concept="Structured Research Payload",
                 field="template_file",
-                message="Durable Markdown rendering from a plain schema file also requires --template-file.",
+                message="Markdown rendering from a plain schema file requires --template-file.",
             )
         ]
     stem = request.record_id or request.placeholder or request.content_name or "structured-payload"
@@ -768,34 +961,85 @@ def _artifact_format_registry(
     return registry
 
 
-def _write_generated_markdown(
+def _write_payload_snapshot(
     context: EffectiveTopicContext,
     request: ResearchRecordRequest,
-    content: str,
+    payload: dict[str, object],
     *,
     validation_payload: dict[str, object],
     env: Mapping[str, str],
     cwd: Path,
-) -> tuple[Path | None, list[Diagnostic]]:
+) -> tuple[Path | None, Path | None, list[Diagnostic]]:
     label = _semantic_label_for_request(request)
     result, diagnostics = resolve_semantic_path(context, label, env=env, cwd=cwd)
     if result is None:
-        return None, diagnostics
-    target_dir = result.path / "research-records" / request.record_kind
+        return None, None, diagnostics
+    if request.record_id is None:
+        raise ResearchRecordError("Structured payload snapshot requires a record id.", code="record_id_missing")
+    target_dir = _payload_snapshot_dir(result.path, request)
     target_dir.mkdir(parents=True, exist_ok=True)
-    target = target_dir / _content_filename(request, suffix=".md")
-    header = "\n".join(
-        [
-            "<!-- isomer-structured-research-record",
-            f"format_profile_ref: {validation_payload.get('format_profile_ref')}",
-            f"schema_ref: {validation_payload.get('schema_ref')}",
-            f"payload_digest: {validation_payload.get('payload_digest')}",
-            "-->",
-            "",
-        ]
+    payload_path = target_dir / "payload.json"
+    manifest_path = target_dir / "manifest.json"
+    payload_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
     )
-    target.write_text(f"{header}{content}", encoding="utf-8")
-    return target.resolve(strict=False), diagnostics
+    manifest = {
+        "schema_version": "isomer-structured-payload-file.v1",
+        "record_id": request.record_id,
+        "record_kind": request.record_kind,
+        "research_topic_id": context.research_topic.id,
+        "topic_workspace_id": context.topic_workspace_id,
+        "payload_file": payload_path.name,
+        "payload_digest": validation_payload.get("payload_digest"),
+        "payload_media_type": "application/json",
+        "format_profile_ref": validation_payload.get("format_profile_ref"),
+        "schema_ref": validation_payload.get("schema_ref"),
+        "schema_version_ref": validation_payload.get("schema_version"),
+        "validation_status": validation_payload.get("status"),
+        "source_payload_file": str(request.payload_file.resolve(strict=False)) if request.payload_file is not None else None,
+    }
+    manifest_path.write_text(
+        json.dumps({key: value for key, value in manifest.items() if value is not None}, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return payload_path.resolve(strict=False), manifest_path.resolve(strict=False), diagnostics
+
+
+def _payload_snapshot_dir(base_path: Path, request: ResearchRecordRequest) -> Path:
+    record_id = request.record_id or "structured-payload"
+    candidate = base_path / "research-records" / request.record_kind / _slug(record_id)
+    manifest_path = candidate / "manifest.json"
+    if not manifest_path.exists():
+        return candidate
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return candidate
+    if isinstance(manifest, dict) and str(manifest.get("record_id") or "") == record_id:
+        return candidate
+    return candidate.with_name(f"{candidate.name}-{uuid.uuid4().hex[:8]}")
+
+
+def _payload_revision_refs(request: ResearchRecordRequest) -> tuple[str | None, str | None, str | None]:
+    metadata = request.metadata or {}
+    revision_of = _optional_metadata_string(metadata.get("revision_of_record_id") or metadata.get("revision_of"))
+    supersedes = _optional_metadata_string(metadata.get("supersedes_record_id") or metadata.get("supersedes"))
+    latest_for = _optional_metadata_string(
+        metadata.get("latest_for_semantic_id")
+        or metadata.get("semantic_id")
+        or request.placeholder
+        or request.profile
+        or request.content_name
+    )
+    return revision_of, supersedes, latest_for
+
+
+def _optional_metadata_string(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
 
 
 def _semantic_label_for_request(request: ResearchRecordRequest) -> str:
@@ -870,9 +1114,22 @@ def _structured_metadata(preparation: StructuredPayloadPreparation) -> dict[str,
         "schema_ref": preparation.schema_ref,
         "schema_source_kind": preparation.schema_source_kind,
         "payload_digest": preparation.payload_digest,
+        "payload_media_type": preparation.payload_media_type,
         "validation_status": preparation.validation_status,
         "render_status": preparation.render_status,
     }
+    if preparation.payload_file_path is not None:
+        metadata["payload_file_path"] = str(preparation.payload_file_path)
+    if preparation.payload_manifest_path is not None:
+        metadata["payload_manifest_path"] = str(preparation.payload_manifest_path)
+    if preparation.payload_source_path is not None:
+        metadata["payload_source_path"] = preparation.payload_source_path
+    if preparation.revision_of_record_id is not None:
+        metadata["revision_of_record_id"] = preparation.revision_of_record_id
+    if preparation.supersedes_record_id is not None:
+        metadata["supersedes_record_id"] = preparation.supersedes_record_id
+    if preparation.latest_for_semantic_id is not None:
+        metadata["latest_for_semantic_id"] = preparation.latest_for_semantic_id
     if preparation.format_profile_ref is not None:
         metadata["format_profile_ref"] = preparation.format_profile_ref
     if preparation.template_ref is not None:
@@ -904,8 +1161,17 @@ def _structured_payload_record(
         schema_source_kind=preparation.schema_source_kind,
         template_ref=preparation.template_ref,
         template_source_kind=preparation.template_source_kind,
-        payload_json=preparation.payload,
+        payload_json={} if preparation.payload_file_path is not None else preparation.payload,
         payload_digest=preparation.payload_digest,
+        payload_file_path=str(preparation.payload_file_path) if preparation.payload_file_path is not None else None,
+        payload_media_type=preparation.payload_media_type,
+        payload_manifest_path=str(preparation.payload_manifest_path) if preparation.payload_manifest_path is not None else None,
+        payload_source_path=preparation.payload_source_path,
+        revision_of_record_id=preparation.revision_of_record_id,
+        supersedes_record_id=preparation.supersedes_record_id,
+        latest_for_semantic_id=preparation.latest_for_semantic_id,
+        legacy_rendered_markdown_path=preparation.legacy_rendered_markdown_path,
+        legacy_rendered_markdown_digest=preparation.legacy_rendered_markdown_digest,
         validation_status=preparation.validation_status,
         validation_diagnostics=preparation.validation_diagnostics,
         render_status=preparation.render_status,
@@ -935,6 +1201,68 @@ def _read_rendered_body(rendered_markdown_path: str | None) -> str | None:
     if not path.exists() or not path.is_file():
         return None
     return path.read_text(encoding="utf-8", errors="replace")
+
+
+def _read_structured_payload_json(
+    structured_payload: StructuredResearchPayloadRecord,
+) -> tuple[dict[str, object] | None, list[Diagnostic]]:
+    diagnostics: list[Diagnostic] = []
+    if structured_payload.payload_file_path is None:
+        return structured_payload.payload_json, diagnostics
+    path = Path(structured_payload.payload_file_path)
+    if not path.exists() or not path.is_file():
+        diagnostics.append(
+            Diagnostic(
+                code="ISO208",
+                severity="error",
+                concept="Structured Research Payload",
+                path=path,
+                field=structured_payload.record_id,
+                message="Structured payload file is missing.",
+            )
+        )
+        return None, diagnostics
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO208",
+                severity="error",
+                concept="Structured Research Payload",
+                path=path,
+                field=structured_payload.record_id,
+                message=f"Structured payload file is not valid JSON: {exc.msg}.",
+            )
+        )
+        return None, diagnostics
+    if not isinstance(loaded, dict):
+        diagnostics.append(
+            Diagnostic(
+                code="ISO208",
+                severity="error",
+                concept="Structured Research Payload",
+                path=path,
+                field=structured_payload.record_id,
+                message="Structured payload file must contain a JSON object.",
+            )
+        )
+        return None, diagnostics
+    payload = {str(key): value for key, value in loaded.items()}
+    observed_digest = digest_json(payload)
+    if observed_digest != structured_payload.payload_digest:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO208",
+                severity="error",
+                concept="Structured Research Payload",
+                path=path,
+                field=structured_payload.record_id,
+                message="Structured payload file digest does not match the recorded payload digest.",
+            )
+        )
+        return None, diagnostics
+    return payload, diagnostics
 
 
 def _effective_records_list_limit(

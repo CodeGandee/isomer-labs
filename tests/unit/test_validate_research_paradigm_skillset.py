@@ -266,11 +266,13 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             """
             # Placeholder Bindings
 
-            For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext research records validate --topic <topic> --format-profile <format-profile-ref> --payload-file <payload-file>`, then create the record.
+            For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext research records validate --topic <topic> --format-profile <format-profile-ref> --payload-file <payload-file>`, then create the record with `--payload-file <payload-file>`.
+
+            Use `isomer-cli --print-json ext research records show <record-id> --topic <topic> --include-payload` to inspect stored payload data. Render Markdown on demand with `isomer-cli --print-json ext research records render <record-id> --topic <topic>`; add `--output-file <path>` only for an explicit Markdown export.
 
             | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
             | --- | --- | --- | --- | --- | --- | --- |
-            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1 --payload-file <payload-file> --render markdown --content-name scout-context-brief.md` |
+            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1 --payload-file <payload-file>` |
             """,
         )
 
@@ -287,6 +289,10 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             """
             # Placeholder Bindings
 
+            For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext research records validate --topic <topic> --format-profile <format-profile-ref> --payload-file <payload-file>`, then create the record with `--payload-file <payload-file>`.
+
+            Use `isomer-cli --print-json ext research records show <record-id> --topic <topic> --include-payload` to inspect stored payload data. Render Markdown on demand with `isomer-cli --print-json ext research records render <record-id> --topic <topic>`; add `--output-file <path>` only for an explicit Markdown export.
+
             | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
             | --- | --- | --- | --- | --- | --- | --- |
             | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --profile evidence.scout-context-brief --body-file <body-file>` |
@@ -297,6 +303,31 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
         self.assertIn("RPS014", codes(diagnostics), messages(diagnostics))
         self.assertTrue(any("--format-profile" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_payload_first_placeholder_binding_rejects_default_markdown_render(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_dir = target / "deepsci" / "isomer-deepsci-scout"
+        write(skill_dir / "migrate" / "placeholders.md", "| Placeholder | Meaning |\n| --- | --- |\n| <SCOUT_CONTEXT_BRIEF> | Context. |\n")
+        write(
+            skill_dir / "placeholder-bindings.md",
+            """
+            # Placeholder Bindings
+
+            For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext research records validate --topic <topic> --format-profile <format-profile-ref> --payload-file <payload-file>`, then create the record with `--payload-file <payload-file>`.
+
+            Use `isomer-cli --print-json ext research records show <record-id> --topic <topic> --include-payload` to inspect stored payload data. Render Markdown on demand with `isomer-cli --print-json ext research records render <record-id> --topic <topic>`; add `--output-file <path>` only for an explicit Markdown export.
+
+            | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
+            | --- | --- | --- | --- | --- | --- | --- |
+            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1 --payload-file <payload-file> --render markdown --content-name scout-context-brief.md` |
+            """,
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS014", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("durable Markdown" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("--content-name" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_expected_inventory_includes_expanded_deepsci_contract(self) -> None:
         self.assertIn("isomer-deepsci-write", validator.EXPECTED_DEEPSCI_SKILLS)

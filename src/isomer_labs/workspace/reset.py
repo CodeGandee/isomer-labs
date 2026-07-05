@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import json
 from pathlib import Path
 import re
 import shutil
@@ -55,7 +56,7 @@ def create_reset_checkpoint(
     env: Mapping[str, str],
     actor_ref: str | None = None,
     checkpoint_id: str | None = None,
-    render_markdown: bool = True,
+    render_markdown: bool = False,
 ) -> tuple[dict[str, Any], list[Diagnostic]]:
     """Create a topic-scoped reset checkpoint from current initialization state."""
 
@@ -155,7 +156,7 @@ def update_reset_checkpoint(
     preserve_support_paths: list[str] | None = None,
     provenance_refs: list[str] | None = None,
     source_label: str | None = None,
-    render_markdown: bool = True,
+    render_markdown: bool = False,
 ) -> tuple[dict[str, Any], list[Diagnostic]]:
     """Extend a checkpoint with later setup that should survive reset."""
 
@@ -315,7 +316,7 @@ def plan_topic_reset(
     env: Mapping[str, str],
     actor_ref: str | None = None,
     plan_id: str | None = None,
-    render_markdown: bool = True,
+    render_markdown: bool = False,
 ) -> tuple[dict[str, Any], list[Diagnostic]]:
     """Generate and store a read-only destructive reset plan."""
 
@@ -462,7 +463,7 @@ def apply_topic_reset(
     plan_id: str,
     actor_ref: str | None = None,
     yes: bool = False,
-    render_markdown: bool = True,
+    render_markdown: bool = False,
 ) -> tuple[dict[str, Any], list[Diagnostic]]:
     """Apply an approved destructive reset plan."""
 
@@ -1187,6 +1188,48 @@ def _delete_path(context: EffectiveTopicContext, path: Path, *, action_id: str) 
     return []
 
 
+def _write_reset_payload_snapshot(
+    context: EffectiveTopicContext,
+    *,
+    record_id: str,
+    record_kind: str,
+    reset_kind: str,
+    payload: dict[str, object],
+    payload_digest: str,
+    profile_ref: str,
+    schema_ref: str,
+    validation_status: str,
+) -> tuple[Path, Path]:
+    target_dir = (
+        context.topic_workspace_path
+        / "records"
+        / "views"
+        / "research-records"
+        / record_kind
+        / _slug(record_id)
+    )
+    target_dir.mkdir(parents=True, exist_ok=True)
+    payload_path = target_dir / "payload.json"
+    manifest_path = target_dir / "manifest.json"
+    payload_path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    manifest = {
+        "schema_version": "isomer-structured-payload-file.v1",
+        "record_id": record_id,
+        "record_kind": record_kind,
+        "reset_kind": reset_kind,
+        "research_topic_id": context.research_topic.id,
+        "topic_workspace_id": context.topic_workspace_id,
+        "payload_file": payload_path.name,
+        "payload_digest": payload_digest,
+        "payload_media_type": "application/json",
+        "format_profile_ref": profile_ref,
+        "schema_ref": schema_ref,
+        "validation_status": validation_status,
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    return payload_path.resolve(strict=False), manifest_path.resolve(strict=False)
+
+
 def _write_reset_structured_record(
     context: EffectiveTopicContext,
     store: WorkspaceRuntimeStore,
@@ -1206,6 +1249,17 @@ def _write_reset_structured_record(
     registry = _artifact_format_registry(context, store)
     validation = validate_payload(payload, registry=registry, format_profile_ref=profile_ref)
     render_status = "rendered" if rendered_markdown_path is not None else "not_requested"
+    payload_path, manifest_path = _write_reset_payload_snapshot(
+        context,
+        record_id=record_id,
+        record_kind=record_kind,
+        reset_kind=reset_kind,
+        payload=payload,
+        payload_digest=validation.payload_digest,
+        profile_ref=validation.profile_ref or profile_ref,
+        schema_ref=str(validation.schema_ref or ""),
+        validation_status=validation.status,
+    )
     lifecycle_record = RuntimeLifecycleRecord(
         id=record_id,
         record_kind=record_kind,
@@ -1219,12 +1273,14 @@ def _write_reset_structured_record(
             "reset_kind": reset_kind,
             "format_profile_ref": profile_ref,
             "payload_digest": validation.payload_digest,
+            "payload_file_path": str(payload_path),
+            "payload_manifest_path": str(manifest_path),
             "render_status": render_status,
             "actor_ref": actor_ref,
             "created_by": "isomer-cli project topic-reset",
             "semantic_label": RESET_RECORD_LABEL,
         },
-        content_path=str(rendered_markdown_path) if rendered_markdown_path is not None else None,
+        content_path=str(payload_path),
         provenance_refs=[_provenance_ref(f"topic-reset-{reset_kind}", record_id)],
     )
     structured_payload = StructuredResearchPayloadRecord(
@@ -1240,6 +1296,15 @@ def _write_reset_structured_record(
         template_source_kind="provider_asset" if rendered_markdown_path is not None else None,
         payload_json=payload,
         payload_digest=validation.payload_digest,
+        payload_file_path=str(payload_path),
+        payload_media_type="application/json",
+        payload_manifest_path=str(manifest_path),
+        payload_source_path=None,
+        revision_of_record_id=None,
+        supersedes_record_id=None,
+        latest_for_semantic_id=reset_kind,
+        legacy_rendered_markdown_path=None,
+        legacy_rendered_markdown_digest=None,
         validation_status=validation.status,
         validation_diagnostics=[diagnostic.to_json() for diagnostic in validation.diagnostics],
         render_status=render_status,

@@ -7,6 +7,7 @@ import mimetypes
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from isomer_labs.artifact_formats import digest_json
 from sqlalchemy import Table, delete, insert
 
 from isomer_labs.models import EffectiveTopicContext
@@ -34,7 +35,7 @@ def _build_index_parts(
 ) -> IndexedRecordParts:
     now = utc_timestamp()
     record_metadata = dict(record.transition_metadata)
-    payload_json = payload.payload_json if payload is not None else {}
+    payload_json = _payload_json_for_index(payload)
     title = _first_string(payload_json.get("title"), record_metadata.get("title"), record.id)
     summary = _first_string(payload_json.get("summary"), record_metadata.get("summary"))
     format_profile_ref = payload.format_profile_ref if payload is not None else _optional_string(record_metadata.get("format_profile_ref"))
@@ -57,6 +58,10 @@ def _build_index_parts(
         "title": title,
         "summary": summary,
         "content_path": record.content_path,
+        "payload_file_path": payload.payload_file_path if payload is not None else _optional_string(record_metadata.get("payload_file_path")),
+        "payload_media_type": payload.payload_media_type if payload is not None else _optional_string(record_metadata.get("payload_media_type")),
+        "payload_manifest_path": payload.payload_manifest_path if payload is not None else _optional_string(record_metadata.get("payload_manifest_path")),
+        "latest_for_semantic_id": payload.latest_for_semantic_id if payload is not None else _optional_string(record_metadata.get("latest_for_semantic_id")),
         "rendered_markdown_path": payload.rendered_markdown_path if payload is not None else _optional_string(record_metadata.get("rendered_markdown_path")),
         "validation_status": payload.validation_status if payload is not None else _optional_string(record_metadata.get("validation_status")),
         "render_status": payload.render_status if payload is not None else _optional_string(record_metadata.get("render_status")),
@@ -99,6 +104,26 @@ def _replace_record_rows(connection: Any, record_id: str, parts: IndexedRecordPa
 def _bulk_insert(connection: Any, table: Table, rows: list[dict[str, object]]) -> None:
     if rows:
         connection.execute(insert(table), rows)
+
+
+def _payload_json_for_index(payload: StructuredResearchPayloadRecord | None) -> dict[str, object]:
+    if payload is None:
+        return {}
+    if payload.payload_file_path is None:
+        return payload.payload_json
+    path = Path(payload.payload_file_path)
+    if not path.exists() or not path.is_file():
+        return {}
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(loaded, dict):
+        return {}
+    normalized = {str(key): value for key, value in loaded.items()}
+    if digest_json(normalized) != payload.payload_digest:
+        return {}
+    return normalized
 
 
 def _edge_rows(
@@ -215,8 +240,40 @@ def _file_rows(
 ) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     semantic_label = _optional_string(record_metadata.get("semantic_label"))
-    if record.content_path is not None:
+    payload_file_path = payload.payload_file_path if payload is not None else _optional_string(record_metadata.get("payload_file_path"))
+    if payload_file_path is not None:
+        rows.append(
+            _file_row(
+                context,
+                record,
+                payload_file_path,
+                "structured_payload",
+                semantic_label,
+                None,
+                "structured_payload.payload_file_path",
+                SOURCE_PAYLOAD,
+                {"payload_digest": payload.payload_digest if payload is not None else record_metadata.get("payload_digest")},
+                created_at,
+            )
+        )
+    elif record.content_path is not None:
         rows.append(_file_row(context, record, record.content_path, "body", semantic_label, None, None, SOURCE_AUTHORED, {}, created_at))
+    manifest_path = payload.payload_manifest_path if payload is not None else _optional_string(record_metadata.get("payload_manifest_path"))
+    if manifest_path is not None:
+        rows.append(
+            _file_row(
+                context,
+                record,
+                manifest_path,
+                "structured_payload_manifest",
+                semantic_label,
+                None,
+                "structured_payload.payload_manifest_path",
+                SOURCE_PAYLOAD,
+                {},
+                created_at,
+            )
+        )
     if payload is not None and payload.rendered_markdown_path is not None:
         rows.append(
             _file_row(
@@ -229,6 +286,40 @@ def _file_rows(
                 "structured_payload.rendered_markdown_path",
                 SOURCE_PAYLOAD,
                 {"payload_digest": payload.payload_digest},
+                created_at,
+            )
+        )
+    if payload is not None and payload.legacy_rendered_markdown_path is not None:
+        rows.append(
+            _file_row(
+                context,
+                record,
+                payload.legacy_rendered_markdown_path,
+                "legacy_generated_markdown",
+                semantic_label,
+                None,
+                "structured_payload.legacy_rendered_markdown_path",
+                SOURCE_PAYLOAD,
+                {"legacy": True, "digest": payload.legacy_rendered_markdown_digest},
+                created_at,
+            )
+        )
+    generated_exports = record_metadata.get("generated_exports")
+    for index, item in enumerate(_list_of_dicts(generated_exports)):
+        path = _optional_string(item.get("path"))
+        if path is None:
+            continue
+        rows.append(
+            _file_row(
+                context,
+                record,
+                path,
+                _optional_string(item.get("file_role")) or "generated_export",
+                semantic_label,
+                None,
+                f"transition_metadata.generated_exports[{index}]",
+                SOURCE_AUTHORED,
+                item,
                 created_at,
             )
         )
@@ -450,14 +541,17 @@ def _claim_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, 
 
 def _fact_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, payload_json: Mapping[str, object], created_at: str) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
+    occurrence_by_path: dict[str, int] = {}
     for path, value in _walk_json(payload_json):
         if len(rows) >= 200:
             break
         if not _is_scalar(value):
             continue
+        occurrence = occurrence_by_path.get(path, 0)
+        occurrence_by_path[path] = occurrence + 1
         rows.append(
             {
-                "id": _row_id("fact", record.id, path),
+                "id": _row_id("fact", record.id, path, str(occurrence)),
                 "research_topic_id": context.research_topic.id,
                 "topic_workspace_id": context.topic_workspace_id,
                 "record_id": record.id,

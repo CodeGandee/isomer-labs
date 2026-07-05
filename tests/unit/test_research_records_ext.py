@@ -4,6 +4,7 @@ import contextlib
 import io
 import json
 import os
+import sqlite3
 import tempfile
 import textwrap
 import unittest
@@ -278,21 +279,33 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 profile_ref,
                 "--payload-file",
                 str(payload_file),
-                "--render",
-                "markdown",
-                "--content-name",
-                "structured-main-run.md",
             ],
         )
         self.assertEqual(0, status, created)
+        record = created["record"]
+        assert isinstance(record, dict)
         structured = created["structured_payload"]
         assert isinstance(structured, dict)
         self.assertEqual("valid", structured["validation_status"])
-        self.assertEqual("rendered", structured["render_status"])
+        self.assertEqual("not_requested", structured["render_status"])
         self.assertEqual(profile_ref, structured["format_profile_ref"])
-        rendered_path = Path(str(structured["rendered_markdown_path"]))
-        self.assertTrue(rendered_path.exists())
-        self.assertIn("Main run", rendered_path.read_text(encoding="utf-8"))
+        self.assertEqual("application/json", structured["payload_media_type"])
+        payload_path = Path(str(structured["payload_file_path"]))
+        self.assertTrue(payload_path.exists())
+        self.assertEqual("payload.json", payload_path.name)
+        self.assertIn("records/artifacts/research-records/artifact/artifact-structured-main-run/payload.json", payload_path.as_posix())
+        self.assertEqual({"summary": "initial", "title": "Main run"}, json.loads(payload_path.read_text(encoding="utf-8")))
+        manifest_path = Path(str(structured["payload_manifest_path"]))
+        self.assertTrue(manifest_path.exists())
+        self.assertEqual(str(payload_path), record["content_path"])
+        self.assertNotIn("rendered_markdown_path", structured)
+        db_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(db_path) as connection:
+            stored_payload_json = connection.execute(
+                "SELECT payload_json FROM structured_research_payloads WHERE record_id = ?",
+                ("artifact-structured-main-run",),
+            ).fetchone()[0]
+        self.assertEqual("{}", stored_payload_json)
 
         status, shown = self.run_records(
             root,
@@ -300,14 +313,41 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "show",
                 "artifact-structured-main-run",
                 "--include-payload",
-                "--include-rendered-body",
             ],
         )
         self.assertEqual(0, status, shown)
         shown_payload = shown["structured_payload"]
         assert isinstance(shown_payload, dict)
         self.assertEqual({"summary": "initial", "title": "Main run"}, shown_payload["payload"])
-        self.assertIn("Main run", shown["rendered_body"])
+        self.assertEqual(str(payload_path), shown_payload["payload_file_path"])
+
+        status, rendered = self.run_records(root, ["render", "artifact-structured-main-run"])
+        self.assertEqual(0, status, rendered)
+        self.assertEqual(False, rendered["mutated"])
+        render = rendered["render"]
+        assert isinstance(render, dict)
+        self.assertIn("Main run", render["content"])
+        self.assertIsNone(rendered["output_file"])
+
+        export_path = root / "explicit-export.md"
+        status, exported_render = self.run_records(
+            root,
+            ["render", "artifact-structured-main-run", "--output-file", str(export_path)],
+        )
+        self.assertEqual(0, status, exported_render)
+        self.assertEqual(True, exported_render["mutated"])
+        self.assertTrue(export_path.exists())
+        self.assertIn("Main run", export_path.read_text(encoding="utf-8"))
+        self.assertEqual(str(export_path), exported_render["output_file"])
+        self.assertIsNotNone(exported_render["output_digest"])
+        exported_record = exported_render["record"]
+        assert isinstance(exported_record, dict)
+        exported_metadata = exported_record["transition_metadata"]
+        assert isinstance(exported_metadata, dict)
+        generated_exports = exported_metadata["generated_exports"]
+        assert isinstance(generated_exports, list)
+        self.assertEqual("generated_markdown_export", generated_exports[-1]["file_role"])
+        self.assertEqual(str(export_path), generated_exports[-1]["path"])
 
         status, listed = self.run_records(root, ["list", "--format-profile", profile_ref, "--limit", "5"])
         self.assertEqual(0, status, listed)
@@ -334,10 +374,6 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 profile_ref,
                 "--payload-file",
                 str(payload_file),
-                "--render",
-                "markdown",
-                "--content-name",
-                "structured-main-run.md",
             ],
         )
         self.assertEqual(0, status, updated)
@@ -345,7 +381,11 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         assert isinstance(updated_record, dict)
         self.assertEqual("artifact-structured-main-run", updated_record["id"])
         self.assertEqual("complete", updated_record["status"])
-        self.assertIn("updated", Path(str(updated["structured_payload"]["rendered_markdown_path"])).read_text(encoding="utf-8"))
+        updated_structured = updated["structured_payload"]
+        assert isinstance(updated_structured, dict)
+        updated_payload_path = Path(str(updated_structured["payload_file_path"]))
+        self.assertEqual(payload_path, updated_payload_path)
+        self.assertEqual({"summary": "updated", "title": "Main run"}, json.loads(updated_payload_path.read_text(encoding="utf-8")))
 
     def test_query_index_refresh_query_validate_and_cleanup_preview(self) -> None:
         root = self.make_project()
@@ -373,6 +413,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 {
                     "title": "Indexed main run",
                     "summary": "Query index payload",
+                    "tags": ["host", "gpu", "runtime"],
                     "sections": {
                         "metrics": {"runtime_ms": 12.5},
                         "claims": [
@@ -410,8 +451,6 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 profile_ref,
                 "--payload-file",
                 str(payload_file),
-                "--render",
-                "markdown",
                 "--relationships-json",
                 '[{"target_record_id":"input-record","relation_kind":"uses_input","relation_role":"baseline"}]',
                 "--files-json",
@@ -420,6 +459,10 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         )
         self.assertEqual(0, status, created)
         self.assertEqual(True, created["query_index"]["ok"])
+        created_structured = created["structured_payload"]
+        assert isinstance(created_structured, dict)
+        indexed_payload_path = Path(str(created_structured["payload_file_path"]))
+        self.assertTrue(indexed_payload_path.exists())
 
         status, listed = self.run_records(root, ["query", "list", "--record-kind", "run", "--facet", "metrics"])
         self.assertEqual(0, status, listed)
@@ -427,6 +470,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         indexed = listed["records"][0]
         self.assertEqual("indexed-main-run", indexed["record_id"])
         self.assertEqual("Indexed main run", indexed["title"])
+        self.assertEqual(str(indexed_payload_path), indexed["payload_file_path"])
+        self.assertEqual(created_structured["payload_digest"], indexed["payload_digest"])
 
         status, facets = self.run_records(root, ["query", "facets", "indexed-main-run"])
         self.assertEqual(0, status, facets)
@@ -437,6 +482,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
 
         status, files = self.run_records(root, ["query", "files", "indexed-main-run"])
         self.assertEqual(0, status, files)
+        self.assertTrue(any(item["file_role"] == "structured_payload" and item["exists"] for item in files["files"]))
+        self.assertTrue(any(item["file_role"] == "structured_payload_manifest" and item["exists"] for item in files["files"]))
         self.assertTrue(any(item["file_role"] == "raw_results" and item["exists"] for item in files["files"]))
 
         status, lineage = self.run_records(root, ["query", "lineage", "indexed-main-run", "--direction", "downstream"])
@@ -511,6 +558,113 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         assert isinstance(structured, dict)
         self.assertEqual("file_snapshot", structured["schema_source_kind"])
         self.assertTrue(str(structured["schema_ref"]).startswith("custom:alpha/record-format/schema/snapshot/"))
+        self.assertTrue(Path(str(structured["payload_file_path"])).exists())
+        self.assertNotIn("rendered_markdown_path", structured)
+
+    def test_structured_payload_missing_file_reports_digest_diagnostic(self) -> None:
+        root = self.make_project()
+        profile_ref = canonical_record_format_ref("run.main-run-record", "profile")
+        payload_file = root / "missing-payload-source.json"
+        payload_file.write_text('{"title":"Missing file","summary":"initial"}', encoding="utf-8")
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "artifact-missing-payload",
+                "--record-kind",
+                "artifact",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(payload_file),
+            ],
+        )
+        self.assertEqual(0, status, created)
+        structured = created["structured_payload"]
+        assert isinstance(structured, dict)
+        Path(str(structured["payload_file_path"])).unlink()
+
+        status, shown = self.run_records(root, ["show", "artifact-missing-payload", "--include-payload"])
+        self.assertEqual(1, status, shown)
+        self.assertEqual(True, shown["ok"])
+        self.assertNotIn("payload", shown["structured_payload"])
+        self.assertTrue(any(item["code"] == "ISO208" for item in shown["diagnostics"]))
+
+    def test_migrate_payload_files_exports_legacy_sqlite_payload_rows(self) -> None:
+        root = self.make_project()
+        profile_ref = canonical_record_format_ref("run.main-run-record", "profile")
+        payload_file = root / "legacy-source.json"
+        payload_file.write_text('{"title":"Legacy row","summary":"from sqlite"}', encoding="utf-8")
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "legacy-structured-row",
+                "--record-kind",
+                "artifact",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(payload_file),
+            ],
+        )
+        self.assertEqual(0, status, created)
+        structured = created["structured_payload"]
+        assert isinstance(structured, dict)
+        original_payload_path = Path(str(structured["payload_file_path"]))
+        original_manifest_path = Path(str(structured["payload_manifest_path"]))
+        original_payload_path.unlink()
+        original_manifest_path.unlink()
+        legacy_markdown = root / "legacy-rendered.md"
+        legacy_markdown.write_text("# Legacy rendered view\n", encoding="utf-8")
+        db_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(db_path) as connection:
+            connection.execute(
+                """
+                UPDATE structured_research_payloads
+                SET payload_json = ?,
+                    payload_file_path = NULL,
+                    payload_manifest_path = NULL,
+                    rendered_markdown_path = ?,
+                    rendered_markdown_digest = ?
+                WHERE record_id = ?
+                """,
+                (
+                    json.dumps({"summary": "from sqlite", "title": "Legacy row"}, sort_keys=True),
+                    str(legacy_markdown),
+                    "legacy-digest",
+                    "legacy-structured-row",
+                ),
+            )
+            connection.execute(
+                "UPDATE lifecycle_records SET content_path = ? WHERE id = ?",
+                (str(legacy_markdown), "legacy-structured-row"),
+            )
+
+        status, migrated = self.run_records(root, ["migrate-payload-files"])
+        self.assertEqual(0, status, migrated)
+        self.assertEqual(True, migrated["mutated"])
+        self.assertEqual(1, migrated["migrated_count"])
+        migrated_item = migrated["migrated"][0]
+        migrated_payload_path = Path(str(migrated_item["payload_file_path"]))
+        self.assertTrue(migrated_payload_path.exists())
+        self.assertEqual({"summary": "from sqlite", "title": "Legacy row"}, json.loads(migrated_payload_path.read_text(encoding="utf-8")))
+
+        status, shown = self.run_records(root, ["show", "legacy-structured-row", "--include-payload"])
+        self.assertEqual(0, status, shown)
+        shown_structured = shown["structured_payload"]
+        assert isinstance(shown_structured, dict)
+        self.assertEqual({"summary": "from sqlite", "title": "Legacy row"}, shown_structured["payload"])
+        self.assertEqual(str(legacy_markdown), shown_structured["legacy_rendered_markdown_path"])
+        self.assertNotIn("rendered_markdown_path", shown_structured)
+        with sqlite3.connect(db_path) as connection:
+            migrated_payload_json = connection.execute(
+                "SELECT payload_json FROM structured_research_payloads WHERE record_id = ?",
+                ("legacy-structured-row",),
+            ).fetchone()[0]
+        self.assertEqual("{}", migrated_payload_json)
 
     def test_context_resolution_failure_is_deterministic(self) -> None:
         root = self.make_root()

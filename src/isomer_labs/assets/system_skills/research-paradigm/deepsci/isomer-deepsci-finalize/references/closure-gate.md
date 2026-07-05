@@ -4,7 +4,7 @@ Use this reference to prevent premature finalization. Placeholder definitions li
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<FINALIZE_CONTEXT_BRIEF>`, final summaries, blocker records, or closure decisions, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, baseline, run, analysis, writing, decision, blocker, package, manifest, review, proofing, submission, and topic-document records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when closure is no longer legitimate. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+Before producing or refreshing `<FINALIZE_CONTEXT_BRIEF>`, final summaries, blocker records, or closure decisions, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, baseline, run, analysis, writing, decision, blocker, package, manifest, review, proofing, submission, and topic-document records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when closure is no longer legitimate. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 

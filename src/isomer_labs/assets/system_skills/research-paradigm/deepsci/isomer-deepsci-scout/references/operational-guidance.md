@@ -4,7 +4,7 @@ Use this reference when a scout pass needs more than a short clarification step.
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<SCOUT_CONTEXT_BRIEF>`, use the shared Latest Context Preflight. Include the `latest-context-snapshot` fields that matter for scout: Effective Topic Context source, Workspace Runtime inspection, relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when conflict means scout is no longer the right stage. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+Before producing or refreshing `<SCOUT_CONTEXT_BRIEF>`, use the shared Latest Context Preflight. Include the `latest-context-snapshot` fields that matter for scout: Effective Topic Context source, Workspace Runtime inspection, relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when conflict means scout is no longer the right stage. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 

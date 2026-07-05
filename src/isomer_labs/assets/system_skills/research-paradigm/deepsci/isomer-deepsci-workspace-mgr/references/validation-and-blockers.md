@@ -6,7 +6,7 @@
 2. Validate <RSCH_STORAGE_LABEL_PLAN> for available labels, planned labels, optional `custom.*` needs, and blocked support.
 3. Validate <RSCH_PLACEHOLDER_BINDING_REGISTRY> for kind coverage, producer and consumer clarity, and missing binding status.
 4. Validate <RSCH_AGENT_ACCESS_PLAN> for pre-promotion surfaces, generated conveniences, and promotion boundaries.
-5. Validate reset-survival intent: if bootstrap setup should survive Topic Workspace reset, require a selected reset checkpoint and a planned or completed `isomer-cli project topic-reset update-checkpoint` call that names preserved records, structured payloads, generated views, semantic labels, support paths, source label, actor refs, and provenance refs.
+5. Validate reset-survival intent: if bootstrap setup should survive Topic Workspace reset, require a selected reset checkpoint and a planned or completed `isomer-cli project topic-reset update-checkpoint` call that names preserved records, structured payloads, on-demand views, semantic labels, support paths, source label, actor refs, and provenance refs.
 6. Produce <RSCH_BOOTSTRAP_VALIDATION_REPORT> when the production DeepSci research loop can start, or <RSCH_WORKSPACE_BLOCKER_RECORD> when a missing input or platform surface would force later skills to guess.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to list the unchecked validation areas and stop with a blocker when durable outputs would otherwise be ambiguous.

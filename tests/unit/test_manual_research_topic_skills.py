@@ -98,7 +98,7 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
                 "isomer-cli project topic-reset apply",
                 "structured records and Workspace Runtime state",
                 "approved structured reset plan",
-                "generated Markdown review path",
+                "managed payload file path",
             ),
         )
         self.assertNotIn("skillset/research-paradigm", reset_only)

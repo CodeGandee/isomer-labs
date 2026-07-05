@@ -10,8 +10,8 @@ Standalone source-only reading may skip this preflight until the skill writes or
 2. Discover safe follow-up commands with `isomer-cli --print-json project self queries` when additional selectors, paths, or diagnostic queries are needed. Do not infer topic identity from sibling directories, remembered context, or hard-coded paths.
 3. Inspect Workspace Runtime with `isomer-cli --print-json project runtime inspect --topic <topic>` when the selected Research Topic has a Topic Workspace. Treat missing, invalid, stale, or contradictory runtime evidence as a blocker or route-to-bootstrap condition before accepted records are written.
 4. Resolve semantic paths with `isomer-cli --print-json project paths get <semantic-label> --topic <topic>` when path labels matter. Use path-resolution output instead of constructing Topic Workspace, Topic Actor Workspace, Agent Workspace, or record paths by hand.
-5. List stage-relevant records with `isomer-cli --print-json ext research records list --topic <topic> --placeholder '<placeholder-token>'` before using a prior context brief, contract, route decision, hypothesis, result, analysis finding, paper state, blocker, or generated view as current.
-6. Inspect candidate records with `isomer-cli --print-json ext research records show <record-id> --topic <topic> --include-payload --include-rendered-body` when payload fields, rendered review text, status, timestamps, active signals, supersession signals, or route metadata may affect the stage.
+5. List stage-relevant records with `isomer-cli --print-json ext research records list --topic <topic> --placeholder '<placeholder-token>'` before using a prior context brief, contract, route decision, hypothesis, result, analysis finding, paper state, blocker, or on-demand view as current.
+6. Inspect candidate records with `isomer-cli --print-json ext research records show <record-id> --topic <topic> --include-payload` when payload fields, rendered review text, status, timestamps, active signals, supersession signals, or route metadata may affect the stage.
 
 ## Freshness Verdict
 
@@ -49,6 +49,6 @@ Do not teach unavailable `--latest` or `--active` selectors as current behavior.
 
 ## Record Authority
 
-When a durable record has both structured payload and generated Markdown view, treat the structured payload and record metadata as authoritative for machine-readable fields. Treat generated Markdown as review material unless the producing binding declares otherwise.
+When a durable record has both structured payload and on-demand Markdown view, treat the structured payload and record metadata as authoritative for machine-readable fields. Treat on-demand Markdown as review material unless the producing binding declares otherwise.
 
 Worker output roots are for pre-promotion or operation-local plain files. A file under the resolved worker output root is not an accepted Artifact, Evidence Item, Run record, Decision Record, View Manifest, context brief, contract, route decision, or other durable research record until a separate accepted record or promotion action records it under the appropriate topic-owned surface.

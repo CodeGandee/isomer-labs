@@ -328,6 +328,15 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             template_source_kind TEXT,
             payload_json TEXT NOT NULL,
             payload_digest TEXT NOT NULL,
+            payload_file_path TEXT,
+            payload_media_type TEXT NOT NULL DEFAULT 'application/json',
+            payload_manifest_path TEXT,
+            payload_source_path TEXT,
+            revision_of_record_id TEXT,
+            supersedes_record_id TEXT,
+            latest_for_semantic_id TEXT,
+            legacy_rendered_markdown_path TEXT,
+            legacy_rendered_markdown_digest TEXT,
             validation_status TEXT NOT NULL,
             validation_diagnostics_json TEXT NOT NULL,
             render_status TEXT NOT NULL,
@@ -367,6 +376,10 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             title TEXT,
             summary TEXT,
             content_path TEXT,
+            payload_file_path TEXT,
+            payload_media_type TEXT,
+            payload_manifest_path TEXT,
+            latest_for_semantic_id TEXT,
             rendered_markdown_path TEXT,
             validation_status TEXT,
             render_status TEXT,
@@ -839,6 +852,8 @@ def _create_schema(connection: sqlite3.Connection) -> None:
     _ensure_path_plan_semantic_columns(connection)
     _ensure_agent_team_instance_provenance_columns(connection)
     _ensure_agent_workspace_metadata_columns(connection)
+    _ensure_structured_payload_file_columns(connection)
+    _ensure_record_index_payload_file_columns(connection)
 
 
 def _ensure_path_plan_semantic_columns(connection: sqlite3.Connection) -> None:
@@ -894,6 +909,43 @@ def _ensure_agent_workspace_metadata_columns(connection: sqlite3.Connection) -> 
     for column, declaration in additions.items():
         if column not in columns:
             connection.execute(f"ALTER TABLE agent_workspaces ADD COLUMN {column} {declaration}")
+
+
+def _ensure_structured_payload_file_columns(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] if isinstance(row, sqlite3.Row) else row[1]
+        for row in connection.execute("PRAGMA table_info(structured_research_payloads)")
+    }
+    additions = {
+        "payload_file_path": "TEXT",
+        "payload_media_type": "TEXT NOT NULL DEFAULT 'application/json'",
+        "payload_manifest_path": "TEXT",
+        "payload_source_path": "TEXT",
+        "revision_of_record_id": "TEXT",
+        "supersedes_record_id": "TEXT",
+        "latest_for_semantic_id": "TEXT",
+        "legacy_rendered_markdown_path": "TEXT",
+        "legacy_rendered_markdown_digest": "TEXT",
+    }
+    for column, declaration in additions.items():
+        if column not in columns:
+            connection.execute(f"ALTER TABLE structured_research_payloads ADD COLUMN {column} {declaration}")
+
+
+def _ensure_record_index_payload_file_columns(connection: sqlite3.Connection) -> None:
+    columns = {
+        row["name"] if isinstance(row, sqlite3.Row) else row[1]
+        for row in connection.execute("PRAGMA table_info(research_record_index)")
+    }
+    additions = {
+        "payload_file_path": "TEXT",
+        "payload_media_type": "TEXT",
+        "payload_manifest_path": "TEXT",
+        "latest_for_semantic_id": "TEXT",
+    }
+    for column, declaration in additions.items():
+        if column not in columns:
+            connection.execute(f"ALTER TABLE research_record_index ADD COLUMN {column} {declaration}")
 
 
 def _write_metadata(connection: sqlite3.Connection, metadata: WorkspaceRuntimeMetadata) -> None:
@@ -1140,6 +1192,7 @@ def _row_to_artifact_format_registration(row: sqlite3.Row) -> ArtifactFormatRegi
 
 
 def _row_to_structured_payload(row: sqlite3.Row) -> StructuredResearchPayloadRecord:
+    keys = set(row.keys())
     return StructuredResearchPayloadRecord(
         id=row["id"],
         record_id=row["record_id"],
@@ -1153,6 +1206,15 @@ def _row_to_structured_payload(row: sqlite3.Row) -> StructuredResearchPayloadRec
         template_source_kind=row["template_source_kind"],
         payload_json=_loads_object_dict(row["payload_json"]),
         payload_digest=row["payload_digest"],
+        payload_file_path=row["payload_file_path"] if "payload_file_path" in keys else None,
+        payload_media_type=row["payload_media_type"] if "payload_media_type" in keys and row["payload_media_type"] is not None else "application/json",
+        payload_manifest_path=row["payload_manifest_path"] if "payload_manifest_path" in keys else None,
+        payload_source_path=row["payload_source_path"] if "payload_source_path" in keys else None,
+        revision_of_record_id=row["revision_of_record_id"] if "revision_of_record_id" in keys else None,
+        supersedes_record_id=row["supersedes_record_id"] if "supersedes_record_id" in keys else None,
+        latest_for_semantic_id=row["latest_for_semantic_id"] if "latest_for_semantic_id" in keys else None,
+        legacy_rendered_markdown_path=row["legacy_rendered_markdown_path"] if "legacy_rendered_markdown_path" in keys else None,
+        legacy_rendered_markdown_digest=row["legacy_rendered_markdown_digest"] if "legacy_rendered_markdown_digest" in keys else None,
         validation_status=row["validation_status"],
         validation_diagnostics=_loads_json_list(row["validation_diagnostics_json"]),
         render_status=row["render_status"],

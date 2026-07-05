@@ -480,6 +480,15 @@ class StructuredResearchPayloadRecord:
     template_source_kind: str | None
     payload_json: dict[str, object]
     payload_digest: str
+    payload_file_path: str | None
+    payload_media_type: str
+    payload_manifest_path: str | None
+    payload_source_path: str | None
+    revision_of_record_id: str | None
+    supersedes_record_id: str | None
+    latest_for_semantic_id: str | None
+    legacy_rendered_markdown_path: str | None
+    legacy_rendered_markdown_digest: str | None
     validation_status: str
     validation_diagnostics: list[dict[str, object]]
     render_status: str
@@ -499,6 +508,7 @@ class StructuredResearchPayloadRecord:
             "schema_ref": self.schema_ref,
             "schema_source_kind": self.schema_source_kind,
             "payload_digest": self.payload_digest,
+            "payload_media_type": self.payload_media_type,
             "validation_status": self.validation_status,
             "render_status": self.render_status,
             "created_at": self.created_at,
@@ -510,6 +520,14 @@ class StructuredResearchPayloadRecord:
             ("schema_version", self.schema_version),
             ("template_ref", self.template_ref),
             ("template_source_kind", self.template_source_kind),
+            ("payload_file_path", self.payload_file_path),
+            ("payload_manifest_path", self.payload_manifest_path),
+            ("payload_source_path", self.payload_source_path),
+            ("revision_of_record_id", self.revision_of_record_id),
+            ("supersedes_record_id", self.supersedes_record_id),
+            ("latest_for_semantic_id", self.latest_for_semantic_id),
+            ("legacy_rendered_markdown_path", self.legacy_rendered_markdown_path),
+            ("legacy_rendered_markdown_digest", self.legacy_rendered_markdown_digest),
             ("rendered_markdown_path", self.rendered_markdown_path),
             ("rendered_markdown_digest", self.rendered_markdown_digest),
         ):

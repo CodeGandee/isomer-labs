@@ -17,7 +17,3 @@ Status: `{{ payload.status }}`
 - Diagnostics: {{ payload.diagnostics | length }}
 
 No Git operations were used by this reset outcome.
-
-```json
-{{ payload | tojson(indent=2) }}
-```

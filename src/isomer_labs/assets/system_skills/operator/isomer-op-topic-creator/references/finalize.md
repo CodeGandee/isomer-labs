@@ -9,7 +9,7 @@ When this subcommand is selected, execute the following steps in order.
 3. Resolve actor scope. If actor setup was requested, or the default `operator` Topic Actor was not explicitly opted out, require `topic.intent.actor_definitions`, selected Topic Actor bindings, selected Topic Actor Workspace readiness, `topic.env.actor_env_gates`, and actor cwd verification evidence. If no actors were requested and the default `operator` Topic Actor was explicitly opted out, record actor readiness as skipped with the opt-out reason.
 4. Build the Topic Workspace readiness summary with identity, generated-at timestamp, overall status, ready surfaces, verified checks, blocked signals, skipped optional work, installed or materialized surfaces, semantic labels and resolved paths, delegated owner evidence, command evidence when available, and durable-versus-editable distinctions.
 5. If the Topic Workspace and `topic.workspace.summary` resolve, write or refresh the summary even when readiness is blocked. If the summary path cannot resolve, report the resolver diagnostic and do not guess a root-level file path.
-6. When Workspace Runtime and the selected Topic Workspace resolve, create or refresh the first structured reset checkpoint with `isomer-cli project topic-reset checkpoint --topic <research-topic-id> --render markdown`, using `topic.workspace.summary`, operator-level readiness evidence, semantic path evidence, preserved setup record ids, selected Topic Actor refs, and blockers as checkpoint input. If readiness is blocked, create a blocked checkpoint or report the deterministic blocker diagnostics from the command.
+6. When Workspace Runtime and the selected Topic Workspace resolve, create or refresh the first structured reset checkpoint with `isomer-cli project topic-reset checkpoint --topic <research-topic-id>`, using `topic.workspace.summary`, operator-level readiness evidence, semantic path evidence, preserved setup record ids, selected Topic Actor refs, and blockers as checkpoint input. If readiness is blocked, create a blocked checkpoint or report the deterministic blocker diagnostics from the command.
 7. Print a compact final report with `ready`, `verified`, and `blocked` groups plus the resolved summary path and reset checkpoint id when available.
 
 If the user's task does not map cleanly to these steps, report which readiness signals can be validated and which selector, semantic label, or predecessor evidence blocks finalization.
@@ -26,7 +26,7 @@ Write `topic.workspace.summary` as Markdown with these sections when information
 - **Installed or Materialized**: Topic env, repositories, runtime, actor workspaces, actor onboarding surfaces, and other prepared surfaces.
 - **Semantic Paths**: Labels, resolved paths, source, storage profile, and diagnostics.
 - **Evidence**: Command evidence, service outputs, runtime refs, and validation refs.
-- **Reset Checkpoint**: Checkpoint id, generated Markdown review path, checkpoint status, source readiness evidence, and blockers.
+- **Reset Checkpoint**: Checkpoint id, managed payload file path, explicit Markdown export path when present, checkpoint status, source readiness evidence, and blockers.
 
 ## Guardrails
 

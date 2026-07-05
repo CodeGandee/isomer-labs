@@ -105,7 +105,7 @@ def register_topic_reset_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--include-payload", is_flag=True, help="Include structured checkpoint payload.")
-    @click.option("--include-rendered-body", is_flag=True, help="Include generated Markdown body.")
+    @click.option("--include-rendered-body", is_flag=True, help="Include rendered Markdown body when present.")
     @click.argument("checkpoint_id")
     @click.pass_context
     def show_command(ctx: click.Context, checkpoint_id: str, include_payload: bool = False, include_rendered_body: bool = False, **kwargs: Any) -> int:
@@ -149,7 +149,7 @@ def register_topic_reset_commands(app: click.Group) -> None:
     @_common_options
     @_topic_selection_options
     @click.option("--include-payload", is_flag=True, help="Include structured plan payload.")
-    @click.option("--include-rendered-body", is_flag=True, help="Include generated Markdown body.")
+    @click.option("--include-rendered-body", is_flag=True, help="Include rendered Markdown body when present.")
     @click.argument("plan_id")
     @click.pass_context
     def show_plan_command(ctx: click.Context, plan_id: str, include_payload: bool = False, include_rendered_body: bool = False, **kwargs: Any) -> int:

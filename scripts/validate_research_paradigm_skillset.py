@@ -987,8 +987,40 @@ def validate_deepsci_payload_first_bindings(
             and "--payload-file" in line
             for line in lines
         )
+        has_payload_inspection_guidance = any(
+            "ext research records show" in line and "--include-payload" in line for line in lines
+        )
+        has_render_export_guidance = any(
+            "ext research records render" in line and "--output-file" in line for line in lines
+        )
         for line_number, line in enumerate(lines, start=1):
-            if not line.startswith("| <"):
+            normalized_line = line.lower()
+            if (
+                "generated markdown" in normalized_line
+                and any(term in normalized_line for term in ("canonical", "source of truth", "authoritative", "durable state"))
+            ):
+                add(
+                    diagnostics,
+                    repo_root,
+                    binding_path,
+                    line_number,
+                    "RPS014",
+                    "structured binding guidance must not treat generated Markdown as canonical durable state",
+                )
+            if (
+                "payload_json" in normalized_line
+                and "sqlite" in normalized_line
+                and any(term in normalized_line for term in ("canonical", "source of truth", "only durable", "authoritative"))
+            ):
+                add(
+                    diagnostics,
+                    repo_root,
+                    binding_path,
+                    line_number,
+                    "RPS014",
+                    "structured binding guidance must not treat SQLite payload_json as the only durable structured payload copy",
+                )
+            if not line.startswith(("| <", "| `")):
                 continue
             cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
             if len(cells) < 7:
@@ -1042,14 +1074,23 @@ def validate_deepsci_payload_first_bindings(
                         "RPS014",
                         "structured binding command must not use direct Markdown body authoring",
                     )
-                if "--render markdown" in command and "--content-name" not in command:
+                if "--render markdown" in command:
                     add(
                         diagnostics,
                         repo_root,
                         binding_path,
                         line_number,
                         "RPS014",
-                        "structured binding command that renders Markdown must name the generated content or document an override",
+                        "structured binding command must not request default durable Markdown rendering; use ext research records render for review or explicit export",
+                    )
+                if "--content-name" in command:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        binding_path,
+                        line_number,
+                        "RPS014",
+                        "structured binding command must not use --content-name for normal structured create/update",
                     )
             elif "." in profile_ref and " " not in profile_ref:
                 add(
@@ -1068,6 +1109,24 @@ def validate_deepsci_payload_first_bindings(
                 1,
                 "RPS014",
                 "structured binding page must include an ext research records validate step with --format-profile and --payload-file",
+            )
+        if has_structured_row and not has_payload_inspection_guidance:
+            add(
+                diagnostics,
+                repo_root,
+                binding_path,
+                1,
+                "RPS014",
+                "structured binding page must show payload inspection with ext research records show --include-payload",
+            )
+        if has_structured_row and not has_render_export_guidance:
+            add(
+                diagnostics,
+                repo_root,
+                binding_path,
+                1,
+                "RPS014",
+                "structured binding page must direct human review or Markdown export through ext research records render and explicit --output-file",
             )
 
 

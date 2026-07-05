@@ -137,7 +137,7 @@ When requested, include grouped handoff and audit fields:
 - **Topic actors**: `topic_actor_bindings`, `topic_actor_workspace_paths`, `topic_actor_branch_plan`, actor-scoped semantic labels, materialization status, runtime audit refs when available, and actor blockers.
 - **Agent workspaces**: `agent_workspace_paths`, `agent_workspace_refs`, branch plan, boundary material, and validation status.
 - **Environment**: `package_request_source`, `package_mutation_plan`, selected Pixi route, verification commands, verification evidence, service output, failed checks, skipped heavy checks, blockers, and next action.
-- **Reset**: reset checkpoint summaries, reset plan action summaries, approved plan id, generated Markdown review paths, applied/skipped/failed actions, and outcome diagnostics when relevant.
+- **Reset**: reset checkpoint summaries, reset plan action summaries, approved plan id, managed payload file paths, explicit Markdown export paths when present, applied/skipped/failed actions, and outcome diagnostics when relevant.
 - **Boundary and validation**: `boundary_material_paths`, `validation_status`, optional `agent_environment_service_output`, blockers, and `next_operator_action`.
 
 ## Guardrails

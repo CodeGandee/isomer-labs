@@ -6,7 +6,7 @@ The main objective is not to report more numbers. It is to make the empirical pa
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<PAPER_CONTROL_STATE>`, `<PAPER_CONTRACT>`, or paper-facing durable records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, paper contract, outline, evidence ledger, experiment matrix, figure, citation, blocker, and route records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the paper target, claim boundary, or evidence state no longer matches durable topic state. Treat structured payload and record metadata as authoritative; generated Markdown views are review material.
+Before producing or refreshing `<PAPER_CONTROL_STATE>`, `<PAPER_CONTRACT>`, or paper-facing durable records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, paper contract, outline, evidence ledger, experiment matrix, figure, citation, blocker, and route records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the paper target, claim boundary, or evidence state no longer matches durable topic state. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## 1. Separate empirical proof from interpretation
 
