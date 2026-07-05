@@ -222,6 +222,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_creator_skill(root)
         self.write_topic_manager_skill(root)
         self.write_welcome_skill(root)
+        self.write_entrypoint_skill(root)
         self.write_switch_identity_skill(root)
 
     def write_topic_team_dependency_contract(self, root: Path) -> None:
@@ -750,6 +751,160 @@ class SkillsetValidatorTests(unittest.TestCase):
         if automatic_tool_pack_route:
             help_path = skill_dir / "references" / "help.md"
             help_path.write_text(help_path.read_text(encoding="utf-8") + "\nUse `isomer-misc-tool-packs` for tool setup.\n", encoding="utf-8")
+
+    def write_entrypoint_skill(
+        self,
+        root: Path,
+        *,
+        omit_skill_term: str | None = None,
+        omit_reference_term: str | None = None,
+        service_first_click: bool = False,
+        active_retired_route: bool = False,
+    ) -> None:
+        skill_dir = root / "skillset" / "operator" / "isomer-op-entrypoint"
+        reference_links = "\n            ".join(f"- [references/{name}](references/{name})" for name in validator.ENTRYPOINT_REFERENCES)
+        skill_text = f"""
+            ---
+            name: isomer-op-entrypoint
+            description: Use when a Project Operator needs an informed-user entrypoint to route a concrete prompt, file, extension request, system skill request, or Isomer CLI need and proceed.
+            ---
+
+            # Isomer Operator Entrypoint
+
+            ## Overview
+
+            This skill routes informed user tasks across system skills and Isomer CLI functionality.
+
+            ## When to Use
+
+            Use it for route-and-proceed dispatch. Use `isomer-op-welcome` for read-only orientation.
+
+            ## Workflow
+
+            1. Parse the task input.
+            2. Run safe read-only context discovery.
+            3. Classify exactly one route.
+            4. Check owner boundaries because service skills are only bounded support.
+            5. Proceed with the selected route.
+            6. Report the entrypoint result.
+
+            If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step routing plan, then execute the plan.
+
+            ## Reference Pages
+
+            {reference_links}
+
+            ## Output Contract
+
+            Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+
+            ### Essential Output
+
+            Report `status`, `interpreted_goal`, `selected_route`, `context_used`, `what_changed`, `blockers`, and `next_action`.
+
+            ### Complete Output
+
+            Include `route_candidates`, `routing_rationale`, `commands_run`, `selected_context`, `extension_skill_readiness`, `service_delegation_notes`, and `retired_route_exclusions`.
+
+            ## Guardrails
+
+            Route through `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`. Service skills are only bounded support unless explicitly invoked. `isomer-misc-tool-packs` is used explicitly, not automatically.
+
+            ## Common Mistakes
+
+            Do not stop after only listing routes when the task is concrete.
+            """
+        if omit_skill_term is not None:
+            skill_text = skill_text.replace(omit_skill_term, "")
+        write(skill_dir / "SKILL.md", skill_text)
+        write(
+            skill_dir / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-op-entrypoint"
+              short_description: "Valid fixture"
+              default_prompt: "Use $isomer-op-entrypoint to validate this fixture."
+            """,
+        )
+        reference_texts = {
+            "input-surfaces.md": """
+                # Input Surfaces
+
+                ## Workflow
+
+                1. Resolve explicit skill name, CLI command, file path, Project root, Research Topic, Topic Actor, Agent, Domain Agent Team Template, and DeepSci stage.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+            """,
+            "routing-rules.md": """
+                # Routing Rules
+
+                ## Workflow
+
+                1. Proceed for concrete tasks.
+                2. Use read-only discovery.
+                3. Select one route and preserve owner boundaries.
+                4. Remember Service skills are only bounded support.
+                5. Retired compatibility skills are not active routes.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+            """,
+            "system-skill-index.md": """
+                # System Skill Index
+
+                ## Workflow
+
+                1. Choose Operator Skills, Service Skills, or Misc Skills.
+                2. Keep services not a normal first-click owner route.
+                3. Keep `isomer-misc-tool-packs` explicit and not automatic package mutation.
+                4. Route through `isomer-op-entrypoint`.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, `isomer-op-entrypoint`.
+                `isomer-srv-topic-env-setup`, `isomer-srv-agent-env-setup`, `isomer-srv-houmao-interop`, `isomer-srv-resolve-pkg-repo`, `isomer-srv-topic-service-agent-support`.
+                `isomer-misc-tool-packs` is explicitly requested.
+            """,
+            "extension-skill-index.md": f"""
+                # Extension Skill Index
+
+                ## Workflow
+
+                1. Use DeepSci Bootstrap and Pipeline when readiness or pass execution is requested.
+                2. Use DeepSci Core Research Loop for research stages.
+                3. Use DeepSci Writing and Companion Skills for paper work.
+                4. Preserve latest-context preflight and worker-output policy.
+                5. Do not let ordinary DeepSci research-stage skills fabricate missing readiness.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                {" ".join(validator.ENTRYPOINT_DEEPSCI_SKILLS)}
+            """,
+            "cli-index.md": f"""
+                # CLI Index
+
+                ## Workflow
+
+                1. Use Safe Discovery Commands.
+                2. Use Project and Topic Command Families.
+                3. Use Research Records and Artifact Formats.
+                4. Use Team and Handoff Command Families.
+                5. Do not hand-edit research record indexes.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                {" ".join(validator.ENTRYPOINT_CLI_TERMS)}
+            """,
+        }
+        for reference_name, reference_text in reference_texts.items():
+            if omit_reference_term is not None:
+                reference_text = reference_text.replace(omit_reference_term, "")
+            extra = ""
+            if service_first_click and reference_name == "system-skill-index.md":
+                extra += "\nUse `isomer-srv-topic-env-setup` as a first-click owner route.\n"
+            if active_retired_route and reference_name == "routing-rules.md":
+                extra += "\nUse `isomer-op-topic-prepare` as an active route.\n"
+            write(skill_dir / "references" / reference_name, reference_text + extra)
 
     def write_switch_identity_skill(
         self,
@@ -1301,6 +1456,50 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS011", codes(diagnostics))
         self.assertTrue(any("isomer-misc-tool-packs only as manual explicit routing" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_accepts_entrypoint_contract(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root)
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_operator_validator_requires_entrypoint_deepsci_extension_coverage(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root, omit_reference_term="isomer-deepsci-scout")
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("isomer-deepsci-scout" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_entrypoint_service_first_click_route(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root, service_first_click=True)
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("first-click owner routes" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_entrypoint_active_retired_route(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root, active_retired_route=True)
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("isomer-op-topic-prepare" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_entrypoint_route_and_proceed_behavior(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root, omit_skill_term="Proceed with the selected route")
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("Proceed with the selected route" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_manifest_inventory_accepts_welcome_and_rejects_retired_entries(self) -> None:
         root = self.make_root()
         write(
@@ -1308,6 +1507,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             """
             [groups.core]
             skills = [
+              "operator/isomer-op-entrypoint",
               "operator/isomer-op-welcome",
               "operator/isomer-op-switch-identity",
               "operator/isomer-op-project-mgr",
@@ -1336,6 +1536,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         rendered = "\n".join(messages(diagnostics))
         self.assertIn("operator/isomer-op-welcome", rendered)
         self.assertIn("operator/isomer-op-switch-identity", rendered)
+        self.assertIn("operator/isomer-op-entrypoint", rendered)
         self.assertIn("operator/isomer-op-topic-prepare", rendered)
         self.assertIn("operator/isomer-op-manual-research-session", rendered)
 

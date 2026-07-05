@@ -1,0 +1,6 @@
+interface:
+  display_name: "isomer-op-entrypoint"
+  short_description: "Routes informed Isomer tasks to the right system skill or CLI surface and proceeds."
+  default_prompt: "Use $isomer-op-entrypoint to route this Isomer task to the right system skill or CLI surface and proceed."
+policy:
+  allow_implicit_invocation: false

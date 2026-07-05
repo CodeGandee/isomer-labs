@@ -7,6 +7,7 @@ skills = [
   "misc/isomer-misc-nvidia-tools",
   "misc/isomer-misc-pkg-specifics",
   "misc/isomer-misc-tool-packs",
+  "operator/isomer-op-entrypoint",
   "operator/isomer-op-project-mgr",
   "operator/isomer-op-switch-identity",
   "operator/isomer-op-topic-creator",

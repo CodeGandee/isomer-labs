@@ -26,6 +26,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertEqual(("core", "deepsci"), tuple(group.name for group in groups))
         paths = iter_system_skill_paths()
         old_houmao_interop_path = "operator/" + "isomer-op-" + "houmao-interop"
+        self.assertIn("operator/isomer-op-entrypoint", paths)
         self.assertIn("operator/isomer-op-project-mgr", paths)
         self.assertIn("service/isomer-srv-houmao-interop", paths)
         self.assertNotIn(old_houmao_interop_path, paths)
@@ -40,6 +41,9 @@ class SystemSkillAssetTests(unittest.TestCase):
             result = materialize_system_skills(target, groups=("core",))
             self.assertEqual(("core",), result.groups)
             self.assertTrue((target / "manifest.toml").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "SKILL.md").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "agents" / "openai.yaml").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "references" / "extension-skill-index.md").is_file())
             self.assertTrue((target / "operator" / "isomer-op-project-mgr" / "SKILL.md").is_file())
             old_houmao_interop_name = "isomer-op-" + "houmao-interop"
             self.assertFalse((target / "operator" / old_houmao_interop_name).exists())

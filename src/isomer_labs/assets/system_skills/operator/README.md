@@ -8,6 +8,7 @@ Install these skills into the agent surface that acts as the Project Operator Se
 
 | Skill | Purpose |
 | --- | --- |
+| `isomer-op-entrypoint` | Route informed user tasks to the correct Isomer system skill or CLI surface, then proceed with the selected route. It indexes operator, service, misc, DeepSci extension, and Isomer CLI surfaces while preserving owner boundaries; `isomer-op-welcome` remains the read-only welcome menu and path chooser. |
 | `isomer-op-welcome` | Manual invocation only. Show the action-oriented Isomer Labs operator menu and route users to the active owner skill. It exposes visible usage paths such as `start-research-manually` for human-orchestrated Topic Actor research through `isomer-op-topic-creator` and `start-research-by-agent-team` for Domain Agent Team Template specialization through `isomer-op-topic-team-specialize`; it also maps Project lifecycle work to `isomer-op-project-mgr` and initialized-topic management to `isomer-op-topic-mgr`. |
 | `isomer-op-project-mgr` | Run the operator Project lifecycle workflow. It exposes short local subcommands such as `help`, `init-project`, `check-project`, `list-topics`, `show-context`, `init-runtime`, `prep-runtime`, `prepare-topic`, `manual-research`, and `specialize-team`; it initializes `.isomer-labs/` and the Isomer-managed `.isomer-labs/.houmao/` overlay through `isomer-cli project init`, checks Project health, resolves context, prepares runtime, routes blank-state topic creation and manual-research setup to `isomer-op-topic-creator`, and hands full topic-team specialization to `isomer-op-topic-team-specialize fast-forward`. |
 | `isomer-op-switch-identity` | Switch the Project Operator's working identity posture to a selected Topic Actor or Agent. It resolves `topic.actors.workspace` or `agent.workspace`, uses that worker workspace as command cwd, supports one-task switches, one-prompt `act-as`, persistent session switches, `status`, and `reset`, and preserves provenance that the Project Operator acted as or on behalf of the selected identity. |
@@ -27,6 +28,16 @@ Use this flow when a user asks the operator to create, diagnose, or prepare an I
 6. When the user asks to create, prepare, or start a Research Topic for manual or future research work without choosing a mode, call `isomer-op-topic-creator run-to finalize`; the `finalize` target is included by default. Use `fast-forward` only when the user explicitly asks for automatic or fast-forward setup, use `step-by-step` when the user asks for guided acknowledgement, and use explicit wording such as `stop before finalize` when the user wants exclusion.
 7. When the user asks for a narrow Project-only route, `prepare-topic` and `manual-research` hand off to `isomer-op-topic-creator`.
 8. When the user asks to specialize a Domain Agent Team Template over a Research Topic, call `specialize-team`; it resolves Project context and hands off to `isomer-op-topic-team-specialize fast-forward` rather than to the internal `adapt-team-template` stage.
+
+## Example: Route an Informed User Task
+
+Use `isomer-op-entrypoint` when the user gives a concrete Isomer task, prompt, file, topic, actor, agent, DeepSci request, or CLI-shaped action and wants the Project Operator to choose the correct surface.
+
+1. The entrypoint parses the input surface, such as a topic brief, existing topic id, Topic Actor name, Agent Name, Domain Agent Team Template, research-stage request, JSON payload, record request, or CLI command family.
+2. It uses read-only context discovery such as `isomer-cli project self queries`, `isomer-cli project validate`, `isomer-cli project topics list`, `isomer-cli project context show`, or Workspace Path Resolution when context is missing.
+3. It selects one route and proceeds by default: an owner operator skill, a DeepSci extension skill, or an Isomer CLI command family.
+4. It keeps service skills as bounded support routes delegated by owner workflows unless the user explicitly invokes a service skill.
+5. It keeps `isomer-op-welcome` as the read-only orientation menu and uses `isomer-op-entrypoint` for route-and-proceed dispatch.
 
 ## Example: Prepare Human-Orchestrated Topic Actor Research
 
@@ -120,6 +131,8 @@ Operator skill folders must be named `isomer-op-<purpose>`, and `SKILL.md` front
 Operator skills must preserve Isomer domain boundaries. They can direct validation, approval, materialization, and launch orchestration, but they must not bypass Isomer validators, Gates, Workspace Runtime recording, or adapter preflight.
 
 `isomer-op-project-mgr` is the canonical entrypoint for Project lifecycle operations before topic work. It owns Project bootstrap, Project checks, topic and workspace listing, context inspection, runtime initialization, readiness preparation, and routing to topic creation, manual research setup, or formal topic-team adaptation.
+
+`isomer-op-entrypoint` is the informed-user dispatcher for concrete prompts, files, topic tasks, actor or agent tasks, DeepSci extension work, and CLI-shaped operations. It indexes operator, service, misc, extension, and Isomer CLI surfaces, selects the smallest correct owner route, and proceeds by default while preserving owner boundaries.
 
 `isomer-op-switch-identity` is the canonical Project Operator surface for acting from a selected Topic Actor or Agent workspace cwd. It changes the operator's working posture only; it does not prove OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution.
 

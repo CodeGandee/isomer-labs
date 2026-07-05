@@ -21,6 +21,7 @@ MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/", "commands/")
 TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-op-topic-team-specialize"
+ENTRYPOINT_SKILL = "isomer-op-entrypoint"
 PROJECT_MANAGER_SKILL = "isomer-op-project-mgr"
 SWITCH_IDENTITY_SKILL = "isomer-op-switch-identity"
 TOPIC_CREATOR_SKILL = "isomer-op-topic-creator"
@@ -882,10 +883,149 @@ WELCOME_ALLOWED_RETIRED_ROUTE_MARKERS = (
 
 WELCOME_TOOL_PACK_ALLOWED_MARKERS = (
     "do not automatically",
+    "explicit",
     "manual",
     "manually",
     "explicitly",
 )
+
+ENTRYPOINT_REFERENCES = (
+    "input-surfaces.md",
+    "routing-rules.md",
+    "system-skill-index.md",
+    "extension-skill-index.md",
+    "cli-index.md",
+)
+
+ENTRYPOINT_ACTIVE_OWNER_SKILLS = (
+    WELCOME_SKILL,
+    PROJECT_MANAGER_SKILL,
+    SWITCH_IDENTITY_SKILL,
+    TOPIC_CREATOR_SKILL,
+    TOPIC_MANAGER_SKILL,
+    TOPIC_TEAM_SPECIALIZATION_SKILL,
+)
+
+ENTRYPOINT_SERVICE_SKILLS = (
+    "isomer-srv-topic-env-setup",
+    "isomer-srv-agent-env-setup",
+    "isomer-srv-houmao-interop",
+    "isomer-srv-resolve-pkg-repo",
+    "isomer-srv-topic-service-agent-support",
+)
+
+ENTRYPOINT_DEEPSCI_SKILLS = (
+    "isomer-deepsci-workspace-mgr",
+    "isomer-deepsci-pipeline",
+    "isomer-deepsci-shared",
+    "isomer-deepsci-scout",
+    "isomer-deepsci-baseline",
+    "isomer-deepsci-idea",
+    "isomer-deepsci-optimize",
+    "isomer-deepsci-experiment",
+    "isomer-deepsci-analysis",
+    "isomer-deepsci-decision",
+    "isomer-deepsci-finalize",
+    "isomer-deepsci-science",
+    "isomer-deepsci-write",
+    "isomer-deepsci-paper-outline",
+    "isomer-deepsci-paper-plot",
+    "isomer-deepsci-figure-polish",
+    "isomer-deepsci-review",
+    "isomer-deepsci-rebuttal",
+    "isomer-deepsci-nature-data",
+    "isomer-deepsci-nature-figure",
+    "isomer-deepsci-nature-paper2ppt",
+    "isomer-deepsci-nature-polishing",
+)
+
+ENTRYPOINT_CLI_TERMS = (
+    "isomer-cli project self queries",
+    "isomer-cli project self show",
+    "isomer-cli project validate",
+    "isomer-cli project doctor",
+    "isomer-cli project topics list",
+    "isomer-cli project context show",
+    "isomer-cli project paths",
+    "isomer-cli ext research records",
+    "isomer-cli project artifact-formats",
+    "isomer-cli project topic-reset",
+    "isomer-cli project runtime",
+    "isomer-cli project handoffs",
+    "isomer-cli project team-templates",
+    "isomer-cli project team-profiles",
+    "isomer-cli project team-instances",
+    "isomer-cli project topic-actors",
+    "isomer-cli project topic-main-guidance",
+    "isomer-cli project outputs policy",
+)
+
+ENTRYPOINT_REQUIRED_SKILL_TERMS = (
+    "## Overview",
+    "## When to Use",
+    "## Workflow",
+    "## Reference Pages",
+    "## Output Contract",
+    "## Common Mistakes",
+    "route",
+    "proceed",
+    "system skills",
+    "Isomer CLI functionality",
+    "read-only orientation",
+    "route-and-proceed",
+    "service skills are only bounded support",
+    "Default to **Essential Output** in chat.",
+    "Complete Output",
+    "route_candidates",
+    "routing_rationale",
+    "extension_skill_readiness",
+    "retired_route_exclusions",
+)
+
+ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
+    "input-surfaces.md": (
+        "explicit skill name",
+        "CLI command",
+        "file path",
+        "Project root",
+        "Research Topic",
+        "Topic Actor",
+        "Agent",
+        "Domain Agent Team Template",
+        "DeepSci stage",
+    ),
+    "routing-rules.md": (
+        "Proceed",
+        "read-only discovery",
+        "Select one route",
+        "owner boundaries",
+        "Service skills are only bounded support",
+        "Retired compatibility skills are not active routes",
+    ),
+    "system-skill-index.md": (
+        "Operator Skills",
+        "Service Skills",
+        "Misc Skills",
+        "not a normal first-click owner route",
+        "not automatic package mutation",
+        "isomer-op-entrypoint",
+    ),
+    "extension-skill-index.md": (
+        "DeepSci Bootstrap and Pipeline",
+        "DeepSci Core Research Loop",
+        "DeepSci Writing and Companion Skills",
+        "latest-context preflight",
+        "worker-output policy",
+        "Do not let ordinary DeepSci research-stage skills fabricate missing",
+    ),
+    "cli-index.md": (
+        "Safe Discovery Commands",
+        "Project and Topic Command Families",
+        "Research Records and Artifact Formats",
+        "Team and Handoff Command Families",
+        "Do not hand-edit research record indexes",
+    ),
+}
 
 TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
     "storage-resolve.md": (
@@ -2764,6 +2904,160 @@ def validate_welcome_module(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+def _line_is_allowed_entrypoint_service_boundary(line: str) -> bool:
+    lower_line = line.lower()
+    return any(
+        marker in lower_line
+        for marker in (
+            "not a normal first-click",
+            "not first-click",
+            "bounded support",
+            "delegated",
+            "unless explicitly",
+            "unless the user explicitly",
+            "through the owning operator",
+            "through owner workflows",
+            "not treated as the normal first-click",
+        )
+    )
+
+
+def validate_entrypoint_module(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skill_dir = repo_root / "skillset" / "operator" / ENTRYPOINT_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "OPS013", f"{ENTRYPOINT_SKILL} is required")
+        return diagnostics
+
+    if (skill_dir / "evals").exists():
+        add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS013", f"{ENTRYPOINT_SKILL} must not contain evals/")
+
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    frontmatter = parse_frontmatter(lines)
+    if frontmatter.get("name") != ENTRYPOINT_SKILL:
+        add(diagnostics, repo_root, skill_md, 2, "OPS013", f"{ENTRYPOINT_SKILL} frontmatter name must match the skill folder")
+    description = frontmatter.get("description", "")
+    if not description:
+        add(diagnostics, repo_root, skill_md, 3, "OPS013", f"{ENTRYPOINT_SKILL} frontmatter description is required")
+    else:
+        if not description.startswith("Use when"):
+            add(diagnostics, repo_root, skill_md, 3, "OPS013", f"{ENTRYPOINT_SKILL} description must start with 'Use when'")
+        if "system skill" not in description or "Isomer CLI" not in description:
+            add(diagnostics, repo_root, skill_md, 3, "OPS013", f"{ENTRYPOINT_SKILL} description must identify system skills and Isomer CLI functionality")
+
+    validate_manifest(skill_dir, repo_root, diagnostics, "OPS013", manifest_required=True)
+    validate_local_references(skill_dir, repo_root, diagnostics, "OPS013")
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS013", require_contract=True)
+
+    for term in ENTRYPOINT_REQUIRED_SKILL_TERMS:
+        if term not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "# Isomer"), "OPS013", f"{ENTRYPOINT_SKILL} must document '{term}'")
+
+    workflow_index = line_index_containing(lines, "## Workflow")
+    if workflow_index is None:
+        add(diagnostics, repo_root, skill_md, 1, "OPS013", f"{ENTRYPOINT_SKILL} must include a ## Workflow section")
+    else:
+        if workflow_index > 24:
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS013", f"{ENTRYPOINT_SKILL} must place ## Workflow near the top")
+        if not has_numbered_step_after(lines, workflow_index):
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS013", f"{ENTRYPOINT_SKILL} workflow must use numbered steps")
+        if "does not map cleanly" not in text:
+            add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS013", f"{ENTRYPOINT_SKILL} must include a freeform fallback")
+        for route_term in ("Parse the task input", "Classify exactly one route", "Proceed with the selected route"):
+            if route_term not in text:
+                add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS013", f"{ENTRYPOINT_SKILL} workflow must include '{route_term}'")
+
+    references_dir = skill_dir / "references"
+    allowed_reference_names = set(ENTRYPOINT_REFERENCES)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_reference_names:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "OPS013",
+                f"{ENTRYPOINT_SKILL} has unexpected reference page references/{reference_path.name}",
+            )
+
+    reference_texts: list[str] = []
+    for reference_file_name in ENTRYPOINT_REFERENCES:
+        reference_path = references_dir / reference_file_name
+        if not reference_path.exists():
+            add(diagnostics, repo_root, reference_path, 1, "OPS013", f"{ENTRYPOINT_SKILL} must include references/{reference_file_name}")
+            continue
+        if f"references/{reference_file_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Reference Pages"), "OPS013", f"{ENTRYPOINT_SKILL} must link references/{reference_file_name}")
+        reference_lines = read_lines(reference_path)
+        reference_text = "\n".join(reference_lines)
+        reference_texts.append(reference_text)
+        reference_workflow_index = line_index_containing(reference_lines, "## Workflow")
+        if reference_workflow_index is None:
+            add(diagnostics, repo_root, reference_path, 1, "OPS013", f"references/{reference_file_name} must include a ## Workflow section")
+            continue
+        if reference_workflow_index > 8:
+            add(diagnostics, repo_root, reference_path, reference_workflow_index + 1, "OPS013", f"references/{reference_file_name} must place ## Workflow near the top")
+        if not has_numbered_step_after(reference_lines, reference_workflow_index):
+            add(diagnostics, repo_root, reference_path, reference_workflow_index + 1, "OPS013", f"references/{reference_file_name} workflow must use numbered steps")
+        if "does not map cleanly" not in reference_text:
+            add(diagnostics, repo_root, reference_path, reference_workflow_index + 1, "OPS013", f"references/{reference_file_name} must include a freeform fallback")
+        for required_term in ENTRYPOINT_REFERENCE_REQUIRED_TERMS.get(reference_file_name, ()):
+            if required_term not in reference_text:
+                add(diagnostics, repo_root, reference_path, 1, "OPS013", f"references/{reference_file_name} must document '{required_term}'")
+
+    combined_text = "\n".join([text, *reference_texts])
+    for owner_skill in ENTRYPOINT_ACTIVE_OWNER_SKILLS:
+        if owner_skill not in combined_text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Reference Pages"), "OPS013", f"{ENTRYPOINT_SKILL} must route to active owner skill '{owner_skill}'")
+    for service_skill in ENTRYPOINT_SERVICE_SKILLS:
+        if service_skill not in combined_text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Guardrails"), "OPS013", f"{ENTRYPOINT_SKILL} must document bounded service route '{service_skill}'")
+    for deepsci_skill in ENTRYPOINT_DEEPSCI_SKILLS:
+        if deepsci_skill not in combined_text:
+            add(diagnostics, repo_root, references_dir / "extension-skill-index.md", 1, "OPS013", f"{ENTRYPOINT_SKILL} must document DeepSci extension route '{deepsci_skill}'")
+    for cli_term in ENTRYPOINT_CLI_TERMS:
+        if cli_term not in combined_text:
+            add(diagnostics, repo_root, references_dir / "cli-index.md", 1, "OPS013", f"{ENTRYPOINT_SKILL} must document CLI route '{cli_term}'")
+
+    for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
+        for line_number, line in enumerate(read_lines(skill_file), start=1):
+            lower_line = line.lower()
+            for retired_skill in (*WELCOME_RETIRED_ROUTE_SKILLS, "isomer-op-houmao-interop"):
+                if retired_skill in line and not any(marker in lower_line for marker in WELCOME_ALLOWED_RETIRED_ROUTE_MARKERS):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_file,
+                        line_number,
+                        "OPS013",
+                        f"{ENTRYPOINT_SKILL} must not present retired skill '{retired_skill}' as an active route",
+                    )
+            if "isomer-admin-" in line and not is_passive_stale_ref_line(line):
+                add(diagnostics, repo_root, skill_file, line_number, "OPS013", f"{ENTRYPOINT_SKILL} must not present old isomer-admin-* names as active routes")
+            if "isomer-misc-tool-packs" in line and not any(marker in lower_line for marker in WELCOME_TOOL_PACK_ALLOWED_MARKERS):
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_file,
+                    line_number,
+                    "OPS013",
+                    f"{ENTRYPOINT_SKILL} must mention isomer-misc-tool-packs only as an explicit helper route, not an automatic package path",
+                )
+            if "isomer-srv-" in line and "first-click" in lower_line and not _line_is_allowed_entrypoint_service_boundary(line):
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_file,
+                    line_number,
+                    "OPS013",
+                    f"{ENTRYPOINT_SKILL} must not present service skills as normal first-click owner routes",
+                )
+
+    return diagnostics
+
+
 def validate_operator_manifest_inventory(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     manifest_path = repo_root / "skillset" / "manifest.toml"
@@ -2783,6 +3077,8 @@ def validate_operator_manifest_inventory(repo_root: Path) -> list[Diagnostic]:
         add(diagnostics, repo_root, manifest_path, 1, "OPS011", f"skillset manifest must include operator/{WELCOME_SKILL}")
     if f"operator/{SWITCH_IDENTITY_SKILL}" not in skills:
         add(diagnostics, repo_root, manifest_path, 1, "OPS012", f"skillset manifest must include operator/{SWITCH_IDENTITY_SKILL}")
+    if f"operator/{ENTRYPOINT_SKILL}" not in skills:
+        add(diagnostics, repo_root, manifest_path, 1, "OPS013", f"skillset manifest must include operator/{ENTRYPOINT_SKILL}")
     for retired_skill in WELCOME_RETIRED_ROUTE_SKILLS:
         retired_entry = f"operator/{retired_skill}"
         if retired_entry in skills:
@@ -2917,6 +3213,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_topic_creator_module(repo_root))
     diagnostics.extend(validate_topic_manager_module(repo_root))
     diagnostics.extend(validate_welcome_module(repo_root))
+    diagnostics.extend(validate_entrypoint_module(repo_root))
     diagnostics.extend(validate_switch_identity_module(repo_root))
     diagnostics.extend(validate_operator_manifest_inventory(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
