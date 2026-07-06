@@ -1,7 +1,10 @@
+import { hotkeysCoreFeature, selectionFeature, syncDataLoaderFeature, type ItemInstance } from "@headless-tree/core";
+import { useTree } from "@headless-tree/react";
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type Node } from "@xyflow/react";
+import { themeLight } from "dockview";
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps } from "dockview-react";
 import Graphology from "graphology";
 import mermaid from "mermaid";
@@ -13,25 +16,52 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import Sigma from "sigma";
 import { Subscription } from "rxjs";
-import { getProject, getRecordDetail, getRecordFacets, getRecordFiles, getRecordLineage, getRecordRender, getRecordSiblings, getRecords, getTopicGraph, getTopics, getViewerDescriptor, type GraphFilters } from "./api";
+import {
+  getOpenableItemDescriptor,
+  getProject,
+  getProjectExplorer,
+  getRecordDetail,
+  getRecordFacets,
+  getRecordFiles,
+  getRecordLineage,
+  getRecordRender,
+  getRecordSiblings,
+  getRecords,
+  getRuntime,
+  getActors,
+  getTopic,
+  getTopicGraph,
+  getTopics,
+  getViewerDescriptor,
+  type GraphFilters,
+} from "./api";
 import { layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes } from "./graph-utils";
 import { manualRefresh$, topicInvalidations, workbenchCommands$ } from "./events";
-import type { GraphScope, RecordSummary, Topic, TopicGraphView } from "./types";
-import { filterRecords, viewerSurface } from "./view-model";
+import type { ExplorerNode, GraphScope, OpenableItemDescriptor, RecordSummary, TopicGraphView } from "./types";
+import { filterRecords, openPanelFromDescriptor, viewerSurface, type DockviewApiLike, type OpenPanelResult } from "./view-model";
+import {
+  coerceWorkbenchHistoryState,
+  isGraphScope,
+  readWorkbenchSearch,
+  semanticOpenItemForState,
+  writeWorkbenchHistory,
+  type UrlSyncMode,
+  type WorkbenchHistoryMetadata,
+  type WorkbenchHistoryState,
+  type WorkbenchSearchState,
+} from "./workbench-history";
 import "dockview/dist/styles/dockview.css";
 import "@xyflow/react/dist/style.css";
 import "katex/dist/katex.min.css";
 import "./styles.css";
 
-type SearchState = {
-  topicId?: string;
-  graphScope: GraphScope;
-};
-
 type PanelParams = {
-  topicId: string;
-  graphScope?: GraphScope;
+  topicId?: string;
+  graphScope?: string;
   recordId?: string;
+  contentUrl?: string | null;
+  mediaType?: string | null;
+  itemKind?: string;
 };
 
 const queryClient = new QueryClient({
@@ -66,24 +96,58 @@ export function RootApp() {
 function Workbench() {
   const [urlState, setUrlState] = useUrlState();
   const [dockApi, setDockApi] = useState<unknown>(null);
+  const [expandedTopicIds, setExpandedTopicIds] = useState<string[]>([]);
+  const [expandedItems, setExpandedItems] = useState<string[]>(["project", "project:topics"]);
+  const startupItemRef = useRef<string | null>(null);
+  const startupCompleteRef = useRef(false);
+  const currentHistoryStateRef = useRef<WorkbenchHistoryState>(
+    coerceWorkbenchHistoryState(typeof window !== "undefined" ? window.history.state : null, urlState),
+  );
+  const navigationIndexRef = useRef(currentHistoryStateRef.current.navigationIndex || 0);
+  const panelStateByIdRef = useRef<Map<string, WorkbenchSearchState>>(new Map());
+  const suppressPanelCloseUrlRef = useRef(false);
   const queryClientValue = useQueryClient();
   const project = useQuery({ queryKey: ["project"], queryFn: getProject });
   const topics = useQuery({ queryKey: ["topics"], queryFn: getTopics });
+  const explorer = useQuery({
+    queryKey: ["explorer", "project", expandedTopicIds],
+    queryFn: () => getProjectExplorer(expandedTopicIds),
+  });
   const topicList = topics.data?.topics || [];
   const selectedTopicId = urlState.topicId || topicList[0]?.id;
   const graphScope = urlState.graphScope;
 
+  const commitUrlState = useCallback(
+    (next: WorkbenchSearchState, mode: UrlSyncMode, metadata: WorkbenchHistoryMetadata = {}) => {
+      const navigationIndex = mode === "push" ? navigationIndexRef.current + 1 : navigationIndexRef.current;
+      const historyState = setUrlState(next, {
+        mode,
+        metadata: {
+          ...metadata,
+          navigationIndex,
+        },
+      });
+      if (mode !== "silent") {
+        navigationIndexRef.current = navigationIndex;
+        currentHistoryStateRef.current = historyState;
+      }
+      return historyState;
+    },
+    [setUrlState],
+  );
+
   useEffect(() => {
     if (!urlState.topicId && selectedTopicId) {
-      setUrlState({ topicId: selectedTopicId, graphScope });
+      commitUrlState({ topicId: selectedTopicId, graphScope }, "replace");
     }
-  }, [graphScope, selectedTopicId, setUrlState, urlState.topicId]);
+  }, [commitUrlState, graphScope, selectedTopicId, urlState.topicId]);
 
   useEffect(() => {
     if (!selectedTopicId) {
       return undefined;
     }
     const subscription = topicInvalidations(selectedTopicId).subscribe((event) => {
+      queryClientValue.invalidateQueries({ queryKey: ["explorer", "project"] });
       queryClientValue.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey;
@@ -94,74 +158,224 @@ function Workbench() {
     return () => subscription.unsubscribe();
   }, [queryClientValue, selectedTopicId]);
 
+  const openDescriptor = useCallback(
+    (descriptor: OpenableItemDescriptor): OpenPanelResult => openPanelFromDescriptor(dockApi as DockviewApiLike | null, descriptor),
+    [dockApi],
+  );
+
+  const openItem = useCallback(
+    async (
+      openableItemId: string,
+      options: { historyMode?: UrlSyncMode; syncState?: boolean; sourceState?: WorkbenchSearchState } = {},
+    ): Promise<OpenPanelResult> => {
+      if (!dockApi) {
+        return { status: "ignored" };
+      }
+      const descriptor = await queryClientValue.fetchQuery({
+        queryKey: ["openable", openableItemId],
+        queryFn: () => getOpenableItemDescriptor(openableItemId),
+      });
+      const historyMode = options.historyMode || "push";
+      const syncState = options.syncState !== false;
+      const representedState = {
+        topicId: urlState.topicId || selectedTopicId,
+        graphScope,
+        openItemId: urlState.openItemId,
+      };
+      const activePanelId = (dockApi as DockviewApiLike).activePanel?.id;
+      if (
+        historyMode === "push" &&
+        descriptor.ok &&
+        descriptor.tab_id &&
+        activePanelId === descriptor.tab_id &&
+        semanticOpenItemForState(representedState) === descriptor.openable_item_id
+      ) {
+        return { status: "ignored", panelId: descriptor.tab_id };
+      }
+
+      const panelResult = openDescriptor(descriptor);
+      if (descriptor.ok) {
+        const nextGraphScope = isGraphScope(descriptor.graph_scope || null) ? descriptor.graph_scope : options.sourceState?.graphScope || graphScope;
+        const nextState: WorkbenchSearchState = {
+          topicId: descriptor.topic_id || options.sourceState?.topicId || selectedTopicId,
+          graphScope: nextGraphScope,
+          openItemId: descriptor.openable_item_id,
+        };
+        if (panelResult.panelId) {
+          panelStateByIdRef.current.set(panelResult.panelId, nextState);
+        }
+        if (syncState) {
+          commitUrlState(nextState, historyMode, {
+            activePanelId: panelResult.panelId,
+            openedPanelId: panelResult.status === "created" ? panelResult.panelId : undefined,
+            closeOnBack: panelResult.status === "created",
+          });
+        }
+      }
+      return panelResult;
+    },
+    [commitUrlState, dockApi, graphScope, openDescriptor, queryClientValue, selectedTopicId, urlState.openItemId, urlState.topicId],
+  );
+
   useEffect(() => {
     if (!dockApi) {
       return undefined;
     }
     const subscription = workbenchCommands$.subscribe((command) => {
-      const api = dockApi as { addPanel?: (options: unknown) => unknown; getPanel?: (id: string) => { api?: { setActive?: () => void } } | undefined };
       if (command.type === "open-record") {
-        const panelId = `record-${command.recordId}`;
-        const existing = api.getPanel?.(panelId);
-        if (existing) {
-          existing.api?.setActive?.();
-          return;
-        }
-        api.addPanel?.({
-          id: panelId,
-          component: "recordDetail",
-          title: command.recordId,
-          params: { topicId: command.topicId, recordId: command.recordId },
-        });
+        void openItem(`record:${command.topicId}:${command.recordId}`);
+      }
+      if (command.type === "open-file") {
+        void openItem(`file:${command.topicId}:${command.recordId}:${command.fileId}`);
       }
       if (command.type === "open-graph") {
-        setUrlState({ topicId: command.topicId, graphScope: command.graphScope });
+        void openItem(`topic:${command.topicId}:graph:${command.graphScope}`);
       }
       if (command.type === "refresh-topic") {
         manualRefresh$.next({ topicId: command.topicId });
       }
     });
     return () => subscription.unsubscribe();
-  }, [dockApi, setUrlState]);
+  }, [dockApi, openItem]);
+
+  useEffect(() => {
+    if (!dockApi || startupCompleteRef.current) {
+      return;
+    }
+    const startupItem = urlState.openItemId || (selectedTopicId ? `topic:${selectedTopicId}:overview` : undefined);
+    if (!startupItem || startupItemRef.current === startupItem) {
+      return;
+    }
+    startupItemRef.current = startupItem;
+    startupCompleteRef.current = true;
+    void openItem(startupItem, {
+      historyMode: urlState.openItemId ? "replace" : "silent",
+      syncState: Boolean(urlState.openItemId),
+      sourceState: urlState,
+    });
+  }, [dockApi, openItem, selectedTopicId, urlState]);
+
+  const closeHistoryCreatedPanel = useCallback(
+    (poppedAway: WorkbenchHistoryState | undefined, targetPanelId?: string) => {
+      const api = dockApi as DockviewApiLike | null;
+      if (!api || !poppedAway?.closeOnBack || !poppedAway.openedPanelId || poppedAway.openedPanelId === targetPanelId) {
+        return;
+      }
+      const panel = api.getPanel?.(poppedAway.openedPanelId);
+      if (!panel) {
+        return;
+      }
+      suppressPanelCloseUrlRef.current = true;
+      if (panel.api?.close) {
+        panel.api.close();
+      } else {
+        api.removePanel?.(panel);
+      }
+      window.setTimeout(() => {
+        suppressPanelCloseUrlRef.current = false;
+      }, 0);
+    },
+    [dockApi],
+  );
+
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      const targetSearch = readWorkbenchSearch(window.location.search);
+      const targetHistoryState = coerceWorkbenchHistoryState(event.state, targetSearch);
+      const poppedAway = currentHistoryStateRef.current;
+      const targetIndex = targetHistoryState.navigationIndex || 0;
+      const poppedIndex = poppedAway.navigationIndex || 0;
+      const isBack = targetIndex < poppedIndex;
+      navigationIndexRef.current = targetIndex;
+      currentHistoryStateRef.current = targetHistoryState;
+      setUrlState(targetSearch, {
+        mode: "silent",
+        metadata: {
+          activePanelId: targetHistoryState.activePanelId,
+          openedPanelId: targetHistoryState.openedPanelId,
+          closeOnBack: targetHistoryState.closeOnBack,
+          navigationIndex: targetIndex,
+        },
+      });
+
+      const targetOpenItem = semanticOpenItemForState(targetSearch);
+      if (!targetOpenItem || !dockApi) {
+        if (isBack) {
+          closeHistoryCreatedPanel(poppedAway);
+        }
+        return;
+      }
+
+      void openItem(targetOpenItem, { historyMode: "silent", syncState: false, sourceState: targetSearch }).then((panelResult) => {
+        if (isBack) {
+          closeHistoryCreatedPanel(poppedAway, panelResult.panelId || targetHistoryState.activePanelId);
+        }
+      });
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [closeHistoryCreatedPanel, dockApi, openItem, setUrlState]);
+
+  useEffect(() => {
+    const api = dockApi as DockviewApiLike | null;
+    if (!api?.onDidRemovePanel) {
+      return undefined;
+    }
+    const disposable = api.onDidRemovePanel((panel) => {
+      const removedState = panelStateByIdRef.current.get(panel.id);
+      panelStateByIdRef.current.delete(panel.id);
+      if (suppressPanelCloseUrlRef.current) {
+        return;
+      }
+      const current = currentHistoryStateRef.current;
+      const removedUrlSelectedPanel = current.activePanelId === panel.id || current.openedPanelId === panel.id || current.openItemId === removedState?.openItemId;
+      if (!removedUrlSelectedPanel) {
+        return;
+      }
+      window.setTimeout(() => {
+        const activePanelId = api.activePanel?.id;
+        const fallbackState = (activePanelId && panelStateByIdRef.current.get(activePanelId)) || {
+          topicId: current.topicId || selectedTopicId,
+          graphScope: current.graphScope || graphScope,
+        };
+        commitUrlState(fallbackState, "replace", {
+          activePanelId,
+          closeOnBack: false,
+        });
+      }, 0);
+    });
+    return () => disposable.dispose?.();
+  }, [commitUrlState, dockApi, graphScope, selectedTopicId]);
 
   const onDockReady = useCallback(
     (event: DockviewReadyEvent) => {
       setDockApi(event.api);
-      if (!selectedTopicId) {
-        return;
-      }
-      const primaryComponent = graphScope === "idea-lineage" ? "ideaGraph" : "denseGraph";
-      event.api.addPanel({
-        id: `graph-${graphScope}`,
-        component: primaryComponent,
-        title: graphTitle(graphScope),
-        params: { topicId: selectedTopicId, graphScope },
-      });
-      event.api.addPanel({
-        id: "records",
-        component: "records",
-        title: "Records",
-        params: { topicId: selectedTopicId },
-      });
-      event.api.addPanel({
-        id: "diagnostics",
-        component: "diagnostics",
-        title: "Diagnostics",
-        params: { topicId: selectedTopicId, graphScope },
-      });
     },
-    [graphScope, selectedTopicId],
+    [],
   );
+
+  const onExpandTopic = useCallback((topicId: string) => {
+    setExpandedTopicIds((current) => (current.includes(topicId) ? current : [...current, topicId].sort()));
+  }, []);
 
   return (
     <div className="research-shell">
-      <aside className="sidebar">
+      <aside className="sidebar explorer-sidebar">
         <header className="brand-row">
           <h1>Isomer</h1>
           <span>{project.data?.ok ? "ready" : "loading"}</span>
         </header>
         <div className="project-root">{String(project.data?.project?.root || "")}</div>
-        <TopicList topics={topicList} selectedTopicId={selectedTopicId} onSelect={(topicId) => setUrlState({ topicId, graphScope })} />
+        <ExplorerPane
+          key={explorer.data?.revision || "loading"}
+          nodes={explorer.data?.nodes || []}
+          rootNodeId={explorer.data?.root_node_ids[0] || "project"}
+          expandedItems={expandedItems}
+          selectedTopicId={selectedTopicId}
+          onExpandedItemsChange={setExpandedItems}
+          onExpandTopic={onExpandTopic}
+          onOpenItem={(openableItemId) => void openItem(openableItemId)}
+        />
       </aside>
       <main className="workbench">
         <div className="topbar">
@@ -170,7 +384,6 @@ function Workbench() {
             <h2>{selectedTopicId || "Select a topic"}</h2>
           </div>
           <div className="toolbar">
-            <GraphScopeButtons selected={graphScope} topicId={selectedTopicId} />
             <button type="button" onClick={() => selectedTopicId && manualRefresh$.next({ topicId: selectedTopicId })}>
               Refresh
             </button>
@@ -178,7 +391,7 @@ function Workbench() {
         </div>
         {selectedTopicId ? (
           <div className="dock-host dockview-theme-light">
-            <DockviewReact key={`${selectedTopicId}:${graphScope}`} components={dockComponents} onReady={onDockReady} />
+            <DockviewReact components={dockComponents} onReady={onDockReady} theme={themeLight} />
           </div>
         ) : (
           <div className="empty-state">No topic selected.</div>
@@ -188,50 +401,152 @@ function Workbench() {
   );
 }
 
-function TopicList({ topics, selectedTopicId, onSelect }: { topics: Topic[]; selectedTopicId?: string; onSelect: (topicId: string) => void }) {
-  return (
-    <nav className="topic-list">
-      {topics.map((topic) => (
-        <button className={topic.id === selectedTopicId ? "topic-button active" : "topic-button"} key={topic.id} type="button" onClick={() => onSelect(topic.id)}>
-          <span>{topic.id}</span>
-          <small>{topic.topic_statement || topic.status || "topic"}</small>
-        </button>
-      ))}
-    </nav>
-  );
-}
+export function ExplorerPane({
+  nodes,
+  rootNodeId,
+  expandedItems,
+  selectedTopicId,
+  onExpandedItemsChange,
+  onExpandTopic,
+  onOpenItem,
+}: {
+  nodes: ExplorerNode[];
+  rootNodeId: string;
+  expandedItems: string[];
+  selectedTopicId?: string;
+  onExpandedItemsChange: (items: string[] | ((old: string[]) => string[])) => void;
+  onExpandTopic: (topicId: string) => void;
+  onOpenItem: (openableItemId: string) => void;
+}) {
+  const nodeMap = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const childrenByParent = useMemo(() => {
+    const children = new Map<string, string[]>();
+    for (const node of nodes) {
+      if (!node.parent_id) {
+        continue;
+      }
+      const existing = children.get(node.parent_id) || [];
+      existing.push(node.id);
+      children.set(node.parent_id, existing);
+    }
+    return children;
+  }, [nodes]);
+  const tree = useTree<ExplorerNode>({
+    state: { expandedItems },
+    setExpandedItems: onExpandedItemsChange,
+    rootItemId: rootNodeId,
+    getItemName: (item) => item.getItemData().label,
+    isItemFolder: (item) => Boolean(item.getItemData().has_children),
+    dataLoader: {
+      getItem: (itemId) =>
+        nodeMap.get(itemId) || {
+          id: itemId,
+          label: itemId,
+          item_kind: "unknown",
+        },
+      getChildren: (itemId) => childrenByParent.get(itemId) || [],
+    },
+    indent: 16,
+    features: [syncDataLoaderFeature, selectionFeature, hotkeysCoreFeature],
+  });
 
-function GraphScopeButtons({ selected, topicId }: { selected: GraphScope; topicId?: string }) {
-  const scopes: GraphScope[] = ["idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"];
+  if (!nodes.length) {
+    return <div className="explorer-empty">Loading Project Explorer.</div>;
+  }
+
   return (
-    <div className="segmented">
-      {scopes.map((scope) => (
-        <button
-          key={scope}
-          className={scope === selected ? "selected" : ""}
-          type="button"
-          onClick={() => topicId && workbenchCommands$.next({ type: "open-graph", topicId, graphScope: scope })}
-        >
-          {scopeLabel(scope)}
-        </button>
+    <div {...tree.getContainerProps("Project Explorer")} className="explorer-tree">
+      {tree.getItems().map((item) => (
+        <ExplorerRow
+          item={item}
+          key={item.getId()}
+          selectedTopicId={selectedTopicId}
+          expandedItems={expandedItems}
+          onExpandedItemsChange={onExpandedItemsChange}
+          onExpandTopic={onExpandTopic}
+          onOpenItem={onOpenItem}
+        />
       ))}
     </div>
   );
 }
 
+function ExplorerRow({
+  item,
+  selectedTopicId,
+  expandedItems,
+  onExpandedItemsChange,
+  onExpandTopic,
+  onOpenItem,
+}: {
+  item: ItemInstance<ExplorerNode>;
+  selectedTopicId?: string;
+  expandedItems: string[];
+  onExpandedItemsChange: (items: string[] | ((old: string[]) => string[])) => void;
+  onExpandTopic: (topicId: string) => void;
+  onOpenItem: (openableItemId: string) => void;
+}) {
+  const data = item.getItemData();
+  const props = item.getProps();
+  const isSelectedTopic = data.item_kind === "research_topic" && data.topic_id === selectedTopicId;
+  const onClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const wasExpanded = item.isExpanded();
+    props.onClick?.(event);
+    if (item.isFolder()) {
+      const next = new Set(expandedItems);
+      if (wasExpanded) {
+        next.delete(item.getId());
+      } else {
+        next.add(item.getId());
+        if (data.item_kind === "research_topic" && data.topic_id && !data.children_loaded) {
+          next.add(`topic:${data.topic_id}:graphs`);
+          onExpandTopic(data.topic_id);
+        }
+      }
+      onExpandedItemsChange([...next]);
+    }
+    if (data.openable_item_id) {
+      onOpenItem(data.openable_item_id);
+    }
+  };
+  return (
+    <button
+      {...props}
+      className={`explorer-row ${item.isFolder() ? "folder" : "leaf"} ${item.isExpanded() ? "expanded" : ""} ${item.isFocused() ? "focused" : ""} ${isSelectedTopic ? "active-topic" : ""}`}
+      data-testid={`explorer-row-${item.getId()}`}
+      onClick={onClick}
+      style={{ paddingLeft: `${8 + item.getItemMeta().level * 14}px` }}
+      type="button"
+    >
+      <span className="explorer-twist">{item.isFolder() ? (item.isExpanded() ? "v" : ">") : ""}</span>
+      <span className={`explorer-icon ${data.icon_hint || "item"}`} />
+      <span className="explorer-label">{data.label}</span>
+      {data.badge_text ? <span className="explorer-badge">{data.badge_text}</span> : null}
+      {data.diagnostics_count ? <span className="explorer-warning">{data.diagnostics_count}</span> : null}
+    </button>
+  );
+}
+
 const dockComponents = {
   ideaGraph: (props: IDockviewPanelProps<PanelParams>) => <IdeaGraphPanel {...props.params} />,
-  denseGraph: (props: IDockviewPanelProps<PanelParams>) => <DenseGraphPanel topicId={props.params.topicId} graphScope={props.params.graphScope || "artifact-overview"} />,
-  records: (props: IDockviewPanelProps<PanelParams>) => <RecordsPanel topicId={props.params.topicId} />,
-  recordDetail: (props: IDockviewPanelProps<PanelParams>) => <RecordDetailPanel topicId={props.params.topicId} recordId={props.params.recordId || ""} />,
-  diagnostics: (props: IDockviewPanelProps<PanelParams>) => <DiagnosticsPanel topicId={props.params.topicId} graphScope={props.params.graphScope || "idea-lineage"} />,
+  denseGraph: (props: IDockviewPanelProps<PanelParams>) => <DenseGraphPanel topicId={props.params.topicId || ""} graphScope={asGraphScope(props.params.graphScope, "artifact-overview")} />,
+  records: (props: IDockviewPanelProps<PanelParams>) => <RecordsPanel topicId={props.params.topicId || ""} />,
+  recordDetail: (props: IDockviewPanelProps<PanelParams>) => <RecordDetailPanel topicId={props.params.topicId || ""} recordId={props.params.recordId || ""} />,
+  diagnostics: (props: IDockviewPanelProps<PanelParams>) => <DiagnosticsPanel topicId={props.params.topicId} graphScope={asGraphScope(props.params.graphScope, "idea-lineage")} />,
+  projectOverview: () => <ProjectOverviewPanel />,
+  topicOverview: (props: IDockviewPanelProps<PanelParams>) => <TopicOverviewPanel topicId={props.params.topicId || ""} />,
+  runtime: (props: IDockviewPanelProps<PanelParams>) => <RuntimePanel topicId={props.params.topicId || ""} />,
+  actors: (props: IDockviewPanelProps<PanelParams>) => <ActorsPanel topicId={props.params.topicId || ""} />,
+  repository: (props: IDockviewPanelProps<PanelParams>) => <RepositoryPanel topicId={props.params.topicId || ""} />,
+  fileArtifact: (props: IDockviewPanelProps<PanelParams>) => <FileArtifactPanel contentUrl={props.params.contentUrl || ""} mediaType={props.params.mediaType || ""} />,
 };
 
 function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelParams) {
-  const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: true });
+  const selectedGraphScope = asGraphScope(graphScope, "idea-lineage");
+  const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: false });
   const graph = useQuery({
-    queryKey: ["topic", topicId, "graph", graphScope, requestedRenderer(graphScope), filters],
-    queryFn: () => getTopicGraph(topicId, graphScope, requestedRenderer(graphScope), filters),
+    queryKey: ["topic", topicId, "graph", selectedGraphScope, requestedRenderer(selectedGraphScope), filters],
+    queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, requestedRenderer(selectedGraphScope), filters),
     enabled: Boolean(topicId),
   });
   const [flowNodes, setFlowNodes] = useState<Node[]>([]);
@@ -253,7 +568,7 @@ function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelParams) {
   return (
     <section className="panel-body">
       <GraphFiltersBar filters={filters} onChange={setFilters} />
-      {graph.data && selectRenderer(graphScope, graph.data.renderer_hint, graph.data.nodes.length) === "sigma" ? (
+      {graph.data && selectRenderer(selectedGraphScope, graph.data.renderer_hint, graph.data.nodes.length) === "sigma" ? (
         <SigmaGraph graph={graph.data} />
       ) : (
         <ReactFlowProvider>
@@ -304,6 +619,99 @@ function DenseGraphPanel({ topicId, graphScope }: { topicId: string; graphScope:
   );
 }
 
+function ProjectOverviewPanel() {
+  const project = useQuery({ queryKey: ["project"], queryFn: getProject });
+  return (
+    <section className="panel-body overview-panel">
+      <div className="detail-heading">
+        <h3>Project Overview</h3>
+        <span>{project.data?.ok ? "ready" : "loading"}</span>
+      </div>
+      <JsonBlock title="Project" value={project.data} />
+    </section>
+  );
+}
+
+function TopicOverviewPanel({ topicId }: { topicId: string }) {
+  const topic = useQuery({ queryKey: ["topic", topicId, "overview"], queryFn: () => getTopic(topicId), enabled: Boolean(topicId) });
+  const runtime = useQuery({ queryKey: ["topic", topicId, "runtime", "overview"], queryFn: () => getRuntime(topicId), enabled: Boolean(topicId) });
+  return (
+    <section className="panel-body overview-panel">
+      <div className="detail-heading">
+        <h3>{topicId || "Topic Overview"}</h3>
+        <span>{topic.data ? "overview" : "loading"}</span>
+      </div>
+      <div className="overview-grid">
+        <JsonBlock title="Topic" value={topic.data} />
+        <JsonBlock title="Runtime" value={runtime.data} />
+      </div>
+    </section>
+  );
+}
+
+function RuntimePanel({ topicId }: { topicId: string }) {
+  const runtime = useQuery({ queryKey: ["topic", topicId, "runtime"], queryFn: () => getRuntime(topicId), enabled: Boolean(topicId) });
+  return (
+    <section className="panel-body overview-panel">
+      <div className="detail-heading">
+        <h3>Workspace Runtime</h3>
+        <span>{topicId}</span>
+      </div>
+      <JsonBlock title="Runtime" value={runtime.data} />
+    </section>
+  );
+}
+
+function ActorsPanel({ topicId }: { topicId: string }) {
+  const actors = useQuery({ queryKey: ["topic", topicId, "actors"], queryFn: () => getActors(topicId), enabled: Boolean(topicId) });
+  return (
+    <section className="panel-body overview-panel">
+      <div className="detail-heading">
+        <h3>Topic Actors</h3>
+        <span>{topicId}</span>
+      </div>
+      <JsonBlock title="Actors" value={actors.data} />
+    </section>
+  );
+}
+
+function RepositoryPanel({ topicId }: { topicId: string }) {
+  const topic = useQuery({ queryKey: ["topic", topicId, "repository"], queryFn: () => getTopic(topicId), enabled: Boolean(topicId) });
+  return (
+    <section className="panel-body overview-panel">
+      <div className="detail-heading">
+        <h3>Repositories</h3>
+        <span>{topicId}</span>
+      </div>
+      <JsonBlock title="Repository Context" value={topic.data} />
+    </section>
+  );
+}
+
+function FileArtifactPanel({ contentUrl, mediaType }: { contentUrl: string; mediaType: string }) {
+  const content = useQuery({
+    queryKey: ["file-artifact", contentUrl],
+    queryFn: async () => {
+      const response = await fetch(contentUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.text();
+    },
+    enabled: Boolean(contentUrl) && !mediaType.startsWith("image/") && mediaType !== "application/pdf",
+  });
+  if (!contentUrl) {
+    return <div className="empty-state">No file content URL.</div>;
+  }
+  if (mediaType === "application/pdf") {
+    return <iframe className="pdf-frame" title="File artifact" src={contentUrl} />;
+  }
+  if (mediaType.startsWith("image/")) {
+    return <img className="image-viewer" alt="" src={contentUrl} />;
+  }
+  return <JsonBlock title={mediaType || "File"} value={content.data || "Loading file."} />;
+}
+
 function SigmaGraph({ graph }: { graph: TopicGraphView }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -332,15 +740,15 @@ function SigmaGraph({ graph }: { graph: TopicGraphView }) {
   return <div className="sigma-frame" ref={containerRef} />;
 }
 
-function GraphFiltersBar({ filters, onChange }: { filters: GraphFilters; onChange: (filters: GraphFilters) => void }) {
+export function GraphFiltersBar({ filters, onChange }: { filters: GraphFilters; onChange: (filters: GraphFilters) => void }) {
   return (
     <div className="filters">
       <input aria-label="Search graph" placeholder="search" value={filters.search || ""} onChange={(event) => onChange({ ...filters, search: event.target.value })} />
       <input aria-label="Status filter" placeholder="status" value={filters.status || ""} onChange={(event) => onChange({ ...filters, status: event.target.value })} />
       <input aria-label="Relation filter" placeholder="relation" value={filters.relationKind || ""} onChange={(event) => onChange({ ...filters, relationKind: event.target.value })} />
       <label className="checkbox">
-        <input type="checkbox" checked={Boolean(filters.includeSecondary)} onChange={(event) => onChange({ ...filters, includeSecondary: event.target.checked })} />
-        secondary
+        <input aria-label="Show supporting records" type="checkbox" checked={Boolean(filters.includeSecondary)} onChange={(event) => onChange({ ...filters, includeSecondary: event.target.checked })} />
+        Supporting Records
       </label>
     </div>
   );
@@ -421,17 +829,32 @@ function RecordDetailPanel({ topicId, recordId }: { topicId: string; recordId: s
         <h3>{descriptor.data?.title || recordId}</h3>
         <span>{descriptor.data?.viewer_kind || "loading"}</span>
       </div>
-      <ViewerContent descriptor={descriptor.data} rendered={rendered.data} detail={detail.data} />
+      <ViewerContent
+        descriptor={descriptor.data}
+        rendered={rendered.data}
+        detail={detail.data}
+        renderIsPending={Boolean(descriptor.data?.viewer_kind === "markdown" && (rendered.isPending || rendered.isFetching))}
+      />
       <div className="detail-columns">
-        <JsonBlock title="Lineage" value={{ lineage: lineage.data, siblings: siblings.data }} />
-        <FilesBlock value={files.data} />
-        <JsonBlock title="Facets" value={facets.data} />
+        <JsonBlock title="Idea Lineage" value={{ lineage: lineage.data, siblings: siblings.data }} />
+        <FilesBlock value={files.data} topicId={topicId} recordId={recordId} />
+        <JsonBlock title="Supporting Details" value={facets.data} />
       </div>
     </section>
   );
 }
 
-function ViewerContent({ descriptor, rendered, detail }: { descriptor: unknown; rendered: unknown; detail: unknown }) {
+export function ViewerContent({
+  descriptor,
+  rendered,
+  detail,
+  renderIsPending = false,
+}: {
+  descriptor: unknown;
+  rendered: unknown;
+  detail: unknown;
+  renderIsPending?: boolean;
+}) {
   const data = descriptor as { viewer_kind?: string; primary_content_url?: string | null; media_type?: string | null } | undefined;
   if (!data) {
     return <div className="empty-state">Loading record.</div>;
@@ -444,8 +867,11 @@ function ViewerContent({ descriptor, rendered, detail }: { descriptor: unknown; 
     return <img className="image-viewer" alt="" src={data.primary_content_url} />;
   }
   if (surface === "markdown") {
-    const content = String(((rendered as { render?: { content?: string } })?.render?.content) || "");
-    return <MarkdownView content={content || "No rendered Markdown available."} />;
+    const content = String(((rendered as { render?: { content?: string | null } })?.render?.content) || "");
+    if (renderIsPending && !content) {
+      return <MarkdownView content="Rendering Markdown." state="loading" />;
+    }
+    return <MarkdownView content={content || "No rendered Markdown available."} state={content ? "ready" : "empty"} />;
   }
   if (surface === "table") {
     return <JsonBlock title="Table" value={detail} />;
@@ -453,7 +879,16 @@ function ViewerContent({ descriptor, rendered, detail }: { descriptor: unknown; 
   return <JsonBlock title={surface === "json" ? "JSON" : "Record"} value={detail} />;
 }
 
-function MarkdownView({ content }: { content: string }) {
+type MarkdownViewState = "loading" | "empty" | "ready";
+
+export function MarkdownView({ content, state = "ready" }: { content: string; state?: MarkdownViewState }) {
+  if (state !== "ready") {
+    return (
+      <div className={`markdown-view markdown-view-status markdown-view-${state}`}>
+        <p>{content}</p>
+      </div>
+    );
+  }
   return (
     <div className="markdown-view">
       <ReactMarkdown
@@ -493,17 +928,19 @@ function MermaidBlock({ chart }: { chart: string }) {
   return <div className="mermaid" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
-function DiagnosticsPanel({ topicId, graphScope }: { topicId: string; graphScope: GraphScope }) {
+function DiagnosticsPanel({ topicId, graphScope }: { topicId?: string; graphScope: GraphScope }) {
+  const project = useQuery({ queryKey: ["project", "diagnostics"], queryFn: getProject, enabled: !topicId });
   const graph = useQuery({
     queryKey: ["topic", topicId, "graph", graphScope, "diagnostics"],
-    queryFn: () => getTopicGraph(topicId, graphScope, requestedRenderer(graphScope), { includeSecondary: true }),
+    queryFn: () => getTopicGraph(topicId || "", graphScope, requestedRenderer(graphScope), { includeSecondary: true }),
     enabled: Boolean(topicId),
   });
+  const diagnostics = topicId ? graph.data?.diagnostics || [] : project.data?.diagnostics || [];
   return (
     <section className="panel-body">
-      <GraphSummary graph={graph.data} isLoading={graph.isLoading} />
+      {topicId ? <GraphSummary graph={graph.data} isLoading={graph.isLoading} /> : <div className="status-line">Project diagnostics</div>}
       <div className="diagnostics-list">
-        {(graph.data?.diagnostics || []).map((diagnostic, index) => (
+        {diagnostics.map((diagnostic, index) => (
           <div className={`diagnostic ${diagnostic.severity || "info"}`} key={`${diagnostic.code}-${index}`}>
             <strong>{diagnostic.code || "diagnostic"}</strong>
             <span>{diagnostic.message || ""}</span>
@@ -549,7 +986,7 @@ function JsonBlock({ title, value }: { title: string; value: unknown }) {
   );
 }
 
-function FilesBlock({ value }: { value: unknown }) {
+function FilesBlock({ value, topicId, recordId }: { value: unknown; topicId: string; recordId: string }) {
   const files = ((value as { files?: Array<Record<string, unknown>> })?.files || []) as Array<Record<string, unknown>>;
   return (
     <div className="json-block">
@@ -560,6 +997,17 @@ function FilesBlock({ value }: { value: unknown }) {
             <strong>{String(file.file_role || "file")}</strong>
             <span>{String(file.path || "")}</span>
             <small>{file.openable ? "openable" : `not openable: ${String(file.open_blocked_reason || "unknown")}`}</small>
+            {file.openable && file.id ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  workbenchCommands$.next({ type: "open-file", topicId, recordId, fileId: String(file.id) });
+                }}
+              >
+                Open
+              </button>
+            ) : null}
           </div>
         ))}
       </div>
@@ -571,7 +1019,21 @@ function useRecordsTable(records: RecordSummary[], topicId: string) {
   const columnHelper = createColumnHelper<RecordSummary>();
   const columns = useMemo(
     () => [
-      columnHelper.accessor("record_id", { header: "Record", cell: (info) => <button type="button" className="link-button" onClick={() => workbenchCommands$.next({ type: "open-record", topicId, recordId: info.getValue() })}>{info.getValue()}</button> }),
+      columnHelper.accessor("record_id", {
+        header: "Record",
+        cell: (info) => (
+          <button
+            type="button"
+            className="link-button"
+            onClick={(event) => {
+              event.stopPropagation();
+              workbenchCommands$.next({ type: "open-record", topicId, recordId: info.getValue() });
+            }}
+          >
+            {info.getValue()}
+          </button>
+        ),
+      }),
       columnHelper.accessor("record_kind", { header: "Kind", cell: (info) => info.getValue() || "" }),
       columnHelper.accessor("status", { header: "Status", cell: (info) => info.getValue() || "" }),
       columnHelper.accessor("title", { header: "Title", cell: (info) => info.getValue() || "" }),
@@ -603,35 +1065,24 @@ function scopeLabel(scope: GraphScope): string {
   }[scope];
 }
 
-function useUrlState(): [SearchState, (next: SearchState) => void] {
-  const read = useCallback((): SearchState => {
-    const params = new URLSearchParams(window.location.search);
-    const graph = params.get("graph");
-    return {
-      topicId: params.get("topic") || undefined,
-      graphScope: isGraphScope(graph) ? graph : "idea-lineage",
-    };
+function useUrlState(): [
+  WorkbenchSearchState,
+  (next: WorkbenchSearchState, options?: { mode?: UrlSyncMode; metadata?: WorkbenchHistoryMetadata }) => WorkbenchHistoryState,
+] {
+  const read = useCallback((): WorkbenchSearchState => {
+    return readWorkbenchSearch(window.location.search);
   }, []);
   const [state, setState] = useState(read);
-  useEffect(() => {
-    const onPopState = () => setState(read());
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [read]);
-  const write = useCallback((next: SearchState) => {
-    const params = new URLSearchParams();
-    if (next.topicId) {
-      params.set("topic", next.topicId);
-    }
-    params.set("graph", next.graphScope);
-    window.history.replaceState(null, "", `/?${params.toString()}`);
+  const write = useCallback((next: WorkbenchSearchState, options: { mode?: UrlSyncMode; metadata?: WorkbenchHistoryMetadata } = {}) => {
+    const historyState = writeWorkbenchHistory(next, options);
     setState(next);
+    return historyState;
   }, []);
   return [state, write];
 }
 
-function isGraphScope(value: string | null): value is GraphScope {
-  return value === "idea-lineage" || value === "artifact-overview" || value === "experiment-records" || value === "paper-revisions";
+function asGraphScope(value: string | null | undefined, fallback: GraphScope): GraphScope {
+  return isGraphScope(value || null) ? value : fallback;
 }
 
 function intersectsEvent(queryKey: readonly unknown[], graphScopes: string[]) {

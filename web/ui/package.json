@@ -5,10 +5,13 @@
   "scripts": {
     "build": "vite build",
     "test": "vitest run",
-    "test:playwright": "node tests/topic-workbench-smoke.mjs"
+    "test:playwright": "node tests/topic-workbench-smoke.mjs",
+    "test:markdown-preview": "node tests/markdown-preview-style.mjs"
   },
   "dependencies": {
     "@ag-ui/core": "^0.0.57",
+    "@headless-tree/core": "^1.7.0",
+    "@headless-tree/react": "^1.7.0",
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-router": "^1.0.0",
     "@tanstack/react-table": "^8.0.0",

@@ -33,17 +33,34 @@ page.on("response", (response) => {
 try {
   await page.goto(`${baseUrl}/?pw=${Date.now()}`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.waitForSelector(".research-shell", { timeout: 30000 });
-  await page.waitForSelector(".topic-button", { timeout: 30000 });
-  const topicText = await page.locator(".topic-button").first().innerText();
-  await page.locator(".topic-button").first().click();
+  await page.waitForSelector(".explorer-tree", { timeout: 30000 });
+  await page.waitForSelector('[data-testid^="explorer-row-topic:"]', { timeout: 30000 });
+  const topicRow = page.locator('[data-testid^="explorer-row-topic:"]').first();
+  const topicText = await topicRow.innerText();
+  await topicRow.click();
   await page.waitForSelector(".dock-host", { timeout: 30000 });
 
-  await page.locator(".dv-tab").filter({ hasText: "Ideas Graph" }).first().click({ timeout: 15000 });
+  await page.locator(".explorer-row").filter({ hasText: "Idea Lineage" }).first().click({ timeout: 15000 });
+  await page.locator(".dv-tab").filter({ hasText: "Idea Lineage Graph" }).first().click({ timeout: 15000 });
   await page.waitForSelector(".graph-summary", { timeout: 30000 });
   await page.waitForSelector(".react-flow__node", { timeout: 30000 });
   await page.waitForTimeout(3000);
+  const historyLengthBeforeActiveNoop = await page.evaluate(() => window.history.length);
+  await page.locator(".explorer-row").filter({ hasText: "Idea Lineage" }).first().click({ timeout: 15000 });
+  await page.waitForTimeout(500);
+  const historyLengthAfterActiveNoop = await page.evaluate(() => window.history.length);
+  const activeOpenNoop = historyLengthAfterActiveNoop === historyLengthBeforeActiveNoop;
   const ideaSummary = await page.locator(".graph-summary").first().innerText();
   const reactFlowNodeCount = await page.locator(".react-flow__node").count();
+  const supportingCheckbox = page.getByRole("checkbox", { name: "Show supporting records" }).first();
+  const supportingInitiallyChecked = await supportingCheckbox.isChecked();
+  const defaultRouteDecisionCount = await page.locator(".react-flow__node").filter({ hasText: "Route decision" }).count();
+  await supportingCheckbox.check({ timeout: 15000 });
+  await page.waitForTimeout(2500);
+  const supportingSummary = await page.locator(".graph-summary").first().innerText();
+  const supportingNodeCount = await page.locator(".react-flow__node").count();
+  await supportingCheckbox.uncheck({ timeout: 15000 });
+  await page.waitForTimeout(2500);
   const visibleNodeIndex = await page.evaluate(() => {
     const nodes = Array.from(document.querySelectorAll(".react-flow__node"));
     return nodes.findIndex((node) => {
@@ -62,14 +79,49 @@ try {
   const detailTitle = await page.locator(".detail-heading h3").first().innerText();
   const detailBodyPresent = await page.locator(".detail-viewer").first().isVisible();
   const tabsAfterDetail = await page.locator(".dv-tab").count();
+  const detailTabsBeforeBack = await page.locator(".dv-tab").filter({ hasText: detailTitle }).count();
 
-  await page.getByRole("button", { name: "Artifacts" }).click({ timeout: 15000 });
+  await page.evaluate(() => window.history.back());
+  await page.waitForFunction(() => {
+    const open = new URL(window.location.href).searchParams.get("open");
+    return open === null || open.includes(":graph:");
+  }, null, { timeout: 15000 });
+  await page.waitForSelector(".graph-summary", { timeout: 30000 });
+  await page.waitForTimeout(1200);
+  const tabsAfterBrowserBack = await page.locator(".dv-tab").count();
+  const detailTabsAfterBrowserBack = await page.locator(".dv-tab").filter({ hasText: detailTitle }).count();
+  const browserBackClosedDetail = detailTabsBeforeBack > 0 && detailTabsAfterBrowserBack === 0 && tabsAfterBrowserBack < tabsAfterDetail;
+
+  await page.evaluate(() => window.history.forward());
+  await page.waitForFunction(() => new URL(window.location.href).searchParams.get("open")?.startsWith("record:"), null, { timeout: 15000 });
+  await page.waitForSelector(".detail-viewer", { timeout: 30000 });
+  await page.waitForTimeout(1200);
+  const detailTitleAfterForward = await page.locator(".detail-heading h3").first().innerText();
+  const detailTabsAfterBrowserForward = await page.locator(".dv-tab").filter({ hasText: detailTitle }).count();
+  const browserForwardRestoredDetail = detailTitleAfterForward === detailTitle && detailTabsAfterBrowserForward > 0;
+
+  const fileButtonCount = await page.locator(".file-row button").count();
+  if (fileButtonCount > 0) {
+    await page.locator(".file-row button").first().click({ timeout: 15000 });
+    await page.waitForSelector(".dv-tab", { timeout: 30000 });
+  }
+
+  await page.locator(".explorer-row").filter({ hasText: "Artifact Overview" }).first().click({ timeout: 15000 });
   await page.waitForSelector(".dv-tab", { timeout: 30000 });
-  await page.locator(".dv-tab").filter({ hasText: "Artifacts Graph" }).first().click({ timeout: 15000 });
-  await page.waitForSelector(".sigma-frame", { timeout: 30000 });
+  await page.locator(".dv-tab").filter({ hasText: "Artifact Overview Graph" }).first().click({ timeout: 15000 });
+  await page.waitForSelector(".sigma-frame, .flow-frame", { timeout: 60000 });
   await page.waitForTimeout(3500);
   const artifactSummary = await page.locator(".graph-summary").first().innerText();
-  const sigmaFrameVisible = await page.locator(".sigma-frame").first().isVisible();
+  const artifactGraphRenderer = await page.evaluate(() => {
+    if (document.querySelector(".sigma-frame")) {
+      return "sigma";
+    }
+    if (document.querySelector(".flow-frame")) {
+      return "react-flow";
+    }
+    return "none";
+  });
+  const artifactGraphFrameVisible = await page.locator(".sigma-frame, .flow-frame").first().isVisible();
 
   await page.getByRole("button", { name: "Refresh" }).click({ timeout: 15000 });
   await page.waitForTimeout(1000);
@@ -89,12 +141,28 @@ try {
     topicText: topicText.split("\n")[0],
     ideaSummary,
     reactFlowNodeCount,
+    historyLengthBeforeActiveNoop,
+    historyLengthAfterActiveNoop,
+    activeOpenNoop,
+    supportingInitiallyChecked,
+    defaultRouteDecisionCount,
+    supportingSummary,
+    supportingNodeCount,
     selectedNodeText,
     detailTitle,
     detailBodyPresent,
     tabsAfterDetail,
+    detailTabsBeforeBack,
+    tabsAfterBrowserBack,
+    detailTabsAfterBrowserBack,
+    browserBackClosedDetail,
+    detailTitleAfterForward,
+    detailTabsAfterBrowserForward,
+    browserForwardRestoredDetail,
+    fileButtonCount,
     artifactSummary,
-    sigmaFrameVisible,
+    artifactGraphRenderer,
+    artifactGraphFrameVisible,
     refreshStillVisible,
     mobileOverflow,
     resizedSummaryVisible,
@@ -113,10 +181,16 @@ try {
     fatalConsoleErrors.length ||
     mobileOverflow ||
     reactFlowNodeCount < 1 ||
+    !activeOpenNoop ||
+    supportingInitiallyChecked ||
+    defaultRouteDecisionCount > 0 ||
+    supportingNodeCount < reactFlowNodeCount ||
     !detailBodyPresent ||
-    tabsAfterDetail < 4 ||
+    tabsAfterDetail < 2 ||
+    !browserBackClosedDetail ||
+    !browserForwardRestoredDetail ||
     artifactSummary.includes("missing") ||
-    !sigmaFrameVisible ||
+    !artifactGraphFrameVisible ||
     !refreshStillVisible ||
     !resizedSummaryVisible
   ) {

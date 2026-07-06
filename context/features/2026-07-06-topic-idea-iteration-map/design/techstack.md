@@ -18,6 +18,12 @@ Use TanStack Router for topic routes, artifact routes, typed search params, and 
 
 Use Dockview for dockable tabs, split panes, draggable panels, floating panels, and layout save/restore. Persist per-project or per-topic layouts locally first, then add explicit saved layouts only if users need to share workbench arrangements.
 
+## Explorer Trees
+
+Use Headless Tree with `@headless-tree/core` and `@headless-tree/react` for the left semantic Project Explorer. It is a headless tree library, so the GUI can keep an IDE-like custom sidebar while relying on library support for accessibility props, keybindings, search, renaming, drag-and-drop, and virtualization. The React binding exposes `useTree` and a flat visible-node model, which fits Isomer's semantic `openable item` tree better than a raw filesystem widget. References: [Headless Tree docs](https://headless-tree.lukasbach.com/), [Get Started](https://headless-tree.lukasbach.com/getstarted/), and [GitHub](https://github.com/lukasbach/headless-tree).
+
+Render semantic nodes such as Research Topics, Graphs, Records, Runtime, Topic Actors, Agent Workspaces, Repositories, diagnostics, and referenced artifacts. Do not add a Files Explorer mode; raw filesystem browsing should stay in the user's editor, shell, or file manager.
+
 ## Idea Lineage Graph
 
 Use React Flow for interactive artifact and idea lineage maps. Pair it with ELK.js for automatic DAG layout, so the view can show parents, siblings, branches, revisions, experiment dependencies, and evidence links without hand-positioning nodes.
@@ -105,6 +111,7 @@ Use pytest or unittest for Python read-model tests, Vitest and Testing Library f
 - Frontend: `vite`, `react`, `react-dom`, `typescript`, `@vitejs/plugin-react`
 - Routing: `@tanstack/react-router`
 - Workbench: `dockview-react`
+- Explorer trees: `@headless-tree/core`, `@headless-tree/react`
 - Graph detail views: `@xyflow/react`, `elkjs`
 - Large graph overview: `sigma`, `graphology`
 - Generated charts: `plotly.js-dist-min`

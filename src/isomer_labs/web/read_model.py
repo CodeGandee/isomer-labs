@@ -29,6 +29,7 @@ from isomer_labs.runtime.validation import inspect_workspace_runtime
 from isomer_labs.workspace.actors import list_topic_actors
 
 from .graph import build_topic_graph_view
+from .project_explorer import openable_item_descriptor_payload, project_explorer_payload
 
 
 def diagnostics_json(diagnostics: list[Diagnostic]) -> list[dict[str, object]]:
@@ -158,6 +159,12 @@ class ProjectWebReadModel:
             "diagnostics": diagnostics_json(diagnostics),
         }
 
+    def project_explorer(self, *, expanded_topic_ids: tuple[str, ...] = ()) -> dict[str, Any]:
+        return project_explorer_payload(self, expanded_topic_ids=expanded_topic_ids)
+
+    def openable_item_descriptor(self, openable_item_id: str) -> dict[str, Any]:
+        return openable_item_descriptor_payload(self, openable_item_id)
+
     def records(
         self,
         topic_id: str,
@@ -255,6 +262,74 @@ class ProjectWebReadModel:
             topic_id,
             lambda context: self._record_viewer_descriptor_payload(context, record_id),
         )
+
+    def record_file_content(self, topic_id: str, record_id: str, file_id: str) -> dict[str, Any]:
+        files_payload = self.record_files(topic_id, record_id)
+        if not files_payload.get("ok"):
+            return {
+                **files_payload,
+                "path": None,
+                "error": files_payload.get("error")
+                or {"code": "record_files_unavailable", "message": "Record file metadata is unavailable."},
+            }
+        files = files_payload.get("files")
+        if not isinstance(files, list):
+            files = []
+        for item in files:
+            if not isinstance(item, Mapping) or str(item.get("id")) != file_id:
+                continue
+            if not item.get("openable"):
+                return {
+                    "ok": False,
+                    "mutated": False,
+                    "topic_id": topic_id,
+                    "record_id": record_id,
+                    "file_id": file_id,
+                    "path": None,
+                    "media_type": item.get("media_type"),
+                    "exists": bool(item.get("exists")),
+                    "error": {
+                        "code": "file_not_openable",
+                        "message": f"File is not openable: {item.get('open_blocked_reason') or 'unknown'}",
+                    },
+                    "diagnostics": files_payload.get("diagnostics", []),
+                }
+            resolved_path = item.get("resolved_path")
+            if not isinstance(resolved_path, str):
+                return {
+                    "ok": False,
+                    "mutated": False,
+                    "topic_id": topic_id,
+                    "record_id": record_id,
+                    "file_id": file_id,
+                    "path": None,
+                    "media_type": item.get("media_type"),
+                    "exists": False,
+                    "error": {"code": "file_path_unresolved", "message": "File path is not resolved."},
+                    "diagnostics": files_payload.get("diagnostics", []),
+                }
+            return {
+                "ok": True,
+                "mutated": False,
+                "topic_id": topic_id,
+                "record_id": record_id,
+                "file_id": file_id,
+                "path": Path(resolved_path),
+                "media_type": item.get("media_type"),
+                "exists": True,
+                "diagnostics": files_payload.get("diagnostics", []),
+            }
+        return {
+            "ok": False,
+            "mutated": False,
+            "topic_id": topic_id,
+            "record_id": record_id,
+            "file_id": file_id,
+            "path": None,
+            "exists": False,
+            "error": {"code": "file_not_found", "message": f"Record file is not indexed: {file_id}"},
+            "diagnostics": files_payload.get("diagnostics", []),
+        }
 
     def topic_change_event(self, topic_id: str) -> dict[str, Any]:
         return self._with_context(topic_id, lambda context: self._topic_change_event_payload(context))
@@ -391,6 +466,7 @@ class ProjectWebReadModel:
         files_raw = files_payload.get("files")
         files: list[object] = list(files_raw) if isinstance(files_raw, list) else []
         viewer_kind, media_type = _viewer_kind(record, structured, files)
+        primary_file = _primary_openable_file(files)
         title = _descriptor_title(record, structured, record_id)
         detail_diagnostic_payload = detail_payload.get("diagnostics")
         file_diagnostic_payload = files_payload.get("diagnostics")
@@ -398,6 +474,11 @@ class ProjectWebReadModel:
             *(list(detail_diagnostic_payload) if isinstance(detail_diagnostic_payload, list) else []),
             *(list(file_diagnostic_payload) if isinstance(file_diagnostic_payload, list) else []),
         ]
+        record_url = f"/api/topics/{context.research_topic.id}/records/{record_id}"
+        render_url = f"{record_url}/render"
+        primary_content_url = render_url if viewer_kind == "markdown" else None
+        if primary_file is not None:
+            primary_content_url = f"{record_url}/files/{primary_file}/content"
         return {
             "ok": bool(detail_payload.get("ok", True)),
             "mutated": False,
@@ -405,11 +486,11 @@ class ProjectWebReadModel:
             "record_id": record_id,
             "title": title,
             "viewer_kind": viewer_kind,
-            "primary_content_url": f"/api/topics/{context.research_topic.id}/records/{record_id}/render" if viewer_kind == "markdown" else None,
-            "detail_url": f"/api/topics/{context.research_topic.id}/records/{record_id}",
-            "render_url": f"/api/topics/{context.research_topic.id}/records/{record_id}/render",
-            "files_url": f"/api/topics/{context.research_topic.id}/records/{record_id}/files",
-            "facets_url": f"/api/topics/{context.research_topic.id}/records/{record_id}/facets",
+            "primary_content_url": primary_content_url,
+            "detail_url": record_url,
+            "render_url": render_url,
+            "files_url": f"{record_url}/files",
+            "facets_url": f"{record_url}/facets",
             "media_type": media_type,
             "exists": True,
             "diagnostics": descriptor_diagnostics,
@@ -435,7 +516,6 @@ class ProjectWebReadModel:
             "diagnostics": event_diagnostics,
         }
         return event, diagnostics
-
 
 def _viewer_kind(record: Mapping[str, Any], structured: Mapping[str, Any], files: list[object]) -> tuple[str, str | None]:
     for item in files:
@@ -463,6 +543,18 @@ def _viewer_kind(record: Mapping[str, Any], structured: Mapping[str, Any], files
             return "pdf", "application/pdf"
         return "markdown", "text/markdown"
     return "unknown", None
+
+
+def _primary_openable_file(files: list[object]) -> str | None:
+    for item in files:
+        if not isinstance(item, Mapping) or not item.get("openable"):
+            continue
+        if item.get("file_role") in {"structured_payload", "structured_payload_manifest"}:
+            continue
+        file_id = item.get("id")
+        if isinstance(file_id, str) and file_id:
+            return file_id
+    return None
 
 
 def _descriptor_title(record: Mapping[str, Any], structured: Mapping[str, Any], record_id: str) -> str:

@@ -1,5 +1,7 @@
 import {
   ProjectResponseSchema,
+  ProjectExplorerResponseSchema,
+  OpenableItemDescriptorSchema,
   RecordsResponseSchema,
   TopicChangeEventSchema,
   TopicGraphViewSchema,
@@ -41,12 +43,47 @@ function params(values: Record<string, string | number | boolean | undefined>): 
   return encoded ? `?${encoded}` : "";
 }
 
+function arrayParams(values: Record<string, string[] | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, items] of Object.entries(values)) {
+    for (const item of items || []) {
+      if (item) {
+        search.append(key, item);
+      }
+    }
+  }
+  const encoded = search.toString();
+  return encoded ? `?${encoded}` : "";
+}
+
 export async function getProject() {
   return ProjectResponseSchema.parse(await fetchJson("/api/project"));
 }
 
 export async function getTopics() {
   return TopicsResponseSchema.parse(await fetchJson("/api/topics"));
+}
+
+export async function getTopic(topicId: string) {
+  return fetchJson(`/api/topics/${encodeURIComponent(topicId)}`);
+}
+
+export async function getRuntime(topicId: string) {
+  return fetchJson(`/api/topics/${encodeURIComponent(topicId)}/runtime`);
+}
+
+export async function getActors(topicId: string) {
+  return fetchJson(`/api/topics/${encodeURIComponent(topicId)}/actors`);
+}
+
+export async function getProjectExplorer(expandedTopicIds: string[] = []) {
+  return ProjectExplorerResponseSchema.parse(
+    await fetchJson(`/api/explorer/project${arrayParams({ expanded_topic_id: expandedTopicIds })}`),
+  );
+}
+
+export async function getOpenableItemDescriptor(openableItemId: string) {
+  return OpenableItemDescriptorSchema.parse(await fetchJson(`/api/openable/${encodeURIComponent(openableItemId)}`));
 }
 
 export async function getRecords(topicId: string, options: { facet?: string; limit?: number } = {}) {

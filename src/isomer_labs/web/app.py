@@ -56,6 +56,14 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
     def topics() -> JSONResponse:
         return _json(read_model.topics())
 
+    @app.get("/api/explorer/project")
+    def project_explorer(expanded_topic_id: list[str] = Query(default=[])) -> JSONResponse:
+        return _json(read_model.project_explorer(expanded_topic_ids=tuple(expanded_topic_id)))
+
+    @app.get("/api/openable/{openable_item_id:path}")
+    def openable_item_descriptor(openable_item_id: str) -> JSONResponse:
+        return _json(read_model.openable_item_descriptor(openable_item_id))
+
     @app.get("/api/topics/{topic_id}")
     def topic(topic_id: str) -> JSONResponse:
         return _json(read_model.topic(topic_id))
@@ -236,6 +244,15 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
     def record_files(topic_id: str, record_id: str) -> JSONResponse:
         return _json(read_model.record_files(topic_id, record_id))
 
+    @app.get("/api/topics/{topic_id}/records/{record_id}/files/{file_id:path}/content")
+    def record_file_content(topic_id: str, record_id: str, file_id: str) -> Response:
+        payload = read_model.record_file_content(topic_id, record_id, file_id)
+        path = payload.get("path")
+        if not payload.get("ok") or not isinstance(path, Path):
+            return JSONResponse(content=jsonable_encoder(payload), status_code=404, headers=NO_CACHE_HEADERS)
+        media_type = payload.get("media_type")
+        return FileResponse(path, media_type=str(media_type) if media_type else None, headers=NO_CACHE_HEADERS)
+
     @app.get("/api/topics/{topic_id}/records/{record_id}/facets")
     def record_facets(topic_id: str, record_id: str, facet: str | None = None) -> JSONResponse:
         return _json(read_model.record_facets(topic_id, record_id, facet=facet))
@@ -243,6 +260,19 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
     @app.get("/")
     def index() -> FileResponse:
         return FileResponse(static_dir / "index.html", headers=NO_CACHE_HEADERS)
+
+    @app.get("/api/{path:path}")
+    def unknown_api(path: str) -> JSONResponse:
+        return JSONResponse(
+            content={
+                "ok": False,
+                "mutated": False,
+                "error": {"code": "api_route_not_found", "message": f"API route not found: /api/{path}"},
+                "diagnostics": [],
+            },
+            status_code=404,
+            headers=NO_CACHE_HEADERS,
+        )
 
     @app.get("/{path:path}")
     def frontend_fallback(path: str) -> FileResponse:

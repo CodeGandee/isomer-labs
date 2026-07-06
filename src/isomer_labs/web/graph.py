@@ -8,6 +8,9 @@ from typing import Any
 
 from isomer_labs.models import EffectiveTopicContext
 
+from .graph_edges import graph_edges as build_graph_edges
+from .graph_edges import idea_graph_edges
+
 GRAPH_SCOPES = {"idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"}
 RENDERERS = {"auto", "react-flow", "sigma"}
 SPARSE_GRAPH_LIMIT = 120
@@ -70,7 +73,16 @@ def build_topic_graph_view(
             nodes.extend(secondary_nodes)
             record_node_ids.update(secondary_record_node_ids)
 
-    graph_edges = _graph_edges(edges, record_node_ids, relation_kind=relation_kind, diagnostics=projection_diagnostics)
+    if graph_scope == "idea-lineage":
+        graph_edges = idea_graph_edges(
+            edges,
+            record_node_ids,
+            relation_kind=relation_kind,
+            include_secondary=include_secondary,
+            diagnostics=projection_diagnostics,
+        )
+    else:
+        graph_edges = build_graph_edges(edges, record_node_ids, relation_kind=relation_kind, diagnostics=projection_diagnostics)
     if include_secondary and graph_scope != "idea-lineage":
         graph_edges.extend(_file_edges(files, record_node_ids))
 
@@ -425,49 +437,6 @@ def _file_nodes(files: list[dict[str, Any]], *, topic_id: str) -> tuple[list[dic
     return nodes, record_node_ids
 
 
-def _graph_edges(
-    rows: list[dict[str, Any]],
-    record_node_ids: Mapping[str, str],
-    *,
-    relation_kind: str | None,
-    diagnostics: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    accepted_relations = _split_filter(relation_kind)
-    edges: list[dict[str, Any]] = []
-    skipped = 0
-    for row in rows:
-        raw_relation = str(row.get("relation_kind") or "")
-        if accepted_relations and raw_relation not in accepted_relations:
-            continue
-        source_record = str(row.get("source_record_id") or "")
-        target_record = str(row.get("target_record_id") or "")
-        source = record_node_ids.get(source_record)
-        target = record_node_ids.get(target_record)
-        if source is None or target is None:
-            skipped += 1
-            continue
-        metadata = row.get("metadata") if isinstance(row.get("metadata"), Mapping) else {}
-        generation_id = row.get("generation_id") or metadata.get("generation_id") if isinstance(metadata, Mapping) else row.get("generation_id")
-        edges.append(
-            {
-                "id": str(row.get("id") or f"{source}->{target}:{raw_relation}"),
-                "source": source,
-                "target": target,
-                "relation_kind": raw_relation,
-                "canonical": row.get("source_classification") == "canonical-lineage",
-                "lineage_kind": raw_relation if row.get("source_classification") == "canonical-lineage" else None,
-                "generation_id": generation_id,
-                "status": row.get("status"),
-                "rationale": row.get("rationale"),
-                "confidence": row.get("confidence"),
-                "source_classification": row.get("source_classification"),
-            }
-        )
-    if skipped:
-        diagnostics.append(_diag("info", "graph_edges_outside_scope", f"{skipped} relationship edges were outside the selected graph scope."))
-    return edges
-
-
 def _file_edges(files: list[dict[str, Any]], record_node_ids: Mapping[str, str]) -> list[dict[str, Any]]:
     edges: list[dict[str, Any]] = []
     for file_row in files:
@@ -579,12 +548,13 @@ def _groups(nodes: list[dict[str, Any]], graph_edges: list[dict[str, Any]], raw_
         )
     unconnected = sorted(str(node["id"]) for node in nodes if str(node["id"]) not in incident)
     if unconnected:
+        ideas_only = all(str(node.get("material_kind")) == "idea" for node in nodes)
         result.append(
             {
                 "id": "unconnected",
                 "group_kind": "unconnected",
-                "title": "Unconnected materials",
-                "purpose": "Materials without in-scope typed relationships in the current read model.",
+                "title": "Unconnected ideas" if ideas_only else "Unconnected materials",
+                "purpose": "Ideas without in-scope typed relationships in the current read model." if ideas_only else "Materials without in-scope typed relationships in the current read model.",
                 "parent_set_digest": None,
                 "node_ids": unconnected,
                 "diagnostics": [_diag("info", "graph_unconnected_nodes", f"{len(unconnected)} nodes have no in-scope graph edges.")],

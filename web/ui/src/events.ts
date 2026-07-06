@@ -5,6 +5,7 @@ import type { GraphScope, TopicChangeEvent } from "./types";
 
 export type WorkbenchCommand =
   | { type: "open-record"; topicId: string; recordId: string }
+  | { type: "open-file"; topicId: string; recordId: string; fileId: string }
   | { type: "open-graph"; topicId: string; graphScope: GraphScope }
   | { type: "refresh-topic"; topicId: string };
 

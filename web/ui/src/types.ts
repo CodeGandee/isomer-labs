@@ -52,6 +52,11 @@ export const TopicGraphEdgeSchema = z
     rationale: z.string().nullable().optional(),
     confidence: z.number().nullable().optional(),
     source_classification: z.string().nullable().optional(),
+    collapsed: z.boolean().optional(),
+    source_relationship_refs: z.array(z.string()).optional(),
+    source_record_refs: z.array(z.string()).optional(),
+    source_classifications: z.array(z.string()).optional(),
+    projection_path: z.array(z.record(z.string(), z.unknown())).optional(),
   })
   .passthrough();
 
@@ -166,6 +171,66 @@ export const ViewerDescriptorSchema = z
   })
   .passthrough();
 
+export const ExplorerNodeSchema = z
+  .object({
+    id: z.string(),
+    parent_id: z.string().nullable().optional(),
+    label: z.string(),
+    item_kind: z.string(),
+    icon_hint: z.string().nullable().optional(),
+    badge_text: z.string().nullable().optional(),
+    diagnostics_count: z.number().optional(),
+    warning: z.boolean().optional(),
+    openability_state: z.string().optional(),
+    openable_item_id: z.string().nullable().optional(),
+    topic_id: z.string().nullable().optional(),
+    has_children: z.boolean().optional(),
+    children_loaded: z.boolean().optional(),
+    expanded_by_default: z.boolean().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough();
+
+export const OpenableItemDescriptorSchema = z
+  .object({
+    ok: z.boolean(),
+    mutated: z.boolean(),
+    openable_item_id: z.string(),
+    tab_id: z.string().optional(),
+    item_kind: z.string(),
+    title: z.string().optional(),
+    preferred_tab_component: z.string().optional(),
+    topic_id: z.string().nullable().optional(),
+    record_id: z.string().nullable().optional(),
+    graph_scope: z.string().nullable().optional(),
+    content_url: z.string().nullable().optional(),
+    detail_urls: z.record(z.string(), z.string()).optional(),
+    media_type: z.string().nullable().optional(),
+    viewer_kind: z.string().nullable().optional(),
+    exists: z.boolean().optional(),
+    diagnostics: z.array(DiagnosticSchema).optional(),
+    error: z
+      .object({
+        code: z.string(),
+        message: z.string(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const ProjectExplorerResponseSchema = z
+  .object({
+    ok: z.boolean(),
+    mutated: z.boolean(),
+    revision: z.string(),
+    root_node_ids: z.array(z.string()),
+    nodes: z.array(ExplorerNodeSchema),
+    descriptors: z.array(OpenableItemDescriptorSchema).optional(),
+    diagnostics: z.array(DiagnosticSchema).optional(),
+  })
+  .passthrough();
+
 export const TopicChangeEventSchema = z
   .object({
     ok: z.boolean().optional(),
@@ -193,6 +258,9 @@ export type TopicGraphGroup = z.infer<typeof TopicGraphGroupSchema>;
 export type TopicChangeEvent = z.infer<typeof TopicChangeEventSchema>;
 export type RecordSummary = z.infer<typeof RecordSummarySchema>;
 export type ViewerDescriptor = z.infer<typeof ViewerDescriptorSchema>;
+export type ExplorerNode = z.infer<typeof ExplorerNodeSchema>;
+export type ProjectExplorerResponse = z.infer<typeof ProjectExplorerResponseSchema>;
+export type OpenableItemDescriptor = z.infer<typeof OpenableItemDescriptorSchema>;
 
 export type GraphScope = "idea-lineage" | "artifact-overview" | "experiment-records" | "paper-revisions";
 export type RendererChoice = "auto" | "react-flow" | "sigma";

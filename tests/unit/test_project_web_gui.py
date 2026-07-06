@@ -80,8 +80,8 @@ class ProjectWebGuiTests(unittest.TestCase):
     def read_model(self, root: Path) -> ProjectWebReadModel:
         return ProjectWebReadModel(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
 
-    def asgi_get(self, app: object, path: str) -> tuple[int, dict[str, str]]:
-        async def call() -> tuple[int, dict[str, str]]:
+    def asgi_get_response(self, app: object, path: str) -> tuple[int, dict[str, str], bytes]:
+        async def call() -> tuple[int, dict[str, str], bytes]:
             messages: list[dict[str, object]] = []
             parsed = urlsplit(path)
             received = False
@@ -116,9 +116,18 @@ class ProjectWebGuiTests(unittest.TestCase):
                 key.decode("latin1").lower(): value.decode("latin1")
                 for key, value in start["headers"]  # type: ignore[index]
             }
-            return int(start["status"]), headers
+            body = b"".join(
+                message.get("body", b"")  # type: ignore[arg-type]
+                for message in messages
+                if message["type"] == "http.response.body"
+            )
+            return int(start["status"]), headers, body
 
         return asyncio.run(call())
+
+    def asgi_get(self, app: object, path: str) -> tuple[int, dict[str, str]]:
+        status, headers, _body = self.asgi_get_response(app, path)
+        return status, headers
 
     def create_indexed_idea_record(
         self,
@@ -128,24 +137,30 @@ class ProjectWebGuiTests(unittest.TestCase):
         idea_id: str,
         idea_text: str,
         relationships_json: str | None = None,
+        files_json: str | None = None,
+        include_idea: bool = True,
+        payload_extra: dict[str, object] | None = None,
     ) -> None:
         payload_file = root / f"{record_id}.json"
+        payload: dict[str, object] = {
+            "title": idea_text,
+            "summary": f"Summary for {idea_text}",
+            "sections": {},
+        }
+        if include_idea:
+            payload["sections"] = {
+                "raw_ideas": [
+                    {
+                        "idea_id": idea_id,
+                        "one_liner": idea_text,
+                        "status": "active",
+                    }
+                ]
+            }
+        if payload_extra:
+            payload.update(payload_extra)
         payload_file.write_text(
-            json.dumps(
-                {
-                    "title": idea_text,
-                    "summary": f"Summary for {idea_text}",
-                    "sections": {
-                        "raw_ideas": [
-                            {
-                                "idea_id": idea_id,
-                                "one_liner": idea_text,
-                                "status": "active",
-                            }
-                        ]
-                    },
-                }
-            ),
+            json.dumps(payload),
             encoding="utf-8",
         )
         args = [
@@ -169,6 +184,8 @@ class ProjectWebGuiTests(unittest.TestCase):
         ]
         if relationships_json is not None:
             args.extend(["--relationships-json", relationships_json])
+        if files_json is not None:
+            args.extend(["--files-json", files_json])
         status, output = self.run_main(args, cwd=root)
         self.assertEqual(0, status, output)
 
@@ -177,10 +194,13 @@ class ProjectWebGuiTests(unittest.TestCase):
         app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
         route_paths = {getattr(route, "path", "") for route in app.routes}
         self.assertIn("/api/project", route_paths)
+        self.assertIn("/api/explorer/project", route_paths)
+        self.assertIn("/api/openable/{openable_item_id:path}", route_paths)
         self.assertIn("/api/topics/{topic_id}/records/export", route_paths)
         self.assertIn("/api/topics/{topic_id}/graphs/{graph_scope}", route_paths)
         self.assertIn("/api/topics/{topic_id}/viewer/records/{record_id}", route_paths)
         self.assertIn("/api/events", route_paths)
+        self.assertNotIn("/api/explorer/files", route_paths)
         self.assertTrue((Path("src/isomer_labs/web/static/index.html")).exists())
         self.assertTrue((Path("src/isomer_labs/web/static/assets/app.js")).exists())
 
@@ -203,6 +223,48 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertTrue(runtime["ok"], runtime)
         self.assertTrue(runtime["runtime"]["exists"])
         self.assertIn("lifecycle_records", runtime["runtime"]["counts"])
+
+    def test_project_explorer_and_openable_descriptors_are_semantic_and_read_only(self) -> None:
+        root = self.make_project()
+        read_model = self.read_model(root)
+
+        explorer = read_model.project_explorer()
+        self.assertTrue(explorer["ok"], explorer)
+        self.assertFalse(explorer["mutated"])
+        self.assertTrue(str(explorer["revision"]).startswith("pexp:"))
+        self.assertEqual(["project"], explorer["root_node_ids"])
+        nodes = {node["id"]: node for node in explorer["nodes"]}
+        self.assertIn("project", nodes)
+        self.assertIn("project:manifest", nodes)
+        self.assertIn("project:topics", nodes)
+        self.assertIn("topic:alpha", nodes)
+        self.assertTrue(nodes["topic:alpha"]["has_children"])
+        self.assertFalse(nodes["topic:alpha"]["children_loaded"])
+        self.assertFalse(any(str(node["id"]).startswith("topic:alpha:graph:") for node in explorer["nodes"]))
+
+        expanded = read_model.project_explorer(expanded_topic_ids=("alpha",))
+        expanded_nodes = {node["id"]: node for node in expanded["nodes"]}
+        self.assertTrue(expanded_nodes["topic:alpha"]["children_loaded"])
+        self.assertIn("topic:alpha:overview", expanded_nodes)
+        self.assertIn("topic:alpha:graph:idea-lineage", expanded_nodes)
+        self.assertIn("topic:alpha:records", expanded_nodes)
+        self.assertIn("topic:alpha:runtime", expanded_nodes)
+        self.assertFalse(any(str(node["id"]).startswith("file:") for node in expanded["nodes"]))
+
+        descriptor = read_model.openable_item_descriptor("topic:alpha:graph:idea-lineage")
+        self.assertTrue(descriptor["ok"], descriptor)
+        self.assertFalse(descriptor["mutated"])
+        self.assertEqual("topic-alpha-graph-idea-lineage", descriptor["tab_id"])
+        self.assertEqual("ideaGraph", descriptor["preferred_tab_component"])
+        self.assertEqual("idea-lineage", descriptor["graph_scope"])
+
+        overview = read_model.openable_item_descriptor("topic:alpha:overview")
+        self.assertTrue(overview["ok"], overview)
+        self.assertEqual("topicOverview", overview["preferred_tab_component"])
+
+        missing = read_model.openable_item_descriptor("topic:missing:overview")
+        self.assertFalse(missing["ok"], missing)
+        self.assertEqual("topic_not_found", missing["error"]["code"])
 
     def test_web_gui_responses_disable_browser_cache(self) -> None:
         root = self.make_project()
@@ -247,6 +309,30 @@ class ProjectWebGuiTests(unittest.TestCase):
             idea_text="Child runtime idea",
             relationships_json='[{"target_record_id":"idea-parent","relation_kind":"derived_from"}]',
         )
+        self.create_indexed_idea_record(
+            root,
+            record_id="route-record",
+            idea_id="route-record",
+            idea_text="Route decision record",
+            include_idea=False,
+            payload_extra={"decision": {"decision": "selected", "next_route": "idea-child", "reason": "Best evidence"}},
+        )
+        self.create_indexed_idea_record(root, record_id="idea-hop-target", idea_id="idea-hop-target", idea_text="Target hop idea")
+        self.create_indexed_idea_record(
+            root,
+            record_id="support-hop",
+            idea_id="support-hop",
+            idea_text="Supporting hop record",
+            include_idea=False,
+            relationships_json='[{"target_record_id":"idea-hop-target","relation_kind":"derived_from"}]',
+        )
+        self.create_indexed_idea_record(
+            root,
+            record_id="idea-hop-source",
+            idea_id="idea-hop-source",
+            idea_text="Source hop idea",
+            relationships_json='[{"target_record_id":"support-hop","relation_kind":"derived_from"}]',
+        )
 
         read_model = self.read_model(root)
         export = read_model.records_export("alpha", view="ideas")
@@ -262,9 +348,21 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("react-flow-detail", graph["renderer_hint"])
         self.assertIn("index_revision", graph)
         self.assertGreaterEqual(len(graph["nodes"]), 2)
+        self.assertTrue(all(node["material_kind"] == "idea" for node in graph["nodes"]))
         self.assertTrue(any(node["record_id"] == "idea-parent" for node in graph["nodes"]))
-        self.assertTrue(any(edge["relation_kind"] == "derived_from" for edge in graph["edges"]))
+        direct_edges = [edge for edge in graph["edges"] if edge["relation_kind"] == "derived_from" and edge["source_record_refs"] == ["idea-child", "idea-parent"]]
+        self.assertTrue(direct_edges, graph["edges"])
+        self.assertFalse(direct_edges[0]["collapsed"])
+        self.assertTrue(direct_edges[0]["source_relationship_refs"])
+        collapsed_edges = [edge for edge in graph["edges"] if edge.get("collapsed") and edge.get("source_record_refs") == ["idea-hop-source", "support-hop", "idea-hop-target"]]
+        self.assertEqual(1, len(collapsed_edges), graph["edges"])
+        self.assertEqual("collapsed-projection", collapsed_edges[0]["source_classification"])
         self.assertGreaterEqual(graph["facets"]["counts"]["ideas"], 2)
+        self.assertFalse(any(node["record_id"] == "route-record" for node in graph["nodes"]))
+
+        graph_with_supporting = read_model.topic_graph("alpha", graph_scope="idea-lineage", renderer="auto", include_secondary=True)
+        self.assertTrue(graph_with_supporting["ok"], graph_with_supporting)
+        self.assertTrue(any(node["material_kind"] == "decision" and node["record_id"] == "route-record" for node in graph_with_supporting["nodes"]))
 
         dense = read_model.topic_graph("alpha", graph_scope="artifact-overview", renderer="sigma", include_secondary=True)
         self.assertTrue(dense["ok"], dense)
@@ -283,6 +381,11 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("markdown", descriptor["viewer_kind"])
         self.assertNotIn("structured_payload", descriptor)
 
+        openable_record = read_model.openable_item_descriptor("record:alpha:idea-parent")
+        self.assertTrue(openable_record["ok"], openable_record)
+        self.assertEqual("recordDetail", openable_record["preferred_tab_component"])
+        self.assertEqual("topic-alpha-record-idea-parent", openable_record["tab_id"])
+
         missing = read_model.record_viewer_descriptor("alpha", "missing-record")
         self.assertFalse(missing["ok"], missing)
         self.assertFalse(missing["mutated"])
@@ -298,6 +401,44 @@ class ProjectWebGuiTests(unittest.TestCase):
         status, headers = self.asgi_get(app, "/api/events?topic_id=alpha&once=true")
         self.assertEqual(200, status)
         self.assertEqual("text/event-stream; charset=utf-8", headers["content-type"])
+
+    def test_file_backed_record_content_opens_through_semantic_record_descriptor(self) -> None:
+        root = self.make_project()
+        metrics = root / "topic-workspaces" / "alpha" / "outputs" / "metrics.json"
+        write(metrics, '{"runtime_ms": 12.3}')
+        self.create_indexed_idea_record(
+            root,
+            record_id="idea-with-file",
+            idea_id="idea-with-file",
+            idea_text="Idea with file",
+            files_json='[{"path":"outputs/metrics.json","file_role":"raw_results","semantic_label":"topic.records.runs"}]',
+        )
+
+        read_model = self.read_model(root)
+        descriptor = read_model.record_viewer_descriptor("alpha", "idea-with-file")
+        self.assertTrue(descriptor["ok"], descriptor)
+        self.assertEqual("json", descriptor["viewer_kind"])
+        self.assertIn("/files/", descriptor["primary_content_url"])
+        self.assertTrue(str(descriptor["primary_content_url"]).endswith("/content"))
+
+        file_id = str(descriptor["primary_content_url"]).split("/files/", 1)[1].split("/content", 1)[0]
+        content = read_model.record_file_content("alpha", "idea-with-file", file_id)
+        self.assertTrue(content["ok"], content)
+        self.assertEqual(metrics.resolve(strict=False), content["path"])
+
+        file_descriptor = read_model.openable_item_descriptor(f"file:alpha:idea-with-file:{file_id}")
+        self.assertTrue(file_descriptor["ok"], file_descriptor)
+        self.assertEqual("fileArtifact", file_descriptor["preferred_tab_component"])
+        self.assertEqual(str(descriptor["primary_content_url"]), file_descriptor["content_url"])
+
+        app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
+        status, _headers, body = self.asgi_get_response(app, str(descriptor["primary_content_url"]))
+        self.assertEqual(200, status)
+        self.assertEqual(b'{"runtime_ms": 12.3}', body.strip())
+
+        status, _headers, body = self.asgi_get_response(app, "/api/explorer/files")
+        self.assertEqual(404, status)
+        self.assertIn(b"api_route_not_found", body)
 
     def test_cli_registers_project_web_commands(self) -> None:
         status, output = self.run_main(["project", "web", "--help"])
