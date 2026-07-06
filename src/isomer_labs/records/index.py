@@ -20,6 +20,7 @@ from .index_extractors import (
     _resolve_local_path,
     _sum_counts,
 )
+from .index_revision import index_revision_payload
 from .lineage_index import (
     canonical_lineage_edge_json,
     canonical_lineage_edges_for_query,
@@ -215,6 +216,7 @@ def query_index_list(
             "ok": True,
             "mutated": False,
             "operation": "query.list",
+            **index_revision_payload(engine, context),
             "count": len(rows),
             "records": rows,
             "diagnostics": [],
@@ -244,6 +246,7 @@ def query_index_export(
             "mutated": False,
             "operation": "query.export",
             "view": view,
+            **index_revision_payload(engine, context),
             "nodes": records,
             "edges": _select_table(engine, record_edges, context),
             "files": _select_table(engine, record_files, context),

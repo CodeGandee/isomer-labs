@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 import os
 from pathlib import Path
 from typing import Any, Mapping
@@ -26,6 +27,8 @@ from isomer_labs.records.index import (
 from isomer_labs.records.store import ResearchRecordError, render_record, show_record
 from isomer_labs.runtime.validation import inspect_workspace_runtime
 from isomer_labs.workspace.actors import list_topic_actors
+
+from .graph import build_topic_graph_view
 
 
 def diagnostics_json(diagnostics: list[Diagnostic]) -> list[dict[str, object]]:
@@ -181,6 +184,38 @@ class ProjectWebReadModel:
     def records_export(self, topic_id: str, *, view: str) -> dict[str, Any]:
         return self._with_context(topic_id, lambda context: query_index_export(context, env=self.selected_env, view=view))
 
+    def topic_graph(
+        self,
+        topic_id: str,
+        *,
+        graph_scope: str,
+        renderer: str = "auto",
+        status: str | None = None,
+        relation_kind: str | None = None,
+        producer: str | None = None,
+        time_range: str | None = None,
+        search: str | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
+        include_secondary: bool = False,
+    ) -> dict[str, Any]:
+        return self._with_context(
+            topic_id,
+            lambda context: self._topic_graph_payload(
+                context,
+                graph_scope=graph_scope,
+                renderer=renderer,
+                status=status,
+                relation_kind=relation_kind,
+                producer=producer,
+                time_range=time_range,
+                search=search,
+                limit=limit,
+                cursor=cursor,
+                include_secondary=include_secondary,
+            ),
+        )
+
     def record_detail(self, topic_id: str, record_id: str, *, include_payload: bool) -> dict[str, Any]:
         return self._with_context(
             topic_id,
@@ -214,6 +249,15 @@ class ProjectWebReadModel:
             topic_id,
             lambda context: query_index_facets(context, record_id, env=self.selected_env, facet=facet),
         )
+
+    def record_viewer_descriptor(self, topic_id: str, record_id: str) -> dict[str, Any]:
+        return self._with_context(
+            topic_id,
+            lambda context: self._record_viewer_descriptor_payload(context, record_id),
+        )
+
+    def topic_change_event(self, topic_id: str) -> dict[str, Any]:
+        return self._with_context(topic_id, lambda context: self._topic_change_event_payload(context))
 
     def index_validate(self, topic_id: str, *, record_id: str | None = None) -> dict[str, Any]:
         return self._with_context(
@@ -279,3 +323,156 @@ class ProjectWebReadModel:
             return merge_diagnostics(exc.to_payload(), diagnostics)
         diagnostics.extend(call_diagnostics)
         return merge_diagnostics(dict(payload), diagnostics)
+
+    def _topic_graph_payload(
+        self,
+        context: EffectiveTopicContext,
+        *,
+        graph_scope: str,
+        renderer: str,
+        status: str | None,
+        relation_kind: str | None,
+        producer: str | None,
+        time_range: str | None,
+        search: str | None,
+        limit: int | None,
+        cursor: str | None,
+        include_secondary: bool,
+    ) -> tuple[dict[str, Any], list[Diagnostic]]:
+        export_payload, diagnostics = query_index_export(context, env=self.selected_env, view="graph")
+        graph_payload = build_topic_graph_view(
+            context,
+            export_payload,
+            graph_scope=graph_scope,
+            renderer=renderer,
+            status=status,
+            relation_kind=relation_kind,
+            producer=producer,
+            time_range=time_range,
+            search=search,
+            limit=limit,
+            cursor=cursor,
+            include_secondary=include_secondary,
+        )
+        return graph_payload, diagnostics
+
+    def _record_viewer_descriptor_payload(
+        self,
+        context: EffectiveTopicContext,
+        record_id: str,
+    ) -> tuple[dict[str, Any], list[Diagnostic]]:
+        try:
+            detail_payload, detail_diagnostics = show_record(
+                context,
+                record_id,
+                env=self.selected_env,
+                include_payload=False,
+                include_validation_diagnostics=True,
+                include_render_diagnostics=True,
+            )
+        except ResearchRecordError as exc:
+            payload = exc.to_payload()
+            payload.update(
+                {
+                    "mutated": False,
+                    "topic_id": context.research_topic.id,
+                    "record_id": record_id,
+                    "viewer_kind": "unknown",
+                    "exists": False,
+                    "diagnostics": [],
+                }
+            )
+            return payload, []
+        files_payload, files_diagnostics = query_index_files(context, record_id, env=self.selected_env)
+        record_raw = detail_payload.get("record")
+        record: Mapping[str, Any] = record_raw if isinstance(record_raw, Mapping) else {}
+        structured_raw = detail_payload.get("structured_payload")
+        structured: Mapping[str, Any] = structured_raw if isinstance(structured_raw, Mapping) else {}
+        files_raw = files_payload.get("files")
+        files: list[object] = list(files_raw) if isinstance(files_raw, list) else []
+        viewer_kind, media_type = _viewer_kind(record, structured, files)
+        title = _descriptor_title(record, structured, record_id)
+        detail_diagnostic_payload = detail_payload.get("diagnostics")
+        file_diagnostic_payload = files_payload.get("diagnostics")
+        descriptor_diagnostics = [
+            *(list(detail_diagnostic_payload) if isinstance(detail_diagnostic_payload, list) else []),
+            *(list(file_diagnostic_payload) if isinstance(file_diagnostic_payload, list) else []),
+        ]
+        return {
+            "ok": bool(detail_payload.get("ok", True)),
+            "mutated": False,
+            "topic_id": context.research_topic.id,
+            "record_id": record_id,
+            "title": title,
+            "viewer_kind": viewer_kind,
+            "primary_content_url": f"/api/topics/{context.research_topic.id}/records/{record_id}/render" if viewer_kind == "markdown" else None,
+            "detail_url": f"/api/topics/{context.research_topic.id}/records/{record_id}",
+            "render_url": f"/api/topics/{context.research_topic.id}/records/{record_id}/render",
+            "files_url": f"/api/topics/{context.research_topic.id}/records/{record_id}/files",
+            "facets_url": f"/api/topics/{context.research_topic.id}/records/{record_id}/facets",
+            "media_type": media_type,
+            "exists": True,
+            "diagnostics": descriptor_diagnostics,
+        }, [*detail_diagnostics, *files_diagnostics]
+
+    def _topic_change_event_payload(self, context: EffectiveTopicContext) -> tuple[dict[str, Any], list[Diagnostic]]:
+        export_payload, diagnostics = query_index_export(context, env=self.selected_env, view="graph")
+        export_diagnostic_payload = export_payload.get("diagnostics")
+        event_diagnostics = list(export_diagnostic_payload) if isinstance(export_diagnostic_payload, list) else []
+        event = {
+            "ok": bool(export_payload.get("ok", True)),
+            "mutated": False,
+            "event_id": f"{context.topic_workspace_id}:{export_payload.get('index_revision') or 'unknown'}",
+            "event_type": "topic.index.changed",
+            "topic_id": context.research_topic.id,
+            "topic_workspace_id": context.topic_workspace_id,
+            "index_revision": export_payload.get("index_revision"),
+            "changed_record_ids": [],
+            "changed_material_kinds": [],
+            "graph_scopes": ["idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"],
+            "diagnostics_count": len(event_diagnostics),
+            "occurred_at": datetime.now(UTC).isoformat(),
+            "diagnostics": event_diagnostics,
+        }
+        return event, diagnostics
+
+
+def _viewer_kind(record: Mapping[str, Any], structured: Mapping[str, Any], files: list[object]) -> tuple[str, str | None]:
+    for item in files:
+        if not isinstance(item, Mapping) or not item.get("openable"):
+            continue
+        if item.get("file_role") in {"structured_payload", "structured_payload_manifest"}:
+            continue
+        media_type = str(item.get("media_type") or "")
+        path = str(item.get("path") or item.get("resolved_path") or "").lower()
+        if media_type == "application/pdf" or path.endswith(".pdf"):
+            return "pdf", media_type or "application/pdf"
+        if media_type.startswith("image/") or path.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
+            return "image", media_type or None
+        if media_type in {"text/csv", "text/tab-separated-values"} or path.endswith((".csv", ".tsv")):
+            return "table", media_type or None
+        if media_type == "application/json" or path.endswith(".json"):
+            return "json", media_type or "application/json"
+    if structured:
+        return "markdown", str(structured.get("payload_media_type") or "text/markdown")
+    if record.get("content_path"):
+        content_path = str(record.get("content_path"))
+        if content_path.endswith(".json"):
+            return "json", "application/json"
+        if content_path.endswith(".pdf"):
+            return "pdf", "application/pdf"
+        return "markdown", "text/markdown"
+    return "unknown", None
+
+
+def _descriptor_title(record: Mapping[str, Any], structured: Mapping[str, Any], record_id: str) -> str:
+    for value in (record.get("title"), structured.get("title"), record.get("id")):
+        if isinstance(value, str) and value:
+            return value
+    metadata = record.get("transition_metadata")
+    if isinstance(metadata, Mapping):
+        for key in ("title", "placeholder", "profile"):
+            value = metadata.get(key)
+            if isinstance(value, str) and value:
+                return value
+    return record_id

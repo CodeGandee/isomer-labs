@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+import asyncio
+import json
+from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from typing import Mapping
 
 from fastapi import Body, FastAPI, Query, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .read_model import ProjectWebReadModel
@@ -101,6 +104,57 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
     ) -> JSONResponse:
         return _json(read_model.records_export(topic_id, view=view))
 
+    @app.get("/api/topics/{topic_id}/graphs/{graph_scope}")
+    def topic_graph(
+        topic_id: str,
+        graph_scope: str,
+        renderer: str = Query(default="auto"),
+        status: str | None = None,
+        relation_kind: str | None = None,
+        producer: str | None = None,
+        time_range: str | None = None,
+        search: str | None = None,
+        limit: int | None = Query(default=None, ge=1, le=5000),
+        cursor: str | None = None,
+        include_secondary: bool = False,
+    ) -> JSONResponse:
+        return _json(
+            read_model.topic_graph(
+                topic_id,
+                graph_scope=graph_scope,
+                renderer=renderer,
+                status=status,
+                relation_kind=relation_kind,
+                producer=producer,
+                time_range=time_range,
+                search=search,
+                limit=limit,
+                cursor=cursor,
+                include_secondary=include_secondary,
+            )
+        )
+
+    @app.get("/api/events")
+    def topic_events(
+        topic_id: str,
+        interval_seconds: float = Query(default=2.0, ge=1.0, le=60.0),
+        once: bool = False,
+    ) -> StreamingResponse:
+        async def stream() -> AsyncIterator[str]:
+            last_event_id = None
+            while True:
+                payload = read_model.topic_change_event(topic_id)
+                event_id = str(payload.get("event_id") or f"{topic_id}:unknown")
+                event_type = str(payload.get("event_type") or "topic.index.changed")
+                if once or event_id != last_event_id:
+                    yield _sse(event_type, event_id, payload)
+                    last_event_id = event_id
+                if once:
+                    break
+                await asyncio.sleep(interval_seconds)
+
+        return StreamingResponse(stream(), media_type="text/event-stream", headers=NO_CACHE_HEADERS)
+
     @app.get("/api/topics/{topic_id}/records/index/validate")
     def index_validate(topic_id: str, record_id: str | None = None) -> JSONResponse:
         return _json(read_model.index_validate(topic_id, record_id=record_id))
@@ -141,6 +195,10 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
         include_payload: bool = False,
     ) -> JSONResponse:
         return _json(read_model.record_detail(topic_id, record_id, include_payload=include_payload))
+
+    @app.get("/api/topics/{topic_id}/viewer/records/{record_id}")
+    def record_viewer_descriptor(topic_id: str, record_id: str) -> JSONResponse:
+        return _json(read_model.record_viewer_descriptor(topic_id, record_id))
 
     @app.get("/api/topics/{topic_id}/records/{record_id}/render")
     def record_render(
@@ -195,3 +253,8 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
 
 def _json(payload: object) -> JSONResponse:
     return JSONResponse(content=jsonable_encoder(payload))
+
+
+def _sse(event_type: str, event_id: str, payload: object) -> str:
+    encoded = json.dumps(jsonable_encoder(payload), sort_keys=True, separators=(",", ":"))
+    return f"id: {event_id}\nevent: {event_type}\ndata: {encoded}\n\n"
