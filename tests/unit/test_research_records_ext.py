@@ -433,7 +433,15 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                             "selected_hypothesis_id": "idea-1",
                         },
                         "artifact_list": [{"path": "outputs/metrics.json", "file_role": "raw_results"}],
+                        "unresolved_artifacts": [{"path": "validation_metrics.json"}],
                     },
+                    "semantic_path_inventory": [
+                        {
+                            "path": str(workspace / "records" / "artifacts" / "missing"),
+                            "path_kind": "directory",
+                            "semantic_label": "topic.records.artifacts",
+                        }
+                    ],
                     "evidence_refs": ["input-record"],
                 }
             ),
@@ -484,7 +492,9 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual(0, status, files)
         self.assertTrue(any(item["file_role"] == "structured_payload" and item["exists"] for item in files["files"]))
         self.assertTrue(any(item["file_role"] == "structured_payload_manifest" and item["exists"] for item in files["files"]))
-        self.assertTrue(any(item["file_role"] == "raw_results" and item["exists"] for item in files["files"]))
+        self.assertTrue(any(item["file_role"] == "raw_results" and item["exists"] and item["openable"] for item in files["files"]))
+        self.assertFalse(any(item["path"] == "validation_metrics.json" for item in files["files"]))
+        self.assertFalse(any(str(item["path"]).endswith("records/artifacts/missing") for item in files["files"]))
 
         status, lineage = self.run_records(root, ["query", "lineage", "indexed-main-run", "--direction", "downstream"])
         self.assertEqual(0, status, lineage)
@@ -493,6 +503,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         status, exported = self.run_records(root, ["query", "export", "--view", "dashboard"])
         self.assertEqual(0, status, exported)
         self.assertTrue(any(node["record_id"] == "indexed-main-run" for node in exported["nodes"]))
+        self.assertEqual({"total": 0, "by_code": []}, exported["diagnostic_summary"])
 
         status, rebuilt = self.run_records(root, ["index", "rebuild"])
         self.assertEqual(0, status, rebuilt)
@@ -505,6 +516,39 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         status, cleanup = self.run_records(root, ["index", "cleanup", "--missing-files"])
         self.assertEqual(0, status, cleanup)
         self.assertEqual(False, cleanup["mutated"])
+
+    def test_query_index_reports_openability_for_explicit_missing_file(self) -> None:
+        root = self.make_project()
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "record-with-missing-file",
+                "--record-kind",
+                "artifact",
+                "--body",
+                "record with missing attachment",
+                "--files-json",
+                '[{"path":"outputs/missing.json","file_role":"raw_results","semantic_label":"topic.records.runs"}]',
+            ],
+        )
+        self.assertEqual(0, status, created)
+
+        status, files = self.run_records(root, ["query", "files", "record-with-missing-file"])
+        self.assertEqual(0, status, files)
+        raw_results = [item for item in files["files"] if item["file_role"] == "raw_results"]
+        self.assertEqual(1, len(raw_results), files)
+        self.assertFalse(raw_results[0]["exists"])
+        self.assertFalse(raw_results[0]["openable"])
+        self.assertEqual("missing", raw_results[0]["open_blocked_reason"])
+
+        status, exported = self.run_records(root, ["query", "export", "--view", "dashboard"])
+        self.assertEqual(0, status, exported)
+        self.assertTrue(
+            any(item["code"] == "query_index_file_missing" and item["count"] == 1 for item in exported["diagnostic_summary"]["by_code"]),
+            exported,
+        )
 
     def test_structured_create_rejects_direct_body_source(self) -> None:
         root = self.make_project()

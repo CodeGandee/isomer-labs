@@ -228,6 +228,7 @@ def query_index_export(
     engine = _engine_for_db_path(store.db_path, read_only=True)
     try:
         records = _query_records(engine, context)
+        index_diagnostics = _validate_index_rows(context, store)
         payload = {
             "ok": True,
             "mutated": False,
@@ -241,7 +242,8 @@ def query_index_export(
             "metrics": _select_table(engine, record_metrics, context),
             "claims": _select_table(engine, record_claims, context),
             "facts": _select_table(engine, record_json_facts, context),
-            "diagnostics": _validate_index_rows(context, store),
+            "diagnostics": index_diagnostics,
+            "diagnostic_summary": _diagnostic_summary(index_diagnostics),
         }
         return payload, diagnostics
     finally:
@@ -533,7 +535,7 @@ def _select_table(engine: Engine, table: Table, context: EffectiveTopicContext) 
         if not _table_exists(connection, table.name):
             return []
         rows = connection.execute(select(table).where(table.c.topic_workspace_id == context.topic_workspace_id)).mappings()
-        return [_row_dict(row) for row in rows]
+        return _decorate_rows(context, table, [_row_dict(row) for row in rows])
 
 
 def _select_record_table(engine: Engine, table: Table, context: EffectiveTopicContext, record_id: str) -> list[dict[str, object]]:
@@ -541,7 +543,7 @@ def _select_record_table(engine: Engine, table: Table, context: EffectiveTopicCo
         if not _table_exists(connection, table.name):
             return []
         rows = connection.execute(select(table).where(table.c.topic_workspace_id == context.topic_workspace_id, table.c.record_id == record_id)).mappings()
-        return [_row_dict(row) for row in rows]
+        return _decorate_rows(context, table, [_row_dict(row) for row in rows])
 
 
 def _query_single_table(
@@ -599,6 +601,53 @@ def _row_dict(row: Any) -> dict[str, object]:
         else:
             result[key] = value
     return result
+
+
+def _decorate_rows(context: EffectiveTopicContext, table: Table, rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    if table.name != "research_record_files":
+        return rows
+    return [_with_file_openability(context, row) for row in rows]
+
+
+def _with_file_openability(context: EffectiveTopicContext, row: dict[str, object]) -> dict[str, object]:
+    path_text = str(row.get("path") or "")
+    if not path_text:
+        return {**row, "resolved_path": None, "openable": False, "open_blocked_reason": "missing_locator"}
+    if "://" in path_text:
+        return {**row, "resolved_path": None, "openable": False, "open_blocked_reason": "external_locator"}
+    local_path = _resolve_local_path(context, path_text)
+    if local_path is None:
+        return {**row, "resolved_path": None, "openable": False, "open_blocked_reason": "unresolved_locator"}
+    resolved = local_path.resolve(strict=False)
+    allowed_roots = (context.project.root.resolve(strict=False), context.topic_workspace_path.resolve(strict=False))
+    if not any(_is_relative_to(resolved, root) for root in allowed_roots):
+        return {**row, "resolved_path": str(resolved), "openable": False, "open_blocked_reason": "outside_project"}
+    if not resolved.exists():
+        return {**row, "resolved_path": str(resolved), "openable": False, "open_blocked_reason": "missing"}
+    if not resolved.is_file():
+        return {**row, "resolved_path": str(resolved), "openable": False, "open_blocked_reason": "not_file"}
+    return {**row, "resolved_path": str(resolved), "exists": True, "openable": True, "open_blocked_reason": None}
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return False
+    return True
+
+
+def _diagnostic_summary(diagnostics: list[dict[str, object]]) -> dict[str, object]:
+    grouped: dict[tuple[str, str], int] = {}
+    for diagnostic in diagnostics:
+        severity = str(diagnostic.get("severity") or "unknown")
+        code = str(diagnostic.get("code") or "unknown")
+        grouped[(severity, code)] = grouped.get((severity, code), 0) + 1
+    by_code = [
+        {"severity": severity, "code": code, "count": count}
+        for (severity, code), count in sorted(grouped.items(), key=lambda item: (item[0][0], item[0][1]))
+    ]
+    return {"total": len(diagnostics), "by_code": by_code}
 
 
 def _operation_payload(operation: str, mutated: bool, diagnostics: list[dict[str, object]], *, counts: dict[str, int] | None = None) -> dict[str, object]:

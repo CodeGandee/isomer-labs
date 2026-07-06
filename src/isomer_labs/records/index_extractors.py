@@ -342,19 +342,24 @@ def _file_rows(
                 created_at,
             )
         )
-    file_keys = {"path", "file_path", "artifact_path", "output_path", "locator"}
+    file_keys = ("file_path", "artifact_path", "output_path", "locator", "path")
     for path, value in _walk_json(payload_json):
         if not isinstance(value, Mapping):
             continue
-        path_value = next((_optional_string(value.get(key)) for key in file_keys if _optional_string(value.get(key)) is not None), None)
+        path_key, path_value = next(
+            ((key, text_value) for key in file_keys if (text_value := _optional_string(value.get(key))) is not None),
+            (None, None),
+        )
         if path_value is None:
+            continue
+        if not _payload_path_is_concrete_file(path, path_key, value, path_value):
             continue
         rows.append(
             _file_row(
                 context,
                 record,
                 path_value,
-                _optional_string(value.get("file_role") or value.get("role") or value.get("kind")) or "payload_ref",
+                _payload_file_role(value) or "payload_ref",
                 _optional_string(value.get("semantic_label")) or semantic_label,
                 _optional_string(value.get("operation_set_id")),
                 path,
@@ -364,6 +369,51 @@ def _file_rows(
             )
         )
     return _dedupe_rows(rows)
+
+
+def _payload_path_is_concrete_file(source_path: str, path_key: str | None, value: Mapping[str, object], path_text: str) -> bool:
+    if path_key is None:
+        return False
+    if _payload_source_is_semantic_inventory(source_path):
+        return False
+    if _optional_string(value.get("path_kind")) == "directory":
+        return False
+    if _payload_file_role(value) is not None:
+        return True
+    if any(_optional_string(value.get(key)) is not None for key in ("operation_set_id", "digest", "sha256", "media_type", "locator_kind", "locator_type")):
+        return True
+    if path_key != "path" and _path_looks_file_like(path_text):
+        return True
+    return False
+
+
+def _payload_source_is_semantic_inventory(source_path: str) -> bool:
+    semantic_segments = (
+        "semantic_path_inventory",
+        "semantic_paths",
+        "path_diagnostics",
+        "source_readiness_evidence",
+    )
+    return any(segment in source_path for segment in semantic_segments)
+
+
+def _payload_file_role(value: Mapping[str, object]) -> str | None:
+    role = _optional_string(value.get("file_role") or value.get("role"))
+    if role is not None:
+        return role
+    kind = _optional_string(value.get("kind"))
+    if kind is None:
+        return None
+    normalized = kind.lower().replace("-", "_")
+    if normalized in {"file", "artifact", "attachment", "output", "generated_export"} or "file" in normalized:
+        return kind
+    return None
+
+
+def _path_looks_file_like(path_text: str) -> bool:
+    if "://" in path_text:
+        return True
+    return bool(Path(path_text).suffix)
 
 
 def _file_row(

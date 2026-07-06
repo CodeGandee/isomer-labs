@@ -51,6 +51,7 @@ Command surface:
   project skill-callbacks disable
   project skill-callbacks validate
   project context show
+  project web serve
   project self show
   project self identity
   project self pixi
@@ -217,12 +218,14 @@ def _register_commands() -> None:
     from isomer_labs.cli.commands.team_repositories import register_team_repository_commands
     from isomer_labs.cli.commands.team_templates import register_team_template_commands
     from isomer_labs.cli.commands.topic_reset import register_topic_reset_commands
+    from isomer_labs.cli.commands.web import register_web_commands
 
     register_project_commands(project_group)
     register_doctor_commands(project_group)
     register_runtime_commands(project_group)
     register_artifact_format_commands(project_group)
     register_topic_reset_commands(project_group)
+    register_web_commands(project_group)
     register_team_instance_commands(project_group)
     register_handoff_commands(project_group)
     register_team_repository_commands(project_group)

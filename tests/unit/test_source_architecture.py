@@ -151,6 +151,7 @@ ALLOWED_PACKAGE_NAMES = {
     "runtime",
     "skills",
     "teams",
+    "web",
     "workspace",
     "__pycache__",
 }
