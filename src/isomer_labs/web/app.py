@@ -170,6 +170,10 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
     ) -> JSONResponse:
         return _json(read_model.record_lineage(topic_id, record_id, direction=direction))
 
+    @app.get("/api/topics/{topic_id}/records/{record_id}/siblings")
+    def record_siblings(topic_id: str, record_id: str) -> JSONResponse:
+        return _json(read_model.record_siblings(topic_id, record_id))
+
     @app.get("/api/topics/{topic_id}/records/{record_id}/files")
     def record_files(topic_id: str, record_id: str) -> JSONResponse:
         return _json(read_model.record_files(topic_id, record_id))

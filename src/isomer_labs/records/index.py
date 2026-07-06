@@ -10,7 +10,7 @@ from sqlalchemy import Table, and_, create_engine, delete, or_, select, text
 from sqlalchemy.engine import Engine
 
 from isomer_labs.models import EffectiveTopicContext
-from isomer_labs.runtime.records import RuntimeLifecycleRecord
+from isomer_labs.runtime.records import ResearchRecordLineageEdge, RuntimeLifecycleRecord
 from isomer_labs.runtime.store import WorkspaceRuntimeStore, open_workspace_runtime
 
 from .index_extractors import (
@@ -20,6 +20,13 @@ from .index_extractors import (
     _resolve_local_path,
     _sum_counts,
 )
+from .lineage_index import (
+    canonical_lineage_edge_json,
+    canonical_lineage_edges_for_query,
+    records_by_id_with_lifecycle_fallback,
+    replace_all_canonical_lineage_rows,
+    replace_canonical_lineage_rows_for_record,
+)
 from .index_schema import (
     EXPORT_VIEWS,
     QUERY_FACETS,
@@ -28,6 +35,7 @@ from .index_schema import (
     RELATION_KINDS,
     SOURCE_AUTHORED,
     SOURCE_BODY,
+    SOURCE_CANONICAL_LINEAGE,
     SOURCE_FILE,
     SOURCE_PAYLOAD,
     record_claims,
@@ -56,6 +64,7 @@ def refresh_query_index_for_record(
     try:
         with engine.begin() as connection:
             _replace_record_rows(connection, record_id, parts)
+            replace_canonical_lineage_rows_for_record(connection, context, store, record_id)
     finally:
         engine.dispose()
     return _operation_payload("refresh", True, [], counts=_parts_counts(parts))
@@ -93,6 +102,7 @@ def rebuild_query_index(
             with engine.begin() as connection:
                 for record, part in zip(records, parts, strict=True):
                     _replace_record_rows(connection, record.id, part)
+                replace_all_canonical_lineage_rows(connection, context, store)
         finally:
             engine.dispose()
         return payload, diagnostics
@@ -265,6 +275,26 @@ def query_index_lineage(
         return _runtime_missing_payload("query.lineage", diagnostics), diagnostics
     engine = _engine_for_db_path(store.db_path, read_only=True)
     try:
+        canonical_edges = canonical_lineage_edges_for_query(store, context, record_id, direction)
+        has_canonical_lineage = bool(
+            canonical_edges
+            or store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id, parent_record_id=record_id)
+            or store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id, child_record_id=record_id)
+        )
+        if has_canonical_lineage:
+            node_ids = sorted({record_id, *(edge.parent_record_id for edge in canonical_edges), *(edge.child_record_id for edge in canonical_edges)})
+            nodes = records_by_id_with_lifecycle_fallback(engine, store, context, node_ids)
+            return {
+                "ok": True,
+                "mutated": False,
+                "operation": "query.lineage",
+                "record_id": record_id,
+                "direction": direction,
+                "lineage_source": "canonical",
+                "nodes": nodes,
+                "edges": [canonical_lineage_edge_json(edge) for edge in canonical_edges],
+                "diagnostics": store.validate_research_record_lineage(topic_workspace_id=context.topic_workspace_id),
+            }, diagnostics
         with engine.connect() as connection:
             conditions = []
             if direction in {"downstream", "both"}:
@@ -286,9 +316,56 @@ def query_index_lineage(
             "operation": "query.lineage",
             "record_id": record_id,
             "direction": direction,
+            "lineage_source": "query-index",
             "nodes": nodes,
             "edges": edges,
             "diagnostics": [],
+        }, diagnostics
+    finally:
+        engine.dispose()
+        store.close()
+
+
+def query_index_siblings(
+    context: EffectiveTopicContext,
+    record_id: str,
+    *,
+    env: Mapping[str, str],
+) -> tuple[dict[str, object], list[Any]]:
+    store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if store is None:
+        return _runtime_missing_payload("query.siblings", diagnostics), diagnostics
+    engine = _engine_for_db_path(store.db_path, read_only=True)
+    try:
+        record_edges_for_child = store.list_research_record_lineage_edges(
+            topic_workspace_id=context.topic_workspace_id,
+            child_record_id=record_id,
+        )
+        generation_ids = sorted({edge.generation_id for edge in record_edges_for_child if edge.generation_id is not None})
+        sibling_edges: list[ResearchRecordLineageEdge] = []
+        generation_groups: list[dict[str, object]] = []
+        sibling_ids: set[str] = set()
+        diag: list[dict[str, object]] = []
+        for generation_id in generation_ids:
+            group = store.get_research_record_generation_group(generation_id)
+            if group is None:
+                diag.append(_diag("warning", "lineage_generation_group_missing", f"Lineage generation group is missing: {generation_id}", generation_id=generation_id))
+                continue
+            generation_groups.append(group.to_json())
+            for edge in store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id, generation_id=generation_id):
+                if edge.child_record_id == record_id:
+                    continue
+                sibling_edges.append(edge)
+                sibling_ids.add(edge.child_record_id)
+        return {
+            "ok": True,
+            "mutated": False,
+            "operation": "query.siblings",
+            "record_id": record_id,
+            "generation_groups": generation_groups,
+            "nodes": records_by_id_with_lifecycle_fallback(engine, store, context, sorted(sibling_ids)),
+            "edges": [canonical_lineage_edge_json(edge) for edge in sibling_edges],
+            "diagnostics": diag,
         }, diagnostics
     finally:
         engine.dispose()
@@ -339,7 +416,6 @@ def query_index_facets(
     finally:
         engine.dispose()
         store.close()
-
 
 
 def _selected_lifecycle_records(
@@ -456,7 +532,7 @@ def _cleanup_plan(
         "record_ids": sorted(target_record_ids),
         "file_ids": sorted(file_ids) if selectors.get("missing_files") else [],
         "skipped_rows": [],
-        "source_classifications": [SOURCE_AUTHORED, SOURCE_PAYLOAD, SOURCE_FILE, SOURCE_BODY],
+        "source_classifications": [SOURCE_AUTHORED, SOURCE_PAYLOAD, SOURCE_FILE, SOURCE_BODY, SOURCE_CANONICAL_LINEAGE],
     }
 
 

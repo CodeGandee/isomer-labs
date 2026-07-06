@@ -19,6 +19,7 @@ from isomer_labs.records.index import (
     query_index_files,
     query_index_lineage,
     query_index_list,
+    query_index_siblings,
     rebuild_query_index,
     validate_query_index,
 )
@@ -201,6 +202,9 @@ class ProjectWebReadModel:
             topic_id,
             lambda context: query_index_lineage(context, record_id, env=self.selected_env, direction=direction),
         )
+
+    def record_siblings(self, topic_id: str, record_id: str) -> dict[str, Any]:
+        return self._with_context(topic_id, lambda context: query_index_siblings(context, record_id, env=self.selected_env))
 
     def record_files(self, topic_id: str, record_id: str) -> dict[str, Any]:
         return self._with_context(topic_id, lambda context: query_index_files(context, record_id, env=self.selected_env))

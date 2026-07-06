@@ -32,6 +32,8 @@ from isomer_labs.runtime.records import (
     HANDOFF_NORMALIZATION_STATUSES,
     HANDOFF_STATUSES,
     READINESS_STATUSES,
+    RESEARCH_RECORD_LINEAGE_KINDS,
+    RESEARCH_RECORD_LINEAGE_STATUSES,
     RESET_CHECKPOINT_STATUSES,
     RESET_OUTCOME_STATUSES,
     RESET_PLAN_ACTIONS,
@@ -59,6 +61,8 @@ from isomer_labs.runtime.records import (
     HandoffNormalizationRecord,
     HandoffRecord,
     PathPlanRecord,
+    ResearchRecordGenerationGroup,
+    ResearchRecordLineageEdge,
     ResetCheckpointRecord,
     ResetOutcomeRecord,
     ResetPlanActionRecord,
@@ -97,6 +101,8 @@ from isomer_labs.runtime.sqlite import (
     _row_to_lifecycle_record,
     _row_to_path_plan,
     _row_to_readiness,
+    _row_to_research_record_generation_group,
+    _row_to_research_record_lineage_edge,
     _row_to_reset_checkpoint,
     _row_to_reset_outcome,
     _row_to_reset_plan,
@@ -133,6 +139,12 @@ def _readiness_diagnostic(check: DoctorCheck, context: EffectiveTopicContext) ->
         field=check.id,
         message=f"{check.summary} Use a Service Request for environment setup or compatibility repair.",
     )
+
+
+def _lineage_diag(severity: str, code: str, message: str, **details: object) -> dict[str, object]:
+    payload: dict[str, object] = {"severity": severity, "code": code, "message": message}
+    payload.update(details)
+    return payload
 
 
 @dataclass(frozen=True)
@@ -599,6 +611,249 @@ class WorkspaceRuntimeStore:
             (record_id,),
         ).fetchone()
         return _row_to_lifecycle_record(row) if row is not None else None
+
+    def upsert_research_record_generation_group(self, record: ResearchRecordGenerationGroup) -> None:
+        self.connection.execute(
+            """
+            INSERT INTO research_record_generation_groups
+                (
+                    id, research_topic_id, topic_workspace_id, purpose, parent_set_digest,
+                    producer_skill, decision_record_id, metadata_json, created_at, updated_at,
+                    provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                purpose = excluded.purpose,
+                parent_set_digest = excluded.parent_set_digest,
+                producer_skill = excluded.producer_skill,
+                decision_record_id = excluded.decision_record_id,
+                metadata_json = excluded.metadata_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.purpose,
+                record.parent_set_digest,
+                record.producer_skill,
+                record.decision_record_id,
+                _dumps(record.metadata),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_research_record_generation_group(self, group_id: str) -> ResearchRecordGenerationGroup | None:
+        if not _table_exists(self.connection, "research_record_generation_groups"):
+            return None
+        row = self.connection.execute(
+            "SELECT * FROM research_record_generation_groups WHERE id = ?",
+            (group_id,),
+        ).fetchone()
+        return _row_to_research_record_generation_group(row) if row is not None else None
+
+    def list_research_record_generation_groups(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        parent_set_digest: str | None = None,
+    ) -> list[ResearchRecordGenerationGroup]:
+        if not _table_exists(self.connection, "research_record_generation_groups"):
+            return []
+        query = "SELECT * FROM research_record_generation_groups"
+        clauses: list[str] = []
+        params: list[object] = []
+        if topic_workspace_id is not None:
+            clauses.append("topic_workspace_id = ?")
+            params.append(topic_workspace_id)
+        if parent_set_digest is not None:
+            clauses.append("parent_set_digest = ?")
+            params.append(parent_set_digest)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY updated_at DESC, id"
+        return [_row_to_research_record_generation_group(row) for row in self.connection.execute(query, params)]
+
+    def upsert_research_record_lineage_edge(self, record: ResearchRecordLineageEdge, *, validate: bool = True) -> None:
+        diagnostics = self.validate_research_record_lineage_edge(record) if validate else []
+        errors = [item for item in diagnostics if item.get("severity") == "error"]
+        if errors:
+            codes = ", ".join(str(item.get("code") or "lineage_error") for item in errors)
+            raise ValueError(f"Invalid research record lineage edge {record.id}: {codes}")
+        self.connection.execute(
+            """
+            INSERT INTO research_record_lineage_edges
+                (
+                    id, research_topic_id, topic_workspace_id, parent_record_id,
+                    child_record_id, lineage_kind, parent_role, generation_id,
+                    decision_record_id, rationale, status, metadata_json,
+                    created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                parent_record_id = excluded.parent_record_id,
+                child_record_id = excluded.child_record_id,
+                lineage_kind = excluded.lineage_kind,
+                parent_role = excluded.parent_role,
+                generation_id = excluded.generation_id,
+                decision_record_id = excluded.decision_record_id,
+                rationale = excluded.rationale,
+                status = excluded.status,
+                metadata_json = excluded.metadata_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.parent_record_id,
+                record.child_record_id,
+                record.lineage_kind,
+                record.parent_role,
+                record.generation_id,
+                record.decision_record_id,
+                record.rationale,
+                record.status,
+                _dumps(record.metadata),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_research_record_lineage_edge(self, edge_id: str) -> ResearchRecordLineageEdge | None:
+        if not _table_exists(self.connection, "research_record_lineage_edges"):
+            return None
+        row = self.connection.execute(
+            "SELECT * FROM research_record_lineage_edges WHERE id = ?",
+            (edge_id,),
+        ).fetchone()
+        return _row_to_research_record_lineage_edge(row) if row is not None else None
+
+    def list_research_record_lineage_edges(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        parent_record_id: str | None = None,
+        child_record_id: str | None = None,
+        generation_id: str | None = None,
+        lineage_kind: str | None = None,
+        include_archived: bool = False,
+    ) -> list[ResearchRecordLineageEdge]:
+        if not _table_exists(self.connection, "research_record_lineage_edges"):
+            return []
+        query = "SELECT * FROM research_record_lineage_edges"
+        clauses: list[str] = []
+        params: list[object] = []
+        for column, value in (
+            ("topic_workspace_id", topic_workspace_id),
+            ("parent_record_id", parent_record_id),
+            ("child_record_id", child_record_id),
+            ("generation_id", generation_id),
+            ("lineage_kind", lineage_kind),
+        ):
+            if value is not None:
+                clauses.append(f"{column} = ?")
+                params.append(value)
+        if not include_archived:
+            clauses.append("status != ?")
+            params.append("archived")
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY created_at, parent_record_id, child_record_id, id"
+        return [_row_to_research_record_lineage_edge(row) for row in self.connection.execute(query, params)]
+
+    def delete_research_record_lineage_edge(self, edge_id: str) -> None:
+        self.connection.execute("DELETE FROM research_record_lineage_edges WHERE id = ?", (edge_id,))
+
+    def validate_research_record_lineage_edge(self, record: ResearchRecordLineageEdge) -> list[dict[str, object]]:
+        diagnostics: list[dict[str, object]] = []
+        if not _table_exists(self.connection, "research_record_lineage_edges"):
+            return [_lineage_diag("error", "lineage_schema_missing", "Workspace Runtime is missing research record lineage tables.", edge_id=record.id)]
+        if record.lineage_kind not in RESEARCH_RECORD_LINEAGE_KINDS:
+            diagnostics.append(_lineage_diag("error", "lineage_kind_unsupported", f"Unsupported lineage kind: {record.lineage_kind}", edge_id=record.id))
+        if record.status not in RESEARCH_RECORD_LINEAGE_STATUSES:
+            diagnostics.append(_lineage_diag("error", "lineage_status_unsupported", f"Unsupported lineage status: {record.status}", edge_id=record.id))
+        parent = self.get_lifecycle_record(record.parent_record_id)
+        child = self.get_lifecycle_record(record.child_record_id)
+        if parent is None:
+            diagnostics.append(_lineage_diag("error", "lineage_parent_missing", f"Lineage parent record is missing: {record.parent_record_id}", edge_id=record.id, record_id=record.parent_record_id))
+        elif parent.research_topic_id != record.research_topic_id or parent.topic_workspace_id != record.topic_workspace_id:
+            diagnostics.append(_lineage_diag("error", "lineage_parent_cross_topic", f"Lineage parent is outside the Topic Workspace: {record.parent_record_id}", edge_id=record.id, record_id=record.parent_record_id))
+        if child is None:
+            diagnostics.append(_lineage_diag("error", "lineage_child_missing", f"Lineage child record is missing: {record.child_record_id}", edge_id=record.id, record_id=record.child_record_id))
+        elif child.research_topic_id != record.research_topic_id or child.topic_workspace_id != record.topic_workspace_id:
+            diagnostics.append(_lineage_diag("error", "lineage_child_cross_topic", f"Lineage child is outside the Topic Workspace: {record.child_record_id}", edge_id=record.id, record_id=record.child_record_id))
+        if record.generation_id is not None:
+            group = self.get_research_record_generation_group(record.generation_id)
+            if group is None:
+                diagnostics.append(_lineage_diag("error", "lineage_generation_group_missing", f"Lineage generation group is missing: {record.generation_id}", edge_id=record.id, generation_id=record.generation_id))
+            elif group.research_topic_id != record.research_topic_id or group.topic_workspace_id != record.topic_workspace_id:
+                diagnostics.append(_lineage_diag("error", "lineage_generation_group_cross_topic", f"Lineage generation group is outside the Topic Workspace: {record.generation_id}", edge_id=record.id, generation_id=record.generation_id))
+        if record.lineage_kind == "revision_of":
+            existing_revision = self.connection.execute(
+                """
+                SELECT id FROM research_record_lineage_edges
+                WHERE topic_workspace_id = ? AND child_record_id = ? AND lineage_kind = 'revision_of'
+                    AND status != 'archived' AND id != ?
+                LIMIT 1
+                """,
+                (record.topic_workspace_id, record.child_record_id, record.id),
+            ).fetchone()
+            if existing_revision is not None:
+                diagnostics.append(_lineage_diag("error", "lineage_revision_parent_not_unique", f"Revision child already has an immediate revision parent: {record.child_record_id}", edge_id=record.id, record_id=record.child_record_id))
+        if record.parent_record_id == record.child_record_id or self._research_record_lineage_creates_cycle(record):
+            diagnostics.append(_lineage_diag("error", "lineage_cycle", f"Lineage edge would create a cycle: {record.parent_record_id} -> {record.child_record_id}", edge_id=record.id))
+        return diagnostics
+
+    def validate_research_record_lineage(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+    ) -> list[dict[str, object]]:
+        if not _table_exists(self.connection, "research_record_lineage_edges"):
+            return [_lineage_diag("warning", "lineage_schema_missing", "Workspace Runtime has no canonical research record lineage table yet.")]
+        diagnostics: list[dict[str, object]] = []
+        for edge in self.list_research_record_lineage_edges(topic_workspace_id=topic_workspace_id, include_archived=True):
+            diagnostics.extend(self.validate_research_record_lineage_edge(edge))
+        return diagnostics
+
+    def _research_record_lineage_creates_cycle(self, record: ResearchRecordLineageEdge) -> bool:
+        if not _table_exists(self.connection, "research_record_lineage_edges"):
+            return False
+        row = self.connection.execute(
+            """
+            WITH RECURSIVE descendants(record_id) AS (
+                SELECT child_record_id
+                FROM research_record_lineage_edges
+                WHERE topic_workspace_id = ?
+                    AND parent_record_id = ?
+                    AND status != 'archived'
+                    AND id != ?
+                UNION
+                SELECT edge.child_record_id
+                FROM research_record_lineage_edges edge
+                JOIN descendants ON edge.parent_record_id = descendants.record_id
+                WHERE edge.topic_workspace_id = ?
+                    AND edge.status != 'archived'
+                    AND edge.id != ?
+            )
+            SELECT 1 AS found FROM descendants WHERE record_id = ? LIMIT 1
+            """,
+            (
+                record.topic_workspace_id,
+                record.child_record_id,
+                record.id,
+                record.topic_workspace_id,
+                record.id,
+                record.parent_record_id,
+            ),
+        ).fetchone()
+        return row is not None
 
     def upsert_artifact_format_registration(self, record: ArtifactFormatRegistrationRecord) -> None:
         if record.source_kind not in ARTIFACT_FORMAT_REGISTRATION_SOURCE_KINDS:

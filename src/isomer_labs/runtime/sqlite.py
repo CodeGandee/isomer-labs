@@ -30,6 +30,8 @@ from isomer_labs.runtime.records import (
     HandoffNormalizationRecord,
     HandoffRecord,
     PathPlanRecord,
+    ResearchRecordGenerationGroup,
+    ResearchRecordLineageEdge,
     ResetCheckpointRecord,
     ResetOutcomeRecord,
     ResetPlanActionRecord,
@@ -218,6 +220,10 @@ CORE_RUNTIME_SCHEMA_TABLES = (
     "handoff_records",
     "validation_issues",
 )
+LINEAGE_RUNTIME_SCHEMA_TABLES = (
+    "research_record_generation_groups",
+    "research_record_lineage_edges",
+)
 ADAPTER_RUNTIME_SCHEMA_TABLES = (
     "adapter_handoff_dispatch_records",
     "signal_observation_records",
@@ -231,7 +237,7 @@ ADAPTER_RUNTIME_SCHEMA_TABLES = (
     "adapter_inspection_snapshots",
     "adapter_stop_outcomes",
 )
-RUNTIME_SCHEMA_TABLES = (*CORE_RUNTIME_SCHEMA_TABLES, *ADAPTER_RUNTIME_SCHEMA_TABLES)
+RUNTIME_SCHEMA_TABLES = (*CORE_RUNTIME_SCHEMA_TABLES, *LINEAGE_RUNTIME_SCHEMA_TABLES, *ADAPTER_RUNTIME_SCHEMA_TABLES)
 
 
 def _create_schema(connection: sqlite3.Connection) -> None:
@@ -423,6 +429,54 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             ON research_record_edges (source_record_id, relation_kind);
         CREATE INDEX IF NOT EXISTS idx_research_record_edges_target
             ON research_record_edges (target_record_id, relation_kind);
+
+        CREATE TABLE IF NOT EXISTS research_record_generation_groups (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            purpose TEXT,
+            parent_set_digest TEXT NOT NULL,
+            producer_skill TEXT,
+            decision_record_id TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_generation_groups_topic
+            ON research_record_generation_groups (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_record_generation_groups_parent_set
+            ON research_record_generation_groups (topic_workspace_id, parent_set_digest);
+
+        CREATE TABLE IF NOT EXISTS research_record_lineage_edges (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            parent_record_id TEXT NOT NULL,
+            child_record_id TEXT NOT NULL,
+            lineage_kind TEXT NOT NULL,
+            parent_role TEXT,
+            generation_id TEXT,
+            decision_record_id TEXT,
+            rationale TEXT,
+            status TEXT NOT NULL,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_record_lineage_edges_topic
+            ON research_record_lineage_edges (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_record_lineage_edges_parent
+            ON research_record_lineage_edges (topic_workspace_id, parent_record_id);
+        CREATE INDEX IF NOT EXISTS idx_research_record_lineage_edges_child
+            ON research_record_lineage_edges (topic_workspace_id, child_record_id);
+        CREATE INDEX IF NOT EXISTS idx_research_record_lineage_edges_kind
+            ON research_record_lineage_edges (topic_workspace_id, lineage_kind);
+        CREATE INDEX IF NOT EXISTS idx_research_record_lineage_edges_generation
+            ON research_record_lineage_edges (topic_workspace_id, generation_id);
 
         CREATE TABLE IF NOT EXISTS research_record_files (
             id TEXT PRIMARY KEY,
@@ -1161,6 +1215,42 @@ def _row_to_lifecycle_record(row: sqlite3.Row) -> RuntimeLifecycleRecord:
         lifecycle_refs=_loads_dict(row["lifecycle_refs_json"]),
         transition_metadata=_loads_object_dict(row["transition_metadata_json"]),
         content_path=row["content_path"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_research_record_generation_group(row: sqlite3.Row) -> ResearchRecordGenerationGroup:
+    return ResearchRecordGenerationGroup(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        purpose=row["purpose"],
+        parent_set_digest=row["parent_set_digest"],
+        producer_skill=row["producer_skill"],
+        decision_record_id=row["decision_record_id"],
+        metadata=_loads_object_dict(row["metadata_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_research_record_lineage_edge(row: sqlite3.Row) -> ResearchRecordLineageEdge:
+    return ResearchRecordLineageEdge(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        parent_record_id=row["parent_record_id"],
+        child_record_id=row["child_record_id"],
+        lineage_kind=row["lineage_kind"],
+        parent_role=row["parent_role"],
+        generation_id=row["generation_id"],
+        decision_record_id=row["decision_record_id"],
+        rationale=row["rationale"],
+        status=row["status"],
+        metadata=_loads_object_dict(row["metadata_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
         provenance_refs=_loads_list(row["provenance_refs_json"]),
     )
 

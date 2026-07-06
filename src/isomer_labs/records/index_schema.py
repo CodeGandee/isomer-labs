@@ -10,6 +10,7 @@ SOURCE_AUTHORED = "authored"
 SOURCE_PAYLOAD = "payload-derived"
 SOURCE_FILE = "file-derived"
 SOURCE_BODY = "body-inferred"
+SOURCE_CANONICAL_LINEAGE = "canonical-lineage"
 
 QUERY_INDEX_TABLE_NAMES = (
     "research_record_index",
@@ -28,6 +29,10 @@ RELATION_KINDS = {
     "routes_to",
     "supports_claim",
     "derived_from",
+    "revision_of",
+    "selected_from",
+    "merged_from",
+    "follow_up_to",
     "supersedes",
     "produces",
     "materializes_file",

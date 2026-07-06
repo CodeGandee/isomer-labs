@@ -20,7 +20,9 @@ from isomer_labs.core.diagnostics import has_errors
 from isomer_labs.records.store import (
     ResearchRecordError,
     ResearchRecordRequest,
+    add_lineage_edge,
     archive_record,
+    backfill_lineage,
     create_record,
     list_records,
     migrate_structured_payload_files,
@@ -28,8 +30,10 @@ from isomer_labs.records.store import (
     parse_json_object,
     parse_string_map,
     render_record,
+    revise_record,
     show_record,
     update_record,
+    validate_lineage,
     validate_record_payload,
 )
 from isomer_labs.records.index import (
@@ -38,6 +42,7 @@ from isomer_labs.records.index import (
     query_index_facets,
     query_index_files,
     query_index_lineage,
+    query_index_siblings,
     query_index_list,
     rebuild_query_index,
     validate_query_index,
@@ -166,6 +171,21 @@ def register_research_record_ext_commands(app: click.Group) -> None:
             ctx,
             kwargs,
             lambda context, request: update_record(context, record_id, request, env=os.environ, cwd=Path.cwd()),
+        )
+
+    @records_group.command(name="revise", help="Create a descendant record for a content-changing revision.")
+    @_common_options
+    @_topic_selection_options
+    @_record_request_options(require_kind=False, include_id=False)
+    @click.option("--id", "new_record_id", default=None, help="Explicit descendant record id.")
+    @click.argument("record_id")
+    @click.pass_context
+    def revise_command(ctx: click.Context, record_id: str, new_record_id: str | None = None, **kwargs: Any) -> int:
+        values = {**kwargs, "record_id": new_record_id}
+        return _with_context(
+            ctx,
+            values,
+            lambda context, request: revise_record(context, record_id, request, env=os.environ, cwd=Path.cwd()),
         )
 
     @records_group.command(name="delete", help="Archive a topic-scoped research record.")
@@ -355,6 +375,19 @@ def register_research_record_ext_commands(app: click.Group) -> None:
             build_request=False,
         )
 
+    @query_group.command(name="siblings", help="Show canonical generation siblings for one record.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("record_id")
+    @click.pass_context
+    def query_siblings_command(ctx: click.Context, record_id: str, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: query_index_siblings(context, record_id, env=os.environ),
+            build_request=False,
+        )
+
     @query_group.command(name="files", help="Show indexed files for one record.")
     @_common_options
     @_topic_selection_options
@@ -382,10 +415,114 @@ def register_research_record_ext_commands(app: click.Group) -> None:
             build_request=False,
         )
 
+    @records_group.group(name="lineage", help="Maintain canonical research record lineage.")
+    def lineage_group() -> None:
+        pass
+
+    @lineage_group.command(name="add", help="Add one canonical parent-child lineage edge.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--lineage-kind", required=True, help="Canonical lineage kind.")
+    @click.option("--parent-role", default=None, help="Optional parent role.")
+    @click.option("--generation-id", default=None, help="Optional generation group id.")
+    @click.option("--generation-purpose", default=None, help="Optional generation group purpose.")
+    @click.option("--decision-record-id", default=None, help="Optional decision record id.")
+    @click.option("--rationale", default=None, help="Lineage rationale.")
+    @click.option("--metadata-json", default=None, help="Additional lineage metadata as a JSON object.")
+    @click.option("--status", default="ready", show_default=True, help="Lineage status.")
+    @click.argument("parent_record_id")
+    @click.argument("child_record_id")
+    @click.pass_context
+    def lineage_add_command(ctx: click.Context, parent_record_id: str, child_record_id: str, **kwargs: Any) -> int:
+        values = dict(kwargs)
+        try:
+            metadata = parse_json_object(values.get("metadata_json"), field_name="metadata-json")
+        except (ResearchRecordError, json.JSONDecodeError) as exc:
+            payload = exc.to_payload() if isinstance(exc, ResearchRecordError) else _json_error_payload(exc)
+            click.echo(dumps_raw_json(payload))
+            return 1
+        return _with_context(
+            ctx,
+            values,
+            lambda context, _request: add_lineage_edge(
+                context,
+                parent_record_id=parent_record_id,
+                child_record_id=child_record_id,
+                lineage_kind=str(values.get("lineage_kind") or ""),
+                env=os.environ,
+                parent_role=values.get("parent_role"),
+                generation_id=values.get("generation_id"),
+                generation_purpose=values.get("generation_purpose"),
+                decision_record_id=values.get("decision_record_id"),
+                rationale=values.get("rationale"),
+                metadata=metadata,
+                status=str(values.get("status") or "ready"),
+            ),
+            build_request=False,
+        )
+
+    @lineage_group.command(name="validate", help="Validate canonical lineage DAG state.")
+    @_common_options
+    @_topic_selection_options
+    @click.pass_context
+    def lineage_validate_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: validate_lineage(context, env=os.environ),
+            build_request=False,
+        )
+
+    @lineage_group.command(name="query", help="Query canonical lineage for one record.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--direction", default="both", show_default=True, help="Lineage direction: upstream, downstream, or both.")
+    @click.argument("record_id")
+    @click.pass_context
+    def lineage_query_command(ctx: click.Context, record_id: str, direction: str = "both", **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: query_index_lineage(context, record_id, env=os.environ, direction=direction),
+            build_request=False,
+        )
+
+    @lineage_group.command(name="siblings", help="Query records in the same canonical generation group.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("record_id")
+    @click.pass_context
+    def lineage_siblings_command(ctx: click.Context, record_id: str, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: query_index_siblings(context, record_id, env=os.environ),
+            build_request=False,
+        )
+
+    @lineage_group.command(name="backfill", help="Backfill canonical lineage from explicit stored refs.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--dry-run/--apply", default=True, show_default=True, help="Preview or apply explicit-ref lineage backfill.")
+    @click.pass_context
+    def lineage_backfill_command(ctx: click.Context, dry_run: bool = True, **kwargs: Any) -> int:
+        return _with_context(
+            ctx,
+            dict(kwargs),
+            lambda context, _request: backfill_lineage(context, env=os.environ, dry_run=dry_run),
+            build_request=False,
+        )
+
 
 def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
     def decorator(command: Any) -> Any:
         command = click.option("--lifecycle-refs-json", default=None, help="Additional lifecycle refs as a JSON object.")(command)
+        command = click.option("--lineage-rationale", default=None, help="Canonical lineage rationale for parent edges.")(command)
+        command = click.option("--decision-record-id", default=None, help="Decision record id associated with canonical lineage.")(command)
+        command = click.option("--generation-purpose", default=None, help="Generation group purpose for sibling candidates.")(command)
+        command = click.option("--generation-id", default=None, help="Generation group id for sibling candidates.")(command)
+        command = click.option("--lineage-kind", default=None, help="Default canonical lineage kind for parents-json.")(command)
+        command = click.option("--parents-json", default=None, help="Canonical lineage parents as a JSON array of objects.")(command)
         command = click.option("--index-hints-json", default=None, help="Query-index hints as a JSON object.")(command)
         command = click.option("--files-json", default=None, help="Query-index file attachments as a JSON array of objects.")(command)
         command = click.option("--relationships-json", default=None, help="Query-index relationship refs as a JSON array of objects.")(command)
@@ -506,6 +643,12 @@ def _request_from_values(values: dict[str, Any]) -> ResearchRecordRequest:
         metadata=parse_json_object(values.get("metadata_json"), field_name="metadata-json"),
         lifecycle_refs=parse_string_map(values.get("lifecycle_refs_json"), field_name="lifecycle-refs-json"),
         relationships=parse_json_object_list(values.get("relationships_json"), field_name="relationships-json"),
+        parents=parse_json_object_list(values.get("parents_json"), field_name="parents-json"),
+        lineage_kind=values.get("lineage_kind"),
+        generation_id=values.get("generation_id"),
+        generation_purpose=values.get("generation_purpose"),
+        decision_record_id=values.get("decision_record_id"),
+        lineage_rationale=values.get("lineage_rationale"),
         file_attachments=parse_json_object_list(values.get("files_json"), field_name="files-json"),
         index_hints=parse_json_object(values.get("index_hints_json"), field_name="index-hints-json"),
     )

@@ -210,6 +210,14 @@ LIFECYCLE_STATUSES = (
 STRUCTURED_PAYLOAD_VALIDATION_STATUSES = ("valid", "invalid", "error")
 STRUCTURED_PAYLOAD_RENDER_STATUSES = ("rendered", "not_requested", "error")
 ARTIFACT_FORMAT_REGISTRATION_SOURCE_KINDS = ("runtime_registration", "file_snapshot")
+RESEARCH_RECORD_LINEAGE_KINDS = (
+    "derived_from",
+    "revision_of",
+    "selected_from",
+    "merged_from",
+    "follow_up_to",
+)
+RESEARCH_RECORD_LINEAGE_STATUSES = ("ready", "stale", "archived")
 RESET_CHECKPOINT_STATUSES = ("ready", "blocked", "stale")
 RESET_PLAN_STATUSES = ("ready", "blocked", "stale", "applied", "failed")
 RESET_PLAN_ACTIONS = (
@@ -408,6 +416,84 @@ class RuntimeLifecycleRecord:
         }
         if self.content_path is not None:
             data["content_path"] = self.content_path
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchRecordGenerationGroup:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    purpose: str | None
+    parent_set_digest: str
+    producer_skill: str | None
+    decision_record_id: str | None
+    metadata: dict[str, object]
+    created_at: str
+    updated_at: str
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "parent_set_digest": self.parent_set_digest,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("purpose", self.purpose),
+            ("producer_skill", self.producer_skill),
+            ("decision_record_id", self.decision_record_id),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchRecordLineageEdge:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    parent_record_id: str
+    child_record_id: str
+    lineage_kind: str
+    parent_role: str | None
+    generation_id: str | None
+    decision_record_id: str | None
+    rationale: str | None
+    status: str
+    metadata: dict[str, object]
+    created_at: str
+    updated_at: str
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "parent_record_id": self.parent_record_id,
+            "child_record_id": self.child_record_id,
+            "lineage_kind": self.lineage_kind,
+            "status": self.status,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("parent_role", self.parent_role),
+            ("generation_id", self.generation_id),
+            ("decision_record_id", self.decision_record_id),
+            ("rationale", self.rationale),
+        ):
+            if value is not None:
+                data[key] = value
         return data
 
 

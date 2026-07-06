@@ -517,6 +517,128 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual(0, status, cleanup)
         self.assertEqual(False, cleanup["mutated"])
 
+    def test_canonical_lineage_create_revise_query_siblings_and_cycle_rejection(self) -> None:
+        root = self.make_project()
+        for record_id in ("parent-a", "parent-b"):
+            status, created = self.run_records(
+                root,
+                [
+                    "create",
+                    "--id",
+                    record_id,
+                    "--record-kind",
+                    "artifact",
+                    "--body",
+                    record_id,
+                ],
+            )
+            self.assertEqual(0, status, created)
+
+        parent_refs = json.dumps(
+            [
+                {"record_id": "parent-a", "role": "board"},
+                {"record_id": "parent-b", "role": "survey"},
+            ]
+        )
+        for child_id in ("candidate-one", "candidate-two"):
+            status, created = self.run_records(
+                root,
+                [
+                    "create",
+                    "--id",
+                    child_id,
+                    "--record-kind",
+                    "artifact",
+                    "--body",
+                    child_id,
+                    "--parents-json",
+                    parent_refs,
+                    "--lineage-kind",
+                    "selected_from",
+                    "--generation-id",
+                    "idea-pass-1",
+                    "--generation-purpose",
+                    "test candidate siblings",
+                    "--decision-record-id",
+                    "decision-alpha",
+                ],
+            )
+            self.assertEqual(0, status, created)
+            self.assertEqual(2, len(created["lineage"]["edges"]))
+            generation_group = created["lineage"]["generation_group"]
+            assert isinstance(generation_group, dict)
+            self.assertEqual("idea-pass-1", generation_group["id"])
+
+        status, upstream = self.run_records(root, ["query", "lineage", "candidate-one", "--direction", "upstream"])
+        self.assertEqual(0, status, upstream)
+        self.assertEqual("canonical", upstream["lineage_source"])
+        self.assertEqual(
+            {"parent-a", "parent-b"},
+            {edge["parent_record_id"] for edge in upstream["edges"]},
+        )
+
+        status, downstream = self.run_records(root, ["query", "lineage", "parent-a", "--direction", "downstream"])
+        self.assertEqual(0, status, downstream)
+        self.assertEqual({"candidate-one", "candidate-two"}, {edge["child_record_id"] for edge in downstream["edges"]})
+
+        status, siblings = self.run_records(root, ["query", "siblings", "candidate-one"])
+        self.assertEqual(0, status, siblings)
+        self.assertEqual(["candidate-two"], [node["record_id"] for node in siblings["nodes"]])
+        self.assertEqual(2, len(siblings["edges"]))
+
+        status, exported = self.run_records(root, ["query", "export", "--view", "graph"])
+        self.assertEqual(0, status, exported)
+        self.assertTrue(
+            any(
+                edge["source_classification"] == "canonical-lineage"
+                and edge["source_record_id"] == "parent-a"
+                and edge["target_record_id"] == "candidate-one"
+                for edge in exported["edges"]
+            ),
+            exported["edges"],
+        )
+
+        status, cycle = self.run_records(
+            root,
+            [
+                "lineage",
+                "add",
+                "candidate-one",
+                "parent-a",
+                "--lineage-kind",
+                "derived_from",
+            ],
+        )
+        self.assertEqual(1, status, cycle)
+        self.assertEqual("lineage_validation_failed", cycle["error"]["code"])
+        self.assertTrue(any(item["code"] == "lineage_cycle" for item in cycle["diagnostics"]))
+
+        status, revised = self.run_records(
+            root,
+            [
+                "revise",
+                "candidate-one",
+                "--id",
+                "candidate-one-rev",
+                "--body",
+                "revised candidate",
+            ],
+        )
+        self.assertEqual(0, status, revised)
+        self.assertEqual("revise", revised["operation"])
+        self.assertEqual("candidate-one", revised["revision_of_record_id"])
+
+        status, revised_lineage = self.run_records(root, ["query", "lineage", "candidate-one-rev", "--direction", "upstream"])
+        self.assertEqual(0, status, revised_lineage)
+        self.assertTrue(
+            any(edge["lineage_kind"] == "revision_of" and edge["parent_record_id"] == "candidate-one" for edge in revised_lineage["edges"]),
+            revised_lineage,
+        )
+
+        status, validated = self.run_records(root, ["lineage", "validate"])
+        self.assertEqual(0, status, validated)
+        self.assertEqual([], validated["diagnostics"])
+
     def test_query_index_reports_openability_for_explicit_missing_file(self) -> None:
         root = self.make_project()
         status, created = self.run_records(

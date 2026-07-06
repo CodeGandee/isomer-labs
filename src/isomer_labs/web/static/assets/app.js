@@ -193,10 +193,11 @@ async function openRecord(recordId) {
     setStatus(`Record ${recordId}`);
     const topicId = encodeURIComponent(state.selectedTopicId);
     const id = encodeURIComponent(recordId);
-    const [detail, render, lineage, files, facets] = await Promise.all([
+    const [detail, render, lineage, siblings, files, facets] = await Promise.all([
         fetchJson(`/api/topics/${topicId}/records/${id}?include_payload=true`),
         fetchJson(`/api/topics/${topicId}/records/${id}/render`),
         fetchJson(`/api/topics/${topicId}/records/${id}/lineage`),
+        fetchJson(`/api/topics/${topicId}/records/${id}/siblings`),
         fetchJson(`/api/topics/${topicId}/records/${id}/files`),
         fetchJson(`/api/topics/${topicId}/records/${id}/facets`),
     ]);
@@ -205,7 +206,7 @@ async function openRecord(recordId) {
     const rendered = render.render;
     $("#rendered-markdown").textContent = text(rendered?.content, "No rendered Markdown available.");
     $("#payload-json").textContent = renderJson(detail.structured_payload?.payload || detail);
-    $("#lineage-json").textContent = renderJson(lineage);
+    $("#lineage-json").textContent = renderJson({ lineage, siblings });
     $("#files-json").textContent = renderFilesView(files);
     $("#facets-json").textContent = renderJson(facets);
 }

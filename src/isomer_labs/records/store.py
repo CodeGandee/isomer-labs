@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import shutil
-from typing import Any, Mapping
+from typing import Any, Mapping, TypedDict
 import uuid
 
 from isomer_labs.artifact_formats import (
@@ -27,6 +27,9 @@ from isomer_labs.runtime.records import _provenance_ref, _slug
 from isomer_labs.runtime.records import (
     LIFECYCLE_RECORD_KINDS,
     LIFECYCLE_STATUSES,
+    RESEARCH_RECORD_LINEAGE_KINDS,
+    ResearchRecordGenerationGroup,
+    ResearchRecordLineageEdge,
     RuntimeLifecycleRecord,
     StructuredResearchPayloadRecord,
     utc_timestamp,
@@ -94,8 +97,24 @@ class ResearchRecordRequest:
     metadata: dict[str, object] | None = None
     lifecycle_refs: dict[str, str] | None = None
     relationships: list[dict[str, object]] | None = None
+    parents: list[dict[str, object]] | None = None
+    lineage_kind: str | None = None
+    generation_id: str | None = None
+    generation_purpose: str | None = None
+    decision_record_id: str | None = None
+    lineage_rationale: str | None = None
     file_attachments: list[dict[str, object]] | None = None
     index_hints: dict[str, object] | None = None
+
+
+class LineageParentSpec(TypedDict):
+    record_id: str
+    lineage_kind: str
+    parent_role: str | None
+    decision_record_id: str | None
+    rationale: str | None
+    status: str
+    metadata: dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -192,7 +211,16 @@ def create_record(
                         provenance_refs=[_provenance_ref("structured-payload", record_id)],
                     )
                 )
+            lineage_payload = _store_request_lineage(
+                context,
+                runtime_store,
+                request,
+                created_at=now,
+                updated_at=now,
+            )
         index_payload = refresh_query_index_for_record(context, runtime_store, record_id)
+        for parent_id in _affected_parent_record_ids(lineage_payload):
+            refresh_query_index_for_record(context, runtime_store, parent_id)
         stored = runtime_store.get_lifecycle_record(record_id) or record
         stored_payload = runtime_store.get_structured_payload(record_id)
         return {
@@ -202,6 +230,7 @@ def create_record(
             "record": stored.to_json(),
             "structured_payload": stored_payload.to_json() if stored_payload is not None else None,
             "content_path": str(content_path) if content_path is not None else None,
+            "lineage": lineage_payload,
             "query_index": index_payload,
         }, diagnostics
     finally:
@@ -417,7 +446,16 @@ def update_record(
                         ],
                     )
                 )
+            lineage_payload = _store_request_lineage(
+                context,
+                runtime_store,
+                request,
+                created_at=existing.created_at,
+                updated_at=str(metadata["updated_at"]),
+            )
         index_payload = refresh_query_index_for_record(context, runtime_store, record_id)
+        for parent_id in _affected_parent_record_ids(lineage_payload):
+            refresh_query_index_for_record(context, runtime_store, parent_id)
         stored = runtime_store.get_lifecycle_record(record_id) or updated
         stored_payload = runtime_store.get_structured_payload(record_id)
         return {
@@ -427,10 +465,70 @@ def update_record(
             "record": stored.to_json(),
             "structured_payload": stored_payload.to_json() if stored_payload is not None else None,
             "content_path": stored.content_path,
+            "lineage": lineage_payload,
             "query_index": index_payload,
         }, diagnostics
     finally:
         runtime_store.close()
+
+
+def revise_record(
+    context: EffectiveTopicContext,
+    record_id: str,
+    request: ResearchRecordRequest,
+    *,
+    env: Mapping[str, str],
+    cwd: Path,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    """Create a new descendant record for a content-changing revision."""
+
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if runtime_store is None:
+        return _runtime_missing_payload("revise", diagnostics), diagnostics
+    try:
+        existing = runtime_store.get_lifecycle_record(record_id)
+        if existing is None or not _belongs_to_context(existing, context):
+            raise ResearchRecordError(f"Research record not found: {record_id}", code="record_not_found")
+        existing_payload = runtime_store.get_structured_payload(record_id)
+    finally:
+        runtime_store.close()
+
+    existing_metadata = existing.transition_metadata
+    request_metadata = dict(request.metadata or {})
+    request_metadata.setdefault("revision_of_record_id", record_id)
+    request_metadata.setdefault("supersedes_record_id", record_id)
+    latest_for = _optional_metadata_string(
+        existing_metadata.get("latest_for_semantic_id")
+        or existing_metadata.get("semantic_id")
+        or existing_metadata.get("placeholder")
+        or existing_metadata.get("profile")
+        or existing.id
+    )
+    if latest_for is not None:
+        request_metadata.setdefault("latest_for_semantic_id", latest_for)
+    next_request = replace(
+        request,
+        record_kind=request.record_kind or existing.record_kind,
+        record_id=request.record_id or _revision_record_id(existing),
+        placeholder=request.placeholder or _optional_metadata_string(existing_metadata.get("placeholder")),
+        profile=request.profile or _optional_metadata_string(existing_metadata.get("profile")),
+        skill=request.skill or _optional_metadata_string(existing_metadata.get("skill")),
+        producer=request.producer or _optional_metadata_string(existing_metadata.get("producer")),
+        consumer=request.consumer or _optional_metadata_string(existing_metadata.get("consumer")),
+        format_profile_ref=request.format_profile_ref or (existing_payload.format_profile_ref if existing_payload is not None else None),
+        schema_ref=request.schema_ref or (existing_payload.schema_ref if existing_payload is not None else None),
+        template_ref=request.template_ref or (existing_payload.template_ref if existing_payload is not None else None),
+        metadata=request_metadata,
+        parents=[{"record_id": record_id, "role": "previous_revision"}],
+        lineage_kind="revision_of",
+        generation_id=None,
+        generation_purpose=None,
+        lineage_rationale=request.lineage_rationale or _optional_metadata_string(request_metadata.get("rationale")),
+    )
+    payload, create_diagnostics = create_record(context, next_request, env=env, cwd=cwd)
+    payload["operation"] = "revise"
+    payload["revision_of_record_id"] = record_id
+    return payload, [*diagnostics, *create_diagnostics]
 
 
 def archive_record(
@@ -479,6 +577,160 @@ def archive_record(
             "delete_mode": "archive",
             "record": stored.to_json(),
             "query_index": index_payload,
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def add_lineage_edge(
+    context: EffectiveTopicContext,
+    *,
+    parent_record_id: str,
+    child_record_id: str,
+    lineage_kind: str,
+    env: Mapping[str, str],
+    parent_role: str | None = None,
+    generation_id: str | None = None,
+    generation_purpose: str | None = None,
+    decision_record_id: str | None = None,
+    rationale: str | None = None,
+    metadata: dict[str, object] | None = None,
+    status: str = "ready",
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    """Add one canonical lineage edge for maintenance or migration."""
+
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
+    if runtime_store is None:
+        return _runtime_missing_payload("lineage.add", diagnostics), diagnostics
+    try:
+        now = utc_timestamp()
+        parent_ids = [parent_record_id]
+        group = _generation_group_for_request(
+            context,
+            runtime_store,
+            generation_id=generation_id,
+            generation_purpose=generation_purpose,
+            producer_skill=None,
+            decision_record_id=decision_record_id,
+            parent_ids=parent_ids,
+            created_at=now,
+            updated_at=now,
+        )
+        edge = _lineage_edge(
+            context,
+            parent_record_id=parent_record_id,
+            child_record_id=child_record_id,
+            lineage_kind=lineage_kind,
+            parent_role=parent_role,
+            generation_id=group.id if group is not None else generation_id,
+            decision_record_id=decision_record_id,
+            rationale=rationale,
+            status=status,
+            metadata=metadata or {},
+            created_at=now,
+            updated_at=now,
+        )
+        validation = runtime_store.validate_research_record_lineage_edge(edge)
+        if _has_lineage_errors(validation):
+            raise ResearchRecordError("Canonical lineage edge failed validation.", code="lineage_validation_failed", payload={"diagnostics": validation})
+        with runtime_store.connection:
+            if group is not None:
+                runtime_store.upsert_research_record_generation_group(group)
+            runtime_store.upsert_research_record_lineage_edge(edge)
+        refresh_query_index_for_record(context, runtime_store, parent_record_id)
+        refresh_query_index_for_record(context, runtime_store, child_record_id)
+        return {
+            "ok": True,
+            "mutated": True,
+            "operation": "lineage.add",
+            "generation_group": group.to_json() if group is not None else None,
+            "edge": edge.to_json(),
+            "diagnostics": validation,
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def validate_lineage(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if runtime_store is None:
+        return _runtime_missing_payload("lineage.validate", diagnostics), diagnostics
+    try:
+        lineage_diagnostics = runtime_store.validate_research_record_lineage(topic_workspace_id=context.topic_workspace_id)
+        lineage_diagnostics.extend(_missing_expected_lineage_diagnostics(context, runtime_store))
+        return {
+            "ok": not _has_lineage_errors(lineage_diagnostics),
+            "mutated": False,
+            "operation": "lineage.validate",
+            "diagnostics": lineage_diagnostics,
+            "count": len(lineage_diagnostics),
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def backfill_lineage(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    dry_run: bool = True,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    """Backfill canonical lineage from explicit structured refs only."""
+
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=dry_run)
+    if runtime_store is None:
+        return _runtime_missing_payload("lineage.backfill", diagnostics), diagnostics
+    try:
+        now = utc_timestamp()
+        planned_edges: list[ResearchRecordLineageEdge] = []
+        for record in runtime_store.list_lifecycle_records():
+            if not _belongs_to_context(record, context):
+                continue
+            metadata = record.transition_metadata
+            for parent_id, kind, role, source in _explicit_lineage_refs_for_backfill(record, runtime_store.get_structured_payload(record.id)):
+                planned_edges.append(
+                    _lineage_edge(
+                        context,
+                        parent_record_id=parent_id,
+                        child_record_id=record.id,
+                        lineage_kind=kind,
+                        parent_role=role,
+                        generation_id=None,
+                        decision_record_id=_optional_metadata_string(metadata.get("decision_record_id")),
+                        rationale=None,
+                        status="ready",
+                        metadata={"backfill_source": source},
+                        created_at=now,
+                        updated_at=now,
+                    )
+                )
+        diagnostics_json: list[dict[str, object]] = []
+        accepted: list[ResearchRecordLineageEdge] = []
+        for edge in planned_edges:
+            edge_diagnostics = runtime_store.validate_research_record_lineage_edge(edge)
+            diagnostics_json.extend(edge_diagnostics)
+            if not _has_lineage_errors(edge_diagnostics):
+                accepted.append(edge)
+        if not dry_run:
+            with runtime_store.connection:
+                for edge in accepted:
+                    runtime_store.upsert_research_record_lineage_edge(edge, validate=False)
+            for edge in accepted:
+                refresh_query_index_for_record(context, runtime_store, edge.parent_record_id)
+                refresh_query_index_for_record(context, runtime_store, edge.child_record_id)
+        return {
+            "ok": not _has_lineage_errors(diagnostics_json),
+            "mutated": not dry_run,
+            "operation": "lineage.backfill",
+            "dry_run": dry_run,
+            "planned_count": len(planned_edges),
+            "accepted_count": len(accepted),
+            "edges": [edge.to_json() for edge in accepted],
+            "diagnostics": diagnostics_json,
         }, diagnostics
     finally:
         runtime_store.close()
@@ -1058,6 +1310,304 @@ def _content_filename(request: ResearchRecordRequest, *, suffix: str) -> str:
 def _new_record_id(request: ResearchRecordRequest) -> str:
     stem = request.placeholder or request.profile or request.record_kind
     return f"{_slug(request.record_kind)}-{_slug(stem)}-{uuid.uuid4().hex[:12]}"
+
+
+def _revision_record_id(record: RuntimeLifecycleRecord) -> str:
+    return f"{_slug(record.record_kind)}-{_slug(record.id)}-revision-{uuid.uuid4().hex[:8]}"
+
+
+def _store_request_lineage(
+    context: EffectiveTopicContext,
+    runtime_store: WorkspaceRuntimeStore,
+    request: ResearchRecordRequest,
+    *,
+    created_at: str,
+    updated_at: str,
+) -> dict[str, object]:
+    parent_specs = _lineage_parent_specs(request)
+    if not parent_specs:
+        return {
+            "ok": True,
+            "edges": [],
+            "generation_group": None,
+            "diagnostics": [],
+            "affected_parent_record_ids": [],
+        }
+    revision_parent_count = sum(1 for spec in parent_specs if spec["lineage_kind"] == "revision_of")
+    if request.lineage_kind == "revision_of" and len(parent_specs) != 1:
+        raise ResearchRecordError("revision_of lineage requires exactly one parent.", code="invalid_revision_lineage")
+    if revision_parent_count > 1:
+        raise ResearchRecordError("A child record can have at most one immediate revision_of parent.", code="invalid_revision_lineage")
+    parent_ids = [str(spec["record_id"]) for spec in parent_specs]
+    group = _generation_group_for_request(
+        context,
+        runtime_store,
+        generation_id=request.generation_id,
+        generation_purpose=request.generation_purpose,
+        producer_skill=request.skill,
+        decision_record_id=request.decision_record_id,
+        parent_ids=parent_ids,
+        created_at=created_at,
+        updated_at=updated_at,
+    )
+    if group is not None:
+        runtime_store.upsert_research_record_generation_group(group)
+    edges: list[ResearchRecordLineageEdge] = []
+    diagnostics: list[dict[str, object]] = []
+    for spec in parent_specs:
+        edge = _lineage_edge(
+            context,
+            parent_record_id=str(spec["record_id"]),
+            child_record_id=str(request.record_id),
+            lineage_kind=str(spec["lineage_kind"]),
+            parent_role=spec["parent_role"],
+            generation_id=group.id if group is not None else request.generation_id,
+            decision_record_id=spec["decision_record_id"],
+            rationale=spec["rationale"],
+            status=str(spec["status"]),
+            metadata=spec["metadata"],
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+        edge_diagnostics = runtime_store.validate_research_record_lineage_edge(edge)
+        diagnostics.extend(edge_diagnostics)
+        if _has_lineage_errors(edge_diagnostics):
+            raise ResearchRecordError(
+                "Canonical lineage failed validation.",
+                code="lineage_validation_failed",
+                payload={"diagnostics": diagnostics},
+            )
+        runtime_store.upsert_research_record_lineage_edge(edge, validate=False)
+        edges.append(edge)
+    return {
+        "ok": True,
+        "edges": [edge.to_json() for edge in edges],
+        "generation_group": group.to_json() if group is not None else None,
+        "diagnostics": diagnostics,
+        "affected_parent_record_ids": sorted({edge.parent_record_id for edge in edges}),
+    }
+
+
+def _lineage_parent_specs(request: ResearchRecordRequest) -> list[LineageParentSpec]:
+    specs: list[LineageParentSpec] = []
+    for index, item in enumerate(request.parents or []):
+        parent_id = _optional_metadata_string(
+            item.get("record_id")
+            or item.get("parent_record_id")
+            or item.get("id")
+            or item.get("ref")
+        )
+        if parent_id is None:
+            raise ResearchRecordError(f"parents-json[{index}] must include record_id.", code="invalid_lineage_parent")
+        lineage_kind = _optional_metadata_string(item.get("lineage_kind") or item.get("kind") or request.lineage_kind) or "derived_from"
+        if lineage_kind not in RESEARCH_RECORD_LINEAGE_KINDS:
+            raise ResearchRecordError(f"Unsupported lineage kind: {lineage_kind}", code="unsupported_lineage_kind")
+        metadata = dict(item)
+        metadata.setdefault("lineage_input_source", "parents-json")
+        specs.append(
+            LineageParentSpec(
+                record_id=parent_id,
+                lineage_kind=lineage_kind,
+                parent_role=_optional_metadata_string(item.get("parent_role") or item.get("role")),
+                decision_record_id=_optional_metadata_string(item.get("decision_record_id") or request.decision_record_id),
+                rationale=_optional_metadata_string(item.get("rationale") or request.lineage_rationale),
+                status=_optional_metadata_string(item.get("status")) or "ready",
+                metadata=metadata,
+            )
+        )
+    return specs
+
+
+def _generation_group_for_request(
+    context: EffectiveTopicContext,
+    runtime_store: WorkspaceRuntimeStore,
+    *,
+    generation_id: str | None,
+    generation_purpose: str | None,
+    producer_skill: str | None,
+    decision_record_id: str | None,
+    parent_ids: list[str],
+    created_at: str,
+    updated_at: str,
+) -> ResearchRecordGenerationGroup | None:
+    if generation_id is None:
+        return None
+    existing = runtime_store.get_research_record_generation_group(generation_id)
+    return ResearchRecordGenerationGroup(
+        id=generation_id,
+        research_topic_id=context.research_topic.id,
+        topic_workspace_id=context.topic_workspace_id,
+        purpose=generation_purpose or (existing.purpose if existing is not None else None),
+        parent_set_digest=_parent_set_digest(parent_ids),
+        producer_skill=producer_skill or (existing.producer_skill if existing is not None else None),
+        decision_record_id=decision_record_id or (existing.decision_record_id if existing is not None else None),
+        metadata=existing.metadata if existing is not None else {"parent_record_ids": sorted(parent_ids)},
+        created_at=existing.created_at if existing is not None else created_at,
+        updated_at=updated_at,
+        provenance_refs=existing.provenance_refs if existing is not None else [_provenance_ref("research-record-generation-group", generation_id)],
+    )
+
+
+def _lineage_edge(
+    context: EffectiveTopicContext,
+    *,
+    parent_record_id: str,
+    child_record_id: str,
+    lineage_kind: str,
+    parent_role: str | None,
+    generation_id: str | None,
+    decision_record_id: str | None,
+    rationale: str | None,
+    status: str,
+    metadata: dict[str, object],
+    created_at: str,
+    updated_at: str,
+) -> ResearchRecordLineageEdge:
+    edge_id = _lineage_edge_id(context.topic_workspace_id, parent_record_id, child_record_id, lineage_kind, parent_role, generation_id)
+    return ResearchRecordLineageEdge(
+        id=edge_id,
+        research_topic_id=context.research_topic.id,
+        topic_workspace_id=context.topic_workspace_id,
+        parent_record_id=parent_record_id,
+        child_record_id=child_record_id,
+        lineage_kind=lineage_kind,
+        parent_role=parent_role,
+        generation_id=generation_id,
+        decision_record_id=decision_record_id,
+        rationale=rationale,
+        status=status,
+        metadata=metadata,
+        created_at=created_at,
+        updated_at=updated_at,
+        provenance_refs=[_provenance_ref("research-record-lineage", edge_id)],
+    )
+
+
+def _lineage_edge_id(
+    topic_workspace_id: str,
+    parent_record_id: str,
+    child_record_id: str,
+    lineage_kind: str,
+    parent_role: str | None,
+    generation_id: str | None,
+) -> str:
+    digest = digest_json(
+        {
+            "topic_workspace_id": topic_workspace_id,
+            "parent_record_id": parent_record_id,
+            "child_record_id": child_record_id,
+            "lineage_kind": lineage_kind,
+            "parent_role": parent_role,
+            "generation_id": generation_id,
+        }
+    )[:16]
+    return f"lineage-{_slug(lineage_kind)}-{digest}"
+
+
+def _parent_set_digest(parent_ids: list[str]) -> str:
+    return digest_json({"parent_record_ids": sorted(set(parent_ids))})
+
+
+def _has_lineage_errors(diagnostics: list[dict[str, object]]) -> bool:
+    return any(item.get("severity") == "error" for item in diagnostics)
+
+
+def _missing_expected_lineage_diagnostics(
+    context: EffectiveTopicContext,
+    runtime_store: WorkspaceRuntimeStore,
+) -> list[dict[str, object]]:
+    incoming = {
+        edge.child_record_id
+        for edge in runtime_store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id)
+    }
+    diagnostics: list[dict[str, object]] = []
+    for record in runtime_store.list_lifecycle_records():
+        if not _belongs_to_context(record, context) or record.status == "archived" or record.id in incoming:
+            continue
+        metadata = record.transition_metadata
+        profile_ref = _optional_metadata_string(metadata.get("format_profile_ref") or metadata.get("profile")) or ""
+        lineage_required = bool(metadata.get("lineage_required")) or _profile_normally_requires_lineage(profile_ref)
+        if lineage_required:
+            diagnostics.append(
+                {
+                    "severity": "warning",
+                    "code": "lineage_expected_parent_missing",
+                    "message": f"Record normally requires canonical lineage parents but has none: {record.id}",
+                    "record_id": record.id,
+                    "profile": profile_ref,
+                }
+            )
+    return diagnostics
+
+
+def _profile_normally_requires_lineage(profile_ref: str) -> bool:
+    parent_dependent_tokens = (
+        "candidate-idea-frontier",
+        "pre-idea-draft",
+        "selected-hypothesis",
+        "selected-idea-draft",
+        "experiment-contract",
+        "main-run-record",
+        "experiment-result-summary",
+        "analysis-slice-record",
+        "analysis-campaign-summary",
+        "route-decision",
+        "paper-contract",
+        "draft-section-set",
+        "review-report",
+        "final-summary",
+    )
+    return any(token in profile_ref for token in parent_dependent_tokens)
+
+
+def _affected_parent_record_ids(lineage_payload: Mapping[str, object]) -> list[str]:
+    value = lineage_payload.get("affected_parent_record_ids")
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value]
+
+
+def _explicit_lineage_refs_for_backfill(
+    record: RuntimeLifecycleRecord,
+    payload: StructuredResearchPayloadRecord | None,
+) -> list[tuple[str, str, str | None, str]]:
+    refs: list[tuple[str, str, str | None, str]] = []
+    metadata = record.transition_metadata
+    for key in ("revision_of_record_id", "revision_of", "supersedes_record_id", "supersedes"):
+        parent = _optional_metadata_string(metadata.get(key))
+        if parent is not None:
+            refs.append((parent, "revision_of", "previous_revision", f"transition_metadata.{key}"))
+    if payload is not None:
+        for value, kind, role, source in (
+            (payload.revision_of_record_id, "revision_of", "previous_revision", "structured_payload.revision_of_record_id"),
+            (payload.supersedes_record_id, "revision_of", "previous_revision", "structured_payload.supersedes_record_id"),
+        ):
+            parent = _optional_metadata_string(value)
+            if parent is not None:
+                refs.append((parent, kind, role, source))
+    for key in ("parent_record_id", "parent", "source_ref"):
+        parent = _optional_metadata_string(metadata.get(key))
+        if parent is not None:
+            refs.append((parent, "derived_from", None, f"transition_metadata.{key}"))
+    for key in ("source_refs", "parent_record_ids"):
+        raw = metadata.get(key)
+        if isinstance(raw, list):
+            for item in raw:
+                parent = _optional_metadata_string(item)
+                if parent is not None:
+                    refs.append((parent, "derived_from", None, f"transition_metadata.{key}"))
+    query_index = metadata.get("query_index")
+    if isinstance(query_index, dict):
+        relationships = query_index.get("relationships")
+        if isinstance(relationships, list):
+            for item in relationships:
+                if not isinstance(item, dict):
+                    continue
+                relationship_kind = _optional_metadata_string(item.get("lineage_kind") or item.get("relation_kind") or item.get("kind"))
+                parent = _optional_metadata_string(item.get("parent_record_id") or item.get("target_record_id") or item.get("record_id") or item.get("ref"))
+                if relationship_kind in RESEARCH_RECORD_LINEAGE_KINDS and parent is not None:
+                    refs.append((parent, relationship_kind, _optional_metadata_string(item.get("role") or item.get("parent_role")), "transition_metadata.query_index.relationships"))
+    return sorted(set(refs), key=lambda item: item[3:])
 
 
 def _record_metadata(request: ResearchRecordRequest) -> dict[str, object]:

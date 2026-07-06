@@ -13,6 +13,8 @@ Latest-context reminder: before accepted durable record writes, record refreshes
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
+Lineage reminder: before accepted durable record writes that depend on prior durable records, follow `isomer-deepsci-shared` Artifact Lineage Recording. Pass canonical parents with `--parents-json` and `--lineage-kind`, use `--generation-id` for sibling candidate passes, keep query-index hints separate, and use `ext research records revise <record-id>` for content-changing accepted revisions.
+
 Finalize closes or pauses work responsibly. It consolidates accepted evidence, records claim status and limitations, chooses stop, park, publish, or continue-later routing, and refuses closure when evidence or writing gates still block it.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.
@@ -36,13 +38,13 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Gather closure context**. Build <FINALIZE_CONTEXT_BRIEF> from accepted comparator state, runs, analysis, writing state, decisions, blockers, and package or paper manifests. Read `references/closure-gate.md` and `references/finalization-checklist.md` for the inventory gates.
+1. **Gather closure context**. Build <FINALIZE_CONTEXT_BRIEF> from accepted comparator state, runs, analysis, writing state, decisions, blockers, package or paper manifests, and the canonical parents for any closure records. Read `references/closure-gate.md`, `references/finalization-checklist.md`, and `isomer-deepsci-shared/references/artifact-lineage-recording.md` for the inventory gates.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-finalize --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 3. **Check closure legitimacy**. If required evidence, writing, review, proofing, or submission gates fail, create <FINALIZE_BLOCKER_RECORD> or route to decision instead of forcing closure. Read `references/closure-gate.md`.
 4. **Build the claim ledger**. Classify every important claim in <CLAIM_LEDGER> as supported, partially supported, unsupported, or deferred with evidence and caveats. Read `references/claim-ledger-template.md`.
 5. **State limitations and failures**. Create <FINAL_LIMITATIONS_REPORT> including data, metric, implementation, resource, literature, and unsupported-claim limits. Read `references/final-summary-template.md` and `references/finalization-checklist.md`.
-6. **Write final state**. Produce <FINAL_SUMMARY> and <RESUME_PACKET> when continuation is plausible. Read `references/final-summary-template.md` and `references/resume-packet-template.md`.
-7. **Choose closure route**. Record <CLOSURE_DECISION> and preserve <FINALIZE_CONTINUITY_UPDATE> for stop, park-and-continue-later, publish-and-continue, archive, or route-back decisions. Read `references/resume-packet-template.md` and `references/checkpoint-memory-template.md`.
+6. **Write final state**. Produce <FINAL_SUMMARY> and <RESUME_PACKET> when continuation is plausible, using `derived_from` lineage from claim ledger, limitations, and package state. Read `references/final-summary-template.md` and `references/resume-packet-template.md`.
+7. **Choose closure route**. Record <CLOSURE_DECISION> and preserve <FINALIZE_CONTINUITY_UPDATE> for stop, park-and-continue-later, publish-and-continue, archive, or route-back decisions, linking them with `follow_up_to` lineage from final summary or blocker records. Read `references/resume-packet-template.md` and `references/checkpoint-memory-template.md`.
 8. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-finalize --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.

@@ -338,6 +338,21 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("isomer-deepsci-rebuttal", validator.EXPECTED_DEEPSCI_SKILLS)
         self.assertIn("isomer-deepsci-nature-data", validator.EXPECTED_DEEPSCI_SKILLS)
         self.assertIn("isomer-deepsci-nature-figure", validator.EXPECTED_DEEPSCI_SKILLS)
+
+    def test_deepsci_skills_teach_canonical_lineage_recording(self) -> None:
+        packaged_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "deepsci"
+        shared_ref = packaged_root / "isomer-deepsci-shared" / "references" / "artifact-lineage-recording.md"
+        self.assertTrue(shared_ref.exists(), shared_ref)
+        shared_text = shared_ref.read_text(encoding="utf-8")
+        self.assertIn("--parents-json", shared_text)
+        self.assertIn("generation group", shared_text)
+        for skill_name in ("isomer-deepsci-idea", "isomer-deepsci-optimize", "isomer-deepsci-experiment", "isomer-deepsci-analysis", "isomer-deepsci-decision", "isomer-deepsci-write", "isomer-deepsci-review", "isomer-deepsci-finalize"):
+            skill_text = (packaged_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("Lineage reminder", skill_text)
+            self.assertTrue("--parents-json" in skill_text or "artifact-lineage-recording.md" in skill_text)
+            binding_text = (packaged_root / skill_name / "placeholder-bindings.md").read_text(encoding="utf-8")
+            self.assertIn("Canonical lineage metadata", binding_text)
+            self.assertIn("--lineage-kind", binding_text)
         self.assertIn("isomer-deepsci-nature-paper2ppt", validator.EXPECTED_DEEPSCI_SKILLS)
         self.assertIn("isomer-deepsci-nature-polishing", validator.EXPECTED_DEEPSCI_SKILLS)
         self.assertIn("isomer-deepsci-workspace-mgr", validator.EXPECTED_DEEPSCI_SKILLS)
