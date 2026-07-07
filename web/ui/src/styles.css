@@ -1270,19 +1270,25 @@ tbody tr:hover {
   box-shadow: var(--flow-node-shadow);
 }
 
+.idea-lineage-flow .react-flow__node.idea-flow-node.ui-selected,
 .idea-lineage-flow .react-flow__node.idea-flow-node.selected,
 .idea-lineage-flow .react-flow__node.idea-flow-node:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 22%, transparent);
 }
 
-.idea-lineage-flow .react-flow__node.idea-flow-node.lineage-parent:not(.selected) {
+.idea-lineage-flow .react-flow__node.idea-flow-node.backend-selected:not(.ui-selected):not(.selected) {
+  border-color: color-mix(in srgb, var(--primary) 62%, var(--flow-node-border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--flow-node));
+}
+
+.idea-lineage-flow .react-flow__node.idea-flow-node.lineage-parent:not(.ui-selected):not(.selected) {
   border-color: color-mix(in srgb, var(--chart-2) 72%, var(--flow-node-border));
   background: color-mix(in srgb, var(--chart-2) 14%, var(--flow-node));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--chart-2) 18%, transparent), var(--flow-node-shadow);
 }
 
-.idea-lineage-flow .react-flow__node.idea-flow-node.lineage-child:not(.selected) {
+.idea-lineage-flow .react-flow__node.idea-flow-node.lineage-child:not(.ui-selected):not(.selected) {
   border-color: color-mix(in srgb, var(--chart-4) 72%, var(--flow-node-border));
   background: color-mix(in srgb, var(--chart-4) 14%, var(--flow-node));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--chart-4) 18%, transparent), var(--flow-node-shadow);

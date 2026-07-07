@@ -117,10 +117,12 @@ vi.mock("./ui-settings", () => ({
 import { getIdeaDetail, getTopicGraph } from "./api";
 import { IdeaGraphPanel } from "./App";
 import { workbenchCommands$ } from "./events";
+import { layoutFlowGraph } from "./graph-utils";
 import type { TopicGraphView } from "./types";
 
 const getIdeaDetailMock = vi.mocked(getIdeaDetail);
 const getTopicGraphMock = vi.mocked(getTopicGraph);
+const layoutFlowGraphMock = vi.mocked(layoutFlowGraph);
 
 describe("Idea graph panel interactions", () => {
   beforeEach(() => {
@@ -128,6 +130,7 @@ describe("Idea graph panel interactions", () => {
     flowRenderMock.snapshots = [];
     getIdeaDetailMock.mockResolvedValue(ideaDetailPayload());
     getTopicGraphMock.mockResolvedValue(graphPayload());
+    layoutFlowGraphMock.mockClear();
   });
 
   afterEach(() => {
@@ -135,6 +138,7 @@ describe("Idea graph panel interactions", () => {
     vi.useRealTimers();
     getIdeaDetailMock.mockReset();
     getTopicGraphMock.mockReset();
+    layoutFlowGraphMock.mockClear();
     settingsMock.refreshGuiSettings.mockReset();
     settingsMock.setHoverPreviewDelayMs.mockReset();
   });
@@ -208,6 +212,53 @@ describe("Idea graph panel interactions", () => {
       vi.advanceTimersByTime(1);
     });
     expect(screen.getByRole("tooltip").textContent).toContain("Loading preview");
+  });
+
+  it("does not show the hover tooltip after a single click until the node is re-entered", async () => {
+    getIdeaDetailMock.mockReturnValue(new Promise(() => {}));
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const node = await screen.findByTestId("graph-node-idea:idea-1");
+
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(node, { clientX: 120, clientY: 140 });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    fireEvent.click(node);
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(screen.queryByRole("tooltip")).toBeNull();
+
+    fireEvent.mouseMove(node, { clientX: 180, clientY: 200 });
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(screen.queryByRole("tooltip")).toBeNull();
+
+    fireEvent.mouseLeave(node);
+    fireEvent.mouseEnter(node, { clientX: 130, clientY: 150 });
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(screen.getByRole("tooltip").textContent).toContain("Loading preview");
+  });
+
+  it("closes the visible hover tooltip when the node is single-clicked", async () => {
+    getIdeaDetailMock.mockReturnValue(new Promise(() => {}));
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const node = await screen.findByTestId("graph-node-idea:idea-1");
+
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(node, { clientX: 120, clientY: 140 });
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(screen.getByRole("tooltip").textContent).toContain("Loading preview");
+
+    fireEvent.click(node);
+
+    expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
   it("keeps the hover tooltip open while the pointer is inside it", async () => {
@@ -305,7 +356,7 @@ describe("Idea graph panel interactions", () => {
     fireEvent.click(node);
 
     expect(screen.getByTestId("graph-node-idea:parent").className).toContain("lineage-parent");
-    expect(screen.getByTestId("graph-node-idea:idea-1").className).toContain("selected");
+    expect(screen.getByTestId("graph-node-idea:idea-1").className).toContain("ui-selected");
     expect(screen.getByTestId("graph-node-idea:child").className).toContain("lineage-child");
     expect(screen.getByTestId("graph-edge-parent-to-main").className).toContain("lineage-incoming");
     expect(screen.getByTestId("graph-edge-main-to-child").className).toContain("lineage-outgoing");
@@ -356,11 +407,52 @@ describe("Idea graph panel interactions", () => {
     expect(screen.getByTestId("graph-edge-main-to-child").className).toContain("lineage-outgoing");
     expect(lastFlowSnapshot().edges).toBe(afterSelect.edges);
   });
+
+  it("keeps selected lineage highlights and layout stable when refetch only changes metadata", async () => {
+    getTopicGraphMock.mockResolvedValueOnce(graphPayload()).mockResolvedValueOnce({ ...graphPayload(), generated_at: "2026-07-07T00:00:00Z" });
+    const { client } = renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const node = await screen.findByTestId("graph-node-idea:idea-1");
+
+    fireEvent.click(node);
+    const afterSelect = lastFlowSnapshot();
+    expect(screen.getByTestId("graph-node-idea:parent").className).toContain("lineage-parent");
+
+    await act(async () => {
+      await client.refetchQueries({ queryKey: ["topic", "alpha", "graph"] });
+    });
+
+    expect(getTopicGraphMock).toHaveBeenCalledTimes(2);
+    expect(layoutFlowGraphMock).toHaveBeenCalledTimes(1);
+    expect(lastFlowSnapshot().nodes).toBe(afterSelect.nodes);
+    expect(lastFlowSnapshot().edges).toBe(afterSelect.edges);
+    expect(screen.getByTestId("graph-node-idea:parent").className).toContain("lineage-parent");
+    expect(screen.getByTestId("graph-node-idea:idea-1").className).toContain("ui-selected");
+    expect(screen.getByTestId("graph-node-idea:child").className).toContain("lineage-child");
+  });
+
+  it("clears selected lineage highlights when changed graph content removes the selected node", async () => {
+    getTopicGraphMock.mockResolvedValueOnce(graphPayload()).mockResolvedValueOnce(graphPayloadWithout("idea:idea-1"));
+    const { client } = renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const node = await screen.findByTestId("graph-node-idea:idea-1");
+
+    fireEvent.click(node);
+    expect(screen.getByTestId("graph-node-idea:idea-1").className).toContain("ui-selected");
+
+    await act(async () => {
+      await client.refetchQueries({ queryKey: ["topic", "alpha", "graph"] });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("graph-node-idea:idea-1")).toBeNull();
+    });
+    expect(lastFlowSnapshot().nodes.some((candidate) => candidate.id === "idea:idea-1")).toBe(false);
+    expect(lastFlowSnapshot().nodes.some((candidate) => (candidate.className || "").includes("ui-selected"))).toBe(false);
+  });
 });
 
 function renderWithQuery(element: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{element}</QueryClientProvider>);
+  return { client, ...render(<QueryClientProvider client={client}>{element}</QueryClientProvider>) };
 }
 
 function lastFlowSnapshot() {
@@ -389,6 +481,7 @@ function ideaDetailPayload() {
     mutated: false,
     topic_id: "alpha",
     topic_workspace_id: "alpha",
+    idea_id: "idea-1",
     idea: {
       idea_id: "idea-1",
       title: "Precision Idea",
@@ -495,5 +588,15 @@ function graphPayload(): TopicGraphView {
     groups: [],
     facets: {},
     diagnostics: [],
+  };
+}
+
+function graphPayloadWithout(nodeId: string): TopicGraphView {
+  const payload = graphPayload();
+  return {
+    ...payload,
+    index_revision: "qidx:changed",
+    nodes: payload.nodes.filter((node) => node.id !== nodeId),
+    edges: payload.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
   };
 }

@@ -228,7 +228,7 @@ function Workbench() {
 
       const panelResult = openDescriptor(descriptor);
       if (descriptor.ok) {
-        const nextGraphScope = isGraphScope(descriptor.graph_scope || null) ? descriptor.graph_scope : options.sourceState?.graphScope || graphScope;
+        const nextGraphScope = asGraphScope(descriptor.graph_scope, options.sourceState?.graphScope || graphScope);
         const nextState: WorkbenchSearchState = {
           topicId: descriptor.topic_id || options.sourceState?.topicId || selectedTopicId,
           graphScope: nextGraphScope,
@@ -1297,7 +1297,7 @@ function useUrlState(): [
 }
 
 function asGraphScope(value: string | null | undefined, fallback: GraphScope): GraphScope {
-  return isGraphScope(value || null) ? value : fallback;
+  return isGraphScope(value) ? value : fallback;
 }
 
 function intersectsEvent(queryKey: readonly unknown[], graphScopes: string[]) {

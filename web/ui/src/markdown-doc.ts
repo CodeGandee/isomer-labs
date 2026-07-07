@@ -21,7 +21,7 @@ export function buildJsonMarkdownPreview(value: unknown, options: { title?: stri
     children.push(heading(1, options.title));
   }
   children.push(...renderValue(undefined, normalized, 2, options.maxDepth ?? 6));
-  const root = u("root", children);
+  const root = u("root", children) as unknown as Parameters<typeof toMarkdown>[0];
   return {
     markdown: toMarkdown(root, { extensions: [gfmToMarkdown()] }).trim(),
     jsonText: JSON.stringify(normalized, null, 2),

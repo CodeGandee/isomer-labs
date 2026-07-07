@@ -37,7 +37,7 @@ export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
       "idea-flow-node",
       `material-${flowClassToken(node.material_kind || "artifact")}`,
       `status-${flowClassToken(node.status || "unknown")}`,
-      node.selected ? "selected" : "",
+      node.selected ? "backend-selected" : "",
     ].filter(Boolean).join(" "),
     position: { x: 40 + (index % 3) * 300, y: 40 + Math.floor(index / 3) * 160 },
     data: {
@@ -58,6 +58,38 @@ export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
       width: 240,
     },
   }));
+}
+
+export function graphContentSignature(graph: TopicGraphView): string {
+  return JSON.stringify({
+    graph_scope: graph.graph_scope,
+    renderer_hint: graph.renderer_hint,
+    nodes: graph.nodes.map((node) => ({
+      id: node.id,
+      record_id: node.record_id,
+      material_kind: node.material_kind,
+      density_class: node.density_class,
+      title: node.title,
+      one_liner: node.one_liner || null,
+      summary: node.summary || null,
+      status: node.status || null,
+      selected: Boolean(node.selected),
+      producer: node.producer || null,
+      skill: node.skill || null,
+      idea_id: node.idea_id || null,
+      visibility: node.visibility || null,
+    })).sort((left, right) => left.id.localeCompare(right.id)),
+    edges: graph.edges.map((edge) => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      relation_kind: edge.relation_kind,
+      canonical: edge.canonical,
+      lineage_kind: edge.lineage_kind || null,
+      generation_id: edge.generation_id || null,
+      status: edge.status || null,
+    })).sort((left, right) => left.id.localeCompare(right.id)),
+  });
 }
 
 export function toFlowEdges(graph: TopicGraphView): Edge[] {

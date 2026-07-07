@@ -6,11 +6,11 @@ import { getIdeaDetail, getTopicGraph, type GraphFilters } from "../../api";
 import { GraphFiltersBar, GraphSummary } from "../graph/GraphPanels";
 import { openRecordFromNode } from "../graph/open-record";
 import { SigmaGraph } from "../graph/SigmaGraph";
-import { layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "../../graph-utils";
+import { graphContentSignature, layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "../../graph-utils";
 import { buildJsonMarkdownPreview } from "../../markdown-doc";
 import { MarkdownView } from "../../markdown-view";
 import { useGuiTheme } from "../../theme-provider";
-import type { GraphScope } from "../../types";
+import type { GraphScope, TopicGraphView } from "../../types";
 import { DEFAULT_HOVER_PREVIEW_DELAY_MS, useGuiSettings } from "../../ui-settings";
 import { isGraphScope } from "../../workbench-history";
 import { ToolbarButton } from "@/components/workbench-controls";
@@ -24,8 +24,8 @@ import {
   type IdeaFlowNode,
   type IdeaLineageOpenIntent,
   type IdeaLineageStore,
-  type TouchLongPressState,
 } from "./idea-lineage-state";
+import { createIdeaLineageInteractionBoundary } from "./idea-lineage-interactions";
 
 const NODE_DOUBLE_CLICK_MS = 500;
 const NODE_DOUBLE_CLICK_DISTANCE_PX = 72;
@@ -63,62 +63,36 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
   const selectedNodeId = useStoreSelector(store, (state) => state.selectedNodeId);
   const hoverPreview = useStoreSelector(store, visibleHoverPreview, sameHoverPreview);
   const openIntent = useStoreSelector(store, (state) => state.openIntent, sameOpenIntent);
-  const touchLongPress = useStoreSelector(store, (state) => state.touchLongPress, sameTouchLongPress);
   const flowNodes = useMemo(() => selectIdeaFlowNodes(baseNodes, baseEdges, selectedNodeId), [baseEdges, baseNodes, selectedNodeId]);
   const flowEdges = useMemo(() => selectIdeaFlowEdges(baseEdges, selectedNodeId), [baseEdges, selectedNodeId]);
   const selectedFlowNode = useMemo(() => flowNodes.find((node) => node.selected), [flowNodes]);
-  const hoverDelayRef = useRef<number | null>(null);
-  const hoverCloseDelayRef = useRef<number | null>(null);
-  const touchLongPressDelayRef = useRef<number | null>(null);
+  const hoverPreviewDelayMsRef = useRef(hoverPreviewDelayMs);
   const lastNodeClickRef = useRef<{ nodeId: string; at: number; x: number; y: number } | null>(null);
-  const suppressHoverUntilNodeExitRef = useRef(false);
+  const renderedGraphSignatureRef = useRef<string | null>(null);
+  const renderedGraphRevisionRef = useRef<string | null>(null);
+  const renderedGraphRef = useRef<TopicGraphView | null>(null);
+  hoverPreviewDelayMsRef.current = hoverPreviewDelayMs;
+  const interactionBoundary = useMemo(
+    () =>
+      createIdeaLineageInteractionBoundary({
+        store,
+        getHoverPreviewDelayMs: () => hoverPreviewDelayMsRef.current,
+        hoverPreviewCloseDelayMs: HOVER_PREVIEW_CLOSE_DELAY_MS,
+        touchLongPressMoveTolerancePx: TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX,
+      }),
+    [store],
+  );
   const graph = useQuery({
     queryKey: ["topic", topicId, "graph", selectedGraphScope, requestedRenderer(selectedGraphScope), filters],
     queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, requestedRenderer(selectedGraphScope), filters),
     enabled: Boolean(topicId),
   });
 
-  const cancelHoverDelay = useCallback(() => {
-    if (hoverDelayRef.current !== null) {
-      window.clearTimeout(hoverDelayRef.current);
-      hoverDelayRef.current = null;
-    }
-  }, []);
-
-  const cancelHoverClose = useCallback(() => {
-    if (hoverCloseDelayRef.current !== null) {
-      window.clearTimeout(hoverCloseDelayRef.current);
-      hoverCloseDelayRef.current = null;
-    }
-  }, []);
-
-  const cancelTouchLongPress = useCallback((pointerId?: number) => {
-    if (touchLongPressDelayRef.current !== null) {
-      window.clearTimeout(touchLongPressDelayRef.current);
-      touchLongPressDelayRef.current = null;
-    }
-    store.dispatch({ type: "touchLongPressCanceled", pointerId });
-  }, [store]);
-
-  const clearHoverPreview = useCallback(() => {
-    cancelHoverDelay();
-    cancelHoverClose();
-    cancelTouchLongPress();
-    store.dispatch({ type: "hoverClosed" });
-  }, [cancelHoverClose, cancelHoverDelay, cancelTouchLongPress, store]);
-
-  const scheduleHoverPreviewClose = useCallback(() => {
-    cancelHoverClose();
-    hoverCloseDelayRef.current = window.setTimeout(() => {
-      clearHoverPreview();
-    }, HOVER_PREVIEW_CLOSE_DELAY_MS);
-  }, [cancelHoverClose, clearHoverPreview]);
+  useEffect(() => () => interactionBoundary.dispose(), [interactionBoundary]);
 
   const openFlowNode = useCallback((nodeId: string) => {
-    suppressHoverUntilNodeExitRef.current = true;
-    clearHoverPreview();
-    store.dispatch({ type: "nodeOpened", nodeId });
-  }, [clearHoverPreview, store]);
+    interactionBoundary.nodeOpen({ nodeId });
+  }, [interactionBoundary]);
 
   const openRecentNodeClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const lastClick = lastNodeClickRef.current;
@@ -143,15 +117,15 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
     const now = Date.now();
     const lastClick = lastNodeClickRef.current;
     const isSecondClick = event.detail >= 2 || (lastClick?.nodeId === node.id && now - lastClick.at < NODE_DOUBLE_CLICK_MS);
-    store.dispatch({ type: "nodeSelected", nodeId: node.id });
     if (isSecondClick) {
       event.preventDefault();
       lastNodeClickRef.current = null;
       openFlowNode(node.id);
       return;
     }
+    interactionBoundary.nodeClick({ nodeId: node.id });
     lastNodeClickRef.current = { nodeId: node.id, at: now, x: event.clientX, y: event.clientY };
-  }, [openFlowNode, store]);
+  }, [interactionBoundary, openFlowNode]);
 
   const handleNodeDoubleClick = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
     event.preventDefault();
@@ -203,33 +177,16 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
     if (!node) {
       return;
     }
-    cancelTouchLongPress();
-    cancelHoverClose();
-    store.dispatch({ type: "touchLongPressStarted", pointerId: event.pointerId, nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY });
-    touchLongPressDelayRef.current = window.setTimeout(() => {
-      touchLongPressDelayRef.current = null;
-      store.dispatch({ type: "touchLongPressElapsed", pointerId: event.pointerId });
-    }, hoverPreviewDelayMs);
-  }, [cancelHoverClose, cancelTouchLongPress, flowNodes, hoverPreviewDelayMs, store]);
+    interactionBoundary.touchLongPressStart({ pointerId: event.pointerId, nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY });
+  }, [flowNodes, interactionBoundary]);
 
   const handleFlowPointerMoveCapture = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    const pending = touchLongPress;
-    if (!pending || pending.pointerId !== event.pointerId) {
-      return;
-    }
-    const dx = event.clientX - pending.x;
-    const dy = event.clientY - pending.y;
-    if (Math.hypot(dx, dy) > TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX) {
-      cancelTouchLongPress(event.pointerId);
-    }
-  }, [cancelTouchLongPress, touchLongPress]);
+    interactionBoundary.touchLongPressMove({ pointerId: event.pointerId, x: event.clientX, y: event.clientY });
+  }, [interactionBoundary]);
 
   const handleFlowPointerEndCapture = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    const pending = touchLongPress;
-    if (!pending || pending.pointerId === event.pointerId) {
-      cancelTouchLongPress(event.pointerId);
-    }
-  }, [cancelTouchLongPress, touchLongPress]);
+    interactionBoundary.touchLongPressEnd({ pointerId: event.pointerId });
+  }, [interactionBoundary]);
 
   const openSelectedFlowNode = useCallback(() => {
     if (selectedFlowNode) {
@@ -238,73 +195,88 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
   }, [openFlowNode, selectedFlowNode]);
 
   const handleNodeMouseEnter = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
-    if (suppressHoverUntilNodeExitRef.current) {
-      return;
-    }
-    cancelHoverClose();
-    cancelHoverDelay();
-    store.dispatch({ type: "hoverStarted", preview: { nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY } });
-    hoverDelayRef.current = window.setTimeout(() => {
-      store.dispatch({ type: "hoverDelayElapsed" });
-      hoverDelayRef.current = null;
-    }, hoverPreviewDelayMs);
-  }, [cancelHoverClose, cancelHoverDelay, hoverPreviewDelayMs, store]);
+    interactionBoundary.nodeEnter({ nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY });
+  }, [interactionBoundary]);
 
   const handleNodeMouseMove = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
-    if (suppressHoverUntilNodeExitRef.current || hoverPreview) {
-      return;
-    }
-    store.dispatch({ type: "hoverMoved", preview: { nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY } });
-  }, [hoverPreview, store]);
+    interactionBoundary.nodeMove({ nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY });
+  }, [interactionBoundary]);
 
-  const handleNodeMouseLeave = useCallback<NodeMouseHandler<IdeaFlowNode>>(() => {
-    suppressHoverUntilNodeExitRef.current = false;
-    scheduleHoverPreviewClose();
-  }, [scheduleHoverPreviewClose]);
-
-  useEffect(
-    () => () => {
-      cancelHoverDelay();
-      cancelHoverClose();
-      if (touchLongPressDelayRef.current !== null) {
-        window.clearTimeout(touchLongPressDelayRef.current);
-        touchLongPressDelayRef.current = null;
-      }
-    },
-    [cancelHoverClose, cancelHoverDelay],
-  );
+  const handleNodeMouseLeave = useCallback<NodeMouseHandler<IdeaFlowNode>>((_event, node) => {
+    interactionBoundary.nodeLeave({ nodeId: node.id });
+  }, [interactionBoundary]);
 
   useEffect(() => {
     let cancelled = false;
-    if (graph.data) {
-      const nodes = toFlowNodes(graph.data);
-      const edges = toFlowEdges(graph.data);
-      setBaseEdges(edges);
-      store.dispatch({
-        type: "graphDataLoaded",
-        nodeIds: nodes.map((node) => node.id),
-        selectedNodeId: nodes.find((node) => node.selected)?.id || null,
-      });
-      layoutFlowGraph(nodes, edges).then((layouted) => {
-        if (!cancelled) {
-          setBaseNodes(layouted);
-        }
-      });
-    } else {
+    if (!topicId) {
+      renderedGraphSignatureRef.current = null;
+      renderedGraphRevisionRef.current = null;
+      renderedGraphRef.current = null;
       setBaseEdges([]);
       setBaseNodes([]);
       store.dispatch({ type: "graphDataLoaded", nodeIds: [], selectedNodeId: null });
+      return () => {
+        cancelled = true;
+      };
     }
+    if (!graph.data) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (!graph.data.ok || graph.data.error) {
+      if (renderedGraphRef.current) {
+        return () => {
+          cancelled = true;
+        };
+      }
+      renderedGraphSignatureRef.current = null;
+      renderedGraphRevisionRef.current = null;
+      setBaseEdges([]);
+      setBaseNodes([]);
+      store.dispatch({ type: "graphDataLoaded", nodeIds: [], selectedNodeId: null });
+      return () => {
+        cancelled = true;
+      };
+    }
+    const revision = graph.data.index_revision || null;
+    const signature = graphContentSignature(graph.data);
+    if (signature === renderedGraphSignatureRef.current) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    const nodes = toFlowNodes(graph.data);
+    const edges = toFlowEdges(graph.data);
+    if (nodes.length === 0 && renderedGraphRef.current && revision && revision === renderedGraphRevisionRef.current) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    layoutFlowGraph(nodes, edges).then((layouted) => {
+      if (cancelled) {
+        return;
+      }
+      renderedGraphSignatureRef.current = signature;
+      renderedGraphRevisionRef.current = revision;
+      renderedGraphRef.current = graph.data || null;
+      setBaseEdges(edges);
+      setBaseNodes(layouted);
+      store.dispatch({
+        type: "graphDataLoaded",
+        nodeIds: nodes.map((node) => node.id),
+      });
+    });
     return () => {
       cancelled = true;
     };
-  }, [graph.data, store]);
+  }, [graph.data, store, topicId]);
 
   useEffect(() => {
     if (!openIntent) {
       return;
     }
-    openRecordFromNode(topicId || "", graph.data, openIntent.nodeId);
+    openRecordFromNode(topicId || "", renderedGraphRef.current || graph.data, openIntent.nodeId);
     store.dispatch({ type: "openIntentConsumed", intentId: openIntent.intentId });
   }, [graph.data, openIntent, store, topicId]);
 
@@ -342,8 +314,8 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
             <IdeaNodeHoverCard
               preview={hoverPreview}
               topicId={topicId || ""}
-              onPointerEnter={cancelHoverClose}
-              onPointerLeave={scheduleHoverPreviewClose}
+              onPointerEnter={interactionBoundary.tooltipEnter}
+              onPointerLeave={interactionBoundary.tooltipLeave}
             />
           </div>
         </ReactFlowProvider>
@@ -471,7 +443,7 @@ function IdeaNodeHoverCard({
 }
 
 function asGraphScope(value: string | null | undefined, fallback: GraphScope): GraphScope {
-  return isGraphScope(value || null) ? value : fallback;
+  return isGraphScope(value) ? value : fallback;
 }
 
 function sameHoverPreview(left: ReturnType<typeof visibleHoverPreview>, right: ReturnType<typeof visibleHoverPreview>) {
@@ -480,8 +452,4 @@ function sameHoverPreview(left: ReturnType<typeof visibleHoverPreview>, right: R
 
 function sameOpenIntent(left: IdeaLineageOpenIntent | null, right: IdeaLineageOpenIntent | null) {
   return left?.intentId === right?.intentId && left?.nodeId === right?.nodeId;
-}
-
-function sameTouchLongPress(left: TouchLongPressState, right: TouchLongPressState) {
-  return left?.pointerId === right?.pointerId && left?.nodeId === right?.nodeId && left?.x === right?.x && left?.y === right?.y && left?.data === right?.data;
 }

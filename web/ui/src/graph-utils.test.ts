@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MarkerType } from "@xyflow/react";
-import { selectRenderer, toFlowEdges, toFlowNodes } from "./graph-utils";
+import { graphContentSignature, selectRenderer, toFlowEdges, toFlowNodes } from "./graph-utils";
 import { TopicGraphViewSchema } from "./types";
 
 const graph = TopicGraphViewSchema.parse({
@@ -54,5 +54,25 @@ describe("graph utilities", () => {
     const edge = toFlowEdges(graph)[0];
     expect(edge.label).toBe("derived_from");
     expect(edge.markerEnd).toEqual(expect.objectContaining({ type: MarkerType.ArrowClosed }));
+  });
+
+  it("keeps backend selected styling separate from UI selection", () => {
+    const node = toFlowNodes({ ...graph, nodes: [{ ...graph.nodes[0], selected: true, status: "selected" }] })[0];
+    expect(node.className).toContain("backend-selected");
+    expect(node.className).toContain("status-selected");
+    expect(node.className).not.toMatch(/(^|\s)selected(\s|$)/);
+    expect(node.selected).toBeUndefined();
+  });
+
+  it("builds a stable graph content signature that ignores response metadata and ordering", () => {
+    const changedMetadata = {
+      ...graph,
+      index_revision: "qidx:other",
+      generated_at: "2026-07-07T00:00:00Z",
+      nodes: [...graph.nodes].reverse(),
+      edges: [...graph.edges].reverse(),
+    };
+    expect(graphContentSignature(changedMetadata)).toBe(graphContentSignature(graph));
+    expect(graphContentSignature({ ...graph, nodes: [{ ...graph.nodes[0], title: "Changed" }] })).not.toBe(graphContentSignature(graph));
   });
 });

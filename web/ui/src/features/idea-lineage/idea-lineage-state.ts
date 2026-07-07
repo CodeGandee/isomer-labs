@@ -11,6 +11,8 @@ export type IdeaNodeHoverPreview = {
   y: number;
 };
 
+export type IdeaLineageHoverSessionId = number;
+
 export type TouchLongPressState = {
   pointerId: number;
   nodeId: string;
@@ -21,8 +23,8 @@ export type TouchLongPressState = {
 
 export type IdeaLineageHoverState =
   | { status: "idle" }
-  | { status: "pending"; preview: IdeaNodeHoverPreview }
-  | { status: "visible"; preview: IdeaNodeHoverPreview };
+  | { status: "pending"; sessionId: IdeaLineageHoverSessionId; preview: IdeaNodeHoverPreview }
+  | { status: "visible"; sessionId: IdeaLineageHoverSessionId; preview: IdeaNodeHoverPreview };
 
 export type IdeaLineageOpenIntent = {
   intentId: number;
@@ -42,13 +44,13 @@ export type IdeaLineageAction =
   | { type: "nodeSelected"; nodeId: string }
   | { type: "nodeOpened"; nodeId: string }
   | { type: "openIntentConsumed"; intentId: number }
-  | { type: "hoverStarted"; preview: IdeaNodeHoverPreview }
-  | { type: "hoverMoved"; preview: IdeaNodeHoverPreview }
-  | { type: "hoverDelayElapsed" }
-  | { type: "hoverClosed" }
+  | { type: "hoverStarted"; sessionId: IdeaLineageHoverSessionId; preview: IdeaNodeHoverPreview }
+  | { type: "hoverMoved"; sessionId: IdeaLineageHoverSessionId; preview: IdeaNodeHoverPreview }
+  | { type: "hoverDelayElapsed"; sessionId: IdeaLineageHoverSessionId }
+  | { type: "hoverClosed"; sessionId?: IdeaLineageHoverSessionId }
   | { type: "touchLongPressStarted"; pointerId: number; nodeId: string; data: IdeaFlowNodeData; x: number; y: number }
   | { type: "touchLongPressCanceled"; pointerId?: number }
-  | { type: "touchLongPressElapsed"; pointerId: number };
+  | { type: "touchLongPressElapsed"; pointerId: number; sessionId: IdeaLineageHoverSessionId };
 
 export type IdeaLineageStore = ProjectWebStore<IdeaLineageState, IdeaLineageAction>;
 
@@ -91,21 +93,24 @@ export function ideaLineageReducer(state: IdeaLineageState, action: IdeaLineageA
     return { ...state, openIntent: null };
   }
   if (action.type === "hoverStarted") {
-    return { ...state, hover: { status: "pending", preview: action.preview } };
+    return { ...state, hover: { status: "pending", sessionId: action.sessionId, preview: action.preview } };
   }
   if (action.type === "hoverMoved") {
-    if (state.hover.status !== "pending" || state.hover.preview.nodeId !== action.preview.nodeId) {
+    if (state.hover.status !== "pending" || state.hover.sessionId !== action.sessionId || state.hover.preview.nodeId !== action.preview.nodeId) {
       return state;
     }
-    return { ...state, hover: { status: "pending", preview: action.preview } };
+    return { ...state, hover: { status: "pending", sessionId: state.hover.sessionId, preview: action.preview } };
   }
   if (action.type === "hoverDelayElapsed") {
-    if (state.hover.status !== "pending") {
+    if (state.hover.status !== "pending" || state.hover.sessionId !== action.sessionId) {
       return state;
     }
-    return { ...state, hover: { status: "visible", preview: state.hover.preview } };
+    return { ...state, hover: { status: "visible", sessionId: state.hover.sessionId, preview: state.hover.preview } };
   }
   if (action.type === "hoverClosed") {
+    if (action.sessionId !== undefined && (state.hover.status === "idle" || state.hover.sessionId !== action.sessionId)) {
+      return state;
+    }
     if (state.hover.status === "idle" && !state.touchLongPress) {
       return state;
     }
@@ -142,6 +147,7 @@ export function ideaLineageReducer(state: IdeaLineageState, action: IdeaLineageA
       touchLongPress: null,
       hover: {
         status: "visible",
+        sessionId: action.sessionId,
         preview: {
           nodeId: pending.nodeId,
           data: pending.data,
@@ -154,7 +160,7 @@ export function ideaLineageReducer(state: IdeaLineageState, action: IdeaLineageA
   return state;
 }
 
-const LINEAGE_NODE_STATE_CLASSES = ["selected", "lineage-parent", "lineage-child"];
+const LINEAGE_NODE_STATE_CLASSES = ["ui-selected", "lineage-parent", "lineage-child"];
 const LINEAGE_EDGE_STATE_CLASSES = ["lineage-incoming", "lineage-outgoing"];
 
 export type IdeaLineageNeighborhood = {
@@ -224,7 +230,7 @@ function lineageNodeClassState(nodeId: string, neighborhood: IdeaLineageNeighbor
     return [];
   }
   return [
-    nodeId === neighborhood.selectedNodeId ? "selected" : "",
+    nodeId === neighborhood.selectedNodeId ? "ui-selected" : "",
     neighborhood.parentNodeIds.has(nodeId) ? "lineage-parent" : "",
     neighborhood.childNodeIds.has(nodeId) ? "lineage-child" : "",
   ].filter(Boolean);

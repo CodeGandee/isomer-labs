@@ -1,4 +1,4 @@
-import { Observable, Subject, interval, map, merge } from "rxjs";
+import { Observable, Subject, map, merge } from "rxjs";
 import { filter } from "rxjs/operators";
 import { parseTopicEvent } from "./api";
 import type { GraphScope, TopicChangeEvent } from "./types";
@@ -12,6 +12,24 @@ export type WorkbenchCommand =
 
 export const workbenchCommands$ = new Subject<WorkbenchCommand>();
 export const manualRefresh$ = new Subject<{ topicId: string }>();
+
+const TOPIC_GRAPH_SCOPES: GraphScope[] = ["idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"];
+
+export type TopicInvalidationDecision = {
+  invalidate: boolean;
+  observedRevision: string | null | undefined;
+};
+
+export function topicEventInvalidationDecision(previousRevision: string | null | undefined, event: TopicChangeEvent): TopicInvalidationDecision {
+  const revision = event.index_revision || null;
+  if (!revision) {
+    return { invalidate: true, observedRevision: previousRevision };
+  }
+  if (previousRevision === undefined) {
+    return { invalidate: false, observedRevision: revision };
+  }
+  return { invalidate: revision !== previousRevision, observedRevision: revision };
+}
 
 export function topicEvents(topicId: string): Observable<TopicChangeEvent> {
   return new Observable<TopicChangeEvent>((subscriber) => {
@@ -39,28 +57,37 @@ export function topicEvents(topicId: string): Observable<TopicChangeEvent> {
 }
 
 export function topicInvalidations(topicId: string) {
-  const polling$ = interval(15000).pipe(
-    map(
-      (): TopicChangeEvent => ({
-        event_id: `${topicId}:poll`,
-        event_type: "topic.runtime.changed",
-        topic_id: topicId,
-        graph_scopes: ["idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"],
-        occurred_at: new Date().toISOString(),
-      }),
-    ),
-  );
+  const revision$ = new Observable<TopicChangeEvent>((subscriber) => {
+    let observedRevision: string | null | undefined;
+    const subscription = topicEvents(topicId).subscribe({
+      next(event) {
+        const decision = topicEventInvalidationDecision(observedRevision, event);
+        observedRevision = decision.observedRevision;
+        if (decision.invalidate) {
+          subscriber.next(event);
+        }
+      },
+      error(error) {
+        subscriber.error(error);
+      },
+      complete() {
+        subscriber.complete();
+      },
+    });
+    return () => subscription.unsubscribe();
+  });
   const manual$ = manualRefresh$.pipe(
     filter((event) => event.topicId === topicId),
     map(
       (): TopicChangeEvent => ({
         event_id: `${topicId}:manual`,
-        event_type: "topic.runtime.changed",
+        event_type: "topic.manual-refresh",
         topic_id: topicId,
-        graph_scopes: ["idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"],
+        index_revision: null,
+        graph_scopes: TOPIC_GRAPH_SCOPES,
         occurred_at: new Date().toISOString(),
       }),
     ),
   );
-  return merge(topicEvents(topicId), polling$, manual$);
+  return merge(revision$, manual$);
 }

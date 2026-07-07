@@ -40,20 +40,46 @@ describe("idea lineage interaction state", () => {
     const selected = ideaLineageReducer(initialIdeaLineageState, { type: "nodeSelected", nodeId: "idea:main" });
     const pending = ideaLineageReducer(selected, {
       type: "hoverStarted",
+      sessionId: 1,
       preview: { nodeId: "idea:child", data: { label: "Child", title: "Child" }, x: 10, y: 20 },
     });
-    const visible = ideaLineageReducer(pending, { type: "hoverDelayElapsed" });
+    const visible = ideaLineageReducer(pending, { type: "hoverDelayElapsed", sessionId: 1 });
 
     expect(visible.selectedNodeId).toBe("idea:main");
     expect(visibleHoverPreview(visible)?.nodeId).toBe("idea:child");
   });
 
+  it("ignores stale hover delay and close events from old sessions", () => {
+    const pending = ideaLineageReducer(initialIdeaLineageState, {
+      type: "hoverStarted",
+      sessionId: 1,
+      preview: { nodeId: "idea:main", data: { label: "Main", title: "Main" }, x: 10, y: 20 },
+    });
+
+    const staleElapsed = ideaLineageReducer(pending, { type: "hoverDelayElapsed", sessionId: 2 });
+    expect(staleElapsed.hover).toEqual(pending.hover);
+
+    const staleMoved = ideaLineageReducer(pending, {
+      type: "hoverMoved",
+      sessionId: 2,
+      preview: { nodeId: "idea:main", data: { label: "Main", title: "Main" }, x: 100, y: 120 },
+    });
+    expect(staleMoved.hover).toEqual(pending.hover);
+
+    const staleClosed = ideaLineageReducer(pending, { type: "hoverClosed", sessionId: 2 });
+    expect(staleClosed.hover).toEqual(pending.hover);
+
+    const closed = ideaLineageReducer(pending, { type: "hoverClosed", sessionId: 1 });
+    expect(closed.hover.status).toBe("idle");
+  });
+
   it("clears hover and emits an open intent on double-click open", () => {
     const pending = ideaLineageReducer(initialIdeaLineageState, {
       type: "hoverStarted",
+      sessionId: 1,
       preview: { nodeId: "idea:main", data: { label: "Main", title: "Main" }, x: 10, y: 20 },
     });
-    const visible = ideaLineageReducer(pending, { type: "hoverDelayElapsed" });
+    const visible = ideaLineageReducer(pending, { type: "hoverDelayElapsed", sessionId: 1 });
     const opened = ideaLineageReducer(visible, { type: "nodeOpened", nodeId: "idea:main" });
 
     expect(opened.hover.status).toBe("idle");
@@ -85,7 +111,7 @@ describe("idea lineage interaction state", () => {
       x: 15,
       y: 25,
     });
-    const elapsed = ideaLineageReducer(restarted, { type: "touchLongPressElapsed", pointerId: 6 });
+    const elapsed = ideaLineageReducer(restarted, { type: "touchLongPressElapsed", pointerId: 6, sessionId: 2 });
     expect(visibleHoverPreview(elapsed)).toEqual({ nodeId: "idea:main", data: { label: "Main", title: "Main" }, x: 15, y: 25 });
   });
 
