@@ -57,6 +57,8 @@ class CliOptions:
     callback_skill_dir: str | None = None
     callback_priority: int | None = None
     callback_allow_external_source: bool = False
+    callback_plugin_dir: str | None = None
+    callback_replace_plugin_source: bool = False
 
 
 def common_options(command: Any) -> Any:

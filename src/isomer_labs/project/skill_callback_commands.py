@@ -26,6 +26,7 @@ from isomer_labs.project.skill_callbacks import (
     secret_like_diagnostics,
     visible_callback_registry_refs,
 )
+from isomer_labs.project.user_plugin_callbacks import load_user_plugin_callback_manifest
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,8 @@ class CallbackCommandResult:
     callback: UserSkillCallback | None = None
     previous_status: str | None = None
     new_status: str | None = None
+    plugin_id: str | None = None
+    plugin_source_path: str | None = None
 
     def to_json(self) -> dict[str, object]:
         project_root = self.project_root
@@ -55,6 +58,10 @@ class CallbackCommandResult:
             payload["previous_status"] = self.previous_status
         if self.new_status is not None:
             payload["new_status"] = self.new_status
+        if self.plugin_id is not None:
+            payload["plugin_id"] = self.plugin_id
+        if self.plugin_source_path is not None:
+            payload["plugin_source_path"] = self.plugin_source_path
         return payload
 
 
@@ -162,6 +169,161 @@ def register_user_skill_callback(
         callback=callback,
         registry_refs=(ref,),
         diagnostics=(),
+    )
+
+
+def install_user_plugin_callbacks(
+    state: ProjectState,
+    context: EffectiveTopicContext | None,
+    *,
+    plugin_dir: str,
+    scope: str,
+    replace_plugin_source: bool,
+) -> CallbackCommandResult:
+    project = state.project
+    diagnostics: list[Diagnostic] = []
+    if scope not in {"project", "research_topic"}:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO103",
+                severity="error",
+                concept="User Plugin callback manifest",
+                field="scope",
+                message="User-plugin callback install scope must be project or research_topic.",
+            )
+        )
+    if scope == "research_topic" and context is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO103",
+                severity="error",
+                concept="User Plugin callback manifest",
+                field="scope",
+                message="Research Topic scoped user-plugin callback installation requires a selected Research Topic.",
+            )
+        )
+    manifest_result = load_user_plugin_callback_manifest(project, plugin_dir)
+    diagnostics.extend(manifest_result.diagnostics)
+    manifest = manifest_result.manifest
+    if manifest is None or has_errors(diagnostics):
+        return CallbackCommandResult(False, False, project.root, (), tuple(diagnostics))
+
+    registry_path = default_callback_registry_path(
+        project,
+        scope=scope,
+        research_topic_id=context.research_topic.id if context is not None else None,
+    )
+    registry_path_input = display_path(registry_path, project.root)
+    ref = CallbackRegistryRef(
+        scope=scope,
+        path_input=registry_path_input,
+        path=registry_path,
+        source_path=context.research_topic_config.source_path if scope == "research_topic" and context is not None and context.research_topic_config is not None else project.manifest_path,
+        research_topic_id=context.research_topic.id if scope == "research_topic" and context is not None else None,
+    )
+    existing_result = load_callback_registry(project, ref, missing_severity="warning")
+    existing_callbacks = list(existing_result.callbacks)
+    different_source_callbacks = [
+        callback
+        for callback in existing_callbacks
+        if callback.plugin_id == manifest.plugin_id and callback.plugin_source_path_input not in {None, manifest.plugin_source_path_input}
+    ]
+    if different_source_callbacks and not replace_plugin_source:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO104",
+                severity="error",
+                concept="User Plugin callback manifest",
+                field="plugin_id",
+                message=f"User-plugin id is already installed from a different source: {manifest.plugin_id}.",
+                hint="Pass --replace to replace callbacks from the previous plugin source.",
+            )
+        )
+    planned_callbacks: list[UserSkillCallback] = []
+    prompt_materials: list[tuple[Path, str]] = []
+    for entry in manifest.callbacks:
+        installed_key = f"{manifest.plugin_id}:{entry.installed_key_suffix}"
+        diagnostics.extend(
+            _callback_identity_diagnostics(
+                skill=entry.target_skill,
+                stage=entry.stage,
+                scope=scope,
+                callback_id=installed_key,
+            )
+        )
+        prompt = entry.source_value if entry.source_type == "prompt" else None
+        prompt_file = entry.source_path_input(project, manifest.plugin_root) if entry.source_type == "prompt_file" else None
+        skill_dir = entry.source_path_input(project, manifest.plugin_root) if entry.source_type == "skill_dir" else None
+        source_kind, source_path_input, source_diagnostics, prompt_material = prepare_callback_source(
+            project,
+            scope=scope,
+            research_topic_id=context.research_topic.id if context is not None else None,
+            callback_id=installed_key,
+            prompt=prompt,
+            prompt_file=prompt_file,
+            skill_dir=skill_dir,
+            allow_external_source=False,
+        )
+        diagnostics.extend(source_diagnostics)
+        if source_kind is None or source_path_input is None:
+            continue
+        prompt_source_path = resolve_project_path(project.root, source_path_input)
+        if prompt_material is not None:
+            prompt_materials.append((prompt_source_path, prompt_material))
+        planned_callbacks.append(
+            UserSkillCallback(
+                id=installed_key,
+                skill=entry.target_skill,
+                stage=entry.stage,
+                scope=scope,
+                status="active",
+                priority=DEFAULT_CALLBACK_PRIORITY,
+                source=CallbackSource(
+                    source_type=source_kind,
+                    path_input=source_path_input,
+                    resolved_path=prompt_source_path,
+                    external=not is_within(prompt_source_path, project.root),
+                ),
+                registry_path=registry_path,
+                research_topic_id=context.research_topic.id if scope == "research_topic" and context is not None else None,
+                plugin_id=manifest.plugin_id,
+                plugin_key=entry.plugin_key,
+                plugin_source_path_input=manifest.plugin_source_path_input,
+            )
+        )
+    if has_errors(diagnostics):
+        return CallbackCommandResult(
+            False,
+            False,
+            project.root,
+            (),
+            tuple(diagnostics),
+            registry_refs=(ref,),
+            plugin_id=manifest.plugin_id,
+            plugin_source_path=manifest.plugin_source_path_input,
+        )
+
+    installed_keys = {callback.id for callback in planned_callbacks}
+    if replace_plugin_source:
+        retained_callbacks = [callback for callback in existing_callbacks if callback.plugin_id != manifest.plugin_id and callback.id not in installed_keys]
+    else:
+        retained_callbacks = [callback for callback in existing_callbacks if callback.id not in installed_keys]
+    callbacks = [*retained_callbacks, *planned_callbacks]
+    for prompt_path, prompt_material in prompt_materials:
+        prompt_path.parent.mkdir(parents=True, exist_ok=True)
+        prompt_path.write_text(prompt_material, encoding="utf-8")
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    _write_callback_registry(registry_path, callbacks)
+    _ensure_registry_ref(project, ref)
+    return CallbackCommandResult(
+        ok=True,
+        mutated=True,
+        project_root=project.root,
+        callbacks=tuple(sorted(planned_callbacks, key=_callback_sort_key)),
+        registry_refs=(ref,),
+        diagnostics=tuple(diagnostics),
+        plugin_id=manifest.plugin_id,
+        plugin_source_path=manifest.plugin_source_path_input,
     )
 
 
@@ -400,6 +562,9 @@ def disable_user_skill_callback(
         source=selected.source,
         registry_path=selected.registry_path,
         research_topic_id=selected.research_topic_id,
+        plugin_id=selected.plugin_id,
+        plugin_key=selected.plugin_key,
+        plugin_source_path_input=selected.plugin_source_path_input,
     )
     for result in loaded:
         if result.ref.path != selected.registry_path:

@@ -536,6 +536,7 @@ class IsomerCliTests(unittest.TestCase):
             "project topics list",
             "project workspaces list",
             "project skill-callbacks register",
+            "project skill-callbacks install",
             "project skill-callbacks resolve",
             "project skill-callbacks list",
             "project skill-callbacks show",
@@ -2224,6 +2225,257 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         self.assertTrue(data["callback"]["source"]["external"])
         self.assertEqual("skill_dir", data["callback"]["source"]["source_type"])
+
+    def test_skill_callbacks_install_user_plugin_manifest_composes_same_extension_point(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        plugin_a = root / "skillset" / "user-plugins" / "plugin-a"
+        plugin_b = root / "skillset" / "user-plugins" / "plugin-b"
+        write(plugin_a / "callback-a" / "SKILL.md", "# A\n")
+        write(plugin_a / "callback-b" / "SKILL.md", "# B\n")
+        write(plugin_a / "callback-z" / "SKILL.md", "# Z\n")
+        write(plugin_b / "callback-a" / "SKILL.md", "# B\n")
+        write(
+            plugin_a / "manifest.toml",
+            """
+            schema_version = "isomer-user-plugin.v1"
+            plugin_id = "plugin-a"
+            kind = "user-skill-callback-bundle"
+
+            [[callbacks]]
+            key = "a"
+            target_skill = "isomer-deepsci-scout"
+            stage = "begin"
+            priority = 1
+            source_type = "skill_dir"
+            skill_dir = "callback-a"
+
+            [[callbacks]]
+            key = "b"
+            target_skill = "isomer-deepsci-scout"
+            stage = "begin"
+            priority = 20
+            source_type = "skill_dir"
+            skill_dir = "callback-b"
+
+            [[callbacks]]
+            key = "group/z"
+            target_skill = "isomer-deepsci-scout"
+            stage = "begin"
+            priority = 999
+            source_type = "skill_dir"
+            skill_dir = "callback-z"
+            """,
+        )
+        write(
+            plugin_b / "manifest.toml",
+            """
+            schema_version = "isomer-user-plugin.v1"
+            plugin_id = "plugin-b"
+            kind = "user-skill-callback-bundle"
+
+            [[callbacks]]
+            key = "a"
+            target_skill = "isomer-deepsci-scout"
+            stage = "begin"
+            source_type = "skill_dir"
+            skill_dir = "callback-a"
+            """,
+        )
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "install",
+                "--topic",
+                "default",
+                "--plugin-dir",
+                "skillset/user-plugins/plugin-a",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("plugin-a", data["plugin_id"])
+        self.assertEqual(["plugin-a:a", "plugin-a:b", "plugin-a:group/z"], [callback["id"] for callback in data["callbacks"]])
+        self.assertEqual(["a", "b", "group/z"], [callback["plugin_key"] for callback in data["callbacks"]])
+        self.assertEqual([100, 100, 100], [callback["priority"] for callback in data["callbacks"]])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "install",
+                "--topic",
+                "default",
+                "--plugin-dir",
+                "skillset/user-plugins/plugin-b",
+                "--json",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "resolve",
+                "--topic",
+                "default",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(
+            {"plugin-a:a", "plugin-a:b", "plugin-a:group/z", "plugin-b:a"},
+            {callback["id"] for callback in data["callbacks"]},
+        )
+        self.assertEqual(["a", "b", "group/z"], [callback["plugin_key"] for callback in data["callbacks"] if callback["plugin_id"] == "plugin-a"])
+
+        status, output = self.run_cli(
+            ["project", "skill-callbacks", "list", "--topic", "default", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(
+            {"plugin-a:a", "plugin-a:b", "plugin-a:group/z", "plugin-b:a"},
+            {callback["id"] for callback in data["callbacks"]},
+        )
+
+        status, output = self.run_cli(
+            ["project", "skill-callbacks", "disable", "plugin-a:a", "--topic", "default", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("inactive", data["new_status"])
+
+    def test_skill_callbacks_install_rejects_duplicate_unlabeled_entries(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        plugin = root / "skillset" / "user-plugins" / "bad-plugin"
+        write(plugin / "one" / "SKILL.md", "# One\n")
+        write(plugin / "two" / "SKILL.md", "# Two\n")
+        write(
+            plugin / "manifest.toml",
+            """
+            schema_version = "isomer-user-plugin.v1"
+            plugin_id = "bad-plugin"
+            kind = "user-skill-callback-bundle"
+
+            [[callbacks]]
+            target_skill = "isomer-deepsci-scout"
+            stage = "begin"
+            source_type = "skill_dir"
+            skill_dir = "one"
+
+            [[callbacks]]
+            target_skill = "isomer-deepsci-scout"
+            stage = "begin"
+            source_type = "skill_dir"
+            skill_dir = "two"
+            """,
+        )
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "install",
+                "--topic",
+                "default",
+                "--plugin-dir",
+                "skillset/user-plugins/bad-plugin",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO104", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_skill_callbacks_install_rejects_same_plugin_id_from_different_source_without_replace(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        plugin_a = root / "skillset" / "user-plugins" / "plugin-a"
+        plugin_copy = root / "skillset" / "user-plugins" / "plugin-copy"
+        for plugin, callback_name in ((plugin_a, "a"), (plugin_copy, "copy")):
+            write(plugin / callback_name / "SKILL.md", "# Callback\n")
+            write(
+                plugin / "manifest.toml",
+                f"""
+                schema_version = "isomer-user-plugin.v1"
+                plugin_id = "shared-plugin"
+                kind = "user-skill-callback-bundle"
+
+                [[callbacks]]
+                key = "{callback_name}"
+                target_skill = "isomer-deepsci-scout"
+                stage = "begin"
+                source_type = "skill_dir"
+                skill_dir = "{callback_name}"
+                """,
+            )
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "install",
+                "--topic",
+                "default",
+                "--plugin-dir",
+                "skillset/user-plugins/plugin-a",
+                "--json",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "install",
+                "--topic",
+                "default",
+                "--plugin-dir",
+                "skillset/user-plugins/plugin-copy",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO104", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "install",
+                "--topic",
+                "default",
+                "--plugin-dir",
+                "skillset/user-plugins/plugin-copy",
+                "--replace",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["shared-plugin:copy"], [callback["id"] for callback in data["callbacks"]])
 
     def test_skill_callbacks_missing_project_is_rejected_without_creating_registry(self) -> None:
         root = self.make_root()

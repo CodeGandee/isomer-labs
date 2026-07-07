@@ -45,6 +45,7 @@ Command surface:
   project topic-main-guidance ensure
   project workspaces list
   project skill-callbacks register
+  project skill-callbacks install
   project skill-callbacks resolve
   project skill-callbacks list
   project skill-callbacks show

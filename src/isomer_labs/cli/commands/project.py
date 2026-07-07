@@ -12,6 +12,7 @@ from isomer_labs.cli.handlers.project import (
     _cmd_context_show,
     _cmd_init,
     _cmd_skill_callbacks_disable,
+    _cmd_skill_callbacks_install,
     _cmd_skill_callbacks_list,
     _cmd_skill_callbacks_register,
     _cmd_skill_callbacks_resolve,
@@ -465,6 +466,60 @@ def register_project_commands(app: click.Group) -> None:
                 callback_skill_dir=callback_skill_dir,
                 callback_priority=callback_priority,
                 callback_allow_external_source=callback_allow_external_source,
+            )
+        )
+
+
+    @skill_callbacks_group.command(name="install", help="Install callbacks from a user-plugin manifest.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--plugin-dir", "callback_plugin_dir", required=True, help="User-plugin directory containing manifest.toml.")
+    @click.option(
+        "--scope",
+        "callback_scope",
+        type=click.Choice(["project", "research_topic"]),
+        default="research_topic",
+        show_default=True,
+        help="Callback registry scope.",
+    )
+    @click.option("--replace", "callback_replace_plugin_source", is_flag=True, help="Replace callbacks from a different source with the same plugin_id.")
+    @click.pass_context
+    def skill_callbacks_install_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        callback_plugin_dir: str | None = None,
+        callback_scope: str | None = None,
+        callback_replace_plugin_source: bool = False,
+    ) -> int:
+        return _cmd_skill_callbacks_install(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+                callback_plugin_dir=callback_plugin_dir,
+                callback_scope=callback_scope,
+                callback_replace_plugin_source=callback_replace_plugin_source,
             )
         )
 

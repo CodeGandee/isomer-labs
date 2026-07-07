@@ -13,18 +13,21 @@ This project-local user-plugin provides User Skill Callback material for GPU ker
 
 ## Manifest Role
 
-The manifest describes the callbacks this plugin expects an operator or future installer to register. Current activation is still explicit:
+The manifest describes the callbacks this plugin expects an operator to install. The top-level `plugin_id` is the stable plugin identity, and each callback has a plugin-local `key`. Installed callback ids use `<plugin_id>:<key>`, such as `gpu-analytical-modeling:gpu-modeling-method/scout/begin`.
+
+Install topic-scoped callbacks with:
 
 ```bash
-pixi run isomer-cli --print-json project skill-callbacks register \
+pixi run isomer-cli --print-json project skill-callbacks install \
   --topic <topic-id> \
-  --id gpu-modeling-method.scout.begin \
-  --skill isomer-deepsci-scout \
-  --stage begin \
-  --skill-dir skillset/user-plugins/gpu-analytical-modeling/gpu-modeling-method
+  --plugin-dir skillset/user-plugins/gpu-analytical-modeling
 ```
 
 The installed registry remains under `.isomer-labs/user-skill-callbacks/.../registry.toml` after registration.
+
+Callback `key` values contain only letters, digits, `-`, `_`, and `/`. Use `/` for naming hierarchy only; it does not imply filesystem paths or ordering dependencies. If a callback omits `key`, Isomer derives `<target_skill>/<stage>`. A plugin cannot contain two unlabeled callbacks for the same target skill and stage because they would derive the same plugin-local key.
+
+Ordering is guaranteed only inside this plugin, by ascending Python string comparison of plugin-local keys. Cross-plugin ordering is deterministic implementation detail and should not be used as a design contract.
 
 ## Recommended Targets
 
@@ -45,35 +48,29 @@ Use `skill_dir` for durable multi-step guidance, `prompt_file` for reusable shor
 
 ## Scope Guidance
 
-Prefer topic-scoped registration for a specific GPU kernel modeling topic:
+Prefer topic-scoped installation for a specific GPU kernel modeling topic:
 
 ```bash
-pixi run isomer-cli --print-json project skill-callbacks register \
+pixi run isomer-cli --print-json project skill-callbacks install \
   --topic <topic-id> \
-  --id gpu-evidence.experiment.begin \
-  --skill isomer-deepsci-experiment \
-  --stage begin \
   --scope research_topic \
-  --skill-dir skillset/user-plugins/gpu-analytical-modeling/gpu-evidence-and-experiment
+  --plugin-dir skillset/user-plugins/gpu-analytical-modeling
 ```
 
-Use project-scoped registration only when GPU analytical modeling is a project-wide default:
+Use project-scoped installation only when GPU analytical modeling is a project-wide default:
+
+```bash
+pixi run isomer-cli --print-json project skill-callbacks install \
+  --scope project \
+  --plugin-dir skillset/user-plugins/gpu-analytical-modeling
+```
+
+Manual one-off callbacks can still use the lower-level registration surface with explicit installed ids:
 
 ```bash
 pixi run isomer-cli --print-json project skill-callbacks register \
   --scope project \
-  --id gpu-reference.scout.begin \
-  --skill isomer-deepsci-scout \
-  --stage begin \
-  --skill-dir skillset/user-plugins/gpu-analytical-modeling/gpu-reference-map
-```
-
-Prompt-file callbacks use the same registration surface with `--prompt-file`:
-
-```bash
-pixi run isomer-cli --print-json project skill-callbacks register \
-  --scope project \
-  --id gpu-reporting.no-emulator-overclaim.write.end \
+  --id gpu-analytical-modeling:manual/no-emulator-overclaim/write/end \
   --skill isomer-deepsci-write \
   --stage end \
   --prompt-file skillset/user-plugins/gpu-analytical-modeling/prompts/no-emulator-overclaim.md

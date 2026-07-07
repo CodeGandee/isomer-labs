@@ -142,6 +142,7 @@ from isomer_labs.cli.handlers.shared import (
 from isomer_labs.project.skill_callback_commands import (
     CallbackCommandResult,
     disable_user_skill_callback,
+    install_user_plugin_callbacks,
     list_user_skill_callbacks,
     register_user_skill_callback,
     resolve_user_skill_callbacks,
@@ -483,6 +484,30 @@ def _cmd_skill_callbacks_register(options: CliOptions) -> int:
     )
 
 
+def _cmd_skill_callbacks_install(options: CliOptions) -> int:
+    state, context, diagnostics = _callback_state_and_context(
+        options,
+        require_topic=_value(options, "callback_scope") == "research_topic",
+    )
+    if state is None or has_errors(diagnostics):
+        payload = {"ok": False, "mutated": False, "callbacks": []}
+        return _emit("skill-callbacks install", options, payload, diagnostics, [])
+    result = install_user_plugin_callbacks(
+        state,
+        context,
+        plugin_dir=_value(options, "callback_plugin_dir"),
+        scope=_value(options, "callback_scope") or "research_topic",
+        replace_plugin_source=bool(_value(options, "callback_replace_plugin_source")),
+    )
+    return _emit(
+        "skill-callbacks install",
+        options,
+        result.to_json(),
+        list(result.diagnostics),
+        _render_callback_result("Installed User Plugin Callbacks", result),
+    )
+
+
 def _cmd_skill_callbacks_resolve(options: CliOptions) -> int:
     state, context, diagnostics = _callback_state_and_context(options, require_topic=False)
     if state is None:
@@ -594,13 +619,17 @@ def _callback_state_and_context(
 
 def _render_callback_result(title: str, result: CallbackCommandResult) -> list[str]:
     lines = [title]
+    if result.plugin_id is not None:
+        source = f", source={result.plugin_source_path}" if result.plugin_source_path is not None else ""
+        lines.append(f"Plugin: {result.plugin_id}{source}")
     if not result.callbacks:
         lines.append("- none")
     for callback in result.callbacks:
         data = callback.to_json(result.project_root)
         source = data["source_summary"]
+        plugin_key = f", plugin_key={callback.plugin_key}" if callback.plugin_key is not None else ""
         lines.append(
-            f"- {callback.id} ({callback.scope} {callback.skill} {callback.stage}, status={callback.status}, priority={callback.priority}, source={source})"
+            f"- {callback.id} ({callback.scope} {callback.skill} {callback.stage}, status={callback.status}, priority={callback.priority}{plugin_key}, source={source})"
         )
     if result.previous_status is not None and result.new_status is not None:
         lines.append(f"Status: {result.previous_status} -> {result.new_status}")
@@ -619,6 +648,7 @@ __all__ = [
     "_cmd_topics_delete",
     "_cmd_context_show",
     "_cmd_skill_callbacks_register",
+    "_cmd_skill_callbacks_install",
     "_cmd_skill_callbacks_resolve",
     "_cmd_skill_callbacks_list",
     "_cmd_skill_callbacks_show",
