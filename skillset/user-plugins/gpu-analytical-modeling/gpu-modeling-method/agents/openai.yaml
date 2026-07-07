@@ -1,6 +1,6 @@
 interface:
   display_name: "gpu-modeling-method"
-  short_description: "Shape GPU analytical model sources, equations, and baselines"
-  default_prompt: "Use $gpu-modeling-method to apply GPU source priority, analytical model shape, and baseline evidence-class discipline."
+  short_description: "Shape GPU analytical model equations, contracts, and baselines"
+  default_prompt: "Use $gpu-modeling-method to apply GPU analytical model shape, hardware contracts, source-map handoff, and baseline evidence-class discipline."
 policy:
   allow_implicit_invocation: false

@@ -10,13 +10,76 @@ default_scope = "research_topic"
 requires_explicit_install = true
 
 [[callbacks]]
+id = "gpu-reference.scout.begin"
+target_skill = "isomer-deepsci-scout"
+stage = "begin"
+priority = 110
+source_type = "skill_dir"
+skill_dir = "gpu-reference-map"
+description = "Choose GPU source families and source limits before scout framing."
+
+[[callbacks]]
+id = "gpu-reference.scout.end"
+target_skill = "isomer-deepsci-scout"
+stage = "end"
+priority = 110
+source_type = "skill_dir"
+skill_dir = "gpu-reference-map"
+description = "Check scout outputs for source provenance and source-to-claim boundaries."
+
+[[callbacks]]
+id = "gpu-reference.baseline.begin"
+target_skill = "isomer-deepsci-baseline"
+stage = "begin"
+priority = 110
+source_type = "skill_dir"
+skill_dir = "gpu-reference-map"
+description = "Classify baseline sources, source limits, and evidence boundaries before comparison."
+
+[[callbacks]]
+id = "gpu-reference.idea.begin"
+target_skill = "isomer-deepsci-idea"
+stage = "begin"
+priority = 110
+source_type = "skill_dir"
+skill_dir = "gpu-reference-map"
+description = "Route GPU model hypotheses to source families before source-backed claims harden."
+
+[[callbacks]]
+id = "gpu-reference.analysis.begin"
+target_skill = "isomer-deepsci-analysis"
+stage = "begin"
+priority = 110
+source_type = "skill_dir"
+skill_dir = "gpu-reference-map"
+description = "Use GPU source families and limitations while interpreting model or evidence outputs."
+
+[[callbacks]]
+id = "gpu-reference.experiment.begin"
+target_skill = "isomer-deepsci-experiment"
+stage = "begin"
+priority = 110
+source_type = "skill_dir"
+skill_dir = "gpu-reference-map"
+description = "Choose profiler, counter, measurement, and microbenchmark source boundaries before experiments."
+
+[[callbacks]]
+id = "gpu-reference.review.begin"
+target_skill = "isomer-deepsci-review"
+stage = "begin"
+priority = 110
+source_type = "skill_dir"
+skill_dir = "gpu-reference-map"
+description = "Review source provenance and source-to-claim boundaries for GPU analytical-modeling claims."
+
+[[callbacks]]
 id = "gpu-modeling-method.scout.begin"
 target_skill = "isomer-deepsci-scout"
 stage = "begin"
 priority = 100
 source_type = "skill_dir"
 skill_dir = "gpu-modeling-method"
-description = "Apply GPU source and model-shape discipline before scout framing."
+description = "Apply GPU source-map handoff and model-shape discipline before scout framing."
 
 [[callbacks]]
 id = "gpu-modeling-method.scout.end"
@@ -25,7 +88,7 @@ stage = "end"
 priority = 100
 source_type = "skill_dir"
 skill_dir = "gpu-modeling-method"
-description = "Check scout outputs for model-shape, source, and evidence-class readiness."
+description = "Check scout outputs for model-shape, source-map handoff, and evidence-class readiness."
 
 [[callbacks]]
 id = "gpu-modeling-method.baseline.begin"

@@ -5,8 +5,9 @@ This project-local user-plugin provides User Skill Callback material for GPU ker
 ## Contents
 
 - `manifest.toml`: Declarative install recipe for desired User Skill Callback registrations. It is not the installed callback registry.
-- `gpu-modeling-method/`: Callback skill for source priority, analytical model shape, and baseline evidence classes.
-- `gpu-evidence-and-experiment/`: Callback skill for evaluation contracts, NCU evidence, component bottleneck proof, and model-refinement decisions.
+- `gpu-reference-map/`: Callback skill for source families, source limits, and source-to-claim mapping.
+- `gpu-modeling-method/`: Callback skill for analytical model shape, hardware contract, and baseline evidence classes.
+- `gpu-evidence-and-experiment/`: Callback skill for evaluation contracts, profiler/counter evidence, component bottleneck proof, and model-refinement decisions.
 - `gpu-reporting-and-closure/`: Callback skill for claim gates, math writing, and closure limits.
 - `prompts/`: Short prompt-file callback material for narrow reminders.
 
@@ -29,7 +30,8 @@ The installed registry remains under `.isomer-labs/user-skill-callbacks/.../regi
 
 | Plugin source | Recommended target stages | Use |
 | --- | --- | --- |
-| `gpu-modeling-method` | `isomer-deepsci-scout:begin/end`, `isomer-deepsci-baseline:begin`, `isomer-deepsci-idea:begin`, `isomer-deepsci-analysis:begin` | Shape sources, equations, assumptions, and baseline classes before model work hardens. |
+| `gpu-reference-map` | `isomer-deepsci-scout:begin/end`, `isomer-deepsci-baseline:begin`, `isomer-deepsci-idea:begin`, `isomer-deepsci-analysis:begin`, `isomer-deepsci-experiment:begin`, `isomer-deepsci-review:begin` | Choose source families, source limits, and source-to-claim evidence boundaries before operational work hardens. |
+| `gpu-modeling-method` | `isomer-deepsci-scout:begin/end`, `isomer-deepsci-baseline:begin`, `isomer-deepsci-idea:begin`, `isomer-deepsci-analysis:begin` | Shape equations, assumptions, hardware contracts, and baseline classes before model work hardens. |
 | `gpu-evidence-and-experiment` | `isomer-deepsci-experiment:begin/end`, `isomer-deepsci-analysis:end`, `isomer-deepsci-review:begin`, `isomer-deepsci-decision:begin`, `isomer-deepsci-pipeline:begin` | Keep experiments falsifiable and route mismatches honestly. |
 | `gpu-reporting-and-closure` | `isomer-deepsci-write:end`, `isomer-deepsci-review:end`, `isomer-deepsci-finalize:begin/end` | Keep user-facing claims, notation, and closure decisions aligned with evidence. |
 | `prompts/ncu-command-posture.md` | `isomer-deepsci-experiment:begin` | Narrow reminder for Pixi and NCU command posture. |
@@ -60,10 +62,10 @@ Use project-scoped registration only when GPU analytical modeling is a project-w
 ```bash
 pixi run isomer-cli --print-json project skill-callbacks register \
   --scope project \
-  --id gpu-reporting.finalize.begin \
-  --skill isomer-deepsci-finalize \
+  --id gpu-reference.scout.begin \
+  --skill isomer-deepsci-scout \
   --stage begin \
-  --skill-dir skillset/user-plugins/gpu-analytical-modeling/gpu-reporting-and-closure
+  --skill-dir skillset/user-plugins/gpu-analytical-modeling/gpu-reference-map
 ```
 
 Prompt-file callbacks use the same registration surface with `--prompt-file`:
