@@ -18,6 +18,10 @@ const graph = TopicGraphViewSchema.parse({
       material_kind: "idea",
       density_class: "sparse",
       title: "One",
+      one_liner: "One line.",
+      summary: "Summary for hover.",
+      status: "candidate",
+      idea_id: "one",
     },
   ],
   edges: [
@@ -42,7 +46,10 @@ describe("graph utilities", () => {
   });
 
   it("converts graph API payloads into React Flow objects", () => {
-    expect(toFlowNodes(graph)[0].id).toBe("idea:one");
+    const node = toFlowNodes(graph)[0];
+    expect(node.id).toBe("idea:one");
+    expect(node.data.summary).toBe("Summary for hover.");
+    expect(node.data.record_id).toBe("record-one");
     expect(toFlowEdges(graph)[0].label).toBe("derived_from");
   });
 });

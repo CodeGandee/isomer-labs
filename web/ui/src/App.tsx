@@ -3,7 +3,7 @@ import { useTree } from "@headless-tree/react";
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type ColorMode, type Edge, type Node } from "@xyflow/react";
+import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type ColorMode, type Edge, type Node, type NodeMouseHandler } from "@xyflow/react";
 import { themeDark, themeLight } from "dockview";
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps } from "dockview-react";
 import Graphology from "graphology";
@@ -37,7 +37,7 @@ import {
   getViewerDescriptor,
   type GraphFilters,
 } from "./api";
-import { layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes } from "./graph-utils";
+import { layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "./graph-utils";
 import { buildJsonMarkdownPreview } from "./markdown-doc";
 import { manualRefresh$, topicInvalidations, workbenchCommands$ } from "./events";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +54,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LinkButton, StatusBadge, ToolbarButton } from "@/components/workbench-controls";
 import type { ExplorerNode, GraphScope, IdeaDetailResponse, OpenableItemDescriptor, RecordSummary, TopicGraphView } from "./types";
@@ -75,6 +76,8 @@ import "dockview/dist/styles/dockview.css";
 import "@xyflow/react/dist/style.css";
 import "katex/dist/katex.min.css";
 import "./styles.css";
+
+type IdeaFlowNode = Node<IdeaFlowNodeData>;
 
 type PanelParams = {
   topicId?: string;
@@ -631,18 +634,140 @@ export function ProjectSettingsPanel() {
   );
 }
 
-function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelParams) {
+type IdeaNodeHoverPreview = {
+  nodeId: string;
+  data: IdeaFlowNodeData;
+  x: number;
+  y: number;
+};
+
+function withSelectedClass(className: string | undefined, selected: boolean) {
+  const tokens = new Set((className || "").split(/\s+/).filter(Boolean));
+  if (selected) {
+    tokens.add("selected");
+  } else {
+    tokens.delete("selected");
+  }
+  return Array.from(tokens).join(" ");
+}
+
+export function buildIdeaNodeHoverMarkdown(data: IdeaFlowNodeData): string {
+  const title = String(data.title || data.label || "Idea");
+  const lines = [`### ${title}`];
+  const oneLiner = typeof data.one_liner === "string" ? data.one_liner.trim() : "";
+  const summary = typeof data.summary === "string" ? data.summary.trim() : "";
+  if (oneLiner) {
+    lines.push("", oneLiner);
+  }
+  if (summary && summary !== oneLiner) {
+    lines.push("", summary);
+  }
+  const facts = [
+    ["Status", data.status],
+    ["Kind", data.material_kind],
+    ["Idea", data.idea_id],
+    ["Record", data.record_id],
+    ["Producer", data.producer || data.skill],
+  ].filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0);
+  if (facts.length) {
+    lines.push("", ...facts.map(([label, value]) => `- **${label}:** ${value}`));
+  }
+  return lines.join("\n");
+}
+
+function IdeaNodeHoverCard({ preview }: { preview: IdeaNodeHoverPreview | null }) {
+  const markdown = useMemo(() => (preview ? buildIdeaNodeHoverMarkdown(preview.data) : ""), [preview]);
+  if (!preview) {
+    return null;
+  }
+  const viewportWidth = typeof window === "undefined" ? 1024 : window.innerWidth;
+  const viewportHeight = typeof window === "undefined" ? 768 : window.innerHeight;
+  const left = Math.max(16, Math.min(preview.x + 16, viewportWidth - 440));
+  const top = Math.max(16, Math.min(preview.y + 18, viewportHeight - 340));
+  return (
+    <div className="idea-node-hover-card" style={{ left, top }} role="tooltip">
+      <MarkdownView content={markdown} />
+    </div>
+  );
+}
+
+export function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelParams) {
   const selectedGraphScope = asGraphScope(graphScope, "idea-lineage");
   const { resolvedThemeMode, themeMode } = useGuiTheme();
   const reactFlowColorMode: ColorMode = themeMode === "system" ? "system" : resolvedThemeMode;
   const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: false });
+  const [hoverPreview, setHoverPreview] = useState<IdeaNodeHoverPreview | null>(null);
+  const hoverDelayRef = useRef<number | null>(null);
+  const pendingHoverRef = useRef<IdeaNodeHoverPreview | null>(null);
   const graph = useQuery({
     queryKey: ["topic", topicId, "graph", selectedGraphScope, requestedRenderer(selectedGraphScope), filters],
     queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, requestedRenderer(selectedGraphScope), filters),
     enabled: Boolean(topicId),
   });
-  const [flowNodes, setFlowNodes] = useState<Node[]>([]);
+  const [flowNodes, setFlowNodes] = useState<IdeaFlowNode[]>([]);
   const flowEdges = useMemo(() => (graph.data ? toFlowEdges(graph.data) : []), [graph.data]);
+
+  const clearHoverPreview = useCallback(() => {
+    if (hoverDelayRef.current !== null) {
+      window.clearTimeout(hoverDelayRef.current);
+      hoverDelayRef.current = null;
+    }
+    pendingHoverRef.current = null;
+    setHoverPreview(null);
+  }, []);
+
+  const selectFlowNode = useCallback((nodeId: string) => {
+    setFlowNodes((nodes) =>
+      nodes.map((node) => {
+        const selected = node.id === nodeId;
+        return {
+          ...node,
+          selected,
+          className: withSelectedClass(node.className, selected),
+        };
+      }),
+    );
+  }, []);
+
+  const handleNodeClick = useCallback<NodeMouseHandler<IdeaFlowNode>>((_event, node) => {
+    selectFlowNode(node.id);
+  }, [selectFlowNode]);
+
+  const handleNodeDoubleClick = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
+    event.preventDefault();
+    clearHoverPreview();
+    selectFlowNode(node.id);
+    openRecordFromNode(topicId || "", graph.data, node.id);
+  }, [clearHoverPreview, graph.data, selectFlowNode, topicId]);
+
+  const handleNodeMouseEnter = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
+    const nextPreview = { nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY };
+    pendingHoverRef.current = nextPreview;
+    if (hoverDelayRef.current !== null) {
+      window.clearTimeout(hoverDelayRef.current);
+    }
+    hoverDelayRef.current = window.setTimeout(() => {
+      setHoverPreview(pendingHoverRef.current);
+      hoverDelayRef.current = null;
+    }, 600);
+  }, []);
+
+  const handleNodeMouseMove = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
+    const nextPreview = { nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY };
+    pendingHoverRef.current = nextPreview;
+    setHoverPreview((current) => (current?.nodeId === node.id ? nextPreview : current));
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (hoverDelayRef.current !== null) {
+        window.clearTimeout(hoverDelayRef.current);
+        hoverDelayRef.current = null;
+      }
+      pendingHoverRef.current = null;
+    },
+    [],
+  );
 
   useEffect(() => {
     let subscription = new Subscription();
@@ -665,11 +790,22 @@ function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelParams) {
       ) : (
         <ReactFlowProvider>
           <div className="flow-frame idea-lineage-flow">
-            <ReactFlow colorMode={reactFlowColorMode} nodes={flowNodes} edges={flowEdges} fitView onNodeClick={(_event, node) => openRecordFromNode(topicId, graph.data, node.id)}>
+            <ReactFlow
+              colorMode={reactFlowColorMode}
+              nodes={flowNodes}
+              edges={flowEdges}
+              fitView
+              onNodeClick={handleNodeClick}
+              onNodeDoubleClick={handleNodeDoubleClick}
+              onNodeMouseEnter={handleNodeMouseEnter}
+              onNodeMouseMove={handleNodeMouseMove}
+              onNodeMouseLeave={clearHoverPreview}
+            >
               <FlowAutoFit edgeCount={flowEdges.length} nodeCount={flowNodes.length} />
               <Background />
               <Controls />
             </ReactFlow>
+            <IdeaNodeHoverCard preview={hoverPreview} />
           </div>
         </ReactFlowProvider>
       )}
@@ -826,7 +962,7 @@ function SigmaGraph({ graph }: { graph: TopicGraphView }) {
       }
     }
     const renderer = new Sigma(graphology, containerRef.current, { allowInvalidContainer: true });
-    renderer.on("clickNode", ({ node }) => openRecordFromNode(graph.topic_id, graph, node));
+    renderer.on("doubleClickNode", ({ node }) => openRecordFromNode(graph.topic_id, graph, node));
     return () => renderer.kill();
   }, [graph]);
   return <div className="sigma-frame" ref={containerRef} />;
@@ -908,7 +1044,6 @@ type CopyState = {
 };
 
 export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: string }) {
-  const queryClientValue = useQueryClient();
   const viewJsonButtonRef = useRef<HTMLButtonElement | null>(null);
   const previousDigestRef = useRef<string | undefined>(undefined);
   const [jsonModalOpen, setJsonModalOpen] = useState(false);
@@ -933,7 +1068,32 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
   const exactJsonText = useMemo(() => (ideaContent === undefined ? null : buildJsonMarkdownPreview(ideaContent).jsonText), [ideaContent]);
   const modalSourceJson = activeDetail?.idea_content ?? activeDetail?.source?.source_json;
   const modalJsonText = useMemo(() => (modalSourceJson === undefined ? null : buildJsonMarkdownPreview(modalSourceJson).jsonText), [modalSourceJson]);
-  const diagnostics = [...(detail.data?.diagnostics || []), ...(fullDetail.data?.diagnostics || [])];
+  const diagnostics = useMemo(() => [...(detail.data?.diagnostics || []), ...(fullDetail.data?.diagnostics || [])], [detail.data?.diagnostics, fullDetail.data?.diagnostics]);
+  const lineageJsonText = useMemo(
+    () =>
+      buildJsonMarkdownPreview({
+        incoming_edges: detail.data?.incoming_edges || [],
+        outgoing_edges: detail.data?.outgoing_edges || [],
+        generation_groups: detail.data?.generation_groups || [],
+      }).jsonText,
+    [detail.data?.generation_groups, detail.data?.incoming_edges, detail.data?.outgoing_edges],
+  );
+  const realizationsJsonText = useMemo(() => buildJsonMarkdownPreview(detail.data?.realizations || []).jsonText, [detail.data?.realizations]);
+  const diagnosticsJsonText = useMemo(() => buildJsonMarkdownPreview(diagnostics).jsonText, [diagnostics]);
+  const jsonTabs = useMemo<JsonModalTab[]>(
+    () => [
+      {
+        id: "main-record",
+        label: "Main Record",
+        jsonText: modalJsonText || exactJsonText || "",
+        loading: Boolean(sourceTruncated && fullDetail.isFetching && !modalJsonText),
+      },
+      { id: "lineage", label: "Lineage", jsonText: lineageJsonText },
+      { id: "realizations", label: "Realizations", jsonText: realizationsJsonText },
+      { id: "diagnostics", label: "Diagnostics", jsonText: diagnosticsJsonText },
+    ],
+    [diagnosticsJsonText, exactJsonText, fullDetail.isFetching, lineageJsonText, modalJsonText, realizationsJsonText, sourceTruncated],
+  );
   const provenance = detail.data?.source_provenance || detail.data?.source;
   const sourceRecordId = String(provenance?.source_record_id || detail.data?.latest_realization?.record_id || detail.data?.source?.source_record_id || "");
   const sourceDigest = detail.data?.source ? detail.data.source.payload_digest || `${detail.data.source.source_kind}:${detail.data.source.source_json_bytes || 0}` : undefined;
@@ -948,23 +1108,6 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
     previousDigestRef.current = sourceDigest;
   }, [sourceDigest]);
 
-  const fetchExactSourceJson = useCallback(async (): Promise<unknown | undefined> => {
-    if (detail.data?.idea_content !== undefined) {
-      return detail.data.idea_content;
-    }
-    if (detail.data?.source?.source_json !== undefined) {
-      return detail.data.source.source_json;
-    }
-    if (!detail.data?.source?.source_json_truncated) {
-      return undefined;
-    }
-    const fetched = await queryClientValue.fetchQuery({
-      queryKey: ["topic", topicId, "idea-lineage", "idea", ideaId, "detail", true],
-      queryFn: () => getIdeaDetail(topicId, ideaId, { includeSourceJson: true }),
-    });
-    return fetched.idea_content ?? fetched.source?.source_json;
-  }, [detail.data?.idea_content, detail.data?.source, ideaId, queryClientValue, topicId]);
-
   const copyText = useCallback(async (target: "json" | "markdown", textValue: string | null | undefined) => {
     if (!textValue) {
       setCopyState({ target, status: "error", message: "Nothing to copy." });
@@ -977,15 +1120,6 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
       setCopyState({ target, status: "error", message: "Clipboard write failed. Content remains selectable." });
     }
   }, []);
-
-  const copyJson = useCallback(async () => {
-    try {
-      const exact = await fetchExactSourceJson();
-      await copyText("json", exact === undefined ? null : buildJsonMarkdownPreview(exact).jsonText);
-    } catch {
-      setCopyState({ target: "json", status: "error", message: "Full JSON fetch failed." });
-    }
-  }, [copyText, fetchExactSourceJson]);
 
   const closeJsonModal = useCallback(() => {
     setJsonModalOpen(false);
@@ -1014,9 +1148,6 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
             onClick={() => setJsonModalOpen(true)}
           >
             View JSON
-          </ToolbarButton>
-          <ToolbarButton type="button" disabled={!detail.data?.source?.source_json_available} onClick={() => void copyJson()}>
-            Copy JSON
           </ToolbarButton>
           <ToolbarButton type="button" disabled={!preview?.markdown} onClick={() => void copyText("markdown", preview?.markdown)}>
             Copy Markdown
@@ -1054,26 +1185,14 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
       ) : (
         <MarkdownView content="No source JSON is available for this idea." state="empty" />
       )}
-      <div className="detail-columns">
-        <JsonBlock
-          title="Lineage"
-          value={{
-            incoming_edges: detail.data?.incoming_edges || [],
-            outgoing_edges: detail.data?.outgoing_edges || [],
-            generation_groups: detail.data?.generation_groups || [],
-          }}
-        />
-        <JsonBlock title="Realizations" value={detail.data?.realizations || []} />
-        <JsonBlock title="Diagnostics" value={diagnostics} />
-      </div>
       {jsonModalOpen ? (
         <JsonModal
-          title={`${title} JSON`}
-          jsonText={modalJsonText || exactJsonText || ""}
-          loading={Boolean(sourceTruncated && fullDetail.isFetching && !modalJsonText)}
+          title={`${title} Data`}
+          tabs={jsonTabs}
+          defaultTabId="main-record"
           copyStatus={copyState.target === "json" ? copyState.message : undefined}
           onClose={closeJsonModal}
-          onCopy={() => void copyJson()}
+          onCopy={(jsonText) => void copyText("json", jsonText)}
         />
       ) : null}
     </section>
@@ -1205,31 +1324,40 @@ function MermaidBlock({ chart }: { chart: string }) {
   return <div className="mermaid" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
+type JsonModalTab = {
+  id: string;
+  label: string;
+  jsonText: string;
+  loading?: boolean;
+};
+
 export function JsonModal({
   title,
-  jsonText,
-  loading,
+  tabs,
+  defaultTabId,
   copyStatus,
   onClose,
   onCopy,
 }: {
   title: string;
-  jsonText: string;
-  loading?: boolean;
+  tabs: JsonModalTab[];
+  defaultTabId: string;
   copyStatus?: string;
   onClose: () => void;
-  onCopy: () => void;
+  onCopy: (jsonText: string) => void;
 }) {
+  const [activeTabId, setActiveTabId] = useState(defaultTabId);
+  const activeTab = tabs.find((tab) => tab.id === activeTabId) || tabs[0];
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="json-modal max-w-[min(1040px,calc(100vw-2rem))] sm:max-w-[min(1040px,calc(100vw-2rem))]" showCloseButton={false}>
         <div className="json-modal-heading">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            <DialogDescription className="sr-only">JSON source content for the selected idea.</DialogDescription>
+            <DialogDescription className="sr-only">JSON data for the selected idea.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="toolbar">
-            <ToolbarButton type="button" onClick={onCopy} disabled={!jsonText}>
+            <ToolbarButton type="button" onClick={() => onCopy(activeTab?.jsonText || "")} disabled={!activeTab?.jsonText || activeTab.loading}>
               Copy JSON
             </ToolbarButton>
             <ToolbarButton type="button" onClick={onClose}>
@@ -1237,8 +1365,23 @@ export function JsonModal({
             </ToolbarButton>
           </DialogFooter>
         </div>
-        {copyStatus ? <div className="status-line">{copyStatus}</div> : null}
-        {loading ? <div className="empty-state">Loading full JSON.</div> : <pre className="json-modal-code">{jsonText || "No JSON content available."}</pre>}
+        <div className="status-line json-modal-status" aria-live="polite">
+          {copyStatus || ""}
+        </div>
+        <Tabs value={activeTab?.id || defaultTabId} onValueChange={setActiveTabId} className="json-modal-tabs">
+          <TabsList className="json-modal-tabs-list">
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.id} value={tab.id}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {tabs.map((tab) => (
+            <TabsContent key={tab.id} value={tab.id} className="json-modal-tab-content">
+              {tab.loading ? <div className="empty-state">Loading full JSON.</div> : <pre className="json-modal-code">{tab.jsonText || "No JSON content available."}</pre>}
+            </TabsContent>
+          ))}
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

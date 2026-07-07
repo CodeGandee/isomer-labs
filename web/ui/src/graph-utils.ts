@@ -2,6 +2,20 @@ import type { Edge, Node } from "@xyflow/react";
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { GraphScope, RendererChoice, TopicGraphView } from "./types";
 
+export type IdeaFlowNodeData = {
+  [key: string]: unknown;
+  label: string;
+  title: string;
+  one_liner?: string | null;
+  summary?: string | null;
+  status?: string | null;
+  material_kind?: string | null;
+  record_id?: string | null;
+  idea_id?: string | null;
+  producer?: string | null;
+  skill?: string | null;
+};
+
 export function selectRenderer(graphScope: GraphScope, rendererHint: string, nodeCount: number): "react-flow" | "sigma" {
   if (rendererHint === "sigma-overview") {
     return "sigma";
@@ -16,13 +30,22 @@ export function requestedRenderer(graphScope: GraphScope): RendererChoice {
   return graphScope === "idea-lineage" ? "auto" : "sigma";
 }
 
-export function toFlowNodes(graph: TopicGraphView): Node[] {
+export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
   return graph.nodes.map((node, index) => ({
     id: node.id,
     className: `idea-flow-node material-${flowClassToken(node.material_kind || "artifact")} status-${flowClassToken(node.status || "unknown")} ${node.selected ? "selected" : ""}`,
     position: { x: 40 + (index % 3) * 300, y: 40 + Math.floor(index / 3) * 160 },
     data: {
       label: `${node.title}${node.status ? `\n${node.status}` : ""}`,
+      title: node.title,
+      one_liner: node.one_liner,
+      summary: node.summary,
+      status: node.status,
+      material_kind: node.material_kind,
+      record_id: node.record_id,
+      idea_id: node.idea_id,
+      producer: node.producer,
+      skill: node.skill,
     },
     style: {
       fontSize: 12,
@@ -47,7 +70,7 @@ function flowClassToken(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
 }
 
-export async function layoutFlowGraph(nodes: Node[], edges: Edge[]): Promise<Node[]> {
+export async function layoutFlowGraph(nodes: Node<IdeaFlowNodeData>[], edges: Edge[]): Promise<Node<IdeaFlowNodeData>[]> {
   const elk = new ELK();
   const layout = await elk.layout({
     id: "root",
