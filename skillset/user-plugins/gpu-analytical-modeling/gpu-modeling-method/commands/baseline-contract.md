@@ -8,7 +8,8 @@ When comparing GPU models or accepting baselines, execute the following steps in
 2. **Separate evidence classes**. Do not merge analytical derivation, emulator ground truth, simulator traces, microbenchmarks, NCU counters, and real hardware timings into one undifferentiated validation claim.
 3. **Define fair comparison**. Use disjoint calibration and validation sets, shared input shapes, shared hardware assumptions, and stable metric definitions.
 4. **Protect measured accuracy claims**. Reserve real-hardware accuracy language for measured kernel runs on the target hardware or an explicitly accepted hardware measurement proxy.
-5. **Record caveats**. If a comparator is weak, stale, coarse, or incomparable, record the caveat before downstream use.
+5. **Downgrade coarse bottleneck support**. Treat roofline, compute-vs-memory, simulator, and emulator outputs as insufficient for exact saturated-component or blocking-path claims unless component/path equations and matching evidence are also present.
+6. **Record caveats**. If a comparator is weak, stale, coarse, or incomparable, record the caveat before downstream use.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a baseline-classification plan from the available comparators, evidence classes, and claim scope, then execute the plan. If fair comparison cannot be established, route to baseline repair, decision, or a blocker according to the owning DeepSci workflow.
 
@@ -26,4 +27,5 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 - Calling emulator agreement "real hardware error."
 - Treating NCU's coarse compute or memory label as enough for component-level claims.
+- Treating roofline agreement as proof of exact saturated-component or blocking-path prediction.
 - Comparing models calibrated on different data without saying so.

@@ -7,7 +7,7 @@ description: Use when a GPU kernel research workflow needs hardware-grounded ana
 
 ## Overview
 
-This callback skill keeps GPU kernel models analytical, hardware-grounded, and falsifiable. It turns "make a model" into explicit sources, equations, assumptions, components, and evidence classes.
+This callback skill keeps GPU kernel models analytical, hardware-grounded, interpretable, and falsifiable. It turns "make a model" into explicit sources, physical parameters, equations, assumptions, internal components, execution paths, bottleneck rules, and evidence classes.
 
 ## When to Use
 
@@ -19,11 +19,12 @@ Do not use it as a benchmark runner, profiler wrapper, simulator, or replacement
 
 When this callback is applied, execute the following steps in order.
 
-1. **Classify the current stage**. Decide whether the owning workflow needs source selection, model-shape discipline, baseline separation, or all three.
+1. **Classify the current stage**. Decide whether the owning workflow needs source selection, hardware-model contract, model-shape discipline, baseline separation, or all of them.
 2. **Apply source priority** when the workflow may search or cite model inputs. See `commands/source-map.md`.
-3. **Apply model-shape requirements** when the workflow proposes, accepts, or analyzes a GPU analytical model. See `commands/model-shape.md`.
-4. **Apply baseline and evidence-class separation** when the workflow compares models or reports support. See `commands/baseline-contract.md`.
-5. **Report conflicts and gaps** if this guidance cannot be followed within the owning DeepSci skill, current user request, or available evidence.
+3. **Apply the hardware-model contract** when the workflow proposes, accepts, or analyzes a GPU analytical model. See `commands/hardware-model-contract.md`.
+4. **Apply model-shape requirements** when the workflow turns the hardware contract into equations, outputs, and validity limits. See `commands/model-shape.md`.
+5. **Apply baseline and evidence-class separation** when the workflow compares models or reports support. See `commands/baseline-contract.md`.
+6. **Report conflicts and gaps** if this guidance cannot be followed within the owning DeepSci skill, current user request, or available evidence.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this callback, the owning DeepSci skill, and the current topic context, then execute the plan.
 
@@ -32,6 +33,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
 | `source-map` | Rank GPU modeling sources and avoid weak provenance | `commands/source-map.md` |
+| `hardware-model-contract` | Define physical parameters, internal components, execution path, and bottleneck verification | `commands/hardware-model-contract.md` |
 | `model-shape` | Define the required analytical model form | `commands/model-shape.md` |
 | `baseline-contract` | Separate baselines and evidence classes | `commands/baseline-contract.md` |
 
@@ -39,5 +41,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 - Treating roofline commentary as the full analytical model instead of a comparator.
 - Accepting a fitted function without mapping terms to GPU hardware, measured quantities, or explicit assumptions.
+- Accepting anonymous efficiency factors that lack physical meaning, units or dimensions, bounds, and a named component or path effect.
+- Reporting runtime accuracy as proof of bottleneck understanding without predicted-vs-observed component or path evidence.
 - Mixing emulator, simulator, NCU, microbenchmark, and real-hardware evidence under one "validated" label.
 - Inventing GPU parameters without source, measurement, or an explicit assumption boundary.
