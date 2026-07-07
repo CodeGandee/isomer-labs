@@ -72,8 +72,13 @@ try {
   if (visibleNodeIndex < 0) {
     throw new Error("No clickable React Flow node found");
   }
-  const selectedNodeText = await page.locator(".react-flow__node").nth(visibleNodeIndex).innerText();
-  await page.locator(".react-flow__node").nth(visibleNodeIndex).click({ timeout: 15000 });
+  const selectedNode = page.locator(".react-flow__node").nth(visibleNodeIndex);
+  const selectedNodeText = await selectedNode.innerText();
+  const selectedNodeBox = await selectedNode.boundingBox();
+  if (!selectedNodeBox) {
+    throw new Error("Clickable React Flow node has no bounding box");
+  }
+  await page.mouse.dblclick(selectedNodeBox.x + selectedNodeBox.width / 2, selectedNodeBox.y + selectedNodeBox.height / 2);
   await page.waitForSelector(".detail-viewer, .idea-detail-panel", { timeout: 30000 });
   await page.waitForTimeout(2500);
   const detailTitle = await page.locator(".detail-heading h3").first().innerText();

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MarkerType } from "@xyflow/react";
 import { selectRenderer, toFlowEdges, toFlowNodes } from "./graph-utils";
 import { TopicGraphViewSchema } from "./types";
 
@@ -50,6 +51,8 @@ describe("graph utilities", () => {
     expect(node.id).toBe("idea:one");
     expect(node.data.summary).toBe("Summary for hover.");
     expect(node.data.record_id).toBe("record-one");
-    expect(toFlowEdges(graph)[0].label).toBe("derived_from");
+    const edge = toFlowEdges(graph)[0];
+    expect(edge.label).toBe("derived_from");
+    expect(edge.markerEnd).toEqual(expect.objectContaining({ type: MarkerType.ArrowClosed }));
   });
 });

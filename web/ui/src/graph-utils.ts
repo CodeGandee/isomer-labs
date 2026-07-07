@@ -1,4 +1,4 @@
-import type { Edge, Node } from "@xyflow/react";
+import { MarkerType, type Edge, type Node } from "@xyflow/react";
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { GraphScope, RendererChoice, TopicGraphView } from "./types";
 
@@ -63,6 +63,16 @@ export function toFlowEdges(graph: TopicGraphView): Edge[] {
     className: `idea-flow-edge relation-${flowClassToken(edge.relation_kind || "related")}`,
     label: edge.relation_kind,
     animated: false,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 16,
+      height: 16,
+      color: "var(--flow-edge-stroke)",
+      strokeWidth: 1.7,
+    },
+    style: {
+      strokeWidth: 1.7,
+    },
   }));
 }
 

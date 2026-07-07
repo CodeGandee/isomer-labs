@@ -7,7 +7,7 @@ import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type 
 import { themeDark, themeLight } from "dockview";
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps } from "dockview-react";
 import Graphology from "graphology";
-import { RefreshCw, Settings } from "lucide-react";
+import { LoaderCircle, Menu, RefreshCw, Settings } from "lucide-react";
 import mermaid from "mermaid";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -78,6 +78,13 @@ import "katex/dist/katex.min.css";
 import "./styles.css";
 
 type IdeaFlowNode = Node<IdeaFlowNodeData>;
+const LINEAGE_NODE_STATE_CLASSES = ["selected", "lineage-parent", "lineage-child"];
+const LINEAGE_EDGE_STATE_CLASSES = ["lineage-incoming", "lineage-outgoing"];
+const NODE_DOUBLE_CLICK_MS = 500;
+const NODE_DOUBLE_CLICK_DISTANCE_PX = 72;
+const HOVER_PREVIEW_OPEN_DELAY_MS = 2000;
+const HOVER_PREVIEW_CLOSE_DELAY_MS = 500;
+const TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX = 14;
 
 type PanelParams = {
   topicId?: string;
@@ -125,6 +132,7 @@ export function RootApp() {
 function Workbench() {
   const [urlState, setUrlState] = useUrlState();
   const [dockApi, setDockApi] = useState<unknown>(null);
+  const [mobileExplorerOpen, setMobileExplorerOpen] = useState(false);
   const [expandedTopicIds, setExpandedTopicIds] = useState<string[]>([]);
   const [expandedItems, setExpandedItems] = useState<string[]>(["project", "project:topics"]);
   const startupItemRef = useRef<string | null>(null);
@@ -392,9 +400,9 @@ function Workbench() {
     setExpandedTopicIds((current) => (current.includes(topicId) ? current : [...current, topicId].sort()));
   }, []);
 
-  return (
-    <div className="research-shell">
-      <aside className="sidebar explorer-sidebar">
+  const renderExplorer = useCallback(
+    (options: { onOpenItem?: () => void } = {}) => (
+      <>
         <header className="brand-row">
           <h1>Isomer</h1>
           <span>{project.data?.ok ? "ready" : "loading"}</span>
@@ -408,14 +416,32 @@ function Workbench() {
           selectedTopicId={selectedTopicId}
           onExpandedItemsChange={setExpandedItems}
           onExpandTopic={onExpandTopic}
-          onOpenItem={(openableItemId) => void openItem(openableItemId)}
+          onOpenItem={(openableItemId) => {
+            options.onOpenItem?.();
+            void openItem(openableItemId);
+          }}
         />
+      </>
+    ),
+    [expandedItems, explorer.data?.nodes, explorer.data?.revision, explorer.data?.root_node_ids, onExpandTopic, openItem, project.data?.ok, project.data?.project?.root, selectedTopicId],
+  );
+
+  return (
+    <div className="research-shell">
+      <aside className="sidebar explorer-sidebar">
+        {renderExplorer()}
       </aside>
       <main className="workbench">
         <div className="topbar">
-          <div className="topic-heading">
-            <span>Research Topic</span>
-            <h2>{selectedTopicId || "Select a topic"}</h2>
+          <div className="topbar-heading-group">
+            <ToolbarButton className="mobile-explorer-trigger" type="button" onClick={() => setMobileExplorerOpen(true)}>
+              <Menu aria-hidden="true" />
+              Project
+            </ToolbarButton>
+            <div className="topic-heading">
+              <span>Research Topic</span>
+              <h2>{selectedTopicId || "Select a topic"}</h2>
+            </div>
           </div>
           <div className="toolbar">
             <ToolbarButton type="button" onClick={() => void openItem("project:settings")}>
@@ -432,6 +458,17 @@ function Workbench() {
           <DockviewReact components={dockComponents} onReady={onDockReady} theme={dockviewTheme} />
         </div>
       </main>
+      <Dialog open={mobileExplorerOpen} onOpenChange={setMobileExplorerOpen}>
+        <DialogContent className="mobile-explorer-sheet" showCloseButton={false}>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Project Explorer</DialogTitle>
+            <DialogDescription>Navigate Project topics and views.</DialogDescription>
+          </DialogHeader>
+          <aside className="sidebar explorer-sidebar mobile-explorer-sidebar">
+            {renderExplorer({ onOpenItem: () => setMobileExplorerOpen(false) })}
+          </aside>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -641,14 +678,19 @@ type IdeaNodeHoverPreview = {
   y: number;
 };
 
-function withSelectedClass(className: string | undefined, selected: boolean) {
+function withControlledClasses(className: string | undefined, controlledClasses: string[], enabledClasses: string[]) {
   const tokens = new Set((className || "").split(/\s+/).filter(Boolean));
-  if (selected) {
-    tokens.add("selected");
-  } else {
-    tokens.delete("selected");
+  for (const token of controlledClasses) {
+    tokens.delete(token);
+  }
+  for (const token of enabledClasses) {
+    tokens.add(token);
   }
   return Array.from(tokens).join(" ");
+}
+
+function withSelectedClass(className: string | undefined, selected: boolean) {
+  return withControlledClasses(className, ["selected"], selected ? ["selected"] : []);
 }
 
 export function buildIdeaNodeHoverMarkdown(data: IdeaFlowNodeData): string {
@@ -675,18 +717,70 @@ export function buildIdeaNodeHoverMarkdown(data: IdeaFlowNodeData): string {
   return lines.join("\n");
 }
 
-function IdeaNodeHoverCard({ preview }: { preview: IdeaNodeHoverPreview | null }) {
-  const markdown = useMemo(() => (preview ? buildIdeaNodeHoverMarkdown(preview.data) : ""), [preview]);
+function IdeaNodeHoverCard({
+  preview,
+  topicId,
+  onPointerEnter,
+  onPointerLeave,
+}: {
+  preview: IdeaNodeHoverPreview | null;
+  topicId: string;
+  onPointerEnter: () => void;
+  onPointerLeave: () => void;
+}) {
+  const ideaId = typeof preview?.data.idea_id === "string" && preview.data.idea_id.trim() ? preview.data.idea_id : "";
+  const detail = useQuery({
+    queryKey: ["topic", topicId, "idea-lineage", "idea-hover-preview", ideaId],
+    queryFn: () => getIdeaDetail(topicId, ideaId, { includeSourceJson: true }),
+    enabled: Boolean(preview && topicId && ideaId),
+    staleTime: 30_000,
+  });
+  const markdown = useMemo(() => {
+    if (!preview) {
+      return "";
+    }
+    const ideaContent = detail.data?.idea_content ?? detail.data?.source?.source_json;
+    const previewSource = ideaContent === undefined && detail.data?.idea ? { idea: detail.data.idea, latest_realization: detail.data.latest_realization } : ideaContent;
+    if (previewSource !== undefined) {
+      return buildJsonMarkdownPreview(previewSource).markdown;
+    }
+    const fallback = buildIdeaNodeHoverMarkdown(preview.data);
+    if (detail.error) {
+      return `${fallback}\n\n_Preview detail failed to load. Showing graph summary._`;
+    }
+    return fallback;
+  }, [detail.data, detail.error, preview]);
   if (!preview) {
     return null;
   }
+  const loading = Boolean(ideaId && detail.isPending && !detail.data && !detail.error);
   const viewportWidth = typeof window === "undefined" ? 1024 : window.innerWidth;
   const viewportHeight = typeof window === "undefined" ? 768 : window.innerHeight;
   const left = Math.max(16, Math.min(preview.x + 16, viewportWidth - 440));
   const top = Math.max(16, Math.min(preview.y + 18, viewportHeight - 340));
+  const stopGraphInteraction = (event: React.SyntheticEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
   return (
-    <div className="idea-node-hover-card" style={{ left, top }} role="tooltip">
-      <MarkdownView content={markdown} />
+    <div
+      className="idea-node-hover-card"
+      style={{ left, top }}
+      role="tooltip"
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      onMouseEnter={onPointerEnter}
+      onMouseLeave={onPointerLeave}
+      onPointerDown={stopGraphInteraction}
+      onWheel={stopGraphInteraction}
+    >
+      {loading ? (
+        <div className="idea-node-hover-loading">
+          <LoaderCircle aria-hidden="true" />
+          <span>Loading preview</span>
+        </div>
+      ) : (
+        <MarkdownView content={markdown} />
+      )}
     </div>
   );
 }
@@ -698,7 +792,12 @@ export function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelPa
   const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: false });
   const [hoverPreview, setHoverPreview] = useState<IdeaNodeHoverPreview | null>(null);
   const hoverDelayRef = useRef<number | null>(null);
+  const hoverCloseDelayRef = useRef<number | null>(null);
+  const touchLongPressDelayRef = useRef<number | null>(null);
+  const touchLongPressRef = useRef<{ pointerId: number; nodeId: string; x: number; y: number } | null>(null);
   const pendingHoverRef = useRef<IdeaNodeHoverPreview | null>(null);
+  const lastNodeClickRef = useRef<{ nodeId: string; at: number; x: number; y: number } | null>(null);
+  const suppressHoverUntilNodeExitRef = useRef(false);
   const graph = useQuery({
     queryKey: ["topic", topicId, "graph", selectedGraphScope, requestedRenderer(selectedGraphScope), filters],
     queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, requestedRenderer(selectedGraphScope), filters),
@@ -706,15 +805,79 @@ export function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelPa
   });
   const [flowNodes, setFlowNodes] = useState<IdeaFlowNode[]>([]);
   const flowEdges = useMemo(() => (graph.data ? toFlowEdges(graph.data) : []), [graph.data]);
+  const selectedFlowNode = useMemo(() => flowNodes.find((node) => node.selected), [flowNodes]);
+  const selectedFlowNodeId = selectedFlowNode?.id || "";
+  const decoratedFlowNodes = useMemo(() => {
+    if (!selectedFlowNodeId) {
+      return flowNodes;
+    }
+    const parentNodeIds = new Set(flowEdges.filter((edge) => edge.target === selectedFlowNodeId).map((edge) => edge.source));
+    const childNodeIds = new Set(flowEdges.filter((edge) => edge.source === selectedFlowNodeId).map((edge) => edge.target));
+    return flowNodes.map((node) => {
+      const enabledClasses = [
+        node.id === selectedFlowNodeId ? "selected" : "",
+        parentNodeIds.has(node.id) ? "lineage-parent" : "",
+        childNodeIds.has(node.id) ? "lineage-child" : "",
+      ].filter(Boolean);
+      return {
+        ...node,
+        className: withControlledClasses(node.className, LINEAGE_NODE_STATE_CLASSES, enabledClasses),
+      };
+    });
+  }, [flowEdges, flowNodes, selectedFlowNodeId]);
+  const decoratedFlowEdges = useMemo<Edge[]>(() => {
+    if (!selectedFlowNodeId) {
+      return flowEdges;
+    }
+    return flowEdges.map((edge) => {
+      const incoming = edge.target === selectedFlowNodeId;
+      const outgoing = edge.source === selectedFlowNodeId;
+      const highlightColor = incoming ? "var(--flow-edge-incoming)" : outgoing ? "var(--flow-edge-outgoing)" : undefined;
+      const enabledClasses = [
+        incoming ? "lineage-incoming" : "",
+        outgoing ? "lineage-outgoing" : "",
+      ].filter(Boolean);
+      return {
+        ...edge,
+        className: withControlledClasses(edge.className, LINEAGE_EDGE_STATE_CLASSES, enabledClasses),
+        markerEnd: highlightColor && typeof edge.markerEnd === "object" ? { ...edge.markerEnd, color: highlightColor } : edge.markerEnd,
+        style: highlightColor ? { ...edge.style, stroke: highlightColor, strokeWidth: 2.2 } : edge.style,
+      };
+    });
+  }, [flowEdges, selectedFlowNodeId]);
+
+  const cancelHoverClose = useCallback(() => {
+    if (hoverCloseDelayRef.current !== null) {
+      window.clearTimeout(hoverCloseDelayRef.current);
+      hoverCloseDelayRef.current = null;
+    }
+  }, []);
+
+  const cancelTouchLongPress = useCallback(() => {
+    if (touchLongPressDelayRef.current !== null) {
+      window.clearTimeout(touchLongPressDelayRef.current);
+      touchLongPressDelayRef.current = null;
+    }
+    touchLongPressRef.current = null;
+  }, []);
 
   const clearHoverPreview = useCallback(() => {
     if (hoverDelayRef.current !== null) {
       window.clearTimeout(hoverDelayRef.current);
       hoverDelayRef.current = null;
     }
+    cancelTouchLongPress();
+    cancelHoverClose();
     pendingHoverRef.current = null;
     setHoverPreview(null);
-  }, []);
+  }, [cancelHoverClose, cancelTouchLongPress]);
+
+  const scheduleHoverPreviewClose = useCallback(() => {
+    cancelHoverClose();
+    hoverCloseDelayRef.current = window.setTimeout(() => {
+      clearHoverPreview();
+    }, HOVER_PREVIEW_CLOSE_DELAY_MS);
+  }, [cancelHoverClose, clearHoverPreview]);
 
   const selectFlowNode = useCallback((nodeId: string) => {
     setFlowNodes((nodes) =>
@@ -729,18 +892,150 @@ export function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelPa
     );
   }, []);
 
-  const handleNodeClick = useCallback<NodeMouseHandler<IdeaFlowNode>>((_event, node) => {
+  const showHoverPreviewForNode = useCallback((nodeId: string, x: number, y: number) => {
+    const node = flowNodes.find((candidate) => candidate.id === nodeId);
+    if (!node) {
+      return false;
+    }
+    cancelHoverClose();
+    const nextPreview = { nodeId: node.id, data: node.data, x, y };
+    pendingHoverRef.current = nextPreview;
+    setHoverPreview(nextPreview);
+    return true;
+  }, [cancelHoverClose, flowNodes]);
+
+  const openFlowNode = useCallback((nodeId: string) => {
+    suppressHoverUntilNodeExitRef.current = true;
+    clearHoverPreview();
+    selectFlowNode(nodeId);
+    openRecordFromNode(topicId || "", graph.data, nodeId);
+  }, [clearHoverPreview, graph.data, selectFlowNode, topicId]);
+
+  const openRecentNodeClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const lastClick = lastNodeClickRef.current;
+    if (!lastClick) {
+      return false;
+    }
+    const dx = event.clientX - lastClick.x;
+    const dy = event.clientY - lastClick.y;
+    const closeEnough = Math.hypot(dx, dy) <= NODE_DOUBLE_CLICK_DISTANCE_PX;
+    const soonEnough = Date.now() - lastClick.at < NODE_DOUBLE_CLICK_MS;
+    if (!closeEnough || !soonEnough) {
+      return false;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    lastNodeClickRef.current = null;
+    openFlowNode(lastClick.nodeId);
+    return true;
+  }, [openFlowNode]);
+
+  const handleNodeClick = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
+    const now = Date.now();
+    const lastClick = lastNodeClickRef.current;
+    const isSecondClick = event.detail >= 2 || (lastClick?.nodeId === node.id && now - lastClick.at < NODE_DOUBLE_CLICK_MS);
     selectFlowNode(node.id);
-  }, [selectFlowNode]);
+    if (isSecondClick) {
+      event.preventDefault();
+      lastNodeClickRef.current = null;
+      openFlowNode(node.id);
+      return;
+    }
+    lastNodeClickRef.current = { nodeId: node.id, at: now, x: event.clientX, y: event.clientY };
+  }, [openFlowNode, selectFlowNode]);
 
   const handleNodeDoubleClick = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
     event.preventDefault();
-    clearHoverPreview();
-    selectFlowNode(node.id);
-    openRecordFromNode(topicId || "", graph.data, node.id);
-  }, [clearHoverPreview, graph.data, selectFlowNode, topicId]);
+    lastNodeClickRef.current = null;
+    openFlowNode(node.id);
+  }, [openFlowNode]);
+
+  const handleFlowClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (target.closest(".react-flow__node[data-id]")) {
+      return;
+    }
+    if (event.detail >= 2) {
+      openRecentNodeClick(event);
+    }
+  }, [openRecentNodeClick]);
+
+  const handleFlowDoubleClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const nodeElement = target.closest(".react-flow__node[data-id]") as HTMLElement | null;
+    const nodeId = nodeElement?.dataset.id;
+    if (!nodeId) {
+      openRecentNodeClick(event);
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    lastNodeClickRef.current = null;
+    openFlowNode(nodeId);
+  }, [openFlowNode, openRecentNodeClick]);
+
+  const handleFlowPointerDownCapture = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse") {
+      return;
+    }
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const nodeElement = target.closest(".react-flow__node[data-id]") as HTMLElement | null;
+    const nodeId = nodeElement?.dataset.id;
+    if (!nodeId) {
+      return;
+    }
+    cancelTouchLongPress();
+    cancelHoverClose();
+    touchLongPressRef.current = { pointerId: event.pointerId, nodeId, x: event.clientX, y: event.clientY };
+    touchLongPressDelayRef.current = window.setTimeout(() => {
+      const pending = touchLongPressRef.current;
+      touchLongPressDelayRef.current = null;
+      touchLongPressRef.current = null;
+      if (pending) {
+        showHoverPreviewForNode(pending.nodeId, pending.x, pending.y);
+      }
+    }, HOVER_PREVIEW_OPEN_DELAY_MS);
+  }, [cancelHoverClose, cancelTouchLongPress, showHoverPreviewForNode]);
+
+  const handleFlowPointerMoveCapture = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const pending = touchLongPressRef.current;
+    if (!pending || pending.pointerId !== event.pointerId) {
+      return;
+    }
+    const dx = event.clientX - pending.x;
+    const dy = event.clientY - pending.y;
+    if (Math.hypot(dx, dy) > TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX) {
+      cancelTouchLongPress();
+    }
+  }, [cancelTouchLongPress]);
+
+  const handleFlowPointerEndCapture = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const pending = touchLongPressRef.current;
+    if (!pending || pending.pointerId === event.pointerId) {
+      cancelTouchLongPress();
+    }
+  }, [cancelTouchLongPress]);
+
+  const openSelectedFlowNode = useCallback(() => {
+    if (selectedFlowNode) {
+      openFlowNode(selectedFlowNode.id);
+    }
+  }, [openFlowNode, selectedFlowNode]);
 
   const handleNodeMouseEnter = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
+    if (suppressHoverUntilNodeExitRef.current) {
+      return;
+    }
+    cancelHoverClose();
     const nextPreview = { nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY };
     pendingHoverRef.current = nextPreview;
     if (hoverDelayRef.current !== null) {
@@ -749,20 +1044,35 @@ export function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelPa
     hoverDelayRef.current = window.setTimeout(() => {
       setHoverPreview(pendingHoverRef.current);
       hoverDelayRef.current = null;
-    }, 600);
-  }, []);
+    }, HOVER_PREVIEW_OPEN_DELAY_MS);
+  }, [cancelHoverClose]);
 
   const handleNodeMouseMove = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
+    if (suppressHoverUntilNodeExitRef.current) {
+      return;
+    }
+    if (hoverPreview) {
+      return;
+    }
     const nextPreview = { nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY };
     pendingHoverRef.current = nextPreview;
     setHoverPreview((current) => (current?.nodeId === node.id ? nextPreview : current));
-  }, []);
+  }, [hoverPreview]);
+
+  const handleNodeMouseLeave = useCallback<NodeMouseHandler<IdeaFlowNode>>(() => {
+    suppressHoverUntilNodeExitRef.current = false;
+    scheduleHoverPreviewClose();
+  }, [scheduleHoverPreviewClose]);
 
   useEffect(
     () => () => {
       if (hoverDelayRef.current !== null) {
         window.clearTimeout(hoverDelayRef.current);
         hoverDelayRef.current = null;
+      }
+      if (hoverCloseDelayRef.current !== null) {
+        window.clearTimeout(hoverCloseDelayRef.current);
+        hoverCloseDelayRef.current = null;
       }
       pendingHoverRef.current = null;
     },
@@ -789,27 +1099,48 @@ export function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelPa
         <SigmaGraph graph={graph.data} />
       ) : (
         <ReactFlowProvider>
-          <div className="flow-frame idea-lineage-flow">
+          <div
+            className="flow-frame idea-lineage-flow"
+            onClickCapture={handleFlowClickCapture}
+            onDoubleClickCapture={handleFlowDoubleClickCapture}
+            onPointerDownCapture={handleFlowPointerDownCapture}
+            onPointerMoveCapture={handleFlowPointerMoveCapture}
+            onPointerUpCapture={handleFlowPointerEndCapture}
+            onPointerCancelCapture={handleFlowPointerEndCapture}
+          >
             <ReactFlow
               colorMode={reactFlowColorMode}
-              nodes={flowNodes}
-              edges={flowEdges}
+              nodes={decoratedFlowNodes}
+              edges={decoratedFlowEdges}
               fitView
               onNodeClick={handleNodeClick}
               onNodeDoubleClick={handleNodeDoubleClick}
               onNodeMouseEnter={handleNodeMouseEnter}
               onNodeMouseMove={handleNodeMouseMove}
-              onNodeMouseLeave={clearHoverPreview}
+              onNodeMouseLeave={handleNodeMouseLeave}
             >
               <FlowAutoFit edgeCount={flowEdges.length} nodeCount={flowNodes.length} />
               <Background />
               <Controls />
             </ReactFlow>
-            <IdeaNodeHoverCard preview={hoverPreview} />
+            <IdeaNodeHoverCard
+              preview={hoverPreview}
+              topicId={topicId || ""}
+              onPointerEnter={cancelHoverClose}
+              onPointerLeave={scheduleHoverPreviewClose}
+            />
           </div>
         </ReactFlowProvider>
       )}
       <GraphSummary graph={graph.data} isLoading={graph.isLoading} />
+      {selectedFlowNode ? (
+        <div className="selected-node-actions">
+          <span>Selected: {String(selectedFlowNode.data.title || selectedFlowNode.id)}</span>
+          <ToolbarButton type="button" onClick={openSelectedFlowNode}>
+            Open
+          </ToolbarButton>
+        </div>
+      ) : null}
     </section>
   );
 }

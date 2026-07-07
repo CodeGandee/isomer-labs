@@ -7,7 +7,9 @@
     "test": "vitest run",
     "test:playwright": "node tests/topic-workbench-smoke.mjs",
     "test:idea-detail": "node tests/idea-detail-smoke.mjs",
-    "test:markdown-preview": "node tests/markdown-preview-style.mjs"
+    "test:idea-hover-preview": "node tests/idea-hover-preview-smoke.mjs",
+    "test:markdown-preview": "node tests/markdown-preview-style.mjs",
+    "test:responsive": "node tests/responsive-layout-smoke.mjs"
   },
   "dependencies": {
     "@ag-ui/core": "^0.0.57",
