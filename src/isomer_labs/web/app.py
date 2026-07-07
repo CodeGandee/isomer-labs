@@ -204,6 +204,14 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
     ) -> JSONResponse:
         return _json(read_model.record_detail(topic_id, record_id, include_payload=include_payload))
 
+    @app.get("/api/topics/{topic_id}/ideas/{idea_id}")
+    def idea_detail(
+        topic_id: str,
+        idea_id: str,
+        include_source_json: bool = False,
+    ) -> JSONResponse:
+        return _json(read_model.idea_detail(topic_id, idea_id, include_source_json=include_source_json))
+
     @app.get("/api/topics/{topic_id}/viewer/records/{record_id}")
     def record_viewer_descriptor(topic_id: str, record_id: str) -> JSONResponse:
         return _json(read_model.record_viewer_descriptor(topic_id, record_id))

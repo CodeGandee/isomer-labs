@@ -15,6 +15,8 @@ Worker-output reminder: before writing JSON payload staging files, Markdown draf
 
 Lineage reminder: before accepted durable record writes that depend on prior durable records, follow `isomer-deepsci-shared` Artifact Lineage Recording. Pass canonical parents with `--parents-json` and `--lineage-kind`, use `--generation-id` for sibling candidate passes, keep query-index hints separate, and use `ext research records revise <record-id>` for content-changing accepted revisions.
 
+Idea-recording reminder: optimization can refine or rank candidate routes, but Research Idea changes are explicit writes. When a pass promotes, fuses, splits, or follows up an idea, use `isomer-deepsci-shared/references/research-idea-recording.md`, update or create the Research Idea, and realize it with `--source-json-path` pointing at one candidate object, not a frontier board, debug notes, metrics, or rendered Markdown.
+
 Optimize manages an algorithm-first frontier one justified move at a time. It recovers current frontier state, chooses one submode for the pass, keeps candidate briefs distinct from durable lines and implementation attempts, and records exactly one next route or stop condition.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`. Step support pages under `references/` preserve the source skill's guidance, preferences, constraints, and quality gates in native Isomer language.

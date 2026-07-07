@@ -27,6 +27,7 @@ import {
   getRecordRender,
   getRecordSiblings,
   getRecords,
+  getIdeaDetail,
   getRuntime,
   getActors,
   getTopic,
@@ -36,8 +37,9 @@ import {
   type GraphFilters,
 } from "./api";
 import { layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes } from "./graph-utils";
+import { buildJsonMarkdownPreview } from "./markdown-doc";
 import { manualRefresh$, topicInvalidations, workbenchCommands$ } from "./events";
-import type { ExplorerNode, GraphScope, OpenableItemDescriptor, RecordSummary, TopicGraphView } from "./types";
+import type { ExplorerNode, GraphScope, IdeaDetailResponse, OpenableItemDescriptor, RecordSummary, TopicGraphView } from "./types";
 import { filterRecords, openPanelFromDescriptor, viewerSurface, type DockviewApiLike, type OpenPanelResult } from "./view-model";
 import {
   coerceWorkbenchHistoryState,
@@ -59,6 +61,7 @@ type PanelParams = {
   topicId?: string;
   graphScope?: string;
   recordId?: string;
+  ideaId?: string;
   contentUrl?: string | null;
   mediaType?: string | null;
   itemKind?: string;
@@ -224,6 +227,9 @@ function Workbench() {
     const subscription = workbenchCommands$.subscribe((command) => {
       if (command.type === "open-record") {
         void openItem(`record:${command.topicId}:${command.recordId}`);
+      }
+      if (command.type === "open-idea") {
+        void openItem(`idea:${command.topicId}:${command.ideaId}`);
       }
       if (command.type === "open-file") {
         void openItem(`file:${command.topicId}:${command.recordId}:${command.fileId}`);
@@ -532,6 +538,7 @@ const dockComponents = {
   denseGraph: (props: IDockviewPanelProps<PanelParams>) => <DenseGraphPanel topicId={props.params.topicId || ""} graphScope={asGraphScope(props.params.graphScope, "artifact-overview")} />,
   records: (props: IDockviewPanelProps<PanelParams>) => <RecordsPanel topicId={props.params.topicId || ""} />,
   recordDetail: (props: IDockviewPanelProps<PanelParams>) => <RecordDetailPanel topicId={props.params.topicId || ""} recordId={props.params.recordId || ""} />,
+  ideaDetail: (props: IDockviewPanelProps<PanelParams>) => <IdeaDetailPanel topicId={props.params.topicId || ""} ideaId={props.params.ideaId || ""} />,
   diagnostics: (props: IDockviewPanelProps<PanelParams>) => <DiagnosticsPanel topicId={props.params.topicId} graphScope={asGraphScope(props.params.graphScope, "idea-lineage")} />,
   projectOverview: () => <ProjectOverviewPanel />,
   topicOverview: (props: IDockviewPanelProps<PanelParams>) => <TopicOverviewPanel topicId={props.params.topicId || ""} />,
@@ -803,6 +810,184 @@ function RecordsPanel({ topicId }: { topicId: string }) {
   );
 }
 
+type CopyState = {
+  target: "json" | "markdown" | null;
+  status: "idle" | "success" | "error";
+  message?: string;
+};
+
+export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: string }) {
+  const queryClientValue = useQueryClient();
+  const viewJsonButtonRef = useRef<HTMLButtonElement | null>(null);
+  const previousDigestRef = useRef<string | undefined>(undefined);
+  const [jsonModalOpen, setJsonModalOpen] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>({ target: null, status: "idle" });
+  const [digestNotice, setDigestNotice] = useState("");
+  const detail = useQuery({
+    queryKey: ["topic", topicId, "idea-lineage", "idea", ideaId, "detail", false],
+    queryFn: () => getIdeaDetail(topicId, ideaId),
+    enabled: Boolean(topicId && ideaId),
+  });
+  const fullDetail = useQuery({
+    queryKey: ["topic", topicId, "idea-lineage", "idea", ideaId, "detail", true],
+    queryFn: () => getIdeaDetail(topicId, ideaId, { includeSourceJson: true }),
+    enabled: Boolean(jsonModalOpen && detail.data?.source?.source_json_truncated),
+  });
+  const activeDetail = fullDetail.data || detail.data;
+  const title = String(detail.data?.idea?.title || ideaId || "Idea Detail");
+  const ideaContent = detail.data?.idea_content ?? detail.data?.source?.source_json;
+  const sourceTruncated = Boolean(detail.data?.source?.source_json_truncated);
+  const previewSource = ideaContent === undefined && detail.data?.idea ? { idea: detail.data.idea, latest_realization: detail.data.latest_realization } : ideaContent;
+  const preview = useMemo(() => (previewSource === undefined ? null : buildJsonMarkdownPreview(previewSource, { title })), [previewSource, title]);
+  const exactJsonText = useMemo(() => (ideaContent === undefined ? null : buildJsonMarkdownPreview(ideaContent).jsonText), [ideaContent]);
+  const modalSourceJson = activeDetail?.idea_content ?? activeDetail?.source?.source_json;
+  const modalJsonText = useMemo(() => (modalSourceJson === undefined ? null : buildJsonMarkdownPreview(modalSourceJson).jsonText), [modalSourceJson]);
+  const diagnostics = [...(detail.data?.diagnostics || []), ...(fullDetail.data?.diagnostics || [])];
+  const provenance = detail.data?.source_provenance || detail.data?.source;
+  const sourceRecordId = String(provenance?.source_record_id || detail.data?.latest_realization?.record_id || detail.data?.source?.source_record_id || "");
+  const sourceDigest = detail.data?.source ? detail.data.source.payload_digest || `${detail.data.source.source_kind}:${detail.data.source.source_json_bytes || 0}` : undefined;
+
+  useEffect(() => {
+    if (!sourceDigest) {
+      return;
+    }
+    if (previousDigestRef.current && previousDigestRef.current !== sourceDigest) {
+      setDigestNotice("Source payload changed. Refresh if you want to compare the new preview.");
+    }
+    previousDigestRef.current = sourceDigest;
+  }, [sourceDigest]);
+
+  const fetchExactSourceJson = useCallback(async (): Promise<unknown | undefined> => {
+    if (detail.data?.idea_content !== undefined) {
+      return detail.data.idea_content;
+    }
+    if (detail.data?.source?.source_json !== undefined) {
+      return detail.data.source.source_json;
+    }
+    if (!detail.data?.source?.source_json_truncated) {
+      return undefined;
+    }
+    const fetched = await queryClientValue.fetchQuery({
+      queryKey: ["topic", topicId, "idea-lineage", "idea", ideaId, "detail", true],
+      queryFn: () => getIdeaDetail(topicId, ideaId, { includeSourceJson: true }),
+    });
+    return fetched.idea_content ?? fetched.source?.source_json;
+  }, [detail.data?.idea_content, detail.data?.source, ideaId, queryClientValue, topicId]);
+
+  const copyText = useCallback(async (target: "json" | "markdown", textValue: string | null | undefined) => {
+    if (!textValue) {
+      setCopyState({ target, status: "error", message: "Nothing to copy." });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(textValue);
+      setCopyState({ target, status: "success", message: target === "json" ? "JSON copied." : "Markdown copied." });
+    } catch {
+      setCopyState({ target, status: "error", message: "Clipboard write failed. Content remains selectable." });
+    }
+  }, []);
+
+  const copyJson = useCallback(async () => {
+    try {
+      const exact = await fetchExactSourceJson();
+      await copyText("json", exact === undefined ? null : buildJsonMarkdownPreview(exact).jsonText);
+    } catch {
+      setCopyState({ target: "json", status: "error", message: "Full JSON fetch failed." });
+    }
+  }, [copyText, fetchExactSourceJson]);
+
+  const closeJsonModal = useCallback(() => {
+    setJsonModalOpen(false);
+    window.requestAnimationFrame(() => viewJsonButtonRef.current?.focus());
+  }, []);
+
+  if (!ideaId) {
+    return <div className="empty-state">No idea selected.</div>;
+  }
+  if (detail.isPending) {
+    return <div className="empty-state">Loading idea.</div>;
+  }
+
+  return (
+    <section className="panel-body idea-detail-panel">
+      <div className="detail-heading">
+        <div>
+          <h3>{title}</h3>
+          <span>{detail.data?.idea?.status ? String(detail.data.idea.status) : ideaId}</span>
+        </div>
+        <div className="toolbar idea-toolbar">
+          <button
+            ref={viewJsonButtonRef}
+            type="button"
+            disabled={!detail.data?.source?.source_json_available}
+            onClick={() => setJsonModalOpen(true)}
+          >
+            View JSON
+          </button>
+          <button type="button" disabled={!detail.data?.source?.source_json_available} onClick={() => void copyJson()}>
+            Copy JSON
+          </button>
+          <button type="button" disabled={!preview?.markdown} onClick={() => void copyText("markdown", preview?.markdown)}>
+            Copy Markdown
+          </button>
+          <button type="button" onClick={() => void detail.refetch()}>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div className="idea-status-row">
+        <span>{String(provenance?.source_kind || "source pending")}</span>
+        {provenance?.source_fragment_status ? <span>{String(provenance.source_fragment_status)}</span> : null}
+        {provenance?.source_json_path ? <span>{String(provenance.source_json_path)}</span> : null}
+        {sourceTruncated ? <span>source JSON over default cap</span> : null}
+        {digestNotice ? <span>{digestNotice}</span> : null}
+        {copyState.status !== "idle" ? <span className={`copy-status ${copyState.status}`}>{copyState.message}</span> : null}
+        <button
+          type="button"
+          className="link-button source-record-button"
+          disabled={!sourceRecordId}
+          onClick={() => workbenchCommands$.next({ type: "open-record", topicId, recordId: sourceRecordId })}
+        >
+          Open Source Record
+        </button>
+      </div>
+      {detail.data?.error ? (
+        <div className="diagnostic error">
+          <strong>{detail.data.error.code}</strong>
+          <span>{detail.data.error.message}</span>
+        </div>
+      ) : null}
+      {preview?.markdown ? (
+        <MarkdownView content={preview.markdown} />
+      ) : (
+        <MarkdownView content="No source JSON is available for this idea." state="empty" />
+      )}
+      <div className="detail-columns">
+        <JsonBlock
+          title="Lineage"
+          value={{
+            incoming_edges: detail.data?.incoming_edges || [],
+            outgoing_edges: detail.data?.outgoing_edges || [],
+            generation_groups: detail.data?.generation_groups || [],
+          }}
+        />
+        <JsonBlock title="Realizations" value={detail.data?.realizations || []} />
+        <JsonBlock title="Diagnostics" value={diagnostics} />
+      </div>
+      {jsonModalOpen ? (
+        <JsonModal
+          title={`${title} JSON`}
+          jsonText={modalJsonText || exactJsonText || ""}
+          loading={Boolean(sourceTruncated && fullDetail.isFetching && !modalJsonText)}
+          copyStatus={copyState.target === "json" ? copyState.message : undefined}
+          onClose={closeJsonModal}
+          onCopy={() => void copyJson()}
+        />
+      ) : null}
+    </section>
+  );
+}
+
 function RecordDetailPanel({ topicId, recordId }: { topicId: string; recordId: string }) {
   const descriptor = useQuery({
     queryKey: ["topic", topicId, "record", recordId, "descriptor"],
@@ -928,6 +1113,59 @@ function MermaidBlock({ chart }: { chart: string }) {
   return <div className="mermaid" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
+export function JsonModal({
+  title,
+  jsonText,
+  loading,
+  copyStatus,
+  onClose,
+  onCopy,
+}: {
+  title: string;
+  jsonText: string;
+  loading?: boolean;
+  copyStatus?: string;
+  onClose: () => void;
+  onCopy: () => void;
+}) {
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+  return (
+    <div className="json-modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section
+        className="json-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="json-modal-heading">
+          <h3>{title}</h3>
+          <div className="toolbar">
+            <button type="button" onClick={onCopy} disabled={!jsonText}>
+              Copy JSON
+            </button>
+            <button ref={closeButtonRef} type="button" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+        {copyStatus ? <div className="status-line">{copyStatus}</div> : null}
+        {loading ? <div className="empty-state">Loading full JSON.</div> : <pre className="json-modal-code">{jsonText || "No JSON content available."}</pre>}
+      </section>
+    </div>
+  );
+}
+
 function DiagnosticsPanel({ topicId, graphScope }: { topicId?: string; graphScope: GraphScope }) {
   const project = useQuery({ queryKey: ["project", "diagnostics"], queryFn: getProject, enabled: !topicId });
   const graph = useQuery({
@@ -1045,9 +1283,18 @@ function useRecordsTable(records: RecordSummary[], topicId: string) {
   return useReactTable({ data: records, columns, getCoreRowModel: getCoreRowModel() });
 }
 
-function openRecordFromNode(topicId: string, graph: TopicGraphView | undefined, nodeId: string) {
+export function openRecordFromNode(topicId: string, graph: TopicGraphView | undefined, nodeId: string) {
   const node = graph?.nodes.find((candidate) => candidate.id === nodeId);
-  if (node) {
+  if (!node) {
+    return;
+  }
+  const sourceIdeaId = typeof node.source?.idea_id === "string" ? node.source.idea_id : undefined;
+  const ideaId = node.idea_id || sourceIdeaId;
+  if (node.material_kind === "idea" && ideaId) {
+    workbenchCommands$.next({ type: "open-idea", topicId, ideaId });
+    return;
+  }
+  if (node.record_id) {
     workbenchCommands$.next({ type: "open-record", topicId, recordId: node.record_id });
   }
 }

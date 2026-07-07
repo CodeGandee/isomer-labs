@@ -56,6 +56,14 @@ Use TanStack Table for artifact indexes, idea lists, evidence lists, experiment 
 
 Use `react-markdown` with `remark-gfm` for Markdown rendering. Add `remark-math` and `rehype-katex` for math, and render fenced `mermaid` blocks through Mermaid with conservative security settings because local research artifacts should still be treated as viewer input.
 
+## JSON To Markdown Generation
+
+Use MDAST and the unified Markdown ecosystem to convert structured JSON payloads into Markdown for preview. The GUI should parse nested JSON keywords into typed Markdown document nodes such as headings, paragraphs, lists, tables, and code blocks, then serialize those nodes through `mdast-util-to-markdown` instead of hand-concatenating Markdown syntax.
+
+Keep this as a local JSON-to-MDAST renderer layer, not a generic raw JSON dump. The first pass can map nested object keys to heading depth, arrays to lists or tables, scalar values to paragraphs or list items, and unsupported subtrees to fenced JSON code nodes. Later schema-specific renderers can reuse the same MDAST builder for Research Ideas, experiments, decisions, analyses, and paper artifacts.
+
+Use `mdast-util-gfm` for table serialization, `mdast-util-frontmatter` only when generated Markdown needs frontmatter, and a small local helper module for ergonomic document construction. The preview path should expose both the generated Markdown string and the exact source JSON string so users can copy either one from the idea detail tab.
+
 ## PDF Viewer
 
 Start with the browser PDF viewer through an `iframe`, object embed, or direct dock tab backed by a FastAPI file endpoint. Add PDF.js later only if the GUI needs custom page navigation, annotation overlays, synchronized citations, or integrated PDF text search.
@@ -118,7 +126,8 @@ Use pytest or unittest for Python read-model tests, Vitest and Testing Library f
 - Data fetching: `@tanstack/react-query`
 - Interaction events: `rxjs`
 - Tables: `@tanstack/react-table`
-- Markdown: `react-markdown`, `remark-gfm`, `remark-math`, `rehype-katex`, `mermaid`, `katex`
+- Markdown rendering: `react-markdown`, `remark-gfm`, `remark-math`, `rehype-katex`, `mermaid`, `katex`
+- Markdown generation from JSON: `mdast-util-to-markdown`, `mdast-util-gfm`, `mdast-util-frontmatter`, `unist-builder`
 - Agent UI protocol: `@ag-ui/core`
 - Validation: `zod`
 - Terminal tabs: `@xterm/xterm`, `@xterm/addon-fit`

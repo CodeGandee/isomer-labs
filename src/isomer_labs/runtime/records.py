@@ -218,6 +218,28 @@ RESEARCH_RECORD_LINEAGE_KINDS = (
     "follow_up_to",
 )
 RESEARCH_RECORD_LINEAGE_STATUSES = ("ready", "stale", "archived")
+RESEARCH_IDEA_STATUSES = (
+    "raw",
+    "candidate",
+    "selected",
+    "active",
+    "deferred",
+    "rejected",
+    "supported",
+    "refuted",
+    "superseded",
+    "archived",
+)
+RESEARCH_IDEA_VISIBILITIES = ("primary", "supporting", "hidden")
+RESEARCH_IDEA_LINEAGE_KINDS = (
+    "derived_from",
+    "selected_from",
+    "merged_from",
+    "follow_up_to",
+    "alternative_to",
+    "subsumes",
+)
+RESEARCH_IDEA_LINEAGE_STATUSES = ("ready", "stale", "archived")
 RESET_CHECKPOINT_STATUSES = ("ready", "blocked", "stale")
 RESET_PLAN_STATUSES = ("ready", "blocked", "stale", "applied", "failed")
 RESET_PLAN_ACTIONS = (
@@ -546,6 +568,170 @@ class ArtifactFormatRegistrationRecord:
             ("original_template_path", self.original_template_path),
             ("template_digest", self.template_digest),
             ("actor_ref", self.actor_ref),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchIdea:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    idea_id: str
+    title: str
+    one_liner: str | None
+    family: str | None
+    status: str
+    visibility: str
+    aliases: list[str]
+    source_record_id: str | None
+    source_json_path: str | None
+    metadata: dict[str, object]
+    created_at: str
+    updated_at: str
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "idea_id": self.idea_id,
+            "title": self.title,
+            "status": self.status,
+            "visibility": self.visibility,
+            "aliases": self.aliases,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("one_liner", self.one_liner),
+            ("family", self.family),
+            ("source_record_id", self.source_record_id),
+            ("source_json_path", self.source_json_path),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchIdeaRealization:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    idea_id: str
+    record_id: str
+    source_json_path: str | None
+    realization_stage: str | None
+    semantic_id: str | None
+    latest: bool
+    metadata: dict[str, object]
+    created_at: str
+    updated_at: str
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "idea_id": self.idea_id,
+            "record_id": self.record_id,
+            "latest": self.latest,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("source_json_path", self.source_json_path),
+            ("realization_stage", self.realization_stage),
+            ("semantic_id", self.semantic_id),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchIdeaGenerationGroup:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    purpose: str | None
+    parent_set_digest: str
+    producer_skill: str | None
+    decision_record_id: str | None
+    metadata: dict[str, object]
+    created_at: str
+    updated_at: str
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "parent_set_digest": self.parent_set_digest,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("purpose", self.purpose),
+            ("producer_skill", self.producer_skill),
+            ("decision_record_id", self.decision_record_id),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchIdeaLineageEdge:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    parent_idea_id: str
+    child_idea_id: str
+    lineage_kind: str
+    parent_role: str | None
+    generation_id: str | None
+    decision_record_id: str | None
+    rationale: str | None
+    status: str
+    confidence: float | None
+    metadata: dict[str, object]
+    created_at: str
+    updated_at: str
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "parent_idea_id": self.parent_idea_id,
+            "child_idea_id": self.child_idea_id,
+            "lineage_kind": self.lineage_kind,
+            "status": self.status,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("parent_role", self.parent_role),
+            ("generation_id", self.generation_id),
+            ("decision_record_id", self.decision_record_id),
+            ("rationale", self.rationale),
+            ("confidence", self.confidence),
         ):
             if value is not None:
                 data[key] = value

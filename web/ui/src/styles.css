@@ -381,6 +381,11 @@ tbody tr:hover {
   overflow: auto;
 }
 
+.idea-detail-panel {
+  grid-template-rows: auto auto minmax(260px, 1fr) auto;
+  overflow: auto;
+}
+
 .detail-heading {
   display: flex;
   justify-content: space-between;
@@ -392,6 +397,43 @@ tbody tr:hover {
   color: #1f2328;
   font-size: 16px;
   line-height: 1.35;
+}
+
+.idea-toolbar {
+  justify-content: flex-end;
+}
+
+.idea-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #59636e;
+  font-size: 12px;
+}
+
+.idea-status-row span {
+  border: 1px solid #dce3ea;
+  border-radius: 999px;
+  background: #f6f8fa;
+  padding: 3px 8px;
+}
+
+.source-record-button {
+  align-self: center;
+  min-height: 24px;
+  color: #176b87;
+}
+
+.copy-status.success {
+  color: #0f5a3d;
+  background: #e9f7ef;
+  border-color: #9bd4b5;
+}
+
+.copy-status.error {
+  color: #7a2020;
+  background: #fde7e7;
+  border-color: #e8abab;
 }
 
 .markdown-view {
@@ -705,6 +747,57 @@ tbody tr:hover {
   margin-top: 3px;
 }
 
+.json-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 24, 32, 0.62);
+}
+
+.json-modal {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  width: min(1040px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  box-shadow: 0 18px 48px rgba(16, 24, 32, 0.28);
+}
+
+.json-modal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.json-modal-heading h3 {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+}
+
+.json-modal-code {
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+  border-radius: 6px;
+  background: #101820;
+  color: #e7edf3;
+  padding: 14px;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  white-space: pre;
+}
+
 .empty-state {
   display: grid;
   place-items: center;
@@ -736,6 +829,11 @@ tbody tr:hover {
     align-items: stretch;
   }
 
+  .detail-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .segmented {
     flex: 1 1 auto;
   }
@@ -757,5 +855,13 @@ tbody tr:hover {
 
   .toolbar > button {
     width: 100%;
+  }
+
+  .json-modal-backdrop {
+    padding: 10px;
+  }
+
+  .json-modal {
+    max-height: calc(100vh - 20px);
   }
 }

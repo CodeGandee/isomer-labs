@@ -357,6 +357,25 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("isomer-deepsci-nature-polishing", validator.EXPECTED_DEEPSCI_SKILLS)
         self.assertIn("isomer-deepsci-workspace-mgr", validator.EXPECTED_DEEPSCI_SKILLS)
 
+    def test_deepsci_skills_teach_exact_research_idea_source_paths(self) -> None:
+        packaged_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "deepsci"
+        shared_ref = packaged_root / "isomer-deepsci-shared" / "references" / "research-idea-recording.md"
+        self.assertTrue(shared_ref.exists(), shared_ref)
+        shared_text = shared_ref.read_text(encoding="utf-8")
+        self.assertIn("--source-json-path", shared_text)
+        self.assertIn("$.sections.raw_ideas[<index>]", shared_text)
+        self.assertIn("$.sections.filter_notes", shared_text)
+        for skill_name in ("isomer-deepsci-idea", "isomer-deepsci-optimize", "isomer-deepsci-experiment", "isomer-deepsci-analysis", "isomer-deepsci-decision", "isomer-deepsci-write", "isomer-deepsci-review", "isomer-deepsci-rebuttal", "isomer-deepsci-finalize"):
+            skill_text = (packaged_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("Idea-recording reminder", skill_text)
+            self.assertIn("source", skill_text.lower())
+            self.assertIn("rendered Markdown", skill_text)
+        for skill_name in ("isomer-deepsci-idea", "isomer-deepsci-optimize", "isomer-deepsci-experiment", "isomer-deepsci-analysis", "isomer-deepsci-decision"):
+            binding_text = (packaged_root / skill_name / "placeholder-bindings.md").read_text(encoding="utf-8")
+            self.assertIn("Canonical idea metadata", binding_text)
+            self.assertIn("--source-json-path", binding_text)
+            self.assertIn("rendered Markdown", binding_text)
+
     def test_reports_core_failure_fixtures(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(

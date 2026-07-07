@@ -1,0 +1,37 @@
+.chatlog-page .chatlog-label {
+  margin-top: 1.15rem;
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+}
+
+.chatlog-page .chatlog-block {
+  margin: 0.35rem 0 1rem;
+  padding: 0.8rem 1rem;
+  border-left-width: 0.3rem;
+  border-radius: 0.35rem;
+}
+
+.chatlog-page .chatlog-block p {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.chatlog-page .chatlog-user-prompt {
+  background: #edf8ef;
+  border-left-color: #4caf6a;
+}
+
+.chatlog-page .chatlog-ai-response {
+  background: #f4effb;
+  border-left-color: #9270d3;
+}
+
+.chatlog-page .chatlog-user-interruption {
+  background: #fff8db;
+  border-left-color: #d5a928;
+}
+
+.chatlog-page .chatlog-user-action {
+  background: #f6fbf8;
+  border-left-color: #7ebc91;
+}

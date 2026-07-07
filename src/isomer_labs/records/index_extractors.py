@@ -11,6 +11,7 @@ from isomer_labs.artifact_formats import digest_json
 from sqlalchemy import Table, delete, insert
 
 from isomer_labs.models import EffectiveTopicContext
+from isomer_labs.records.idea_sources import profile_idea_entry_fragments
 from isomer_labs.runtime.records import RuntimeLifecycleRecord, StructuredResearchPayloadRecord, utc_timestamp
 
 from .index_schema import (
@@ -77,7 +78,7 @@ def _build_index_parts(
         index_row=index_row,
         edge_rows=_edge_rows(context, record, payload_json, record_metadata, now),
         file_rows=_file_rows(context, record, payload, payload_json, record_metadata, now),
-        idea_rows=_idea_rows(context, record, payload_json, now),
+        idea_rows=_idea_rows(context, record, payload_json, format_profile_ref, now),
         route_rows=_route_rows(context, record, payload_json, now),
         metric_rows=_metric_rows(context, record, payload_json, now),
         claim_rows=_claim_rows(context, record, payload_json, now),
@@ -454,36 +455,32 @@ def _file_row(
     }
 
 
-def _idea_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, payload_json: Mapping[str, object], created_at: str) -> list[dict[str, object]]:
+def _idea_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, payload_json: Mapping[str, object], format_profile_ref: str | None, created_at: str) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
-    for path, value in _walk_json(payload_json):
-        key = path.rsplit(".", 1)[-1].replace("[]", "")
-        if key not in {"raw_ideas", "candidate_ideas", "ideas", "selected_hypothesis", "hypotheses"}:
+    fragments, _diagnostics = profile_idea_entry_fragments(payload_json, format_profile_ref, record_id=record.id)
+    for fragment in fragments:
+        item_map = dict(fragment.source_json)
+        key = fragment.source_json_path.rsplit(".", 1)[-1].split("[", 1)[0]
+        one_liner = _first_string(item_map.get("one_liner"), item_map.get("summary"), item_map.get("title"), item_map.get("idea"), item_map.get("text"), item_map.get("hypothesis"))
+        if one_liner is None:
             continue
-        items = value if isinstance(value, list) else [value]
-        for index, item in enumerate(items):
-            item_map = dict(item) if isinstance(item, Mapping) else {"one_liner": str(item)}
-            one_liner = _first_string(item_map.get("one_liner"), item_map.get("summary"), item_map.get("title"), item_map.get("idea"), item_map.get("text"))
-            if one_liner is None:
-                continue
-            idea_id = _optional_string(item_map.get("idea_id") or item_map.get("id"))
-            source_path = f"{path}[{index}]" if isinstance(value, list) else path
-            rows.append(
-                {
-                    "id": _row_id("idea", record.id, idea_id or one_liner, source_path),
-                    "research_topic_id": context.research_topic.id,
-                    "topic_workspace_id": context.topic_workspace_id,
-                    "record_id": record.id,
-                    "idea_id": idea_id,
-                    "family": _optional_string(item_map.get("family")) or key,
-                    "one_liner": one_liner,
-                    "status": _optional_string(item_map.get("status")) or ("selected" if key == "selected_hypothesis" else None),
-                    "selected": 1 if key == "selected_hypothesis" or bool(item_map.get("selected")) else 0,
-                    "source_json_path": source_path,
-                    "metadata_json": _dumps(item_map),
-                    "created_at": created_at,
-                }
-            )
+        idea_id = _optional_string(item_map.get("idea_id") or item_map.get("canonical_idea_id") or item_map.get("id") or item_map.get("candidate_id"))
+        rows.append(
+            {
+                "id": _row_id("idea", record.id, idea_id or one_liner, fragment.source_json_path),
+                "research_topic_id": context.research_topic.id,
+                "topic_workspace_id": context.topic_workspace_id,
+                "record_id": record.id,
+                "idea_id": idea_id,
+                "family": _optional_string(item_map.get("family")) or key,
+                "one_liner": one_liner,
+                "status": _optional_string(item_map.get("status")) or ("selected" if "selected" in fragment.source_json_path else None),
+                "selected": 1 if "selected" in fragment.source_json_path or bool(item_map.get("selected")) else 0,
+                "source_json_path": fragment.source_json_path,
+                "metadata_json": _dumps(item_map),
+                "created_at": created_at,
+            }
+        )
     return _dedupe_rows(rows)
 
 

@@ -6,6 +6,7 @@
     "build": "vite build",
     "test": "vitest run",
     "test:playwright": "node tests/topic-workbench-smoke.mjs",
+    "test:idea-detail": "node tests/idea-detail-smoke.mjs",
     "test:markdown-preview": "node tests/markdown-preview-style.mjs"
   },
   "dependencies": {
@@ -23,6 +24,9 @@
     "elkjs": "^0.11.0",
     "graphology": "^0.26.0",
     "katex": "^0.16.0",
+    "mdast-util-frontmatter": "^2.0.1",
+    "mdast-util-gfm": "^3.1.0",
+    "mdast-util-to-markdown": "^2.1.2",
     "mermaid": "^11.0.0",
     "plotly.js-dist-min": "^3.7.0",
     "react": "^19.0.0",
@@ -33,6 +37,7 @@
     "remark-math": "^6.0.0",
     "rxjs": "^7.8.0",
     "sigma": "^3.0.3",
+    "unist-builder": "^4.0.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {

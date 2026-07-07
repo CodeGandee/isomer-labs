@@ -21,6 +21,7 @@ from .index_extractors import (
     _sum_counts,
 )
 from .index_revision import index_revision_payload
+from .idea_index import canonical_ideas_with_source_status, canonical_realizations_with_source_status, idea_export_diagnostics, legacy_idea_facet
 from .lineage_index import (
     canonical_lineage_edge_json,
     canonical_lineage_edges_for_query,
@@ -241,6 +242,23 @@ def query_index_export(
     try:
         records = _query_records(engine, context)
         index_diagnostics = _validate_index_rows(context, store)
+        legacy_ideas = _select_table(engine, record_ideas, context)
+        canonical_idea_records = store.list_research_ideas(topic_workspace_id=context.topic_workspace_id)
+        canonical_realization_records = store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id)
+        canonical_ideas, canonical_idea_source_diagnostics = canonical_ideas_with_source_status(
+            context,
+            store,
+            canonical_idea_records,
+            canonical_realization_records,
+        )
+        canonical_realizations, canonical_realization_source_diagnostics = canonical_realizations_with_source_status(
+            context,
+            store,
+            canonical_idea_records,
+            canonical_realization_records,
+        )
+        idea_diagnostics = idea_export_diagnostics(legacy_ideas, canonical_ideas)
+        diagnostics_out = [*index_diagnostics, *idea_diagnostics, *canonical_idea_source_diagnostics, *canonical_realization_source_diagnostics]
         payload = {
             "ok": True,
             "mutated": False,
@@ -250,13 +268,17 @@ def query_index_export(
             "nodes": records,
             "edges": _select_table(engine, record_edges, context),
             "files": _select_table(engine, record_files, context),
-            "ideas": _select_table(engine, record_ideas, context),
+            "ideas": [legacy_idea_facet(row, has_canonical=bool(canonical_ideas)) for row in legacy_ideas],
+            "canonical_ideas": canonical_ideas,
+            "canonical_idea_realizations": canonical_realizations,
+            "canonical_idea_edges": [edge.to_json() for edge in store.list_research_idea_lineage_edges(topic_workspace_id=context.topic_workspace_id)],
+            "canonical_idea_generation_groups": [group.to_json() for group in store.list_research_idea_generation_groups(topic_workspace_id=context.topic_workspace_id)],
             "routes": _select_table(engine, record_routes, context),
             "metrics": _select_table(engine, record_metrics, context),
             "claims": _select_table(engine, record_claims, context),
             "facts": _select_table(engine, record_json_facts, context),
-            "diagnostics": index_diagnostics,
-            "diagnostic_summary": _diagnostic_summary(index_diagnostics),
+            "diagnostics": diagnostics_out,
+            "diagnostic_summary": _diagnostic_summary(diagnostics_out),
         }
         return payload, diagnostics
     finally:

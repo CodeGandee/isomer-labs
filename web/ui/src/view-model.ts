@@ -44,6 +44,7 @@ export type WorkbenchPanelOptions = {
     topicId?: string;
     graphScope?: string;
     recordId?: string;
+    ideaId?: string;
     contentUrl?: string | null;
     mediaType?: string | null;
     itemKind?: string;
@@ -83,6 +84,7 @@ export function panelOptionsFromDescriptor(descriptor: OpenableItemDescriptor): 
       topicId: descriptor.topic_id || undefined,
       graphScope: descriptor.graph_scope || undefined,
       recordId: descriptor.record_id || undefined,
+      ideaId: descriptor.idea_id || undefined,
       contentUrl: descriptor.content_url || undefined,
       mediaType: descriptor.media_type || undefined,
       itemKind: descriptor.item_kind,

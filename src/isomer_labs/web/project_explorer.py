@@ -31,6 +31,8 @@ class ProjectExplorerHost(Protocol):
 
     def record_file_content(self, topic_id: str, record_id: str, file_id: str) -> dict[str, Any]: ...
 
+    def idea_detail(self, topic_id: str, idea_id: str, *, include_source_json: bool = False) -> dict[str, Any]: ...
+
 
 def project_explorer_payload(
     host: ProjectExplorerHost,
@@ -213,6 +215,10 @@ class _ProjectExplorerReadModel:
             topic_id = parts[1]
             record_id = ":".join(parts[2:])
             return self._record_openable_descriptor(topic_id, record_id)
+        if parts[0] == "idea" and len(parts) >= 3:
+            topic_id = parts[1]
+            idea_id = ":".join(parts[2:])
+            return self._idea_openable_descriptor(topic_id, idea_id)
         if parts[0] != "topic":
             return self._unknown_openable(openable_item_id, diagnostics)
 
@@ -516,6 +522,45 @@ class _ProjectExplorerReadModel:
             "diagnostics": content.get("diagnostics", []),
         }
 
+    def _idea_openable_descriptor(self, topic_id: str, idea_id: str) -> dict[str, Any]:
+        detail = self.host.idea_detail(topic_id, idea_id, include_source_json=False)
+        openable_item_id = f"idea:{topic_id}:{idea_id}"
+        tab_id = f"topic-{_tab_token(topic_id)}-idea-{_tab_token(idea_id)}"
+        idea_value = detail.get("idea")
+        idea: Mapping[str, Any] = idea_value if isinstance(idea_value, Mapping) else {}
+        title = str(idea.get("title") or idea_id)
+        if not detail.get("ok"):
+            return {
+                "ok": False,
+                "mutated": False,
+                "openable_item_id": openable_item_id,
+                "tab_id": tab_id,
+                "item_kind": "idea",
+                "title": title,
+                "preferred_tab_component": "ideaDetail",
+                "topic_id": topic_id,
+                "idea_id": idea_id,
+                "detail_urls": {"idea": f"/api/topics/{topic_id}/ideas/{idea_id}"},
+                "exists": False,
+                "error": detail.get("error")
+                or {"code": "idea_not_found", "message": f"Research Idea is not available: {idea_id}"},
+                "diagnostics": detail.get("diagnostics", []),
+            }
+        return {
+            "ok": True,
+            "mutated": False,
+            "openable_item_id": openable_item_id,
+            "tab_id": tab_id,
+            "item_kind": "idea",
+            "title": title,
+            "preferred_tab_component": "ideaDetail",
+            "topic_id": topic_id,
+            "idea_id": str(detail.get("idea_id") or idea_id),
+            "detail_urls": {"idea": f"/api/topics/{topic_id}/ideas/{idea_id}"},
+            "exists": True,
+            "diagnostics": detail.get("diagnostics", []),
+        }
+
     def _unknown_openable(self, openable_item_id: str, diagnostics: list[Diagnostic]) -> dict[str, Any]:
         return {
             "ok": False,
@@ -539,3 +584,8 @@ def _graph_scope_label(scope: str) -> str:
         "experiment-records": "Experiment Records",
         "paper-revisions": "Paper Revisions",
     }.get(scope, scope)
+
+
+def _tab_token(value: str) -> str:
+    cleaned = "".join(char if char.isalnum() or char in {"-", "_", "."} else "-" for char in value)
+    return cleaned.strip("-") or hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]

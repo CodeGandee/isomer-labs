@@ -1,0 +1,22 @@
+site_name: Isomer Labs Context
+site_description: Project context, design notes, plans, and summaries for Isomer Labs.
+docs_dir: context
+site_dir: tmp/mkdocs-site
+use_directory_urls: true
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.highlight
+
+plugins:
+  - search
+
+extra_css:
+  - assets/styles/chatlogs.css
+
+extra_javascript:
+  - assets/js/chatlogs.js

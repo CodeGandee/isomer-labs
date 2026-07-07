@@ -14,6 +14,10 @@ For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext
 
 When a durable record is produced from prior durable records, pass immediate parents through `--parents-json`, choose `--lineage-kind`, and add `--generation-id` plus `--generation-purpose` for sibling candidate passes. Use `revision_of` only through `ext research records revise <record-id>` when accepted content changes; use `--relationships-json`, `--files-json`, and `--index-hints-json` only for non-lineage query metadata.
 
+## Canonical idea metadata
+
+Analysis record revisions should realize the same Research Idea unless the concept changes direction. Use `isomer-cli --print-json ext research ideas upsert`, `realize --source-json-path <exact-object-path>`, and `lineage add` for explicit follow-ups, splits, merges, returns to ideation, or `subsumes` relationships. The source path must name one idea object and must not name the whole analysis payload, a metrics table, notes, route context, or rendered Markdown.
+
 ## Query-index metadata
 
 When a structured payload has relationship facts, file outputs, or GUI facets, preserve them in the payload and pass explicit refs through `--relationships-json`, `--files-json`, and `--index-hints-json` when the producing skill knows them. Relationship metadata should name evidence, citations, file materialization, support links, summaries, routes, or other non-canonical refs; file metadata should name file role, semantic label, and source payload field or output pattern; facet metadata should leave ideas, route decisions, metrics, claims, artifact lists, and scalar facts in profile-backed payload sections so the query-index extractor can derive rows.

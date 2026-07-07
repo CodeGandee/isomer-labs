@@ -14,6 +14,12 @@ For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext
 
 When a durable record is produced from prior durable records, pass immediate parents through `--parents-json`, choose `--lineage-kind`, and add `--generation-id` plus `--generation-purpose` for sibling candidate passes. Use `revision_of` only through `ext research records revise <record-id>` when accepted content changes; use `--relationships-json`, `--files-json`, and `--index-hints-json` only for non-lineage query metadata.
 
+## Canonical idea metadata
+
+When a durable record creates, selects, rejects, defers, follows up, merges, or subsumes research concepts, write canonical Research Idea data with `isomer-cli --print-json ext research ideas`. Use semantic topic-scoped `idea_id` values, preserve source labels as aliases, realize the idea to the durable record with an exact object-valued `--source-json-path`, and use explicit idea lineage edges instead of relying on Markdown or extracted record facets.
+
+Valid Primary Idea source paths point at one idea object in an accepted payload, such as `$.sections.raw_ideas[0]`, `$.sections.serious_candidates[1]`, `$.sections.rejected_ideas[0]`, or a profile-declared selected idea object. Invalid paths include `$`, `$.sections.raw_ideas`, `$.sections.filter_notes`, `$.sections.route_context`, generated Markdown files, metrics, artifact lists, and other source-record context.
+
 ## Query-index metadata
 
 When a structured payload has relationship facts, file outputs, or GUI facets, preserve them in the payload and pass explicit refs through `--relationships-json`, `--files-json`, and `--index-hints-json` when the producing skill knows them. Relationship metadata should name evidence, citations, file materialization, support links, summaries, routes, or other non-canonical refs; file metadata should name file role, semantic label, and source payload field or output pattern; facet metadata should leave ideas, route decisions, metrics, claims, artifact lists, and scalar facts in profile-backed payload sections so the query-index extractor can derive rows.

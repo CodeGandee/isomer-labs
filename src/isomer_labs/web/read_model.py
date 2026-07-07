@@ -29,6 +29,7 @@ from isomer_labs.runtime.validation import inspect_workspace_runtime
 from isomer_labs.workspace.actors import list_topic_actors
 
 from .graph import build_topic_graph_view
+from .idea_detail import idea_detail_payload
 from .project_explorer import openable_item_descriptor_payload, project_explorer_payload
 
 
@@ -233,6 +234,17 @@ class ProjectWebReadModel:
                 include_payload=include_payload,
                 include_validation_diagnostics=True,
                 include_render_diagnostics=True,
+            ),
+        )
+
+    def idea_detail(self, topic_id: str, idea_id: str, *, include_source_json: bool = False) -> dict[str, Any]:
+        return self._with_context(
+            topic_id,
+            lambda context: idea_detail_payload(
+                context,
+                idea_id,
+                env=self.selected_env,
+                include_source_json=include_source_json,
             ),
         )
 

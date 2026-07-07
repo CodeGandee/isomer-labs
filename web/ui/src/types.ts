@@ -36,6 +36,9 @@ export const TopicGraphNodeSchema = z
     source: z.record(z.string(), z.unknown()).optional(),
     detail_refs: z.record(z.string(), z.string().nullable()).optional(),
     renderer_hints: z.record(z.string(), z.unknown()).optional(),
+    idea_id: z.string().optional(),
+    visibility: z.string().nullable().optional(),
+    realizations: z.array(z.record(z.string(), z.unknown())).optional(),
   })
   .passthrough();
 
@@ -57,6 +60,7 @@ export const TopicGraphEdgeSchema = z
     source_record_refs: z.array(z.string()).optional(),
     source_classifications: z.array(z.string()).optional(),
     projection_path: z.array(z.record(z.string(), z.unknown())).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough();
 
@@ -136,6 +140,54 @@ export const RecordSummarySchema = z
   })
   .passthrough();
 
+export const IdeaDetailSourceSchema = z
+  .object({
+    source_kind: z.string(),
+    source_record_id: z.string().nullable().optional(),
+    source_json_path: z.string().nullable().optional(),
+    source_json_available: z.boolean().optional(),
+    source_json_truncated: z.boolean().optional(),
+    source_json_bytes: z.number().optional(),
+    source_json_cap_bytes: z.number().optional(),
+    source_fragment_status: z.string().nullable().optional(),
+    source_classification: z.string().nullable().optional(),
+    full_source_url: z.string().optional(),
+    payload_digest: z.string().optional(),
+    payload_file_path: z.string().nullable().optional(),
+    payload_media_type: z.string().optional(),
+    source_json: z.unknown().optional(),
+  })
+  .passthrough();
+
+export const IdeaDetailResponseSchema = z
+  .object({
+    ok: z.boolean(),
+    mutated: z.boolean(),
+    topic_id: z.string(),
+    topic_workspace_id: z.string().optional(),
+    idea_id: z.string(),
+    exists: z.boolean().optional(),
+    idea: z.record(z.string(), z.unknown()).nullable().optional(),
+    realizations: z.array(z.record(z.string(), z.unknown())).optional(),
+    latest_realization: z.record(z.string(), z.unknown()).nullable().optional(),
+    latest_record: z.record(z.string(), z.unknown()).nullable().optional(),
+    generation_groups: z.array(z.record(z.string(), z.unknown())).optional(),
+    incoming_edges: z.array(z.record(z.string(), z.unknown())).optional(),
+    outgoing_edges: z.array(z.record(z.string(), z.unknown())).optional(),
+    idea_content: z.record(z.string(), z.unknown()).nullable().optional(),
+    source_provenance: z.record(z.string(), z.unknown()).nullable().optional(),
+    source: IdeaDetailSourceSchema.optional(),
+    diagnostics: z.array(DiagnosticSchema).optional(),
+    error: z
+      .object({
+        code: z.string(),
+        message: z.string(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
 export const RecordsResponseSchema = z
   .object({
     ok: z.boolean(),
@@ -202,6 +254,7 @@ export const OpenableItemDescriptorSchema = z
     preferred_tab_component: z.string().optional(),
     topic_id: z.string().nullable().optional(),
     record_id: z.string().nullable().optional(),
+    idea_id: z.string().nullable().optional(),
     graph_scope: z.string().nullable().optional(),
     content_url: z.string().nullable().optional(),
     detail_urls: z.record(z.string(), z.string()).optional(),
@@ -257,6 +310,7 @@ export type TopicGraphView = z.infer<typeof TopicGraphViewSchema>;
 export type TopicGraphGroup = z.infer<typeof TopicGraphGroupSchema>;
 export type TopicChangeEvent = z.infer<typeof TopicChangeEventSchema>;
 export type RecordSummary = z.infer<typeof RecordSummarySchema>;
+export type IdeaDetailResponse = z.infer<typeof IdeaDetailResponseSchema>;
 export type ViewerDescriptor = z.infer<typeof ViewerDescriptorSchema>;
 export type ExplorerNode = z.infer<typeof ExplorerNodeSchema>;
 export type ProjectExplorerResponse = z.infer<typeof ProjectExplorerResponseSchema>;

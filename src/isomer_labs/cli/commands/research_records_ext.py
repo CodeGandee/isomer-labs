@@ -9,6 +9,7 @@ from typing import Any
 
 import click
 
+from isomer_labs.cli.commands.research_ideas_ext import register_research_idea_commands
 from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import (
     common_options as _common_options,
@@ -64,6 +65,12 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     @research_group.group(name="records", help="CRUD commands for topic-scoped research records.")
     def records_group() -> None:
         pass
+
+    register_research_idea_commands(
+        research_group,
+        with_context=_with_context,
+        json_error_payload=_json_error_payload,
+    )
 
     @records_group.command(name="create", help="Create a topic-scoped research record.")
     @_common_options
@@ -516,6 +523,10 @@ def register_research_record_ext_commands(app: click.Group) -> None:
 
 def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
     def decorator(command: Any) -> Any:
+        command = click.option("--primary-idea-json", default=None, help="Canonical primary idea object realized by this record.")(command)
+        command = click.option("--idea-parents-json", default=None, help="Canonical idea parent edges as a JSON array of objects.")(command)
+        command = click.option("--idea-realizations-json", default=None, help="Canonical idea realizations as a JSON array of objects.")(command)
+        command = click.option("--realizes-idea-id", default=None, help="Canonical idea id realized by this record.")(command)
         command = click.option("--lifecycle-refs-json", default=None, help="Additional lifecycle refs as a JSON object.")(command)
         command = click.option("--lineage-rationale", default=None, help="Canonical lineage rationale for parent edges.")(command)
         command = click.option("--decision-record-id", default=None, help="Decision record id associated with canonical lineage.")(command)
@@ -651,6 +662,10 @@ def _request_from_values(values: dict[str, Any]) -> ResearchRecordRequest:
         lineage_rationale=values.get("lineage_rationale"),
         file_attachments=parse_json_object_list(values.get("files_json"), field_name="files-json"),
         index_hints=parse_json_object(values.get("index_hints_json"), field_name="index-hints-json"),
+        realizes_idea_id=values.get("realizes_idea_id"),
+        idea_realizations=parse_json_object_list(values.get("idea_realizations_json"), field_name="idea-realizations-json"),
+        idea_parents=parse_json_object_list(values.get("idea_parents_json"), field_name="idea-parents-json"),
+        primary_idea=parse_json_object(values.get("primary_idea_json"), field_name="primary-idea-json"),
     )
 
 

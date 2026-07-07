@@ -1,6 +1,7 @@
 import {
   ProjectResponseSchema,
   ProjectExplorerResponseSchema,
+  IdeaDetailResponseSchema,
   OpenableItemDescriptorSchema,
   RecordsResponseSchema,
   TopicChangeEventSchema,
@@ -114,6 +115,16 @@ export async function getViewerDescriptor(topicId: string, recordId: string) {
 
 export async function getRecordDetail(topicId: string, recordId: string, includePayload = false) {
   return fetchJson(`/api/topics/${encodeURIComponent(topicId)}/records/${encodeURIComponent(recordId)}${params({ include_payload: includePayload })}`);
+}
+
+export async function getIdeaDetail(topicId: string, ideaId: string, options: { includeSourceJson?: boolean } = {}) {
+  return IdeaDetailResponseSchema.parse(
+    await fetchJson(
+      `/api/topics/${encodeURIComponent(topicId)}/ideas/${encodeURIComponent(ideaId)}${params({
+        include_source_json: options.includeSourceJson,
+      })}`,
+    ),
+  );
 }
 
 export async function getRecordRender(topicId: string, recordId: string) {

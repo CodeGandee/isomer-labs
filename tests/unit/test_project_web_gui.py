@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import os
+import sqlite3
 import tempfile
 import textwrap
 import unittest
@@ -140,6 +141,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         files_json: str | None = None,
         include_idea: bool = True,
         payload_extra: dict[str, object] | None = None,
+        format_profile_ref: str | None = None,
     ) -> None:
         payload_file = root / f"{record_id}.json"
         payload: dict[str, object] = {
@@ -178,7 +180,7 @@ class ProjectWebGuiTests(unittest.TestCase):
             "--record-kind",
             "run",
             "--format-profile",
-            canonical_record_format_ref("run.main-run-record", "profile"),
+            format_profile_ref or canonical_record_format_ref("report.raw-idea-slate", "profile"),
             "--payload-file",
             str(payload_file),
         ]
@@ -187,6 +189,60 @@ class ProjectWebGuiTests(unittest.TestCase):
         if files_json is not None:
             args.extend(["--files-json", files_json])
         status, output = self.run_main(args, cwd=root)
+        self.assertEqual(0, status, output)
+
+    def register_canonical_idea(
+        self,
+        root: Path,
+        *,
+        idea_id: str,
+        title: str,
+        record_id: str | None = None,
+        source_json_path: str | None = None,
+    ) -> None:
+        upsert_args = [
+            "--print-json",
+            "ext",
+            "research",
+            "ideas",
+            "upsert",
+            "--project",
+            str(root),
+            "--topic",
+            "alpha",
+            "--idea-id",
+            idea_id,
+            "--title",
+            title,
+            "--status",
+            "candidate",
+        ]
+        if record_id is not None:
+            upsert_args.extend(["--source-record-id", record_id])
+        if source_json_path is not None:
+            upsert_args.extend(["--source-json-path", source_json_path])
+        status, output = self.run_main(upsert_args, cwd=root)
+        self.assertEqual(0, status, output)
+        if record_id is None:
+            return
+        realize_args = [
+            "--print-json",
+            "ext",
+            "research",
+            "ideas",
+            "realize",
+            "--project",
+            str(root),
+            "--topic",
+            "alpha",
+            "--idea-id",
+            idea_id,
+            "--record-id",
+            record_id,
+        ]
+        if source_json_path is not None:
+            realize_args.extend(["--source-json-path", source_json_path])
+        status, output = self.run_main(realize_args, cwd=root)
         self.assertEqual(0, status, output)
 
     def test_project_topic_runtime_read_model_and_static_routes(self) -> None:
@@ -199,6 +255,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertIn("/api/topics/{topic_id}/records/export", route_paths)
         self.assertIn("/api/topics/{topic_id}/graphs/{graph_scope}", route_paths)
         self.assertIn("/api/topics/{topic_id}/viewer/records/{record_id}", route_paths)
+        self.assertIn("/api/topics/{topic_id}/ideas/{idea_id}", route_paths)
         self.assertIn("/api/events", route_paths)
         self.assertNotIn("/api/explorer/files", route_paths)
         self.assertTrue((Path("src/isomer_labs/web/static/index.html")).exists())
@@ -265,6 +322,116 @@ class ProjectWebGuiTests(unittest.TestCase):
         missing = read_model.openable_item_descriptor("topic:missing:overview")
         self.assertFalse(missing["ok"], missing)
         self.assertEqual("topic_not_found", missing["error"]["code"])
+
+    def test_idea_detail_resolves_source_json_and_openable_descriptor_read_only(self) -> None:
+        root = self.make_project()
+        self.create_indexed_idea_record(
+            root,
+            record_id="idea-source",
+            idea_id="idea-source",
+            idea_text="Source path idea",
+        )
+        self.register_canonical_idea(
+            root,
+            idea_id="idea-source",
+            title="Canonical source idea",
+            record_id="idea-source",
+            source_json_path="$.sections.raw_ideas[0]",
+        )
+        db_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        before_mtime = db_path.stat().st_mtime_ns
+        read_model = self.read_model(root)
+
+        detail = read_model.idea_detail("alpha", "idea-source")
+        self.assertTrue(detail["ok"], detail)
+        self.assertFalse(detail["mutated"])
+        self.assertEqual("Canonical source idea", detail["idea"]["title"])
+        self.assertEqual("idea-source", detail["latest_realization"]["record_id"])
+        self.assertEqual("latest_realization_source_path", detail["source"]["source_kind"])
+        self.assertEqual("$.sections.raw_ideas[0]", detail["source"]["source_json_path"])
+        self.assertEqual("$.sections.raw_ideas[0]", detail["source_provenance"]["source_json_path"])
+        self.assertEqual("exact", detail["source_provenance"]["source_fragment_status"])
+        self.assertEqual("canonical_idea_source", detail["source_provenance"]["source_classification"])
+        self.assertEqual("Source path idea", detail["idea_content"]["one_liner"])
+        self.assertEqual("Source path idea", detail["source"]["source_json"]["one_liner"])
+        self.assertEqual(before_mtime, db_path.stat().st_mtime_ns)
+
+        descriptor = read_model.openable_item_descriptor("idea:alpha:idea-source")
+        self.assertTrue(descriptor["ok"], descriptor)
+        self.assertEqual("ideaDetail", descriptor["preferred_tab_component"])
+        self.assertEqual("idea-source", descriptor["idea_id"])
+        self.assertEqual("topic-alpha-idea-idea-source", descriptor["tab_id"])
+
+        app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
+        status, _headers, body = self.asgi_get_response(app, "/api/topics/alpha/ideas/idea-source")
+        self.assertEqual(200, status)
+        route_payload = json.loads(body)
+        self.assertTrue(route_payload["ok"], route_payload)
+        self.assertEqual("Source path idea", route_payload["idea_content"]["one_liner"])
+        self.assertEqual("idea-source", route_payload["source_provenance"]["source_record_id"])
+
+        with sqlite3.connect(db_path) as connection:
+            connection.execute(
+                "UPDATE research_idea_realizations SET source_json_path = ? WHERE idea_id = ?",
+                ("$", "idea-source"),
+            )
+        fallback = read_model.idea_detail("alpha", "idea-source")
+        self.assertTrue(fallback["ok"], fallback)
+        self.assertEqual("Canonical source idea", fallback["idea_content"]["title"])
+        self.assertEqual("legacy_fallback", fallback["source_provenance"]["source_fragment_status"])
+        self.assertTrue(any(item["code"] == "source_json_path_broad" for item in fallback["diagnostics"]))
+        self.assertNotIn("sections", fallback["source"]["source_json"])
+
+    def test_idea_detail_reports_missing_and_oversized_source_json_without_repair(self) -> None:
+        root = self.make_project()
+        self.register_canonical_idea(root, idea_id="metadata-only", title="Metadata Only")
+        self.create_indexed_idea_record(
+            root,
+            record_id="large-source",
+            idea_id="large-source",
+            idea_text="Large source idea",
+        )
+        (root / "topic-workspaces" / "alpha" / "records" / "runs" / "research-records" / "run" / "large-source" / "payload.json").write_text(
+            json.dumps(
+                {
+                    "title": "Large Source",
+                    "summary": "Large Source",
+                    "sections": {
+                        "raw_ideas": [
+                            {
+                                "idea_id": "large-source",
+                                "one_liner": "Large source idea",
+                                "large_blob": "x" * (1024 * 1024 + 64),
+                            }
+                        ]
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        self.register_canonical_idea(root, idea_id="large-source", title="Large Source", record_id="large-source", source_json_path="$.sections.raw_ideas[0]")
+        read_model = self.read_model(root)
+
+        metadata_detail = read_model.idea_detail("alpha", "metadata-only")
+        self.assertTrue(metadata_detail["ok"], metadata_detail)
+        self.assertEqual("idea_metadata", metadata_detail["source"]["source_kind"])
+        self.assertTrue(any(item["code"] == "source_json_unavailable" for item in metadata_detail["diagnostics"]))
+
+        large_detail = read_model.idea_detail("alpha", "large-source")
+        self.assertTrue(large_detail["ok"], large_detail)
+        self.assertTrue(large_detail["source"]["source_json_truncated"])
+        self.assertNotIn("source_json", large_detail["source"])
+        self.assertTrue(any(item["code"] == "source_json_truncated" for item in large_detail["diagnostics"]))
+
+        full_detail = read_model.idea_detail("alpha", "large-source", include_source_json=True)
+        self.assertTrue(full_detail["ok"], full_detail)
+        self.assertFalse(full_detail["source"]["source_json_truncated"])
+        self.assertIn("large_blob", full_detail["source"]["source_json"])
+
+        missing = read_model.openable_item_descriptor("idea:alpha:unknown-idea")
+        self.assertFalse(missing["ok"], missing)
+        self.assertEqual("ideaDetail", missing["preferred_tab_component"])
+        self.assertEqual("idea_not_found", missing["error"]["code"])
 
     def test_web_gui_responses_disable_browser_cache(self) -> None:
         root = self.make_project()
@@ -401,6 +568,96 @@ class ProjectWebGuiTests(unittest.TestCase):
         status, headers = self.asgi_get(app, "/api/events?topic_id=alpha&once=true")
         self.assertEqual(200, status)
         self.assertEqual("text/event-stream; charset=utf-8", headers["content-type"])
+
+    def test_idea_graph_prefers_canonical_research_ideas_when_present(self) -> None:
+        root = self.make_project()
+        self.create_indexed_idea_record(root, record_id="legacy-parent", idea_id="legacy-parent", idea_text="Legacy parent idea")
+        self.create_indexed_idea_record(root, record_id="legacy-child", idea_id="legacy-child", idea_text="Legacy child idea")
+        commands = [
+            [
+                "ext",
+                "research",
+                "ideas",
+                "upsert",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+                "--idea-id",
+                "idea-parent",
+                "--title",
+                "Canonical parent",
+                "--status",
+                "candidate",
+                "--source-record-id",
+                "legacy-parent",
+                "--source-json-path",
+                "$.sections.raw_ideas[0]",
+            ],
+            [
+                "ext",
+                "research",
+                "ideas",
+                "upsert",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+                "--idea-id",
+                "idea-child",
+                "--title",
+                "Canonical child",
+                "--status",
+                "selected",
+                "--alias",
+                "legacy-child",
+                "--source-record-id",
+                "legacy-child",
+                "--source-json-path",
+                "$.sections.raw_ideas[0]",
+            ],
+            [
+                "ext",
+                "research",
+                "ideas",
+                "realize",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+                "--idea-id",
+                "idea-child",
+                "--record-id",
+                "legacy-child",
+                "--source-json-path",
+                "$.sections.raw_ideas[0]",
+            ],
+            [
+                "ext",
+                "research",
+                "ideas",
+                "lineage",
+                "add",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+                "idea-parent",
+                "idea-child",
+                "--lineage-kind",
+                "derived_from",
+            ],
+        ]
+        for command in commands:
+            status, output = self.run_main(["--print-json", *command], cwd=root)
+            self.assertEqual(0, status, output)
+
+        read_model = self.read_model(root)
+        graph = read_model.topic_graph("alpha", graph_scope="idea-lineage", renderer="auto")
+        self.assertTrue(graph["ok"], graph)
+        self.assertEqual({"idea:idea-parent", "idea:idea-child"}, {node["id"] for node in graph["nodes"]})
+        self.assertEqual(["derived_from"], [edge["relation_kind"] for edge in graph["edges"]])
+        self.assertFalse(any(item["code"] == "idea_graph_heuristic_fallback" for item in graph["diagnostics"]))
 
     def test_file_backed_record_content_opens_through_semantic_record_descriptor(self) -> None:
         root = self.make_project()

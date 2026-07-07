@@ -30,6 +30,10 @@ from isomer_labs.runtime.records import (
     HandoffNormalizationRecord,
     HandoffRecord,
     PathPlanRecord,
+    ResearchIdea,
+    ResearchIdeaGenerationGroup,
+    ResearchIdeaLineageEdge,
+    ResearchIdeaRealization,
     ResearchRecordGenerationGroup,
     ResearchRecordLineageEdge,
     ResetCheckpointRecord,
@@ -223,6 +227,10 @@ CORE_RUNTIME_SCHEMA_TABLES = (
 LINEAGE_RUNTIME_SCHEMA_TABLES = (
     "research_record_generation_groups",
     "research_record_lineage_edges",
+    "research_ideas",
+    "research_idea_realizations",
+    "research_idea_generation_groups",
+    "research_idea_lineage_edges",
 )
 ADAPTER_RUNTIME_SCHEMA_TABLES = (
     "adapter_handoff_dispatch_records",
@@ -477,6 +485,101 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             ON research_record_lineage_edges (topic_workspace_id, lineage_kind);
         CREATE INDEX IF NOT EXISTS idx_research_record_lineage_edges_generation
             ON research_record_lineage_edges (topic_workspace_id, generation_id);
+
+        CREATE TABLE IF NOT EXISTS research_ideas (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            idea_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            one_liner TEXT,
+            family TEXT,
+            status TEXT NOT NULL,
+            visibility TEXT NOT NULL,
+            aliases_json TEXT NOT NULL,
+            source_record_id TEXT,
+            source_json_path TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, idea_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_ideas_topic
+            ON research_ideas (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_ideas_visibility
+            ON research_ideas (topic_workspace_id, visibility, status);
+
+        CREATE TABLE IF NOT EXISTS research_idea_realizations (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            idea_id TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            source_json_path TEXT,
+            realization_stage TEXT,
+            semantic_id TEXT,
+            latest INTEGER NOT NULL,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_idea_realizations_idea
+            ON research_idea_realizations (topic_workspace_id, idea_id, latest);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_realizations_record
+            ON research_idea_realizations (topic_workspace_id, record_id);
+
+        CREATE TABLE IF NOT EXISTS research_idea_generation_groups (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            purpose TEXT,
+            parent_set_digest TEXT NOT NULL,
+            producer_skill TEXT,
+            decision_record_id TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_idea_generation_groups_topic
+            ON research_idea_generation_groups (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_generation_groups_parent_set
+            ON research_idea_generation_groups (topic_workspace_id, parent_set_digest);
+
+        CREATE TABLE IF NOT EXISTS research_idea_lineage_edges (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            parent_idea_id TEXT NOT NULL,
+            child_idea_id TEXT NOT NULL,
+            lineage_kind TEXT NOT NULL,
+            parent_role TEXT,
+            generation_id TEXT,
+            decision_record_id TEXT,
+            rationale TEXT,
+            status TEXT NOT NULL,
+            confidence REAL,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_idea_lineage_edges_topic
+            ON research_idea_lineage_edges (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_lineage_edges_parent
+            ON research_idea_lineage_edges (topic_workspace_id, parent_idea_id);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_lineage_edges_child
+            ON research_idea_lineage_edges (topic_workspace_id, child_idea_id);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_lineage_edges_kind
+            ON research_idea_lineage_edges (topic_workspace_id, lineage_kind);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_lineage_edges_generation
+            ON research_idea_lineage_edges (topic_workspace_id, generation_id);
 
         CREATE TABLE IF NOT EXISTS research_record_files (
             id TEXT PRIMARY KEY,
@@ -1248,6 +1351,82 @@ def _row_to_research_record_lineage_edge(row: sqlite3.Row) -> ResearchRecordLine
         decision_record_id=row["decision_record_id"],
         rationale=row["rationale"],
         status=row["status"],
+        metadata=_loads_object_dict(row["metadata_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_research_idea(row: sqlite3.Row) -> ResearchIdea:
+    return ResearchIdea(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        idea_id=row["idea_id"],
+        title=row["title"],
+        one_liner=row["one_liner"],
+        family=row["family"],
+        status=row["status"],
+        visibility=row["visibility"],
+        aliases=_loads_list(row["aliases_json"]),
+        source_record_id=row["source_record_id"],
+        source_json_path=row["source_json_path"],
+        metadata=_loads_object_dict(row["metadata_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_research_idea_realization(row: sqlite3.Row) -> ResearchIdeaRealization:
+    return ResearchIdeaRealization(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        idea_id=row["idea_id"],
+        record_id=row["record_id"],
+        source_json_path=row["source_json_path"],
+        realization_stage=row["realization_stage"],
+        semantic_id=row["semantic_id"],
+        latest=bool(row["latest"]),
+        metadata=_loads_object_dict(row["metadata_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_research_idea_generation_group(row: sqlite3.Row) -> ResearchIdeaGenerationGroup:
+    return ResearchIdeaGenerationGroup(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        purpose=row["purpose"],
+        parent_set_digest=row["parent_set_digest"],
+        producer_skill=row["producer_skill"],
+        decision_record_id=row["decision_record_id"],
+        metadata=_loads_object_dict(row["metadata_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_research_idea_lineage_edge(row: sqlite3.Row) -> ResearchIdeaLineageEdge:
+    return ResearchIdeaLineageEdge(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        parent_idea_id=row["parent_idea_id"],
+        child_idea_id=row["child_idea_id"],
+        lineage_kind=row["lineage_kind"],
+        parent_role=row["parent_role"],
+        generation_id=row["generation_id"],
+        decision_record_id=row["decision_record_id"],
+        rationale=row["rationale"],
+        status=row["status"],
+        confidence=row["confidence"],
         metadata=_loads_object_dict(row["metadata_json"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"],

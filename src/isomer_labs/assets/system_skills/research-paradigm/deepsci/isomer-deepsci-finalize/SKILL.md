@@ -15,6 +15,8 @@ Worker-output reminder: before writing JSON payload staging files, Markdown draf
 
 Lineage reminder: before accepted durable record writes that depend on prior durable records, follow `isomer-deepsci-shared` Artifact Lineage Recording. Pass canonical parents with `--parents-json` and `--lineage-kind`, use `--generation-id` for sibling candidate passes, keep query-index hints separate, and use `ext research records revise <record-id>` for content-changing accepted revisions.
 
+Idea-recording reminder: finalization records closure and resume state, but Research Idea status still changes only through explicit idea writes. When finalization marks an idea supported, refuted, superseded, parked, or followed up, read `isomer-deepsci-shared/references/research-idea-recording.md` and realize the idea with an exact object-valued source path, not the final summary, claim ledger, resume packet, or rendered Markdown.
+
 Finalize closes or pauses work responsibly. It consolidates accepted evidence, records claim status and limitations, chooses stop, park, publish, or continue-later routing, and refuses closure when evidence or writing gates still block it.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.

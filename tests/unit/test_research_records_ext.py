@@ -13,6 +13,13 @@ from unittest.mock import patch
 
 from isomer_labs import cli
 from isomer_labs.deepsci_ext.record_formats import canonical_record_format_ref
+from isomer_labs.records.idea_sources import (
+    SOURCE_STATUS_BROAD_PATH,
+    SOURCE_STATUS_EXACT,
+    SOURCE_STATUS_NON_OBJECT,
+    extract_json_path,
+    resolve_payload_source_fragment,
+)
 
 
 def write(path: Path, content: str) -> None:
@@ -76,6 +83,27 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
     def run_records(self, root: Path, args: list[str]) -> tuple[int, dict[str, object]]:
         status, output = self.run_main(["ext", "research", "records", *args, "--project", str(root), "--topic", "alpha"], cwd=root)
         return status, json.loads(output)
+
+    def run_ideas(self, root: Path, args: list[str]) -> tuple[int, dict[str, object]]:
+        status, output = self.run_main(["ext", "research", "ideas", *args, "--project", str(root), "--topic", "alpha"], cwd=root)
+        return status, json.loads(output)
+
+    def test_idea_source_fragment_resolver_uses_bounded_paths_and_requires_objects(self) -> None:
+        payload = {"sections": {"raw_ideas": [{"id": "R1", "one_liner": "Idea one"}], "filter_notes": ["not idea"]}}
+
+        value, unresolved = extract_json_path(payload, "$.sections.raw_ideas[0]")
+        self.assertFalse(unresolved)
+        self.assertEqual({"id": "R1", "one_liner": "Idea one"}, value)
+
+        exact = resolve_payload_source_fragment(payload, "$.sections.raw_ideas[0]", format_profile_ref=canonical_record_format_ref("report.raw-idea-slate", "profile"))
+        self.assertEqual(SOURCE_STATUS_EXACT, exact.status)
+        self.assertEqual({"id": "R1", "one_liner": "Idea one"}, exact.source_json)
+
+        broad = resolve_payload_source_fragment(payload, "$.sections.raw_ideas", format_profile_ref=canonical_record_format_ref("report.raw-idea-slate", "profile"))
+        self.assertEqual(SOURCE_STATUS_NON_OBJECT, broad.status)
+
+        context = resolve_payload_source_fragment(payload, "$.sections.filter_notes", format_profile_ref=canonical_record_format_ref("report.raw-idea-slate", "profile"))
+        self.assertEqual(SOURCE_STATUS_BROAD_PATH, context.status)
 
     def test_record_crud_preserves_placeholder_metadata_and_body(self) -> None:
         root = self.make_project()
@@ -485,7 +513,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual(0, status, facets)
         self.assertEqual("runtime_ms", facets["metrics"][0]["metric_key"])
         self.assertEqual("Runtime is predictable", facets["claims"][0]["claim"])
-        self.assertEqual("Model host runtime path", facets["ideas"][0]["one_liner"])
+        self.assertEqual([], facets["ideas"])
         self.assertEqual("continue", facets["routes"][0]["decision"])
 
         status, files = self.run_records(root, ["query", "files", "indexed-main-run"])
@@ -842,3 +870,161 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         payload = json.loads(output)
         self.assertEqual(False, payload["ok"])
         self.assertEqual("context_resolution_failed", payload["error"]["code"])
+
+    def test_research_ideas_cli_records_canonical_graph_and_rejects_revision_edges(self) -> None:
+        root = self.make_project()
+        for record_id in ("record-parent", "record-child"):
+            status, created = self.run_records(
+                root,
+                ["create", "--id", record_id, "--record-kind", "artifact", "--body", record_id],
+            )
+            self.assertEqual(0, status, created)
+
+        status, parent = self.run_ideas(
+            root,
+            [
+                "upsert",
+                "--idea-id",
+                "idea-parent",
+                "--title",
+                "Parent idea",
+                "--status",
+                "candidate",
+                "--alias",
+                "R1",
+                "--source-record-id",
+                "record-parent",
+            ],
+        )
+        self.assertEqual(0, status, parent)
+        self.assertEqual("idea-parent", parent["idea"]["idea_id"])
+
+        status, child = self.run_ideas(
+            root,
+            [
+                "upsert",
+                "--idea-id",
+                "idea-child",
+                "--title",
+                "Child idea",
+                "--status",
+                "selected",
+                "--alias",
+                "C1",
+                "--source-record-id",
+                "record-child",
+            ],
+        )
+        self.assertEqual(0, status, child)
+
+        status, realization = self.run_ideas(root, ["realize", "--idea-id", "idea-child", "--record-id", "record-child", "--realization-stage", "selected-hypothesis"])
+        self.assertEqual(0, status, realization)
+        self.assertEqual("record-child", realization["realization"]["record_id"])
+
+        status, group = self.run_ideas(root, ["generation", "upsert", "--generation-id", "idea-pass-1", "--parent-idea-id", "idea-parent", "--purpose", "test candidates"])
+        self.assertEqual(0, status, group)
+
+        status, edge = self.run_ideas(
+            root,
+            [
+                "lineage",
+                "add",
+                "idea-parent",
+                "idea-child",
+                "--lineage-kind",
+                "subsumes",
+                "--generation-id",
+                "idea-pass-1",
+                "--rationale",
+                "Child covers the parent as a test role.",
+            ],
+        )
+        self.assertEqual(0, status, edge)
+        self.assertEqual("subsumes", edge["edge"]["lineage_kind"])
+
+        status, bad_edge = self.run_ideas(root, ["lineage", "add", "idea-parent", "idea-child", "--lineage-kind", "revision_of"])
+        self.assertEqual(1, status, bad_edge)
+        self.assertEqual("idea_lineage_validation_failed", bad_edge["error"]["code"])
+        self.assertTrue(any(item["code"] == "idea_revision_edge_rejected" for item in bad_edge["diagnostics"]))
+
+        status, exported = self.run_records(root, ["query", "export", "--view", "graph"])
+        self.assertEqual(0, status, exported)
+        self.assertEqual(["idea-child", "idea-parent"], sorted(row["idea_id"] for row in exported["canonical_ideas"]))
+        self.assertEqual(["subsumes"], [row["lineage_kind"] for row in exported["canonical_idea_edges"]])
+
+        status, graph = self.run_ideas(root, ["graph"])
+        self.assertEqual(0, status, graph)
+        self.assertEqual("canonical", graph["graph_source"])
+        self.assertEqual(["idea-child", "idea-parent"], sorted(row["idea_id"] for row in graph["nodes"]))
+        self.assertEqual(["subsumes"], [row["lineage_kind"] for row in graph["edges"]])
+
+    def test_research_idea_source_contract_validates_imports_exports_and_repairs(self) -> None:
+        root = self.make_project()
+        profile_ref = canonical_record_format_ref("report.raw-idea-slate", "profile")
+        payload_path = root / "raw-idea-slate.json"
+        write(
+            payload_path,
+            """
+            {
+              "title": "Raw Idea Slate",
+              "sections": {
+                "filter_notes": ["R2 deferred; not an idea entry."],
+                "raw_ideas": [
+                  {"id": "R1", "family": "model", "one_liner": "Add occupancy correction."},
+                  {"id": "R2", "family": "model", "one_liner": "Add symbolic regression fallback.", "status": "deferred"}
+                ]
+              }
+            }
+            """,
+        )
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "raw-record",
+                "--record-kind",
+                "artifact",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(payload_path),
+            ],
+        )
+        self.assertEqual(0, status, created)
+
+        status, imported = self.run_ideas(root, ["import-from-record", "raw-record"])
+        self.assertEqual(0, status, imported)
+        self.assertEqual(["$.sections.raw_ideas[0]", "$.sections.raw_ideas[1]"], [item["source_json_path"] for item in imported["plan"]])
+
+        status, idea = self.run_ideas(root, ["upsert", "--idea-id", "idea-occupancy", "--title", "Occupancy", "--alias", "R1", "--source-record-id", "raw-record"])
+        self.assertEqual(0, status, idea)
+        status, realization = self.run_ideas(root, ["realize", "--idea-id", "idea-occupancy", "--record-id", "raw-record", "--source-json-path", "$.sections.raw_ideas[0]"])
+        self.assertEqual(0, status, realization)
+
+        status, bad_idea = self.run_ideas(root, ["upsert", "--idea-id", "idea-bad", "--title", "Bad", "--alias", "R1", "--source-record-id", "raw-record"])
+        self.assertEqual(0, status, bad_idea)
+        status, bad_realization = self.run_ideas(root, ["realize", "--idea-id", "idea-bad", "--record-id", "raw-record", "--source-json-path", "$.sections.raw_ideas"])
+        self.assertEqual(1, status, bad_realization)
+        self.assertEqual("idea_realization_validation_failed", bad_realization["error"]["code"])
+        self.assertTrue(any(item["code"] == "source_json_fragment_non_object" for item in bad_realization["diagnostics"]))
+
+        status, exported = self.run_records(root, ["query", "export", "--view", "ideas"])
+        self.assertEqual(0, status, exported)
+        realization_rows = [row for row in exported["canonical_idea_realizations"] if row["idea_id"] == "idea-occupancy"]
+        self.assertEqual(SOURCE_STATUS_EXACT, realization_rows[0]["source_fragment_status"])
+
+        db_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(db_path) as connection:
+            connection.execute(
+                "UPDATE research_idea_realizations SET source_json_path = ? WHERE idea_id = ?",
+                ("$.raw_ideas", "idea-occupancy"),
+            )
+        status, validate = self.run_ideas(root, ["validate"])
+        self.assertEqual(1, status, validate)
+        self.assertEqual(False, validate["ok"])
+        self.assertTrue(any(item["code"] == "source_json_path_unresolved" for item in validate["diagnostics"]))
+
+        status, repair = self.run_ideas(root, ["repair", "--apply"])
+        self.assertEqual(0, status, repair)
+        self.assertEqual([{"realization_id": realization["realization"]["id"], "source_json_path": "$.sections.raw_ideas[0]"}], repair["applied"])

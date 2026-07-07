@@ -28,14 +28,26 @@ from isomer_labs.runtime.records import (
     LIFECYCLE_RECORD_KINDS,
     LIFECYCLE_STATUSES,
     RESEARCH_RECORD_LINEAGE_KINDS,
+    RESEARCH_IDEA_LINEAGE_KINDS,
     ResearchRecordGenerationGroup,
     ResearchRecordLineageEdge,
+    ResearchIdea,
+    ResearchIdeaGenerationGroup,
+    ResearchIdeaLineageEdge,
+    ResearchIdeaRealization,
     RuntimeLifecycleRecord,
     StructuredResearchPayloadRecord,
     utc_timestamp,
 )
 from isomer_labs.runtime.store import WorkspaceRuntimeStore, open_workspace_runtime
 from isomer_labs.records.index import refresh_query_index_for_record
+from isomer_labs.records.idea_sources import (
+    SOURCE_STATUS_EXACT,
+    IdeaEntryFragment,
+    load_structured_payload,
+    profile_idea_entry_fragments,
+    resolve_structured_source_fragment,
+)
 
 
 RESEARCH_RECORD_DEFAULT_LABELS = {
@@ -105,6 +117,10 @@ class ResearchRecordRequest:
     lineage_rationale: str | None = None
     file_attachments: list[dict[str, object]] | None = None
     index_hints: dict[str, object] | None = None
+    realizes_idea_id: str | None = None
+    idea_realizations: list[dict[str, object]] | None = None
+    idea_parents: list[dict[str, object]] | None = None
+    primary_idea: dict[str, object] | None = None
 
 
 class LineageParentSpec(TypedDict):
@@ -218,6 +234,14 @@ def create_record(
                 created_at=now,
                 updated_at=now,
             )
+            idea_payload = _store_request_ideas(
+                context,
+                runtime_store,
+                request,
+                record_id=record_id,
+                created_at=now,
+                updated_at=now,
+            )
         index_payload = refresh_query_index_for_record(context, runtime_store, record_id)
         for parent_id in _affected_parent_record_ids(lineage_payload):
             refresh_query_index_for_record(context, runtime_store, parent_id)
@@ -231,6 +255,7 @@ def create_record(
             "structured_payload": stored_payload.to_json() if stored_payload is not None else None,
             "content_path": str(content_path) if content_path is not None else None,
             "lineage": lineage_payload,
+            "idea_writes": idea_payload,
             "query_index": index_payload,
         }, diagnostics
     finally:
@@ -453,6 +478,14 @@ def update_record(
                 created_at=existing.created_at,
                 updated_at=str(metadata["updated_at"]),
             )
+            idea_payload = _store_request_ideas(
+                context,
+                runtime_store,
+                request,
+                record_id=record_id,
+                created_at=existing.created_at,
+                updated_at=str(metadata["updated_at"]),
+            )
         index_payload = refresh_query_index_for_record(context, runtime_store, record_id)
         for parent_id in _affected_parent_record_ids(lineage_payload):
             refresh_query_index_for_record(context, runtime_store, parent_id)
@@ -466,6 +499,7 @@ def update_record(
             "structured_payload": stored_payload.to_json() if stored_payload is not None else None,
             "content_path": stored.content_path,
             "lineage": lineage_payload,
+            "idea_writes": idea_payload,
             "query_index": index_payload,
         }, diagnostics
     finally:
@@ -668,6 +702,377 @@ def validate_lineage(
             "operation": "lineage.validate",
             "diagnostics": lineage_diagnostics,
             "count": len(lineage_diagnostics),
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def upsert_research_idea(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    idea_id: str,
+    title: str,
+    one_liner: str | None = None,
+    family: str | None = None,
+    status: str = "candidate",
+    visibility: str = "primary",
+    aliases: list[str] | None = None,
+    source_record_id: str | None = None,
+    source_json_path: str | None = None,
+    metadata: dict[str, object] | None = None,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.upsert", diagnostics), diagnostics
+    try:
+        now = utc_timestamp()
+        existing = runtime_store.get_research_idea(idea_id, topic_workspace_id=context.topic_workspace_id)
+        record = _idea_record(
+            context,
+            idea_id=idea_id,
+            title=title,
+            one_liner=one_liner,
+            family=family,
+            status=status,
+            visibility=visibility,
+            aliases=aliases or (existing.aliases if existing is not None else []),
+            source_record_id=source_record_id,
+            source_json_path=source_json_path,
+            metadata=metadata or (existing.metadata if existing is not None else {}),
+            created_at=existing.created_at if existing is not None else now,
+            updated_at=now,
+        )
+        validation = runtime_store.validate_research_idea(record)
+        if _has_lineage_errors(validation):
+            raise ResearchRecordError("Research idea failed validation.", code="idea_validation_failed", payload={"diagnostics": validation})
+        with runtime_store.connection:
+            runtime_store.upsert_research_idea(record, validate=False)
+        return {"ok": True, "mutated": True, "operation": "ideas.upsert", "idea": record.to_json(), "diagnostics": validation}, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def realize_research_idea(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    idea_id: str,
+    record_id: str,
+    source_json_path: str | None = None,
+    realization_stage: str | None = None,
+    semantic_id: str | None = None,
+    latest: bool = True,
+    metadata: dict[str, object] | None = None,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.realize", diagnostics), diagnostics
+    try:
+        now = utc_timestamp()
+        realization = _idea_realization_record(
+            context,
+            idea_id=idea_id,
+            record_id=record_id,
+            source_json_path=source_json_path,
+            realization_stage=realization_stage,
+            semantic_id=semantic_id,
+            latest=latest,
+            metadata=metadata or {},
+            created_at=now,
+            updated_at=now,
+        )
+        validation = runtime_store.validate_research_idea_realization(realization)
+        validation.extend(_validate_realization_source(context, runtime_store, realization, report_missing_payload=False))
+        if _has_lineage_errors(validation):
+            raise ResearchRecordError("Research idea realization failed validation.", code="idea_realization_validation_failed", payload={"diagnostics": validation})
+        with runtime_store.connection:
+            runtime_store.upsert_research_idea_realization(realization, validate=False)
+        refresh_query_index_for_record(context, runtime_store, record_id)
+        return {"ok": True, "mutated": True, "operation": "ideas.realize", "realization": realization.to_json(), "diagnostics": validation}, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def add_research_idea_lineage_edge(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    parent_idea_id: str,
+    child_idea_id: str,
+    lineage_kind: str,
+    parent_role: str | None = None,
+    generation_id: str | None = None,
+    decision_record_id: str | None = None,
+    rationale: str | None = None,
+    status: str = "ready",
+    confidence: float | None = None,
+    metadata: dict[str, object] | None = None,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.lineage.add", diagnostics), diagnostics
+    try:
+        now = utc_timestamp()
+        edge = _idea_lineage_edge(
+            context,
+            parent_idea_id=parent_idea_id,
+            child_idea_id=child_idea_id,
+            lineage_kind=lineage_kind,
+            parent_role=parent_role,
+            generation_id=generation_id,
+            decision_record_id=decision_record_id,
+            rationale=rationale,
+            status=status,
+            confidence=confidence,
+            metadata=metadata or {},
+            created_at=now,
+            updated_at=now,
+        )
+        validation = runtime_store.validate_research_idea_lineage_edge(edge)
+        if _has_lineage_errors(validation):
+            raise ResearchRecordError("Research idea lineage edge failed validation.", code="idea_lineage_validation_failed", payload={"diagnostics": validation})
+        with runtime_store.connection:
+            runtime_store.upsert_research_idea_lineage_edge(edge, validate=False)
+        return {"ok": True, "mutated": True, "operation": "ideas.lineage.add", "edge": edge.to_json(), "diagnostics": validation}, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def upsert_research_idea_generation_group(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    generation_id: str,
+    parent_idea_ids: list[str],
+    purpose: str | None = None,
+    producer_skill: str | None = None,
+    decision_record_id: str | None = None,
+    metadata: dict[str, object] | None = None,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.generation.upsert", diagnostics), diagnostics
+    try:
+        now = utc_timestamp()
+        existing = runtime_store.get_research_idea_generation_group(generation_id)
+        group = ResearchIdeaGenerationGroup(
+            id=generation_id,
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            purpose=purpose or (existing.purpose if existing is not None else None),
+            parent_set_digest=_idea_parent_set_digest(parent_idea_ids),
+            producer_skill=producer_skill or (existing.producer_skill if existing is not None else None),
+            decision_record_id=decision_record_id or (existing.decision_record_id if existing is not None else None),
+            metadata=metadata or (existing.metadata if existing is not None else {"parent_idea_ids": sorted(parent_idea_ids)}),
+            created_at=existing.created_at if existing is not None else now,
+            updated_at=now,
+            provenance_refs=existing.provenance_refs if existing is not None else [_provenance_ref("research-idea-generation-group", generation_id)],
+        )
+        with runtime_store.connection:
+            runtime_store.upsert_research_idea_generation_group(group)
+        return {"ok": True, "mutated": True, "operation": "ideas.generation.upsert", "generation_group": group.to_json(), "diagnostics": []}, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def query_research_ideas(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    visibility: str | None = None,
+    include_archived: bool = False,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.query", diagnostics), diagnostics
+    try:
+        ideas = runtime_store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, visibility=visibility, include_archived=include_archived)
+        return {
+            "ok": True,
+            "mutated": False,
+            "operation": "ideas.query",
+            "ideas": [idea.to_json() for idea in ideas],
+            "realizations": [item.to_json() for item in runtime_store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id)],
+            "edges": [edge.to_json() for edge in runtime_store.list_research_idea_lineage_edges(topic_workspace_id=context.topic_workspace_id, include_archived=include_archived)],
+            "generation_groups": [group.to_json() for group in runtime_store.list_research_idea_generation_groups(topic_workspace_id=context.topic_workspace_id)],
+            "diagnostics": [],
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def graph_research_ideas(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    visibility: str = "primary",
+    include_supporting: bool = False,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.graph", diagnostics), diagnostics
+    try:
+        selected_visibility = None if include_supporting else visibility
+        ideas = runtime_store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, visibility=selected_visibility)
+        allowed = {idea.idea_id for idea in ideas}
+        edges = [
+            edge
+            for edge in runtime_store.list_research_idea_lineage_edges(topic_workspace_id=context.topic_workspace_id)
+            if edge.parent_idea_id in allowed and edge.child_idea_id in allowed
+        ]
+        return {
+            "ok": True,
+            "mutated": False,
+            "operation": "ideas.graph",
+            "graph_source": "canonical",
+            "nodes": [idea.to_json() for idea in ideas],
+            "edges": [edge.to_json() for edge in edges],
+            "generation_groups": [group.to_json() for group in runtime_store.list_research_idea_generation_groups(topic_workspace_id=context.topic_workspace_id)],
+            "diagnostics": runtime_store.validate_research_idea_lineage(topic_workspace_id=context.topic_workspace_id),
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def validate_research_ideas(context: EffectiveTopicContext, *, env: Mapping[str, str]) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.validate", diagnostics), diagnostics
+    try:
+        idea_diagnostics = runtime_store.validate_research_idea_lineage(topic_workspace_id=context.topic_workspace_id)
+        for realization in runtime_store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id):
+            idea_diagnostics.extend(_validate_realization_source(context, runtime_store, realization, report_missing_payload=True))
+        return {
+            "ok": not _has_lineage_errors(idea_diagnostics),
+            "mutated": False,
+            "operation": "ideas.validate",
+            "diagnostics": idea_diagnostics,
+            "count": len(idea_diagnostics),
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def import_research_ideas_from_record(
+    context: EffectiveTopicContext,
+    record_id: str,
+    *,
+    env: Mapping[str, str],
+    apply: bool = False,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=not apply)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.import-from-record", diagnostics), diagnostics
+    try:
+        payload = runtime_store.get_structured_payload(record_id)
+        if payload is None:
+            return {"ok": False, "mutated": False, "operation": "ideas.import-from-record", "error": {"code": "record_payload_missing", "message": f"Record has no structured payload: {record_id}"}, "diagnostics": []}, diagnostics
+        payload_json, payload_diagnostics = load_structured_payload(context, payload)
+        if not isinstance(payload_json, Mapping):
+            return {
+                "ok": False,
+                "mutated": False,
+                "operation": "ideas.import-from-record",
+                "error": {"code": "record_payload_unavailable", "message": f"Record payload could not be read as an object: {record_id}"},
+                "diagnostics": payload_diagnostics,
+            }, diagnostics
+        fragments, fragment_diagnostics = profile_idea_entry_fragments(payload_json, payload.format_profile_ref, record_id=record_id)
+        plan = _idea_import_plan_from_fragments(context, fragments, record_id)
+        applied: list[dict[str, object]] = []
+        if apply:
+            now = utc_timestamp()
+            with runtime_store.connection:
+                for item in plan:
+                    idea = _idea_record(
+                        context,
+                        idea_id=str(item["idea_id"]),
+                        title=str(item["title"]),
+                        one_liner=str(item.get("one_liner") or item["title"]),
+                        family=str(item.get("family") or "legacy-import"),
+                        status=str(item.get("status") or "candidate"),
+                        visibility=str(item.get("visibility") or "supporting"),
+                        aliases=_string_list(item.get("aliases")),
+                        source_record_id=record_id,
+                        source_json_path=str(item.get("source_json_path") or ""),
+                        metadata={"import_source": "legacy-record-facet", "preview": item},
+                        created_at=now,
+                        updated_at=now,
+                    )
+                    runtime_store.upsert_research_idea(idea)
+                    realization = _idea_realization_record(
+                        context,
+                        idea_id=str(item["idea_id"]),
+                        record_id=record_id,
+                        source_json_path=str(item.get("source_json_path") or ""),
+                        realization_stage=_optional_metadata_string(item.get("realization_stage")) or "imported",
+                        semantic_id=_optional_metadata_string(item.get("semantic_id")),
+                        latest=bool(item.get("latest", False)),
+                        metadata={"import_source": "profile-aware-record", "preview": item},
+                        created_at=now,
+                        updated_at=now,
+                    )
+                    realization_diagnostics = runtime_store.validate_research_idea_realization(realization)
+                    realization_diagnostics.extend(_validate_realization_source(context, runtime_store, realization, report_missing_payload=False))
+                    if _has_lineage_errors(realization_diagnostics):
+                        raise ResearchRecordError("Research idea realization failed validation.", code="idea_realization_validation_failed", payload={"diagnostics": realization_diagnostics})
+                    runtime_store.upsert_research_idea_realization(realization, validate=False)
+                    applied.append(idea.to_json())
+        return {"ok": True, "mutated": apply, "operation": "ideas.import-from-record", "record_id": record_id, "plan": plan, "applied": applied, "diagnostics": [*payload_diagnostics, *fragment_diagnostics]}, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def repair_research_ideas(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    apply: bool = False,
+    update_payloads: bool = False,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=not apply)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.repair", diagnostics), diagnostics
+    try:
+        plan = _idea_repair_plan(context, runtime_store)
+        applied: list[dict[str, object]] = []
+        if apply:
+            now = utc_timestamp()
+            with runtime_store.connection:
+                for item in plan:
+                    if item.get("action") != "update_realization_source_path":
+                        continue
+                    realization = runtime_store.get_research_idea_realization(str(item["realization_id"]))
+                    if realization is None:
+                        continue
+                    repaired = ResearchIdeaRealization(
+                        id=realization.id,
+                        research_topic_id=realization.research_topic_id,
+                        topic_workspace_id=realization.topic_workspace_id,
+                        idea_id=realization.idea_id,
+                        record_id=realization.record_id,
+                        source_json_path=str(item["source_json_path"]),
+                        realization_stage=realization.realization_stage,
+                        semantic_id=realization.semantic_id,
+                        latest=realization.latest,
+                        metadata={**realization.metadata, "repair_source": "ideas.repair", "previous_source_json_path": realization.source_json_path},
+                        created_at=realization.created_at,
+                        updated_at=now,
+                        provenance_refs=realization.provenance_refs,
+                    )
+                    runtime_store.upsert_research_idea_realization(repaired)
+                    applied.append({"realization_id": repaired.id, "source_json_path": repaired.source_json_path})
+        validation_payload, _ = validate_research_ideas(context, env=env)
+        return {
+            "ok": validation_payload.get("ok", False),
+            "mutated": apply,
+            "operation": "ideas.repair",
+            "apply": apply,
+            "update_payloads": update_payloads,
+            "diagnostics": validation_payload.get("diagnostics", []),
+            "plan": plan,
+            "applied": applied,
+            "note": "Managed payload files are not mutated unless a dedicated payload-update repair path is implemented and explicitly enabled.",
         }, diagnostics
     finally:
         runtime_store.close()
@@ -1294,6 +1699,21 @@ def _optional_metadata_string(value: object) -> str | None:
     return text or None
 
 
+def _string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if item]
+
+
+def _optional_float(value: object) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+
+
 def _semantic_label_for_request(request: ResearchRecordRequest) -> str:
     return request.semantic_label or RESEARCH_RECORD_DEFAULT_LABELS.get(request.record_kind, DEFAULT_RECORD_LABEL)
 
@@ -1446,6 +1866,370 @@ def _generation_group_for_request(
         updated_at=updated_at,
         provenance_refs=existing.provenance_refs if existing is not None else [_provenance_ref("research-record-generation-group", generation_id)],
     )
+
+
+def _store_request_ideas(
+    context: EffectiveTopicContext,
+    runtime_store: WorkspaceRuntimeStore,
+    request: ResearchRecordRequest,
+    *,
+    record_id: str,
+    created_at: str,
+    updated_at: str,
+) -> dict[str, object]:
+    ideas: list[dict[str, object]] = []
+    realizations: list[dict[str, object]] = []
+    edges: list[dict[str, object]] = []
+    diagnostics: list[dict[str, object]] = []
+    if request.primary_idea:
+        item = request.primary_idea
+        idea_id = _optional_metadata_string(item.get("idea_id") or item.get("id"))
+        title = _optional_metadata_string(item.get("title") or item.get("one_liner") or item.get("summary"))
+        if idea_id is None or title is None:
+            raise ResearchRecordError("primary-idea-json must include idea_id and title or one_liner.", code="invalid_primary_idea")
+        existing = runtime_store.get_research_idea(idea_id, topic_workspace_id=context.topic_workspace_id)
+        idea = _idea_record(
+            context,
+            idea_id=idea_id,
+            title=title,
+            one_liner=_optional_metadata_string(item.get("one_liner") or item.get("summary")),
+            family=_optional_metadata_string(item.get("family")),
+            status=_optional_metadata_string(item.get("status")) or "candidate",
+            visibility=_optional_metadata_string(item.get("visibility")) or "primary",
+            aliases=_string_list(item.get("aliases")),
+            source_record_id=record_id,
+            source_json_path=_optional_metadata_string(item.get("source_json_path")),
+            metadata=dict(item),
+            created_at=existing.created_at if existing is not None else created_at,
+            updated_at=updated_at,
+        )
+        idea_diagnostics = runtime_store.validate_research_idea(idea)
+        diagnostics.extend(idea_diagnostics)
+        if _has_lineage_errors(idea_diagnostics):
+            raise ResearchRecordError("Research idea failed validation.", code="idea_validation_failed", payload={"diagnostics": diagnostics})
+        runtime_store.upsert_research_idea(idea, validate=False)
+        ideas.append(idea.to_json())
+    realization_inputs = list(request.idea_realizations or [])
+    if request.realizes_idea_id is not None:
+        realization_inputs.append({"idea_id": request.realizes_idea_id, "latest": True, "source": "realizes-idea-id"})
+    for index, item in enumerate(realization_inputs):
+        idea_id = _optional_metadata_string(item.get("idea_id") or item.get("id"))
+        if idea_id is None:
+            raise ResearchRecordError(f"idea-realizations-json[{index}] must include idea_id.", code="invalid_idea_realization")
+        realization = _idea_realization_record(
+            context,
+            idea_id=idea_id,
+            record_id=record_id,
+            source_json_path=_optional_metadata_string(item.get("source_json_path")),
+            realization_stage=_optional_metadata_string(item.get("realization_stage") or item.get("stage")),
+            semantic_id=_optional_metadata_string(item.get("semantic_id")),
+            latest=bool(item.get("latest", True)),
+            metadata=dict(item),
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+        realization_diagnostics = runtime_store.validate_research_idea_realization(realization)
+        realization_diagnostics.extend(_validate_realization_source(context, runtime_store, realization, report_missing_payload=False))
+        diagnostics.extend(realization_diagnostics)
+        if _has_lineage_errors(realization_diagnostics):
+            raise ResearchRecordError("Research idea realization failed validation.", code="idea_realization_validation_failed", payload={"diagnostics": diagnostics})
+        runtime_store.upsert_research_idea_realization(realization, validate=False)
+        realizations.append(realization.to_json())
+    child_idea_id = request.realizes_idea_id or _optional_metadata_string((request.primary_idea or {}).get("idea_id"))
+    for index, item in enumerate(request.idea_parents or []):
+        parent_idea_id = _optional_metadata_string(item.get("idea_id") or item.get("parent_idea_id") or item.get("id"))
+        selected_child = _optional_metadata_string(item.get("child_idea_id")) or child_idea_id
+        if parent_idea_id is None or selected_child is None:
+            raise ResearchRecordError(f"idea-parents-json[{index}] must include parent idea_id and child_idea_id or --realizes-idea-id.", code="invalid_idea_parent")
+        lineage_kind = _optional_metadata_string(item.get("lineage_kind") or item.get("kind")) or "derived_from"
+        edge = _idea_lineage_edge(
+            context,
+            parent_idea_id=parent_idea_id,
+            child_idea_id=selected_child,
+            lineage_kind=lineage_kind,
+            parent_role=_optional_metadata_string(item.get("parent_role") or item.get("role")),
+            generation_id=_optional_metadata_string(item.get("generation_id") or request.generation_id),
+            decision_record_id=_optional_metadata_string(item.get("decision_record_id") or request.decision_record_id),
+            rationale=_optional_metadata_string(item.get("rationale") or request.lineage_rationale),
+            status=_optional_metadata_string(item.get("status")) or "ready",
+            confidence=_optional_float(item.get("confidence")),
+            metadata=dict(item),
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+        edge_diagnostics = runtime_store.validate_research_idea_lineage_edge(edge)
+        diagnostics.extend(edge_diagnostics)
+        if _has_lineage_errors(edge_diagnostics):
+            raise ResearchRecordError("Research idea lineage failed validation.", code="idea_lineage_validation_failed", payload={"diagnostics": diagnostics})
+        runtime_store.upsert_research_idea_lineage_edge(edge, validate=False)
+        edges.append(edge.to_json())
+    return {"ideas": ideas, "realizations": realizations, "edges": edges, "diagnostics": diagnostics}
+
+
+def _idea_record(
+    context: EffectiveTopicContext,
+    *,
+    idea_id: str,
+    title: str,
+    one_liner: str | None,
+    family: str | None,
+    status: str,
+    visibility: str,
+    aliases: list[str],
+    source_record_id: str | None,
+    source_json_path: str | None,
+    metadata: dict[str, object],
+    created_at: str,
+    updated_at: str,
+) -> ResearchIdea:
+    stable_id = f"idea-{_slug(context.topic_workspace_id)}-{_slug(idea_id)}"
+    return ResearchIdea(
+        id=stable_id,
+        research_topic_id=context.research_topic.id,
+        topic_workspace_id=context.topic_workspace_id,
+        idea_id=idea_id,
+        title=title,
+        one_liner=one_liner,
+        family=family,
+        status=status,
+        visibility=visibility,
+        aliases=sorted(set(aliases)),
+        source_record_id=source_record_id,
+        source_json_path=source_json_path,
+        metadata=metadata,
+        created_at=created_at,
+        updated_at=updated_at,
+        provenance_refs=[_provenance_ref("research-idea", idea_id)],
+    )
+
+
+def _idea_realization_record(
+    context: EffectiveTopicContext,
+    *,
+    idea_id: str,
+    record_id: str,
+    source_json_path: str | None,
+    realization_stage: str | None,
+    semantic_id: str | None,
+    latest: bool,
+    metadata: dict[str, object],
+    created_at: str,
+    updated_at: str,
+) -> ResearchIdeaRealization:
+    digest = digest_json({"topic_workspace_id": context.topic_workspace_id, "idea_id": idea_id, "record_id": record_id, "source_json_path": source_json_path})[:16]
+    realization_id = f"idea-realization-{digest}"
+    return ResearchIdeaRealization(
+        id=realization_id,
+        research_topic_id=context.research_topic.id,
+        topic_workspace_id=context.topic_workspace_id,
+        idea_id=idea_id,
+        record_id=record_id,
+        source_json_path=source_json_path,
+        realization_stage=realization_stage,
+        semantic_id=semantic_id,
+        latest=latest,
+        metadata=metadata,
+        created_at=created_at,
+        updated_at=updated_at,
+        provenance_refs=[_provenance_ref("research-idea-realization", realization_id)],
+    )
+
+
+def _idea_lineage_edge(
+    context: EffectiveTopicContext,
+    *,
+    parent_idea_id: str,
+    child_idea_id: str,
+    lineage_kind: str,
+    parent_role: str | None,
+    generation_id: str | None,
+    decision_record_id: str | None,
+    rationale: str | None,
+    status: str,
+    confidence: float | None,
+    metadata: dict[str, object],
+    created_at: str,
+    updated_at: str,
+) -> ResearchIdeaLineageEdge:
+    if lineage_kind not in RESEARCH_IDEA_LINEAGE_KINDS and lineage_kind != "revision_of":
+        raise ResearchRecordError(f"Unsupported idea lineage kind: {lineage_kind}", code="unsupported_idea_lineage_kind")
+    digest = digest_json(
+        {
+            "topic_workspace_id": context.topic_workspace_id,
+            "parent_idea_id": parent_idea_id,
+            "child_idea_id": child_idea_id,
+            "lineage_kind": lineage_kind,
+            "parent_role": parent_role,
+            "generation_id": generation_id,
+        }
+    )[:16]
+    edge_id = f"idea-lineage-{_slug(lineage_kind)}-{digest}"
+    return ResearchIdeaLineageEdge(
+        id=edge_id,
+        research_topic_id=context.research_topic.id,
+        topic_workspace_id=context.topic_workspace_id,
+        parent_idea_id=parent_idea_id,
+        child_idea_id=child_idea_id,
+        lineage_kind=lineage_kind,
+        parent_role=parent_role,
+        generation_id=generation_id,
+        decision_record_id=decision_record_id,
+        rationale=rationale,
+        status=status,
+        confidence=confidence,
+        metadata=metadata,
+        created_at=created_at,
+        updated_at=updated_at,
+        provenance_refs=[_provenance_ref("research-idea-lineage", edge_id)],
+    )
+
+
+def _idea_parent_set_digest(parent_idea_ids: list[str]) -> str:
+    return digest_json({"parent_idea_ids": sorted(set(parent_idea_ids))})
+
+
+def _validate_realization_source(
+    context: EffectiveTopicContext,
+    runtime_store: WorkspaceRuntimeStore,
+    realization: ResearchIdeaRealization,
+    *,
+    report_missing_payload: bool,
+) -> list[dict[str, object]]:
+    idea = runtime_store.get_research_idea(realization.idea_id, topic_workspace_id=realization.topic_workspace_id)
+    structured = runtime_store.get_structured_payload(realization.record_id)
+    if structured is None and not report_missing_payload and not realization.source_json_path:
+        return []
+    latest_primary = idea is not None and idea.visibility == "primary" and realization.latest
+    severity = "error" if latest_primary and structured is not None else "warning"
+    resolution = resolve_structured_source_fragment(
+        context,
+        structured,
+        realization.source_json_path,
+        idea_id=realization.idea_id,
+        record_id=realization.record_id,
+        severity=severity,
+    )
+    diagnostics = list(resolution.diagnostics)
+    if resolution.status == SOURCE_STATUS_EXACT and idea is not None and isinstance(resolution.source_json, Mapping):
+        labels = _idea_source_labels(resolution.source_json)
+        known = {idea.idea_id, *idea.aliases}
+        if labels and labels.isdisjoint(known):
+            diagnostics.append(
+                _source_diag(
+                    severity,
+                    "idea_source_label_mismatch",
+                    "Source fragment label does not match the canonical idea id or aliases.",
+                    idea_id=idea.idea_id,
+                    record_id=realization.record_id,
+                    source_json_path=realization.source_json_path,
+                    source_labels=sorted(labels),
+                    known_labels=sorted(known),
+                )
+            )
+    return diagnostics
+
+
+def _idea_source_labels(source_json: Mapping[str, object]) -> set[str]:
+    labels: set[str] = set()
+    for key in ("canonical_idea_id", "idea_id", "id", "label", "candidate_id"):
+        value = source_json.get(key)
+        if isinstance(value, str) and value.strip():
+            labels.add(value.strip())
+    return labels
+
+
+def _source_diag(severity: str, code: str, message: str, **details: object) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "severity": severity,
+        "code": code,
+        "concept": "Research Idea Source JSON",
+        "message": message,
+    }
+    payload.update({key: value for key, value in details.items() if value is not None})
+    return payload
+
+
+def _idea_import_plan_from_fragments(
+    context: EffectiveTopicContext,
+    fragments: list[IdeaEntryFragment],
+    record_id: str,
+) -> list[dict[str, object]]:
+    plan: list[dict[str, object]] = []
+    for fragment in fragments:
+        item_map = dict(fragment.source_json)
+        title = _optional_metadata_string(item_map.get("title") or item_map.get("one_liner") or item_map.get("summary") or item_map.get("idea") or item_map.get("text") or item_map.get("hypothesis"))
+        if title is None:
+            continue
+        source_id = _optional_metadata_string(item_map.get("idea_id") or item_map.get("id") or item_map.get("label") or item_map.get("candidate_id"))
+        idea_id = _optional_metadata_string(item_map.get("canonical_idea_id")) or f"idea-{_slug(source_id or title)}"
+        family = _optional_metadata_string(item_map.get("family")) or fragment.source_json_path.rsplit(".", 1)[-1].split("[", 1)[0]
+        plan.append(
+            {
+                "idea_id": idea_id,
+                "title": title,
+                "one_liner": title,
+                "family": family,
+                "status": _optional_metadata_string(item_map.get("status")) or ("selected" if "selected" in fragment.source_json_path else "candidate"),
+                "visibility": _optional_metadata_string(item_map.get("visibility")) or "primary",
+                "aliases": [source_id] if source_id else [],
+                "source_record_id": record_id,
+                "source_json_path": fragment.source_json_path,
+                "latest": bool(item_map.get("latest", False)),
+                "metadata": {"source_payload": item_map, "research_topic_id": context.research_topic.id},
+            }
+        )
+    return plan
+
+
+def _idea_repair_plan(context: EffectiveTopicContext, runtime_store: WorkspaceRuntimeStore) -> list[dict[str, object]]:
+    plan: list[dict[str, object]] = []
+    for realization in runtime_store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id):
+        idea = runtime_store.get_research_idea(realization.idea_id, topic_workspace_id=context.topic_workspace_id)
+        structured = runtime_store.get_structured_payload(realization.record_id)
+        if idea is None or structured is None:
+            continue
+        resolution = resolve_structured_source_fragment(
+            context,
+            structured,
+            realization.source_json_path,
+            idea_id=idea.idea_id,
+            record_id=realization.record_id,
+            severity="warning",
+        )
+        if resolution.status == SOURCE_STATUS_EXACT:
+            continue
+        payload, payload_diagnostics = load_structured_payload(context, structured)
+        if not isinstance(payload, Mapping):
+            continue
+        fragments, _ = profile_idea_entry_fragments(payload, structured.format_profile_ref, record_id=realization.record_id)
+        match = _matching_fragment_for_idea(idea, fragments)
+        if match is None:
+            continue
+        plan.append(
+            {
+                "action": "update_realization_source_path",
+                "idea_id": idea.idea_id,
+                "realization_id": realization.id,
+                "record_id": realization.record_id,
+                "previous_source_json_path": realization.source_json_path,
+                "source_json_path": match.source_json_path,
+                "diagnostics": [*payload_diagnostics, *resolution.diagnostics],
+            }
+        )
+    return plan
+
+
+def _matching_fragment_for_idea(idea: ResearchIdea, fragments: list[IdeaEntryFragment]) -> IdeaEntryFragment | None:
+    known = {idea.idea_id, *idea.aliases}
+    for fragment in fragments:
+        if not _idea_source_labels(fragment.source_json).isdisjoint(known):
+            return fragment
+    normalized_title = _slug(idea.title)
+    for fragment in fragments:
+        title = _optional_metadata_string(fragment.source_json.get("title") or fragment.source_json.get("one_liner") or fragment.source_json.get("summary"))
+        if title is not None and _slug(title) == normalized_title:
+            return fragment
+    return None
 
 
 def _lineage_edge(

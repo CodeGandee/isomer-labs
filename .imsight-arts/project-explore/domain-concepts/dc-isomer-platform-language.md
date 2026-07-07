@@ -130,6 +130,22 @@ _Avoid_: Research Topic, Research Task, Research Branch, parallel execution scop
 A typed connection between Research Inquiries under a Research Topic, such as decomposes, follows from, contradicts, supports, blocks, supersedes, or alternative to. Inquiry relationships form an exploration graph and do not imply that inquiry must be represented as a tree.
 _Avoid_: Research Branch, route, experiment route, path, Git branch unless referring to an actual Git branch
 
+**Research Idea**:
+A durable topic-scoped concept that an agent or operator may develop, compare, select, reject, defer, support, or refute during a Research Topic. A Research Idea has a stable semantic `idea_id`, status, visibility, aliases for source-local labels such as `R1` or `C3`, and links to the records that express it.
+_Avoid_: one extracted phrase, route decision, record id, Artifact, Research Inquiry
+
+**Primary Idea**:
+A Research Idea whose visibility marks it for the default high-level idea map. Primary Idea is a presentation role on Research Idea, not a separate entity, so raw time-parent ideas, candidate branches, and follow-up ideas can share one canonical model.
+_Avoid_: every detail phrase, every claim, every ablation term, separate primary-idea table
+
+**Idea Realization**:
+A link from a Research Idea to a durable record and optional source JSON path that expresses that idea at a workflow stage. Revisions update the same Research Idea in place and add or refresh Idea Realizations instead of creating idea-level `revision_of` edges.
+_Avoid_: single canonical record pointer, record lineage edge, Markdown-only inference
+
+**Idea Lineage Edge**:
+A typed parent-child relationship between Research Ideas, such as `derived_from`, `selected_from`, `merged_from`, `follow_up_to`, `alternative_to`, or `subsumes`. Idea Lineage Edges form a validated topic-scoped DAG and remain separate from record lineage, which tracks Artifact provenance.
+_Avoid_: record lineage, inferred Markdown connection, idea-level `revision_of`
+
 **Research Task**:
 A bounded development, setup, experiment, analysis, writing, or operational action inside a Topic Workspace that helps answer a Research Inquiry. A Research Task belongs to one Research Inquiry and one Research Topic, has expected inputs and outputs, names an accountable task handler, and can be attempted through one or more Runs. The task handler can be the Operator Agent or a delegated Agent Instance from an Agent Team Instance. For task-level parallel execution, a Research Task can also record multiple participating Agent Instances from the selected Agent Team Instance.
 _Avoid_: Task Scope, Topic Workspace, Run, Workflow Stage, task workspace, general to-do item

@@ -10,6 +10,7 @@ from isomer_labs.models import EffectiveTopicContext
 
 from .graph_edges import graph_edges as build_graph_edges
 from .graph_edges import idea_graph_edges
+from .idea_graph import canonical_idea_edges, canonical_idea_groups, canonical_idea_nodes
 
 GRAPH_SCOPES = {"idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"}
 RENDERERS = {"auto", "react-flow", "sigma"}
@@ -48,6 +49,10 @@ def build_topic_graph_view(
     edges = _rows(export_payload, "edges")
     files = _rows(export_payload, "files")
     ideas = _rows(export_payload, "ideas")
+    canonical_ideas = _rows(export_payload, "canonical_ideas")
+    canonical_idea_realizations = _rows(export_payload, "canonical_idea_realizations")
+    canonical_idea_edge_rows = _rows(export_payload, "canonical_idea_edges")
+    canonical_idea_generation_groups = _rows(export_payload, "canonical_idea_generation_groups")
     routes = _rows(export_payload, "routes")
     metrics = _rows(export_payload, "metrics")
     claims = _rows(export_payload, "claims")
@@ -56,14 +61,23 @@ def build_topic_graph_view(
     projection_diagnostics: list[dict[str, Any]] = []
 
     if graph_scope == "idea-lineage":
-        nodes, record_node_ids = _idea_nodes(
-            records,
-            ideas,
-            routes,
-            claims,
-            topic_id=context.research_topic.id,
-            include_secondary=include_secondary,
-        )
+        if canonical_ideas:
+            nodes, record_node_ids = canonical_idea_nodes(
+                canonical_ideas,
+                canonical_idea_realizations,
+                topic_id=context.research_topic.id,
+                include_secondary=include_secondary,
+            )
+        else:
+            projection_diagnostics.append(_diag("warning", "idea_graph_heuristic_fallback", "Canonical Research Ideas are absent; using extracted record idea facets as a heuristic graph."))
+            nodes, record_node_ids = _idea_nodes(
+                records,
+                ideas,
+                routes,
+                claims,
+                topic_id=context.research_topic.id,
+                include_secondary=include_secondary,
+            )
     else:
         scoped_records = _records_for_dense_scope(records, graph_scope)
         nodes = [_record_node(record, graph_scope, topic_id=context.research_topic.id) for record in scoped_records]
@@ -74,13 +88,16 @@ def build_topic_graph_view(
             record_node_ids.update(secondary_record_node_ids)
 
     if graph_scope == "idea-lineage":
-        graph_edges = idea_graph_edges(
-            edges,
-            record_node_ids,
-            relation_kind=relation_kind,
-            include_secondary=include_secondary,
-            diagnostics=projection_diagnostics,
-        )
+        if canonical_ideas:
+            graph_edges = canonical_idea_edges(canonical_idea_edge_rows, record_node_ids, relation_kind=relation_kind, diagnostics=projection_diagnostics)
+        else:
+            graph_edges = idea_graph_edges(
+                edges,
+                record_node_ids,
+                relation_kind=relation_kind,
+                include_secondary=include_secondary,
+                diagnostics=projection_diagnostics,
+            )
     else:
         graph_edges = build_graph_edges(edges, record_node_ids, relation_kind=relation_kind, diagnostics=projection_diagnostics)
     if include_secondary and graph_scope != "idea-lineage":
@@ -89,7 +106,7 @@ def build_topic_graph_view(
     nodes = _filter_nodes(nodes, status=status, producer=producer, time_range=time_range, search=search)
     allowed_node_ids = {str(node["id"]) for node in nodes}
     graph_edges = [edge for edge in graph_edges if edge["source"] in allowed_node_ids and edge["target"] in allowed_node_ids]
-    groups = _groups(nodes, graph_edges, edges)
+    groups = (canonical_idea_groups(nodes, graph_edges, canonical_idea_generation_groups) + _groups(nodes, graph_edges, [])) if graph_scope == "idea-lineage" and canonical_ideas else _groups(nodes, graph_edges, edges)
     facets = _facets(ideas=ideas, routes=routes, metrics=metrics, claims=claims, facts=facts, files=files, filters={
         "status": status,
         "relation_kind": relation_kind,

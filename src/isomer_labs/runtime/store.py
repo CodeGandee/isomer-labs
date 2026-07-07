@@ -32,6 +32,10 @@ from isomer_labs.runtime.records import (
     HANDOFF_NORMALIZATION_STATUSES,
     HANDOFF_STATUSES,
     READINESS_STATUSES,
+    RESEARCH_IDEA_LINEAGE_KINDS,
+    RESEARCH_IDEA_LINEAGE_STATUSES,
+    RESEARCH_IDEA_STATUSES,
+    RESEARCH_IDEA_VISIBILITIES,
     RESEARCH_RECORD_LINEAGE_KINDS,
     RESEARCH_RECORD_LINEAGE_STATUSES,
     RESET_CHECKPOINT_STATUSES,
@@ -61,6 +65,10 @@ from isomer_labs.runtime.records import (
     HandoffNormalizationRecord,
     HandoffRecord,
     PathPlanRecord,
+    ResearchIdea,
+    ResearchIdeaGenerationGroup,
+    ResearchIdeaLineageEdge,
+    ResearchIdeaRealization,
     ResearchRecordGenerationGroup,
     ResearchRecordLineageEdge,
     ResetCheckpointRecord,
@@ -101,6 +109,10 @@ from isomer_labs.runtime.sqlite import (
     _row_to_lifecycle_record,
     _row_to_path_plan,
     _row_to_readiness,
+    _row_to_research_idea,
+    _row_to_research_idea_generation_group,
+    _row_to_research_idea_lineage_edge,
+    _row_to_research_idea_realization,
     _row_to_research_record_generation_group,
     _row_to_research_record_lineage_edge,
     _row_to_reset_checkpoint,
@@ -851,6 +863,420 @@ class WorkspaceRuntimeStore:
                 record.topic_workspace_id,
                 record.id,
                 record.parent_record_id,
+            ),
+        ).fetchone()
+        return row is not None
+
+    def upsert_research_idea(self, record: ResearchIdea, *, validate: bool = True) -> None:
+        diagnostics = self.validate_research_idea(record) if validate else []
+        errors = [item for item in diagnostics if item.get("severity") == "error"]
+        if errors:
+            codes = ", ".join(str(item.get("code") or "idea_error") for item in errors)
+            raise ValueError(f"Invalid research idea {record.idea_id}: {codes}")
+        self.connection.execute(
+            """
+            INSERT INTO research_ideas
+                (
+                    id, research_topic_id, topic_workspace_id, idea_id, title, one_liner,
+                    family, status, visibility, aliases_json, source_record_id, source_json_path,
+                    metadata_json, created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(topic_workspace_id, idea_id) DO UPDATE SET
+                title = excluded.title,
+                one_liner = excluded.one_liner,
+                family = excluded.family,
+                status = excluded.status,
+                visibility = excluded.visibility,
+                aliases_json = excluded.aliases_json,
+                source_record_id = excluded.source_record_id,
+                source_json_path = excluded.source_json_path,
+                metadata_json = excluded.metadata_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.idea_id,
+                record.title,
+                record.one_liner,
+                record.family,
+                record.status,
+                record.visibility,
+                _dumps(record.aliases),
+                record.source_record_id,
+                record.source_json_path,
+                _dumps(record.metadata),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_research_idea(self, idea_id: str, *, topic_workspace_id: str | None = None) -> ResearchIdea | None:
+        if not _table_exists(self.connection, "research_ideas"):
+            return None
+        if topic_workspace_id is None:
+            row = self.connection.execute("SELECT * FROM research_ideas WHERE idea_id = ? OR id = ? LIMIT 1", (idea_id, idea_id)).fetchone()
+        else:
+            row = self.connection.execute(
+                "SELECT * FROM research_ideas WHERE topic_workspace_id = ? AND (idea_id = ? OR id = ?) LIMIT 1",
+                (topic_workspace_id, idea_id, idea_id),
+            ).fetchone()
+        return _row_to_research_idea(row) if row is not None else None
+
+    def list_research_ideas(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        visibility: str | None = None,
+        include_archived: bool = False,
+    ) -> list[ResearchIdea]:
+        if not _table_exists(self.connection, "research_ideas"):
+            return []
+        query = "SELECT * FROM research_ideas"
+        clauses: list[str] = []
+        params: list[object] = []
+        if topic_workspace_id is not None:
+            clauses.append("topic_workspace_id = ?")
+            params.append(topic_workspace_id)
+        if visibility is not None:
+            clauses.append("visibility = ?")
+            params.append(visibility)
+        if not include_archived:
+            clauses.append("status != ?")
+            params.append("archived")
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY created_at, idea_id"
+        return [_row_to_research_idea(row) for row in self.connection.execute(query, params)]
+
+    def upsert_research_idea_realization(self, record: ResearchIdeaRealization, *, validate: bool = True) -> None:
+        diagnostics = self.validate_research_idea_realization(record) if validate else []
+        errors = [item for item in diagnostics if item.get("severity") == "error"]
+        if errors:
+            codes = ", ".join(str(item.get("code") or "idea_realization_error") for item in errors)
+            raise ValueError(f"Invalid research idea realization {record.id}: {codes}")
+        if record.latest:
+            self.connection.execute(
+                """
+                UPDATE research_idea_realizations
+                SET latest = 0, updated_at = ?
+                WHERE topic_workspace_id = ? AND idea_id = ? AND id != ?
+                """,
+                (record.updated_at, record.topic_workspace_id, record.idea_id, record.id),
+            )
+        self.connection.execute(
+            """
+            INSERT INTO research_idea_realizations
+                (
+                    id, research_topic_id, topic_workspace_id, idea_id, record_id,
+                    source_json_path, realization_stage, semantic_id, latest, metadata_json,
+                    created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                record_id = excluded.record_id,
+                source_json_path = excluded.source_json_path,
+                realization_stage = excluded.realization_stage,
+                semantic_id = excluded.semantic_id,
+                latest = excluded.latest,
+                metadata_json = excluded.metadata_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.idea_id,
+                record.record_id,
+                record.source_json_path,
+                record.realization_stage,
+                record.semantic_id,
+                1 if record.latest else 0,
+                _dumps(record.metadata),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def list_research_idea_realizations(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        idea_id: str | None = None,
+        record_id: str | None = None,
+    ) -> list[ResearchIdeaRealization]:
+        if not _table_exists(self.connection, "research_idea_realizations"):
+            return []
+        query = "SELECT * FROM research_idea_realizations"
+        clauses: list[str] = []
+        params: list[object] = []
+        for column, value in (
+            ("topic_workspace_id", topic_workspace_id),
+            ("idea_id", idea_id),
+            ("record_id", record_id),
+        ):
+            if value is not None:
+                clauses.append(f"{column} = ?")
+                params.append(value)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY latest DESC, updated_at DESC, id"
+        return [_row_to_research_idea_realization(row) for row in self.connection.execute(query, params)]
+
+    def get_research_idea_realization(self, realization_id: str) -> ResearchIdeaRealization | None:
+        if not _table_exists(self.connection, "research_idea_realizations"):
+            return None
+        row = self.connection.execute("SELECT * FROM research_idea_realizations WHERE id = ? LIMIT 1", (realization_id,)).fetchone()
+        return _row_to_research_idea_realization(row) if row is not None else None
+
+    def upsert_research_idea_generation_group(self, record: ResearchIdeaGenerationGroup) -> None:
+        self.connection.execute(
+            """
+            INSERT INTO research_idea_generation_groups
+                (
+                    id, research_topic_id, topic_workspace_id, purpose, parent_set_digest,
+                    producer_skill, decision_record_id, metadata_json, created_at, updated_at,
+                    provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                purpose = excluded.purpose,
+                parent_set_digest = excluded.parent_set_digest,
+                producer_skill = excluded.producer_skill,
+                decision_record_id = excluded.decision_record_id,
+                metadata_json = excluded.metadata_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.purpose,
+                record.parent_set_digest,
+                record.producer_skill,
+                record.decision_record_id,
+                _dumps(record.metadata),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_research_idea_generation_group(self, group_id: str) -> ResearchIdeaGenerationGroup | None:
+        if not _table_exists(self.connection, "research_idea_generation_groups"):
+            return None
+        row = self.connection.execute("SELECT * FROM research_idea_generation_groups WHERE id = ?", (group_id,)).fetchone()
+        return _row_to_research_idea_generation_group(row) if row is not None else None
+
+    def list_research_idea_generation_groups(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+    ) -> list[ResearchIdeaGenerationGroup]:
+        if not _table_exists(self.connection, "research_idea_generation_groups"):
+            return []
+        query = "SELECT * FROM research_idea_generation_groups"
+        params: list[object] = []
+        if topic_workspace_id is not None:
+            query += " WHERE topic_workspace_id = ?"
+            params.append(topic_workspace_id)
+        query += " ORDER BY updated_at DESC, id"
+        return [_row_to_research_idea_generation_group(row) for row in self.connection.execute(query, params)]
+
+    def upsert_research_idea_lineage_edge(self, record: ResearchIdeaLineageEdge, *, validate: bool = True) -> None:
+        diagnostics = self.validate_research_idea_lineage_edge(record) if validate else []
+        errors = [item for item in diagnostics if item.get("severity") == "error"]
+        if errors:
+            codes = ", ".join(str(item.get("code") or "idea_lineage_error") for item in errors)
+            raise ValueError(f"Invalid research idea lineage edge {record.id}: {codes}")
+        self.connection.execute(
+            """
+            INSERT INTO research_idea_lineage_edges
+                (
+                    id, research_topic_id, topic_workspace_id, parent_idea_id, child_idea_id,
+                    lineage_kind, parent_role, generation_id, decision_record_id, rationale,
+                    status, confidence, metadata_json, created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                parent_idea_id = excluded.parent_idea_id,
+                child_idea_id = excluded.child_idea_id,
+                lineage_kind = excluded.lineage_kind,
+                parent_role = excluded.parent_role,
+                generation_id = excluded.generation_id,
+                decision_record_id = excluded.decision_record_id,
+                rationale = excluded.rationale,
+                status = excluded.status,
+                confidence = excluded.confidence,
+                metadata_json = excluded.metadata_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.parent_idea_id,
+                record.child_idea_id,
+                record.lineage_kind,
+                record.parent_role,
+                record.generation_id,
+                record.decision_record_id,
+                record.rationale,
+                record.status,
+                record.confidence,
+                _dumps(record.metadata),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def list_research_idea_lineage_edges(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        parent_idea_id: str | None = None,
+        child_idea_id: str | None = None,
+        generation_id: str | None = None,
+        include_archived: bool = False,
+    ) -> list[ResearchIdeaLineageEdge]:
+        if not _table_exists(self.connection, "research_idea_lineage_edges"):
+            return []
+        query = "SELECT * FROM research_idea_lineage_edges"
+        clauses: list[str] = []
+        params: list[object] = []
+        for column, value in (
+            ("topic_workspace_id", topic_workspace_id),
+            ("parent_idea_id", parent_idea_id),
+            ("child_idea_id", child_idea_id),
+            ("generation_id", generation_id),
+        ):
+            if value is not None:
+                clauses.append(f"{column} = ?")
+                params.append(value)
+        if not include_archived:
+            clauses.append("status != ?")
+            params.append("archived")
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY created_at, parent_idea_id, child_idea_id, id"
+        return [_row_to_research_idea_lineage_edge(row) for row in self.connection.execute(query, params)]
+
+    def validate_research_idea(self, record: ResearchIdea) -> list[dict[str, object]]:
+        diagnostics: list[dict[str, object]] = []
+        if record.status not in RESEARCH_IDEA_STATUSES:
+            diagnostics.append(_lineage_diag("error", "idea_status_unsupported", f"Unsupported idea status: {record.status}", idea_id=record.idea_id))
+        if record.visibility not in RESEARCH_IDEA_VISIBILITIES:
+            diagnostics.append(_lineage_diag("error", "idea_visibility_unsupported", f"Unsupported idea visibility: {record.visibility}", idea_id=record.idea_id))
+        if record.source_record_id is not None:
+            source = self.get_lifecycle_record(record.source_record_id)
+            if source is None:
+                diagnostics.append(_lineage_diag("warning", "idea_source_record_missing", f"Idea source record is missing: {record.source_record_id}", idea_id=record.idea_id, record_id=record.source_record_id))
+            elif source.research_topic_id != record.research_topic_id or source.topic_workspace_id != record.topic_workspace_id:
+                diagnostics.append(_lineage_diag("error", "idea_source_record_cross_topic", f"Idea source record is outside the Topic Workspace: {record.source_record_id}", idea_id=record.idea_id, record_id=record.source_record_id))
+        existing = self.connection.execute(
+            "SELECT id FROM research_ideas WHERE topic_workspace_id = ? AND idea_id = ? AND id != ? LIMIT 1",
+            (record.topic_workspace_id, record.idea_id, record.id),
+        ).fetchone() if _table_exists(self.connection, "research_ideas") else None
+        if existing is not None:
+            diagnostics.append(_lineage_diag("error", "idea_id_duplicate", f"Duplicate canonical idea id: {record.idea_id}", idea_id=record.idea_id))
+        return diagnostics
+
+    def validate_research_idea_realization(self, record: ResearchIdeaRealization) -> list[dict[str, object]]:
+        diagnostics: list[dict[str, object]] = []
+        idea = self.get_research_idea(record.idea_id, topic_workspace_id=record.topic_workspace_id)
+        if idea is None:
+            diagnostics.append(_lineage_diag("error", "idea_realization_idea_missing", f"Idea realization references a missing idea: {record.idea_id}", idea_id=record.idea_id))
+        elif idea.research_topic_id != record.research_topic_id:
+            diagnostics.append(_lineage_diag("error", "idea_realization_idea_cross_topic", f"Idea realization references an idea outside the Research Topic: {record.idea_id}", idea_id=record.idea_id))
+        lifecycle = self.get_lifecycle_record(record.record_id)
+        if lifecycle is None:
+            diagnostics.append(_lineage_diag("error", "idea_realization_record_missing", f"Idea realization references a missing record: {record.record_id}", idea_id=record.idea_id, record_id=record.record_id))
+        elif lifecycle.research_topic_id != record.research_topic_id or lifecycle.topic_workspace_id != record.topic_workspace_id:
+            diagnostics.append(_lineage_diag("error", "idea_realization_record_cross_topic", f"Idea realization record is outside the Topic Workspace: {record.record_id}", idea_id=record.idea_id, record_id=record.record_id))
+        return diagnostics
+
+    def validate_research_idea_lineage_edge(self, record: ResearchIdeaLineageEdge) -> list[dict[str, object]]:
+        diagnostics: list[dict[str, object]] = []
+        if record.lineage_kind == "revision_of":
+            diagnostics.append(_lineage_diag("error", "idea_revision_edge_rejected", "Idea-level revision_of edges are rejected; update the same idea and add a realization.", edge_id=record.id))
+        elif record.lineage_kind not in RESEARCH_IDEA_LINEAGE_KINDS:
+            diagnostics.append(_lineage_diag("error", "idea_lineage_kind_unsupported", f"Unsupported idea lineage kind: {record.lineage_kind}", edge_id=record.id))
+        if record.status not in RESEARCH_IDEA_LINEAGE_STATUSES:
+            diagnostics.append(_lineage_diag("error", "idea_lineage_status_unsupported", f"Unsupported idea lineage status: {record.status}", edge_id=record.id))
+        parent = self.get_research_idea(record.parent_idea_id, topic_workspace_id=record.topic_workspace_id)
+        child = self.get_research_idea(record.child_idea_id, topic_workspace_id=record.topic_workspace_id)
+        if parent is None:
+            diagnostics.append(_lineage_diag("error", "idea_lineage_parent_missing", f"Idea lineage parent is missing: {record.parent_idea_id}", edge_id=record.id, idea_id=record.parent_idea_id))
+        elif parent.research_topic_id != record.research_topic_id:
+            diagnostics.append(_lineage_diag("error", "idea_lineage_parent_cross_topic", f"Idea lineage parent is outside the Research Topic: {record.parent_idea_id}", edge_id=record.id, idea_id=record.parent_idea_id))
+        if child is None:
+            diagnostics.append(_lineage_diag("error", "idea_lineage_child_missing", f"Idea lineage child is missing: {record.child_idea_id}", edge_id=record.id, idea_id=record.child_idea_id))
+        elif child.research_topic_id != record.research_topic_id:
+            diagnostics.append(_lineage_diag("error", "idea_lineage_child_cross_topic", f"Idea lineage child is outside the Research Topic: {record.child_idea_id}", edge_id=record.id, idea_id=record.child_idea_id))
+        if record.generation_id is not None:
+            group = self.get_research_idea_generation_group(record.generation_id)
+            if group is None:
+                diagnostics.append(_lineage_diag("error", "idea_generation_group_missing", f"Idea generation group is missing: {record.generation_id}", edge_id=record.id, generation_id=record.generation_id))
+            elif group.research_topic_id != record.research_topic_id or group.topic_workspace_id != record.topic_workspace_id:
+                diagnostics.append(_lineage_diag("error", "idea_generation_group_cross_topic", f"Idea generation group is outside the Topic Workspace: {record.generation_id}", edge_id=record.id, generation_id=record.generation_id))
+        if record.parent_idea_id == record.child_idea_id or self._research_idea_lineage_creates_cycle(record):
+            diagnostics.append(_lineage_diag("error", "idea_lineage_cycle", f"Idea lineage edge would create a cycle: {record.parent_idea_id} -> {record.child_idea_id}", edge_id=record.id))
+        return diagnostics
+
+    def validate_research_idea_lineage(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+    ) -> list[dict[str, object]]:
+        if not _table_exists(self.connection, "research_ideas"):
+            return [_lineage_diag("warning", "research_idea_schema_missing", "Workspace Runtime has no canonical research idea tables yet.")]
+        diagnostics: list[dict[str, object]] = []
+        for idea in self.list_research_ideas(topic_workspace_id=topic_workspace_id, include_archived=True):
+            diagnostics.extend(self.validate_research_idea(idea))
+        for realization in self.list_research_idea_realizations(topic_workspace_id=topic_workspace_id):
+            diagnostics.extend(self.validate_research_idea_realization(realization))
+        for edge in self.list_research_idea_lineage_edges(topic_workspace_id=topic_workspace_id, include_archived=True):
+            diagnostics.extend(self.validate_research_idea_lineage_edge(edge))
+        return diagnostics
+
+    def _research_idea_lineage_creates_cycle(self, record: ResearchIdeaLineageEdge) -> bool:
+        if not _table_exists(self.connection, "research_idea_lineage_edges"):
+            return False
+        row = self.connection.execute(
+            """
+            WITH RECURSIVE descendants(idea_id) AS (
+                SELECT child_idea_id
+                FROM research_idea_lineage_edges
+                WHERE topic_workspace_id = ?
+                    AND parent_idea_id = ?
+                    AND status != 'archived'
+                    AND id != ?
+                UNION
+                SELECT edge.child_idea_id
+                FROM research_idea_lineage_edges edge
+                JOIN descendants ON edge.parent_idea_id = descendants.idea_id
+                WHERE edge.topic_workspace_id = ?
+                    AND edge.status != 'archived'
+                    AND edge.id != ?
+            )
+            SELECT 1 AS found FROM descendants WHERE idea_id = ? LIMIT 1
+            """,
+            (
+                record.topic_workspace_id,
+                record.child_idea_id,
+                record.id,
+                record.topic_workspace_id,
+                record.id,
+                record.parent_idea_id,
             ),
         ).fetchone()
         return row is not None
