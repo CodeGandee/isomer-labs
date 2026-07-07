@@ -33,7 +33,12 @@ export function requestedRenderer(graphScope: GraphScope): RendererChoice {
 export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
   return graph.nodes.map((node, index) => ({
     id: node.id,
-    className: `idea-flow-node material-${flowClassToken(node.material_kind || "artifact")} status-${flowClassToken(node.status || "unknown")} ${node.selected ? "selected" : ""}`,
+    className: [
+      "idea-flow-node",
+      `material-${flowClassToken(node.material_kind || "artifact")}`,
+      `status-${flowClassToken(node.status || "unknown")}`,
+      node.selected ? "selected" : "",
+    ].filter(Boolean).join(" "),
     position: { x: 40 + (index % 3) * 300, y: 40 + Math.floor(index / 3) * 160 },
     data: {
       label: `${node.title}${node.status ? `\n${node.status}` : ""}`,

@@ -3,6 +3,16 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const settingsMock = vi.hoisted(() => ({
+  hoverPreviewDelayMs: 1500,
+  refreshGuiSettings: vi.fn(),
+  setHoverPreviewDelayMs: vi.fn(),
+}));
+
+const flowRenderMock = vi.hoisted(() => ({
+  snapshots: [] as Array<{ nodes: unknown[]; edges: unknown[] }>,
+}));
+
 type MockNode = {
   id: string;
   className?: string;
@@ -41,36 +51,39 @@ vi.mock("@xyflow/react", () => ({
   },
   ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   useReactFlow: () => ({ fitView: vi.fn() }),
-  ReactFlow: ({ nodes = [], edges = [], onNodeClick, onNodeDoubleClick, onNodeMouseEnter, onNodeMouseMove, onNodeMouseLeave, children }: MockFlowProps) => (
-    <div data-testid="react-flow">
-      {nodes.map((node) => (
-        <button
-          className={`react-flow__node ${node.className || ""}`}
-          data-id={node.id}
-          data-testid={`graph-node-${node.id}`}
-          key={node.id}
-          onClick={(event) => onNodeClick?.(event, node)}
-          onDoubleClick={(event) => onNodeDoubleClick?.(event, node)}
-          onMouseEnter={(event) => onNodeMouseEnter?.(event, node)}
-          onMouseLeave={(event) => onNodeMouseLeave?.(event, node)}
-          onMouseMove={(event) => onNodeMouseMove?.(event, node)}
-          type="button"
-        >
-          {String(node.data?.label || node.id)}
-        </button>
-      ))}
-      {edges.map((edge) => (
-        <div
-          className={`react-flow__edge ${edge.className || ""}`}
-          data-id={edge.id}
-          data-marker-end={JSON.stringify(edge.markerEnd || null)}
-          data-testid={`graph-edge-${edge.id}`}
-          key={edge.id}
-        />
-      ))}
-      {children}
-    </div>
-  ),
+  ReactFlow: ({ nodes = [], edges = [], onNodeClick, onNodeDoubleClick, onNodeMouseEnter, onNodeMouseMove, onNodeMouseLeave, children }: MockFlowProps) => {
+    flowRenderMock.snapshots.push({ nodes, edges });
+    return (
+      <div data-testid="react-flow">
+        {nodes.map((node) => (
+          <button
+            className={`react-flow__node ${node.className || ""}`}
+            data-id={node.id}
+            data-testid={`graph-node-${node.id}`}
+            key={node.id}
+            onClick={(event) => onNodeClick?.(event, node)}
+            onDoubleClick={(event) => onNodeDoubleClick?.(event, node)}
+            onMouseEnter={(event) => onNodeMouseEnter?.(event, node)}
+            onMouseLeave={(event) => onNodeMouseLeave?.(event, node)}
+            onMouseMove={(event) => onNodeMouseMove?.(event, node)}
+            type="button"
+          >
+            {String(node.data?.label || node.id)}
+          </button>
+        ))}
+        {edges.map((edge) => (
+          <div
+            className={`react-flow__edge ${edge.className || ""}`}
+            data-id={edge.id}
+            data-marker-end={JSON.stringify(edge.markerEnd || null)}
+            data-testid={`graph-edge-${edge.id}`}
+            key={edge.id}
+          />
+        ))}
+        {children}
+      </div>
+    );
+  },
 }));
 
 vi.mock("sigma", () => ({
@@ -91,6 +104,16 @@ vi.mock("./api", async (importOriginal) => ({
   getTopicGraph: vi.fn(),
 }));
 
+vi.mock("./ui-settings", () => ({
+  DEFAULT_HOVER_PREVIEW_DELAY_MS: 1500,
+  GuiSettingsProvider: ({ children }: { children: unknown }) => children,
+  useGuiSettings: () => ({
+    hoverPreviewDelayMs: settingsMock.hoverPreviewDelayMs,
+    refreshGuiSettings: settingsMock.refreshGuiSettings,
+    setHoverPreviewDelayMs: settingsMock.setHoverPreviewDelayMs,
+  }),
+}));
+
 import { getIdeaDetail, getTopicGraph } from "./api";
 import { IdeaGraphPanel } from "./App";
 import { workbenchCommands$ } from "./events";
@@ -101,6 +124,8 @@ const getTopicGraphMock = vi.mocked(getTopicGraph);
 
 describe("Idea graph panel interactions", () => {
   beforeEach(() => {
+    settingsMock.hoverPreviewDelayMs = 1500;
+    flowRenderMock.snapshots = [];
     getIdeaDetailMock.mockResolvedValue(ideaDetailPayload());
     getTopicGraphMock.mockResolvedValue(graphPayload());
   });
@@ -110,6 +135,8 @@ describe("Idea graph panel interactions", () => {
     vi.useRealTimers();
     getIdeaDetailMock.mockReset();
     getTopicGraphMock.mockReset();
+    settingsMock.refreshGuiSettings.mockReset();
+    settingsMock.setHoverPreviewDelayMs.mockReset();
   });
 
   it("selects on single click and opens on double click", async () => {
@@ -139,7 +166,7 @@ describe("Idea graph panel interactions", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
 
     act(() => {
-      vi.advanceTimersByTime(1999);
+      vi.advanceTimersByTime(1499);
     });
     expect(screen.queryByRole("tooltip")).toBeNull();
 
@@ -164,6 +191,25 @@ describe("Idea graph panel interactions", () => {
     });
   });
 
+  it("uses the configured hover popup delay", async () => {
+    settingsMock.hoverPreviewDelayMs = 1250;
+    getIdeaDetailMock.mockReturnValue(new Promise(() => {}));
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const node = await screen.findByTestId("graph-node-idea:idea-1");
+
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(node, { clientX: 120, clientY: 140 });
+    act(() => {
+      vi.advanceTimersByTime(1249);
+    });
+    expect(screen.queryByRole("tooltip")).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.getByRole("tooltip").textContent).toContain("Loading preview");
+  });
+
   it("keeps the hover tooltip open while the pointer is inside it", async () => {
     getIdeaDetailMock.mockReturnValue(new Promise(() => {}));
     renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
@@ -172,7 +218,7 @@ describe("Idea graph panel interactions", () => {
     vi.useFakeTimers();
     fireEvent.mouseEnter(node, { clientX: 120, clientY: 140 });
     act(() => {
-      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(1500);
     });
 
     const tooltip = screen.getByRole("tooltip");
@@ -198,7 +244,7 @@ describe("Idea graph panel interactions", () => {
     vi.useFakeTimers();
     fireEvent.mouseEnter(node, { clientX: 120, clientY: 140 });
     act(() => {
-      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(1500);
     });
 
     const tooltip = screen.getByRole("tooltip");
@@ -221,13 +267,13 @@ describe("Idea graph panel interactions", () => {
     });
     fireEvent.pointerUp(node, { pointerId: 11, pointerType: "touch", clientX: 150, clientY: 160 });
     act(() => {
-      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(1500);
     });
     expect(screen.queryByRole("tooltip")).toBeNull();
 
     fireEvent.pointerDown(node, { pointerId: 12, pointerType: "touch", clientX: 155, clientY: 165 });
     act(() => {
-      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(1500);
     });
     expect(screen.getByRole("tooltip").textContent).toContain("Loading preview");
   });
@@ -242,7 +288,7 @@ describe("Idea graph panel interactions", () => {
     vi.useFakeTimers();
     fireEvent.mouseEnter(node, { clientX: 120, clientY: 140 });
     act(() => {
-      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(1500);
     });
     expect(screen.getByRole("tooltip").textContent).toContain("Loading preview");
 
@@ -264,11 +310,77 @@ describe("Idea graph panel interactions", () => {
     expect(screen.getByTestId("graph-edge-parent-to-main").className).toContain("lineage-incoming");
     expect(screen.getByTestId("graph-edge-main-to-child").className).toContain("lineage-outgoing");
   });
+
+  it("keeps unaffected graph objects stable and applies affected edge classes declaratively when selecting", async () => {
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const node = await screen.findByTestId("graph-node-idea:idea-1");
+    const before = lastFlowSnapshot();
+    const unrelatedNodeBefore = findSnapshotNode(before, "idea:unrelated");
+    const selectedNodeBefore = findSnapshotNode(before, "idea:idea-1");
+    const unrelatedEdgeBefore = findSnapshotEdge(before, "unrelated-self");
+    const incomingEdgeBefore = findSnapshotEdge(before, "parent-to-main");
+    expect(incomingEdgeBefore.className || "").not.toContain("lineage-incoming");
+
+    fireEvent.click(node);
+
+    const after = lastFlowSnapshot();
+    expect(findSnapshotNode(after, "idea:unrelated")).toBe(unrelatedNodeBefore);
+    expect(findSnapshotNode(after, "idea:idea-1")).not.toBe(selectedNodeBefore);
+    expect(findSnapshotEdge(after, "unrelated-self")).toBe(unrelatedEdgeBefore);
+    expect(findSnapshotEdge(after, "parent-to-main")).not.toBe(incomingEdgeBefore);
+    expect(findSnapshotEdge(after, "parent-to-main").className).toContain("lineage-incoming");
+    expect(findSnapshotEdge(after, "main-to-child").className).toContain("lineage-outgoing");
+    expect(screen.getByTestId("graph-edge-parent-to-main").className).toContain("lineage-incoming");
+    expect(screen.getByTestId("graph-edge-unrelated-self").className).not.toContain("lineage-incoming");
+    expect(screen.getByTestId("graph-edge-unrelated-self").className).not.toContain("lineage-outgoing");
+  });
+
+  it("keeps selected lineage highlights visible when hover preview rerenders", async () => {
+    getIdeaDetailMock.mockReturnValue(new Promise(() => {}));
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const node = await screen.findByTestId("graph-node-idea:idea-1");
+
+    fireEvent.click(node);
+    const afterSelect = lastFlowSnapshot();
+
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(node, { clientX: 120, clientY: 140 });
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+
+    expect(screen.getByRole("tooltip").textContent).toContain("Loading preview");
+    expect(screen.getByTestId("graph-node-idea:parent").className).toContain("lineage-parent");
+    expect(screen.getByTestId("graph-node-idea:child").className).toContain("lineage-child");
+    expect(screen.getByTestId("graph-edge-parent-to-main").className).toContain("lineage-incoming");
+    expect(screen.getByTestId("graph-edge-main-to-child").className).toContain("lineage-outgoing");
+    expect(lastFlowSnapshot().edges).toBe(afterSelect.edges);
+  });
 });
 
 function renderWithQuery(element: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={client}>{element}</QueryClientProvider>);
+}
+
+function lastFlowSnapshot() {
+  return flowRenderMock.snapshots.at(-1) as { nodes: MockNode[]; edges: MockEdge[] };
+}
+
+function findSnapshotNode(snapshot: { nodes: MockNode[] }, id: string) {
+  const node = snapshot.nodes.find((candidate) => candidate.id === id);
+  if (!node) {
+    throw new Error(`Missing node snapshot for ${id}`);
+  }
+  return node;
+}
+
+function findSnapshotEdge(snapshot: { edges: MockEdge[] }, id: string) {
+  const edge = snapshot.edges.find((candidate) => candidate.id === id);
+  if (!edge) {
+    throw new Error(`Missing edge snapshot for ${id}`);
+  }
+  return edge;
 }
 
 function ideaDetailPayload() {
@@ -345,6 +457,17 @@ function graphPayload(): TopicGraphView {
         status: "candidate",
         idea_id: "child",
       },
+      {
+        id: "idea:unrelated",
+        record_id: "record-unrelated",
+        material_kind: "idea",
+        density_class: "sparse",
+        title: "Unrelated Idea",
+        one_liner: "No relation to selected branch.",
+        summary: "Unrelated summary.",
+        status: "candidate",
+        idea_id: "unrelated",
+      },
     ],
     edges: [
       {
@@ -359,6 +482,13 @@ function graphPayload(): TopicGraphView {
         source: "idea:idea-1",
         target: "idea:child",
         relation_kind: "derived_from",
+        canonical: true,
+      },
+      {
+        id: "unrelated-self",
+        source: "idea:unrelated",
+        target: "idea:unrelated",
+        relation_kind: "self",
         canonical: true,
       },
     ],

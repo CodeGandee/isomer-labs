@@ -3,20 +3,11 @@ import { useTree } from "@headless-tree/react";
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type ColorMode, type Edge, type Node, type NodeMouseHandler } from "@xyflow/react";
 import { themeDark, themeLight } from "dockview";
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps } from "dockview-react";
-import Graphology from "graphology";
-import { LoaderCircle, Menu, RefreshCw, Settings } from "lucide-react";
-import mermaid from "mermaid";
+import { Menu, RefreshCw, Settings } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import ReactMarkdown from "react-markdown";
-import rehypeKatex from "rehype-katex";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import Sigma from "sigma";
-import { Subscription } from "rxjs";
 import {
   getOpenableItemDescriptor,
   getProject,
@@ -37,12 +28,11 @@ import {
   getViewerDescriptor,
   type GraphFilters,
 } from "./api";
-import { layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "./graph-utils";
+import { requestedRenderer } from "./graph-utils";
 import { buildJsonMarkdownPreview } from "./markdown-doc";
 import { manualRefresh$, topicInvalidations, workbenchCommands$ } from "./events";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -57,10 +47,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LinkButton, StatusBadge, ToolbarButton } from "@/components/workbench-controls";
-import type { ExplorerNode, GraphScope, IdeaDetailResponse, OpenableItemDescriptor, RecordSummary, TopicGraphView } from "./types";
+import type { ExplorerNode, GraphScope, IdeaDetailResponse, OpenableItemDescriptor, RecordSummary } from "./types";
 import { ThemeProvider, useGuiTheme } from "./theme-provider";
 import type { ThemeMode } from "./theme-mode";
+import { GuiSettingsProvider, useGuiSettings } from "./ui-settings";
 import { filterRecords, openPanelFromDescriptor, viewerSurface, type DockviewApiLike, type OpenPanelResult } from "./view-model";
+import { GraphFiltersBar, GraphSummary } from "./features/graph/GraphPanels";
+import { SigmaGraph } from "./features/graph/SigmaGraph";
+import { IdeaGraphPanel } from "./features/idea-lineage/IdeaLineagePanel";
+import { MarkdownView } from "./markdown-view";
 import {
   coerceWorkbenchHistoryState,
   isGraphScope,
@@ -77,14 +72,11 @@ import "@xyflow/react/dist/style.css";
 import "katex/dist/katex.min.css";
 import "./styles.css";
 
-type IdeaFlowNode = Node<IdeaFlowNodeData>;
-const LINEAGE_NODE_STATE_CLASSES = ["selected", "lineage-parent", "lineage-child"];
-const LINEAGE_EDGE_STATE_CLASSES = ["lineage-incoming", "lineage-outgoing"];
-const NODE_DOUBLE_CLICK_MS = 500;
-const NODE_DOUBLE_CLICK_DISTANCE_PX = 72;
-const HOVER_PREVIEW_OPEN_DELAY_MS = 2000;
-const HOVER_PREVIEW_CLOSE_DELAY_MS = 500;
-const TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX = 14;
+export { IdeaGraphPanel } from "./features/idea-lineage/IdeaLineagePanel";
+export { MarkdownView } from "./markdown-view";
+export { GraphFiltersBar } from "./features/graph/GraphPanels";
+export { openRecordFromNode } from "./features/graph/open-record";
+export { buildIdeaNodeHoverMarkdown } from "./features/idea-lineage/IdeaLineagePanel";
 
 type PanelParams = {
   topicId?: string;
@@ -120,11 +112,13 @@ declare module "@tanstack/react-router" {
 export function RootApp() {
   return (
     <ThemeProvider>
-      <TooltipProvider>
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-        </QueryClientProvider>
-      </TooltipProvider>
+      <GuiSettingsProvider>
+        <TooltipProvider>
+          <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router} />
+          </QueryClientProvider>
+        </TooltipProvider>
+      </GuiSettingsProvider>
     </ThemeProvider>
   );
 }
@@ -610,7 +604,7 @@ function ExplorerRow({
 }
 
 const dockComponents = {
-  ideaGraph: (props: IDockviewPanelProps<PanelParams>) => <IdeaGraphPanel {...props.params} />,
+  ideaGraph: (props: IDockviewPanelProps<PanelParams>) => <IdeaGraphPanel {...props.params} panelId={props.api.id} openableItemId={props.params.topicId ? `topic:${props.params.topicId}:graph:${props.params.graphScope || "idea-lineage"}` : undefined} />,
   denseGraph: (props: IDockviewPanelProps<PanelParams>) => <DenseGraphPanel topicId={props.params.topicId || ""} graphScope={asGraphScope(props.params.graphScope, "artifact-overview")} />,
   records: (props: IDockviewPanelProps<PanelParams>) => <RecordsPanel topicId={props.params.topicId || ""} />,
   recordDetail: (props: IDockviewPanelProps<PanelParams>) => <RecordDetailPanel topicId={props.params.topicId || ""} recordId={props.params.recordId || ""} />,
@@ -627,9 +621,30 @@ const dockComponents = {
 
 export function ProjectSettingsPanel() {
   const { resolvedThemeMode, setThemeMode, themeMode } = useGuiTheme();
+  const { hoverPreviewDelayMs, refreshGuiSettings, setHoverPreviewDelayMs } = useGuiSettings();
+  const [hoverPreviewDelaySeconds, setHoverPreviewDelaySeconds] = useState(() => formatDelaySeconds(hoverPreviewDelayMs));
   const onThemeChange = useCallback((value: string) => {
     setThemeMode(value as ThemeMode);
   }, [setThemeMode]);
+  const onHoverPreviewDelayChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextValue = event.target.value;
+    setHoverPreviewDelaySeconds(nextValue);
+    if (!nextValue.trim()) {
+      return;
+    }
+    const parsedSeconds = Number(nextValue);
+    if (Number.isFinite(parsedSeconds)) {
+      setHoverPreviewDelayMs(parsedSeconds * 1000);
+    }
+  }, [setHoverPreviewDelayMs]);
+
+  useEffect(() => {
+    setHoverPreviewDelaySeconds(formatDelaySeconds(hoverPreviewDelayMs));
+  }, [hoverPreviewDelayMs]);
+
+  useEffect(() => {
+    refreshGuiSettings();
+  }, [refreshGuiSettings]);
 
   return (
     <section className="panel-body settings-panel">
@@ -662,504 +677,31 @@ export function ProjectSettingsPanel() {
         </section>
         <section className="settings-section muted-section">
           <div className="settings-copy">
-            <h4>Service</h4>
-            <p>Backend and project-owned settings will appear here after the service settings API defines editable scope and persistence.</p>
+            <h4>Idea Graph</h4>
+            <p>Tune graph inspection behavior for this browser.</p>
           </div>
+          <label className="settings-field">
+            <span>Hover Popup Delay</span>
+            <Input
+              aria-label="Hover Popup Delay"
+              className="settings-number-input"
+              type="number"
+              min={0.25}
+              max={5}
+              step={0.25}
+              value={hoverPreviewDelaySeconds}
+              onChange={onHoverPreviewDelayChange}
+            />
+          </label>
+          <p className="settings-note">Current delay: {formatDelaySeconds(hoverPreviewDelayMs)}s</p>
         </section>
       </div>
     </section>
   );
 }
 
-type IdeaNodeHoverPreview = {
-  nodeId: string;
-  data: IdeaFlowNodeData;
-  x: number;
-  y: number;
-};
-
-function withControlledClasses(className: string | undefined, controlledClasses: string[], enabledClasses: string[]) {
-  const tokens = new Set((className || "").split(/\s+/).filter(Boolean));
-  for (const token of controlledClasses) {
-    tokens.delete(token);
-  }
-  for (const token of enabledClasses) {
-    tokens.add(token);
-  }
-  return Array.from(tokens).join(" ");
-}
-
-function withSelectedClass(className: string | undefined, selected: boolean) {
-  return withControlledClasses(className, ["selected"], selected ? ["selected"] : []);
-}
-
-export function buildIdeaNodeHoverMarkdown(data: IdeaFlowNodeData): string {
-  const title = String(data.title || data.label || "Idea");
-  const lines = [`### ${title}`];
-  const oneLiner = typeof data.one_liner === "string" ? data.one_liner.trim() : "";
-  const summary = typeof data.summary === "string" ? data.summary.trim() : "";
-  if (oneLiner) {
-    lines.push("", oneLiner);
-  }
-  if (summary && summary !== oneLiner) {
-    lines.push("", summary);
-  }
-  const facts = [
-    ["Status", data.status],
-    ["Kind", data.material_kind],
-    ["Idea", data.idea_id],
-    ["Record", data.record_id],
-    ["Producer", data.producer || data.skill],
-  ].filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0);
-  if (facts.length) {
-    lines.push("", ...facts.map(([label, value]) => `- **${label}:** ${value}`));
-  }
-  return lines.join("\n");
-}
-
-function IdeaNodeHoverCard({
-  preview,
-  topicId,
-  onPointerEnter,
-  onPointerLeave,
-}: {
-  preview: IdeaNodeHoverPreview | null;
-  topicId: string;
-  onPointerEnter: () => void;
-  onPointerLeave: () => void;
-}) {
-  const ideaId = typeof preview?.data.idea_id === "string" && preview.data.idea_id.trim() ? preview.data.idea_id : "";
-  const detail = useQuery({
-    queryKey: ["topic", topicId, "idea-lineage", "idea-hover-preview", ideaId],
-    queryFn: () => getIdeaDetail(topicId, ideaId, { includeSourceJson: true }),
-    enabled: Boolean(preview && topicId && ideaId),
-    staleTime: 30_000,
-  });
-  const markdown = useMemo(() => {
-    if (!preview) {
-      return "";
-    }
-    const ideaContent = detail.data?.idea_content ?? detail.data?.source?.source_json;
-    const previewSource = ideaContent === undefined && detail.data?.idea ? { idea: detail.data.idea, latest_realization: detail.data.latest_realization } : ideaContent;
-    if (previewSource !== undefined) {
-      return buildJsonMarkdownPreview(previewSource).markdown;
-    }
-    const fallback = buildIdeaNodeHoverMarkdown(preview.data);
-    if (detail.error) {
-      return `${fallback}\n\n_Preview detail failed to load. Showing graph summary._`;
-    }
-    return fallback;
-  }, [detail.data, detail.error, preview]);
-  if (!preview) {
-    return null;
-  }
-  const loading = Boolean(ideaId && detail.isPending && !detail.data && !detail.error);
-  const viewportWidth = typeof window === "undefined" ? 1024 : window.innerWidth;
-  const viewportHeight = typeof window === "undefined" ? 768 : window.innerHeight;
-  const left = Math.max(16, Math.min(preview.x + 16, viewportWidth - 440));
-  const top = Math.max(16, Math.min(preview.y + 18, viewportHeight - 340));
-  const stopGraphInteraction = (event: React.SyntheticEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-  };
-  return (
-    <div
-      className="idea-node-hover-card"
-      style={{ left, top }}
-      role="tooltip"
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
-      onMouseEnter={onPointerEnter}
-      onMouseLeave={onPointerLeave}
-      onPointerDown={stopGraphInteraction}
-      onWheel={stopGraphInteraction}
-    >
-      {loading ? (
-        <div className="idea-node-hover-loading">
-          <LoaderCircle aria-hidden="true" />
-          <span>Loading preview</span>
-        </div>
-      ) : (
-        <MarkdownView content={markdown} />
-      )}
-    </div>
-  );
-}
-
-export function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelParams) {
-  const selectedGraphScope = asGraphScope(graphScope, "idea-lineage");
-  const { resolvedThemeMode, themeMode } = useGuiTheme();
-  const reactFlowColorMode: ColorMode = themeMode === "system" ? "system" : resolvedThemeMode;
-  const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: false });
-  const [hoverPreview, setHoverPreview] = useState<IdeaNodeHoverPreview | null>(null);
-  const hoverDelayRef = useRef<number | null>(null);
-  const hoverCloseDelayRef = useRef<number | null>(null);
-  const touchLongPressDelayRef = useRef<number | null>(null);
-  const touchLongPressRef = useRef<{ pointerId: number; nodeId: string; x: number; y: number } | null>(null);
-  const pendingHoverRef = useRef<IdeaNodeHoverPreview | null>(null);
-  const lastNodeClickRef = useRef<{ nodeId: string; at: number; x: number; y: number } | null>(null);
-  const suppressHoverUntilNodeExitRef = useRef(false);
-  const graph = useQuery({
-    queryKey: ["topic", topicId, "graph", selectedGraphScope, requestedRenderer(selectedGraphScope), filters],
-    queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, requestedRenderer(selectedGraphScope), filters),
-    enabled: Boolean(topicId),
-  });
-  const [flowNodes, setFlowNodes] = useState<IdeaFlowNode[]>([]);
-  const flowEdges = useMemo(() => (graph.data ? toFlowEdges(graph.data) : []), [graph.data]);
-  const selectedFlowNode = useMemo(() => flowNodes.find((node) => node.selected), [flowNodes]);
-  const selectedFlowNodeId = selectedFlowNode?.id || "";
-  const decoratedFlowNodes = useMemo(() => {
-    if (!selectedFlowNodeId) {
-      return flowNodes;
-    }
-    const parentNodeIds = new Set(flowEdges.filter((edge) => edge.target === selectedFlowNodeId).map((edge) => edge.source));
-    const childNodeIds = new Set(flowEdges.filter((edge) => edge.source === selectedFlowNodeId).map((edge) => edge.target));
-    return flowNodes.map((node) => {
-      const enabledClasses = [
-        node.id === selectedFlowNodeId ? "selected" : "",
-        parentNodeIds.has(node.id) ? "lineage-parent" : "",
-        childNodeIds.has(node.id) ? "lineage-child" : "",
-      ].filter(Boolean);
-      return {
-        ...node,
-        className: withControlledClasses(node.className, LINEAGE_NODE_STATE_CLASSES, enabledClasses),
-      };
-    });
-  }, [flowEdges, flowNodes, selectedFlowNodeId]);
-  const decoratedFlowEdges = useMemo<Edge[]>(() => {
-    if (!selectedFlowNodeId) {
-      return flowEdges;
-    }
-    return flowEdges.map((edge) => {
-      const incoming = edge.target === selectedFlowNodeId;
-      const outgoing = edge.source === selectedFlowNodeId;
-      const highlightColor = incoming ? "var(--flow-edge-incoming)" : outgoing ? "var(--flow-edge-outgoing)" : undefined;
-      const enabledClasses = [
-        incoming ? "lineage-incoming" : "",
-        outgoing ? "lineage-outgoing" : "",
-      ].filter(Boolean);
-      return {
-        ...edge,
-        className: withControlledClasses(edge.className, LINEAGE_EDGE_STATE_CLASSES, enabledClasses),
-        markerEnd: highlightColor && typeof edge.markerEnd === "object" ? { ...edge.markerEnd, color: highlightColor } : edge.markerEnd,
-        style: highlightColor ? { ...edge.style, stroke: highlightColor, strokeWidth: 2.2 } : edge.style,
-      };
-    });
-  }, [flowEdges, selectedFlowNodeId]);
-
-  const cancelHoverClose = useCallback(() => {
-    if (hoverCloseDelayRef.current !== null) {
-      window.clearTimeout(hoverCloseDelayRef.current);
-      hoverCloseDelayRef.current = null;
-    }
-  }, []);
-
-  const cancelTouchLongPress = useCallback(() => {
-    if (touchLongPressDelayRef.current !== null) {
-      window.clearTimeout(touchLongPressDelayRef.current);
-      touchLongPressDelayRef.current = null;
-    }
-    touchLongPressRef.current = null;
-  }, []);
-
-  const clearHoverPreview = useCallback(() => {
-    if (hoverDelayRef.current !== null) {
-      window.clearTimeout(hoverDelayRef.current);
-      hoverDelayRef.current = null;
-    }
-    cancelTouchLongPress();
-    cancelHoverClose();
-    pendingHoverRef.current = null;
-    setHoverPreview(null);
-  }, [cancelHoverClose, cancelTouchLongPress]);
-
-  const scheduleHoverPreviewClose = useCallback(() => {
-    cancelHoverClose();
-    hoverCloseDelayRef.current = window.setTimeout(() => {
-      clearHoverPreview();
-    }, HOVER_PREVIEW_CLOSE_DELAY_MS);
-  }, [cancelHoverClose, clearHoverPreview]);
-
-  const selectFlowNode = useCallback((nodeId: string) => {
-    setFlowNodes((nodes) =>
-      nodes.map((node) => {
-        const selected = node.id === nodeId;
-        return {
-          ...node,
-          selected,
-          className: withSelectedClass(node.className, selected),
-        };
-      }),
-    );
-  }, []);
-
-  const showHoverPreviewForNode = useCallback((nodeId: string, x: number, y: number) => {
-    const node = flowNodes.find((candidate) => candidate.id === nodeId);
-    if (!node) {
-      return false;
-    }
-    cancelHoverClose();
-    const nextPreview = { nodeId: node.id, data: node.data, x, y };
-    pendingHoverRef.current = nextPreview;
-    setHoverPreview(nextPreview);
-    return true;
-  }, [cancelHoverClose, flowNodes]);
-
-  const openFlowNode = useCallback((nodeId: string) => {
-    suppressHoverUntilNodeExitRef.current = true;
-    clearHoverPreview();
-    selectFlowNode(nodeId);
-    openRecordFromNode(topicId || "", graph.data, nodeId);
-  }, [clearHoverPreview, graph.data, selectFlowNode, topicId]);
-
-  const openRecentNodeClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    const lastClick = lastNodeClickRef.current;
-    if (!lastClick) {
-      return false;
-    }
-    const dx = event.clientX - lastClick.x;
-    const dy = event.clientY - lastClick.y;
-    const closeEnough = Math.hypot(dx, dy) <= NODE_DOUBLE_CLICK_DISTANCE_PX;
-    const soonEnough = Date.now() - lastClick.at < NODE_DOUBLE_CLICK_MS;
-    if (!closeEnough || !soonEnough) {
-      return false;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    lastNodeClickRef.current = null;
-    openFlowNode(lastClick.nodeId);
-    return true;
-  }, [openFlowNode]);
-
-  const handleNodeClick = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
-    const now = Date.now();
-    const lastClick = lastNodeClickRef.current;
-    const isSecondClick = event.detail >= 2 || (lastClick?.nodeId === node.id && now - lastClick.at < NODE_DOUBLE_CLICK_MS);
-    selectFlowNode(node.id);
-    if (isSecondClick) {
-      event.preventDefault();
-      lastNodeClickRef.current = null;
-      openFlowNode(node.id);
-      return;
-    }
-    lastNodeClickRef.current = { nodeId: node.id, at: now, x: event.clientX, y: event.clientY };
-  }, [openFlowNode, selectFlowNode]);
-
-  const handleNodeDoubleClick = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
-    event.preventDefault();
-    lastNodeClickRef.current = null;
-    openFlowNode(node.id);
-  }, [openFlowNode]);
-
-  const handleFlowClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-    if (target.closest(".react-flow__node[data-id]")) {
-      return;
-    }
-    if (event.detail >= 2) {
-      openRecentNodeClick(event);
-    }
-  }, [openRecentNodeClick]);
-
-  const handleFlowDoubleClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-    const nodeElement = target.closest(".react-flow__node[data-id]") as HTMLElement | null;
-    const nodeId = nodeElement?.dataset.id;
-    if (!nodeId) {
-      openRecentNodeClick(event);
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    lastNodeClickRef.current = null;
-    openFlowNode(nodeId);
-  }, [openFlowNode, openRecentNodeClick]);
-
-  const handleFlowPointerDownCapture = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "mouse") {
-      return;
-    }
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-    const nodeElement = target.closest(".react-flow__node[data-id]") as HTMLElement | null;
-    const nodeId = nodeElement?.dataset.id;
-    if (!nodeId) {
-      return;
-    }
-    cancelTouchLongPress();
-    cancelHoverClose();
-    touchLongPressRef.current = { pointerId: event.pointerId, nodeId, x: event.clientX, y: event.clientY };
-    touchLongPressDelayRef.current = window.setTimeout(() => {
-      const pending = touchLongPressRef.current;
-      touchLongPressDelayRef.current = null;
-      touchLongPressRef.current = null;
-      if (pending) {
-        showHoverPreviewForNode(pending.nodeId, pending.x, pending.y);
-      }
-    }, HOVER_PREVIEW_OPEN_DELAY_MS);
-  }, [cancelHoverClose, cancelTouchLongPress, showHoverPreviewForNode]);
-
-  const handleFlowPointerMoveCapture = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    const pending = touchLongPressRef.current;
-    if (!pending || pending.pointerId !== event.pointerId) {
-      return;
-    }
-    const dx = event.clientX - pending.x;
-    const dy = event.clientY - pending.y;
-    if (Math.hypot(dx, dy) > TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX) {
-      cancelTouchLongPress();
-    }
-  }, [cancelTouchLongPress]);
-
-  const handleFlowPointerEndCapture = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    const pending = touchLongPressRef.current;
-    if (!pending || pending.pointerId === event.pointerId) {
-      cancelTouchLongPress();
-    }
-  }, [cancelTouchLongPress]);
-
-  const openSelectedFlowNode = useCallback(() => {
-    if (selectedFlowNode) {
-      openFlowNode(selectedFlowNode.id);
-    }
-  }, [openFlowNode, selectedFlowNode]);
-
-  const handleNodeMouseEnter = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
-    if (suppressHoverUntilNodeExitRef.current) {
-      return;
-    }
-    cancelHoverClose();
-    const nextPreview = { nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY };
-    pendingHoverRef.current = nextPreview;
-    if (hoverDelayRef.current !== null) {
-      window.clearTimeout(hoverDelayRef.current);
-    }
-    hoverDelayRef.current = window.setTimeout(() => {
-      setHoverPreview(pendingHoverRef.current);
-      hoverDelayRef.current = null;
-    }, HOVER_PREVIEW_OPEN_DELAY_MS);
-  }, [cancelHoverClose]);
-
-  const handleNodeMouseMove = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
-    if (suppressHoverUntilNodeExitRef.current) {
-      return;
-    }
-    if (hoverPreview) {
-      return;
-    }
-    const nextPreview = { nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY };
-    pendingHoverRef.current = nextPreview;
-    setHoverPreview((current) => (current?.nodeId === node.id ? nextPreview : current));
-  }, [hoverPreview]);
-
-  const handleNodeMouseLeave = useCallback<NodeMouseHandler<IdeaFlowNode>>(() => {
-    suppressHoverUntilNodeExitRef.current = false;
-    scheduleHoverPreviewClose();
-  }, [scheduleHoverPreviewClose]);
-
-  useEffect(
-    () => () => {
-      if (hoverDelayRef.current !== null) {
-        window.clearTimeout(hoverDelayRef.current);
-        hoverDelayRef.current = null;
-      }
-      if (hoverCloseDelayRef.current !== null) {
-        window.clearTimeout(hoverCloseDelayRef.current);
-        hoverCloseDelayRef.current = null;
-      }
-      pendingHoverRef.current = null;
-    },
-    [],
-  );
-
-  useEffect(() => {
-    let subscription = new Subscription();
-    if (graph.data) {
-      const nodes = toFlowNodes(graph.data);
-      layoutFlowGraph(nodes, flowEdges).then((layouted) => {
-        if (!subscription.closed) {
-          setFlowNodes(layouted);
-        }
-      });
-    }
-    return () => subscription.unsubscribe();
-  }, [flowEdges, graph.data]);
-
-  return (
-    <section className="panel-body">
-      <GraphFiltersBar filters={filters} onChange={setFilters} />
-      {graph.data && selectRenderer(selectedGraphScope, graph.data.renderer_hint, graph.data.nodes.length) === "sigma" ? (
-        <SigmaGraph graph={graph.data} />
-      ) : (
-        <ReactFlowProvider>
-          <div
-            className="flow-frame idea-lineage-flow"
-            onClickCapture={handleFlowClickCapture}
-            onDoubleClickCapture={handleFlowDoubleClickCapture}
-            onPointerDownCapture={handleFlowPointerDownCapture}
-            onPointerMoveCapture={handleFlowPointerMoveCapture}
-            onPointerUpCapture={handleFlowPointerEndCapture}
-            onPointerCancelCapture={handleFlowPointerEndCapture}
-          >
-            <ReactFlow
-              colorMode={reactFlowColorMode}
-              nodes={decoratedFlowNodes}
-              edges={decoratedFlowEdges}
-              fitView
-              onNodeClick={handleNodeClick}
-              onNodeDoubleClick={handleNodeDoubleClick}
-              onNodeMouseEnter={handleNodeMouseEnter}
-              onNodeMouseMove={handleNodeMouseMove}
-              onNodeMouseLeave={handleNodeMouseLeave}
-            >
-              <FlowAutoFit edgeCount={flowEdges.length} nodeCount={flowNodes.length} />
-              <Background />
-              <Controls />
-            </ReactFlow>
-            <IdeaNodeHoverCard
-              preview={hoverPreview}
-              topicId={topicId || ""}
-              onPointerEnter={cancelHoverClose}
-              onPointerLeave={scheduleHoverPreviewClose}
-            />
-          </div>
-        </ReactFlowProvider>
-      )}
-      <GraphSummary graph={graph.data} isLoading={graph.isLoading} />
-      {selectedFlowNode ? (
-        <div className="selected-node-actions">
-          <span>Selected: {String(selectedFlowNode.data.title || selectedFlowNode.id)}</span>
-          <ToolbarButton type="button" onClick={openSelectedFlowNode}>
-            Open
-          </ToolbarButton>
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-function FlowAutoFit({ edgeCount, nodeCount }: { edgeCount: number; nodeCount: number }) {
-  const { fitView } = useReactFlow();
-  useEffect(() => {
-    if (!nodeCount) {
-      return undefined;
-    }
-    const fit = () => fitView({ padding: 0.2, duration: 0 });
-    const animationFrame = window.requestAnimationFrame(fit);
-    window.addEventListener("resize", fit);
-    return () => {
-      window.cancelAnimationFrame(animationFrame);
-      window.removeEventListener("resize", fit);
-    };
-  }, [edgeCount, fitView, nodeCount]);
-  return null;
+function formatDelaySeconds(delayMs: number) {
+  return Number((delayMs / 1000).toFixed(2)).toString();
 }
 
 function DenseGraphPanel({ topicId, graphScope }: { topicId: string; graphScope: GraphScope }) {
@@ -1269,48 +811,6 @@ function FileArtifactPanel({ contentUrl, mediaType }: { contentUrl: string; medi
     return <img className="image-viewer" alt="" src={contentUrl} />;
   }
   return <JsonBlock title={mediaType || "File"} value={content.data || "Loading file."} />;
-}
-
-function SigmaGraph({ graph }: { graph: TopicGraphView }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (!containerRef.current) {
-      return undefined;
-    }
-    const graphology = new Graphology({ multi: true });
-    for (const node of graph.nodes) {
-      graphology.addNode(node.id, {
-        label: node.title,
-        x: Math.random(),
-        y: Math.random(),
-        size: Number(node.renderer_hints?.size || 8),
-        color: String(node.renderer_hints?.color || "#64748b"),
-      });
-    }
-    for (const edge of graph.edges) {
-      if (graphology.hasNode(edge.source) && graphology.hasNode(edge.target) && !graphology.hasEdge(edge.id)) {
-        graphology.addEdgeWithKey(edge.id, edge.source, edge.target, { label: edge.relation_kind, color: "#94a3b8" });
-      }
-    }
-    const renderer = new Sigma(graphology, containerRef.current, { allowInvalidContainer: true });
-    renderer.on("doubleClickNode", ({ node }) => openRecordFromNode(graph.topic_id, graph, node));
-    return () => renderer.kill();
-  }, [graph]);
-  return <div className="sigma-frame" ref={containerRef} />;
-}
-
-export function GraphFiltersBar({ filters, onChange }: { filters: GraphFilters; onChange: (filters: GraphFilters) => void }) {
-  return (
-    <div className="filters">
-      <Input aria-label="Search graph" placeholder="search" value={filters.search || ""} onChange={(event) => onChange({ ...filters, search: event.target.value })} />
-      <Input aria-label="Status filter" placeholder="status" value={filters.status || ""} onChange={(event) => onChange({ ...filters, status: event.target.value })} />
-      <Input aria-label="Relation filter" placeholder="relation" value={filters.relationKind || ""} onChange={(event) => onChange({ ...filters, relationKind: event.target.value })} />
-      <label className="checkbox">
-        <Checkbox aria-label="Show supporting records" checked={Boolean(filters.includeSecondary)} onCheckedChange={(checked) => onChange({ ...filters, includeSecondary: checked === true })} />
-        Supporting Records
-      </label>
-    </div>
-  );
 }
 
 function RecordsPanel({ topicId }: { topicId: string }) {
@@ -1606,55 +1106,6 @@ export function ViewerContent({
   return <JsonBlock title={surface === "json" ? "JSON" : "Record"} value={detail} />;
 }
 
-type MarkdownViewState = "loading" | "empty" | "ready";
-
-export function MarkdownView({ content, state = "ready" }: { content: string; state?: MarkdownViewState }) {
-  if (state !== "ready") {
-    return (
-      <div className={`markdown-view markdown-view-status markdown-view-${state}`}>
-        <p>{content}</p>
-      </div>
-    );
-  }
-  return (
-    <div className="markdown-view">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
-        components={{
-          code(props) {
-            const className = props.className || "";
-            const value = String(props.children || "");
-            if (className.includes("language-mermaid")) {
-              return <MermaidBlock chart={value} />;
-            }
-            return <code className={className}>{props.children}</code>;
-          },
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
-}
-
-function MermaidBlock({ chart }: { chart: string }) {
-  const [svg, setSvg] = useState("");
-  useEffect(() => {
-    let cancelled = false;
-    mermaid.initialize({ startOnLoad: false, securityLevel: "strict" });
-    mermaid.render(`mmd-${crypto.randomUUID()}`, chart).then((result) => {
-      if (!cancelled) {
-        setSvg(result.svg);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [chart]);
-  return <div className="mermaid" dangerouslySetInnerHTML={{ __html: svg }} />;
-}
-
 type JsonModalTab = {
   id: string;
   label: string;
@@ -1749,24 +1200,6 @@ function DiagnosticsPanel({ topicId, graphScope }: { topicId?: string; graphScop
   );
 }
 
-function GraphSummary({ graph, isLoading }: { graph?: TopicGraphView; isLoading: boolean }) {
-  if (isLoading) {
-    return <div className="status-line">Loading.</div>;
-  }
-  if (!graph) {
-    return <div className="status-line">No graph data.</div>;
-  }
-  return (
-    <div className="graph-summary">
-      <StatusBadge>{graph.nodes.length} nodes</StatusBadge>
-      <StatusBadge>{graph.edges.length} edges</StatusBadge>
-      <StatusBadge>{graph.renderer_hint}</StatusBadge>
-      {graph.paging?.truncated ? <StatusBadge tone="warning">truncated</StatusBadge> : null}
-      {graph.error ? <StatusBadge tone="danger">{graph.error.code}</StatusBadge> : null}
-    </div>
-  );
-}
-
 function JsonBlock({ title, value }: { title: string; value: unknown }) {
   return (
     <div className="json-block">
@@ -1832,22 +1265,6 @@ function useRecordsTable(records: RecordSummary[], topicId: string) {
     [columnHelper, topicId],
   );
   return useReactTable({ data: records, columns, getCoreRowModel: getCoreRowModel() });
-}
-
-export function openRecordFromNode(topicId: string, graph: TopicGraphView | undefined, nodeId: string) {
-  const node = graph?.nodes.find((candidate) => candidate.id === nodeId);
-  if (!node) {
-    return;
-  }
-  const sourceIdeaId = typeof node.source?.idea_id === "string" ? node.source.idea_id : undefined;
-  const ideaId = node.idea_id || sourceIdeaId;
-  if (node.material_kind === "idea" && ideaId) {
-    workbenchCommands$.next({ type: "open-idea", topicId, ideaId });
-    return;
-  }
-  if (node.record_id) {
-    workbenchCommands$.next({ type: "open-record", topicId, recordId: node.record_id });
-  }
 }
 
 function graphTitle(scope: GraphScope): string {
