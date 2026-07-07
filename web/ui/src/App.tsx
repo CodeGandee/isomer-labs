@@ -3,10 +3,11 @@ import { useTree } from "@headless-tree/react";
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type Node } from "@xyflow/react";
-import { themeLight } from "dockview";
+import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type ColorMode, type Edge, type Node } from "@xyflow/react";
+import { themeDark, themeLight } from "dockview";
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps } from "dockview-react";
 import Graphology from "graphology";
+import { RefreshCw, Settings } from "lucide-react";
 import mermaid from "mermaid";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -39,7 +40,25 @@ import {
 import { layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes } from "./graph-utils";
 import { buildJsonMarkdownPreview } from "./markdown-doc";
 import { manualRefresh$, topicInvalidations, workbenchCommands$ } from "./events";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { LinkButton, StatusBadge, ToolbarButton } from "@/components/workbench-controls";
 import type { ExplorerNode, GraphScope, IdeaDetailResponse, OpenableItemDescriptor, RecordSummary, TopicGraphView } from "./types";
+import { ThemeProvider, useGuiTheme } from "./theme-provider";
+import type { ThemeMode } from "./theme-mode";
 import { filterRecords, openPanelFromDescriptor, viewerSurface, type DockviewApiLike, type OpenPanelResult } from "./view-model";
 import {
   coerceWorkbenchHistoryState,
@@ -90,9 +109,13 @@ declare module "@tanstack/react-router" {
 
 export function RootApp() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 }
 
@@ -119,6 +142,8 @@ function Workbench() {
   const topicList = topics.data?.topics || [];
   const selectedTopicId = urlState.topicId || topicList[0]?.id;
   const graphScope = urlState.graphScope;
+  const { resolvedThemeMode } = useGuiTheme();
+  const dockviewTheme = resolvedThemeMode === "dark" ? themeDark : themeLight;
 
   const commitUrlState = useCallback(
     (next: WorkbenchSearchState, mode: UrlSyncMode, metadata: WorkbenchHistoryMetadata = {}) => {
@@ -141,9 +166,9 @@ function Workbench() {
 
   useEffect(() => {
     if (!urlState.topicId && selectedTopicId) {
-      commitUrlState({ topicId: selectedTopicId, graphScope }, "replace");
+      commitUrlState({ topicId: selectedTopicId, graphScope, openItemId: urlState.openItemId }, "replace");
     }
-  }, [commitUrlState, graphScope, selectedTopicId, urlState.topicId]);
+  }, [commitUrlState, graphScope, selectedTopicId, urlState.openItemId, urlState.topicId]);
 
   useEffect(() => {
     if (!selectedTopicId) {
@@ -390,18 +415,19 @@ function Workbench() {
             <h2>{selectedTopicId || "Select a topic"}</h2>
           </div>
           <div className="toolbar">
-            <button type="button" onClick={() => selectedTopicId && manualRefresh$.next({ topicId: selectedTopicId })}>
+            <ToolbarButton type="button" onClick={() => void openItem("project:settings")}>
+              <Settings aria-hidden="true" />
+              Settings
+            </ToolbarButton>
+            <ToolbarButton type="button" onClick={() => selectedTopicId && manualRefresh$.next({ topicId: selectedTopicId })}>
+              <RefreshCw aria-hidden="true" />
               Refresh
-            </button>
+            </ToolbarButton>
           </div>
         </div>
-        {selectedTopicId ? (
-          <div className="dock-host dockview-theme-light">
-            <DockviewReact components={dockComponents} onReady={onDockReady} theme={themeLight} />
-          </div>
-        ) : (
-          <div className="empty-state">No topic selected.</div>
-        )}
+        <div className={`dock-host dockview-theme-${resolvedThemeMode}`}>
+          <DockviewReact components={dockComponents} onReady={onDockReady} theme={dockviewTheme} />
+        </div>
       </main>
     </div>
   );
@@ -516,20 +542,30 @@ function ExplorerRow({
     }
   };
   return (
-    <button
+    <Button
       {...props}
       className={`explorer-row ${item.isFolder() ? "folder" : "leaf"} ${item.isExpanded() ? "expanded" : ""} ${item.isFocused() ? "focused" : ""} ${isSelectedTopic ? "active-topic" : ""}`}
       data-testid={`explorer-row-${item.getId()}`}
       onClick={onClick}
+      size="sm"
       style={{ paddingLeft: `${8 + item.getItemMeta().level * 14}px` }}
       type="button"
+      variant="ghost"
     >
       <span className="explorer-twist">{item.isFolder() ? (item.isExpanded() ? "v" : ">") : ""}</span>
       <span className={`explorer-icon ${data.icon_hint || "item"}`} />
       <span className="explorer-label">{data.label}</span>
-      {data.badge_text ? <span className="explorer-badge">{data.badge_text}</span> : null}
-      {data.diagnostics_count ? <span className="explorer-warning">{data.diagnostics_count}</span> : null}
-    </button>
+      {data.badge_text ? (
+        <Badge className="explorer-badge" variant="outline">
+          {data.badge_text}
+        </Badge>
+      ) : null}
+      {data.diagnostics_count ? (
+        <Badge className="explorer-warning" variant="outline">
+          {data.diagnostics_count}
+        </Badge>
+      ) : null}
+    </Button>
   );
 }
 
@@ -540,6 +576,7 @@ const dockComponents = {
   recordDetail: (props: IDockviewPanelProps<PanelParams>) => <RecordDetailPanel topicId={props.params.topicId || ""} recordId={props.params.recordId || ""} />,
   ideaDetail: (props: IDockviewPanelProps<PanelParams>) => <IdeaDetailPanel topicId={props.params.topicId || ""} ideaId={props.params.ideaId || ""} />,
   diagnostics: (props: IDockviewPanelProps<PanelParams>) => <DiagnosticsPanel topicId={props.params.topicId} graphScope={asGraphScope(props.params.graphScope, "idea-lineage")} />,
+  settings: () => <ProjectSettingsPanel />,
   projectOverview: () => <ProjectOverviewPanel />,
   topicOverview: (props: IDockviewPanelProps<PanelParams>) => <TopicOverviewPanel topicId={props.params.topicId || ""} />,
   runtime: (props: IDockviewPanelProps<PanelParams>) => <RuntimePanel topicId={props.params.topicId || ""} />,
@@ -548,8 +585,56 @@ const dockComponents = {
   fileArtifact: (props: IDockviewPanelProps<PanelParams>) => <FileArtifactPanel contentUrl={props.params.contentUrl || ""} mediaType={props.params.mediaType || ""} />,
 };
 
+export function ProjectSettingsPanel() {
+  const { resolvedThemeMode, setThemeMode, themeMode } = useGuiTheme();
+  const onThemeChange = useCallback((value: string) => {
+    setThemeMode(value as ThemeMode);
+  }, [setThemeMode]);
+
+  return (
+    <section className="panel-body settings-panel">
+      <div className="detail-heading">
+        <div>
+          <h3>Project Settings</h3>
+          <span>Frontend preferences and future service settings</span>
+        </div>
+      </div>
+      <div className="settings-sections">
+        <section className="settings-section">
+          <div className="settings-copy">
+            <h4>Appearance</h4>
+            <p>Choose the theme used across the workbench. This preference is stored in this browser.</p>
+          </div>
+          <label className="settings-field">
+            <span>Global Theme</span>
+            <Select value={themeMode} onValueChange={onThemeChange}>
+              <SelectTrigger aria-label="Global Theme" className="settings-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="system">System</SelectItem>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <p className="settings-note">Resolved theme: {resolvedThemeMode}</p>
+        </section>
+        <section className="settings-section muted-section">
+          <div className="settings-copy">
+            <h4>Service</h4>
+            <p>Backend and project-owned settings will appear here after the service settings API defines editable scope and persistence.</p>
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
+
 function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelParams) {
   const selectedGraphScope = asGraphScope(graphScope, "idea-lineage");
+  const { resolvedThemeMode, themeMode } = useGuiTheme();
+  const reactFlowColorMode: ColorMode = themeMode === "system" ? "system" : resolvedThemeMode;
   const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: false });
   const graph = useQuery({
     queryKey: ["topic", topicId, "graph", selectedGraphScope, requestedRenderer(selectedGraphScope), filters],
@@ -579,8 +664,8 @@ function IdeaGraphPanel({ topicId, graphScope = "idea-lineage" }: PanelParams) {
         <SigmaGraph graph={graph.data} />
       ) : (
         <ReactFlowProvider>
-          <div className="flow-frame">
-            <ReactFlow nodes={flowNodes} edges={flowEdges} fitView onNodeClick={(_event, node) => openRecordFromNode(topicId, graph.data, node.id)}>
+          <div className="flow-frame idea-lineage-flow">
+            <ReactFlow colorMode={reactFlowColorMode} nodes={flowNodes} edges={flowEdges} fitView onNodeClick={(_event, node) => openRecordFromNode(topicId, graph.data, node.id)}>
               <FlowAutoFit edgeCount={flowEdges.length} nodeCount={flowNodes.length} />
               <Background />
               <Controls />
@@ -750,11 +835,11 @@ function SigmaGraph({ graph }: { graph: TopicGraphView }) {
 export function GraphFiltersBar({ filters, onChange }: { filters: GraphFilters; onChange: (filters: GraphFilters) => void }) {
   return (
     <div className="filters">
-      <input aria-label="Search graph" placeholder="search" value={filters.search || ""} onChange={(event) => onChange({ ...filters, search: event.target.value })} />
-      <input aria-label="Status filter" placeholder="status" value={filters.status || ""} onChange={(event) => onChange({ ...filters, status: event.target.value })} />
-      <input aria-label="Relation filter" placeholder="relation" value={filters.relationKind || ""} onChange={(event) => onChange({ ...filters, relationKind: event.target.value })} />
+      <Input aria-label="Search graph" placeholder="search" value={filters.search || ""} onChange={(event) => onChange({ ...filters, search: event.target.value })} />
+      <Input aria-label="Status filter" placeholder="status" value={filters.status || ""} onChange={(event) => onChange({ ...filters, status: event.target.value })} />
+      <Input aria-label="Relation filter" placeholder="relation" value={filters.relationKind || ""} onChange={(event) => onChange({ ...filters, relationKind: event.target.value })} />
       <label className="checkbox">
-        <input aria-label="Show supporting records" type="checkbox" checked={Boolean(filters.includeSecondary)} onChange={(event) => onChange({ ...filters, includeSecondary: event.target.checked })} />
+        <Checkbox aria-label="Show supporting records" checked={Boolean(filters.includeSecondary)} onCheckedChange={(checked) => onChange({ ...filters, includeSecondary: checked === true })} />
         Supporting Records
       </label>
     </div>
@@ -771,40 +856,46 @@ function RecordsPanel({ topicId }: { topicId: string }) {
   });
   const filteredRecords = useMemo(() => filterRecords(records.data?.records || [], search), [records.data?.records, search]);
   const table = useRecordsTable(filteredRecords, topicId);
+  const facetValue = facet || "all";
   return (
     <section className="panel-body">
       <div className="filters">
-        <input aria-label="Search records" placeholder="search records" value={search} onChange={(event) => setSearch(event.target.value)} />
-        <select aria-label="Facet" value={facet} onChange={(event) => setFacet(event.target.value)}>
-          <option value="">all facets</option>
-          <option value="ideas">ideas</option>
-          <option value="routes">routes</option>
-          <option value="metrics">metrics</option>
-          <option value="claims">claims</option>
-          <option value="facts">facts</option>
-        </select>
+        <Input aria-label="Search records" placeholder="search records" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <Select value={facetValue} onValueChange={(value) => setFacet(value === "all" ? "" : value)}>
+          <SelectTrigger aria-label="Facet" className="facet-select">
+            <SelectValue placeholder="all facets" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">all facets</SelectItem>
+            <SelectItem value="ideas">ideas</SelectItem>
+            <SelectItem value="routes">routes</SelectItem>
+            <SelectItem value="metrics">metrics</SelectItem>
+            <SelectItem value="claims">claims</SelectItem>
+            <SelectItem value="facts">facts</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="table-wrap">
-        <table>
-          <thead>
+        <Table>
+          <TableHeader>
             {table.getHeaderGroups().map((group) => (
-              <tr key={group.id}>
+              <TableRow key={group.id}>
                 {group.headers.map((header) => (
-                  <th key={header.id}>{flexRender(header.column.columnDef.header, header.getContext())}</th>
+                  <TableHead key={header.id}>{flexRender(header.column.columnDef.header, header.getContext())}</TableHead>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </thead>
-          <tbody>
+          </TableHeader>
+          <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} onClick={() => workbenchCommands$.next({ type: "open-record", topicId, recordId: row.original.record_id })}>
+              <TableRow key={row.id} onClick={() => workbenchCommands$.next({ type: "open-record", topicId, recordId: row.original.record_id })}>
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                  <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </section>
   );
@@ -916,40 +1007,41 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
           <span>{detail.data?.idea?.status ? String(detail.data.idea.status) : ideaId}</span>
         </div>
         <div className="toolbar idea-toolbar">
-          <button
+          <ToolbarButton
             ref={viewJsonButtonRef}
             type="button"
             disabled={!detail.data?.source?.source_json_available}
             onClick={() => setJsonModalOpen(true)}
           >
             View JSON
-          </button>
-          <button type="button" disabled={!detail.data?.source?.source_json_available} onClick={() => void copyJson()}>
+          </ToolbarButton>
+          <ToolbarButton type="button" disabled={!detail.data?.source?.source_json_available} onClick={() => void copyJson()}>
             Copy JSON
-          </button>
-          <button type="button" disabled={!preview?.markdown} onClick={() => void copyText("markdown", preview?.markdown)}>
+          </ToolbarButton>
+          <ToolbarButton type="button" disabled={!preview?.markdown} onClick={() => void copyText("markdown", preview?.markdown)}>
             Copy Markdown
-          </button>
-          <button type="button" onClick={() => void detail.refetch()}>
+          </ToolbarButton>
+          <ToolbarButton type="button" onClick={() => void detail.refetch()}>
+            <RefreshCw aria-hidden="true" />
             Refresh
-          </button>
+          </ToolbarButton>
         </div>
       </div>
       <div className="idea-status-row">
-        <span>{String(provenance?.source_kind || "source pending")}</span>
-        {provenance?.source_fragment_status ? <span>{String(provenance.source_fragment_status)}</span> : null}
-        {provenance?.source_json_path ? <span>{String(provenance.source_json_path)}</span> : null}
-        {sourceTruncated ? <span>source JSON over default cap</span> : null}
-        {digestNotice ? <span>{digestNotice}</span> : null}
-        {copyState.status !== "idle" ? <span className={`copy-status ${copyState.status}`}>{copyState.message}</span> : null}
-        <button
+        <StatusBadge>{String(provenance?.source_kind || "source pending")}</StatusBadge>
+        {provenance?.source_fragment_status ? <StatusBadge>{String(provenance.source_fragment_status)}</StatusBadge> : null}
+        {provenance?.source_json_path ? <StatusBadge>{String(provenance.source_json_path)}</StatusBadge> : null}
+        {sourceTruncated ? <StatusBadge tone="warning">source JSON over default cap</StatusBadge> : null}
+        {digestNotice ? <StatusBadge tone="info">{digestNotice}</StatusBadge> : null}
+        {copyState.status !== "idle" ? <StatusBadge className={`copy-status ${copyState.status}`} tone={copyState.status === "success" ? "success" : "danger"}>{copyState.message}</StatusBadge> : null}
+        <LinkButton
           type="button"
-          className="link-button source-record-button"
+          className="source-record-button"
           disabled={!sourceRecordId}
           onClick={() => workbenchCommands$.next({ type: "open-record", topicId, recordId: sourceRecordId })}
         >
           Open Source Record
-        </button>
+        </LinkButton>
       </div>
       {detail.data?.error ? (
         <div className="diagnostic error">
@@ -1128,41 +1220,27 @@ export function JsonModal({
   onClose: () => void;
   onCopy: () => void;
 }) {
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  useEffect(() => {
-    closeButtonRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
   return (
-    <div className="json-modal-backdrop" role="presentation" onMouseDown={onClose}>
-      <section
-        className="json-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="json-modal max-w-[min(1040px,calc(100vw-2rem))] sm:max-w-[min(1040px,calc(100vw-2rem))]" showCloseButton={false}>
         <div className="json-modal-heading">
-          <h3>{title}</h3>
-          <div className="toolbar">
-            <button type="button" onClick={onCopy} disabled={!jsonText}>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription className="sr-only">JSON source content for the selected idea.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="toolbar">
+            <ToolbarButton type="button" onClick={onCopy} disabled={!jsonText}>
               Copy JSON
-            </button>
-            <button ref={closeButtonRef} type="button" onClick={onClose}>
+            </ToolbarButton>
+            <ToolbarButton type="button" onClick={onClose}>
               Close
-            </button>
-          </div>
+            </ToolbarButton>
+          </DialogFooter>
         </div>
         {copyStatus ? <div className="status-line">{copyStatus}</div> : null}
         {loading ? <div className="empty-state">Loading full JSON.</div> : <pre className="json-modal-code">{jsonText || "No JSON content available."}</pre>}
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1206,11 +1284,11 @@ function GraphSummary({ graph, isLoading }: { graph?: TopicGraphView; isLoading:
   }
   return (
     <div className="graph-summary">
-      <span>{graph.nodes.length} nodes</span>
-      <span>{graph.edges.length} edges</span>
-      <span>{graph.renderer_hint}</span>
-      {graph.paging?.truncated ? <span>truncated</span> : null}
-      {graph.error ? <span>{graph.error.code}</span> : null}
+      <StatusBadge>{graph.nodes.length} nodes</StatusBadge>
+      <StatusBadge>{graph.edges.length} edges</StatusBadge>
+      <StatusBadge>{graph.renderer_hint}</StatusBadge>
+      {graph.paging?.truncated ? <StatusBadge tone="warning">truncated</StatusBadge> : null}
+      {graph.error ? <StatusBadge tone="danger">{graph.error.code}</StatusBadge> : null}
     </div>
   );
 }
@@ -1236,7 +1314,7 @@ function FilesBlock({ value, topicId, recordId }: { value: unknown; topicId: str
             <span>{String(file.path || "")}</span>
             <small>{file.openable ? "openable" : `not openable: ${String(file.open_blocked_reason || "unknown")}`}</small>
             {file.openable && file.id ? (
-              <button
+              <ToolbarButton
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
@@ -1244,7 +1322,7 @@ function FilesBlock({ value, topicId, recordId }: { value: unknown; topicId: str
                 }}
               >
                 Open
-              </button>
+              </ToolbarButton>
             ) : null}
           </div>
         ))}
@@ -1260,16 +1338,15 @@ function useRecordsTable(records: RecordSummary[], topicId: string) {
       columnHelper.accessor("record_id", {
         header: "Record",
         cell: (info) => (
-          <button
+          <LinkButton
             type="button"
-            className="link-button"
             onClick={(event) => {
               event.stopPropagation();
               workbenchCommands$.next({ type: "open-record", topicId, recordId: info.getValue() });
             }}
           >
             {info.getValue()}
-          </button>
+          </LinkButton>
         ),
       }),
       columnHelper.accessor("record_kind", { header: "Kind", cell: (info) => info.getValue() || "" }),

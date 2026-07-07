@@ -98,6 +98,15 @@ class _ProjectExplorerReadModel:
         )
         self._append_node(
             nodes,
+            node_id="project:settings",
+            parent_id=root_id,
+            label="Settings",
+            item_kind="settings",
+            icon_hint="settings",
+            openable_item_id="project:settings",
+        )
+        self._append_node(
+            nodes,
             node_id=topic_group_id,
             parent_id=root_id,
             label="Research Topics",
@@ -181,7 +190,7 @@ class _ProjectExplorerReadModel:
                 "error": {"code": "project_not_found", "message": "The Project could not be discovered."},
                 "diagnostics": _diagnostics_json(diagnostics),
             }
-        if openable_item_id in {"project:overview", "project:manifest", "project:diagnostics"}:
+        if openable_item_id in {"project:overview", "project:manifest", "project:settings", "project:diagnostics"}:
             return {
                 "ok": not has_errors(diagnostics),
                 "mutated": False,
@@ -191,11 +200,13 @@ class _ProjectExplorerReadModel:
                 "title": {
                     "project:overview": "Project Overview",
                     "project:manifest": "Project Manifest",
+                    "project:settings": "Project Settings",
                     "project:diagnostics": "Project Diagnostics",
                 }[openable_item_id],
                 "preferred_tab_component": {
                     "project:overview": "projectOverview",
                     "project:manifest": "projectOverview",
+                    "project:settings": "settings",
                     "project:diagnostics": "diagnostics",
                 }[openable_item_id],
                 "detail_urls": {"project": "/api/project"},

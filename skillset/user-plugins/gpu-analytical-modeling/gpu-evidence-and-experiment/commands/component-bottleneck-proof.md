@@ -11,7 +11,7 @@ When a model predicts saturated hardware or a blocking path, execute the followi
 5. **Compare labels and magnitudes**. Report predicted component, measured dominant component, predicted runtime, measured runtime, and key raw counters.
 6. **Explain misses**. A miss is useful evidence only if the model refinement path is named.
 
-If only coarse compute or memory labels are available, present them as coarse support and do not claim component-level proof.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a component-proof plan from the predicted bottlenecks, available counters, execution-path evidence, and validation limits, then execute the plan. If only coarse compute or memory labels are available, present them as coarse support and do not claim component-level proof.
 
 ## Proof Table Shape
 

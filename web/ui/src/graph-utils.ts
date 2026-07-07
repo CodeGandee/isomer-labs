@@ -19,13 +19,12 @@ export function requestedRenderer(graphScope: GraphScope): RendererChoice {
 export function toFlowNodes(graph: TopicGraphView): Node[] {
   return graph.nodes.map((node, index) => ({
     id: node.id,
+    className: `idea-flow-node material-${flowClassToken(node.material_kind || "artifact")} status-${flowClassToken(node.status || "unknown")} ${node.selected ? "selected" : ""}`,
     position: { x: 40 + (index % 3) * 300, y: 40 + Math.floor(index / 3) * 160 },
     data: {
       label: `${node.title}${node.status ? `\n${node.status}` : ""}`,
     },
     style: {
-      border: node.selected ? "2px solid #0f766e" : "1px solid #94a3b8",
-      borderRadius: 6,
       fontSize: 12,
       whiteSpace: "pre-line",
       width: 240,
@@ -38,9 +37,14 @@ export function toFlowEdges(graph: TopicGraphView): Edge[] {
     id: edge.id,
     source: edge.source,
     target: edge.target,
+    className: `idea-flow-edge relation-${flowClassToken(edge.relation_kind || "related")}`,
     label: edge.relation_kind,
     animated: false,
   }));
+}
+
+function flowClassToken(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
 }
 
 export async function layoutFlowGraph(nodes: Node[], edges: Edge[]): Promise<Node[]> {

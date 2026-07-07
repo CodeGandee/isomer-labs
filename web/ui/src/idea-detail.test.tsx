@@ -49,9 +49,10 @@ describe("Idea detail panel", () => {
     expect(screen.getByText("JSON copied.")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "View JSON" }));
-    expect(await screen.findByRole("dialog", { name: "Precision Idea JSON" })).toBeTruthy();
+    const dialog = await screen.findByRole("dialog", { name: "Precision Idea JSON" });
+    expect(dialog).toBeTruthy();
     expect(document.querySelector(".json-modal-code")?.textContent).toContain("Separate launch overhead.");
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(dialog, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 

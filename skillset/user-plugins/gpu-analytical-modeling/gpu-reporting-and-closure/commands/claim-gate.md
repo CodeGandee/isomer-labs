@@ -10,7 +10,7 @@ When reviewing GPU analytical-modeling claims, execute the following steps in or
 4. **Downgrade overclaims**. Replace unsupported certainty with measured scope, proxy support, or explicit limitation.
 5. **Preserve rejected strength**. If a claim was weakened, say why so later reviewers do not restore the stronger wording by accident.
 
-If evidence is too ambiguous to classify, route to analysis, review, decision, or finalization blocker.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a claim-gating plan from the available claims, evidence sources, and publication scope, then execute the plan. If evidence is too ambiguous to classify, route to analysis, review, decision, or finalization blocker.
 
 ## Claim Classes
 

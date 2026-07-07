@@ -11,7 +11,7 @@ When evaluation is planned or audited, execute the following steps in order.
 5. **Declare evidence classes**. Identify whether each result comes from real hardware, NCU counters, microbenchmarks, simulator, emulator, synthetic data, or analytical proxy.
 6. **Block overclaiming**. If the result lacks evidence for a central claim, downgrade the claim or route to more evidence.
 
-If an evaluation contract already exists, refresh only the missing or stale parts.
+If the user's task does not map cleanly to these steps, use your native planning tool to build an evaluation plan from the available model outputs, metrics, evidence classes, and claim boundaries, then execute the plan. If an evaluation contract already exists, refresh only the missing or stale parts.
 
 ## Required Outputs
 

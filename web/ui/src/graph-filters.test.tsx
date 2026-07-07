@@ -16,7 +16,7 @@ describe("GraphFiltersBar", () => {
     render(<GraphFiltersBar filters={{ includeSecondary: false }} onChange={onChange} />);
 
     const checkbox = screen.getByRole("checkbox", { name: "Show supporting records" });
-    expect((checkbox as HTMLInputElement).checked).toBe(false);
+    expect(checkbox.getAttribute("aria-checked")).toBe("false");
     expect(screen.getByText("Supporting Records")).toBeTruthy();
 
     fireEvent.click(checkbox);

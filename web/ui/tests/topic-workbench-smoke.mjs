@@ -74,10 +74,10 @@ try {
   }
   const selectedNodeText = await page.locator(".react-flow__node").nth(visibleNodeIndex).innerText();
   await page.locator(".react-flow__node").nth(visibleNodeIndex).click({ timeout: 15000 });
-  await page.waitForSelector(".detail-viewer", { timeout: 30000 });
+  await page.waitForSelector(".detail-viewer, .idea-detail-panel", { timeout: 30000 });
   await page.waitForTimeout(2500);
   const detailTitle = await page.locator(".detail-heading h3").first().innerText();
-  const detailBodyPresent = await page.locator(".detail-viewer").first().isVisible();
+  const detailBodyPresent = await page.locator(".detail-viewer, .idea-detail-panel").first().isVisible();
   const tabsAfterDetail = await page.locator(".dv-tab").count();
   const detailTabsBeforeBack = await page.locator(".dv-tab").filter({ hasText: detailTitle }).count();
 
@@ -93,8 +93,11 @@ try {
   const browserBackClosedDetail = detailTabsBeforeBack > 0 && detailTabsAfterBrowserBack === 0 && tabsAfterBrowserBack < tabsAfterDetail;
 
   await page.evaluate(() => window.history.forward());
-  await page.waitForFunction(() => new URL(window.location.href).searchParams.get("open")?.startsWith("record:"), null, { timeout: 15000 });
-  await page.waitForSelector(".detail-viewer", { timeout: 30000 });
+  await page.waitForFunction(() => {
+    const open = new URL(window.location.href).searchParams.get("open") || "";
+    return open.startsWith("record:") || open.startsWith("idea:");
+  }, null, { timeout: 15000 });
+  await page.waitForSelector(".detail-viewer, .idea-detail-panel", { timeout: 30000 });
   await page.waitForTimeout(1200);
   const detailTitleAfterForward = await page.locator(".detail-heading h3").first().innerText();
   const detailTabsAfterBrowserForward = await page.locator(".dv-tab").filter({ hasText: detailTitle }).count();

@@ -10,6 +10,12 @@ Treat Houmao's `apps/ag-ui-workbench` as the reference implementation for agent/
 
 Use Vite with React and TypeScript. This keeps the local development loop fast, gives us typed UI code, and produces static assets that the Isomer FastAPI service can serve.
 
+Use shadcn/ui as the primary source for ordinary app UI components, with copied component source committed under the frontend tree. Use Tailwind CSS v4 and shadcn-compatible CSS variables as the primary styling and token layer for workbench chrome, controls, dialogs, tables, custom graph nodes, and viewer wrappers.
+
+Use the Radix-backed shadcn component path for accessible primitives such as buttons, inputs, selects, checkboxes, badges, dialogs, tooltips, dropdown menus, scroll areas, separators, tabs, and tables. Theme mode is local browser presentation state: default to `system`, allow light/dark/system when exposed, and persist explicit user choice in local storage rather than Project or Topic Workspace state.
+
+Keep specialized viewer libraries in charge of their own rendering APIs. Dockview, React Flow, Sigma, Plotly, Markdown, PDF, and terminal views should receive Tailwind/shadcn tokens through wrapper classes and scoped CSS variables, not through replacement with shadcn components.
+
 ## Routing
 
 Use TanStack Router for topic routes, artifact routes, typed search params, and bookmarkable viewer state. Route state should capture durable navigation such as selected topic, selected artifact, active view type, and graph filters; ephemeral pane layout should stay in Dockview state.
@@ -117,6 +123,7 @@ Use pytest or unittest for Python read-model tests, Vitest and Testing Library f
 ## Initial Dependency Set
 
 - Frontend: `vite`, `react`, `react-dom`, `typescript`, `@vitejs/plugin-react`
+- App UI foundation: `tailwindcss`, `@tailwindcss/vite`, `shadcn`, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`, `tw-animate-css`, `radix-ui`
 - Routing: `@tanstack/react-router`
 - Workbench: `dockview-react`
 - Explorer trees: `@headless-tree/core`, `@headless-tree/react`

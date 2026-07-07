@@ -11,7 +11,7 @@ When evaluating or creating a GPU analytical model, execute the following steps 
 5. **Bound calibration**. Keep fitted constants few, named, bounded, and separated from held-out validation data.
 6. **Declare validity limits**. State unsupported GPUs, kernel variants, shapes, precisions, cache regimes, and occupancy regimes.
 
-If the model cannot meet this shape, label it as a baseline, sketch, or blocker rather than an accepted analytical model.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a model-shape plan from the available equations, hardware facts, assumptions, and validation needs, then execute the plan. If the model cannot meet this shape, label it as a baseline, sketch, or blocker rather than an accepted analytical model.
 
 ## Required Slots
 

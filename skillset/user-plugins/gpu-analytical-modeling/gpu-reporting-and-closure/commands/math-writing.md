@@ -10,7 +10,7 @@ When writing model equations, execute the following steps in order.
 4. **Separate code identifiers from math**. Use code names only when naming implementation fields, files, or APIs.
 5. **Check fit and readability**. Split long max expressions, tables, or metric names so they do not overflow the intended document format.
 
-If mathematical notation would hide an important implementation detail, state the symbol and then name the implementation field separately.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a math-writing plan from the formulas, notation, units, and target document constraints, then execute the plan. If mathematical notation would hide an important implementation detail, state the symbol and then name the implementation field separately.
 
 ## Good Shape
 

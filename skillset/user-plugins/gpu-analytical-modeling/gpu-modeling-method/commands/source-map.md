@@ -11,7 +11,7 @@ When source priority matters, execute the following steps in order.
 5. **Use simulator sources carefully**. Treat AccelSim, GPGPU-Sim, and similar projects as architecture and execution-path references, not direct truth for a modern target GPU unless calibrated.
 6. **Name source gaps**. If a parameter or execution path lacks a trustworthy source, mark it as an assumption, a calibration parameter, or a blocker.
 
-If the task does not map cleanly to this source order, preserve the same evidence-class distinctions while adapting the order to the owning workflow.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a source-selection plan from the available topic context, modeling constraints, and evidence needs, then execute the plan while preserving the same evidence-class distinctions.
 
 ## Preferred Source Order
 

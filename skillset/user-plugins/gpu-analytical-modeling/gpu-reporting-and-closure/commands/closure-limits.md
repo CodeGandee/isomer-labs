@@ -10,7 +10,7 @@ When deciding whether GPU analytical-modeling work can close, execute the follow
 4. **Write reopen conditions**. If parked or deferred, name what evidence or implementation would change the decision.
 5. **Preserve resume context**. Tell the next agent what to read first and which failed or partial evidence must not be repeated blindly.
 
-If the evidence does not support a central claim, do not close as publishable.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a closure plan from the central claims, evidence gaps, closure postures, and resume context, then execute the plan. If the evidence does not support a central claim, do not close as publishable.
 
 ## Closure Postures
 

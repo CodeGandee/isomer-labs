@@ -11,7 +11,7 @@ When NCU evidence is planned, collected, or reported, execute the following step
 5. **Separate raw and derived evidence**. Keep raw counters distinct from derived dominant component, trend agreement, or path label.
 6. **Link results to claims**. State which model output each counter supports, contradicts, or leaves unresolved.
 
-If NCU cannot run, record the concrete blocker and route to repair, alternate measurement, or limitation.
+If the user's task does not map cleanly to these steps, use your native planning tool to build an NCU evidence plan from the available profiler commands, metric names, target hardware, and claim map, then execute the plan. If NCU cannot run, record the concrete blocker and route to repair, alternate measurement, or limitation.
 
 ## Counter Mapping
 

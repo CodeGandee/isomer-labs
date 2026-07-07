@@ -11,7 +11,7 @@ When prediction and evidence disagree, execute the following steps in order.
 5. **Choose a route**. Refine, add evidence, limit the claim, park, block, or accept partial support.
 6. **Record the decision**. Preserve the mismatch, likely cause, rejected causes, and next route for later stages.
 
-If the mismatch cannot be explained with available evidence, say so and route to decision or blocker rather than smoothing it away.
+If the user's task does not map cleanly to these steps, use your native planning tool to build a mismatch-refinement plan from the observed failure, evidence mapping, model structure, and decision routes, then execute the plan. If the mismatch cannot be explained with available evidence, say so and route to decision or blocker rather than smoothing it away.
 
 ## Mismatch Classes
 
