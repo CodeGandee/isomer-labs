@@ -18,4 +18,4 @@
 
 - [x] 4.1 Run focused unit tests, full unit tests, lint, docs validation, package build, and MkDocs strict build.
 - [x] 4.2 Commit and push all changes to `main`.
-- [ ] 4.3 Create a new GitHub release and verify the release workflow starts or completes the PyPI and GitHub Pages publishing jobs.
+- [x] 4.3 Create a new GitHub release and verify the release workflow starts or completes the PyPI and GitHub Pages publishing jobs.
