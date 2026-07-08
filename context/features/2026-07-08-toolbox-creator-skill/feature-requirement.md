@@ -28,7 +28,7 @@ Primary creation workflow:
 2. The skill asks for or derives the Toolbox purpose, target system skills, begin or end stages, desired scope, optional runtime params, and whether any topic-specific specialization is needed.
 3. The agent creates `skillset/toolboxes/<toolbox-id>/manifest.toml`, a README, callback skill directories with `SKILL.md`, optional prompt files, and optional runtime param bundle files.
 4. The agent validates the Toolbox manifest and source paths before installing it.
-5. The agent installs callbacks or a Toolbox registration through `isomer-cli`, then reports callback ids, registration scope, source path, runtime params, and validation diagnostics.
+5. The agent installs the Toolbox bundle through `isomer-cli`, then reports callback ids, registration scope, source path, runtime params, and validation diagnostics.
 
 Primary management workflow:
 
@@ -43,7 +43,8 @@ Primary management workflow:
 - The skill shall teach the canonical source layout under `skillset/toolboxes/<toolbox-id>/`, including `manifest.toml`, `README.md`, callback skill directories, prompt files, and optional default param bundle TOML files.
 - The skill shall require Toolbox manifests to use `schema_version = "isomer-toolbox.v1"`, `kind = "toolbox-callback-bundle"`, and `toolbox_id`.
 - The skill shall explain that callback ids installed from a Toolbox use `<toolbox_id>:<toolbox-local-key>`, while callback entries inside the manifest use toolbox-local `key` values.
-- The skill shall teach the difference between `project skill-callbacks install --toolbox-dir <path>` and `project toolboxes install --toolbox-dir <path>`: callback install writes callback records and ensures registration, while Toolbox install manages parent registration.
+- The skill shall teach `project toolboxes install --toolbox-dir <path>` as the canonical directory install operation: it validates the Toolbox manifest, writes or updates Toolbox registration, installs declared callback records at supported scopes, and can install runtime-param default imports when explicitly requested.
+- The skill shall teach `project skill-callbacks install --toolbox-dir <path>` as a lower-level callback refresh or repair primitive that does not install runtime-param default imports.
 - The skill shall document the management commands for `project toolboxes`: install, list, show, explain, enable, disable, update-source, uninstall, and validate.
 - The skill shall document the runtime param commands for `project toolbox-params`: define, set, get, list, explain, unset, validate, import add, import list, import show, and import remove.
 - The skill shall explain effective runtime param resolution order: Project Manifest imports, Project Manifest explicit rows, Topic Workspace Manifest imports, then Topic Workspace Manifest explicit rows.
@@ -79,7 +80,7 @@ Primary management workflow:
 ## Assumptions
 
 - Toolboxes are now the canonical Isomer term for project-local extension packages that can provide callback material and runtime param defaults.
-- The existing `isomer-cli project toolboxes`, `project skill-callbacks install --toolbox-dir`, and `project toolbox-params` surfaces are sufficient for the first version of the skill.
+- The existing `isomer-cli project toolboxes install --toolbox-dir`, lower-level `project skill-callbacks` primitives, and `project toolbox-params` primitives are sufficient for the first version of the skill.
 - Most first users will create Toolboxes under the host Project's `skillset/toolboxes/` directory, even though the CLI can validate other project-local source paths.
 - The skill can be packaged as a project-local or system skill later; this feature requirement defines behavior and content rather than the final packaging path.
 - Agents using this skill have normal repository file-editing ability and can run local `pixi run isomer-cli ...` commands when the user asks them to act.
@@ -90,5 +91,5 @@ Primary management workflow:
 - Should the first version be operator-facing only, or should it also support developers maintaining Isomer's own Toolbox schema and CLI implementation?
 - Should the skill include a scaffold template for new Toolboxes, or should it only describe the expected files and let agents create them from scratch?
 - Should the skill ask clarifying questions before creating a Toolbox, or should it infer defaults from target skills and user intent when possible?
-- Which validation command should be the canonical final check for a newly created Toolbox: `project skill-callbacks install --toolbox-dir ... --dry-run` if added later, `project toolboxes validate`, direct manifest loading through tests, or another command?
+- Which validation command should be the canonical final check for a newly created Toolbox: a future `project toolboxes install --dry-run`, `project toolboxes validate`, direct manifest loading through tests, or another command?
 - Should runtime param bundle authoring be a first-class workflow in this skill, or a short advanced section until more Toolboxes use it?

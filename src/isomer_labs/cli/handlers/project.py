@@ -153,6 +153,7 @@ from isomer_labs.project.skill_callback_commands import (
     validate_user_skill_callbacks,
 )
 from isomer_labs.project.callback_insertion_points import list_callback_insertion_points
+from isomer_labs.project.skill_callbacks import CallbackRegistryRef, UserSkillCallback
 from isomer_labs.project.toolbox_callbacks import load_toolbox_callback_manifest
 from isomer_labs.project.toolboxes import (
     ToolboxCommandResult,
@@ -166,6 +167,7 @@ from isomer_labs.project.toolboxes import (
     unset_runtime_param,
     upsert_toolbox_registration,
 )
+from isomer_labs.workspace.manifest import topic_workspace_manifest_path
 
 
 def _cmd_init(options: CliOptions) -> int:
@@ -679,23 +681,140 @@ def _cmd_toolboxes_install(options: CliOptions) -> int:
     state, context, diagnostics = _toolbox_state_and_context(options)
     if state is None or has_errors(diagnostics):
         return _emit("toolboxes install", options, {"ok": False, "mutated": False}, diagnostics, [])
+    scope = _toolbox_scope(options)
     manifest_result = load_toolbox_callback_manifest(state.project, _value(options, "toolbox_dir"))
     diagnostics.extend(manifest_result.diagnostics)
     manifest = manifest_result.manifest
     if manifest is None or has_errors(diagnostics):
-        return _emit("toolboxes install", options, {"ok": False, "mutated": False}, diagnostics, [])
-    result = upsert_toolbox_registration(
+        result = ToolboxCommandResult(
+            ok=False,
+            mutated=False,
+            project_root=state.project.root,
+            diagnostics=tuple(diagnostics),
+            unavailable_insertion_points=_unavailable_insertion_points(diagnostics),
+        )
+        return _emit("toolboxes install", options, result.to_json(), diagnostics, [])
+
+    if scope in {"topic_actor", "topic_agent"} and manifest.callbacks:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO103",
+                severity="error",
+                concept="Toolbox bundle installation",
+                field="scope",
+                message="Toolboxes with callbacks can be installed only at project or research_topic scope until callback registries support Topic Actor and Topic Agent scope.",
+            )
+        )
+        result = ToolboxCommandResult(
+            ok=False,
+            mutated=False,
+            project_root=state.project.root,
+            diagnostics=tuple(diagnostics),
+            skipped_runtime_param_bundles=_skipped_runtime_param_bundles(manifest.runtime_param_bundles, "install-rejected"),
+        )
+        return _emit("toolboxes install", options, result.to_json(), diagnostics, _render_toolbox_result("Toolbox Install Rejected", result))
+
+    callbacks: tuple[UserSkillCallback, ...] = ()
+    registry_refs: tuple[CallbackRegistryRef, ...] = ()
+    gated_callback_ids: tuple[str, ...] = ()
+    callback_mutated = False
+    if scope in {"project", "research_topic"} and manifest.callbacks:
+        callback_result = install_toolbox_callbacks(
+            state,
+            context,
+            toolbox_dir=_value(options, "toolbox_dir"),
+            scope=scope,
+            replace_toolbox_source=bool(_value(options, "callback_replace_toolbox_source")),
+        )
+        diagnostics.extend(callback_result.diagnostics)
+        if has_errors(diagnostics):
+            result = ToolboxCommandResult(
+                ok=False,
+                mutated=callback_result.mutated,
+                project_root=state.project.root,
+                diagnostics=tuple(diagnostics),
+                callbacks=callback_result.callbacks,
+                registry_refs=callback_result.registry_refs,
+                toolbox_statuses=callback_result.toolbox_statuses,
+                skipped_runtime_param_bundles=_skipped_runtime_param_bundles(manifest.runtime_param_bundles, "install-rejected"),
+                gated_callback_ids=callback_result.gated_callback_ids,
+                unavailable_insertion_points=_unavailable_insertion_points(diagnostics),
+            )
+            return _emit("toolboxes install", options, result.to_json(), diagnostics, _render_toolbox_result("Toolbox Install Failed", result))
+        callbacks = callback_result.callbacks
+        registry_refs = callback_result.registry_refs
+        gated_callback_ids = callback_result.gated_callback_ids
+        callback_mutated = callback_result.mutated
+
+    registration_result = upsert_toolbox_registration(
         state.project,
         context,
         toolbox_id=manifest.toolbox_id,
         source_path_input=manifest.toolbox_source_path_input,
-        scope=_toolbox_scope(options),
+        scope=scope,
         status=_value(options, "toolbox_status") or "active",
         topic_actor_name=_value(options, "topic_actor_name"),
         topic_agent_name=_value(options, "agent_name"),
     )
-    diagnostics.extend(result.diagnostics)
-    return _emit("toolboxes install", options, result.to_json(), diagnostics, _render_toolbox_result("Updated Toolbox", result))
+    diagnostics.extend(registration_result.diagnostics)
+
+    imports: list[Any] = []
+    runtime_import_status = "none"
+    skipped_bundles: tuple[dict[str, object], ...] = ()
+    if manifest.runtime_param_bundles:
+        if bool(_value(options, "toolbox_install_runtime_defaults")):
+            runtime_import_status = "installed"
+            mutation_manifest_path = state.project.manifest_path if scope == "project" else topic_workspace_manifest_path(context.topic_workspace_path) if context is not None else state.project.manifest_path
+            for bundle in manifest.runtime_param_bundles:
+                import_path = _runtime_param_bundle_import_path(
+                    mutation_manifest_path=mutation_manifest_path,
+                    toolbox_root=manifest.toolbox_root,
+                    bundle_path_input=bundle.path_input,
+                )
+                import_result = add_runtime_param_import(
+                    state.project,
+                    context,
+                    toolbox_id=manifest.toolbox_id,
+                    path_input=import_path,
+                    scope=scope,
+                    topic_actor_name=_value(options, "topic_actor_name"),
+                    topic_agent_name=_value(options, "agent_name"),
+                )
+                diagnostics.extend(import_result.diagnostics)
+                imports.extend(import_result.imports)
+        else:
+            runtime_import_status = "skipped"
+            skipped_bundles = _skipped_runtime_param_bundles(manifest.runtime_param_bundles, "requires --install-runtime-defaults")
+
+    status = _value(options, "toolbox_status") or "active"
+    if status == "disabled":
+        gated_callback_ids = tuple(sorted({*gated_callback_ids, *(callback.id for callback in callbacks)}))
+    toolbox_statuses: tuple[dict[str, object], ...] = ()
+    if registration_result.toolbox is not None:
+        toolbox_statuses = (
+            {
+                "toolbox_id": registration_result.toolbox.toolbox_id,
+                "status": registration_result.toolbox.status,
+                "source": "registration",
+                "registration": registration_result.toolbox.to_json(),
+            },
+        )
+    result = ToolboxCommandResult(
+        ok=not has_errors(diagnostics),
+        mutated=callback_mutated or registration_result.mutated or bool(imports),
+        project_root=state.project.root,
+        diagnostics=tuple(diagnostics),
+        toolboxes=registration_result.toolboxes,
+        toolbox_statuses=toolbox_statuses,
+        imports=tuple(imports),
+        callbacks=callbacks,
+        registry_refs=registry_refs,
+        runtime_param_import_status=runtime_import_status,
+        skipped_runtime_param_bundles=skipped_bundles,
+        gated_callback_ids=gated_callback_ids,
+        toolbox=registration_result.toolbox,
+    )
+    return _emit("toolboxes install", options, result.to_json(), diagnostics, _render_toolbox_result("Installed Toolbox", result))
 
 
 def _cmd_toolboxes_enable(options: CliOptions) -> int:
@@ -1068,6 +1187,38 @@ def _toolbox_scope(options: CliOptions) -> str:
     if explicit_scope is not None:
         return explicit_scope
     return "research_topic" if _topic_selector_requested(options) else "project"
+
+
+def _runtime_param_bundle_import_path(
+    *,
+    mutation_manifest_path: Path,
+    toolbox_root: Path,
+    bundle_path_input: str,
+) -> str:
+    bundle_path = toolbox_root / bundle_path_input
+    return os.path.relpath(bundle_path, mutation_manifest_path.parent).replace(os.sep, "/")
+
+
+def _skipped_runtime_param_bundles(bundles: Sequence[Any], reason: str) -> tuple[dict[str, object], ...]:
+    return tuple(
+        {
+            "name": bundle.name,
+            "path": bundle.path_input,
+            "reason": reason,
+        }
+        for bundle in bundles
+    )
+
+
+def _unavailable_insertion_points(diagnostics: Sequence[Diagnostic]) -> tuple[str, ...]:
+    marker = "packaged catalog: "
+    points: list[str] = []
+    for diagnostic in diagnostics:
+        if marker not in diagnostic.message:
+            continue
+        point = diagnostic.message.split(marker, 1)[1].split(".", 1)[0]
+        points.append(point)
+    return tuple(sorted(set(points)))
 
 
 def _param_parts_from_options(options: CliOptions, diagnostics: list[Diagnostic]) -> tuple[str | None, str | None]:

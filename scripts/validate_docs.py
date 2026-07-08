@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from pathlib import Path
 
 from isomer_labs.cli.examples import COMMAND_EXAMPLES
@@ -84,6 +86,7 @@ FIXED_PATH_ONLY_PATTERNS = [
     ("fixed agent workspace path", re.compile(r"\b(always|must|only)\b[^\n]*(?:agents/<agent-name>|<topic-workspace>/agents)", re.IGNORECASE)),
     ("fixed topic main path", re.compile(r"\b(always|must|only)\b[^\n]*repos/topic-main", re.IGNORECASE)),
 ]
+DEFAULT_CLI_HELP_WORKERS = min(8, os.cpu_count() or 1)
 
 
 def get_repo_root() -> Path:
@@ -107,8 +110,8 @@ def _command_name(line: str) -> str | None:
     return match.group(1) if match else None
 
 
-def collect_cli_commands(base_args: list[str], help_text: str) -> list[str]:
-    commands: list[str] = []
+def _command_names(help_text: str) -> list[str]:
+    names: list[str] = []
     in_commands = False
     for line in help_text.splitlines():
         stripped = line.strip()
@@ -121,20 +124,77 @@ def collect_cli_commands(base_args: list[str], help_text: str) -> list[str]:
             name = _command_name(line)
             if name is None:
                 continue
-            sub_args = base_args + [name]
-            sub_help = run_cli_help(sub_args)
-            if "Commands:" in sub_help:
-                commands.extend(collect_cli_commands(sub_args, sub_help))
-            else:
-                commands.append(" ".join(sub_args))
+            names.append(name)
+    return names
+
+
+def collect_cli_commands(
+    base_args: list[str],
+    help_text: str,
+    executor: ThreadPoolExecutor | None = None,
+) -> list[str]:
+    commands: list[str] = []
+    names = _command_names(help_text)
+    if not names:
+        return commands
+
+    root_path = tuple(base_args)
+    if executor is not None:
+        children_by_path: dict[tuple[str, ...], list[str]] = {root_path: names}
+        pending: dict[Future[str], tuple[str, ...]] = {}
+
+        def submit_help(path: tuple[str, ...]) -> None:
+            pending[executor.submit(run_cli_help, list(path))] = path
+
+        for name in names:
+            submit_help(root_path + (name,))
+
+        while pending:
+            completed, _ = wait(pending, return_when=FIRST_COMPLETED)
+            for future in completed:
+                path = pending.pop(future)
+                child_names = _command_names(future.result())
+                if not child_names:
+                    continue
+                children_by_path[path] = child_names
+                for child_name in child_names:
+                    submit_help(path + (child_name,))
+
+        return _render_cli_commands(root_path, children_by_path)
+
+    sub_args_by_name = [(name, base_args + [name]) for name in names]
+    help_by_name = [(name, run_cli_help(sub_args)) for name, sub_args in sub_args_by_name]
+    for name, sub_help in help_by_name:
+        sub_args = base_args + [name]
+        if "Commands:" in sub_help:
+            commands.extend(collect_cli_commands(sub_args, sub_help, executor))
+        else:
+            commands.append(" ".join(sub_args))
     return commands
 
 
-def get_public_commands() -> list[str]:
+def _render_cli_commands(
+    base_args: tuple[str, ...],
+    children_by_path: dict[tuple[str, ...], list[str]],
+) -> list[str]:
+    commands: list[str] = []
+    for name in children_by_path.get(base_args, []):
+        path = base_args + (name,)
+        if path in children_by_path:
+            commands.extend(_render_cli_commands(path, children_by_path))
+        else:
+            commands.append(" ".join(path))
+    return commands
+
+
+def get_public_commands(max_workers: int = DEFAULT_CLI_HELP_WORKERS) -> list[str]:
     top_help = run_cli_help([])
     if not top_help:
         return []
-    return collect_cli_commands([], top_help)
+    if max_workers <= 1:
+        return collect_cli_commands([], top_help)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        return collect_cli_commands([], top_help, executor)
 
 
 def check_required_pages(repo_root: Path) -> list[str]:
@@ -281,11 +341,11 @@ def check_semantic_path_documentation(repo_root: Path) -> list[str]:
     return issues
 
 
-def validate_docs(repo_root: Path) -> list[str]:
+def validate_docs(repo_root: Path, cli_help_workers: int = DEFAULT_CLI_HELP_WORKERS) -> list[str]:
     issues: list[str] = []
     issues.extend(check_required_pages(repo_root))
     issues.extend(check_readme_links(repo_root))
-    commands = get_public_commands()
+    commands = get_public_commands(max_workers=cli_help_workers)
     if not commands:
         issues.append("Could not discover public isomer-cli commands")
     else:
@@ -306,9 +366,15 @@ def main() -> int:
         default=get_repo_root(),
         help="Repository root to validate.",
     )
+    parser.add_argument(
+        "--cli-help-workers",
+        type=int,
+        default=DEFAULT_CLI_HELP_WORKERS,
+        help="Maximum parallel workers for isomer-cli help discovery.",
+    )
     args = parser.parse_args()
 
-    issues = validate_docs(args.repo_root)
+    issues = validate_docs(args.repo_root, cli_help_workers=max(1, args.cli_help_workers))
     if issues:
         print("Documentation validation failed:", file=sys.stderr)
         for issue in issues:

@@ -13,12 +13,12 @@ This project-local toolbox provides User Skill Callback material for GPU kernel 
 
 ## Manifest Role
 
-The manifest describes the callbacks this Toolbox expects an operator to install. The top-level `toolbox_id` is the stable Toolbox identity, and each callback has a toolbox-local `key`. Installed callback ids use `<toolbox_id>:<key>`, such as `gpu-analytical-modeling:gpu-modeling-method/scout/begin`.
+The manifest describes the callbacks this Toolbox expects an operator to install through the high-level Toolbox bundle path. The top-level `toolbox_id` is the stable Toolbox identity, and each callback has a toolbox-local `key`. Installed callback ids use `<toolbox_id>:<key>`, such as `gpu-analytical-modeling:gpu-modeling-method/scout/begin`.
 
-Install topic-scoped callbacks with:
+Install the Toolbox for one Research Topic with:
 
 ```bash
-pixi run isomer-cli --print-json project skill-callbacks install \
+pixi run isomer-cli --print-json project toolboxes install \
   --topic <topic-id> \
   --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
 ```
@@ -48,10 +48,10 @@ Use `skill_dir` for durable multi-step guidance, `prompt_file` for reusable shor
 
 ## Scope Guidance
 
-Prefer topic-scoped installation for a specific GPU kernel modeling topic:
+Prefer Research Topic installation for a specific GPU kernel modeling topic:
 
 ```bash
-pixi run isomer-cli --print-json project skill-callbacks install \
+pixi run isomer-cli --print-json project toolboxes install \
   --topic <topic-id> \
   --scope research_topic \
   --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
@@ -60,12 +60,12 @@ pixi run isomer-cli --print-json project skill-callbacks install \
 Use project-scoped installation only when GPU analytical modeling is a project-wide default:
 
 ```bash
-pixi run isomer-cli --print-json project skill-callbacks install \
+pixi run isomer-cli --print-json project toolboxes install \
   --scope project \
   --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
 ```
 
-Manual one-off callbacks can still use the lower-level registration surface with explicit installed ids:
+Manual one-off callbacks can still use the lower-level registration surface with explicit installed ids. `project skill-callbacks install --toolbox-dir` remains available as a callback refresh or repair primitive for an existing Toolbox manifest, but it is not the normal Toolbox bundle install path.
 
 ```bash
 pixi run isomer-cli --print-json project skill-callbacks register \

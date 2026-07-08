@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from scripts.validate_docs import (
     FORBIDDEN_TERMS,
@@ -15,6 +16,7 @@ from scripts.validate_docs import (
     check_required_pages,
     check_semantic_path_documentation,
     check_stale_isomer_cli_json_examples,
+    get_public_commands,
 )
 from isomer_labs.cli.examples import COMMAND_EXAMPLES
 
@@ -74,6 +76,32 @@ class ValidateDocsTests(unittest.TestCase):
             issues = check_cli_coverage(root, ["init", "doctor", "validate"])
             self.assertEqual(1, len(issues))
             self.assertIn("validate", issues[0])
+
+    def test_public_command_discovery_is_deterministic_with_parallel_help(self) -> None:
+        help_by_args = {
+            (): "Commands:\n  project\n  schemas\n",
+            ("project",): "Commands:\n  topics\n  validate\n",
+            ("project", "topics"): "Commands:\n  create\n  list\n",
+            ("project", "topics", "create"): "Usage: create\n",
+            ("project", "topics", "list"): "Usage: list\n",
+            ("project", "validate"): "Usage: validate\n",
+            ("schemas",): "Commands:\n  list\n",
+            ("schemas", "list"): "Usage: list\n",
+        }
+
+        def fake_help(args: list[str]) -> str:
+            return help_by_args[tuple(args)]
+
+        with patch("scripts.validate_docs.run_cli_help", side_effect=fake_help):
+            self.assertEqual(
+                [
+                    "project topics create",
+                    "project topics list",
+                    "project validate",
+                    "schemas list",
+                ],
+                get_public_commands(max_workers=4),
+            )
 
     def test_forbidden_terms_detected(self) -> None:
         with TemporaryDirectory() as tmp:

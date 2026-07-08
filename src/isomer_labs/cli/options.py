@@ -68,6 +68,7 @@ class CliOptions:
     toolbox_source_path: str | None = None
     toolbox_scope: str | None = None
     toolbox_status: str | None = None
+    toolbox_install_runtime_defaults: bool = False
     toolbox_param_id: str | None = None
     toolbox_param_key: str | None = None
     toolbox_param_value: str | None = None

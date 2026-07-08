@@ -269,6 +269,33 @@ class IsomerCliTests(unittest.TestCase):
     def default_topic_workspace(self, root: Path, topic_id: str = "default") -> Path:
         return root / "isomer-content" / "topic-ws" / topic_id
 
+    def write_callback_toolbox(
+        self,
+        toolbox: Path,
+        *,
+        toolbox_id: str,
+        callback_key: str = "scout/begin",
+        target_skill: str = "isomer-deepsci-scout",
+        stage: str = "begin",
+        skill_dir: str = "callback",
+    ) -> None:
+        write(toolbox / skill_dir / "SKILL.md", "# Callback\n")
+        write(
+            toolbox / "manifest.toml",
+            f"""
+            schema_version = "isomer-toolbox.v1"
+            toolbox_id = "{toolbox_id}"
+            kind = "toolbox-callback-bundle"
+
+            [[callbacks]]
+            key = "{callback_key}"
+            target_skill = "{target_skill}"
+            stage = "{stage}"
+            source_type = "skill_dir"
+            skill_dir = "{skill_dir}"
+            """,
+        )
+
     def prepare_topic_main_repo(self, root: Path, topic_id: str = "default") -> Path:
         topic_main = self.default_topic_workspace(root, topic_id) / "repos" / "topic-main"
         topic_main.mkdir(parents=True, exist_ok=True)
@@ -2515,6 +2542,261 @@ class IsomerCliTests(unittest.TestCase):
             status, stdout, stderr = self.run_main(args, cwd=root)
             self.assertNotEqual(0, status)
             self.assertIn("No such", stdout + stderr)
+
+    def test_toolboxes_install_bundle_installs_project_callbacks(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        self.write_callback_toolbox(root / "skillset" / "toolboxes" / "project-toolbox", toolbox_id="project.toolbox")
+
+        status, output = self.run_cli(
+            ["project", "toolboxes", "install", "--toolbox-dir", "skillset/toolboxes/project-toolbox", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("project.toolbox", data["toolbox"]["toolbox_id"])
+        self.assertEqual("project", data["toolbox"]["scope"])
+        self.assertEqual(["project.toolbox:scout/begin"], data["installed_callback_ids"])
+        self.assertEqual("project", data["callbacks"][0]["scope"])
+        self.assertEqual("none", data["runtime_param_import_status"])
+
+        status, output = self.run_cli(
+            ["project", "skill-callbacks", "list", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["project.toolbox:scout/begin"], [callback["id"] for callback in data["callbacks"]])
+
+    def test_toolboxes_install_bundle_installs_research_topic_callbacks(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        self.write_callback_toolbox(root / "skillset" / "toolboxes" / "topic-toolbox", toolbox_id="topic.toolbox")
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "toolboxes",
+                "install",
+                "--topic",
+                "default",
+                "--toolbox-dir",
+                "skillset/toolboxes/topic-toolbox",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("research_topic", data["toolbox"]["scope"])
+        self.assertEqual(["topic.toolbox:scout/begin"], data["installed_callback_ids"])
+        self.assertEqual("research_topic", data["callbacks"][0]["scope"])
+        self.assertEqual("default", data["callbacks"][0]["research_topic_id"])
+
+        topic_manifest = tomllib.loads((self.default_topic_workspace(root) / "topic-workspace.toml").read_text(encoding="utf-8"))
+        self.assertEqual("topic.toolbox", topic_manifest["toolboxes"][0]["toolbox_id"])
+
+        status, output = self.run_cli(
+            ["project", "skill-callbacks", "list", "--topic", "default", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["topic.toolbox:scout/begin"], [callback["id"] for callback in data["callbacks"]])
+
+    def test_toolboxes_install_runtime_defaults_are_explicit(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        toolbox = root / "skillset" / "toolboxes" / "defaults-toolbox"
+        write(
+            toolbox / "defaults.toml",
+            """
+            schema_version = "isomer-toolbox-runtime-params.v1"
+
+            [[toolbox_runtime_params]]
+            toolbox_id = "defaults.toolbox"
+            key = "mode"
+            value = "careful"
+            value_type = "string"
+            scope = "project"
+            """,
+        )
+        write(
+            toolbox / "manifest.toml",
+            """
+            schema_version = "isomer-toolbox.v1"
+            toolbox_id = "defaults.toolbox"
+            kind = "toolbox-callback-bundle"
+
+            [[runtime_param_bundles]]
+            name = "default"
+            path = "defaults.toml"
+            """,
+        )
+
+        status, output = self.run_cli(
+            ["project", "toolboxes", "install", "--toolbox-dir", "skillset/toolboxes/defaults-toolbox", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("skipped", data["runtime_param_import_status"])
+        self.assertEqual("default", data["skipped_runtime_param_bundles"][0]["name"])
+        manifest = tomllib.loads((root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8"))
+        self.assertNotIn("toolbox_runtime_param_imports", manifest)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "toolboxes",
+                "install",
+                "--toolbox-dir",
+                "skillset/toolboxes/defaults-toolbox",
+                "--install-runtime-defaults",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("installed", data["runtime_param_import_status"])
+        self.assertTrue(data["imports"][0]["path"].endswith("skillset/toolboxes/defaults-toolbox/defaults.toml"))
+
+    def test_skill_callbacks_install_remains_callback_primitive_and_preserves_runtime_imports(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        toolbox = root / "skillset" / "toolboxes" / "primitive-toolbox"
+        self.write_callback_toolbox(toolbox, toolbox_id="primitive.toolbox")
+        write(
+            toolbox / "defaults.toml",
+            """
+            schema_version = "isomer-toolbox-runtime-params.v1"
+
+            [[toolbox_runtime_params]]
+            toolbox_id = "primitive.toolbox"
+            key = "mode"
+            value = "default"
+            value_type = "string"
+            scope = "project"
+            """,
+        )
+        manifest_text = (toolbox / "manifest.toml").read_text(encoding="utf-8")
+        (toolbox / "manifest.toml").write_text(
+            manifest_text
+            + textwrap.dedent(
+                """
+
+                [[runtime_param_bundles]]
+                name = "default"
+                path = "defaults.toml"
+                """
+            ),
+            encoding="utf-8",
+        )
+        write(
+            root / ".isomer-labs" / "manual-defaults.toml",
+            """
+            schema_version = "isomer-toolbox-runtime-params.v1"
+
+            [[toolbox_runtime_params]]
+            toolbox_id = "primitive.toolbox"
+            key = "manual"
+            value = "kept"
+            value_type = "string"
+            scope = "project"
+            """,
+        )
+        status, output = self.run_cli(
+            ["project", "toolbox-params", "import", "add", "primitive.toolbox", "manual-defaults.toml", "--json"],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "install",
+                "--scope",
+                "project",
+                "--toolbox-dir",
+                "skillset/toolboxes/primitive-toolbox",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["primitive.toolbox:scout/begin"], [callback["id"] for callback in data["callbacks"]])
+        manifest = tomllib.loads((root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8"))
+        self.assertEqual(["manual-defaults.toml"], [row["path"] for row in manifest["toolbox_runtime_param_imports"]])
+
+    def test_toolboxes_install_reports_replace_gating_unavailable_and_narrow_scope_cases(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        self.write_callback_toolbox(root / "skillset" / "toolboxes" / "first", toolbox_id="shared.toolbox", callback_key="first")
+        self.write_callback_toolbox(root / "skillset" / "toolboxes" / "second", toolbox_id="shared.toolbox", callback_key="second")
+
+        status, output = self.run_cli(
+            ["project", "toolboxes", "install", "--toolbox-dir", "skillset/toolboxes/first", "--json"],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        status, output = self.run_cli(
+            ["project", "toolboxes", "install", "--toolbox-dir", "skillset/toolboxes/second", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertIn("ISO104", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+        status, output = self.run_cli(
+            ["project", "toolboxes", "install", "--toolbox-dir", "skillset/toolboxes/second", "--replace", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["shared.toolbox:second"], data["installed_callback_ids"])
+
+        self.write_callback_toolbox(root / "skillset" / "toolboxes" / "disabled", toolbox_id="disabled.toolbox")
+        status, output = self.run_cli(
+            ["project", "toolboxes", "install", "--toolbox-dir", "skillset/toolboxes/disabled", "--status", "disabled", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["disabled.toolbox:scout/begin"], data["gated_callback_ids"])
+
+        self.write_callback_toolbox(root / "skillset" / "toolboxes" / "narrow", toolbox_id="narrow.toolbox")
+        status, output = self.run_cli(
+            [
+                "project",
+                "toolboxes",
+                "install",
+                "--topic",
+                "default",
+                "--scope",
+                "topic_agent",
+                "--topic-agent",
+                "coder",
+                "--toolbox-dir",
+                "skillset/toolboxes/narrow",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(any("Topic Actor and Topic Agent" in diagnostic["message"] for diagnostic in data["diagnostics"]))
+
+        self.write_callback_toolbox(root / "skillset" / "toolboxes" / "unavailable", toolbox_id="unavailable.toolbox", target_skill="missing-skill")
+        status, output = self.run_cli(
+            ["project", "toolboxes", "install", "--toolbox-dir", "skillset/toolboxes/unavailable", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertTrue(any("missing-skill/begin" in diagnostic["message"] for diagnostic in data["diagnostics"]))
+        self.assertEqual(["missing-skill/begin"], data["unavailable_insertion_points"])
 
     def test_skill_callbacks_project_scope_external_skill_dir_requires_explicit_flag(self) -> None:
         root = self.make_root()

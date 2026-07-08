@@ -21,7 +21,7 @@ from isomer_labs.models import (
     ToolboxRuntimeParamImport,
 )
 from isomer_labs.project.callback_keys import CALLBACK_TOOLBOX_ID_RE
-from isomer_labs.project.skill_callbacks import secret_like_diagnostics
+from isomer_labs.project.skill_callbacks import CallbackRegistryRef, UserSkillCallback, secret_like_diagnostics
 
 
 TOOLBOX_STATUS_VALUES = ("active", "disabled")
@@ -139,6 +139,12 @@ class ToolboxCommandResult:
     params: tuple[EffectiveRuntimeParam, ...] = ()
     param_candidates: tuple[RuntimeParamCandidate, ...] = ()
     imports: tuple[ToolboxRuntimeParamImport, ...] = ()
+    callbacks: tuple[UserSkillCallback, ...] = ()
+    registry_refs: tuple[CallbackRegistryRef, ...] = ()
+    runtime_param_import_status: str | None = None
+    skipped_runtime_param_bundles: tuple[dict[str, object], ...] = ()
+    gated_callback_ids: tuple[str, ...] = ()
+    unavailable_insertion_points: tuple[str, ...] = ()
     toolbox: ToolboxRegistration | None = None
     param: EffectiveRuntimeParam | None = None
     import_ref: ToolboxRuntimeParamImport | None = None
@@ -160,6 +166,19 @@ class ToolboxCommandResult:
             data["param_candidates"] = [candidate.to_json() for candidate in self.param_candidates]
         if self.imports:
             data["imports"] = [import_ref.to_json() for import_ref in self.imports]
+        if self.callbacks:
+            data["callbacks"] = [callback.to_json(self.project_root) for callback in self.callbacks]
+            data["installed_callback_ids"] = [callback.id for callback in self.callbacks]
+        if self.registry_refs:
+            data["registry_refs"] = [ref.to_json(self.project_root) for ref in self.registry_refs]
+        if self.runtime_param_import_status is not None:
+            data["runtime_param_import_status"] = self.runtime_param_import_status
+        if self.skipped_runtime_param_bundles:
+            data["skipped_runtime_param_bundles"] = list(self.skipped_runtime_param_bundles)
+        if self.gated_callback_ids:
+            data["gated_callback_ids"] = list(self.gated_callback_ids)
+        if self.unavailable_insertion_points:
+            data["unavailable_insertion_points"] = list(self.unavailable_insertion_points)
         if self.toolbox is not None:
             data["toolbox"] = self.toolbox.to_json()
         if self.param is not None:

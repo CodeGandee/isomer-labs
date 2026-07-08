@@ -239,7 +239,7 @@ isomer-cli --print-json project workspaces list
 
 Register, inspect, resolve, disable, and validate User Skill Callbacks. A User Skill Callback is supplemental instruction material attached to one packaged system skill and one stage, currently `begin` or `end`. Participating skills resolve `begin` callbacks after mandatory context checks and before workflow step 1, then resolve `end` callbacks after tentative outputs exist and before final response or handoff.
 
-**Side effects:** `register` writes or updates a callback registry under `.isomer-labs/user-skill-callbacks/`, materializes inline prompts as managed Markdown files, and adds a Project Manifest or Research Topic Config registry ref. `install --toolbox-dir` also ensures a matching Toolbox registration at the selected scope. `disable` marks the callback inactive while keeping the record. `resolve`, `insertion-points`, `list`, `show`, and `validate` are read-only.
+**Side effects:** `register` writes or updates a callback registry under `.isomer-labs/user-skill-callbacks/`, materializes inline prompts as managed Markdown files, and adds a Project Manifest or Research Topic Config registry ref. `install --toolbox-dir` is a lower-level callback refresh or repair primitive for Toolbox manifests; it writes callback records and ensures a matching Toolbox registration, but it does not install runtime-param default imports. `disable` marks the callback inactive while keeping the record. `resolve`, `insertion-points`, `list`, `show`, and `validate` are read-only.
 
 Callbacks are instruction material, not executable provider payloads. They cannot override system or developer instructions, the owning system skill, the current user request, Isomer domain constraints, required Gates, evidence rules, validation, or recording obligations. Empty resolution results are normal and do not block the owning workflow.
 
@@ -278,12 +278,13 @@ isomer-cli --print-json project system-extensions forget deepsci
 
 ### `project toolboxes`
 
-Manage Toolbox registrations as parent resources. Registrations live in the Project Manifest for `scope = "project"` or in the selected Topic Workspace Manifest for `scope = "research_topic"`, `scope = "topic_actor"`, or `scope = "topic_agent"`. New topic-agent commands document `--topic-agent`; `--agent` remains accepted as an alias where this selector is supported.
+Install and manage Toolbox bundles. Registrations live in the Project Manifest for `scope = "project"` or in the selected Topic Workspace Manifest for `scope = "research_topic"`, `scope = "topic_actor"`, or `scope = "topic_agent"`. New topic-agent commands document `--topic-agent`; `--agent` remains accepted as an alias where this selector is supported.
 
-**Side effects:** `install`, `enable`, `disable`, `update-source`, and `uninstall` mutate only the selected manifest layer. `list`, `show`, `explain`, and `validate` are read-only.
+**Side effects:** `install` validates the Toolbox manifest, writes or updates the selected Toolbox registration, installs declared callback records for Project or Research Topic scope, and registers manifest-declared runtime-param default bundle imports only when `--install-runtime-defaults` is present. Topic Actor and Topic Agent install scopes can manage Toolbox registration and runtime-param imports, but Toolboxes with callbacks are rejected at those narrower scopes until callback registries support them. `enable`, `disable`, `update-source`, and `uninstall` mutate only the selected manifest layer. `list`, `show`, `explain`, and `validate` are read-only.
 
 ```bash
 isomer-cli --print-json project toolboxes install --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
+isomer-cli --print-json project toolboxes install --toolbox-dir skillset/toolboxes/gpu-analytical-modeling --topic my-topic --install-runtime-defaults
 isomer-cli --print-json project toolboxes disable gpu-analytical-modeling --topic my-topic --scope research_topic
 isomer-cli --print-json project toolboxes enable gpu-analytical-modeling --topic my-topic --scope topic_agent --topic-agent coder
 isomer-cli --print-json project toolboxes show gpu-analytical-modeling --topic my-topic --topic-agent coder
@@ -292,7 +293,7 @@ isomer-cli --print-json project toolboxes validate --topic my-topic
 
 ### `project toolbox-params`
 
-Manage Toolbox runtime params that callback skills can query through JSON. Effective param ids use `<toolbox_id>:<key>`. Values resolve in this order: Project Manifest imports, Project Manifest explicit params, Topic Workspace Manifest imports, Topic Workspace Manifest explicit params. Topic rows can specialize by Research Topic, exact Topic Actor name, or exact Topic Agent name.
+Manage Toolbox runtime params that callback skills can query through JSON. These commands are direct configuration primitives and can be used with or without high-level Toolbox installation. Effective param ids use `<toolbox_id>:<key>`. Values resolve in this order: Project Manifest imports, Project Manifest explicit params, Topic Workspace Manifest imports, Topic Workspace Manifest explicit params. Topic rows can specialize by Research Topic, exact Topic Actor name, or exact Topic Agent name.
 
 **Side effects:** `define`, `set`, `unset`, `import add`, and `import remove` mutate only the selected manifest layer. `get`, `list`, `explain`, `validate`, `import list`, and `import show` are read-only.
 

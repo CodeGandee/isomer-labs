@@ -434,7 +434,7 @@ def register_project_commands(app: click.Group) -> None:
         )
 
 
-    @app.group(name="skill-callbacks", help="User Skill Callback commands.")
+    @app.group(name="skill-callbacks", help="User Skill Callback primitive commands.")
     def skill_callbacks_group() -> None:
         pass
 
@@ -585,7 +585,7 @@ def register_project_commands(app: click.Group) -> None:
         )
 
 
-    @skill_callbacks_group.command(name="install", help="Install callbacks from a toolbox manifest.")
+    @skill_callbacks_group.command(name="install", help="Refresh callback records from a Toolbox manifest.")
     @_common_options
     @_topic_selection_options
     @click.option("--toolbox-dir", "callback_toolbox_dir", required=True, help="Toolbox directory containing manifest.toml.")
@@ -910,17 +910,19 @@ def register_project_commands(app: click.Group) -> None:
         )
 
 
-    @app.group(name="toolboxes", help="Toolbox registration commands.")
+    @app.group(name="toolboxes", help="Toolbox bundle commands.")
     def toolboxes_group() -> None:
         pass
 
 
-    @toolboxes_group.command(name="install", help="Install or update a Toolbox registration.")
+    @toolboxes_group.command(name="install", help="Install or update a Toolbox bundle.")
     @_common_options
     @_toolbox_selection_options
     @_toolbox_scope_option
     @click.option("--toolbox-dir", "toolbox_dir", required=True, help="Toolbox directory containing manifest.toml.")
     @click.option("--status", "toolbox_status", type=click.Choice(["active", "disabled"]), default="active", show_default=True)
+    @click.option("--install-runtime-defaults", "toolbox_install_runtime_defaults", is_flag=True, help="Register manifest-declared runtime-param default bundle imports.")
+    @click.option("--replace", "callback_replace_toolbox_source", is_flag=True, help="Replace callbacks from a different source with the same toolbox_id.")
     @click.pass_context
     def toolboxes_install_command(ctx: click.Context, **kwargs: Any) -> int:
         return _cmd_toolboxes_install(_merge_toolbox_command_options(ctx, kwargs))
@@ -1001,7 +1003,7 @@ def register_project_commands(app: click.Group) -> None:
         return _cmd_toolboxes_validate(_merge_toolbox_command_options(ctx, kwargs))
 
 
-    @app.group(name="toolbox-params", help="Toolbox runtime param commands.")
+    @app.group(name="toolbox-params", help="Toolbox runtime param primitive commands.")
     def toolbox_params_group() -> None:
         pass
 
