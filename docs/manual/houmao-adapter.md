@@ -97,7 +97,7 @@ isomer-cli --print-json project handoffs normalize <handoff-id> \
 
 ## UC-01 Adapter Boundary
 
-The UC-01 manual harness uses the Houmao Execution Adapter boundary or an adapter-simulated equivalent while keeping case-specific code under `tests/manual/uc01_headless_vertical_slice`. Run it with:
+The UC-01 manual harness uses the Houmao Execution Adapter boundary or an adapter-simulated equivalent while keeping case-specific code under `tests/manual/uc01_headless_vertical_slice`. From a source checkout, run it with:
 
 ```bash
 pixi run python tests/manual/uc01_headless_vertical_slice
@@ -187,7 +187,7 @@ isomer-cli --print-json project team-instances stop <agent-team-instance-id> --a
 
 ## Manual Validation
 
-The live-gated handoff manual test is:
+The live-gated handoff manual test is source-checkout-only:
 
 ```bash
 pixi run python tests/manual/houmao_handoff_round.py --live-houmao

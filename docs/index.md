@@ -7,9 +7,12 @@ Use these docs by task. Tutorials teach a path from an empty directory to a runn
 - [Tutorial Overview](tutorial/index.md)
 - [Quickstart](tutorial/quickstart.md)
 - [Create a Project](tutorial/first-project.md)
-- [Create a Research Topic](tutorial/first-research-topic.md)
-- [Open the Web GUI](tutorial/project-web-gui.md)
-- [Install System Skills](tutorial/system-skills.md)
+- [Author Research Intent](tutorial/author-research-intent.md)
+- [Prepare Topic Environment](tutorial/prepare-topic-environment.md)
+- [Run a Human-Steered Research Pass](tutorial/run-a-human-steered-research-pass.md)
+- [Validate With Real Evidence](tutorial/validate-with-real-evidence.md)
+- [Develop a White-Box Model](tutorial/develop-a-white-box-model.md)
+- [Write and Inspect a Paper](tutorial/write-and-inspect-a-paper.md)
 
 ## Manual
 

@@ -227,7 +227,7 @@ Use `--status rejected`, `--status blocked`, `--status superseded`, `--status re
 
 ## UC-01 Headless Exploration
 
-Symptom: the UC-01 manual harness reports the fixture is incomplete, skips live mode, or `project runtime validate` reports diagnostics after a manual run.
+Symptom: the source-checkout UC-01 manual harness reports the fixture is incomplete, skips live mode, or `project runtime validate` reports diagnostics after a manual run.
 
 Diagnosis:
 

@@ -20,7 +20,8 @@ The docs validation script requires the main entry pages:
 - `docs/index.md`
 - `docs/tutorial/index.md`
 - `docs/tutorial/quickstart.md`
-- `docs/tutorial/system-skills.md`
+- `docs/tutorial/first-project.md`
+- `docs/tutorial/author-research-intent.md`
 - `docs/manual/index.md`
 - `docs/manual/concepts.md`
 - `docs/manual/cli-reference.md`

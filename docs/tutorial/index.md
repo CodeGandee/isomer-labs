@@ -1,9 +1,23 @@
 # Tutorial Overview
 
-Tutorials are short, sequential guides for operators. They use public CLI commands, avoid internal implementation details, and assume you want to get a local project working before reading the full manual.
+Tutorials are short, sequential guides for operators. Start with project creation, then follow the research workflow pages when you are ready to conduct a topic.
 
-- [Quickstart](quickstart.md) creates a project, a topic, and a GUI session.
+The research workflow pages use the local `isomer-content/topic-ws/flash-attention-4-whitebox-runtime-model` workspace as a concrete case. Each page explains the task, the prompt pattern, and the skill call pattern because Isomer's main user experience is driving agents through system skills such as `$isomer-op-topic-creator`, `$isomer-op-topic-mgr`, and `$isomer-deepsci-pipeline`.
+
+## Project Creation
+
+- [Quickstart](quickstart.md) installs the released CLI, initializes a Project, and validates it.
 - [Create a Project](first-project.md) explains the project directory setup.
-- [Create a Research Topic](first-research-topic.md) explains topic creation and topic workspace validation.
-- [Open the Web GUI](project-web-gui.md) explains the local viewer workflow.
-- [Install System Skills](system-skills.md) explains how to install the packaged agent skills.
+
+## Research Workflow
+
+- [Author Research Intent](author-research-intent.md)
+- [Prepare Topic Environment](prepare-topic-environment.md)
+- [Run a Human-Steered Research Pass](run-a-human-steered-research-pass.md)
+- [Validate With Real Evidence](validate-with-real-evidence.md)
+- [Develop a White-Box Model](develop-a-white-box-model.md)
+- [Write and Inspect a Paper](write-and-inspect-a-paper.md)
+
+## Links
+
+- [FlashAttention-4 analytical model example](https://github.com/CodeGandee/isomer-example-fa4-analytical-model)
