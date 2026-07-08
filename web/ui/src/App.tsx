@@ -30,6 +30,7 @@ import {
   type GraphFilters,
 } from "./api";
 import { requestedRenderer } from "./graph-utils";
+import { topicRelativeDisplayPath } from "./display-path";
 import { buildJsonMarkdownPreview } from "./markdown-doc";
 import { manualRefresh$, topicInvalidations, workbenchCommands$ } from "./events";
 import { Badge } from "@/components/ui/badge";
@@ -783,6 +784,7 @@ export function TopicOverviewPanel({ topicId }: { topicId: string }) {
     : markdown || missingOverviewMarkdown(overview.data?.overview?.semantic_label || "topic.intent.overview", diagnostics);
   const overviewExists = overview.data?.overview?.exists === true;
   const overviewMissing = overview.data?.overview?.exists === false;
+  const overviewPath = topicRelativeDisplayPath(overview.data?.overview?.path, { topicId });
 
   return (
     <section className="panel-body overview-panel idea-detail-panel">
@@ -813,7 +815,7 @@ export function TopicOverviewPanel({ topicId }: { topicId: string }) {
         <StatusBadge tone={overviewExists ? "success" : overviewMissing ? "warning" : "muted"}>
           {overviewExists ? "overview ready" : overviewMissing ? "topic.intent.overview missing" : "loading overview"}
         </StatusBadge>
-        {overview.data?.overview?.path ? <StatusBadge>{overview.data.overview.path}</StatusBadge> : null}
+        {overviewPath ? <StatusBadge>{overviewPath}</StatusBadge> : null}
         {overview.data?.overview?.content_bytes !== undefined ? <StatusBadge>{overview.data.overview.content_bytes} bytes</StatusBadge> : null}
         {copyState.status !== "idle" ? <StatusBadge className={`copy-status ${copyState.status}`} tone={copyState.status === "success" ? "success" : "danger"}>{copyState.message}</StatusBadge> : null}
       </div>
@@ -1105,7 +1107,9 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
       <div className="idea-status-row">
         <StatusBadge>{String(provenance?.source_kind || "source pending")}</StatusBadge>
         {provenance?.source_fragment_status ? <StatusBadge>{String(provenance.source_fragment_status)}</StatusBadge> : null}
-        {provenance?.source_json_path ? <StatusBadge>{String(provenance.source_json_path)}</StatusBadge> : null}
+        {provenance?.source_json_path ? (
+          <StatusBadge>{topicRelativeDisplayPath(provenance.source_json_path, { topicId })}</StatusBadge>
+        ) : null}
         {sourceTruncated ? <StatusBadge tone="warning">source JSON over default cap</StatusBadge> : null}
         {digestNotice ? <StatusBadge tone="info">{digestNotice}</StatusBadge> : null}
         {copyState.status !== "idle" ? <StatusBadge className={`copy-status ${copyState.status}`} tone={copyState.status === "success" ? "success" : "danger"}>{copyState.message}</StatusBadge> : null}
@@ -1334,7 +1338,7 @@ function FilesBlock({ value, topicId, recordId }: { value: unknown; topicId: str
         {files.map((file) => (
           <div className="file-row" key={String(file.id || file.path)}>
             <strong>{String(file.file_role || "file")}</strong>
-            <span>{String(file.path || "")}</span>
+            <span>{topicRelativeDisplayPath(file.path || "", { topicId })}</span>
             <small>{file.openable ? "openable" : `not openable: ${String(file.open_blocked_reason || "unknown")}`}</small>
             {file.openable && file.id ? (
               <ToolbarButton

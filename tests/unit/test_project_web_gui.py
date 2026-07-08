@@ -16,6 +16,14 @@ from unittest.mock import patch
 from isomer_labs import cli
 from isomer_labs.deepsci_ext.record_formats import canonical_record_format_ref
 from isomer_labs.web import create_app
+from isomer_labs.web.contracts import (
+    IdeaDetailResponseContract,
+    RecordFilesResponseContract,
+    RecordViewerDescriptorContract,
+    TopicGraphResponseContract,
+    TopicOverviewResponseContract,
+    validate_gui_payload,
+)
 from isomer_labs.web.read_model import ProjectWebReadModel
 
 
@@ -350,6 +358,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         read_model = self.read_model(root)
 
         overview = read_model.topic_overview("alpha")
+        validate_gui_payload(overview, TopicOverviewResponseContract)
         self.assertTrue(overview["ok"], overview)
         self.assertFalse(overview["mutated"])
         self.assertEqual("alpha", overview["topic_id"])
@@ -372,6 +381,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         read_model = self.read_model(root)
 
         overview = read_model.topic_overview("alpha")
+        validate_gui_payload(overview, TopicOverviewResponseContract)
         self.assertTrue(overview["ok"], overview)
         self.assertFalse(overview["mutated"])
         self.assertFalse(overview["overview"]["exists"])
@@ -407,6 +417,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         read_model = self.read_model(root)
 
         detail = read_model.idea_detail("alpha", "idea-source")
+        validate_gui_payload(detail, IdeaDetailResponseContract)
         self.assertTrue(detail["ok"], detail)
         self.assertFalse(detail["mutated"])
         self.assertEqual("Canonical source idea", detail["idea"]["title"])
@@ -430,6 +441,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         status, _headers, body = self.asgi_get_response(app, "/api/topics/alpha/ideas/idea-source")
         self.assertEqual(200, status)
         route_payload = json.loads(body)
+        validate_gui_payload(route_payload, IdeaDetailResponseContract)
         self.assertTrue(route_payload["ok"], route_payload)
         self.assertEqual("Source path idea", route_payload["idea_content"]["one_liner"])
         self.assertEqual("idea-source", route_payload["source_provenance"]["source_record_id"])
@@ -477,17 +489,20 @@ class ProjectWebGuiTests(unittest.TestCase):
         read_model = self.read_model(root)
 
         metadata_detail = read_model.idea_detail("alpha", "metadata-only")
+        validate_gui_payload(metadata_detail, IdeaDetailResponseContract)
         self.assertTrue(metadata_detail["ok"], metadata_detail)
         self.assertEqual("idea_metadata", metadata_detail["source"]["source_kind"])
         self.assertTrue(any(item["code"] == "source_json_unavailable" for item in metadata_detail["diagnostics"]))
 
         large_detail = read_model.idea_detail("alpha", "large-source")
+        validate_gui_payload(large_detail, IdeaDetailResponseContract)
         self.assertTrue(large_detail["ok"], large_detail)
         self.assertTrue(large_detail["source"]["source_json_truncated"])
         self.assertNotIn("source_json", large_detail["source"])
         self.assertTrue(any(item["code"] == "source_json_truncated" for item in large_detail["diagnostics"]))
 
         full_detail = read_model.idea_detail("alpha", "large-source", include_source_json=True)
+        validate_gui_payload(full_detail, IdeaDetailResponseContract)
         self.assertTrue(full_detail["ok"], full_detail)
         self.assertFalse(full_detail["source"]["source_json_truncated"])
         self.assertIn("large_blob", full_detail["source"]["source_json"])
@@ -573,6 +588,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertIn("index_revision_state", export)
 
         graph = read_model.topic_graph("alpha", graph_scope="idea-lineage", renderer="auto")
+        validate_gui_payload(graph, TopicGraphResponseContract)
         self.assertTrue(graph["ok"], graph)
         self.assertFalse(graph["mutated"])
         self.assertEqual("idea-lineage", graph["graph_scope"])
@@ -592,20 +608,24 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertFalse(any(node["record_id"] == "route-record" for node in graph["nodes"]))
 
         graph_with_supporting = read_model.topic_graph("alpha", graph_scope="idea-lineage", renderer="auto", include_secondary=True)
+        validate_gui_payload(graph_with_supporting, TopicGraphResponseContract)
         self.assertTrue(graph_with_supporting["ok"], graph_with_supporting)
         self.assertTrue(any(node["material_kind"] == "decision" and node["record_id"] == "route-record" for node in graph_with_supporting["nodes"]))
 
         dense = read_model.topic_graph("alpha", graph_scope="artifact-overview", renderer="sigma", include_secondary=True)
+        validate_gui_payload(dense, TopicGraphResponseContract)
         self.assertTrue(dense["ok"], dense)
         self.assertEqual("sigma-overview", dense["renderer_hint"])
         self.assertFalse(dense["mutated"])
 
         invalid = read_model.topic_graph("alpha", graph_scope="unknown")
+        validate_gui_payload(invalid, TopicGraphResponseContract)
         self.assertFalse(invalid["ok"], invalid)
         self.assertEqual("unsupported_graph_scope", invalid["error"]["code"])
         self.assertFalse(invalid["mutated"])
 
         descriptor = read_model.record_viewer_descriptor("alpha", "idea-parent")
+        validate_gui_payload(descriptor, RecordViewerDescriptorContract)
         self.assertTrue(descriptor["ok"], descriptor)
         self.assertFalse(descriptor["mutated"])
         self.assertEqual("idea-parent", descriptor["record_id"])
@@ -618,6 +638,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("topic-alpha-record-idea-parent", openable_record["tab_id"])
 
         missing = read_model.record_viewer_descriptor("alpha", "missing-record")
+        validate_gui_payload(missing, RecordViewerDescriptorContract)
         self.assertFalse(missing["ok"], missing)
         self.assertFalse(missing["mutated"])
         self.assertEqual("record_not_found", missing["error"]["code"])
@@ -737,12 +758,16 @@ class ProjectWebGuiTests(unittest.TestCase):
 
         read_model = self.read_model(root)
         descriptor = read_model.record_viewer_descriptor("alpha", "idea-with-file")
+        validate_gui_payload(descriptor, RecordViewerDescriptorContract)
         self.assertTrue(descriptor["ok"], descriptor)
         self.assertEqual("json", descriptor["viewer_kind"])
         self.assertIn("/files/", descriptor["primary_content_url"])
         self.assertTrue(str(descriptor["primary_content_url"]).endswith("/content"))
 
         file_id = str(descriptor["primary_content_url"]).split("/files/", 1)[1].split("/content", 1)[0]
+        files = read_model.record_files("alpha", "idea-with-file")
+        validate_gui_payload(files, RecordFilesResponseContract)
+        self.assertEqual("alpha", files["topic_id"])
         content = read_model.record_file_content("alpha", "idea-with-file", file_id)
         self.assertTrue(content["ok"], content)
         self.assertEqual(metrics.resolve(strict=False), content["path"])

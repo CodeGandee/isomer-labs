@@ -29,6 +29,14 @@ from isomer_labs.runtime.validation import inspect_workspace_runtime
 from isomer_labs.workspace.actors import list_topic_actors
 from isomer_labs.workspace.manifest import resolve_semantic_binding
 
+from .contracts import (
+    IdeaDetailResponseContract,
+    RecordFilesResponseContract,
+    RecordViewerDescriptorContract,
+    TopicGraphResponseContract,
+    TopicOverviewResponseContract,
+    ensure_gui_payload,
+)
 from .graph import build_topic_graph_view
 from .idea_detail import idea_detail_payload
 from .project_explorer import openable_item_descriptor_payload, project_explorer_payload
@@ -167,7 +175,7 @@ class ProjectWebReadModel:
     def topic_overview(self, topic_id: str) -> dict[str, Any]:
         context, diagnostics = self.topic_context(topic_id)
         if context is None:
-            return {
+            return ensure_gui_payload({
                 "ok": False,
                 "mutated": False,
                 "topic_id": topic_id,
@@ -180,7 +188,7 @@ class ProjectWebReadModel:
                 "topic_payload": None,
                 "runtime_payload": None,
                 "diagnostics": diagnostics_json(diagnostics),
-            }
+            }, TopicOverviewResponseContract, contract_name="topic-overview")
 
         overview_result, overview_diagnostics = resolve_semantic_binding(
             context,
@@ -210,7 +218,7 @@ class ProjectWebReadModel:
             if isinstance(payload_diagnostics, list):
                 merged_diagnostics.extend(payload_diagnostics)
 
-        return {
+        return ensure_gui_payload({
             "ok": not has_errors(diagnostics) and bool(topic_payload.get("ok", True)) and bool(runtime_payload.get("ok", True)),
             "mutated": False,
             "topic_id": context.research_topic.id,
@@ -219,7 +227,7 @@ class ProjectWebReadModel:
             "topic_payload": topic_payload,
             "runtime_payload": runtime_payload,
             "diagnostics": merged_diagnostics,
-        }
+        }, TopicOverviewResponseContract, contract_name="topic-overview")
 
     def project_explorer(self, *, expanded_topic_ids: tuple[str, ...] = ()) -> dict[str, Any]:
         return project_explorer_payload(self, expanded_topic_ids=expanded_topic_ids)
@@ -301,11 +309,15 @@ class ProjectWebReadModel:
     def idea_detail(self, topic_id: str, idea_id: str, *, include_source_json: bool = False) -> dict[str, Any]:
         return self._with_context(
             topic_id,
-            lambda context: idea_detail_payload(
-                context,
-                idea_id,
-                env=self.selected_env,
-                include_source_json=include_source_json,
+            lambda context: _ensure_contract_tuple(
+                idea_detail_payload(
+                    context,
+                    idea_id,
+                    env=self.selected_env,
+                    include_source_json=include_source_json,
+                ),
+                IdeaDetailResponseContract,
+                "idea-detail",
             ),
         )
 
@@ -322,7 +334,7 @@ class ProjectWebReadModel:
         return self._with_context(topic_id, lambda context: query_index_siblings(context, record_id, env=self.selected_env))
 
     def record_files(self, topic_id: str, record_id: str) -> dict[str, Any]:
-        return self._with_context(topic_id, lambda context: query_index_files(context, record_id, env=self.selected_env))
+        return self._with_context(topic_id, lambda context: self._record_files_payload(context, record_id))
 
     def record_facets(self, topic_id: str, record_id: str, *, facet: str | None) -> dict[str, Any]:
         return self._with_context(
@@ -541,7 +553,17 @@ class ProjectWebReadModel:
             cursor=cursor,
             include_secondary=include_secondary,
         )
-        return graph_payload, diagnostics
+        return ensure_gui_payload(graph_payload, TopicGraphResponseContract, contract_name="topic-graph"), diagnostics
+
+    def _record_files_payload(
+        self,
+        context: EffectiveTopicContext,
+        record_id: str,
+    ) -> tuple[dict[str, Any], list[Diagnostic]]:
+        payload, diagnostics = query_index_files(context, record_id, env=self.selected_env)
+        payload = dict(payload)
+        payload["topic_id"] = context.research_topic.id
+        return ensure_gui_payload(payload, RecordFilesResponseContract, contract_name="record-files"), diagnostics
 
     def _record_viewer_descriptor_payload(
         self,
@@ -569,7 +591,7 @@ class ProjectWebReadModel:
                     "diagnostics": [],
                 }
             )
-            return payload, []
+            return ensure_gui_payload(payload, RecordViewerDescriptorContract, contract_name="record-viewer-descriptor"), []
         files_payload, files_diagnostics = query_index_files(context, record_id, env=self.selected_env)
         record_raw = detail_payload.get("record")
         record: Mapping[str, Any] = record_raw if isinstance(record_raw, Mapping) else {}
@@ -591,7 +613,7 @@ class ProjectWebReadModel:
         primary_content_url = render_url if viewer_kind == "markdown" else None
         if primary_file is not None:
             primary_content_url = f"{record_url}/files/{primary_file}/content"
-        return {
+        return ensure_gui_payload({
             "ok": bool(detail_payload.get("ok", True)),
             "mutated": False,
             "topic_id": context.research_topic.id,
@@ -606,7 +628,7 @@ class ProjectWebReadModel:
             "media_type": media_type,
             "exists": True,
             "diagnostics": descriptor_diagnostics,
-        }, [*detail_diagnostics, *files_diagnostics]
+        }, RecordViewerDescriptorContract, contract_name="record-viewer-descriptor"), [*detail_diagnostics, *files_diagnostics]
 
     def _topic_change_event_payload(self, context: EffectiveTopicContext) -> tuple[dict[str, Any], list[Diagnostic]]:
         export_payload, diagnostics = query_index_export(context, env=self.selected_env, view="graph")
@@ -628,6 +650,15 @@ class ProjectWebReadModel:
             "diagnostics": event_diagnostics,
         }
         return event, diagnostics
+
+
+def _ensure_contract_tuple(
+    result: tuple[dict[str, Any], list[Diagnostic]],
+    schema: type[Any],
+    contract_name: str,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    payload, diagnostics = result
+    return ensure_gui_payload(payload, schema, contract_name=contract_name), diagnostics
 
 def _viewer_kind(record: Mapping[str, Any], structured: Mapping[str, Any], files: list[object]) -> tuple[str, str | None]:
     for item in files:
