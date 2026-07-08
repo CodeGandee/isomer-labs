@@ -11,16 +11,17 @@ from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.workspace.surfaces import ensure_tmp_surface_ignore_policy
 from isomer_labs.models import (
     EffectiveTopicContext,
-    UserPluginRegistration,
-    UserPluginRuntimeParam,
-    UserPluginRuntimeParamImport,
+    ToolboxRegistration,
+    ToolboxRuntimeParam,
+    ToolboxRuntimeParamImport,
 )
-from isomer_labs.project.user_plugins import (
+from isomer_labs.project.toolboxes import (
     TOPIC_RUNTIME_PARAM_SCOPES,
-    parse_user_plugin_registrations,
-    parse_user_plugin_runtime_param_imports,
-    parse_user_plugin_runtime_params,
-    validate_user_plugin_tables,
+    parse_toolbox_registrations,
+    parse_toolbox_runtime_param_imports,
+    parse_toolbox_runtime_params,
+    stale_toolbox_schema_diagnostics,
+    validate_toolbox_tables,
 )
 from isomer_labs.core.path_utils import canonicalize, is_within, resolve_project_path
 from isomer_labs.workspace.surfaces import (
@@ -198,9 +199,9 @@ class TopicWorkspaceManifest:
     topic_actor_bindings: tuple[TopicActorBinding, ...] = ()
     agent_output_defaults: WorkerOutputPolicyConfig = field(default_factory=WorkerOutputPolicyConfig)
     agent_output_overrides: tuple[AgentOutputPolicyOverride, ...] = ()
-    user_plugins: tuple[UserPluginRegistration, ...] = ()
-    user_plugin_runtime_param_imports: tuple[UserPluginRuntimeParamImport, ...] = ()
-    user_plugin_runtime_params: tuple[UserPluginRuntimeParam, ...] = ()
+    toolboxes: tuple[ToolboxRegistration, ...] = ()
+    toolbox_runtime_param_imports: tuple[ToolboxRuntimeParamImport, ...] = ()
+    toolbox_runtime_params: tuple[ToolboxRuntimeParam, ...] = ()
 
     def active_bindings(self) -> tuple[TopicWorkspaceBinding, ...]:
         return tuple(binding for binding in self.bindings if binding.status == "active")
@@ -236,11 +237,11 @@ class TopicWorkspaceManifest:
             "topic_actors": [binding.to_json() for binding in self.topic_actor_bindings],
             "agent_output_defaults": self.agent_output_defaults.to_json(),
             "agent_output_overrides": [override.to_json() for override in self.agent_output_overrides],
-            "user_plugins": [plugin.to_json() for plugin in self.user_plugins],
-            "user_plugin_runtime_param_imports": [
-                import_ref.to_json() for import_ref in self.user_plugin_runtime_param_imports
+            "toolboxes": [toolbox.to_json() for toolbox in self.toolboxes],
+            "toolbox_runtime_param_imports": [
+                import_ref.to_json() for import_ref in self.toolbox_runtime_param_imports
             ],
-            "user_plugin_runtime_params": [param.to_json() for param in self.user_plugin_runtime_params],
+            "toolbox_runtime_params": [param.to_json() for param in self.toolbox_runtime_params],
         }
 
 
@@ -399,6 +400,7 @@ def load_topic_workspace_manifest(context: EffectiveTopicContext) -> tuple[Topic
             diagnostics,
         )
     manifest = parse_topic_workspace_manifest(manifest_path, raw)
+    diagnostics.extend(stale_toolbox_schema_diagnostics(raw, manifest_path, "Topic Workspace Manifest Toolbox configuration"))
     diagnostics.extend(validate_topic_workspace_manifest(context, manifest))
     return manifest, diagnostics
 
@@ -497,11 +499,11 @@ def parse_topic_workspace_manifest(path: Path, raw: Mapping[str, Any]) -> TopicW
         topic_actor_bindings=tuple(topic_actor_bindings),
         agent_output_defaults=agent_output_defaults,
         agent_output_overrides=tuple(agent_output_overrides),
-        user_plugins=tuple(parse_user_plugin_registrations(path, raw, default_scope="research_topic")),
-        user_plugin_runtime_param_imports=tuple(
-            parse_user_plugin_runtime_param_imports(path, raw, default_scope="research_topic")
+        toolboxes=tuple(parse_toolbox_registrations(path, raw, default_scope="research_topic")),
+        toolbox_runtime_param_imports=tuple(
+            parse_toolbox_runtime_param_imports(path, raw, default_scope="research_topic")
         ),
-        user_plugin_runtime_params=tuple(parse_user_plugin_runtime_params(path, raw, default_scope="research_topic")),
+        toolbox_runtime_params=tuple(parse_toolbox_runtime_params(path, raw, default_scope="research_topic")),
         exists=True,
     )
 
@@ -638,18 +640,18 @@ def validate_topic_workspace_manifest(
         seen_actor_names.add(actor.topic_actor_name)
     diagnostics.extend(_validate_agent_output_policy(context, manifest))
     diagnostics.extend(
-        validate_user_plugin_tables(
+        validate_toolbox_tables(
             project=context.project,
             context=context,
-            registrations=manifest.user_plugins,
-            imports=manifest.user_plugin_runtime_param_imports,
-            params=manifest.user_plugin_runtime_params,
+            registrations=manifest.toolboxes,
+            imports=manifest.toolbox_runtime_param_imports,
+            params=manifest.toolbox_runtime_params,
             source_path=manifest.path,
             allowed_scopes=TOPIC_RUNTIME_PARAM_SCOPES,
-            concept="Topic Workspace Manifest User Plugin configuration",
+            concept="Topic Workspace Manifest Toolbox configuration",
             broader_definitions={
                 param.param_id: param
-                for param in context.project.manifest.user_plugin_runtime_params
+                for param in context.project.manifest.toolbox_runtime_params
                 if param.status == "active"
             },
         )
@@ -1765,30 +1767,30 @@ def render_topic_workspace_manifest(manifest: TopicWorkspaceManifest) -> str:
         if override.allow_shared_output_root:
             lines.append("allow_shared_output_root = true")
         lines.append("")
-    for plugin in sorted(manifest.user_plugins, key=lambda item: (item.plugin_id, item.scope, item.topic_actor_name or "", item.topic_agent_name or "")):
+    for toolbox in sorted(manifest.toolboxes, key=lambda item: (item.toolbox_id, item.scope, item.topic_actor_name or "", item.topic_agent_name or "")):
         lines.extend(
             [
-                "[[user_plugins]]",
-                f"plugin_id = {_toml_string(plugin.plugin_id)}",
-                f"scope = {_toml_string(plugin.scope)}",
-                f"status = {_toml_string(plugin.status)}",
+                "[[toolboxes]]",
+                f"toolbox_id = {_toml_string(toolbox.toolbox_id)}",
+                f"scope = {_toml_string(toolbox.scope)}",
+                f"status = {_toml_string(toolbox.status)}",
             ]
         )
-        if plugin.source_path_input is not None:
-            lines.append(f"source_path = {_toml_string(plugin.source_path_input)}")
-        if plugin.topic_actor_name is not None:
-            lines.append(f"topic_actor_name = {_toml_string(plugin.topic_actor_name)}")
-        if plugin.topic_agent_name is not None:
-            lines.append(f"topic_agent_name = {_toml_string(plugin.topic_agent_name)}")
+        if toolbox.source_path_input is not None:
+            lines.append(f"source_path = {_toml_string(toolbox.source_path_input)}")
+        if toolbox.topic_actor_name is not None:
+            lines.append(f"topic_actor_name = {_toml_string(toolbox.topic_actor_name)}")
+        if toolbox.topic_agent_name is not None:
+            lines.append(f"topic_agent_name = {_toml_string(toolbox.topic_agent_name)}")
         lines.append("")
     for import_ref in sorted(
-        manifest.user_plugin_runtime_param_imports,
-        key=lambda item: (item.plugin_id, item.scope, item.path_input, item.topic_actor_name or "", item.topic_agent_name or ""),
+        manifest.toolbox_runtime_param_imports,
+        key=lambda item: (item.toolbox_id, item.scope, item.path_input, item.topic_actor_name or "", item.topic_agent_name or ""),
     ):
         lines.extend(
             [
-                "[[user_plugin_runtime_param_imports]]",
-                f"plugin_id = {_toml_string(import_ref.plugin_id)}",
+                "[[toolbox_runtime_param_imports]]",
+                f"toolbox_id = {_toml_string(import_ref.toolbox_id)}",
                 f"path = {_toml_string(import_ref.path_input)}",
                 f"scope = {_toml_string(import_ref.scope)}",
                 f"status = {_toml_string(import_ref.status)}",
@@ -1800,13 +1802,13 @@ def render_topic_workspace_manifest(manifest: TopicWorkspaceManifest) -> str:
             lines.append(f"topic_agent_name = {_toml_string(import_ref.topic_agent_name)}")
         lines.append("")
     for param in sorted(
-        manifest.user_plugin_runtime_params,
-        key=lambda item: (item.plugin_id, item.key, item.scope, item.topic_actor_name or "", item.topic_agent_name or ""),
+        manifest.toolbox_runtime_params,
+        key=lambda item: (item.toolbox_id, item.key, item.scope, item.topic_actor_name or "", item.topic_agent_name or ""),
     ):
         lines.extend(
             [
-                "[[user_plugin_runtime_params]]",
-                f"plugin_id = {_toml_string(param.plugin_id)}",
+                "[[toolbox_runtime_params]]",
+                f"toolbox_id = {_toml_string(param.toolbox_id)}",
                 f"key = {_toml_string(param.key)}",
                 f"value = {_toml_value(param.value)}",
                 f"scope = {_toml_string(param.scope)}",

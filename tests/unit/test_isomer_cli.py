@@ -2183,24 +2183,32 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         self.assertEqual([], data["callbacks"])
 
-    def test_user_plugin_cli_manages_project_and_topic_agent_runtime_params(self) -> None:
+    def test_toolbox_cli_manages_project_and_topic_agent_runtime_params(self) -> None:
         root = self.make_root()
         self.init_project(root)
+        write(
+            root / "toolboxes" / "demo" / "manifest.toml",
+            """
+            schema_version = "isomer-toolbox.v1"
+            toolbox_id = "demo.toolbox"
+            kind = "toolbox-callback-bundle"
+            """,
+        )
 
         status, output = self.run_cli(
-            ["project", "user-plugins", "install", "demo.plugin", "--source-path", "plugins/demo", "--json"],
+            ["project", "toolboxes", "install", "--toolbox-dir", "toolboxes/demo", "--json"],
             cwd=root,
         )
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual("demo.plugin", data["plugin"]["plugin_id"])
+        self.assertEqual("demo.toolbox", data["toolbox"]["toolbox_id"])
 
         status, output = self.run_cli(
             [
                 "project",
-                "user-plugin-params",
+                "toolbox-params",
                 "set",
-                "demo.plugin:mode",
+                "demo.toolbox:mode",
                 "--value",
                 "strict",
                 "--value-type",
@@ -2220,9 +2228,9 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(
             [
                 "project",
-                "user-plugin-params",
+                "toolbox-params",
                 "set",
-                "demo.plugin:mode",
+                "demo.toolbox:mode",
                 "--topic",
                 "default",
                 "--scope",
@@ -2246,7 +2254,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual("topic_agent", data["param"]["effective_scope"])
 
         status, output = self.run_cli(
-            ["project", "user-plugin-params", "get", "demo.plugin:mode", "--topic", "default", "--topic-agent", "coder", "--json"],
+            ["project", "toolbox-params", "get", "demo.toolbox:mode", "--topic", "default", "--topic-agent", "coder", "--json"],
             cwd=root,
         )
         data = json.loads(output)
@@ -2255,70 +2263,83 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual("coder", data["param"]["source"]["topic_agent_name"])
 
         for args in (
-            ["project", "user-plugins", "list", "--topic", "default", "--json"],
-            ["project", "user-plugins", "show", "demo.plugin", "--topic", "default", "--json"],
-            ["project", "user-plugins", "explain", "demo.plugin", "--topic", "default", "--json"],
-            ["project", "user-plugins", "validate", "--topic", "default", "--json"],
-            ["project", "user-plugin-params", "list", "--topic", "default", "--topic-agent", "coder", "--json"],
-            ["project", "user-plugin-params", "explain", "demo.plugin:mode", "--topic", "default", "--topic-agent", "coder", "--json"],
-            ["project", "user-plugin-params", "validate", "--topic", "default", "--topic-agent", "coder", "--json"],
+            ["project", "toolboxes", "list", "--topic", "default", "--json"],
+            ["project", "toolboxes", "show", "demo.toolbox", "--topic", "default", "--json"],
+            ["project", "toolboxes", "explain", "demo.toolbox", "--topic", "default", "--json"],
+            ["project", "toolboxes", "validate", "--topic", "default", "--json"],
+            ["project", "toolbox-params", "list", "--topic", "default", "--topic-agent", "coder", "--json"],
+            ["project", "toolbox-params", "explain", "demo.toolbox:mode", "--topic", "default", "--topic-agent", "coder", "--json"],
+            ["project", "toolbox-params", "validate", "--topic", "default", "--topic-agent", "coder", "--json"],
         ):
             status, output = self.run_cli(args, cwd=root)
             data = json.loads(output)
             self.assertEqual(0, status, output)
             self.assertTrue(data["ok"])
 
-        status, output = self.run_cli(["project", "user-plugins", "disable", "demo.plugin", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "toolboxes", "disable", "demo.toolbox", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual("disabled", data["plugin"]["status"])
-        status, output = self.run_cli(["project", "user-plugins", "enable", "demo.plugin", "--json"], cwd=root)
+        self.assertEqual("disabled", data["toolbox"]["status"])
+        status, output = self.run_cli(["project", "toolboxes", "enable", "demo.toolbox", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual("active", data["plugin"]["status"])
-        status, output = self.run_cli(["project", "user-plugins", "update-source", "demo.plugin", "--source-path", "plugins/renamed", "--json"], cwd=root)
+        self.assertEqual("active", data["toolbox"]["status"])
+        status, output = self.run_cli(["project", "toolboxes", "update-source", "demo.toolbox", "--source-path", "toolboxes/renamed", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual("plugins/renamed", data["plugin"]["source_path"])
+        self.assertEqual("toolboxes/renamed", data["toolbox"]["source_path"])
 
         write(
             root / ".isomer-labs" / "param-defaults.toml",
             """
-            schema_version = "isomer-user-plugin-runtime-params.v1"
+            schema_version = "isomer-toolbox-runtime-params.v1"
 
-            [[user_plugin_runtime_params]]
-            plugin_id = "demo.plugin"
+            [[toolbox_runtime_params]]
+            toolbox_id = "demo.toolbox"
             key = "profile"
             value = "default"
             value_type = "string"
             scope = "project"
             """,
         )
-        status, output = self.run_cli(["project", "user-plugin-params", "import", "add", "demo.plugin", "param-defaults.toml", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "toolbox-params", "import", "add", "demo.toolbox", "param-defaults.toml", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("param-defaults.toml", data["import"]["path"])
-        status, output = self.run_cli(["project", "user-plugin-params", "import", "list", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "toolbox-params", "import", "list", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("param-defaults.toml", data["imports"][0]["path"])
-        status, output = self.run_cli(["project", "user-plugin-params", "import", "show", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "toolbox-params", "import", "show", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["imports"])
-        status, output = self.run_cli(["project", "user-plugin-params", "import", "remove", "demo.plugin", "param-defaults.toml", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "toolbox-params", "import", "remove", "demo.toolbox", "param-defaults.toml", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["mutated"])
 
-        status, output = self.run_cli(["project", "user-plugin-params", "unset", "demo.plugin:mode", "--topic", "default", "--scope", "topic_agent", "--topic-agent", "coder", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "toolbox-params", "unset", "demo.toolbox:mode", "--topic", "default", "--scope", "topic_agent", "--topic-agent", "coder", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["mutated"])
-        status, output = self.run_cli(["project", "user-plugins", "uninstall", "demo.plugin", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "toolboxes", "uninstall", "demo.toolbox", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["mutated"])
+
+    def test_old_toolbox_cli_names_are_rejected(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+
+        for args in (
+            ["project", "user-plugins", "list"],
+            ["project", "user-plugin-params", "list"],
+            ["project", "skill-callbacks", "install", "--plugin-dir", "skillset/toolboxes/demo"],
+        ):
+            status, stdout, stderr = self.run_main(args, cwd=root)
+            self.assertNotEqual(0, status)
+            self.assertIn("No such", stdout + stderr)
 
     def test_skill_callbacks_project_scope_external_skill_dir_requires_explicit_flag(self) -> None:
         root = self.make_root()
@@ -2363,21 +2384,21 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(data["callback"]["source"]["external"])
         self.assertEqual("skill_dir", data["callback"]["source"]["source_type"])
 
-    def test_skill_callbacks_install_user_plugin_manifest_composes_same_extension_point(self) -> None:
+    def test_skill_callbacks_install_toolbox_manifest_composes_same_extension_point(self) -> None:
         root = self.make_root()
         self.init_project(root)
-        plugin_a = root / "skillset" / "user-plugins" / "plugin-a"
-        plugin_b = root / "skillset" / "user-plugins" / "plugin-b"
-        write(plugin_a / "callback-a" / "SKILL.md", "# A\n")
-        write(plugin_a / "callback-b" / "SKILL.md", "# B\n")
-        write(plugin_a / "callback-z" / "SKILL.md", "# Z\n")
-        write(plugin_b / "callback-a" / "SKILL.md", "# B\n")
+        toolbox_a = root / "skillset" / "toolboxes" / "toolbox-a"
+        toolbox_b = root / "skillset" / "toolboxes" / "toolbox-b"
+        write(toolbox_a / "callback-a" / "SKILL.md", "# A\n")
+        write(toolbox_a / "callback-b" / "SKILL.md", "# B\n")
+        write(toolbox_a / "callback-z" / "SKILL.md", "# Z\n")
+        write(toolbox_b / "callback-a" / "SKILL.md", "# B\n")
         write(
-            plugin_a / "manifest.toml",
+            toolbox_a / "manifest.toml",
             """
-            schema_version = "isomer-user-plugin.v1"
-            plugin_id = "plugin-a"
-            kind = "user-skill-callback-bundle"
+            schema_version = "isomer-toolbox.v1"
+            toolbox_id = "toolbox-a"
+            kind = "toolbox-callback-bundle"
 
             [[callbacks]]
             key = "a"
@@ -2405,11 +2426,11 @@ class IsomerCliTests(unittest.TestCase):
             """,
         )
         write(
-            plugin_b / "manifest.toml",
+            toolbox_b / "manifest.toml",
             """
-            schema_version = "isomer-user-plugin.v1"
-            plugin_id = "plugin-b"
-            kind = "user-skill-callback-bundle"
+            schema_version = "isomer-toolbox.v1"
+            toolbox_id = "toolbox-b"
+            kind = "toolbox-callback-bundle"
 
             [[callbacks]]
             key = "a"
@@ -2427,24 +2448,24 @@ class IsomerCliTests(unittest.TestCase):
                 "install",
                 "--topic",
                 "default",
-                "--plugin-dir",
-                "skillset/user-plugins/plugin-a",
+                "--toolbox-dir",
+                "skillset/toolboxes/toolbox-a",
                 "--json",
             ],
             cwd=root,
         )
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual("plugin-a", data["plugin_id"])
-        self.assertEqual(["plugin-a:a", "plugin-a:b", "plugin-a:group/z"], [callback["id"] for callback in data["callbacks"]])
-        self.assertEqual(["a", "b", "group/z"], [callback["plugin_key"] for callback in data["callbacks"]])
+        self.assertEqual("toolbox-a", data["toolbox_id"])
+        self.assertEqual(["toolbox-a:a", "toolbox-a:b", "toolbox-a:group/z"], [callback["id"] for callback in data["callbacks"]])
+        self.assertEqual(["a", "b", "group/z"], [callback["toolbox_key"] for callback in data["callbacks"]])
         self.assertEqual([100, 100, 100], [callback["priority"] for callback in data["callbacks"]])
 
-        status, output = self.run_cli(["project", "user-plugins", "show", "plugin-a", "--topic", "default", "--json"], cwd=root)
+        status, output = self.run_cli(["project", "toolboxes", "show", "toolbox-a", "--topic", "default", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual("plugin-a", data["plugin"]["plugin_id"])
-        self.assertEqual("research_topic", data["plugin"]["scope"])
+        self.assertEqual("toolbox-a", data["toolbox"]["toolbox_id"])
+        self.assertEqual("research_topic", data["toolbox"]["scope"])
 
         status, output = self.run_cli(
             [
@@ -2453,8 +2474,8 @@ class IsomerCliTests(unittest.TestCase):
                 "install",
                 "--topic",
                 "default",
-                "--plugin-dir",
-                "skillset/user-plugins/plugin-b",
+                "--toolbox-dir",
+                "skillset/toolboxes/toolbox-b",
                 "--json",
             ],
             cwd=root,
@@ -2479,10 +2500,10 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(
-            {"plugin-a:a", "plugin-a:b", "plugin-a:group/z", "plugin-b:a"},
+            {"toolbox-a:a", "toolbox-a:b", "toolbox-a:group/z", "toolbox-b:a"},
             {callback["id"] for callback in data["callbacks"]},
         )
-        self.assertEqual(["a", "b", "group/z"], [callback["plugin_key"] for callback in data["callbacks"] if callback["plugin_id"] == "plugin-a"])
+        self.assertEqual(["a", "b", "group/z"], [callback["toolbox_key"] for callback in data["callbacks"] if callback["toolbox_id"] == "toolbox-a"])
 
         status, output = self.run_cli(
             ["project", "skill-callbacks", "list", "--topic", "default", "--json"],
@@ -2491,12 +2512,12 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(
-            {"plugin-a:a", "plugin-a:b", "plugin-a:group/z", "plugin-b:a"},
+            {"toolbox-a:a", "toolbox-a:b", "toolbox-a:group/z", "toolbox-b:a"},
             {callback["id"] for callback in data["callbacks"]},
         )
 
         status, output = self.run_cli(
-            ["project", "skill-callbacks", "disable", "plugin-a:a", "--topic", "default", "--json"],
+            ["project", "skill-callbacks", "disable", "toolbox-a:a", "--topic", "default", "--json"],
             cwd=root,
         )
         data = json.loads(output)
@@ -2506,15 +2527,15 @@ class IsomerCliTests(unittest.TestCase):
     def test_skill_callbacks_install_rejects_duplicate_unlabeled_entries(self) -> None:
         root = self.make_root()
         self.init_project(root)
-        plugin = root / "skillset" / "user-plugins" / "bad-plugin"
-        write(plugin / "one" / "SKILL.md", "# One\n")
-        write(plugin / "two" / "SKILL.md", "# Two\n")
+        toolbox = root / "skillset" / "toolboxes" / "bad-toolbox"
+        write(toolbox / "one" / "SKILL.md", "# One\n")
+        write(toolbox / "two" / "SKILL.md", "# Two\n")
         write(
-            plugin / "manifest.toml",
+            toolbox / "manifest.toml",
             """
-            schema_version = "isomer-user-plugin.v1"
-            plugin_id = "bad-plugin"
-            kind = "user-skill-callback-bundle"
+            schema_version = "isomer-toolbox.v1"
+            toolbox_id = "bad-toolbox"
+            kind = "toolbox-callback-bundle"
 
             [[callbacks]]
             target_skill = "isomer-deepsci-scout"
@@ -2537,8 +2558,8 @@ class IsomerCliTests(unittest.TestCase):
                 "install",
                 "--topic",
                 "default",
-                "--plugin-dir",
-                "skillset/user-plugins/bad-plugin",
+                "--toolbox-dir",
+                "skillset/toolboxes/bad-toolbox",
                 "--json",
             ],
             cwd=root,
@@ -2547,19 +2568,19 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertIn("ISO104", {diagnostic["code"] for diagnostic in data["diagnostics"]})
 
-    def test_skill_callbacks_install_rejects_same_plugin_id_from_different_source_without_replace(self) -> None:
+    def test_skill_callbacks_install_rejects_same_toolbox_id_from_different_source_without_replace(self) -> None:
         root = self.make_root()
         self.init_project(root)
-        plugin_a = root / "skillset" / "user-plugins" / "plugin-a"
-        plugin_copy = root / "skillset" / "user-plugins" / "plugin-copy"
-        for plugin, callback_name in ((plugin_a, "a"), (plugin_copy, "copy")):
-            write(plugin / callback_name / "SKILL.md", "# Callback\n")
+        toolbox_a = root / "skillset" / "toolboxes" / "toolbox-a"
+        toolbox_copy = root / "skillset" / "toolboxes" / "toolbox-copy"
+        for toolbox, callback_name in ((toolbox_a, "a"), (toolbox_copy, "copy")):
+            write(toolbox / callback_name / "SKILL.md", "# Callback\n")
             write(
-                plugin / "manifest.toml",
+                toolbox / "manifest.toml",
                 f"""
-                schema_version = "isomer-user-plugin.v1"
-                plugin_id = "shared-plugin"
-                kind = "user-skill-callback-bundle"
+                schema_version = "isomer-toolbox.v1"
+                toolbox_id = "shared-toolbox"
+                kind = "toolbox-callback-bundle"
 
                 [[callbacks]]
                 key = "{callback_name}"
@@ -2577,8 +2598,8 @@ class IsomerCliTests(unittest.TestCase):
                 "install",
                 "--topic",
                 "default",
-                "--plugin-dir",
-                "skillset/user-plugins/plugin-a",
+                "--toolbox-dir",
+                "skillset/toolboxes/toolbox-a",
                 "--json",
             ],
             cwd=root,
@@ -2592,8 +2613,8 @@ class IsomerCliTests(unittest.TestCase):
                 "install",
                 "--topic",
                 "default",
-                "--plugin-dir",
-                "skillset/user-plugins/plugin-copy",
+                "--toolbox-dir",
+                "skillset/toolboxes/toolbox-copy",
                 "--json",
             ],
             cwd=root,
@@ -2609,8 +2630,8 @@ class IsomerCliTests(unittest.TestCase):
                 "install",
                 "--topic",
                 "default",
-                "--plugin-dir",
-                "skillset/user-plugins/plugin-copy",
+                "--toolbox-dir",
+                "skillset/toolboxes/toolbox-copy",
                 "--replace",
                 "--json",
             ],
@@ -2618,7 +2639,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual(["shared-plugin:copy"], [callback["id"] for callback in data["callbacks"]])
+        self.assertEqual(["shared-toolbox:copy"], [callback["id"] for callback in data["callbacks"]])
 
     def test_skill_callbacks_missing_project_is_rejected_without_creating_registry(self) -> None:
         root = self.make_root()

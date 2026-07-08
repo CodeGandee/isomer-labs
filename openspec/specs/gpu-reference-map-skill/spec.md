@@ -4,11 +4,11 @@
 TBD - created by archiving change add-gpu-reference-map-skill. Update Purpose after archive.
 ## Requirements
 ### Requirement: Reference Map Skill Centralizes Source Lookup
-The GPU analytical-modeling user plugin SHALL provide a project-local `gpu-reference-map` callback skill that centralizes where agents should look for GPU analytical-modeling information and what each source family can justify.
+The GPU analytical-modeling Toolbox SHALL provide a project-local `gpu-reference-map` callback skill that centralizes where agents should look for GPU analytical-modeling information and what each source family can justify.
 
 #### Scenario: Source lookup has a dedicated entrance
 - **WHEN** an agent needs sources for GPU analytical-modeling facts, parameters, execution-path structure, measurement evidence, simulator references, or literature
-- **THEN** the plugin guidance directs the agent to `gpu-reference-map` rather than scattering detailed source taxonomy across operational skills
+- **THEN** the Toolbox guidance directs the agent to `gpu-reference-map` rather than scattering detailed source taxonomy across operational skills
 
 #### Scenario: Operational skills remain principle-focused
 - **WHEN** an operational skill needs source guidance
@@ -40,18 +40,18 @@ The `gpu-reference-map` skill SHALL describe profiler and counter sources as evi
 - **THEN** the guidance requires raw observations, mapping rationale, derived label separation, and support/refute/unresolved linkage to the model claim
 
 ### Requirement: Reference Map Is Registered as Project-Local Callback Guidance
-The plugin manifest and README SHALL include `gpu-reference-map` as a project-local callback source for source-discovery and source-checking stages without changing packaged system skills or runtime behavior.
+The Toolbox manifest and README SHALL include `gpu-reference-map` as a project-local callback source for source-discovery and source-checking stages without changing packaged system skills or runtime behavior.
 
 #### Scenario: Manifest includes reference-map callbacks
-- **WHEN** an operator reads the plugin manifest
+- **WHEN** an operator reads the Toolbox manifest
 - **THEN** `gpu-reference-map` callback entries are available for stages where source lookup matters, such as scout, baseline, idea, analysis, experiment, or review
 
 #### Scenario: Scope remains project-local
 - **WHEN** this change is implemented
-- **THEN** only `skillset/user-plugins/gpu-analytical-modeling/` and change artifacts are modified, with no edits to packaged system skills, callback registry behavior, CLI/runtime behavior, or distribution manifests
+- **THEN** only `skillset/toolboxes/gpu-analytical-modeling/` and change artifacts are modified, with no edits to packaged system skills, callback registry behavior, CLI/runtime behavior, or distribution manifests
 
 ### Requirement: Reference Guidance Avoids Topic-Specific Hard-Coding
-The reference-map skill SHALL remain generic to GPU kernel analytical modeling and SHALL NOT require a specific topic workspace, kernel, GPU SKU, host, paper venue, or artifact path as general plugin context.
+The reference-map skill SHALL remain generic to GPU kernel analytical modeling and SHALL NOT require a specific topic workspace, kernel, GPU SKU, host, paper venue, or artifact path as general Toolbox context.
 
 #### Scenario: Examples remain source-class examples
 - **WHEN** source pages use examples such as profiler tools, simulator projects, vendor documents, or modeling papers

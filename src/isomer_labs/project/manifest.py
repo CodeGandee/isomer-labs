@@ -20,10 +20,11 @@ from isomer_labs.models import (
     TopicStandalonePixiBinding,
     TopicWorkspaceRegistration,
 )
-from isomer_labs.project.user_plugins import (
-    parse_user_plugin_registrations,
-    parse_user_plugin_runtime_param_imports,
-    parse_user_plugin_runtime_params,
+from isomer_labs.project.toolboxes import (
+    parse_toolbox_registrations,
+    parse_toolbox_runtime_param_imports,
+    parse_toolbox_runtime_params,
+    stale_toolbox_schema_diagnostics,
 )
 
 
@@ -47,9 +48,10 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
     artifact_format_profiles = _registration_ids(raw.get("artifact_format_profiles"))
     artifact_extensions = _registration_ids(raw.get("artifact_extensions"))
     user_skill_callback_registry_refs = _callback_registry_ref_values(raw)
-    user_plugins = parse_user_plugin_registrations(path, raw, default_scope="project")
-    user_plugin_runtime_param_imports = parse_user_plugin_runtime_param_imports(path, raw, default_scope="project")
-    user_plugin_runtime_params = parse_user_plugin_runtime_params(path, raw, default_scope="project")
+    diagnostics.extend(stale_toolbox_schema_diagnostics(raw, path, "Project Manifest Toolbox configuration"))
+    toolboxes = parse_toolbox_registrations(path, raw, default_scope="project")
+    toolbox_runtime_param_imports = parse_toolbox_runtime_param_imports(path, raw, default_scope="project")
+    toolbox_runtime_params = parse_toolbox_runtime_params(path, raw, default_scope="project")
 
     manifest = ProjectManifest(
         schema_version=schema_version,
@@ -66,9 +68,9 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
         artifact_format_profiles=artifact_format_profiles,
         artifact_extensions=artifact_extensions,
         user_skill_callback_registry_refs=user_skill_callback_registry_refs,
-        user_plugins=user_plugins,
-        user_plugin_runtime_param_imports=user_plugin_runtime_param_imports,
-        user_plugin_runtime_params=user_plugin_runtime_params,
+        toolboxes=toolboxes,
+        toolbox_runtime_param_imports=toolbox_runtime_param_imports,
+        toolbox_runtime_params=toolbox_runtime_params,
         raw=raw,
     )
     return manifest, diagnostics

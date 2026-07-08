@@ -8,7 +8,7 @@ from pathlib import Path
 from isomer_labs.models import SelectionRequest
 from isomer_labs.project import discover_project
 from isomer_labs.project.context import resolve_effective_topic_context
-from isomer_labs.project.user_plugins import resolve_runtime_params
+from isomer_labs.project.toolboxes import resolve_runtime_params
 from isomer_labs.project.validation import build_project_state
 from isomer_labs.workspace.manifest import load_topic_workspace_manifest
 
@@ -22,7 +22,7 @@ def codes(diagnostics: object) -> set[str]:
     return {diagnostic.code for diagnostic in diagnostics}  # type: ignore[attr-defined]
 
 
-class UserPluginRuntimeParamTests(unittest.TestCase):
+class ToolboxRuntimeParamTests(unittest.TestCase):
     def make_root(self) -> Path:
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
@@ -89,13 +89,13 @@ class UserPluginRuntimeParamTests(unittest.TestCase):
             research_topic_id = "default"
             path = "topic-workspaces/default"
 
-            [[user_plugin_runtime_param_imports]]
-            plugin_id = "demo.plugin"
+            [[toolbox_runtime_param_imports]]
+            toolbox_id = "demo.toolbox"
             path = "defaults.toml"
             scope = "project"
 
-            [[user_plugin_runtime_params]]
-            plugin_id = "demo.plugin"
+            [[toolbox_runtime_params]]
+            toolbox_id = "demo.toolbox"
             key = "mode"
             value = "project-explicit"
             value_type = "enum"
@@ -106,10 +106,10 @@ class UserPluginRuntimeParamTests(unittest.TestCase):
         write(
             root / ".isomer-labs" / "defaults.toml",
             """
-            schema_version = "isomer-user-plugin-runtime-params.v1"
+            schema_version = "isomer-toolbox-runtime-params.v1"
 
-            [[user_plugin_runtime_params]]
-            plugin_id = "demo.plugin"
+            [[toolbox_runtime_params]]
+            toolbox_id = "demo.toolbox"
             key = "mode"
             value = "project-import"
             value_type = "enum"
@@ -120,10 +120,10 @@ class UserPluginRuntimeParamTests(unittest.TestCase):
         write(
             context.topic_workspace_path / "topic-defaults.toml",
             """
-            schema_version = "isomer-user-plugin-runtime-params.v1"
+            schema_version = "isomer-toolbox-runtime-params.v1"
 
-            [[user_plugin_runtime_params]]
-            plugin_id = "demo.plugin"
+            [[toolbox_runtime_params]]
+            toolbox_id = "demo.toolbox"
             key = "mode"
             value = "topic-import"
             value_type = "enum"
@@ -138,13 +138,13 @@ class UserPluginRuntimeParamTests(unittest.TestCase):
             research_topic_id = "default"
             topic_workspace_id = "default"
 
-            [[user_plugin_runtime_param_imports]]
-            plugin_id = "demo.plugin"
+            [[toolbox_runtime_param_imports]]
+            toolbox_id = "demo.toolbox"
             path = "topic-defaults.toml"
             scope = "research_topic"
 
-            [[user_plugin_runtime_params]]
-            plugin_id = "demo.plugin"
+            [[toolbox_runtime_params]]
+            toolbox_id = "demo.toolbox"
             key = "mode"
             value = "agent-explicit"
             value_type = "enum"
@@ -163,14 +163,14 @@ class UserPluginRuntimeParamTests(unittest.TestCase):
         assert context is not None
 
         broad = resolve_runtime_params(project, context)
-        selected = broad.get("demo.plugin:mode")
+        selected = broad.get("demo.toolbox:mode")
         self.assertIsNotNone(selected)
         assert selected is not None
         self.assertEqual("topic-import", selected.value)
         self.assertEqual(["project_import", "project_explicit", "topic_import"], [candidate.layer for candidate in selected.candidates])
 
         agent = resolve_runtime_params(project, context, topic_agent_name="coder")
-        selected = agent.get("demo.plugin:mode")
+        selected = agent.get("demo.toolbox:mode")
         self.assertIsNotNone(selected)
         assert selected is not None
         self.assertEqual("agent-explicit", selected.value)
@@ -179,15 +179,15 @@ class UserPluginRuntimeParamTests(unittest.TestCase):
             [candidate.layer for candidate in selected.candidates],
         )
 
-    def test_project_manifest_rejects_topic_scope_plugin_config(self) -> None:
+    def test_project_manifest_rejects_topic_scope_toolbox_config(self) -> None:
         root = self.make_root()
         write(
             root / ".isomer-labs" / "manifest.toml",
             """
             schema_version = "isomer-project-manifest.v1"
 
-            [[user_plugins]]
-            plugin_id = "demo.plugin"
+            [[toolboxes]]
+            toolbox_id = "demo.toolbox"
             scope = "topic_agent"
             topic_agent_name = "coder"
             status = "active"
@@ -200,7 +200,66 @@ class UserPluginRuntimeParamTests(unittest.TestCase):
 
         self.assertIn("ISO103", codes(state.diagnostics))
 
-    def test_topic_manifest_parses_user_plugin_tables(self) -> None:
+    def test_old_toolbox_schema_names_are_rejected(self) -> None:
+        root = self.make_root()
+        write(
+            root / ".isomer-labs" / "manifest.toml",
+            """
+            schema_version = "isomer-project-manifest.v1"
+
+            [[user_plugins]]
+            plugin_id = "demo.toolbox"
+            plugin_dir = "skillset/toolboxes/demo"
+
+            [[toolboxes]]
+            plugin_id = "demo.toolbox"
+            source_path = "skillset/toolboxes/demo"
+
+            [[user_plugin_runtime_params]]
+            plugin_id = "demo.toolbox"
+            key = "mode"
+            value = "strict"
+            """,
+        )
+
+        _project, diagnostics = discover_project(cwd=root, env={})
+
+        self.assertIn("ISO103", codes(diagnostics))
+
+    def test_old_runtime_param_import_schema_is_rejected(self) -> None:
+        root, project, _context = self.make_project_with_topic()
+        write(
+            root / ".isomer-labs" / "manifest.toml",
+            """
+            schema_version = "isomer-project-manifest.v1"
+
+            [[toolbox_runtime_param_imports]]
+            toolbox_id = "demo.toolbox"
+            path = "defaults.toml"
+            scope = "project"
+            """,
+        )
+        write(
+            root / ".isomer-labs" / "defaults.toml",
+            """
+            schema_version = "isomer-user-plugin-runtime-params.v1"
+
+            [[user_plugin_runtime_params]]
+            plugin_id = "demo.toolbox"
+            key = "mode"
+            value = "strict"
+            """,
+        )
+        project, diagnostics = discover_project(cwd=root, env={})
+        self.assertEqual([], diagnostics)
+        assert project is not None
+
+        resolution = resolve_runtime_params(project)
+
+        self.assertIn("ISO102", codes(resolution.diagnostics))
+        self.assertIn("ISO103", codes(resolution.diagnostics))
+
+    def test_topic_manifest_parses_toolbox_tables(self) -> None:
         root, _project, context = self.make_project_with_topic()
         write(
             context.topic_workspace_path / "topic-workspace.toml",
@@ -209,14 +268,14 @@ class UserPluginRuntimeParamTests(unittest.TestCase):
             research_topic_id = "default"
             topic_workspace_id = "default"
 
-            [[user_plugins]]
-            plugin_id = "demo.plugin"
+            [[toolboxes]]
+            toolbox_id = "demo.toolbox"
             scope = "topic_agent"
             topic_agent_name = "coder"
             status = "active"
 
-            [[user_plugin_runtime_params]]
-            plugin_id = "demo.plugin"
+            [[toolbox_runtime_params]]
+            toolbox_id = "demo.toolbox"
             key = "mode"
             value = "strict"
             value_type = "enum"
@@ -229,8 +288,8 @@ class UserPluginRuntimeParamTests(unittest.TestCase):
         manifest, diagnostics = load_topic_workspace_manifest(context)
 
         self.assertEqual([], diagnostics)
-        self.assertEqual("demo.plugin", manifest.user_plugins[0].plugin_id)
-        self.assertEqual("coder", manifest.user_plugin_runtime_params[0].topic_agent_name)
+        self.assertEqual("demo.toolbox", manifest.toolboxes[0].toolbox_id)
+        self.assertEqual("coder", manifest.toolbox_runtime_params[0].topic_agent_name)
 
 
 if __name__ == "__main__":

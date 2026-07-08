@@ -433,8 +433,8 @@ class TopicStandalonePixiBinding:
 
 
 @dataclass(frozen=True)
-class UserPluginRegistration:
-    plugin_id: str
+class ToolboxRegistration:
+    toolbox_id: str
     scope: str
     status: str
     source_path_input: str | None
@@ -445,7 +445,7 @@ class UserPluginRegistration:
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
-            "plugin_id": self.plugin_id,
+            "toolbox_id": self.toolbox_id,
             "scope": self.scope,
             "status": self.status,
             "source_path": self.source_path_input,
@@ -460,8 +460,8 @@ class UserPluginRegistration:
 
 
 @dataclass(frozen=True)
-class UserPluginRuntimeParamImport:
-    plugin_id: str
+class ToolboxRuntimeParamImport:
+    toolbox_id: str
     path_input: str
     scope: str
     source_path: Path
@@ -472,7 +472,7 @@ class UserPluginRuntimeParamImport:
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
-            "plugin_id": self.plugin_id,
+            "toolbox_id": self.toolbox_id,
             "path": self.path_input,
             "scope": self.scope,
             "status": self.status,
@@ -487,8 +487,8 @@ class UserPluginRuntimeParamImport:
 
 
 @dataclass(frozen=True)
-class UserPluginRuntimeParam:
-    plugin_id: str
+class ToolboxRuntimeParam:
+    toolbox_id: str
     key: str
     value: Any
     scope: str
@@ -504,12 +504,12 @@ class UserPluginRuntimeParam:
 
     @property
     def param_id(self) -> str:
-        return f"{self.plugin_id}:{self.key}"
+        return f"{self.toolbox_id}:{self.key}"
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
             "param_id": self.param_id,
-            "plugin_id": self.plugin_id,
+            "toolbox_id": self.toolbox_id,
             "key": self.key,
             "value": self.value,
             "scope": self.scope,
@@ -598,9 +598,9 @@ class ProjectManifest:
     artifact_format_profiles: list[str] = field(default_factory=list)
     artifact_extensions: list[str] = field(default_factory=list)
     user_skill_callback_registry_refs: list[str] = field(default_factory=list)
-    user_plugins: list[UserPluginRegistration] = field(default_factory=list)
-    user_plugin_runtime_param_imports: list[UserPluginRuntimeParamImport] = field(default_factory=list)
-    user_plugin_runtime_params: list[UserPluginRuntimeParam] = field(default_factory=list)
+    toolboxes: list[ToolboxRegistration] = field(default_factory=list)
+    toolbox_runtime_param_imports: list[ToolboxRuntimeParamImport] = field(default_factory=list)
+    toolbox_runtime_params: list[ToolboxRuntimeParam] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict)
 
     def first_topic(self, topic_id: str) -> ResearchTopicRegistration | None:
@@ -702,11 +702,11 @@ class ProjectManifest:
             "artifact_format_profiles": self.artifact_format_profiles,
             "artifact_extensions": self.artifact_extensions,
             "user_skill_callback_registry_refs": self.user_skill_callback_registry_refs,
-            "user_plugins": [plugin.to_json() for plugin in self.user_plugins],
-            "user_plugin_runtime_param_imports": [
-                import_ref.to_json() for import_ref in self.user_plugin_runtime_param_imports
+            "toolboxes": [toolbox.to_json() for toolbox in self.toolboxes],
+            "toolbox_runtime_param_imports": [
+                import_ref.to_json() for import_ref in self.toolbox_runtime_param_imports
             ],
-            "user_plugin_runtime_params": [param.to_json() for param in self.user_plugin_runtime_params],
+            "toolbox_runtime_params": [param.to_json() for param in self.toolbox_runtime_params],
         }
 
 

@@ -10,14 +10,14 @@ from isomer_labs.models import (
     Project,
     ProjectManifest,
     ProjectState,
-    UserPluginRegistration,
+    ToolboxRegistration,
 )
 from isomer_labs.project.skill_callback_commands import (
     prepare_callback_source,
     resolve_user_skill_callbacks,
 )
 from isomer_labs.project.skill_callbacks import CallbackRegistryRef, load_callback_registry
-from isomer_labs.project.user_plugin_callbacks import load_user_plugin_callback_manifest
+from isomer_labs.project.toolbox_callbacks import load_toolbox_callback_manifest
 
 
 def write(path: Path, content: str) -> None:
@@ -155,14 +155,14 @@ class UserSkillCallbackTests(unittest.TestCase):
         self.assertTrue(result.ok, result.diagnostics)
         self.assertEqual(["a", "b"], [callback.id for callback in result.callbacks])
 
-    def test_resolve_skips_plugin_callbacks_when_user_plugin_is_disabled(self) -> None:
+    def test_resolve_skips_plugin_callbacks_when_toolbox_is_disabled(self) -> None:
         project = self.make_project()
-        project.manifest.user_plugins.append(
-            UserPluginRegistration(
-                plugin_id="demo.plugin",
+        project.manifest.toolboxes.append(
+            ToolboxRegistration(
+                toolbox_id="demo.toolbox",
                 scope="project",
                 status="disabled",
-                source_path_input="plugins/demo",
+                source_path_input="toolboxes/demo",
                 source_path=project.manifest_path,
             )
         )
@@ -175,7 +175,7 @@ class UserSkillCallbackTests(unittest.TestCase):
             schema_version = "isomer-user-skill-callback-registry.v1"
 
             [[callbacks]]
-            id = "demo.plugin:group/a"
+            id = "demo.toolbox:group/a"
             skill = "isomer-deepsci-scout"
             stage = "begin"
             scope = "project"
@@ -183,8 +183,8 @@ class UserSkillCallbackTests(unittest.TestCase):
             priority = 10
             source_type = "prompt_file"
             prompt_file = "prompt-a.md"
-            plugin_id = "demo.plugin"
-            plugin_key = "group/a"
+            toolbox_id = "demo.toolbox"
+            toolbox_key = "group/a"
 
             [[callbacks]]
             id = "manual"
@@ -203,7 +203,7 @@ class UserSkillCallbackTests(unittest.TestCase):
 
         self.assertTrue(result.ok, result.diagnostics)
         self.assertEqual(["manual"], [callback.id for callback in result.callbacks])
-        self.assertEqual(("demo.plugin:group/a",), result.gated_callback_ids)
+        self.assertEqual(("demo.toolbox:group/a",), result.gated_callback_ids)
 
     def test_namespaced_callback_ids_resolve_together_and_reject_duplicates(self) -> None:
         project = self.make_project()
@@ -216,7 +216,7 @@ class UserSkillCallbackTests(unittest.TestCase):
             schema_version = "isomer-user-skill-callback-registry.v1"
 
             [[callbacks]]
-            id = "plugin-a:group/a"
+            id = "toolbox-a:group/a"
             skill = "isomer-deepsci-scout"
             stage = "begin"
             scope = "project"
@@ -226,7 +226,7 @@ class UserSkillCallbackTests(unittest.TestCase):
             prompt_file = "prompt-a.md"
 
             [[callbacks]]
-            id = "plugin-b:group/a"
+            id = "toolbox-b:group/a"
             skill = "isomer-deepsci-scout"
             stage = "begin"
             scope = "project"
@@ -241,7 +241,7 @@ class UserSkillCallbackTests(unittest.TestCase):
         result = resolve_user_skill_callbacks(state, None, skill="isomer-deepsci-scout", stage="begin")
 
         self.assertTrue(result.ok, result.diagnostics)
-        self.assertEqual(["plugin-a:group/a", "plugin-b:group/a"], [callback.id for callback in result.callbacks])
+        self.assertEqual(["toolbox-a:group/a", "toolbox-b:group/a"], [callback.id for callback in result.callbacks])
 
         write(
             registry.path,
@@ -249,7 +249,7 @@ class UserSkillCallbackTests(unittest.TestCase):
             schema_version = "isomer-user-skill-callback-registry.v1"
 
             [[callbacks]]
-            id = "plugin-a:group/a"
+            id = "toolbox-a:group/a"
             skill = "isomer-deepsci-scout"
             stage = "begin"
             scope = "project"
@@ -259,7 +259,7 @@ class UserSkillCallbackTests(unittest.TestCase):
             prompt_file = "prompt-a.md"
 
             [[callbacks]]
-            id = "plugin-a:group/a"
+            id = "toolbox-a:group/a"
             skill = "isomer-deepsci-scout"
             stage = "begin"
             scope = "project"
@@ -322,27 +322,27 @@ class UserSkillCallbackTests(unittest.TestCase):
             project,
             scope="project",
             research_topic_id=None,
-            callback_id="plugin:group/key",
-            prompt="Use plugin guidance.",
+            callback_id="toolbox:group/key",
+            prompt="Use toolbox guidance.",
             prompt_file=None,
             skill_dir=None,
             allow_external_source=False,
         )
 
         self.assertEqual("prompt", source[0])
-        self.assertEqual(".isomer-labs/user-skill-callbacks/prompts/plugin%3Agroup%2Fkey.md", source[1])
+        self.assertEqual(".isomer-labs/user-skill-callbacks/prompts/toolbox%3Agroup%2Fkey.md", source[1])
 
-    def test_user_plugin_manifest_requires_plugin_id_key_and_unique_local_keys(self) -> None:
+    def test_toolbox_manifest_requires_toolbox_id_key_and_unique_local_keys(self) -> None:
         project = self.make_project()
-        plugin = project.root / "skillset" / "user-plugins" / "bad"
-        write(plugin / "one" / "SKILL.md", "# One\n")
-        write(plugin / "two" / "SKILL.md", "# Two\n")
+        toolbox = project.root / "skillset" / "toolboxes" / "bad"
+        write(toolbox / "one" / "SKILL.md", "# One\n")
+        write(toolbox / "two" / "SKILL.md", "# Two\n")
         write(
-            plugin / "manifest.toml",
+            toolbox / "manifest.toml",
             """
-            schema_version = "isomer-user-plugin.v1"
+            schema_version = "isomer-toolbox.v1"
             id = "bad"
-            kind = "user-skill-callback-bundle"
+            kind = "toolbox-callback-bundle"
 
             [[callbacks]]
             id = "legacy"
@@ -359,21 +359,21 @@ class UserSkillCallbackTests(unittest.TestCase):
             """,
         )
 
-        result = load_user_plugin_callback_manifest(project, "skillset/user-plugins/bad")
+        result = load_toolbox_callback_manifest(project, "skillset/toolboxes/bad")
 
         self.assertIsNone(result.manifest)
         self.assertIn("ISO103", codes(result.diagnostics))
 
-    def test_user_plugin_manifest_derives_key_and_accepts_slash_hierarchy(self) -> None:
+    def test_toolbox_manifest_derives_key_and_accepts_slash_hierarchy(self) -> None:
         project = self.make_project()
-        plugin = project.root / "skillset" / "user-plugins" / "good"
-        write(plugin / "callback" / "SKILL.md", "# Callback\n")
+        toolbox = project.root / "skillset" / "toolboxes" / "good"
+        write(toolbox / "callback" / "SKILL.md", "# Callback\n")
         write(
-            plugin / "manifest.toml",
+            toolbox / "manifest.toml",
             """
-            schema_version = "isomer-user-plugin.v1"
-            plugin_id = "good-plugin"
-            kind = "user-skill-callback-bundle"
+            schema_version = "isomer-toolbox.v1"
+            toolbox_id = "good-toolbox"
+            kind = "toolbox-callback-bundle"
 
             [[callbacks]]
             key = "group/a"
@@ -390,22 +390,22 @@ class UserSkillCallbackTests(unittest.TestCase):
             """,
         )
 
-        result = load_user_plugin_callback_manifest(project, "skillset/user-plugins/good")
+        result = load_toolbox_callback_manifest(project, "skillset/toolboxes/good")
 
         self.assertIsNotNone(result.manifest)
         assert result.manifest is not None
-        self.assertEqual(["group/a", "isomer-deepsci-scout/end"], [entry.plugin_key for entry in result.manifest.callbacks])
+        self.assertEqual(["group/a", "isomer-deepsci-scout/end"], [entry.toolbox_key for entry in result.manifest.callbacks])
 
-    def test_user_plugin_manifest_accepts_runtime_param_definitions_and_bundles(self) -> None:
+    def test_toolbox_manifest_accepts_runtime_param_definitions_and_bundles(self) -> None:
         project = self.make_project()
-        plugin = project.root / "skillset" / "user-plugins" / "with-params"
-        write(plugin / "callback" / "SKILL.md", "# Callback\n")
+        toolbox = project.root / "skillset" / "toolboxes" / "with-params"
+        write(toolbox / "callback" / "SKILL.md", "# Callback\n")
         write(
-            plugin / "manifest.toml",
+            toolbox / "manifest.toml",
             """
-            schema_version = "isomer-user-plugin.v1"
-            plugin_id = "with-params"
-            kind = "user-skill-callback-bundle"
+            schema_version = "isomer-toolbox.v1"
+            toolbox_id = "with-params"
+            kind = "toolbox-callback-bundle"
 
             [[callbacks]]
             target_skill = "isomer-deepsci-scout"
@@ -426,7 +426,7 @@ class UserSkillCallbackTests(unittest.TestCase):
             """,
         )
 
-        result = load_user_plugin_callback_manifest(project, "skillset/user-plugins/with-params")
+        result = load_toolbox_callback_manifest(project, "skillset/toolboxes/with-params")
 
         self.assertIsNotNone(result.manifest)
         assert result.manifest is not None

@@ -26,8 +26,8 @@ from isomer_labs.project.skill_callbacks import (
     secret_like_diagnostics,
     visible_callback_registry_refs,
 )
-from isomer_labs.project.user_plugin_callbacks import load_user_plugin_callback_manifest
-from isomer_labs.project.user_plugins import effective_user_plugin_status, ensure_user_plugin_registration
+from isomer_labs.project.toolbox_callbacks import load_toolbox_callback_manifest
+from isomer_labs.project.toolboxes import effective_toolbox_status, ensure_toolbox_registration
 
 
 @dataclass(frozen=True)
@@ -41,9 +41,9 @@ class CallbackCommandResult:
     callback: UserSkillCallback | None = None
     previous_status: str | None = None
     new_status: str | None = None
-    plugin_id: str | None = None
-    plugin_source_path: str | None = None
-    plugin_statuses: tuple[dict[str, object], ...] = ()
+    toolbox_id: str | None = None
+    toolbox_source_path: str | None = None
+    toolbox_statuses: tuple[dict[str, object], ...] = ()
     gated_callback_ids: tuple[str, ...] = ()
 
     def to_json(self) -> dict[str, object]:
@@ -61,12 +61,12 @@ class CallbackCommandResult:
             payload["previous_status"] = self.previous_status
         if self.new_status is not None:
             payload["new_status"] = self.new_status
-        if self.plugin_id is not None:
-            payload["plugin_id"] = self.plugin_id
-        if self.plugin_source_path is not None:
-            payload["plugin_source_path"] = self.plugin_source_path
-        if self.plugin_statuses:
-            payload["plugin_statuses"] = list(self.plugin_statuses)
+        if self.toolbox_id is not None:
+            payload["toolbox_id"] = self.toolbox_id
+        if self.toolbox_source_path is not None:
+            payload["toolbox_source_path"] = self.toolbox_source_path
+        if self.toolbox_statuses:
+            payload["toolbox_statuses"] = list(self.toolbox_statuses)
         if self.gated_callback_ids:
             payload["gated_callback_ids"] = list(self.gated_callback_ids)
         return payload
@@ -179,13 +179,13 @@ def register_user_skill_callback(
     )
 
 
-def install_user_plugin_callbacks(
+def install_toolbox_callbacks(
     state: ProjectState,
     context: EffectiveTopicContext | None,
     *,
-    plugin_dir: str,
+    toolbox_dir: str,
     scope: str,
-    replace_plugin_source: bool,
+    replace_toolbox_source: bool,
 ) -> CallbackCommandResult:
     project = state.project
     diagnostics: list[Diagnostic] = []
@@ -194,9 +194,9 @@ def install_user_plugin_callbacks(
             Diagnostic(
                 code="ISO103",
                 severity="error",
-                concept="User Plugin callback manifest",
+                concept="Toolbox callback manifest",
                 field="scope",
-                message="User-plugin callback install scope must be project or research_topic.",
+                message="Toolbox callback install scope must be project or research_topic.",
             )
         )
     if scope == "research_topic" and context is None:
@@ -204,12 +204,12 @@ def install_user_plugin_callbacks(
             Diagnostic(
                 code="ISO103",
                 severity="error",
-                concept="User Plugin callback manifest",
+                concept="Toolbox callback manifest",
                 field="scope",
-                message="Research Topic scoped user-plugin callback installation requires a selected Research Topic.",
+                message="Research Topic scoped toolbox callback installation requires a selected Research Topic.",
             )
         )
-    manifest_result = load_user_plugin_callback_manifest(project, plugin_dir)
+    manifest_result = load_toolbox_callback_manifest(project, toolbox_dir)
     diagnostics.extend(manifest_result.diagnostics)
     manifest = manifest_result.manifest
     if manifest is None or has_errors(diagnostics):
@@ -233,23 +233,23 @@ def install_user_plugin_callbacks(
     different_source_callbacks = [
         callback
         for callback in existing_callbacks
-        if callback.plugin_id == manifest.plugin_id and callback.plugin_source_path_input not in {None, manifest.plugin_source_path_input}
+        if callback.toolbox_id == manifest.toolbox_id and callback.toolbox_source_path_input not in {None, manifest.toolbox_source_path_input}
     ]
-    if different_source_callbacks and not replace_plugin_source:
+    if different_source_callbacks and not replace_toolbox_source:
         diagnostics.append(
             Diagnostic(
                 code="ISO104",
                 severity="error",
-                concept="User Plugin callback manifest",
-                field="plugin_id",
-                message=f"User-plugin id is already installed from a different source: {manifest.plugin_id}.",
-                hint="Pass --replace to replace callbacks from the previous plugin source.",
+                concept="Toolbox callback manifest",
+                field="toolbox_id",
+                message=f"Toolbox id is already installed from a different source: {manifest.toolbox_id}.",
+                hint="Pass --replace to replace callbacks from the previous Toolbox source.",
             )
         )
     planned_callbacks: list[UserSkillCallback] = []
     prompt_materials: list[tuple[Path, str]] = []
     for entry in manifest.callbacks:
-        installed_key = f"{manifest.plugin_id}:{entry.installed_key_suffix}"
+        installed_key = f"{manifest.toolbox_id}:{entry.installed_key_suffix}"
         diagnostics.extend(
             _callback_identity_diagnostics(
                 skill=entry.target_skill,
@@ -259,8 +259,8 @@ def install_user_plugin_callbacks(
             )
         )
         prompt = entry.source_value if entry.source_type == "prompt" else None
-        prompt_file = entry.source_path_input(project, manifest.plugin_root) if entry.source_type == "prompt_file" else None
-        skill_dir = entry.source_path_input(project, manifest.plugin_root) if entry.source_type == "skill_dir" else None
+        prompt_file = entry.source_path_input(project, manifest.toolbox_root) if entry.source_type == "prompt_file" else None
+        skill_dir = entry.source_path_input(project, manifest.toolbox_root) if entry.source_type == "skill_dir" else None
         source_kind, source_path_input, source_diagnostics, prompt_material = prepare_callback_source(
             project,
             scope=scope,
@@ -293,9 +293,9 @@ def install_user_plugin_callbacks(
                 ),
                 registry_path=registry_path,
                 research_topic_id=context.research_topic.id if scope == "research_topic" and context is not None else None,
-                plugin_id=manifest.plugin_id,
-                plugin_key=entry.plugin_key,
-                plugin_source_path_input=manifest.plugin_source_path_input,
+                toolbox_id=manifest.toolbox_id,
+                toolbox_key=entry.toolbox_key,
+                toolbox_source_path_input=manifest.toolbox_source_path_input,
             )
         )
     if has_errors(diagnostics):
@@ -306,18 +306,18 @@ def install_user_plugin_callbacks(
             (),
             tuple(diagnostics),
             registry_refs=(ref,),
-            plugin_id=manifest.plugin_id,
-            plugin_source_path=manifest.plugin_source_path_input,
+            toolbox_id=manifest.toolbox_id,
+            toolbox_source_path=manifest.toolbox_source_path_input,
         )
 
-    _, plugin_registration_diagnostics = ensure_user_plugin_registration(
+    _, toolbox_registration_diagnostics = ensure_toolbox_registration(
         project,
         context,
-        plugin_id=manifest.plugin_id,
-        source_path_input=manifest.plugin_source_path_input,
+        toolbox_id=manifest.toolbox_id,
+        source_path_input=manifest.toolbox_source_path_input,
         scope=scope,
     )
-    diagnostics.extend(plugin_registration_diagnostics)
+    diagnostics.extend(toolbox_registration_diagnostics)
     if has_errors(diagnostics):
         return CallbackCommandResult(
             False,
@@ -326,13 +326,13 @@ def install_user_plugin_callbacks(
             (),
             tuple(diagnostics),
             registry_refs=(ref,),
-            plugin_id=manifest.plugin_id,
-            plugin_source_path=manifest.plugin_source_path_input,
+            toolbox_id=manifest.toolbox_id,
+            toolbox_source_path=manifest.toolbox_source_path_input,
         )
 
     installed_keys = {callback.id for callback in planned_callbacks}
-    if replace_plugin_source:
-        retained_callbacks = [callback for callback in existing_callbacks if callback.plugin_id != manifest.plugin_id and callback.id not in installed_keys]
+    if replace_toolbox_source:
+        retained_callbacks = [callback for callback in existing_callbacks if callback.toolbox_id != manifest.toolbox_id and callback.id not in installed_keys]
     else:
         retained_callbacks = [callback for callback in existing_callbacks if callback.id not in installed_keys]
     callbacks = [*retained_callbacks, *planned_callbacks]
@@ -349,8 +349,8 @@ def install_user_plugin_callbacks(
         callbacks=tuple(sorted(planned_callbacks, key=_callback_sort_key)),
         registry_refs=(ref,),
         diagnostics=tuple(diagnostics),
-        plugin_id=manifest.plugin_id,
-        plugin_source_path=manifest.plugin_source_path_input,
+        toolbox_id=manifest.toolbox_id,
+        toolbox_source_path=manifest.toolbox_source_path_input,
     )
 
 
@@ -492,7 +492,8 @@ def resolve_user_skill_callbacks(
             key=_callback_sort_key,
         )
     )
-    selected, plugin_statuses, gated_callback_ids = _apply_plugin_gating(project, context, selected)
+    selected, toolbox_statuses, gated_callback_ids, gate_diagnostics = _apply_toolbox_gating(project, context, selected)
+    diagnostics.extend(gate_diagnostics)
     return CallbackCommandResult(
         ok=not has_errors(diagnostics),
         mutated=False,
@@ -500,7 +501,7 @@ def resolve_user_skill_callbacks(
         callbacks=selected,
         registry_refs=refs,
         diagnostics=tuple(diagnostics),
-        plugin_statuses=plugin_statuses,
+        toolbox_statuses=toolbox_statuses,
         gated_callback_ids=gated_callback_ids,
     )
 
@@ -511,7 +512,8 @@ def list_user_skill_callbacks(
 ) -> CallbackCommandResult:
     project = state.project
     callbacks, refs, diagnostics = _load_visible_callbacks(project, context, missing_severity="warning")
-    _active_callbacks, plugin_statuses, gated_callback_ids = _apply_plugin_gating(project, context, tuple(callbacks))
+    _active_callbacks, toolbox_statuses, gated_callback_ids, gate_diagnostics = _apply_toolbox_gating(project, context, tuple(callbacks))
+    diagnostics.extend(gate_diagnostics)
     return CallbackCommandResult(
         ok=not has_errors(diagnostics),
         mutated=False,
@@ -519,7 +521,7 @@ def list_user_skill_callbacks(
         callbacks=tuple(sorted(callbacks, key=_callback_sort_key)),
         registry_refs=refs,
         diagnostics=tuple(diagnostics),
-        plugin_statuses=plugin_statuses,
+        toolbox_statuses=toolbox_statuses,
         gated_callback_ids=gated_callback_ids,
     )
 
@@ -544,7 +546,8 @@ def show_user_skill_callback(
             )
         )
     selected = tuple(sorted(matches, key=_callback_sort_key))
-    _active_callbacks, plugin_statuses, gated_callback_ids = _apply_plugin_gating(project, context, selected)
+    _active_callbacks, toolbox_statuses, gated_callback_ids, gate_diagnostics = _apply_toolbox_gating(project, context, selected)
+    diagnostics.extend(gate_diagnostics)
     return CallbackCommandResult(
         ok=not has_errors(diagnostics),
         mutated=False,
@@ -553,7 +556,7 @@ def show_user_skill_callback(
         callback=selected[0] if selected else None,
         registry_refs=refs,
         diagnostics=tuple(diagnostics),
-        plugin_statuses=plugin_statuses,
+        toolbox_statuses=toolbox_statuses,
         gated_callback_ids=gated_callback_ids,
     )
 
@@ -598,9 +601,9 @@ def disable_user_skill_callback(
         source=selected.source,
         registry_path=selected.registry_path,
         research_topic_id=selected.research_topic_id,
-        plugin_id=selected.plugin_id,
-        plugin_key=selected.plugin_key,
-        plugin_source_path_input=selected.plugin_source_path_input,
+        toolbox_id=selected.toolbox_id,
+        toolbox_key=selected.toolbox_key,
+        toolbox_source_path_input=selected.toolbox_source_path_input,
     )
     for result in loaded:
         if result.ref.path != selected.registry_path:
@@ -634,7 +637,8 @@ def validate_user_skill_callbacks(
         diagnostics.extend(result.diagnostics)
         all_callbacks.extend(result.callbacks)
     diagnostics.extend(_duplicate_active_callback_diagnostics(project, refs))
-    _active_callbacks, plugin_statuses, gated_callback_ids = _apply_plugin_gating(project, context, tuple(all_callbacks))
+    _active_callbacks, toolbox_statuses, gated_callback_ids, gate_diagnostics = _apply_toolbox_gating(project, context, tuple(all_callbacks))
+    diagnostics.extend(gate_diagnostics)
     return CallbackCommandResult(
         ok=not has_errors(diagnostics),
         mutated=False,
@@ -642,7 +646,7 @@ def validate_user_skill_callbacks(
         callbacks=tuple(sorted(all_callbacks, key=_callback_sort_key)),
         registry_refs=refs,
         diagnostics=tuple(diagnostics),
-        plugin_statuses=plugin_statuses,
+        toolbox_statuses=toolbox_statuses,
         gated_callback_ids=gated_callback_ids,
     )
 
@@ -663,25 +667,38 @@ def _load_visible_callbacks(
     return tuple(callbacks), refs, diagnostics
 
 
-def _apply_plugin_gating(
+def _apply_toolbox_gating(
     project: Project,
     context: EffectiveTopicContext | None,
     callbacks: tuple[UserSkillCallback, ...],
-) -> tuple[tuple[UserSkillCallback, ...], tuple[dict[str, object], ...], tuple[str, ...]]:
+) -> tuple[tuple[UserSkillCallback, ...], tuple[dict[str, object], ...], tuple[str, ...], tuple[Diagnostic, ...]]:
     statuses: dict[str, dict[str, object]] = {}
     gated: list[str] = []
     retained: list[UserSkillCallback] = []
+    diagnostics: list[Diagnostic] = []
     for callback in callbacks:
-        if callback.plugin_id is None:
+        if callback.toolbox_id is None:
             retained.append(callback)
             continue
-        status = effective_user_plugin_status(project, context, callback.plugin_id)
-        statuses[callback.plugin_id] = status.to_json()
+        status = effective_toolbox_status(project, context, callback.toolbox_id)
+        statuses[callback.toolbox_id] = status.to_json()
+        if status.source == "missing-registration":
+            gated.append(callback.id)
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO104",
+                    severity="error",
+                    concept="Toolbox-installed User Skill Callback",
+                    field="toolbox_id",
+                    message=f"Callback {callback.id} references Toolbox `{callback.toolbox_id}` but no matching Toolbox registration is visible.",
+                )
+            )
+            continue
         if status.status == "disabled":
             gated.append(callback.id)
             continue
         retained.append(callback)
-    return tuple(retained), tuple(statuses[key] for key in sorted(statuses)), tuple(gated)
+    return tuple(retained), tuple(statuses[key] for key in sorted(statuses)), tuple(gated), tuple(diagnostics)
 
 
 def _generated_callback_id(skill: str, stage: str, source_hint: str) -> str:

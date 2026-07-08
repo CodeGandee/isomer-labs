@@ -23,26 +23,26 @@ from isomer_labs.cli.handlers.project import (
     _cmd_topics_list,
     _cmd_topics_show,
     _cmd_topics_update,
-    _cmd_user_plugin_param_import_add,
-    _cmd_user_plugin_param_import_list,
-    _cmd_user_plugin_param_import_remove,
-    _cmd_user_plugin_param_import_show,
-    _cmd_user_plugin_params_define,
-    _cmd_user_plugin_params_explain,
-    _cmd_user_plugin_params_get,
-    _cmd_user_plugin_params_list,
-    _cmd_user_plugin_params_set,
-    _cmd_user_plugin_params_unset,
-    _cmd_user_plugin_params_validate,
-    _cmd_user_plugins_disable,
-    _cmd_user_plugins_enable,
-    _cmd_user_plugins_explain,
-    _cmd_user_plugins_install,
-    _cmd_user_plugins_list,
-    _cmd_user_plugins_show,
-    _cmd_user_plugins_uninstall,
-    _cmd_user_plugins_update_source,
-    _cmd_user_plugins_validate,
+    _cmd_toolbox_param_import_add,
+    _cmd_toolbox_param_import_list,
+    _cmd_toolbox_param_import_remove,
+    _cmd_toolbox_param_import_show,
+    _cmd_toolbox_params_define,
+    _cmd_toolbox_params_explain,
+    _cmd_toolbox_params_get,
+    _cmd_toolbox_params_list,
+    _cmd_toolbox_params_set,
+    _cmd_toolbox_params_unset,
+    _cmd_toolbox_params_validate,
+    _cmd_toolboxes_disable,
+    _cmd_toolboxes_enable,
+    _cmd_toolboxes_explain,
+    _cmd_toolboxes_install,
+    _cmd_toolboxes_list,
+    _cmd_toolboxes_show,
+    _cmd_toolboxes_uninstall,
+    _cmd_toolboxes_update_source,
+    _cmd_toolboxes_validate,
     _cmd_validate,
 )
 from isomer_labs.cli.handlers.schemas import _cmd_schemas_list
@@ -97,21 +97,20 @@ def _self_selection_options(command: Any) -> Any:
     return command
 
 
-def _plugin_selection_options(command: Any) -> Any:
+def _toolbox_selection_options(command: Any) -> Any:
     command = click.option("--topic-agent", "--agent", "agent_name", default=None, help="Topic-local Agent Name selector.")(command)
     command = click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name selector.")(command)
     command = _topic_selection_options(command)
     return command
 
 
-def _plugin_scope_option(command: Any) -> Any:
+def _toolbox_scope_option(command: Any) -> Any:
     return click.option(
         "--scope",
-        "user_plugin_scope",
+        "toolbox_scope",
         type=click.Choice(["project", "research_topic", "topic_actor", "topic_agent"]),
-        default="project",
-        show_default=True,
-        help="User Plugin configuration scope.",
+        default=None,
+        help="Toolbox configuration scope.",
     )(command)
 
 
@@ -508,10 +507,10 @@ def register_project_commands(app: click.Group) -> None:
         )
 
 
-    @skill_callbacks_group.command(name="install", help="Install callbacks from a user-plugin manifest.")
+    @skill_callbacks_group.command(name="install", help="Install callbacks from a toolbox manifest.")
     @_common_options
     @_topic_selection_options
-    @click.option("--plugin-dir", "callback_plugin_dir", required=True, help="User-plugin directory containing manifest.toml.")
+    @click.option("--toolbox-dir", "callback_toolbox_dir", required=True, help="Toolbox directory containing manifest.toml.")
     @click.option(
         "--scope",
         "callback_scope",
@@ -520,7 +519,7 @@ def register_project_commands(app: click.Group) -> None:
         show_default=True,
         help="Callback registry scope.",
     )
-    @click.option("--replace", "callback_replace_plugin_source", is_flag=True, help="Replace callbacks from a different source with the same plugin_id.")
+    @click.option("--replace", "callback_replace_toolbox_source", is_flag=True, help="Replace callbacks from a different source with the same toolbox_id.")
     @click.pass_context
     def skill_callbacks_install_command(
         ctx: click.Context,
@@ -536,9 +535,9 @@ def register_project_commands(app: click.Group) -> None:
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
         topic_agent_team_profile_id: str | None = None,
-        callback_plugin_dir: str | None = None,
+        callback_toolbox_dir: str | None = None,
         callback_scope: str | None = None,
-        callback_replace_plugin_source: bool = False,
+        callback_replace_toolbox_source: bool = False,
     ) -> int:
         return _cmd_skill_callbacks_install(
             _merge_options(
@@ -555,9 +554,9 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
-                callback_plugin_dir=callback_plugin_dir,
+                callback_toolbox_dir=callback_toolbox_dir,
                 callback_scope=callback_scope,
-                callback_replace_plugin_source=callback_replace_plugin_source,
+                callback_replace_toolbox_source=callback_replace_toolbox_source,
             )
         )
 
@@ -763,7 +762,7 @@ def register_project_commands(app: click.Group) -> None:
             )
         )
 
-    def _merge_plugin_command_options(ctx: click.Context, kwargs: dict[str, Any], **extra: Any) -> Any:
+    def _merge_toolbox_command_options(ctx: click.Context, kwargs: dict[str, Any], **extra: Any) -> Any:
         values = dict(kwargs)
         project = values.pop("project", None)
         manifest = values.pop("manifest", None)
@@ -780,218 +779,217 @@ def register_project_commands(app: click.Group) -> None:
         )
 
 
-    @app.group(name="user-plugins", help="User Plugin registration commands.")
-    def user_plugins_group() -> None:
+    @app.group(name="toolboxes", help="Toolbox registration commands.")
+    def toolboxes_group() -> None:
         pass
 
 
-    @user_plugins_group.command(name="install", help="Install or update a User Plugin registration.")
+    @toolboxes_group.command(name="install", help="Install or update a Toolbox registration.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
-    @click.argument("plugin_id")
-    @click.option("--source-path", "user_plugin_source_path", default=None, help="Plugin source path or directory.")
-    @click.option("--status", "user_plugin_status", type=click.Choice(["active", "disabled"]), default="active", show_default=True)
+    @_toolbox_selection_options
+    @_toolbox_scope_option
+    @click.option("--toolbox-dir", "toolbox_dir", required=True, help="Toolbox directory containing manifest.toml.")
+    @click.option("--status", "toolbox_status", type=click.Choice(["active", "disabled"]), default="active", show_default=True)
     @click.pass_context
-    def user_plugins_install_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugins_install(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+    def toolboxes_install_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_toolboxes_install(_merge_toolbox_command_options(ctx, kwargs))
 
 
-    @user_plugins_group.command(name="list", help="List User Plugin registrations visible from the selected context.")
+    @toolboxes_group.command(name="list", help="List Toolbox registrations visible from the selected context.")
     @_common_options
-    @_plugin_selection_options
+    @_toolbox_selection_options
     @click.pass_context
-    def user_plugins_list_command(ctx: click.Context, **kwargs: Any) -> int:
-        return _cmd_user_plugins_list(_merge_plugin_command_options(ctx, kwargs))
+    def toolboxes_list_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_toolboxes_list(_merge_toolbox_command_options(ctx, kwargs))
 
 
-    @user_plugins_group.command(name="show", help="Show one User Plugin registration.")
+    @toolboxes_group.command(name="show", help="Show one Toolbox registration.")
     @_common_options
-    @_plugin_selection_options
-    @click.argument("plugin_id")
+    @_toolbox_selection_options
+    @click.argument("toolbox_id")
     @click.pass_context
-    def user_plugins_show_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugins_show(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+    def toolboxes_show_command(ctx: click.Context, toolbox_id: str, **kwargs: Any) -> int:
+        return _cmd_toolboxes_show(_merge_toolbox_command_options(ctx, kwargs, toolbox_id=toolbox_id))
 
 
-    @user_plugins_group.command(name="explain", help="Explain effective User Plugin status.")
+    @toolboxes_group.command(name="explain", help="Explain effective Toolbox status.")
     @_common_options
-    @_plugin_selection_options
-    @click.argument("plugin_id")
+    @_toolbox_selection_options
+    @click.argument("toolbox_id")
     @click.pass_context
-    def user_plugins_explain_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugins_explain(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+    def toolboxes_explain_command(ctx: click.Context, toolbox_id: str, **kwargs: Any) -> int:
+        return _cmd_toolboxes_explain(_merge_toolbox_command_options(ctx, kwargs, toolbox_id=toolbox_id))
 
 
-    @user_plugins_group.command(name="enable", help="Enable a User Plugin at the selected scope.")
+    @toolboxes_group.command(name="enable", help="Enable a Toolbox at the selected scope.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
-    @click.argument("plugin_id")
+    @_toolbox_selection_options
+    @_toolbox_scope_option
+    @click.argument("toolbox_id")
     @click.pass_context
-    def user_plugins_enable_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugins_enable(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+    def toolboxes_enable_command(ctx: click.Context, toolbox_id: str, **kwargs: Any) -> int:
+        return _cmd_toolboxes_enable(_merge_toolbox_command_options(ctx, kwargs, toolbox_id=toolbox_id))
 
 
-    @user_plugins_group.command(name="disable", help="Disable a User Plugin at the selected scope.")
+    @toolboxes_group.command(name="disable", help="Disable a Toolbox at the selected scope.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
-    @click.argument("plugin_id")
+    @_toolbox_selection_options
+    @_toolbox_scope_option
+    @click.argument("toolbox_id")
     @click.pass_context
-    def user_plugins_disable_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugins_disable(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+    def toolboxes_disable_command(ctx: click.Context, toolbox_id: str, **kwargs: Any) -> int:
+        return _cmd_toolboxes_disable(_merge_toolbox_command_options(ctx, kwargs, toolbox_id=toolbox_id))
 
 
-    @user_plugins_group.command(name="update-source", help="Update a User Plugin source path.")
+    @toolboxes_group.command(name="update-source", help="Update a Toolbox source path.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
-    @click.argument("plugin_id")
-    @click.option("--source-path", "user_plugin_source_path", required=True, help="Replacement plugin source path.")
+    @_toolbox_selection_options
+    @_toolbox_scope_option
+    @click.argument("toolbox_id")
+    @click.option("--source-path", "toolbox_source_path", required=True, help="Replacement Toolbox source path.")
     @click.pass_context
-    def user_plugins_update_source_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugins_update_source(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+    def toolboxes_update_source_command(ctx: click.Context, toolbox_id: str, **kwargs: Any) -> int:
+        return _cmd_toolboxes_update_source(_merge_toolbox_command_options(ctx, kwargs, toolbox_id=toolbox_id))
 
 
-    @user_plugins_group.command(name="uninstall", help="Remove a User Plugin registration at the selected scope.")
+    @toolboxes_group.command(name="uninstall", help="Remove a Toolbox registration at the selected scope.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
-    @click.argument("plugin_id")
+    @_toolbox_selection_options
+    @_toolbox_scope_option
+    @click.argument("toolbox_id")
     @click.pass_context
-    def user_plugins_uninstall_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugins_uninstall(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+    def toolboxes_uninstall_command(ctx: click.Context, toolbox_id: str, **kwargs: Any) -> int:
+        return _cmd_toolboxes_uninstall(_merge_toolbox_command_options(ctx, kwargs, toolbox_id=toolbox_id))
 
 
-    @user_plugins_group.command(name="validate", help="Validate User Plugin registrations and runtime params.")
+    @toolboxes_group.command(name="validate", help="Validate Toolbox registrations and runtime params.")
     @_common_options
-    @_plugin_selection_options
+    @_toolbox_selection_options
     @click.pass_context
-    def user_plugins_validate_command(ctx: click.Context, **kwargs: Any) -> int:
-        return _cmd_user_plugins_validate(_merge_plugin_command_options(ctx, kwargs))
+    def toolboxes_validate_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_toolboxes_validate(_merge_toolbox_command_options(ctx, kwargs))
 
 
-    @app.group(name="user-plugin-params", help="User Plugin runtime param commands.")
-    def user_plugin_params_group() -> None:
+    @app.group(name="toolbox-params", help="Toolbox runtime param commands.")
+    def toolbox_params_group() -> None:
         pass
 
 
     def _param_value_options(command: Any) -> Any:
-        command = click.option("--description", "user_plugin_param_description", default=None, help="Runtime param description.")(command)
-        command = click.option("--allowed-value", "user_plugin_param_allowed_values", multiple=True, help="Allowed enum value. Repeat for multiple values.")(command)
-        command = click.option("--value-type", "user_plugin_param_value_type", type=click.Choice(["string", "bool", "integer", "number", "enum", "string_list"]), default=None, help="Runtime param value type.")(command)
-        command = click.option("--value", "user_plugin_param_value", required=True, help="Runtime param value.")(command)
+        command = click.option("--description", "toolbox_param_description", default=None, help="Runtime param description.")(command)
+        command = click.option("--allowed-value", "toolbox_param_allowed_values", multiple=True, help="Allowed enum value. Repeat for multiple values.")(command)
+        command = click.option("--value-type", "toolbox_param_value_type", type=click.Choice(["string", "bool", "integer", "number", "enum", "string_list"]), default=None, help="Runtime param value type.")(command)
+        command = click.option("--value", "toolbox_param_value", required=True, help="Runtime param value.")(command)
         return command
 
 
-    @user_plugin_params_group.command(name="define", help="Define a User Plugin runtime param at the selected scope.")
+    @toolbox_params_group.command(name="define", help="Define a Toolbox runtime param at the selected scope.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
+    @_toolbox_selection_options
+    @_toolbox_scope_option
     @_param_value_options
     @click.argument("param_id")
     @click.pass_context
-    def user_plugin_params_define_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugin_params_define(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+    def toolbox_params_define_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_toolbox_params_define(_merge_toolbox_command_options(ctx, kwargs, toolbox_param_id=param_id))
 
 
-    @user_plugin_params_group.command(name="set", help="Set a User Plugin runtime param at the selected scope.")
+    @toolbox_params_group.command(name="set", help="Set a Toolbox runtime param at the selected scope.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
+    @_toolbox_selection_options
+    @_toolbox_scope_option
     @_param_value_options
     @click.argument("param_id")
     @click.pass_context
-    def user_plugin_params_set_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugin_params_set(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+    def toolbox_params_set_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_toolbox_params_set(_merge_toolbox_command_options(ctx, kwargs, toolbox_param_id=param_id))
 
 
-    @user_plugin_params_group.command(name="get", help="Get an effective User Plugin runtime param.")
+    @toolbox_params_group.command(name="get", help="Get an effective Toolbox runtime param.")
     @_common_options
-    @_plugin_selection_options
+    @_toolbox_selection_options
     @click.argument("param_id")
     @click.pass_context
-    def user_plugin_params_get_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugin_params_get(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+    def toolbox_params_get_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_toolbox_params_get(_merge_toolbox_command_options(ctx, kwargs, toolbox_param_id=param_id))
 
 
-    @user_plugin_params_group.command(name="list", help="List effective User Plugin runtime params.")
+    @toolbox_params_group.command(name="list", help="List effective Toolbox runtime params.")
     @_common_options
-    @_plugin_selection_options
+    @_toolbox_selection_options
     @click.pass_context
-    def user_plugin_params_list_command(ctx: click.Context, **kwargs: Any) -> int:
-        return _cmd_user_plugin_params_list(_merge_plugin_command_options(ctx, kwargs))
+    def toolbox_params_list_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_toolbox_params_list(_merge_toolbox_command_options(ctx, kwargs))
 
 
-    @user_plugin_params_group.command(name="explain", help="Explain runtime param candidates and selected value.")
+    @toolbox_params_group.command(name="explain", help="Explain runtime param candidates and selected value.")
     @_common_options
-    @_plugin_selection_options
+    @_toolbox_selection_options
     @click.argument("param_id")
     @click.pass_context
-    def user_plugin_params_explain_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugin_params_explain(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+    def toolbox_params_explain_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_toolbox_params_explain(_merge_toolbox_command_options(ctx, kwargs, toolbox_param_id=param_id))
 
 
-    @user_plugin_params_group.command(name="unset", help="Remove a runtime param row at the selected scope.")
+    @toolbox_params_group.command(name="unset", help="Remove a runtime param row at the selected scope.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
+    @_toolbox_selection_options
+    @_toolbox_scope_option
     @click.argument("param_id")
     @click.pass_context
-    def user_plugin_params_unset_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
-        return _cmd_user_plugin_params_unset(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+    def toolbox_params_unset_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_toolbox_params_unset(_merge_toolbox_command_options(ctx, kwargs, toolbox_param_id=param_id))
 
 
-    @user_plugin_params_group.command(name="validate", help="Validate and resolve User Plugin runtime params.")
+    @toolbox_params_group.command(name="validate", help="Validate and resolve Toolbox runtime params.")
     @_common_options
-    @_plugin_selection_options
+    @_toolbox_selection_options
     @click.pass_context
-    def user_plugin_params_validate_command(ctx: click.Context, **kwargs: Any) -> int:
-        return _cmd_user_plugin_params_validate(_merge_plugin_command_options(ctx, kwargs))
+    def toolbox_params_validate_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_toolbox_params_validate(_merge_toolbox_command_options(ctx, kwargs))
 
 
-    @user_plugin_params_group.group(name="import", help="Runtime param import commands.")
-    def user_plugin_params_import_group() -> None:
+    @toolbox_params_group.group(name="import", help="Runtime param import commands.")
+    def toolbox_params_import_group() -> None:
         pass
 
 
-    @user_plugin_params_import_group.command(name="add", help="Add a runtime param import row.")
+    @toolbox_params_import_group.command(name="add", help="Add a runtime param import row.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
-    @click.argument("plugin_id")
+    @_toolbox_selection_options
+    @_toolbox_scope_option
+    @click.argument("toolbox_id")
     @click.argument("path")
     @click.pass_context
-    def user_plugin_params_import_add_command(ctx: click.Context, plugin_id: str, path: str, **kwargs: Any) -> int:
-        return _cmd_user_plugin_param_import_add(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id, user_plugin_import_path=path))
+    def toolbox_params_import_add_command(ctx: click.Context, toolbox_id: str, path: str, **kwargs: Any) -> int:
+        return _cmd_toolbox_param_import_add(_merge_toolbox_command_options(ctx, kwargs, toolbox_id=toolbox_id, toolbox_import_path=path))
 
 
-    @user_plugin_params_import_group.command(name="list", help="List runtime param imports visible from the selected context.")
+    @toolbox_params_import_group.command(name="list", help="List runtime param imports visible from the selected context.")
     @_common_options
-    @_plugin_selection_options
+    @_toolbox_selection_options
     @click.pass_context
-    def user_plugin_params_import_list_command(ctx: click.Context, **kwargs: Any) -> int:
-        return _cmd_user_plugin_param_import_list(_merge_plugin_command_options(ctx, kwargs))
+    def toolbox_params_import_list_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_toolbox_param_import_list(_merge_toolbox_command_options(ctx, kwargs))
 
 
-    @user_plugin_params_import_group.command(name="show", help="Show runtime param imports.")
+    @toolbox_params_import_group.command(name="show", help="Show runtime param imports.")
     @_common_options
-    @_plugin_selection_options
+    @_toolbox_selection_options
     @click.pass_context
-    def user_plugin_params_import_show_command(ctx: click.Context, **kwargs: Any) -> int:
-        return _cmd_user_plugin_param_import_show(_merge_plugin_command_options(ctx, kwargs))
+    def toolbox_params_import_show_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_toolbox_param_import_show(_merge_toolbox_command_options(ctx, kwargs))
 
 
-    @user_plugin_params_import_group.command(name="remove", help="Remove a runtime param import row.")
+    @toolbox_params_import_group.command(name="remove", help="Remove a runtime param import row.")
     @_common_options
-    @_plugin_selection_options
-    @_plugin_scope_option
-    @click.argument("plugin_id")
+    @_toolbox_selection_options
+    @_toolbox_scope_option
+    @click.argument("toolbox_id")
     @click.argument("path")
     @click.pass_context
-    def user_plugin_params_import_remove_command(ctx: click.Context, plugin_id: str, path: str, **kwargs: Any) -> int:
-        return _cmd_user_plugin_param_import_remove(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id, user_plugin_import_path=path))
+    def toolbox_params_import_remove_command(ctx: click.Context, toolbox_id: str, path: str, **kwargs: Any) -> int:
+        return _cmd_toolbox_param_import_remove(_merge_toolbox_command_options(ctx, kwargs, toolbox_id=toolbox_id, toolbox_import_path=path))
 
 
     @app.group(name="topic-actors", help="Topic Actor and Topic Actor Workspace commands.")

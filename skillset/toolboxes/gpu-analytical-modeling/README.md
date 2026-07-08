@@ -1,6 +1,6 @@
-# GPU Analytical Modeling User Plugin
+# GPU Analytical Modeling Toolbox
 
-This project-local user-plugin provides User Skill Callback material for GPU kernel analytical modeling. It keeps GPU modeling preferences under `skillset/user-plugins/gpu-analytical-modeling/`; it is not part of the packaged Isomer distribution and does not install itself.
+This project-local toolbox provides User Skill Callback material for GPU kernel analytical modeling. It keeps GPU modeling preferences under `skillset/toolboxes/gpu-analytical-modeling/`; it is not part of the packaged Isomer distribution and does not install itself.
 
 ## Contents
 
@@ -13,25 +13,25 @@ This project-local user-plugin provides User Skill Callback material for GPU ker
 
 ## Manifest Role
 
-The manifest describes the callbacks this plugin expects an operator to install. The top-level `plugin_id` is the stable plugin identity, and each callback has a plugin-local `key`. Installed callback ids use `<plugin_id>:<key>`, such as `gpu-analytical-modeling:gpu-modeling-method/scout/begin`.
+The manifest describes the callbacks this Toolbox expects an operator to install. The top-level `toolbox_id` is the stable Toolbox identity, and each callback has a toolbox-local `key`. Installed callback ids use `<toolbox_id>:<key>`, such as `gpu-analytical-modeling:gpu-modeling-method/scout/begin`.
 
 Install topic-scoped callbacks with:
 
 ```bash
 pixi run isomer-cli --print-json project skill-callbacks install \
   --topic <topic-id> \
-  --plugin-dir skillset/user-plugins/gpu-analytical-modeling
+  --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
 ```
 
 The installed registry remains under `.isomer-labs/user-skill-callbacks/.../registry.toml` after registration.
 
-Callback `key` values contain only letters, digits, `-`, `_`, and `/`. Use `/` for naming hierarchy only; it does not imply filesystem paths or ordering dependencies. If a callback omits `key`, Isomer derives `<target_skill>/<stage>`. A plugin cannot contain two unlabeled callbacks for the same target skill and stage because they would derive the same plugin-local key.
+Callback `key` values contain only letters, digits, `-`, `_`, and `/`. Use `/` for naming hierarchy only; it does not imply filesystem paths or ordering dependencies. If a callback omits `key`, Isomer derives `<target_skill>/<stage>`. A Toolbox cannot contain two unlabeled callbacks for the same target skill and stage because they would derive the same toolbox-local key.
 
-Ordering is guaranteed only inside this plugin, by ascending Python string comparison of plugin-local keys. Cross-plugin ordering is deterministic implementation detail and should not be used as a design contract.
+Ordering is guaranteed only inside this Toolbox, by ascending Python string comparison of toolbox-local keys. Cross-Toolbox ordering is deterministic implementation detail and should not be used as a design contract.
 
 ## Recommended Targets
 
-| Plugin source | Recommended target stages | Use |
+| Toolbox source | Recommended target stages | Use |
 | --- | --- | --- |
 | `gpu-reference-map` | `isomer-deepsci-scout:begin/end`, `isomer-deepsci-baseline:begin`, `isomer-deepsci-idea:begin`, `isomer-deepsci-analysis:begin`, `isomer-deepsci-experiment:begin`, `isomer-deepsci-review:begin` | Choose source families, source limits, and source-to-claim evidence boundaries before operational work hardens. |
 | `gpu-modeling-method` | `isomer-deepsci-scout:begin/end`, `isomer-deepsci-baseline:begin`, `isomer-deepsci-idea:begin`, `isomer-deepsci-analysis:begin` | Shape equations, assumptions, hardware contracts, and baseline classes before model work hardens. |
@@ -54,7 +54,7 @@ Prefer topic-scoped installation for a specific GPU kernel modeling topic:
 pixi run isomer-cli --print-json project skill-callbacks install \
   --topic <topic-id> \
   --scope research_topic \
-  --plugin-dir skillset/user-plugins/gpu-analytical-modeling
+  --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
 ```
 
 Use project-scoped installation only when GPU analytical modeling is a project-wide default:
@@ -62,7 +62,7 @@ Use project-scoped installation only when GPU analytical modeling is a project-w
 ```bash
 pixi run isomer-cli --print-json project skill-callbacks install \
   --scope project \
-  --plugin-dir skillset/user-plugins/gpu-analytical-modeling
+  --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
 ```
 
 Manual one-off callbacks can still use the lower-level registration surface with explicit installed ids:
@@ -73,7 +73,7 @@ pixi run isomer-cli --print-json project skill-callbacks register \
   --id gpu-analytical-modeling:manual/no-emulator-overclaim/write/end \
   --skill isomer-deepsci-write \
   --stage end \
-  --prompt-file skillset/user-plugins/gpu-analytical-modeling/prompts/no-emulator-overclaim.md
+  --prompt-file skillset/toolboxes/gpu-analytical-modeling/prompts/no-emulator-overclaim.md
 ```
 
 ## Boundaries

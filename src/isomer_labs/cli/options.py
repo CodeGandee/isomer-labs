@@ -57,19 +57,20 @@ class CliOptions:
     callback_skill_dir: str | None = None
     callback_priority: int | None = None
     callback_allow_external_source: bool = False
-    callback_plugin_dir: str | None = None
-    callback_replace_plugin_source: bool = False
-    user_plugin_id: str | None = None
-    user_plugin_source_path: str | None = None
-    user_plugin_scope: str | None = None
-    user_plugin_status: str | None = None
-    user_plugin_param_id: str | None = None
-    user_plugin_param_key: str | None = None
-    user_plugin_param_value: str | None = None
-    user_plugin_param_value_type: str | None = None
-    user_plugin_param_allowed_values: tuple[str, ...] = ()
-    user_plugin_param_description: str | None = None
-    user_plugin_import_path: str | None = None
+    callback_toolbox_dir: str | None = None
+    callback_replace_toolbox_source: bool = False
+    toolbox_dir: str | None = None
+    toolbox_id: str | None = None
+    toolbox_source_path: str | None = None
+    toolbox_scope: str | None = None
+    toolbox_status: str | None = None
+    toolbox_param_id: str | None = None
+    toolbox_param_key: str | None = None
+    toolbox_param_value: str | None = None
+    toolbox_param_value_type: str | None = None
+    toolbox_param_allowed_values: tuple[str, ...] = ()
+    toolbox_param_description: str | None = None
+    toolbox_import_path: str | None = None
 
 
 def common_options(command: Any) -> Any:

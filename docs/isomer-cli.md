@@ -173,7 +173,7 @@ pixi run isomer-cli --print-json project workspaces list
 
 Register, inspect, resolve, disable, and validate User Skill Callbacks. A User Skill Callback is supplemental instruction material attached to one packaged system skill and one stage, currently `begin` or `end`. Participating skills resolve `begin` callbacks after mandatory context checks and before workflow step 1, then resolve `end` callbacks after tentative outputs exist and before final response or handoff.
 
-**Side effects:** `register` writes or updates a callback registry under `.isomer-labs/user-skill-callbacks/`, materializes inline prompts as managed Markdown files, and adds a Project Manifest or Research Topic Config registry ref. `install --plugin-dir` also ensures a matching User Plugin registration at the selected scope. `disable` marks the callback inactive while keeping the record. `resolve`, `list`, `show`, and `validate` are read-only.
+**Side effects:** `register` writes or updates a callback registry under `.isomer-labs/user-skill-callbacks/`, materializes inline prompts as managed Markdown files, and adds a Project Manifest or Research Topic Config registry ref. `install --toolbox-dir` also ensures a matching Toolbox registration at the selected scope. `disable` marks the callback inactive while keeping the record. `resolve`, `list`, `show`, and `validate` are read-only.
 
 Callbacks are instruction material, not executable provider payloads. They cannot override system or developer instructions, the owning system skill, the current user request, Isomer domain constraints, required Gates, evidence rules, validation, or recording obligations. Empty resolution results are normal and do not block the owning workflow.
 
@@ -190,36 +190,36 @@ pixi run isomer-cli --print-json project skill-callbacks validate --topic my-top
 
 Use `--prompt` for short inline guidance that Isomer should materialize into managed callback content. Use `--prompt-file` for a project-scoped file that already contains the guidance. Use `--skill-dir` when the callback guidance lives in an external skill directory with `SKILL.md`; Isomer reads it as supplemental instruction material and does not install it as a packaged system skill.
 
-Plugin-installed callbacks include `plugin_id` metadata. During `resolve`, Isomer checks the effective User Plugin status for the selected Project or topic context. A disabled plugin leaves callback records installed for audit, but its callbacks are omitted from resolution and reported in `gated_callback_ids`. Existing callback records without a matching User Plugin registration stay enabled for backward compatibility.
+Toolbox-installed callbacks include `toolbox_id` metadata. During `resolve`, Isomer checks the effective Toolbox status for the selected Project or topic context. A disabled Toolbox leaves callback records installed for audit, but its callbacks are omitted from resolution and reported in `gated_callback_ids`. Callback records with Toolbox metadata but no matching Toolbox registration are gated with diagnostics.
 
 System skill families use `isomer-<extension-name>-<purpose>` names for domain extensions such as `isomer-deepsci-*`. `isomer-misc-*` remains the public cross-domain helper namespace, not a generic extension bucket.
 
-### `project user-plugins`
+### `project toolboxes`
 
-Manage User Plugin registrations as parent resources. Registrations live in the Project Manifest for `scope = "project"` or in the selected Topic Workspace Manifest for `scope = "research_topic"`, `scope = "topic_actor"`, or `scope = "topic_agent"`. New topic-agent commands document `--topic-agent`; `--agent` remains accepted as an alias where this selector is supported.
+Manage Toolbox registrations as parent resources. Registrations live in the Project Manifest for `scope = "project"` or in the selected Topic Workspace Manifest for `scope = "research_topic"`, `scope = "topic_actor"`, or `scope = "topic_agent"`. New topic-agent commands document `--topic-agent`; `--agent` remains accepted as an alias where this selector is supported.
 
 **Side effects:** `install`, `enable`, `disable`, `update-source`, and `uninstall` mutate only the selected manifest layer. `list`, `show`, `explain`, and `validate` are read-only.
 
 ```bash
-pixi run isomer-cli --print-json project user-plugins install gpu-analytical-modeling --source-path skillset/user-plugins/gpu-analytical-modeling
-pixi run isomer-cli --print-json project user-plugins disable gpu-analytical-modeling --topic my-topic --scope research_topic
-pixi run isomer-cli --print-json project user-plugins enable gpu-analytical-modeling --topic my-topic --scope topic_agent --topic-agent coder
-pixi run isomer-cli --print-json project user-plugins show gpu-analytical-modeling --topic my-topic --topic-agent coder
-pixi run isomer-cli --print-json project user-plugins validate --topic my-topic
+pixi run isomer-cli --print-json project toolboxes install --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
+pixi run isomer-cli --print-json project toolboxes disable gpu-analytical-modeling --topic my-topic --scope research_topic
+pixi run isomer-cli --print-json project toolboxes enable gpu-analytical-modeling --topic my-topic --scope topic_agent --topic-agent coder
+pixi run isomer-cli --print-json project toolboxes show gpu-analytical-modeling --topic my-topic --topic-agent coder
+pixi run isomer-cli --print-json project toolboxes validate --topic my-topic
 ```
 
-### `project user-plugin-params`
+### `project toolbox-params`
 
-Manage User Plugin runtime params that callback skills can query through JSON. Effective param ids use `<plugin_id>:<key>`. Values resolve in this order: Project Manifest imports, Project Manifest explicit params, Topic Workspace Manifest imports, Topic Workspace Manifest explicit params. Topic rows can specialize by Research Topic, exact Topic Actor name, or exact Topic Agent name.
+Manage Toolbox runtime params that callback skills can query through JSON. Effective param ids use `<toolbox_id>:<key>`. Values resolve in this order: Project Manifest imports, Project Manifest explicit params, Topic Workspace Manifest imports, Topic Workspace Manifest explicit params. Topic rows can specialize by Research Topic, exact Topic Actor name, or exact Topic Agent name.
 
 **Side effects:** `define`, `set`, `unset`, `import add`, and `import remove` mutate only the selected manifest layer. `get`, `list`, `explain`, `validate`, `import list`, and `import show` are read-only.
 
 ```bash
-pixi run isomer-cli --print-json project user-plugin-params set gpu-analytical-modeling:evidence/mode --value strict --value-type enum --allowed-value strict --allowed-value relaxed
-pixi run isomer-cli --print-json project user-plugin-params import add gpu-analytical-modeling profiles/gpu-defaults.toml --topic my-topic --scope research_topic
-pixi run isomer-cli --print-json project user-plugin-params set gpu-analytical-modeling:evidence/mode --topic my-topic --scope topic_agent --topic-agent coder --value relaxed --value-type enum --allowed-value strict --allowed-value relaxed
-pixi run isomer-cli --print-json project user-plugin-params get gpu-analytical-modeling:evidence/mode --topic my-topic --topic-agent coder
-pixi run isomer-cli --print-json project user-plugin-params explain gpu-analytical-modeling:evidence/mode --topic my-topic --topic-agent coder
+pixi run isomer-cli --print-json project toolbox-params set gpu-analytical-modeling:evidence/mode --value strict --value-type enum --allowed-value strict --allowed-value relaxed
+pixi run isomer-cli --print-json project toolbox-params import add gpu-analytical-modeling profiles/gpu-defaults.toml --topic my-topic --scope research_topic
+pixi run isomer-cli --print-json project toolbox-params set gpu-analytical-modeling:evidence/mode --topic my-topic --scope topic_agent --topic-agent coder --value relaxed --value-type enum --allowed-value strict --allowed-value relaxed
+pixi run isomer-cli --print-json project toolbox-params get gpu-analytical-modeling:evidence/mode --topic my-topic --topic-agent coder
+pixi run isomer-cli --print-json project toolbox-params explain gpu-analytical-modeling:evidence/mode --topic my-topic --topic-agent coder
 ```
 
 Imported TOML files contain param rows only. Import paths are relative to the manifest file that declares them, so Project Manifest imports resolve relative to `.isomer-labs/` and Topic Workspace Manifest imports resolve relative to the Topic Workspace root. Runtime params are not a credentials surface; secret-like keys or values are rejected.

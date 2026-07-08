@@ -1,4 +1,4 @@
-"""User Plugin registration and runtime-param helpers."""
+"""Toolbox registration and runtime-param helpers."""
 
 from __future__ import annotations
 
@@ -16,36 +16,46 @@ from isomer_labs.core.toml_loader import load_toml
 from isomer_labs.models import (
     EffectiveTopicContext,
     Project,
-    UserPluginRegistration,
-    UserPluginRuntimeParam,
-    UserPluginRuntimeParamImport,
+    ToolboxRegistration,
+    ToolboxRuntimeParam,
+    ToolboxRuntimeParamImport,
 )
-from isomer_labs.project.callback_keys import CALLBACK_PLUGIN_ID_RE
+from isomer_labs.project.callback_keys import CALLBACK_TOOLBOX_ID_RE
 from isomer_labs.project.skill_callbacks import secret_like_diagnostics
 
 
-USER_PLUGIN_STATUS_VALUES = ("active", "disabled")
-USER_PLUGIN_RUNTIME_PARAM_IMPORT_SCHEMA_VERSION = "isomer-user-plugin-runtime-params.v1"
+TOOLBOX_STATUS_VALUES = ("active", "disabled")
+TOOLBOX_RUNTIME_PARAM_IMPORT_SCHEMA_VERSION = "isomer-toolbox-runtime-params.v1"
 PROJECT_RUNTIME_PARAM_SCOPES = ("project",)
 TOPIC_RUNTIME_PARAM_SCOPES = ("research_topic", "topic_actor", "topic_agent")
 RUNTIME_PARAM_SCOPES = PROJECT_RUNTIME_PARAM_SCOPES + TOPIC_RUNTIME_PARAM_SCOPES
 RUNTIME_PARAM_VALUE_TYPES = ("string", "bool", "integer", "number", "enum", "string_list")
 PARAM_KEY_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_/-]*$")
 TOPIC_SELECTOR_SCOPES = {"topic_actor", "topic_agent"}
-UserPluginConfigRow: TypeAlias = UserPluginRegistration | UserPluginRuntimeParamImport | UserPluginRuntimeParam
+ToolboxConfigRow: TypeAlias = ToolboxRegistration | ToolboxRuntimeParamImport | ToolboxRuntimeParam
+STALE_TOOLBOX_TABLES = (
+    "user_plugins",
+    "user_plugin_runtime_param_imports",
+    "user_plugin_runtime_params",
+)
+STALE_TOOLBOX_FIELDS = {
+    "toolboxes": ("plugin_id", "plugin_dir", "id", "path", "agent_name"),
+    "toolbox_runtime_param_imports": ("plugin_id", "id", "import_path", "agent_name"),
+    "toolbox_runtime_params": ("plugin_id", "id", "param_key", "name", "type", "agent_name"),
+}
 
 
 @dataclass(frozen=True)
-class UserPluginEffectiveStatus:
-    plugin_id: str
+class ToolboxEffectiveStatus:
+    toolbox_id: str
     status: str
     source: str
-    registration: UserPluginRegistration | None = None
+    registration: ToolboxRegistration | None = None
     diagnostics: tuple[Diagnostic, ...] = ()
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
-            "plugin_id": self.plugin_id,
+            "toolbox_id": self.toolbox_id,
             "status": self.status,
             "source": self.source,
         }
@@ -59,7 +69,7 @@ class UserPluginEffectiveStatus:
 @dataclass(frozen=True)
 class RuntimeParamCandidate:
     layer: str
-    param: UserPluginRuntimeParam
+    param: ToolboxRuntimeParam
 
     def to_json(self) -> dict[str, object]:
         data = self.param.to_json()
@@ -70,12 +80,12 @@ class RuntimeParamCandidate:
 @dataclass(frozen=True)
 class EffectiveRuntimeParam:
     param_id: str
-    plugin_id: str
+    toolbox_id: str
     key: str
     value: Any
     value_type: str
     effective_scope: str
-    selected: UserPluginRuntimeParam
+    selected: ToolboxRuntimeParam
     candidates: tuple[RuntimeParamCandidate, ...]
     overridden: tuple[RuntimeParamCandidate, ...]
     diagnostics: tuple[Diagnostic, ...] = ()
@@ -83,7 +93,7 @@ class EffectiveRuntimeParam:
     def to_json(self, *, explain: bool = False) -> dict[str, object]:
         data: dict[str, object] = {
             "param_id": self.param_id,
-            "plugin_id": self.plugin_id,
+            "toolbox_id": self.toolbox_id,
             "key": self.key,
             "value": self.value,
             "value_type": self.value_type,
@@ -119,19 +129,19 @@ class RuntimeParamResolution:
 
 
 @dataclass(frozen=True)
-class UserPluginCommandResult:
+class ToolboxCommandResult:
     ok: bool
     mutated: bool
     project_root: Path
     diagnostics: tuple[Diagnostic, ...] = ()
-    plugins: tuple[UserPluginRegistration, ...] = ()
-    plugin_statuses: tuple[dict[str, object], ...] = ()
+    toolboxes: tuple[ToolboxRegistration, ...] = ()
+    toolbox_statuses: tuple[dict[str, object], ...] = ()
     params: tuple[EffectiveRuntimeParam, ...] = ()
     param_candidates: tuple[RuntimeParamCandidate, ...] = ()
-    imports: tuple[UserPluginRuntimeParamImport, ...] = ()
-    plugin: UserPluginRegistration | None = None
+    imports: tuple[ToolboxRuntimeParamImport, ...] = ()
+    toolbox: ToolboxRegistration | None = None
     param: EffectiveRuntimeParam | None = None
-    import_ref: UserPluginRuntimeParamImport | None = None
+    import_ref: ToolboxRuntimeParamImport | None = None
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
@@ -140,18 +150,18 @@ class UserPluginCommandResult:
             "project_root": str(self.project_root),
             "diagnostics": [diagnostic.to_json() for diagnostic in self.diagnostics],
         }
-        if self.plugins:
-            data["plugins"] = [plugin.to_json() for plugin in self.plugins]
-        if self.plugin_statuses:
-            data["plugin_statuses"] = list(self.plugin_statuses)
+        if self.toolboxes:
+            data["toolboxes"] = [toolbox.to_json() for toolbox in self.toolboxes]
+        if self.toolbox_statuses:
+            data["toolbox_statuses"] = list(self.toolbox_statuses)
         if self.params:
             data["params"] = [param.to_json() for param in self.params]
         if self.param_candidates:
             data["param_candidates"] = [candidate.to_json() for candidate in self.param_candidates]
         if self.imports:
             data["imports"] = [import_ref.to_json() for import_ref in self.imports]
-        if self.plugin is not None:
-            data["plugin"] = self.plugin.to_json()
+        if self.toolbox is not None:
+            data["toolbox"] = self.toolbox.to_json()
         if self.param is not None:
             data["param"] = self.param.to_json(explain=True)
         if self.import_ref is not None:
@@ -159,110 +169,141 @@ class UserPluginCommandResult:
         return data
 
 
-def parse_user_plugin_registrations(
+def parse_toolbox_registrations(
     path: Path,
     raw: Mapping[str, Any],
     *,
     default_scope: str,
-) -> list[UserPluginRegistration]:
-    registrations: list[UserPluginRegistration] = []
-    for index, item in enumerate(_table_items(raw.get("user_plugins"))):
-        plugin_id = _string(item.get("plugin_id") or item.get("id"))
-        if plugin_id is None:
+) -> list[ToolboxRegistration]:
+    registrations: list[ToolboxRegistration] = []
+    for index, item in enumerate(_table_items(raw.get("toolboxes"))):
+        toolbox_id = _string(item.get("toolbox_id"))
+        if toolbox_id is None:
             continue
-        source_path_input = _string(item.get("source_path") or item.get("path") or item.get("plugin_dir"))
+        source_path_input = _string(item.get("source_path"))
         registrations.append(
-            UserPluginRegistration(
-                plugin_id=plugin_id,
+            ToolboxRegistration(
+                toolbox_id=toolbox_id,
                 scope=_string(item.get("scope")) or default_scope,
                 status=_string(item.get("status")) or "active",
                 source_path_input=source_path_input,
                 source_path=path,
                 topic_actor_name=_string(item.get("topic_actor_name")),
-                topic_agent_name=_string(item.get("topic_agent_name") or item.get("agent_name")),
-                source_detail=f"{path.name}:user_plugins[{index}]",
+                topic_agent_name=_string(item.get("topic_agent_name")),
+                source_detail=f"{path.name}:toolboxes[{index}]",
             )
         )
     return registrations
 
 
-def parse_user_plugin_runtime_param_imports(
+def parse_toolbox_runtime_param_imports(
     path: Path,
     raw: Mapping[str, Any],
     *,
     default_scope: str,
-) -> list[UserPluginRuntimeParamImport]:
-    imports: list[UserPluginRuntimeParamImport] = []
-    for index, item in enumerate(_table_items(raw.get("user_plugin_runtime_param_imports"))):
-        plugin_id = _string(item.get("plugin_id") or item.get("id"))
-        path_input = _string(item.get("path") or item.get("import_path"))
-        if plugin_id is None or path_input is None:
+) -> list[ToolboxRuntimeParamImport]:
+    imports: list[ToolboxRuntimeParamImport] = []
+    for index, item in enumerate(_table_items(raw.get("toolbox_runtime_param_imports"))):
+        toolbox_id = _string(item.get("toolbox_id"))
+        path_input = _string(item.get("path"))
+        if toolbox_id is None or path_input is None:
             continue
         imports.append(
-            UserPluginRuntimeParamImport(
-                plugin_id=plugin_id,
+            ToolboxRuntimeParamImport(
+                toolbox_id=toolbox_id,
                 path_input=path_input,
                 scope=_string(item.get("scope")) or default_scope,
                 status=_string(item.get("status")) or "active",
                 source_path=path,
                 topic_actor_name=_string(item.get("topic_actor_name")),
-                topic_agent_name=_string(item.get("topic_agent_name") or item.get("agent_name")),
-                source_detail=f"{path.name}:user_plugin_runtime_param_imports[{index}]",
+                topic_agent_name=_string(item.get("topic_agent_name")),
+                source_detail=f"{path.name}:toolbox_runtime_param_imports[{index}]",
             )
         )
     return imports
 
 
-def parse_user_plugin_runtime_params(
+def parse_toolbox_runtime_params(
     path: Path,
     raw: Mapping[str, Any],
     *,
     default_scope: str,
     imported_from: Path | None = None,
-) -> list[UserPluginRuntimeParam]:
-    params: list[UserPluginRuntimeParam] = []
-    for index, item in enumerate(_table_items(raw.get("user_plugin_runtime_params"))):
-        plugin_id = _string(item.get("plugin_id") or item.get("id"))
-        key = _string(item.get("key") or item.get("param_key") or item.get("name"))
-        if plugin_id is None or key is None or "value" not in item:
+) -> list[ToolboxRuntimeParam]:
+    params: list[ToolboxRuntimeParam] = []
+    for index, item in enumerate(_table_items(raw.get("toolbox_runtime_params"))):
+        toolbox_id = _string(item.get("toolbox_id"))
+        key = _string(item.get("key"))
+        if toolbox_id is None or key is None or "value" not in item:
             continue
         params.append(
-            UserPluginRuntimeParam(
-                plugin_id=plugin_id,
+            ToolboxRuntimeParam(
+                toolbox_id=toolbox_id,
                 key=key,
                 value=item.get("value"),
                 scope=_string(item.get("scope")) or default_scope,
                 status=_string(item.get("status")) or "active",
-                value_type=_string(item.get("value_type") or item.get("type")),
+                value_type=_string(item.get("value_type")),
                 allowed_values=_string_tuple(item.get("allowed_values")),
                 description=_string(item.get("description")),
                 source_path=path,
                 topic_actor_name=_string(item.get("topic_actor_name")),
-                topic_agent_name=_string(item.get("topic_agent_name") or item.get("agent_name")),
-                source_detail=f"{path.name}:user_plugin_runtime_params[{index}]",
+                topic_agent_name=_string(item.get("topic_agent_name")),
+                source_detail=f"{path.name}:toolbox_runtime_params[{index}]",
                 imported_from=imported_from,
             )
         )
     return params
 
 
-def validate_user_plugin_tables(
+def stale_toolbox_schema_diagnostics(raw: Mapping[str, Any], path: Path, concept: str) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for table_name in STALE_TOOLBOX_TABLES:
+        if table_name in raw:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO103",
+                    severity="error",
+                    concept=concept,
+                    path=path,
+                    field=table_name,
+                    message=f"Old Toolbox schema name `{table_name}` is not supported; use Toolbox table names.",
+                )
+            )
+    for table_name, stale_fields in STALE_TOOLBOX_FIELDS.items():
+        for index, item in enumerate(_table_items(raw.get(table_name))):
+            present = sorted(field for field in stale_fields if field in item)
+            if present:
+                diagnostics.append(
+                    Diagnostic(
+                        code="ISO103",
+                        severity="error",
+                        concept=concept,
+                        path=path,
+                        field=f"{table_name}[{index}]",
+                        message=f"Old Toolbox field names are not supported in `{table_name}`: {', '.join(present)}.",
+                    )
+                )
+    return diagnostics
+
+
+def validate_toolbox_tables(
     *,
     project: Project,
     context: EffectiveTopicContext | None = None,
-    registrations: Iterable[UserPluginRegistration],
-    imports: Iterable[UserPluginRuntimeParamImport],
-    params: Iterable[UserPluginRuntimeParam],
+    registrations: Iterable[ToolboxRegistration],
+    imports: Iterable[ToolboxRuntimeParamImport],
+    params: Iterable[ToolboxRuntimeParam],
     source_path: Path,
     allowed_scopes: tuple[str, ...],
     concept: str,
-    broader_definitions: Mapping[str, UserPluginRuntimeParam] | None = None,
+    broader_definitions: Mapping[str, ToolboxRuntimeParam] | None = None,
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    rows: list[UserPluginConfigRow] = [*registrations, *imports, *params]
+    rows: list[ToolboxConfigRow] = [*registrations, *imports, *params]
     diagnostics.extend(secret_like_diagnostics([_row_scan_payload(row) for row in rows], concept, source_path, ()))
     for row in rows:
-        diagnostics.extend(_validate_plugin_id(row.plugin_id, concept, source_path, "plugin_id"))
+        diagnostics.extend(_validate_toolbox_id(row.toolbox_id, concept, source_path, "toolbox_id"))
         if row.scope not in allowed_scopes:
             diagnostics.append(
                 Diagnostic(
@@ -271,10 +312,10 @@ def validate_user_plugin_tables(
                     concept=concept,
                     path=source_path,
                     field="scope",
-                    message=f"User Plugin scope `{row.scope}` is not allowed in this manifest.",
+                    message=f"Toolbox scope `{row.scope}` is not allowed in this manifest.",
                 )
             )
-        if getattr(row, "status", "active") not in USER_PLUGIN_STATUS_VALUES:
+        if getattr(row, "status", "active") not in TOOLBOX_STATUS_VALUES:
             diagnostics.append(
                 Diagnostic(
                     code="ISO103",
@@ -282,7 +323,7 @@ def validate_user_plugin_tables(
                     concept=concept,
                     path=source_path,
                     field="status",
-                    message="User Plugin status must be active or disabled.",
+                    message="Toolbox status must be active or disabled.",
                 )
             )
         diagnostics.extend(_selector_diagnostics(row, source_path, concept, context))
@@ -305,25 +346,25 @@ def validate_user_plugin_tables(
                 )
             )
     diagnostics.extend(_duplicate_active_row_diagnostics(params, source_path, concept))
-    diagnostics.extend(_duplicate_active_plugin_diagnostics(registrations, source_path, concept))
+    diagnostics.extend(_duplicate_active_toolbox_diagnostics(registrations, source_path, concept))
     return diagnostics
 
 
-def validate_project_user_plugins(project: Project) -> list[Diagnostic]:
-    return validate_user_plugin_tables(
+def validate_project_toolboxes(project: Project) -> list[Diagnostic]:
+    return validate_toolbox_tables(
         project=project,
-        registrations=project.manifest.user_plugins,
-        imports=project.manifest.user_plugin_runtime_param_imports,
-        params=project.manifest.user_plugin_runtime_params,
+        registrations=project.manifest.toolboxes,
+        imports=project.manifest.toolbox_runtime_param_imports,
+        params=project.manifest.toolbox_runtime_params,
         source_path=project.manifest_path,
         allowed_scopes=PROJECT_RUNTIME_PARAM_SCOPES,
-        concept="Project Manifest User Plugin configuration",
+        concept="Project Manifest Toolbox configuration",
     )
 
 
 def load_imported_runtime_params(
     project: Project,
-    import_ref: UserPluginRuntimeParamImport,
+    import_ref: ToolboxRuntimeParamImport,
     *,
     allowed_scopes: tuple[str, ...],
     layer: str,
@@ -335,7 +376,7 @@ def load_imported_runtime_params(
             Diagnostic(
                 code="ISO005",
                 severity="error",
-                concept="User Plugin runtime param import",
+                concept="Toolbox runtime param import",
                 path=import_ref.source_path,
                 field="path",
                 message="Runtime param import path must be relative to the declaring manifest file.",
@@ -348,54 +389,55 @@ def load_imported_runtime_params(
             Diagnostic(
                 code="ISO005",
                 severity="error",
-                concept="User Plugin runtime param import",
+                concept="Toolbox runtime param import",
                 path=import_ref.source_path,
                 field="path",
                 message="Runtime param import path must resolve inside the Project root.",
             )
         )
         return [], diagnostics
-    raw, load_diagnostics = load_toml(resolved, "User Plugin runtime param import")
+    raw, load_diagnostics = load_toml(resolved, "Toolbox runtime param import")
     diagnostics.extend(load_diagnostics)
     if raw is None:
         return [], diagnostics
+    diagnostics.extend(stale_toolbox_schema_diagnostics(raw, resolved, "Toolbox runtime param import"))
     schema_version = _string(raw.get("schema_version"))
-    if schema_version is not None and schema_version != USER_PLUGIN_RUNTIME_PARAM_IMPORT_SCHEMA_VERSION:
+    if schema_version is not None and schema_version != TOOLBOX_RUNTIME_PARAM_IMPORT_SCHEMA_VERSION:
         diagnostics.append(
             Diagnostic(
                 code="ISO102",
                 severity="error",
-                concept="User Plugin runtime param import",
+                concept="Toolbox runtime param import",
                 path=resolved,
                 field="schema_version",
-                message=f"Runtime param import schema_version must be {USER_PLUGIN_RUNTIME_PARAM_IMPORT_SCHEMA_VERSION}.",
+                message=f"Runtime param import schema_version must be {TOOLBOX_RUNTIME_PARAM_IMPORT_SCHEMA_VERSION}.",
             )
         )
-    unsupported = sorted(key for key in raw if key not in {"schema_version", "user_plugin_runtime_params"})
+    unsupported = sorted(key for key in raw if key not in {"schema_version", "toolbox_runtime_params"})
     if unsupported:
         diagnostics.append(
             Diagnostic(
                 code="ISO103",
                 severity="error",
-                concept="User Plugin runtime param import",
+                concept="Toolbox runtime param import",
                 path=resolved,
                 message=f"Runtime param imports may contain only param rows; unsupported fields: {', '.join(unsupported)}.",
             )
         )
     params = [
         replace(param, imported_from=resolved, source_path=resolved)
-        for param in parse_user_plugin_runtime_params(resolved, raw, default_scope=import_ref.scope, imported_from=resolved)
-        if param.plugin_id == import_ref.plugin_id
+        for param in parse_toolbox_runtime_params(resolved, raw, default_scope=import_ref.scope, imported_from=resolved)
+        if param.toolbox_id == import_ref.toolbox_id
     ]
     diagnostics.extend(
-        validate_user_plugin_tables(
+        validate_toolbox_tables(
             project=project,
             registrations=(),
             imports=(),
             params=params,
             source_path=resolved,
             allowed_scopes=allowed_scopes,
-            concept="User Plugin runtime param import",
+            concept="Toolbox runtime param import",
         )
     )
     return [RuntimeParamCandidate(layer=layer, param=param) for param in params if param.status == "active"], diagnostics
@@ -410,7 +452,7 @@ def resolve_runtime_params(
 ) -> RuntimeParamResolution:
     diagnostics: list[Diagnostic] = []
     candidates: list[RuntimeParamCandidate] = []
-    for import_ref in project.manifest.user_plugin_runtime_param_imports:
+    for import_ref in project.manifest.toolbox_runtime_param_imports:
         if import_ref.status == "active":
             imported, import_diagnostics = load_imported_runtime_params(
                 project,
@@ -422,7 +464,7 @@ def resolve_runtime_params(
             diagnostics.extend(import_diagnostics)
     candidates.extend(
         RuntimeParamCandidate("project_explicit", param)
-        for param in project.manifest.user_plugin_runtime_params
+        for param in project.manifest.toolbox_runtime_params
         if param.status == "active"
     )
     if context is not None:
@@ -430,7 +472,7 @@ def resolve_runtime_params(
 
         manifest, manifest_diagnostics = load_topic_workspace_manifest(context)
         diagnostics.extend(manifest_diagnostics)
-        for import_ref in manifest.user_plugin_runtime_param_imports:
+        for import_ref in manifest.toolbox_runtime_param_imports:
             if import_ref.status == "active" and _matches_topic_selector(import_ref, topic_actor_name, topic_agent_name):
                 imported, import_diagnostics = load_imported_runtime_params(
                     project,
@@ -442,7 +484,7 @@ def resolve_runtime_params(
                 diagnostics.extend(import_diagnostics)
         candidates.extend(
             RuntimeParamCandidate("topic_explicit", param)
-            for param in manifest.user_plugin_runtime_params
+            for param in manifest.toolbox_runtime_params
             if param.status == "active" and _matches_topic_selector(param, topic_actor_name, topic_agent_name)
         )
     selected_by_id: dict[str, EffectiveRuntimeParam] = {}
@@ -457,7 +499,7 @@ def resolve_runtime_params(
             value_type = infer_value_type(selected.value)
         selected_by_id[param_id] = EffectiveRuntimeParam(
             param_id=param_id,
-            plugin_id=selected.plugin_id,
+            toolbox_id=selected.toolbox_id,
             key=selected.key,
             value=selected.value,
             value_type=value_type,
@@ -465,7 +507,7 @@ def resolve_runtime_params(
             selected=selected,
             candidates=tuple(group),
             overridden=tuple(group[:-1]),
-            diagnostics=tuple(_validate_param_value(selected, selected.source_path, "User Plugin runtime param", inherited=inherited)),
+            diagnostics=tuple(_validate_param_value(selected, selected.source_path, "Toolbox runtime param", inherited=inherited)),
         )
     diagnostics.extend(diagnostic for param in selected_by_id.values() for diagnostic in param.diagnostics)
     return RuntimeParamResolution(
@@ -475,43 +517,43 @@ def resolve_runtime_params(
     )
 
 
-def effective_user_plugin_status(
+def effective_toolbox_status(
     project: Project,
     context: EffectiveTopicContext | None,
-    plugin_id: str,
+    toolbox_id: str,
     *,
     topic_actor_name: str | None = None,
     topic_agent_name: str | None = None,
-) -> UserPluginEffectiveStatus:
-    registrations = [registration for registration in project.manifest.user_plugins if registration.plugin_id == plugin_id and registration.status in USER_PLUGIN_STATUS_VALUES]
+) -> ToolboxEffectiveStatus:
+    registrations = [registration for registration in project.manifest.toolboxes if registration.toolbox_id == toolbox_id and registration.status in TOOLBOX_STATUS_VALUES]
     if context is not None:
         from isomer_labs.workspace.manifest import load_topic_workspace_manifest
 
         manifest, diagnostics = load_topic_workspace_manifest(context)
         registrations.extend(
             registration
-            for registration in manifest.user_plugins
-            if registration.plugin_id == plugin_id
-            and registration.status in USER_PLUGIN_STATUS_VALUES
+            for registration in manifest.toolboxes
+            if registration.toolbox_id == toolbox_id
+            and registration.status in TOOLBOX_STATUS_VALUES
             and _matches_topic_selector(registration, topic_actor_name, topic_agent_name)
         )
         if registrations:
             selected = registrations[-1]
-            return UserPluginEffectiveStatus(plugin_id, selected.status, "registration", selected, tuple(diagnostics))
-        return UserPluginEffectiveStatus(plugin_id, "active", "missing-registration", None, tuple(diagnostics))
+            return ToolboxEffectiveStatus(toolbox_id, selected.status, "registration", selected, tuple(diagnostics))
+        return ToolboxEffectiveStatus(toolbox_id, "active", "missing-registration", None, tuple(diagnostics))
     if registrations:
         selected = registrations[-1]
-        return UserPluginEffectiveStatus(plugin_id, selected.status, "registration", selected, ())
-    return UserPluginEffectiveStatus(plugin_id, "active", "missing-registration", None, ())
+        return ToolboxEffectiveStatus(toolbox_id, selected.status, "registration", selected, ())
+    return ToolboxEffectiveStatus(toolbox_id, "active", "missing-registration", None, ())
 
 
 def parse_param_id(param_id: str) -> tuple[str, str] | None:
     if ":" not in param_id:
         return None
-    plugin_id, key = param_id.split(":", 1)
-    if not CALLBACK_PLUGIN_ID_RE.match(plugin_id) or not PARAM_KEY_RE.match(key):
+    toolbox_id, key = param_id.split(":", 1)
+    if not CALLBACK_TOOLBOX_ID_RE.match(toolbox_id) or not PARAM_KEY_RE.match(key):
         return None
-    return plugin_id, key
+    return toolbox_id, key
 
 
 def infer_value_type(value: Any) -> str:
@@ -526,88 +568,88 @@ def infer_value_type(value: Any) -> str:
     return "string"
 
 
-def ensure_user_plugin_registration(
+def ensure_toolbox_registration(
     project: Project,
     context: EffectiveTopicContext | None,
     *,
-    plugin_id: str,
+    toolbox_id: str,
     source_path_input: str | None,
     scope: str,
     status: str = "active",
-) -> tuple[UserPluginRegistration | None, list[Diagnostic]]:
+) -> tuple[ToolboxRegistration | None, list[Diagnostic]]:
     if scope == "project":
         path = project.manifest_path
-        row = _registration_row(plugin_id, source_path_input, scope, status)
-        diagnostics = _upsert_toml_row(path, "user_plugins", row, _plugin_row_matches(plugin_id, scope, None, None))
-        registration = UserPluginRegistration(plugin_id, scope, status, source_path_input, path)
+        row = _registration_row(toolbox_id, source_path_input, scope, status)
+        diagnostics = _upsert_toml_row(path, "toolboxes", row, _toolbox_row_matches(toolbox_id, scope, None, None))
+        registration = ToolboxRegistration(toolbox_id, scope, status, source_path_input, path)
         return registration, diagnostics
     if context is None:
         return None, [
             Diagnostic(
                 code="ISO103",
                 severity="error",
-                concept="User Plugin registration",
+                concept="Toolbox registration",
                 field="scope",
-                message="Topic-scoped User Plugin registration requires a selected Research Topic.",
+                message="Topic-scoped Toolbox registration requires a selected Research Topic.",
             )
         ]
     from isomer_labs.workspace.manifest import topic_workspace_manifest_path
 
     path = topic_workspace_manifest_path(context.topic_workspace_path)
-    row = _registration_row(plugin_id, source_path_input, "research_topic", status)
-    diagnostics = _upsert_toml_row(path, "user_plugins", row, _plugin_row_matches(plugin_id, "research_topic", None, None))
-    registration = UserPluginRegistration(plugin_id, "research_topic", status, source_path_input, path)
+    row = _registration_row(toolbox_id, source_path_input, "research_topic", status)
+    diagnostics = _upsert_toml_row(path, "toolboxes", row, _toolbox_row_matches(toolbox_id, "research_topic", None, None))
+    registration = ToolboxRegistration(toolbox_id, "research_topic", status, source_path_input, path)
     return registration, diagnostics
 
 
-def upsert_user_plugin_registration(
+def upsert_toolbox_registration(
     project: Project,
     context: EffectiveTopicContext | None,
     *,
-    plugin_id: str,
+    toolbox_id: str,
     source_path_input: str | None,
     scope: str,
     status: str,
     topic_actor_name: str | None = None,
     topic_agent_name: str | None = None,
-) -> UserPluginCommandResult:
+) -> ToolboxCommandResult:
     diagnostics = _mutation_scope_diagnostics(context, scope, topic_actor_name, topic_agent_name)
     if diagnostics:
-        return UserPluginCommandResult(False, False, project.root, tuple(diagnostics))
+        return ToolboxCommandResult(False, False, project.root, tuple(diagnostics))
     path = _manifest_path_for_mutation(project, context, scope)
-    row = _registration_row(plugin_id, source_path_input, scope, status, topic_actor_name, topic_agent_name)
-    diagnostics.extend(_validate_plugin_id(plugin_id, "User Plugin registration", path, "plugin_id"))
-    if status not in USER_PLUGIN_STATUS_VALUES:
-        diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="User Plugin registration", path=path, field="status", message="User Plugin status must be active or disabled."))
+    row = _registration_row(toolbox_id, source_path_input, scope, status, topic_actor_name, topic_agent_name)
+    diagnostics.extend(_validate_toolbox_id(toolbox_id, "Toolbox registration", path, "toolbox_id"))
+    if status not in TOOLBOX_STATUS_VALUES:
+        diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="Toolbox registration", path=path, field="status", message="Toolbox status must be active or disabled."))
     if has_errors(diagnostics):
-        return UserPluginCommandResult(False, False, project.root, tuple(diagnostics))
-    diagnostics.extend(_upsert_toml_row(path, "user_plugins", row, _plugin_row_matches(plugin_id, scope, topic_actor_name, topic_agent_name)))
-    plugin = UserPluginRegistration(plugin_id, scope, status, source_path_input, path, topic_actor_name, topic_agent_name)
-    return UserPluginCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics), plugins=(plugin,), plugin=plugin)
+        return ToolboxCommandResult(False, False, project.root, tuple(diagnostics))
+    diagnostics.extend(_upsert_toml_row(path, "toolboxes", row, _toolbox_row_matches(toolbox_id, scope, topic_actor_name, topic_agent_name)))
+    toolbox = ToolboxRegistration(toolbox_id, scope, status, source_path_input, path, topic_actor_name, topic_agent_name)
+    return ToolboxCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics), toolboxes=(toolbox,), toolbox=toolbox)
 
 
-def remove_user_plugin_registration(
+def remove_toolbox_registration(
     project: Project,
     context: EffectiveTopicContext | None,
     *,
-    plugin_id: str,
+    toolbox_id: str,
     scope: str,
     topic_actor_name: str | None = None,
     topic_agent_name: str | None = None,
-) -> UserPluginCommandResult:
+) -> ToolboxCommandResult:
     diagnostics = _mutation_scope_diagnostics(context, scope, topic_actor_name, topic_agent_name)
     if diagnostics:
-        return UserPluginCommandResult(False, False, project.root, tuple(diagnostics))
+        return ToolboxCommandResult(False, False, project.root, tuple(diagnostics))
     path = _manifest_path_for_mutation(project, context, scope)
-    diagnostics.extend(_remove_toml_rows(path, "user_plugins", _plugin_row_matches(plugin_id, scope, topic_actor_name, topic_agent_name)))
-    return UserPluginCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics))
+    diagnostics.extend(_remove_toml_rows(path, "toolboxes", _toolbox_row_matches(toolbox_id, scope, topic_actor_name, topic_agent_name)))
+    return ToolboxCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics))
 
 
 def set_runtime_param(
     project: Project,
     context: EffectiveTopicContext | None,
     *,
-    plugin_id: str,
+    toolbox_id: str,
     key: str,
     value: Any,
     scope: str,
@@ -616,11 +658,11 @@ def set_runtime_param(
     description: str | None = None,
     topic_actor_name: str | None = None,
     topic_agent_name: str | None = None,
-) -> UserPluginCommandResult:
+) -> ToolboxCommandResult:
     diagnostics = _mutation_scope_diagnostics(context, scope, topic_actor_name, topic_agent_name)
     path = _manifest_path_for_mutation(project, context, scope) if not diagnostics else project.manifest_path
-    temp = UserPluginRuntimeParam(
-        plugin_id=plugin_id,
+    temp = ToolboxRuntimeParam(
+        toolbox_id=toolbox_id,
         key=key,
         value=value,
         scope=scope,
@@ -632,17 +674,17 @@ def set_runtime_param(
         topic_actor_name=topic_actor_name,
         topic_agent_name=topic_agent_name,
     )
-    diagnostics.extend(_validate_param_identity(temp, path, "User Plugin runtime param"))
-    diagnostics.extend(_validate_param_value(temp, path, "User Plugin runtime param", inherited=None))
-    diagnostics.extend(secret_like_diagnostics(_row_scan_payload(temp), "User Plugin runtime param", path, ()))
+    diagnostics.extend(_validate_param_identity(temp, path, "Toolbox runtime param"))
+    diagnostics.extend(_validate_param_value(temp, path, "Toolbox runtime param", inherited=None))
+    diagnostics.extend(secret_like_diagnostics(_row_scan_payload(temp), "Toolbox runtime param", path, ()))
     if has_errors(diagnostics):
-        return UserPluginCommandResult(False, False, project.root, tuple(diagnostics))
+        return ToolboxCommandResult(False, False, project.root, tuple(diagnostics))
     row = _param_row(temp)
-    diagnostics.extend(_upsert_toml_row(path, "user_plugin_runtime_params", row, _param_row_matches(plugin_id, key, scope, topic_actor_name, topic_agent_name)))
+    diagnostics.extend(_upsert_toml_row(path, "toolbox_runtime_params", row, _param_row_matches(toolbox_id, key, scope, topic_actor_name, topic_agent_name)))
     candidate = RuntimeParamCandidate("written", temp)
     effective = EffectiveRuntimeParam(
         param_id=temp.param_id,
-        plugin_id=temp.plugin_id,
+        toolbox_id=temp.toolbox_id,
         key=temp.key,
         value=temp.value,
         value_type=temp.value_type or infer_value_type(temp.value),
@@ -651,7 +693,7 @@ def set_runtime_param(
         candidates=(candidate,),
         overridden=(),
     )
-    return UserPluginCommandResult(
+    return ToolboxCommandResult(
         not has_errors(diagnostics),
         not has_errors(diagnostics),
         project.root,
@@ -665,63 +707,63 @@ def unset_runtime_param(
     project: Project,
     context: EffectiveTopicContext | None,
     *,
-    plugin_id: str,
+    toolbox_id: str,
     key: str,
     scope: str,
     topic_actor_name: str | None = None,
     topic_agent_name: str | None = None,
-) -> UserPluginCommandResult:
+) -> ToolboxCommandResult:
     diagnostics = _mutation_scope_diagnostics(context, scope, topic_actor_name, topic_agent_name)
     if diagnostics:
-        return UserPluginCommandResult(False, False, project.root, tuple(diagnostics))
+        return ToolboxCommandResult(False, False, project.root, tuple(diagnostics))
     path = _manifest_path_for_mutation(project, context, scope)
-    diagnostics.extend(_remove_toml_rows(path, "user_plugin_runtime_params", _param_row_matches(plugin_id, key, scope, topic_actor_name, topic_agent_name)))
-    return UserPluginCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics))
+    diagnostics.extend(_remove_toml_rows(path, "toolbox_runtime_params", _param_row_matches(toolbox_id, key, scope, topic_actor_name, topic_agent_name)))
+    return ToolboxCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics))
 
 
 def add_runtime_param_import(
     project: Project,
     context: EffectiveTopicContext | None,
     *,
-    plugin_id: str,
+    toolbox_id: str,
     path_input: str,
     scope: str,
     topic_actor_name: str | None = None,
     topic_agent_name: str | None = None,
-) -> UserPluginCommandResult:
+) -> ToolboxCommandResult:
     diagnostics = _mutation_scope_diagnostics(context, scope, topic_actor_name, topic_agent_name)
     path = _manifest_path_for_mutation(project, context, scope) if not diagnostics else project.manifest_path
-    import_ref = UserPluginRuntimeParamImport(plugin_id, path_input, scope, path, "active", topic_actor_name, topic_agent_name)
-    diagnostics.extend(_validate_plugin_id(plugin_id, "User Plugin runtime param import", path, "plugin_id"))
-    diagnostics.extend(_validate_import_ref(project, import_ref, PROJECT_RUNTIME_PARAM_SCOPES if scope == "project" else TOPIC_RUNTIME_PARAM_SCOPES, "User Plugin runtime param import"))
+    import_ref = ToolboxRuntimeParamImport(toolbox_id, path_input, scope, path, "active", topic_actor_name, topic_agent_name)
+    diagnostics.extend(_validate_toolbox_id(toolbox_id, "Toolbox runtime param import", path, "toolbox_id"))
+    diagnostics.extend(_validate_import_ref(project, import_ref, PROJECT_RUNTIME_PARAM_SCOPES if scope == "project" else TOPIC_RUNTIME_PARAM_SCOPES, "Toolbox runtime param import"))
     if has_errors(diagnostics):
-        return UserPluginCommandResult(False, False, project.root, tuple(diagnostics))
+        return ToolboxCommandResult(False, False, project.root, tuple(diagnostics))
     row = _import_row(import_ref)
-    diagnostics.extend(_upsert_toml_row(path, "user_plugin_runtime_param_imports", row, _import_row_matches(plugin_id, path_input, scope, topic_actor_name, topic_agent_name)))
-    return UserPluginCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics), imports=(import_ref,), import_ref=import_ref)
+    diagnostics.extend(_upsert_toml_row(path, "toolbox_runtime_param_imports", row, _import_row_matches(toolbox_id, path_input, scope, topic_actor_name, topic_agent_name)))
+    return ToolboxCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics), imports=(import_ref,), import_ref=import_ref)
 
 
 def remove_runtime_param_import(
     project: Project,
     context: EffectiveTopicContext | None,
     *,
-    plugin_id: str,
+    toolbox_id: str,
     path_input: str,
     scope: str,
     topic_actor_name: str | None = None,
     topic_agent_name: str | None = None,
-) -> UserPluginCommandResult:
+) -> ToolboxCommandResult:
     diagnostics = _mutation_scope_diagnostics(context, scope, topic_actor_name, topic_agent_name)
     if diagnostics:
-        return UserPluginCommandResult(False, False, project.root, tuple(diagnostics))
+        return ToolboxCommandResult(False, False, project.root, tuple(diagnostics))
     path = _manifest_path_for_mutation(project, context, scope)
-    diagnostics.extend(_remove_toml_rows(path, "user_plugin_runtime_param_imports", _import_row_matches(plugin_id, path_input, scope, topic_actor_name, topic_agent_name)))
-    return UserPluginCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics))
+    diagnostics.extend(_remove_toml_rows(path, "toolbox_runtime_param_imports", _import_row_matches(toolbox_id, path_input, scope, topic_actor_name, topic_agent_name)))
+    return ToolboxCommandResult(not has_errors(diagnostics), not has_errors(diagnostics), project.root, tuple(diagnostics))
 
 
 def _validate_import_ref(
     project: Project,
-    import_ref: UserPluginRuntimeParamImport,
+    import_ref: ToolboxRuntimeParamImport,
     allowed_scopes: tuple[str, ...],
     concept: str,
 ) -> list[Diagnostic]:
@@ -741,8 +783,8 @@ def _validate_import_ref(
     return diagnostics
 
 
-def _validate_plugin_id(plugin_id: str, concept: str, path: Path, field: str) -> list[Diagnostic]:
-    if CALLBACK_PLUGIN_ID_RE.match(plugin_id):
+def _validate_toolbox_id(toolbox_id: str, concept: str, path: Path, field: str) -> list[Diagnostic]:
+    if CALLBACK_TOOLBOX_ID_RE.match(toolbox_id):
         return []
     return [
         Diagnostic(
@@ -751,13 +793,13 @@ def _validate_plugin_id(plugin_id: str, concept: str, path: Path, field: str) ->
             concept=concept,
             path=path,
             field=field,
-            message="User Plugin plugin_id must start with an alphanumeric character and contain only letters, numbers, underscore, dot, or dash.",
+            message="Toolbox toolbox_id must start with an alphanumeric character and contain only letters, numbers, underscore, dot, or dash.",
         )
     ]
 
 
-def _validate_param_identity(param: UserPluginRuntimeParam, path: Path, concept: str) -> list[Diagnostic]:
-    diagnostics = _validate_plugin_id(param.plugin_id, concept, path, "plugin_id")
+def _validate_param_identity(param: ToolboxRuntimeParam, path: Path, concept: str) -> list[Diagnostic]:
+    diagnostics = _validate_toolbox_id(param.toolbox_id, concept, path, "toolbox_id")
     if not PARAM_KEY_RE.match(param.key):
         diagnostics.append(
             Diagnostic(
@@ -773,11 +815,11 @@ def _validate_param_identity(param: UserPluginRuntimeParam, path: Path, concept:
 
 
 def _validate_param_value(
-    param: UserPluginRuntimeParam,
+    param: ToolboxRuntimeParam,
     path: Path,
     concept: str,
     *,
-    inherited: UserPluginRuntimeParam | None,
+    inherited: ToolboxRuntimeParam | None,
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     value_type = param.value_type or inherited.value_type if inherited is not None else param.value_type
@@ -807,7 +849,7 @@ def _validate_param_value(
     return diagnostics
 
 
-def _type_diagnostic(concept: str, path: Path, param: UserPluginRuntimeParam, expected: str) -> Diagnostic:
+def _type_diagnostic(concept: str, path: Path, param: ToolboxRuntimeParam, expected: str) -> Diagnostic:
     return Diagnostic(code="ISO103", severity="error", concept=concept, path=path, field=param.param_id, message=f"Runtime param value must be {expected}.")
 
 
@@ -832,28 +874,28 @@ def _selector_diagnostics(row: object, source_path: Path, concept: str, context:
     return diagnostics
 
 
-def _duplicate_active_row_diagnostics(params: Iterable[UserPluginRuntimeParam], path: Path, concept: str) -> list[Diagnostic]:
+def _duplicate_active_row_diagnostics(params: Iterable[ToolboxRuntimeParam], path: Path, concept: str) -> list[Diagnostic]:
     keys = [
-        (param.plugin_id, param.key, param.scope, param.topic_actor_name, param.topic_agent_name)
+        (param.toolbox_id, param.key, param.scope, param.topic_actor_name, param.topic_agent_name)
         for param in params
         if param.status == "active"
     ]
     return [
-        Diagnostic(code="ISO104", severity="error", concept=concept, path=path, field=f"{plugin_id}:{key}", message="Duplicate active runtime param row.")
-        for (plugin_id, key, _scope, _actor, _agent), count in Counter(keys).items()
+        Diagnostic(code="ISO104", severity="error", concept=concept, path=path, field=f"{toolbox_id}:{key}", message="Duplicate active runtime param row.")
+        for (toolbox_id, key, _scope, _actor, _agent), count in Counter(keys).items()
         if count > 1
     ]
 
 
-def _duplicate_active_plugin_diagnostics(registrations: Iterable[UserPluginRegistration], path: Path, concept: str) -> list[Diagnostic]:
+def _duplicate_active_toolbox_diagnostics(registrations: Iterable[ToolboxRegistration], path: Path, concept: str) -> list[Diagnostic]:
     keys = [
-        (registration.plugin_id, registration.scope, registration.topic_actor_name, registration.topic_agent_name)
+        (registration.toolbox_id, registration.scope, registration.topic_actor_name, registration.topic_agent_name)
         for registration in registrations
         if registration.status == "active"
     ]
     return [
-        Diagnostic(code="ISO104", severity="error", concept=concept, path=path, field=plugin_id, message="Duplicate active User Plugin registration.")
-        for (plugin_id, _scope, _actor, _agent), count in Counter(keys).items()
+        Diagnostic(code="ISO104", severity="error", concept=concept, path=path, field=toolbox_id, message="Duplicate active Toolbox registration.")
+        for (toolbox_id, _scope, _actor, _agent), count in Counter(keys).items()
         if count > 1
     ]
 
@@ -869,14 +911,14 @@ def _matches_topic_selector(row: object, topic_actor_name: str | None, topic_age
     return True
 
 
-def _definition_source(group: list[RuntimeParamCandidate]) -> UserPluginRuntimeParam | None:
+def _definition_source(group: list[RuntimeParamCandidate]) -> ToolboxRuntimeParam | None:
     for candidate in group:
         if candidate.param.value_type is not None:
             return candidate.param
     return None
 
 
-def _self_defining(param: UserPluginRuntimeParam) -> bool:
+def _self_defining(param: ToolboxRuntimeParam) -> bool:
     return param.value_type is not None and (param.value_type != "enum" or bool(param.allowed_values))
 
 
@@ -888,11 +930,11 @@ def _mutation_scope_diagnostics(
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     if scope not in RUNTIME_PARAM_SCOPES:
-        diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="User Plugin configuration", field="scope", message=f"Unsupported User Plugin scope: {scope}."))
+        diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="Toolbox configuration", field="scope", message=f"Unsupported Toolbox scope: {scope}."))
     if scope != "project" and context is None:
-        diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="User Plugin configuration", field="scope", message="Topic-scoped User Plugin configuration requires a selected Research Topic."))
+        diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="Toolbox configuration", field="scope", message="Topic-scoped Toolbox configuration requires a selected Research Topic."))
     temp = type("_ScopeRow", (), {"scope": scope, "topic_actor_name": topic_actor_name, "topic_agent_name": topic_agent_name})()
-    diagnostics.extend(_selector_diagnostics(temp, Path("<cli>"), "User Plugin configuration", context))
+    diagnostics.extend(_selector_diagnostics(temp, Path("<cli>"), "Toolbox configuration", context))
     return diagnostics
 
 
@@ -957,7 +999,7 @@ def _load_tomlkit_doc(path: Path) -> tuple[Any | None, list[Diagnostic]]:
             doc["schema_version"] = "isomer-topic-workspace-manifest.v1"
         return doc, []
     except OSError as exc:
-        return None, [Diagnostic(code="ISO001", severity="error", concept="User Plugin configuration", path=path, message=f"Could not read manifest: {exc}")]
+        return None, [Diagnostic(code="ISO001", severity="error", concept="Toolbox configuration", path=path, message=f"Could not read manifest: {exc}")]
 
 
 def _write_tomlkit_doc(path: Path, doc: Any) -> list[Diagnostic]:
@@ -965,24 +1007,24 @@ def _write_tomlkit_doc(path: Path, doc: Any) -> list[Diagnostic]:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(tomlkit.dumps(doc), encoding="utf-8")
     except OSError as exc:
-        return [Diagnostic(code="ISO001", severity="error", concept="User Plugin configuration", path=path, message=f"Could not write manifest: {exc}")]
+        return [Diagnostic(code="ISO001", severity="error", concept="Toolbox configuration", path=path, message=f"Could not write manifest: {exc}")]
     return []
 
 
-def _plugin_row_matches(plugin_id: str, scope: str, topic_actor_name: str | None, topic_agent_name: str | None) -> Any:
-    return lambda row: _string(row.get("plugin_id") or row.get("id")) == plugin_id and (_string(row.get("scope")) or "project") == scope and _string(row.get("topic_actor_name")) == topic_actor_name and _string(row.get("topic_agent_name") or row.get("agent_name")) == topic_agent_name
+def _toolbox_row_matches(toolbox_id: str, scope: str, topic_actor_name: str | None, topic_agent_name: str | None) -> Any:
+    return lambda row: _string(row.get("toolbox_id")) == toolbox_id and (_string(row.get("scope")) or "project") == scope and _string(row.get("topic_actor_name")) == topic_actor_name and _string(row.get("topic_agent_name")) == topic_agent_name
 
 
-def _param_row_matches(plugin_id: str, key: str, scope: str, topic_actor_name: str | None, topic_agent_name: str | None) -> Any:
-    return lambda row: _string(row.get("plugin_id") or row.get("id")) == plugin_id and _string(row.get("key") or row.get("param_key") or row.get("name")) == key and (_string(row.get("scope")) or "project") == scope and _string(row.get("topic_actor_name")) == topic_actor_name and _string(row.get("topic_agent_name") or row.get("agent_name")) == topic_agent_name
+def _param_row_matches(toolbox_id: str, key: str, scope: str, topic_actor_name: str | None, topic_agent_name: str | None) -> Any:
+    return lambda row: _string(row.get("toolbox_id")) == toolbox_id and _string(row.get("key")) == key and (_string(row.get("scope")) or "project") == scope and _string(row.get("topic_actor_name")) == topic_actor_name and _string(row.get("topic_agent_name")) == topic_agent_name
 
 
-def _import_row_matches(plugin_id: str, path_input: str, scope: str, topic_actor_name: str | None, topic_agent_name: str | None) -> Any:
-    return lambda row: _string(row.get("plugin_id") or row.get("id")) == plugin_id and _string(row.get("path") or row.get("import_path")) == path_input and (_string(row.get("scope")) or "project") == scope and _string(row.get("topic_actor_name")) == topic_actor_name and _string(row.get("topic_agent_name") or row.get("agent_name")) == topic_agent_name
+def _import_row_matches(toolbox_id: str, path_input: str, scope: str, topic_actor_name: str | None, topic_agent_name: str | None) -> Any:
+    return lambda row: _string(row.get("toolbox_id")) == toolbox_id and _string(row.get("path")) == path_input and (_string(row.get("scope")) or "project") == scope and _string(row.get("topic_actor_name")) == topic_actor_name and _string(row.get("topic_agent_name")) == topic_agent_name
 
 
-def _registration_row(plugin_id: str, source_path_input: str | None, scope: str, status: str, topic_actor_name: str | None = None, topic_agent_name: str | None = None) -> dict[str, Any]:
-    row: dict[str, Any] = {"plugin_id": plugin_id, "scope": scope, "status": status}
+def _registration_row(toolbox_id: str, source_path_input: str | None, scope: str, status: str, topic_actor_name: str | None = None, topic_agent_name: str | None = None) -> dict[str, Any]:
+    row: dict[str, Any] = {"toolbox_id": toolbox_id, "scope": scope, "status": status}
     if source_path_input is not None:
         row["source_path"] = source_path_input
     if topic_actor_name is not None:
@@ -992,9 +1034,9 @@ def _registration_row(plugin_id: str, source_path_input: str | None, scope: str,
     return row
 
 
-def _param_row(param: UserPluginRuntimeParam) -> dict[str, Any]:
+def _param_row(param: ToolboxRuntimeParam) -> dict[str, Any]:
     row: dict[str, Any] = {
-        "plugin_id": param.plugin_id,
+        "toolbox_id": param.toolbox_id,
         "key": param.key,
         "value": param.value,
         "scope": param.scope,
@@ -1013,9 +1055,9 @@ def _param_row(param: UserPluginRuntimeParam) -> dict[str, Any]:
     return row
 
 
-def _import_row(import_ref: UserPluginRuntimeParamImport) -> dict[str, Any]:
+def _import_row(import_ref: ToolboxRuntimeParamImport) -> dict[str, Any]:
     row: dict[str, Any] = {
-        "plugin_id": import_ref.plugin_id,
+        "toolbox_id": import_ref.toolbox_id,
         "path": import_ref.path_input,
         "scope": import_ref.scope,
         "status": import_ref.status,

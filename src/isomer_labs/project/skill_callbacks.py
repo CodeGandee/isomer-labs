@@ -16,8 +16,8 @@ from isomer_labs.core.path_utils import display_path, is_within, resolve_project
 from isomer_labs.core.toml_loader import load_toml
 from isomer_labs.models import EffectiveTopicContext, Project
 from isomer_labs.project.callback_keys import (
-    CALLBACK_PLUGIN_ID_RE,
-    CALLBACK_PLUGIN_KEY_RE,
+    CALLBACK_TOOLBOX_ID_RE,
+    CALLBACK_TOOLBOX_KEY_RE,
     valid_callback_id,
 )
 from isomer_labs.skills.system_assets import SystemSkillAssetError, iter_system_skill_paths
@@ -100,9 +100,9 @@ class UserSkillCallback:
     source: CallbackSource
     registry_path: Path
     research_topic_id: str | None = None
-    plugin_id: str | None = None
-    plugin_key: str | None = None
-    plugin_source_path_input: str | None = None
+    toolbox_id: str | None = None
+    toolbox_key: str | None = None
+    toolbox_source_path_input: str | None = None
 
     @property
     def active(self) -> bool:
@@ -122,14 +122,14 @@ class UserSkillCallback:
         }
         if self.research_topic_id is not None:
             data["research_topic_id"] = self.research_topic_id
-        if self.plugin_id is not None:
-            data["plugin_id"] = self.plugin_id
-        if self.plugin_key is not None:
-            data["plugin_key"] = self.plugin_key
-        if self.plugin_source_path_input is not None:
-            plugin_source_path = resolve_project_path(project_root, self.plugin_source_path_input)
-            data["plugin_source_path_input"] = self.plugin_source_path_input
-            data["plugin_source_path"] = display_path(plugin_source_path, project_root)
+        if self.toolbox_id is not None:
+            data["toolbox_id"] = self.toolbox_id
+        if self.toolbox_key is not None:
+            data["toolbox_key"] = self.toolbox_key
+        if self.toolbox_source_path_input is not None:
+            toolbox_source_path = resolve_project_path(project_root, self.toolbox_source_path_input)
+            data["toolbox_source_path_input"] = self.toolbox_source_path_input
+            data["toolbox_source_path"] = display_path(toolbox_source_path, project_root)
         return data
 
 
@@ -343,12 +343,24 @@ def _parse_callback_item(
     scope = _string(item.get("scope")) or ref.scope
     status = _string(item.get("status")) or "active"
     source_type = _string(item.get("source_type"))
-    plugin_id = _string(item.get("plugin_id"))
-    plugin_key = _string(item.get("plugin_key"))
-    plugin_source_path_input = _string(item.get("plugin_source"))
+    toolbox_id = _string(item.get("toolbox_id"))
+    toolbox_key = _string(item.get("toolbox_key"))
+    stale_metadata = sorted(field_name for field_name in ("plugin_id", "plugin_key", "plugin_source", "plugin_source_path_input", "toolbox_source") if field_name in item)
+    if stale_metadata:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO103",
+                severity="error",
+                concept="User Skill Callback registry",
+                path=ref.path,
+                field=field,
+                message=f"Old Toolbox callback metadata fields are not supported: {', '.join(stale_metadata)}.",
+            )
+        )
+    toolbox_source_path_input = _string(item.get("toolbox_source_path_input"))
     priority = item.get("priority", DEFAULT_CALLBACK_PRIORITY)
     diagnostics.extend(_callback_identity_diagnostics(skill=skill, stage=stage, scope=scope, callback_id=callback_id))
-    diagnostics.extend(_plugin_metadata_diagnostics(plugin_id=plugin_id, plugin_key=plugin_key, path=ref.path, field=field))
+    diagnostics.extend(_toolbox_metadata_diagnostics(toolbox_id=toolbox_id, toolbox_key=toolbox_key, path=ref.path, field=field))
     if status not in VALID_CALLBACK_STATUSES:
         diagnostics.append(
             Diagnostic(
@@ -431,9 +443,9 @@ def _parse_callback_item(
             source=source,
             registry_path=ref.path,
             research_topic_id=ref.research_topic_id if scope == "research_topic" else None,
-            plugin_id=plugin_id,
-            plugin_key=plugin_key,
-            plugin_source_path_input=plugin_source_path_input,
+            toolbox_id=toolbox_id,
+            toolbox_key=toolbox_key,
+            toolbox_source_path_input=toolbox_source_path_input,
         ),
         diagnostics,
     )
@@ -454,7 +466,7 @@ def _callback_identity_diagnostics(
                 severity="error",
                 concept="User Skill Callback",
                 field="id",
-                message="User Skill Callback id must be a local id using letters, numbers, underscore, dot, or dash, or a namespaced plugin key in the form <plugin_id>:<key> where key contains only letters, numbers, dash, underscore, or slash.",
+                message="User Skill Callback id must be a local id using letters, numbers, underscore, dot, or dash, or a namespaced Toolbox key in the form <toolbox_id>:<key> where key contains only letters, numbers, dash, underscore, or slash.",
             )
         )
     if skill is None:
@@ -510,34 +522,34 @@ def _callback_identity_diagnostics(
     return diagnostics
 
 
-def _plugin_metadata_diagnostics(
+def _toolbox_metadata_diagnostics(
     *,
-    plugin_id: str | None,
-    plugin_key: str | None,
+    toolbox_id: str | None,
+    toolbox_key: str | None,
     path: Path,
     field: str,
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    if plugin_id is not None and not CALLBACK_PLUGIN_ID_RE.match(plugin_id):
+    if toolbox_id is not None and not CALLBACK_TOOLBOX_ID_RE.match(toolbox_id):
         diagnostics.append(
             Diagnostic(
                 code="ISO103",
                 severity="error",
                 concept="User Skill Callback registry",
                 path=path,
-                field=f"{field}.plugin_id",
-                message="User Skill Callback plugin_id must start with an alphanumeric character and contain only letters, numbers, underscore, dot, or dash.",
+                field=f"{field}.toolbox_id",
+                message="User Skill Callback toolbox_id must start with an alphanumeric character and contain only letters, numbers, underscore, dot, or dash.",
             )
         )
-    if plugin_key is not None and not CALLBACK_PLUGIN_KEY_RE.match(plugin_key):
+    if toolbox_key is not None and not CALLBACK_TOOLBOX_KEY_RE.match(toolbox_key):
         diagnostics.append(
             Diagnostic(
                 code="ISO103",
                 severity="error",
                 concept="User Skill Callback registry",
                 path=path,
-                field=f"{field}.plugin_key",
-                message="User Skill Callback plugin_key must contain only letters, numbers, dash, underscore, or slash.",
+                field=f"{field}.toolbox_key",
+                message="User Skill Callback toolbox_key must contain only letters, numbers, dash, underscore, or slash.",
             )
         )
     return diagnostics
@@ -741,12 +753,12 @@ def _write_callback_registry(path: Path, callbacks: Iterable[UserSkillCallback])
         table["scope"] = callback.scope
         if callback.research_topic_id is not None:
             table["research_topic_id"] = callback.research_topic_id
-        if callback.plugin_id is not None:
-            table["plugin_id"] = callback.plugin_id
-        if callback.plugin_key is not None:
-            table["plugin_key"] = callback.plugin_key
-        if callback.plugin_source_path_input is not None:
-            table["plugin_source"] = callback.plugin_source_path_input
+        if callback.toolbox_id is not None:
+            table["toolbox_id"] = callback.toolbox_id
+        if callback.toolbox_key is not None:
+            table["toolbox_key"] = callback.toolbox_key
+        if callback.toolbox_source_path_input is not None:
+            table["toolbox_source_path_input"] = callback.toolbox_source_path_input
         table["status"] = callback.status
         table["priority"] = callback.priority
         table["source_type"] = callback.source.source_type
