@@ -16,6 +16,12 @@ export type IdeaFlowNodeData = {
   skill?: string | null;
 };
 
+export function ideaNodeVisibleLabel(node: Pick<TopicGraphView["nodes"][number], "status" | "title">): string {
+  const title = String(node.title || "");
+  const status = node.status ? String(node.status) : "";
+  return status ? `${title}\n${status}` : title;
+}
+
 export function selectRenderer(graphScope: GraphScope, rendererHint: string, nodeCount: number): "react-flow" | "sigma" {
   if (rendererHint === "sigma-overview") {
     return "sigma";
@@ -41,7 +47,7 @@ export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
     ].filter(Boolean).join(" "),
     position: { x: 40 + (index % 3) * 300, y: 40 + Math.floor(index / 3) * 160 },
     data: {
-      label: `${node.title}${node.status ? `\n${node.status}` : ""}`,
+      label: ideaNodeVisibleLabel(node),
       title: node.title,
       one_liner: node.one_liner,
       summary: node.summary,

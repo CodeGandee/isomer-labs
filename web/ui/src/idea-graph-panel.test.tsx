@@ -117,6 +117,7 @@ vi.mock("./ui-settings", () => ({
 import { getIdeaDetail, getTopicGraph } from "./api";
 import { IdeaGraphPanel } from "./App";
 import { workbenchCommands$ } from "./events";
+import { filterIdeaLineageGraphForSearch } from "./features/idea-lineage/IdeaLineagePanel";
 import { layoutFlowGraph } from "./graph-utils";
 import type { TopicGraphView } from "./types";
 
@@ -141,6 +142,83 @@ describe("Idea graph panel interactions", () => {
     layoutFlowGraphMock.mockClear();
     settingsMock.refreshGuiSettings.mockReset();
     settingsMock.setHoverPreviewDelayMs.mockReset();
+  });
+
+  it("uses one local idea search and requests the backend overview graph", async () => {
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+
+    expect(await screen.findByRole("searchbox", { name: "Search ideas" })).toBeTruthy();
+    expect(screen.queryByLabelText("Search graph")).toBeNull();
+    expect(screen.queryByLabelText("Status filter")).toBeNull();
+    expect(screen.queryByLabelText("Relation filter")).toBeNull();
+    expect(screen.queryByLabelText("Show supporting records")).toBeNull();
+    await waitFor(() => {
+      expect(getTopicGraphMock).toHaveBeenCalledWith("alpha", "idea-lineage", "auto", { includeSecondary: false });
+    });
+  });
+
+  it("filters idea nodes locally and restores the overview when search is cleared", async () => {
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const search = await screen.findByRole("searchbox", { name: "Search ideas" });
+    await screen.findByTestId("graph-node-idea:parent");
+    const backendCallCount = getTopicGraphMock.mock.calls.length;
+
+    fireEvent.change(search, { target: { value: "Precision" } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("graph-node-idea:idea-1")).toBeTruthy();
+      expect(screen.queryByTestId("graph-node-idea:parent")).toBeNull();
+      expect(screen.queryByTestId("graph-node-idea:child")).toBeNull();
+      expect(screen.queryByTestId("graph-edge-parent-to-main")).toBeNull();
+    });
+    expect(getTopicGraphMock).toHaveBeenCalledTimes(backendCallCount);
+
+    fireEvent.change(search, { target: { value: "" } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("graph-node-idea:parent")).toBeTruthy();
+      expect(screen.getByTestId("graph-node-idea:child")).toBeTruthy();
+      expect(screen.getByTestId("graph-edge-parent-to-main")).toBeTruthy();
+    });
+    expect(getTopicGraphMock).toHaveBeenCalledTimes(backendCallCount);
+  });
+
+  it("filters NCU by visible node labels only", async () => {
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const search = await screen.findByRole("searchbox", { name: "Search ideas" });
+    await screen.findByTestId("graph-node-idea:parent");
+
+    fireEvent.change(search, { target: { value: "ncu" } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("graph-node-idea:parent")).toBeTruthy();
+      expect(screen.getByTestId("graph-node-idea:child")).toBeTruthy();
+      expect(screen.queryByTestId("graph-node-idea:idea-1")).toBeNull();
+      expect(screen.queryByTestId("graph-node-idea:unrelated")).toBeNull();
+      expect(screen.queryByTestId("graph-edge-parent-to-main")).toBeNull();
+      expect(screen.queryByTestId("graph-edge-main-to-child")).toBeNull();
+      expect(screen.queryByTestId("graph-edge-unrelated-self")).toBeNull();
+    });
+  });
+
+  it("filters visible label tokens and prunes edges outside the visible nodes", () => {
+    const graph = graphPayload();
+
+    const ncu = filterIdeaLineageGraphForSearch(graph, "ncu");
+    expect(ncu?.nodes.map((node) => node.id)).toEqual(["idea:parent", "idea:child"]);
+    expect(ncu?.edges).toEqual([]);
+
+    const ncuSide = filterIdeaLineageGraphForSearch(graph, "ncu side");
+    expect(ncuSide?.nodes.map((node) => node.id)).toEqual(["idea:parent"]);
+
+    const launchCalibration = filterIdeaLineageGraphForSearch(graph, "launch calibration");
+    expect(launchCalibration?.nodes.map((node) => node.id)).toEqual(["idea:child"]);
+
+    const hiddenMetadataOnly = filterIdeaLineageGraphForSearch(graph, "hiddenpath");
+    expect(hiddenMetadataOnly?.nodes).toEqual([]);
+    expect(hiddenMetadataOnly?.edges).toEqual([]);
+
+    expect(filterIdeaLineageGraphForSearch(graph, "")).toBe(graph);
   });
 
   it("selects on single click and opens on double click", async () => {
@@ -522,7 +600,7 @@ function graphPayload(): TopicGraphView {
         record_id: "record-parent",
         material_kind: "idea",
         density_class: "sparse",
-        title: "Parent Idea",
+        title: "NCU counter trend and bottleneck classifier side output",
         one_liner: "Parent branch.",
         summary: "Parent summary.",
         status: "candidate",
@@ -544,7 +622,7 @@ function graphPayload(): TopicGraphView {
         record_id: "record-child",
         material_kind: "idea",
         density_class: "sparse",
-        title: "Child Idea",
+        title: "Launch-overhead and NCU calibration for short-kernel runtime",
         one_liner: "Child branch.",
         summary: "Child summary.",
         status: "candidate",
@@ -560,6 +638,10 @@ function graphPayload(): TopicGraphView {
         summary: "Unrelated summary.",
         status: "candidate",
         idea_id: "unrelated",
+        source: { source_json_path: "records/hiddenpath-ncu-source.json" },
+        detail_refs: { record_detail: "/api/topics/alpha/records/hiddenpath-ncu-record" },
+        renderer_hints: { cluster: "hiddenpath-ncu-cluster" },
+        realizations: [{ note: "hiddenpath ncu realization metadata" }],
       },
     ],
     edges: [

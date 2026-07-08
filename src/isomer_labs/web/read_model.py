@@ -27,10 +27,14 @@ from isomer_labs.records.index import (
 from isomer_labs.records.store import ResearchRecordError, render_record, show_record
 from isomer_labs.runtime.validation import inspect_workspace_runtime
 from isomer_labs.workspace.actors import list_topic_actors
+from isomer_labs.workspace.manifest import resolve_semantic_binding
 
 from .graph import build_topic_graph_view
 from .idea_detail import idea_detail_payload
 from .project_explorer import openable_item_descriptor_payload, project_explorer_payload
+
+TOPIC_OVERVIEW_LABEL = "topic.intent.overview"
+TOPIC_OVERVIEW_MAX_BYTES = 512 * 1024
 
 
 def diagnostics_json(diagnostics: list[Diagnostic]) -> list[dict[str, object]]:
@@ -158,6 +162,63 @@ class ProjectWebReadModel:
             "mutated": False,
             "runtime": inspection.to_json() if inspection is not None else None,
             "diagnostics": diagnostics_json(diagnostics),
+        }
+
+    def topic_overview(self, topic_id: str) -> dict[str, Any]:
+        context, diagnostics = self.topic_context(topic_id)
+        if context is None:
+            return {
+                "ok": False,
+                "mutated": False,
+                "topic_id": topic_id,
+                "topic_workspace_id": None,
+                "overview": {
+                    "semantic_label": TOPIC_OVERVIEW_LABEL,
+                    "exists": False,
+                    "content_markdown": None,
+                },
+                "topic_payload": None,
+                "runtime_payload": None,
+                "diagnostics": diagnostics_json(diagnostics),
+            }
+
+        overview_result, overview_diagnostics = resolve_semantic_binding(
+            context,
+            TOPIC_OVERVIEW_LABEL,
+            env=self.selected_env,
+        )
+        diagnostics.extend(overview_diagnostics)
+        overview_payload: dict[str, Any] = {
+            "semantic_label": TOPIC_OVERVIEW_LABEL,
+            "exists": False,
+            "content_markdown": None,
+            "content_cap_bytes": TOPIC_OVERVIEW_MAX_BYTES,
+        }
+        if overview_result is not None:
+            overview_payload.update(overview_result.to_json())
+            overview_payload["content_markdown"] = None
+            overview_payload["content_cap_bytes"] = TOPIC_OVERVIEW_MAX_BYTES
+            overview_diagnostic = self._read_topic_overview_markdown(overview_result.path, overview_payload)
+            if overview_diagnostic is not None:
+                diagnostics.append(overview_diagnostic)
+
+        topic_payload = self.topic(topic_id)
+        runtime_payload = self.runtime(topic_id)
+        merged_diagnostics = diagnostics_json(diagnostics)
+        for payload in (topic_payload, runtime_payload):
+            payload_diagnostics = payload.get("diagnostics")
+            if isinstance(payload_diagnostics, list):
+                merged_diagnostics.extend(payload_diagnostics)
+
+        return {
+            "ok": not has_errors(diagnostics) and bool(topic_payload.get("ok", True)) and bool(runtime_payload.get("ok", True)),
+            "mutated": False,
+            "topic_id": context.research_topic.id,
+            "topic_workspace_id": context.topic_workspace_id,
+            "overview": overview_payload,
+            "topic_payload": topic_payload,
+            "runtime_payload": runtime_payload,
+            "diagnostics": merged_diagnostics,
         }
 
     def project_explorer(self, *, expanded_topic_ids: tuple[str, ...] = ()) -> dict[str, Any]:
@@ -410,6 +471,45 @@ class ProjectWebReadModel:
             return merge_diagnostics(exc.to_payload(), diagnostics)
         diagnostics.extend(call_diagnostics)
         return merge_diagnostics(dict(payload), diagnostics)
+
+    def _read_topic_overview_markdown(self, path: Path, overview_payload: dict[str, Any]) -> Diagnostic | None:
+        if not path.exists():
+            overview_payload["exists"] = False
+            return Diagnostic(
+                code="topic_overview_missing",
+                severity="warning",
+                concept="Topic Overview",
+                path=path,
+                field=TOPIC_OVERVIEW_LABEL,
+                message="Topic overview Markdown is missing.",
+                hint=f"Create the `{TOPIC_OVERVIEW_LABEL}` file before expecting the overview tab to show Markdown.",
+            )
+        try:
+            size = path.stat().st_size
+            overview_payload["exists"] = True
+            overview_payload["content_bytes"] = size
+            if size > TOPIC_OVERVIEW_MAX_BYTES:
+                return Diagnostic(
+                    code="topic_overview_unreadable",
+                    severity="warning",
+                    concept="Topic Overview",
+                    path=path,
+                    field=TOPIC_OVERVIEW_LABEL,
+                    message=f"Topic overview Markdown is larger than the {TOPIC_OVERVIEW_MAX_BYTES} byte read-model limit.",
+                    hint="Shorten the topic overview or inspect it outside the GUI.",
+                )
+            overview_payload["content_markdown"] = path.read_text(encoding="utf-8")
+            return None
+        except (OSError, UnicodeError) as exc:
+            overview_payload["content_markdown"] = None
+            return Diagnostic(
+                code="topic_overview_unreadable",
+                severity="warning",
+                concept="Topic Overview",
+                path=path,
+                field=TOPIC_OVERVIEW_LABEL,
+                message=f"Topic overview Markdown cannot be read: {exc}",
+            )
 
     def _topic_graph_payload(
         self,

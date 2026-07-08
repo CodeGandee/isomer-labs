@@ -6,6 +6,7 @@ import {
   RecordsResponseSchema,
   TopicChangeEventSchema,
   TopicGraphViewSchema,
+  TopicOverviewResponseSchema,
   TopicsResponseSchema,
   ViewerDescriptorSchema,
   type GraphScope,
@@ -67,6 +68,10 @@ export async function getTopics() {
 
 export async function getTopic(topicId: string) {
   return fetchJson(`/api/topics/${encodeURIComponent(topicId)}`);
+}
+
+export async function getTopicOverview(topicId: string) {
+  return TopicOverviewResponseSchema.parse(await fetchJson(`/api/topics/${encodeURIComponent(topicId)}/overview`));
 }
 
 export async function getRuntime(topicId: string) {

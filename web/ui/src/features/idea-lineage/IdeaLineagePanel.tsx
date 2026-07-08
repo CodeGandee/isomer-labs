@@ -2,17 +2,18 @@ import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type 
 import { useQuery } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { getIdeaDetail, getTopicGraph, type GraphFilters } from "../../api";
-import { GraphFiltersBar, GraphSummary } from "../graph/GraphPanels";
+import { getIdeaDetail, getTopicGraph } from "../../api";
+import { GraphSummary } from "../graph/GraphPanels";
 import { openRecordFromNode } from "../graph/open-record";
 import { SigmaGraph } from "../graph/SigmaGraph";
-import { graphContentSignature, layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "../../graph-utils";
+import { graphContentSignature, ideaNodeVisibleLabel, layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "../../graph-utils";
 import { buildJsonMarkdownPreview } from "../../markdown-doc";
 import { MarkdownView } from "../../markdown-view";
 import { useGuiTheme } from "../../theme-provider";
 import type { GraphScope, TopicGraphView } from "../../types";
 import { DEFAULT_HOVER_PREVIEW_DELAY_MS, useGuiSettings } from "../../ui-settings";
 import { isGraphScope } from "../../workbench-history";
+import { Input } from "@/components/ui/input";
 import { ToolbarButton } from "@/components/workbench-controls";
 import { useStoreSelector } from "../../state/observable-store";
 import {
@@ -31,6 +32,7 @@ const NODE_DOUBLE_CLICK_MS = 500;
 const NODE_DOUBLE_CLICK_DISTANCE_PX = 72;
 const HOVER_PREVIEW_CLOSE_DELAY_MS = 500;
 const TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX = 14;
+const IDEA_LINEAGE_OVERVIEW_FILTERS = { includeSecondary: false };
 
 export type IdeaGraphPanelProps = {
   topicId?: string;
@@ -57,7 +59,7 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
   const { resolvedThemeMode, themeMode } = useGuiTheme();
   const { hoverPreviewDelayMs = DEFAULT_HOVER_PREVIEW_DELAY_MS } = useGuiSettings();
   const reactFlowColorMode: ColorMode = themeMode === "system" ? "system" : resolvedThemeMode;
-  const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: false });
+  const [searchText, setSearchText] = useState("");
   const [baseNodes, setBaseNodes] = useState<IdeaFlowNode[]>([]);
   const [baseEdges, setBaseEdges] = useState<ReturnType<typeof toFlowEdges>>([]);
   const selectedNodeId = useStoreSelector(store, (state) => state.selectedNodeId);
@@ -83,10 +85,11 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
     [store],
   );
   const graph = useQuery({
-    queryKey: ["topic", topicId, "graph", selectedGraphScope, requestedRenderer(selectedGraphScope), filters],
-    queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, requestedRenderer(selectedGraphScope), filters),
+    queryKey: ["topic", topicId, "graph", selectedGraphScope, requestedRenderer(selectedGraphScope), "overview"],
+    queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, requestedRenderer(selectedGraphScope), IDEA_LINEAGE_OVERVIEW_FILTERS),
     enabled: Boolean(topicId),
   });
+  const filteredGraph = useMemo(() => filterIdeaLineageGraphForSearch(graph.data, searchText), [graph.data, searchText]);
 
   useEffect(() => () => interactionBoundary.dispose(), [interactionBoundary]);
 
@@ -219,12 +222,12 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
         cancelled = true;
       };
     }
-    if (!graph.data) {
+    if (!filteredGraph) {
       return () => {
         cancelled = true;
       };
     }
-    if (!graph.data.ok || graph.data.error) {
+    if (!filteredGraph.ok || filteredGraph.error) {
       if (renderedGraphRef.current) {
         return () => {
           cancelled = true;
@@ -239,16 +242,16 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
         cancelled = true;
       };
     }
-    const revision = graph.data.index_revision || null;
-    const signature = graphContentSignature(graph.data);
+    const revision = filteredGraph.index_revision || null;
+    const signature = graphContentSignature(filteredGraph);
     if (signature === renderedGraphSignatureRef.current) {
       return () => {
         cancelled = true;
       };
     }
-    const nodes = toFlowNodes(graph.data);
-    const edges = toFlowEdges(graph.data);
-    if (nodes.length === 0 && renderedGraphRef.current && revision && revision === renderedGraphRevisionRef.current) {
+    const nodes = toFlowNodes(filteredGraph);
+    const edges = toFlowEdges(filteredGraph);
+    if (nodes.length === 0 && !searchText.trim() && renderedGraphRef.current && revision && revision === renderedGraphRevisionRef.current) {
       return () => {
         cancelled = true;
       };
@@ -259,7 +262,7 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
       }
       renderedGraphSignatureRef.current = signature;
       renderedGraphRevisionRef.current = revision;
-      renderedGraphRef.current = graph.data || null;
+      renderedGraphRef.current = filteredGraph || null;
       setBaseEdges(edges);
       setBaseNodes(layouted);
       store.dispatch({
@@ -270,21 +273,21 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
     return () => {
       cancelled = true;
     };
-  }, [graph.data, store, topicId]);
+  }, [filteredGraph, searchText, store, topicId]);
 
   useEffect(() => {
     if (!openIntent) {
       return;
     }
-    openRecordFromNode(topicId || "", renderedGraphRef.current || graph.data, openIntent.nodeId);
+    openRecordFromNode(topicId || "", renderedGraphRef.current || filteredGraph, openIntent.nodeId);
     store.dispatch({ type: "openIntentConsumed", intentId: openIntent.intentId });
-  }, [graph.data, openIntent, store, topicId]);
+  }, [filteredGraph, openIntent, store, topicId]);
 
   return (
     <section className="panel-body">
-      <GraphFiltersBar filters={filters} onChange={setFilters} />
-      {graph.data && selectRenderer(selectedGraphScope, graph.data.renderer_hint, graph.data.nodes.length) === "sigma" ? (
-        <SigmaGraph graph={graph.data} />
+      <IdeaLineageSearch value={searchText} onChange={setSearchText} />
+      {filteredGraph && selectRenderer(selectedGraphScope, filteredGraph.renderer_hint, filteredGraph.nodes.length) === "sigma" ? (
+        <SigmaGraph graph={filteredGraph} />
       ) : (
         <ReactFlowProvider>
           <div
@@ -320,7 +323,7 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
           </div>
         </ReactFlowProvider>
       )}
-      <GraphSummary graph={graph.data} isLoading={graph.isLoading} />
+      <GraphSummary graph={filteredGraph} isLoading={graph.isLoading} />
       {selectedFlowNode ? (
         <div className="selected-node-actions">
           <span>Selected: {String(selectedFlowNode.data.title || selectedFlowNode.id)}</span>
@@ -331,6 +334,60 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
       ) : null}
     </section>
   );
+}
+
+function IdeaLineageSearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="filters idea-lineage-search">
+      <Input aria-label="Search ideas" placeholder="Search ideas" type="search" value={value} onChange={(event) => onChange(event.target.value)} />
+    </div>
+  );
+}
+
+export function filterIdeaLineageGraphForSearch(graph: TopicGraphView | undefined, searchText: string): TopicGraphView | undefined {
+  const queryTokens = normalizedSearchTokens(searchText);
+  if (!graph || queryTokens.length === 0) {
+    return graph;
+  }
+  const visibleNodeIds = new Set(
+    graph.nodes
+      .filter((node) => visibleLabelMatches(node, queryTokens))
+      .map((node) => node.id),
+  );
+  const nodes = graph.nodes.filter((node) => visibleNodeIds.has(node.id));
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const edges = graph.edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target));
+  const groups = graph.groups
+    .map((group) => ({ ...group, node_ids: group.node_ids.filter((nodeId) => nodeIds.has(nodeId)) }))
+    .filter((group) => group.node_ids.length > 0);
+  return {
+    ...graph,
+    nodes,
+    edges,
+    groups,
+    facets: {
+      ...graph.facets,
+      idea_lineage_search: searchText.trim(),
+    },
+  };
+}
+
+function visibleLabelMatches(node: TopicGraphView["nodes"][number], queryTokens: string[]): boolean {
+  const label = normalizeVisibleLabel(ideaNodeVisibleLabel(node));
+  return queryTokens.every((token) => label.includes(token));
+}
+
+function normalizedSearchTokens(value: string): string[] {
+  return normalizeVisibleLabel(value).split(" ").filter(Boolean);
+}
+
+function normalizeVisibleLabel(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function FlowAutoFit({ edgeCount, nodeCount }: { edgeCount: number; nodeCount: number }) {

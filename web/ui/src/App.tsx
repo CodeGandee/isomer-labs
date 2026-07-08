@@ -23,6 +23,7 @@ import {
   getRuntime,
   getActors,
   getTopic,
+  getTopicOverview,
   getTopicGraph,
   getTopics,
   getViewerDescriptor,
@@ -47,7 +48,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LinkButton, StatusBadge, ToolbarButton } from "@/components/workbench-controls";
-import type { ExplorerNode, GraphScope, IdeaDetailResponse, OpenableItemDescriptor, RecordSummary } from "./types";
+import type { Diagnostic, ExplorerNode, GraphScope, IdeaDetailResponse, OpenableItemDescriptor, RecordSummary } from "./types";
 import { ThemeProvider, useGuiTheme } from "./theme-provider";
 import type { ThemeMode } from "./theme-mode";
 import { GuiSettingsProvider, useGuiSettings } from "./ui-settings";
@@ -733,20 +734,132 @@ function ProjectOverviewPanel() {
   );
 }
 
-function TopicOverviewPanel({ topicId }: { topicId: string }) {
-  const topic = useQuery({ queryKey: ["topic", topicId, "overview"], queryFn: () => getTopic(topicId), enabled: Boolean(topicId) });
-  const runtime = useQuery({ queryKey: ["topic", topicId, "runtime", "overview"], queryFn: () => getRuntime(topicId), enabled: Boolean(topicId) });
+export function TopicOverviewPanel({ topicId }: { topicId: string }) {
+  const viewJsonButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [jsonModalOpen, setJsonModalOpen] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>({ target: null, status: "idle" });
+  const overview = useQuery({
+    queryKey: ["topic", topicId, "overview"],
+    queryFn: () => getTopicOverview(topicId),
+    enabled: Boolean(topicId),
+  });
+  const markdown = overview.data?.overview?.content_markdown || "";
+  const diagnostics = overview.data?.diagnostics || [];
+  const sourceMetadata = useMemo(() => overviewSourceMetadata(overview.data?.overview), [overview.data?.overview]);
+  const jsonTabs = useMemo<JsonModalTab[]>(() => {
+    const tabs: JsonModalTab[] = [
+      { id: "topic", label: "Topic", jsonText: buildJsonMarkdownPreview(overview.data?.topic_payload || {}).jsonText },
+      { id: "runtime", label: "Runtime", jsonText: buildJsonMarkdownPreview(overview.data?.runtime_payload || {}).jsonText },
+    ];
+    if (diagnostics.length > 0) {
+      tabs.push({ id: "diagnostics", label: "Diagnostics", jsonText: buildJsonMarkdownPreview(diagnostics).jsonText });
+    } else {
+      tabs.push({ id: "source", label: "Source", jsonText: buildJsonMarkdownPreview(sourceMetadata || {}).jsonText });
+    }
+    return tabs;
+  }, [diagnostics, overview.data?.runtime_payload, overview.data?.topic_payload, sourceMetadata]);
+
+  const copyText = useCallback(async (target: "json" | "markdown", textValue: string | null | undefined) => {
+    if (!textValue) {
+      setCopyState({ target, status: "error", message: target === "markdown" ? "No Markdown available." : "Nothing to copy." });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(textValue);
+      setCopyState({ target, status: "success", message: target === "json" ? "JSON copied." : "Markdown copied." });
+    } catch {
+      setCopyState({ target, status: "error", message: "Clipboard write failed. Content remains selectable." });
+    }
+  }, []);
+
+  const closeJsonModal = useCallback(() => {
+    setJsonModalOpen(false);
+    window.requestAnimationFrame(() => viewJsonButtonRef.current?.focus());
+  }, []);
+
+  const markdownState: "loading" | "empty" | "ready" = overview.isPending || overview.isFetching ? "loading" : markdown ? "ready" : "empty";
+  const markdownContent = overview.isPending
+    ? "Loading topic overview."
+    : markdown || missingOverviewMarkdown(overview.data?.overview?.semantic_label || "topic.intent.overview", diagnostics);
+  const overviewExists = overview.data?.overview?.exists === true;
+  const overviewMissing = overview.data?.overview?.exists === false;
+
   return (
-    <section className="panel-body overview-panel">
+    <section className="panel-body overview-panel idea-detail-panel">
       <div className="detail-heading">
-        <h3>{topicId || "Topic Overview"}</h3>
-        <span>{topic.data ? "overview" : "loading"}</span>
+        <div>
+          <h3>{topicId || "Topic Overview"}</h3>
+          <span>{overview.data?.overview?.semantic_label || "topic.intent.overview"}</span>
+        </div>
+        <div className="toolbar idea-toolbar">
+          <ToolbarButton
+            ref={viewJsonButtonRef}
+            type="button"
+            disabled={!overview.data}
+            onClick={() => setJsonModalOpen(true)}
+          >
+            View JSON
+          </ToolbarButton>
+          <ToolbarButton type="button" disabled={!markdown} onClick={() => void copyText("markdown", markdown)}>
+            Copy Markdown
+          </ToolbarButton>
+          <ToolbarButton type="button" onClick={() => void overview.refetch()}>
+            <RefreshCw aria-hidden="true" />
+            Refresh
+          </ToolbarButton>
+        </div>
       </div>
-      <div className="overview-grid">
-        <JsonBlock title="Topic" value={topic.data} />
-        <JsonBlock title="Runtime" value={runtime.data} />
+      <div className="idea-status-row">
+        <StatusBadge tone={overviewExists ? "success" : overviewMissing ? "warning" : "muted"}>
+          {overviewExists ? "overview ready" : overviewMissing ? "topic.intent.overview missing" : "loading overview"}
+        </StatusBadge>
+        {overview.data?.overview?.path ? <StatusBadge>{overview.data.overview.path}</StatusBadge> : null}
+        {overview.data?.overview?.content_bytes !== undefined ? <StatusBadge>{overview.data.overview.content_bytes} bytes</StatusBadge> : null}
+        {copyState.status !== "idle" ? <StatusBadge className={`copy-status ${copyState.status}`} tone={copyState.status === "success" ? "success" : "danger"}>{copyState.message}</StatusBadge> : null}
       </div>
+      {diagnostics.length > 0 ? <OverviewDiagnostics diagnostics={diagnostics} /> : null}
+      <MarkdownView content={markdownContent} state={markdownState} />
+      {jsonModalOpen ? (
+        <JsonModal
+          title={`${topicId || "Topic"} Overview Data`}
+          description="JSON data for the topic overview."
+          tabs={jsonTabs}
+          defaultTabId="topic"
+          copyStatus={copyState.target === "json" ? copyState.message : undefined}
+          onClose={closeJsonModal}
+          onCopy={(jsonText) => void copyText("json", jsonText)}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function overviewSourceMetadata(overview: Record<string, unknown> | null | undefined) {
+  if (!overview) {
+    return null;
+  }
+  const { content_markdown: _contentMarkdown, ...metadata } = overview;
+  return {
+    ...metadata,
+    content_markdown: overview.content_markdown ? "[available in Markdown preview]" : null,
+  };
+}
+
+function missingOverviewMarkdown(label: string, diagnostics: Diagnostic[]) {
+  const message = diagnostics.find((diagnostic) => diagnostic.code === "topic_overview_missing")?.message || "Topic overview Markdown is unavailable.";
+  return `> ${message}\n\nCreate or restore \`${label}\` to show the topic overview here.`;
+}
+
+function OverviewDiagnostics({ diagnostics }: { diagnostics: Diagnostic[] }) {
+  return (
+    <div className="diagnostics-list overview-diagnostics">
+      {diagnostics.map((diagnostic, index) => (
+        <div className={`diagnostic ${diagnostic.severity || "info"}`} key={`${diagnostic.code}-${index}`}>
+          <strong>{diagnostic.code || "diagnostic"}</strong>
+          <span>{diagnostic.message || ""}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1019,6 +1132,7 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
       {jsonModalOpen ? (
         <JsonModal
           title={`${title} Data`}
+          description="JSON data for the selected idea."
           tabs={jsonTabs}
           defaultTabId="main-record"
           copyStatus={copyState.target === "json" ? copyState.message : undefined}
@@ -1115,6 +1229,7 @@ type JsonModalTab = {
 
 export function JsonModal({
   title,
+  description,
   tabs,
   defaultTabId,
   copyStatus,
@@ -1122,6 +1237,7 @@ export function JsonModal({
   onCopy,
 }: {
   title: string;
+  description?: string;
   tabs: JsonModalTab[];
   defaultTabId: string;
   copyStatus?: string;
@@ -1136,7 +1252,7 @@ export function JsonModal({
         <div className="json-modal-heading">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            <DialogDescription className="sr-only">JSON data for the selected idea.</DialogDescription>
+            <DialogDescription className="sr-only">{description || "JSON data for the selected item."}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="toolbar">
             <ToolbarButton type="button" onClick={() => onCopy(activeTab?.jsonText || "")} disabled={!activeTab?.jsonText || activeTab.loading}>

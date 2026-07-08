@@ -126,6 +126,37 @@ export const ProjectResponseSchema = z
   })
   .passthrough();
 
+export const TopicOverviewSourceSchema = z
+  .object({
+    semantic_label: z.string(),
+    path: z.string().optional(),
+    exists: z.boolean(),
+    content_markdown: z.string().nullable().optional(),
+    content_bytes: z.number().optional(),
+    content_cap_bytes: z.number().optional(),
+  })
+  .passthrough();
+
+export const TopicOverviewResponseSchema = z
+  .object({
+    ok: z.boolean(),
+    mutated: z.boolean(),
+    topic_id: z.string(),
+    topic_workspace_id: z.string().nullable().optional(),
+    overview: TopicOverviewSourceSchema,
+    topic_payload: z.unknown().nullable().optional(),
+    runtime_payload: z.unknown().nullable().optional(),
+    diagnostics: z.array(DiagnosticSchema).optional(),
+    error: z
+      .object({
+        code: z.string(),
+        message: z.string(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
 export const RecordSummarySchema = z
   .object({
     record_id: z.string(),
@@ -309,6 +340,7 @@ export type TopicGraphEdge = z.infer<typeof TopicGraphEdgeSchema>;
 export type TopicGraphView = z.infer<typeof TopicGraphViewSchema>;
 export type TopicGraphGroup = z.infer<typeof TopicGraphGroupSchema>;
 export type TopicChangeEvent = z.infer<typeof TopicChangeEventSchema>;
+export type TopicOverviewResponse = z.infer<typeof TopicOverviewResponseSchema>;
 export type RecordSummary = z.infer<typeof RecordSummarySchema>;
 export type IdeaDetailResponse = z.infer<typeof IdeaDetailResponseSchema>;
 export type ViewerDescriptor = z.infer<typeof ViewerDescriptorSchema>;

@@ -72,6 +72,10 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
     def runtime(topic_id: str) -> JSONResponse:
         return _json(read_model.runtime(topic_id))
 
+    @app.get("/api/topics/{topic_id}/overview")
+    def topic_overview(topic_id: str) -> JSONResponse:
+        return _json(read_model.topic_overview(topic_id))
+
     @app.get("/api/topics/{topic_id}/actors")
     def actors(topic_id: str) -> JSONResponse:
         payload = read_model.topic(topic_id)

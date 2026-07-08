@@ -281,7 +281,17 @@ class _ProjectExplorerReadModel:
             )
 
         mapping = {
-            "overview": ("topic_overview", f"topic-{topic_id}-overview", "topicOverview", "Topic Overview", {"topic": f"/api/topics/{topic_id}"}),
+            "overview": (
+                "topic_overview",
+                f"topic-{topic_id}-overview",
+                "topicOverview",
+                "Topic Overview",
+                {
+                    "overview": f"/api/topics/{topic_id}/overview",
+                    "topic": f"/api/topics/{topic_id}",
+                    "runtime": f"/api/topics/{topic_id}/runtime",
+                },
+            ),
             "records": ("record_collection", f"topic-{topic_id}-records", "records", "Records", {"records": f"/api/topics/{topic_id}/records"}),
             "runtime": ("runtime", f"topic-{topic_id}-runtime", "runtime", "Runtime", {"runtime": f"/api/topics/{topic_id}/runtime"}),
             "actors": ("topic_actors", f"topic-{topic_id}-actors", "actors", "Topic Actors", {"actors": f"/api/topics/{topic_id}/actors"}),

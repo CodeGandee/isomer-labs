@@ -256,6 +256,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertIn("/api/topics/{topic_id}/graphs/{graph_scope}", route_paths)
         self.assertIn("/api/topics/{topic_id}/viewer/records/{record_id}", route_paths)
         self.assertIn("/api/topics/{topic_id}/ideas/{idea_id}", route_paths)
+        self.assertIn("/api/topics/{topic_id}/overview", route_paths)
         self.assertIn("/api/events", route_paths)
         self.assertNotIn("/api/explorer/files", route_paths)
         self.assertTrue((Path("src/isomer_labs/web/static/index.html")).exists())
@@ -321,6 +322,9 @@ class ProjectWebGuiTests(unittest.TestCase):
         overview = read_model.openable_item_descriptor("topic:alpha:overview")
         self.assertTrue(overview["ok"], overview)
         self.assertEqual("topicOverview", overview["preferred_tab_component"])
+        self.assertEqual("/api/topics/alpha/overview", overview["detail_urls"]["overview"])
+        self.assertEqual("/api/topics/alpha", overview["detail_urls"]["topic"])
+        self.assertEqual("/api/topics/alpha/runtime", overview["detail_urls"]["runtime"])
 
         settings = read_model.openable_item_descriptor("project:settings")
         self.assertTrue(settings["ok"], settings)
@@ -332,6 +336,56 @@ class ProjectWebGuiTests(unittest.TestCase):
         missing = read_model.openable_item_descriptor("topic:missing:overview")
         self.assertFalse(missing["ok"], missing)
         self.assertEqual("topic_not_found", missing["error"]["code"])
+
+    def test_topic_overview_api_reads_markdown_and_supporting_json(self) -> None:
+        root = self.make_project()
+        write(
+            root / "topic-workspaces" / "alpha" / "intent" / "src" / "topic-overview.md",
+            """
+            # Alpha Overview
+
+            Human-readable topic summary.
+            """,
+        )
+        read_model = self.read_model(root)
+
+        overview = read_model.topic_overview("alpha")
+        self.assertTrue(overview["ok"], overview)
+        self.assertFalse(overview["mutated"])
+        self.assertEqual("alpha", overview["topic_id"])
+        self.assertEqual("alpha", overview["topic_workspace_id"])
+        self.assertEqual("topic.intent.overview", overview["overview"]["semantic_label"])
+        self.assertTrue(overview["overview"]["exists"])
+        self.assertIn("Human-readable topic summary.", overview["overview"]["content_markdown"])
+        self.assertEqual("Alpha topic", overview["topic_payload"]["topic_config"]["topic_statement"])
+        self.assertTrue(overview["runtime_payload"]["runtime"]["exists"])
+
+        app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
+        status, _headers, body = self.asgi_get_response(app, "/api/topics/alpha/overview")
+        self.assertEqual(200, status)
+        route_payload = json.loads(body)
+        self.assertTrue(route_payload["ok"], route_payload)
+        self.assertIn("Human-readable topic summary.", route_payload["overview"]["content_markdown"])
+
+    def test_topic_overview_api_reports_missing_markdown_without_failing_topic(self) -> None:
+        root = self.make_project()
+        read_model = self.read_model(root)
+
+        overview = read_model.topic_overview("alpha")
+        self.assertTrue(overview["ok"], overview)
+        self.assertFalse(overview["mutated"])
+        self.assertFalse(overview["overview"]["exists"])
+        self.assertIsNone(overview["overview"]["content_markdown"])
+        self.assertTrue(any(diagnostic["code"] == "topic_overview_missing" for diagnostic in overview["diagnostics"]), overview)
+        self.assertEqual("Alpha topic", overview["topic_payload"]["topic_config"]["topic_statement"])
+        self.assertTrue(overview["runtime_payload"]["runtime"]["exists"])
+
+        app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
+        status, _headers, body = self.asgi_get_response(app, "/api/topics/alpha/overview")
+        self.assertEqual(200, status)
+        route_payload = json.loads(body)
+        self.assertTrue(route_payload["ok"], route_payload)
+        self.assertFalse(route_payload["overview"]["exists"])
 
     def test_idea_detail_resolves_source_json_and_openable_descriptor_read_only(self) -> None:
         root = self.make_project()
