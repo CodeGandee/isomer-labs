@@ -14,16 +14,23 @@ from isomer_labs.cli.examples import COMMAND_EXAMPLES
 
 REQUIRED_PAGES = [
     "docs/index.md",
-    "docs/getting-started.md",
-    "docs/concepts.md",
-    "docs/system-design.md",
-    "docs/isomer-cli.md",
-    "docs/workflows.md",
-    "docs/houmao-adapter.md",
-    "docs/runtime-and-files.md",
-    "docs/assumptions-and-roadmap.md",
-    "docs/troubleshooting.md",
-    "docs/contributing-docs.md",
+    "docs/tutorial/index.md",
+    "docs/tutorial/quickstart.md",
+    "docs/tutorial/system-skills.md",
+    "docs/manual/index.md",
+    "docs/manual/concepts.md",
+    "docs/manual/cli-reference.md",
+    "docs/manual/project-lifecycle.md",
+    "docs/manual/topic-workspaces.md",
+    "docs/manual/workspace-runtime.md",
+    "docs/manual/research-records.md",
+    "docs/manual/project-web.md",
+    "docs/manual/houmao-adapter.md",
+    "docs/manual/troubleshooting.md",
+    "docs/developer/index.md",
+    "docs/developer/architecture.md",
+    "docs/developer/packaged-system-skills.md",
+    "docs/developer/contributing-docs.md",
 ]
 
 FORBIDDEN_TERMS: list[tuple[str, str]] = [
@@ -33,7 +40,14 @@ FORBIDDEN_TERMS: list[tuple[str, str]] = [
     ("control plane", r"control plane"),
 ]
 
-README_LINK_TARGETS = ["docs/index.md", "docs/getting-started.md", "docs/isomer-cli.md"]
+README_LINK_TARGETS = [
+    "docs/index.md",
+    "docs/tutorial/quickstart.md",
+    "docs/manual/cli-reference.md",
+    "docs/developer/index.md",
+]
+CLI_REFERENCE_PAGE = "docs/manual/cli-reference.md"
+TOPIC_WORKSPACE_PAGE = "docs/manual/topic-workspaces.md"
 STALE_ISOMER_JSON_PATTERNS = [
     re.compile(r"\bisomer-cli\b[^\n]*\s--json\b"),
     re.compile(r"\bisomer-cli\b[^\n]*\s--format(?:=|\s+)json\b"),
@@ -68,6 +82,10 @@ FIXED_PATH_ONLY_PATTERNS = [
 
 def get_repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
+
+
+def iter_docs_markdown(repo_root: Path) -> list[Path]:
+    return sorted((repo_root / "docs").glob("**/*.md"))
 
 
 def run_cli_help(args: list[str]) -> str:
@@ -128,19 +146,20 @@ def check_readme_links(repo_root: Path) -> list[str]:
         return ["README.md is missing"]
     content = readme.read_text(encoding="utf-8")
     if not any(target in content for target in README_LINK_TARGETS):
-        return ["README.md does not link to docs/index.md, docs/getting-started.md, or docs/isomer-cli.md"]
+        expected = ", ".join(README_LINK_TARGETS)
+        return [f"README.md does not link to one of the required docs targets: {expected}"]
     return []
 
 
 def check_cli_coverage(repo_root: Path, commands: list[str]) -> list[str]:
-    cli_doc = repo_root / "docs" / "isomer-cli.md"
+    cli_doc = repo_root / CLI_REFERENCE_PAGE
     if not cli_doc.is_file():
-        return ["docs/isomer-cli.md is missing"]
+        return [f"{CLI_REFERENCE_PAGE} is missing"]
     content = cli_doc.read_text(encoding="utf-8")
     issues: list[str] = []
     for command in commands:
         if command not in content:
-            issues.append(f"docs/isomer-cli.md missing command: {command}")
+            issues.append(f"{CLI_REFERENCE_PAGE} missing command: {command}")
     return issues
 
 
@@ -151,20 +170,19 @@ def _without_inline_code(content: str) -> str:
 
 def check_forbidden_terms(repo_root: Path) -> list[str]:
     issues: list[str] = []
-    docs_dir = repo_root / "docs"
-    for path in sorted(docs_dir.glob("*.md")):
+    for path in iter_docs_markdown(repo_root):
         content = path.read_text(encoding="utf-8")
         searchable = _without_inline_code(content)
         for label, pattern in FORBIDDEN_TERMS:
             for match in re.finditer(pattern, searchable, flags=re.IGNORECASE):
                 line_number = content[: match.start()].count("\n") + 1
-                issues.append(f"{path.name}:{line_number}: forbidden term '{label}'")
+                issues.append(f"{path.relative_to(repo_root)}:{line_number}: forbidden term '{label}'")
     return issues
 
 
 def check_stale_isomer_cli_json_examples(repo_root: Path) -> list[str]:
     issues: list[str] = []
-    paths = [repo_root / "README.md", *sorted((repo_root / "docs").glob("*.md"))]
+    paths = [repo_root / "README.md", *iter_docs_markdown(repo_root)]
     for path in paths:
         if not path.is_file():
             continue
@@ -178,21 +196,21 @@ def check_stale_isomer_cli_json_examples(repo_root: Path) -> list[str]:
 
 
 def check_cli_error_example_registry(repo_root: Path) -> list[str]:
-    cli_doc = repo_root / "docs" / "isomer-cli.md"
+    cli_doc = repo_root / CLI_REFERENCE_PAGE
     if not cli_doc.is_file():
-        return ["docs/isomer-cli.md is missing"]
+        return [f"{CLI_REFERENCE_PAGE} is missing"]
     content = cli_doc.read_text(encoding="utf-8")
     issues: list[str] = []
     for command, examples in sorted(COMMAND_EXAMPLES.items()):
         for example in examples:
             if example not in content:
-                issues.append(f"docs/isomer-cli.md missing CLI error example for `{command}`: {example}")
+                issues.append(f"{CLI_REFERENCE_PAGE} missing CLI error example for `{command}`: {example}")
     return issues
 
 
 def check_legacy_workspace_paths(repo_root: Path) -> list[str]:
     issues: list[str] = []
-    paths = [repo_root / "README.md", *sorted((repo_root / "docs").glob("*.md"))]
+    paths = [repo_root / "README.md", *iter_docs_markdown(repo_root)]
     for path in paths:
         if not path.is_file():
             continue
@@ -212,28 +230,27 @@ def check_legacy_workspace_paths(repo_root: Path) -> list[str]:
 
 def check_semantic_path_documentation(repo_root: Path) -> list[str]:
     issues: list[str] = []
-    docs_dir = repo_root / "docs"
-    cli_doc = docs_dir / "isomer-cli.md"
+    cli_doc = repo_root / CLI_REFERENCE_PAGE
     if cli_doc.is_file():
         content = cli_doc.read_text(encoding="utf-8")
         for command in SEMANTIC_PATH_COMMANDS:
             if command not in content:
-                issues.append(f"docs/isomer-cli.md missing semantic path command coverage: {command}")
-    topic_doc = docs_dir / "topic-workspace-definition.md"
+                issues.append(f"{CLI_REFERENCE_PAGE} missing semantic path command coverage: {command}")
+    topic_doc = repo_root / TOPIC_WORKSPACE_PAGE
     if topic_doc.is_file():
         content = topic_doc.read_text(encoding="utf-8")
         if "topic-workspace.toml" not in content or "isomer-default.v1" not in content:
-            issues.append("docs/topic-workspace-definition.md must document Topic Workspace Manifest, topic-workspace.toml, and isomer-default.v1")
+            issues.append(f"{TOPIC_WORKSPACE_PAGE} must document Topic Workspace Manifest, topic-workspace.toml, and isomer-default.v1")
         for term in ("storage_profile", "custom.*", "topic.repos.<group...>.<repo-name>", "label", "path"):
             if term not in content:
-                issues.append(f"docs/topic-workspace-definition.md missing storage contract term: {term}")
-    cli_doc = docs_dir / "isomer-cli.md"
+                issues.append(f"{TOPIC_WORKSPACE_PAGE} missing storage contract term: {term}")
+    cli_doc = repo_root / CLI_REFERENCE_PAGE
     if cli_doc.is_file():
         content = cli_doc.read_text(encoding="utf-8")
         for term in ("--storage-profile", "ISOMER_PATH__TOPIC__REPOS__MAIN", "ISOMER_PATH__CUSTOM__DATASETS__RAW", "--configured"):
             if term not in content:
-                issues.append(f"docs/isomer-cli.md missing semantic storage CLI term: {term}")
-    for path in [repo_root / "README.md", *sorted(docs_dir.glob("*.md"))]:
+                issues.append(f"{CLI_REFERENCE_PAGE} missing semantic storage CLI term: {term}")
+    for path in [repo_root / "README.md", *iter_docs_markdown(repo_root)]:
         if not path.is_file():
             continue
         content = path.read_text(encoding="utf-8")

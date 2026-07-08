@@ -16,3 +16,44 @@ theme:
 
 plugins:
   - search
+
+nav:
+  - Home: index.md
+  - Tutorials:
+      - Overview: tutorial/index.md
+      - Quickstart: tutorial/quickstart.md
+      - Create a Project: tutorial/first-project.md
+      - Create a Research Topic: tutorial/first-research-topic.md
+      - Open the Web GUI: tutorial/project-web-gui.md
+      - Install System Skills: tutorial/system-skills.md
+  - Manual:
+      - Overview: manual/index.md
+      - Concepts: manual/concepts.md
+      - CLI Reference: manual/cli-reference.md
+      - Project Lifecycle: manual/project-lifecycle.md
+      - Research Topics: manual/research-topics.md
+      - Topic Workspaces: manual/topic-workspaces.md
+      - Workspace Runtime: manual/workspace-runtime.md
+      - Research Records: manual/research-records.md
+      - Project Web GUI: manual/project-web.md
+      - Houmao Adapter: manual/houmao-adapter.md
+      - Troubleshooting: manual/troubleshooting.md
+  - Developer:
+      - Overview: developer/index.md
+      - Architecture: developer/architecture.md
+      - Storage Layer: developer/storage-layer.md
+      - Team Repositories: developer/team-repositories.md
+      - Packaged System Skills: developer/packaged-system-skills.md
+      - UI Contracts: developer/ui-contracts.md
+      - Release Process: developer/release-process.md
+      - Testing: developer/testing.md
+      - Contributing to Docs: developer/contributing-docs.md
+      - Assumptions and Roadmap: developer/assumptions-and-roadmap.md
+  - UI Contracts:
+      - Overview: ui/contracts/index.md
+      - Display Paths: ui/contracts/display-paths.md
+      - Topic Overview: ui/contracts/topic-overview.md
+      - Topic Graph: ui/contracts/topic-graph.md
+      - Idea Detail: ui/contracts/idea-detail.md
+      - Record Inspection: ui/contracts/record-inspection.md
+      - Diagnostics: ui/contracts/diagnostics.md

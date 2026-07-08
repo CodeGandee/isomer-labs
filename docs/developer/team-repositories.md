@@ -1,6 +1,6 @@
 # Team Repositories
 
-Team Repositories are local filesystem plugin roots that contain Domain Agent Team Templates. Isomer core loads them explicitly through Project configuration or `ISOMER_TEAM_REPOSITORIES`; package code does not derive paths to checkout-local `teams/`, `skillset/`, `tests/`, or other repository-only directories.
+This developer guide explains Team Repositories, the local filesystem plugin roots that contain Domain Agent Team Templates. Isomer core loads them explicitly through Project configuration or `ISOMER_TEAM_REPOSITORIES`; package code does not derive paths to checkout-local `teams/`, `skillset/`, `tests/`, or other repository-only directories.
 
 ## Manifest
 

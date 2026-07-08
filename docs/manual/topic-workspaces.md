@@ -1,6 +1,6 @@
-# Topic Workspace Definition
+# Topic Workspaces
 
-This page defines the Topic Workspace path contract by semantic workspace surface labels first and by the standard filesystem layout second. The default directories shown here are the built-in `isomer-default.v1` layout profile, not the only valid structure.
+This manual page defines the Topic Workspace path contract by semantic workspace surface labels first and by the standard filesystem layout second. The default directories shown here are the built-in `isomer-default.v1` layout profile, not the only valid structure.
 
 ## Scope
 

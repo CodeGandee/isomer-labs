@@ -1,6 +1,6 @@
 # Concepts
 
-This page summarizes the canonical Isomer Labs domain language. The full source lives in `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`; this page selects the concepts most useful when reading the rest of the documentation.
+This manual page summarizes the canonical Isomer Labs domain language. The full source lives in `.imsight-arts/project-explore/domain-concepts/dc-isomer-platform-language.md`; this page selects the concepts most useful when reading the rest of the documentation.
 
 ## Project and Workspace
 
@@ -14,7 +14,7 @@ This page summarizes the canonical Isomer Labs domain language. The full source 
 
 **Research Topic**: the root research problem or investigation intent that initiates work and Topic Team Specialization.
 
-**Topic Workspace**: a project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Topic Main Development Repository, canonical external repositories, Agent Workspaces, owner-preserved records under `records/*`, runtime support material under `runtime/`, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, and logs. Its path contract is expressed through semantic workspace surface labels; the default directory structure is the `isomer-default.v1` layout profile documented in [Topic Workspace Definition](topic-workspace-definition.md).
+**Topic Workspace**: a project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Topic Main Development Repository, canonical external repositories, Agent Workspaces, owner-preserved records under `records/*`, runtime support material under `runtime/`, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, and logs. Its path contract is expressed through semantic workspace surface labels; the default directory structure is the `isomer-default.v1` layout profile documented in [Topic Workspaces](topic-workspaces.md).
 
 **Topic Workspace Manifest**: the topic-owned `topic-workspace.toml` file at the root of a Topic Workspace. It binds semantic workspace surface labels to concrete paths or bounded agent templates for that Topic Workspace, and it can carry topic-scope Toolbox registrations and runtime params. Active bindings use `label`, `path`, and `storage_profile`; the storage profile defines required context, path kind, lifecycle, visibility, safety policy, and Git semantics. It is not Project Config Directory state and is not a replacement for Workspace Runtime records.
 

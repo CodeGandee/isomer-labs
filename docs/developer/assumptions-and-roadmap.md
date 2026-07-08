@@ -1,6 +1,6 @@
 # Assumptions and Roadmap
 
-This page documents the assumptions Isomer Labs currently makes, the non-goals that shape its scope, the advisory nature of workspace boundaries, and the status of current milestones versus future work. Reading this page helps you avoid inferring guarantees that the system does not yet provide.
+This developer page documents the assumptions Isomer Labs currently makes, the non-goals that shape its scope, the advisory nature of workspace boundaries, and the status of current milestones versus future work. Reading this page helps you avoid inferring guarantees that the system does not yet provide.
 
 ## Implementation Assumptions
 
@@ -99,4 +99,4 @@ When a page describes an Agent Workspace as "owned" by an Agent Instance, it mea
 
 ## How to Read the Rest of the Docs
 
-Pages such as [System Design](system-design.md), [Workflows](workflows.md), and [Houmao Adapter](houmao-adapter.md) describe implemented behavior first and label planned or partial behavior explicitly. If a sentence sounds like a guarantee, check whether the capability is listed under Implemented above.
+Pages such as [Architecture](architecture.md), [Project Lifecycle](../manual/project-lifecycle.md), and [Houmao Adapter](../manual/houmao-adapter.md) describe implemented behavior first and label planned or partial behavior explicitly. If a sentence sounds like a guarantee, check whether the capability is listed under Implemented above.

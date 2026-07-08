@@ -1,6 +1,6 @@
 # Storage Layer
 
-This page is a practical guide for a new Project Operator Session that needs to read from or write to Isomer-managed storage. In canonical Isomer language, "storage layer" is a guide phrase for the combination of Project configuration, Topic Workspace files, semantic workspace surface labels, Workspace Path Resolution, Workspace Runtime records, and adapter-owned payload files.
+This developer guide is a practical reference for a Project Operator Session that needs to read from or write to Isomer-managed storage. In canonical Isomer language, "storage layer" is a guide phrase for the combination of Project configuration, Topic Workspace files, semantic workspace surface labels, Workspace Path Resolution, Workspace Runtime records, and adapter-owned payload files.
 
 ## Mental Model
 
@@ -35,36 +35,36 @@ Use `--configured` with `project paths get` when you specifically want the curre
 Start by selecting a Research Topic and resolving the Effective Topic Context:
 
 ```bash
-pixi run isomer-cli --print-json project context show --topic my-topic
+isomer-cli --print-json project context show --topic my-topic
 ```
 
 Resolve one storage surface:
 
 ```bash
-pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
-pixi run isomer-cli --print-json project paths get topic.repos.main --topic my-topic
-pixi run isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent alice
+isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
+isomer-cli --print-json project paths get topic.repos.main --topic my-topic
+isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent alice
 ```
 
 List known labels and their resolution status:
 
 ```bash
-pixi run isomer-cli --print-json project paths list --topic my-topic
-pixi run isomer-cli --print-json project paths list --topic my-topic --agent alice
+isomer-cli --print-json project paths list --topic my-topic
+isomer-cli --print-json project paths list --topic my-topic --agent alice
 ```
 
 Explain why a path was selected:
 
 ```bash
-pixi run isomer-cli --print-json project paths explain topic.records.artifacts --topic my-topic
-pixi run isomer-cli --print-json project paths explain custom.datasets.raw --topic my-topic
+isomer-cli --print-json project paths explain topic.records.artifacts --topic my-topic
+isomer-cli --print-json project paths explain custom.datasets.raw --topic my-topic
 ```
 
 Inspect or validate runtime records:
 
 ```bash
-pixi run isomer-cli --print-json project runtime inspect --topic my-topic
-pixi run isomer-cli --print-json project runtime validate --topic my-topic
+isomer-cli --print-json project runtime inspect --topic my-topic
+isomer-cli --print-json project runtime validate --topic my-topic
 ```
 
 ## Put Durable Topic Material
@@ -72,7 +72,7 @@ pixi run isomer-cli --print-json project runtime validate --topic my-topic
 For durable topic-level outputs, prefer an owner-preserved records label. The common starting point is `topic.records.artifacts`:
 
 ```bash
-pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
+isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
 ```
 
 After resolving the path, write the file under a clear subdirectory such as `experiments`, `analysis`, `figures`, `paper`, `decisions`, `evidence`, `findings`, or `handoffs`. The resolved path is the storage authority, not the default directory name.
@@ -80,8 +80,8 @@ After resolving the path, write the file under a clear subdirectory such as `exp
 If the material needs its own named surface, register a `custom.*` label instead of inventing an untracked convention:
 
 ```bash
-pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
-pixi run isomer-cli --print-json project paths get custom.datasets.raw --topic my-topic
+isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
+isomer-cli --print-json project paths get custom.datasets.raw --topic my-topic
 ```
 
 Use a storage profile that matches the material. For durable topic records, `topic_records_dir` is usually appropriate. For a supporting topic repository, use `topic_repo`.
@@ -91,14 +91,14 @@ Use a storage profile that matches the material. For durable topic records, `top
 Use `topic.repos.main` for the Topic Main Development Repository. This is the shared code-bearing topic repository and the normal source for Agent Workspace worktrees.
 
 ```bash
-pixi run isomer-cli --print-json project paths get topic.repos.main --topic my-topic
+isomer-cli --print-json project paths get topic.repos.main --topic my-topic
 ```
 
 For a non-main supporting repository, use the helper command:
 
 ```bash
-pixi run isomer-cli --print-json project repos create inner_group.some_repo_name --topic my-topic
-pixi run isomer-cli --print-json project paths get topic.repos.inner_group.some_repo_name --topic my-topic
+isomer-cli --print-json project repos create inner_group.some_repo_name --topic my-topic
+isomer-cli --print-json project paths get topic.repos.inner_group.some_repo_name --topic my-topic
 ```
 
 The helper registers a grouped `topic.repos.<group...>.<repo-name>` label with `storage_profile = "topic_repo"` and creates the configured target unless `--no-create` is selected. Topic environment setup decides whether that repository should also appear inside `topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`.
@@ -108,10 +108,10 @@ The helper registers a grouped `topic.repos.<group...>.<repo-name>` label with `
 Agent-scoped labels need an Agent Name or Agent Instance context unless the current working directory is already inside that Agent Workspace.
 
 ```bash
-pixi run isomer-cli --print-json project paths get agent.workspace --topic my-topic --agent alice
-pixi run isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent alice
-pixi run isomer-cli --print-json project paths get agent.public_share --topic my-topic --agent alice
-pixi run isomer-cli --print-json project paths get agent.scratch --topic my-topic --agent alice
+isomer-cli --print-json project paths get agent.workspace --topic my-topic --agent alice
+isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent alice
+isomer-cli --print-json project paths get agent.public_share --topic my-topic --agent alice
+isomer-cli --print-json project paths get agent.scratch --topic my-topic --agent alice
 ```
 
 Use `agent.private_artifacts` for agent-owned outputs before they are promoted into topic-level records. Use `agent.public_share` only for peer-readable material that should remain agent-owned. Use `agent.scratch` for drafts and intermediate work that may later be promoted. Agent material is not automatically accepted as a topic Artifact, Evidence Item, Decision Record, or Provenance Record.
@@ -123,10 +123,10 @@ Implemented tmp/ surfaces use `topic.tmp`, `topic.repos.main.tmp`, and `agent.tm
 Do not write `state.sqlite` directly. Use `isomer-cli` commands that own the record type:
 
 ```bash
-pixi run isomer-cli --print-json project runtime init --topic my-topic
-pixi run isomer-cli --print-json project runtime prepare --topic my-topic --actor operator
-pixi run isomer-cli --print-json project team-instances create --topic my-topic --id ati-my-topic-deepsci
-pixi run isomer-cli --print-json project handoffs dispatch --topic my-topic --agent-team-instance ati-my-topic-deepsci --source-agent-instance ati-my-topic-deepsci-lead --target-agent-instance ati-my-topic-deepsci-scout --run run-first-pass --message "Inspect the topic repository and report blockers."
+isomer-cli --print-json project runtime init --topic my-topic
+isomer-cli --print-json project runtime prepare --topic my-topic --actor operator
+isomer-cli --print-json project team-instances create --topic my-topic --id ati-my-topic-deepsci
+isomer-cli --print-json project handoffs dispatch --topic my-topic --agent-team-instance ati-my-topic-deepsci --source-agent-instance ati-my-topic-deepsci-lead --target-agent-instance ati-my-topic-deepsci-scout --run run-first-pass --message "Inspect the topic repository and report blockers."
 ```
 
 Runtime commands create or update Path Plans, readiness records, lifecycle records, Agent Team Instance records, Agent Workspace records, handoff records, adapter refs, and validation issues. They also report side effects through the `mutated` flag in JSON output.
@@ -138,9 +138,9 @@ Adapter material belongs under the Topic Workspace runtime support surface and i
 Use adapter-facing CLI commands rather than writing adapter manifests by hand:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances launch-material prepare ati-my-topic-deepsci --topic my-topic --adapter houmao
-pixi run isomer-cli --print-json project team-instances launch ati-my-topic-deepsci --topic my-topic --adapter houmao
-pixi run isomer-cli --print-json project team-instances inspect-live ati-my-topic-deepsci --topic my-topic --adapter houmao --integrity
+isomer-cli --print-json project team-instances launch-material prepare ati-my-topic-deepsci --topic my-topic --adapter houmao
+isomer-cli --print-json project team-instances launch ati-my-topic-deepsci --topic my-topic --adapter houmao
+isomer-cli --print-json project team-instances inspect-live ati-my-topic-deepsci --topic my-topic --adapter houmao --integrity
 ```
 
 Adapter command payloads are durable records when Isomer stores and references them through Workspace Runtime. Secret-like fields are redacted before storage.
@@ -150,10 +150,10 @@ Adapter command payloads are durable records when Isomer stores and references t
 Use path lifecycle commands instead of editing the Topic Workspace Manifest by hand:
 
 ```bash
-pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
-pixi run isomer-cli --print-json project paths update custom.datasets.raw --topic my-topic --path data/raw-v2 --create
-pixi run isomer-cli --print-json project paths unregister custom.datasets.raw --topic my-topic
-pixi run isomer-cli --print-json project paths reset topic.repos.main --topic my-topic
+isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
+isomer-cli --print-json project paths update custom.datasets.raw --topic my-topic --path data/raw-v2 --create
+isomer-cli --print-json project paths unregister custom.datasets.raw --topic my-topic
+isomer-cli --print-json project paths reset topic.repos.main --topic my-topic
 ```
 
 `unregister` and `reset` do not delete filesystem targets and do not rewrite historical Path Plans. If runtime records already depend on an old path, validation should report drift rather than pretending the old records moved.
@@ -183,32 +183,31 @@ Keep these out of durable topic records unless explicitly promoted:
 Create a durable topic records directory for raw data:
 
 ```bash
-pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
+isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
 ```
 
 Create a supporting topic repository:
 
 ```bash
-pixi run isomer-cli --print-json project repos create tools.benchmarks --topic my-topic
+isomer-cli --print-json project repos create tools.benchmarks --topic my-topic
 ```
 
 Find where an agent should place private outputs:
 
 ```bash
-pixi run isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent experimenter
+isomer-cli --print-json project paths get agent.private_artifacts --topic my-topic --agent experimenter
 ```
 
 Check whether runtime truth exists and is coherent:
 
 ```bash
-pixi run isomer-cli --print-json project runtime inspect --topic my-topic
-pixi run isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
+isomer-cli --print-json project runtime inspect --topic my-topic
+isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
 ```
 
 Compare recorded and configured storage answers:
 
 ```bash
-pixi run isomer-cli --print-json project paths explain topic.repos.main --topic my-topic
-pixi run isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured
+isomer-cli --print-json project paths explain topic.repos.main --topic my-topic
+isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured
 ```
-

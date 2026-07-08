@@ -20,6 +20,11 @@ from isomer_labs.cli.examples import COMMAND_EXAMPLES
 
 
 class ValidateDocsTests(unittest.TestCase):
+    def _manual_docs_dir(self, root: Path) -> Path:
+        path = root / "docs" / "manual"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
     def test_required_pages_pass_when_present(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -51,8 +56,8 @@ class ValidateDocsTests(unittest.TestCase):
     def test_cli_coverage_passes_when_commands_present(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "docs").mkdir()
-            (root / "docs" / "isomer-cli.md").write_text(
+            manual = self._manual_docs_dir(root)
+            (manual / "cli-reference.md").write_text(
                 "## Commands\n\n`init`\n`doctor`\n`validate`\n",
                 encoding="utf-8",
             )
@@ -61,8 +66,8 @@ class ValidateDocsTests(unittest.TestCase):
     def test_cli_coverage_fails_when_command_missing(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "docs").mkdir()
-            (root / "docs" / "isomer-cli.md").write_text(
+            manual = self._manual_docs_dir(root)
+            (manual / "cli-reference.md").write_text(
                 "## Commands\n\n`init`\n`doctor`\n",
                 encoding="utf-8",
             )
@@ -98,9 +103,9 @@ class ValidateDocsTests(unittest.TestCase):
     def test_stale_isomer_cli_json_examples_are_reported(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "docs").mkdir()
+            manual = self._manual_docs_dir(root)
             (root / "README.md").write_text("pixi run isomer-cli validate --json\n", encoding="utf-8")
-            (root / "docs" / "isomer-cli.md").write_text("pixi run isomer-cli --print-json validate\n", encoding="utf-8")
+            (manual / "cli-reference.md").write_text("pixi run isomer-cli --print-json validate\n", encoding="utf-8")
             issues = check_stale_isomer_cli_json_examples(root)
             self.assertEqual(1, len(issues))
             self.assertIn("--print-json", issues[0])
@@ -116,14 +121,13 @@ class ValidateDocsTests(unittest.TestCase):
     def test_cli_error_example_registry_requires_documented_examples(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
-            docs = root / "docs"
-            docs.mkdir()
+            docs = self._manual_docs_dir(root)
             all_examples = list(dict.fromkeys(example for examples in COMMAND_EXAMPLES.values() for example in examples))
-            (docs / "isomer-cli.md").write_text("\n".join(all_examples[1:]), encoding="utf-8")
+            (docs / "cli-reference.md").write_text("\n".join(all_examples[1:]), encoding="utf-8")
             issues = check_cli_error_example_registry(root)
             self.assertTrue(any(all_examples[0] in issue for issue in issues), issues)
 
-            (docs / "isomer-cli.md").write_text("\n".join(all_examples), encoding="utf-8")
+            (docs / "cli-reference.md").write_text("\n".join(all_examples), encoding="utf-8")
             self.assertEqual([], check_cli_error_example_registry(root))
 
     def test_legacy_workspace_paths_are_reported_outside_breaking_layout_notes(self) -> None:
@@ -150,11 +154,10 @@ class ValidateDocsTests(unittest.TestCase):
     def test_semantic_path_documentation_requires_commands_and_manifest_terms(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
-            docs = root / "docs"
-            docs.mkdir()
+            docs = self._manual_docs_dir(root)
             (root / "README.md").write_text("No tmp wording here.\n", encoding="utf-8")
-            (docs / "isomer-cli.md").write_text("project paths get\nproject paths list\n", encoding="utf-8")
-            (docs / "topic-workspace-definition.md").write_text("Topic Workspace paths only.\n", encoding="utf-8")
+            (docs / "cli-reference.md").write_text("project paths get\nproject paths list\n", encoding="utf-8")
+            (docs / "topic-workspaces.md").write_text("Topic Workspace paths only.\n", encoding="utf-8")
             issues = check_semantic_path_documentation(root)
             self.assertTrue(any("project paths materialize-default" in issue for issue in issues), issues)
             self.assertTrue(any("topic-workspace.toml" in issue for issue in issues), issues)
@@ -162,14 +165,13 @@ class ValidateDocsTests(unittest.TestCase):
     def test_semantic_path_documentation_flags_fixed_path_only_and_tmp_wording(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
-            docs = root / "docs"
-            docs.mkdir()
+            docs = self._manual_docs_dir(root)
             (root / "README.md").write_text("tmp/ exists here.\n", encoding="utf-8")
-            (docs / "isomer-cli.md").write_text(
+            (docs / "cli-reference.md").write_text(
                 "project paths get\nproject paths list\nproject paths materialize-default\n",
                 encoding="utf-8",
             )
-            (docs / "topic-workspace-definition.md").write_text(
+            (docs / "topic-workspaces.md").write_text(
                 "topic-workspace.toml and isomer-default.v1 are documented.\nAgent Workspace must use agents/<agent-name>.\n",
                 encoding="utf-8",
             )
@@ -180,17 +182,16 @@ class ValidateDocsTests(unittest.TestCase):
     def test_semantic_path_documentation_passes_label_first_wording(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
-            docs = root / "docs"
-            docs.mkdir()
+            docs = self._manual_docs_dir(root)
             (root / "README.md").write_text(
                 "Implemented tmp/ surfaces use topic.tmp, topic.repos.main.tmp, and agent.tmp; they are local, ignored, disposable, and not durable evidence.\n",
                 encoding="utf-8",
             )
-            (docs / "isomer-cli.md").write_text(
+            (docs / "cli-reference.md").write_text(
                 "project paths default\nproject paths explain\nproject paths get\nproject paths list\nproject paths materialize\nproject paths materialize-default\nproject paths register\nproject paths reset\nproject paths unregister\nproject paths update\nproject repos create\n--storage-profile\nISOMER_PATH__TOPIC__REPOS__MAIN\nISOMER_PATH__CUSTOM__DATASETS__RAW\n--configured\n",
                 encoding="utf-8",
             )
-            (docs / "topic-workspace-definition.md").write_text(
+            (docs / "topic-workspaces.md").write_text(
                 "topic-workspace.toml and isomer-default.v1 are documented. Bindings use label, path, and storage_profile. User labels use custom.* and repository groups use topic.repos.<group...>.<repo-name>. Agent Workspace defaults to agents/<agent-name> through agent.workspace.\n",
                 encoding="utf-8",
             )

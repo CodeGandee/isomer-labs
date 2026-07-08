@@ -1,44 +1,69 @@
 # isomer-labs
 
-Isomer Labs is a private research platform that uses multi-agent teams as a research engine while a human operator sets goals and steers work at critical steps.
+Isomer Labs is a research workbench for running multi-agent research topics from a project directory. It gives operators a CLI, packaged system skills, topic workspaces, durable records, and a local web GUI for inspecting how ideas, experiments, and artifacts evolve.
 
-The same base capabilities can form different research teams, workflows, and feedback loops. One Research Topic may need discovery, synthesis, and review agents; another may need planning, data analysis, and report-writing agents. The platform makes those structures easy to create, run, observe, and improve.
+## Install
 
-## Documentation
+Install the CLI as a uv tool:
 
-- [Getting Started](docs/getting-started.md) — initialize a Project, validate it, prepare a Topic Workspace, and create an Agent Team Instance record.
-- [isomer-cli Reference](docs/isomer-cli.md) — every public command, its side effects, and common examples.
-- [Documentation Index](docs/index.md) — all docs pages and navigation.
+```bash
+uv tool install isomer-labs
+isomer-cli --help
+```
 
-## Quick Sampler
+For development from a checkout, use Pixi:
 
 ```bash
 pixi install
-pixi run isomer-cli project init
-pixi run isomer-cli project topics create my-topic --statement "Investigate the concrete research question." --set-default
-pixi run isomer-cli --print-json project validate
-pixi run isomer-cli --print-json project runtime init --topic my-topic
-pixi run isomer-cli --print-json project runtime prepare --topic my-topic
-pixi run isomer-cli --print-json project team-instances create \
-  --topic my-topic \
-  --topic-agent-team-profile my-topic-deepsci \
-  --id ati-my-topic-deepsci
+pixi run isomer-cli --help
 ```
 
-After a Houmao-backed Agent Team Instance is launched or adopted, manual handoff rounds use one root JSON switch for every command:
+## Start a Project
 
 ```bash
-pixi run isomer-cli --print-json project handoffs dispatch \
-  --topic my-topic \
-  --agent-team-instance ati-my-topic-deepsci \
-  --target-agent-instance ati-my-topic-deepsci-deepsci-org-experimenter \
-  --message "Draft the first experiment handoff."
-pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source mail
-pixi run isomer-cli --print-json project handoffs normalize <handoff-id> --topic my-topic --status accepted --signal-observation <signal-observation-id> --output-artifact artifact:my-topic:first-handoff
+mkdir my-isomer-project
+cd my-isomer-project
+isomer-cli project init
+isomer-cli project topics create my-topic --statement "Investigate the concrete research question." --set-default
+isomer-cli --print-json project validate
 ```
 
-For Houmao-backed launch paths, handoff behavior, and live-gated validation, see [docs/workflows.md](docs/workflows.md) and [docs/houmao-adapter.md](docs/houmao-adapter.md).
+Start the local GUI over the project directory:
+
+```bash
+isomer-cli project web serve --root .
+```
+
+Then open the printed local URL and choose the Research Topic to inspect.
+
+## Install System Skills
+
+Install packaged Isomer skills with `npx skills add`. The entrypoint skill is the best starting point for operators because it routes known tasks to the right Isomer skill or CLI command.
+
+```bash
+npx skills add https://github.com/CodeGandee/isomer-labs/tree/main/src/isomer_labs/assets/system_skills/operator/isomer-op-entrypoint --agent codex --yes
+```
+
+Install the welcome skill when you want an agent to bootstrap a first-time Project Operator Session:
+
+```bash
+npx skills add https://github.com/CodeGandee/isomer-labs/tree/main/src/isomer_labs/assets/system_skills/operator/isomer-op-welcome --agent codex --yes
+```
+
+Install extension skills the same way when a project needs them, for example the DeepSci pipeline skill:
+
+```bash
+npx skills add https://github.com/CodeGandee/isomer-labs/tree/main/src/isomer_labs/assets/system_skills/research-paradigm/deepsci/isomer-deepsci-pipeline --agent codex --yes
+```
+
+## Documentation
+
+- [Documentation Home](docs/index.md)
+- [Quickstart](docs/tutorial/quickstart.md)
+- [CLI Reference](docs/manual/cli-reference.md)
+- [Concepts](docs/manual/concepts.md)
+- [Developer Guide](docs/developer/index.md)
 
 ## Status
 
-Initial sketch. Structure and scope are expected to change. See [Assumptions and Roadmap](docs/assumptions-and-roadmap.md) for current milestone status and future work.
+The project is early but usable for local research-project setup, topic workspace management, record indexing, and GUI inspection. See [Assumptions and Roadmap](docs/developer/assumptions-and-roadmap.md) for current boundaries.

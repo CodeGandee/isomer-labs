@@ -1,6 +1,8 @@
 # Houmao Adapter
 
-The Houmao Execution Adapter lets Isomer Labs launch and reconcile an Agent Team Instance through Houmao without importing Houmao Python internals. Isomer calls the public `houmao-mgr --print-json` CLI, stores command payloads under the selected Topic Workspace, and records adapter refs in Workspace Runtime.
+The Houmao Execution Adapter lets Isomer Labs launch and reconcile an Agent Team Instance through Houmao without importing Houmao Python internals. This manual page is for operators who need to launch, inspect, reconcile, or stop Houmao-backed team instances.
+
+Isomer calls the public `houmao-mgr --print-json` CLI, stores command payloads under the selected Topic Workspace, and records adapter refs in Workspace Runtime.
 
 Houmao-specific concepts such as specialist, project profile, native role, recipe, launch dossier, and managed-agent id belong to this adapter. They are not promoted to generic Isomer domain language unless an accepted spec explicitly does so.
 

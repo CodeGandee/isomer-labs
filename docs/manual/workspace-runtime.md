@@ -1,6 +1,6 @@
 # Runtime and Files
 
-This page describes durable runtime files, generated adapter files, manifests, payload refs, and the boundary between durable records and cache. The canonical Topic Workspace and Agent Workspace directory structure lives in [Topic Workspace Definition](topic-workspace-definition.md).
+This manual page describes durable runtime files, generated adapter files, manifests, payload refs, and the boundary between durable records and cache. The canonical Topic Workspace and Agent Workspace directory structure lives in [Topic Workspaces](topic-workspaces.md).
 
 ## Project Files
 
@@ -18,7 +18,7 @@ Successful Project initialization also creates the Isomer-managed Houmao overlay
 
 ## Topic Workspace Structure Reference
 
-A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `isomer-content/topic-ws/<topic-workspace-id>/` for fresh Projects or `<content-dir>/topic-ws/<topic-workspace-id>/` when init selected a custom content root. It is a Pixi workspace by default, and its semantic label contract and `isomer-default.v1` default layout are standardized in [Topic Workspace Definition](topic-workspace-definition.md).
+A Topic Workspace is a project-local directory declared by the Project Manifest, usually under `isomer-content/topic-ws/<topic-workspace-id>/` for fresh Projects or `<content-dir>/topic-ws/<topic-workspace-id>/` when init selected a custom content root. It is a Pixi workspace by default, and its semantic label contract and `isomer-default.v1` default layout are standardized in [Topic Workspaces](topic-workspaces.md).
 
 Runtime-facing pages should refer to Topic Workspace surfaces by semantic label, such as `topic.runtime.db`, `topic.team_profile_bundle`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `agent.workspace`, `topic.records.runs`, or adapter material labels when accepted. Commands should record path plans for durable surfaces before downstream work depends on them.
 
@@ -59,7 +59,7 @@ Commands use Path Plan records to locate durable files without recomputing layou
 
 Topic environment setup creates, configures, and verifies the Topic Main Development Repository resolved by `topic.repos.main`, canonical external repositories under non-main `topic.repos.*` labels, external repository projections under `topic.repos.main.projections.{readonly,writable}`, and projection metadata at `topic.repos.main.projections.manifest`. Agent environment setup consumes that predecessor evidence before it creates or validates Agent Workspace worktrees.
 
-Agent Workspace structure, agent-owned Git worktrees, per-agent branch namespaces, launch cwd behavior, `isomer-managed/` tracked material, agent-owned untracked material, topic-owned projections, generated links, topic-owned Pixi task channels, environment inheritance, and Workspace Boundary meanings are standardized in [Topic Workspace Definition](topic-workspace-definition.md). Runtime records create Agent Workspace path plans by resolving `agent.workspace` and support labels such as `agent.private_artifacts`, `agent.runtime`, and `agent.links`; under `isomer-default.v1` those paths live under `<topic-workspace>/agents/<agent-name>/`, but safe manifest bindings may use another project-local template.
+Agent Workspace structure, agent-owned Git worktrees, per-agent branch namespaces, launch cwd behavior, `isomer-managed/` tracked material, agent-owned untracked material, topic-owned projections, generated links, topic-owned Pixi task channels, environment inheritance, and Workspace Boundary meanings are standardized in [Topic Workspaces](topic-workspaces.md). Runtime records create Agent Workspace path plans by resolving `agent.workspace` and support labels such as `agent.private_artifacts`, `agent.runtime`, and `agent.links`; under `isomer-default.v1` those paths live under `<topic-workspace>/agents/<agent-name>/`, but safe manifest bindings may use another project-local template.
 
 ## Adapter Material and Manifests
 

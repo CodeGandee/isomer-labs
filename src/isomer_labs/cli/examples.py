@@ -5,54 +5,54 @@ from __future__ import annotations
 
 COMMAND_EXAMPLES: dict[str, tuple[str, ...]] = {
     "project": (
-        "pixi run isomer-cli --print-json project validate",
-        "pixi run isomer-cli --print-json project doctor",
-        "pixi run isomer-cli --print-json project topics list",
+        "isomer-cli --print-json project validate",
+        "isomer-cli --print-json project doctor",
+        "isomer-cli --print-json project topics list",
     ),
     "project doctor": (
-        "pixi run isomer-cli --print-json project doctor",
-        "pixi run isomer-cli --print-json project doctor --topic my-topic",
+        "isomer-cli --print-json project doctor",
+        "isomer-cli --print-json project doctor --topic my-topic",
     ),
     "project paths": (
-        "pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic",
-        "pixi run isomer-cli --print-json project paths list --topic my-topic --agent alice",
-        "pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create",
+        "isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic",
+        "isomer-cli --print-json project paths list --topic my-topic --agent alice",
+        "isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create",
     ),
     "project paths get": (
-        "pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic",
-        "pixi run isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured",
-        "pixi run isomer-cli --print-json project paths get agent.output_root --topic my-topic --agent alice",
+        "isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic",
+        "isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured",
+        "isomer-cli --print-json project paths get agent.output_root --topic my-topic --agent alice",
     ),
     "project outputs policy": (
-        "pixi run isomer-cli --print-json project outputs policy --topic my-topic --agent alice",
-        "pixi run isomer-cli --print-json project outputs policy --topic my-topic --topic-actor operator",
+        "isomer-cli --print-json project outputs policy --topic my-topic --agent alice",
+        "isomer-cli --print-json project outputs policy --topic my-topic --topic-actor operator",
     ),
     "project paths register": (
-        "pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create",
-        "pixi run isomer-cli --print-json project paths register topic.repos.inner_group.some_repo_name --topic my-topic --path repos/extern/inner_group/some_repo_name --storage-profile topic_repo --create",
+        "isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create",
+        "isomer-cli --print-json project paths register topic.repos.inner_group.some_repo_name --topic my-topic --path repos/extern/inner_group/some_repo_name --storage-profile topic_repo --create",
     ),
     "project paths materialize-default": (
-        "pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --label topic.records.artifacts",
-        "pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --agent alice --label agent.private_artifacts",
+        "isomer-cli --print-json project paths materialize-default --topic my-topic --label topic.records.artifacts",
+        "isomer-cli --print-json project paths materialize-default --topic my-topic --agent alice --label agent.private_artifacts",
     ),
     "project topics": (
-        "pixi run isomer-cli --print-json project topics list",
-        "pixi run isomer-cli project topics create my-topic --statement \"Investigate the concrete research question.\"",
-        "pixi run isomer-cli --print-json project topics show my-topic",
+        "isomer-cli --print-json project topics list",
+        "isomer-cli project topics create my-topic --statement \"Investigate the concrete research question.\"",
+        "isomer-cli --print-json project topics show my-topic",
     ),
     "project topics create": (
-        "pixi run isomer-cli project topics create my-topic --statement \"Investigate the concrete research question.\"",
-        "pixi run isomer-cli project topics create my-topic --statement \"Investigate the concrete research question.\" --workspace-dir topic-workspaces/my-topic --set-default",
+        "isomer-cli project topics create my-topic --statement \"Investigate the concrete research question.\"",
+        "isomer-cli project topics create my-topic --statement \"Investigate the concrete research question.\" --workspace-dir topic-workspaces/my-topic --set-default",
     ),
     "project validate": (
-        "pixi run isomer-cli --print-json project validate",
-        "pixi run isomer-cli --print-json project --root /path/to/project validate",
+        "isomer-cli --print-json project validate",
+        "isomer-cli --print-json project --root /path/to/project validate",
     ),
     "schemas": (
-        "pixi run isomer-cli --print-json schemas list",
+        "isomer-cli --print-json schemas list",
     ),
     "schemas list": (
-        "pixi run isomer-cli --print-json schemas list",
+        "isomer-cli --print-json schemas list",
     ),
 }
 

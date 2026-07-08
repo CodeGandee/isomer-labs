@@ -1,6 +1,6 @@
 # Troubleshooting
 
-This page collects common diagnostics and recovery paths for Isomer Labs. Each section starts with read-only inspection and escalates to explicit mutation only when necessary.
+This manual page collects common diagnostics and recovery paths for Isomer Labs. Each section starts with read-only inspection and escalates to explicit mutation only when necessary.
 
 ## Missing Project
 
@@ -14,8 +14,8 @@ Diagnosis:
 Recovery:
 
 ```bash
-pixi run isomer-cli project init
-pixi run isomer-cli --print-json project validate
+isomer-cli project init
+isomer-cli --print-json project validate
 ```
 
 `project init` mutates the Project filesystem by creating `.isomer-labs/`, the Isomer-managed Houmao overlay under `.isomer-labs/.houmao/`, and the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied). It does not create a Research Topic Config or Topic Workspace; use `project topics create <topic-id> --statement "<research topic>"` for that. If a Project already exists but the command cannot find it, use `project --root <path>` to point to the correct root.
@@ -28,13 +28,13 @@ Diagnosis:
 
 ```bash
 houmao-mgr --version
-pixi run isomer-cli --print-json project doctor
+isomer-cli --print-json project doctor
 ```
 
 Recovery:
 
 - Set `ISOMER_HOUMAO_COMMAND` to the supported Houmao manager command, add `houmao-mgr` to `PATH`, or expose the local checkout at `extern/orphan/houmao`.
-- Rerun `pixi run isomer-cli project init` after the Houmao command boundary works.
+- Rerun `isomer-cli project init` after the Houmao command boundary works.
 - Do not create `.isomer-labs/` by hand as a workaround; fresh init should create `.isomer-labs/`, `.isomer-labs/.houmao/`, and the selected generated content root together.
 
 ## Pixi or Readiness Failures
@@ -44,8 +44,8 @@ Symptom: `project doctor` or `project runtime prepare` reports missing Pixi, mis
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project doctor --topic my-topic
-pixi run isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
+isomer-cli --print-json project doctor --topic my-topic
+isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
 ```
 
 Recovery:
@@ -82,7 +82,7 @@ Symptom: `project runtime init` reports an unsupported schema version.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project runtime inspect --topic my-topic
+isomer-cli --print-json project runtime inspect --topic my-topic
 ```
 
 Recovery:
@@ -97,8 +97,8 @@ Symptom: `project runtime validate` reports missing Agent Workspace directories.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances show <id> --topic my-topic
-pixi run isomer-cli --print-json project paths preview --topic my-topic
+isomer-cli --print-json project team-instances show <id> --topic my-topic
+isomer-cli --print-json project paths preview --topic my-topic
 ```
 
 Recovery:
@@ -113,8 +113,8 @@ Symptom: `project runtime validate` reports a missing `isomer-managed/` support 
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project runtime validate --topic my-topic
-pixi run isomer-cli --print-json project team-instances show <id> --topic my-topic
+isomer-cli --print-json project runtime validate --topic my-topic
+isomer-cli --print-json project team-instances show <id> --topic my-topic
 ```
 
 Recovery:
@@ -145,8 +145,8 @@ Symptom: `inspect-live --integrity` or `reconcile` reports material drift.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao --integrity
-pixi run isomer-cli --print-json project team-instances reconcile <id> --topic my-topic
+isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao --integrity
+isomer-cli --print-json project team-instances reconcile <id> --topic my-topic
 ```
 
 Recovery:
@@ -161,8 +161,8 @@ Symptom: `project team-instances launch` returned a partial or failed status, bu
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao
-pixi run isomer-cli --print-json project runtime validate --topic my-topic
+isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao
+isomer-cli --print-json project runtime validate --topic my-topic
 ```
 
 Recovery:
@@ -178,8 +178,8 @@ Symptom: `project team-instances stop` returned partial or failed, and some agen
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao
-pixi run isomer-cli --print-json project runtime validate --topic my-topic
+isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao
+isomer-cli --print-json project runtime validate --topic my-topic
 ```
 
 Recovery:
@@ -195,9 +195,9 @@ Symptom: `project handoffs dispatch` returns `ISO070`, `ISO077`, or another adap
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
-pixi run isomer-cli --print-json project team-instances show <id> --topic my-topic
-pixi run isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao
+isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
+isomer-cli --print-json project team-instances show <id> --topic my-topic
+isomer-cli --print-json project team-instances inspect-live <id> --topic my-topic --adapter houmao
 ```
 
 Recovery:
@@ -216,7 +216,7 @@ Explanation: this is expected. Signal Observations are non-authoritative adapter
 Recovery:
 
 ```bash
-pixi run isomer-cli --print-json project handoffs normalize <handoff-id> \
+isomer-cli --print-json project handoffs normalize <handoff-id> \
   --topic my-topic \
   --status accepted \
   --signal-observation <signal-observation-id> \
@@ -232,7 +232,7 @@ Symptom: the UC-01 manual harness reports the fixture is incomplete, skips live 
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project --root /path/to/project validate
+isomer-cli --print-json project --root /path/to/project validate
 pixi run python tests/manual/uc01_headless_vertical_slice
 ```
 
@@ -252,8 +252,8 @@ Symptom: `project runtime validate` reports `ISO045` for a handoff.
 Diagnosis:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances show <id> --topic my-topic
-pixi run isomer-cli --print-json project runtime validate --topic my-topic
+isomer-cli --print-json project team-instances show <id> --topic my-topic
+isomer-cli --print-json project runtime validate --topic my-topic
 ```
 
 Recovery:
@@ -274,8 +274,8 @@ Diagnosis:
 Recovery:
 
 ```bash
-pixi run isomer-cli --print-json project team-instances reconcile <id> --topic my-topic --adapter houmao
-pixi run isomer-cli --print-json project team-instances adopt <id> --topic my-topic --adapter houmao --yes
+isomer-cli --print-json project team-instances reconcile <id> --topic my-topic --adapter houmao
+isomer-cli --print-json project team-instances adopt <id> --topic my-topic --adapter houmao --yes
 ```
 
 `adopt` records an explicit decision to associate externally launched state with the Agent Team Instance. It requires `--yes`.

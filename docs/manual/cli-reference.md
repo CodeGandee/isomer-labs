@@ -1,6 +1,6 @@
 # isomer-cli Reference
 
-`isomer-cli` is the command-line interface for Isomer Labs. It supports Project discovery, Project Manifest validation, Effective Topic Context resolution, Workspace Path Resolution previews, Workspace Runtime management, Domain Agent Team Template and Topic Agent Team Profile work, Agent Team Instance records, and Houmao-backed launch paths.
+This manual page documents `isomer-cli`, the command-line interface for Isomer Labs. It supports Project discovery, Project Manifest validation, Effective Topic Context resolution, Workspace Path Resolution previews, Workspace Runtime management, Domain Agent Team Template and Topic Agent Team Profile work, Agent Team Instance records, and Houmao-backed launch paths.
 
 ## Root and Project Options
 
@@ -33,6 +33,72 @@ Normal failure output does not include Python tracebacks. Use root-level `--debu
 
 ## Command Groups
 
+### Extension Research Commands
+
+The `ext research` namespace manages GUI-readable research records and idea lineage metadata:
+
+- `ext research ideas generation upsert`
+- `ext research ideas graph`
+- `ext research ideas import-from-record`
+- `ext research ideas lineage add`
+- `ext research ideas query`
+- `ext research ideas realize`
+- `ext research ideas repair`
+- `ext research ideas upsert`
+- `ext research ideas validate`
+- `ext research records index cleanup`
+- `ext research records index rebuild`
+- `ext research records index validate`
+- `ext research records lineage add`
+- `ext research records lineage backfill`
+- `ext research records lineage query`
+- `ext research records lineage siblings`
+- `ext research records lineage validate`
+- `ext research records migrate-payload-files`
+- `ext research records query export`
+- `ext research records query facets`
+- `ext research records query files`
+- `ext research records query lineage`
+- `ext research records query list`
+- `ext research records query siblings`
+- `ext research records render`
+- `ext research records revise`
+- `ext research records validate`
+
+### Project Extension and GUI Commands
+
+These project commands register extension metadata, manage topic reset checkpoints, and run the local GUI:
+
+- `project artifact-formats register`
+- `project artifact-formats render`
+- `project artifact-formats validate`
+- `project skill-callbacks install`
+- `project team-repositories inspect`
+- `project team-repositories list`
+- `project team-templates register`
+- `project toolbox-params define`
+- `project toolbox-params import list`
+- `project toolbox-params import remove`
+- `project toolbox-params import show`
+- `project toolbox-params list`
+- `project toolbox-params unset`
+- `project toolbox-params validate`
+- `project toolboxes explain`
+- `project toolboxes list`
+- `project toolboxes uninstall`
+- `project toolboxes update-source`
+- `project topic-main-guidance ensure`
+- `project topic-main-guidance inspect`
+- `project topic-main-guidance render`
+- `project topic-reset apply`
+- `project topic-reset checkpoint`
+- `project topic-reset list`
+- `project topic-reset plan`
+- `project topic-reset show`
+- `project topic-reset show-plan`
+- `project topic-reset update-checkpoint`
+- `project web serve`
+
 ### `project init`
 
 Initialize the smallest valid Project configuration and Project-level Houmao overlay.
@@ -44,8 +110,8 @@ Initialize the smallest valid Project configuration and Project-level Houmao ove
 **Options:** pass `--content-dir <content-dir>` to select a project-local generated content root during fresh initialization.
 
 ```bash
-pixi run isomer-cli project init
-pixi run isomer-cli project init --content-dir custom-content
+isomer-cli project init
+isomer-cli project init --content-dir custom-content
 ```
 
 `--content-dir <content-dir>` must resolve inside the Project root and must not live inside `.isomer-labs/` or collide with root `.houmao/`. When omitted, init uses `isomer-content/`. Create Research Topics with `project topics create`, not `project init`.
@@ -59,9 +125,9 @@ Plan or apply relocation of the Project generated content root.
 **Options:** `--to <content-dir>` selects the new project-local generated content root. The destination must resolve inside the Project root, must not live inside `.isomer-labs/`, and must not collide with protected Project or Houmao paths.
 
 ```bash
-pixi run isomer-cli project content-root move --to generated --dry-run
-pixi run isomer-cli --print-json project content-root move --to generated --dry-run
-pixi run isomer-cli --print-json project content-root move --to generated --yes
+isomer-cli project content-root move --to generated --dry-run
+isomer-cli --print-json project content-root move --to generated --dry-run
+isomer-cli --print-json project content-root move --to generated --yes
 ```
 
 ### `project cleanup`
@@ -73,10 +139,10 @@ Plan or apply cleanup of selected Isomer-managed Project material.
 **Parts:** `project-config` removes `.isomer-labs/`; `houmao-overlay` removes the Isomer-managed `.isomer-labs/.houmao/` overlay; `content-policy` removes the selected content root's generated `README.md` and `.gitignore`; `topic-workspace` removes selected registered Topic Workspace directories; `runtime` removes `state.sqlite`, runtime-owned directories, and adapter runtime material under selected Topic Workspaces; `bootstrap` combines Project config, Houmao overlay, content policy files, and registered Topic Workspace directories; `content-root` removes the selected generated content root only with `--purge-content-root`.
 
 ```bash
-pixi run isomer-cli project cleanup --part bootstrap --dry-run
-pixi run isomer-cli project cleanup --part bootstrap --yes
-pixi run isomer-cli --print-json project cleanup --part runtime --topic my-topic --dry-run
-pixi run isomer-cli project cleanup --part content-root --purge-content-root --yes
+isomer-cli project cleanup --part bootstrap --dry-run
+isomer-cli project cleanup --part bootstrap --yes
+isomer-cli --print-json project cleanup --part runtime --topic my-topic --dry-run
+isomer-cli project cleanup --part content-root --purge-content-root --yes
 ```
 
 When a valid Project Manifest exists, cleanup uses it as authority for path defaults, Research Topic registrations, and Topic Workspace registrations. If the manifest is missing or malformed, cleanup is limited to `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external state, and the built-in or explicitly selected content root policy files; it will not infer Research Topics from filesystem directories.
@@ -88,8 +154,8 @@ Run read-only dependency, Project, and topic diagnostics.
 **Side effects:** none. Checks host Pixi availability, Project-level Pixi configuration, optional `requires-pixi`, `pixi.lock` presence, Project-root topic Pixi bindings, and Topic Workspace Pixi binding targets. If no explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target exists, it checks the registered Topic Workspace directory as the implicit default target with Pixi environment `default`. Does not install Pixi environments, create lockfiles, create Topic Workspace runtime state, create Agent Workspaces, or edit Project config.
 
 ```bash
-pixi run isomer-cli --print-json project doctor
-pixi run isomer-cli --print-json project doctor --topic my-topic
+isomer-cli --print-json project doctor
+isomer-cli --print-json project doctor --topic my-topic
 ```
 
 ### `project validate`
@@ -99,8 +165,8 @@ Validate the Project Manifest and registered configs.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli --print-json project validate
-pixi run isomer-cli --print-json project --root /path/to/project validate
+isomer-cli --print-json project validate
+isomer-cli --print-json project --root /path/to/project validate
 ```
 
 ### `project topics list`
@@ -110,8 +176,8 @@ List registered Research Topics.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli project topics list
-pixi run isomer-cli --print-json project topics list
+isomer-cli project topics list
+isomer-cli --print-json project topics list
 ```
 
 ### `project topics create`
@@ -121,8 +187,8 @@ Create and register a Research Topic and its Topic Workspace.
 **Side effects:** writes `.isomer-labs/research-topics/<topic-id>.toml`, updates `.isomer-labs/manifest.toml` with `[[research_topics]]` and `[[topic_workspaces]]`, and creates the Topic Workspace directory. It does not create Workspace Runtime state or live Houmao state.
 
 ```bash
-pixi run isomer-cli project topics create my-topic --statement "Investigate the concrete research question."
-pixi run isomer-cli project topics create my-topic --statement "Investigate the concrete research question." --workspace-dir topic-workspaces/my-topic --set-default
+isomer-cli project topics create my-topic --statement "Investigate the concrete research question."
+isomer-cli project topics create my-topic --statement "Investigate the concrete research question." --workspace-dir topic-workspaces/my-topic --set-default
 ```
 
 ### `project topics show`
@@ -132,7 +198,7 @@ Show one registered Research Topic, its config, associated Topic Workspace regis
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli --print-json project topics show my-topic
+isomer-cli --print-json project topics show my-topic
 ```
 
 ### `project topics update`
@@ -142,9 +208,9 @@ Update bounded Research Topic metadata. Supported updates are `--statement`, `--
 **Side effects:** updates `.isomer-labs/manifest.toml` for status/default changes and the Research Topic Config for statement changes. It preserves existing workspace contents.
 
 ```bash
-pixi run isomer-cli project topics update my-topic --statement "Investigate the revised concrete research question."
-pixi run isomer-cli project topics update my-topic --status archived
-pixi run isomer-cli project topics update my-topic --set-default
+isomer-cli project topics update my-topic --statement "Investigate the revised concrete research question."
+isomer-cli project topics update my-topic --status archived
+isomer-cli project topics update my-topic --set-default
 ```
 
 ### `project topics delete`
@@ -154,8 +220,8 @@ Plan or apply Research Topic deletion.
 **Side effects:** `--dry-run` mutates nothing. `--yes` removes the Research Topic registration, associated Topic Workspace registration, matching Project Manifest defaults, and Research Topic Config file when no blockers remain. It preserves the Topic Workspace directory and reports cleanup guidance for filesystem removal.
 
 ```bash
-pixi run isomer-cli --print-json project topics delete my-topic --dry-run
-pixi run isomer-cli --print-json project topics delete my-topic --yes
+isomer-cli --print-json project topics delete my-topic --dry-run
+isomer-cli --print-json project topics delete my-topic --yes
 ```
 
 ### `project workspaces list`
@@ -165,8 +231,8 @@ List registered Topic Workspaces.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli project workspaces list
-pixi run isomer-cli --print-json project workspaces list
+isomer-cli project workspaces list
+isomer-cli --print-json project workspaces list
 ```
 
 ### `project skill-callbacks`
@@ -178,16 +244,16 @@ Register, inspect, resolve, disable, and validate User Skill Callbacks. A User S
 Callbacks are instruction material, not executable provider payloads. They cannot override system or developer instructions, the owning system skill, the current user request, Isomer domain constraints, required Gates, evidence rules, validation, or recording obligations. Empty resolution results are normal and do not block the owning workflow.
 
 ```bash
-pixi run isomer-cli --print-json project skill-callbacks register --topic my-topic --id scout-domain-prior --skill isomer-deepsci-scout --stage begin --prompt "Prefer the local benchmark contract before broad discovery."
-pixi run isomer-cli --print-json project skill-callbacks register --scope project --id write-style-check --skill isomer-deepsci-write --stage end --prompt-file docs/callbacks/write-style-check.md
-pixi run isomer-cli --print-json project skill-callbacks register --topic my-topic --id paper-dir-callback --skill isomer-deepsci-paper-outline --stage begin --skill-dir extern/orphan/my-paper-callback --allow-external-source
-pixi run isomer-cli --print-json project skill-callbacks insertion-points
-pixi run isomer-cli --print-json project skill-callbacks insertion-points --extension deepsci --skill isomer-deepsci-scout --stage begin
-pixi run isomer-cli --print-json project skill-callbacks resolve --topic my-topic --skill isomer-deepsci-scout --stage begin
-pixi run isomer-cli --print-json project skill-callbacks list --topic my-topic
-pixi run isomer-cli --print-json project skill-callbacks show scout-domain-prior --topic my-topic
-pixi run isomer-cli --print-json project skill-callbacks disable scout-domain-prior --topic my-topic
-pixi run isomer-cli --print-json project skill-callbacks validate --topic my-topic
+isomer-cli --print-json project skill-callbacks register --topic my-topic --id scout-domain-prior --skill isomer-deepsci-scout --stage begin --prompt "Prefer the local benchmark contract before broad discovery."
+isomer-cli --print-json project skill-callbacks register --scope project --id write-style-check --skill isomer-deepsci-write --stage end --prompt-file docs/callbacks/write-style-check.md
+isomer-cli --print-json project skill-callbacks register --topic my-topic --id paper-dir-callback --skill isomer-deepsci-paper-outline --stage begin --skill-dir extern/orphan/my-paper-callback --allow-external-source
+isomer-cli --print-json project skill-callbacks insertion-points
+isomer-cli --print-json project skill-callbacks insertion-points --extension deepsci --skill isomer-deepsci-scout --stage begin
+isomer-cli --print-json project skill-callbacks resolve --topic my-topic --skill isomer-deepsci-scout --stage begin
+isomer-cli --print-json project skill-callbacks list --topic my-topic
+isomer-cli --print-json project skill-callbacks show scout-domain-prior --topic my-topic
+isomer-cli --print-json project skill-callbacks disable scout-domain-prior --topic my-topic
+isomer-cli --print-json project skill-callbacks validate --topic my-topic
 ```
 
 Use `--prompt` for short inline guidance that Isomer should materialize into managed callback content. Use `--prompt-file` for a project-scoped file that already contains the guidance. Use `--skill-dir` when the callback guidance lives in an external skill directory with `SKILL.md`; Isomer reads it as supplemental instruction material and does not install it as a packaged system skill.
@@ -205,9 +271,9 @@ List and maintain user-declared Project operator system extensions. These declar
 **Side effects:** `remember` and `forget` mutate only the Project Manifest declaration list. `list` is read-only.
 
 ```bash
-pixi run isomer-cli --print-json project system-extensions list
-pixi run isomer-cli --print-json project system-extensions remember deepsci
-pixi run isomer-cli --print-json project system-extensions forget deepsci
+isomer-cli --print-json project system-extensions list
+isomer-cli --print-json project system-extensions remember deepsci
+isomer-cli --print-json project system-extensions forget deepsci
 ```
 
 ### `project toolboxes`
@@ -217,11 +283,11 @@ Manage Toolbox registrations as parent resources. Registrations live in the Proj
 **Side effects:** `install`, `enable`, `disable`, `update-source`, and `uninstall` mutate only the selected manifest layer. `list`, `show`, `explain`, and `validate` are read-only.
 
 ```bash
-pixi run isomer-cli --print-json project toolboxes install --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
-pixi run isomer-cli --print-json project toolboxes disable gpu-analytical-modeling --topic my-topic --scope research_topic
-pixi run isomer-cli --print-json project toolboxes enable gpu-analytical-modeling --topic my-topic --scope topic_agent --topic-agent coder
-pixi run isomer-cli --print-json project toolboxes show gpu-analytical-modeling --topic my-topic --topic-agent coder
-pixi run isomer-cli --print-json project toolboxes validate --topic my-topic
+isomer-cli --print-json project toolboxes install --toolbox-dir skillset/toolboxes/gpu-analytical-modeling
+isomer-cli --print-json project toolboxes disable gpu-analytical-modeling --topic my-topic --scope research_topic
+isomer-cli --print-json project toolboxes enable gpu-analytical-modeling --topic my-topic --scope topic_agent --topic-agent coder
+isomer-cli --print-json project toolboxes show gpu-analytical-modeling --topic my-topic --topic-agent coder
+isomer-cli --print-json project toolboxes validate --topic my-topic
 ```
 
 ### `project toolbox-params`
@@ -231,11 +297,11 @@ Manage Toolbox runtime params that callback skills can query through JSON. Effec
 **Side effects:** `define`, `set`, `unset`, `import add`, and `import remove` mutate only the selected manifest layer. `get`, `list`, `explain`, `validate`, `import list`, and `import show` are read-only.
 
 ```bash
-pixi run isomer-cli --print-json project toolbox-params set gpu-analytical-modeling:evidence/mode --value strict --value-type enum --allowed-value strict --allowed-value relaxed
-pixi run isomer-cli --print-json project toolbox-params import add gpu-analytical-modeling profiles/gpu-defaults.toml --topic my-topic --scope research_topic
-pixi run isomer-cli --print-json project toolbox-params set gpu-analytical-modeling:evidence/mode --topic my-topic --scope topic_agent --topic-agent coder --value relaxed --value-type enum --allowed-value strict --allowed-value relaxed
-pixi run isomer-cli --print-json project toolbox-params get gpu-analytical-modeling:evidence/mode --topic my-topic --topic-agent coder
-pixi run isomer-cli --print-json project toolbox-params explain gpu-analytical-modeling:evidence/mode --topic my-topic --topic-agent coder
+isomer-cli --print-json project toolbox-params set gpu-analytical-modeling:evidence/mode --value strict --value-type enum --allowed-value strict --allowed-value relaxed
+isomer-cli --print-json project toolbox-params import add gpu-analytical-modeling profiles/gpu-defaults.toml --topic my-topic --scope research_topic
+isomer-cli --print-json project toolbox-params set gpu-analytical-modeling:evidence/mode --topic my-topic --scope topic_agent --topic-agent coder --value relaxed --value-type enum --allowed-value strict --allowed-value relaxed
+isomer-cli --print-json project toolbox-params get gpu-analytical-modeling:evidence/mode --topic my-topic --topic-agent coder
+isomer-cli --print-json project toolbox-params explain gpu-analytical-modeling:evidence/mode --topic my-topic --topic-agent coder
 ```
 
 Imported TOML files contain param rows only. Import paths are relative to the manifest file that declares them, so Project Manifest imports resolve relative to `.isomer-labs/` and Topic Workspace Manifest imports resolve relative to the Topic Workspace root. Runtime params are not a credentials surface; secret-like keys or values are rejected.
@@ -247,7 +313,7 @@ Show resolved Effective Topic Context.
 **Side effects:** none. The resolved context is process-local and is not stored as Workspace Runtime state.
 
 ```bash
-pixi run isomer-cli --print-json project context show --topic my-topic
+isomer-cli --print-json project context show --topic my-topic
 ```
 
 ### `project self`
@@ -259,12 +325,12 @@ Query small, read-only slices of the caller's process-local Isomer identity from
 Start with `project self show` for a tiny index, then ask for only the needed slice. Use `identity` for resolved topic, Topic Actor, and Agent refs; `pixi` for the selected manifest, environment, and `pixi run --manifest-path ... --environment ... python ...` hint; `env` for recognized Isomer environment input names without values by default; `paths <label>...` for requested semantic labels only; and `queries` for follow-up command examples. `project self env --values` may print allowlisted non-secret identity/path/config values, but secret-like names remain omitted.
 
 ```bash
-pixi run isomer-cli --print-json project self show
-pixi run isomer-cli --print-json project self identity
-pixi run isomer-cli --print-json project self pixi
-pixi run isomer-cli --print-json project self env
-pixi run isomer-cli --print-json project self paths topic.repos.main agent.workspace --agent alice
-pixi run isomer-cli --print-json project self queries
+isomer-cli --print-json project self show
+isomer-cli --print-json project self identity
+isomer-cli --print-json project self pixi
+isomer-cli --print-json project self env
+isomer-cli --print-json project self paths topic.repos.main agent.workspace --agent alice
+isomer-cli --print-json project self queries
 ```
 
 ### `project paths preview`
@@ -274,8 +340,8 @@ Preview workspace paths, including semantic labels, compatibility surface ids, p
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli project paths preview --topic my-topic
-pixi run isomer-cli --print-json project paths preview --topic my-topic
+isomer-cli project paths preview --topic my-topic
+isomer-cli --print-json project paths preview --topic my-topic
 ```
 
 ### `project paths get`
@@ -287,10 +353,10 @@ Resolve one semantic workspace surface label for the selected Topic Workspace.
 Use dotted semantic labels such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `topic.actors.workspace`, `topic.actors.private_artifacts`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch`. Add `--configured` when you need the current manifest or environment answer instead of a historical Path Plan. Actor-scoped labels need a Topic Actor selector unless the current working directory is already inside the selected Topic Actor Workspace. Agent-scoped labels need an Agent Name or Agent Instance selector unless the current working directory is already inside the selected agent's Agent Workspace.
 
 ```bash
-pixi run isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
-pixi run isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured
-pixi run isomer-cli --print-json project paths get topic.actors.output_root --topic my-topic --topic-actor operator
-pixi run isomer-cli --print-json project paths get agent.output_root --topic my-topic --agent alice
+isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic
+isomer-cli --print-json project paths get topic.repos.main --topic my-topic --configured
+isomer-cli --print-json project paths get topic.actors.output_root --topic my-topic --topic-actor operator
+isomer-cli --print-json project paths get agent.output_root --topic my-topic --agent alice
 ```
 
 ### `project outputs policy`
@@ -300,8 +366,8 @@ Resolve the user-customizable worker output root and post-operation commit prefe
 **Side effects:** none. This command does not create directories, write manifests, write runtime records, launch agents, or commit files.
 
 ```bash
-pixi run isomer-cli --print-json project outputs policy --topic my-topic --topic-actor operator
-pixi run isomer-cli --print-json project outputs policy --topic my-topic --agent alice
+isomer-cli --print-json project outputs policy --topic my-topic --topic-actor operator
+isomer-cli --print-json project outputs policy --topic my-topic --agent alice
 ```
 
 ### `project paths default`
@@ -311,9 +377,9 @@ Show the built-in default-layout path for one reserved semantic label without Pa
 **Side effects:** none. This command is only for Isomer-defined labels with default paths, such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `topic.tmp`, supported `topic.actors.*` labels, and supported `agent.*` labels.
 
 ```bash
-pixi run isomer-cli --print-json project paths default topic.repos.main --topic my-topic
-pixi run isomer-cli --print-json project paths default topic.actors.workspace --topic my-topic --topic-actor operator
-pixi run isomer-cli --print-json project paths default agent.workspace --topic my-topic --agent alice
+isomer-cli --print-json project paths default topic.repos.main --topic my-topic
+isomer-cli --print-json project paths default topic.actors.workspace --topic my-topic --topic-actor operator
+isomer-cli --print-json project paths default agent.workspace --topic my-topic --agent alice
 ```
 
 ### `project paths explain`
@@ -323,8 +389,8 @@ Explain candidate sources for one semantic label, including the selected source,
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli --print-json project paths explain topic.repos.main --topic my-topic
-pixi run isomer-cli --print-json project paths explain custom.datasets.raw --topic my-topic
+isomer-cli --print-json project paths explain topic.repos.main --topic my-topic
+isomer-cli --print-json project paths explain custom.datasets.raw --topic my-topic
 ```
 
 ### `project paths list`
@@ -334,9 +400,9 @@ List known semantic workspace labels with scope, required context, resolution st
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli project paths list --topic my-topic
-pixi run isomer-cli --print-json project paths list --topic my-topic --topic-actor operator
-pixi run isomer-cli --print-json project paths list --topic my-topic --agent alice
+isomer-cli project paths list --topic my-topic
+isomer-cli --print-json project paths list --topic my-topic --topic-actor operator
+isomer-cli --print-json project paths list --topic my-topic --agent alice
 ```
 
 ### `project paths register`
@@ -348,8 +414,8 @@ Use `custom.*` for user-defined labels. Use grouped reserved repository labels u
 **Side effects:** writes `<topic-workspace>/topic-workspace.toml`; with `--create`, creates the validated target path. It does not create Workspace Runtime records or rewrite historical Path Plans.
 
 ```bash
-pixi run isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
-pixi run isomer-cli --print-json project paths register topic.repos.inner_group.some_repo_name --topic my-topic --path repos/extern/inner_group/some_repo_name --storage-profile topic_repo --create
+isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create
+isomer-cli --print-json project paths register topic.repos.inner_group.some_repo_name --topic my-topic --path repos/extern/inner_group/some_repo_name --storage-profile topic_repo --create
 ```
 
 ### `project paths update`
@@ -359,7 +425,7 @@ Update an existing manifest binding's `path`, `storage_profile`, or both after t
 **Side effects:** writes `<topic-workspace>/topic-workspace.toml`; with `--create`, creates the new target path. It preserves previous filesystem targets and historical Path Plans.
 
 ```bash
-pixi run isomer-cli --print-json project paths update custom.datasets.raw --topic my-topic --path data/raw-production DeepSci --create
+isomer-cli --print-json project paths update custom.datasets.raw --topic my-topic --path data/raw-production DeepSci --create
 ```
 
 ### `project paths unregister`
@@ -369,7 +435,7 @@ Remove a dynamic `custom.*` or grouped reserved binding from the Topic Workspace
 **Side effects:** writes `<topic-workspace>/topic-workspace.toml`. It does not delete the target directory or historical Path Plans. Built-in labels cannot be unregistered; use `project paths reset` to remove a built-in override.
 
 ```bash
-pixi run isomer-cli --print-json project paths unregister custom.datasets.raw --topic my-topic
+isomer-cli --print-json project paths unregister custom.datasets.raw --topic my-topic
 ```
 
 ### `project paths reset`
@@ -379,7 +445,7 @@ Remove a manifest override for a built-in reserved label and fall back to the de
 **Side effects:** writes `<topic-workspace>/topic-workspace.toml`. It does not delete the previous target directory or historical Path Plans.
 
 ```bash
-pixi run isomer-cli --print-json project paths reset topic.repos.main --topic my-topic
+isomer-cli --print-json project paths reset topic.repos.main --topic my-topic
 ```
 
 ### `project paths materialize-default`
@@ -389,9 +455,9 @@ Write or update the Topic Workspace Manifest and create selected default-layout 
 **Side effects:** writes `<topic-workspace>/topic-workspace.toml` and creates only the selected owned default directories. Without `--label`, the command materializes the standard topic-owned default readiness labels and does not create per-actor or per-agent directories. Actor-scoped labels such as `topic.actors.private_artifacts` require `--topic-actor` or another explicit Topic Actor selector. Agent-scoped labels such as `agent.private_artifacts` require `--agent` or another explicit agent selector.
 
 ```bash
-pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --label topic.records.artifacts
-pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --topic-actor operator --label topic.actors.private_artifacts
-pixi run isomer-cli --print-json project paths materialize-default --topic my-topic --agent alice --label agent.private_artifacts
+isomer-cli --print-json project paths materialize-default --topic my-topic --label topic.records.artifacts
+isomer-cli --print-json project paths materialize-default --topic my-topic --topic-actor operator --label topic.actors.private_artifacts
+isomer-cli --print-json project paths materialize-default --topic my-topic --agent alice --label agent.private_artifacts
 ```
 
 ### `project paths materialize`
@@ -401,8 +467,8 @@ Create the currently configured target for an existing semantic label according 
 **Side effects:** creates the configured directory or file parent as required by the label's `storage_profile`. It does not alter the manifest and does not delete previous targets.
 
 ```bash
-pixi run isomer-cli --print-json project paths materialize custom.datasets.raw --topic my-topic
-pixi run isomer-cli --print-json project paths materialize topic.repos.main --topic my-topic
+isomer-cli --print-json project paths materialize custom.datasets.raw --topic my-topic
+isomer-cli --print-json project paths materialize topic.repos.main --topic my-topic
 ```
 
 ### `project repos create`
@@ -412,8 +478,8 @@ Register and create a non-main topic repository binding without writing the mani
 **Side effects:** writes `<topic-workspace>/topic-workspace.toml` and, unless `--no-create` is set, creates the repository target directory. It does not initialize Git by itself.
 
 ```bash
-pixi run isomer-cli --print-json project repos create inner_group.some_repo_name --topic my-topic
-pixi run isomer-cli --print-json project repos create topic.repos.tools.benchmarks --topic my-topic --path repos/extern/tools/benchmarks --replace
+isomer-cli --print-json project repos create inner_group.some_repo_name --topic my-topic
+isomer-cli --print-json project repos create topic.repos.tools.benchmarks --topic my-topic --path repos/extern/tools/benchmarks --replace
 ```
 
 ### `project topic-actors list/show/register/update/archive/materialize/repair/diagnose`
@@ -423,15 +489,15 @@ Manage Topic Actor bindings and Topic Actor Workspaces for human-orchestrated wo
 **Side effects:** `list`, `show`, and `diagnose` are read-only. `register`, `update`, and `archive` write `<topic-workspace>/topic-workspace.toml`. `materialize` and `repair` create or reuse the resolved Topic Actor Workspace and support paths, and may create a Git worktree from `topic.repos.main` using `per-topic-actor/<topic-actor-name>/main`. They do not create Agent Team Instance records, Agent Instance records, formal Agent Workspaces, Houmao launch material, or research records.
 
 ```bash
-pixi run isomer-cli --print-json project topic-actors list --topic my-topic
-pixi run isomer-cli --print-json project topic-actors show operator --topic my-topic
-pixi run isomer-cli --print-json project topic-actors register operator --topic my-topic --actor-kind operator --runtime-kind human_cli --role-kind operator --controller-kind project_operator_session --materialize
-pixi run isomer-cli --print-json project topic-actors register claude-scout --topic my-topic --actor-kind manual_worker --runtime-kind claude_code --role-kind scout --controller-kind human_user --materialize
-pixi run isomer-cli --print-json project topic-actors update claude-scout --topic my-topic --status active
-pixi run isomer-cli --print-json project topic-actors materialize claude-scout --topic my-topic
-pixi run isomer-cli --print-json project topic-actors repair claude-scout --topic my-topic
-pixi run isomer-cli --print-json project topic-actors diagnose --topic my-topic --topic-actor claude-scout
-pixi run isomer-cli --print-json project topic-actors archive claude-scout --topic my-topic --reason "finished manual scouting"
+isomer-cli --print-json project topic-actors list --topic my-topic
+isomer-cli --print-json project topic-actors show operator --topic my-topic
+isomer-cli --print-json project topic-actors register operator --topic my-topic --actor-kind operator --runtime-kind human_cli --role-kind operator --controller-kind project_operator_session --materialize
+isomer-cli --print-json project topic-actors register claude-scout --topic my-topic --actor-kind manual_worker --runtime-kind claude_code --role-kind scout --controller-kind human_user --materialize
+isomer-cli --print-json project topic-actors update claude-scout --topic my-topic --status active
+isomer-cli --print-json project topic-actors materialize claude-scout --topic my-topic
+isomer-cli --print-json project topic-actors repair claude-scout --topic my-topic
+isomer-cli --print-json project topic-actors diagnose --topic my-topic --topic-actor claude-scout
+isomer-cli --print-json project topic-actors archive claude-scout --topic my-topic --reason "finished manual scouting"
 ```
 
 `--source-repo` on materialization must resolve to `topic.repos.main` in this change. Alternate worktree source repositories are rejected instead of accepted as ad hoc topology.
@@ -443,8 +509,8 @@ List Isomer built-in schemas and contracts.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli schemas list
-pixi run isomer-cli --print-json schemas list
+isomer-cli schemas list
+isomer-cli --print-json schemas list
 ```
 
 ### `project runtime init`
@@ -454,7 +520,7 @@ Initialize or reopen the selected Workspace Runtime.
 **Side effects:** creates or reopens the path resolved by `topic.runtime.db`, stores schema metadata, records owner Research Topic and Topic Workspace refs, persists semantic path plans for required runtime labels such as `topic.runtime`, `topic.records`, `topic.records.artifacts`, `topic.records.tasks`, `topic.records.runs`, `topic.records.views`, and `topic.records.logs`, and creates those resolved runtime-owned directories. Reopening a current-schema runtime is idempotent. Unsupported older or newer schemas produce diagnostics and do not create directories or rewrite owner refs.
 
 ```bash
-pixi run isomer-cli --print-json project runtime init --topic my-topic
+isomer-cli --print-json project runtime init --topic my-topic
 ```
 
 ### `project runtime prepare`
@@ -464,8 +530,8 @@ Record selected topic environment readiness.
 **Side effects:** writes or updates a `TopicEnvironmentReadinessRecord` in Workspace Runtime. Checks explicit Project Manifest `topic_pixi_environment_bindings`, explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` targets, or the implicit registered Topic Workspace directory default when no explicit standalone target exists. Pixi must be installed and on `PATH`; online installation can use `curl -fsSL https://pixi.sh/install.sh | sh`, while offline hosts should receive a pre-downloaded `pixi` executable on `PATH`. Does not install Pixi environments or perform hidden repair.
 
 ```bash
-pixi run isomer-cli --print-json project runtime prepare --topic my-topic
-pixi run isomer-cli --print-json project runtime prepare --topic my-topic --actor operator
+isomer-cli --print-json project runtime prepare --topic my-topic
+isomer-cli --print-json project runtime prepare --topic my-topic --actor operator
 ```
 
 ### `project runtime inspect`
@@ -475,8 +541,8 @@ Inspect Workspace Runtime metadata without mutation.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli project runtime inspect --topic my-topic
-pixi run isomer-cli --print-json project runtime inspect --topic my-topic
+isomer-cli project runtime inspect --topic my-topic
+isomer-cli --print-json project runtime inspect --topic my-topic
 ```
 
 ### `project runtime validate`
@@ -486,8 +552,8 @@ Validate Workspace Runtime records without mutation.
 **Side effects:** none. Reports metadata, record counts, readiness summaries, path-plan mismatches, broken refs, missing Agent Workspace directories, stale handoffs, unresolved Gates, unsupported Research Claims, stale Provenance Records, schema mismatches, and cross-topic leakage.
 
 ```bash
-pixi run isomer-cli project runtime validate --topic my-topic
-pixi run isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
+isomer-cli project runtime validate --topic my-topic
+isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
 ```
 
 ### `project team-instances create`
@@ -499,7 +565,7 @@ Create an Agent Team Instance record.
 **Prerequisites:** Workspace Runtime must be initialized, the Research Topic's single Topic Agent Team Profile Bundle must be materialized, and readiness should be `ready` for launch-facing work.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances create \
+isomer-cli --print-json project team-instances create \
   --topic my-topic \
   --id ati-my-topic-deepsci
 ```
@@ -511,8 +577,8 @@ List Agent Team Instance records.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli project team-instances list --topic my-topic
-pixi run isomer-cli --print-json project team-instances list --topic my-topic
+isomer-cli project team-instances list --topic my-topic
+isomer-cli --print-json project team-instances list --topic my-topic
 ```
 
 ### `project team-instances show`
@@ -522,7 +588,7 @@ Show one Agent Team Instance record.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances show ati-my-topic-deepsci --topic my-topic
+isomer-cli --print-json project team-instances show ati-my-topic-deepsci --topic my-topic
 ```
 
 ### `project team-instances adapter-link export`
@@ -532,8 +598,8 @@ Write or print a Houmao adapter link JSON manifest.
 **Side effects:** writes `adapter-link.json` under the Topic Workspace adapter directory unless `--print` is used. Does not launch agents.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances adapter-link export ati-my-topic-deepsci --topic my-topic
-pixi run isomer-cli --print-json project team-instances adapter-link export ati-my-topic-deepsci --topic my-topic --print
+isomer-cli --print-json project team-instances adapter-link export ati-my-topic-deepsci --topic my-topic
+isomer-cli --print-json project team-instances adapter-link export ati-my-topic-deepsci --topic my-topic --print
 ```
 
 ### `project team-instances launch-material prepare`
@@ -543,7 +609,7 @@ Prepare Houmao launch material without launching agents.
 **Side effects:** writes shared launch material, creates or updates `adapter-link.json` and `launch-material-manifest.json`, and records materialization state in Workspace Runtime. Does not launch, stop, message, or inspect Houmao managed agents.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances launch-material prepare ati-my-topic-deepsci \
+isomer-cli --print-json project team-instances launch-material prepare ati-my-topic-deepsci \
   --topic my-topic --adapter houmao
 ```
 
@@ -554,7 +620,7 @@ Quick-launch a Houmao-backed Agent Team Instance.
 **Side effects:** runs preflight, writes shared launch material, creates or updates `adapter-link.json` and `launch-material-manifest.json`, launches one Houmao managed agent per Isomer Agent Instance, writes `adapter-runtime-manifest.json`, and records command runs, payload refs, a launch attempt, and reconciliation state in Workspace Runtime. This is a live mutation of external Houmao state.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances launch ati-my-topic-deepsci \
+isomer-cli --print-json project team-instances launch ati-my-topic-deepsci \
   --topic my-topic --adapter houmao
 ```
 
@@ -565,7 +631,7 @@ Inspect Houmao adapter manifest integrity without mutation.
 **Side effects:** none. Runs read-only Houmao CLI inspection and records a bounded adapter inspection snapshot in Workspace Runtime. The snapshot is a durable record of the observation; the underlying Houmao state is not modified.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances inspect-live ati-my-topic-deepsci \
+isomer-cli --print-json project team-instances inspect-live ati-my-topic-deepsci \
   --topic my-topic --adapter houmao --integrity
 ```
 
@@ -576,7 +642,7 @@ Stop a Houmao-backed Agent Team Instance.
 **Side effects:** an explicit live mutation. Targets known mapped Houmao agent names from manifests or launch attempts and records a stopped, partial, failed, or stale outcome in Workspace Runtime.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances stop ati-my-topic-deepsci \
+isomer-cli --print-json project team-instances stop ati-my-topic-deepsci \
   --topic my-topic --adapter houmao
 ```
 
@@ -587,7 +653,7 @@ Record Houmao adapter manifest reconciliation state.
 **Side effects:** writes or updates `adapter-runtime-manifest.json` and records an `AdapterReconciliationRecord` in Workspace Runtime. Does not start, stop, or message Houmao-managed agents.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances reconcile ati-my-topic-deepsci \
+isomer-cli --print-json project team-instances reconcile ati-my-topic-deepsci \
   --topic my-topic
 ```
 
@@ -598,7 +664,7 @@ Adopt externally launched Houmao runtime state.
 **Side effects:** records an explicit decision to associate externally launched Houmao runtime state with the selected Agent Team Instance. Requires `--yes` to confirm.
 
 ```bash
-pixi run isomer-cli --print-json project team-instances adopt ati-my-topic-deepsci \
+isomer-cli --print-json project team-instances adopt ati-my-topic-deepsci \
   --topic my-topic --yes
 ```
 
@@ -609,7 +675,7 @@ Dispatch a manual handoff through the selected Execution Adapter.
 **Side effects:** writes or reuses a Run lifecycle record, writes a Handoff record, links the handoff and Run to the Agent Team Instance, writes durable handoff payload files, invokes Houmao mail dispatch for the Houmao adapter, and records adapter command and payload refs. Requires ready Workspace Runtime and a launched, adopted, or linked adapter context.
 
 ```bash
-pixi run isomer-cli --print-json project handoffs dispatch \
+isomer-cli --print-json project handoffs dispatch \
   --topic my-topic \
   --agent-team-instance ati-my-topic-deepsci \
   --source-agent-instance ati-my-topic-deepsci-deepsci-org-master \
@@ -626,10 +692,10 @@ Record a non-authoritative Signal Observation for a handoff.
 **Side effects:** writes a Signal Observation record, durable observation payload files, and any adapter command/payload refs needed to read mail or gateway output. Observation alone does not complete a Run, accept a handoff, promote returned claims into Evidence Items, or accept an Artifact.
 
 ```bash
-pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source mail
-pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source gateway
-pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source file --payload-json handoff-observation.json
-pixi run isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source inspection
+isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source mail
+isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source gateway
+isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source file --payload-json handoff-observation.json
+isomer-cli --print-json project handoffs observe <handoff-id> --topic my-topic --source inspection
 ```
 
 ### `project handoffs normalize`
@@ -639,7 +705,7 @@ Record the Operator Agent decision for a handoff result.
 **Side effects:** writes a handoff normalization record and payload ref, updates the Handoff record, records output Artifact lifecycle refs when supplied, and completes the linked Run only for `accepted`. Supported statuses are `accepted`, `rejected`, `blocked`, `superseded`, `repair_routed`, and `follow_up`.
 
 ```bash
-pixi run isomer-cli --print-json project handoffs normalize <handoff-id> \
+isomer-cli --print-json project handoffs normalize <handoff-id> \
   --topic my-topic \
   --status accepted \
   --signal-observation <signal-observation-id> \
@@ -654,8 +720,8 @@ List the DeepScientist compatibility tools exposed through Isomer extension shim
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli ext deepsci tools
-pixi run isomer-cli ext deepsci tools artifact
+isomer-cli ext deepsci tools
+isomer-cli ext deepsci tools artifact
 ```
 
 ### `ext deepsci call`
@@ -665,7 +731,7 @@ Call one DeepScientist compatibility tool against the selected Topic Workspace.
 **Side effects:** depends on the tool. Compatibility calls may write extension-owned records inside the Workspace Runtime database and may return durable references that later production DeepSci skills summarize through normal Isomer placeholder bindings. Use this surface only for source-shaped compatibility behavior while the native research record APIs are still incomplete.
 
 ```bash
-pixi run isomer-cli ext deepsci call artifact.record \
+isomer-cli ext deepsci call artifact.record \
   --topic my-topic \
   --input-json '{"title":"Draft note","body":"Compatibility note."}'
 ```
@@ -681,7 +747,7 @@ Create, inspect, query, update, or archive transitional topic-scoped research re
 When a Topic Actor creates or updates an accepted research record, include `--topic-actor <topic-actor-name>` and known actor metadata such as `--actor-kind`, `--runtime-kind`, `--controller-kind`, and `--adapter-ref`. Include formal Agent Team Instance, Agent Instance, or Agent Workspace refs only when the record was actually produced inside that formal context; do not fabricate those refs for Topic Actor work.
 
 ```bash
-pixi run isomer-cli --print-json ext research records create \
+isomer-cli --print-json ext research records create \
   --topic my-topic \
   --record-kind artifact \
   --placeholder '<LITERATURE_SCOUTING_REPORT>' \
@@ -695,21 +761,21 @@ pixi run isomer-cli --print-json ext research records create \
   --controller-kind human_user \
   --body-file scouting-report.md
 
-pixi run isomer-cli --print-json ext research records list \
+isomer-cli --print-json ext research records list \
   --topic my-topic \
   --placeholder '<LITERATURE_SCOUTING_REPORT>'
 
-pixi run isomer-cli --print-json ext research records show <record-id> \
+isomer-cli --print-json ext research records show <record-id> \
   --topic my-topic --include-body
 
-pixi run isomer-cli --print-json ext research records update <record-id> \
+isomer-cli --print-json ext research records update <record-id> \
   --topic my-topic \
   --record-kind artifact \
   --status complete \
   --placeholder '<LITERATURE_SCOUTING_REPORT>' \
   --body-file scouting-report-production DeepSci.md
 
-pixi run isomer-cli --print-json ext research records delete <record-id> \
+isomer-cli --print-json ext research records delete <record-id> \
   --topic my-topic \
   --reason superseded
 ```
@@ -730,8 +796,8 @@ List registered Domain Agent Team Templates.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli project team-templates list
-pixi run isomer-cli --print-json project team-templates list
+isomer-cli project team-templates list
+isomer-cli --print-json project team-templates list
 ```
 
 ### `project team-templates inspect`
@@ -741,7 +807,7 @@ Inspect a registered Domain Agent Team Template.
 **Side effects:** none. The output includes template roles, Workflow Stage ownership, placeholder catalog entries, instantiation schema paths, and copyable material declarations such as `execplan/` for templates that support Topic Team Specialization.
 
 ```bash
-pixi run isomer-cli --print-json project team-templates inspect deepsci-org
+isomer-cli --print-json project team-templates inspect deepsci-org
 ```
 
 ### `project team-templates validate`
@@ -751,8 +817,8 @@ Validate a registered Domain Agent Team Template.
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli project team-templates validate deepsci-org
-pixi run isomer-cli project --root /path/to/project team-templates validate fixture-method-team
+isomer-cli project team-templates validate deepsci-org
+isomer-cli project --root /path/to/project team-templates validate fixture-method-team
 ```
 
 ### `project team-profiles specialize`
@@ -762,9 +828,9 @@ Preview Topic Team Specialization for the selected Research Topic by deriving a 
 **Side effects:** by default, prints preview or candidate material without writing files. `--profile-id` is preview-only and is not accepted by the packet-backed authoritative materialization path. Legacy preview-write behavior may write a single profile file, but authoritative Topic Team Specialization writes the Research Topic's one Topic Agent Team Profile Bundle under `team-profile/` in the owning Topic Workspace and keeps only the Project Manifest ref in Project Config. Does not launch Houmao agents, create an Agent Team Instance, or write Workspace Runtime state.
 
 ```bash
-pixi run isomer-cli --print-json project team-profiles specialize \
+isomer-cli --print-json project team-profiles specialize \
   --topic my-topic --use-case UC-01
-pixi run isomer-cli --print-json project team-profiles specialize \
+isomer-cli --print-json project team-profiles specialize \
   --topic my-topic --use-case UC-01 --write
 ```
 
@@ -775,10 +841,10 @@ Materialize an approved packet-backed Topic Agent Team Profile Bundle for the se
 **Side effects:** without `--write`, previews validation and planned bundle paths. With `--write`, writes `<topic-workspace>/team-profile/profile.toml`, `instantiation-packet.toml`, `approval.toml`, validation output, provenance files, and copied topic-edited template material. It does not mutate Workspace Runtime, launch Houmao agents, or create an Agent Team Instance.
 
 ```bash
-pixi run isomer-cli --print-json project team-profiles materialize \
+isomer-cli --print-json project team-profiles materialize \
   --topic flash-attention-gb10-peak-performance-optimization \
   --packet fixtures/uc01/topic-team-instantiation-packet.toml
-pixi run isomer-cli --print-json project team-profiles materialize \
+isomer-cli --print-json project team-profiles materialize \
   --topic flash-attention-gb10-peak-performance-optimization \
   --packet fixtures/uc01/topic-team-instantiation-packet.toml --write
 ```
@@ -790,8 +856,8 @@ Validate a Topic Agent Team Profile file or a `profile.toml` file inside a Topic
 **Side effects:** none.
 
 ```bash
-pixi run isomer-cli project team-profiles validate isomer-content/topic-ws/my-topic/team-profile/profile.toml
-pixi run isomer-cli project --root /path/to/project team-profiles validate topic-workspaces/my-topic/team-profile/profile.toml
+isomer-cli project team-profiles validate isomer-content/topic-ws/my-topic/team-profile/profile.toml
+isomer-cli project --root /path/to/project team-profiles validate topic-workspaces/my-topic/team-profile/profile.toml
 ```
 
 ## Side-effect Summary
