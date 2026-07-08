@@ -1,8 +1,10 @@
-site_name: Isomer Labs Context
-site_description: Project context, design notes, plans, and summaries for Isomer Labs.
-docs_dir: context
+site_name: Isomer Labs
+site_description: Documentation for the Isomer Labs research platform and CLI.
+docs_dir: docs
 site_dir: tmp/mkdocs-site
 use_directory_urls: true
+repo_url: https://github.com/CodeGandee/isomer-labs
+repo_name: CodeGandee/isomer-labs
 
 theme:
   name: material
@@ -14,9 +16,3 @@ theme:
 
 plugins:
   - search
-
-extra_css:
-  - assets/styles/chatlogs.css
-
-extra_javascript:
-  - assets/js/chatlogs.js

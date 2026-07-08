@@ -14,6 +14,14 @@ requires = ["hatchling"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/isomer_labs"]
 
+[tool.hatch.build.targets.sdist]
+only-include = [
+  "LICENSE",
+  "README.md",
+  "pyproject.toml",
+  "src/isomer_labs",
+]
+
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["linux-64", "linux-aarch64", "osx-arm64"]
