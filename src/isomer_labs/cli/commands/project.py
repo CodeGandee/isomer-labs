@@ -23,6 +23,26 @@ from isomer_labs.cli.handlers.project import (
     _cmd_topics_list,
     _cmd_topics_show,
     _cmd_topics_update,
+    _cmd_user_plugin_param_import_add,
+    _cmd_user_plugin_param_import_list,
+    _cmd_user_plugin_param_import_remove,
+    _cmd_user_plugin_param_import_show,
+    _cmd_user_plugin_params_define,
+    _cmd_user_plugin_params_explain,
+    _cmd_user_plugin_params_get,
+    _cmd_user_plugin_params_list,
+    _cmd_user_plugin_params_set,
+    _cmd_user_plugin_params_unset,
+    _cmd_user_plugin_params_validate,
+    _cmd_user_plugins_disable,
+    _cmd_user_plugins_enable,
+    _cmd_user_plugins_explain,
+    _cmd_user_plugins_install,
+    _cmd_user_plugins_list,
+    _cmd_user_plugins_show,
+    _cmd_user_plugins_uninstall,
+    _cmd_user_plugins_update_source,
+    _cmd_user_plugins_validate,
     _cmd_validate,
 )
 from isomer_labs.cli.handlers.schemas import _cmd_schemas_list
@@ -75,6 +95,24 @@ def _self_selection_options(command: Any) -> Any:
     command = click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for self context.")(command)
     command = _topic_selection_options(command)
     return command
+
+
+def _plugin_selection_options(command: Any) -> Any:
+    command = click.option("--topic-agent", "--agent", "agent_name", default=None, help="Topic-local Agent Name selector.")(command)
+    command = click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name selector.")(command)
+    command = _topic_selection_options(command)
+    return command
+
+
+def _plugin_scope_option(command: Any) -> Any:
+    return click.option(
+        "--scope",
+        "user_plugin_scope",
+        type=click.Choice(["project", "research_topic", "topic_actor", "topic_agent"]),
+        default="project",
+        show_default=True,
+        help="User Plugin configuration scope.",
+    )(command)
 
 
 def register_project_commands(app: click.Group) -> None:
@@ -724,6 +762,236 @@ def register_project_commands(app: click.Group) -> None:
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             )
         )
+
+    def _merge_plugin_command_options(ctx: click.Context, kwargs: dict[str, Any], **extra: Any) -> Any:
+        values = dict(kwargs)
+        project = values.pop("project", None)
+        manifest = values.pop("manifest", None)
+        output_format = values.pop("output_format", None)
+        json_output = values.pop("json_output", False)
+        values.update(extra)
+        return _merge_options(
+            ctx,
+            project=project,
+            manifest=manifest,
+            output_format=output_format,
+            json_output=json_output,
+            **values,
+        )
+
+
+    @app.group(name="user-plugins", help="User Plugin registration commands.")
+    def user_plugins_group() -> None:
+        pass
+
+
+    @user_plugins_group.command(name="install", help="Install or update a User Plugin registration.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @click.argument("plugin_id")
+    @click.option("--source-path", "user_plugin_source_path", default=None, help="Plugin source path or directory.")
+    @click.option("--status", "user_plugin_status", type=click.Choice(["active", "disabled"]), default="active", show_default=True)
+    @click.pass_context
+    def user_plugins_install_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugins_install(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+
+
+    @user_plugins_group.command(name="list", help="List User Plugin registrations visible from the selected context.")
+    @_common_options
+    @_plugin_selection_options
+    @click.pass_context
+    def user_plugins_list_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_user_plugins_list(_merge_plugin_command_options(ctx, kwargs))
+
+
+    @user_plugins_group.command(name="show", help="Show one User Plugin registration.")
+    @_common_options
+    @_plugin_selection_options
+    @click.argument("plugin_id")
+    @click.pass_context
+    def user_plugins_show_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugins_show(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+
+
+    @user_plugins_group.command(name="explain", help="Explain effective User Plugin status.")
+    @_common_options
+    @_plugin_selection_options
+    @click.argument("plugin_id")
+    @click.pass_context
+    def user_plugins_explain_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugins_explain(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+
+
+    @user_plugins_group.command(name="enable", help="Enable a User Plugin at the selected scope.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @click.argument("plugin_id")
+    @click.pass_context
+    def user_plugins_enable_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugins_enable(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+
+
+    @user_plugins_group.command(name="disable", help="Disable a User Plugin at the selected scope.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @click.argument("plugin_id")
+    @click.pass_context
+    def user_plugins_disable_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugins_disable(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+
+
+    @user_plugins_group.command(name="update-source", help="Update a User Plugin source path.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @click.argument("plugin_id")
+    @click.option("--source-path", "user_plugin_source_path", required=True, help="Replacement plugin source path.")
+    @click.pass_context
+    def user_plugins_update_source_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugins_update_source(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+
+
+    @user_plugins_group.command(name="uninstall", help="Remove a User Plugin registration at the selected scope.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @click.argument("plugin_id")
+    @click.pass_context
+    def user_plugins_uninstall_command(ctx: click.Context, plugin_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugins_uninstall(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id))
+
+
+    @user_plugins_group.command(name="validate", help="Validate User Plugin registrations and runtime params.")
+    @_common_options
+    @_plugin_selection_options
+    @click.pass_context
+    def user_plugins_validate_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_user_plugins_validate(_merge_plugin_command_options(ctx, kwargs))
+
+
+    @app.group(name="user-plugin-params", help="User Plugin runtime param commands.")
+    def user_plugin_params_group() -> None:
+        pass
+
+
+    def _param_value_options(command: Any) -> Any:
+        command = click.option("--description", "user_plugin_param_description", default=None, help="Runtime param description.")(command)
+        command = click.option("--allowed-value", "user_plugin_param_allowed_values", multiple=True, help="Allowed enum value. Repeat for multiple values.")(command)
+        command = click.option("--value-type", "user_plugin_param_value_type", type=click.Choice(["string", "bool", "integer", "number", "enum", "string_list"]), default=None, help="Runtime param value type.")(command)
+        command = click.option("--value", "user_plugin_param_value", required=True, help="Runtime param value.")(command)
+        return command
+
+
+    @user_plugin_params_group.command(name="define", help="Define a User Plugin runtime param at the selected scope.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @_param_value_options
+    @click.argument("param_id")
+    @click.pass_context
+    def user_plugin_params_define_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugin_params_define(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+
+
+    @user_plugin_params_group.command(name="set", help="Set a User Plugin runtime param at the selected scope.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @_param_value_options
+    @click.argument("param_id")
+    @click.pass_context
+    def user_plugin_params_set_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugin_params_set(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+
+
+    @user_plugin_params_group.command(name="get", help="Get an effective User Plugin runtime param.")
+    @_common_options
+    @_plugin_selection_options
+    @click.argument("param_id")
+    @click.pass_context
+    def user_plugin_params_get_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugin_params_get(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+
+
+    @user_plugin_params_group.command(name="list", help="List effective User Plugin runtime params.")
+    @_common_options
+    @_plugin_selection_options
+    @click.pass_context
+    def user_plugin_params_list_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_user_plugin_params_list(_merge_plugin_command_options(ctx, kwargs))
+
+
+    @user_plugin_params_group.command(name="explain", help="Explain runtime param candidates and selected value.")
+    @_common_options
+    @_plugin_selection_options
+    @click.argument("param_id")
+    @click.pass_context
+    def user_plugin_params_explain_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugin_params_explain(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+
+
+    @user_plugin_params_group.command(name="unset", help="Remove a runtime param row at the selected scope.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @click.argument("param_id")
+    @click.pass_context
+    def user_plugin_params_unset_command(ctx: click.Context, param_id: str, **kwargs: Any) -> int:
+        return _cmd_user_plugin_params_unset(_merge_plugin_command_options(ctx, kwargs, user_plugin_param_id=param_id))
+
+
+    @user_plugin_params_group.command(name="validate", help="Validate and resolve User Plugin runtime params.")
+    @_common_options
+    @_plugin_selection_options
+    @click.pass_context
+    def user_plugin_params_validate_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_user_plugin_params_validate(_merge_plugin_command_options(ctx, kwargs))
+
+
+    @user_plugin_params_group.group(name="import", help="Runtime param import commands.")
+    def user_plugin_params_import_group() -> None:
+        pass
+
+
+    @user_plugin_params_import_group.command(name="add", help="Add a runtime param import row.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @click.argument("plugin_id")
+    @click.argument("path")
+    @click.pass_context
+    def user_plugin_params_import_add_command(ctx: click.Context, plugin_id: str, path: str, **kwargs: Any) -> int:
+        return _cmd_user_plugin_param_import_add(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id, user_plugin_import_path=path))
+
+
+    @user_plugin_params_import_group.command(name="list", help="List runtime param imports visible from the selected context.")
+    @_common_options
+    @_plugin_selection_options
+    @click.pass_context
+    def user_plugin_params_import_list_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_user_plugin_param_import_list(_merge_plugin_command_options(ctx, kwargs))
+
+
+    @user_plugin_params_import_group.command(name="show", help="Show runtime param imports.")
+    @_common_options
+    @_plugin_selection_options
+    @click.pass_context
+    def user_plugin_params_import_show_command(ctx: click.Context, **kwargs: Any) -> int:
+        return _cmd_user_plugin_param_import_show(_merge_plugin_command_options(ctx, kwargs))
+
+
+    @user_plugin_params_import_group.command(name="remove", help="Remove a runtime param import row.")
+    @_common_options
+    @_plugin_selection_options
+    @_plugin_scope_option
+    @click.argument("plugin_id")
+    @click.argument("path")
+    @click.pass_context
+    def user_plugin_params_import_remove_command(ctx: click.Context, plugin_id: str, path: str, **kwargs: Any) -> int:
+        return _cmd_user_plugin_param_import_remove(_merge_plugin_command_options(ctx, kwargs, user_plugin_id=plugin_id, user_plugin_import_path=path))
 
 
     @app.group(name="topic-actors", help="Topic Actor and Topic Actor Workspace commands.")

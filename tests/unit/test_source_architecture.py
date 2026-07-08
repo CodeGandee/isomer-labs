@@ -35,9 +35,11 @@ ROOT_FILE_ALLOWLIST = {
 }
 
 PACKAGE_SIZE_TRANSITIONS = {
+    "cli/handlers/project.py",
     "cli/commands/project.py",
     "models/__init__.py",
     "project/doctor.py",
+    "project/user_plugins.py",
     "records/store.py",
     "houmao/adapter.py",
     "houmao/manifests.py",

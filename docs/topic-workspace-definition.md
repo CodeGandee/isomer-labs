@@ -21,7 +21,7 @@ Isomer must not infer managed Topic Workspaces by scanning directories. A direct
 
 ## Topic Workspace Manifest and Semantic Labels
 
-Each Topic Workspace may contain a topic-owned Topic Workspace Manifest at `<topic-workspace>/topic-workspace.toml`. The manifest binds semantic workspace surface labels such as `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records.artifacts`, `topic.runtime.db`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch` to concrete paths or agent path templates inside the selected Topic Workspace.
+Each Topic Workspace may contain a topic-owned Topic Workspace Manifest at `<topic-workspace>/topic-workspace.toml`. The manifest binds semantic workspace surface labels such as `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records.artifacts`, `topic.runtime.db`, `topic.agents_root`, `agent.workspace`, `agent.private_artifacts`, `agent.public_share`, and `agent.scratch` to concrete paths or agent path templates inside the selected Topic Workspace. It may also carry topic-scope User Plugin registrations, User Plugin Runtime Param imports, and User Plugin Runtime Params for Research Topic, Topic Actor, and Topic Agent specialization.
 
 The Project Manifest remains the outer discovery authority for Research Topics and Topic Workspaces. It does not carry a per-topic manifest path override. The Topic Workspace Manifest is topic-owned configuration and must not be stored inside `.isomer-labs/`.
 
@@ -44,6 +44,34 @@ label = "topic.repos.inner_group.some_repo_name"
 path = "repos/extern/inner_group/some_repo_name"
 storage_profile = "topic_repo"
 ```
+
+User Plugin configuration tables use the same shape in the Project Manifest and the Topic Workspace Manifest. File location and `scope` determine the layer: the Project Manifest accepts only `scope = "project"`, while the Topic Workspace Manifest accepts `scope = "research_topic"`, `scope = "topic_actor"`, and `scope = "topic_agent"`. Topic Actor rows require `topic_actor_name`. Topic Agent rows require `topic_agent_name`, selected from the topic-local Effective Agent Context Agent Name rather than a new durable actor type.
+
+```toml
+[[user_plugins]]
+plugin_id = "gpu-analytical-modeling"
+scope = "research_topic"
+status = "active"
+source_path = "skillset/user-plugins/gpu-analytical-modeling"
+
+[[user_plugin_runtime_param_imports]]
+plugin_id = "gpu-analytical-modeling"
+path = "profiles/gpu-defaults.toml"
+scope = "research_topic"
+status = "active"
+
+[[user_plugin_runtime_params]]
+plugin_id = "gpu-analytical-modeling"
+key = "evidence/mode"
+value = "strict"
+value_type = "enum"
+allowed_values = ["strict", "relaxed"]
+scope = "topic_agent"
+topic_agent_name = "coder"
+status = "active"
+```
+
+Runtime param imports are defaults, not plugin installers. An imported TOML file may contain `schema_version = "isomer-user-plugin-runtime-params.v1"` and `[[user_plugin_runtime_params]]` rows only. Import paths are relative to the manifest file that declares them: Project Manifest imports resolve relative to `.isomer-labs/`, and Topic Workspace Manifest imports resolve relative to the Topic Workspace root. Effective values resolve as Project imports, Project explicit rows, Topic imports, then Topic explicit rows.
 
 ## Standard Layout
 

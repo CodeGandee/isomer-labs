@@ -5,7 +5,13 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from isomer_labs.models import PROJECT_MANIFEST_SCHEMA_VERSION, Project, ProjectManifest, ProjectState
+from isomer_labs.models import (
+    PROJECT_MANIFEST_SCHEMA_VERSION,
+    Project,
+    ProjectManifest,
+    ProjectState,
+    UserPluginRegistration,
+)
 from isomer_labs.project.skill_callback_commands import (
     prepare_callback_source,
     resolve_user_skill_callbacks,
@@ -148,6 +154,56 @@ class UserSkillCallbackTests(unittest.TestCase):
 
         self.assertTrue(result.ok, result.diagnostics)
         self.assertEqual(["a", "b"], [callback.id for callback in result.callbacks])
+
+    def test_resolve_skips_plugin_callbacks_when_user_plugin_is_disabled(self) -> None:
+        project = self.make_project()
+        project.manifest.user_plugins.append(
+            UserPluginRegistration(
+                plugin_id="demo.plugin",
+                scope="project",
+                status="disabled",
+                source_path_input="plugins/demo",
+                source_path=project.manifest_path,
+            )
+        )
+        registry = self.registry_ref(project)
+        write(project.root / "prompt-a.md", "A\n")
+        write(project.root / "prompt-b.md", "B\n")
+        write(
+            registry.path,
+            """
+            schema_version = "isomer-user-skill-callback-registry.v1"
+
+            [[callbacks]]
+            id = "demo.plugin:group/a"
+            skill = "isomer-deepsci-scout"
+            stage = "begin"
+            scope = "project"
+            status = "active"
+            priority = 10
+            source_type = "prompt_file"
+            prompt_file = "prompt-a.md"
+            plugin_id = "demo.plugin"
+            plugin_key = "group/a"
+
+            [[callbacks]]
+            id = "manual"
+            skill = "isomer-deepsci-scout"
+            stage = "begin"
+            scope = "project"
+            status = "active"
+            priority = 20
+            source_type = "prompt_file"
+            prompt_file = "prompt-b.md"
+            """,
+        )
+        state = ProjectState(project=project, topic_configs={}, local_context=None, diagnostics=[])
+
+        result = resolve_user_skill_callbacks(state, None, skill="isomer-deepsci-scout", stage="begin")
+
+        self.assertTrue(result.ok, result.diagnostics)
+        self.assertEqual(["manual"], [callback.id for callback in result.callbacks])
+        self.assertEqual(("demo.plugin:group/a",), result.gated_callback_ids)
 
     def test_namespaced_callback_ids_resolve_together_and_reject_duplicates(self) -> None:
         project = self.make_project()
@@ -339,6 +395,44 @@ class UserSkillCallbackTests(unittest.TestCase):
         self.assertIsNotNone(result.manifest)
         assert result.manifest is not None
         self.assertEqual(["group/a", "isomer-deepsci-scout/end"], [entry.plugin_key for entry in result.manifest.callbacks])
+
+    def test_user_plugin_manifest_accepts_runtime_param_definitions_and_bundles(self) -> None:
+        project = self.make_project()
+        plugin = project.root / "skillset" / "user-plugins" / "with-params"
+        write(plugin / "callback" / "SKILL.md", "# Callback\n")
+        write(
+            plugin / "manifest.toml",
+            """
+            schema_version = "isomer-user-plugin.v1"
+            plugin_id = "with-params"
+            kind = "user-skill-callback-bundle"
+
+            [[callbacks]]
+            target_skill = "isomer-deepsci-scout"
+            stage = "begin"
+            source_type = "skill_dir"
+            skill_dir = "callback"
+
+            [[runtime_params]]
+            key = "policy/mode"
+            value_type = "enum"
+            default = "strict"
+            allowed_values = ["strict", "relaxed"]
+            description = "Policy mode."
+
+            [[runtime_param_bundles]]
+            name = "strict-defaults"
+            path = "params/strict.toml"
+            """,
+        )
+
+        result = load_user_plugin_callback_manifest(project, "skillset/user-plugins/with-params")
+
+        self.assertIsNotNone(result.manifest)
+        assert result.manifest is not None
+        self.assertEqual("policy/mode", result.manifest.runtime_params[0].key)
+        self.assertEqual(("strict", "relaxed"), result.manifest.runtime_params[0].allowed_values)
+        self.assertEqual("strict-defaults", result.manifest.runtime_param_bundles[0].name)
 
 
 if __name__ == "__main__":

@@ -31,7 +31,7 @@ A per-Topic Actor work area inside a Topic Workspace for human-orchestrated topi
 _Avoid_: Agent Workspace, Agent Instance workspace, shared manual topic-main cwd, secure sandbox
 
 **Topic Workspace Manifest**:
-The topic-owned `topic-workspace.toml` file at the Topic Workspace root. It binds semantic workspace surface labels to concrete paths, Topic Actor bindings, actor-scoped workspace templates, or bounded Agent Workspace templates for one selected Topic Workspace. It is the topology authority for Topic Actor names and Topic Actor Workspace paths. It is not Project Config Directory state, not a Project Manifest override, and not Workspace Runtime state.
+The topic-owned `topic-workspace.toml` file at the Topic Workspace root. It binds semantic workspace surface labels to concrete paths, Topic Actor bindings, actor-scoped workspace templates, or bounded Agent Workspace templates for one selected Topic Workspace. It can also carry topic-scope User Plugin registrations, User Plugin Runtime Param imports, and User Plugin Runtime Params for Research Topic, Topic Actor, and Topic Agent specialization. It is the topology authority for Topic Actor names and Topic Actor Workspace paths. It is topic-owned configuration, not Project Config Directory state, not a Project Manifest override, and not Workspace Runtime state.
 _Avoid_: Project Manifest path registry, runtime database, hidden workspace config
 
 **Semantic Workspace Surface Label**:

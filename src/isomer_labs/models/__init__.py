@@ -432,6 +432,106 @@ class TopicStandalonePixiBinding:
         }
 
 
+@dataclass(frozen=True)
+class UserPluginRegistration:
+    plugin_id: str
+    scope: str
+    status: str
+    source_path_input: str | None
+    source_path: Path
+    topic_actor_name: str | None = None
+    topic_agent_name: str | None = None
+    source_detail: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "plugin_id": self.plugin_id,
+            "scope": self.scope,
+            "status": self.status,
+            "source_path": self.source_path_input,
+        }
+        if self.topic_actor_name is not None:
+            data["topic_actor_name"] = self.topic_actor_name
+        if self.topic_agent_name is not None:
+            data["topic_agent_name"] = self.topic_agent_name
+        if self.source_detail is not None:
+            data["source_detail"] = self.source_detail
+        return data
+
+
+@dataclass(frozen=True)
+class UserPluginRuntimeParamImport:
+    plugin_id: str
+    path_input: str
+    scope: str
+    source_path: Path
+    status: str = "active"
+    topic_actor_name: str | None = None
+    topic_agent_name: str | None = None
+    source_detail: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "plugin_id": self.plugin_id,
+            "path": self.path_input,
+            "scope": self.scope,
+            "status": self.status,
+        }
+        if self.topic_actor_name is not None:
+            data["topic_actor_name"] = self.topic_actor_name
+        if self.topic_agent_name is not None:
+            data["topic_agent_name"] = self.topic_agent_name
+        if self.source_detail is not None:
+            data["source_detail"] = self.source_detail
+        return data
+
+
+@dataclass(frozen=True)
+class UserPluginRuntimeParam:
+    plugin_id: str
+    key: str
+    value: Any
+    scope: str
+    source_path: Path
+    status: str = "active"
+    value_type: str | None = None
+    allowed_values: tuple[str, ...] = ()
+    description: str | None = None
+    topic_actor_name: str | None = None
+    topic_agent_name: str | None = None
+    source_detail: str | None = None
+    imported_from: Path | None = None
+
+    @property
+    def param_id(self) -> str:
+        return f"{self.plugin_id}:{self.key}"
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "param_id": self.param_id,
+            "plugin_id": self.plugin_id,
+            "key": self.key,
+            "value": self.value,
+            "scope": self.scope,
+            "status": self.status,
+        }
+        if self.value_type is not None:
+            data["value_type"] = self.value_type
+        if self.allowed_values:
+            data["allowed_values"] = list(self.allowed_values)
+        if self.description is not None:
+            data["description"] = self.description
+        if self.topic_actor_name is not None:
+            data["topic_actor_name"] = self.topic_actor_name
+        if self.topic_agent_name is not None:
+            data["topic_agent_name"] = self.topic_agent_name
+        if self.source_detail is not None:
+            data["source_detail"] = self.source_detail
+        if self.imported_from is not None:
+            data["imported_from"] = str(self.imported_from)
+        return data
+
+
 TopicStandalonePixiBindingSource = Literal["explicit", "implicit-default"]
 
 
@@ -498,6 +598,9 @@ class ProjectManifest:
     artifact_format_profiles: list[str] = field(default_factory=list)
     artifact_extensions: list[str] = field(default_factory=list)
     user_skill_callback_registry_refs: list[str] = field(default_factory=list)
+    user_plugins: list[UserPluginRegistration] = field(default_factory=list)
+    user_plugin_runtime_param_imports: list[UserPluginRuntimeParamImport] = field(default_factory=list)
+    user_plugin_runtime_params: list[UserPluginRuntimeParam] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict)
 
     def first_topic(self, topic_id: str) -> ResearchTopicRegistration | None:
@@ -599,6 +702,11 @@ class ProjectManifest:
             "artifact_format_profiles": self.artifact_format_profiles,
             "artifact_extensions": self.artifact_extensions,
             "user_skill_callback_registry_refs": self.user_skill_callback_registry_refs,
+            "user_plugins": [plugin.to_json() for plugin in self.user_plugins],
+            "user_plugin_runtime_param_imports": [
+                import_ref.to_json() for import_ref in self.user_plugin_runtime_param_imports
+            ],
+            "user_plugin_runtime_params": [param.to_json() for param in self.user_plugin_runtime_params],
         }
 
 

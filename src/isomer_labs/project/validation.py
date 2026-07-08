@@ -20,6 +20,7 @@ from isomer_labs.teams.templates import (
 from isomer_labs.core.toml_loader import load_toml
 from isomer_labs.project.topic_config import parse_local_active_context, parse_research_topic_config
 from isomer_labs.project.skill_callbacks import validate_callback_registry_refs
+from isomer_labs.project.user_plugins import validate_project_user_plugins
 
 
 SECRET_TERMS = (
@@ -98,6 +99,7 @@ def build_project_state(project: Project) -> ProjectState:
     diagnostics.extend(_validate_environment_bindings(project))
     diagnostics.extend(_validate_template_registrations(project))
     diagnostics.extend(_validate_profile_registrations(project))
+    diagnostics.extend(validate_project_user_plugins(project))
 
     topic_configs: dict[str, ResearchTopicConfig] = {}
     for topic in project.manifest.research_topics:

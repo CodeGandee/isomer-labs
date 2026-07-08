@@ -18,6 +18,7 @@ from isomer_labs.project.skill_callbacks import (
     active_system_skill_names,
     secret_like_diagnostics,
 )
+from isomer_labs.project.user_plugins import PARAM_KEY_RE, RUNTIME_PARAM_VALUE_TYPES
 
 
 USER_PLUGIN_SCHEMA_VERSION = "isomer-user-plugin.v1"
@@ -47,12 +48,30 @@ class UserPluginCallbackEntry:
 
 
 @dataclass(frozen=True)
+class UserPluginRuntimeParamDefinition:
+    key: str
+    value_type: str
+    default_value: Any | None = None
+    allowed_values: tuple[str, ...] = ()
+    description: str | None = None
+
+
+@dataclass(frozen=True)
+class UserPluginRuntimeParamBundle:
+    name: str
+    path_input: str
+    description: str | None = None
+
+
+@dataclass(frozen=True)
 class UserPluginCallbackManifest:
     plugin_id: str
     plugin_root: Path
     plugin_dir_input: str
     plugin_source_path_input: str
     callbacks: tuple[UserPluginCallbackEntry, ...]
+    runtime_params: tuple[UserPluginRuntimeParamDefinition, ...] = ()
+    runtime_param_bundles: tuple[UserPluginRuntimeParamBundle, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -218,6 +237,11 @@ def load_user_plugin_callback_manifest(
             )
         )
 
+    runtime_params, param_diagnostics = _parse_runtime_param_definitions(manifest_path, raw)
+    diagnostics.extend(param_diagnostics)
+    runtime_param_bundles, bundle_diagnostics = _parse_runtime_param_bundles(manifest_path, raw)
+    diagnostics.extend(bundle_diagnostics)
+
     if has_errors(diagnostics) or plugin_id is None:
         return UserPluginCallbackManifestLoadResult(None, tuple(diagnostics))
     return UserPluginCallbackManifestLoadResult(
@@ -227,6 +251,8 @@ def load_user_plugin_callback_manifest(
             plugin_dir_input=plugin_dir_input,
             plugin_source_path_input=display_path(plugin_root, project.root),
             callbacks=tuple(entries),
+            runtime_params=tuple(runtime_params),
+            runtime_param_bundles=tuple(runtime_param_bundles),
         ),
         tuple(diagnostics),
     )
@@ -397,3 +423,170 @@ def _string(value: object) -> str | None:
     if isinstance(value, str) and value:
         return value
     return None
+
+
+def _parse_runtime_param_definitions(
+    manifest_path: Path,
+    raw: dict[str, Any],
+) -> tuple[list[UserPluginRuntimeParamDefinition], list[Diagnostic]]:
+    diagnostics: list[Diagnostic] = []
+    raw_params = raw.get("runtime_params")
+    if raw_params is None:
+        return [], diagnostics
+    if not isinstance(raw_params, list):
+        return [], [
+            Diagnostic(
+                code="ISO102",
+                severity="error",
+                concept="User Plugin callback manifest",
+                path=manifest_path,
+                field="runtime_params",
+                message="User-plugin runtime_params must be an array of tables.",
+            )
+        ]
+    definitions: list[UserPluginRuntimeParamDefinition] = []
+    for index, item in enumerate(raw_params):
+        field = f"runtime_params[{index}]"
+        if not isinstance(item, dict):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO102",
+                    severity="error",
+                    concept="User Plugin callback manifest",
+                    path=manifest_path,
+                    field=field,
+                    message="Runtime param definitions must be tables.",
+                )
+            )
+            continue
+        key = _string(item.get("key") or item.get("name"))
+        value_type = _string(item.get("value_type") or item.get("type"))
+        if key is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO103",
+                    severity="error",
+                    concept="User Plugin callback manifest",
+                    path=manifest_path,
+                    field=f"{field}.key",
+                    message="Runtime param definition must include key.",
+                )
+            )
+        elif not PARAM_KEY_RE.match(key):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO103",
+                    severity="error",
+                    concept="User Plugin callback manifest",
+                    path=manifest_path,
+                    field=f"{field}.key",
+                    message="Runtime param key must start with an alphanumeric character and contain only letters, numbers, slash, underscore, or dash.",
+                )
+            )
+        if value_type is None:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO103",
+                    severity="error",
+                    concept="User Plugin callback manifest",
+                    path=manifest_path,
+                    field=f"{field}.value_type",
+                    message="Runtime param definition must include value_type.",
+                )
+            )
+        elif value_type not in RUNTIME_PARAM_VALUE_TYPES:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO103",
+                    severity="error",
+                    concept="User Plugin callback manifest",
+                    path=manifest_path,
+                    field=f"{field}.value_type",
+                    message=f"Unsupported runtime param value_type: {value_type}.",
+                )
+            )
+        allowed_values = tuple(value for value in item.get("allowed_values", []) if isinstance(value, str)) if isinstance(item.get("allowed_values"), list) else ()
+        if value_type == "enum" and not allowed_values:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO103",
+                    severity="error",
+                    concept="User Plugin callback manifest",
+                    path=manifest_path,
+                    field=f"{field}.allowed_values",
+                    message="Enum runtime param definitions must include allowed_values.",
+                )
+            )
+        if key is not None and value_type is not None:
+            definitions.append(
+                UserPluginRuntimeParamDefinition(
+                    key=key,
+                    value_type=value_type,
+                    default_value=item.get("default"),
+                    allowed_values=allowed_values,
+                    description=_string(item.get("description")),
+                )
+            )
+    for key, count in Counter(definition.key for definition in definitions).items():
+        if count > 1:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO104",
+                    severity="error",
+                    concept="User Plugin callback manifest",
+                    path=manifest_path,
+                    field="runtime_params.key",
+                    message=f"Duplicate runtime param definition key is registered inside this plugin: {key}.",
+                )
+            )
+    return definitions, diagnostics
+
+
+def _parse_runtime_param_bundles(
+    manifest_path: Path,
+    raw: dict[str, Any],
+) -> tuple[list[UserPluginRuntimeParamBundle], list[Diagnostic]]:
+    diagnostics: list[Diagnostic] = []
+    raw_bundles = raw.get("runtime_param_bundles")
+    if raw_bundles is None:
+        return [], diagnostics
+    if not isinstance(raw_bundles, list):
+        return [], [
+            Diagnostic(
+                code="ISO102",
+                severity="error",
+                concept="User Plugin callback manifest",
+                path=manifest_path,
+                field="runtime_param_bundles",
+                message="User-plugin runtime_param_bundles must be an array of tables.",
+            )
+        ]
+    bundles: list[UserPluginRuntimeParamBundle] = []
+    for index, item in enumerate(raw_bundles):
+        field = f"runtime_param_bundles[{index}]"
+        if not isinstance(item, dict):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO102",
+                    severity="error",
+                    concept="User Plugin callback manifest",
+                    path=manifest_path,
+                    field=field,
+                    message="Runtime param bundle declarations must be tables.",
+                )
+            )
+            continue
+        name = _string(item.get("name") or item.get("id"))
+        path_input = _string(item.get("path"))
+        if name is None:
+            diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="User Plugin callback manifest", path=manifest_path, field=f"{field}.name", message="Runtime param bundle must include name."))
+        if path_input is None:
+            diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="User Plugin callback manifest", path=manifest_path, field=f"{field}.path", message="Runtime param bundle must include path."))
+        elif Path(path_input).is_absolute():
+            diagnostics.append(Diagnostic(code="ISO005", severity="error", concept="User Plugin callback manifest", path=manifest_path, field=f"{field}.path", message="Runtime param bundle path must be relative to the plugin directory."))
+        if name is not None and path_input is not None:
+            bundles.append(UserPluginRuntimeParamBundle(name=name, path_input=path_input, description=_string(item.get("description"))))
+    for name, count in Counter(bundle.name for bundle in bundles).items():
+        if count > 1:
+            diagnostics.append(Diagnostic(code="ISO104", severity="error", concept="User Plugin callback manifest", path=manifest_path, field="runtime_param_bundles.name", message=f"Duplicate runtime param bundle is declared inside this plugin: {name}."))
+    return bundles, diagnostics

@@ -149,6 +149,18 @@ from isomer_labs.project.skill_callback_commands import (
     show_user_skill_callback,
     validate_user_skill_callbacks,
 )
+from isomer_labs.project.user_plugins import (
+    UserPluginCommandResult,
+    add_runtime_param_import,
+    effective_user_plugin_status,
+    parse_param_id,
+    remove_runtime_param_import,
+    remove_user_plugin_registration,
+    resolve_runtime_params,
+    set_runtime_param,
+    unset_runtime_param,
+    upsert_user_plugin_registration,
+)
 
 
 def _cmd_init(options: CliOptions) -> int:
@@ -593,6 +605,237 @@ def _cmd_skill_callbacks_validate(options: CliOptions) -> int:
     )
 
 
+def _cmd_user_plugins_install(options: CliOptions) -> int:
+    return _mutate_user_plugin_registration(options, status=_value(options, "user_plugin_status") or "active")
+
+
+def _cmd_user_plugins_enable(options: CliOptions) -> int:
+    return _mutate_user_plugin_registration(options, status="active")
+
+
+def _cmd_user_plugins_disable(options: CliOptions) -> int:
+    return _mutate_user_plugin_registration(options, status="disabled")
+
+
+def _cmd_user_plugins_update_source(options: CliOptions) -> int:
+    return _mutate_user_plugin_registration(options, status=_value(options, "user_plugin_status") or "active")
+
+
+def _cmd_user_plugins_uninstall(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None or has_errors(diagnostics):
+        return _emit("user-plugins uninstall", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = remove_user_plugin_registration(
+        state.project,
+        context,
+        plugin_id=_value(options, "user_plugin_id"),
+        scope=_plugin_scope(options),
+        topic_actor_name=_value(options, "topic_actor_name"),
+        topic_agent_name=_value(options, "agent_name"),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit("user-plugins uninstall", options, result.to_json(), diagnostics, _render_user_plugin_result("Removed User Plugin", result))
+
+
+def _cmd_user_plugins_list(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None:
+        return _emit("user-plugins list", options, {"ok": False, "mutated": False, "plugins": []}, diagnostics, [])
+    plugins = list(state.project.manifest.user_plugins)
+    if context is not None:
+        from isomer_labs.workspace.manifest import load_topic_workspace_manifest
+
+        manifest, manifest_diagnostics = load_topic_workspace_manifest(context)
+        diagnostics.extend(manifest_diagnostics)
+        plugins.extend(manifest.user_plugins)
+    statuses = tuple(effective_user_plugin_status(state.project, context, plugin.plugin_id).to_json() for plugin in plugins)
+    result = UserPluginCommandResult(
+        ok=not has_errors(diagnostics),
+        mutated=False,
+        project_root=state.project.root,
+        diagnostics=tuple(diagnostics),
+        plugins=tuple(plugins),
+        plugin_statuses=statuses,
+    )
+    return _emit("user-plugins list", options, result.to_json(), diagnostics, _render_user_plugin_result("User Plugins", result))
+
+
+def _cmd_user_plugins_show(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None:
+        return _emit("user-plugins show", options, {"ok": False, "mutated": False}, diagnostics, [])
+    plugin_id = _value(options, "user_plugin_id")
+    plugins = [plugin for plugin in state.project.manifest.user_plugins if plugin.plugin_id == plugin_id]
+    if context is not None:
+        from isomer_labs.workspace.manifest import load_topic_workspace_manifest
+
+        manifest, manifest_diagnostics = load_topic_workspace_manifest(context)
+        diagnostics.extend(manifest_diagnostics)
+        plugins.extend(plugin for plugin in manifest.user_plugins if plugin.plugin_id == plugin_id)
+    if not plugins:
+        diagnostics.append(Diagnostic(code="ISO104", severity="error", concept="User Plugin", field="plugin_id", message=f"User Plugin was not found: {plugin_id}."))
+    status = effective_user_plugin_status(state.project, context, plugin_id)
+    result = UserPluginCommandResult(
+        ok=not has_errors(diagnostics),
+        mutated=False,
+        project_root=state.project.root,
+        diagnostics=tuple(diagnostics),
+        plugins=tuple(plugins),
+        plugin=plugins[-1] if plugins else None,
+        plugin_statuses=(status.to_json(),),
+    )
+    return _emit("user-plugins show", options, result.to_json(), diagnostics, _render_user_plugin_result("User Plugin", result))
+
+
+def _cmd_user_plugins_explain(options: CliOptions) -> int:
+    return _cmd_user_plugins_show(options)
+
+
+def _cmd_user_plugins_validate(options: CliOptions) -> int:
+    state, _context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None:
+        return _emit("user-plugins validate", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = UserPluginCommandResult(ok=not has_errors(diagnostics), mutated=False, project_root=state.project.root, diagnostics=tuple(diagnostics))
+    return _emit("user-plugins validate", options, result.to_json(), diagnostics, _render_user_plugin_result("Validated User Plugins", result))
+
+
+def _cmd_user_plugin_params_set(options: CliOptions) -> int:
+    return _set_user_plugin_param(options)
+
+
+def _cmd_user_plugin_params_define(options: CliOptions) -> int:
+    return _set_user_plugin_param(options)
+
+
+def _cmd_user_plugin_params_get(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None:
+        return _emit("user-plugin-params get", options, {"ok": False, "mutated": False}, diagnostics, [])
+    param_id = _value(options, "user_plugin_param_id")
+    resolution = resolve_runtime_params(
+        state.project,
+        context,
+        topic_actor_name=_value(options, "topic_actor_name"),
+        topic_agent_name=_value(options, "agent_name"),
+    )
+    diagnostics.extend(resolution.diagnostics)
+    param = resolution.get(param_id)
+    if param is None:
+        diagnostics.append(Diagnostic(code="ISO104", severity="error", concept="User Plugin runtime param", field="param_id", message=f"Runtime param was not found: {param_id}."))
+    result = UserPluginCommandResult(
+        ok=not has_errors(diagnostics),
+        mutated=False,
+        project_root=state.project.root,
+        diagnostics=tuple(diagnostics),
+        params=resolution.params,
+        param=param,
+    )
+    return _emit("user-plugin-params get", options, result.to_json(), diagnostics, _render_user_plugin_result("User Plugin Runtime Param", result))
+
+
+def _cmd_user_plugin_params_list(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None:
+        return _emit("user-plugin-params list", options, {"ok": False, "mutated": False, "params": []}, diagnostics, [])
+    resolution = resolve_runtime_params(
+        state.project,
+        context,
+        topic_actor_name=_value(options, "topic_actor_name"),
+        topic_agent_name=_value(options, "agent_name"),
+    )
+    diagnostics.extend(resolution.diagnostics)
+    result = UserPluginCommandResult(
+        ok=not has_errors(diagnostics),
+        mutated=False,
+        project_root=state.project.root,
+        diagnostics=tuple(diagnostics),
+        params=resolution.params,
+        param_candidates=resolution.candidates,
+    )
+    return _emit("user-plugin-params list", options, result.to_json(), diagnostics, _render_user_plugin_result("User Plugin Runtime Params", result))
+
+
+def _cmd_user_plugin_params_explain(options: CliOptions) -> int:
+    return _cmd_user_plugin_params_get(options)
+
+
+def _cmd_user_plugin_params_unset(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None or has_errors(diagnostics):
+        return _emit("user-plugin-params unset", options, {"ok": False, "mutated": False}, diagnostics, [])
+    plugin_id, key = _param_parts_from_options(options, diagnostics)
+    if plugin_id is None or key is None:
+        return _emit("user-plugin-params unset", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = unset_runtime_param(
+        state.project,
+        context,
+        plugin_id=plugin_id,
+        key=key,
+        scope=_plugin_scope(options),
+        topic_actor_name=_value(options, "topic_actor_name"),
+        topic_agent_name=_value(options, "agent_name"),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit("user-plugin-params unset", options, result.to_json(), diagnostics, _render_user_plugin_result("Removed User Plugin Runtime Param", result))
+
+
+def _cmd_user_plugin_params_validate(options: CliOptions) -> int:
+    return _cmd_user_plugin_params_list(options)
+
+
+def _cmd_user_plugin_param_import_add(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None or has_errors(diagnostics):
+        return _emit("user-plugin-params import add", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = add_runtime_param_import(
+        state.project,
+        context,
+        plugin_id=_value(options, "user_plugin_id"),
+        path_input=_value(options, "user_plugin_import_path"),
+        scope=_plugin_scope(options),
+        topic_actor_name=_value(options, "topic_actor_name"),
+        topic_agent_name=_value(options, "agent_name"),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit("user-plugin-params import add", options, result.to_json(), diagnostics, _render_user_plugin_result("Added User Plugin Runtime Param Import", result))
+
+
+def _cmd_user_plugin_param_import_remove(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None or has_errors(diagnostics):
+        return _emit("user-plugin-params import remove", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = remove_runtime_param_import(
+        state.project,
+        context,
+        plugin_id=_value(options, "user_plugin_id"),
+        path_input=_value(options, "user_plugin_import_path"),
+        scope=_plugin_scope(options),
+        topic_actor_name=_value(options, "topic_actor_name"),
+        topic_agent_name=_value(options, "agent_name"),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit("user-plugin-params import remove", options, result.to_json(), diagnostics, _render_user_plugin_result("Removed User Plugin Runtime Param Import", result))
+
+
+def _cmd_user_plugin_param_import_list(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None:
+        return _emit("user-plugin-params import list", options, {"ok": False, "mutated": False, "imports": []}, diagnostics, [])
+    imports = list(state.project.manifest.user_plugin_runtime_param_imports)
+    if context is not None:
+        from isomer_labs.workspace.manifest import load_topic_workspace_manifest
+
+        manifest, manifest_diagnostics = load_topic_workspace_manifest(context)
+        diagnostics.extend(manifest_diagnostics)
+        imports.extend(manifest.user_plugin_runtime_param_imports)
+    result = UserPluginCommandResult(ok=not has_errors(diagnostics), mutated=False, project_root=state.project.root, diagnostics=tuple(diagnostics), imports=tuple(imports))
+    return _emit("user-plugin-params import list", options, result.to_json(), diagnostics, _render_user_plugin_result("User Plugin Runtime Param Imports", result))
+
+
+def _cmd_user_plugin_param_import_show(options: CliOptions) -> int:
+    return _cmd_user_plugin_param_import_list(options)
+
+
 def _callback_state_and_context(
     options: CliOptions,
     *,
@@ -626,13 +869,131 @@ def _render_callback_result(title: str, result: CallbackCommandResult) -> list[s
         lines.append("- none")
     for callback in result.callbacks:
         data = callback.to_json(result.project_root)
-        source = data["source_summary"]
+        source = str(data["source_summary"])
         plugin_key = f", plugin_key={callback.plugin_key}" if callback.plugin_key is not None else ""
         lines.append(
             f"- {callback.id} ({callback.scope} {callback.skill} {callback.stage}, status={callback.status}, priority={callback.priority}{plugin_key}, source={source})"
         )
     if result.previous_status is not None and result.new_status is not None:
         lines.append(f"Status: {result.previous_status} -> {result.new_status}")
+    return lines
+
+
+def _mutate_user_plugin_registration(options: CliOptions, *, status: str) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None or has_errors(diagnostics):
+        return _emit("user-plugins install", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = upsert_user_plugin_registration(
+        state.project,
+        context,
+        plugin_id=_value(options, "user_plugin_id"),
+        source_path_input=_value(options, "user_plugin_source_path"),
+        scope=_plugin_scope(options),
+        status=status,
+        topic_actor_name=_value(options, "topic_actor_name"),
+        topic_agent_name=_value(options, "agent_name"),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit("user-plugins install", options, result.to_json(), diagnostics, _render_user_plugin_result("Updated User Plugin", result))
+
+
+def _set_user_plugin_param(options: CliOptions) -> int:
+    state, context, diagnostics = _user_plugin_state_and_context(options)
+    if state is None or has_errors(diagnostics):
+        return _emit("user-plugin-params set", options, {"ok": False, "mutated": False}, diagnostics, [])
+    plugin_id, key = _param_parts_from_options(options, diagnostics)
+    value = _parse_cli_param_value(_value(options, "user_plugin_param_value"), _value(options, "user_plugin_param_value_type"))
+    if plugin_id is None or key is None:
+        return _emit("user-plugin-params set", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = set_runtime_param(
+        state.project,
+        context,
+        plugin_id=plugin_id,
+        key=key,
+        value=value,
+        scope=_plugin_scope(options),
+        value_type=_value(options, "user_plugin_param_value_type"),
+        allowed_values=tuple(_value(options, "user_plugin_param_allowed_values") or ()),
+        description=_value(options, "user_plugin_param_description"),
+        topic_actor_name=_value(options, "topic_actor_name"),
+        topic_agent_name=_value(options, "agent_name"),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit("user-plugin-params set", options, result.to_json(), diagnostics, _render_user_plugin_result("Set User Plugin Runtime Param", result))
+
+
+def _user_plugin_state_and_context(
+    options: CliOptions,
+) -> tuple[ProjectState | None, EffectiveTopicContext | None, list[Diagnostic]]:
+    project, diagnostics = _discover(options)
+    if project is None:
+        return None, None, diagnostics
+    state = build_project_state(project)
+    diagnostics.extend(state.diagnostics)
+    context, context_diagnostics = resolve_effective_topic_context(
+        state,
+        _selection_request_from_options(options),
+        cwd=Path.cwd(),
+        env=os.environ,
+    )
+    if context is None:
+        if _plugin_scope(options) != "project" or _topic_selector_requested(options):
+            diagnostics.extend(context_diagnostics)
+    else:
+        diagnostics.extend(context_diagnostics)
+    return state, context, diagnostics
+
+
+def _plugin_scope(options: CliOptions) -> str:
+    return _value(options, "user_plugin_scope") or "project"
+
+
+def _param_parts_from_options(options: CliOptions, diagnostics: list[Diagnostic]) -> tuple[str | None, str | None]:
+    param_id = _value(options, "user_plugin_param_id")
+    if param_id is not None:
+        parsed = parse_param_id(param_id)
+        if parsed is None:
+            diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="User Plugin runtime param", field="param_id", message="Runtime param id must use <plugin_id>:<key>."))
+            return None, None
+        return parsed
+    plugin_id = _value(options, "user_plugin_id")
+    key = _value(options, "user_plugin_param_key")
+    if plugin_id is None or key is None:
+        diagnostics.append(Diagnostic(code="ISO103", severity="error", concept="User Plugin runtime param", field="param_id", message="Provide param_id or both plugin_id and key."))
+        return None, None
+    return plugin_id, key
+
+
+def _parse_cli_param_value(value: str | None, value_type: str | None) -> object:
+    if value is None:
+        return ""
+    if value_type == "bool":
+        return value.lower() in {"1", "true", "yes", "on"}
+    if value_type == "integer":
+        return int(value)
+    if value_type == "number":
+        return float(value)
+    if value_type == "string_list":
+        return [part.strip() for part in value.split(",") if part.strip()]
+    return value
+
+
+def _render_user_plugin_result(title: str, result: UserPluginCommandResult) -> list[str]:
+    lines = [title]
+    for plugin in result.plugins:
+        lines.append(f"- {plugin.plugin_id} ({plugin.scope}, status={plugin.status})")
+    for param in result.params:
+        lines.append(f"- {param.param_id} = {param.value!r} ({param.value_type}, scope={param.effective_scope})")
+    for import_ref in result.imports:
+        lines.append(f"- {import_ref.plugin_id}: {import_ref.path_input} ({import_ref.scope})")
+    if result.plugin is not None:
+        lines.append(f"Selected plugin: {result.plugin.plugin_id} ({result.plugin.scope}, status={result.plugin.status})")
+    if result.param is not None:
+        lines.append(f"Selected param: {result.param.param_id} = {result.param.value!r}")
+    if result.import_ref is not None:
+        lines.append(f"Selected import: {result.import_ref.plugin_id}: {result.import_ref.path_input}")
+    if len(lines) == 1:
+        lines.append("- none")
     return lines
 
 __all__ = [

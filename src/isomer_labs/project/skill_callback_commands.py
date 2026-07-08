@@ -27,6 +27,7 @@ from isomer_labs.project.skill_callbacks import (
     visible_callback_registry_refs,
 )
 from isomer_labs.project.user_plugin_callbacks import load_user_plugin_callback_manifest
+from isomer_labs.project.user_plugins import effective_user_plugin_status, ensure_user_plugin_registration
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,8 @@ class CallbackCommandResult:
     new_status: str | None = None
     plugin_id: str | None = None
     plugin_source_path: str | None = None
+    plugin_statuses: tuple[dict[str, object], ...] = ()
+    gated_callback_ids: tuple[str, ...] = ()
 
     def to_json(self) -> dict[str, object]:
         project_root = self.project_root
@@ -62,6 +65,10 @@ class CallbackCommandResult:
             payload["plugin_id"] = self.plugin_id
         if self.plugin_source_path is not None:
             payload["plugin_source_path"] = self.plugin_source_path
+        if self.plugin_statuses:
+            payload["plugin_statuses"] = list(self.plugin_statuses)
+        if self.gated_callback_ids:
+            payload["gated_callback_ids"] = list(self.gated_callback_ids)
         return payload
 
 
@@ -303,6 +310,26 @@ def install_user_plugin_callbacks(
             plugin_source_path=manifest.plugin_source_path_input,
         )
 
+    _, plugin_registration_diagnostics = ensure_user_plugin_registration(
+        project,
+        context,
+        plugin_id=manifest.plugin_id,
+        source_path_input=manifest.plugin_source_path_input,
+        scope=scope,
+    )
+    diagnostics.extend(plugin_registration_diagnostics)
+    if has_errors(diagnostics):
+        return CallbackCommandResult(
+            False,
+            False,
+            project.root,
+            (),
+            tuple(diagnostics),
+            registry_refs=(ref,),
+            plugin_id=manifest.plugin_id,
+            plugin_source_path=manifest.plugin_source_path_input,
+        )
+
     installed_keys = {callback.id for callback in planned_callbacks}
     if replace_plugin_source:
         retained_callbacks = [callback for callback in existing_callbacks if callback.plugin_id != manifest.plugin_id and callback.id not in installed_keys]
@@ -465,6 +492,7 @@ def resolve_user_skill_callbacks(
             key=_callback_sort_key,
         )
     )
+    selected, plugin_statuses, gated_callback_ids = _apply_plugin_gating(project, context, selected)
     return CallbackCommandResult(
         ok=not has_errors(diagnostics),
         mutated=False,
@@ -472,6 +500,8 @@ def resolve_user_skill_callbacks(
         callbacks=selected,
         registry_refs=refs,
         diagnostics=tuple(diagnostics),
+        plugin_statuses=plugin_statuses,
+        gated_callback_ids=gated_callback_ids,
     )
 
 
@@ -481,6 +511,7 @@ def list_user_skill_callbacks(
 ) -> CallbackCommandResult:
     project = state.project
     callbacks, refs, diagnostics = _load_visible_callbacks(project, context, missing_severity="warning")
+    _active_callbacks, plugin_statuses, gated_callback_ids = _apply_plugin_gating(project, context, tuple(callbacks))
     return CallbackCommandResult(
         ok=not has_errors(diagnostics),
         mutated=False,
@@ -488,6 +519,8 @@ def list_user_skill_callbacks(
         callbacks=tuple(sorted(callbacks, key=_callback_sort_key)),
         registry_refs=refs,
         diagnostics=tuple(diagnostics),
+        plugin_statuses=plugin_statuses,
+        gated_callback_ids=gated_callback_ids,
     )
 
 
@@ -511,6 +544,7 @@ def show_user_skill_callback(
             )
         )
     selected = tuple(sorted(matches, key=_callback_sort_key))
+    _active_callbacks, plugin_statuses, gated_callback_ids = _apply_plugin_gating(project, context, selected)
     return CallbackCommandResult(
         ok=not has_errors(diagnostics),
         mutated=False,
@@ -519,6 +553,8 @@ def show_user_skill_callback(
         callback=selected[0] if selected else None,
         registry_refs=refs,
         diagnostics=tuple(diagnostics),
+        plugin_statuses=plugin_statuses,
+        gated_callback_ids=gated_callback_ids,
     )
 
 
@@ -598,6 +634,7 @@ def validate_user_skill_callbacks(
         diagnostics.extend(result.diagnostics)
         all_callbacks.extend(result.callbacks)
     diagnostics.extend(_duplicate_active_callback_diagnostics(project, refs))
+    _active_callbacks, plugin_statuses, gated_callback_ids = _apply_plugin_gating(project, context, tuple(all_callbacks))
     return CallbackCommandResult(
         ok=not has_errors(diagnostics),
         mutated=False,
@@ -605,6 +642,8 @@ def validate_user_skill_callbacks(
         callbacks=tuple(sorted(all_callbacks, key=_callback_sort_key)),
         registry_refs=refs,
         diagnostics=tuple(diagnostics),
+        plugin_statuses=plugin_statuses,
+        gated_callback_ids=gated_callback_ids,
     )
 
 
@@ -622,6 +661,27 @@ def _load_visible_callbacks(
         diagnostics.extend(result.diagnostics)
         callbacks.extend(result.callbacks)
     return tuple(callbacks), refs, diagnostics
+
+
+def _apply_plugin_gating(
+    project: Project,
+    context: EffectiveTopicContext | None,
+    callbacks: tuple[UserSkillCallback, ...],
+) -> tuple[tuple[UserSkillCallback, ...], tuple[dict[str, object], ...], tuple[str, ...]]:
+    statuses: dict[str, dict[str, object]] = {}
+    gated: list[str] = []
+    retained: list[UserSkillCallback] = []
+    for callback in callbacks:
+        if callback.plugin_id is None:
+            retained.append(callback)
+            continue
+        status = effective_user_plugin_status(project, context, callback.plugin_id)
+        statuses[callback.plugin_id] = status.to_json()
+        if status.status == "disabled":
+            gated.append(callback.id)
+            continue
+        retained.append(callback)
+    return tuple(retained), tuple(statuses[key] for key in sorted(statuses)), tuple(gated)
 
 
 def _generated_callback_id(skill: str, stage: str, source_hint: str) -> str:

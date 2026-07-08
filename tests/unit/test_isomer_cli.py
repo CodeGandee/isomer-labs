@@ -2183,6 +2183,143 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         self.assertEqual([], data["callbacks"])
 
+    def test_user_plugin_cli_manages_project_and_topic_agent_runtime_params(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+
+        status, output = self.run_cli(
+            ["project", "user-plugins", "install", "demo.plugin", "--source-path", "plugins/demo", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("demo.plugin", data["plugin"]["plugin_id"])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "user-plugin-params",
+                "set",
+                "demo.plugin:mode",
+                "--value",
+                "strict",
+                "--value-type",
+                "enum",
+                "--allowed-value",
+                "strict",
+                "--allowed-value",
+                "relaxed",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("strict", data["param"]["value"])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "user-plugin-params",
+                "set",
+                "demo.plugin:mode",
+                "--topic",
+                "default",
+                "--scope",
+                "topic_agent",
+                "--topic-agent",
+                "coder",
+                "--value",
+                "relaxed",
+                "--value-type",
+                "enum",
+                "--allowed-value",
+                "strict",
+                "--allowed-value",
+                "relaxed",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("topic_agent", data["param"]["effective_scope"])
+
+        status, output = self.run_cli(
+            ["project", "user-plugin-params", "get", "demo.plugin:mode", "--topic", "default", "--topic-agent", "coder", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("relaxed", data["param"]["value"])
+        self.assertEqual("coder", data["param"]["source"]["topic_agent_name"])
+
+        for args in (
+            ["project", "user-plugins", "list", "--topic", "default", "--json"],
+            ["project", "user-plugins", "show", "demo.plugin", "--topic", "default", "--json"],
+            ["project", "user-plugins", "explain", "demo.plugin", "--topic", "default", "--json"],
+            ["project", "user-plugins", "validate", "--topic", "default", "--json"],
+            ["project", "user-plugin-params", "list", "--topic", "default", "--topic-agent", "coder", "--json"],
+            ["project", "user-plugin-params", "explain", "demo.plugin:mode", "--topic", "default", "--topic-agent", "coder", "--json"],
+            ["project", "user-plugin-params", "validate", "--topic", "default", "--topic-agent", "coder", "--json"],
+        ):
+            status, output = self.run_cli(args, cwd=root)
+            data = json.loads(output)
+            self.assertEqual(0, status, output)
+            self.assertTrue(data["ok"])
+
+        status, output = self.run_cli(["project", "user-plugins", "disable", "demo.plugin", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("disabled", data["plugin"]["status"])
+        status, output = self.run_cli(["project", "user-plugins", "enable", "demo.plugin", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("active", data["plugin"]["status"])
+        status, output = self.run_cli(["project", "user-plugins", "update-source", "demo.plugin", "--source-path", "plugins/renamed", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("plugins/renamed", data["plugin"]["source_path"])
+
+        write(
+            root / ".isomer-labs" / "param-defaults.toml",
+            """
+            schema_version = "isomer-user-plugin-runtime-params.v1"
+
+            [[user_plugin_runtime_params]]
+            plugin_id = "demo.plugin"
+            key = "profile"
+            value = "default"
+            value_type = "string"
+            scope = "project"
+            """,
+        )
+        status, output = self.run_cli(["project", "user-plugin-params", "import", "add", "demo.plugin", "param-defaults.toml", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("param-defaults.toml", data["import"]["path"])
+        status, output = self.run_cli(["project", "user-plugin-params", "import", "list", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("param-defaults.toml", data["imports"][0]["path"])
+        status, output = self.run_cli(["project", "user-plugin-params", "import", "show", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["imports"])
+        status, output = self.run_cli(["project", "user-plugin-params", "import", "remove", "demo.plugin", "param-defaults.toml", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+
+        status, output = self.run_cli(["project", "user-plugin-params", "unset", "demo.plugin:mode", "--topic", "default", "--scope", "topic_agent", "--topic-agent", "coder", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        status, output = self.run_cli(["project", "user-plugins", "uninstall", "demo.plugin", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+
     def test_skill_callbacks_project_scope_external_skill_dir_requires_explicit_flag(self) -> None:
         root = self.make_root()
         self.init_project(root)
@@ -2302,6 +2439,12 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(["plugin-a:a", "plugin-a:b", "plugin-a:group/z"], [callback["id"] for callback in data["callbacks"]])
         self.assertEqual(["a", "b", "group/z"], [callback["plugin_key"] for callback in data["callbacks"]])
         self.assertEqual([100, 100, 100], [callback["priority"] for callback in data["callbacks"]])
+
+        status, output = self.run_cli(["project", "user-plugins", "show", "plugin-a", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("plugin-a", data["plugin"]["plugin_id"])
+        self.assertEqual("research_topic", data["plugin"]["scope"])
 
         status, output = self.run_cli(
             [
