@@ -2,17 +2,18 @@
 
 System skills live under `src/isomer_labs/assets/system_skills/` and are packaged with the Python distribution. They teach agents how to operate Isomer projects, create research intent, manage topic workspaces, use DeepSci workflows, and route tasks through the operator entrypoint.
 
-Public installation should use `npx skills add` against a specific skill directory in the repository:
+Released-package installation should use `isomer-cli system-skills install`, which reads packaged resources from the installed Python package and projects flat skill directories into supported agent-tool skill roots:
 
 ```bash
-npx skills add https://github.com/CodeGandee/isomer-labs/tree/main/src/isomer_labs/assets/system_skills/operator/isomer-op-entrypoint --agent codex --yes
+isomer-cli system-skills install --target codex
+isomer-cli system-skills install --target codex --extension deepsci
 ```
+
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Target defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible projection. The installer writes an Isomer ownership marker and uninstall removes only Isomer-owned projections.
 
 Core operator skills include `isomer-op-entrypoint` for informed routing and `isomer-op-welcome` for first-time project orientation. Optional extension skills include the DeepSci skills under `research-paradigm/deepsci/`.
 
-This command shape has been verified against `npx skills add` for both local filesystem skill directories and GitHub tree URLs. Prefer direct skill-directory URLs over a repository root install until the repository exposes a dedicated skills catalog.
-
-Repository-root discovery currently finds the repository-local OpenSpec development skills, not packaged system skills under `src/isomer_labs/assets/system_skills/`. Do not document `npx skills add CodeGandee/isomer-labs --skill isomer-op-entrypoint` until a skills-facing catalog or root-level system-skill export exists.
+`npx skills add` remains useful when testing a single source-checkout skill directory directly, but it is no longer the public recommended path for released Isomer packages. Repository-root discovery can still find repository-local OpenSpec development skills, so do not document repository-root `npx skills add CodeGandee/isomer-labs --skill isomer-op-entrypoint` as a packaged Isomer install path.
 
 Keep each skill in the supported skill format. Workflow-oriented skills should present their workflow as ordered steps that an agent follows from start to finish, not as detached callback reminders.
 

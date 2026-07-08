@@ -33,6 +33,29 @@ Normal failure output does not include Python tracebacks. Use root-level `--debu
 
 ## Command Groups
 
+### System Skill Installation Commands
+
+The `system-skills` namespace installs packaged Isomer system skills from the released Python package into local coding-agent skill roots:
+
+- `system-skills list`
+- `system-skills status`
+- `system-skills install`
+- `system-skills uninstall`
+
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible layout. The `all` target expands to every concrete target and cannot be combined with `--home`.
+
+**Side effects:** `install` copies selected packaged skills by default, or symlinks them with `--mode symlink`, and writes an Isomer ownership marker into each projected skill directory. It refuses unmanaged name collisions. `uninstall` removes only Isomer-owned projections and preserves user-authored directories without an Isomer ownership marker. `list` and `status` are read-only.
+
+```bash
+isomer-cli system-skills list
+isomer-cli --print-json system-skills list
+isomer-cli system-skills install --target codex
+isomer-cli system-skills install --target codex --extension deepsci
+isomer-cli system-skills install --target all --skill isomer-op-entrypoint
+isomer-cli --print-json system-skills status --target generic
+isomer-cli system-skills uninstall --target codex
+```
+
 ### Extension Research Commands
 
 The `ext research` namespace manages GUI-readable research records and idea lineage metadata:

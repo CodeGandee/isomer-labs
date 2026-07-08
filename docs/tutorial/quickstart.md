@@ -13,6 +13,23 @@ isomer-cli --help
 
 When working from a source checkout, use the developer setup in [Testing](../developer/testing.md). The rest of this tutorial assumes the released CLI is installed and available as `isomer-cli`.
 
+## Install System Skills
+
+Install the packaged core skills into the coding-agent surface you use. Pick one target, or use `all` when you intentionally want every supported local target populated.
+
+```bash
+isomer-cli system-skills install --target codex
+isomer-cli system-skills install --target claude-code
+isomer-cli system-skills install --target kimi-code
+isomer-cli system-skills install --target generic
+```
+
+Use `--extension deepsci` when the agent should run the DeepSci research workflow skills:
+
+```bash
+isomer-cli system-skills install --target codex --extension deepsci
+```
+
 ## Create a Project
 
 Create a directory that will own the project manifest, topic workspaces, runtime files, and GUI-readable records:

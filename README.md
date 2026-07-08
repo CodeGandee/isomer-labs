@@ -55,22 +55,25 @@ The Project Manifest records where each Topic Workspace lives, while `topic-work
 
 ## Install System Skills
 
-Install packaged Isomer skills with `npx skills add`. The entrypoint skill is the best starting point for operators because it routes known tasks to the right Isomer skill or CLI command.
+Install packaged Isomer skills with `isomer-cli system-skills install`. The entrypoint skill is included in the core group and is the best starting point for operators because it routes known tasks to the right Isomer skill or CLI command.
 
 ```bash
-npx skills add https://github.com/CodeGandee/isomer-labs/tree/main/src/isomer_labs/assets/system_skills/operator/isomer-op-entrypoint --agent codex --yes
+isomer-cli system-skills install --target codex
 ```
 
-Install the welcome skill when you want an agent to bootstrap a first-time Project Operator Session:
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. `codex` installs to `$CODEX_HOME/skills` or `~/.codex/skills`; `generic` installs to `.agents/skills`; `claude-code` installs to `.claude/skills`; `kimi-code` installs to `.kimi-code/skills`.
+
+Install the DeepSci extension when a project needs the research pipeline skills:
 
 ```bash
-npx skills add https://github.com/CodeGandee/isomer-labs/tree/main/src/isomer_labs/assets/system_skills/operator/isomer-op-welcome --agent codex --yes
+isomer-cli system-skills install --target codex --extension deepsci
 ```
 
-Install extension skills the same way when a project needs them, for example the DeepSci pipeline skill:
+Inspect or remove Isomer-owned projections with:
 
 ```bash
-npx skills add https://github.com/CodeGandee/isomer-labs/tree/main/src/isomer_labs/assets/system_skills/research-paradigm/deepsci/isomer-deepsci-pipeline --agent codex --yes
+isomer-cli system-skills status --target codex
+isomer-cli system-skills uninstall --target codex
 ```
 
 ## Getting Started With CLI Agent

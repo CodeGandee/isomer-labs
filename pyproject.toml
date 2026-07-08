@@ -11,7 +11,7 @@ dependencies = [
 ]
 name = "isomer-labs"
 requires-python = ">= 3.11"
-version = "0.1.0"
+version = "0.1.1"
 
 [project.scripts]
 isomer-cli = "isomer_labs.cli:main"

@@ -128,6 +128,10 @@ Command surface:
   ext research records query files
   ext research records query facets
   schemas list
+  system-skills list
+  system-skills status
+  system-skills install
+  system-skills uninstall
 """
 
 
@@ -218,6 +222,7 @@ def _register_commands() -> None:
     from isomer_labs.cli.commands.project import register_project_commands, register_schema_commands
     from isomer_labs.cli.commands.research_records_ext import register_research_record_ext_commands
     from isomer_labs.cli.commands.runtime import register_runtime_commands
+    from isomer_labs.cli.commands.system_skills import register_system_skill_commands
     from isomer_labs.cli.commands.team_instances import register_team_instance_commands
     from isomer_labs.cli.commands.team_profiles import register_team_profile_commands
     from isomer_labs.cli.commands.team_repositories import register_team_repository_commands
@@ -239,6 +244,7 @@ def _register_commands() -> None:
     register_deepsci_ext_commands(app)
     register_research_record_ext_commands(app)
     register_schema_commands(app)
+    register_system_skill_commands(app)
 
 
 _register_commands()
