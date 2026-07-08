@@ -14,11 +14,10 @@ from isomer_labs.models import Project
 from isomer_labs.project.callback_keys import CALLBACK_TOOLBOX_ID_RE, CALLBACK_TOOLBOX_KEY_RE
 from isomer_labs.project.skill_callbacks import (
     VALID_CALLBACK_SOURCE_TYPES,
-    VALID_CALLBACK_STAGES,
-    active_system_skill_names,
     secret_like_diagnostics,
 )
 from isomer_labs.project.toolboxes import PARAM_KEY_RE, RUNTIME_PARAM_VALUE_TYPES
+from isomer_labs.skills.system_assets import has_system_skill_callback_insertion_point
 
 
 TOOLBOX_SCHEMA_VERSION = "isomer-toolbox.v1"
@@ -295,17 +294,6 @@ def _parse_callback_entry(
                 message="Toolbox callback must target a system skill name.",
             )
         )
-    elif target_skill not in active_system_skill_names():
-        diagnostics.append(
-            Diagnostic(
-                code="ISO103",
-                severity="error",
-                concept="Toolbox callback manifest",
-                path=manifest_path,
-                field=f"{field}.target_skill",
-                message=f"Toolbox callback target is not an active packaged system skill: {target_skill}.",
-            )
-        )
     if stage is None:
         diagnostics.append(
             Diagnostic(
@@ -317,15 +305,15 @@ def _parse_callback_entry(
                 message="Toolbox callback must include a stage.",
             )
         )
-    elif stage not in VALID_CALLBACK_STAGES:
+    if target_skill is not None and stage is not None and not has_system_skill_callback_insertion_point(target_skill, stage):
         diagnostics.append(
             Diagnostic(
                 code="ISO103",
                 severity="error",
                 concept="Toolbox callback manifest",
                 path=manifest_path,
-                field=f"{field}.stage",
-                message="Toolbox callback stage must be begin or end.",
+                field=f"{field}.target_skill",
+                message=f"Toolbox callback insertion point is not declared in the packaged catalog: {target_skill}/{stage}. Query `isomer-cli project skill-callbacks insertion-points` for supported targets.",
             )
         )
     if toolbox_key is None:

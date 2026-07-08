@@ -128,6 +128,11 @@ from isomer_labs.teams.templates import (
 from isomer_labs.teams.instantiation import parse_topic_team_instantiation_packet
 from isomer_labs.core.toml_loader import load_toml
 from isomer_labs.project.validation import build_project_state
+from isomer_labs.project.system_extensions import (
+    forget_project_system_extension,
+    list_project_system_extensions,
+    remember_project_system_extension,
+)
 
 _IMPLICIT_TOPIC_SELECTION_SOURCES = {
     "Project Manifest default",

@@ -598,6 +598,7 @@ class ProjectManifest:
     artifact_format_profiles: list[str] = field(default_factory=list)
     artifact_extensions: list[str] = field(default_factory=list)
     user_skill_callback_registry_refs: list[str] = field(default_factory=list)
+    operator_system_extensions: list[str] = field(default_factory=list)
     toolboxes: list[ToolboxRegistration] = field(default_factory=list)
     toolbox_runtime_param_imports: list[ToolboxRuntimeParamImport] = field(default_factory=list)
     toolbox_runtime_params: list[ToolboxRuntimeParam] = field(default_factory=list)

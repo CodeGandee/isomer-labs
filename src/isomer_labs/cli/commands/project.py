@@ -13,11 +13,15 @@ from isomer_labs.cli.handlers.project import (
     _cmd_init,
     _cmd_skill_callbacks_disable,
     _cmd_skill_callbacks_install,
+    _cmd_skill_callbacks_insertion_points,
     _cmd_skill_callbacks_list,
     _cmd_skill_callbacks_register,
     _cmd_skill_callbacks_resolve,
     _cmd_skill_callbacks_show,
     _cmd_skill_callbacks_validate,
+    _cmd_system_extensions_forget,
+    _cmd_system_extensions_list,
+    _cmd_system_extensions_remember,
     _cmd_topics_create,
     _cmd_topics_delete,
     _cmd_topics_list,
@@ -435,6 +439,80 @@ def register_project_commands(app: click.Group) -> None:
         pass
 
 
+    @app.group(name="system-extensions", help="Project operator system-extension declarations.")
+    def system_extensions_group() -> None:
+        pass
+
+
+    @system_extensions_group.command(name="list", help="List known system extensions and Project declarations.")
+    @_common_options
+    @click.pass_context
+    def system_extensions_list_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_system_extensions_list(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+            )
+        )
+
+
+    @system_extensions_group.command(name="remember", help="Remember an operator system extension declaration.")
+    @_common_options
+    @click.argument("extension_id")
+    @click.pass_context
+    def system_extensions_remember_command(
+        ctx: click.Context,
+        extension_id: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_system_extensions_remember(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                extension_id=extension_id,
+            )
+        )
+
+
+    @system_extensions_group.command(name="forget", help="Forget an operator system extension declaration.")
+    @_common_options
+    @click.argument("extension_id")
+    @click.pass_context
+    def system_extensions_forget_command(
+        ctx: click.Context,
+        extension_id: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_system_extensions_forget(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                extension_id=extension_id,
+            )
+        )
+
+
     @skill_callbacks_group.command(name="register", help="Register a User Skill Callback.")
     @_common_options
     @_topic_selection_options
@@ -599,6 +677,59 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
+                callback_skill=callback_skill,
+                callback_stage=callback_stage,
+            )
+        )
+
+
+    @skill_callbacks_group.command(name="insertion-points", help="List catalog-declared callback insertion points.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--extension", "callback_extensions", multiple=True, help="Optional system extension id to include.")
+    @click.option("--all-catalog-extensions", "callback_all_catalog_extensions", is_flag=True, help="Include every catalog-known optional system extension.")
+    @click.option("--core-only", "callback_core_only", is_flag=True, help="List core system-skill insertion points only.")
+    @click.option("--skill", "callback_skill", default=None, help="Filter by target packaged system skill name.")
+    @click.option("--stage", "callback_stage", type=click.Choice(["begin", "end"]), default=None, help="Filter by callback stage.")
+    @click.pass_context
+    def skill_callbacks_insertion_points_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        callback_extensions: tuple[str, ...] = (),
+        callback_all_catalog_extensions: bool = False,
+        callback_core_only: bool = False,
+        callback_skill: str | None = None,
+        callback_stage: str | None = None,
+    ) -> int:
+        return _cmd_skill_callbacks_insertion_points(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+                callback_extensions=callback_extensions,
+                callback_all_catalog_extensions=callback_all_catalog_extensions,
+                callback_core_only=callback_core_only,
                 callback_skill=callback_skill,
                 callback_stage=callback_stage,
             )

@@ -48,6 +48,7 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
     artifact_format_profiles = _registration_ids(raw.get("artifact_format_profiles"))
     artifact_extensions = _registration_ids(raw.get("artifact_extensions"))
     user_skill_callback_registry_refs = _callback_registry_ref_values(raw)
+    operator_system_extensions = _operator_system_extension_values(raw)
     diagnostics.extend(stale_toolbox_schema_diagnostics(raw, path, "Project Manifest Toolbox configuration"))
     toolboxes = parse_toolbox_registrations(path, raw, default_scope="project")
     toolbox_runtime_param_imports = parse_toolbox_runtime_param_imports(path, raw, default_scope="project")
@@ -68,6 +69,7 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
         artifact_format_profiles=artifact_format_profiles,
         artifact_extensions=artifact_extensions,
         user_skill_callback_registry_refs=user_skill_callback_registry_refs,
+        operator_system_extensions=operator_system_extensions,
         toolboxes=toolboxes,
         toolbox_runtime_param_imports=toolbox_runtime_param_imports,
         toolbox_runtime_params=toolbox_runtime_params,
@@ -463,6 +465,16 @@ def _callback_registry_ref_values(raw: dict[str, Any]) -> list[str]:
         values.extend(_string_refs(nested_refs.get("user_skill_callback_registry_ref")))
         values.extend(_string_refs(nested_refs.get("user_skill_callback_registry_refs")))
     return list(dict.fromkeys(values))
+
+
+def _operator_system_extension_values(raw: dict[str, Any]) -> list[str]:
+    operator = raw.get("operator")
+    if not isinstance(operator, dict):
+        return []
+    system_extensions = operator.get("system_extensions")
+    if not isinstance(system_extensions, dict):
+        return []
+    return list(dict.fromkeys(_string_refs(system_extensions.get("installed"))))
 
 
 def _string_refs(value: object) -> list[str]:

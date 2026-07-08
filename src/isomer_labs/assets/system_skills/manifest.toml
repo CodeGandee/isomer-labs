@@ -1,7 +1,9 @@
-schema_version = "isomer-skillset-manifest.v1"
+schema_version = "isomer-skillset-manifest.v2"
 
 [groups.core]
 description = "Core Isomer operator, service, and miscellaneous skills."
+kind = "core"
+always_available = true
 skills = [
   "misc/isomer-misc-bounded-run-tips",
   "misc/isomer-misc-nvidia-tools",
@@ -23,6 +25,9 @@ skills = [
 
 [groups.deepsci]
 description = "DeepScientist-derived production research paradigm skills."
+kind = "extension"
+extension_id = "deepsci"
+always_available = false
 skills = [
   "research-paradigm/deepsci/isomer-deepsci-analysis",
   "research-paradigm/deepsci/isomer-deepsci-baseline",
@@ -47,3 +52,77 @@ skills = [
   "research-paradigm/deepsci/isomer-deepsci-workspace-mgr",
   "research-paradigm/deepsci/isomer-deepsci-write",
 ]
+
+[callback_insertion_point_stages.begin]
+label = "Begin"
+description = "After mandatory context or entry-fit checks and before the first skill-specific action."
+
+[callback_insertion_point_stages.end]
+label = "End"
+description = "After tentative outputs exist and before final response, handoff, or treating the workflow as complete."
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-analysis"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-baseline"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-decision"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-experiment"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-figure-polish"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-finalize"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-idea"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-nature-data"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-nature-figure"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-nature-paper2ppt"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-nature-polishing"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-optimize"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-paper-outline"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-paper-plot"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-pipeline"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-rebuttal"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-review"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-science"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-scout"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-shared"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-workspace-mgr"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-write"]
+callback_insertion_points = ["begin", "end"]

@@ -47,10 +47,14 @@ Command surface:
   project skill-callbacks register
   project skill-callbacks install
   project skill-callbacks resolve
+  project skill-callbacks insertion-points
   project skill-callbacks list
   project skill-callbacks show
   project skill-callbacks disable
   project skill-callbacks validate
+  project system-extensions list
+  project system-extensions remember
+  project system-extensions forget
   project context show
   project web serve
   project self show

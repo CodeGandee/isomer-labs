@@ -53,6 +53,7 @@ from isomer_labs.cli.handlers.shared import (
     inspect_workspace_runtime,
     json,
     list_built_in_schemas,
+    list_project_system_extensions,
     list_semantic_paths,
     list_topic_actors,
     load_json_manifest,
@@ -82,6 +83,7 @@ from isomer_labs.cli.handlers.shared import (
     reconcile_houmao_manifests,
     register_manifest_binding,
     register_topic_actor,
+    remember_project_system_extension,
     render_cleanup_text,
     render_content_root_move_text,
     render_doctor_text,
@@ -138,6 +140,7 @@ from isomer_labs.cli.handlers.shared import (
     _topic_selector_requested,
     _unknown_template_diagnostic,
     _value,
+    forget_project_system_extension,
 )
 from isomer_labs.project.skill_callback_commands import (
     CallbackCommandResult,
@@ -149,6 +152,7 @@ from isomer_labs.project.skill_callback_commands import (
     show_user_skill_callback,
     validate_user_skill_callbacks,
 )
+from isomer_labs.project.callback_insertion_points import list_callback_insertion_points
 from isomer_labs.project.toolbox_callbacks import load_toolbox_callback_manifest
 from isomer_labs.project.toolboxes import (
     ToolboxCommandResult,
@@ -542,6 +546,29 @@ def _cmd_skill_callbacks_resolve(options: CliOptions) -> int:
     )
 
 
+def _cmd_skill_callbacks_insertion_points(options: CliOptions) -> int:
+    state, _context, diagnostics = _callback_state_and_context(options, require_topic=False)
+    if state is None:
+        payload = {"ok": False, "mutated": False, "insertion_points": []}
+        return _emit("skill-callbacks insertion-points", options, payload, diagnostics, [])
+    result = list_callback_insertion_points(
+        state,
+        extension_ids=tuple(_value(options, "callback_extensions") or ()),
+        include_all_catalog_extensions=bool(_value(options, "callback_all_catalog_extensions")),
+        core_only=bool(_value(options, "callback_core_only")),
+        skill=_value(options, "callback_skill"),
+        stage=_value(options, "callback_stage"),
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit(
+        "skill-callbacks insertion-points",
+        options,
+        result.to_json(),
+        diagnostics,
+        _render_callback_insertion_point_result("Callback Insertion Points", result.to_json()),
+    )
+
+
 def _cmd_skill_callbacks_list(options: CliOptions) -> int:
     state, context, diagnostics = _callback_state_and_context(options, require_topic=False)
     if state is None:
@@ -603,6 +630,48 @@ def _cmd_skill_callbacks_validate(options: CliOptions) -> int:
         result.to_json(),
         diagnostics,
         _render_callback_result("Validated User Skill Callbacks", result),
+    )
+
+
+def _cmd_system_extensions_list(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None:
+        return _emit("system-extensions list", options, {"ok": False, "mutated": False, "extensions": []}, diagnostics, [])
+    result = list_project_system_extensions(project)
+    return _emit(
+        "system-extensions list",
+        options,
+        result.to_json(),
+        list(result.diagnostics),
+        _render_system_extensions_result("Project System Extensions", result.to_json()),
+    )
+
+
+def _cmd_system_extensions_remember(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None or has_errors(diagnostics):
+        return _emit("system-extensions remember", options, {"ok": False, "mutated": False, "extensions": []}, diagnostics, [])
+    result = remember_project_system_extension(project, _value(options, "extension_id"))
+    return _emit(
+        "system-extensions remember",
+        options,
+        result.to_json(),
+        list(result.diagnostics),
+        _render_system_extensions_result("Remembered Project System Extension", result.to_json()),
+    )
+
+
+def _cmd_system_extensions_forget(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None or has_errors(diagnostics):
+        return _emit("system-extensions forget", options, {"ok": False, "mutated": False, "extensions": []}, diagnostics, [])
+    result = forget_project_system_extension(project, _value(options, "extension_id"))
+    return _emit(
+        "system-extensions forget",
+        options,
+        result.to_json(),
+        list(result.diagnostics),
+        _render_system_extensions_result("Forgot Project System Extension", result.to_json()),
     )
 
 
@@ -899,6 +968,36 @@ def _render_callback_result(title: str, result: CallbackCommandResult) -> list[s
     return lines
 
 
+def _render_callback_insertion_point_result(title: str, payload: dict[str, object]) -> list[str]:
+    lines = [title]
+    points = payload.get("insertion_points")
+    if not isinstance(points, list) or not points:
+        lines.append("- none")
+        return lines
+    for point in points:
+        if not isinstance(point, dict):
+            continue
+        extension = f", extension={point.get('extension_id')}" if point.get("extension_id") is not None else ""
+        lines.append(
+            f"- {point.get('target_skill')}/{point.get('stage')} ({point.get('group')}{extension}, {point.get('availability_basis')})"
+        )
+    return lines
+
+
+def _render_system_extensions_result(title: str, payload: dict[str, object]) -> list[str]:
+    lines = [title]
+    extensions = payload.get("extensions")
+    if not isinstance(extensions, list) or not extensions:
+        lines.append("- none")
+        return lines
+    for extension in extensions:
+        if not isinstance(extension, dict):
+            continue
+        declared = "declared" if extension.get("declared_installed") is True else "not declared"
+        lines.append(f"- {extension.get('extension_id')} ({extension.get('group')}, {declared}, not filesystem-verified)")
+    return lines
+
+
 def _mutate_toolbox_registration(options: CliOptions, *, status: str) -> int:
     state, context, diagnostics = _toolbox_state_and_context(options)
     if state is None or has_errors(diagnostics):
@@ -1034,8 +1133,12 @@ __all__ = [
     "_cmd_skill_callbacks_register",
     "_cmd_skill_callbacks_install",
     "_cmd_skill_callbacks_resolve",
+    "_cmd_skill_callbacks_insertion_points",
     "_cmd_skill_callbacks_list",
     "_cmd_skill_callbacks_show",
     "_cmd_skill_callbacks_disable",
     "_cmd_skill_callbacks_validate",
+    "_cmd_system_extensions_list",
+    "_cmd_system_extensions_remember",
+    "_cmd_system_extensions_forget",
 ]

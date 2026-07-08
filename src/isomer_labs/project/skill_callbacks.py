@@ -20,11 +20,14 @@ from isomer_labs.project.callback_keys import (
     CALLBACK_TOOLBOX_KEY_RE,
     valid_callback_id,
 )
-from isomer_labs.skills.system_assets import SystemSkillAssetError, iter_system_skill_paths
+from isomer_labs.skills.system_assets import (
+    callback_insertion_point_stage_names,
+    has_system_skill_callback_insertion_point,
+)
 
 
 USER_SKILL_CALLBACK_REGISTRY_SCHEMA_VERSION = "isomer-user-skill-callback-registry.v1"
-VALID_CALLBACK_STAGES = ("begin", "end")
+VALID_CALLBACK_STAGES = callback_insertion_point_stage_names()
 VALID_CALLBACK_SCOPES = ("project", "research_topic")
 VALID_CALLBACK_STATUSES = ("active", "inactive", "disabled")
 VALID_CALLBACK_SOURCE_TYPES = ("prompt", "prompt_file", "skill_dir")
@@ -479,16 +482,6 @@ def _callback_identity_diagnostics(
                 message="User Skill Callback must target a system skill name.",
             )
         )
-    elif skill not in active_system_skill_names():
-        diagnostics.append(
-            Diagnostic(
-                code="ISO103",
-                severity="error",
-                concept="User Skill Callback",
-                field="skill",
-                message=f"User Skill Callback target is not an active packaged system skill: {skill}.",
-            )
-        )
     if stage is None:
         diagnostics.append(
             Diagnostic(
@@ -499,14 +492,14 @@ def _callback_identity_diagnostics(
                 message="User Skill Callback must include a stage.",
             )
         )
-    elif stage not in VALID_CALLBACK_STAGES:
+    if skill is not None and stage is not None and not has_system_skill_callback_insertion_point(skill, stage):
         diagnostics.append(
             Diagnostic(
                 code="ISO103",
                 severity="error",
                 concept="User Skill Callback",
-                field="stage",
-                message="User Skill Callback stage must be begin or end.",
+                field="skill",
+                message=f"User Skill Callback insertion point is not declared in the packaged catalog: {skill}/{stage}. Query `isomer-cli project skill-callbacks insertion-points` for supported targets.",
             )
         )
     if scope is not None and scope not in VALID_CALLBACK_SCOPES:
@@ -553,14 +546,6 @@ def _toolbox_metadata_diagnostics(
             )
         )
     return diagnostics
-
-
-def active_system_skill_names() -> frozenset[str]:
-    try:
-        return frozenset(Path(path).name for path in iter_system_skill_paths())
-    except SystemSkillAssetError:
-        return frozenset()
-
 
 def _source_file_diagnostics(source: CallbackSource) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []

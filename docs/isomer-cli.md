@@ -173,7 +173,7 @@ pixi run isomer-cli --print-json project workspaces list
 
 Register, inspect, resolve, disable, and validate User Skill Callbacks. A User Skill Callback is supplemental instruction material attached to one packaged system skill and one stage, currently `begin` or `end`. Participating skills resolve `begin` callbacks after mandatory context checks and before workflow step 1, then resolve `end` callbacks after tentative outputs exist and before final response or handoff.
 
-**Side effects:** `register` writes or updates a callback registry under `.isomer-labs/user-skill-callbacks/`, materializes inline prompts as managed Markdown files, and adds a Project Manifest or Research Topic Config registry ref. `install --toolbox-dir` also ensures a matching Toolbox registration at the selected scope. `disable` marks the callback inactive while keeping the record. `resolve`, `list`, `show`, and `validate` are read-only.
+**Side effects:** `register` writes or updates a callback registry under `.isomer-labs/user-skill-callbacks/`, materializes inline prompts as managed Markdown files, and adds a Project Manifest or Research Topic Config registry ref. `install --toolbox-dir` also ensures a matching Toolbox registration at the selected scope. `disable` marks the callback inactive while keeping the record. `resolve`, `insertion-points`, `list`, `show`, and `validate` are read-only.
 
 Callbacks are instruction material, not executable provider payloads. They cannot override system or developer instructions, the owning system skill, the current user request, Isomer domain constraints, required Gates, evidence rules, validation, or recording obligations. Empty resolution results are normal and do not block the owning workflow.
 
@@ -181,6 +181,8 @@ Callbacks are instruction material, not executable provider payloads. They canno
 pixi run isomer-cli --print-json project skill-callbacks register --topic my-topic --id scout-domain-prior --skill isomer-deepsci-scout --stage begin --prompt "Prefer the local benchmark contract before broad discovery."
 pixi run isomer-cli --print-json project skill-callbacks register --scope project --id write-style-check --skill isomer-deepsci-write --stage end --prompt-file docs/callbacks/write-style-check.md
 pixi run isomer-cli --print-json project skill-callbacks register --topic my-topic --id paper-dir-callback --skill isomer-deepsci-paper-outline --stage begin --skill-dir extern/orphan/my-paper-callback --allow-external-source
+pixi run isomer-cli --print-json project skill-callbacks insertion-points
+pixi run isomer-cli --print-json project skill-callbacks insertion-points --extension deepsci --skill isomer-deepsci-scout --stage begin
 pixi run isomer-cli --print-json project skill-callbacks resolve --topic my-topic --skill isomer-deepsci-scout --stage begin
 pixi run isomer-cli --print-json project skill-callbacks list --topic my-topic
 pixi run isomer-cli --print-json project skill-callbacks show scout-domain-prior --topic my-topic
@@ -190,9 +192,23 @@ pixi run isomer-cli --print-json project skill-callbacks validate --topic my-top
 
 Use `--prompt` for short inline guidance that Isomer should materialize into managed callback content. Use `--prompt-file` for a project-scoped file that already contains the guidance. Use `--skill-dir` when the callback guidance lives in an external skill directory with `SKILL.md`; Isomer reads it as supplemental instruction material and does not install it as a packaged system skill.
 
+Use `insertion-points` to query manifest-declared callback targets. By default it lists core insertion points and insertion points from Project-declared operator system extensions; `--extension <id>` and `--all-catalog-extensions` query catalog extension points without claiming that optional extension skill files were filesystem-verified.
+
 Toolbox-installed callbacks include `toolbox_id` metadata. During `resolve`, Isomer checks the effective Toolbox status for the selected Project or topic context. A disabled Toolbox leaves callback records installed for audit, but its callbacks are omitted from resolution and reported in `gated_callback_ids`. Callback records with Toolbox metadata but no matching Toolbox registration are gated with diagnostics.
 
 System skill families use `isomer-<extension-name>-<purpose>` names for domain extensions such as `isomer-deepsci-*`. `isomer-misc-*` remains the public cross-domain helper namespace, not a generic extension bucket.
+
+### `project system-extensions`
+
+List and maintain user-declared Project operator system extensions. These declarations live in the Project Manifest under `[operator.system_extensions]` and mean the user says the Project operator has the optional extension installed; Isomer does not inspect or verify manually copied operator skill files.
+
+**Side effects:** `remember` and `forget` mutate only the Project Manifest declaration list. `list` is read-only.
+
+```bash
+pixi run isomer-cli --print-json project system-extensions list
+pixi run isomer-cli --print-json project system-extensions remember deepsci
+pixi run isomer-cli --print-json project system-extensions forget deepsci
+```
 
 ### `project toolboxes`
 

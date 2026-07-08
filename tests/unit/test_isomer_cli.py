@@ -538,10 +538,14 @@ class IsomerCliTests(unittest.TestCase):
             "project skill-callbacks register",
             "project skill-callbacks install",
             "project skill-callbacks resolve",
+            "project skill-callbacks insertion-points",
             "project skill-callbacks list",
             "project skill-callbacks show",
             "project skill-callbacks disable",
             "project skill-callbacks validate",
+            "project system-extensions list",
+            "project system-extensions remember",
+            "project system-extensions forget",
             "project context show",
             "project self show",
             "project self identity",
@@ -2182,6 +2186,177 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual([], data["callbacks"])
+
+    def test_system_extensions_cli_remembers_and_forgets_project_declarations(self) -> None:
+        root = self.make_root()
+        self.init_project(root, create_topic=False)
+
+        status, output = self.run_cli(["project", "system-extensions", "list", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual(["deepsci"], [extension["extension_id"] for extension in data["extensions"]])
+        self.assertFalse(data["extensions"][0]["declared_installed"])
+        self.assertFalse(data["extensions"][0]["installation_verified"])
+
+        status, output = self.run_cli(["project", "system-extensions", "remember", "deepsci", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue(data["extensions"][0]["declared_installed"])
+        self.assertEqual("project_manifest_user_declared", data["extensions"][0]["availability_basis"])
+        manifest_text = (root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8")
+        self.assertIn("[operator.system_extensions]", manifest_text)
+        self.assertIn('installed = ["deepsci"]', manifest_text)
+
+        status, output = self.run_cli(["project", "system-extensions", "remember", "deepsci", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+
+        status, output = self.run_cli(["project", "system-extensions", "forget", "deepsci", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertFalse(data["extensions"][0]["declared_installed"])
+
+    def test_system_extensions_cli_rejects_unknown_and_missing_project(self) -> None:
+        root = self.make_root()
+        self.init_project(root, create_topic=False)
+
+        status, output = self.run_cli(["project", "system-extensions", "remember", "unknown", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertTrue(any("Unknown packaged system extension" in diagnostic["message"] for diagnostic in data["diagnostics"]))
+
+        empty = self.make_root()
+        status, output = self.run_cli(["project", "system-extensions", "list", "--json"], cwd=empty)
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertEqual([], data["extensions"])
+
+    def test_skill_callback_insertion_points_query_catalog_and_project_declarations(self) -> None:
+        root = self.make_root()
+        self.init_project(root, create_topic=False)
+
+        status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual([], data["insertion_points"])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "insertion-points",
+                "--extension",
+                "deepsci",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(1, len(data["insertion_points"]))
+        self.assertEqual("catalog_requested_not_verified", data["insertion_points"][0]["availability_basis"])
+        self.assertFalse(data["insertion_points"][0]["installation_verified"])
+
+        status, output = self.run_cli(["project", "system-extensions", "remember", "deepsci", "--json"], cwd=root)
+        self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(44, len(data["insertion_points"]))
+        self.assertEqual("project_manifest_user_declared", data["insertion_points"][0]["availability_basis"])
+
+        status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--all-catalog-extensions", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(44, len(data["insertion_points"]))
+
+        status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--core-only", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual([], data["insertion_points"])
+
+    def test_skill_callback_insertion_points_reject_invalid_filters_and_missing_project(self) -> None:
+        root = self.make_root()
+        self.init_project(root, create_topic=False)
+
+        status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--extension", "unknown", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertTrue(any("Unknown packaged system extension" in diagnostic["message"] for diagnostic in data["diagnostics"]))
+
+        status, output = self.run_cli(
+            ["project", "skill-callbacks", "insertion-points", "--core-only", "--extension", "deepsci", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertTrue(any("--core-only" in diagnostic["message"] for diagnostic in data["diagnostics"]))
+
+        empty = self.make_root()
+        status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--json"], cwd=empty)
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertEqual([], data["insertion_points"])
+
+    def test_skill_callback_validation_rejects_undeclared_insertion_points(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "register",
+                "--topic",
+                "default",
+                "--id",
+                "entrypoint-begin",
+                "--skill",
+                "isomer-op-entrypoint",
+                "--stage",
+                "begin",
+                "--prompt",
+                "Prefer local context.",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertTrue(any("isomer-op-entrypoint/begin" in diagnostic["message"] for diagnostic in data["diagnostics"]))
+        self.assertTrue(any("skill-callbacks insertion-points" in diagnostic["message"] for diagnostic in data["diagnostics"]))
+
+        write(
+            root / "toolboxes" / "bad" / "manifest.toml",
+            """
+            schema_version = "isomer-toolbox.v1"
+            kind = "toolbox-callback-bundle"
+            toolbox_id = "bad.toolbox"
+
+            [[callbacks]]
+            target_skill = "isomer-op-entrypoint"
+            stage = "begin"
+            source_type = "prompt"
+            prompt = "Prefer local context."
+            """,
+        )
+        status, output = self.run_cli(
+            ["project", "skill-callbacks", "install", "--topic", "default", "--toolbox-dir", "toolboxes/bad", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertTrue(any("isomer-op-entrypoint/begin" in diagnostic["message"] for diagnostic in data["diagnostics"]))
 
     def test_toolbox_cli_manages_project_and_topic_agent_runtime_params(self) -> None:
         root = self.make_root()

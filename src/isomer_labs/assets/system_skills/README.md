@@ -4,6 +4,8 @@ Project-specific agent skills live in this packaged asset directory. The reposit
 
 Installed Isomer packages load official non-development skills from `isomer_labs.assets.system_skills`; runtime code should use package-resource helpers instead of deriving a repository checkout path.
 
+`manifest.toml` is the packaged catalog for system-skill groups, optional system extensions, and callback insertion points. When a packaged skill starts or stops resolving User Skill Callbacks, update the manifest metadata along with the `SKILL.md` workflow text.
+
 | Subtree | Naming | Installation target |
 | --- | --- | --- |
 | `skillset/operator/` | `isomer-op-<purpose>` | Project Operator Sessions and Operator Agents that operate project control surfaces. |
