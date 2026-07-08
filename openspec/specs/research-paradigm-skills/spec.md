@@ -804,3 +804,118 @@ Production DeepSci system skills SHALL teach agents to create durable structured
 - **WHEN** the research-paradigm validation harness scans active production DeepSci guidance
 - **THEN** it reports instructions that make SQLite payload blobs or generated Markdown files the canonical accepted-output content for structured records
 
+### Requirement: Production DeepSci Artifact Lineage Workflow
+Production DeepSci skills SHALL identify canonical artifact lineage before writing or revising durable research records.
+
+#### Scenario: Skill creates a durable record
+- **WHEN** a production DeepSci skill creates a durable Artifact, Evidence Item, Decision Record, Run, View Manifest, or related structured research record
+- **THEN** the skill workflow tells the agent to identify parent records, lineage kind, parent roles, generation group when relevant, decision record when relevant, and revision parent when relevant before calling the recording CLI
+
+#### Scenario: Skill cannot identify parents
+- **WHEN** a production DeepSci skill cannot responsibly identify lineage parents for a durable record
+- **THEN** the skill records the omission as a blocker, diagnostic, or explicit no-parent/root-lineage reason rather than inventing parentage
+
+#### Scenario: Skill revises accepted content
+- **WHEN** a production DeepSci skill changes accepted record content in a way that should remain historically visible
+- **THEN** the skill uses the record revision path and preserves the prior record as the immediate revision parent
+
+### Requirement: DeepSci Idea Flow Records Artifact DAG
+The DeepSci idea flow SHALL record parent-child lineage across raw ideas, candidate frontiers, pre-idea drafts, route decisions, and selected hypotheses.
+
+#### Scenario: Raw slate is produced
+- **WHEN** `isomer-deepsci-idea` records a raw idea slate
+- **THEN** it records lineage parents such as objective contract, current board, literature survey, limitations map, and mechanism framing when those records exist
+
+#### Scenario: Serious candidates are produced
+- **WHEN** `isomer-deepsci-idea` promotes serious candidates into candidate frontier or pre-idea draft records
+- **THEN** it records those candidates as children of the raw slate or candidate frontier and associates sibling alternatives with a generation group
+
+#### Scenario: Selected hypothesis is produced
+- **WHEN** `isomer-deepsci-idea` records a selected hypothesis
+- **THEN** it records the selected hypothesis as a child of the selected pre-idea draft or candidate record and the route decision that selected it
+
+### Requirement: DeepSci Downstream Flows Continue Artifact DAG
+Downstream DeepSci flows SHALL continue canonical artifact lineage after idea selection.
+
+#### Scenario: Experiment flow creates records
+- **WHEN** `isomer-deepsci-experiment` creates an experiment contract, run record, artifact manifest, result summary, or route decision
+- **THEN** it records lineage from the selected hypothesis, comparator contract, prior run, and relevant decision records according to the artifact's actual parents
+
+#### Scenario: Analysis flow creates records
+- **WHEN** `isomer-deepsci-analysis` creates context briefs, slice records, campaign plans, findings, summaries, or route decisions
+- **THEN** it records lineage from parent results, parent claims, runs, evidence, and decisions according to the artifact's actual parents
+
+#### Scenario: Decision flow changes route
+- **WHEN** `isomer-deepsci-decision` records a route-changing decision or checkpoint memory
+- **THEN** it records lineage from the evidence packet, route question, selected target record, and superseded or rejected route records when those refs are explicit
+
+### Requirement: DeepSci Skills Record Research Idea Identity
+Production DeepSci skills SHALL record stable Research Idea identity when producing idea-bearing durable records.
+
+#### Scenario: Idea skill records candidate ideas
+- **WHEN** `isomer-deepsci-idea` produces raw idea slates, candidate frontiers, pre-idea drafts, selected hypotheses, selected idea drafts, rejected ideas, or deferred ideas
+- **THEN** the skill instructs the agent to record stable semantic topic-scoped Research Idea ids, source-local aliases, visibility, status, realization records, source JSON paths, sibling generation groups, and idea lineage where the relationship is known
+
+#### Scenario: Experiment skill records explicit idea outcome
+- **WHEN** `isomer-deepsci-experiment` records an experiment result that supports, refutes, narrows, or motivates a follow-up to a selected idea
+- **THEN** the skill instructs the agent to explicitly update the relevant Research Idea status or create a follow-up Research Idea with canonical idea lineage and supporting evidence refs
+
+#### Scenario: Experiment result does not auto-mutate idea
+- **WHEN** `isomer-deepsci-experiment` records an experiment result without an explicit accepted idea status update
+- **THEN** the skill guidance treats the result as evidence or a stale-status diagnostic and does not claim that the Research Idea status changed automatically
+
+#### Scenario: Analysis skill records conceptual redirection
+- **WHEN** `isomer-deepsci-analysis` concludes that the current line should continue, revise, split, merge, or return to ideation
+- **THEN** the skill instructs the agent to record the affected Research Idea relationship, realization, status change, or follow-up idea before routing onward
+
+### Requirement: DeepSci Skills Separate Idea Lineage from Record Lineage
+Production DeepSci skills SHALL distinguish record lineage from idea lineage in active workflow guidance.
+
+#### Scenario: Durable record has both lineage layers
+- **WHEN** a DeepSci skill produces a durable record from prior durable records and the record also expresses an idea relationship
+- **THEN** the skill instructs the agent to record record parents through `--parents-json` and idea parents through the Research Idea CLI/API or accepted idea metadata fields
+
+#### Scenario: Siblings use generation group
+- **WHEN** a DeepSci idea pass creates alternative serious candidates from the same parent context
+- **THEN** the skill instructs the agent to use an idea generation group rather than pairwise sibling edges as the primary sibling representation
+
+#### Scenario: Candidate collapse records subsumption
+- **WHEN** a DeepSci idea pass concludes that one serious candidate subsumes another as an ablation, mechanism subset, or test role
+- **THEN** the skill instructs the agent to record a canonical `subsumes` idea lineage edge in addition to the shared generation group
+
+#### Scenario: Markdown is not authoritative lineage
+- **WHEN** a DeepSci skill renders or writes Markdown for human review
+- **THEN** the skill instructs the agent that Markdown prose does not replace canonical Research Idea rows, realizations, lineage edges, or generation groups
+
+### Requirement: Skill Validation Covers Idea Recording Guidance
+The research-paradigm skill validation harness SHALL detect missing or contradictory active guidance for Research Idea recording.
+
+#### Scenario: Idea recording guidance is present
+- **WHEN** the validation harness inspects active DeepSci idea, experiment, analysis, decision, optimize, and shared skill guidance
+- **THEN** it confirms that idea-bearing workflows mention canonical Research Idea identity, realization, and lineage obligations where applicable
+
+#### Scenario: Contradictory guidance is reported
+- **WHEN** active skill guidance tells agents to infer authoritative idea lineage only from chat memory, generated Markdown, or record-lineage projection
+- **THEN** validation reports the guidance as stale and directs the skill to use canonical Research Idea recording
+
+### Requirement: DeepSci Skills Preserve Exact Idea Content
+Production DeepSci skills SHALL teach agents to preserve Primary Idea content separately from slate/report context and to record exact Idea Realization source paths.
+
+#### Scenario: Idea skill records exact source fragments
+- **WHEN** `isomer-deepsci-idea` produces raw slates, candidate frontiers, pre-idea drafts, selected hypotheses, selected idea drafts, rejected/deferred ideas, route decisions, or paper-facing idea seeds
+- **THEN** its workflow and directly linked research-idea recording guidance tell the agent to write canonical Research Ideas and Idea Realizations with exact object-valued source paths
+- **AND** the guidance says that filter notes, summaries, and route context belong to the source record, not the Primary Idea main content
+
+#### Scenario: Downstream skills update existing idea identity
+- **WHEN** experiment, analysis, optimize, decision, write, review, rebuttal, or finalize skills support, refute, narrow, supersede, or follow up a Research Idea
+- **THEN** their guidance tells the agent to update or realize the existing Research Idea when the concept is unchanged
+- **AND** it tells the agent to create a new Research Idea only for a true follow-up or alternative concept with explicit lineage
+
+### Requirement: Packaged DeepSci Skills Carry Source Contract Guidance
+Packaged system-skill assets SHALL include the same Primary Idea source contract guidance as the repository skillset.
+
+#### Scenario: Package skill mirrors are updated
+- **WHEN** repository skill guidance or placeholder bindings are updated for exact idea source fragments
+- **THEN** the corresponding files under `src/isomer_labs/assets/system_skills/research-paradigm/deepsci/` are updated consistently
+- **AND** packaged skill validation does not route installed agents to stale broad-path guidance
+

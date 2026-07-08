@@ -166,3 +166,58 @@ Active production DeepSci placeholder binding pages SHALL describe accepted stru
 - **WHEN** the validation harness inspects active production DeepSci placeholder bindings
 - **THEN** it reports guidance that treats generated Markdown as canonical structured state, expects generated Markdown to grow across rounds, or requires later agents to parse generated Markdown for structured fields
 
+### Requirement: Placeholder Bindings Name Artifact Lineage
+Production DeepSci placeholder binding pages SHALL describe expected canonical lineage metadata for structured records that derive from, revise, select, merge, or follow up prior records.
+
+#### Scenario: Binding row expects parents
+- **WHEN** a placeholder binding describes a record that is normally produced from prior artifacts, evidence, decisions, runs, or route state
+- **THEN** the binding guidance names the expected parent record refs, parent roles, lineage kind, and whether a generation group is expected
+
+#### Scenario: Binding row expects revision behavior
+- **WHEN** a placeholder binding describes a current-state snapshot, selected hypothesis, draft, route decision, or paper-facing artifact that may be revised
+- **THEN** the binding guidance states whether agents should use record revision, create a follow-up child, or update only metadata/status
+
+#### Scenario: Binding row separates lineage from relationship hints
+- **WHEN** a structured record also needs evidence refs, file refs, claim refs, citations, or GUI facets
+- **THEN** the binding guidance distinguishes canonical lineage inputs from optional `--relationships-json`, `--files-json`, and `--index-hints-json`
+
+### Requirement: Idea-stage Bindings Preserve Generation Groups
+Idea-stage placeholder bindings SHALL preserve enough lineage information to reconstruct candidate siblings and selected paths.
+
+#### Scenario: Candidate frontier is recorded
+- **WHEN** an agent records a candidate idea frontier
+- **THEN** the binding guidance requires parent refs to the raw slate or source evidence and a generation group for serious candidates when separate candidate records are created
+
+#### Scenario: Selected hypothesis is recorded
+- **WHEN** an agent records a selected hypothesis
+- **THEN** the binding guidance requires lineage parents for the selected candidate or pre-idea draft and the decision record that selected it
+
+#### Scenario: Rejected and deferred ideas are recorded
+- **WHEN** an agent records rejected or deferred ideas
+- **THEN** the binding guidance preserves their shared parent set or generation group so future agents can see they were siblings of the selected route
+
+### Requirement: Placeholder Bindings Declare Idea-bearing Payload Sections
+Active production DeepSci placeholder binding pages SHALL declare exact idea-bearing payload sections for structured records that create, select, reject, defer, merge, subsume, or follow up Research Ideas.
+
+#### Scenario: Idea-producing binding names source path pattern
+- **WHEN** a `placeholder-bindings.md` row describes an idea-producing structured profile such as raw idea slate, candidate idea frontier, pre-idea draft, selected hypothesis, selected idea draft, rejected/deferred ideas, route decision, or paper-facing idea seed
+- **THEN** the binding guidance names the payload section or path pattern that contains idea entries
+- **AND** it distinguishes those entries from filter notes, report summaries, decision context, and provenance fields
+
+#### Scenario: Binding command preserves exact source path
+- **WHEN** a binding instructs an agent to record canonical Research Idea data for an idea-bearing record
+- **THEN** the guidance tells the agent to pass exact item paths such as `$.sections.raw_ideas[0]` to `ext research ideas realize` or record-create idea convenience metadata
+- **AND** it forbids collection paths, payload-root paths, generated Markdown paths, and context-only note paths as Primary Idea realization sources
+- **AND** it treats executable profile-to-section mapping as owned by the shared CLI/runtime source-fragment registry rather than by free-form skill prose
+
+### Requirement: Placeholder Binding Validation Checks Idea Source Contracts
+The placeholder binding validation harness SHALL check active DeepSci idea-producing bindings for exact source-fragment guidance.
+
+#### Scenario: Missing idea source guidance is reported
+- **WHEN** validation inspects an active production DeepSci binding for an idea-producing structured profile and no idea-bearing section or source path pattern is documented
+- **THEN** validation reports the skill, placeholder, and missing source-fragment guidance
+
+#### Scenario: Broad path guidance is reported
+- **WHEN** validation finds a binding that tells agents to realize Primary Ideas to a payload root, list path, generated Markdown file, or context-only section
+- **THEN** validation reports the binding as violating the Primary Idea source contract
+

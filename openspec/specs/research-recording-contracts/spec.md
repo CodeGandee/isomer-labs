@@ -674,3 +674,89 @@ The system SHALL render Markdown for structured research records only as a view 
 - **WHEN** a caller explicitly exports a structured research record to Markdown
 - **THEN** the exported Markdown is recorded as a generated artifact snapshot with provenance and is not parsed as the source of structured fields
 
+### Requirement: Lineage-aware Research Record Writes
+The research recording API and CLI SHALL accept canonical artifact lineage inputs separately from optional query-index relationship hints.
+
+#### Scenario: Create supplies parents
+- **WHEN** a caller creates a research record with parent record refs, lineage kind, parent roles, generation id, or decision record id
+- **THEN** the recording API validates and stores those refs as canonical artifact lineage rather than only as query-index relationship metadata
+
+#### Scenario: Create supplies relationship hints
+- **WHEN** a caller creates a research record with non-canonical relationship hints such as evidence, citation, file, summary, support, or GUI relationship metadata
+- **THEN** the recording API preserves those hints for query-index extraction without treating them as canonical artifact lineage
+
+#### Scenario: Lineage and relationship hints coexist
+- **WHEN** a record creation request includes both canonical lineage inputs and optional relationship hints
+- **THEN** the recording API stores canonical lineage and query-index hints through separate fields and reports diagnostics for each surface independently
+
+### Requirement: Research Record Revision Command
+The research recording CLI SHALL provide a revision path that creates a new descendant record for content-changing revisions.
+
+#### Scenario: Revise creates descendant
+- **WHEN** a caller revises an accepted structured record with a new payload
+- **THEN** the CLI creates a new record, stores the new payload, and creates a canonical `revision_of` lineage edge from the revised record to the new record
+
+#### Scenario: Revise preserves semantic identity
+- **WHEN** a caller revises a record with a placeholder, semantic id, or latest-for semantic id
+- **THEN** the new record preserves the semantic identity needed for latest-view resolution while retaining a distinct record id
+
+#### Scenario: Update remains non-revision
+- **WHEN** a caller updates status, actor metadata, file hints, query hints, or repair metadata without changing accepted content
+- **THEN** the operation MAY update the existing record without creating a revision edge
+
+### Requirement: Research Record Lineage Maintenance CLI
+The research recording CLI SHALL expose explicit maintenance commands for canonical lineage.
+
+#### Scenario: Lineage edge is added explicitly
+- **WHEN** an operator runs a lineage maintenance command to add a parent-child edge
+- **THEN** the CLI validates topic scope, record existence, acyclicity, and lineage kind before mutating canonical lineage
+
+#### Scenario: Lineage DAG is validated
+- **WHEN** an operator runs lineage validation for a Topic Workspace
+- **THEN** the CLI reports missing records, cross-topic refs, cycles, invalid revision chains, missing generation groups, and unsupported lineage kinds
+
+#### Scenario: Lineage maintenance avoids payload inference
+- **WHEN** lineage maintenance inspects existing records
+- **THEN** it uses explicit payload fields, metadata, and existing canonical refs and does not infer authoritative lineage from generated Markdown prose
+
+### Requirement: Records Declare Idea Realizations
+Structured research records SHALL be able to declare which Research Ideas they realize without overloading canonical record lineage.
+
+#### Scenario: Record realizes an idea
+- **WHEN** an idea-bearing structured record is created or updated with explicit idea realization metadata
+- **THEN** the recording API writes or updates the canonical Research Idea and Idea Realization through Workspace Runtime and still records record lineage separately through `parents-json`
+
+#### Scenario: Multiple ideas in one record
+- **WHEN** one structured record contains several raw ideas, serious candidates, or alternatives
+- **THEN** the recording API can create multiple Idea Realizations that point to the same record with distinct idea ids, stages, source JSON paths, and metadata
+
+#### Scenario: Idea metadata does not create record parents
+- **WHEN** a record declares idea parents or idea lineage
+- **THEN** the system records idea-level lineage and does not invent `research_record_lineage_edges` unless explicit record parent refs are also supplied
+
+### Requirement: Records Preserve Idea Hints for Repair
+Structured research payloads SHALL preserve explicit idea ids, source raw idea ids, source candidate ids, sibling group ids, and collapse rationale when the producing skill knows them.
+
+#### Scenario: Candidate frontier carries source hints
+- **WHEN** a candidate frontier payload is written
+- **THEN** it includes stable candidate idea ids, status, primary/supporting visibility intent when known, source raw idea ids when known, generation group id when known, and selection or collapse rationale when known
+
+#### Scenario: Source labels are not canonical ids
+- **WHEN** a structured payload uses local labels such as `R1`, `R8`, `C1`, or `C3`
+- **THEN** the recording API preserves those labels as source aliases or realization metadata and maps them to semantic topic-scoped canonical Research Idea ids
+
+#### Scenario: Selected hypothesis carries realized idea
+- **WHEN** a selected hypothesis or selected idea draft is written
+- **THEN** it identifies the Research Idea it realizes and records whether the record selects, updates in place, follows up from, or merely elaborates that idea
+
+### Requirement: Idea Recording Validation
+The recording API SHALL validate explicit idea recording metadata before accepting durable record writes that claim canonical idea effects.
+
+#### Scenario: Invalid idea metadata blocks canonical idea write
+- **WHEN** a record write supplies malformed idea ids, unsupported idea lineage kinds, missing parent ideas, or cross-topic idea refs
+- **THEN** the system rejects the canonical idea mutation with diagnostics and does not write partial idea rows
+
+#### Scenario: Record can still omit idea metadata
+- **WHEN** a durable record is not idea-bearing or lacks enough context to claim canonical idea effects
+- **THEN** the system can accept the record without idea metadata and may report a diagnostic only when the record profile normally requires idea lineage
+

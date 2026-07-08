@@ -742,3 +742,119 @@ Workspace Runtime SHALL provide a migration path from SQLite-stored structured p
 - **WHEN** migration exports payload files
 - **THEN** the query index is rebuilt from the managed payload files and recorded runtime metadata
 
+### Requirement: Workspace Runtime Artifact Lineage Storage
+Workspace Runtime SHALL persist canonical artifact lineage edges and generation groups in topic-scoped SQLite tables.
+
+#### Scenario: Runtime initializes lineage tables
+- **WHEN** Workspace Runtime initializes or migrates `state.sqlite`
+- **THEN** it creates or preserves tables for canonical artifact lineage edges and generation groups with indexes for topic, parent record, child record, lineage kind, and generation group
+
+#### Scenario: Runtime stores lineage with records
+- **WHEN** the recording API creates a record with lineage parents or generation metadata
+- **THEN** Workspace Runtime stores the lifecycle record and structured payload first, then stores validated canonical lineage edges in the same Topic Workspace
+
+#### Scenario: Runtime reset preserves schema support
+- **WHEN** a Topic Workspace is reset or bootstrapped
+- **THEN** the reset path prepares the artifact lineage schema without requiring any lineage rows to exist
+
+### Requirement: Workspace Runtime Lineage Validation
+Workspace Runtime SHALL validate canonical artifact lineage before accepting it.
+
+#### Scenario: Missing parent is reported
+- **WHEN** a lineage edge references a missing parent record
+- **THEN** Workspace Runtime rejects the edge or reports a validation diagnostic according to the operation mode
+
+#### Scenario: Missing child is reported
+- **WHEN** a lineage edge references a missing child record
+- **THEN** Workspace Runtime rejects the edge or reports a validation diagnostic according to the operation mode
+
+#### Scenario: Cycle check is topic scoped
+- **WHEN** Workspace Runtime checks whether a lineage edge creates a cycle
+- **THEN** the check is scoped to the active Topic Workspace and does not traverse records from other topics
+
+### Requirement: Workspace Runtime Latest Artifact Views
+Workspace Runtime SHALL derive current/latest artifact views from explicit latest metadata and canonical revision lineage without mutating historical records.
+
+#### Scenario: Latest semantic record is resolved
+- **WHEN** several records share a semantic id or placeholder and one is the newest accepted revision
+- **THEN** Workspace Runtime can resolve the latest record without deleting or rewriting prior records
+
+#### Scenario: Historical record remains inspectable
+- **WHEN** a record is no longer latest because a descendant revision exists
+- **THEN** Workspace Runtime keeps the historical record, payload, lineage edges, and provenance inspectable
+
+### Requirement: Topic Fixture Runtime Repair Integrity
+Workspace Runtime persistence SHALL support explicit fixture-quality repair of a topic-owned runtime database without corrupting canonical runtime state.
+
+#### Scenario: Repair uses canonical runtime tables
+- **WHEN** a topic fixture repair adds or updates lineage, generation groups, lifecycle records, structured payload refs, or statuses
+- **THEN** the repaired data is stored in the current canonical Workspace Runtime tables for the selected Topic Workspace and preserves matching Research Topic and Topic Workspace refs
+
+#### Scenario: Repair preserves history
+- **WHEN** historical topic records are superseded, revised, or made obsolete by the repair
+- **THEN** the prior records remain inspectable as archived or historical records unless an explicit cleanup task removes only derived query-index rows
+
+#### Scenario: Repair can be rolled back
+- **WHEN** the operator needs to undo a fixture repair
+- **THEN** restoring the pre-repair `state.sqlite` snapshot and removing newly created topic-owned payload folders returns the Topic Workspace to its prior runtime state
+
+### Requirement: Generation Group Runtime Consistency
+Workspace Runtime persistence SHALL keep repaired generation groups consistent with their lineage edges.
+
+#### Scenario: Generation group parent set is stable
+- **WHEN** repaired lineage edges share a generation id
+- **THEN** the corresponding generation group records the same Topic Workspace, a purpose, a deterministic parent-set digest for the shared parent records, and optional decision or producer metadata
+
+#### Scenario: Generation group refs are valid
+- **WHEN** runtime or lineage validation inspects repaired generation groups
+- **THEN** every generation id referenced by a lineage edge resolves to an existing generation group in the same Topic Workspace
+
+#### Scenario: Missing generation groups are not hidden
+- **WHEN** a lineage edge references a missing generation group after repair
+- **THEN** validation reports the issue rather than silently creating, deleting, or ignoring the group during read-only inspection
+
+### Requirement: Workspace Runtime Research Idea Store
+The Workspace Runtime SHALL persist canonical Research Ideas, Idea Realizations, Idea Lineage Edges, and Idea Generation Groups inside the Topic Workspace runtime database.
+
+#### Scenario: Research idea rows are stored
+- **WHEN** canonical idea data is written for a Topic Workspace
+- **THEN** the runtime stores topic-scoped rows for Research Ideas, Idea Realizations, Idea Lineage Edges, and Idea Generation Groups with stable semantic ids, alias metadata, timestamps, status, metadata JSON, and provenance refs when known
+
+#### Scenario: Canonical idea id is unique per topic
+- **WHEN** a Research Idea row is written
+- **THEN** validation requires the canonical `idea_id` to be unique within the Research Topic and allows source alias reuse only as metadata
+
+#### Scenario: Runtime reopen preserves idea data
+- **WHEN** a Workspace Runtime is reopened after process restart
+- **THEN** previously written Research Ideas, realizations, lineage edges, generation groups, statuses, and metadata are recoverable with the same ids and topic refs
+
+### Requirement: Workspace Runtime Idea Validation
+The Workspace Runtime SHALL validate Research Idea refs and lineage consistency without silently repairing canonical data.
+
+#### Scenario: Missing idea ref is reported
+- **WHEN** an Idea Realization, Idea Lineage Edge, or Idea Generation Group references a missing Research Idea
+- **THEN** runtime validation reports the broken ref and identifies the referring row
+
+#### Scenario: Missing realization record is reported
+- **WHEN** an Idea Realization references a missing durable research record
+- **THEN** runtime validation reports the missing record ref and keeps the realization row visible for repair
+
+#### Scenario: Cross-topic idea leakage is reported
+- **WHEN** Research Idea data in one Topic Workspace references another Topic Workspace's idea, record, generation group, or decision record
+- **THEN** runtime validation reports cross-topic leakage and names both conflicting refs when available
+
+#### Scenario: Idea lineage cycle is reported
+- **WHEN** non-archived Idea Lineage Edges create a cycle
+- **THEN** runtime validation reports the cycle and does not delete or rewrite any edge
+
+### Requirement: Workspace Runtime Idea Store APIs
+The Workspace Runtime SHALL expose Python store APIs used by CLI, record writers, query index rebuilds, and web graph reads for canonical idea data.
+
+#### Scenario: Store upserts idea data
+- **WHEN** CLI or record-write code upserts a Research Idea, realization, lineage edge, or generation group
+- **THEN** it uses Workspace Runtime store APIs that validate topic scope and return deterministic diagnostics
+
+#### Scenario: Read-only operations do not mutate ideas
+- **WHEN** GUI, query, export, graph, or validation code opens Workspace Runtime in read-only mode
+- **THEN** it can inspect Research Idea data without refreshing, repairing, or backfilling idea rows
+
