@@ -6,6 +6,14 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-07-09
+
+This bugfix release improves setup guidance for paper-writing workflows.
+
+### Changed
+
+- Added README prerequisite guidance for TeX rendering in paper-writing workflows, recommending Tectonic and showing the Pixi global install command.
+
 ## [0.2.2] - 2026-07-09
 
 This bugfix release improves packaged system skill guidance for Pixi-scoped profiler, debugger, tracer, and memory-checker commands.
@@ -122,7 +130,8 @@ Initial tagged release of Isomer Labs.
 - Removed generated Isomer project state and vendored skill creator material.
 - Excluded local heavy folders from VS Code and updated local package lock metadata.
 
-[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/CodeGandee/isomer-labs/compare/v0.1.0...v0.2.0
