@@ -7,7 +7,13 @@ from pathlib import Path
 import re
 from typing import Any, Mapping
 
+import tomlkit
+
 from isomer_labs.core.diagnostics import Diagnostic
+from isomer_labs.project.topic_service_master import (
+    derive_topic_service_master_names,
+    topic_service_master_name_drift,
+)
 from isomer_labs.workspace.surfaces import ensure_tmp_surface_ignore_policy
 from isomer_labs.models import (
     EffectiveTopicContext,
@@ -59,6 +65,8 @@ TOPIC_ACTOR_RUNTIME_KINDS = ("human_cli", "claude_code", "codex", "houmao", "she
 TOPIC_ACTOR_ROLE_KINDS = ("operator", "scout", "coder", "experimenter", "analyst", "writer", "reviewer")
 TOPIC_ACTOR_CONTROLLER_KINDS = ("project_operator_session", "operator_agent", "human_user", "houmao")
 TOPIC_ACTOR_STATUSES = ("planned", "ready", "active", "blocked", "stale", "archived")
+TOPIC_SERVICE_MASTER_PROVIDERS = ("houmao",)
+TOPIC_SERVICE_MASTER_STATUSES = ("prepared", "launched", "stopped", "stale", "archived")
 DEFAULT_TOPIC_ACTOR_WORKSPACE_LABEL = "topic.actors.workspace"
 TOPIC_ACTOR_OUTPUT_ROOT_LABEL = "topic.actors.output_root"
 AGENT_OUTPUT_ROOT_LABEL = "agent.output_root"
@@ -158,6 +166,70 @@ class TopicActorBinding:
 
 
 @dataclass(frozen=True)
+class HoumaoTopicServiceMasterDetails:
+    specialist_name: str | None = None
+    launch_profile_name: str | None = None
+    managed_agent_name: str | None = None
+    specialist_ref: str | None = None
+    launch_profile_ref: str | None = None
+    managed_agent_ref: str | None = None
+    source_detail: str | None = None
+    forbidden_fields: tuple[str, ...] = ()
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "specialist_name": self.specialist_name,
+            "launch_profile_name": self.launch_profile_name,
+            "managed_agent_name": self.managed_agent_name,
+        }
+        if self.specialist_ref is not None:
+            data["specialist_ref"] = self.specialist_ref
+        if self.launch_profile_ref is not None:
+            data["launch_profile_ref"] = self.launch_profile_ref
+        if self.managed_agent_ref is not None:
+            data["managed_agent_ref"] = self.managed_agent_ref
+        if self.source_detail is not None:
+            data["source_detail"] = self.source_detail
+        if self.forbidden_fields:
+            data["forbidden_fields"] = list(self.forbidden_fields)
+        return data
+
+
+@dataclass(frozen=True)
+class TopicServiceMasterBinding:
+    provider: str
+    status: str
+    updated_by: str | None = None
+    prepared_at: str | None = None
+    launched_at: str | None = None
+    updated_at: str | None = None
+    houmao: HoumaoTopicServiceMasterDetails | None = None
+    source_detail: str | None = None
+    forbidden_fields: tuple[str, ...] = ()
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "provider": self.provider,
+            "status": self.status,
+        }
+        if self.updated_by is not None:
+            data["updated_by"] = self.updated_by
+        if self.prepared_at is not None:
+            data["prepared_at"] = self.prepared_at
+        if self.launched_at is not None:
+            data["launched_at"] = self.launched_at
+        if self.updated_at is not None:
+            data["updated_at"] = self.updated_at
+        if self.houmao is not None:
+            data["houmao"] = self.houmao.to_json()
+        if self.source_detail is not None:
+            data["source_detail"] = self.source_detail
+        if self.forbidden_fields:
+            data["forbidden_fields"] = list(self.forbidden_fields)
+        return data
+
+
+@dataclass(frozen=True)
 class WorkerOutputPolicyConfig:
     output_root: str | None = None
     commit_after_operation: bool | None = None
@@ -199,6 +271,7 @@ class TopicWorkspaceManifest:
     topic_actor_bindings: tuple[TopicActorBinding, ...] = ()
     agent_output_defaults: WorkerOutputPolicyConfig = field(default_factory=WorkerOutputPolicyConfig)
     agent_output_overrides: tuple[AgentOutputPolicyOverride, ...] = ()
+    topic_service_master: TopicServiceMasterBinding | None = None
     toolboxes: tuple[ToolboxRegistration, ...] = ()
     toolbox_runtime_param_imports: tuple[ToolboxRuntimeParamImport, ...] = ()
     toolbox_runtime_params: tuple[ToolboxRuntimeParam, ...] = ()
@@ -237,6 +310,7 @@ class TopicWorkspaceManifest:
             "topic_actors": [binding.to_json() for binding in self.topic_actor_bindings],
             "agent_output_defaults": self.agent_output_defaults.to_json(),
             "agent_output_overrides": [override.to_json() for override in self.agent_output_overrides],
+            "topic_service_master": self.topic_service_master.to_json() if self.topic_service_master is not None else None,
             "toolboxes": [toolbox.to_json() for toolbox in self.toolboxes],
             "toolbox_runtime_param_imports": [
                 import_ref.to_json() for import_ref in self.toolbox_runtime_param_imports
@@ -489,6 +563,7 @@ def parse_topic_workspace_manifest(path: Path, raw: Mapping[str, Any]) -> TopicW
                     source_detail=f"{path.name}:{table_name}[{index}]",
                 )
             )
+    topic_service_master = _parse_topic_service_master_binding(path, raw.get("topic_service_master"))
     return TopicWorkspaceManifest(
         path=path,
         schema_version=_string(raw.get("schema_version")) or TOPIC_WORKSPACE_MANIFEST_SCHEMA_VERSION,
@@ -499,6 +574,7 @@ def parse_topic_workspace_manifest(path: Path, raw: Mapping[str, Any]) -> TopicW
         topic_actor_bindings=tuple(topic_actor_bindings),
         agent_output_defaults=agent_output_defaults,
         agent_output_overrides=tuple(agent_output_overrides),
+        topic_service_master=topic_service_master,
         toolboxes=tuple(parse_toolbox_registrations(path, raw, default_scope="research_topic")),
         toolbox_runtime_param_imports=tuple(
             parse_toolbox_runtime_param_imports(path, raw, default_scope="research_topic")
@@ -639,6 +715,7 @@ def validate_topic_workspace_manifest(
             )
         seen_actor_names.add(actor.topic_actor_name)
     diagnostics.extend(_validate_agent_output_policy(context, manifest))
+    diagnostics.extend(_validate_topic_service_master_binding(context, manifest))
     diagnostics.extend(
         validate_toolbox_tables(
             project=context.project,
@@ -656,6 +733,131 @@ def validate_topic_workspace_manifest(
             },
         )
     )
+    return diagnostics
+
+
+def _parse_topic_service_master_binding(
+    path: Path,
+    raw_value: object,
+) -> TopicServiceMasterBinding | None:
+    if not isinstance(raw_value, Mapping):
+        return None
+    houmao_value = raw_value.get("houmao")
+    houmao = None
+    if isinstance(houmao_value, Mapping):
+        houmao = HoumaoTopicServiceMasterDetails(
+            specialist_name=_string(houmao_value.get("specialist_name")),
+            launch_profile_name=_string(houmao_value.get("launch_profile_name")),
+            managed_agent_name=_string(houmao_value.get("managed_agent_name")),
+            specialist_ref=_string(houmao_value.get("specialist_ref")),
+            launch_profile_ref=_string(houmao_value.get("launch_profile_ref")),
+            managed_agent_ref=_string(houmao_value.get("managed_agent_ref")),
+            source_detail=f"{path.name}:topic_service_master.houmao",
+            forbidden_fields=_forbidden_topic_service_master_fields(houmao_value),
+        )
+    return TopicServiceMasterBinding(
+        provider=_string(raw_value.get("provider")) or "houmao",
+        status=_string(raw_value.get("status")) or "prepared",
+        updated_by=_string(raw_value.get("updated_by")),
+        prepared_at=_string(raw_value.get("prepared_at")),
+        launched_at=_string(raw_value.get("launched_at")),
+        updated_at=_string(raw_value.get("updated_at")),
+        houmao=houmao,
+        source_detail=f"{path.name}:topic_service_master",
+        forbidden_fields=_forbidden_topic_service_master_fields(raw_value, allowed_nested=("houmao",)),
+    )
+
+
+def _validate_topic_service_master_binding(
+    context: EffectiveTopicContext,
+    manifest: TopicWorkspaceManifest,
+) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    binding = manifest.topic_service_master
+    if binding is None:
+        return diagnostics
+    if binding.provider not in TOPIC_SERVICE_MASTER_PROVIDERS:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO060",
+                severity="error",
+                concept="Topic Service Master binding",
+                path=manifest.path,
+                field="topic_service_master.provider",
+                message="Topic Service Master binding provider must be `houmao`.",
+            )
+        )
+    if binding.status not in TOPIC_SERVICE_MASTER_STATUSES:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO060",
+                severity="error",
+                concept="Topic Service Master binding",
+                path=manifest.path,
+                field="topic_service_master.status",
+                message=(
+                    "Topic Service Master binding status must be one of "
+                    f"{', '.join(TOPIC_SERVICE_MASTER_STATUSES)}."
+                ),
+            )
+        )
+    if binding.forbidden_fields:
+        diagnostics.append(_forbidden_topic_service_master_diagnostic(manifest.path, "topic_service_master", binding.forbidden_fields))
+    houmao = binding.houmao
+    if binding.provider == "houmao" and houmao is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO060",
+                severity="error",
+                concept="Topic Service Master binding",
+                path=manifest.path,
+                field="topic_service_master.houmao",
+                message="Houmao Topic Service Master binding requires nested provider details.",
+            )
+        )
+        return diagnostics
+    if houmao is None:
+        return diagnostics
+    if houmao.forbidden_fields:
+        diagnostics.append(_forbidden_topic_service_master_diagnostic(manifest.path, "topic_service_master.houmao", houmao.forbidden_fields))
+    required_fields = {
+        "specialist_name": houmao.specialist_name,
+        "launch_profile_name": houmao.launch_profile_name,
+        "managed_agent_name": houmao.managed_agent_name,
+    }
+    for field_name, value in required_fields.items():
+        if not value:
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO060",
+                    severity="error",
+                    concept="Topic Service Master binding",
+                    path=manifest.path,
+                    field=f"topic_service_master.houmao.{field_name}",
+                    message="Houmao Topic Service Master binding requires this name.",
+                )
+            )
+    suggested = derive_topic_service_master_names(context.topic_workspace_id)
+    diagnostics.extend(suggested.diagnostics)
+    for field_name, drift in topic_service_master_name_drift(
+        specialist_name=houmao.specialist_name,
+        launch_profile_name=houmao.launch_profile_name,
+        managed_agent_name=houmao.managed_agent_name,
+        suggested_names=suggested,
+    ).items():
+        diagnostics.append(
+            Diagnostic(
+                code="ISO060",
+                severity="error",
+                concept="Topic Service Master binding",
+                path=manifest.path,
+                field=f"topic_service_master.houmao.{field_name}",
+                message=(
+                    "Houmao Topic Service Master binding name differs from the current Topic Workspace naming contract: "
+                    f"expected {drift['expected']!r}, found {drift['actual']!r}."
+                ),
+            )
+        )
     return diagnostics
 
 
@@ -1626,6 +1828,54 @@ def archive_topic_actor_binding(
     return update_topic_actor_binding(context, topic_actor_name=topic_actor_name, status="archived")
 
 
+def record_topic_service_master_binding(
+    context: EffectiveTopicContext,
+    *,
+    status: str,
+    specialist_name: str,
+    launch_profile_name: str,
+    managed_agent_name: str,
+    specialist_ref: str | None = None,
+    launch_profile_ref: str | None = None,
+    managed_agent_ref: str | None = None,
+    updated_by: str | None = None,
+    prepared_at: str | None = None,
+    launched_at: str | None = None,
+    updated_at: str | None = None,
+) -> tuple[TopicWorkspaceManifest | None, TopicServiceMasterBinding | None, list[Diagnostic]]:
+    manifest, diagnostics = load_topic_workspace_manifest(context)
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, None, diagnostics
+    binding = TopicServiceMasterBinding(
+        provider="houmao",
+        status=status,
+        updated_by=updated_by,
+        prepared_at=prepared_at,
+        launched_at=launched_at,
+        updated_at=updated_at,
+        houmao=HoumaoTopicServiceMasterDetails(
+            specialist_name=specialist_name,
+            launch_profile_name=launch_profile_name,
+            managed_agent_name=managed_agent_name,
+            specialist_ref=specialist_ref,
+            launch_profile_ref=launch_profile_ref,
+            managed_agent_ref=managed_agent_ref,
+            source_detail=f"{TOPIC_WORKSPACE_MANIFEST_FILENAME}:topic-service-master-record",
+        ),
+        source_detail=f"{TOPIC_WORKSPACE_MANIFEST_FILENAME}:topic-service-master-record",
+    )
+    next_manifest = _manifest_with_topic_service_master(context, manifest, binding)
+    diagnostics.extend(validate_topic_workspace_manifest(context, next_manifest))
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, None, diagnostics
+    _write_topic_service_master_binding(context, binding)
+    reloaded, reload_diagnostics = load_topic_workspace_manifest(context)
+    diagnostics.extend(reload_diagnostics)
+    if any(diagnostic.is_error for diagnostic in diagnostics):
+        return None, None, diagnostics
+    return reloaded, reloaded.topic_service_master, diagnostics
+
+
 def _manifest_with_bindings(
     context: EffectiveTopicContext,
     manifest: TopicWorkspaceManifest,
@@ -1658,9 +1908,63 @@ def _manifest_with_topic_actor_bindings(
     )
 
 
+def _manifest_with_topic_service_master(
+    context: EffectiveTopicContext,
+    manifest: TopicWorkspaceManifest,
+    binding: TopicServiceMasterBinding | None,
+) -> TopicWorkspaceManifest:
+    return replace(
+        manifest,
+        schema_version=TOPIC_WORKSPACE_MANIFEST_SCHEMA_VERSION,
+        research_topic_id=context.research_topic.id,
+        topic_workspace_id=context.topic_workspace_id,
+        layout_profile=DEFAULT_LAYOUT_PROFILE,
+        topic_service_master=binding,
+        exists=True,
+    )
+
+
 def _write_topic_workspace_manifest(manifest: TopicWorkspaceManifest) -> None:
     manifest.path.parent.mkdir(parents=True, exist_ok=True)
     manifest.path.write_text(render_topic_workspace_manifest(manifest), encoding="utf-8")
+
+
+def _write_topic_service_master_binding(
+    context: EffectiveTopicContext,
+    binding: TopicServiceMasterBinding,
+) -> None:
+    path = topic_workspace_manifest_path(context.topic_workspace_path)
+    if path.is_file():
+        document = tomlkit.parse(path.read_text(encoding="utf-8"))
+    else:
+        document = tomlkit.document()
+    document["schema_version"] = TOPIC_WORKSPACE_MANIFEST_SCHEMA_VERSION
+    document["research_topic_id"] = context.research_topic.id
+    document["topic_workspace_id"] = context.topic_workspace_id
+    document["layout_profile"] = DEFAULT_LAYOUT_PROFILE
+    table = document.get("topic_service_master")
+    if not isinstance(table, dict):
+        table = tomlkit.table()
+        document["topic_service_master"] = table
+    table["provider"] = binding.provider
+    table["status"] = binding.status
+    _set_toml_optional(table, "updated_by", binding.updated_by)
+    _set_toml_optional(table, "prepared_at", binding.prepared_at)
+    _set_toml_optional(table, "launched_at", binding.launched_at)
+    _set_toml_optional(table, "updated_at", binding.updated_at)
+    houmao = table.get("houmao")
+    if not isinstance(houmao, dict):
+        houmao = tomlkit.table()
+        table["houmao"] = houmao
+    if binding.houmao is not None:
+        houmao["specialist_name"] = binding.houmao.specialist_name or ""
+        houmao["launch_profile_name"] = binding.houmao.launch_profile_name or ""
+        houmao["managed_agent_name"] = binding.houmao.managed_agent_name or ""
+        _set_toml_optional(houmao, "specialist_ref", binding.houmao.specialist_ref)
+        _set_toml_optional(houmao, "launch_profile_ref", binding.houmao.launch_profile_ref)
+        _set_toml_optional(houmao, "managed_agent_ref", binding.houmao.managed_agent_ref)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(tomlkit.dumps(document), encoding="utf-8")
 
 
 def _create_binding_target(
@@ -1702,6 +2006,57 @@ def _actor_lifecycle_diagnostic(topic_actor_name: str, message: str) -> Diagnost
     )
 
 
+def _forbidden_topic_service_master_fields(
+    table: Mapping[str, object],
+    *,
+    allowed_nested: tuple[str, ...] = (),
+) -> tuple[str, ...]:
+    forbidden: list[str] = []
+    exact = {
+        "credential",
+        "credentials",
+        "token",
+        "password",
+        "api_key",
+        "secret",
+        "raw_launch_profile",
+        "launch_profile_payload",
+        "mailbox",
+        "mailbox_contents",
+        "gateway_queue_state",
+        "process_id",
+        "pid",
+        "tmux_session",
+        "tmux_session_name",
+    }
+    fragments = ("credential", "token", "password", "secret", "mailbox", "gateway_queue", "process_id", "tmux")
+    for field_name in table:
+        if field_name in allowed_nested:
+            continue
+        normalized = str(field_name).lower()
+        if normalized in exact or any(fragment in normalized for fragment in fragments):
+            forbidden.append(str(field_name))
+    return tuple(sorted(set(forbidden)))
+
+
+def _forbidden_topic_service_master_diagnostic(
+    path: Path,
+    field: str,
+    forbidden_fields: tuple[str, ...],
+) -> Diagnostic:
+    return Diagnostic(
+        code="ISO060",
+        severity="error",
+        concept="Topic Service Master binding",
+        path=path,
+        field=field,
+        message=(
+            "Topic Service Master binding must not store credentials, live process state, "
+            f"mailbox/gateway state, or raw provider payloads; forbidden fields: {', '.join(forbidden_fields)}."
+        ),
+    )
+
+
 def render_topic_workspace_manifest(manifest: TopicWorkspaceManifest) -> str:
     lines = [
         f"schema_version = {_toml_string(manifest.schema_version)}",
@@ -1710,6 +2065,40 @@ def render_topic_workspace_manifest(manifest: TopicWorkspaceManifest) -> str:
         f"layout_profile = {_toml_string(manifest.layout_profile)}",
         "",
     ]
+    if manifest.topic_service_master is not None:
+        tsm = manifest.topic_service_master
+        lines.extend(
+            [
+                "[topic_service_master]",
+                f"provider = {_toml_string(tsm.provider)}",
+                f"status = {_toml_string(tsm.status)}",
+            ]
+        )
+        if tsm.updated_by is not None:
+            lines.append(f"updated_by = {_toml_string(tsm.updated_by)}")
+        if tsm.prepared_at is not None:
+            lines.append(f"prepared_at = {_toml_string(tsm.prepared_at)}")
+        if tsm.launched_at is not None:
+            lines.append(f"launched_at = {_toml_string(tsm.launched_at)}")
+        if tsm.updated_at is not None:
+            lines.append(f"updated_at = {_toml_string(tsm.updated_at)}")
+        lines.append("")
+        if tsm.houmao is not None:
+            lines.extend(
+                [
+                    "[topic_service_master.houmao]",
+                    f"specialist_name = {_toml_string(tsm.houmao.specialist_name or '')}",
+                    f"launch_profile_name = {_toml_string(tsm.houmao.launch_profile_name or '')}",
+                    f"managed_agent_name = {_toml_string(tsm.houmao.managed_agent_name or '')}",
+                ]
+            )
+            if tsm.houmao.specialist_ref is not None:
+                lines.append(f"specialist_ref = {_toml_string(tsm.houmao.specialist_ref)}")
+            if tsm.houmao.launch_profile_ref is not None:
+                lines.append(f"launch_profile_ref = {_toml_string(tsm.houmao.launch_profile_ref)}")
+            if tsm.houmao.managed_agent_ref is not None:
+                lines.append(f"managed_agent_ref = {_toml_string(tsm.houmao.managed_agent_ref)}")
+            lines.append("")
     for binding in sorted(manifest.bindings, key=lambda item: item.label):
         lines.extend(
             [
@@ -2191,3 +2580,11 @@ def _toml_value(value: object) -> str:
     if isinstance(value, list) and all(isinstance(item, str) for item in value):
         return "[" + ", ".join(_toml_string(item) for item in value) + "]"
     return _toml_string(str(value))
+
+
+def _set_toml_optional(table: Any, key: str, value: str | None) -> None:
+    if value is None:
+        if key in table:
+            del table[key]
+        return
+    table[key] = value

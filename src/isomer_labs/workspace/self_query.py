@@ -7,6 +7,7 @@ from typing import Mapping
 
 from isomer_labs.project.context import IDENTITY_ENV_FIELDS
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
+from isomer_labs.project.topic_service_master import topic_service_master_identity_for_context
 from isomer_labs.project.doctor import find_project_pixi_manifest
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.core.path_utils import display_path
@@ -76,6 +77,10 @@ def build_self_show_payload(
         "agent": _agent_headline(agent_context),
         "diagnostic_counts": _diagnostic_counts(diagnostics),
     }
+    if context is not None:
+        topic_service_master, tsm_diagnostics = topic_service_master_identity_for_context(context)
+        diagnostics.extend(tsm_diagnostics)
+        summary["topic_service_master"] = _topic_service_master_headline(topic_service_master)
     return {
         "ok": not has_errors(diagnostics),
         "mutated": False,
@@ -101,6 +106,9 @@ def build_self_identity_payload(
     if context is not None:
         identity["sources"] = dict(context.sources)
         identity["lifecycle_refs"] = dict(context.lifecycle_refs)
+        topic_service_master, tsm_diagnostics = topic_service_master_identity_for_context(context)
+        diagnostics.extend(tsm_diagnostics)
+        identity["topic_service_master"] = topic_service_master
     return {
         "ok": not has_errors(diagnostics),
         "mutated": False,
@@ -448,6 +456,20 @@ def _agent_headline(agent_context: EffectiveAgentContext | None) -> dict[str, ob
     }
     if agent_context.agent_instance_id is not None:
         data["agent_instance_id"] = agent_context.agent_instance_id
+    return data
+
+
+def _topic_service_master_headline(topic_service_master: dict[str, object]) -> dict[str, object]:
+    data: dict[str, object] = {
+        "binding_status": topic_service_master.get("binding_status"),
+    }
+    suggested = topic_service_master.get("suggested_names")
+    if isinstance(suggested, dict):
+        data["specialist_name"] = suggested.get("specialist_name")
+        data["launch_profile_name"] = suggested.get("launch_profile_name")
+        data["managed_agent_name"] = suggested.get("managed_agent_name")
+    if topic_service_master.get("drift"):
+        data["drift"] = topic_service_master.get("drift")
     return data
 
 

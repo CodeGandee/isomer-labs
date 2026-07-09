@@ -16,6 +16,9 @@ from isomer_labs.cli.handlers.project import (
     _cmd_integrations_houmao_prepare_skills,
     _cmd_integrations_houmao_skill_context,
     _cmd_integrations_houmao_status,
+    _cmd_integrations_houmao_topic_service_master_binding_record,
+    _cmd_integrations_houmao_topic_service_master_binding_show,
+    _cmd_integrations_houmao_topic_service_master_names,
     _cmd_skill_callbacks_disable,
     _cmd_skill_callbacks_install,
     _cmd_skill_callbacks_insertion_points,
@@ -526,6 +529,140 @@ def register_project_commands(app: click.Group) -> None:
     @integrations_group.group(name="houmao", help="Internal Houmao integration policy and skill routing commands.")
     def integrations_houmao_group() -> None:
         pass
+
+
+    @integrations_houmao_group.group(name="topic-service-master", help="Topic Service Master identity and binding commands.")
+    def integrations_houmao_topic_service_master_group() -> None:
+        pass
+
+
+    @integrations_houmao_topic_service_master_group.command(name="names", help="Show suggested Houmao names for a Topic Workspace.")
+    @_common_options
+    @click.option("--topic-workspace", "topic_workspace_id", required=True, help="Topic Workspace id.")
+    @click.pass_context
+    def integrations_houmao_topic_service_master_names_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        topic_workspace_id: str | None = None,
+    ) -> int:
+        return _cmd_integrations_houmao_topic_service_master_names(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                topic_workspace_id=topic_workspace_id,
+            )
+        )
+
+
+    @integrations_houmao_topic_service_master_group.group(name="binding", help="Inspect or record Topic Service Master bindings.")
+    def integrations_houmao_topic_service_master_binding_group() -> None:
+        pass
+
+
+    @integrations_houmao_topic_service_master_binding_group.command(name="show", help="Show the current Topic Service Master binding.")
+    @_common_options
+    @_topic_selection_options
+    @click.pass_context
+    def integrations_houmao_topic_service_master_binding_show_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_integrations_houmao_topic_service_master_binding_show(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            )
+        )
+
+
+    @integrations_houmao_topic_service_master_binding_group.command(name="record", help="Record a prepared Topic Service Master binding.")
+    @_common_options
+    @_topic_selection_options
+    @click.option("--status", "topic_service_master_status", type=click.Choice(["prepared", "launched", "stopped", "stale", "archived", "blocked", "skipped"]), default="prepared", show_default=True)
+    @click.option("--specialist-name", "topic_service_master_specialist_name", default=None)
+    @click.option("--launch-profile-name", "topic_service_master_launch_profile_name", default=None)
+    @click.option("--managed-agent-name", "topic_service_master_managed_agent_name", default=None)
+    @click.option("--specialist-ref", "topic_service_master_specialist_ref", default=None)
+    @click.option("--launch-profile-ref", "topic_service_master_launch_profile_ref", default=None)
+    @click.option("--managed-agent-ref", "topic_service_master_managed_agent_ref", default=None)
+    @click.option("--updated-by", "topic_service_master_updated_by", default=None)
+    @click.pass_context
+    def integrations_houmao_topic_service_master_binding_record_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        topic_service_master_status: str | None = None,
+        topic_service_master_specialist_name: str | None = None,
+        topic_service_master_launch_profile_name: str | None = None,
+        topic_service_master_managed_agent_name: str | None = None,
+        topic_service_master_specialist_ref: str | None = None,
+        topic_service_master_launch_profile_ref: str | None = None,
+        topic_service_master_managed_agent_ref: str | None = None,
+        topic_service_master_updated_by: str | None = None,
+    ) -> int:
+        return _cmd_integrations_houmao_topic_service_master_binding_record(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+                topic_service_master_status=topic_service_master_status,
+                topic_service_master_specialist_name=topic_service_master_specialist_name,
+                topic_service_master_launch_profile_name=topic_service_master_launch_profile_name,
+                topic_service_master_managed_agent_name=topic_service_master_managed_agent_name,
+                topic_service_master_specialist_ref=topic_service_master_specialist_ref,
+                topic_service_master_launch_profile_ref=topic_service_master_launch_profile_ref,
+                topic_service_master_managed_agent_ref=topic_service_master_managed_agent_ref,
+                topic_service_master_updated_by=topic_service_master_updated_by,
+            )
+        )
 
 
     @integrations_houmao_group.command(name="status", help="Show Project Houmao integration status and routing paths.")

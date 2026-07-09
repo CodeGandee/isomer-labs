@@ -17,6 +17,10 @@ from isomer_labs.project.houmao_integration import (
     TOPIC_SERVICE_MASTER_ROUTES,
     houmao_integration_state,
 )
+from isomer_labs.project.topic_service_master import TOPIC_SERVICE_MASTER_NAME_MAX_LENGTH, derive_topic_service_master_names
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def write(path: Path, content: str) -> None:
@@ -224,11 +228,124 @@ class HoumaoIntegrationTests(unittest.TestCase):
         self.assertEqual("alpha", payload["topic_workspace_id"])
         self.assertTrue(str(payload["houmao_skill_path"]).endswith("prepare-topic-service-master/SKILL.md"))
         self.assertIn("--project-dir", str(payload["instructions"]))
+        self.assertEqual("isomer-tsm-alpha-specialist", payload["topic_service_master"]["suggested_names"]["specialist_name"])
 
         status, payload = self.run_cli(["project", "--root", str(root), "integrations", "houmao", "skill-context", "unknown-route"], cwd=root)
         self.assertEqual(1, status, payload)
         self.assertIsNone(payload["houmao_skill_path"])
         self.assertTrue(any("Unknown Houmao skill route" in diagnostic["message"] for diagnostic in payload["diagnostics"]))
+
+    def test_topic_service_master_names_slugging_and_cli(self) -> None:
+        names = derive_topic_service_master_names("Alpha Workspace!")
+        self.assertEqual("alpha-workspace", names.topic_workspace_slug)
+        self.assertEqual("isomer-tsm-alpha-workspace-specialist", names.specialist_name)
+        long_names = derive_topic_service_master_names("Alpha_" * 30)
+        self.assertLessEqual(len(str(long_names.specialist_name)), TOPIC_SERVICE_MASTER_NAME_MAX_LENGTH)
+        self.assertEqual(long_names.specialist_name, derive_topic_service_master_names("Alpha_" * 30).specialist_name)
+        empty = derive_topic_service_master_names("!!!")
+        self.assertFalse(empty.ok)
+        self.assertIsNone(empty.specialist_name)
+
+        root = self.make_root()
+        self.write_topic_project(root, integration="disabled")
+        status, payload = self.run_cli(
+            [
+                "project",
+                "--root",
+                str(root),
+                "integrations",
+                "houmao",
+                "topic-service-master",
+                "names",
+                "--topic-workspace",
+                "alpha",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, payload)
+        self.assertEqual("isomer-tsm-alpha-profile", payload["launch_profile_name"])
+        self.assertEqual("alpha", payload["research_topic_id"])
+
+    def test_topic_service_master_binding_record_show_and_skill_context(self) -> None:
+        root = self.make_root()
+        self.write_topic_project(root)
+        (root / "topic-workspaces" / "alpha").mkdir(parents=True)
+        status, payload = self.run_cli(
+            [
+                "project",
+                "--root",
+                str(root),
+                "integrations",
+                "houmao",
+                "topic-service-master",
+                "binding",
+                "record",
+                "--topic",
+                "alpha",
+                "--updated-by",
+                "test",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, payload)
+        self.assertTrue(payload["mutated"])
+        binding = payload["topic_service_master"]["binding"]
+        self.assertEqual("prepared", binding["status"])
+        self.assertEqual("isomer-tsm-alpha-agent", binding["houmao"]["managed_agent_name"])
+
+        status, payload = self.run_cli(
+            ["project", "--root", str(root), "integrations", "houmao", "topic-service-master", "binding", "show", "--topic", "alpha"],
+            cwd=root,
+        )
+        self.assertEqual(0, status, payload)
+        self.assertEqual("prepared", payload["topic_service_master"]["binding_status"])
+
+        source = self.write_houmao_skill_source(root)
+        env = {"ISOMER_HOUMAO_SYSTEM_SKILLS_SOURCE": str(source)}
+        status, _ = self.run_cli(["project", "--root", str(root), "integrations", "houmao", "prepare-skills"], cwd=root, env=env)
+        self.assertEqual(0, status)
+        status, payload = self.run_cli(
+            ["project", "--root", str(root), "integrations", "houmao", "skill-context", "launch-topic-service-master", "--topic", "alpha"],
+            cwd=root,
+        )
+        self.assertEqual(0, status, payload)
+        self.assertEqual("prepared", payload["topic_service_master"]["binding"]["status"])
+
+    def test_disabled_policy_skips_binding_record_but_self_reports_identity(self) -> None:
+        root = self.make_root()
+        self.write_topic_project(root, integration="disabled")
+        workspace = root / "topic-workspaces" / "alpha"
+        workspace.mkdir(parents=True)
+
+        status, payload = self.run_cli(
+            ["project", "--root", str(root), "integrations", "houmao", "topic-service-master", "binding", "record", "--topic", "alpha"],
+            cwd=root,
+        )
+        self.assertEqual(0, status, payload)
+        self.assertFalse(payload["mutated"])
+        self.assertEqual("skipped", payload["topic_service_master"]["binding_status"])
+        self.assertFalse((workspace / "topic-workspace.toml").exists())
+
+        status, payload = self.run_cli(["project", "self", "identity"], cwd=root, env={"ISOMER_TOPIC_WORKSPACE_ID": "alpha"})
+        self.assertEqual(0, status, payload)
+        identity = payload["identity"]
+        self.assertEqual("alpha", identity["context"]["topic_workspace_id"])
+        self.assertEqual("environment", identity["sources"]["topic_workspace_id"])
+        self.assertEqual("isomer-tsm-alpha-specialist", identity["topic_service_master"]["suggested_names"]["specialist_name"])
+
+    def test_system_skill_assets_require_suggested_names_and_binding(self) -> None:
+        service_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "service"
+        operator_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "operator"
+        prepare = (service_root / "isomer-srv-topic-service-agent-support" / "references" / "prepare-topic-service-master.md").read_text(encoding="utf-8")
+        launch = (service_root / "isomer-srv-topic-service-agent-support" / "references" / "launch-topic-service-master.md").read_text(encoding="utf-8")
+        interop = (service_root / "isomer-srv-houmao-interop" / "references" / "skill-context.md").read_text(encoding="utf-8")
+        setup = (operator_root / "isomer-op-topic-creator" / "references" / "setup-actors.md").read_text(encoding="utf-8")
+
+        self.assertIn("topic_service_master.suggested_names", prepare)
+        self.assertIn("binding record", prepare)
+        self.assertIn("topic-service-master binding show", launch)
+        self.assertIn("Do not fabricate Topic Service Master specialist", interop)
+        self.assertIn("record the Topic Workspace Manifest binding", setup)
 
     def test_disabled_policy_skips_prepare_and_skill_context(self) -> None:
         root = self.make_root()

@@ -140,3 +140,45 @@ The packaged core system-skill group SHALL include `operator/isomer-op-toolbox-m
 - **THEN** the result includes `operator/isomer-op-toolbox-mgr`
 - **AND** the result does not include `operator/isomer-op-toolbox-creator`
 - **AND** it keeps the manager path manifest-relative rather than deriving a repository checkout path
+
+### Requirement: Core Isomer Skills Include Internal Houmao Bridge Support
+The packaged Isomer system-skill catalog SHALL keep Isomer-facing Houmao bridge and Topic Service Agent support available in the core skill set while keeping Houmao-owned projected skill material Project-local and opt-in.
+
+#### Scenario: Core operator installation does not expose Houmao administration
+- **WHEN** a user installs only the basic Isomer operator skill set
+- **THEN** the installed user-facing skills do not require the user to install or invoke Houmao-owned system skills directly
+- **AND** Houmao-specific procedures remain reachable only through Isomer-managed routing or an explicit advanced support path
+
+#### Scenario: Core includes Isomer-facing bridge skills
+- **WHEN** the packaged system-skill manifest is inspected
+- **THEN** the core group may include Isomer-facing bridge/support skills such as `isomer-srv-houmao-interop` and `isomer-srv-topic-service-agent-support`
+- **AND** those skills do not require Project-local Houmao skill projection, Houmao credentials, or live Houmao state merely to report disabled or not-configured integration
+
+#### Scenario: Project-local projection remains opt-in
+- **WHEN** a Project has not enabled Houmao integration
+- **THEN** core Isomer skill installation does not create `.isomer-labs/houmao-skills/`
+- **AND** projected Houmao-owned skill material is prepared only through explicit Project integration setup
+
+#### Scenario: Public installation guidance keeps Isomer first
+- **WHEN** public system-skill installation documentation describes Houmao-backed behavior
+- **THEN** it describes Houmao as an internal Isomer integration provider
+- **AND** it directs users to Isomer setup and Project integration commands instead of direct Houmao skill installation as the primary route
+
+### Requirement: Core Packaged Skills Include GUI Manager
+The packaged core system-skill group SHALL include `operator/isomer-op-gui-mgr` and materialize it with the rest of the core operator skills.
+
+#### Scenario: Core manifest includes GUI manager
+- **WHEN** `src/isomer_labs/assets/system_skills/manifest.toml` is inspected
+- **THEN** `groups.core.skills` includes `operator/isomer-op-gui-mgr`
+- **AND** the listed path resolves below the packaged system-skill root
+- **AND** the listed directory contains `SKILL.md`
+
+#### Scenario: Core materialization copies GUI manager
+- **WHEN** a caller materializes the `core` group to an empty target directory
+- **THEN** the target receives `operator/isomer-op-gui-mgr/SKILL.md`
+- **AND** it receives the GUI manager skill's directly linked reference pages
+
+#### Scenario: Packaged skill discovery returns GUI manager
+- **WHEN** code asks for manifest-relative skill paths for the `core` group
+- **THEN** the result includes `operator/isomer-op-gui-mgr`
+- **AND** it keeps the path manifest-relative rather than deriving a repository checkout path

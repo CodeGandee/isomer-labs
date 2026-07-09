@@ -80,6 +80,7 @@ from isomer_labs.cli.handlers.shared import (
     Project,
     ProjectState,
     reconcile_houmao_manifests,
+    record_topic_service_master_binding,
     register_manifest_binding,
     register_topic_actor,
     remember_project_system_extension,
@@ -100,11 +101,13 @@ from isomer_labs.cli.handlers.shared import (
     resolve_effective_topic_context,
     resolve_self_identity_contexts,
     resolve_semantic_path,
+    resolve_topic_service_master_names,
     resolve_template_source_path,
     resolve_worker_output_policy,
     SelectionRequest,
     Sequence,
     show_research_topic,
+    show_topic_service_master_binding,
     show_topic_actor,
     specialize_topic_agent_team_profile,
     houmao_integration_state,
@@ -729,6 +732,91 @@ def _cmd_integrations_houmao_prepare_skills(options: CliOptions) -> int:
     return _emit("integrations houmao prepare-skills", options, payload, diagnostics, _render_houmao_integration_result("Prepared Houmao Integration Skills", payload))
 
 
+def _cmd_integrations_houmao_topic_service_master_names(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None or has_errors(diagnostics):
+        return _emit("integrations houmao topic-service-master names", options, {"ok": False, "mutated": False}, diagnostics, [])
+    workspace_id = _value(options, "topic_workspace_id")
+    if not workspace_id:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO013",
+                severity="error",
+                concept="Topic Service Master identity",
+                field="topic_workspace_id",
+                message="Suggested Topic Service Master names require --topic-workspace.",
+            )
+        )
+        return _emit("integrations houmao topic-service-master names", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = resolve_topic_service_master_names(project, workspace_id)
+    diagnostics.extend(result.diagnostics)
+    payload = result.to_json()
+    return _emit("integrations houmao topic-service-master names", options, payload, diagnostics, _render_topic_service_master_identity_result("Topic Service Master Names", payload))
+
+
+def _cmd_integrations_houmao_topic_service_master_binding_show(options: CliOptions) -> int:
+    context, diagnostics = _context_for_options(options)
+    if context is None or has_errors(diagnostics):
+        return _emit("integrations houmao topic-service-master binding show", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = show_topic_service_master_binding(context)
+    diagnostics.extend(result.diagnostics)
+    payload = result.to_json()
+    return _emit("integrations houmao topic-service-master binding show", options, payload, diagnostics, _render_topic_service_master_identity_result("Topic Service Master Binding", payload))
+
+
+def _cmd_integrations_houmao_topic_service_master_binding_record(options: CliOptions) -> int:
+    context, diagnostics = _context_for_options(options)
+    if context is None or has_errors(diagnostics):
+        return _emit("integrations houmao topic-service-master binding record", options, {"ok": False, "mutated": False}, diagnostics, [])
+    state = houmao_integration_state(context.project)
+    diagnostics.extend(state.diagnostics)
+    if state.integration_status == "disabled":
+        identity = {
+            "suggested_names": resolve_topic_service_master_names(context.project, context.topic_workspace_id).names.to_json(),
+            "binding": None,
+            "binding_status": "skipped",
+            "binding_write": "skipped",
+        }
+        payload = {
+            "ok": not has_errors(diagnostics),
+            "mutated": False,
+            "project_root": str(context.project.root),
+            "integration_status": state.integration_status,
+            "skip_reason": state.skip_reason,
+            "topic_service_master": identity,
+            "diagnostics": [diagnostic.to_json() for diagnostic in diagnostics],
+        }
+        return _emit("integrations houmao topic-service-master binding record", options, payload, diagnostics, _render_topic_service_master_identity_result("Skipped Topic Service Master Binding", payload))
+    if state.integration_status == "not_configured":
+        diagnostics.append(
+            Diagnostic(
+                code="ISO103",
+                severity="error",
+                concept="Project Houmao integration",
+                message="Houmao integration is not configured for this Project.",
+                hint="Run `isomer-cli project integrations houmao enable` or `isomer-cli project integrations houmao disable`.",
+            )
+        )
+        return _emit("integrations houmao topic-service-master binding record", options, {"ok": False, "mutated": False}, diagnostics, [])
+    if has_errors(diagnostics):
+        return _emit("integrations houmao topic-service-master binding record", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = record_topic_service_master_binding(
+        context,
+        status=_value(options, "topic_service_master_status") or "prepared",
+        specialist_name=_value(options, "topic_service_master_specialist_name"),
+        launch_profile_name=_value(options, "topic_service_master_launch_profile_name"),
+        managed_agent_name=_value(options, "topic_service_master_managed_agent_name"),
+        specialist_ref=_value(options, "topic_service_master_specialist_ref"),
+        launch_profile_ref=_value(options, "topic_service_master_launch_profile_ref"),
+        managed_agent_ref=_value(options, "topic_service_master_managed_agent_ref"),
+        updated_by=_value(options, "topic_service_master_updated_by") or "isomer-cli",
+        updated_at=utc_timestamp(),
+    )
+    diagnostics.extend(result.diagnostics)
+    payload = result.to_json()
+    return _emit("integrations houmao topic-service-master binding record", options, payload, diagnostics, _render_topic_service_master_identity_result("Recorded Topic Service Master Binding", payload))
+
+
 def _cmd_integrations_houmao_skill_context(options: CliOptions) -> int:
     project, diagnostics = _discover(options)
     if project is None or has_errors(diagnostics):
@@ -1236,6 +1324,32 @@ def _render_houmao_skill_context_result(payload: dict[str, object]) -> list[str]
     return lines
 
 
+def _render_topic_service_master_identity_result(title: str, payload: dict[str, object]) -> list[str]:
+    lines = [title]
+    identity = payload.get("topic_service_master")
+    if not isinstance(identity, dict):
+        identity = payload
+    suggested = identity.get("suggested_names")
+    if isinstance(suggested, dict):
+        lines.append(f"Topic Workspace: {suggested.get('topic_workspace_id')}")
+        lines.append(f"Specialist: {suggested.get('specialist_name')}")
+        lines.append(f"Launch Profile: {suggested.get('launch_profile_name')}")
+        lines.append(f"Managed Agent: {suggested.get('managed_agent_name')}")
+    binding = identity.get("binding")
+    if isinstance(binding, dict):
+        lines.append(f"Binding Status: {binding.get('status')}")
+        houmao = binding.get("houmao")
+        if isinstance(houmao, dict):
+            lines.append(f"Bound Specialist: {houmao.get('specialist_name')}")
+    elif identity.get("binding_status"):
+        lines.append(f"Binding Status: {identity.get('binding_status')}")
+    if payload.get("skip_reason"):
+        lines.append(f"Skip Reason: {payload.get('skip_reason')}")
+    if identity.get("drift"):
+        lines.append("Drift: present")
+    return lines
+
+
 def _mutate_toolbox_registration(options: CliOptions, *, status: str) -> int:
     state, context, diagnostics = _toolbox_state_and_context(options)
     if state is None or has_errors(diagnostics):
@@ -1415,5 +1529,8 @@ __all__ = [
     "_cmd_integrations_houmao_enable",
     "_cmd_integrations_houmao_disable",
     "_cmd_integrations_houmao_prepare_skills",
+    "_cmd_integrations_houmao_topic_service_master_names",
+    "_cmd_integrations_houmao_topic_service_master_binding_show",
+    "_cmd_integrations_houmao_topic_service_master_binding_record",
     "_cmd_integrations_houmao_skill_context",
 ]

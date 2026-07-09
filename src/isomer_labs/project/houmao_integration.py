@@ -22,6 +22,7 @@ from isomer_labs.project import (
     houmao_project_dir_for_root,
     houmao_skill_projection_dir_for_root,
 )
+from isomer_labs.project.topic_service_master import topic_service_master_identity_for_context
 
 
 HOUMAO_SKILL_PROJECTION_SCHEMA_VERSION = "isomer-houmao-skill-projection.v1"
@@ -156,6 +157,7 @@ class HoumaoSkillContextResult:
     houmao_project_path: Path | None = None
     houmao_overlay_path: Path | None = None
     topic_context: EffectiveTopicContext | None = None
+    topic_service_master: dict[str, object] | None = None
     skip_reason: str | None = None
     next_action: str | None = None
 
@@ -178,6 +180,8 @@ class HoumaoSkillContextResult:
             data["research_topic_id"] = self.topic_context.research_topic.id
             data["topic_workspace_id"] = self.topic_context.topic_workspace_id
             data["topic_workspace_path"] = str(self.topic_context.topic_workspace_path)
+        if self.topic_service_master is not None:
+            data["topic_service_master"] = self.topic_service_master
         return data
 
     @property
@@ -385,6 +389,10 @@ def resolve_houmao_skill_context(
         return HoumaoSkillContextResult(False, False, project.root, state.integration_status, skill_name, tuple(diagnostics))
     if state.integration_status in {"disabled", "not_configured"}:
         ok = state.integration_status == "disabled"
+        topic_service_master = None
+        if topic_context is not None:
+            topic_service_master, identity_diagnostics = topic_service_master_identity_for_context(topic_context)
+            diagnostics.extend(identity_diagnostics)
         return HoumaoSkillContextResult(
             ok,
             False,
@@ -392,6 +400,8 @@ def resolve_houmao_skill_context(
             state.integration_status,
             skill_name,
             tuple(diagnostics),
+            topic_context=topic_context,
+            topic_service_master=topic_service_master,
             skip_reason=state.skip_reason,
             next_action=state.next_action,
         )
@@ -453,6 +463,10 @@ def resolve_houmao_skill_context(
             )
         )
         return HoumaoSkillContextResult(False, False, project.root, state.integration_status, skill_name, tuple(diagnostics))
+    topic_service_master = None
+    if topic_context is not None:
+        topic_service_master, identity_diagnostics = topic_service_master_identity_for_context(topic_context)
+        diagnostics.extend(identity_diagnostics)
     return HoumaoSkillContextResult(
         True,
         False,
@@ -464,6 +478,7 @@ def resolve_houmao_skill_context(
         houmao_project_path=state.houmao_project_path,
         houmao_overlay_path=state.houmao_overlay_path,
         topic_context=topic_context,
+        topic_service_master=topic_service_master,
     )
 
 

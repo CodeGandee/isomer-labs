@@ -139,6 +139,11 @@ from isomer_labs.project.houmao_integration import (
     resolve_houmao_skill_context,
     set_houmao_integration_policy,
 )
+from isomer_labs.project.topic_service_master import (
+    record_topic_service_master_binding,
+    resolve_topic_service_master_names,
+    show_topic_service_master_binding,
+)
 
 _IMPLICIT_TOPIC_SELECTION_SOURCES = {
     "Project Manifest default",

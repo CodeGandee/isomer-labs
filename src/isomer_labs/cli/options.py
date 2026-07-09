@@ -78,6 +78,14 @@ class CliOptions:
     toolbox_param_description: str | None = None
     toolbox_import_path: str | None = None
     houmao_skill_route: str | None = None
+    topic_service_master_status: str | None = None
+    topic_service_master_specialist_name: str | None = None
+    topic_service_master_launch_profile_name: str | None = None
+    topic_service_master_managed_agent_name: str | None = None
+    topic_service_master_specialist_ref: str | None = None
+    topic_service_master_launch_profile_ref: str | None = None
+    topic_service_master_managed_agent_ref: str | None = None
+    topic_service_master_updated_by: str | None = None
 
 
 def common_options(command: Any) -> Any:

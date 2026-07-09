@@ -55,3 +55,44 @@ The repository SHALL validate the Houmao interop service skill as part of active
 - **WHEN** the active packaged skill inventory is inspected
 - **THEN** no alias, wrapper, duplicate folder, or manifest entry keeps `isomer-op-houmao-interop` available as an active compatibility skill
 
+### Requirement: Houmao Interop Routes Through Isomer Skill Context
+The Houmao interop service skill SHALL route Houmao-specific procedures through Isomer-provided skill context rather than assuming direct operator installation of Houmao system skills or implicit Houmao project discovery.
+
+#### Scenario: Service requests skill context before routing
+- **WHEN** `isomer-srv-houmao-interop` needs to delegate to a Houmao-owned procedure
+- **THEN** it first obtains a Houmao skill context through the supported `isomer-cli` Project integration command
+- **AND** it uses the returned `houmao_skill_path` and `houmao_project_path` in its routing instructions
+
+#### Scenario: Service keeps Isomer language first
+- **WHEN** the service reports a Houmao-backed support route to the Project Operator Session
+- **THEN** it describes the requested work in Isomer terms such as Project, Topic Workspace, Topic Actor, Topic Service Master, and Service Request
+- **AND** it presents Houmao terms only as internal provider context needed to follow the projected skill
+
+#### Scenario: Disabled integration is skipped
+- **WHEN** the returned Houmao skill context reports disabled integration
+- **THEN** the service reports a skipped Houmao integration result
+- **AND** it does not tell the agent to inspect Houmao credentials, launch profiles, mailboxes, gateways, or runtime state
+
+#### Scenario: Explicit project dir is preserved
+- **WHEN** the service instructs an agent to follow a projected Houmao skill
+- **THEN** the instruction includes the exact Houmao Project path returned by Isomer
+- **AND** it tells the agent not to rely on implicit `.houmao/` discovery from the current working directory
+
+### Requirement: Houmao Interop Uses Isomer Topic Service Master Identity
+Houmao interop service guidance SHALL use Isomer-provided Topic Service Master names and bindings when routing to Houmao-owned procedures.
+
+#### Scenario: Preparation passes suggested names
+- **WHEN** `isomer-srv-houmao-interop` or `isomer-srv-topic-service-agent-support` routes to Houmao-owned preparation procedure
+- **THEN** it passes the Isomer-provided specialist name, launch profile name, and managed agent name as context
+- **AND** it does not ask the agent to invent those names
+
+#### Scenario: Later lifecycle routes use binding
+- **WHEN** launch, inspect, stop, or repair routes operate on a Topic Service Master
+- **THEN** they first inspect the Topic Workspace Manifest binding or skill-context binding payload
+- **AND** they use the recorded specialist, launch profile, and managed agent names when present
+
+#### Scenario: Drift is reported in Isomer terms
+- **WHEN** Houmao observations differ from the Topic Workspace Manifest binding
+- **THEN** the service reports drift against the Topic Workspace and Topic Service Master identity
+- **AND** it routes repair through `repair-topic-service-master` rather than silently choosing new Houmao names
+

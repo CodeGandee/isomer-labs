@@ -17,6 +17,7 @@ from isomer_labs.workspace.manifest import (
     load_topic_workspace_manifest,
     materialize_default_manifest,
     parse_topic_workspace_manifest,
+    record_topic_service_master_binding,
     render_topic_workspace_manifest,
     resolve_semantic_binding,
     resolve_worker_output_policy,
@@ -160,6 +161,101 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual("topic_actor", actor_workspace.scope)
         self.assertEqual("topic_actor_worktree", actor_workspace.storage_profile)
         self.assertEqual("topic_actor", actor_workspace.required_context)
+
+    def test_topic_service_master_binding_parse_validate_and_render(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [topic_service_master]
+            provider = "houmao"
+            status = "prepared"
+            updated_by = "isomer-srv-topic-service-agent-support"
+
+            [topic_service_master.houmao]
+            specialist_name = "isomer-tsm-default-specialist"
+            launch_profile_name = "isomer-tsm-default-profile"
+            managed_agent_name = "isomer-tsm-default-agent"
+            specialist_ref = "houmao:specialist:isomer-tsm-default-specialist"
+            """,
+        )
+
+        manifest, diagnostics = load_topic_workspace_manifest(context)
+
+        self.assertEqual([], diagnostics)
+        self.assertIsNotNone(manifest.topic_service_master)
+        assert manifest.topic_service_master is not None
+        self.assertEqual("prepared", manifest.topic_service_master.status)
+        self.assertIsNotNone(manifest.topic_service_master.houmao)
+        assert manifest.topic_service_master.houmao is not None
+        self.assertEqual("isomer-tsm-default-specialist", manifest.topic_service_master.houmao.specialist_name)
+        payload = manifest.to_json()["topic_service_master"]
+        self.assertIsInstance(payload, dict)
+        rendered = render_topic_workspace_manifest(manifest)
+        self.assertIn("[topic_service_master.houmao]", rendered)
+        self.assertIn('managed_agent_name = "isomer-tsm-default-agent"', rendered)
+
+    def test_topic_service_master_binding_write_preserves_other_tables(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [custom_table]
+            value = "preserve-me"
+            """,
+        )
+
+        manifest, binding, diagnostics = record_topic_service_master_binding(
+            context,
+            status="prepared",
+            specialist_name="isomer-tsm-default-specialist",
+            launch_profile_name="isomer-tsm-default-profile",
+            managed_agent_name="isomer-tsm-default-agent",
+            updated_by="test",
+        )
+
+        self.assertEqual([], diagnostics)
+        self.assertIsNotNone(manifest)
+        self.assertIsNotNone(binding)
+        text = (context.topic_workspace_path / "topic-workspace.toml").read_text(encoding="utf-8")
+        self.assertIn("[custom_table]", text)
+        self.assertIn("[topic_service_master.houmao]", text)
+
+    def test_topic_service_master_binding_validation_rejects_drift_and_secrets(self) -> None:
+        context = self.make_context()
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [topic_service_master]
+            provider = "houmao"
+            status = "planned"
+
+            [topic_service_master.houmao]
+            specialist_name = "wrong-specialist"
+            launch_profile_name = "isomer-tsm-default-profile"
+            managed_agent_name = "isomer-tsm-default-agent"
+            mailbox_contents = "do-not-store"
+            """,
+        )
+
+        _, diagnostics = load_topic_workspace_manifest(context)
+
+        messages = "\n".join(diagnostic.message for diagnostic in diagnostics)
+        self.assertIn("status must be one of", messages)
+        self.assertIn("differs from the current Topic Workspace naming contract", messages)
+        self.assertIn("must not store credentials", messages)
 
     def test_topic_actor_binding_resolves_actor_scoped_paths(self) -> None:
         context = self.make_context()

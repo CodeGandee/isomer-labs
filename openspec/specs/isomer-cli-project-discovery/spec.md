@@ -4,15 +4,38 @@
 TBD - created by archiving changes implement-isomer-cli-project-discovery and refactor-isomer-cli-to-click. Update Purpose after archive.
 ## Requirements
 ### Requirement: CLI Entrypoint and Command Surface
-The system SHALL provide an installed `isomer-cli` command with a global command surface and a `project` command group for Project discovery, doctor diagnostics, Workspace Runtime management, topic environment readiness preparation, Agent Team Instance record management, template inspection, and Topic Agent Team Profile validation commands.
+The system SHALL provide an installed `isomer-cli` command with a global command surface for environment diagnostics, global extensions, schema inspection, and system skill inspection, plus a `project` command group for Project discovery, Workspace Runtime management, topic environment readiness preparation, Agent Team Instance record management, template inspection, and Topic Agent Team Profile validation commands.
 
-#### Scenario: CLI exposes project group
+#### Scenario: CLI exposes project group and global commands
 - **WHEN** a user runs `isomer-cli --help`
-- **THEN** the command help lists `project` and global Project-independent commands such as `schemas`
+- **THEN** the command help lists `doctor`, `project`, and global Project-independent commands such as `schemas`
 
-#### Scenario: Project group exposes project-discovery commands
+#### Scenario: Top-level empty invocation shows command overview
+- **WHEN** a user runs `isomer-cli` without arguments
+- **THEN** the process exits successfully
+- **AND** the output lists the top-level subcommands `doctor`, `project`, `ext`, `schemas`, and `system-skills`
+- **AND** the output explains the purpose of each top-level subcommand
+
+#### Scenario: Top-level help links to project resources
+- **WHEN** a user runs `isomer-cli` or `isomer-cli --help`
+- **THEN** the output includes the GitHub repository URL `https://github.com/CodeGandee/isomer-labs`
+- **AND** the output includes the documentation URL `https://codegandee.github.io/isomer-labs/`
+
+#### Scenario: CLI reports installed version
+- **WHEN** a user runs `isomer-cli --version`
+- **THEN** the process exits successfully
+- **AND** the output reports the installed `isomer-labs` package version
+
+#### Scenario: Empty group invocation shows group help
+- **WHEN** a user runs a command group without a child subcommand, such as `isomer-cli project`, `isomer-cli project topics`, `isomer-cli ext research`, or `isomer-cli system-skills`
+- **THEN** the process exits successfully
+- **AND** the output lists the subcommands available at that command level
+- **AND** the output is not wrapped in an `ISOCLI001` invocation-error diagnostic
+
+#### Scenario: Project group exposes project-discovery command groups
 - **WHEN** a user runs `isomer-cli project --help`
-- **THEN** the command help lists `init`, `validate`, `doctor`, `topics list`, `workspaces list`, `context show`, `paths preview`, `runtime init`, `runtime prepare`, `runtime inspect`, `runtime validate`, `team-instances create`, `team-instances list`, and `team-instances show`
+- **THEN** the command help lists immediate Project subcommands and command groups such as `init`, `validate`, `topics`, `workspaces`, `context`, `paths`, `runtime`, and `team-instances`
+- **AND** the command help does not list `doctor`
 
 #### Scenario: Project group exposes template and profile commands
 - **WHEN** a user runs `isomer-cli project --help`

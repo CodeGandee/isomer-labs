@@ -303,3 +303,44 @@ The Topic Creator skill SHALL present `create-research-intent`, `define-topic-en
 - **AND** `create-research-intent.md` required terms cover `Research Topic`, `Motivation`, `Topic Breakdown`, `Do's`, `Don'ts`, `Expected Outcome`, `Related Links`, and stripping of `>` example blocks
 - **AND** `clarify-research-intent.md` required terms cover the new coverage categories: `Research Topic`, `Motivation`, `Topic Breakdown`, `Do's`, `Don'ts`, `Expected Outcome`, and `Related Links`
 - **AND** it reports stale command guidance that treats `define-topic` as the research intent writer
+
+### Requirement: Topic Creator Handles Houmao Integration Skips
+The Topic Creator skill SHALL treat Houmao-backed Topic Service Master preparation as optional Project integration work governed by Project Manifest Houmao integration policy.
+
+#### Scenario: Disabled integration skips service master preparation
+- **WHEN** Topic Creator setup reaches a Houmao-backed Topic Service Master or Houmao-backed operator actor step and the Project disables Houmao integration
+- **THEN** the skill records that Houmao-backed preparation was skipped
+- **AND** it continues any non-Houmao topic readiness work that remains valid
+
+#### Scenario: Skipped Houmao work is visible in final output
+- **WHEN** Topic Creator finalization reports Topic Workspace readiness after skipping Houmao integration
+- **THEN** Essential Output includes the skipped Houmao-backed preparation state and skip reason
+- **AND** Complete Output includes the Project Manifest integration evidence used for the skip
+
+#### Scenario: Enabled integration routes through service support
+- **WHEN** Topic Creator setup reaches Houmao-backed Topic Service Master preparation and the Project enables Houmao integration
+- **THEN** the skill routes the work through Isomer service support that obtains Houmao skill context from `isomer-cli`
+- **AND** it does not directly require the user to install or invoke Houmao-owned system skills
+
+### Requirement: Topic Creator Uses Stable Topic Service Master Names
+The Topic Creator skill SHALL route Houmao-backed Topic Service Master preparation with Isomer-provided specialist, launch profile, and managed-agent names.
+
+#### Scenario: Setup actors obtains suggested names
+- **WHEN** `setup-actors` reaches enabled Houmao-backed Topic Service Master preparation
+- **THEN** it routes through `isomer-srv-topic-service-agent-support prepare-topic-service-master`
+- **AND** the service route obtains suggested Topic Service Master names from `isomer-cli`
+
+#### Scenario: Preparation records binding
+- **WHEN** Houmao-owned procedure creates or updates the Topic Service Master specialist and launch profile
+- **THEN** Topic Creator readiness consumes evidence that the Topic Workspace Manifest binding was recorded
+- **AND** it does not treat preparation as ready from a chat-only name choice
+
+#### Scenario: Final output includes binding state
+- **WHEN** Topic Creator finalization reports Topic Workspace readiness
+- **THEN** Essential Output includes Topic Service Master binding status, specialist name, launch profile name, managed agent name, or skip reason
+- **AND** Complete Output includes the Topic Workspace Manifest binding evidence when available
+
+#### Scenario: Disabled integration skips binding
+- **WHEN** Project Houmao integration is disabled during setup-actors
+- **THEN** Topic Creator reports Topic Service Master preparation and binding as skipped
+- **AND** it does not create suggested-name bindings in the Topic Workspace Manifest
