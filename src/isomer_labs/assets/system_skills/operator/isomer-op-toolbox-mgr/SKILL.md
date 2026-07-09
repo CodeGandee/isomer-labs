@@ -9,6 +9,8 @@ description: Use when the user asks a Project Operator Session to create, conver
 
 Use this operator skill to help users create and manage project-local Toolboxes. It authors Toolbox source material and composes existing `isomer-cli` Toolbox, User Skill Callback, Runtime Param, validation, and path-safety surfaces; it does not define new schemas or bypass CLI authority.
 
+Toolbox skills default to routed or manual invocation. Author Toolbox skill metadata with `policy.allow_implicit_invocation: false`, and use callback prompt files to route agents to a named Toolbox skill and subcommand for a specific purpose.
+
 ## When to Use
 
 Use this skill when the user wants to create a Toolbox, convert an existing skill into Toolbox callback material, insert a callback at a Callback Insertion Point, define or inspect Toolbox Runtime Params, install or manage a Toolbox, or list available insertion points.
@@ -51,7 +53,7 @@ Helper subcommands group CRUD-style work by target resource so the skill does no
 
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
-| `author-toolbox-source` | Create or update Toolbox directory skeletons, manifests, README notes, callback `SKILL.md` files, prompt files, and default bundle files | [commands/author-toolbox-source.md](commands/author-toolbox-source.md) |
+| `author-toolbox-source` | Create or update Toolbox directory skeletons, manifests, README notes, Toolbox skill directories, prompt router files, and default bundle files | [commands/author-toolbox-source.md](commands/author-toolbox-source.md) |
 | `edit-callback-declarations` | Draft, add, update, or remove Toolbox manifest `[[callbacks]]` entries | [commands/edit-callback-declarations.md](commands/edit-callback-declarations.md) |
 | `edit-runtime-params` | Declare Runtime Params, write bundles, register imports, set or unset explicit values, and explain effective values | [commands/edit-runtime-params.md](commands/edit-runtime-params.md) |
 | `inspect-effective-state` | Inspect callback records, Runtime Params, Toolbox registration, gating, scope, and diagnostics without mutation | [commands/inspect-effective-state.md](commands/inspect-effective-state.md) |
@@ -67,6 +69,7 @@ Helper subcommands group CRUD-style work by target resource so the skill does no
 - **Toolbox**: a project-local bundle under `skillset/toolboxes/<toolbox-id>/` that can declare callback material and Runtime Param defaults.
 - **Toolbox ID**: the stable Toolbox identity from the manifest `toolbox_id`.
 - **Callback Insertion Point**: a declared target skill and stage pair, such as a packaged system skill's `begin` or `end` stage.
+- **Toolbox Skill**: a project-local skill shipped inside a Toolbox. It should be routed by a callback prompt or invoked manually, and its `agents/openai.yaml` should set `allow_implicit_invocation: false` by default.
 - **Toolbox-Local Key**: the callback or Runtime Param key authored inside one Toolbox. Installed callback ids use `<toolbox_id>:<toolbox-local-key>`.
 - **Runtime Param**: a Toolbox-specific value whose effective id is `<toolbox_id>:<param-key>` while stored rows keep `toolbox_id` and `key` separate.
 - **Toolbox Scope**: the Project, Research Topic, Topic Actor, or Topic Agent layer selected for registration, Runtime Param values, or effective-state inspection.
@@ -79,7 +82,7 @@ Default to **Essential Output** in chat. Print **Complete Output** only when the
 
 ### Essential Output
 
-Report `status`, Toolbox ID, Toolbox source path when relevant, selected Toolbox Scope, changed files or ids, installed callback ids, effective Runtime Param ids, validation result, diagnostics, blockers, rollback hint, and next action.
+Report `status`, Toolbox ID, Toolbox source path when relevant, selected Toolbox Scope, changed files or ids, installed callback ids, Toolbox skill invocation posture, effective Runtime Param ids, validation result, diagnostics, blockers, rollback hint, and next action.
 
 ### Complete Output
 
@@ -93,6 +96,8 @@ Do not mutate callback registries, Project Manifests, or Topic Workspace Manifes
 
 Do not write credentials, tokens, passwords, private data, or secret-like values into Toolbox manifests, callback material, README notes, prompt files, or Runtime Param bundles. Report a blocker or redacted diagnostic instead.
 
+Do not describe a Toolbox skill as automatically or implicitly invoked by default. Direct `skill_dir` callback sources are supplemental instruction material; use them only when that is the explicit requested shape.
+
 Warn when Project scope could affect every compatible topic context. Warn again before disable, uninstall, or source replacement when the operation can broadly change callback behavior.
 
 Use `--topic-agent` for Topic Agent selection. Keep Topic Actor and Topic Agent Runtime Param scope explicit.
@@ -103,6 +108,7 @@ Use `--topic-agent` for Topic Agent selection. Keep Topic Actor and Topic Agent 
 | --- | --- |
 | Splitting each CRUD operation into a separate helper command | Group operations by target resource, such as callback declarations or Runtime Params. |
 | Treating callback ids and local keys as the same thing | Author local `key` values and report installed callback ids as `<toolbox_id>:<toolbox-local-key>`. |
+| Letting Toolbox skills look implicitly auto-invoked | Add `agents/openai.yaml` with `allow_implicit_invocation: false`, and route through prompt-file callbacks or manual invocation. |
 | Setting Runtime Params by editing TOML from memory | Use `isomer-cli project toolbox-params` for mutation and explanation unless a command is only drafting source bundles. |
 | Installing before validating scope and insertion point | Validate manifest, target skill, stage, source paths, and scope before install or refresh. |
 | Hiding broad effects in a short success message | Report selected scope, effective status, blockers, diagnostics, and rollback hints in Essential Output. |

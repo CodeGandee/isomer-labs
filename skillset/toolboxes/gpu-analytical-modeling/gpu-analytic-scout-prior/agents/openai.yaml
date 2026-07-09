@@ -1,0 +1,6 @@
+interface:
+  display_name: "gpu-analytic-scout-prior"
+  short_description: "GPU analytical-modeling scout prior for source framing and output checks"
+  default_prompt: "Use $gpu-analytic-scout-prior when routed by a Toolbox callback prompt or manually invoked for GPU analytical-modeling scout guidance."
+policy:
+  allow_implicit_invocation: false

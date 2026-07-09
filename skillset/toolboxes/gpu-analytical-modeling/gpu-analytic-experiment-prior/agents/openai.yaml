@@ -1,0 +1,6 @@
+interface:
+  display_name: "gpu-analytic-experiment-prior"
+  short_description: "GPU analytical-modeling experiment prior for evaluation, profiler evidence, and result checks"
+  default_prompt: "Use $gpu-analytic-experiment-prior when routed by a Toolbox callback prompt or manually invoked for GPU analytical-modeling experiment guidance."
+policy:
+  allow_implicit_invocation: false
