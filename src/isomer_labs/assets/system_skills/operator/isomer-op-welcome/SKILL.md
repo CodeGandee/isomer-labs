@@ -11,7 +11,7 @@ Manual invocation only. Use this command-style operator skill as the action-orie
 
 ## When to Use
 
-Use this skill when the user asks what Isomer Labs can do, which operator path to choose, how to start research manually, how to start research by Agent Team, or what the next safe owner workflow is.
+Use this skill when the user asks what Isomer Labs can do, which operator path to choose, how to start research manually, how to start research by Agent Team, which owner skill manages project-local Toolboxes, or what the next safe owner workflow is.
 
 Do not use this skill to execute Project initialization, Research Topic creation, Topic Workspace mutation, package installation, Topic Team Specialization, Houmao launch, or research-paradigm v2 bootstrap. Route those requests to the active owner skill named by this menu.
 
@@ -104,6 +104,8 @@ Route initialized-topic storage, Topic Actors, package mutation, environment ver
 Route Topic Team Specialization to `isomer-op-topic-team-specialize` only when the user asks for a Domain Agent Team Template or formal Agent Team path.
 
 Route Houmao loop, runtime, launch profile, mailbox, gateway, and template-mapping questions to the owning operator workflow first. Project bootstrap or check questions belong to `isomer-op-project-mgr`; Topic Team Specialization and launch-facing questions belong to `isomer-op-topic-team-specialize`. Those workflows may delegate bounded Houmao adapter support to `isomer-srv-houmao-interop`.
+
+Route project-local Toolbox creation, conversion, install, inspection, callback insertion, callback insertion-point, Runtime Param, disable, uninstall, or source-update questions to `isomer-op-toolbox-mgr`. This welcome skill may recommend the owner route, but it must not author Toolbox files, install Toolboxes, mutate callback registries, or mutate Runtime Params itself.
 
 Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; those are retired operator compatibility skills, not active routes.
 

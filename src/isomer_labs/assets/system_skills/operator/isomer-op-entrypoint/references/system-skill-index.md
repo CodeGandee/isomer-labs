@@ -3,7 +3,7 @@
 ## Workflow
 
 1. Match the user's task to one system skill family: operator, service, or misc. Use [extension-skill-index.md](extension-skill-index.md) for DeepSci and other domain-extension work.
-2. Prefer the active operator owner skill for user-facing Project, Topic, actor, agent, team, and routing tasks.
+2. Prefer the active operator owner skill for user-facing Project, Topic, actor, agent, Toolbox, team, and routing tasks.
 3. Treat service skills as delegated support routes from owner workflows unless the user explicitly invokes the service skill by name.
 4. Treat misc skills as explicit helper interfaces, not default owner workflows.
 5. Return the selected skill name, direct invocation shape, owner boundary, and any prerequisite context needed before proceeding.
@@ -19,6 +19,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Blank or partial Research Topic setup, manual-research-ready Topic Workspace, topic intent, Topic Actor preparation, or final readiness summary. | `isomer-op-topic-creator` | `Use $isomer-op-topic-creator run-to <target>`, `fast-forward`, `step-by-step`, `status`, or `repair`. |
 | Initialized Research Topic storage, Topic Actors, actor workspaces, packages, environment verification, reset checkpoints, branch helpers, or diagnostics. | `isomer-op-topic-mgr` | `Use $isomer-op-topic-mgr <subcommand>`. |
 | Switch the Project Operator to act as or on behalf of a selected Topic Actor or Agent workspace cwd. | `isomer-op-switch-identity` | `Use $isomer-op-switch-identity switch`, `act-as`, `status`, or `reset`. |
+| Project-local Toolbox creation, conversion, install, inspection, update, disable, uninstall, callback insertion, insertion-point discovery, Runtime Params, or effective-state diagnostics. | `isomer-op-toolbox-mgr` | `Use $isomer-op-toolbox-mgr help` or a specific Toolbox subcommand. |
 | Domain Agent Team Template adaptation, Topic Team Specialization, static team validation, profile approval, materialization, or launch-facing preparation. | `isomer-op-topic-team-specialize` | `Use $isomer-op-topic-team-specialize fast-forward`, `step-by-step`, or a procedural subcommand. |
 | Informed-user dispatch from a concrete task to a system skill or CLI family. | `isomer-op-entrypoint` | Parse, route, and proceed with the selected skill or CLI family. |
 
@@ -42,5 +43,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | NVIDIA tooling guidance. | `isomer-misc-nvidia-tools` | Explicit helper guidance when GPU tooling is relevant. |
 | Package-specific routing rules. | `isomer-misc-pkg-specifics` | Helper guidance before generic package handling. |
 | Named installable toolset contract such as paper-writing, paper-figures-python, paper2ppt, cuda-build, torch-gpu, or topic-python-starter. | `isomer-misc-tool-packs` | Explicitly requested helper only; not automatic package mutation. |
+
+Project-local Toolbox callback, insertion-point, Runtime Param, and registration management routes to `isomer-op-toolbox-mgr`, not to `isomer-misc-tool-packs`.
 
 Do not route active work to retired operator compatibility skills or old admin names.

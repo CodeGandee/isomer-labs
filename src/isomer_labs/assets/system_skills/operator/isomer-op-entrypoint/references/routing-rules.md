@@ -19,6 +19,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | User names a valid skill directly. | Load that skill unless readiness or ownership makes it unsafe. |
 | User names a valid `isomer-cli` command family. | Inspect CLI help and run the smallest safe command. |
 | Project bootstrap, validation, cleanup, relocation, context, or runtime setup. | `isomer-op-project-mgr`. |
+| Project-local Toolbox authoring, conversion, install, callback insertion, insertion-point discovery, Runtime Params, or effective-state inspection. | `isomer-op-toolbox-mgr`. |
 | New or partial Research Topic setup. | `isomer-op-topic-creator`. |
 | Existing topic storage, actors, packages, environment verification, reset, or diagnostics. | `isomer-op-topic-mgr`. |
 | Work as or on behalf of a Topic Actor or Agent. | `isomer-op-switch-identity`. |
@@ -37,5 +38,7 @@ Block when required context cannot be resolved safely, when the selected route w
 Normal user-facing requests route to operator owner skills before service delegation. Service skills are only bounded support unless explicitly invoked.
 
 Misc helper skills are explicit helper routes. `isomer-misc-tool-packs` can resolve a named toolset contract only when explicitly requested as a helper, but package mutation for a Topic Workspace remains owned by topic or environment setup workflows.
+
+Project-local Toolbox requests route to `isomer-op-toolbox-mgr`. Do not treat Toolbox callback management, insertion points, or Runtime Params as installable toolset requests.
 
 Retired compatibility skills are not active routes. Do not invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, `isomer-op-manual-research-session`, `isomer-op-houmao-interop`, or old `isomer-admin-*` names.

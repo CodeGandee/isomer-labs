@@ -41,6 +41,9 @@ Use these before ambiguous mutation:
 | Workspace Runtime readiness and inspection. | `isomer-cli project runtime ...` |
 | Topic reset checkpoints and plans. | `isomer-cli project topic-reset ...` |
 | Worker output policy. | `isomer-cli project outputs policy` |
+| Toolbox registration, validation, install, enable, disable, update-source, uninstall, show, list, or explain. | `isomer-cli project toolboxes ...` |
+| Toolbox callback insertion points, callback registry rows, callback resolution, validation, install, or refresh. | `isomer-cli project skill-callbacks ...` |
+| Toolbox Runtime Param set, unset, import, get, explain, or validate. | `isomer-cli project toolbox-params ...` |
 
 ## Research Records and Artifact Formats
 
