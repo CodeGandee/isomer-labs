@@ -10,6 +10,7 @@ skills = [
   "misc/isomer-misc-pkg-specifics",
   "misc/isomer-misc-tool-packs",
   "operator/isomer-op-entrypoint",
+  "operator/isomer-op-gui-mgr",
   "operator/isomer-op-project-mgr",
   "operator/isomer-op-switch-identity",
   "operator/isomer-op-toolbox-mgr",

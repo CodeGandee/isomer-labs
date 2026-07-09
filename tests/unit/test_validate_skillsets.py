@@ -635,7 +635,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             ## Guardrails
 
             The skill is read-only and uses `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, and `isomer-cli project context show` only for inspection.
-            Route Project checks to `isomer-op-project-mgr`, topic creation to `isomer-op-topic-creator`, initialized-topic work to `isomer-op-topic-mgr`, and Topic Team work to `isomer-op-topic-team-specialize`. Route bounded Houmao adapter support through the owning operator workflow to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
+            Route Project checks to `isomer-op-project-mgr`, Project Web GUI work to `isomer-op-gui-mgr`, topic creation to `isomer-op-topic-creator`, initialized-topic work to `isomer-op-topic-mgr`, and Topic Team work to `isomer-op-topic-team-specialize`. Route bounded Houmao adapter support through the owning operator workflow to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
             Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; they are retired.
             Do not automatically route to `isomer-misc-tool-packs`; mention `isomer-misc-tool-packs` only as a manual skill when explicitly relevant.
             """
@@ -667,6 +667,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 | --- | --- | --- |
                 | `start-research-manually` | Manual research. | Owner route. |
                 | `start-research-by-agent-team` | Agent Team research. | Owner route. |
+                | `isomer-op-gui-mgr` | Project Web GUI lifecycle and backend API reference. | Owner route. |
                 | `show-options` | Options. | Menu. |
                 | `choose-path` | Choose. | Recommendation. |
                 | `show-skill-map` | Map. | Map. |
@@ -681,7 +682,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Project setup or checks, Research Topic setup, Topic Team work, and Houmao support all name owner workflows.
+                Project setup or checks, Project Web GUI work with `isomer-op-gui-mgr`, Research Topic setup, Topic Team work, and Houmao support all name owner workflows.
             """,
             "choose-path.md": """
                 # Choose Path
@@ -692,7 +693,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                This command recommends visible paths and reports `status`, `interpreted_goal`, `recommended_workflow`, `owner_skill`, `safe_first_command`, `blockers`, and `next_action`.
+                This command recommends visible paths, routes GUI questions to `isomer-op-gui-mgr`, and reports `status`, `interpreted_goal`, `recommended_workflow`, `owner_skill`, `safe_first_command`, `blockers`, and `next_action`.
             """,
             "show-skill-map.md": """
                 # Show Skill Map
@@ -703,7 +704,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use $isomer-op-project-mgr, Use $isomer-op-topic-creator, Use $isomer-op-topic-mgr, and Use $isomer-op-topic-team-specialize. Route bounded support to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
+                Use $isomer-op-project-mgr, Use $isomer-op-gui-mgr, Use $isomer-op-topic-creator, Use $isomer-op-topic-mgr, and Use $isomer-op-topic-team-specialize. Route bounded support to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
             """,
             "next-step.md": """
                 # Next Step
@@ -808,7 +809,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Guardrails
 
-            Route through `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`. Service skills are only bounded support unless explicitly invoked. `isomer-misc-tool-packs` is used explicitly, not automatically.
+            Route through `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-gui-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`. Service skills are only bounded support unless explicitly invoked. `isomer-misc-tool-packs` is used explicitly, not automatically.
 
             ## Common Mistakes
 
@@ -861,7 +862,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, `isomer-op-entrypoint`.
+                `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-gui-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, `isomer-op-entrypoint`.
                 `isomer-srv-topic-env-setup`, `isomer-srv-agent-env-setup`, `isomer-srv-houmao-interop`, `isomer-srv-resolve-pkg-repo`, `isomer-srv-topic-service-agent-support`.
                 `isomer-misc-tool-packs` is explicitly requested.
             """,
@@ -1508,6 +1509,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             [groups.core]
             skills = [
               "operator/isomer-op-entrypoint",
+              "operator/isomer-op-gui-mgr",
               "operator/isomer-op-welcome",
               "operator/isomer-op-switch-identity",
               "operator/isomer-op-project-mgr",
@@ -1537,6 +1539,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("operator/isomer-op-welcome", rendered)
         self.assertIn("operator/isomer-op-switch-identity", rendered)
         self.assertIn("operator/isomer-op-entrypoint", rendered)
+        self.assertIn("operator/isomer-op-gui-mgr", rendered)
         self.assertIn("operator/isomer-op-topic-prepare", rendered)
         self.assertIn("operator/isomer-op-manual-research-session", rendered)
 

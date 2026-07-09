@@ -16,6 +16,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | --- | --- | --- |
 | Read-only welcome, supported paths, first-run option menu, or owner-skill recommendations. | `isomer-op-welcome` | `Use $isomer-op-welcome show-options`, `choose-path`, `show-skill-map`, or `next-step`. |
 | Project init, validation, doctor diagnostics, cleanup, content-root relocation, topic listing, context, runtime readiness, or Project-level routing. | `isomer-op-project-mgr` | `Use $isomer-op-project-mgr <subcommand>`. |
+| Project Web GUI lifecycle, GUI Backend launch or status, cache-mode debugging, GUI refresh, recent-errors inspection, backend API reference, or GUI troubleshooting. | `isomer-op-gui-mgr` | `Use $isomer-op-gui-mgr help`, `launch`, `status`, `api-reference`, `refresh-records`, or `troubleshoot`. |
 | Blank or partial Research Topic setup, manual-research-ready Topic Workspace, topic intent, Topic Actor preparation, or final readiness summary. | `isomer-op-topic-creator` | `Use $isomer-op-topic-creator run-to <target>`, `fast-forward`, `step-by-step`, `status`, or `repair`. |
 | Initialized Research Topic storage, Topic Actors, actor workspaces, packages, environment verification, reset checkpoints, branch helpers, or diagnostics. | `isomer-op-topic-mgr` | `Use $isomer-op-topic-mgr <subcommand>`. |
 | Switch the Project Operator to act as or on behalf of a selected Topic Actor or Agent workspace cwd. | `isomer-op-switch-identity` | `Use $isomer-op-switch-identity switch`, `act-as`, `status`, or `reset`. |

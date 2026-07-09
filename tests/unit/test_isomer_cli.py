@@ -691,6 +691,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(listed["ok"])
         self.assertIn("generic", listed["supported_targets"])
         self.assertTrue(any(skill["name"] == "isomer-op-entrypoint" for skill in listed["skills"]))
+        self.assertTrue(any(skill["name"] == "isomer-op-gui-mgr" for skill in listed["skills"]))
 
         status, output = self.run_cli(
             [

@@ -11,7 +11,7 @@ Manual invocation only. Use this command-style operator skill as the action-orie
 
 ## When to Use
 
-Use this skill when the user asks what Isomer Labs can do, which operator path to choose, how to start research manually, how to start research by Agent Team, which owner skill manages project-local Toolboxes, or what the next safe owner workflow is.
+Use this skill when the user asks what Isomer Labs can do, which operator path to choose, how to start research manually, how to start research by Agent Team, which owner skill manages the Project Web GUI, which owner skill manages project-local Toolboxes, or what the next safe owner workflow is.
 
 Do not use this skill to execute Project initialization, Research Topic creation, Topic Workspace mutation, package installation, Topic Team Specialization, Houmao launch, or research-paradigm v2 bootstrap. Route those requests to the active owner skill named by this menu.
 
@@ -96,6 +96,8 @@ The default posture is read-only. This skill may recommend an owner skill and sa
 `next-step` may use only read-only Project inspection commands such as `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, and `isomer-cli project context show`. Report commands run in Complete Output.
 
 Route Project setup, Project checks, topic listing, context inspection, runtime initialization, and Project-level routing to `isomer-op-project-mgr`.
+
+Route Project Web GUI lifecycle, GUI Backend launch or status, cache-mode debugging, GUI refresh, recent-errors inspection, backend API reference, or GUI troubleshooting to `isomer-op-gui-mgr`. This welcome skill may recommend the owner route, but it must not start the GUI Backend, inspect HTTP routes, rebuild query-index rows, or troubleshoot code defects itself.
 
 Route blank or partial Research Topic creation and manual-research-ready topic preparation to `isomer-op-topic-creator`.
 

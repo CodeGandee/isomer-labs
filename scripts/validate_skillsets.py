@@ -23,6 +23,7 @@ LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/"
 TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-op-topic-team-specialize"
 ENTRYPOINT_SKILL = "isomer-op-entrypoint"
 PROJECT_MANAGER_SKILL = "isomer-op-project-mgr"
+GUI_MANAGER_SKILL = "isomer-op-gui-mgr"
 SWITCH_IDENTITY_SKILL = "isomer-op-switch-identity"
 TOPIC_CREATOR_SKILL = "isomer-op-topic-creator"
 TOPIC_MANAGER_SKILL = "isomer-op-topic-mgr"
@@ -662,6 +663,7 @@ WELCOME_USAGE_PATHS = (
 
 WELCOME_ACTIVE_OWNER_SKILLS = (
     PROJECT_MANAGER_SKILL,
+    GUI_MANAGER_SKILL,
     TOPIC_CREATOR_SKILL,
     TOPIC_MANAGER_SKILL,
     TOPIC_TEAM_SPECIALIZATION_SKILL,
@@ -721,6 +723,7 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "| Subcommand | Purpose | Produces |",
         "start-research-manually",
         "start-research-by-agent-team",
+        "isomer-op-gui-mgr",
         "show-options",
         "choose-path",
         "show-skill-map",
@@ -729,6 +732,8 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
     "show-options.md": (
         "visible usage paths first",
         "Project setup or checks",
+        "Project Web GUI",
+        "isomer-op-gui-mgr",
         "Research Topic",
         "Topic Team",
         "Houmao",
@@ -738,6 +743,8 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "recommends visible paths",
         "manual research",
         "Domain Agent Team Template",
+        "isomer-op-gui-mgr",
+        "GUI",
         "status",
         "interpreted_goal",
         "recommended_workflow",
@@ -749,6 +756,7 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
     "show-skill-map.md": (
         "Direct Invocation",
         "Use $isomer-op-project-mgr",
+        "Use $isomer-op-gui-mgr",
         "Use $isomer-op-topic-creator",
         "Use $isomer-op-topic-mgr",
         "Use $isomer-op-topic-team-specialize",
@@ -899,6 +907,7 @@ ENTRYPOINT_REFERENCES = (
 ENTRYPOINT_ACTIVE_OWNER_SKILLS = (
     WELCOME_SKILL,
     PROJECT_MANAGER_SKILL,
+    GUI_MANAGER_SKILL,
     SWITCH_IDENTITY_SKILL,
     TOPIC_CREATOR_SKILL,
     TOPIC_MANAGER_SKILL,
@@ -3078,6 +3087,8 @@ def validate_operator_manifest_inventory(repo_root: Path) -> list[Diagnostic]:
         add(diagnostics, repo_root, manifest_path, 1, "OPS012", f"skillset manifest must include operator/{SWITCH_IDENTITY_SKILL}")
     if f"operator/{ENTRYPOINT_SKILL}" not in skills:
         add(diagnostics, repo_root, manifest_path, 1, "OPS013", f"skillset manifest must include operator/{ENTRYPOINT_SKILL}")
+    if f"operator/{GUI_MANAGER_SKILL}" not in skills:
+        add(diagnostics, repo_root, manifest_path, 1, "OPS011", f"skillset manifest must include operator/{GUI_MANAGER_SKILL}")
     for retired_skill in WELCOME_RETIRED_ROUTE_SKILLS:
         retired_entry = f"operator/{retired_skill}"
         if retired_entry in skills:

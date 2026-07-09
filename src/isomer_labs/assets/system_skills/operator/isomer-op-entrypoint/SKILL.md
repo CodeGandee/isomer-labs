@@ -13,7 +13,7 @@ Use this skill as the informed-user route-and-proceed dispatcher for Isomer syst
 
 Use this skill when the user already knows Isomer enough to provide a task, prompt, file, Research Topic, Topic Actor, Agent, DeepSci research request, or CLI-shaped operation, but wants the Project Operator to decide which Isomer surface to use next. Do not use this skill as the first-run welcome menu; use `isomer-op-welcome` for read-only orientation, visible usage paths, and safe owner-skill recommendations without execution.
 
-Do not use this skill to bypass owner workflows. Project lifecycle work belongs to `isomer-op-project-mgr`, topic creation belongs to `isomer-op-topic-creator`, initialized-topic management belongs to `isomer-op-topic-mgr`, identity posture belongs to `isomer-op-switch-identity`, project-local Toolbox management belongs to `isomer-op-toolbox-mgr`, Topic Team Specialization belongs to `isomer-op-topic-team-specialize`, DeepSci bootstrap belongs to `isomer-deepsci-workspace-mgr`, and research-stage work belongs to the selected `isomer-deepsci-*` skill.
+Do not use this skill to bypass owner workflows. Project lifecycle work belongs to `isomer-op-project-mgr`, Project Web GUI lifecycle and backend API reference belongs to `isomer-op-gui-mgr`, topic creation belongs to `isomer-op-topic-creator`, initialized-topic management belongs to `isomer-op-topic-mgr`, identity posture belongs to `isomer-op-switch-identity`, project-local Toolbox management belongs to `isomer-op-toolbox-mgr`, Topic Team Specialization belongs to `isomer-op-topic-team-specialize`, DeepSci bootstrap belongs to `isomer-deepsci-workspace-mgr`, and research-stage work belongs to the selected `isomer-deepsci-*` skill.
 
 ## Workflow
 

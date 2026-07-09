@@ -38,6 +38,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         paths = iter_system_skill_paths()
         old_houmao_interop_path = "operator/" + "isomer-op-" + "houmao-interop"
         self.assertIn("operator/isomer-op-entrypoint", paths)
+        self.assertIn("operator/isomer-op-gui-mgr", paths)
         self.assertIn("operator/isomer-op-project-mgr", paths)
         self.assertIn("operator/isomer-op-toolbox-mgr", paths)
         self.assertNotIn("operator/isomer-op-toolbox-creator", paths)
@@ -98,6 +99,10 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "SKILL.md").is_file())
             self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "agents" / "openai.yaml").is_file())
             self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "references" / "extension-skill-index.md").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "SKILL.md").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "agents" / "openai.yaml").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "commands" / "help.md").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "commands" / "api-reference.md").is_file())
             self.assertTrue((target / "operator" / "isomer-op-project-mgr" / "SKILL.md").is_file())
             self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "SKILL.md").is_file())
             self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "agents" / "openai.yaml").is_file())
@@ -110,6 +115,86 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertTrue((target / "service" / "isomer-srv-topic-env-setup" / "SKILL.md").is_file())
             self.assertFalse((target / "research-paradigm").exists())
             self.assertFalse((target / "dev").exists())
+
+    def test_gui_mgr_skill_identity_commands_and_api_reference(self) -> None:
+        skill = resolve_system_skill("operator/isomer-op-gui-mgr")
+        skill_md = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
+        agent_yaml = skill.joinpath("agents", "openai.yaml").read_text(encoding="utf-8")
+        self.assertIn("name: isomer-op-gui-mgr", skill_md)
+        self.assertIn("description: Use when", skill_md)
+        self.assertIn("## Workflow", skill_md)
+        self.assertIn("## Output Contract", skill_md)
+        self.assertIn("## Guardrails", skill_md)
+        self.assertIn("isomer-cli project web serve --root <project-root>", skill_md)
+        self.assertNotIn("pixi run isomer-cli", skill_md)
+        self.assertIn('display_name: "isomer-op-gui-mgr"', agent_yaml)
+        self.assertIn("$isomer-op-gui-mgr", agent_yaml)
+
+        for command_name in (
+            "help",
+            "launch",
+            "status",
+            "api-reference",
+            "refresh-records",
+            "troubleshoot",
+        ):
+            command = skill.joinpath("commands", f"{command_name}.md")
+            self.assertTrue(command.is_file(), command_name)
+            command_text = command.read_text(encoding="utf-8")
+            self.assertIn("## Workflow", command_text, command_name)
+            self.assertIn("does not map cleanly", command_text, command_name)
+            self.assertNotIn("pixi run isomer-cli", command_text, command_name)
+
+        launch = skill.joinpath("commands", "launch.md").read_text(encoding="utf-8")
+        for option in ("--host", "--port", "--reload", "--no-browser", "--cache-mode normal", "--cache-mode debug"):
+            self.assertIn(option, launch)
+
+        api_reference = skill.joinpath("commands", "api-reference.md").read_text(encoding="utf-8")
+        for route_family in (
+            "/api/health",
+            "/api/project",
+            "/api/topics",
+            "/api/explorer/project",
+            "/api/openable/{openable_item_id}",
+            "/api/topics/{topic_id}/runtime",
+            "/api/topics/{topic_id}/overview",
+            "/api/topics/{topic_id}/actors",
+            "/api/topics/{topic_id}/records",
+            "/api/topics/{topic_id}/records/export",
+            "/api/topics/{topic_id}/graphs/{graph_scope}",
+            "/api/topics/{topic_id}/recent-errors",
+            "/api/events",
+            "/api/topics/{topic_id}/records/{record_id}",
+            "/api/topics/{topic_id}/ideas/{idea_id}",
+            "/api/topics/{topic_id}/viewer/records/{record_id}",
+            "/api/topics/{topic_id}/records/{record_id}/render",
+            "/api/topics/{topic_id}/records/{record_id}/lineage",
+            "/api/topics/{topic_id}/records/{record_id}/siblings",
+            "/api/topics/{topic_id}/records/{record_id}/files",
+            "/api/topics/{topic_id}/records/{record_id}/facets",
+            "/api/topics/{topic_id}/records/index/validate",
+            "/api/topics/{topic_id}/records/index/rebuild",
+            "/api/topics/{topic_id}/records/index/cleanup",
+        ):
+            self.assertIn(route_family, api_reference)
+        self.assertIn("docs/ui/contracts/", api_reference)
+        self.assertIn("Read-only", api_reference)
+        self.assertIn("Explicit mutation", api_reference)
+
+    def test_gui_mgr_is_discoverable_from_welcome_and_entrypoint(self) -> None:
+        entrypoint = resolve_system_skill("operator/isomer-op-entrypoint")
+        system_index = entrypoint.joinpath("references", "system-skill-index.md").read_text(encoding="utf-8")
+        self.assertIn("isomer-op-gui-mgr", system_index)
+        self.assertIn("Project Web GUI lifecycle", system_index)
+        self.assertIn("backend API reference", system_index)
+
+        welcome = resolve_system_skill("operator/isomer-op-welcome")
+        for reference_name in ("help", "show-options", "choose-path", "show-skill-map"):
+            reference = welcome.joinpath("references", f"{reference_name}.md").read_text(encoding="utf-8")
+            self.assertIn("isomer-op-gui-mgr", reference, reference_name)
+        welcome_skill = welcome.joinpath("SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Project Web GUI", welcome_skill)
+        self.assertIn("isomer-op-gui-mgr", welcome_skill)
 
     def test_toolbox_mgr_skill_identity_and_command_pages(self) -> None:
         skill_path = "operator/isomer-op-toolbox-mgr"

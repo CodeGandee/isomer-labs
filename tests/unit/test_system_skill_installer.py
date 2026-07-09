@@ -41,6 +41,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         core = resolve_system_skill_selection()
         self.assertIn("core", core.selected_groups)
         self.assertIn("isomer-op-entrypoint", [skill.name for skill in core.skills])
+        self.assertIn("isomer-op-gui-mgr", [skill.name for skill in core.skills])
         self.assertNotIn("deepsci", core.selected_extensions)
 
         deepsci = resolve_system_skill_selection(extensions=("deepsci",))
