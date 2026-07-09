@@ -83,7 +83,7 @@ Use `isomer-cli project cleanup --part <part> --dry-run` before destructive clea
 
 Use `isomer-cli project content-root move --to <content-dir> --dry-run` before moving generated content, and use `isomer-cli project content-root move --to <content-dir> --yes` only after the user has reviewed the plan. Relocation updates Project Manifest paths and moves Isomer-managed content containers only. It preserves unmanaged leftovers and does not rewrite Workspace Runtime records, Pixi environments, installed packages, adapter runtime material, logs, stored path plans, or generated runtime internals. Warn the user that moved runtimes may need reinstall or reinitialization.
 
-Use read-only commands for checks unless the user explicitly requests initialization or preparation. `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, `isomer-cli project workspaces list`, `isomer-cli project context show`, `isomer-cli project paths preview`, and Houmao project status checks must not mutate Project config, Workspace Runtime, or live Houmao agents.
+Use read-only commands for checks unless the user explicitly requests initialization or preparation. `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, `isomer-cli project workspaces list`, `isomer-cli project context show`, `isomer-cli project paths preview`, and Houmao project status checks must not mutate Project config, Workspace Runtime, or live Houmao agents.
 
 Route Houmao loop explanation, adapter customization guidance, template mapping, mailbox or gateway support, and runtime inspection to `isomer-srv-houmao-interop` only as bounded service support. Keep Project bootstrap and Project status checks in this operator workflow.
 

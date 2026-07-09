@@ -67,6 +67,21 @@ class PixiHostInfo:
 
 
 @dataclass(frozen=True)
+class HoumaoHostInfo:
+    available: bool
+    executable_path: str | None = None
+    version: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {"available": self.available, "optional": True}
+        if self.executable_path is not None:
+            data["executable_path"] = self.executable_path
+        if self.version is not None:
+            data["version"] = self.version
+        return data
+
+
+@dataclass(frozen=True)
 class PixiManifestInfo:
     manifest_path: Path
     manifest_kind: str
@@ -91,8 +106,9 @@ class DoctorReport:
     checks: list[DoctorCheck]
     diagnostics: list[Diagnostic]
     pixi: PixiHostInfo
+    houmao: HoumaoHostInfo
     project: dict[str, object] | None = None
-    topic: dict[str, object] | None = None
+    topics: list[dict[str, object]] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -105,11 +121,11 @@ class DoctorReport:
             "mutated": False,
             "checks": [check.to_json() for check in self.checks],
             "pixi": self.pixi.to_json(),
+            "houmao": self.houmao.to_json(),
+            "topics": self.topics,
         }
         if self.project is not None:
             payload["project"] = self.project
-        if self.topic is not None:
-            payload["topic"] = self.topic
         return payload
 
 
@@ -118,18 +134,22 @@ def build_doctor_report(
     project: Project | None,
     discovery_diagnostics: list[Diagnostic],
     project_diagnostics: list[Diagnostic],
-    context: EffectiveTopicContext | None,
+    contexts: list[EffectiveTopicContext],
     context_diagnostics: list[Diagnostic],
-    topic_skipped: bool,
+    topic_filters: tuple[str, ...] = (),
 ) -> DoctorReport:
     checks: list[DoctorCheck] = []
     diagnostics = [*discovery_diagnostics, *project_diagnostics, *context_diagnostics]
     pixi, host_checks, host_diagnostics = inspect_host_pixi()
     checks.extend(host_checks)
     diagnostics.extend(host_diagnostics)
+    houmao, houmao_checks, houmao_diagnostics = inspect_host_houmao()
+    checks.extend(houmao_checks)
+    diagnostics.extend(houmao_diagnostics)
 
     project_payload: dict[str, object] | None = None
     project_pixi_info: PixiManifestInfo | None = None
+    topic_payloads: list[dict[str, object]] = []
     if project is None:
         if discovery_diagnostics:
             checks.append(
@@ -161,29 +181,29 @@ def build_doctor_report(
         )
         checks.extend(project_checks)
         diagnostics.extend(project_pixi_diagnostics)
-        if context is None:
+        if not contexts:
             checks.append(
                 DoctorCheck(
-                    id="topic.selection",
+                    id="topic.scan",
                     scope="topic",
-                    status="skip" if topic_skipped else "fail",
-                    concept="Effective Topic Context",
-                    summary=(
-                        "No Research Topic was selected; topic Pixi binding checks were skipped."
-                        if topic_skipped
-                        else "Research Topic selection failed; topic Pixi binding checks were not run."
-                    ),
+                    status="fail" if has_errors(context_diagnostics) else "skip",
+                    concept="Research Topic diagnostics",
+                    summary=_topic_scan_summary(project, topic_filters, context_diagnostics),
                 )
             )
             mode = "project"
         else:
-            topic_payload, topic_checks, topic_diagnostics = inspect_topic_pixi(
-                context,
-                project_pixi_info,
-                pixi_executable=pixi.executable_path,
-            )
-            checks.extend(topic_checks)
-            diagnostics.extend(topic_diagnostics)
+            multi_topic = len(contexts) > 1
+            for context in contexts:
+                topic_payload, topic_checks, topic_diagnostics = inspect_topic_pixi(
+                    context,
+                    project_pixi_info,
+                    pixi_executable=pixi.executable_path,
+                    prefix_check_ids=multi_topic,
+                )
+                topic_payloads.append(topic_payload)
+                checks.extend(topic_checks)
+                diagnostics.extend(topic_diagnostics)
             mode = "topic"
 
     return DoctorReport(
@@ -191,8 +211,9 @@ def build_doctor_report(
         checks=checks,
         diagnostics=diagnostics,
         pixi=pixi,
+        houmao=houmao,
         project=project_payload,
-        topic=topic_payload if context is not None else None,
+        topics=topic_payloads,
     )
 
 
@@ -306,6 +327,127 @@ def inspect_host_pixi() -> tuple[PixiHostInfo, list[DoctorCheck], list[Diagnosti
     return PixiHostInfo(available=True, executable_path=pixi_path, version=version), checks, diagnostics
 
 
+def inspect_host_houmao() -> tuple[HoumaoHostInfo, list[DoctorCheck], list[Diagnostic]]:
+    checks: list[DoctorCheck] = []
+    diagnostics: list[Diagnostic] = []
+    houmao_path = shutil.which("houmao-mgr")
+    if houmao_path is None:
+        checks.append(
+            DoctorCheck(
+                id="host.houmao.executable",
+                scope="host",
+                status="warn",
+                concept="Houmao",
+                summary="Optional houmao-mgr executable was not found on PATH.",
+            )
+        )
+        diagnostics.append(
+            Diagnostic(
+                code="ISO040",
+                severity="warning",
+                concept="Houmao",
+                message=(
+                    "houmao-mgr is optional for read-only doctor output, but it is required for Houmao-backed "
+                    "Project bootstrap, launch, mailbox, gateway, and agent team operations."
+                ),
+            )
+        )
+        checks.append(
+            DoctorCheck(
+                id="host.houmao.version",
+                scope="host",
+                status="skip",
+                concept="Houmao",
+                summary="Houmao manager version check was skipped because the executable is missing.",
+            )
+        )
+        return HoumaoHostInfo(available=False), checks, diagnostics
+
+    checks.append(
+        DoctorCheck(
+            id="host.houmao.executable",
+            scope="host",
+            status="pass",
+            concept="Houmao",
+            summary="houmao-mgr executable was found.",
+            source_detail=houmao_path,
+        )
+    )
+    result, error = _run_command([houmao_path, "--version"])
+    if error is not None:
+        checks.append(
+            DoctorCheck(
+                id="host.houmao.version",
+                scope="host",
+                status="warn",
+                concept="Houmao",
+                summary=f"Houmao manager version check failed: {error}.",
+            )
+        )
+        diagnostics.append(
+            Diagnostic(
+                code="ISO041",
+                severity="warning",
+                concept="Houmao",
+                message=f"Houmao manager version check failed: {error}.",
+            )
+        )
+        return HoumaoHostInfo(available=True, executable_path=houmao_path), checks, diagnostics
+    assert result is not None
+    if result.returncode != 0:
+        message = _command_failure_summary(result)
+        checks.append(
+            DoctorCheck(
+                id="host.houmao.version",
+                scope="host",
+                status="warn",
+                concept="Houmao",
+                summary=f"Houmao manager version check failed: {message}.",
+            )
+        )
+        diagnostics.append(
+            Diagnostic(
+                code="ISO041",
+                severity="warning",
+                concept="Houmao",
+                message=f"Houmao manager version check returned a non-zero exit status: {message}.",
+            )
+        )
+        return HoumaoHostInfo(available=True, executable_path=houmao_path), checks, diagnostics
+
+    version = _first_output_line(result.stdout) or _first_output_line(result.stderr)
+    if version is None:
+        checks.append(
+            DoctorCheck(
+                id="host.houmao.version",
+                scope="host",
+                status="warn",
+                concept="Houmao",
+                summary="Houmao manager version check completed, but no parseable version output was returned.",
+            )
+        )
+        diagnostics.append(
+            Diagnostic(
+                code="ISO041",
+                severity="warning",
+                concept="Houmao",
+                message="Houmao manager version check completed, but no parseable version output was returned.",
+            )
+        )
+        return HoumaoHostInfo(available=True, executable_path=houmao_path), checks, diagnostics
+
+    checks.append(
+        DoctorCheck(
+            id="host.houmao.version",
+            scope="host",
+            status="pass",
+            concept="Houmao",
+            summary=f"Houmao manager version detected: {version}.",
+        )
+    )
+    return HoumaoHostInfo(available=True, executable_path=houmao_path, version=version), checks, diagnostics
+
+
 def inspect_project_pixi(
     project: Project,
     pixi: PixiHostInfo,
@@ -414,27 +556,29 @@ def inspect_topic_pixi(
     project_pixi_info: PixiManifestInfo | None,
     *,
     pixi_executable: str | None = None,
+    prefix_check_ids: bool = False,
 ) -> tuple[dict[str, object], list[DoctorCheck], list[Diagnostic]]:
+    topic_id = context.research_topic.id
     checks: list[DoctorCheck] = [
         DoctorCheck(
-            id="topic.selection",
+            id=_topic_check_id(topic_id, "topic.selection", prefix_check_ids),
             scope="topic",
             status="pass",
             concept="Effective Topic Context",
-            summary=f"Research Topic selected: {context.research_topic.id}.",
+            summary=f"Research Topic selected: {topic_id}.",
             source_detail=context.sources.get("research_topic_id"),
+            details=_topic_check_details(context),
         )
     ]
     diagnostics: list[Diagnostic] = []
     project = context.project
-    topic_id = context.research_topic.id
     project_bindings = project.manifest.active_topic_pixi_environment_bindings(topic_id)
     standalone_bindings = project.manifest.active_topic_standalone_pixi_bindings(topic_id)
     resolved_standalone_binding = None
     standalone_binding_payloads: list[dict[str, object]] = [binding.to_json() for binding in standalone_bindings]
 
     for index, binding in enumerate(project_bindings):
-        check_id = f"topic.pixi.project-env.{index + 1}"
+        check_id = _topic_check_id(topic_id, f"topic.pixi.project-env.{index + 1}", prefix_check_ids)
         if project_pixi_info is None:
             checks.append(
                 DoctorCheck(
@@ -447,7 +591,7 @@ def inspect_topic_pixi(
                         "but no Project-level Pixi manifest is available."
                     ),
                     source_path=display_path(project.manifest_path, project.root),
-                    details=binding.to_json(),
+                    details=_topic_check_details(context, binding.to_json()),
                 )
             )
         elif binding.pixi_environment in project_pixi_info.environments:
@@ -459,7 +603,7 @@ def inspect_topic_pixi(
                     concept="Topic Pixi environment binding",
                     summary=f"Project Pixi environment binding is declared: {binding.pixi_environment}.",
                     source_path=display_path(project_pixi_info.manifest_path, project.root),
-                    details=binding.to_json(),
+                    details=_topic_check_details(context, binding.to_json()),
                 )
             )
         else:
@@ -474,7 +618,7 @@ def inspect_topic_pixi(
                         "but that environment is not declared in the Project-level Pixi manifest."
                     ),
                     source_path=display_path(project_pixi_info.manifest_path, project.root),
-                    details=binding.to_json(),
+                    details=_topic_check_details(context, binding.to_json()),
                 )
             )
 
@@ -483,14 +627,21 @@ def inspect_topic_pixi(
             context,
             pixi_executable=pixi_executable,
         )
-        check_id = "topic.pixi.standalone.1" if standalone_bindings else "topic.pixi.standalone.default"
+        base_check_id = "topic.pixi.standalone.1" if standalone_bindings else "topic.pixi.standalone.default"
+        check_id = _topic_check_id(topic_id, base_check_id, prefix_check_ids)
         if resolved_standalone_binding is not None:
             checks.append(_standalone_binding_success_check(context, resolved_standalone_binding, check_id))
             if not standalone_bindings:
                 standalone_binding_payloads.append(resolved_standalone_binding.to_json(project.root))
         elif failure is not None:
             if not project_bindings and not standalone_bindings and failure.kind == "unresolvable-target":
-                checks.append(_missing_topic_binding_check(context, failure))
+                checks.append(
+                    _missing_topic_binding_check(
+                        context,
+                        failure,
+                        _topic_check_id(topic_id, "topic.pixi.binding.present", prefix_check_ids),
+                    )
+                )
             else:
                 checks.append(_standalone_binding_failure_check(context, failure, check_id))
                 diagnostic = _standalone_binding_failure_diagnostic(context, failure, check_id)
@@ -499,6 +650,7 @@ def inspect_topic_pixi(
 
     topic_payload: dict[str, object] = {
         "research_topic_id": topic_id,
+        "topic_workspace_id": context.topic_workspace_id,
         "context": context.to_json(),
         "project_pixi_environment_bindings": [binding.to_json() for binding in project_bindings],
         "standalone_pixi_bindings": standalone_binding_payloads,
@@ -548,6 +700,37 @@ def render_doctor_text(report: DoctorReport) -> list[str]:
         lines.append(scope.title())
         lines.extend(f"- [{check.status}] {check.id}: {check.summary}" for check in scoped_checks)
     return lines
+
+
+def _topic_scan_summary(
+    project: Project,
+    topic_filters: tuple[str, ...],
+    context_diagnostics: list[Diagnostic],
+) -> str:
+    if context_diagnostics and has_errors(context_diagnostics):
+        if topic_filters:
+            return "Filtered Research Topic diagnostics failed before topic Pixi binding checks could run."
+        return "Research Topic diagnostics failed before topic Pixi binding checks could run."
+    active_count = sum(1 for topic in project.manifest.research_topics if topic.status == "active")
+    if topic_filters:
+        return "No requested Research Topics were available for topic Pixi binding checks."
+    if active_count == 0:
+        return "Project Manifest registers no active Research Topics; topic Pixi binding checks were skipped."
+    return "No Research Topic contexts were available; topic Pixi binding checks were skipped."
+
+
+def _topic_check_id(topic_id: str, base_id: str, prefix: bool) -> str:
+    return f"topic.{topic_id}.{base_id.removeprefix('topic.')}" if prefix else base_id
+
+
+def _topic_check_details(
+    context: EffectiveTopicContext,
+    details: dict[str, object] | None = None,
+) -> dict[str, object]:
+    merged = dict(details or {})
+    merged["research_topic_id"] = context.research_topic.id
+    merged["topic_workspace_id"] = context.topic_workspace_id
+    return merged
 
 
 def _project_manifest_validation_check(project: Project, diagnostics: list[Diagnostic]) -> DoctorCheck:
@@ -684,7 +867,7 @@ def _standalone_binding_success_check(
             f"with source {source} and environment {details['pixi_environment']}."
         ),
         source_path=str(details["resolved_manifest_path"]),
-        details=details,
+        details=_topic_check_details(context, details),
     )
 
 
@@ -700,16 +883,17 @@ def _standalone_binding_failure_check(
         concept=_standalone_binding_failure_concept(failure),
         summary=_standalone_binding_failure_summary(context, failure),
         source_path=display_path(failure.target_path, context.project.root),
-        details=failure.to_json(context.project.root),
+        details=_topic_check_details(context, failure.to_json(context.project.root)),
     )
 
 
 def _missing_topic_binding_check(
     context: EffectiveTopicContext,
     failure: TopicStandalonePixiBindingResolutionFailure,
+    check_id: str,
 ) -> DoctorCheck:
     return DoctorCheck(
-        id="topic.pixi.binding.present",
+        id=check_id,
         scope="topic",
         status="fail",
         concept="Topic Pixi environment binding",
@@ -718,7 +902,7 @@ def _missing_topic_binding_check(
             f"and Pixi could not resolve the implicit Topic Workspace directory target {display_path(failure.target_path, context.project.root)}."
         ),
         source_path=display_path(context.project.manifest_path, context.project.root),
-        details=failure.to_json(context.project.root),
+        details=_topic_check_details(context, failure.to_json(context.project.root)),
     )
 
 

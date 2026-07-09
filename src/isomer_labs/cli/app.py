@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Sequence
+from importlib import metadata
+from typing import Any, Sequence
 
 import click
 
@@ -18,121 +19,42 @@ from isomer_labs.cli.options import CliOptions
 from isomer_labs.cli.output import OutputMode
 
 
-COMMAND_SURFACE = """Milestone 1 Isomer Labs Project discovery and path preview CLI.
+REPOSITORY_URL = "https://github.com/CodeGandee/isomer-labs"
+DOCUMENTATION_URL = "https://codegandee.github.io/isomer-labs/"
+PACKAGE_NAME = "isomer-labs"
+
+
+def _package_version() -> str:
+    try:
+        return metadata.version(PACKAGE_NAME)
+    except metadata.PackageNotFoundError:
+        return "unknown"
+
+
+PACKAGE_VERSION = _package_version()
+
+COMMAND_SURFACE = f"""Isomer Labs CLI for project setup, topic workspaces, research records, and the local web GUI.
 
 \b
-Command surface:
-  project init
-  project content-root move
-  project cleanup
-  project doctor
-  project validate
-  project topics list
-  project topics show
-  project topics create
-  project topics update
-  project topics delete
-  project topic-actors list
-  project topic-actors show
-  project topic-actors register
-  project topic-actors update
-  project topic-actors archive
-  project topic-actors materialize
-  project topic-actors repair
-  project topic-actors diagnose
-  project topic-main-guidance render
-  project topic-main-guidance inspect
-  project topic-main-guidance ensure
-  project workspaces list
-  project skill-callbacks register
-  project skill-callbacks install
-  project skill-callbacks resolve
-  project skill-callbacks insertion-points
-  project skill-callbacks list
-  project skill-callbacks show
-  project skill-callbacks disable
-  project skill-callbacks validate
-  project system-extensions list
-  project system-extensions remember
-  project system-extensions forget
-  project context show
-  project web serve
-  project self show
-  project self identity
-  project self pixi
-  project self env
-  project self paths
-  project self queries
-  project repos create
-  project outputs policy
-  project paths default
-  project paths explain
-  project paths get
-  project paths list
-  project paths materialize
-  project paths materialize-default
-  project paths preview
-  project paths register
-  project paths reset
-  project paths unregister
-  project paths update
-  project runtime init
-  project runtime prepare
-  project runtime inspect
-  project runtime validate
-  project topic-reset checkpoint
-  project topic-reset update-checkpoint
-  project topic-reset list
-  project topic-reset show
-  project topic-reset plan
-  project topic-reset show-plan
-  project topic-reset apply
-  project artifact-formats validate
-  project artifact-formats render
-  project artifact-formats register
-  project team-instances create
-  project team-instances list
-  project team-instances show
-  project team-instances adapter-link export
-  project team-instances launch-material prepare
-  project team-instances launch
-  project team-instances inspect-live
-  project team-instances stop
-  project team-instances reconcile
-  project team-instances adopt
-  project handoffs dispatch
-  project handoffs observe
-  project handoffs normalize
-  project team-templates list
-  project team-templates inspect
-  project team-templates validate
-  project team-templates register
-  project team-repositories list
-  project team-repositories inspect
-  project team-profiles specialize
-  project team-profiles materialize
-  project team-profiles validate
-  ext deepsci call
-  ext deepsci tools
-  ext research records create
-  ext research records show
-  ext research records list
-  ext research records update
-  ext research records delete
-  ext research records index rebuild
-  ext research records index validate
-  ext research records index cleanup
-  ext research records query list
-  ext research records query export
-  ext research records query lineage
-  ext research records query files
-  ext research records query facets
-  schemas list
-  system-skills list
-  system-skills status
-  system-skills install
-  system-skills uninstall
+Repository: {REPOSITORY_URL}
+Documentation: {DOCUMENTATION_URL}
 """
+
+
+class HelpOnEmptyGroup(click.Group):
+    """Click group that treats an empty group invocation as help."""
+
+    group_class = type
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("invoke_without_command", True)
+        super().__init__(*args, **kwargs)
+
+    def invoke(self, ctx: click.Context) -> object:
+        result = super().invoke(ctx)
+        if ctx.invoked_subcommand is None and not ctx.resilient_parsing:
+            click.echo(ctx.get_help())
+        return result
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -170,12 +92,13 @@ def build_parser() -> click.Group:
 
 
 @click.group(
+    cls=HelpOnEmptyGroup,
     context_settings={"help_option_names": ["-h", "--help"]},
     help=COMMAND_SURFACE,
-    invoke_without_command=True,
 )
 @click.option("--print-json", "print_json", is_flag=True, help="Emit deterministic JSON for the selected command.")
 @click.option("--debug", "debug", is_flag=True, help="Include debug details for unexpected CLI errors.")
+@click.version_option(PACKAGE_VERSION, "--version", prog_name="isomer-cli", message="%(prog)s %(version)s")
 @click.pass_context
 def app(
     ctx: click.Context,
@@ -187,11 +110,9 @@ def app(
         output_mode=output_mode,
         debug=debug,
     )
-    if ctx.invoked_subcommand is None:
-        click.echo(ctx.get_help())
 
 
-@app.group(name="project", help="Project-scoped commands.")
+@app.group(name="project", help="Manage Isomer Projects, Research Topics, Workspace Runtime, records, and the local web GUI.")
 @click.option("--root", "project_root", default=None, help="Explicit Project root selector.")
 @click.option("--project", "project_alias", default=None, hidden=True, help="Compatibility alias for --root.")
 @click.option("--manifest", default=None, help="Explicit Project Manifest selector.")
@@ -210,8 +131,6 @@ def project_group(
         project=selected_root if selected_root is not None else options.project,
         manifest=manifest if manifest is not None else options.manifest,
     )
-    if ctx.invoked_subcommand is None:
-        click.echo(ctx.get_help())
 
 
 def _register_commands() -> None:
@@ -230,8 +149,8 @@ def _register_commands() -> None:
     from isomer_labs.cli.commands.topic_reset import register_topic_reset_commands
     from isomer_labs.cli.commands.web import register_web_commands
 
+    register_doctor_commands(app)
     register_project_commands(project_group)
-    register_doctor_commands(project_group)
     register_runtime_commands(project_group)
     register_artifact_format_commands(project_group)
     register_topic_reset_commands(project_group)

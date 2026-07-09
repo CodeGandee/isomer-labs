@@ -73,7 +73,7 @@ The project manager skill SHALL guide Project lifecycle commands without bypassi
 
 #### Scenario: Check project remains read-only
 - **WHEN** the user asks to check, diagnose, or validate an existing Project
-- **THEN** the skill routes to `check-project`, uses read-only `isomer-cli project validate`, `isomer-cli project doctor`, and related diagnostics commands, and includes Isomer-managed Houmao project status checks without launching, stopping, or messaging managed agents
+- **THEN** the skill routes to `check-project`, uses read-only `isomer-cli project validate`, `isomer-cli doctor`, and related diagnostics commands, and includes Isomer-managed Houmao project status checks without launching, stopping, or messaging managed agents
 
 #### Scenario: Topic listing uses CLI surfaces
 - **WHEN** the user asks what Research Topics or Topic Workspaces are available
@@ -174,7 +174,7 @@ The project manager skill SHALL use `isomer-cli project ...` as the canonical co
 
 #### Scenario: CLI boundary examples use project namespace
 - **WHEN** the project-manager CLI boundary reference lists command examples
-- **THEN** Project-scoped commands use shapes such as `isomer-cli project init`, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, and `isomer-cli project cleanup --dry-run`
+- **THEN** Project-scoped commands use shapes such as `isomer-cli project init`, `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project runtime init`, and `isomer-cli project cleanup --dry-run`
 
 #### Scenario: Project selector examples use root option
 - **WHEN** project-manager guidance selects a Project root explicitly

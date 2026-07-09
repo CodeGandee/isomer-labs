@@ -31,9 +31,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 | --- | --- | --- |
 | Topic Workspace environment setup, topic-main readiness, external repos, projections, and verification materialization. | `isomer-srv-topic-env-setup` | Delegated by Topic Creator, Topic Manager, or Topic Team Specialization after manifest-backed topic refs exist. |
 | Agent Workspace worktree creation and cwd proof. | `isomer-srv-agent-env-setup` | Delegated by Topic Team Specialization or Topic Manager after topic-main predecessor evidence and authoritative Agent Names exist. |
-| Houmao loop, adapter, mailbox, gateway, launch material, and runtime support. | `isomer-srv-houmao-interop` | Bounded support through Project Manager or Topic Team Specialization. |
+| Houmao loop, adapter, mailbox, gateway, launch material, and runtime support. | `isomer-srv-houmao-interop` | Bounded internal provider support through Isomer CLI skill-context, Project Manager, Topic Service Agent support, or Topic Team Specialization. |
 | Package repository resolution. | `isomer-srv-resolve-pkg-repo` | Bounded service support for package or repo resolution. |
-| Topic service agent support. | `isomer-srv-topic-service-agent-support` | Bounded service-team support, not a normal first-click owner route. |
+| Topic service agent support, including explicit Topic Service Master prepare, launch, inspect, stop, and repair lifecycle routes. | `isomer-srv-topic-service-agent-support` | Bounded service-team support, not a normal first-click owner route. Houmao remains an internal integration provider. |
 
 ## Misc Skills
 

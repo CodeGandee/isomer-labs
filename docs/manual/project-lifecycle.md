@@ -8,7 +8,7 @@ Use this workflow when you want to understand a Project without changing it.
 
 ```bash
 isomer-cli --print-json project validate
-isomer-cli --print-json project doctor
+isomer-cli --print-json doctor
 isomer-cli project topics list
 isomer-cli project workspaces list
 isomer-cli --print-json project context show --topic my-topic
@@ -27,7 +27,7 @@ pixi install
 isomer-cli project init
 isomer-cli project topics create my-topic --statement "Investigate the concrete research question." --set-default
 isomer-cli --print-json project validate
-isomer-cli --print-json project doctor
+isomer-cli --print-json doctor
 ```
 
 `project init` mutates the Project filesystem by creating the Isomer-managed Houmao overlay, Project Config Directory, Project Manifest, and selected generated content root. `project topics create` mutates the Project Manifest and Research Topic Configs, and creates the Topic Workspace directory under `isomer-content/topic-ws/<topic-id>/` by default or `<content-dir>/topic-ws/<topic-id>/` after custom content-root init. Neither command creates Workspace Runtime state or live Houmao agents.

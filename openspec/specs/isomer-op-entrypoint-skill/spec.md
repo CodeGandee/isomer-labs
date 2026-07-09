@@ -86,7 +86,7 @@ The entrypoint SHALL include concise routing guidance for Isomer CLI command fam
 
 #### Scenario: Read-only context discovery commands are named
 - **WHEN** entrypoint CLI guidance is inspected
-- **THEN** it names safe context discovery surfaces such as `isomer-cli project self queries`, `isomer-cli project self show`, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, `isomer-cli project context show`, and Workspace Path Resolution commands
+- **THEN** it names safe context discovery surfaces such as `isomer-cli project self queries`, `isomer-cli project self show`, `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, `isomer-cli project context show`, and Workspace Path Resolution commands
 
 #### Scenario: Topic-owned record commands are named
 - **WHEN** entrypoint CLI guidance is inspected

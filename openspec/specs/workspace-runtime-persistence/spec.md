@@ -27,7 +27,7 @@ The system SHALL create and reopen a Workspace Runtime for a selected Topic Work
 - **THEN** mutating commands fail with a schema-version diagnostic and do not alter runtime records or directories
 
 #### Scenario: Runtime is not created by read-only commands
-- **WHEN** a user runs `project doctor`, `project validate`, `project context show`, `project paths preview`, `project team-templates`, or `project team-profiles validate`
+- **WHEN** a user runs `doctor`, `project validate`, `project context show`, `project paths preview`, `project team-templates`, or `project team-profiles validate`
 - **THEN** the system does not create `state.sqlite` or Workspace Runtime directories
 
 ### Requirement: Workspace Runtime Record Store

@@ -6,7 +6,7 @@ When this subcommand is selected, execute the following steps in order.
 
 1. Resolve the Project root from the user-provided path or current working directory.
 2. Run `isomer-cli --print-json project validate` from the Project root, or use `isomer-cli --print-json project --root <project-root> validate` when needed.
-3. Run `isomer-cli --print-json project doctor` for Project-level diagnostics; include `--topic <topic-id>` when the user asks about one Research Topic.
+3. Run `isomer-cli --print-json doctor` for Project-level diagnostics; include `--with-topic <topic-id>` when the user asks about one Research Topic.
 4. Check Houmao status only when relevant:
    - If `.isomer-labs/.houmao/` exists or Houmao status matters, run the read-only Houmao Project status command from `references/houmao-bootstrap.md`.
    - Do not treat root `.houmao/` as Isomer-managed state.

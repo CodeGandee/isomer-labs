@@ -118,6 +118,65 @@ class IsomerCliTests(unittest.TestCase):
             normalized.insert(0, "--print-json")
         return normalized
 
+    def test_empty_top_level_invocation_shows_help_with_links(self) -> None:
+        status, stdout, stderr = self.run_main([])
+
+        self.assertEqual(0, status)
+        self.assertEqual("", stderr)
+        self.assertIn("Usage: isomer-cli", stdout)
+        self.assertIn("Repository: https://github.com/CodeGandee/isomer-labs", stdout)
+        self.assertIn("Documentation: https://codegandee.github.io/isomer-labs/", stdout)
+        self.assertIn("Commands:", stdout)
+        self.assertIn("doctor         Run read-only dependency, Project, and topic diagnostics.", stdout)
+        self.assertIn("project        Manage Isomer Projects", stdout)
+        self.assertIn("ext            Use extension command surfaces", stdout)
+        self.assertIn("schemas        Inspect built-in schemas", stdout)
+        self.assertIn("system-skills  Install and inspect packaged Isomer system skills", stdout)
+        self.assertEqual(1, stdout.count("doctor         Run read-only dependency, Project, and topic diagnostics."))
+        self.assertEqual(1, stdout.count("project        Manage Isomer Projects"))
+        self.assertNotIn("Top-level commands:", stdout)
+        self.assertNotIn("Command surface:", stdout)
+        self.assertNotIn("ISOCLI001", stdout)
+
+    def test_empty_group_invocation_shows_help_at_that_level(self) -> None:
+        cases = [
+            (["project"], "Usage: isomer-cli project", ("topics", "runtime", "web")),
+            (["project", "topics"], "Usage: isomer-cli project topics", ("list", "show", "create")),
+            (["project", "team-instances", "adapter-link"], "Usage: isomer-cli project team-instances adapter-link", ("export",)),
+            (["ext", "research"], "Usage: isomer-cli ext research", ("records", "ideas")),
+            (["system-skills"], "Usage: isomer-cli system-skills", ("list", "install", "status")),
+        ]
+
+        for args, usage, expected_commands in cases:
+            with self.subTest(args=args):
+                status, stdout, stderr = self.run_main(args)
+
+                self.assertEqual(0, status, stdout)
+                self.assertEqual("", stderr)
+                self.assertIn(usage, stdout)
+                self.assertIn("Commands:", stdout)
+                for expected_command in expected_commands:
+                    self.assertIn(expected_command, stdout)
+                self.assertNotIn("ISOCLI001", stdout)
+                self.assertNotIn("Mutated: false", stdout)
+
+    def test_malformed_command_still_reports_normalized_invocation_error(self) -> None:
+        status, stdout, stderr = self.run_main(["project", "topics", "show"])
+
+        self.assertEqual(2, status)
+        self.assertEqual("", stderr)
+        self.assertIn("ERROR | ISOCLI001 | CLI invocation", stdout)
+        self.assertIn("Missing argument 'TOPIC_ID'", stdout)
+        self.assertIn("Mutated: false", stdout)
+
+    def test_version_option_reports_package_version(self) -> None:
+        status, stdout, stderr = self.run_main(["--version"])
+        expected_version = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+
+        self.assertEqual(0, status)
+        self.assertEqual("", stderr)
+        self.assertEqual(f"isomer-cli {expected_version}\n", stdout)
+
     def init_project(self, root: Path, topic_id: str = "default", *, create_topic: bool = True) -> None:
         status, output = self.run_cli(["project", "--root", str(root), "init"], cwd=root, env=self.fake_houmao_env(root))
         self.assertEqual(0, status, output)
@@ -555,52 +614,49 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIsInstance(cli.app, click.Group)
         self.assertIsInstance(cli.build_parser(), click.Group)
         help_text = result.output
-        for command in (
-            "project init",
-            "project cleanup",
-            "project doctor",
-            "project validate",
-            "project topics list",
-            "project workspaces list",
-            "project skill-callbacks register",
-            "project skill-callbacks install",
-            "project skill-callbacks resolve",
-            "project skill-callbacks insertion-points",
-            "project skill-callbacks list",
-            "project skill-callbacks show",
-            "project skill-callbacks disable",
-            "project skill-callbacks validate",
-            "project system-extensions list",
-            "project system-extensions remember",
-            "project system-extensions forget",
-            "project context show",
-            "project self show",
-            "project self identity",
-            "project self pixi",
-            "project self env",
-            "project self paths",
-            "project self queries",
-            "project topic-main-guidance render",
-            "project topic-main-guidance inspect",
-            "project topic-main-guidance ensure",
-            "project paths preview",
-            "schemas list",
-            "project team-templates",
-            "project team-profiles",
-            "project handoffs",
-            "project handoffs dispatch",
-            "project handoffs observe",
-            "project handoffs normalize",
-            "system-skills list",
-            "system-skills status",
-            "system-skills install",
-            "system-skills uninstall",
+        for text in (
+            "Repository: https://github.com/CodeGandee/isomer-labs",
+            "Documentation: https://codegandee.github.io/isomer-labs/",
+            "doctor         Run read-only dependency, Project, and topic diagnostics.",
+            "project        Manage Isomer Projects",
+            "ext            Use extension command surfaces",
+            "schemas        Inspect built-in schemas",
+            "system-skills  Install and inspect packaged Isomer system skills",
         ):
-            self.assertIn(command, help_text)
-        for command in ("uc01", "uc01 run", "uc01 inspect", "\n  init", "\n  validate", "\n  doctor"):
+            self.assertIn(text, help_text)
+        self.assertNotIn("Top-level commands:", help_text)
+        self.assertEqual(1, help_text.count("doctor         Run read-only dependency, Project, and topic diagnostics."))
+        self.assertEqual(1, help_text.count("project        Manage Isomer Projects"))
+        for command in ("project init", "project topics list", "system-skills list", "uc01", "uc01 run", "uc01 inspect", "\n  init", "\n  validate"):
             self.assertNotIn(command, help_text)
         pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         self.assertEqual("isomer_labs.cli:main", pyproject["project"]["scripts"]["isomer-cli"])
+
+        project_help = runner.invoke(cli.app, ["project", "--help"])
+        self.assertEqual(0, project_help.exit_code, project_help.output)
+        self.assertNotIn("doctor", project_help.output)
+        for command in (
+            "init",
+            "cleanup",
+            "validate",
+            "topics",
+            "workspaces",
+            "skill-callbacks",
+            "system-extensions",
+            "context",
+            "self",
+            "topic-main-guidance",
+            "paths",
+            "team-templates",
+            "team-profiles",
+            "handoffs",
+        ):
+            self.assertIn(command, project_help.output)
+
+        system_skills_help = runner.invoke(cli.app, ["system-skills", "--help"])
+        self.assertEqual(0, system_skills_help.exit_code, system_skills_help.output)
+        for command in ("list", "status", "install", "uninstall"):
+            self.assertIn(command, system_skills_help.output)
 
         for help_args in (
             ["project", "handoffs", "--help"],
@@ -618,7 +674,6 @@ class IsomerCliTests(unittest.TestCase):
         for legacy_help_args in (
             ["init", "--help"],
             ["validate", "--help"],
-            ["doctor", "--help"],
             ["topics", "--help"],
             ["runtime", "--help"],
             ["team-instances", "--help"],
@@ -747,16 +802,24 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIn("--manifest", project_result.output)
         self.assertNotIn("--project", project_result.output)
 
-        result = runner.invoke(cli.app, ["project", "doctor", "--help"])
+        result = runner.invoke(cli.app, ["doctor", "--help"])
         self.assertEqual(0, result.exit_code, result.output)
         self.assertIn("Run read-only dependency, Project, and topic diagnostics.", result.output)
-        self.assertIn("--topic", result.output)
+        self.assertIn("--root", result.output)
+        self.assertIn("--manifest", result.output)
+        self.assertIn("--with-topic <research-topic-id>", result.output)
+        self.assertNotIn("--topic ", result.output)
         self.assertNotIn("--project", result.output)
-        self.assertNotIn("--manifest", result.output)
         self.assertNotIn("--json", result.output)
         self.assertNotIn("--format", result.output)
         self.assertNotIn("--fix", result.output)
         self.assertNotIn("--prepare", result.output)
+
+    def test_project_doctor_is_removed(self) -> None:
+        status, output, stderr = self.run_main(["project", "doctor"])
+        self.assertEqual(2, status)
+        self.assertEqual("", stderr)
+        self.assertIn("No such command 'doctor'", output)
 
     def test_root_print_json_is_documented_and_applies_to_subcommands(self) -> None:
         root = self.make_root()
@@ -769,7 +832,7 @@ class IsomerCliTests(unittest.TestCase):
 
         for args in (
             ["--print-json", "project", "validate"],
-            ["--print-json", "project", "doctor"],
+            ["--print-json", "doctor"],
             ["--print-json", "project", "runtime", "inspect"],
             ["--print-json", "project", "team-instances", "list"],
         ):
@@ -903,24 +966,48 @@ class IsomerCliTests(unittest.TestCase):
     def test_doctor_dependency_only_reports_missing_and_found_pixi(self) -> None:
         root = self.make_root()
         with patch("isomer_labs.project.doctor.shutil.which", return_value=None):
-            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("dependency-only", data["mode"])
         self.assertFalse(data["mutated"])
+        self.assertEqual([], data["topics"])
+        self.assertNotIn("topic", data)
         self.assertEqual("fail", self.check(data, "host.pixi.executable")["status"])
         self.assertEqual("skip", self.check(data, "project.discovery")["status"])
+        self.assertEqual("warn", self.check(data, "host.houmao.executable")["status"])
         self.assertIn("ISO030", {diagnostic["code"] for diagnostic in data["diagnostics"]})
 
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertTrue(data["ok"])
         self.assertEqual("dependency-only", data["mode"])
+        self.assertEqual([], data["topics"])
         self.assertEqual("pass", self.check(data, "host.pixi.version")["status"])
         self.assertEqual("pixi 0.99.0", data["pixi"]["version"])
+
+    def test_doctor_optional_houmao_warning_does_not_fail_ok(self) -> None:
+        root = self.make_root()
+
+        def fake_which(command: str) -> str | None:
+            return "/usr/bin/pixi" if command == "pixi" else None
+
+        def fake_run(args: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+            if args[1:] == ["--version"]:
+                return subprocess.CompletedProcess(args, 0, stdout="pixi 0.99.0\n", stderr="")
+            return subprocess.CompletedProcess(args, 2, stdout="", stderr="unexpected command")
+
+        with patch("shutil.which", side_effect=fake_which), patch("subprocess.run", side_effect=fake_run):
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["ok"])
+        self.assertEqual("warn", self.check(data, "host.houmao.executable")["status"])
+        self.assertEqual("skip", self.check(data, "host.houmao.version")["status"])
+        self.assertIn("ISO040", {diagnostic["code"] for diagnostic in data["diagnostics"]})
 
     def test_doctor_project_pixi_manifest_lockfile_and_requires_checks(self) -> None:
         root = self.make_root()
@@ -936,10 +1023,12 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("topic", data["mode"])
+        self.assertEqual(["default"], [topic["research_topic_id"] for topic in data["topics"]])
+        self.assertNotIn("topic", data)
         self.assertEqual("pass", self.check(data, "project.pixi.manifest")["status"])
         self.assertEqual("pass", self.check(data, "project.pixi.lockfile")["status"])
         self.assertEqual("pass", self.check(data, "project.pixi.requires")["status"])
@@ -958,7 +1047,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("fail", self.check(data, "project.pixi.manifest")["status"])
@@ -966,7 +1055,7 @@ class IsomerCliTests(unittest.TestCase):
         self.add_project_pixi_manifest(root)
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("warn", self.check(data, "project.pixi.lockfile")["status"])
@@ -992,9 +1081,10 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
+        self.assertEqual(["alpha"], [topic["research_topic_id"] for topic in data["topics"]])
         self.assertEqual("pass", self.check(data, "topic.pixi.project-env.1")["status"])
         self.assertEqual("pass", self.check(data, "topic.pixi.project-env.2")["status"])
 
@@ -1003,7 +1093,7 @@ class IsomerCliTests(unittest.TestCase):
         self.add_project_pixi_manifest(missing_root, environments=("alpha-main",), lockfile=True)
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=missing_root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=missing_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("fail", self.check(data, "topic.pixi.binding.present")["status"])
@@ -1021,10 +1111,73 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=absent_env_root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=absent_env_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("fail", self.check(data, "topic.pixi.project-env.1")["status"])
+
+    def test_doctor_default_scans_all_active_manifest_topics_and_ignores_stray_workspaces(self) -> None:
+        root = self.make_root()
+        self.make_two_topic_project(root)
+        self.add_project_pixi_manifest(root, environments=("alpha-main", "beta-main"), lockfile=True)
+        self.append_manifest(
+            root,
+            """
+            [[topic_pixi_environment_bindings]]
+            research_topic_id = "alpha"
+            pixi_environment = "alpha-main"
+
+            [[topic_pixi_environment_bindings]]
+            research_topic_id = "beta"
+            pixi_environment = "beta-main"
+            """,
+        )
+        (root / "topic-workspaces" / "stray").mkdir(parents=True)
+        which_patch, run_patch = self.patch_pixi()
+        with which_patch, run_patch:
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["alpha", "beta"], [topic["research_topic_id"] for topic in data["topics"]])
+        self.assertEqual("pass", self.check(data, "topic.alpha.pixi.project-env.1")["status"])
+        self.assertEqual("pass", self.check(data, "topic.beta.pixi.project-env.1")["status"])
+        self.assertNotIn("stray", output)
+
+    def test_doctor_with_topic_matches_research_topic_id_not_workspace_id(self) -> None:
+        root = self.make_root()
+        write(
+            root / ".isomer-labs" / "manifest.toml",
+            """
+            schema_version = "isomer-project-manifest.v1"
+
+            [[research_topics]]
+            id = "alpha"
+            config_path = ".isomer-labs/research-topics/alpha.toml"
+            topic_workspace_id = "alpha-ws"
+            status = "active"
+
+            [[topic_workspaces]]
+            id = "alpha-ws"
+            research_topic_id = "alpha"
+            path = "topic-workspaces/alpha"
+            status = "active"
+            """,
+        )
+        write(
+            root / ".isomer-labs" / "research-topics" / "alpha.toml",
+            """
+            schema_version = "isomer-research-topic-config.v1"
+            research_topic_id = "alpha"
+            """,
+        )
+        self.add_project_pixi_manifest(root, lockfile=True)
+        which_patch, run_patch = self.patch_pixi()
+        with which_patch, run_patch:
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha-ws", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual([], data["topics"])
+        self.assertTrue(any(diagnostic["field"] == "with-topic" for diagnostic in data["diagnostics"]))
 
     def test_doctor_standalone_bindings_and_invalid_binding_config(self) -> None:
         root = self.make_root()
@@ -1049,7 +1202,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual("pass", self.check(data, "topic.pixi.standalone.1")["status"])
@@ -1067,7 +1220,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=missing_root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=missing_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertEqual("fail", self.check(data, "topic.pixi.standalone.1")["status"])
@@ -1089,7 +1242,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=duplicate_root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=duplicate_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO004", {diagnostic["code"] for diagnostic in data["diagnostics"]})
@@ -1106,7 +1259,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=invalid_root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=invalid_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO003", {diagnostic["code"] for diagnostic in data["diagnostics"]})
@@ -1135,7 +1288,7 @@ class IsomerCliTests(unittest.TestCase):
 
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         check = self.check(data, "topic.pixi.standalone.1")
@@ -1158,7 +1311,7 @@ class IsomerCliTests(unittest.TestCase):
 
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=implicit_root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=implicit_root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         check = self.check(data, "topic.pixi.standalone.default")
@@ -1182,7 +1335,7 @@ class IsomerCliTests(unittest.TestCase):
 
         which_patch, run_patch = self.patch_pixi(info_stdout="{not-json")
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         check = self.check(data, "topic.pixi.standalone.default")
@@ -1218,7 +1371,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi(info_stdout=escaping_payload)
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=confined_root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=confined_root)
         data = json.loads(output)
         self.assertEqual(1, status)
         check = self.check(data, "topic.pixi.standalone.default")
@@ -1241,7 +1394,7 @@ class IsomerCliTests(unittest.TestCase):
 
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--topic", "alpha", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--with-topic", "alpha", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(1, status)
         self.assertIn("ISO003", {diagnostic["code"] for diagnostic in data["diagnostics"]})
@@ -1273,7 +1426,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor"], cwd=root)
+            status, output = self.run_cli(["doctor"], cwd=root)
         self.assertEqual(1, status)
         self.assertIn("Doctor mode:", output)
         self.assertIn("Host", output)
@@ -1290,7 +1443,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertFalse(data["mutated"])
@@ -2066,35 +2219,60 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(str(root), discovered["project"]["root"])
         self.assertEqual("current directory", discovered["project"]["discovery_source"])
 
+        child_root = root / "nested-project"
+        self.init_project(child_root, topic_id="child")
+        child_cwd = child_root / "work" / "deeper"
+        child_cwd.mkdir(parents=True)
+
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=child_cwd)
+        child = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(child_root), child["project"]["root"])
+        self.assertEqual("current directory", child["project"]["discovery_source"])
+
+        parent_cwd = root / "outside-child"
+        parent_cwd.mkdir()
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=parent_cwd)
+        parent = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(root), parent["project"]["root"])
+
         other_root = self.make_root()
         self.init_project(other_root, topic_id="other")
         status, output = self.run_cli(
             ["project", "--manifest", str(root / ".isomer-labs" / "manifest.toml"), "validate", "--json"],
-            cwd=other_root,
+            cwd=child_cwd,
         )
         explicit = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual(str(root), explicit["project"]["root"])
         self.assertEqual("explicit Project Manifest selector", explicit["project"]["discovery_source"])
 
-    def test_project_init_refuses_nested_project_root(self) -> None:
+    def test_project_init_allows_nested_project_root(self) -> None:
         root = self.make_root()
         self.init_project(root)
+        parent_manifest = root / ".isomer-labs" / "manifest.toml"
+        parent_manifest_before = parent_manifest.read_text(encoding="utf-8")
         nested = root / "nested-project"
         nested.mkdir()
 
         status, output = self.run_cli(
             ["project", "--root", str(nested), "init", "--json"],
             cwd=root,
-            env=self.fake_houmao_env(root),
+            env=self.fake_houmao_env(nested),
         )
 
         data = json.loads(output)
-        self.assertEqual(1, status)
-        self.assertFalse(data["mutated"])
-        self.assertEqual("ISO003", data["diagnostics"][0]["code"])
-        self.assertEqual(str(root), data["ancestor_project_root"])
-        self.assertFalse((nested / ".isomer-labs" / "manifest.toml").exists())
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual(str(nested), data["project_root"])
+        self.assertTrue((nested / ".isomer-labs" / "manifest.toml").exists())
+        self.assertEqual(parent_manifest_before, parent_manifest.read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(["project", "validate", "--json"], cwd=nested)
+        nested_data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(nested), nested_data["project"]["root"])
 
     def test_missing_and_malformed_projects_are_rejected(self) -> None:
         missing_root = self.make_root()
@@ -4577,7 +4755,7 @@ class IsomerCliTests(unittest.TestCase):
 
         which_patch, run_patch = self.patch_pixi()
         with which_patch, run_patch:
-            status, output = self.run_cli(["project", "doctor", "--json"], cwd=root)
+            status, output = self.run_cli(["doctor", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertFalse(data["mutated"])

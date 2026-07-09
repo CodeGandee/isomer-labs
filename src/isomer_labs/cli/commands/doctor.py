@@ -6,46 +6,36 @@ import click
 
 from isomer_labs.cli.handlers.project import _cmd_doctor
 from isomer_labs.cli.options import (
-    common_options as _common_options,
     merge_options as _merge_options,
-    topic_selection_options as _topic_selection_options,
 )
 
 
 def register_doctor_commands(app: click.Group) -> None:
     @app.command(name="doctor", help="Run read-only dependency, Project, and topic diagnostics.")
-    @_common_options
-    @_topic_selection_options
+    @click.option("--root", "project_root", default=None, help="Explicit Project root selector.")
+    @click.option("--project", "project_alias", default=None, hidden=True, help="Compatibility alias for --root.")
+    @click.option("--manifest", default=None, help="Explicit Project Manifest selector.")
+    @click.option(
+        "--with-topic",
+        "doctor_topics",
+        multiple=True,
+        metavar="<research-topic-id>",
+        help="Limit topic diagnostics to a Research Topic id. May be repeated.",
+    )
     @click.pass_context
     def doctor_command(
         ctx: click.Context,
-        project: str | None = None,
+        project_root: str | None = None,
+        project_alias: str | None = None,
         manifest: str | None = None,
-        output_format: str | None = None,
-        json_output: bool = False,
-        research_topic_id: str | None = None,
-        topic_workspace_id: str | None = None,
-        research_inquiry_id: str | None = None,
-        research_task_id: str | None = None,
-        run_id: str | None = None,
-        agent_team_instance_id: str | None = None,
-        agent_instance_id: str | None = None,
-        topic_agent_team_profile_id: str | None = None,
+        doctor_topics: tuple[str, ...] = (),
     ) -> int:
+        selected_root = project_root if project_root is not None else project_alias
         return _cmd_doctor(
             _merge_options(
                 ctx,
-                project=project,
+                project=selected_root,
                 manifest=manifest,
-                output_format=output_format,
-                json_output=json_output,
-                research_topic_id=research_topic_id,
-                topic_workspace_id=topic_workspace_id,
-                research_inquiry_id=research_inquiry_id,
-                research_task_id=research_task_id,
-                run_id=run_id,
-                agent_team_instance_id=agent_team_instance_id,
-                agent_instance_id=agent_instance_id,
-                topic_agent_team_profile_id=topic_agent_team_profile_id,
+                doctor_topics=doctor_topics,
             )
         )

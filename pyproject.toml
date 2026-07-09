@@ -13,7 +13,7 @@ name = "isomer-labs"
 description = "A research workbench for running and inspecting multi-agent research topics."
 readme = "README.md"
 requires-python = ">= 3.11"
-version = "0.1.2"
+version = "0.1.2+local.20260709"
 
 [project.scripts]
 isomer-cli = "isomer_labs.cli:main"

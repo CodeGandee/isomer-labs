@@ -40,7 +40,6 @@ from isomer_labs.cli.handlers.shared import (
     execute_project_cleanup,
     execute_project_content_root_move,
     explain_semantic_path,
-    find_ancestor_manifest,
     find_domain_agent_team_template,
     guidance_metadata,
     has_errors,
@@ -75,10 +74,10 @@ from isomer_labs.cli.handlers.shared import (
     plan_project_cleanup,
     plan_project_content_root_move,
     prepare_topic_environment_readiness,
+    prepare_houmao_skills,
     preview_paths,
     profile_to_toml,
     Project,
-    project_root_for_manifest,
     ProjectState,
     reconcile_houmao_manifests,
     register_manifest_binding,
@@ -96,6 +95,7 @@ from isomer_labs.cli.handlers.shared import (
     replace,
     reset_manifest_binding,
     resolve_effective_agent_context,
+    resolve_houmao_skill_context,
     resolve_effective_topic_actor_context,
     resolve_effective_topic_context,
     resolve_self_identity_contexts,
@@ -107,6 +107,8 @@ from isomer_labs.cli.handlers.shared import (
     show_research_topic,
     show_topic_actor,
     specialize_topic_agent_team_profile,
+    houmao_integration_state,
+    set_houmao_integration_policy,
     tomlkit,
     TopicAgentTeamProfile,
     unregister_manifest_binding,
@@ -190,26 +192,6 @@ def _cmd_init(options: CliOptions) -> int:
             "project_root": str(project_root.resolve(strict=False)),
         }
         return _emit("init", options, payload, diagnostics, [])
-    nested_project = find_ancestor_manifest(project_root)
-    if nested_project is not None:
-        ancestor_root = project_root_for_manifest(nested_project)
-        if ancestor_root != project_root.resolve(strict=False):
-            diagnostics = [
-                Diagnostic(
-                    code="ISO003",
-                    severity="error",
-                    concept="Project",
-                    path=nested_project,
-                    message=f"Refusing to initialize a nested Isomer Project inside existing Project root: {ancestor_root}.",
-                )
-            ]
-            payload = {
-                "ok": False,
-                "mutated": False,
-                "project_root": str(project_root.resolve(strict=False)),
-                "ancestor_project_root": str(ancestor_root),
-            }
-            return _emit("project init", options, payload, diagnostics, [])
     result = initialize_project(
         project_root,
         content_dir=_value(options, "content_dir"),
@@ -298,35 +280,60 @@ def _cmd_doctor(options: CliOptions) -> int:
         ]
     state: ProjectState | None = None
     project_diagnostics: list[Diagnostic] = []
-    context: EffectiveTopicContext | None = None
+    contexts: list[EffectiveTopicContext] = []
     context_diagnostics: list[Diagnostic] = []
-    topic_skipped = True
+    requested_topics = tuple(_value(options, "doctor_topics", ()) or ())
     if project is not None:
         state = build_project_state(project)
         project_diagnostics = list(state.diagnostics)
-        request = _selection_request_from_options(options)
-        resolved_context, resolved_diagnostics = resolve_effective_topic_context(
-            state,
-            request,
-            cwd=Path.cwd(),
-            env=os.environ,
-        )
-        if resolved_context is None and not _topic_selector_requested(options):
-            context_diagnostics = [
-                diagnostic for diagnostic in resolved_diagnostics if diagnostic.code != "ISO013"
-            ]
-            topic_skipped = True
-        else:
-            context = resolved_context
-            context_diagnostics = list(resolved_diagnostics)
-            topic_skipped = False
+        seen_requested_topics: set[str] = set()
+        duplicate_requested_topics: set[str] = set()
+        for topic_id in requested_topics:
+            if topic_id in seen_requested_topics:
+                duplicate_requested_topics.add(topic_id)
+            else:
+                seen_requested_topics.add(topic_id)
+        for topic_id in sorted(duplicate_requested_topics):
+            context_diagnostics.append(
+                Diagnostic(
+                    code="ISO013",
+                    severity="warning",
+                    concept="Doctor topic filter",
+                    field="with-topic",
+                    message=f"Duplicate Research Topic id filter was ignored: {topic_id}.",
+                )
+            )
+        active_topics = [topic for topic in project.manifest.research_topics if topic.status == "active"]
+        active_topic_ids = {topic.id for topic in active_topics}
+        selected_topic_ids = list(dict.fromkeys(requested_topics)) if requested_topics else [topic.id for topic in active_topics]
+        for topic_id in selected_topic_ids:
+            if topic_id not in active_topic_ids:
+                context_diagnostics.append(
+                    Diagnostic(
+                        code="ISO013",
+                        severity="error",
+                        concept="Doctor topic filter",
+                        field="with-topic",
+                        message=f"Research Topic id is not registered as active in the Project Manifest: {topic_id}.",
+                    )
+                )
+                continue
+            resolved_context, resolved_diagnostics = resolve_effective_topic_context(
+                state,
+                SelectionRequest(research_topic_id=topic_id),
+                cwd=Path.cwd(),
+                env=os.environ,
+            )
+            context_diagnostics.extend(resolved_diagnostics)
+            if resolved_context is not None:
+                contexts.append(resolved_context)
     report = build_doctor_report(
         project=project,
         discovery_diagnostics=discovery_diagnostics,
         project_diagnostics=project_diagnostics,
-        context=context,
+        contexts=contexts,
         context_diagnostics=context_diagnostics,
-        topic_skipped=topic_skipped,
+        topic_filters=requested_topics,
     )
     return _emit("doctor", options, report.to_payload(), report.diagnostics, render_doctor_text(report))
 
@@ -675,6 +682,79 @@ def _cmd_system_extensions_forget(options: CliOptions) -> int:
         list(result.diagnostics),
         _render_system_extensions_result("Forgot Project System Extension", result.to_json()),
     )
+
+
+def _cmd_integrations_houmao_status(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None:
+        return _emit("integrations houmao status", options, {"ok": False, "mutated": False}, diagnostics, [])
+    state = houmao_integration_state(project)
+    diagnostics.extend(state.diagnostics)
+    payload = {
+        "ok": not has_errors(diagnostics),
+        "mutated": False,
+        "project_root": str(project.root),
+        **state.to_json(),
+    }
+    return _emit("integrations houmao status", options, payload, diagnostics, _render_houmao_integration_result("Houmao Integration", payload))
+
+
+def _cmd_integrations_houmao_enable(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None or has_errors(diagnostics):
+        return _emit("integrations houmao enable", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = set_houmao_integration_policy(project, "enabled")
+    diagnostics.extend(result.diagnostics)
+    payload = result.to_json()
+    return _emit("integrations houmao enable", options, payload, diagnostics, _render_houmao_integration_result("Enabled Houmao Integration", payload))
+
+
+def _cmd_integrations_houmao_disable(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None or has_errors(diagnostics):
+        return _emit("integrations houmao disable", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = set_houmao_integration_policy(project, "disabled")
+    diagnostics.extend(result.diagnostics)
+    payload = result.to_json()
+    return _emit("integrations houmao disable", options, payload, diagnostics, _render_houmao_integration_result("Disabled Houmao Integration", payload))
+
+
+def _cmd_integrations_houmao_prepare_skills(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None or has_errors(diagnostics):
+        return _emit("integrations houmao prepare-skills", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = prepare_houmao_skills(project, env=os.environ)
+    diagnostics.extend(result.diagnostics)
+    payload = result.to_json()
+    return _emit("integrations houmao prepare-skills", options, payload, diagnostics, _render_houmao_integration_result("Prepared Houmao Integration Skills", payload))
+
+
+def _cmd_integrations_houmao_skill_context(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None or has_errors(diagnostics):
+        return _emit("integrations houmao skill-context", options, {"ok": False, "mutated": False}, diagnostics, [])
+    topic_context = None
+    if _topic_selector_requested(options):
+        state = build_project_state(project)
+        diagnostics.extend(state.diagnostics)
+        context, context_diagnostics = resolve_effective_topic_context(
+            state,
+            _selection_request_from_options(options),
+            cwd=Path.cwd(),
+            env=os.environ,
+        )
+        diagnostics.extend(context_diagnostics)
+        topic_context = context
+        if has_errors(diagnostics):
+            return _emit("integrations houmao skill-context", options, {"ok": False, "mutated": False}, diagnostics, [])
+    result = resolve_houmao_skill_context(
+        project,
+        str(_value(options, "houmao_skill_route") or ""),
+        topic_context=topic_context,
+    )
+    diagnostics.extend(result.diagnostics)
+    payload = result.to_json()
+    return _emit("integrations houmao skill-context", options, payload, diagnostics, _render_houmao_skill_context_result(payload))
 
 
 def _cmd_toolboxes_install(options: CliOptions) -> int:
@@ -1117,6 +1197,45 @@ def _render_system_extensions_result(title: str, payload: dict[str, object]) -> 
     return lines
 
 
+def _render_houmao_integration_result(title: str, payload: dict[str, object]) -> list[str]:
+    lines = [
+        title,
+        f"Status: {payload.get('integration_status')}",
+        f"Houmao Project: {payload.get('houmao_project_path')}",
+        f"Houmao Skills: {payload.get('houmao_skill_root')}",
+    ]
+    skip_reason = payload.get("skip_reason")
+    next_action = payload.get("next_action")
+    if skip_reason:
+        lines.append(f"Skip Reason: {skip_reason}")
+    if next_action:
+        lines.append(f"Next Action: {next_action}")
+    routes = payload.get("projected_routes")
+    if isinstance(routes, list) and routes:
+        lines.append("Projected Routes:")
+        lines.extend(f"- {route}" for route in routes)
+    return lines
+
+
+def _render_houmao_skill_context_result(payload: dict[str, object]) -> list[str]:
+    lines = [
+        "Houmao Skill Context",
+        f"Status: {payload.get('integration_status')}",
+        f"Route: {payload.get('skill_name')}",
+    ]
+    if payload.get("houmao_skill_path"):
+        lines.append(f"Skill: {payload.get('houmao_skill_path')}")
+    if payload.get("houmao_project_path"):
+        lines.append(f"Houmao Project: {payload.get('houmao_project_path')}")
+    if payload.get("instructions"):
+        lines.append(f"Instructions: {payload.get('instructions')}")
+    if payload.get("skip_reason"):
+        lines.append(f"Skip Reason: {payload.get('skip_reason')}")
+    if payload.get("next_action"):
+        lines.append(f"Next Action: {payload.get('next_action')}")
+    return lines
+
+
 def _mutate_toolbox_registration(options: CliOptions, *, status: str) -> int:
     state, context, diagnostics = _toolbox_state_and_context(options)
     if state is None or has_errors(diagnostics):
@@ -1292,4 +1411,9 @@ __all__ = [
     "_cmd_system_extensions_list",
     "_cmd_system_extensions_remember",
     "_cmd_system_extensions_forget",
+    "_cmd_integrations_houmao_status",
+    "_cmd_integrations_houmao_enable",
+    "_cmd_integrations_houmao_disable",
+    "_cmd_integrations_houmao_prepare_skills",
+    "_cmd_integrations_houmao_skill_context",
 ]

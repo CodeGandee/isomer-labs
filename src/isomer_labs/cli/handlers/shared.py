@@ -133,6 +133,12 @@ from isomer_labs.project.system_extensions import (
     list_project_system_extensions,
     remember_project_system_extension,
 )
+from isomer_labs.project.houmao_integration import (
+    houmao_integration_state,
+    prepare_houmao_skills,
+    resolve_houmao_skill_context,
+    set_houmao_integration_policy,
+)
 
 _IMPLICIT_TOPIC_SELECTION_SOURCES = {
     "Project Manifest default",

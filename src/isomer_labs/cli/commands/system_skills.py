@@ -24,7 +24,7 @@ from isomer_labs.skills.system_assets import iter_system_skill_groups
 
 
 def register_system_skill_commands(app: click.Group) -> None:
-    @app.group(name="system-skills", help="Packaged Isomer system skill installation commands.")
+    @app.group(name="system-skills", help="Install and inspect packaged Isomer system skills.")
     def system_skills_group() -> None:
         pass
 

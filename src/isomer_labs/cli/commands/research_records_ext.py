@@ -55,7 +55,7 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     if isinstance(ext_command, click.Group):
         ext_group = ext_command
     else:
-        ext_group = click.Group(name="ext", help="Extension commands.")
+        ext_group = click.Group(name="ext", help="Use extension command surfaces for research records, ideas, and compatibility tooling.")
         app.add_command(ext_group)
 
     @ext_group.group(name="research", help="Isomer research extension commands.")

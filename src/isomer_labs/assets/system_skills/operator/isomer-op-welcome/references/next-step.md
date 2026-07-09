@@ -4,7 +4,7 @@
 
 1. Confirm that the user asked for context-aware next-step guidance.
 2. Announce that this subcommand performs read-only Project inspection only.
-3. Run only useful read-only commands, such as `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, or `isomer-cli project context show`.
+3. Run only useful read-only commands, such as `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, or `isomer-cli project context show`.
 4. Interpret the read-only result into a recommended visible usage path or active owner workflow.
 5. Report blockers and the safest next owner skill without running mutating commands.
 6. Include commands run, context evidence, alternate owner workflows, routing rationale, and retired-route exclusions only in Complete Output unless the user asks for them.
@@ -16,7 +16,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 Allowed inspection commands:
 
 - `isomer-cli project validate`
-- `isomer-cli project doctor`
+- `isomer-cli doctor`
 - `isomer-cli project topics list`
 - `isomer-cli project context show`
 

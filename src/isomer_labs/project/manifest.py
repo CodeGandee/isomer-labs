@@ -12,6 +12,8 @@ from isomer_labs.models import (
     TEAM_REPOSITORY_MANIFEST_SCHEMA_VERSION,
     TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION,
     DomainAgentTeamTemplateRegistration,
+    HOUMAO_INTEGRATION_STATUSES,
+    HoumaoIntegrationPolicy,
     ProjectManifest,
     ResearchTopicRegistration,
     TeamRepositoryRegistration,
@@ -49,6 +51,7 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
     artifact_extensions = _registration_ids(raw.get("artifact_extensions"))
     user_skill_callback_registry_refs = _callback_registry_ref_values(raw)
     operator_system_extensions = _operator_system_extension_values(raw)
+    houmao_integration = _parse_houmao_integration(path, raw, diagnostics)
     diagnostics.extend(stale_toolbox_schema_diagnostics(raw, path, "Project Manifest Toolbox configuration"))
     toolboxes = parse_toolbox_registrations(path, raw, default_scope="project")
     toolbox_runtime_param_imports = parse_toolbox_runtime_param_imports(path, raw, default_scope="project")
@@ -70,6 +73,7 @@ def parse_project_manifest(path: Path, raw: dict[str, Any]) -> tuple[ProjectMani
         artifact_extensions=artifact_extensions,
         user_skill_callback_registry_refs=user_skill_callback_registry_refs,
         operator_system_extensions=operator_system_extensions,
+        houmao_integration=houmao_integration,
         toolboxes=toolboxes,
         toolbox_runtime_param_imports=toolbox_runtime_param_imports,
         toolbox_runtime_params=toolbox_runtime_params,
@@ -475,6 +479,54 @@ def _operator_system_extension_values(raw: dict[str, Any]) -> list[str]:
     if not isinstance(system_extensions, dict):
         return []
     return list(dict.fromkeys(_string_refs(system_extensions.get("installed"))))
+
+
+def _parse_houmao_integration(
+    path: Path,
+    raw: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> HoumaoIntegrationPolicy | None:
+    operator = raw.get("operator")
+    if not isinstance(operator, dict):
+        return None
+    integrations = operator.get("integrations")
+    if not isinstance(integrations, dict):
+        return None
+    houmao = integrations.get("houmao")
+    if not isinstance(houmao, dict):
+        return None
+
+    status = _first_string(houmao, ("status",))
+    if status is None:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO003",
+                severity="error",
+                concept="Project Houmao integration",
+                path=path,
+                field="operator.integrations.houmao.status",
+                message="Houmao integration status must be enabled or disabled.",
+            )
+        )
+        status = "invalid"
+    elif status not in HOUMAO_INTEGRATION_STATUSES:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO003",
+                severity="error",
+                concept="Project Houmao integration",
+                path=path,
+                field="operator.integrations.houmao.status",
+                message="Houmao integration status must be enabled or disabled.",
+            )
+        )
+
+    return HoumaoIntegrationPolicy(
+        status=status,
+        skill_root_input=_first_string(houmao, ("skill_root",)),
+        project_dir_input=_first_string(houmao, ("project_dir",)),
+        source_path=path,
+    )
 
 
 def _string_refs(value: object) -> list[str]:

@@ -19,7 +19,7 @@ Use these before ambiguous mutation:
 - `isomer-cli project self identity`
 - `isomer-cli project self paths`
 - `isomer-cli project validate`
-- `isomer-cli project doctor`
+- `isomer-cli doctor`
 - `isomer-cli project topics list`
 - `isomer-cli project context show`
 - `isomer-cli project paths get`

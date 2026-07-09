@@ -138,6 +138,42 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertTrue(command.is_file(), command_name)
             self.assertIn("## Workflow", command.read_text(encoding="utf-8"), command_name)
 
+    def test_topic_service_agent_support_declares_lifecycle_routes(self) -> None:
+        skill = resolve_system_skill("service/isomer-srv-topic-service-agent-support")
+        skill_md = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
+        for route_name in (
+            "prepare-topic-service-master",
+            "launch-topic-service-master",
+            "inspect-topic-service-master",
+            "stop-topic-service-master",
+            "repair-topic-service-master",
+        ):
+            reference = skill.joinpath("references", f"{route_name}.md")
+            self.assertTrue(reference.is_file(), route_name)
+            reference_text = reference.read_text(encoding="utf-8")
+            self.assertIn(f"skill-context {route_name}", reference_text)
+            self.assertIn("--project-dir <houmao_project_path>", reference_text)
+            self.assertIn("implicit `.houmao/` discovery", reference_text)
+            self.assertIn(route_name, skill_md)
+
+    def test_houmao_interop_routes_through_isomer_skill_context(self) -> None:
+        skill = resolve_system_skill("service/isomer-srv-houmao-interop")
+        skill_md = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("isomer-cli --print-json project integrations houmao skill-context <route-name>", skill_md)
+        self.assertIn("houmao_skill_path", skill_md)
+        self.assertIn("--project-dir <houmao_project_path>", skill_md)
+        self.assertTrue(skill.joinpath("references", "skill-context.md").is_file())
+
+    def test_topic_creator_reports_disabled_houmao_skip(self) -> None:
+        skill = resolve_system_skill("operator/isomer-op-topic-creator")
+        setup_actors = skill.joinpath("references", "setup-actors.md").read_text(encoding="utf-8")
+        finalize = skill.joinpath("references", "finalize.md").read_text(encoding="utf-8")
+        status = skill.joinpath("references", "status.md").read_text(encoding="utf-8")
+        self.assertIn("record skipped Topic Service Master preparation", setup_actors)
+        self.assertIn("prepare-topic-service-master", setup_actors)
+        self.assertIn("Project Manifest Houmao integration evidence", finalize)
+        self.assertIn("disabled Houmao integration as a skip state", status)
+
     def test_materialize_refuses_non_empty_target(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp)

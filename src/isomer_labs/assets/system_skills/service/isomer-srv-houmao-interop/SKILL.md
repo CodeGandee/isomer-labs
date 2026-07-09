@@ -13,6 +13,8 @@ Run this workflow at the command of a Project Operator Session, Operator Agent, 
 
 Use this skill for one bounded Houmao-interop support task at a time. For user-facing Project lifecycle, Topic Team Specialization, approval provenance, profile materialization, Agent Team Instance launch orchestration, Gate decisions, or research task routing, route back to the appropriate operator workflow such as `isomer-op-project-mgr`, `isomer-op-topic-team-specialize`, or generic Isomer CLI/API surfaces.
 
+When this skill needs Houmao-owned procedure, do not assume the Project Operator has Houmao system skills installed in their ordinary tool home and do not rely on implicit Houmao project discovery. First request Isomer-provided context with `isomer-cli --print-json project integrations houmao skill-context <route-name>`. If the response is `disabled`, report skipped Houmao integration work. If the response is `not_configured`, report the Isomer next action. If the response is `enabled`, tell the agent to read the returned `houmao_skill_path` and run Houmao commands with `--project-dir <houmao_project_path>`.
+
 ## Workflow
 
 When this service skill is invoked, choose one of the modes below.
@@ -48,6 +50,7 @@ Load only the subcommand pages needed for the support task.
 | `customize-loop` | List Houmao agent-loop customization points and file paths | [references/customize-loop.md](references/customize-loop.md) |
 | `map-template-to-houmao` | Map Isomer Domain Agent Team Templates and DeepScientist stage skills to Houmao concepts | [references/map-template-to-houmao.md](references/map-template-to-houmao.md) |
 | `inspect-runtime` | Inspect live Houmao runtime, gateway, mailbox, and agent state | [references/inspect-runtime.md](references/inspect-runtime.md) |
+| `skill-context` | Resolve Isomer-managed Project-local Houmao skill routing context before following Houmao-owned procedure | [references/skill-context.md](references/skill-context.md) |
 
 ## Output Contract
 
@@ -89,3 +92,5 @@ Do not launch Houmao-managed agents from Domain Agent Team Template source direc
 Do not conflate DeepScientist's single-agent stage-skill model with Houmao's multi-agent role/recipe model. One DeepScientist quest normally maps to one Houmao-managed agent that loads stage skills through prompts and state, not to one Houmao agent per stage.
 
 Do not own Project lifecycle, Research Topic creation, Topic Team Specialization, approval provenance, Topic Agent Team Profile materialization, Agent Team Instance launch orchestration, Gate decisions, Research Claims, or research task routing. Route those decisions back to the Project Operator Session, Operator Agent, generic Isomer CLI/API surface, or Execution Adapter boundary.
+
+Do not tell users that direct Houmao system-skill installation is required for ordinary Isomer operation. Houmao is an internal integration provider for this route; Project-local projected support material comes from `isomer-cli project integrations houmao prepare-skills`.

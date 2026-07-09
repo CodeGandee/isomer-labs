@@ -16,6 +16,24 @@ LOCAL_ACTIVE_CONTEXT_SCHEMA_VERSION = "isomer-local-active-context.v1"
 DOMAIN_AGENT_TEAM_TEMPLATE_REF_SCHEMA_VERSION = "isomer-domain-agent-team-template-ref.v1"
 TOPIC_AGENT_TEAM_PROFILE_SCHEMA_VERSION = "isomer-topic-agent-team-profile.v1"
 TEAM_REPOSITORY_MANIFEST_SCHEMA_VERSION = "isomer-team-repository.v1"
+HOUMAO_INTEGRATION_STATUSES = ("enabled", "disabled")
+
+
+@dataclass(frozen=True)
+class HoumaoIntegrationPolicy:
+    status: str
+    skill_root_input: str | None = None
+    project_dir_input: str | None = None
+    source_path: Path | None = None
+    exists: bool = True
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "skill_root": self.skill_root_input,
+            "project_dir": self.project_dir_input,
+            "exists": self.exists,
+        }
 
 
 @dataclass(frozen=True)
@@ -599,6 +617,7 @@ class ProjectManifest:
     artifact_extensions: list[str] = field(default_factory=list)
     user_skill_callback_registry_refs: list[str] = field(default_factory=list)
     operator_system_extensions: list[str] = field(default_factory=list)
+    houmao_integration: HoumaoIntegrationPolicy | None = None
     toolboxes: list[ToolboxRegistration] = field(default_factory=list)
     toolbox_runtime_param_imports: list[ToolboxRuntimeParamImport] = field(default_factory=list)
     toolbox_runtime_params: list[ToolboxRuntimeParam] = field(default_factory=list)
@@ -703,6 +722,10 @@ class ProjectManifest:
             "artifact_format_profiles": self.artifact_format_profiles,
             "artifact_extensions": self.artifact_extensions,
             "user_skill_callback_registry_refs": self.user_skill_callback_registry_refs,
+            "operator_system_extensions": self.operator_system_extensions,
+            "houmao_integration": (
+                self.houmao_integration.to_json() if self.houmao_integration is not None else None
+            ),
             "toolboxes": [toolbox.to_json() for toolbox in self.toolboxes],
             "toolbox_runtime_param_imports": [
                 import_ref.to_json() for import_ref in self.toolbox_runtime_param_imports

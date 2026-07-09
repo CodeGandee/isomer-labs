@@ -265,7 +265,7 @@ def build_self_pixi_payload(
                     concept="Agent Self Pixi Query",
                     field="manifest_path",
                     message="The selected topic uses a Project Pixi environment, but no Project Pixi manifest was found.",
-                    usage="isomer-cli --print-json project doctor",
+                    usage="isomer-cli --print-json doctor",
                 )
             )
         elif binding.pixi_environment not in project_pixi_info.environments:
@@ -276,7 +276,7 @@ def build_self_pixi_payload(
                     concept="Agent Self Pixi Query",
                     field="pixi_environment",
                     message=f"Project Pixi manifest does not declare selected environment {binding.pixi_environment!r}.",
-                    usage="isomer-cli --print-json project doctor",
+                    usage="isomer-cli --print-json doctor",
                 )
             )
         else:
@@ -312,7 +312,7 @@ def build_self_pixi_payload(
                 concept="Agent Self Pixi Query",
                 field="pixi",
                 message=f"Pixi binding could not be resolved: {failure.message}",
-                usage="isomer-cli --print-json project doctor",
+                usage="isomer-cli --print-json doctor",
             )
         )
     return {"ok": not has_errors(diagnostics), "mutated": False, "pixi": pixi}

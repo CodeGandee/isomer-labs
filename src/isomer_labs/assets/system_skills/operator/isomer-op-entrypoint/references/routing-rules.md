@@ -24,6 +24,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Existing topic storage, actors, packages, environment verification, reset, or diagnostics. | `isomer-op-topic-mgr`. |
 | Work as or on behalf of a Topic Actor or Agent. | `isomer-op-switch-identity`. |
 | Domain Agent Team Template specialization. | `isomer-op-topic-team-specialize`. |
+| Topic Service Master lifecycle preparation, launch, inspection, stop, or repair. | `isomer-srv-topic-service-agent-support` through the matching lifecycle subcommand after an operator owner delegates it. |
 | Prepared DeepSci research-stage work. | Matching `isomer-deepsci-*` skill or `isomer-deepsci-pipeline`. |
 | DeepSci work before accepted bootstrap. | `isomer-deepsci-workspace-mgr` or missing setup owner. |
 
@@ -36,6 +37,8 @@ Block when required context cannot be resolved safely, when the selected route w
 ## Boundary Rules
 
 Normal user-facing requests route to operator owner skills before service delegation. Service skills are only bounded support unless explicitly invoked.
+
+Houmao-backed work stays Isomer-first. Use `isomer-cli project integrations houmao ...` and returned skill-context paths before following Houmao-owned procedures; do not make ordinary users install or invoke Houmao system skills directly for standard Isomer workflows.
 
 Misc helper skills are explicit helper routes. `isomer-misc-tool-packs` can resolve a named toolset contract only when explicitly requested as a helper, but package mutation for a Topic Workspace remains owned by topic or environment setup workflows.
 

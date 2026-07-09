@@ -28,7 +28,7 @@ Diagnosis:
 
 ```bash
 houmao-mgr --version
-isomer-cli --print-json project doctor
+isomer-cli --print-json doctor
 ```
 
 Recovery:
@@ -39,12 +39,12 @@ Recovery:
 
 ## Pixi or Readiness Failures
 
-Symptom: `project doctor` or `project runtime prepare` reports missing Pixi, missing `pixi.lock`, or failed topic environment bindings.
+Symptom: `doctor` or `project runtime prepare` reports missing Pixi, missing `pixi.lock`, or failed topic environment bindings.
 
 Diagnosis:
 
 ```bash
-isomer-cli --print-json project doctor --topic my-topic
+isomer-cli --print-json doctor --with-topic my-topic
 isomer-cli --print-json project runtime validate --topic my-topic --require-ready-readiness
 ```
 
@@ -59,7 +59,7 @@ Recovery:
 
 Symptom: `project runtime prepare` records `blocked` for a Research Topic.
 
-Diagnosis: inspect the Project Manifest for `topic_pixi_environment_bindings` and `topic_standalone_pixi_bindings`, then run `project doctor --topic <topic-id>` to see whether Pixi can resolve the registered Topic Workspace directory as the implicit default target. Isomer never infers a topic's environment from its id or name.
+Diagnosis: inspect the Project Manifest for `topic_pixi_environment_bindings` and `topic_standalone_pixi_bindings`, then run `doctor --with-topic <topic-id>` to see whether Pixi can resolve the registered Topic Workspace directory as the implicit default target. Isomer never infers a topic's environment from its id or name.
 
 Recovery: keep the implicit default when the Topic Workspace root is the Pixi workspace, or add an explicit binding when the target is different. For example:
 
@@ -285,7 +285,7 @@ isomer-cli --print-json project team-instances adopt <id> --topic my-topic --ada
 When a command fails unexpectedly:
 
 1. Run `isomer-cli --print-json project validate` to check the Project Manifest.
-2. Run `isomer-cli --print-json project doctor` to check host and Project Pixi state.
+2. Run `isomer-cli --print-json doctor` to check host and Project Pixi state.
 3. Run `isomer-cli --print-json project context show --topic <topic>` to inspect Effective Topic Context.
 4. Run `isomer-cli --print-json project runtime validate --topic <topic>` to inspect Workspace Runtime.
 5. For Houmao issues, verify `houmao-mgr` availability or set `ISOMER_HOUMAO_COMMAND`.

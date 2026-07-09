@@ -128,7 +128,7 @@ Initialize the smallest valid Project configuration and Project-level Houmao ove
 
 **Side effects:** runs the supported Houmao Project bootstrap boundary for the selected Project root and writes `.isomer-labs/manifest.toml`, the Isomer-managed Houmao overlay under `.isomer-labs/.houmao/`, and the selected content root's `README.md` and `.gitignore`. The fresh manifest contains path defaults but no Research Topic defaults, Research Topic registrations, or Topic Workspace registrations. The generated `.gitignore` ignores generated content by default while keeping `README.md` and `.gitignore` trackable. Does not create a Research Topic Config, Topic Workspace directory, `state.sqlite`, Workspace Runtime subdirectories, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers.
 
-**Prerequisites:** the target directory must not already be an Isomer-managed Project unless you intend to reinitialize. Houmao command resolution must succeed through `houmao-mgr`, `ISOMER_HOUMAO_COMMAND`, or a supported local checkout.
+**Prerequisites:** the target directory must not already be an Isomer-managed Project unless you intend to reinitialize. Nested Project roots are allowed; cwd-based discovery resolves the nearest `.isomer-labs/manifest.toml`, like Git repository discovery. Houmao command resolution must succeed through `houmao-mgr`, `ISOMER_HOUMAO_COMMAND`, or a supported local checkout.
 
 **Options:** pass `--content-dir <content-dir>` to select a project-local generated content root during fresh initialization.
 
@@ -170,15 +170,15 @@ isomer-cli project cleanup --part content-root --purge-content-root --yes
 
 When a valid Project Manifest exists, cleanup uses it as authority for path defaults, Research Topic registrations, and Topic Workspace registrations. If the manifest is missing or malformed, cleanup is limited to `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external state, and the built-in or explicitly selected content root policy files; it will not infer Research Topics from filesystem directories.
 
-### `project doctor`
+### `doctor`
 
 Run read-only dependency, Project, and topic diagnostics.
 
 **Side effects:** none. Checks host Pixi availability, Project-level Pixi configuration, optional `requires-pixi`, `pixi.lock` presence, Project-root topic Pixi bindings, and Topic Workspace Pixi binding targets. If no explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target exists, it checks the registered Topic Workspace directory as the implicit default target with Pixi environment `default`. Does not install Pixi environments, create lockfiles, create Topic Workspace runtime state, create Agent Workspaces, or edit Project config.
 
 ```bash
-isomer-cli --print-json project doctor
-isomer-cli --print-json project doctor --topic my-topic
+isomer-cli --print-json doctor
+isomer-cli --print-json doctor --with-topic my-topic
 ```
 
 ### `project validate`
@@ -889,7 +889,7 @@ isomer-cli project --root /path/to/project team-profiles validate topic-workspac
 | Command | Mutates Project files | Mutates Workspace Runtime | Mutates adapter files | Mutates live Houmao state |
 |---|---|---|---|---|
 | `project init` | yes (`.isomer-labs/`, `.isomer-labs/.houmao/`, content root policy files) | no | no | no |
-| `project doctor` | no | no | no | no |
+| `doctor` | no | no | no | no |
 | `project validate` | no | no | no | no |
 | `project topics list` | no | no | no | no |
 | `project topics create` | yes (topic config, manifest, workspace dir) | no | no | no |

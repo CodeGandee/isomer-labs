@@ -45,7 +45,7 @@ The `isomer-op-welcome` skill SHALL be read-only by default and SHALL NOT perfor
 
 #### Scenario: Context-aware next step uses read-only inspection
 - **WHEN** the user asks for a context-aware next step and a Project context is available
-- **THEN** the skill may use read-only commands such as `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, or `isomer-cli project context show`
+- **THEN** the skill may use read-only commands such as `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, or `isomer-cli project context show`
 - **AND** it reports blockers and the recommended owner workflow without running mutating commands
 
 ### Requirement: Welcome Skill Exposes Focused Subcommands

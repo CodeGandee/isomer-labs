@@ -307,7 +307,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             1. **Default help mode**: If invoked without a prompt, run `help`.
             2. Select one subcommand and load only the selected subcommand page.
-            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize` boundaries.
+            3. Preserve `.isomer-labs/`, `.isomer-labs/.houmao/`, root `.houmao/` as external user-owned state, `isomer-content/`, `isomer-content/topic-ws/<topic-id>/`, `--content-dir <content-dir>`, `<content-dir>/topic-ws/<topic-id>/`, Isomer-managed Houmao overlay, `isomer-cli project init`, `isomer-cli project cleanup --part <part> --dry-run`, `isomer-cli project cleanup --part <part> --yes`, `--purge-content-root`, `isomer-cli project content-root move --to <content-dir> --dry-run`, `isomer-cli project content-root move --to <content-dir> --yes`, unknown files, `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project runtime init`, `isomer-cli project runtime prepare`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize` boundaries.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -634,7 +634,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Guardrails
 
-            The skill is read-only and uses `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, and `isomer-cli project context show` only for inspection.
+            The skill is read-only and uses `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, and `isomer-cli project context show` only for inspection.
             Route Project checks to `isomer-op-project-mgr`, topic creation to `isomer-op-topic-creator`, initialized-topic work to `isomer-op-topic-mgr`, and Topic Team work to `isomer-op-topic-team-specialize`. Route bounded Houmao adapter support through the owning operator workflow to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
             Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; they are retired.
             Do not automatically route to `isomer-misc-tool-packs`; mention `isomer-misc-tool-packs` only as a manual skill when explicitly relevant.
@@ -714,7 +714,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, and `isomer-cli project context show`. Do not run mutating commands.
+                Use `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, and `isomer-cli project context show`. Do not run mutating commands.
             """,
             "start-research-manually.md": """
                 # Start Research Manually
@@ -2084,7 +2084,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS005", codes(diagnostics))
-        self.assertTrue(any("isomer-cli project ..." in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("supported isomer-cli command shapes" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_repo_local_isomer_cli_wrapper(self) -> None:
         root = self.make_root()

@@ -6,12 +6,12 @@ from __future__ import annotations
 COMMAND_EXAMPLES: dict[str, tuple[str, ...]] = {
     "project": (
         "isomer-cli --print-json project validate",
-        "isomer-cli --print-json project doctor",
         "isomer-cli --print-json project topics list",
+        "isomer-cli --print-json project context show",
     ),
-    "project doctor": (
-        "isomer-cli --print-json project doctor",
-        "isomer-cli --print-json project doctor --topic my-topic",
+    "doctor": (
+        "isomer-cli --print-json doctor",
+        "isomer-cli --print-json doctor --with-topic my-topic",
     ),
     "project paths": (
         "isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic",

@@ -11,6 +11,11 @@ from isomer_labs.cli.handlers.project import (
     _cmd_content_root_move,
     _cmd_context_show,
     _cmd_init,
+    _cmd_integrations_houmao_disable,
+    _cmd_integrations_houmao_enable,
+    _cmd_integrations_houmao_prepare_skills,
+    _cmd_integrations_houmao_skill_context,
+    _cmd_integrations_houmao_status,
     _cmd_skill_callbacks_disable,
     _cmd_skill_callbacks_install,
     _cmd_skill_callbacks_insertion_points,
@@ -509,6 +514,141 @@ def register_project_commands(app: click.Group) -> None:
                 output_format=output_format,
                 json_output=json_output,
                 extension_id=extension_id,
+            )
+        )
+
+
+    @app.group(name="integrations", help="Project integration policy and support material commands.")
+    def integrations_group() -> None:
+        pass
+
+
+    @integrations_group.group(name="houmao", help="Internal Houmao integration policy and skill routing commands.")
+    def integrations_houmao_group() -> None:
+        pass
+
+
+    @integrations_houmao_group.command(name="status", help="Show Project Houmao integration status and routing paths.")
+    @_common_options
+    @click.pass_context
+    def integrations_houmao_status_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_integrations_houmao_status(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+            )
+        )
+
+
+    @integrations_houmao_group.command(name="enable", help="Enable Houmao-backed Isomer integration for this Project.")
+    @_common_options
+    @click.pass_context
+    def integrations_houmao_enable_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_integrations_houmao_enable(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+            )
+        )
+
+
+    @integrations_houmao_group.command(name="disable", help="Disable Houmao-backed Isomer integration without deleting state.")
+    @_common_options
+    @click.pass_context
+    def integrations_houmao_disable_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_integrations_houmao_disable(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+            )
+        )
+
+
+    @integrations_houmao_group.command(name="prepare-skills", help="Prepare Isomer-managed Houmao support skill projection.")
+    @_common_options
+    @click.pass_context
+    def integrations_houmao_prepare_skills_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_integrations_houmao_prepare_skills(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+            )
+        )
+
+
+    @integrations_houmao_group.command(name="skill-context", help="Resolve one projected Houmao skill route for Isomer service routing.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("skill_route")
+    @click.pass_context
+    def integrations_houmao_skill_context_command(
+        ctx: click.Context,
+        skill_route: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_integrations_houmao_skill_context(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                houmao_skill_route=skill_route,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
             )
         )
 
@@ -2578,7 +2718,7 @@ def register_project_commands(app: click.Group) -> None:
             replace_existing=replace_existing,
         )
 def register_schema_commands(app: click.Group) -> None:
-    @app.group(name="schemas", help="Built-in schema commands.")
+    @app.group(name="schemas", help="Inspect built-in schemas and contracts.")
     def schemas_group() -> None:
         pass
 

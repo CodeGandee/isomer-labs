@@ -84,7 +84,7 @@ Report:
 When requested, include:
 
 - `context_evidence`: read-only Project context facts, prompt evidence, and selected Project root.
-- `read_only_commands_run`: any `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, or `isomer-cli project context show` command used for `next-step`.
+- `read_only_commands_run`: any `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, or `isomer-cli project context show` command used for `next-step`.
 - `alternate_owner_workflows`: plausible lower-priority visible usage paths or owner skills.
 - `routing_rationale`: why the recommended owner skill is safer than nearby alternatives.
 - `retired_route_exclusions`: explicit note that retired operator compatibility skills are not active routes when relevant.
@@ -93,7 +93,7 @@ When requested, include:
 
 The default posture is read-only. This skill may recommend an owner skill and safe first command, but it must not initialize Projects, create Research Topics, mutate Topic Workspaces, install packages, specialize teams, launch agents, or bootstrap research-paradigm v2 artifacts.
 
-`next-step` may use only read-only Project inspection commands such as `isomer-cli project validate`, `isomer-cli project doctor`, `isomer-cli project topics list`, and `isomer-cli project context show`. Report commands run in Complete Output.
+`next-step` may use only read-only Project inspection commands such as `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, and `isomer-cli project context show`. Report commands run in Complete Output.
 
 Route Project setup, Project checks, topic listing, context inspection, runtime initialization, and Project-level routing to `isomer-op-project-mgr`.
 

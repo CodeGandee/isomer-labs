@@ -125,7 +125,7 @@ If `houmao-mgr` is not on `PATH`, Isomer looks for a Pixi-backed checkout at `ex
 Before live mutation, use read-only checks:
 
 ```bash
-isomer-cli --print-json project doctor --topic <research-topic-id>
+isomer-cli --print-json doctor --with-topic <research-topic-id>
 isomer-cli --print-json project runtime validate --topic <research-topic-id> --require-ready-readiness
 houmao-mgr --version
 ```

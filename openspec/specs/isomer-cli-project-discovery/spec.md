@@ -26,7 +26,7 @@ The system SHALL provide an installed `isomer-cli` command with a global command
 The system SHALL initialize the smallest valid Isomer-managed Project configuration, the selected Project-local generated content root, and the Isomer-managed Project-level Houmao overlay under the Project Config Directory through `isomer-cli project init` without creating Research Topic registrations, Topic Workspace registrations, Workspace Runtime state, or live Houmao agent state.
 
 #### Scenario: Initialize empty project registry
-- **WHEN** a user runs `isomer-cli project init` in a directory that is not inside an existing Isomer Project and does not contain `.isomer-labs/manifest.toml`
+- **WHEN** a user runs `isomer-cli project init` in a directory that does not contain `.isomer-labs/manifest.toml`
 - **THEN** the system creates `.isomer-labs/manifest.toml`, a Project-local generated content root at `isomer-content/`, generated content-root policy files, and an Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`
 - **AND** the system does not create a Research Topic Config, a Research Topic registration, a Topic Workspace registration, or a Topic Workspace directory
 
@@ -41,7 +41,7 @@ The system SHALL initialize the smallest valid Isomer-managed Project configurat
 - **AND** the system does not create or modify Project files
 
 #### Scenario: Initialize accepts custom content directory
-- **WHEN** a user runs `isomer-cli project init --content-dir custom-content` in a directory that is not inside an existing Isomer Project and does not contain `.isomer-labs/manifest.toml`
+- **WHEN** a user runs `isomer-cli project init --content-dir custom-content` in a directory that does not contain `.isomer-labs/manifest.toml`
 - **THEN** the system creates the generated content root at `custom-content/`, writes content-root policy files there, and records Project Manifest path defaults for `isomer_content_root = "custom-content"` and `topic_workspace_base_dir = "custom-content/topic-ws"`
 - **AND** the system does not create `custom-content/topic-ws/<topic-id>/` or any other Topic Workspace directory
 
@@ -53,9 +53,11 @@ The system SHALL initialize the smallest valid Isomer-managed Project configurat
 - **WHEN** Project validation reads a fresh Project Manifest created by `isomer-cli project init`
 - **THEN** it treats the empty Research Topic registry as valid for Project-scoped commands
 
-#### Scenario: Initialize rejects nested project
-- **WHEN** a user runs `isomer-cli project init` from inside a directory tree that already has an ancestor `.isomer-labs/manifest.toml`
-- **THEN** the system refuses to create a nested Isomer Project and reports the ancestor Project root
+#### Scenario: Initialize allows nested project
+- **WHEN** a user runs `isomer-cli project init` for a target directory inside another Isomer Project tree
+- **THEN** the system creates or validates the selected target as its own Isomer Project
+- **AND** the system does not mutate the ancestor Project Manifest
+- **AND** the system does not report the ancestor Project root as a blocker
 
 #### Scenario: Initialize creates Houmao project overlay
 - **WHEN** `isomer-cli project init` completes successfully
@@ -82,7 +84,7 @@ The system SHALL initialize the smallest valid Isomer-managed Project configurat
 - **THEN** the system refuses to overwrite the existing Project Manifest and does not offer a force-overwrite behavior in Milestone 1
 
 ### Requirement: Project Discovery
-The system SHALL discover the active Project before resolving Project-scoped command behavior under `isomer-cli project`.
+The system SHALL discover the active Project before resolving Project-scoped command behavior under `isomer-cli project`, using nearest Project Manifest semantics for cwd-based discovery.
 
 #### Scenario: Explicit root selector wins
 - **WHEN** a user provides `isomer-cli project --root <project-root> <subcmd>`
@@ -92,9 +94,18 @@ The system SHALL discover the active Project before resolving Project-scoped com
 - **WHEN** a user provides `isomer-cli project --manifest <manifest-path> <subcmd>`
 - **THEN** the system loads that Project Manifest before checking the current directory or environment-derived Project fallbacks
 
-#### Scenario: Current directory discovers project
-- **WHEN** a user runs `isomer-cli project <subcmd>` from inside a directory tree containing an ancestor `.isomer-labs/manifest.toml`
-- **THEN** the system resolves that ancestor as the Project root and loads its Project Manifest
+#### Scenario: Current directory discovers nearest project
+- **WHEN** a user runs `isomer-cli project <subcmd>` from inside a directory tree containing one or more ancestor `.isomer-labs/manifest.toml` files
+- **THEN** the system resolves the nearest ancestor Project Manifest as the Project root and loads that Project Manifest
+
+#### Scenario: Nested project discovery prefers child
+- **WHEN** a parent Project and a nested child Project both have `.isomer-labs/manifest.toml` and a user runs `isomer-cli project <subcmd>` from inside the nested child Project tree
+- **THEN** the system resolves the nested child Project
+- **AND** the system does not resolve the parent Project unless the parent is explicitly selected
+
+#### Scenario: Parent project discovery outside child
+- **WHEN** a parent Project contains a nested child Project and a user runs `isomer-cli project <subcmd>` from a parent Project directory outside the child Project tree
+- **THEN** the system resolves the parent Project
 
 #### Scenario: Project environment fallback is used
 - **WHEN** no explicit Project selector or current-directory Project applies and a supported Project environment override is set
@@ -239,7 +250,7 @@ The system SHALL produce deterministic diagnostics, structured human-readable te
 - **THEN** diagnostic output identifies the offending field or path without printing the secret value
 
 #### Scenario: JSON output is deterministic
-- **WHEN** a user requests JSON output with root-level `--print-json` for `project validate`, `project doctor`, `project topics list`, `project workspaces list`, `project context show`, `project paths preview`, `schemas list`, `project runtime init`, `project runtime prepare`, `project runtime inspect`, `project runtime validate`, `project team-instances create`, `project team-instances list`, `project team-instances show`, `project team-templates list`, `project team-templates inspect`, `project team-templates validate`, `project team-profiles specialize`, or `project team-profiles validate`
+- **WHEN** a user requests JSON output with root-level `--print-json` for `project validate`, `doctor`, `project topics list`, `project workspaces list`, `project context show`, `project paths preview`, `schemas list`, `project runtime init`, `project runtime prepare`, `project runtime inspect`, `project runtime validate`, `project team-instances create`, `project team-instances list`, `project team-instances show`, `project team-templates list`, `project team-templates inspect`, `project team-templates validate`, `project team-profiles specialize`, or `project team-profiles validate`
 - **THEN** the command emits deterministic JSON suitable for unit tests and future Operator Agent consumption
 
 #### Scenario: JSON output is versioned but provisional
@@ -401,11 +412,11 @@ The system SHALL emit deterministic text and JSON output for Houmao adapter mani
 The system SHALL use root-level `--print-json` as the canonical JSON output switch for `isomer-cli`.
 
 #### Scenario: Root print-json applies to subcommands
-- **WHEN** a user runs `isomer-cli --print-json project validate`, `isomer-cli --print-json project doctor`, or `isomer-cli --print-json project runtime inspect`
+- **WHEN** a user runs `isomer-cli --print-json project validate`, `isomer-cli --print-json doctor`, or `isomer-cli --print-json project runtime inspect`
 - **THEN** the selected command emits the deterministic `isomer-cli-output.v1` JSON wrapper
 
 #### Scenario: Default output is structured text
-- **WHEN** a user runs `isomer-cli project validate`, `isomer-cli project doctor`, or another supported command without `--print-json`
+- **WHEN** a user runs `isomer-cli project validate`, `isomer-cli doctor`, or another supported command without `--print-json`
 - **THEN** the command emits structured human-readable text and does not emit the JSON wrapper
 
 #### Scenario: Help shows global output mode
@@ -894,4 +905,3 @@ The system SHALL present `project toolboxes install` as the canonical command fo
 #### Scenario: Runtime params help names primitive role
 - **WHEN** a user runs `isomer-cli project toolbox-params --help`
 - **THEN** the command help presents runtime-param definition, mutation, lookup, explanation, import management, and validation as direct configuration primitives that can be used with or without high-level Toolbox installation
-

@@ -53,7 +53,7 @@ Read-only Project checks:
 
 ```bash
 isomer-cli --print-json project validate
-isomer-cli --print-json project doctor
+isomer-cli --print-json doctor
 isomer-cli --print-json project topics list
 isomer-cli --print-json project workspaces list
 isomer-cli --print-json project context show --topic <topic-id>

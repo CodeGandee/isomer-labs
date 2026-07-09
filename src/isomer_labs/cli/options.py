@@ -30,6 +30,7 @@ class CliOptions:
     content_dir: str | None = None
     research_topic_id: str | None = None
     topic_workspace_id: str | None = None
+    doctor_topics: tuple[str, ...] = ()
     research_inquiry_id: str | None = None
     research_task_id: str | None = None
     run_id: str | None = None
@@ -76,6 +77,7 @@ class CliOptions:
     toolbox_param_allowed_values: tuple[str, ...] = ()
     toolbox_param_description: str | None = None
     toolbox_import_path: str | None = None
+    houmao_skill_route: str | None = None
 
 
 def common_options(command: Any) -> Any:

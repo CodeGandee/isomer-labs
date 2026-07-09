@@ -307,7 +307,7 @@ PROJECT_MANAGER_REQUIRED_SKILL_TERMS = (
     "isomer-cli project content-root move --to <content-dir> --yes",
     "unknown files",
     "isomer-cli project validate",
-    "isomer-cli project doctor",
+    "isomer-cli doctor",
     "isomer-cli project runtime init",
     "isomer-cli project runtime prepare",
     "isomer-op-topic-creator",
@@ -318,7 +318,6 @@ PROJECT_MANAGER_REQUIRED_SKILL_TERMS = (
 PROJECT_MANAGER_FORBIDDEN_CLI_TERMS = (
     "isomer-cli init",
     "isomer-cli validate",
-    "isomer-cli doctor",
     "isomer-cli topics",
     "isomer-cli workspaces",
     "isomer-cli context",
@@ -692,7 +691,7 @@ WELCOME_REQUIRED_SKILL_TERMS = (
     "references/start-research-manually.md",
     "references/start-research-by-agent-team.md",
     "isomer-cli project validate",
-    "isomer-cli project doctor",
+    "isomer-cli doctor",
     "isomer-cli project topics list",
     "isomer-cli project context show",
     "Default to **Essential Output** in chat.",
@@ -759,7 +758,7 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
     "next-step.md": (
         "read-only Project inspection",
         "isomer-cli project validate",
-        "isomer-cli project doctor",
+        "isomer-cli doctor",
         "isomer-cli project topics list",
         "isomer-cli project context show",
         "Do not run",
@@ -943,7 +942,7 @@ ENTRYPOINT_CLI_TERMS = (
     "isomer-cli project self queries",
     "isomer-cli project self show",
     "isomer-cli project validate",
-    "isomer-cli project doctor",
+    "isomer-cli doctor",
     "isomer-cli project topics list",
     "isomer-cli project context show",
     "isomer-cli project paths",
@@ -2553,7 +2552,7 @@ def validate_project_manager_module(repo_root: Path) -> list[Diagnostic]:
                         skill_file,
                         line_number,
                         "OPS005",
-                        f"{PROJECT_MANAGER_SKILL} must use 'isomer-cli project ...' command shapes instead of '{forbidden_cli_term}'",
+                        f"{PROJECT_MANAGER_SKILL} must use supported isomer-cli command shapes instead of '{forbidden_cli_term}'",
                     )
     for subcommand_file_name in PROJECT_MANAGER_SUBCOMMANDS:
         subcommand_name = subcommand_file_name.removesuffix(".md")

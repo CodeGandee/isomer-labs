@@ -14,7 +14,7 @@ Isomer never infers a Research Topic's Pixi environment from its id, name, or na
 
 ### Repair is explicit
 
-When `isomer-cli project doctor`, `project runtime prepare`, or `project runtime validate` reports a missing dependency, failed readiness check, or environment mismatch, the repair should be explicit. Represent setup or compatibility work as a Service Request rather than hiding it inside a read-only diagnostic command or a runtime preparation step.
+When `isomer-cli doctor`, `project runtime prepare`, or `project runtime validate` reports a missing dependency, failed readiness check, or environment mismatch, the repair should be explicit. Represent setup or compatibility work as a Service Request rather than hiding it inside a read-only diagnostic command or a runtime preparation step.
 
 ### Houmao is an adapter-specific backend
 
