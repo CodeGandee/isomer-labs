@@ -1,5 +1,5 @@
 import type * as React from "react";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -15,4 +15,14 @@ export function LinkButton({ className, variant = "link", size = "sm", ...props 
 
 export function StatusBadge({ className, tone = "muted", ...props }: React.ComponentProps<typeof Badge> & { tone?: Tone }) {
   return <Badge className={cn("status-badge", `status-badge-${tone}`, className)} variant="outline" {...props} />;
+}
+
+export function StatusBadgeButton({ className, tone = "muted", type = "button", ...props }: React.ComponentProps<"button"> & { tone?: Tone }) {
+  return (
+    <button
+      className={cn(badgeVariants({ variant: "outline" }), "status-badge", `status-badge-${tone}`, "status-badge-button", className)}
+      type={type}
+      {...props}
+    />
+  );
 }

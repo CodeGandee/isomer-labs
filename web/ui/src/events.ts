@@ -3,9 +3,14 @@ import { filter } from "rxjs/operators";
 import { parseTopicEvent } from "./api";
 import type { GraphScope, TopicChangeEvent } from "./types";
 
+export type WorkbenchOpenResult = {
+  status: "created" | "focused" | "ignored";
+  panelId?: string;
+};
+
 export type WorkbenchCommand =
   | { type: "open-record"; topicId: string; recordId: string }
-  | { type: "open-idea"; topicId: string; ideaId: string }
+  | { type: "open-idea"; topicId: string; ideaId: string; onOpenResult?: (result: WorkbenchOpenResult) => void }
   | { type: "open-file"; topicId: string; recordId: string; fileId: string }
   | { type: "open-graph"; topicId: string; graphScope: GraphScope }
   | { type: "refresh-topic"; topicId: string };

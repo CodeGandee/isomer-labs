@@ -30,7 +30,8 @@ import {
   getRecordSiblings,
   getViewerDescriptor,
 } from "./api";
-import { RecordDetailPanel } from "./App";
+import { parentIdeaNavigation, RecordDetailPanel } from "./App";
+import { workbenchCommands$, type WorkbenchCommand } from "./events";
 import { ToastNotificationsProvider } from "./toast-notifications";
 import type { RecordDetailResponse, RecordRenderResponse, ViewerDescriptor } from "./types";
 
@@ -68,6 +69,7 @@ describe("Record detail panel", () => {
     await waitFor(() => expect(document.body.textContent).toContain("Rendered record body."));
     expect(document.body.textContent).toContain("records/artifacts/record-1/payload.json");
     expect(document.body.textContent).toContain("parent idea: I-7 Parent idea");
+    expect(screen.getByRole("button", { name: "Open parent idea I-7 Parent idea" })).toBeTruthy();
     expect(document.body.textContent).not.toContain("Idea Lineage");
 
     fireEvent.click(screen.getByRole("button", { name: "Copy Markdown" }));
@@ -91,6 +93,46 @@ describe("Record detail panel", () => {
     await waitFor(() => expect((screen.getByRole("button", { name: "Copy JSON" }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole("button", { name: "Copy JSON" }));
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('"record_id": "record-1"')));
+  });
+
+  it("opens parent idea links through the workbench command and reports stale link failures", async () => {
+    const commands: WorkbenchCommand[] = [];
+    const subscription = workbenchCommands$.subscribe((command) => commands.push(command));
+    renderWithQuery(<RecordDetailPanel topicId="alpha" recordId="record-1" />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Open parent idea I-7 Parent idea" }));
+    expect(commands).toHaveLength(1);
+    expect(commands[0]).toMatchObject({ type: "open-idea", topicId: "alpha", ideaId: "idea-7" });
+
+    if (commands[0].type === "open-idea") {
+      commands[0].onOpenResult?.({ status: "ignored" });
+    }
+    expect(await screen.findByRole("alert", { name: "Parent idea is no longer available." })).toBeTruthy();
+    expect(document.body.textContent).toContain("I-7 Parent idea");
+    subscription.unsubscribe();
+  });
+
+  it("keeps parent idea labels inert when no stable idea id exists", async () => {
+    const parentWithoutIdeaId = { display_key: "I-7", title: "Parent idea" };
+    getViewerDescriptorMock.mockResolvedValue({ ...recordDescriptor(), direct_parent_idea: parentWithoutIdeaId });
+    getRecordDetailMock.mockResolvedValue({ ...recordDetail(), direct_parent_idea: parentWithoutIdeaId });
+    getRecordRenderMock.mockResolvedValue({ ...recordRender(), direct_parent_idea: parentWithoutIdeaId });
+    renderWithQuery(<RecordDetailPanel topicId="alpha" recordId="record-1" />);
+
+    await screen.findByText("parent idea: I-7 Parent idea");
+    expect(screen.queryByRole("button", { name: "Open parent idea I-7 Parent idea" })).toBeNull();
+  });
+
+  it("extracts parent idea navigation from structured metadata only", () => {
+    expect(parentIdeaNavigation({ idea_id: "idea-7", display_key: "I-7", title: "Parent idea" })).toEqual({
+      ideaId: "idea-7",
+      label: "I-7 Parent idea",
+    });
+    expect(parentIdeaNavigation({ display_key: "I-7", title: "Parent idea" })).toEqual({
+      ideaId: "",
+      label: "I-7 Parent idea",
+    });
+    expect(parentIdeaNavigation(null)).toBeNull();
   });
 });
 

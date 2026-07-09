@@ -44,6 +44,8 @@ describe("Idea detail panel", () => {
     expect(document.body.textContent).toContain("Separate launch overhead.");
     expect(document.body.textContent).not.toContain("filter notes");
     expect(screen.getByRole("button", { name: "Open Source Record" })).toBeTruthy();
+    expect(document.querySelector(".idea-status-row")?.textContent).not.toContain("latest_realization_source_path");
+    expect(document.querySelector(".idea-status-row")?.textContent).not.toContain("sections.raw_ideas");
 
     expect(screen.queryByRole("button", { name: "Copy JSON" })).toBeNull();
 

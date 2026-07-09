@@ -48,7 +48,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { LinkButton, StatusBadge, ToolbarButton } from "@/components/workbench-controls";
+import { LinkButton, StatusBadge, StatusBadgeButton, ToolbarButton } from "@/components/workbench-controls";
 import type { Diagnostic, ExplorerNode, GraphScope, IdeaDetailResponse, OpenableItemDescriptor, RecordSummary } from "./types";
 import { ThemeProvider, useGuiTheme } from "./theme-provider";
 import type { ThemeMode } from "./theme-mode";
@@ -264,7 +264,7 @@ function Workbench() {
         void openItem(`record:${command.topicId}:${command.recordId}`);
       }
       if (command.type === "open-idea") {
-        void openItem(`idea:${command.topicId}:${command.ideaId}`);
+        void openItem(`idea:${command.topicId}:${command.ideaId}`).then((result) => command.onOpenResult?.(result));
       }
       if (command.type === "open-file") {
         void openItem(`file:${command.topicId}:${command.recordId}:${command.fileId}`);
@@ -1114,11 +1114,6 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
         </div>
       </div>
       <div className="idea-status-row">
-        <StatusBadge>{String(provenance?.source_kind || "source pending")}</StatusBadge>
-        {provenance?.source_fragment_status ? <StatusBadge>{String(provenance.source_fragment_status)}</StatusBadge> : null}
-        {provenance?.source_json_path ? (
-          <StatusBadge>{topicRelativeDisplayPath(provenance.source_json_path, { topicId })}</StatusBadge>
-        ) : null}
         {sourceTruncated ? <StatusBadge tone="warning">source JSON over default cap</StatusBadge> : null}
         {digestNotice ? <StatusBadge tone="info">{digestNotice}</StatusBadge> : null}
         <LinkButton
@@ -1250,7 +1245,26 @@ export function RecordDetailPanel({ topicId, recordId }: { topicId: string; reco
     setJsonModalOpen(false);
     window.requestAnimationFrame(() => viewJsonButtonRef.current?.focus());
   }, []);
-  const parentIdeaLabel = formatParentIdea(parentIdea);
+  const parentIdeaTarget = useMemo(() => parentIdeaNavigation(parentIdea), [parentIdea]);
+  const openParentIdea = useCallback(() => {
+    if (!parentIdeaTarget?.ideaId) {
+      return;
+    }
+    workbenchCommands$.next({
+      type: "open-idea",
+      topicId,
+      ideaId: parentIdeaTarget.ideaId,
+      onOpenResult: (result) => {
+        if (result.status === "ignored") {
+          notify({
+            title: "Parent idea is no longer available.",
+            description: parentIdeaTarget.label,
+            tone: "error",
+          });
+        }
+      },
+    });
+  }, [notify, parentIdeaTarget, topicId]);
   const showSpecialViewer = surface === "pdf" || surface === "image" || surface === "table";
   return (
     <section className="panel-body detail-viewer idea-detail-panel">
@@ -1277,7 +1291,19 @@ export function RecordDetailPanel({ topicId, recordId }: { topicId: string; reco
       </div>
       <div className="idea-status-row">
         <StatusBadge>{descriptor.data?.viewer_kind || "loading"}</StatusBadge>
-        {parentIdeaLabel ? <StatusBadge>parent idea: {parentIdeaLabel}</StatusBadge> : null}
+        {parentIdeaTarget ? (
+          parentIdeaTarget.ideaId && topicId ? (
+            <StatusBadgeButton
+              aria-label={`Open parent idea ${parentIdeaTarget.label}`}
+              className="parent-idea-button"
+              onClick={openParentIdea}
+            >
+              parent idea: {parentIdeaTarget.label}
+            </StatusBadgeButton>
+          ) : (
+            <StatusBadge>parent idea: {parentIdeaTarget.label}</StatusBadge>
+          )
+        ) : null}
       </div>
       {showSpecialViewer ? (
         <ViewerContent descriptor={descriptor.data} rendered={rendered.data} detail={detail.data} renderIsPending={Boolean(rendered.isPending || rendered.isFetching)} />
@@ -1300,18 +1326,24 @@ export function RecordDetailPanel({ topicId, recordId }: { topicId: string; reco
   );
 }
 
-function formatParentIdea(parentIdea: unknown): string {
+export type ParentIdeaNavigation = {
+  ideaId: string;
+  label: string;
+};
+
+export function parentIdeaNavigation(parentIdea: unknown): ParentIdeaNavigation | null {
   if (!parentIdea || typeof parentIdea !== "object") {
-    return "";
+    return null;
   }
   const value = parentIdea as Record<string, unknown>;
   const displayKey = typeof value.display_key === "string" ? value.display_key : "";
   const title = typeof value.title === "string" ? value.title : "";
   const ideaId = typeof value.idea_id === "string" ? value.idea_id : "";
-  if (displayKey && title) {
-    return `${displayKey} ${title}`;
+  const label = displayKey && title ? `${displayKey} ${title}` : displayKey || title || ideaId;
+  if (!label) {
+    return null;
   }
-  return displayKey || title || ideaId;
+  return { ideaId, label };
 }
 
 export function ViewerContent({

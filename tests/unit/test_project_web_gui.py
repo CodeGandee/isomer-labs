@@ -307,11 +307,9 @@ class ProjectWebGuiTests(unittest.TestCase):
         nodes = {node["id"]: node for node in explorer["nodes"]}
         self.assertIn("project", nodes)
         self.assertIn("project:manifest", nodes)
-        self.assertIn("project:settings", nodes)
+        self.assertNotIn("project:settings", nodes)
         self.assertIn("project:topics", nodes)
         self.assertIn("topic:alpha", nodes)
-        self.assertEqual("Settings", nodes["project:settings"]["label"])
-        self.assertEqual("project:settings", nodes["project:settings"]["openable_item_id"])
         self.assertTrue(nodes["topic:alpha"]["has_children"])
         self.assertFalse(nodes["topic:alpha"]["children_loaded"])
         self.assertFalse(any(str(node["id"]).startswith("topic:alpha:graph:") for node in explorer["nodes"]))

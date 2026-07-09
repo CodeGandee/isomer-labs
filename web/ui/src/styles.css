@@ -816,6 +816,15 @@ tbody tr:hover {
   color: var(--primary);
 }
 
+.status-badge-button {
+  cursor: pointer;
+}
+
+.status-badge-button:hover {
+  border-color: color-mix(in srgb, var(--primary) 44%, var(--border));
+  color: var(--primary);
+}
+
 .markdown-view {
   min-width: 0;
   min-height: 180px;

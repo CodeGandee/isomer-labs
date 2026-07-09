@@ -98,15 +98,6 @@ class _ProjectExplorerReadModel:
         )
         self._append_node(
             nodes,
-            node_id="project:settings",
-            parent_id=root_id,
-            label="Settings",
-            item_kind="settings",
-            icon_hint="settings",
-            openable_item_id="project:settings",
-        )
-        self._append_node(
-            nodes,
             node_id=topic_group_id,
             parent_id=root_id,
             label="Research Topics",
