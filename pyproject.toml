@@ -10,8 +10,10 @@ dependencies = [
   "uvicorn[standard]>=0.38.0,<0.39",
 ]
 name = "isomer-labs"
+description = "A research workbench for running and inspecting multi-agent research topics."
+readme = "README.md"
 requires-python = ">= 3.11"
-version = "0.1.1"
+version = "0.1.2"
 
 [project.scripts]
 isomer-cli = "isomer_labs.cli:main"
