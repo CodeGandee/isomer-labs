@@ -14,6 +14,12 @@ Isomer Labs depends on [Pixi](https://github.com/prefix-dev/pixi) for project an
 curl -fsSL https://pixi.sh/install.sh | sh
 ```
 
+Paper-writing workflows need a TeX renderer. [Tectonic](https://github.com/tectonic-typesetting/tectonic) is recommended; a standard LaTeX distribution also works when a project already depends on it. Install Tectonic as a Pixi global tool with:
+
+```bash
+pixi global install tectonic
+```
+
 [Houmao](https://github.com/igamenovoer/houmao) is optional. Install it when you want Houmao-backed agent-team construction, Topic Service Master setup, managed agents, gateways, mailboxes, and related adapter features:
 
 ```bash
