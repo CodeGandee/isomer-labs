@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from importlib import metadata
 from importlib.resources.abc import Traversable
 import json
@@ -11,6 +12,7 @@ from pathlib import Path
 import shutil
 from typing import Literal, Sequence
 
+from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.skills.system_assets import (
     SystemSkillAssetError,
     iter_system_skill_groups,
@@ -18,8 +20,8 @@ from isomer_labs.skills.system_assets import (
 )
 
 
-INSTALL_MARKER_FILENAME = ".isomer-system-skill.json"
-INSTALL_MARKER_SCHEMA = "isomer-system-skill-install.v1"
+SKILL_MANIFEST_FILENAME = "isomer-labs-skill-manifest.json"
+SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v1"
 CONCRETE_TARGETS = ("claude-code", "codex", "kimi-code", "generic")
 SUPPORTED_TARGETS = (*CONCRETE_TARGETS, "all")
 ProjectionMode = Literal["copy", "symlink"]
@@ -83,7 +85,7 @@ class SystemSkillTarget:
 
 @dataclass(frozen=True)
 class InstalledSystemSkill:
-    """One Isomer-owned packaged system-skill projection."""
+    """One packaged system-skill projection in a target root."""
 
     name: str
     path: Path
@@ -100,14 +102,84 @@ class InstalledSystemSkill:
 
 
 @dataclass(frozen=True)
-class UnmanagedSystemSkillCollision:
-    """One skill-named directory not owned by Isomer."""
+class ExistingSystemSkillPath:
+    """One selected skill path preserved because force was not requested."""
 
     name: str
     path: Path
+    path_kind: str
 
     def to_json(self) -> dict[str, str]:
-        return {"name": self.name, "path": str(self.path)}
+        return {"name": self.name, "path": str(self.path), "path_kind": self.path_kind}
+
+
+@dataclass(frozen=True)
+class InvalidSystemSkillProjection:
+    """One selected skill path that exists in an unsupported shape."""
+
+    name: str
+    path: Path
+    path_kind: str
+    message: str
+
+    def to_json(self) -> dict[str, str]:
+        return {
+            "name": self.name,
+            "path": str(self.path),
+            "path_kind": self.path_kind,
+            "message": self.message,
+        }
+
+
+@dataclass(frozen=True)
+class SystemSkillManifestRecord:
+    """One skill record tracked in the target-root manifest."""
+
+    name: str
+    source_path: str
+    projection_mode: ProjectionMode
+
+    def to_json(self) -> dict[str, str]:
+        return {
+            "name": self.name,
+            "source_path": self.source_path,
+            "projection_mode": self.projection_mode,
+        }
+
+
+@dataclass(frozen=True)
+class SystemSkillRootManifest:
+    """Target-root manifest for Isomer-managed system skill projections."""
+
+    schema_version: str
+    target: str
+    skill_root: Path
+    package_name: str
+    package_version: str | None
+    installed_by: str
+    updated_at: str
+    skills: tuple[SystemSkillManifestRecord, ...]
+
+    @property
+    def path(self) -> Path:
+        return self.skill_root / SKILL_MANIFEST_FILENAME
+
+    def record_map(self) -> dict[str, SystemSkillManifestRecord]:
+        return {record.name: record for record in self.skills}
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "schema_version": self.schema_version,
+            "target": self.target,
+            "skill_root": str(self.skill_root),
+            "package_name": self.package_name,
+            "package_version": self.package_version,
+            "installed_by": self.installed_by,
+            "updated_at": self.updated_at,
+            "skills": [record.to_json() for record in self.skills],
+            "skill_names": [record.name for record in self.skills],
+            "path": str(self.path),
+        }
 
 
 @dataclass(frozen=True)
@@ -117,17 +189,20 @@ class SystemSkillStatusResult:
     target: SystemSkillTarget
     installed: tuple[InstalledSystemSkill, ...]
     missing: tuple[str, ...]
-    unmanaged_collisions: tuple[UnmanagedSystemSkillCollision, ...]
+    invalid_projections: tuple[InvalidSystemSkillProjection, ...]
     selection: SystemSkillSelection
+    manifest: SystemSkillRootManifest | None
+    diagnostics: tuple[Diagnostic, ...]
 
     def to_json(self) -> dict[str, object]:
         return {
             "target": self.target.target,
             "skill_root": str(self.target.skill_root),
+            "manifest": self.manifest.to_json() if self.manifest is not None else None,
             "installed": [record.to_json() for record in self.installed],
             "installed_skills": [record.name for record in self.installed],
             "missing_skills": list(self.missing),
-            "unmanaged_collisions": [collision.to_json() for collision in self.unmanaged_collisions],
+            "invalid_projections": [projection.to_json() for projection in self.invalid_projections],
             "selection": self.selection.to_json(),
         }
 
@@ -139,21 +214,31 @@ class SystemSkillInstallResult:
     target: SystemSkillTarget
     selection: SystemSkillSelection
     installed: tuple[InstalledSystemSkill, ...]
-    unmanaged_collisions: tuple[UnmanagedSystemSkillCollision, ...]
+    preserved_existing: tuple[ExistingSystemSkillPath, ...]
+    replaced: tuple[ExistingSystemSkillPath, ...]
     projection_mode: ProjectionMode
+    manifest: SystemSkillRootManifest | None
+    diagnostics: tuple[Diagnostic, ...]
 
     @property
     def ok(self) -> bool:
-        return not self.unmanaged_collisions
+        return True
+
+    @property
+    def mutated(self) -> bool:
+        return bool(self.installed or self.replaced)
 
     def to_json(self) -> dict[str, object]:
         return {
             "target": self.target.target,
             "skill_root": str(self.target.skill_root),
             "projection_mode": self.projection_mode,
+            "manifest": self.manifest.to_json() if self.manifest is not None else None,
             "installed": [record.to_json() for record in self.installed],
             "installed_skills": [record.name for record in self.installed],
-            "unmanaged_collisions": [collision.to_json() for collision in self.unmanaged_collisions],
+            "preserved_existing": [record.to_json() for record in self.preserved_existing],
+            "replaced": [record.to_json() for record in self.replaced],
+            "replaced_skills": [record.name for record in self.replaced],
             "selection": self.selection.to_json(),
         }
 
@@ -165,21 +250,62 @@ class SystemSkillUninstallResult:
     target: SystemSkillTarget
     removed: tuple[InstalledSystemSkill, ...]
     absent: tuple[str, ...]
-    preserved_unmanaged: tuple[UnmanagedSystemSkillCollision, ...]
     selection: SystemSkillSelection
+    manifest: SystemSkillRootManifest | None
+    diagnostics: tuple[Diagnostic, ...]
 
     @property
     def ok(self) -> bool:
         return True
 
+    @property
+    def mutated(self) -> bool:
+        return bool(self.removed)
+
     def to_json(self) -> dict[str, object]:
         return {
             "target": self.target.target,
             "skill_root": str(self.target.skill_root),
+            "manifest": self.manifest.to_json() if self.manifest is not None else None,
             "removed": [record.to_json() for record in self.removed],
             "removed_skills": [record.name for record in self.removed],
             "absent_skills": list(self.absent),
-            "preserved_unmanaged": [collision.to_json() for collision in self.preserved_unmanaged],
+            "selection": self.selection.to_json(),
+        }
+
+
+@dataclass(frozen=True)
+class SystemSkillUpgradeResult:
+    """Upgrade result for one target skill root."""
+
+    target: SystemSkillTarget
+    selection: SystemSkillSelection
+    refreshed: tuple[InstalledSystemSkill, ...]
+    stale_removed: tuple[InstalledSystemSkill, ...]
+    stale_absent: tuple[str, ...]
+    projection_mode_override: ProjectionMode | None
+    manifest: SystemSkillRootManifest | None
+    diagnostics: tuple[Diagnostic, ...]
+
+    @property
+    def ok(self) -> bool:
+        return True
+
+    @property
+    def mutated(self) -> bool:
+        return bool(self.refreshed or self.stale_removed or self.stale_absent)
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "target": self.target.target,
+            "skill_root": str(self.target.skill_root),
+            "projection_mode_override": self.projection_mode_override,
+            "manifest": self.manifest.to_json() if self.manifest is not None else None,
+            "refreshed": [record.to_json() for record in self.refreshed],
+            "refreshed_skills": [record.name for record in self.refreshed],
+            "stale_removed": [record.to_json() for record in self.stale_removed],
+            "stale_removed_skills": [record.name for record in self.stale_removed],
+            "stale_absent_skills": list(self.stale_absent),
             "selection": self.selection.to_json(),
         }
 
@@ -292,106 +418,173 @@ def install_system_skills(
     selection: SystemSkillSelection,
     *,
     projection_mode: ProjectionMode = "copy",
+    force: bool = False,
 ) -> SystemSkillInstallResult:
     """Install selected packaged skills into one target skill root."""
 
     _validate_projection_mode(projection_mode)
     target.skill_root.mkdir(parents=True, exist_ok=True)
-    collisions = _unmanaged_collisions(target, selection)
-    if collisions:
-        return SystemSkillInstallResult(
-            target=target,
-            selection=selection,
-            installed=(),
-            unmanaged_collisions=collisions,
+    manifest, diagnostics = _read_manifest(target)
+    manifest_records = manifest.record_map() if manifest is not None else {}
+
+    installed: list[InstalledSystemSkill] = []
+    preserved_existing: list[ExistingSystemSkillPath] = []
+    replaced: list[ExistingSystemSkillPath] = []
+    for record in selection.skills:
+        destination = target.skill_root / record.name
+        if destination.exists() or destination.is_symlink():
+            existing = ExistingSystemSkillPath(record.name, destination, _path_kind(destination))
+            if not force:
+                preserved_existing.append(existing)
+                continue
+            _remove_path(destination)
+            replaced.append(existing)
+        _project_skill(record.source_path, destination, projection_mode=projection_mode)
+        installed.append(_installed_record(record, destination, projection_mode))
+        manifest_records[record.name] = SystemSkillManifestRecord(
+            name=record.name,
+            source_path=record.source_path,
             projection_mode=projection_mode,
         )
 
-    installed: list[InstalledSystemSkill] = []
-    for record in selection.skills:
-        destination = target.skill_root / record.name
-        _remove_path(destination)
-        _project_skill(record.source_path, destination, projection_mode=projection_mode)
-        _write_marker(destination, target=target.target, record=record, projection_mode=projection_mode)
-        installed.append(
-            InstalledSystemSkill(
-                name=record.name,
-                path=destination,
-                source_path=record.source_path,
-                projection_mode=projection_mode,
-            )
-        )
+    updated_manifest = manifest
+    if installed or replaced:
+        updated_manifest = _write_manifest(target, manifest_records)
     return SystemSkillInstallResult(
         target=target,
         selection=selection,
         installed=tuple(installed),
-        unmanaged_collisions=(),
+        preserved_existing=tuple(preserved_existing),
+        replaced=tuple(replaced),
         projection_mode=projection_mode,
+        manifest=updated_manifest,
+        diagnostics=diagnostics,
     )
 
 
 def inspect_system_skills(target: SystemSkillTarget, selection: SystemSkillSelection) -> SystemSkillStatusResult:
     """Inspect selected packaged skill projections for one target skill root."""
 
+    manifest, diagnostics = _read_manifest(target)
     installed: list[InstalledSystemSkill] = []
     missing: list[str] = []
-    collisions: list[UnmanagedSystemSkillCollision] = []
+    invalid: list[InvalidSystemSkillProjection] = []
+    status_diagnostics = list(diagnostics)
     for record in selection.skills:
         destination = target.skill_root / record.name
-        marker = _read_marker(destination)
-        if marker is None:
-            if destination.exists() or destination.is_symlink():
-                collisions.append(UnmanagedSystemSkillCollision(name=record.name, path=destination))
-            else:
-                missing.append(record.name)
-            continue
-        installed.append(
-            InstalledSystemSkill(
+        if destination.is_symlink():
+            installed.append(_installed_record(record, destination, "symlink"))
+        elif destination.is_dir():
+            installed.append(_installed_record(record, destination, "copy"))
+        elif destination.exists():
+            issue = InvalidSystemSkillProjection(
                 name=record.name,
                 path=destination,
-                source_path=_marker_string(marker, "source_path"),
-                projection_mode=_marker_string(marker, "projection_mode"),
+                path_kind=_path_kind(destination),
+                message="Selected packaged system-skill path is not a directory or symlink projection.",
             )
-        )
+            invalid.append(issue)
+            status_diagnostics.append(_projection_diagnostic(issue))
+        else:
+            missing.append(record.name)
     return SystemSkillStatusResult(
         target=target,
         selection=selection,
         installed=tuple(installed),
         missing=tuple(missing),
-        unmanaged_collisions=tuple(collisions),
+        invalid_projections=tuple(invalid),
+        manifest=manifest,
+        diagnostics=tuple(status_diagnostics),
     )
 
 
 def uninstall_system_skills(target: SystemSkillTarget, selection: SystemSkillSelection) -> SystemSkillUninstallResult:
-    """Remove selected Isomer-owned packaged skill projections from one target skill root."""
+    """Remove selected packaged skill projections from one target skill root."""
 
+    manifest, diagnostics = _read_manifest(target)
+    manifest_records = manifest.record_map() if manifest is not None else {}
     removed: list[InstalledSystemSkill] = []
     absent: list[str] = []
-    preserved: list[UnmanagedSystemSkillCollision] = []
+    changed_manifest = False
     for record in selection.skills:
         destination = target.skill_root / record.name
-        marker = _read_marker(destination)
-        if marker is None:
-            if destination.exists() or destination.is_symlink():
-                preserved.append(UnmanagedSystemSkillCollision(name=record.name, path=destination))
-            else:
-                absent.append(record.name)
-            continue
-        removed.append(
-            InstalledSystemSkill(
-                name=record.name,
-                path=destination,
-                source_path=_marker_string(marker, "source_path"),
-                projection_mode=_marker_string(marker, "projection_mode"),
-            )
-        )
-        _remove_path(destination)
+        if destination.exists() or destination.is_symlink():
+            removed.append(_installed_record(record, destination, _detected_projection_mode(destination)))
+            _remove_path(destination)
+        else:
+            absent.append(record.name)
+        if manifest_records.pop(record.name, None) is not None:
+            changed_manifest = True
+
+    updated_manifest = manifest
+    if removed or changed_manifest:
+        target.skill_root.mkdir(parents=True, exist_ok=True)
+        updated_manifest = _write_manifest(target, manifest_records)
     return SystemSkillUninstallResult(
         target=target,
         selection=selection,
         removed=tuple(removed),
         absent=tuple(absent),
-        preserved_unmanaged=tuple(preserved),
+        manifest=updated_manifest,
+        diagnostics=diagnostics,
+    )
+
+
+def upgrade_system_skills(
+    target: SystemSkillTarget,
+    selection: SystemSkillSelection,
+    *,
+    projection_mode: ProjectionMode | None = None,
+) -> SystemSkillUpgradeResult:
+    """Refresh selected packaged skills and remove stale manifest-tracked skills."""
+
+    if projection_mode is not None:
+        _validate_projection_mode(projection_mode)
+    target.skill_root.mkdir(parents=True, exist_ok=True)
+    manifest, diagnostics = _read_manifest(target)
+    manifest_records = manifest.record_map() if manifest is not None else {}
+    selected_names = {record.name for record in selection.skills}
+
+    stale_removed: list[InstalledSystemSkill] = []
+    stale_absent: list[str] = []
+    for name, tracked in sorted(manifest_records.items()):
+        if name in selected_names:
+            continue
+        destination = target.skill_root / name
+        if destination.exists() or destination.is_symlink():
+            stale_removed.append(
+                InstalledSystemSkill(
+                    name=name,
+                    path=destination,
+                    source_path=tracked.source_path,
+                    projection_mode=_detected_projection_mode(destination),
+                )
+            )
+            _remove_path(destination)
+        else:
+            stale_absent.append(name)
+        manifest_records.pop(name, None)
+
+    refreshed: list[InstalledSystemSkill] = []
+    for record in selection.skills:
+        destination = target.skill_root / record.name
+        mode = projection_mode or manifest_records.get(record.name, _manifest_record_for(record, "copy")).projection_mode
+        if destination.exists() or destination.is_symlink():
+            _remove_path(destination)
+        _project_skill(record.source_path, destination, projection_mode=mode)
+        refreshed.append(_installed_record(record, destination, mode))
+        manifest_records[record.name] = _manifest_record_for(record, mode)
+
+    updated_manifest = _write_manifest(target, manifest_records)
+    return SystemSkillUpgradeResult(
+        target=target,
+        selection=selection,
+        refreshed=tuple(refreshed),
+        stale_removed=tuple(stale_removed),
+        stale_absent=tuple(stale_absent),
+        projection_mode_override=projection_mode,
+        manifest=updated_manifest,
+        diagnostics=diagnostics,
     )
 
 
@@ -414,18 +607,6 @@ def _default_skill_root(target: str, *, cwd: Path | None = None) -> Path:
 def _validate_projection_mode(projection_mode: str) -> None:
     if projection_mode not in {"copy", "symlink"}:
         raise SystemSkillInstallError("Projection mode must be `copy` or `symlink`.")
-
-
-def _unmanaged_collisions(
-    target: SystemSkillTarget,
-    selection: SystemSkillSelection,
-) -> tuple[UnmanagedSystemSkillCollision, ...]:
-    collisions: list[UnmanagedSystemSkillCollision] = []
-    for record in selection.skills:
-        destination = target.skill_root / record.name
-        if (destination.exists() or destination.is_symlink()) and _read_marker(destination) is None:
-            collisions.append(UnmanagedSystemSkillCollision(name=record.name, path=destination))
-    return tuple(collisions)
 
 
 def _project_skill(source_path: str, destination: Path, *, projection_mode: ProjectionMode) -> None:
@@ -457,46 +638,141 @@ def _remove_path(path: Path) -> None:
         shutil.rmtree(path)
 
 
-def _write_marker(
-    destination: Path,
-    *,
-    target: str,
-    record: SystemSkillRecord,
-    projection_mode: ProjectionMode,
-) -> None:
-    marker = {
-        "schema_version": INSTALL_MARKER_SCHEMA,
-        "package": "isomer-labs",
-        "package_version": _package_version(),
-        "installed_by": "isomer-cli",
-        "target": target,
-        "skill_name": record.name,
-        "source_path": record.source_path,
-        "projection_mode": projection_mode,
-    }
-    (destination / INSTALL_MARKER_FILENAME).write_text(json.dumps(marker, indent=2, sort_keys=True), encoding="utf-8")
-
-
-def _read_marker(destination: Path) -> dict[str, object] | None:
-    marker_path = destination / INSTALL_MARKER_FILENAME
-    if not marker_path.is_file():
-        return None
+def _read_manifest(target: SystemSkillTarget) -> tuple[SystemSkillRootManifest | None, tuple[Diagnostic, ...]]:
+    manifest_path = target.skill_root / SKILL_MANIFEST_FILENAME
+    if not manifest_path.exists():
+        return None, ()
     try:
-        marker = json.loads(marker_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return None
-    if not isinstance(marker, dict):
-        return None
-    if marker.get("schema_version") != INSTALL_MARKER_SCHEMA:
-        return None
-    if marker.get("package") != "isomer-labs":
-        return None
-    return marker
+        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return None, (_manifest_diagnostic(manifest_path, f"Cannot read Isomer skill manifest: {exc}"),)
+    if not isinstance(raw, dict):
+        return None, (_manifest_diagnostic(manifest_path, "Isomer skill manifest must be a JSON object."),)
+    if raw.get("schema_version") != SKILL_MANIFEST_SCHEMA:
+        return None, (_manifest_diagnostic(manifest_path, "Unsupported Isomer skill manifest schema version."),)
+
+    skills: list[SystemSkillManifestRecord] = []
+    raw_skills = raw.get("skills", [])
+    if not isinstance(raw_skills, list):
+        return None, (_manifest_diagnostic(manifest_path, "Isomer skill manifest `skills` field must be a list."),)
+    for index, item in enumerate(raw_skills):
+        if not isinstance(item, dict):
+            return None, (_manifest_diagnostic(manifest_path, f"Isomer skill manifest skill record {index} must be an object."),)
+        name = item.get("name")
+        source_path = item.get("source_path")
+        projection_mode = item.get("projection_mode")
+        if not isinstance(name, str) or not isinstance(source_path, str) or projection_mode not in {"copy", "symlink"}:
+            return None, (_manifest_diagnostic(manifest_path, f"Isomer skill manifest skill record {index} is invalid."),)
+        skills.append(
+            SystemSkillManifestRecord(
+                name=name,
+                source_path=source_path,
+                projection_mode=projection_mode,
+            )
+        )
+
+    package_version = raw.get("package_version")
+    updated_at = raw.get("updated_at")
+    target_name = raw.get("target")
+    installed_by = raw.get("installed_by")
+    package_name = raw.get("package_name")
+    return (
+        SystemSkillRootManifest(
+            schema_version=SKILL_MANIFEST_SCHEMA,
+            target=target_name if isinstance(target_name, str) else target.target,
+            skill_root=target.skill_root,
+            package_name=package_name if isinstance(package_name, str) else "isomer-labs",
+            package_version=package_version if isinstance(package_version, str) else None,
+            installed_by=installed_by if isinstance(installed_by, str) else "isomer-cli",
+            updated_at=updated_at if isinstance(updated_at, str) else "",
+            skills=tuple(skills),
+        ),
+        (),
+    )
 
 
-def _marker_string(marker: dict[str, object], key: str) -> str | None:
-    value = marker.get(key)
-    return value if isinstance(value, str) else None
+def _write_manifest(
+    target: SystemSkillTarget,
+    records: dict[str, SystemSkillManifestRecord],
+) -> SystemSkillRootManifest:
+    manifest = SystemSkillRootManifest(
+        schema_version=SKILL_MANIFEST_SCHEMA,
+        target=target.target,
+        skill_root=target.skill_root,
+        package_name="isomer-labs",
+        package_version=_package_version(),
+        installed_by="isomer-cli",
+        updated_at=datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        skills=tuple(records[name] for name in sorted(records)),
+    )
+    target.skill_root.mkdir(parents=True, exist_ok=True)
+    manifest.path.write_text(json.dumps(_manifest_file_json(manifest), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return manifest
+
+
+def _manifest_file_json(manifest: SystemSkillRootManifest) -> dict[str, object]:
+    data = manifest.to_json()
+    data.pop("path", None)
+    data.pop("skill_names", None)
+    return data
+
+
+def _manifest_record_for(record: SystemSkillRecord, projection_mode: ProjectionMode) -> SystemSkillManifestRecord:
+    return SystemSkillManifestRecord(
+        name=record.name,
+        source_path=record.source_path,
+        projection_mode=projection_mode,
+    )
+
+
+def _installed_record(record: SystemSkillRecord, destination: Path, projection_mode: str | None) -> InstalledSystemSkill:
+    return InstalledSystemSkill(
+        name=record.name,
+        path=destination,
+        source_path=record.source_path,
+        projection_mode=projection_mode,
+    )
+
+
+def _detected_projection_mode(path: Path) -> str | None:
+    if path.is_symlink():
+        return "symlink"
+    if path.is_dir():
+        return "copy"
+    return None
+
+
+def _path_kind(path: Path) -> str:
+    if path.is_symlink():
+        return "symlink"
+    if path.is_dir():
+        return "directory"
+    if path.is_file():
+        return "file"
+    if path.exists():
+        return "other"
+    return "missing"
+
+
+def _manifest_diagnostic(path: Path, message: str) -> Diagnostic:
+    return Diagnostic(
+        code="ISOSKILL001",
+        severity="warning",
+        concept="system-skill-manifest",
+        path=path,
+        message=message,
+    )
+
+
+def _projection_diagnostic(issue: InvalidSystemSkillProjection) -> Diagnostic:
+    return Diagnostic(
+        code="ISOSKILL002",
+        severity="warning",
+        concept="system-skill-projection",
+        path=issue.path,
+        field=issue.name,
+        message=issue.message,
+    )
 
 
 def _read_skill_description(source_path: str) -> str | None:

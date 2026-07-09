@@ -9,7 +9,16 @@ isomer-cli system-skills install --target codex
 isomer-cli system-skills install --target codex --extension deepsci
 ```
 
-Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Target defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible projection. The installer writes an Isomer ownership marker and uninstall removes only Isomer-owned projections.
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Target defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible projection.
+
+Packaged skill names are reserved install slots in each target skill root. Installation no longer writes per-skill ownership markers; instead, successful mutations update `<skill-root>/isomer-labs-skill-manifest.json` with the Isomer package version, target, source paths, projection modes, and tracked skill names. If a selected same-name path already exists, `system-skills install` preserves it unless `--force` is supplied.
+
+Use `system-skills upgrade` after installing a newer Isomer CLI package when packaged skills may have been renamed or removed. Upgrade reads the target-root manifest, refreshes the currently selected packaged skills, and removes stale manifest-tracked skill paths that are no longer in the selected set:
+
+```bash
+isomer-cli system-skills upgrade --target codex
+isomer-cli system-skills upgrade --target codex --extension deepsci
+```
 
 Core operator skills include `isomer-op-entrypoint` for informed routing and `isomer-op-welcome` for first-time project orientation. Optional extension skills include the DeepSci skills under `research-paradigm/deepsci/`.
 

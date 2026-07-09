@@ -15,7 +15,7 @@ from isomer_labs.skills.system_assets import (
 )
 from isomer_labs.skills.installer import (
     CONCRETE_TARGETS,
-    INSTALL_MARKER_FILENAME,
+    SKILL_MANIFEST_FILENAME,
     SUPPORTED_TARGETS,
     SystemSkillInstallError,
     inspect_system_skills,
@@ -24,11 +24,12 @@ from isomer_labs.skills.installer import (
     resolve_system_skill_selection,
     resolve_targets,
     uninstall_system_skills,
+    upgrade_system_skills,
 )
 
 __all__ = [
     "CONCRETE_TARGETS",
-    "INSTALL_MARKER_FILENAME",
+    "SKILL_MANIFEST_FILENAME",
     "SUPPORTED_TARGETS",
     "SystemSkillAssetError",
     "SystemSkillGroup",
@@ -46,4 +47,5 @@ __all__ = [
     "resolve_targets",
     "system_skills_root",
     "uninstall_system_skills",
+    "upgrade_system_skills",
 ]

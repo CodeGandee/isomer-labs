@@ -8,13 +8,17 @@ from pathlib import Path
 from unittest.mock import patch
 
 from isomer_labs.skills.installer import (
-    INSTALL_MARKER_FILENAME,
+    SKILL_MANIFEST_FILENAME,
     inspect_system_skills,
     install_system_skills,
     resolve_system_skill_selection,
     resolve_targets,
     uninstall_system_skills,
+    upgrade_system_skills,
 )
+
+
+OLD_MARKER_FILENAME = ".isomer-system-skill.json"
 
 
 class SystemSkillInstallerTests(unittest.TestCase):
@@ -49,7 +53,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertIn("deepsci", deepsci.selected_extensions)
         self.assertIn("isomer-deepsci-pipeline", [skill.name for skill in deepsci.skills])
 
-    def test_copy_projection_is_flat_and_marker_owned(self) -> None:
+    def test_copy_projection_is_flat_and_manifest_tracked(self) -> None:
         root = self.make_root()
         target = resolve_targets("generic", home=root / "skills")[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
@@ -57,35 +61,77 @@ class SystemSkillInstallerTests(unittest.TestCase):
         result = install_system_skills(target, selection)
 
         self.assertTrue(result.ok)
+        self.assertTrue(result.mutated)
         skill_dir = target.skill_root / "isomer-op-entrypoint"
         self.assertTrue((skill_dir / "SKILL.md").is_file())
+        self.assertFalse((skill_dir / OLD_MARKER_FILENAME).exists())
         self.assertFalse((target.skill_root / "operator" / "isomer-op-entrypoint").exists())
-        marker = json.loads((skill_dir / INSTALL_MARKER_FILENAME).read_text(encoding="utf-8"))
-        self.assertEqual("isomer-system-skill-install.v1", marker["schema_version"])
-        self.assertEqual("operator/isomer-op-entrypoint", marker["source_path"])
+        manifest = json.loads((target.skill_root / SKILL_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+        self.assertEqual("isomer-labs-skill-manifest.v1", manifest["schema_version"])
+        self.assertEqual(["isomer-op-entrypoint"], [item["name"] for item in manifest["skills"]])
+        self.assertEqual("operator/isomer-op-entrypoint", manifest["skills"][0]["source_path"])
 
         status = inspect_system_skills(target, selection)
         self.assertEqual(["isomer-op-entrypoint"], [record.name for record in status.installed])
         self.assertEqual((), status.missing)
+        self.assertIsNotNone(status.manifest)
 
-    def test_install_refuses_unmanaged_collision_and_uninstall_preserves_it(self) -> None:
+    def test_symlink_projection_does_not_write_per_skill_marker(self) -> None:
         root = self.make_root()
         target = resolve_targets("generic", home=root / "skills")[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
-        collision = target.skill_root / "isomer-op-entrypoint"
-        collision.mkdir(parents=True)
-        (collision / "SKILL.md").write_text("user-owned\n", encoding="utf-8")
 
-        install_result = install_system_skills(target, selection)
-        self.assertFalse(install_result.ok)
-        self.assertEqual(["isomer-op-entrypoint"], [item.name for item in install_result.unmanaged_collisions])
-        self.assertEqual("user-owned\n", (collision / "SKILL.md").read_text(encoding="utf-8"))
+        result = install_system_skills(target, selection, projection_mode="symlink")
 
-        uninstall_result = uninstall_system_skills(target, selection)
-        self.assertEqual(["isomer-op-entrypoint"], [item.name for item in uninstall_result.preserved_unmanaged])
-        self.assertTrue(collision.is_dir())
+        self.assertTrue(result.ok)
+        skill_link = target.skill_root / "isomer-op-entrypoint"
+        self.assertTrue(skill_link.is_symlink())
+        self.assertFalse((skill_link / OLD_MARKER_FILENAME).exists())
+        manifest = json.loads((target.skill_root / SKILL_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+        self.assertEqual("symlink", manifest["skills"][0]["projection_mode"])
 
-    def test_uninstall_removes_owned_projection(self) -> None:
+    def test_install_preserves_existing_path_without_force_and_force_replaces_it(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", home=root / "skills")[0]
+        selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+        existing = target.skill_root / "isomer-op-entrypoint"
+        existing.mkdir(parents=True)
+        (existing / "SKILL.md").write_text("user-owned\n", encoding="utf-8")
+
+        preserved = install_system_skills(target, selection)
+
+        self.assertTrue(preserved.ok)
+        self.assertFalse(preserved.mutated)
+        self.assertEqual(["isomer-op-entrypoint"], [item.name for item in preserved.preserved_existing])
+        self.assertEqual("user-owned\n", (existing / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertFalse((target.skill_root / SKILL_MANIFEST_FILENAME).exists())
+
+        replaced = install_system_skills(target, selection, force=True)
+
+        self.assertTrue(replaced.mutated)
+        self.assertEqual(["isomer-op-entrypoint"], [item.name for item in replaced.replaced])
+        self.assertNotEqual("user-owned\n", (existing / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertTrue((target.skill_root / SKILL_MANIFEST_FILENAME).is_file())
+
+    def test_force_switches_copy_and_symlink_projection_modes(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", home=root / "skills")[0]
+        selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+        install_system_skills(target, selection)
+
+        to_symlink = install_system_skills(target, selection, projection_mode="symlink", force=True)
+
+        skill_path = target.skill_root / "isomer-op-entrypoint"
+        self.assertEqual(["isomer-op-entrypoint"], [item.name for item in to_symlink.replaced])
+        self.assertTrue(skill_path.is_symlink())
+
+        to_copy = install_system_skills(target, selection, projection_mode="copy", force=True)
+
+        self.assertEqual(["isomer-op-entrypoint"], [item.name for item in to_copy.replaced])
+        self.assertTrue(skill_path.is_dir())
+        self.assertFalse(skill_path.is_symlink())
+
+    def test_uninstall_removes_named_projection_and_updates_manifest(self) -> None:
         root = self.make_root()
         target = resolve_targets("generic", home=root / "skills")[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
@@ -95,6 +141,61 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
         self.assertEqual(["isomer-op-entrypoint"], [record.name for record in result.removed])
         self.assertFalse((target.skill_root / "isomer-op-entrypoint").exists())
+        manifest = json.loads((target.skill_root / SKILL_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+        self.assertEqual([], manifest["skills"])
+
+    def test_status_reports_invalid_path_and_unreadable_manifest(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", home=root / "skills")[0]
+        selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+        target.skill_root.mkdir(parents=True)
+        (target.skill_root / "isomer-op-entrypoint").write_text("not a directory\n", encoding="utf-8")
+        (target.skill_root / SKILL_MANIFEST_FILENAME).write_text("{broken\n", encoding="utf-8")
+
+        status = inspect_system_skills(target, selection)
+
+        self.assertEqual(["isomer-op-entrypoint"], [item.name for item in status.invalid_projections])
+        self.assertEqual({"ISOSKILL001", "ISOSKILL002"}, {diagnostic.code for diagnostic in status.diagnostics})
+
+    def test_upgrade_refreshes_selected_and_removes_manifest_tracked_stale_paths(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", home=root / "skills")[0]
+        both = resolve_system_skill_selection(
+            skills=("isomer-op-entrypoint", "isomer-op-gui-mgr"),
+            default_core=False,
+        )
+        selected = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+        install_system_skills(target, both)
+        untracked = target.skill_root / "user-skill"
+        untracked.mkdir()
+
+        result = upgrade_system_skills(target, selected)
+
+        self.assertEqual(["isomer-op-entrypoint"], [item.name for item in result.refreshed])
+        self.assertEqual(["isomer-op-gui-mgr"], [item.name for item in result.stale_removed])
+        self.assertTrue((target.skill_root / "isomer-op-entrypoint").is_dir())
+        self.assertFalse((target.skill_root / "isomer-op-gui-mgr").exists())
+        self.assertTrue(untracked.exists())
+        manifest = json.loads((target.skill_root / SKILL_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+        self.assertEqual(["isomer-op-entrypoint"], [item["name"] for item in manifest["skills"]])
+
+    def test_upgrade_preserves_recorded_mode_and_honors_override(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", home=root / "skills")[0]
+        selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+        install_system_skills(target, selection, projection_mode="symlink")
+
+        preserved = upgrade_system_skills(target, selection)
+
+        skill_path = target.skill_root / "isomer-op-entrypoint"
+        self.assertTrue(skill_path.is_symlink())
+        self.assertEqual("symlink", preserved.refreshed[0].projection_mode)
+
+        overridden = upgrade_system_skills(target, selection, projection_mode="copy")
+
+        self.assertTrue(skill_path.is_dir())
+        self.assertFalse(skill_path.is_symlink())
+        self.assertEqual("copy", overridden.refreshed[0].projection_mode)
 
 
 if __name__ == "__main__":

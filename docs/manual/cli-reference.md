@@ -40,11 +40,12 @@ The `system-skills` namespace installs packaged Isomer system skills from the re
 - `system-skills list`
 - `system-skills status`
 - `system-skills install`
+- `system-skills upgrade`
 - `system-skills uninstall`
 
 Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible layout. The `all` target expands to every concrete target and cannot be combined with `--home`.
 
-**Side effects:** `install` copies selected packaged skills by default, or symlinks them with `--mode symlink`, and writes an Isomer ownership marker into each projected skill directory. It refuses unmanaged name collisions. `uninstall` removes only Isomer-owned projections and preserves user-authored directories without an Isomer ownership marker. `list` and `status` are read-only.
+**Side effects:** `install` copies selected packaged skills by default, or symlinks them with `--mode symlink`, and tracks the target skill root in `isomer-labs-skill-manifest.json`. Packaged skill names are reserved install slots. If a selected same-name path already exists, `install` preserves it unless `--force` is supplied. `upgrade` refreshes selected skills from the current package and removes stale skill paths tracked in the target-root manifest, which supports package upgrades that rename or delete skills. `uninstall` removes selected packaged skill names and updates the target-root manifest. `list` and `status` are read-only.
 
 ```bash
 isomer-cli system-skills list
@@ -52,6 +53,8 @@ isomer-cli --print-json system-skills list
 isomer-cli system-skills install --target codex
 isomer-cli system-skills install --target codex --extension deepsci
 isomer-cli system-skills install --target all --skill isomer-op-entrypoint
+isomer-cli system-skills install --target codex --skill isomer-op-entrypoint --force
+isomer-cli system-skills upgrade --target codex
 isomer-cli --print-json system-skills status --target generic
 isomer-cli system-skills uninstall --target codex
 ```

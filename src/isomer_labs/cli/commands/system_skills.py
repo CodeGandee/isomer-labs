@@ -9,6 +9,7 @@ import click
 
 from isomer_labs.cli.options import CliOptions
 from isomer_labs.cli.output import output_format
+from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.core.rendering import render_json
 from isomer_labs.skills.installer import (
     SUPPORTED_TARGETS,
@@ -19,6 +20,7 @@ from isomer_labs.skills.installer import (
     resolve_system_skill_selection,
     resolve_targets,
     uninstall_system_skills,
+    upgrade_system_skills,
 )
 from isomer_labs.skills.system_assets import iter_system_skill_groups
 
@@ -86,9 +88,11 @@ def register_system_skill_commands(app: click.Group) -> None:
                 skills=skills,
             )
             targets = resolve_targets(target, home=home)
-            statuses = [inspect_system_skills(item, selection).to_json() for item in targets]
+            results = [inspect_system_skills(item, selection) for item in targets]
         except SystemSkillInstallError as exc:
             raise click.ClickException(str(exc)) from exc
+        statuses = [result.to_json() for result in results]
+        diagnostics = _result_diagnostics(results)
         payload: dict[str, object] = {
             "ok": True,
             "mutated": False,
@@ -96,7 +100,7 @@ def register_system_skill_commands(app: click.Group) -> None:
         }
         if len(statuses) == 1:
             payload.update(statuses[0])
-        return _emit("system-skills status", options, payload, _render_statuses(statuses))
+        return _emit("system-skills status", options, payload, _render_statuses(statuses), diagnostics)
 
     @system_skills_group.command(name="install", help="Install packaged Isomer system skills into a target tool skill root.")
     @_target_options
@@ -109,6 +113,7 @@ def register_system_skill_commands(app: click.Group) -> None:
         show_default=True,
         help="Projection mode for installed skill directories.",
     )
+    @click.option("--force", is_flag=True, help="Replace existing selected skill paths before installing.")
     @click.pass_context
     def system_skills_install_command(
         ctx: click.Context,
@@ -119,6 +124,7 @@ def register_system_skill_commands(app: click.Group) -> None:
         all_extensions: bool,
         skills: tuple[str, ...],
         projection_mode: str,
+        force: bool,
     ) -> int:
         options = _root_options(ctx)
         try:
@@ -131,21 +137,70 @@ def register_system_skill_commands(app: click.Group) -> None:
             )
             targets = resolve_targets(target, home=home)
             results = [
-                install_system_skills(item, selection, projection_mode=projection_mode)  # type: ignore[arg-type]
+                install_system_skills(item, selection, projection_mode=projection_mode, force=force)  # type: ignore[arg-type]
                 for item in targets
             ]
         except SystemSkillInstallError as exc:
             raise click.ClickException(str(exc)) from exc
         result_payloads = [result.to_json() for result in results]
+        diagnostics = _result_diagnostics(results)
         ok = all(result.ok for result in results)
         payload: dict[str, object] = {
             "ok": ok,
-            "mutated": any(result.installed for result in results),
+            "mutated": any(result.mutated for result in results),
             "targets": result_payloads,
         }
         if len(result_payloads) == 1:
             payload.update(result_payloads[0])
-        return _emit("system-skills install", options, payload, _render_installs(result_payloads))
+        return _emit("system-skills install", options, payload, _render_installs(result_payloads), diagnostics)
+
+    @system_skills_group.command(name="upgrade", help="Refresh packaged system skills and remove stale manifest-tracked projections.")
+    @_target_options
+    @_selection_options
+    @click.option(
+        "--mode",
+        "projection_mode",
+        type=click.Choice(["copy", "symlink"]),
+        default=None,
+        help="Projection mode override for refreshed skill directories.",
+    )
+    @click.pass_context
+    def system_skills_upgrade_command(
+        ctx: click.Context,
+        target: str,
+        home: Path | None,
+        groups: tuple[str, ...],
+        extensions: tuple[str, ...],
+        all_extensions: bool,
+        skills: tuple[str, ...],
+        projection_mode: str | None,
+    ) -> int:
+        options = _root_options(ctx)
+        try:
+            selection = resolve_system_skill_selection(
+                groups=groups,
+                extensions=extensions,
+                all_extensions=all_extensions,
+                skills=skills,
+                default_core=True,
+            )
+            targets = resolve_targets(target, home=home)
+            results = [
+                upgrade_system_skills(item, selection, projection_mode=projection_mode)  # type: ignore[arg-type]
+                for item in targets
+            ]
+        except SystemSkillInstallError as exc:
+            raise click.ClickException(str(exc)) from exc
+        result_payloads = [result.to_json() for result in results]
+        diagnostics = _result_diagnostics(results)
+        payload: dict[str, object] = {
+            "ok": all(result.ok for result in results),
+            "mutated": any(result.mutated for result in results),
+            "targets": result_payloads,
+        }
+        if len(result_payloads) == 1:
+            payload.update(result_payloads[0])
+        return _emit("system-skills upgrade", options, payload, _render_upgrades(result_payloads), diagnostics)
 
     @system_skills_group.command(name="uninstall", help="Remove Isomer-owned packaged system skill projections.")
     @_target_options
@@ -173,14 +228,15 @@ def register_system_skill_commands(app: click.Group) -> None:
         except SystemSkillInstallError as exc:
             raise click.ClickException(str(exc)) from exc
         result_payloads = [result.to_json() for result in results]
+        diagnostics = _result_diagnostics(results)
         payload: dict[str, object] = {
             "ok": True,
-            "mutated": any(result.removed for result in results),
+            "mutated": any(result.mutated for result in results),
             "targets": result_payloads,
         }
         if len(result_payloads) == 1:
             payload.update(result_payloads[0])
-        return _emit("system-skills uninstall", options, payload, _render_uninstalls(result_payloads))
+        return _emit("system-skills uninstall", options, payload, _render_uninstalls(result_payloads), diagnostics)
 
 
 def _target_options(func: Any) -> Any:
@@ -232,12 +288,27 @@ def _resolve_selection_for_read(
     )
 
 
-def _emit(command: str, options: CliOptions, payload: dict[str, object], text_lines: list[str]) -> int:
+def _emit(
+    command: str,
+    options: CliOptions,
+    payload: dict[str, object],
+    text_lines: list[str],
+    diagnostics: Sequence[Diagnostic] = (),
+) -> int:
     if output_format(options) == "json":
-        click.echo(render_json(command, payload, []))
+        click.echo(render_json(command, payload, list(diagnostics)))
     else:
         click.echo("\n".join(text_lines))
+        for diagnostic in diagnostics:
+            click.echo(diagnostic.render())
     return 0 if payload.get("ok") is not False else 1
+
+
+def _result_diagnostics(results: Sequence[Any]) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for result in results:
+        diagnostics.extend(getattr(result, "diagnostics", ()))
+    return diagnostics
 
 
 def _render_list(payload: dict[str, object]) -> list[str]:
@@ -258,11 +329,15 @@ def _render_statuses(statuses: list[dict[str, object]]) -> list[str]:
         lines.append(f"- {status.get('target')}: {status.get('skill_root')}")
         lines.append(f"  installed: {', '.join(_string_list(status.get('installed_skills'))) or '(none)'}")
         lines.append(f"  missing: {', '.join(_string_list(status.get('missing_skills'))) or '(none)'}")
-        collisions = _mapping_list(status.get("unmanaged_collisions"))
-        if collisions:
-            lines.append("  unmanaged collisions:")
-            for collision in collisions:
-                lines.append(f"    - {collision.get('name')}: {collision.get('path')}")
+        invalid = _mapping_list(status.get("invalid_projections"))
+        if invalid:
+            lines.append("  invalid projections:")
+            for projection in invalid:
+                lines.append(f"    - {projection.get('name')}: {projection.get('path')} ({projection.get('path_kind')})")
+        manifest = status.get("manifest")
+        if isinstance(manifest, dict):
+            lines.append(f"  manifest: {manifest.get('path')}")
+            lines.append(f"  manifest package version: {manifest.get('package_version') or '(unknown)'}")
     return lines
 
 
@@ -272,11 +347,32 @@ def _render_installs(results: list[dict[str, object]]) -> list[str]:
         lines.append(f"- {result.get('target')}: {result.get('skill_root')}")
         installed = _string_list(result.get("installed_skills"))
         lines.append(f"  installed: {', '.join(installed) or '(none)'}")
-        collisions = _mapping_list(result.get("unmanaged_collisions"))
-        if collisions:
-            lines.append("  unmanaged collisions:")
-            for collision in collisions:
-                lines.append(f"    - {collision.get('name')}: {collision.get('path')}")
+        replaced = _string_list(result.get("replaced_skills"))
+        if replaced:
+            lines.append(f"  replaced: {', '.join(replaced)}")
+        preserved = _mapping_list(result.get("preserved_existing"))
+        if preserved:
+            lines.append("  preserved existing:")
+            for item in preserved:
+                lines.append(f"    - {item.get('name')}: {item.get('path')} ({item.get('path_kind')})")
+        manifest = result.get("manifest")
+        if isinstance(manifest, dict):
+            lines.append(f"  manifest: {manifest.get('path')}")
+    return lines
+
+
+def _render_upgrades(results: list[dict[str, object]]) -> list[str]:
+    lines = ["Upgraded Isomer system skills:"]
+    for result in results:
+        lines.append(f"- {result.get('target')}: {result.get('skill_root')}")
+        lines.append(f"  refreshed: {', '.join(_string_list(result.get('refreshed_skills'))) or '(none)'}")
+        lines.append(f"  stale removed: {', '.join(_string_list(result.get('stale_removed_skills'))) or '(none)'}")
+        stale_absent = _string_list(result.get("stale_absent_skills"))
+        if stale_absent:
+            lines.append(f"  stale absent: {', '.join(stale_absent)}")
+        manifest = result.get("manifest")
+        if isinstance(manifest, dict):
+            lines.append(f"  manifest: {manifest.get('path')}")
     return lines
 
 
@@ -286,11 +382,9 @@ def _render_uninstalls(results: list[dict[str, object]]) -> list[str]:
         lines.append(f"- {result.get('target')}: {result.get('skill_root')}")
         lines.append(f"  removed: {', '.join(_string_list(result.get('removed_skills'))) or '(none)'}")
         lines.append(f"  absent: {', '.join(_string_list(result.get('absent_skills'))) or '(none)'}")
-        preserved = _mapping_list(result.get("preserved_unmanaged"))
-        if preserved:
-            lines.append("  preserved unmanaged:")
-            for collision in preserved:
-                lines.append(f"    - {collision.get('name')}: {collision.get('path')}")
+        manifest = result.get("manifest")
+        if isinstance(manifest, dict):
+            lines.append(f"  manifest: {manifest.get('path')}")
     return lines
 
 

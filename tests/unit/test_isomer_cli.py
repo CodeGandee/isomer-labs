@@ -144,7 +144,7 @@ class IsomerCliTests(unittest.TestCase):
             (["project", "topics"], "Usage: isomer-cli project topics", ("list", "show", "create")),
             (["project", "team-instances", "adapter-link"], "Usage: isomer-cli project team-instances adapter-link", ("export",)),
             (["ext", "research"], "Usage: isomer-cli ext research", ("records", "ideas")),
-            (["system-skills"], "Usage: isomer-cli system-skills", ("list", "install", "status")),
+            (["system-skills"], "Usage: isomer-cli system-skills", ("list", "install", "status", "upgrade")),
         ]
 
         for args, usage, expected_commands in cases:
@@ -655,7 +655,7 @@ class IsomerCliTests(unittest.TestCase):
 
         system_skills_help = runner.invoke(cli.app, ["system-skills", "--help"])
         self.assertEqual(0, system_skills_help.exit_code, system_skills_help.output)
-        for command in ("list", "status", "install", "uninstall"):
+        for command in ("list", "status", "install", "upgrade", "uninstall"):
             self.assertIn(command, system_skills_help.output)
 
         for help_args in (
@@ -710,8 +710,30 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         installed = json.loads(output)
         self.assertEqual(["isomer-op-entrypoint"], installed["installed_skills"])
+        self.assertIsNotNone(installed["manifest"])
+        self.assertEqual(["isomer-op-entrypoint"], installed["manifest"]["skill_names"])
         self.assertTrue((skill_root / "isomer-op-entrypoint" / "SKILL.md").is_file())
+        self.assertFalse((skill_root / "isomer-op-entrypoint" / ".isomer-system-skill.json").exists())
         self.assertFalse((skill_root / "operator" / "isomer-op-entrypoint").exists())
+
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "system-skills",
+                "install",
+                "--target",
+                "generic",
+                "--home",
+                str(skill_root),
+                "--skill",
+                "isomer-op-entrypoint",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        preserved = json.loads(output)
+        self.assertEqual([], preserved["installed_skills"])
+        self.assertEqual(["isomer-op-entrypoint"], [item["name"] for item in preserved["preserved_existing"]])
 
         status, output = self.run_cli(
             [
@@ -731,6 +753,7 @@ class IsomerCliTests(unittest.TestCase):
         status_data = json.loads(output)
         self.assertEqual(["isomer-op-entrypoint"], status_data["installed_skills"])
         self.assertEqual([], status_data["missing_skills"])
+        self.assertIsNotNone(status_data["manifest"])
 
         status, output = self.run_cli(
             [
@@ -750,6 +773,82 @@ class IsomerCliTests(unittest.TestCase):
         removed = json.loads(output)
         self.assertEqual(["isomer-op-entrypoint"], removed["removed_skills"])
         self.assertFalse((skill_root / "isomer-op-entrypoint").exists())
+
+    def test_system_skills_cli_force_and_upgrade_refresh_manifest_tracked_skills(self) -> None:
+        root = self.make_root()
+        skill_root = root / "agent-skills"
+
+        help_status, help_output = self.run_cli(["system-skills", "install", "--help"], cwd=root)
+        self.assertEqual(0, help_status, help_output)
+        self.assertIn("--force", help_output)
+
+        upgrade_help_status, upgrade_help_output = self.run_cli(["system-skills", "upgrade", "--help"], cwd=root)
+        self.assertEqual(0, upgrade_help_status, upgrade_help_output)
+        self.assertIn("--mode", upgrade_help_output)
+
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "system-skills",
+                "install",
+                "--target",
+                "generic",
+                "--home",
+                str(skill_root),
+                "--skill",
+                "isomer-op-entrypoint",
+                "--skill",
+                "isomer-op-gui-mgr",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+
+        (skill_root / "untracked-skill").mkdir()
+
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "system-skills",
+                "upgrade",
+                "--target",
+                "generic",
+                "--home",
+                str(skill_root),
+                "--skill",
+                "isomer-op-entrypoint",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        upgraded = json.loads(output)
+        self.assertEqual(["isomer-op-entrypoint"], upgraded["refreshed_skills"])
+        self.assertEqual(["isomer-op-gui-mgr"], upgraded["stale_removed_skills"])
+        self.assertTrue((skill_root / "isomer-op-entrypoint" / "SKILL.md").is_file())
+        self.assertFalse((skill_root / "isomer-op-gui-mgr").exists())
+        self.assertTrue((skill_root / "untracked-skill").exists())
+        self.assertEqual(["isomer-op-entrypoint"], upgraded["manifest"]["skill_names"])
+
+        (skill_root / "isomer-op-entrypoint" / "SKILL.md").write_text("local edit\n", encoding="utf-8")
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "system-skills",
+                "install",
+                "--target",
+                "generic",
+                "--home",
+                str(skill_root),
+                "--skill",
+                "isomer-op-entrypoint",
+                "--force",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        forced = json.loads(output)
+        self.assertEqual(["isomer-op-entrypoint"], forced["replaced_skills"])
+        self.assertNotEqual("local edit\n", (skill_root / "isomer-op-entrypoint" / "SKILL.md").read_text(encoding="utf-8"))
 
     def test_system_skills_cli_supports_all_target_and_rejects_home_with_all(self) -> None:
         root = self.make_root()
