@@ -165,6 +165,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 - List exact Pixi commands that prove the runnable target works.
 - Ensure each source-intent runnable target has a corresponding verification command, bounded real-path command, or blocker.
 - For operations classified as `heavy` or `unknown-risk`, align the command with the `## Resource Check Plan` guidance source and bounded limits instead of inventing an unrecorded full-scale command.
+- For profiler, tracer, debugger, memory-checker, and similar wrapper tools that execute a target command as a subprocess, put the wrapper tool inside Pixi: `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <wrapper-tool> <tool-options> <target-command> <target-args>`. Do not write `<wrapper-tool> pixi run ...` unless local evidence proves that Pixi itself is the intended target process.
 - Include recorded environment variables, sourced scripts, or runtime paths inside the Pixi-run command when needed.
 - Keep Topic Workspace readiness topic-scoped; do not derive per-Agent Workspace verification here and do not write `topic.env.agent_setup_target_spec`.
 
@@ -229,3 +230,15 @@ Classify every dependency and runtime need before writing install or verificatio
 ## Command Style
 
 Write setup and verification commands that execute inside the prepared Topic Workspace environment as `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`. Dependency mutation commands may use `pixi add --manifest-path <manifest_path> ...` and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
+
+For command-wrapper tools that launch the measured or debugged program as a subprocess, Pixi must launch the wrapper tool, and the wrapper tool must launch the target command. Use:
+
+```bash
+pixi run --manifest-path <manifest_path> --environment <pixi_environment> ncu <ncu-options> python bench.py
+pixi run --manifest-path <manifest_path> --environment <pixi_environment> nsys profile python bench.py
+pixi run --manifest-path <manifest_path> --environment <pixi_environment> valgrind --tool=memcheck python script.py
+pixi run --manifest-path <manifest_path> --environment <pixi_environment> gdb --args python script.py
+pixi run --manifest-path <manifest_path> --environment <pixi_environment> cuda-gdb --args ./kernel_bench
+```
+
+Do not write inverted commands such as `ncu pixi run ...`, `nsys profile pixi run ...`, `valgrind pixi run ...`, or `gdb --args pixi run ...` unless the gate records explicit local evidence that Pixi itself, rather than the target program, is the process under inspection.

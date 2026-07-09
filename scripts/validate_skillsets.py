@@ -1412,6 +1412,7 @@ HOUMAO_INTEROP_SERVICE_SUBCOMMANDS = (
     "customize-loop.md",
     "map-template-to-houmao.md",
     "inspect-runtime.md",
+    "skill-context.md",
 )
 
 HOUMAO_INTEROP_SERVICE_REQUIRED_SKILL_TERMS = (

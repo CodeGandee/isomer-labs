@@ -6,6 +6,16 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-07-09
+
+This bugfix release improves packaged system skill guidance for Pixi-scoped profiler, debugger, tracer, and memory-checker commands.
+
+### Changed
+
+- Added generic wrapper-tool command-shape guidance so Topic Workspace setup and verification prefer `pixi run <wrapper-tool> ... <target-command>` over `<wrapper-tool> pixi run ...`.
+- Added bounded-run and NVIDIA-specific examples for tools such as `ncu`, `nsys`, `valgrind`, `gdb`, and `cuda-gdb`.
+- Synced and archived the completed OpenSpec change for Pixi wrapper-tool command-shape guidance.
+
 ## [0.2.1] - 2026-07-09
 
 This bugfix release updates published package metadata and README guidance so package indexes and new users can find the repository, documentation, and recommended CLI-agent setup path.
@@ -112,7 +122,8 @@ Initial tagged release of Isomer Labs.
 - Removed generated Isomer project state and vendored skill creator material.
 - Excluded local heavy folders from VS Code and updated local package lock metadata.
 
-[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/CodeGandee/isomer-labs/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/CodeGandee/isomer-labs/releases/tag/v0.1.0

@@ -662,8 +662,8 @@ packages:
   requires_python: '>=3.10'
 - pypi: ./
   name: isomer-labs
-  version: 0.2.1
-  sha256: 2dbf9bb2de495de53d9ab1411456990974e1e56adfe30bce4bddc33957fb4069
+  version: 0.2.2
+  sha256: 3b8f2d44b51f68a425c8560aa6e4a927a5e0428b731bff696c196e11d9dfd813
   requires_dist:
   - click>=8.4.1,<9
   - fastapi>=0.139.0,<0.140

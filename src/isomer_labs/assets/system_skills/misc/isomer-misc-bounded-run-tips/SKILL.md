@@ -39,6 +39,7 @@ When this skill is invoked, execute the following steps in order.
 5. **Choose a bounded real-path command**:
    - Reduce breadth, not meaning: fewer workers, selected targets, smaller inputs, shorter benchmarks, selected tests, or sample data.
    - Keep the command on the critical path that the task or gate needs to prove.
+   - For profiler, tracer, debugger, memory-checker, and similar wrapper tools that execute a target command as a subprocess, keep Pixi outside the wrapper: use `pixi run <wrapper-tool> <tool-options> <target-command> <target-args>` or the explicit manifest equivalent, not `<wrapper-tool> pixi run ...`, unless local evidence proves that Pixi itself is the intended target process.
 6. **Run, observe, and adjust**:
    - Start with conservative limits.
    - Increase parallelism only when resource headroom remains clear.
@@ -57,6 +58,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 ## Bounded Run Principle
 
 Bounded does not mean superficial. A bounded run is valid when it still exercises the important implementation path with smaller scope or lower parallelism. For example, compiling one CUDA extension for the host GPU architecture with one worker is bounded; replacing compilation with `python -c "import torch"` is only a smoke test.
+
+For tools that wrap and launch another command, such as `ncu`, `nsys`, `valgrind`, `gdb`, `cuda-gdb`, profilers, tracers, debuggers, and memory checkers, the bounded command must preserve the Pixi-first shape. Use `pixi run ncu ... python bench.py`, `pixi run valgrind ... python script.py`, or `pixi run gdb --args python script.py`. Do not use `ncu pixi run ...`, `valgrind pixi run ...`, or `gdb --args pixi run ...` unless Pixi itself is deliberately the command being profiled or debugged.
 
 ## Reporting Contract
 
@@ -99,3 +102,4 @@ When requested, include:
 - Compiling CUDA kernels for broad architecture lists when the task is local to the current host.
 - Saturating all RAM, CPU, disk, or GPU capacity just to prove environment readiness.
 - Hiding skipped heavy work behind `ready` instead of reporting a blocker and the bounded command to retry.
+- Inverting Pixi and a wrapper tool by writing `<wrapper-tool> pixi run ...` for profiler, debugger, tracer, or memory-checker work; the usual bounded command shape is `pixi run <wrapper-tool> ... <target-command>`.

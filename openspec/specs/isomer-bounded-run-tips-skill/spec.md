@@ -2,9 +2,7 @@
 
 ## Purpose
 Defines the bounded-run tips misc skill contract for classifying resource risk and producing bounded execution guidance.
-
 ## Requirements
-
 ### Requirement: Bounded Run Tips Classifies Operation Resource Risk
 The bounded-run tips misc skill SHALL own user-tunable classification of whether a requested operation needs bounded resource handling.
 
@@ -44,3 +42,15 @@ The bounded-run tips misc skill SHALL provide bounded real-path execution guidan
 - **WHEN** an operation is classified as `light`
 - **THEN** the skill reports that a resource check plan is not required
 - **AND** it still states the reason so callers can record why no bounded execution plan was generated
+
+### Requirement: Bounded Guidance Preserves Pixi Wrapper Tool Shape
+The bounded-run tips misc skill SHALL preserve Pixi-first command ordering when producing bounded commands for wrapper tools that execute target commands as subprocesses.
+
+#### Scenario: Bounded profiler command keeps wrapper inside Pixi
+- **WHEN** bounded-run tips produces a bounded command for a profiler, tracer, debugger, memory checker, or similar wrapper tool
+- **THEN** the bounded command uses `pixi run <wrapper-tool> ... <target-command>` or the explicit manifest equivalent
+- **AND** it does not use `<wrapper-tool> pixi run ...` unless local evidence proves that Pixi itself is the intended target process
+
+#### Scenario: Bounded guidance lists representative wrapper tools
+- **WHEN** bounded-run tips documents common mistakes or generic bounded guidance
+- **THEN** it names representative wrapper tools such as `ncu`, `nsys`, `valgrind`, `gdb`, and `cuda-gdb`

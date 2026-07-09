@@ -31,6 +31,7 @@ When this subcommand is selected, execute the following steps in order.
    - The resolved manifest may be `pixi.toml` or Pixi-enabled `pyproject.toml`.
 4. **Confirm verification commands are replayable**:
    - Each command must use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
+   - For profiler, tracer, debugger, memory-checker, and similar wrapper tools that execute a target command as a subprocess, Pixi must launch the wrapper tool. Accept `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <wrapper-tool> ... <target-command>` and reject inverted commands shaped as `<wrapper-tool> pixi run ...`, such as `ncu pixi run ...`, `nsys profile pixi run ...`, `valgrind pixi run ...`, or `gdb --args pixi run ...`, unless the target spec records explicit local evidence that Pixi itself is the intended inspected process.
    - When a command needs external runtime wiring, the target spec must record the exact variables, paths, sourced scripts, or activation commands before the command runs.
    - When the gate depends on package-specific runtime behavior, use the verification expectations recorded from `isomer-misc-pkg-specifics`.
    - When a named package has no package-specific page, require the target spec to record `no package-specific rule` before using generic import, CLI, metadata, or smoke verification.

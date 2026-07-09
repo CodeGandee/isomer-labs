@@ -259,6 +259,31 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertIn("Project Manifest Houmao integration evidence", finalize)
         self.assertIn("disabled Houmao integration as a skip state", status)
 
+    def test_pixi_wrapper_tool_command_shape_guidance_is_packaged(self) -> None:
+        topic_env = resolve_system_skill("service/isomer-srv-topic-env-setup")
+        derive = topic_env.joinpath("references", "derive-env-gate.md").read_text(encoding="utf-8")
+        verify = topic_env.joinpath("references", "verify-env-gate.md").read_text(encoding="utf-8")
+        bounded = resolve_system_skill("misc/isomer-misc-bounded-run-tips").joinpath("SKILL.md").read_text(encoding="utf-8")
+        nvidia = resolve_system_skill("misc/isomer-misc-nvidia-tools").joinpath("SKILL.md").read_text(encoding="utf-8")
+
+        for text in (derive, verify, bounded):
+            self.assertIn("wrapper tools", text)
+            self.assertIn("pixi run", text)
+            self.assertIn("<wrapper-tool> pixi run", text)
+            self.assertIn("ncu", text)
+            self.assertIn("valgrind", text)
+            self.assertIn("gdb", text)
+
+        self.assertIn("pixi run ncu", bounded)
+        self.assertIn("pixi run valgrind", bounded)
+        self.assertIn("pixi run gdb --args", bounded)
+        self.assertIn("ncu pixi run", bounded)
+
+        self.assertIn("pixi run ncu", nvidia)
+        self.assertIn("pixi run nsys profile", nvidia)
+        self.assertIn("pixi run cuda-gdb --args", nvidia)
+        self.assertIn("ncu pixi run", nvidia)
+
     def test_materialize_refuses_non_empty_target(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp)

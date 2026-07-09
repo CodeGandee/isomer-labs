@@ -28,6 +28,12 @@ If the user's task does not map cleanly to these steps, use your native planning
 | --- | --- | --- |
 | `pixi-cuda-cpp-env` | Set up or repair a Pixi environment for compiling CUDA and C++ code | [references/pixi-cuda-cpp-env.md](references/pixi-cuda-cpp-env.md) |
 
+## NVIDIA Profiler and Debugger Command Shape
+
+For NVIDIA tools that launch a measured or debugged command, Pixi must launch the NVIDIA tool, and the NVIDIA tool must launch the target command. Use `pixi run ncu ... <target-command>`, `pixi run nsys profile ... <target-command>`, or `pixi run cuda-gdb --args <target-command>`.
+
+Do not use inverted commands such as `ncu pixi run ...`, `nsys profile pixi run ...`, or `cuda-gdb --args pixi run ...` unless local evidence proves that Pixi itself is deliberately the profiled or debugged process. In Topic Workspace setup or verification, prefer the explicit form `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <nvidia-tool> ... <target-command>`.
+
 ## Boundary
 
 For CUDA compile bounding, host GPU architecture selection, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `-gencode`, `MAX_JOBS`, `ninja -j`, `cmake --build ... -j`, or RAM-aware worker counts, use `isomer-misc-bounded-run-tips` subcommand `cuda-compile`.

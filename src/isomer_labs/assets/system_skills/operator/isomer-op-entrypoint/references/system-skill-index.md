@@ -45,6 +45,6 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Package-specific routing rules. | `isomer-misc-pkg-specifics` | Helper guidance before generic package handling. |
 | Named installable toolset contract such as paper-writing, paper-figures-python, paper2ppt, cuda-build, torch-gpu, or topic-python-starter. | `isomer-misc-tool-packs` | Explicitly requested helper only; not automatic package mutation. |
 
-Project-local Toolbox callback, insertion-point, Runtime Param, and registration management routes to `isomer-op-toolbox-mgr`, not to `isomer-misc-tool-packs`.
+Project-local Toolbox callback, insertion-point, Runtime Param, and registration management routes to `isomer-op-toolbox-mgr`; `isomer-misc-tool-packs` remains an explicitly requested helper only.
 
 Do not route active work to retired operator compatibility skills or old admin names.
