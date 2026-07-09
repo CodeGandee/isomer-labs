@@ -16,8 +16,10 @@ vi.mock("./api", async (importOriginal) => ({
 }));
 
 import { getIdeaDetail } from "./api";
-import { buildIdeaNodeHoverMarkdown, IdeaDetailPanel, openRecordFromNode } from "./App";
+import { IdeaDetailPanel } from "./App";
 import { workbenchCommands$ } from "./events";
+import { openRecordFromNode } from "./features/graph/open-record";
+import { buildIdeaNodeHoverMarkdown } from "./features/idea-lineage/IdeaLineagePanel";
 import { ToastNotificationsProvider } from "./toast-notifications";
 import type { IdeaDetailResponse, TopicGraphView } from "./types";
 
@@ -41,7 +43,7 @@ describe("Idea detail panel", () => {
     renderWithQuery(<IdeaDetailPanel topicId="alpha" ideaId="idea-1" />);
 
     expect((await screen.findAllByRole("heading", { name: "Precision Idea" })).length).toBeGreaterThan(0);
-    expect(document.body.textContent).toContain("Separate launch overhead.");
+    await waitFor(() => expect(document.body.textContent).toContain("Separate launch overhead."));
     expect(document.body.textContent).not.toContain("filter notes");
     expect(screen.getByRole("button", { name: "Open Source Record" })).toBeTruthy();
     expect(document.querySelector(".idea-status-row")?.textContent).not.toContain("latest_realization_source_path");

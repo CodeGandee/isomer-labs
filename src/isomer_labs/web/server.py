@@ -8,11 +8,12 @@ import webbrowser
 
 from fastapi import FastAPI
 
-from .app import create_app
+from .app import WebCacheMode, create_app
 
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
+DEFAULT_CACHE_MODE: WebCacheMode = "normal"
 
 
 def run_server(
@@ -22,12 +23,14 @@ def run_server(
     port: int = DEFAULT_PORT,
     reload: bool = False,
     open_browser: bool = True,
+    cache_mode: WebCacheMode = DEFAULT_CACHE_MODE,
 ) -> None:
     """Run the Project web GUI service."""
 
     import uvicorn
 
     os.environ["ISOMER_WEB_PROJECT_ROOT"] = str(project_root)
+    os.environ["ISOMER_WEB_CACHE_MODE"] = cache_mode
     if open_browser:
         webbrowser.open(f"http://{host}:{port}/")
     uvicorn.run(
@@ -45,4 +48,11 @@ def create_app_from_env() -> FastAPI:
     project_root = os.environ.get("ISOMER_WEB_PROJECT_ROOT")
     if project_root is None:
         project_root = str(Path.cwd())
-    return create_app(project_root)
+    cache_mode = _cache_mode_from_env(os.environ.get("ISOMER_WEB_CACHE_MODE"))
+    return create_app(project_root, cache_mode=cache_mode)
+
+
+def _cache_mode_from_env(value: str | None) -> WebCacheMode:
+    if value == "debug":
+        return "debug"
+    return DEFAULT_CACHE_MODE

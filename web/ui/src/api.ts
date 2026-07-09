@@ -9,6 +9,7 @@ import {
   RecentErrorsResponseSchema,
   TopicChangeEventSchema,
   TopicGraphViewSchema,
+  TopicOverviewJsonResponseSchema,
   TopicOverviewResponseSchema,
   TopicsResponseSchema,
   ViewerDescriptorSchema,
@@ -75,6 +76,10 @@ export async function getTopic(topicId: string) {
 
 export async function getTopicOverview(topicId: string) {
   return TopicOverviewResponseSchema.parse(await fetchJson(`/api/topics/${encodeURIComponent(topicId)}/overview`));
+}
+
+export async function getTopicOverviewJson(topicId: string) {
+  return TopicOverviewJsonResponseSchema.parse(await fetchJson(`/api/topics/${encodeURIComponent(topicId)}/overview/json`));
 }
 
 export async function getRuntime(topicId: string) {

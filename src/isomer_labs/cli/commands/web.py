@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import cast
 
 import click
 
 from isomer_labs.cli.options import CliOptions
-from isomer_labs.web.server import DEFAULT_HOST, DEFAULT_PORT, run_server
+from isomer_labs.web.app import WebCacheMode
+from isomer_labs.web.server import DEFAULT_CACHE_MODE, DEFAULT_HOST, DEFAULT_PORT, run_server
 
 
 def register_web_commands(app: click.Group) -> None:
@@ -22,6 +24,13 @@ def register_web_commands(app: click.Group) -> None:
     @click.option("--port", default=DEFAULT_PORT, show_default=True, type=int, help="Port to bind.")
     @click.option("--reload", is_flag=True, help="Reload the web service when Python files change.")
     @click.option("--no-browser", is_flag=True, help="Do not open a browser after starting.")
+    @click.option(
+        "--cache-mode",
+        type=click.Choice(["normal", "debug"]),
+        default=DEFAULT_CACHE_MODE,
+        show_default=True,
+        help="Static asset and API cache behavior. Use debug to force no-store responses while iterating.",
+    )
     @click.pass_context
     def serve_command(
         ctx: click.Context,
@@ -30,6 +39,7 @@ def register_web_commands(app: click.Group) -> None:
         port: int = DEFAULT_PORT,
         reload: bool = False,
         no_browser: bool = False,
+        cache_mode: str = DEFAULT_CACHE_MODE,
     ) -> int:
         parent_options = ctx.obj if isinstance(ctx.obj, CliOptions) else None
         selected_root = project_root or (parent_options.project if parent_options is not None else None) or os.getcwd()
@@ -39,5 +49,6 @@ def register_web_commands(app: click.Group) -> None:
             port=port,
             reload=reload,
             open_browser=not no_browser,
+            cache_mode=cast(WebCacheMode, cache_mode),
         )
         return 0

@@ -50,6 +50,12 @@ The Project Web GUI SHALL let users inspect records and files from graph or tabl
 - **WHEN** the user selects an idea, artifact, evidence, decision, experiment, paper revision, or file node
 - **THEN** the GUI can open record detail, rendered Markdown, lineage, siblings, files, and facets using existing read APIs or the viewer descriptor API
 
+#### Scenario: Parent idea tag opens idea detail
+- **WHEN** a record or artifact detail page shows direct parent idea metadata with a stable idea id
+- **THEN** the parent idea tag is clickable and opens the existing idea detail tab for that idea
+- **AND** the GUI leaves the tag display-only when the parent idea metadata lacks a stable idea id
+- **AND** stale or unresolvable parent idea links report a user-facing notification instead of crashing or silently clearing the current detail view
+
 #### Scenario: File actions respect openability metadata
 - **WHEN** a record or file facet points to a local or external file
 - **THEN** the GUI offers file actions only when backend metadata says the file exists, is openable, and is within accepted Project or Topic Workspace surfaces
@@ -59,7 +65,7 @@ The Project Web GUI SHALL let users inspect records and files from graph or tabl
 - **THEN** the GUI does not fetch full structured payload JSON, render Markdown, load PDF content, render Mermaid, render KaTeX, or start graph layout for that record
 
 ### Requirement: Open-tab Resource Policy
-The Project Web GUI SHALL scope expensive data fetching and rendering to open relevant workbench tabs.
+The Project Web GUI SHALL scope expensive data fetching, module loading, and rendering to open relevant workbench tabs.
 
 #### Scenario: Closed tabs stop expensive work
 - **WHEN** a graph, Markdown, PDF, table, diagnostics, AG-UI, or future tmux tab is closed
@@ -72,6 +78,14 @@ The Project Web GUI SHALL scope expensive data fetching and rendering to open re
 #### Scenario: User context survives refresh
 - **WHEN** the selected topic read model refreshes after terminal-side work creates or revises records
 - **THEN** the GUI preserves topic selection, filters, layout mode, and selected detail when the selected record still exists
+
+#### Scenario: Initial shell avoids heavy viewer modules
+- **WHEN** the user opens the Project Web GUI shell before opening a graph, detail Markdown preview, Mermaid diagram, KaTeX content, PDF preview, or graph-layout-heavy panel
+- **THEN** the initial browser bundle SHALL NOT synchronously load the modules used only by those unopened viewers
+
+#### Scenario: Heavy viewer opens on demand
+- **WHEN** the user opens a graph, Markdown preview, Mermaid diagram, KaTeX content, PDF preview, or graph-layout-heavy panel
+- **THEN** the GUI SHALL load the needed viewer module on demand and show a non-blocking loading state while that module loads
 
 ### Requirement: Read-only Browsing
 The Project Web GUI SHALL keep ordinary research browsing separate from Workspace Runtime mutation and index maintenance.
@@ -87,13 +101,17 @@ The Project Web GUI SHALL keep ordinary research browsing separate from Workspac
 - **AND** any rebuild or cleanup operation remains an explicit user action through existing maintenance endpoints
 
 ### Requirement: Responsive Research Workbench
-The Project Web GUI SHALL remain usable across desktop, tablet, and mobile browser sizes.
+The Project Web GUI SHALL remain usable across desktop, tablet, and mobile browser sizes and SHALL respect the service cache mode when loading local static assets.
 
 #### Scenario: Browser size changes
 - **WHEN** the browser viewport changes size
 - **THEN** the workbench layout, graph viewport, tables, detail panels, and diagnostics remain usable without text overlap or hidden primary controls
 
-#### Scenario: Latest static assets are loaded
-- **WHEN** the local web service serves the GUI shell, static assets, or API responses
+#### Scenario: Debug launch loads latest static assets
+- **WHEN** the local web service serves the GUI shell, static assets, or API responses in debug launch mode
 - **THEN** cache headers prevent stale browser assets from hiding the latest local build during development and manual testing
+
+#### Scenario: Normal launch remains responsive on remote links
+- **WHEN** the local web service serves the GUI in normal launch mode over a constrained remote connection
+- **THEN** compressed responses, cacheable hashed static assets, lightweight initial API payloads, and lazy-loaded heavy viewers keep the workbench shell usable before unopened viewer details finish loading
 

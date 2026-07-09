@@ -115,9 +115,8 @@ vi.mock("./ui-settings", () => ({
 }));
 
 import { getIdeaDetail, getTopicGraph } from "./api";
-import { IdeaGraphPanel } from "./App";
 import { workbenchCommands$ } from "./events";
-import { filterIdeaLineageGraphForSearch } from "./features/idea-lineage/IdeaLineagePanel";
+import { filterIdeaLineageGraphForSearch, IdeaGraphPanel } from "./features/idea-lineage/IdeaLineagePanel";
 import { layoutFlowGraph } from "./graph-utils";
 import type { TopicGraphView } from "./types";
 

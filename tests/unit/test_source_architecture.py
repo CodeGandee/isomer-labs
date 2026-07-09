@@ -48,6 +48,7 @@ PACKAGE_SIZE_TRANSITIONS = {
     "teams/instantiation.py",
     "teams/profiles.py",
     "teams/templates.py",
+    "web/read_model.py",
     "workspace/manifest.py",
     "workspace/path_resolution.py",
     "workspace/reset.py",

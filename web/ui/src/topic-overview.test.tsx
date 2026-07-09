@@ -13,18 +13,21 @@ vi.mock("sigma", () => ({
 vi.mock("./api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./api")>()),
   getTopicOverview: vi.fn(),
+  getTopicOverviewJson: vi.fn(),
 }));
 
-import { getTopicOverview } from "./api";
+import { getTopicOverview, getTopicOverviewJson } from "./api";
 import { TopicOverviewPanel } from "./App";
 import { ToastNotificationsProvider } from "./toast-notifications";
-import type { TopicOverviewResponse } from "./types";
+import type { TopicOverviewJsonResponse, TopicOverviewResponse } from "./types";
 
 const getTopicOverviewMock = vi.mocked(getTopicOverview);
+const getTopicOverviewJsonMock = vi.mocked(getTopicOverviewJson);
 
 describe("Topic overview panel", () => {
   beforeEach(() => {
     getTopicOverviewMock.mockReset();
+    getTopicOverviewJsonMock.mockReset();
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -37,12 +40,14 @@ describe("Topic overview panel", () => {
 
   it("renders topic overview Markdown first and moves Topic and Runtime JSON into the modal", async () => {
     getTopicOverviewMock.mockResolvedValue(topicOverviewPayload());
+    getTopicOverviewJsonMock.mockResolvedValue(topicOverviewJsonPayload());
     renderWithQuery(<TopicOverviewPanel topicId="alpha" />);
 
     expect(await screen.findByRole("heading", { level: 1, name: "Alpha Overview" })).toBeTruthy();
     expect(document.body.textContent).toContain("Human-readable topic summary.");
     expect(document.body.textContent).not.toContain("topic_json_only");
     expect(document.body.textContent).not.toContain("runtime_json_only");
+    expect(getTopicOverviewJsonMock).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Copy Markdown" }));
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("# Alpha Overview")));
@@ -51,6 +56,7 @@ describe("Topic overview panel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "View JSON" }));
     const dialog = await screen.findByRole("dialog", { name: "alpha Overview Data" });
+    await waitFor(() => expect(getTopicOverviewJsonMock).toHaveBeenCalledWith("alpha"));
     expect(dialog).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Topic", selected: true })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Runtime" })).toBeTruthy();
@@ -114,6 +120,28 @@ function topicOverviewPayload(): TopicOverviewResponse {
       content_bytes: 46,
       content_cap_bytes: 524288,
     },
+    topic_payload: {
+      ok: true,
+      mutated: false,
+      topic_config: { topic_statement: "topic_json_only" },
+      diagnostics: [],
+    },
+    runtime_payload: {
+      ok: true,
+      mutated: false,
+      runtime: { status: "runtime_json_only" },
+      diagnostics: [],
+    },
+    diagnostics: [],
+  };
+}
+
+function topicOverviewJsonPayload(): TopicOverviewJsonResponse {
+  return {
+    ok: true,
+    mutated: false,
+    topic_id: "alpha",
+    topic_workspace_id: "alpha",
     topic_payload: {
       ok: true,
       mutated: false,

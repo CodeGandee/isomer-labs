@@ -90,7 +90,7 @@ class ProjectWebGuiTests(unittest.TestCase):
     def read_model(self, root: Path) -> ProjectWebReadModel:
         return ProjectWebReadModel(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
 
-    def asgi_get_response(self, app: object, path: str) -> tuple[int, dict[str, str], bytes]:
+    def asgi_get_response(self, app: object, path: str, *, request_headers: dict[str, str] | None = None) -> tuple[int, dict[str, str], bytes]:
         async def call() -> tuple[int, dict[str, str], bytes]:
             messages: list[dict[str, object]] = []
             parsed = urlsplit(path)
@@ -115,7 +115,10 @@ class ProjectWebGuiTests(unittest.TestCase):
                 "path": parsed.path,
                 "raw_path": parsed.path.encode(),
                 "query_string": parsed.query.encode(),
-                "headers": [],
+                "headers": [
+                    (key.lower().encode("latin1"), value.encode("latin1"))
+                    for key, value in (request_headers or {}).items()
+                ],
                 "client": ("testclient", 50000),
                 "server": ("testserver", 80),
                 "root_path": "",
@@ -135,8 +138,8 @@ class ProjectWebGuiTests(unittest.TestCase):
 
         return asyncio.run(call())
 
-    def asgi_get(self, app: object, path: str) -> tuple[int, dict[str, str]]:
-        status, headers, _body = self.asgi_get_response(app, path)
+    def asgi_get(self, app: object, path: str, *, headers: dict[str, str] | None = None) -> tuple[int, dict[str, str]]:
+        status, headers, _body = self.asgi_get_response(app, path, request_headers=headers)
         return status, headers
 
     def create_indexed_idea_record(
@@ -270,10 +273,11 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertIn("/api/topics/{topic_id}/viewer/records/{record_id}", route_paths)
         self.assertIn("/api/topics/{topic_id}/ideas/{idea_id}", route_paths)
         self.assertIn("/api/topics/{topic_id}/overview", route_paths)
+        self.assertIn("/api/topics/{topic_id}/overview/json", route_paths)
         self.assertIn("/api/events", route_paths)
         self.assertNotIn("/api/explorer/files", route_paths)
         self.assertTrue((Path("src/isomer_labs/web/static/index.html")).exists())
-        self.assertTrue((Path("src/isomer_labs/web/static/assets/app.js")).exists())
+        self.assertTrue(list(Path("src/isomer_labs/web/static/assets").glob("*.js")))
 
         read_model = self.read_model(root)
         project = read_model.project_summary()
@@ -356,7 +360,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertFalse(missing["ok"], missing)
         self.assertEqual("topic_not_found", missing["error"]["code"])
 
-    def test_topic_overview_api_reads_markdown_and_supporting_json(self) -> None:
+    def test_topic_overview_api_reads_markdown_and_defers_supporting_json(self) -> None:
         root = self.make_project()
         write(
             root / "topic-workspaces" / "alpha" / "intent" / "src" / "topic-overview.md",
@@ -377,8 +381,13 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("topic.intent.overview", overview["overview"]["semantic_label"])
         self.assertTrue(overview["overview"]["exists"])
         self.assertIn("Human-readable topic summary.", overview["overview"]["content_markdown"])
-        self.assertEqual("Alpha topic", overview["topic_payload"]["topic_config"]["topic_statement"])
-        self.assertTrue(overview["runtime_payload"]["runtime"]["exists"])
+        self.assertIsNone(overview["topic_payload"])
+        self.assertIsNone(overview["runtime_payload"])
+
+        supporting_json = read_model.topic_overview_supporting_json("alpha")
+        self.assertTrue(supporting_json["ok"], supporting_json)
+        self.assertEqual("Alpha topic", supporting_json["topic_payload"]["topic_config"]["topic_statement"])
+        self.assertTrue(supporting_json["runtime_payload"]["runtime"]["exists"])
 
         app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
         status, _headers, body = self.asgi_get_response(app, "/api/topics/alpha/overview")
@@ -386,6 +395,13 @@ class ProjectWebGuiTests(unittest.TestCase):
         route_payload = json.loads(body)
         self.assertTrue(route_payload["ok"], route_payload)
         self.assertIn("Human-readable topic summary.", route_payload["overview"]["content_markdown"])
+        self.assertIsNone(route_payload["topic_payload"])
+        self.assertIsNone(route_payload["runtime_payload"])
+
+        status, _headers, body = self.asgi_get_response(app, "/api/topics/alpha/overview/json")
+        self.assertEqual(200, status)
+        route_payload = json.loads(body)
+        self.assertEqual("Alpha topic", route_payload["topic_payload"]["topic_config"]["topic_statement"])
 
     def test_topic_overview_api_reports_missing_markdown_without_failing_topic(self) -> None:
         root = self.make_project()
@@ -398,8 +414,8 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertFalse(overview["overview"]["exists"])
         self.assertIsNone(overview["overview"]["content_markdown"])
         self.assertTrue(any(diagnostic["code"] == "topic_overview_missing" for diagnostic in overview["diagnostics"]), overview)
-        self.assertEqual("Alpha topic", overview["topic_payload"]["topic_config"]["topic_statement"])
-        self.assertTrue(overview["runtime_payload"]["runtime"]["exists"])
+        self.assertIsNone(overview["topic_payload"])
+        self.assertIsNone(overview["runtime_payload"])
 
         app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
         status, _headers, body = self.asgi_get_response(app, "/api/topics/alpha/overview")
@@ -524,24 +540,55 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("ideaDetail", missing["preferred_tab_component"])
         self.assertEqual("idea_not_found", missing["error"]["code"])
 
-    def test_web_gui_responses_disable_browser_cache(self) -> None:
+    def test_web_gui_cache_modes_and_compression_are_visible(self) -> None:
         root = self.make_project()
         app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
+        asset_path = next(Path("src/isomer_labs/web/static/assets").glob("*.js"))
 
-        for path in ("/", "/assets/app.js", "/api/health"):
-            status, headers = self.asgi_get(app, path)
+        status, headers, body = self.asgi_get_response(app, "/api/health")
+        self.assertEqual(200, status)
+        self.assertEqual("normal", json.loads(body)["cache_mode"])
+        self.assertEqual("normal", headers["x-isomer-web-cache-mode"])
+        self.assertEqual("no-cache", headers["cache-control"])
+        self.assertIn("app;dur=", headers["server-timing"])
+
+        status, headers = self.asgi_get(app, "/")
+        self.assertEqual(200, status)
+        self.assertEqual("no-cache", headers["cache-control"])
+
+        status, headers = self.asgi_get(app, f"/assets/{asset_path.name}")
+        self.assertEqual(200, status)
+        if "-" in asset_path.stem:
+            self.assertEqual("public, max-age=31536000, immutable", headers["cache-control"])
+
+        status, headers = self.asgi_get(app, f"/assets/{asset_path.name}", headers={"accept-encoding": "gzip"})
+        self.assertEqual(200, status)
+        self.assertEqual("gzip", headers.get("content-encoding"))
+
+        debug_app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")}, cache_mode="debug")
+        for path in ("/", f"/assets/{asset_path.name}", "/api/health"):
+            status, headers = self.asgi_get(debug_app, path)
             self.assertEqual(200, status, path)
+            self.assertEqual("debug", headers["x-isomer-web-cache-mode"])
             self.assertEqual("no-store, no-cache, must-revalidate, max-age=0", headers["cache-control"])
             self.assertEqual("no-cache", headers["pragma"])
             self.assertEqual("0", headers["expires"])
 
     def test_record_read_and_index_maintenance_routes_are_explicit(self) -> None:
         root = self.make_project()
+        self.create_indexed_idea_record(root, record_id="idea-list-row", idea_id="idea-list-row", idea_text="List row idea")
         read_model = self.read_model(root)
 
-        records = read_model.records("alpha")
+        records = read_model.records("alpha", limit=1)
         self.assertTrue(records["ok"], records)
         self.assertIn("records", records)
+        self.assertEqual("table-summary", records["projection"]["kind"])
+        self.assertEqual(1, records["returned_count"])
+        self.assertEqual(1, records["limit"])
+        self.assertEqual("idea-list-row", records["records"][0]["record_id"])
+        self.assertIn("title", records["records"][0])
+        self.assertNotIn("metadata", records["records"][0])
+        self.assertNotIn("transition_metadata", records["records"][0])
 
         export = read_model.records_export("alpha", view="dashboard")
         self.assertTrue(export["ok"], export)

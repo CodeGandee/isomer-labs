@@ -215,6 +215,30 @@ class ProjectWebReadModel:
             if overview_diagnostic is not None:
                 diagnostics.append(overview_diagnostic)
 
+        return ensure_gui_payload({
+            "ok": not has_errors(diagnostics),
+            "mutated": False,
+            "topic_id": context.research_topic.id,
+            "topic_workspace_id": context.topic_workspace_id,
+            "overview": overview_payload,
+            "topic_payload": None,
+            "runtime_payload": None,
+            "diagnostics": diagnostics_json(diagnostics),
+        }, TopicOverviewResponseContract, contract_name="topic-overview")
+
+    def topic_overview_supporting_json(self, topic_id: str) -> dict[str, Any]:
+        context, diagnostics = self.topic_context(topic_id)
+        if context is None:
+            return {
+                "ok": False,
+                "mutated": False,
+                "topic_id": topic_id,
+                "topic_workspace_id": None,
+                "topic_payload": None,
+                "runtime_payload": None,
+                "diagnostics": diagnostics_json(diagnostics),
+            }
+
         topic_payload = self.topic(topic_id)
         runtime_payload = self.runtime(topic_id)
         merged_diagnostics = diagnostics_json(diagnostics)
@@ -222,17 +246,15 @@ class ProjectWebReadModel:
             payload_diagnostics = payload.get("diagnostics")
             if isinstance(payload_diagnostics, list):
                 merged_diagnostics.extend(payload_diagnostics)
-
-        return ensure_gui_payload({
+        return {
             "ok": not has_errors(diagnostics) and bool(topic_payload.get("ok", True)) and bool(runtime_payload.get("ok", True)),
             "mutated": False,
             "topic_id": context.research_topic.id,
             "topic_workspace_id": context.topic_workspace_id,
-            "overview": overview_payload,
             "topic_payload": topic_payload,
             "runtime_payload": runtime_payload,
             "diagnostics": merged_diagnostics,
-        }, TopicOverviewResponseContract, contract_name="topic-overview")
+        }
 
     def project_explorer(self, *, expanded_topic_ids: tuple[str, ...] = ()) -> dict[str, Any]:
         return project_explorer_payload(self, expanded_topic_ids=expanded_topic_ids)
@@ -250,7 +272,7 @@ class ProjectWebReadModel:
         facet: str | None = None,
         limit: int | None = None,
     ) -> dict[str, Any]:
-        return self._with_context(
+        payload = self._with_context(
             topic_id,
             lambda context: query_index_list(
                 context,
@@ -262,6 +284,7 @@ class ProjectWebReadModel:
                 limit=limit,
             ),
         )
+        return _records_list_projection(payload, requested_limit=limit)
 
     def records_export(self, topic_id: str, *, view: str) -> dict[str, Any]:
         return self._with_context(topic_id, lambda context: query_index_export(context, env=self.selected_env, view=view))
@@ -755,6 +778,68 @@ def _ensure_contract_tuple(
 ) -> tuple[dict[str, Any], list[Diagnostic]]:
     payload, diagnostics = result
     return ensure_gui_payload(payload, schema, contract_name=contract_name), diagnostics
+
+
+def _records_list_projection(payload: dict[str, Any], *, requested_limit: int | None) -> dict[str, Any]:
+    records_raw = payload.get("records")
+    if not isinstance(records_raw, list):
+        return payload
+    projected_records = [_record_list_projection(record) for record in records_raw if isinstance(record, Mapping)]
+    projected = dict(payload)
+    projected["records"] = projected_records
+    projected["projection"] = {
+        "kind": "table-summary",
+        "omitted_fields": [
+            "metadata",
+            "transition_metadata",
+            "structured_payload",
+            "payload",
+            "payload_json",
+        ],
+    }
+    projected["limit"] = requested_limit
+    projected["returned_count"] = len(projected_records)
+    if requested_limit is not None and len(projected_records) >= requested_limit:
+        diagnostics = list(projected.get("diagnostics", [])) if isinstance(projected.get("diagnostics"), list) else []
+        diagnostics.append(
+            {
+                "severity": "info",
+                "code": "records_list_limit_reached",
+                "message": f"Records list returned the requested limit of {requested_limit} records.",
+            }
+        )
+        projected["diagnostics"] = diagnostics
+    return projected
+
+
+def _record_list_projection(record: Mapping[str, Any]) -> dict[str, Any]:
+    allowed_keys = (
+        "record_id",
+        "id",
+        "record_kind",
+        "status",
+        "title",
+        "summary",
+        "profile",
+        "format_profile",
+        "format_profile_ref",
+        "producer",
+        "skill",
+        "created_at",
+        "updated_at",
+        "recorded_at",
+        "created_by",
+        "material_kind",
+        "category",
+        "display_key",
+        "idea_id",
+        "direct_parent_idea",
+    )
+    projected = {key: record.get(key) for key in allowed_keys if key in record}
+    if "record_id" not in projected and isinstance(record.get("id"), str):
+        projected["record_id"] = record["id"]
+    return projected
+
 
 def _viewer_kind(record: Mapping[str, Any], structured: Mapping[str, Any], files: list[object]) -> tuple[str, str | None]:
     for item in files:

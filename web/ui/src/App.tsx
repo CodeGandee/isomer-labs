@@ -2,7 +2,7 @@ import { hotkeysCoreFeature, selectionFeature, syncDataLoaderFeature, type ItemI
 import { useTree } from "@headless-tree/react";
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { createColumnHelper, flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type SortingState } from "@tanstack/react-table";
 import { themeDark, themeLight } from "dockview";
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps } from "dockview-react";
 import { Menu, RefreshCw, Settings } from "lucide-react";
@@ -24,11 +24,11 @@ import {
   getActors,
   getTopic,
   getTopicOverview,
+  getTopicOverviewJson,
   getTopicGraph,
   getTopics,
   getViewerDescriptor,
 } from "./api";
-import { requestedRenderer } from "./graph-utils";
 import { topicRelativeDisplayPath } from "./display-path";
 import { buildJsonMarkdownPreview } from "./markdown-doc";
 import { manualRefresh$, topicInvalidations, workbenchCommands$ } from "./events";
@@ -55,10 +55,7 @@ import type { ThemeMode } from "./theme-mode";
 import { ToastNotificationsProvider, useToastNotifications } from "./toast-notifications";
 import { GuiSettingsProvider, useGuiSettings } from "./ui-settings";
 import { filterRecords, openPanelFromDescriptor, viewerSurface, type DockviewApiLike, type OpenPanelResult } from "./view-model";
-import { GraphFiltersBar, GraphSummary } from "./features/graph/GraphPanels";
-import { IdeaGraphPanel } from "./features/idea-lineage/IdeaLineagePanel";
-import { IdeaTimelinePanel } from "./features/idea-timeline/IdeaTimelinePanel";
-import { MarkdownView } from "./markdown-view";
+import { GraphSummary } from "./features/graph/GraphPanels";
 import {
   coerceWorkbenchHistoryState,
   isGraphScope,
@@ -72,14 +69,19 @@ import {
 } from "./workbench-history";
 import "dockview/dist/styles/dockview.css";
 import "@xyflow/react/dist/style.css";
-import "katex/dist/katex.min.css";
 import "./styles.css";
 
-export { IdeaGraphPanel } from "./features/idea-lineage/IdeaLineagePanel";
-export { MarkdownView } from "./markdown-view";
-export { GraphFiltersBar } from "./features/graph/GraphPanels";
-export { openRecordFromNode } from "./features/graph/open-record";
-export { buildIdeaNodeHoverMarkdown } from "./features/idea-lineage/IdeaLineagePanel";
+const LazyIdeaGraphPanel = React.lazy(() => import("./features/idea-lineage/IdeaLineagePanel").then((module) => ({ default: module.IdeaGraphPanel })));
+const LazyIdeaTimelinePanel = React.lazy(() => import("./features/idea-timeline/IdeaTimelinePanel").then((module) => ({ default: module.IdeaTimelinePanel })));
+const LazyMarkdownView = React.lazy(() => import("./markdown-view").then((module) => ({ default: module.MarkdownView })));
+
+function MarkdownView(props: { content: string; state?: "loading" | "empty" | "ready" }) {
+  return (
+    <React.Suspense fallback={<div className="markdown-view markdown-view-status markdown-view-loading"><p>Loading Markdown preview.</p></div>}>
+      <LazyMarkdownView {...props} />
+    </React.Suspense>
+  );
+}
 
 type PanelParams = {
   topicId?: string;
@@ -609,8 +611,16 @@ function ExplorerRow({
 }
 
 const dockComponents = {
-  ideaGraph: (props: IDockviewPanelProps<PanelParams>) => <IdeaGraphPanel {...props.params} panelId={props.api.id} openableItemId={props.params.topicId ? `topic:${props.params.topicId}:graph:${props.params.graphScope || "idea-lineage"}` : undefined} />,
-  ideaTimeline: (props: IDockviewPanelProps<PanelParams>) => <IdeaTimelinePanel topicId={props.params.topicId || ""} />,
+  ideaGraph: (props: IDockviewPanelProps<PanelParams>) => (
+    <React.Suspense fallback={<div className="panel-body empty-state">Loading graph viewer.</div>}>
+      <LazyIdeaGraphPanel {...props.params} panelId={props.api.id} openableItemId={props.params.topicId ? `topic:${props.params.topicId}:graph:${props.params.graphScope || "idea-lineage"}` : undefined} />
+    </React.Suspense>
+  ),
+  ideaTimeline: (props: IDockviewPanelProps<PanelParams>) => (
+    <React.Suspense fallback={<div className="panel-body empty-state">Loading timeline.</div>}>
+      <LazyIdeaTimelinePanel topicId={props.params.topicId || ""} />
+    </React.Suspense>
+  ),
   records: (props: IDockviewPanelProps<PanelParams>) => <RecordsPanel topicId={props.params.topicId || ""} />,
   recordDetail: (props: IDockviewPanelProps<PanelParams>) => <RecordDetailPanel topicId={props.params.topicId || ""} recordId={props.params.recordId || ""} />,
   ideaDetail: (props: IDockviewPanelProps<PanelParams>) => <IdeaDetailPanel topicId={props.params.topicId || ""} ideaId={props.params.ideaId || ""} />,
@@ -761,13 +771,31 @@ export function TopicOverviewPanel({ topicId }: { topicId: string }) {
     queryFn: () => getTopicOverview(topicId),
     enabled: Boolean(topicId),
   });
+  const overviewJson = useQuery({
+    queryKey: ["topic", topicId, "overview", "json"],
+    queryFn: () => getTopicOverviewJson(topicId),
+    enabled: Boolean(topicId) && jsonModalOpen,
+  });
   const markdown = overview.data?.overview?.content_markdown || "";
-  const diagnostics = overview.data?.diagnostics || [];
+  const diagnostics = useMemo(
+    () => [...(overview.data?.diagnostics || []), ...(overviewJson.data?.diagnostics || [])],
+    [overview.data?.diagnostics, overviewJson.data?.diagnostics],
+  );
   const sourceMetadata = useMemo(() => overviewSourceMetadata(overview.data?.overview), [overview.data?.overview]);
   const jsonTabs = useMemo<JsonModalTab[]>(() => {
+    const topicJson = overviewJson.isError
+      ? { error: String(overviewJson.error) }
+      : overviewJson.isPending || overviewJson.isFetching
+        ? { loading: true }
+        : overviewJson.data?.topic_payload || {};
+    const runtimeJson = overviewJson.isError
+      ? { error: String(overviewJson.error) }
+      : overviewJson.isPending || overviewJson.isFetching
+        ? { loading: true }
+        : overviewJson.data?.runtime_payload || {};
     const tabs: JsonModalTab[] = [
-      { id: "topic", label: "Topic", jsonText: buildJsonMarkdownPreview(overview.data?.topic_payload || {}).jsonText },
-      { id: "runtime", label: "Runtime", jsonText: buildJsonMarkdownPreview(overview.data?.runtime_payload || {}).jsonText },
+      { id: "topic", label: "Topic", jsonText: buildJsonMarkdownPreview(topicJson).jsonText },
+      { id: "runtime", label: "Runtime", jsonText: buildJsonMarkdownPreview(runtimeJson).jsonText },
     ];
     if (diagnostics.length > 0) {
       tabs.push({ id: "diagnostics", label: "Diagnostics", jsonText: buildJsonMarkdownPreview(diagnostics).jsonText });
@@ -775,7 +803,7 @@ export function TopicOverviewPanel({ topicId }: { topicId: string }) {
       tabs.push({ id: "source", label: "Source", jsonText: buildJsonMarkdownPreview(sourceMetadata || {}).jsonText });
     }
     return tabs;
-  }, [diagnostics, overview.data?.runtime_payload, overview.data?.topic_payload, sourceMetadata]);
+  }, [diagnostics, overviewJson.data?.runtime_payload, overviewJson.data?.topic_payload, overviewJson.error, overviewJson.isError, overviewJson.isFetching, overviewJson.isPending, sourceMetadata]);
 
   const copyText = useCallback(async (target: "json" | "markdown", textValue: string | null | undefined) => {
     if (!textValue) {
@@ -946,9 +974,10 @@ function FileArtifactPanel({ contentUrl, mediaType }: { contentUrl: string; medi
 function RecordsPanel({ topicId }: { topicId: string }) {
   const [search, setSearch] = useState("");
   const [facet, setFacet] = useState("");
+  const [recordLimit, setRecordLimit] = useState(100);
   const records = useQuery({
-    queryKey: ["topic", topicId, "records", facet],
-    queryFn: () => getRecords(topicId, { facet: facet || undefined, limit: 500 }),
+    queryKey: ["topic", topicId, "records", facet, recordLimit],
+    queryFn: () => getRecords(topicId, { facet: facet || undefined, limit: recordLimit }),
     enabled: Boolean(topicId),
   });
   const filteredRecords = useMemo(() => filterRecords(records.data?.records || [], search), [records.data?.records, search]);
@@ -971,6 +1000,18 @@ function RecordsPanel({ topicId }: { topicId: string }) {
             <SelectItem value="facts">facts</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={String(recordLimit)} onValueChange={(value) => setRecordLimit(Number(value))}>
+          <SelectTrigger aria-label="Records shown" className="facet-select">
+            <SelectValue placeholder="records" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="50">50 rows</SelectItem>
+            <SelectItem value="100">100 rows</SelectItem>
+            <SelectItem value="250">250 rows</SelectItem>
+            <SelectItem value="500">500 rows</SelectItem>
+          </SelectContent>
+        </Select>
+        <StatusBadge>{records.data?.returned_count ?? filteredRecords.length} shown</StatusBadge>
       </div>
       <div className="table-wrap">
         <Table>
@@ -978,7 +1019,16 @@ function RecordsPanel({ topicId }: { topicId: string }) {
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id}>
                 {group.headers.map((header) => (
-                  <TableHead key={header.id}>{flexRender(header.column.columnDef.header, header.getContext())}</TableHead>
+                  <TableHead key={header.id}>
+                    {header.column.getCanSort() ? (
+                      <button className="table-sort-button" type="button" onClick={header.column.getToggleSortingHandler()}>
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        <span aria-hidden="true">{header.column.getIsSorted() === "asc" ? " ^" : header.column.getIsSorted() === "desc" ? " v" : ""}</span>
+                      </button>
+                    ) : (
+                      flexRender(header.column.columnDef.header, header.getContext())
+                    )}
+                  </TableHead>
                 ))}
               </TableRow>
             ))}
@@ -1445,7 +1495,7 @@ function DiagnosticsPanel({ topicId, graphScope }: { topicId?: string; graphScop
   const project = useQuery({ queryKey: ["project", "diagnostics"], queryFn: getProject, enabled: !topicId });
   const graph = useQuery({
     queryKey: ["topic", topicId, "graph", graphScope, "diagnostics"],
-    queryFn: () => getTopicGraph(topicId || "", graphScope, requestedRenderer(graphScope), { includeSecondary: true }),
+    queryFn: () => getTopicGraph(topicId || "", graphScope, graphScope === "idea-lineage" ? "auto" : "sigma", { includeSecondary: true }),
     enabled: Boolean(topicId),
   });
   const diagnostics = topicId ? graph.data?.diagnostics || [] : project.data?.diagnostics || [];
@@ -1512,6 +1562,7 @@ function FilesBlock({ value, topicId, recordId }: { value: unknown; topicId: str
 
 function useRecordsTable(records: RecordSummary[], topicId: string) {
   const columnHelper = createColumnHelper<RecordSummary>();
+  const [sorting, setSorting] = useState<SortingState>([]);
   const columns = useMemo(
     () => [
       columnHelper.accessor("record_id", {
@@ -1536,7 +1587,14 @@ function useRecordsTable(records: RecordSummary[], topicId: string) {
     ],
     [columnHelper, topicId],
   );
-  return useReactTable({ data: records, columns, getCoreRowModel: getCoreRowModel() });
+  return useReactTable({
+    data: records,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
 }
 
 function graphTitle(scope: GraphScope): string {

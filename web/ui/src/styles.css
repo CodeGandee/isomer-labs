@@ -634,6 +634,17 @@ th {
   color: var(--muted-foreground);
 }
 
+.table-sort-button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
 .idea-timeline-panel {
   grid-template-rows: auto minmax(0, 1fr) auto;
 }

@@ -5,17 +5,22 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
+import re
+import time
 from pathlib import Path
-from typing import Mapping
+from typing import Literal, Mapping
 
 from fastapi import Body, FastAPI, Query, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 
 from .read_model import ProjectWebReadModel
 from .schemas import IndexCleanupRequest, IndexRebuildRequest
+
+WebCacheMode = Literal["normal", "debug"]
 
 NO_CACHE_HEADERS = {
     "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -23,30 +28,52 @@ NO_CACHE_HEADERS = {
     "Expires": "0",
 }
 
+HTML_CACHE_HEADERS = {
+    "Cache-Control": "no-cache",
+}
 
-def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None) -> FastAPI:
+API_CACHE_HEADERS = {
+    "Cache-Control": "no-cache",
+}
+
+IMMUTABLE_ASSET_HEADERS = {
+    "Cache-Control": "public, max-age=31536000, immutable",
+}
+
+_HASHED_ASSET_RE = re.compile(r"^/assets/.+[-.][A-Za-z0-9_-]{8,}\.[A-Za-z0-9][A-Za-z0-9.]*$")
+
+
+def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None, cache_mode: WebCacheMode = "normal") -> FastAPI:
     """Create a Project-scoped local web application."""
 
+    if cache_mode not in {"normal", "debug"}:
+        raise ValueError(f"Unsupported Project Web cache mode: {cache_mode}")
     resolved_root = Path(project_root).expanduser().resolve(strict=False)
     read_model = ProjectWebReadModel(resolved_root, env=env)
     static_dir = Path(__file__).parent / "static"
     assets_dir = static_dir / "assets"
 
     app = FastAPI(title="Isomer Project Web GUI", version="0.1.0")
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
     app.state.project_root = resolved_root
     app.state.read_model = read_model
+    app.state.cache_mode = cache_mode
 
     @app.middleware("http")
-    async def no_cache_responses(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def cache_and_timing_headers(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        started = time.perf_counter()
         response = await call_next(request)
-        response.headers.update(NO_CACHE_HEADERS)
+        elapsed_ms = max(0.0, (time.perf_counter() - started) * 1000)
+        response.headers["Server-Timing"] = f"app;dur={elapsed_ms:.1f}"
+        response.headers["X-Isomer-Web-Cache-Mode"] = cache_mode
+        response.headers.update(_cache_headers_for_path(request.url.path, cache_mode=cache_mode))
         return response
 
     app.mount("/assets", StaticFiles(directory=assets_dir, check_dir=False), name="assets")
 
     @app.get("/api/health")
     def health() -> dict[str, object]:
-        return {"ok": True, "project_root": str(resolved_root)}
+        return {"ok": True, "project_root": str(resolved_root), "cache_mode": cache_mode}
 
     @app.get("/api/project")
     def project() -> JSONResponse:
@@ -75,6 +102,10 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
     @app.get("/api/topics/{topic_id}/overview")
     def topic_overview(topic_id: str) -> JSONResponse:
         return _json(read_model.topic_overview(topic_id))
+
+    @app.get("/api/topics/{topic_id}/overview/json")
+    def topic_overview_json(topic_id: str) -> JSONResponse:
+        return _json(read_model.topic_overview_supporting_json(topic_id))
 
     @app.get("/api/topics/{topic_id}/actors")
     def actors(topic_id: str) -> JSONResponse:
@@ -268,9 +299,9 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
         payload = read_model.record_file_content(topic_id, record_id, file_id)
         path = payload.get("path")
         if not payload.get("ok") or not isinstance(path, Path):
-            return JSONResponse(content=jsonable_encoder(payload), status_code=404, headers=NO_CACHE_HEADERS)
+            return JSONResponse(content=jsonable_encoder(payload), status_code=404)
         media_type = payload.get("media_type")
-        return FileResponse(path, media_type=str(media_type) if media_type else None, headers=NO_CACHE_HEADERS)
+        return FileResponse(path, media_type=str(media_type) if media_type else None)
 
     @app.get("/api/topics/{topic_id}/records/{record_id}/facets")
     def record_facets(topic_id: str, record_id: str, facet: str | None = None) -> JSONResponse:
@@ -278,7 +309,7 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
 
     @app.get("/")
     def index() -> FileResponse:
-        return FileResponse(static_dir / "index.html", headers=NO_CACHE_HEADERS)
+        return FileResponse(static_dir / "index.html")
 
     @app.get("/api/{path:path}")
     def unknown_api(path: str) -> JSONResponse:
@@ -290,18 +321,33 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
                 "diagnostics": [],
             },
             status_code=404,
-            headers=NO_CACHE_HEADERS,
         )
 
     @app.get("/{path:path}")
     def frontend_fallback(path: str) -> FileResponse:
-        return FileResponse(static_dir / "index.html", headers=NO_CACHE_HEADERS)
+        return FileResponse(static_dir / "index.html")
 
     return app
 
 
 def _json(payload: object) -> JSONResponse:
     return JSONResponse(content=jsonable_encoder(payload))
+
+
+def _cache_headers_for_path(path: str, *, cache_mode: WebCacheMode) -> dict[str, str]:
+    if cache_mode == "debug":
+        return dict(NO_CACHE_HEADERS)
+    if path.startswith("/api/") or path == "/api":
+        return dict(API_CACHE_HEADERS)
+    if _is_hashed_asset_path(path):
+        return dict(IMMUTABLE_ASSET_HEADERS)
+    if path.startswith("/assets/"):
+        return dict(HTML_CACHE_HEADERS)
+    return dict(HTML_CACHE_HEADERS)
+
+
+def _is_hashed_asset_path(path: str) -> bool:
+    return bool(_HASHED_ASSET_RE.match(path))
 
 
 def _sse(event_type: str, event_id: str, payload: object) -> str:

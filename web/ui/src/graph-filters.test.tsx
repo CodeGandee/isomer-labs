@@ -8,7 +8,7 @@ vi.mock("sigma", () => ({
   },
 }));
 
-import { GraphFiltersBar } from "./App";
+import { GraphFiltersBar } from "./features/graph/GraphPanels";
 
 describe("GraphFiltersBar", () => {
   it("labels secondary graph material as supporting records", () => {

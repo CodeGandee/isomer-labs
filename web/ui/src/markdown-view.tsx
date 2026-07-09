@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import mermaid from "mermaid";
+import "katex/dist/katex.min.css";
 
 export type MarkdownViewState = "loading" | "empty" | "ready";
 
@@ -41,10 +41,19 @@ function MermaidBlock({ chart }: { chart: string }) {
   const [svg, setSvg] = useState("");
   useEffect(() => {
     let cancelled = false;
-    mermaid.initialize({ startOnLoad: false, securityLevel: "strict" });
-    mermaid.render(`mmd-${crypto.randomUUID()}`, chart).then((result) => {
+    import("mermaid").then(({ default: mermaid }) => {
+      if (cancelled) {
+        return;
+      }
+      mermaid.initialize({ startOnLoad: false, securityLevel: "strict" });
+      mermaid.render(`mmd-${crypto.randomUUID()}`, chart).then((result) => {
+        if (!cancelled) {
+          setSvg(result.svg);
+        }
+      });
+    }).catch(() => {
       if (!cancelled) {
-        setSvg(result.svg);
+        setSvg("");
       }
     });
     return () => {

@@ -8,13 +8,14 @@ vi.mock("sigma", () => ({
   },
 }));
 
-import { MarkdownView, ViewerContent } from "./App";
+import { ViewerContent } from "./App";
+import { MarkdownView } from "./markdown-view";
 
 describe("Markdown viewer", () => {
-  it("shows a loading state while Markdown render data is pending", () => {
+  it("shows a loading state while Markdown render data is pending", async () => {
     render(<ViewerContent descriptor={{ viewer_kind: "markdown" }} rendered={undefined} detail={undefined} renderIsPending />);
 
-    expect(screen.getByText("Rendering Markdown.")).toBeTruthy();
+    expect(await screen.findByText("Rendering Markdown.")).toBeTruthy();
     expect(screen.queryByText("No rendered Markdown available.")).toBeNull();
   });
 
