@@ -2,7 +2,7 @@ schema_version = "isomer-toolbox.v1"
 toolbox_id = "gpu-analytical-modeling"
 kind = "toolbox-callback-bundle"
 name = "GPU Analytical Modeling"
-description = "Project-local callback skills and prompts for GPU kernel analytical modeling."
+description = "Project-local stage-prior callbacks for GPU kernel analytical modeling."
 distribution = "project-local"
 
 [install]
@@ -10,193 +10,121 @@ default_scope = "research_topic"
 requires_explicit_install = true
 
 [[callbacks]]
-key = "gpu-reference/scout/begin"
+key = "scout/begin/framing-prior"
 target_skill = "isomer-deepsci-scout"
 stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-reference-map"
-description = "Choose GPU source families and source limits before scout framing."
+source_type = "prompt_file"
+prompt_file = "callbacks/scout-begin-framing-prior.md"
+description = "Invoke gpu-analytic-scout-prior framing-prior before scout framing."
 
 [[callbacks]]
-key = "gpu-reference/scout/end"
+key = "scout/end/output-check"
 target_skill = "isomer-deepsci-scout"
 stage = "end"
-source_type = "skill_dir"
-skill_dir = "gpu-reference-map"
-description = "Check scout outputs for source provenance and source-to-claim boundaries."
+source_type = "prompt_file"
+prompt_file = "callbacks/scout-end-output-check.md"
+description = "Invoke gpu-analytic-scout-prior output-check before scout handoff."
 
 [[callbacks]]
-key = "gpu-reference/baseline/begin"
-target_skill = "isomer-deepsci-baseline"
-stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-reference-map"
-description = "Classify baseline sources, source limits, and evidence boundaries before comparison."
-
-[[callbacks]]
-key = "gpu-reference/idea/begin"
+key = "idea/begin/hypothesis-model-contract"
 target_skill = "isomer-deepsci-idea"
 stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-reference-map"
-description = "Route GPU model hypotheses to source families before source-backed claims harden."
+source_type = "prompt_file"
+prompt_file = "callbacks/idea-begin-hypothesis-model-contract.md"
+description = "Invoke gpu-analytic-idea-prior hypothesis-model-contract before idea work hardens."
 
 [[callbacks]]
-key = "gpu-reference/analysis/begin"
-target_skill = "isomer-deepsci-analysis"
-stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-reference-map"
-description = "Use GPU source families and limitations while interpreting model or evidence outputs."
-
-[[callbacks]]
-key = "gpu-reference/experiment/begin"
-target_skill = "isomer-deepsci-experiment"
-stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-reference-map"
-description = "Choose profiler, counter, measurement, and microbenchmark source boundaries before experiments."
-
-[[callbacks]]
-key = "gpu-reference/review/begin"
-target_skill = "isomer-deepsci-review"
-stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-reference-map"
-description = "Review source provenance and source-to-claim boundaries for GPU analytical-modeling claims."
-
-[[callbacks]]
-key = "gpu-modeling-method/scout/begin"
-target_skill = "isomer-deepsci-scout"
-stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-modeling-method"
-description = "Apply GPU source-map handoff and model-shape discipline before scout framing."
-
-[[callbacks]]
-key = "gpu-modeling-method/scout/end"
-target_skill = "isomer-deepsci-scout"
-stage = "end"
-source_type = "skill_dir"
-skill_dir = "gpu-modeling-method"
-description = "Check scout outputs for model-shape, source-map handoff, and evidence-class readiness."
-
-[[callbacks]]
-key = "gpu-modeling-method/baseline/begin"
+key = "baseline/begin/evidence-baseline-contract"
 target_skill = "isomer-deepsci-baseline"
 stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-modeling-method"
-description = "Separate analytical, roofline, simulator, emulator, and measured baselines before acceptance."
+source_type = "prompt_file"
+prompt_file = "callbacks/baseline-begin-evidence-baseline-contract.md"
+description = "Invoke gpu-analytic-baseline-prior evidence-baseline-contract before baseline acceptance."
 
 [[callbacks]]
-key = "gpu-modeling-method/idea/begin"
-target_skill = "isomer-deepsci-idea"
-stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-modeling-method"
-description = "Require GPU model hypotheses to have explicit equations, hardware terms, and validity limits."
-
-[[callbacks]]
-key = "gpu-modeling-method/analysis/begin"
+key = "analysis/begin/hardware-grounded-interpretation"
 target_skill = "isomer-deepsci-analysis"
 stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-modeling-method"
-description = "Analyze GPU model outputs through hardware-grounded terms rather than black-box fit labels."
+source_type = "prompt_file"
+prompt_file = "callbacks/analysis-begin-hardware-grounded-interpretation.md"
+description = "Invoke gpu-analytic-analysis-prior hardware-grounded-interpretation before analysis interpretation."
 
 [[callbacks]]
-key = "gpu-evidence/experiment/begin"
-target_skill = "isomer-deepsci-experiment"
-stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-evidence-and-experiment"
-description = "Plan falsifiable GPU model evaluation with calibration, validation, and counter evidence."
-
-[[callbacks]]
-key = "gpu-evidence/experiment/end"
-target_skill = "isomer-deepsci-experiment"
-stage = "end"
-source_type = "skill_dir"
-skill_dir = "gpu-evidence-and-experiment"
-description = "Check that experiment results separate real hardware from proxy evidence and explain mismatches."
-
-[[callbacks]]
-key = "gpu-evidence/analysis/end"
+key = "analysis/end/component-proof-check"
 target_skill = "isomer-deepsci-analysis"
 stage = "end"
-source_type = "skill_dir"
-skill_dir = "gpu-evidence-and-experiment"
-description = "Require component-level and path-level bottleneck conclusions to cite matching evidence or gaps."
+source_type = "prompt_file"
+prompt_file = "callbacks/analysis-end-component-proof-check.md"
+description = "Invoke gpu-analytic-analysis-prior component-proof-check before analysis handoff."
 
 [[callbacks]]
-key = "gpu-evidence/review/begin"
+key = "experiment/begin/evaluation-and-profiler-contract"
+target_skill = "isomer-deepsci-experiment"
+stage = "begin"
+source_type = "prompt_file"
+prompt_file = "callbacks/experiment-begin-evaluation-and-profiler-contract.md"
+description = "Invoke gpu-analytic-experiment-prior evaluation-and-profiler-contract before experiment design."
+
+[[callbacks]]
+key = "experiment/end/result-evidence-check"
+target_skill = "isomer-deepsci-experiment"
+stage = "end"
+source_type = "prompt_file"
+prompt_file = "callbacks/experiment-end-result-evidence-check.md"
+description = "Invoke gpu-analytic-experiment-prior result-evidence-check before experiment handoff."
+
+[[callbacks]]
+key = "review/begin/source-and-evidence-review"
 target_skill = "isomer-deepsci-review"
 stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-evidence-and-experiment"
-description = "Review GPU claims against runtime, counter, saturated-component, and blocking-path evidence."
+source_type = "prompt_file"
+prompt_file = "callbacks/review-begin-source-and-evidence-review.md"
+description = "Invoke gpu-analytic-review-prior source-and-evidence-review before review."
 
 [[callbacks]]
-key = "gpu-evidence/decision/begin"
+key = "review/end/claim-strength-review"
+target_skill = "isomer-deepsci-review"
+stage = "end"
+source_type = "prompt_file"
+prompt_file = "callbacks/review-end-claim-strength-review.md"
+description = "Invoke gpu-analytic-review-prior claim-strength-review before review closure."
+
+[[callbacks]]
+key = "decision/begin/mismatch-route"
 target_skill = "isomer-deepsci-decision"
 stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-evidence-and-experiment"
-description = "Route mismatched or incomplete GPU model evidence to refine, park, limit, or block."
+source_type = "prompt_file"
+prompt_file = "callbacks/decision-begin-mismatch-route.md"
+description = "Invoke gpu-analytic-decision-prior mismatch-route before decision routing."
 
 [[callbacks]]
-key = "gpu-evidence/pipeline/begin"
+key = "pipeline/begin/evidence-route"
 target_skill = "isomer-deepsci-pipeline"
 stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-evidence-and-experiment"
-description = "Steer multi-stage passes toward the evidence route that the GPU model currently lacks."
-
-[[callbacks]]
-key = "gpu-reporting/write/end"
-target_skill = "isomer-deepsci-write"
-stage = "end"
-source_type = "skill_dir"
-skill_dir = "gpu-reporting-and-closure"
-description = "Check publication-facing GPU modeling claims, notation, and limitations before handoff."
-
-[[callbacks]]
-key = "gpu-reporting/review/end"
-target_skill = "isomer-deepsci-review"
-stage = "end"
-source_type = "skill_dir"
-skill_dir = "gpu-reporting-and-closure"
-description = "Review whether central proof is visible and claim strength matches evidence class."
-
-[[callbacks]]
-key = "gpu-reporting/finalize/begin"
-target_skill = "isomer-deepsci-finalize"
-stage = "begin"
-source_type = "skill_dir"
-skill_dir = "gpu-reporting-and-closure"
-description = "Prevent closure or publication when central GPU model evidence remains unsupported."
-
-[[callbacks]]
-key = "gpu-evidence/ncu-command/experiment/begin"
-target_skill = "isomer-deepsci-experiment"
-stage = "begin"
 source_type = "prompt_file"
-prompt_file = "prompts/ncu-command-posture.md"
-description = "Remind experiment agents to use local Pixi and NCU command posture."
+prompt_file = "callbacks/pipeline-begin-evidence-route.md"
+description = "Invoke gpu-analytic-pipeline-prior evidence-route before pipeline planning."
 
 [[callbacks]]
-key = "gpu-reporting/no-emulator-overclaim/write/end"
+key = "write/end/claim-and-proxy-check"
 target_skill = "isomer-deepsci-write"
 stage = "end"
 source_type = "prompt_file"
-prompt_file = "prompts/no-emulator-overclaim.md"
-description = "Prevent publication-facing overclaiming from emulator, simulator, or synthetic evidence."
+prompt_file = "callbacks/write-end-claim-and-proxy-check.md"
+description = "Invoke gpu-analytic-write-prior claim-and-proxy-check before writing handoff."
 
 [[callbacks]]
-key = "gpu-reporting/inline-evidence-class/finalize/end"
+key = "finalize/begin/closure-readiness"
+target_skill = "isomer-deepsci-finalize"
+stage = "begin"
+source_type = "prompt_file"
+prompt_file = "callbacks/finalize-begin-closure-readiness.md"
+description = "Invoke gpu-analytic-finalize-prior closure-readiness before finalization."
+
+[[callbacks]]
+key = "finalize/end/final-evidence-class"
 target_skill = "isomer-deepsci-finalize"
 stage = "end"
-source_type = "prompt"
-prompt = "Before finalizing GPU analytical-modeling work, classify every central runtime, counter-trend, saturated-component, and blocking-path claim by evidence class. Do not close as publishable when the central claim relies only on emulator, simulator, synthetic, or analytical-proxy evidence."
-description = "Inline final evidence-class reminder for closure checks."
+source_type = "prompt_file"
+prompt_file = "callbacks/finalize-end-final-evidence-class.md"
+description = "Invoke gpu-analytic-finalize-prior final-evidence-class before final closure."

@@ -1,6 +1,0 @@
-interface:
-  display_name: "gpu-reference-map"
-  short_description: "Map GPU modeling claims to source families and limits"
-  default_prompt: "Use $gpu-reference-map to find GPU analytical-modeling source families, source limits, and source-to-claim evidence boundaries."
-policy:
-  allow_implicit_invocation: false

@@ -1,6 +1,0 @@
-interface:
-  display_name: "gpu-reporting-and-closure"
-  short_description: "Gate GPU modeling claims, math, and closure"
-  default_prompt: "Use $gpu-reporting-and-closure to align GPU analytical-modeling claims, notation, and closure decisions with evidence."
-policy:
-  allow_implicit_invocation: false

@@ -1,19 +1,30 @@
 # GPU Analytical Modeling Toolbox
 
-This project-local toolbox provides User Skill Callback material for GPU kernel analytical modeling. It keeps GPU modeling preferences under `skillset/toolboxes/gpu-analytical-modeling/`; it is not part of the packaged Isomer distribution and does not install itself.
+This project-local Toolbox provides stage-specific User Skill Callback priors for GPU kernel analytical modeling. It keeps GPU modeling preferences under `skillset/toolboxes/gpu-analytical-modeling/`; it is not part of the packaged Isomer distribution and does not install itself.
 
 ## Contents
 
-- `manifest.toml`: Declarative install recipe for desired User Skill Callback registrations. It is not the installed callback registry.
-- `gpu-reference-map/`: Callback skill for source families, source limits, and source-to-claim mapping.
-- `gpu-modeling-method/`: Callback skill for analytical model shape, hardware contract, and baseline evidence classes.
-- `gpu-evidence-and-experiment/`: Callback skill for evaluation contracts, profiler/counter evidence, component bottleneck proof, and model-refinement decisions.
-- `gpu-reporting-and-closure/`: Callback skill for claim gates, math writing, and closure limits.
-- `prompts/`: Short prompt-file callback material for narrow reminders.
+- `manifest.toml`: Declarative install recipe for stage-prior callback registrations.
+- `callbacks/`: Short prompt-file callbacks that invoke an installed prior skill, subcommand, and purpose.
+- `gpu-analytic-*-prior/`: Installed prior skills organized by DeepSci stage.
+
+## Prompt Routing Contract
+
+The Toolbox assumes that after installation the prior skills are discoverable by name in the agent skillset. Each callback prompt uses the same compact shape:
+
+```md
+Invoke `gpu-analytic-<stage>-prior` subcommand `<subcommand>`.
+
+Purpose: <why this prior is injected at this insertion point>.
+
+Treat this as supplemental prior guidance under the active DeepSci skill, project context, and user request.
+```
+
+This makes `manifest.toml` the readable map of what takes effect and when, while the stage-prior skill directory keeps the reusable guidance.
 
 ## Manifest Role
 
-The manifest describes the callbacks this Toolbox expects an operator to install through the high-level Toolbox bundle path. The top-level `toolbox_id` is the stable Toolbox identity, and each callback has a toolbox-local `key`. Installed callback ids use `<toolbox_id>:<key>`, such as `gpu-analytical-modeling:gpu-modeling-method/scout/begin`.
+The manifest describes the callbacks this Toolbox expects an operator to install through the high-level Toolbox bundle path. The top-level `toolbox_id` is the stable Toolbox identity, and each callback has a toolbox-local `key`. Installed callback ids use `<toolbox_id>:<key>`, such as `gpu-analytical-modeling:experiment/begin/evaluation-and-profiler-contract`.
 
 Install the Toolbox for one Research Topic with:
 
@@ -25,26 +36,31 @@ pixi run isomer-cli --print-json project toolboxes install \
 
 The installed registry remains under `.isomer-labs/user-skill-callbacks/.../registry.toml` after registration.
 
-Callback `key` values contain only letters, digits, `-`, `_`, and `/`. Use `/` for naming hierarchy only; it does not imply filesystem paths or ordering dependencies. If a callback omits `key`, Isomer derives `<target_skill>/<stage>`. A Toolbox cannot contain two unlabeled callbacks for the same target skill and stage because they would derive the same toolbox-local key.
+Callback `key` values contain only letters, digits, `-`, `_`, and `/`. Use `/` for naming hierarchy only; it does not imply filesystem paths or ordering dependencies. Ordering is guaranteed only inside this Toolbox, by ascending Python string comparison of toolbox-local keys. Cross-Toolbox ordering is deterministic implementation detail and should not be used as a design contract.
 
-Ordering is guaranteed only inside this Toolbox, by ascending Python string comparison of toolbox-local keys. Cross-Toolbox ordering is deterministic implementation detail and should not be used as a design contract.
+## Stage-Prior Map
 
-## Recommended Targets
-
-| Toolbox source | Recommended target stages | Use |
+| Callback target | Prompt invokes | Use |
 | --- | --- | --- |
-| `gpu-reference-map` | `isomer-deepsci-scout:begin/end`, `isomer-deepsci-baseline:begin`, `isomer-deepsci-idea:begin`, `isomer-deepsci-analysis:begin`, `isomer-deepsci-experiment:begin`, `isomer-deepsci-review:begin` | Choose source families, source limits, and source-to-claim evidence boundaries before operational work hardens. |
-| `gpu-modeling-method` | `isomer-deepsci-scout:begin/end`, `isomer-deepsci-baseline:begin`, `isomer-deepsci-idea:begin`, `isomer-deepsci-analysis:begin` | Shape equations, assumptions, hardware contracts, and baseline classes before model work hardens. |
-| `gpu-evidence-and-experiment` | `isomer-deepsci-experiment:begin/end`, `isomer-deepsci-analysis:end`, `isomer-deepsci-review:begin`, `isomer-deepsci-decision:begin`, `isomer-deepsci-pipeline:begin` | Keep experiments falsifiable and route mismatches honestly. |
-| `gpu-reporting-and-closure` | `isomer-deepsci-write:end`, `isomer-deepsci-review:end`, `isomer-deepsci-finalize:begin/end` | Keep user-facing claims, notation, and closure decisions aligned with evidence. |
-| `prompts/ncu-command-posture.md` | `isomer-deepsci-experiment:begin` | Narrow reminder for Pixi and NCU command posture. |
-| `prompts/no-emulator-overclaim.md` | `isomer-deepsci-write:end` | Narrow reminder to separate proxy evidence from real-hardware evidence. |
+| `isomer-deepsci-scout:begin` | `gpu-analytic-scout-prior framing-prior` | Classify source families, early model-shape needs, simulator-structure boundaries, and evidence gaps. |
+| `isomer-deepsci-scout:end` | `gpu-analytic-scout-prior output-check` | Check scout outputs for source families, model-shape expectations, evidence classes, and unresolved gaps. |
+| `isomer-deepsci-idea:begin` | `gpu-analytic-idea-prior hypothesis-model-contract` | Ground GPU model hypotheses in source needs, hardware components, physical parameters, equations, assumptions, and evidence targets. |
+| `isomer-deepsci-baseline:begin` | `gpu-analytic-baseline-prior evidence-baseline-contract` | Separate analytical, roofline, simulator, emulator, microbenchmark, profiler-counter, and real-hardware timing evidence classes. |
+| `isomer-deepsci-analysis:begin` | `gpu-analytic-analysis-prior hardware-grounded-interpretation` | Ground interpretation in named components, execution paths, evidence classes, and source limits. |
+| `isomer-deepsci-analysis:end` | `gpu-analytic-analysis-prior component-proof-check` | Check component/path bottleneck claims against matching observations, mismatch classes, and honest routes. |
+| `isomer-deepsci-experiment:begin` | `gpu-analytic-experiment-prior evaluation-and-profiler-contract` | Shape evaluation metrics, data roles, profiler or NCU collection posture, component stressors, and claim-to-evidence mapping. |
+| `isomer-deepsci-experiment:end` | `gpu-analytic-experiment-prior result-evidence-check` | Classify results by evidence class and prevent proxy evidence from becoming measured-hardware accuracy. |
+| `isomer-deepsci-review:begin` | `gpu-analytic-review-prior source-and-evidence-review` | Map central claims to source families, evidence classes, source limits, and provenance gaps. |
+| `isomer-deepsci-review:end` | `gpu-analytic-review-prior claim-strength-review` | Classify central claims by support level and make proof visibility or downgrade reasons explicit. |
+| `isomer-deepsci-decision:begin` | `gpu-analytic-decision-prior mismatch-route` | Classify model/evidence mismatches and choose the next honest route. |
+| `isomer-deepsci-pipeline:begin` | `gpu-analytic-pipeline-prior evidence-route` | Choose the next DeepSci route based on the weakest missing modeling evidence or source support. |
+| `isomer-deepsci-write:end` | `gpu-analytic-write-prior claim-and-proxy-check` | Check claim strength, mathematical notation, and proxy-evidence wording. |
+| `isomer-deepsci-finalize:begin` | `gpu-analytic-finalize-prior closure-readiness` | Decide whether central claims are publishable, limited, parked, deferred, routed back, or blocked. |
+| `isomer-deepsci-finalize:end` | `gpu-analytic-finalize-prior final-evidence-class` | Classify every central runtime, counter-trend, saturated-component, and blocking-path claim by evidence class. |
 
 ## Source Types
 
-Manifest callback entries support the same source families as `project skill-callbacks register`: `skill_dir`, `prompt_file`, and `prompt`. Each entry should provide exactly one matching source field.
-
-Use `skill_dir` for durable multi-step guidance, `prompt_file` for reusable short reminders, and inline `prompt` only for tiny static instructions.
+The manifest uses `prompt_file` for every callback. Prompt files are intentionally short because they only route the active agent to a discoverable installed prior skill and subcommand. The durable guidance lives in `gpu-analytic-*-prior/`.
 
 ## Scope Guidance
 
@@ -66,15 +82,6 @@ pixi run isomer-cli --print-json project toolboxes install \
 ```
 
 Manual one-off callbacks can still use the lower-level registration surface with explicit installed ids. `project skill-callbacks install --toolbox-dir` remains available as a callback refresh or repair primitive for an existing Toolbox manifest, but it is not the normal Toolbox bundle install path.
-
-```bash
-pixi run isomer-cli --print-json project skill-callbacks register \
-  --scope project \
-  --id gpu-analytical-modeling:manual/no-emulator-overclaim/write/end \
-  --skill isomer-deepsci-write \
-  --stage end \
-  --prompt-file skillset/toolboxes/gpu-analytical-modeling/prompts/no-emulator-overclaim.md
-```
 
 ## Boundaries
 

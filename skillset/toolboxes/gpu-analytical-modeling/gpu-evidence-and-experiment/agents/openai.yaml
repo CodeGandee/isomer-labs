@@ -1,6 +1,0 @@
-interface:
-  display_name: "gpu-evidence-and-experiment"
-  short_description: "Check GPU analytical model evidence and experiments"
-  default_prompt: "Use $gpu-evidence-and-experiment to define falsifiable GPU model evaluation, profiler/counter evidence, component proof, and refinement routing."
-policy:
-  allow_implicit_invocation: false
