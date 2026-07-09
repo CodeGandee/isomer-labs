@@ -15,6 +15,8 @@ This release expands the Project operator surface, improves packaged system skil
 ### Added
 
 - Added the system skill installer CLI and release verification workflow.
+- Added `isomer-cli system-skills upgrade` to refresh installed packaged system skills, remove manifest-tracked stale skill paths, and preserve or override projection mode.
+- Added target-root system skill manifests at `isomer-labs-skill-manifest.json` to record installed Isomer skill names, source paths, projection modes, package version, and update time.
 - Added the toolbox manager system skill and routed toolbox-manager access from operator entrypoints.
 - Added the GUI Manager operator skill and packaged it with the core system skill set.
 - Added top-level `isomer-cli doctor` diagnostics and read-only host, Project, Pixi, and topic-environment checks.
@@ -27,6 +29,9 @@ This release expands the Project operator surface, improves packaged system skil
 ### Changed
 
 - Refined project CLI workflows.
+- Changed packaged system-skill installation ownership to use reserved skill names under the target skill root instead of per-skill `.isomer-system-skill.json` marker files.
+- Updated `system-skills install`, `status`, and `uninstall` output to report root manifest metadata, preserved existing paths, forced replacements, invalid projection shapes, and manifest updates.
+- Updated packaged system skill documentation and CLI reference for name-based install slots, `--force`, root manifests, and upgrade behavior.
 - Improved top-level and command-group help navigation, including empty invocation help and package version reporting.
 - Unified the toolbox installation flow.
 - Promoted doctor guidance out of the Project command group and into global CLI and operator skill guidance.
@@ -38,6 +43,10 @@ This release expands the Project operator surface, improves packaged system skil
 ### Fixed
 
 - Included `README.md` in package metadata so built distributions carry the project readme.
+
+### Breaking
+
+- Removed per-skill hidden marker files as the ownership source for packaged system-skill install, status, and uninstall behavior. Existing same-name paths are now preserved unless users pass `system-skills install --force`.
 
 ### Maintenance
 
