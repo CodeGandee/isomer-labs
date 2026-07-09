@@ -827,7 +827,7 @@ The topic-main guidance renderer SHALL direct coding agents to start with the sm
 - **AND** it does not embed a concrete Research Topic id, Topic Workspace path, Agent Name, Agent Instance id, manifest path, Pixi environment, credential, or external repository path
 
 ### Requirement: Project Skill Callback Command Group
-The system SHALL expose User Skill Callback management and resolution through the generic `isomer-cli project skill-callbacks` command group.
+The system SHALL expose User Skill Callback management, resolution, and insertion-point discovery through the generic `isomer-cli project skill-callbacks` command group.
 
 #### Scenario: Project group exposes skill-callbacks
 - **WHEN** a user runs `isomer-cli project --help`
@@ -835,11 +835,11 @@ The system SHALL expose User Skill Callback management and resolution through th
 
 #### Scenario: Skill-callbacks help lists commands
 - **WHEN** a user runs `isomer-cli project skill-callbacks --help`
-- **THEN** the command help lists `register`, `resolve`, `list`, `show`, `disable`, and `validate`
+- **THEN** the command help lists `register`, `install`, `resolve`, `insertion-points`, `list`, `show`, `disable`, and `validate`
 
 #### Scenario: Commands discover Project first
 - **WHEN** a user runs a `project skill-callbacks` command
-- **THEN** the command uses the standard Project discovery and explicit Project selector behavior before loading callback registries
+- **THEN** the command uses the standard Project discovery and explicit Project selector behavior before loading callback registries or Project-declared operator system extensions
 
 #### Scenario: Topic-scoped commands resolve topic context
 - **WHEN** a user runs a `project skill-callbacks` command that targets or reads topic-scoped callback registrations
@@ -847,9 +847,51 @@ The system SHALL expose User Skill Callback management and resolution through th
 
 #### Scenario: JSON output is deterministic
 - **WHEN** a user runs `isomer-cli --print-json project skill-callbacks <subcommand>`
-- **THEN** the command returns deterministic machine-readable output with callback ids, target system skill names, stages, scopes, statuses, priorities, source summaries, and diagnostics
+- **THEN** the command returns deterministic machine-readable output with callback ids, target system skill names, stages, scopes, statuses, priorities, source summaries, callback insertion-point metadata when requested, and diagnostics
 
 #### Scenario: Missing project is rejected
 - **WHEN** no Project can be discovered for a `project skill-callbacks` command
 - **THEN** the command fails with the standard missing-Project diagnostic and does not create callback registry files in the current directory
+
+### Requirement: Project System Extensions Command Group
+The system SHALL expose Project operator system-extension memory through the generic `isomer-cli project system-extensions` command group.
+
+#### Scenario: Project group exposes system-extensions
+- **WHEN** a user runs `isomer-cli project --help`
+- **THEN** the command help lists the `system-extensions` command group alongside other Project-scoped command groups
+
+#### Scenario: System-extensions help lists commands
+- **WHEN** a user runs `isomer-cli project system-extensions --help`
+- **THEN** the command help lists `list`, `remember`, and `forget`
+
+#### Scenario: Commands use Project discovery
+- **WHEN** a user runs a `project system-extensions` command
+- **THEN** the command uses the standard Project discovery and explicit Project selector behavior before reading or mutating the Project Manifest
+
+#### Scenario: JSON output is deterministic
+- **WHEN** a user runs `isomer-cli --print-json project system-extensions <subcommand>`
+- **THEN** the command returns deterministic machine-readable output with catalog extension ids, Project declaration state, mutation status, and diagnostics
+
+#### Scenario: Missing project is rejected
+- **WHEN** no Project can be discovered for a `project system-extensions` command
+- **THEN** the command fails with the standard missing-Project diagnostic and does not create a Project Manifest in the current directory
+
+### Requirement: Toolbox CLI Surface Presents Canonical Bundle Install
+The system SHALL present `project toolboxes install` as the canonical command for installing an effective Toolbox bundle while keeping lower-level callback and runtime-param command groups discoverable as primitives.
+
+#### Scenario: Project help exposes Toolbox commands
+- **WHEN** a user runs `isomer-cli project --help`
+- **THEN** the command help lists `toolboxes`, `skill-callbacks`, and `toolbox-params` command groups
+
+#### Scenario: Toolboxes help names bundle install
+- **WHEN** a user runs `isomer-cli project toolboxes --help`
+- **THEN** the command help presents `install` as the operation for installing or updating an effective Toolbox bundle from a Toolbox directory
+
+#### Scenario: Skill callbacks help names primitive role
+- **WHEN** a user runs `isomer-cli project skill-callbacks --help`
+- **THEN** the command help presents direct callback registration, resolution, validation, and callback-manifest installation as lower-level User Skill Callback operations rather than the canonical Toolbox bundle install path
+
+#### Scenario: Runtime params help names primitive role
+- **WHEN** a user runs `isomer-cli project toolbox-params --help`
+- **THEN** the command help presents runtime-param definition, mutation, lookup, explanation, import management, and validation as direct configuration primitives that can be used with or without high-level Toolbox installation
 

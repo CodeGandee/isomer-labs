@@ -77,11 +77,19 @@ The system SHALL store User Skill Callback registrations in declarative registry
 - **THEN** the registry retains the record for auditability, marks it inactive, and excludes it from normal resolution results
 
 ### Requirement: Callback CLI Surface
-The system SHALL expose a generic `isomer-cli project skill-callbacks` command group for User Skill Callback management and resolution.
+The system SHALL expose a generic `isomer-cli project skill-callbacks` command group for User Skill Callback management, resolution, and lower-level callback-material operations that are not necessarily installed as full Toolbox bundles.
 
 #### Scenario: Register command creates callback
 - **WHEN** a user runs `isomer-cli project skill-callbacks register` with a target system skill, supported stage, scope, and exactly one source kind
 - **THEN** the command validates the inputs, creates or updates the appropriate callback registry, and reports the callback id, target skill, stage, scope, status, and source summary
+
+#### Scenario: Register command supports loose callback material
+- **WHEN** a user has callback material that is not packaged as a Toolbox manifest
+- **THEN** the `register` command provides the direct mutation path for prompt, prompt-file, or skill-directory callback sources
+
+#### Scenario: Install command is a callback-manifest primitive
+- **WHEN** a user runs the lower-level callback-manifest install operation for a Toolbox directory
+- **THEN** the command installs or refreshes callback records from the Toolbox manifest without being the canonical high-level Toolbox bundle install surface
 
 #### Scenario: Resolve command is read-only
 - **WHEN** a user runs `isomer-cli project skill-callbacks resolve` for a system skill and callback stage
@@ -207,3 +215,21 @@ The system SHALL honor effective Toolbox status when resolving callbacks install
 #### Scenario: Callback list explains Toolbox gating
 - **WHEN** a callback list, resolve, show, or validate command reports Toolbox-installed callbacks
 - **THEN** the output includes enough Toolbox status metadata to explain whether the callback is effective or gated off for the selected context
+
+### Requirement: Callback Target Validation Uses Insertion Point Catalog
+The system SHALL validate User Skill Callback target skill and stage pairs against manifest-declared callback insertion points.
+
+#### Scenario: Declared insertion point is accepted
+- **WHEN** a User Skill Callback targets a system skill and callback stage pair declared in the packaged callback insertion-point catalog
+- **THEN** validation accepts the target pair subject to the existing registry, source, scope, status, priority, and redaction rules
+
+#### Scenario: Undeclared insertion point is rejected
+- **WHEN** a User Skill Callback targets a packaged system skill and stage pair that is not declared as a callback insertion point
+- **THEN** validation rejects the target pair with a deterministic diagnostic that names the missing insertion point
+- **AND** the diagnostic directs users toward callback insertion-point discovery
+
+#### Scenario: Optional extension target remains catalog based
+- **WHEN** a User Skill Callback targets an insertion point belonging to a known optional system extension
+- **THEN** validation uses the packaged catalog declaration rather than attempting to inspect the Project operator filesystem
+- **AND** command output can report whether the extension is Project-declared or only catalog-known
+
