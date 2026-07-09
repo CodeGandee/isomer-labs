@@ -55,7 +55,7 @@ describe("Idea detail panel", () => {
     expect(screen.getByRole("tab", { name: "Diagnostics" })).toBeTruthy();
     expect(document.querySelector(".json-modal-code")?.textContent).toContain("Separate launch overhead.");
     fireEvent.click(screen.getByRole("button", { name: "Copy JSON" }));
-    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('"one_liner": "Separate launch overhead."')));
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('"summary": "Separate launch overhead."')));
     expect(screen.getAllByText("JSON copied.").length).toBeGreaterThan(0);
     fireEvent.keyDown(dialog, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -87,7 +87,6 @@ describe("Idea detail panel", () => {
       buildIdeaNodeHoverMarkdown({
         label: "Precision Idea",
         title: "Precision Idea",
-        one_liner: "Separate launch overhead.",
         summary: "Compare corrected runtime curves.",
         status: "candidate",
         material_kind: "idea",
@@ -131,7 +130,7 @@ function ideaDetailPayload(): IdeaDetailResponse {
     topic_workspace_id: "alpha",
     idea_id: "idea-1",
     exists: true,
-    idea: { idea_id: "idea-1", title: "Precision Idea", status: "candidate" },
+    idea: { idea_id: "idea-1", title: "Precision Idea", summary: "Separate launch overhead.", status: "candidate" },
     realizations: [{ idea_id: "idea-1", record_id: "record-1", latest: true }],
     latest_realization: { idea_id: "idea-1", record_id: "record-1", latest: true },
     latest_record: { record_id: "record-1", title: "Record 1" },
@@ -141,7 +140,7 @@ function ideaDetailPayload(): IdeaDetailResponse {
     idea_content: {
       idea_id: "idea-1",
       title: "Precision Idea",
-      one_liner: "Separate launch overhead.",
+      summary: "Separate launch overhead.",
       evidence: ["A", "B"],
       source_json_path: "sections.raw_ideas[0]",
     },
@@ -171,7 +170,7 @@ function ideaDetailPayload(): IdeaDetailResponse {
             {
               idea_id: "idea-1",
               title: "Precision Idea",
-              one_liner: "Separate launch overhead.",
+              summary: "Separate launch overhead.",
               evidence: ["A", "B"],
             },
           ],

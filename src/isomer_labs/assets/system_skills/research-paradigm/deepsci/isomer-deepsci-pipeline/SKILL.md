@@ -9,6 +9,8 @@ description: Use when a research task matches one of the named single-pass resea
 
 `isomer-deepsci-pipeline` executes one named single-pass research procedure. Each procedure (called a "pass") is a linear sequence of production DeepSci skills with automatic artifact handoffs. The skill does not loop, retry, or make macro-strategy decisions; it runs the selected pass once and produces a `pipeline-terminal-report` for an external controller.
 
+Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
+
 Each pass is defined by a dedicated subcommand page under `commands/`. The recipe is embedded in that page so pass-specific customization can grow without complicating the main skill entrypoint.
 
 ## Workflow

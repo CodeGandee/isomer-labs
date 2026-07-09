@@ -276,7 +276,7 @@ def _idea_content(
     resolution: object | None,
 ) -> dict[str, object]:
     content: dict[str, object] = dict(source_json) if isinstance(source_json, Mapping) else {}
-    for key in ("idea_id", "title", "one_liner", "family", "status", "visibility", "aliases"):
+    for key in ("idea_id", "title", "summary", "family", "status", "visibility", "aliases"):
         if key in idea and key not in content:
             content[key] = idea[key]  # type: ignore[index]
     if "source_label" not in content:

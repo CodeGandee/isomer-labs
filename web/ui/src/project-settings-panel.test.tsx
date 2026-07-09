@@ -8,8 +8,14 @@ const themeMock = vi.hoisted(() => ({
 
 const settingsMock = vi.hoisted(() => ({
   hoverPreviewDelayMs: 1500,
+  ideaTimelinePrimaryColor: "#e9f7ef",
+  ideaTimelineRowColorsEnabled: false,
+  ideaTimelineSupportingColor: "#fff7d6",
   refreshGuiSettings: vi.fn(),
   setHoverPreviewDelayMs: vi.fn(),
+  setIdeaTimelinePrimaryColor: vi.fn(),
+  setIdeaTimelineRowColorsEnabled: vi.fn(),
+  setIdeaTimelineSupportingColor: vi.fn(),
 }));
 
 vi.mock("sigma", () => ({
@@ -33,8 +39,14 @@ vi.mock("./ui-settings", () => ({
   GuiSettingsProvider: ({ children }: { children: unknown }) => children,
   useGuiSettings: () => ({
     hoverPreviewDelayMs: settingsMock.hoverPreviewDelayMs,
+    ideaTimelinePrimaryColor: settingsMock.ideaTimelinePrimaryColor,
+    ideaTimelineRowColorsEnabled: settingsMock.ideaTimelineRowColorsEnabled,
+    ideaTimelineSupportingColor: settingsMock.ideaTimelineSupportingColor,
     refreshGuiSettings: settingsMock.refreshGuiSettings,
     setHoverPreviewDelayMs: settingsMock.setHoverPreviewDelayMs,
+    setIdeaTimelinePrimaryColor: settingsMock.setIdeaTimelinePrimaryColor,
+    setIdeaTimelineRowColorsEnabled: settingsMock.setIdeaTimelineRowColorsEnabled,
+    setIdeaTimelineSupportingColor: settingsMock.setIdeaTimelineSupportingColor,
   }),
 }));
 
@@ -70,8 +82,14 @@ describe("ProjectSettingsPanel", () => {
   beforeEach(() => {
     themeMock.setThemeMode.mockReset();
     settingsMock.hoverPreviewDelayMs = 1500;
+    settingsMock.ideaTimelinePrimaryColor = "#e9f7ef";
+    settingsMock.ideaTimelineRowColorsEnabled = false;
+    settingsMock.ideaTimelineSupportingColor = "#fff7d6";
     settingsMock.refreshGuiSettings.mockReset();
     settingsMock.setHoverPreviewDelayMs.mockReset();
+    settingsMock.setIdeaTimelinePrimaryColor.mockReset();
+    settingsMock.setIdeaTimelineRowColorsEnabled.mockReset();
+    settingsMock.setIdeaTimelineSupportingColor.mockReset();
   });
 
   it("renders appearance settings and updates the global theme mode", async () => {
@@ -94,5 +112,18 @@ describe("ProjectSettingsPanel", () => {
     fireEvent.change(screen.getByRole("spinbutton", { name: "Hover Popup Delay" }), { target: { value: "2" } });
 
     await waitFor(() => expect(settingsMock.setHoverPreviewDelayMs).toHaveBeenCalledWith(2000));
+  });
+
+  it("updates idea timeline row color settings", async () => {
+    render(<ProjectSettingsPanel />);
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Color Idea Timeline Rows" }));
+    await waitFor(() => expect(settingsMock.setIdeaTimelineRowColorsEnabled).toHaveBeenCalledWith(true));
+
+    fireEvent.change(screen.getByLabelText("Primary Idea Row Color"), { target: { value: "#ccffcc" } });
+    fireEvent.change(screen.getByLabelText("Supporting Idea Row Color"), { target: { value: "#fff1aa" } });
+
+    await waitFor(() => expect(settingsMock.setIdeaTimelinePrimaryColor).toHaveBeenCalledWith("#ccffcc"));
+    await waitFor(() => expect(settingsMock.setIdeaTimelineSupportingColor).toHaveBeenCalledWith("#fff1aa"));
   });
 });

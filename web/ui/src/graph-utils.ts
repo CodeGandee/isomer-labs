@@ -6,20 +6,22 @@ export type IdeaFlowNodeData = {
   [key: string]: unknown;
   label: string;
   title: string;
-  one_liner?: string | null;
   summary?: string | null;
   status?: string | null;
   material_kind?: string | null;
   record_id?: string | null;
   idea_id?: string | null;
+  display_key?: string | null;
   producer?: string | null;
   skill?: string | null;
 };
 
-export function ideaNodeVisibleLabel(node: Pick<TopicGraphView["nodes"][number], "status" | "title">): string {
+export function ideaNodeVisibleLabel(node: Pick<TopicGraphView["nodes"][number], "display_key" | "idea_id" | "status" | "title">): string {
+  const key = String(node.display_key || node.idea_id || "").trim();
   const title = String(node.title || "");
   const status = node.status ? String(node.status) : "";
-  return status ? `${title}\n${status}` : title;
+  const heading = key ? `${key} ${title}` : title;
+  return status ? `${heading}\n${status}` : heading;
 }
 
 export function selectRenderer(graphScope: GraphScope, rendererHint: string, nodeCount: number): "react-flow" | "sigma" {
@@ -49,12 +51,12 @@ export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
     data: {
       label: ideaNodeVisibleLabel(node),
       title: node.title,
-      one_liner: node.one_liner,
       summary: node.summary,
       status: node.status,
       material_kind: node.material_kind,
       record_id: node.record_id,
       idea_id: node.idea_id,
+      display_key: node.display_key,
       producer: node.producer,
       skill: node.skill,
     },
@@ -76,13 +78,13 @@ export function graphContentSignature(graph: TopicGraphView): string {
       material_kind: node.material_kind,
       density_class: node.density_class,
       title: node.title,
-      one_liner: node.one_liner || null,
       summary: node.summary || null,
       status: node.status || null,
       selected: Boolean(node.selected),
       producer: node.producer || null,
       skill: node.skill || null,
       idea_id: node.idea_id || null,
+      display_key: node.display_key || null,
       visibility: node.visibility || null,
     })).sort((left, right) => left.id.localeCompare(right.id)),
     edges: graph.edges.map((edge) => ({

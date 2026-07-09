@@ -27,7 +27,6 @@ import {
   getTopicGraph,
   getTopics,
   getViewerDescriptor,
-  type GraphFilters,
 } from "./api";
 import { requestedRenderer } from "./graph-utils";
 import { topicRelativeDisplayPath } from "./display-path";
@@ -35,6 +34,7 @@ import { buildJsonMarkdownPreview } from "./markdown-doc";
 import { manualRefresh$, topicInvalidations, workbenchCommands$ } from "./events";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -55,8 +55,8 @@ import type { ThemeMode } from "./theme-mode";
 import { GuiSettingsProvider, useGuiSettings } from "./ui-settings";
 import { filterRecords, openPanelFromDescriptor, viewerSurface, type DockviewApiLike, type OpenPanelResult } from "./view-model";
 import { GraphFiltersBar, GraphSummary } from "./features/graph/GraphPanels";
-import { SigmaGraph } from "./features/graph/SigmaGraph";
 import { IdeaGraphPanel } from "./features/idea-lineage/IdeaLineagePanel";
+import { IdeaTimelinePanel } from "./features/idea-timeline/IdeaTimelinePanel";
 import { MarkdownView } from "./markdown-view";
 import {
   coerceWorkbenchHistoryState,
@@ -607,7 +607,7 @@ function ExplorerRow({
 
 const dockComponents = {
   ideaGraph: (props: IDockviewPanelProps<PanelParams>) => <IdeaGraphPanel {...props.params} panelId={props.api.id} openableItemId={props.params.topicId ? `topic:${props.params.topicId}:graph:${props.params.graphScope || "idea-lineage"}` : undefined} />,
-  denseGraph: (props: IDockviewPanelProps<PanelParams>) => <DenseGraphPanel topicId={props.params.topicId || ""} graphScope={asGraphScope(props.params.graphScope, "artifact-overview")} />,
+  ideaTimeline: (props: IDockviewPanelProps<PanelParams>) => <IdeaTimelinePanel topicId={props.params.topicId || ""} />,
   records: (props: IDockviewPanelProps<PanelParams>) => <RecordsPanel topicId={props.params.topicId || ""} />,
   recordDetail: (props: IDockviewPanelProps<PanelParams>) => <RecordDetailPanel topicId={props.params.topicId || ""} recordId={props.params.recordId || ""} />,
   ideaDetail: (props: IDockviewPanelProps<PanelParams>) => <IdeaDetailPanel topicId={props.params.topicId || ""} ideaId={props.params.ideaId || ""} />,
@@ -623,7 +623,17 @@ const dockComponents = {
 
 export function ProjectSettingsPanel() {
   const { resolvedThemeMode, setThemeMode, themeMode } = useGuiTheme();
-  const { hoverPreviewDelayMs, refreshGuiSettings, setHoverPreviewDelayMs } = useGuiSettings();
+  const {
+    hoverPreviewDelayMs,
+    ideaTimelinePrimaryColor,
+    ideaTimelineRowColorsEnabled,
+    ideaTimelineSupportingColor,
+    refreshGuiSettings,
+    setHoverPreviewDelayMs,
+    setIdeaTimelinePrimaryColor,
+    setIdeaTimelineRowColorsEnabled,
+    setIdeaTimelineSupportingColor,
+  } = useGuiSettings();
   const [hoverPreviewDelaySeconds, setHoverPreviewDelaySeconds] = useState(() => formatDelaySeconds(hoverPreviewDelayMs));
   const onThemeChange = useCallback((value: string) => {
     setThemeMode(value as ThemeMode);
@@ -697,6 +707,26 @@ export function ProjectSettingsPanel() {
           </label>
           <p className="settings-note">Current delay: {formatDelaySeconds(hoverPreviewDelayMs)}s</p>
         </section>
+        <section className="settings-section muted-section">
+          <div className="settings-copy">
+            <h4>Idea Timeline</h4>
+            <p>Choose row colors used by the idea timeline table in this browser.</p>
+          </div>
+          <label className="settings-field checkbox-setting">
+            <Checkbox aria-label="Color Idea Timeline Rows" checked={ideaTimelineRowColorsEnabled} onCheckedChange={(checked) => setIdeaTimelineRowColorsEnabled(checked === true)} />
+            <span>Color Idea Timeline Rows</span>
+          </label>
+          <div className="settings-color-grid">
+            <label className="settings-field">
+              <span>Primary Row</span>
+              <Input aria-label="Primary Idea Row Color" className="settings-color-input" type="color" value={ideaTimelinePrimaryColor} onChange={(event) => setIdeaTimelinePrimaryColor(event.target.value)} />
+            </label>
+            <label className="settings-field">
+              <span>Supporting Row</span>
+              <Input aria-label="Supporting Idea Row Color" className="settings-color-input" type="color" value={ideaTimelineSupportingColor} onChange={(event) => setIdeaTimelineSupportingColor(event.target.value)} />
+            </label>
+          </div>
+        </section>
       </div>
     </section>
   );
@@ -704,22 +734,6 @@ export function ProjectSettingsPanel() {
 
 function formatDelaySeconds(delayMs: number) {
   return Number((delayMs / 1000).toFixed(2)).toString();
-}
-
-function DenseGraphPanel({ topicId, graphScope }: { topicId: string; graphScope: GraphScope }) {
-  const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: true });
-  const graph = useQuery({
-    queryKey: ["topic", topicId, "graph", graphScope, "sigma", filters],
-    queryFn: () => getTopicGraph(topicId, graphScope, "sigma", filters),
-    enabled: Boolean(topicId),
-  });
-  return (
-    <section className="panel-body">
-      <GraphFiltersBar filters={filters} onChange={setFilters} />
-      {graph.data ? <SigmaGraph graph={graph.data} /> : <div className="empty-state">Loading graph.</div>}
-      <GraphSummary graph={graph.data} isLoading={graph.isLoading} />
-    </section>
-  );
 }
 
 function ProjectOverviewPanel() {
@@ -1388,15 +1402,13 @@ function useRecordsTable(records: RecordSummary[], topicId: string) {
 }
 
 function graphTitle(scope: GraphScope): string {
-  return `${scopeLabel(scope)} Graph`;
+  return scopeLabel(scope);
 }
 
 function scopeLabel(scope: GraphScope): string {
   return {
-    "idea-lineage": "Ideas",
-    "artifact-overview": "Artifacts",
-    "experiment-records": "Experiments",
-    "paper-revisions": "Papers",
+    "idea-lineage": "Idea Graph",
+    "idea-timeline": "Idea Timeline",
   }[scope];
 }
 

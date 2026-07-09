@@ -257,7 +257,8 @@ DEEPSCI_SUPPORT_SECTION_HEADINGS = frozenset(
 )
 SUPPORT_INTRO_DISALLOWED_PREFIXES = tuple(f"{number}. " for number in range(1, 10)) + ("- ", "##", "###")
 SENTENCE_END_RE = re.compile(r"[.!?](?:\s|$)")
-DEEPSCI_FORMAT_PROFILE_RE = re.compile(r"^isomer:deepsci/record-format/profile/[A-Za-z0-9._/-]+/v1$")
+DEEPSCI_FORMAT_PROFILE_RE = re.compile(r"^isomer:deepsci/record-format/profile/[A-Za-z0-9._/-]+/v2$")
+DEEPSCI_FORMAT_PROFILE_V1_TEXT_RE = re.compile(r"isomer:deepsci/record-format/profile/[A-Za-z0-9._/-]+/v1")
 DEEPSCI_PLAIN_OUTPUT_TERMS = (
     "json payload staging",
     "markdown draft",
@@ -993,8 +994,23 @@ def validate_deepsci_payload_first_bindings(
         has_render_export_guidance = any(
             "ext research records render" in line and "--output-file" in line for line in lines
         )
+        has_display_field_guidance = any(
+            "top-level `title` and `summary`" in line and "non-empty" in line for line in lines
+        )
+        has_idea_entry_display_guidance = any(
+            "idea-bearing entries" in line and "`title`" in line and "`summary`" in line for line in lines
+        )
         for line_number, line in enumerate(lines, start=1):
             normalized_line = line.lower()
+            if "one_liner" in normalized_line:
+                add(
+                    diagnostics,
+                    repo_root,
+                    binding_path,
+                    line_number,
+                    "RPS014",
+                    "structured binding guidance must not use legacy one_liner authoring; use summary",
+                )
             if (
                 "generated markdown" in normalized_line
                 and any(term in normalized_line for term in ("canonical", "source of truth", "authoritative", "durable state"))
@@ -1036,7 +1052,7 @@ def validate_deepsci_payload_first_bindings(
                         binding_path,
                         line_number,
                         "RPS014",
-                        "structured binding profile must use an explicit isomer:deepsci/record-format/profile/.../v1 ref",
+                        "structured binding profile must use an explicit isomer:deepsci/record-format/profile/.../v2 ref",
                     )
                 if "--format-profile" not in command:
                     add(
@@ -1128,6 +1144,63 @@ def validate_deepsci_payload_first_bindings(
                 "RPS014",
                 "structured binding page must direct human review or Markdown export through ext research records render and explicit --output-file",
             )
+        if has_structured_row and not has_display_field_guidance:
+            add(
+                diagnostics,
+                repo_root,
+                binding_path,
+                1,
+                "RPS014",
+                "structured binding page must require non-empty top-level `title` and `summary` display fields",
+            )
+        if has_structured_row and not has_idea_entry_display_guidance:
+            add(
+                diagnostics,
+                repo_root,
+                binding_path,
+                1,
+                "RPS014",
+                "structured binding page must require `title` and `summary` on idea-bearing entries",
+            )
+
+
+def validate_deepsci_display_contract_guidance(document: Document, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
+    if "deepsci" not in document.roles or not is_active_guidance(document):
+        return
+    for line_index, line in enumerate(document.lines):
+        lowered = line.casefold()
+        if "one_liner" in lowered and not is_rejection_line(line):
+            add(
+                diagnostics,
+                repo_root,
+                document.path,
+                line_index + 1,
+                "RPS014",
+                "active DeepSci guidance must not author legacy one_liner display fields; use summary",
+            )
+        if DEEPSCI_FORMAT_PROFILE_V1_TEXT_RE.search(line) and not is_rejection_line(line):
+            add(
+                diagnostics,
+                repo_root,
+                document.path,
+                line_index + 1,
+                "RPS014",
+                "active DeepSci guidance must not use structured-record v1 profile refs for new writes; use v2",
+            )
+    if document.rel_target.endswith("/SKILL.md") and not any(
+        "supported deepsci v2 display contract" in line.casefold()
+        and "`title`" in line
+        and "`summary`" in line
+        for line in document.lines
+    ):
+        add(
+            diagnostics,
+            repo_root,
+            document.path,
+            1,
+            "RPS014",
+            "active DeepSci SKILL.md must teach the supported v2 `title` and `summary` display contract",
+        )
 
 
 def validate_deepsci_storage_binding(
@@ -1461,6 +1534,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_deepsci_storage_binding(document, repo_root, diagnostics, allow_zones)
         validate_deepsci_worker_output_policy(document, repo_root, diagnostics)
         validate_deepsci_latest_context_preflight(document, repo_root, diagnostics)
+        validate_deepsci_display_contract_guidance(document, repo_root, diagnostics)
         validate_deepsci_support_section_intros(document, repo_root, diagnostics)
     validate_deepsci_placeholder_bindings(skill_dirs, repo_root, diagnostics)
     validate_deepsci_payload_first_bindings(skill_dirs, repo_root, diagnostics)

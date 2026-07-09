@@ -89,15 +89,15 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         return status, json.loads(output)
 
     def test_idea_source_fragment_resolver_uses_bounded_paths_and_requires_objects(self) -> None:
-        payload = {"sections": {"raw_ideas": [{"id": "R1", "one_liner": "Idea one"}], "filter_notes": ["not idea"]}}
+        payload = {"sections": {"raw_ideas": [{"id": "R1", "title": "Idea one", "summary": "First idea summary"}], "filter_notes": ["not idea"]}}
 
         value, unresolved = extract_json_path(payload, "$.sections.raw_ideas[0]")
         self.assertFalse(unresolved)
-        self.assertEqual({"id": "R1", "one_liner": "Idea one"}, value)
+        self.assertEqual({"id": "R1", "title": "Idea one", "summary": "First idea summary"}, value)
 
         exact = resolve_payload_source_fragment(payload, "$.sections.raw_ideas[0]", format_profile_ref=canonical_record_format_ref("report.raw-idea-slate", "profile"))
         self.assertEqual(SOURCE_STATUS_EXACT, exact.status)
-        self.assertEqual({"id": "R1", "one_liner": "Idea one"}, exact.source_json)
+        self.assertEqual({"id": "R1", "title": "Idea one", "summary": "First idea summary"}, exact.source_json)
 
         broad = resolve_payload_source_fragment(payload, "$.sections.raw_ideas", format_profile_ref=canonical_record_format_ref("report.raw-idea-slate", "profile"))
         self.assertEqual(SOURCE_STATUS_NON_OBJECT, broad.status)
@@ -206,6 +206,32 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         archive_metadata = archived_record["transition_metadata"]
         assert isinstance(archive_metadata, dict)
         self.assertEqual("superseded", archive_metadata["archive_reason"])
+
+    def test_structured_record_v1_profile_is_rejected_for_new_writes(self) -> None:
+        root = self.make_project()
+        payload_file = root / "legacy-v1-payload.json"
+        payload_file.write_text(json.dumps({"title": "Legacy v1 payload", "summary": "Valid display fields but unsupported profile."}), encoding="utf-8")
+        v1_profile = canonical_record_format_ref("report.raw-idea-slate", "profile", version="v1")
+
+        status, payload = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "legacy-v1-write",
+                "--record-kind",
+                "artifact",
+                "--format-profile",
+                v1_profile,
+                "--payload-file",
+                str(payload_file),
+            ],
+        )
+
+        self.assertEqual(1, status, payload)
+        self.assertFalse(payload["ok"])
+        self.assertEqual("diagnostics_failed", payload["error"]["code"])
+        self.assertTrue(any(item["code"] == "structured_record_v1_unsupported" for item in payload["diagnostics"]))
 
     def test_create_can_copy_body_file_to_run_records_label(self) -> None:
         root = self.make_project()
@@ -453,7 +479,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                                 "verdict": "supported",
                             }
                         ],
-                        "raw_ideas": [{"idea_id": "idea-1", "one_liner": "Model host runtime path"}],
+                        "raw_ideas": [{"idea_id": "idea-1", "title": "Model host runtime path", "summary": "Model host runtime path as a candidate idea."}],
                         "decision": {
                             "decision": "continue",
                             "next_route": "analysis",
@@ -728,7 +754,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
             encoding="utf-8",
         )
         template_file.write_text("# {{ payload.title }}\n", encoding="utf-8")
-        payload_file.write_text('{"title":"Snapshot record"}', encoding="utf-8")
+        payload_file.write_text('{"title":"Snapshot record","summary":"Snapshot record summary."}', encoding="utf-8")
         status, created = self.run_records(
             root,
             [
@@ -888,6 +914,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "idea-parent",
                 "--title",
                 "Parent idea",
+                "--summary",
+                "Parent idea summary.",
                 "--status",
                 "candidate",
                 "--alias",
@@ -907,6 +935,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "idea-child",
                 "--title",
                 "Child idea",
+                "--summary",
+                "Child idea summary.",
                 "--status",
                 "selected",
                 "--alias",
@@ -958,6 +988,95 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual(["idea-child", "idea-parent"], sorted(row["idea_id"] for row in graph["nodes"]))
         self.assertEqual(["subsumes"], [row["lineage_kind"] for row in graph["edges"]])
 
+    def test_research_idea_display_keys_are_stable_and_explicitly_repaired(self) -> None:
+        root = self.make_project()
+        status, first = self.run_ideas(root, ["upsert", "--idea-id", "idea-one", "--title", "Idea One", "--summary", "Idea One summary."])
+        self.assertEqual(0, status, first)
+        self.assertEqual("I-1", first["idea"]["display_key"])
+
+        status, second = self.run_ideas(root, ["upsert", "--idea-id", "idea-two", "--title", "Idea Two", "--summary", "Idea Two summary."])
+        self.assertEqual(0, status, second)
+        self.assertEqual("I-2", second["idea"]["display_key"])
+
+        db_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(db_path) as connection:
+            connection.execute("UPDATE research_ideas SET display_key = NULL WHERE idea_id = ?", ("idea-one",))
+
+        status, validate = self.run_ideas(root, ["validate"])
+        self.assertEqual(0, status, validate)
+        self.assertTrue(any(item["code"] == "idea_display_key_missing" and item["idea_id"] == "idea-one" for item in validate["diagnostics"]))
+
+        status, repair_plan = self.run_ideas(root, ["repair"])
+        self.assertEqual(0, status, repair_plan)
+        display_key_actions = [item for item in repair_plan["plan"] if item["action"] == "assign_display_key"]
+        self.assertEqual([{"action": "assign_display_key", "idea_id": "idea-one", "display_key": "I-3", "visibility": "primary", "status": "candidate"}], display_key_actions)
+
+        status, repair = self.run_ideas(root, ["repair", "--apply"])
+        self.assertEqual(0, status, repair)
+        self.assertIn({"idea_id": "idea-one", "display_key": "I-3"}, repair["applied"])
+
+        with sqlite3.connect(db_path) as connection:
+            connection.execute("UPDATE research_ideas SET display_key = ? WHERE idea_id = ?", ("I2", "idea-two"))
+
+        status, validate_old = self.run_ideas(root, ["validate"])
+        self.assertEqual(1, status, validate_old)
+        self.assertTrue(any(item["code"] == "idea_display_key_invalid" and item["display_key"] == "I2" for item in validate_old["diagnostics"]))
+
+        status, migrate_plan = self.run_ideas(root, ["repair"])
+        self.assertEqual(1, status, migrate_plan)
+        migrate_actions = [item for item in migrate_plan["plan"] if item["action"] == "migrate_display_key"]
+        self.assertEqual(
+            [
+                {
+                    "action": "migrate_display_key",
+                    "idea_id": "idea-two",
+                    "previous_display_key": "I2",
+                    "display_key": "I-2",
+                    "visibility": "primary",
+                    "status": "candidate",
+                    "diagnostics": [],
+                }
+            ],
+            migrate_actions,
+        )
+
+        status, migrated = self.run_ideas(root, ["repair", "--apply"])
+        self.assertEqual(0, status, migrated)
+        self.assertIn({"idea_id": "idea-two", "display_key": "I-2", "previous_display_key": "I2"}, migrated["applied"])
+
+        status, query = self.run_ideas(root, ["query"])
+        self.assertEqual(0, status, query)
+        display_keys = {item["idea_id"]: item["display_key"] for item in query["ideas"]}
+        self.assertEqual({"idea-one": "I-3", "idea-two": "I-2"}, display_keys)
+
+    def test_research_idea_display_key_migration_rejects_collisions(self) -> None:
+        root = self.make_project()
+        status, first = self.run_ideas(root, ["upsert", "--idea-id", "idea-one", "--title", "Idea One", "--summary", "Idea One summary."])
+        self.assertEqual(0, status, first)
+        status, second = self.run_ideas(root, ["upsert", "--idea-id", "idea-two", "--title", "Idea Two", "--summary", "Idea Two summary."])
+        self.assertEqual(0, status, second)
+
+        db_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(db_path) as connection:
+            connection.execute("UPDATE research_ideas SET display_key = ? WHERE idea_id = ?", ("I1", "idea-one"))
+            connection.execute("UPDATE research_ideas SET display_key = ? WHERE idea_id = ?", ("I-1", "idea-two"))
+
+        status, repair_plan = self.run_ideas(root, ["repair"])
+        self.assertEqual(1, status, repair_plan)
+        migrate_actions = [item for item in repair_plan["plan"] if item["action"] == "migrate_display_key"]
+        self.assertEqual(1, len(migrate_actions))
+        self.assertEqual("I-1", migrate_actions[0]["display_key"])
+        self.assertTrue(any(item["code"] == "idea_display_key_migration_collision" for item in migrate_actions[0]["diagnostics"]))
+
+        status, repair = self.run_ideas(root, ["repair", "--apply"])
+        self.assertEqual(1, status, repair)
+        self.assertFalse(repair["mutated"])
+        self.assertEqual("idea_repair_plan_blocked", repair["error"]["code"])
+
+        with sqlite3.connect(db_path) as connection:
+            row = connection.execute("SELECT display_key FROM research_ideas WHERE idea_id = ?", ("idea-one",)).fetchone()
+        self.assertEqual("I1", row[0])
+
     def test_research_idea_source_contract_validates_imports_exports_and_repairs(self) -> None:
         root = self.make_project()
         profile_ref = canonical_record_format_ref("report.raw-idea-slate", "profile")
@@ -967,11 +1086,12 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
             """
             {
               "title": "Raw Idea Slate",
+              "summary": "Two raw model ideas ready for import.",
               "sections": {
                 "filter_notes": ["R2 deferred; not an idea entry."],
                 "raw_ideas": [
-                  {"id": "R1", "family": "model", "one_liner": "Add occupancy correction."},
-                  {"id": "R2", "family": "model", "one_liner": "Add symbolic regression fallback.", "status": "deferred"}
+                  {"id": "R1", "title": "Occupancy correction", "summary": "Add occupancy correction.", "family": "model"},
+                  {"id": "R2", "title": "Symbolic regression fallback", "summary": "Add symbolic regression fallback.", "family": "model", "status": "deferred"}
                 ]
               }
             }
@@ -997,12 +1117,12 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual(0, status, imported)
         self.assertEqual(["$.sections.raw_ideas[0]", "$.sections.raw_ideas[1]"], [item["source_json_path"] for item in imported["plan"]])
 
-        status, idea = self.run_ideas(root, ["upsert", "--idea-id", "idea-occupancy", "--title", "Occupancy", "--alias", "R1", "--source-record-id", "raw-record"])
+        status, idea = self.run_ideas(root, ["upsert", "--idea-id", "idea-occupancy", "--title", "Occupancy", "--summary", "Add occupancy correction.", "--alias", "R1", "--source-record-id", "raw-record"])
         self.assertEqual(0, status, idea)
         status, realization = self.run_ideas(root, ["realize", "--idea-id", "idea-occupancy", "--record-id", "raw-record", "--source-json-path", "$.sections.raw_ideas[0]"])
         self.assertEqual(0, status, realization)
 
-        status, bad_idea = self.run_ideas(root, ["upsert", "--idea-id", "idea-bad", "--title", "Bad", "--alias", "R1", "--source-record-id", "raw-record"])
+        status, bad_idea = self.run_ideas(root, ["upsert", "--idea-id", "idea-bad", "--title", "Bad", "--summary", "Bad source path test.", "--alias", "R1", "--source-record-id", "raw-record"])
         self.assertEqual(0, status, bad_idea)
         status, bad_realization = self.run_ideas(root, ["realize", "--idea-id", "idea-bad", "--record-id", "raw-record", "--source-json-path", "$.sections.raw_ideas"])
         self.assertEqual(1, status, bad_realization)

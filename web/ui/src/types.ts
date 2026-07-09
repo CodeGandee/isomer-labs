@@ -25,7 +25,6 @@ export const TopicGraphNodeSchema = z
     material_kind: z.string(),
     density_class: z.string(),
     title: z.string(),
-    one_liner: z.string().nullable().optional(),
     summary: z.string().nullable().optional(),
     status: z.string().nullable().optional(),
     selected: z.boolean().nullable().optional(),
@@ -37,6 +36,7 @@ export const TopicGraphNodeSchema = z
     detail_refs: z.record(z.string(), z.string().nullable()).optional(),
     renderer_hints: z.record(z.string(), z.unknown()).optional(),
     idea_id: z.string().optional(),
+    display_key: z.string().nullable().optional(),
     visibility: z.string().nullable().optional(),
     realizations: z.array(z.record(z.string(), z.unknown())).optional(),
   })
@@ -333,6 +333,27 @@ export const TopicChangeEventSchema = z
   })
   .passthrough();
 
+export const RecentErrorsResponseSchema = z
+  .object({
+    ok: z.boolean(),
+    mutated: z.boolean(),
+    topic_id: z.string(),
+    errors: z.array(
+      z
+        .object({
+          occurred_at: z.string(),
+          topic_id: z.string(),
+          source_view: z.string(),
+          severity: z.string(),
+          code: z.string().nullable().optional(),
+          message: z.string().nullable().optional(),
+        })
+        .passthrough(),
+    ),
+    diagnostics: z.array(DiagnosticSchema).optional(),
+  })
+  .passthrough();
+
 export type Diagnostic = z.infer<typeof DiagnosticSchema>;
 export type Topic = z.infer<typeof TopicSchema>;
 export type TopicGraphNode = z.infer<typeof TopicGraphNodeSchema>;
@@ -340,6 +361,7 @@ export type TopicGraphEdge = z.infer<typeof TopicGraphEdgeSchema>;
 export type TopicGraphView = z.infer<typeof TopicGraphViewSchema>;
 export type TopicGraphGroup = z.infer<typeof TopicGraphGroupSchema>;
 export type TopicChangeEvent = z.infer<typeof TopicChangeEventSchema>;
+export type RecentErrorsResponse = z.infer<typeof RecentErrorsResponseSchema>;
 export type TopicOverviewResponse = z.infer<typeof TopicOverviewResponseSchema>;
 export type RecordSummary = z.infer<typeof RecordSummarySchema>;
 export type IdeaDetailResponse = z.infer<typeof IdeaDetailResponseSchema>;
@@ -348,5 +370,5 @@ export type ExplorerNode = z.infer<typeof ExplorerNodeSchema>;
 export type ProjectExplorerResponse = z.infer<typeof ProjectExplorerResponseSchema>;
 export type OpenableItemDescriptor = z.infer<typeof OpenableItemDescriptorSchema>;
 
-export type GraphScope = "idea-lineage" | "artifact-overview" | "experiment-records" | "paper-revisions";
+export type GraphScope = "idea-lineage" | "idea-timeline";
 export type RendererChoice = "auto" | "react-flow" | "sigma";

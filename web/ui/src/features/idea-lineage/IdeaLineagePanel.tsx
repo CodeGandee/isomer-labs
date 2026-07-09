@@ -410,12 +410,8 @@ function FlowAutoFit({ edgeCount, nodeCount }: { edgeCount: number; nodeCount: n
 export function buildIdeaNodeHoverMarkdown(data: IdeaFlowNodeData): string {
   const title = String(data.title || data.label || "Idea");
   const lines = [`### ${title}`];
-  const oneLiner = typeof data.one_liner === "string" ? data.one_liner.trim() : "";
   const summary = typeof data.summary === "string" ? data.summary.trim() : "";
-  if (oneLiner) {
-    lines.push("", oneLiner);
-  }
-  if (summary && summary !== oneLiner) {
+  if (summary) {
     lines.push("", summary);
   }
   const facts = [

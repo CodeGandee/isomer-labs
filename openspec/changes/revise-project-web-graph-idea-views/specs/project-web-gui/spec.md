@@ -12,6 +12,11 @@ Project Web SHALL make the visible Research Topic `Graphs` navigation focus on R
 - **WHEN** a user expands the `Graphs` section
 - **THEN** Project Web does not show `Artifact Overview`, `Experiment Records`, or `Paper Revisions` as visible graph entries
 
+#### Scenario: Removed dense graph URLs do not restore views
+- **WHEN** a user opens an old Project Web URL for `artifact-overview`, `experiment-records`, or `paper-revisions`
+- **THEN** Project Web does not render the removed dense graph view
+- **AND** it reports or routes through unsupported graph-scope behavior
+
 #### Scenario: Idea graph opens relationship view
 - **WHEN** a user opens the Idea Graph view
 - **THEN** Project Web opens the existing idea relationship graph backed by the `idea-lineage` read model

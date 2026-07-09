@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 import json
 from pathlib import Path
+import re
 import shutil
 from typing import Any, Mapping, TypedDict
 import uuid
@@ -19,7 +20,7 @@ from isomer_labs.artifact_formats import (
     validate_payload,
 )
 from isomer_labs.artifact_formats.processing import load_payload_file
-from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
+from isomer_labs.deepsci_ext.record_formats import is_unsupported_deepsci_v1_ref, register_deepsci_record_format_provider
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.workspace.path_resolution import resolve_semantic_path
@@ -713,11 +714,12 @@ def upsert_research_idea(
     env: Mapping[str, str],
     idea_id: str,
     title: str,
-    one_liner: str | None = None,
+    summary: str,
     family: str | None = None,
     status: str = "candidate",
     visibility: str = "primary",
     aliases: list[str] | None = None,
+    display_key: str | None = None,
     source_record_id: str | None = None,
     source_json_path: str | None = None,
     metadata: dict[str, object] | None = None,
@@ -731,8 +733,9 @@ def upsert_research_idea(
         record = _idea_record(
             context,
             idea_id=idea_id,
+            display_key=existing.display_key if existing is not None and existing.display_key is not None else display_key or runtime_store.next_research_idea_display_key(context.topic_workspace_id),
             title=title,
-            one_liner=one_liner,
+            summary=summary,
             family=family,
             status=status,
             visibility=visibility,
@@ -987,8 +990,9 @@ def import_research_ideas_from_record(
                     idea = _idea_record(
                         context,
                         idea_id=str(item["idea_id"]),
+                        display_key=_optional_metadata_string(item.get("display_key")) or runtime_store.next_research_idea_display_key(context.topic_workspace_id),
                         title=str(item["title"]),
-                        one_liner=str(item.get("one_liner") or item["title"]),
+                        summary=str(item["summary"]),
                         family=str(item.get("family") or "legacy-import"),
                         status=str(item.get("status") or "candidate"),
                         visibility=str(item.get("visibility") or "supporting"),
@@ -1036,11 +1040,59 @@ def repair_research_ideas(
     try:
         plan = _idea_repair_plan(context, runtime_store)
         applied: list[dict[str, object]] = []
+        plan_errors = [
+            diagnostic
+            for item in plan
+            for diagnostic in _dict_list(item.get("diagnostics"))
+            if diagnostic.get("severity") == "error"
+        ]
         if apply:
+            if plan_errors:
+                validation_payload, _ = validate_research_ideas(context, env=env)
+                return {
+                    "ok": False,
+                    "mutated": False,
+                    "operation": "ideas.repair",
+                    "apply": apply,
+                    "update_payloads": update_payloads,
+                    "error": {"code": "idea_repair_plan_blocked", "message": "Research Idea repair plan has errors and was not applied."},
+                    "diagnostics": [*validation_payload.get("diagnostics", []), *plan_errors],
+                    "plan": plan,
+                    "applied": applied,
+                    "note": "Managed payload files are not mutated unless a dedicated payload-update repair path is implemented and explicitly enabled.",
+                }, diagnostics
             now = utc_timestamp()
             with runtime_store.connection:
                 for item in plan:
                     if item.get("action") != "update_realization_source_path":
+                        if item.get("action") in {"assign_display_key", "migrate_display_key"}:
+                            idea = runtime_store.get_research_idea(str(item["idea_id"]), topic_workspace_id=context.topic_workspace_id)
+                            if idea is None:
+                                continue
+                            repaired_idea = ResearchIdea(
+                                id=idea.id,
+                                research_topic_id=idea.research_topic_id,
+                                topic_workspace_id=idea.topic_workspace_id,
+                                idea_id=idea.idea_id,
+                                display_key=str(item["display_key"]),
+                                title=idea.title,
+                                summary=idea.summary,
+                                family=idea.family,
+                                status=idea.status,
+                                visibility=idea.visibility,
+                                aliases=idea.aliases,
+                                source_record_id=idea.source_record_id,
+                                source_json_path=idea.source_json_path,
+                                metadata={**idea.metadata, "display_key_repair_source": "ideas.repair"},
+                                created_at=idea.created_at,
+                                updated_at=now,
+                                provenance_refs=idea.provenance_refs,
+                            )
+                            runtime_store.upsert_research_idea(repaired_idea)
+                            payload: dict[str, object] = {"idea_id": repaired_idea.idea_id, "display_key": repaired_idea.display_key}
+                            if item.get("previous_display_key") is not None:
+                                payload["previous_display_key"] = str(item["previous_display_key"])
+                            applied.append(payload)
                         continue
                     realization = runtime_store.get_research_idea_realization(str(item["realization_id"]))
                     if realization is None:
@@ -1473,6 +1525,7 @@ def _prepare_structured_payload(
             )
         )
         return None, None, diagnostics
+    diagnostics.extend(_structured_display_diagnostics(payload, payload_file=request.payload_file))
 
     selected_request = request
     if durable and request.schema_file is not None:
@@ -1480,6 +1533,9 @@ def _prepare_structured_payload(
         diagnostics.extend(snapshot_diagnostics)
         if has_errors(diagnostics):
             return None, None, diagnostics
+    diagnostics.extend(_unsupported_structured_format_diagnostics(selected_request))
+    if has_errors(diagnostics):
+        return None, None, diagnostics
     registry = _artifact_format_registry(context, runtime_store)
     validation = validate_payload(
         payload,
@@ -1556,6 +1612,67 @@ def _prepare_structured_payload(
         content_path,
         diagnostics,
     )
+
+
+def _structured_display_diagnostics(payload: Mapping[str, object], *, payload_file: Path | None) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    title = _optional_metadata_string(payload.get("title"))
+    summary = _optional_metadata_string(payload.get("summary"))
+    if title is None:
+        diagnostics.append(
+            Diagnostic(
+                code="display_title_missing",
+                severity="error",
+                concept="Structured Research Payload",
+                path=payload_file,
+                field="title",
+                message="Structured research record payloads require a non-empty title.",
+            )
+        )
+    if summary is None:
+        diagnostics.append(
+            Diagnostic(
+                code="display_summary_missing",
+                severity="error",
+                concept="Structured Research Payload",
+                path=payload_file,
+                field="summary",
+                message="Structured research record payloads require a non-empty summary.",
+            )
+        )
+    if title is not None and summary is not None and title.strip() == summary.strip():
+        diagnostics.append(
+            Diagnostic(
+                code="display_fields_duplicate",
+                severity="warning",
+                concept="Structured Research Payload",
+                path=payload_file,
+                field="summary",
+                message="Structured research record payload title and summary are identical.",
+            )
+        )
+    return diagnostics
+
+
+def _unsupported_structured_format_diagnostics(request: ResearchRecordRequest) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for field, value in (
+        ("format_profile_ref", request.format_profile_ref),
+        ("schema_ref", request.schema_ref),
+        ("template_ref", request.template_ref),
+    ):
+        if is_unsupported_deepsci_v1_ref(value):
+            diagnostics.append(
+                Diagnostic(
+                    code="structured_record_v1_unsupported",
+                    severity="error",
+                    concept="Structured Research Payload",
+                    field=field,
+                    message="DeepSci structured-record.v1 refs are unsupported for new writes; use the supported v2 profile or schema.",
+                    hint="Legacy v1 data may be read only by validation, repair, or migration code.",
+                )
+            )
+    return diagnostics
 
 
 def _snapshot_plain_format_inputs(
@@ -1884,15 +2001,17 @@ def _store_request_ideas(
     if request.primary_idea:
         item = request.primary_idea
         idea_id = _optional_metadata_string(item.get("idea_id") or item.get("id"))
-        title = _optional_metadata_string(item.get("title") or item.get("one_liner") or item.get("summary"))
-        if idea_id is None or title is None:
-            raise ResearchRecordError("primary-idea-json must include idea_id and title or one_liner.", code="invalid_primary_idea")
+        title = _optional_metadata_string(item.get("title"))
+        summary = _optional_metadata_string(item.get("summary"))
+        if idea_id is None or title is None or summary is None:
+            raise ResearchRecordError("primary-idea-json must include idea_id, title, and summary.", code="invalid_primary_idea")
         existing = runtime_store.get_research_idea(idea_id, topic_workspace_id=context.topic_workspace_id)
         idea = _idea_record(
             context,
             idea_id=idea_id,
+            display_key=_optional_metadata_string(item.get("display_key")) or (existing.display_key if existing is not None and existing.display_key is not None else runtime_store.next_research_idea_display_key(context.topic_workspace_id)),
             title=title,
-            one_liner=_optional_metadata_string(item.get("one_liner") or item.get("summary")),
+            summary=summary,
             family=_optional_metadata_string(item.get("family")),
             status=_optional_metadata_string(item.get("status")) or "candidate",
             visibility=_optional_metadata_string(item.get("visibility")) or "primary",
@@ -1970,8 +2089,9 @@ def _idea_record(
     context: EffectiveTopicContext,
     *,
     idea_id: str,
+    display_key: str | None = None,
     title: str,
-    one_liner: str | None,
+    summary: str,
     family: str | None,
     status: str,
     visibility: str,
@@ -1988,8 +2108,9 @@ def _idea_record(
         research_topic_id=context.research_topic.id,
         topic_workspace_id=context.topic_workspace_id,
         idea_id=idea_id,
+        display_key=display_key,
         title=title,
-        one_liner=one_liner,
+        summary=summary,
         family=family,
         status=status,
         visibility=visibility,
@@ -2157,8 +2278,9 @@ def _idea_import_plan_from_fragments(
     plan: list[dict[str, object]] = []
     for fragment in fragments:
         item_map = dict(fragment.source_json)
-        title = _optional_metadata_string(item_map.get("title") or item_map.get("one_liner") or item_map.get("summary") or item_map.get("idea") or item_map.get("text") or item_map.get("hypothesis"))
-        if title is None:
+        title = _optional_metadata_string(item_map.get("title"))
+        summary = _optional_metadata_string(item_map.get("summary"))
+        if title is None or summary is None:
             continue
         source_id = _optional_metadata_string(item_map.get("idea_id") or item_map.get("id") or item_map.get("label") or item_map.get("candidate_id"))
         idea_id = _optional_metadata_string(item_map.get("canonical_idea_id")) or f"idea-{_slug(source_id or title)}"
@@ -2166,8 +2288,9 @@ def _idea_import_plan_from_fragments(
         plan.append(
             {
                 "idea_id": idea_id,
+                "display_key": _optional_metadata_string(item_map.get("display_key")),
                 "title": title,
-                "one_liner": title,
+                "summary": summary,
                 "family": family,
                 "status": _optional_metadata_string(item_map.get("status")) or ("selected" if "selected" in fragment.source_json_path else "candidate"),
                 "visibility": _optional_metadata_string(item_map.get("visibility")) or "primary",
@@ -2183,16 +2306,63 @@ def _idea_import_plan_from_fragments(
 
 def _idea_repair_plan(context: EffectiveTopicContext, runtime_store: WorkspaceRuntimeStore) -> list[dict[str, object]]:
     plan: list[dict[str, object]] = []
+    next_display_key = runtime_store.next_research_idea_display_key(context.topic_workspace_id)
+    next_match = re.fullmatch(r"I-(?P<number>[1-9][0-9]*)", next_display_key)
+    next_number = int(next_match.group("number")) if next_match else 1
+    ideas = runtime_store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, include_archived=True)
+    allocated_keys = _allocated_display_keys(runtime_store, context.topic_workspace_id)
+    occupied_targets = {key: idea.idea_id for idea in ideas for key in [idea.display_key] if key}
+    planned_targets: dict[str, str] = {}
+    for idea in ideas:
+        display_key = (idea.display_key or "").strip()
+        old_match = re.fullmatch(r"I(?P<number>[1-9][0-9]*)", display_key)
+        if old_match:
+            target = f"I-{old_match.group('number')}"
+            diagnostics: list[dict[str, object]] = []
+            collision_idea = occupied_targets.get(target)
+            collision_plan = planned_targets.get(target)
+            if collision_idea is not None and collision_idea != idea.idea_id:
+                diagnostics.append(_display_key_migration_collision(idea.idea_id, display_key, target, "research_ideas", collision_idea))
+            if target in allocated_keys and allocated_keys[target] != idea.idea_id:
+                diagnostics.append(_display_key_migration_collision(idea.idea_id, display_key, target, "research_idea_display_keys", allocated_keys[target]))
+            if collision_plan is not None and collision_plan != idea.idea_id:
+                diagnostics.append(_display_key_migration_collision(idea.idea_id, display_key, target, "repair_plan", collision_plan))
+            planned_targets[target] = idea.idea_id
+            plan.append(
+                {
+                    "action": "migrate_display_key",
+                    "idea_id": idea.idea_id,
+                    "previous_display_key": display_key,
+                    "display_key": target,
+                    "visibility": idea.visibility,
+                    "status": idea.status,
+                    "diagnostics": diagnostics,
+                }
+            )
+            continue
+        if display_key:
+            continue
+        assigned = f"I-{next_number}"
+        next_number += 1
+        plan.append(
+            {
+                "action": "assign_display_key",
+                "idea_id": idea.idea_id,
+                "display_key": assigned,
+                "visibility": idea.visibility,
+                "status": idea.status,
+            }
+        )
     for realization in runtime_store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id):
-        idea = runtime_store.get_research_idea(realization.idea_id, topic_workspace_id=context.topic_workspace_id)
+        lineage_idea = runtime_store.get_research_idea(realization.idea_id, topic_workspace_id=context.topic_workspace_id)
         structured = runtime_store.get_structured_payload(realization.record_id)
-        if idea is None or structured is None:
+        if lineage_idea is None or structured is None:
             continue
         resolution = resolve_structured_source_fragment(
             context,
             structured,
             realization.source_json_path,
-            idea_id=idea.idea_id,
+            idea_id=lineage_idea.idea_id,
             record_id=realization.record_id,
             severity="warning",
         )
@@ -2202,13 +2372,13 @@ def _idea_repair_plan(context: EffectiveTopicContext, runtime_store: WorkspaceRu
         if not isinstance(payload, Mapping):
             continue
         fragments, _ = profile_idea_entry_fragments(payload, structured.format_profile_ref, record_id=realization.record_id)
-        match = _matching_fragment_for_idea(idea, fragments)
+        match = _matching_fragment_for_idea(lineage_idea, fragments)
         if match is None:
             continue
         plan.append(
             {
                 "action": "update_realization_source_path",
-                "idea_id": idea.idea_id,
+                "idea_id": lineage_idea.idea_id,
                 "realization_id": realization.id,
                 "record_id": realization.record_id,
                 "previous_source_json_path": realization.source_json_path,
@@ -2219,6 +2389,43 @@ def _idea_repair_plan(context: EffectiveTopicContext, runtime_store: WorkspaceRu
     return plan
 
 
+def _allocated_display_keys(runtime_store: WorkspaceRuntimeStore, topic_workspace_id: str) -> dict[str, str]:
+    if not runtime_store.connection.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'research_idea_display_keys'"
+    ).fetchone():
+        return {}
+    rows = runtime_store.connection.execute(
+        "SELECT display_key, idea_id FROM research_idea_display_keys WHERE topic_workspace_id = ?",
+        (topic_workspace_id,),
+    )
+    return {str(row["display_key"]): str(row["idea_id"]) for row in rows}
+
+
+def _dict_list(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    return [dict(item) for item in value if isinstance(item, Mapping)]
+
+
+def _display_key_migration_collision(
+    idea_id: str,
+    previous_display_key: str,
+    display_key: str,
+    collision_source: str,
+    collision_ref: str,
+) -> dict[str, object]:
+    return {
+        "severity": "error",
+        "code": "idea_display_key_migration_collision",
+        "message": f"Cannot migrate Research Idea display key {previous_display_key} to {display_key}; target is already allocated.",
+        "idea_id": idea_id,
+        "previous_display_key": previous_display_key,
+        "display_key": display_key,
+        "collision_source": collision_source,
+        "collision_ref": collision_ref,
+    }
+
+
 def _matching_fragment_for_idea(idea: ResearchIdea, fragments: list[IdeaEntryFragment]) -> IdeaEntryFragment | None:
     known = {idea.idea_id, *idea.aliases}
     for fragment in fragments:
@@ -2226,7 +2433,7 @@ def _matching_fragment_for_idea(idea: ResearchIdea, fragments: list[IdeaEntryFra
             return fragment
     normalized_title = _slug(idea.title)
     for fragment in fragments:
-        title = _optional_metadata_string(fragment.source_json.get("title") or fragment.source_json.get("one_liner") or fragment.source_json.get("summary"))
+        title = _optional_metadata_string(fragment.source_json.get("title"))
         if title is not None and _slug(title) == normalized_title:
             return fragment
     return None

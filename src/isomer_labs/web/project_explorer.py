@@ -13,7 +13,7 @@ from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, Sel
 from isomer_labs.project.context import resolve_effective_topic_context
 
 
-GRAPH_SCOPES = ("idea-lineage", "artifact-overview", "experiment-records", "paper-revisions")
+GRAPH_SCOPES = ("idea-lineage", "idea-timeline")
 
 
 class ProjectExplorerHost(Protocol):
@@ -272,11 +272,11 @@ class _ProjectExplorerReadModel:
                 openable_item_id=openable_item_id,
                 tab_id=f"topic-{topic_id}-graph-{graph_scope}",
                 item_kind="graph",
-                title=f"{_graph_scope_label(graph_scope)} Graph",
-                preferred_tab_component="ideaGraph" if graph_scope == "idea-lineage" else "denseGraph",
+                title=_graph_scope_label(graph_scope),
+                preferred_tab_component="ideaGraph" if graph_scope == "idea-lineage" else "ideaTimeline",
                 topic_id=topic_id,
                 graph_scope=graph_scope,
-                detail_urls={"graph": f"/api/topics/{topic_id}/graphs/{graph_scope}"},
+                detail_urls={"graph": f"/api/topics/{topic_id}/graphs/idea-lineage"},
                 diagnostics=diagnostics,
             )
 
@@ -600,10 +600,8 @@ def _diagnostics_json(diagnostics: list[Diagnostic]) -> list[dict[str, object]]:
 
 def _graph_scope_label(scope: str) -> str:
     return {
-        "idea-lineage": "Idea Lineage",
-        "artifact-overview": "Artifact Overview",
-        "experiment-records": "Experiment Records",
-        "paper-revisions": "Paper Revisions",
+        "idea-lineage": "Idea Graph",
+        "idea-timeline": "Idea Timeline",
     }.get(scope, scope)
 
 

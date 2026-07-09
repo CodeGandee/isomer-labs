@@ -9,6 +9,8 @@ description: Use when a production DeepSci Isomer research skill needs shared co
 
 Accepted durable outputs named by this skill are structured research records. When a placeholder output must be recorded, follow this skill's `placeholder-bindings.md`: draft the JSON payload, validate it, create or update the record with `--payload-file`; render Markdown later with `ext research records render` only when a human-readable view or explicit export is needed.
 
+Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
+
 Shared defines the coordination contract for production DeepSci research skills. It is not migrated from one upstream source skill; it exists to keep production DeepSci skill handoffs, route decisions, placeholder usage, and storage-binding cautions consistent across the refactor-migrated skills.
 
 ## Latest Context Preflight

@@ -4,6 +4,7 @@ import {
   IdeaDetailResponseSchema,
   OpenableItemDescriptorSchema,
   RecordsResponseSchema,
+  RecentErrorsResponseSchema,
   TopicChangeEventSchema,
   TopicGraphViewSchema,
   TopicOverviewResponseSchema,
@@ -112,6 +113,10 @@ export async function getTopicGraph(topicId: string, graphScope: GraphScope, ren
       })}`,
     ),
   );
+}
+
+export async function getRecentErrors(topicId: string, limit = 50) {
+  return RecentErrorsResponseSchema.parse(await fetchJson(`/api/topics/${encodeURIComponent(topicId)}/recent-errors${params({ limit })}`));
 }
 
 export async function getViewerDescriptor(topicId: string, recordId: string) {

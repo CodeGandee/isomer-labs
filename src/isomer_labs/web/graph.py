@@ -8,14 +8,12 @@ from typing import Any
 
 from isomer_labs.models import EffectiveTopicContext
 
-from .graph_edges import graph_edges as build_graph_edges
 from .graph_edges import idea_graph_edges
 from .idea_graph import canonical_idea_edges, canonical_idea_groups, canonical_idea_nodes
 
-GRAPH_SCOPES = {"idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"}
+GRAPH_SCOPES = {"idea-lineage"}
 RENDERERS = {"auto", "react-flow", "sigma"}
 SPARSE_GRAPH_LIMIT = 120
-DENSE_GRAPH_LIMIT = 1000
 
 
 def build_topic_graph_view(
@@ -60,48 +58,35 @@ def build_topic_graph_view(
     diagnostics = list(_rows(export_payload, "diagnostics"))
     projection_diagnostics: list[dict[str, Any]] = []
 
-    if graph_scope == "idea-lineage":
-        if canonical_ideas:
-            nodes, record_node_ids = canonical_idea_nodes(
-                canonical_ideas,
-                canonical_idea_realizations,
-                topic_id=context.research_topic.id,
-                include_secondary=include_secondary,
-            )
-        else:
-            projection_diagnostics.append(_diag("warning", "idea_graph_heuristic_fallback", "Canonical Research Ideas are absent; using extracted record idea facets as a heuristic graph."))
-            nodes, record_node_ids = _idea_nodes(
-                records,
-                ideas,
-                routes,
-                claims,
-                topic_id=context.research_topic.id,
-                include_secondary=include_secondary,
-            )
+    if canonical_ideas:
+        projection_diagnostics.extend(_idea_display_key_diagnostics(canonical_ideas))
+        nodes, record_node_ids = canonical_idea_nodes(
+            canonical_ideas,
+            canonical_idea_realizations,
+            topic_id=context.research_topic.id,
+            include_secondary=include_secondary,
+        )
     else:
-        scoped_records = _records_for_dense_scope(records, graph_scope)
-        nodes = [_record_node(record, graph_scope, topic_id=context.research_topic.id) for record in scoped_records]
-        record_node_ids = {str(record.get("record_id")): f"record:{record.get('record_id')}" for record in scoped_records if record.get("record_id")}
-        if include_secondary:
-            secondary_nodes, secondary_record_node_ids = _file_nodes(files, topic_id=context.research_topic.id)
-            nodes.extend(secondary_nodes)
-            record_node_ids.update(secondary_record_node_ids)
+        projection_diagnostics.append(_diag("warning", "idea_graph_heuristic_fallback", "Canonical Research Ideas are absent; using extracted record idea facets as a heuristic graph."))
+        nodes, record_node_ids = _idea_nodes(
+            records,
+            ideas,
+            routes,
+            claims,
+            topic_id=context.research_topic.id,
+            include_secondary=include_secondary,
+        )
 
-    if graph_scope == "idea-lineage":
-        if canonical_ideas:
-            graph_edges = canonical_idea_edges(canonical_idea_edge_rows, record_node_ids, relation_kind=relation_kind, diagnostics=projection_diagnostics)
-        else:
-            graph_edges = idea_graph_edges(
-                edges,
-                record_node_ids,
-                relation_kind=relation_kind,
-                include_secondary=include_secondary,
-                diagnostics=projection_diagnostics,
-            )
+    if canonical_ideas:
+        graph_edges = canonical_idea_edges(canonical_idea_edge_rows, record_node_ids, relation_kind=relation_kind, diagnostics=projection_diagnostics)
     else:
-        graph_edges = build_graph_edges(edges, record_node_ids, relation_kind=relation_kind, diagnostics=projection_diagnostics)
-    if include_secondary and graph_scope != "idea-lineage":
-        graph_edges.extend(_file_edges(files, record_node_ids))
+        graph_edges = idea_graph_edges(
+            edges,
+            record_node_ids,
+            relation_kind=relation_kind,
+            include_secondary=include_secondary,
+            diagnostics=projection_diagnostics,
+        )
 
     nodes = _filter_nodes(nodes, status=status, producer=producer, time_range=time_range, search=search)
     allowed_node_ids = {str(node["id"]) for node in nodes}
@@ -117,7 +102,7 @@ def build_topic_graph_view(
     })
 
     offset = _cursor_offset(cursor)
-    selected_limit = limit or (SPARSE_GRAPH_LIMIT if graph_scope == "idea-lineage" else DENSE_GRAPH_LIMIT)
+    selected_limit = limit or SPARSE_GRAPH_LIMIT
     total_nodes = len(nodes)
     truncated = offset > 0 or total_nodes > offset + selected_limit
     paged_nodes = nodes[offset : offset + selected_limit]
@@ -244,9 +229,8 @@ def _idea_nodes(
             record_id=record_id,
             material_kind="idea",
             density_class="sparse",
-            title=str(idea.get("one_liner") or record.get("title") or idea_id),
-            one_liner=idea.get("one_liner"),
-            summary=record.get("summary"),
+            title=str(idea.get("title") or record.get("title") or idea_id),
+            summary=idea.get("summary") or record.get("summary"),
             status=idea.get("status") or record.get("status"),
             selected=bool(idea.get("selected")),
             producer=record.get("producer"),
@@ -286,8 +270,7 @@ def _idea_nodes(
                     material_kind="decision",
                     density_class="sparse",
                     title=str(route.get("decision") or route.get("next_route") or "Route decision"),
-                    one_liner=route.get("reason"),
-                    summary=route.get("next_route"),
+                    summary=route.get("reason") or route.get("next_route"),
                     status=route.get("decision"),
                     selected=None,
                     producer=None,
@@ -313,8 +296,7 @@ def _idea_nodes(
                     material_kind="claim",
                     density_class="sparse",
                     title=str(claim.get("claim") or "Research claim"),
-                    one_liner=claim.get("verdict"),
-                    summary=claim.get("expected"),
+                    summary=claim.get("expected") or claim.get("verdict"),
                     status=claim.get("verdict"),
                     selected=None,
                     producer=None,
@@ -346,7 +328,6 @@ def _record_node(
         material_kind=material_kind or _material_kind(record, graph_scope),
         density_class=density_class or ("sparse" if graph_scope == "idea-lineage" else "dense"),
         title=str(record.get("title") or record_id),
-        one_liner=record.get("summary"),
         summary=record.get("summary"),
         status=record.get("status"),
         selected=None,
@@ -367,7 +348,6 @@ def _node(
     material_kind: str,
     density_class: str,
     title: str,
-    one_liner: Any,
     summary: Any,
     status: Any,
     selected: bool | None,
@@ -385,7 +365,6 @@ def _node(
         "material_kind": material_kind,
         "density_class": density_class,
         "title": title,
-        "one_liner": one_liner,
         "summary": summary,
         "status": status,
         "selected": selected,
@@ -406,21 +385,6 @@ def _node(
     }
 
 
-def _records_for_dense_scope(records: list[dict[str, Any]], graph_scope: str) -> list[dict[str, Any]]:
-    if graph_scope == "artifact-overview":
-        return records
-    keywords = {
-        "experiment-records": ("experiment", "run", "metric", "evidence", "result", "claim"),
-        "paper-revisions": ("paper", "revision", "draft", "manuscript", "pdf", "figure"),
-    }[graph_scope]
-    selected: list[dict[str, Any]] = []
-    for record in records:
-        haystack = " ".join(str(record.get(key) or "").lower() for key in ("record_kind", "profile", "profile_name", "title", "summary", "content_path", "payload_file_path"))
-        if any(keyword in haystack for keyword in keywords):
-            selected.append(record)
-    return selected
-
-
 def _file_nodes(files: list[dict[str, Any]], *, topic_id: str) -> tuple[list[dict[str, Any]], dict[str, str]]:
     nodes: list[dict[str, Any]] = []
     record_node_ids: dict[str, str] = {}
@@ -437,8 +401,7 @@ def _file_nodes(files: list[dict[str, Any]], *, topic_id: str) -> tuple[list[dic
                 material_kind="file",
                 density_class="dense",
                 title=str(file_row.get("semantic_label") or file_row.get("file_role") or file_row.get("path")),
-                one_liner=file_row.get("path"),
-                summary=file_row.get("media_type"),
+                summary=file_row.get("path") or file_row.get("media_type"),
                 status=file_row.get("status"),
                 selected=None,
                 producer=None,
@@ -526,8 +489,9 @@ def _node_haystack(node: Mapping[str, Any]) -> str:
     fields = [
         node.get("id"),
         node.get("record_id"),
+        node.get("idea_id"),
+        node.get("display_key"),
         node.get("title"),
-        node.get("one_liner"),
         node.get("summary"),
         node.get("status"),
         node.get("producer"),
@@ -535,6 +499,28 @@ def _node_haystack(node: Mapping[str, Any]) -> str:
         node.get("material_kind"),
     ]
     return " ".join(str(value).lower() for value in fields if value is not None)
+
+
+def _idea_display_key_diagnostics(ideas: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    diagnostics: list[dict[str, Any]] = []
+    for idea in ideas:
+        idea_id = str(idea.get("idea_id") or idea.get("id") or "").strip()
+        display_key = str(idea.get("display_key") or "").strip()
+        if not idea_id:
+            continue
+        if not display_key:
+            diagnostics.append(_diag("warning", "idea_display_key_missing", f"Research Idea has no GUI display key: {idea_id}", idea_id=idea_id))
+        elif display_key.startswith("I") and not display_key.startswith("I-"):
+            diagnostics.append(
+                _diag(
+                    "warning",
+                    "idea_display_key_legacy_format",
+                    f"Research Idea display key needs explicit migration: {display_key}",
+                    idea_id=idea_id,
+                    display_key=display_key,
+                )
+            )
+    return diagnostics
 
 
 def _groups(nodes: list[dict[str, Any]], graph_edges: list[dict[str, Any]], raw_edges: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -630,8 +616,6 @@ def _renderer_hint(graph_scope: str, node_count: int, renderer: str) -> str:
 
 
 def _material_kind(record: Mapping[str, Any], graph_scope: str) -> str:
-    if graph_scope == "paper-revisions":
-        return "paper_revision"
     kind = str(record.get("record_kind") or "")
     profile = str(record.get("profile") or record.get("profile_name") or "").lower()
     if "run" in kind or "experiment" in profile or "run" in profile:

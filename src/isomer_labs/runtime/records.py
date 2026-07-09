@@ -580,8 +580,9 @@ class ResearchIdea:
     research_topic_id: str
     topic_workspace_id: str
     idea_id: str
+    display_key: str | None
     title: str
-    one_liner: str | None
+    summary: str
     family: str | None
     status: str
     visibility: str
@@ -600,6 +601,7 @@ class ResearchIdea:
             "topic_workspace_id": self.topic_workspace_id,
             "idea_id": self.idea_id,
             "title": self.title,
+            "summary": self.summary,
             "status": self.status,
             "visibility": self.visibility,
             "aliases": self.aliases,
@@ -609,7 +611,7 @@ class ResearchIdea:
             "provenance_refs": self.provenance_refs,
         }
         for key, value in (
-            ("one_liner", self.one_liner),
+            ("display_key", self.display_key),
             ("family", self.family),
             ("source_record_id", self.source_record_id),
             ("source_json_path", self.source_json_path),

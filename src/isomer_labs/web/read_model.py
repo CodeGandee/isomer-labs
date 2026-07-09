@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 import os
 from pathlib import Path
@@ -40,6 +40,7 @@ from .contracts import (
 from .graph import build_topic_graph_view
 from .idea_detail import idea_detail_payload
 from .project_explorer import openable_item_descriptor_payload, project_explorer_payload
+from .recent_errors import RecentErrorBuffer
 
 TOPIC_OVERVIEW_LABEL = "topic.intent.overview"
 TOPIC_OVERVIEW_MAX_BYTES = 512 * 1024
@@ -64,6 +65,7 @@ class ProjectWebReadModel:
 
     project_root: Path
     env: Mapping[str, str] | None = None
+    _recent_errors: RecentErrorBuffer = field(default_factory=RecentErrorBuffer, init=False, repr=False, compare=False)
 
     @property
     def selected_env(self) -> Mapping[str, str]:
@@ -276,7 +278,7 @@ class ProjectWebReadModel:
         cursor: str | None = None,
         include_secondary: bool = False,
     ) -> dict[str, Any]:
-        return self._with_context(
+        payload = self._with_context(
             topic_id,
             lambda context: self._topic_graph_payload(
                 context,
@@ -292,6 +294,17 @@ class ProjectWebReadModel:
                 include_secondary=include_secondary,
             ),
         )
+        self._recent_errors.record_payload(topic_id, f"graph:{graph_scope}", payload)
+        return payload
+
+    def recent_errors(self, topic_id: str, *, limit: int = 50) -> dict[str, Any]:
+        return {
+            "ok": True,
+            "mutated": False,
+            "topic_id": topic_id,
+            "errors": self._recent_errors.query(topic_id=topic_id, limit=limit),
+            "diagnostics": [],
+        }
 
     def record_detail(self, topic_id: str, record_id: str, *, include_payload: bool) -> dict[str, Any]:
         return self._with_context(
@@ -644,7 +657,7 @@ class ProjectWebReadModel:
             "index_revision": export_payload.get("index_revision"),
             "changed_record_ids": [],
             "changed_material_kinds": [],
-            "graph_scopes": ["idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"],
+            "graph_scopes": ["idea-lineage", "idea-timeline"],
             "diagnostics_count": len(event_diagnostics),
             "occurred_at": datetime.now(UTC).isoformat(),
             "diagnostics": event_diagnostics,

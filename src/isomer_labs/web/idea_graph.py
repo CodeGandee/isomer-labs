@@ -32,15 +32,16 @@ def canonical_idea_nodes(
             node_id=node_id,
             record_id=record_id,
             title=str(idea.get("title") or idea_id),
-            one_liner=idea.get("one_liner"),
-            summary=idea.get("one_liner"),
+            summary=idea.get("summary"),
             status=idea.get("status"),
             selected=str(idea.get("status") or "") == "selected",
             created_at=idea.get("created_at"),
             updated_at=idea.get("updated_at"),
             source={
                 "idea_id": idea_id,
+                "display_key": idea.get("display_key"),
                 "aliases": idea.get("aliases") or [],
+                "family": idea.get("family"),
                 "source_record_id": idea.get("source_record_id"),
                 "source_json_path": idea.get("source_json_path"),
                 "realization_count": len(history),
@@ -55,6 +56,7 @@ def canonical_idea_nodes(
             },
         )
         node["idea_id"] = idea_id
+        node["display_key"] = idea.get("display_key")
         node["visibility"] = idea.get("visibility")
         node["realizations"] = history
         node["detail_refs"] = {
@@ -144,7 +146,6 @@ def _node(
     node_id: str,
     record_id: str,
     title: str,
-    one_liner: Any,
     summary: Any,
     status: Any,
     selected: bool | None,
@@ -160,7 +161,6 @@ def _node(
         "material_kind": "idea",
         "density_class": "sparse",
         "title": title,
-        "one_liner": one_liner,
         "summary": summary,
         "status": status,
         "selected": selected,

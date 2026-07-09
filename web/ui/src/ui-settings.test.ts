@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_HOVER_PREVIEW_DELAY_MS,
   MIN_HOVER_PREVIEW_DELAY_MS,
+  readStoredIdeaTimelinePrimaryColor,
+  readStoredIdeaTimelineRowColorsEnabled,
+  writeStoredIdeaTimelineRowColorsEnabled,
+  writeStoredIdeaTimelineSupportingColor,
   readStoredHoverPreviewDelayMs,
   writeStoredHoverPreviewDelayMs,
 } from "./ui-settings";
@@ -26,6 +30,26 @@ describe("GUI settings storage", () => {
     writeStoredHoverPreviewDelayMs(10, storage);
 
     expect(storage.setItem).toHaveBeenCalledWith("isomer-web-hover-preview-delay-ms", String(MIN_HOVER_PREVIEW_DELAY_MS));
+  });
+
+  it("defaults idea timeline row coloring off and stores the preference", () => {
+    const emptyStorage = storageWith(null);
+    expect(readStoredIdeaTimelineRowColorsEnabled(emptyStorage)).toBe(false);
+
+    const storage = storageWith("false");
+
+    expect(readStoredIdeaTimelineRowColorsEnabled(storage)).toBe(false);
+    writeStoredIdeaTimelineRowColorsEnabled(true, storage);
+    writeStoredIdeaTimelineSupportingColor("not-a-color", storage);
+
+    expect(storage.setItem).toHaveBeenCalledWith("isomer-web-idea-timeline-row-colors-enabled", "true");
+    expect(storage.setItem).toHaveBeenCalledWith("isomer-web-idea-timeline-supporting-color", "#fff7d6");
+  });
+
+  it("normalizes stored idea timeline colors", () => {
+    const storage = storageWith("#CCFFCC");
+
+    expect(readStoredIdeaTimelinePrimaryColor(storage)).toBe("#ccffcc");
   });
 });
 

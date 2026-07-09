@@ -300,9 +300,13 @@ def profile_idea_entry_fragments(
         if isinstance(section, list):
             for index, item in enumerate(section):
                 if isinstance(item, Mapping):
-                    fragments.append(IdeaEntryFragment(source_json_path=f"{section_path}[{index}]", source_json=dict(item)))
+                    fragment = IdeaEntryFragment(source_json_path=f"{section_path}[{index}]", source_json=dict(item))
+                    fragments.append(fragment)
+                    diagnostics.extend(idea_entry_display_diagnostics(fragment, record_id=record_id, format_profile_ref=format_profile_ref))
         elif isinstance(section, Mapping):
-            fragments.append(IdeaEntryFragment(source_json_path=section_path, source_json=dict(section)))
+            fragment = IdeaEntryFragment(source_json_path=section_path, source_json=dict(section))
+            fragments.append(fragment)
+            diagnostics.extend(idea_entry_display_diagnostics(fragment, record_id=record_id, format_profile_ref=format_profile_ref))
     if not fragments:
         diagnostics.append(
             _diag(
@@ -314,6 +318,65 @@ def profile_idea_entry_fragments(
             )
         )
     return fragments, diagnostics
+
+
+def idea_entry_display_diagnostics(
+    fragment: IdeaEntryFragment,
+    *,
+    record_id: str | None = None,
+    format_profile_ref: str | None = None,
+    severity: str = "warning",
+) -> list[dict[str, object]]:
+    """Report missing or duplicated canonical display fields for an idea entry."""
+
+    diagnostics: list[dict[str, object]] = []
+    title = _nonempty_string(fragment.source_json.get("title"))
+    summary = _nonempty_string(fragment.source_json.get("summary"))
+    if title is None:
+        diagnostics.append(
+            _diag(
+                severity,
+                "idea_entry_title_missing",
+                "Idea-bearing source fragment is missing required display field: title.",
+                record_id=record_id,
+                format_profile_ref=format_profile_ref,
+                source_json_path=fragment.source_json_path,
+            )
+        )
+    if summary is None:
+        diagnostics.append(
+            _diag(
+                severity,
+                "idea_entry_summary_missing",
+                "Idea-bearing source fragment is missing required display field: summary.",
+                record_id=record_id,
+                format_profile_ref=format_profile_ref,
+                source_json_path=fragment.source_json_path,
+            )
+        )
+    if title is not None and summary is not None and title.strip() == summary.strip():
+        diagnostics.append(
+            _diag(
+                "warning",
+                "idea_entry_display_fields_duplicate",
+                "Idea-bearing source fragment has identical title and summary.",
+                record_id=record_id,
+                format_profile_ref=format_profile_ref,
+                source_json_path=fragment.source_json_path,
+            )
+        )
+    if summary is None and _nonempty_string(fragment.source_json.get("one_liner")) is not None:
+        diagnostics.append(
+            _diag(
+                severity,
+                "idea_entry_legacy_one_liner",
+                "Idea-bearing source fragment uses legacy one_liner without canonical summary.",
+                record_id=record_id,
+                format_profile_ref=format_profile_ref,
+                source_json_path=fragment.source_json_path,
+            )
+        )
+    return diagnostics
 
 
 def legacy_idea_entry_fragments(payload: Mapping[str, object]) -> list[IdeaEntryFragment]:
@@ -364,9 +427,15 @@ def _profile_key(format_profile_ref: str | None) -> str | None:
         suffix = format_profile_ref.split("profile/", 1)[1]
     else:
         suffix = format_profile_ref
-    if suffix.endswith("/v1"):
+    if suffix.endswith("/v1") or suffix.endswith("/v2"):
         suffix = suffix[:-3]
     return suffix
+
+
+def _nonempty_string(value: object) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    return value
 
 
 def _is_context_path(format_profile_ref: str | None, source_json_path: str) -> bool:

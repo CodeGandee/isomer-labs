@@ -1,0 +1,23 @@
+# {{ payload.title }}
+
+{{ payload.summary }}
+
+{% if payload.status is defined %}
+Status: `{{ payload.status }}`
+{% endif %}
+
+{% if payload.sections is defined %}
+## Sections
+
+{% for key, value in payload.sections.items() -%}
+- `{{ key }}`: {{ value | string | truncate(240) }}
+{% endfor %}
+{% endif %}
+
+## Payload Fields
+
+{% for key, value in payload.items() -%}
+{% if key not in ["title", "summary", "sections"] -%}
+- `{{ key }}`: {{ value | string | truncate(240) }}
+{% endif -%}
+{% endfor %}

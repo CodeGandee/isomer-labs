@@ -162,7 +162,8 @@ class ProjectWebGuiTests(unittest.TestCase):
                 "raw_ideas": [
                     {
                         "idea_id": idea_id,
-                        "one_liner": idea_text,
+                        "title": idea_text,
+                        "summary": f"Summary for {idea_text}",
                         "status": "active",
                     }
                 ]
@@ -205,6 +206,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         *,
         idea_id: str,
         title: str,
+        summary: str | None = None,
         record_id: str | None = None,
         source_json_path: str | None = None,
     ) -> None:
@@ -222,6 +224,8 @@ class ProjectWebGuiTests(unittest.TestCase):
             idea_id,
             "--title",
             title,
+            "--summary",
+            summary or f"Summary for {title}",
             "--status",
             "candidate",
         ]
@@ -427,8 +431,8 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("$.sections.raw_ideas[0]", detail["source_provenance"]["source_json_path"])
         self.assertEqual("exact", detail["source_provenance"]["source_fragment_status"])
         self.assertEqual("canonical_idea_source", detail["source_provenance"]["source_classification"])
-        self.assertEqual("Source path idea", detail["idea_content"]["one_liner"])
-        self.assertEqual("Source path idea", detail["source"]["source_json"]["one_liner"])
+        self.assertEqual("Summary for Source path idea", detail["idea_content"]["summary"])
+        self.assertEqual("Summary for Source path idea", detail["source"]["source_json"]["summary"])
         self.assertEqual(before_mtime, db_path.stat().st_mtime_ns)
 
         descriptor = read_model.openable_item_descriptor("idea:alpha:idea-source")
@@ -443,7 +447,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         route_payload = json.loads(body)
         validate_gui_payload(route_payload, IdeaDetailResponseContract)
         self.assertTrue(route_payload["ok"], route_payload)
-        self.assertEqual("Source path idea", route_payload["idea_content"]["one_liner"])
+        self.assertEqual("Summary for Source path idea", route_payload["idea_content"]["summary"])
         self.assertEqual("idea-source", route_payload["source_provenance"]["source_record_id"])
 
         with sqlite3.connect(db_path) as connection:
@@ -476,7 +480,8 @@ class ProjectWebGuiTests(unittest.TestCase):
                         "raw_ideas": [
                             {
                                 "idea_id": "large-source",
-                                "one_liner": "Large source idea",
+                                "title": "Large source idea",
+                                "summary": "Summary for Large source idea",
                                 "large_blob": "x" * (1024 * 1024 + 64),
                             }
                         ]
@@ -614,9 +619,13 @@ class ProjectWebGuiTests(unittest.TestCase):
 
         dense = read_model.topic_graph("alpha", graph_scope="artifact-overview", renderer="sigma", include_secondary=True)
         validate_gui_payload(dense, TopicGraphResponseContract)
-        self.assertTrue(dense["ok"], dense)
-        self.assertEqual("sigma-overview", dense["renderer_hint"])
+        self.assertFalse(dense["ok"], dense)
+        self.assertEqual("unsupported_graph_scope", dense["error"]["code"])
         self.assertFalse(dense["mutated"])
+        recent_errors = read_model.recent_errors("alpha")
+        self.assertFalse(recent_errors["mutated"])
+        self.assertEqual("unsupported_graph_scope", recent_errors["errors"][0]["code"])
+        self.assertEqual("graph:artifact-overview", recent_errors["errors"][0]["source_view"])
 
         invalid = read_model.topic_graph("alpha", graph_scope="unknown")
         validate_gui_payload(invalid, TopicGraphResponseContract)
@@ -672,6 +681,8 @@ class ProjectWebGuiTests(unittest.TestCase):
                 "idea-parent",
                 "--title",
                 "Canonical parent",
+                "--summary",
+                "Canonical parent summary.",
                 "--status",
                 "candidate",
                 "--source-record-id",
@@ -692,6 +703,8 @@ class ProjectWebGuiTests(unittest.TestCase):
                 "idea-child",
                 "--title",
                 "Canonical child",
+                "--summary",
+                "Canonical child summary.",
                 "--status",
                 "selected",
                 "--alias",
@@ -741,8 +754,15 @@ class ProjectWebGuiTests(unittest.TestCase):
         graph = read_model.topic_graph("alpha", graph_scope="idea-lineage", renderer="auto")
         self.assertTrue(graph["ok"], graph)
         self.assertEqual({"idea:idea-parent", "idea:idea-child"}, {node["id"] for node in graph["nodes"]})
+        self.assertEqual({"I-1", "I-2"}, {node["display_key"] for node in graph["nodes"]})
         self.assertEqual(["derived_from"], [edge["relation_kind"] for edge in graph["edges"]])
         self.assertFalse(any(item["code"] == "idea_graph_heuristic_fallback" for item in graph["diagnostics"]))
+
+        db_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(db_path) as connection:
+            connection.execute("UPDATE research_ideas SET display_key = ? WHERE idea_id = ?", ("I1", "idea-parent"))
+        legacy_graph = read_model.topic_graph("alpha", graph_scope="idea-lineage", renderer="auto")
+        self.assertTrue(any(item["code"] == "idea_display_key_legacy_format" and item["display_key"] == "I1" for item in legacy_graph["diagnostics"]))
 
     def test_file_backed_record_content_opens_through_semantic_record_descriptor(self) -> None:
         root = self.make_project()

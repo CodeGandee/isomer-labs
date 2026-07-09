@@ -12,7 +12,7 @@ from isomer_labs.artifact_formats import (
     validate_format_ref,
     validate_payload,
 )
-from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
+from isomer_labs.deepsci_ext.record_formats import canonical_record_format_ref, register_deepsci_record_format_provider
 
 
 PROFILE_REF = "isomer:test/record-format/profile/run/main-run-record/v1"
@@ -101,6 +101,50 @@ class ArtifactFormatApiTests(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertEqual("error", result.status)
         self.assertEqual("ISO205", result.diagnostics[0].code)
+
+    def test_deepsci_structured_v2_requires_title_and_summary(self) -> None:
+        registry = ArtifactFormatRegistry()
+        register_deepsci_record_format_provider(registry)
+        profile_ref = canonical_record_format_ref("report.raw-idea-slate", "profile")
+
+        valid = validate_payload({"title": "Raw ideas", "summary": "Candidate idea slate."}, registry=registry, format_profile_ref=profile_ref)
+        self.assertTrue(valid.ok, [diagnostic.message for diagnostic in valid.diagnostics])
+        self.assertEqual(canonical_record_format_ref("report.raw-idea-slate", "schema"), valid.schema_ref)
+        self.assertTrue(profile_ref.endswith("/v2"))
+
+        missing_summary = validate_payload({"title": "Raw ideas"}, registry=registry, format_profile_ref=profile_ref)
+        self.assertFalse(missing_summary.ok)
+        self.assertEqual("invalid", missing_summary.status)
+        self.assertTrue(any("summary" in diagnostic.message for diagnostic in missing_summary.diagnostics))
+
+        empty_summary = validate_payload({"title": "Raw ideas", "summary": "   "}, registry=registry, format_profile_ref=profile_ref)
+        self.assertFalse(empty_summary.ok)
+        self.assertEqual("invalid", empty_summary.status)
+
+    def test_deepsci_structured_v2_template_renders_summary(self) -> None:
+        registry = ArtifactFormatRegistry()
+        register_deepsci_record_format_provider(registry)
+        rendered = render_artifact(
+            {"title": "Raw ideas", "summary": "Candidate idea slate."},
+            registry=registry,
+            format_profile_ref=canonical_record_format_ref("report.raw-idea-slate", "profile"),
+        )
+        self.assertTrue(rendered.ok, [diagnostic.message for diagnostic in rendered.diagnostics])
+        self.assertIn("Raw ideas", str(rendered.content))
+        self.assertIn("Candidate idea slate.", str(rendered.content))
+
+    def test_deepsci_structured_v1_resolves_as_legacy_unsupported(self) -> None:
+        registry = ArtifactFormatRegistry()
+        register_deepsci_record_format_provider(registry)
+        resolver = ArtifactFormatResolver(registry)
+        profile_ref = canonical_record_format_ref("report.raw-idea-slate", "profile", version="v1")
+
+        profile, _resolution, diagnostics = resolver.resolve_profile(profile_ref)
+        self.assertEqual([], diagnostics)
+        self.assertIsNotNone(profile)
+        assert profile is not None
+        self.assertEqual("legacy_unsupported", profile.status)
+        self.assertEqual("v1", profile.compatibility_version)
 
     def test_topic_reset_profiles_resolve_validate_and_render(self) -> None:
         registry = ArtifactFormatRegistry()

@@ -11,9 +11,13 @@ from isomer_labs.artifact_formats.registry import ArtifactFormatRegistry, defaul
 
 
 CATALOG_RESOURCE = "assets/record_formats/profiles/catalog.v1.json"
-SCHEMA_RESOURCE = "assets/record_formats/schemas/structured-record.v1.schema.json"
-TEMPLATE_RESOURCE = "assets/record_formats/templates/markdown/structured-record.v1.md.j2"
+SCHEMA_RESOURCE_V1 = "assets/record_formats/schemas/structured-record.v1.schema.json"
+SCHEMA_RESOURCE_V2 = "assets/record_formats/schemas/structured-record.v2.schema.json"
+TEMPLATE_RESOURCE_V1 = "assets/record_formats/templates/markdown/structured-record.v1.md.j2"
+TEMPLATE_RESOURCE_V2 = "assets/record_formats/templates/markdown/structured-record.v2.md.j2"
 PROVIDER_ID = "isomer.deepsci.record-formats"
+SUPPORTED_STRUCTURED_RECORD_VERSION = "v2"
+UNSUPPORTED_STRUCTURED_RECORD_VERSION = "v1"
 PROFILE_ASSETS = {
     "control.topic-reset-checkpoint": (
         "assets/record_formats/schemas/topic-reset-checkpoint.v1.schema.json",
@@ -37,38 +41,60 @@ class DeepScientistRecordFormatProvider:
     provider_id: str = PROVIDER_ID
 
     def resolve_profile(self, ref: str) -> ArtifactFormatResolution | None:
-        legacy_profile = legacy_profile_from_ref(ref, expected_kind="profile")
-        if legacy_profile is None or legacy_profile not in active_profile_names():
+        parsed = parse_record_format_ref(ref, expected_kind="profile")
+        if parsed is None:
+            return None
+        legacy_profile, version = parsed
+        if legacy_profile not in active_profile_names():
+            return None
+        if legacy_profile in PROFILE_ASSETS and version != "v1":
+            return None
+        if legacy_profile not in PROFILE_ASSETS and version not in {"v1", "v2"}:
             return None
         profile = {
-            "schema_ref": canonical_record_format_ref(legacy_profile, "schema"),
+            "schema_ref": canonical_record_format_ref(legacy_profile, "schema", version=version),
             "templates": {
-                "markdown": canonical_record_format_ref(legacy_profile, "template"),
+                "markdown": canonical_record_format_ref(legacy_profile, "template", version=version),
             },
             "media_type": "application/json",
-            "schema_version": "topic-reset.v1" if legacy_profile in PROFILE_ASSETS else "deepsci-structured-record.v1",
-            "compatibility_version": "v1",
-            "status": "active",
+            "schema_version": "topic-reset.v1" if legacy_profile in PROFILE_ASSETS else f"deepsci-structured-record.{version}",
+            "compatibility_version": version,
+            "status": "active" if version == "v2" or legacy_profile in PROFILE_ASSETS else "legacy_unsupported",
             "metadata": {
                 "provider": "deepsci",
                 "legacy_profile": legacy_profile,
+                "record_format_version": version,
             },
         }
         content = json.dumps(profile, indent=2, sort_keys=True)
         return _resolution(ref, "profile", content)
 
     def resolve_schema(self, ref: str) -> ArtifactFormatResolution | None:
-        legacy_profile = legacy_profile_from_ref(ref, expected_kind="schema")
-        if legacy_profile is None or legacy_profile not in active_profile_names():
+        parsed = parse_record_format_ref(ref, expected_kind="schema")
+        if parsed is None:
             return None
-        resource = PROFILE_ASSETS.get(legacy_profile, (SCHEMA_RESOURCE, TEMPLATE_RESOURCE))[0]
+        legacy_profile, version = parsed
+        if legacy_profile not in active_profile_names():
+            return None
+        if legacy_profile in PROFILE_ASSETS and version != "v1":
+            return None
+        if legacy_profile not in PROFILE_ASSETS and version not in {"v1", "v2"}:
+            return None
+        resource = PROFILE_ASSETS.get(legacy_profile, _shared_resources(version))[0]
         return _resolution(ref, "schema", _resource_text(resource), media_type="application/schema+json")
 
     def resolve_template(self, ref: str) -> ArtifactFormatResolution | None:
-        legacy_profile = legacy_profile_from_ref(ref, expected_kind="template")
-        if legacy_profile is None or legacy_profile not in active_profile_names():
+        parsed = parse_record_format_ref(ref, expected_kind="template")
+        if parsed is None:
             return None
-        resource = PROFILE_ASSETS.get(legacy_profile, (SCHEMA_RESOURCE, TEMPLATE_RESOURCE))[1]
+        legacy_profile, version = parsed
+        if legacy_profile not in active_profile_names():
+            return None
+        if legacy_profile in PROFILE_ASSETS and version != "v1":
+            return None
+        if legacy_profile not in PROFILE_ASSETS and version not in {"v1", "v2"}:
+            return None
+        resource = PROFILE_ASSETS.get(legacy_profile, _shared_resources(version))[1]
         return _resolution(ref, "template", _resource_text(resource), media_type="text/markdown")
 
 
@@ -95,32 +121,62 @@ def active_deepsci_binding_profile_names() -> tuple[str, ...]:
     return tuple(profile for profile in active_profile_names() if profile not in PROFILE_ASSETS)
 
 
-def canonical_record_format_ref(legacy_profile: str, kind: str) -> str:
+def canonical_record_format_ref(legacy_profile: str, kind: str, *, version: str | None = None) -> str:
     """Convert a legacy binding profile name to a canonical DeepScientist ref."""
 
     parts = [part for part in legacy_profile.split(".") if part]
     if not parts:
         raise ValueError("DeepScientist legacy profile name is required.")
+    selected_version = version or ("v1" if legacy_profile in PROFILE_ASSETS else SUPPORTED_STRUCTURED_RECORD_VERSION)
     if kind == "template":
-        return f"isomer:deepsci/record-format/template/markdown/{'/'.join(parts)}/v1"
+        return f"isomer:deepsci/record-format/template/markdown/{'/'.join(parts)}/{selected_version}"
     if kind in {"profile", "schema"}:
-        return f"isomer:deepsci/record-format/{kind}/{'/'.join(parts)}/v1"
+        return f"isomer:deepsci/record-format/{kind}/{'/'.join(parts)}/{selected_version}"
     raise ValueError(f"Unsupported DeepScientist record-format ref kind: {kind}")
 
 
 def legacy_profile_from_ref(ref: str, *, expected_kind: str) -> str | None:
+    parsed = parse_record_format_ref(ref, expected_kind=expected_kind)
+    return parsed[0] if parsed is not None else None
+
+
+def parse_record_format_ref(ref: str, *, expected_kind: str) -> tuple[str, str] | None:
     prefix = "isomer:deepsci/record-format/"
     if not ref.startswith(prefix):
         return None
     tail = ref[len(prefix):]
     parts = tail.split("/")
     if expected_kind == "template":
-        if len(parts) < 5 or parts[0] != "template" or parts[1] != "markdown" or parts[-1] != "v1":
+        if len(parts) < 5 or parts[0] != "template" or parts[1] != "markdown" or not _version_tail(parts[-1]):
             return None
-        return ".".join(parts[2:-1])
-    if len(parts) < 4 or parts[0] != expected_kind or parts[-1] != "v1":
+        return ".".join(parts[2:-1]), parts[-1]
+    if len(parts) < 4 or parts[0] != expected_kind or not _version_tail(parts[-1]):
         return None
-    return ".".join(parts[1:-1])
+    return ".".join(parts[1:-1]), parts[-1]
+
+
+def is_unsupported_deepsci_v1_ref(ref: str | None) -> bool:
+    """Return whether a ref names an unsupported generic DeepSci v1 structured record."""
+
+    if not ref:
+        return False
+    for kind in ("profile", "schema", "template"):
+        parsed = parse_record_format_ref(ref, expected_kind=kind)
+        if parsed is None:
+            continue
+        legacy_profile, version = parsed
+        return version == UNSUPPORTED_STRUCTURED_RECORD_VERSION and legacy_profile not in PROFILE_ASSETS
+    return False
+
+
+def _shared_resources(version: str) -> tuple[str, str]:
+    if version == "v2":
+        return SCHEMA_RESOURCE_V2, TEMPLATE_RESOURCE_V2
+    return SCHEMA_RESOURCE_V1, TEMPLATE_RESOURCE_V1
+
+
+def _version_tail(value: str) -> bool:
+    return value in {"v1", "v2"}
 
 
 def _resolution(

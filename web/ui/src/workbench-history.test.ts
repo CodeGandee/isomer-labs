@@ -14,17 +14,17 @@ describe("workbench history helpers", () => {
   });
 
   it("reads and writes bookmarkable workbench query state", () => {
-    const state = readWorkbenchSearch("?topic=alpha&graph=artifact-overview&open=topic:alpha:records");
+    const state = readWorkbenchSearch("?topic=alpha&graph=idea-timeline&open=topic:alpha:graph:idea-timeline");
     expect(state).toEqual({
       topicId: "alpha",
-      graphScope: "artifact-overview",
-      openItemId: "topic:alpha:records",
+      graphScope: "idea-timeline",
+      openItemId: "topic:alpha:graph:idea-timeline",
     });
-    expect(workbenchUrlForState(state)).toBe("/?topic=alpha&graph=artifact-overview&open=topic%3Aalpha%3Arecords");
+    expect(workbenchUrlForState(state)).toBe("/?topic=alpha&graph=idea-timeline&open=topic%3Aalpha%3Agraph%3Aidea-timeline");
   });
 
   it("falls back to idea-lineage for invalid graph scopes", () => {
-    expect(readWorkbenchSearch("?topic=alpha&graph=nope")).toEqual({
+    expect(readWorkbenchSearch("?topic=alpha&graph=artifact-overview")).toEqual({
       topicId: "alpha",
       graphScope: "idea-lineage",
       openItemId: undefined,
@@ -60,7 +60,7 @@ describe("workbench history helpers", () => {
     expect(window.location.search).toContain("open=topic%3Aalpha%3Arecords");
     expect(window.history.state).toEqual(pushed);
 
-    const silent = writeWorkbenchHistory({ topicId: "beta", graphScope: "paper-revisions" }, { mode: "silent", metadata: { navigationIndex: 3 } });
+    const silent = writeWorkbenchHistory({ topicId: "beta", graphScope: "idea-timeline" }, { mode: "silent", metadata: { navigationIndex: 3 } });
     expect(window.location.search).toContain("open=topic%3Aalpha%3Arecords");
     expect(window.history.state).toEqual(pushed);
     expect(silent.topicId).toBe("beta");

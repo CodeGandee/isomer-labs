@@ -21,7 +21,7 @@ export type WorkbenchHistoryMetadata = Partial<Omit<WorkbenchHistoryState, "kind
 export type UrlSyncMode = "push" | "replace" | "silent";
 
 export function isGraphScope(value: string | null | undefined): value is GraphScope {
-  return value === "idea-lineage" || value === "artifact-overview" || value === "experiment-records" || value === "paper-revisions";
+  return value === "idea-lineage" || value === "idea-timeline";
 }
 
 export function readWorkbenchSearch(search: string): WorkbenchSearchState {

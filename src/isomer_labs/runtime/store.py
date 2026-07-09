@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+import re
 import sqlite3
 from typing import Callable, Mapping
 
@@ -873,18 +874,21 @@ class WorkspaceRuntimeStore:
         if errors:
             codes = ", ".join(str(item.get("code") or "idea_error") for item in errors)
             raise ValueError(f"Invalid research idea {record.idea_id}: {codes}")
+        if record.display_key is not None:
+            self.reserve_research_idea_display_key(record)
         self.connection.execute(
             """
             INSERT INTO research_ideas
                 (
-                    id, research_topic_id, topic_workspace_id, idea_id, title, one_liner,
+                    id, research_topic_id, topic_workspace_id, idea_id, display_key, title, summary,
                     family, status, visibility, aliases_json, source_record_id, source_json_path,
                     metadata_json, created_at, updated_at, provenance_refs_json
                 )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(topic_workspace_id, idea_id) DO UPDATE SET
+                display_key = COALESCE(excluded.display_key, research_ideas.display_key),
                 title = excluded.title,
-                one_liner = excluded.one_liner,
+                summary = excluded.summary,
                 family = excluded.family,
                 status = excluded.status,
                 visibility = excluded.visibility,
@@ -900,8 +904,9 @@ class WorkspaceRuntimeStore:
                 record.research_topic_id,
                 record.topic_workspace_id,
                 record.idea_id,
+                record.display_key,
                 record.title,
-                record.one_liner,
+                record.summary,
                 record.family,
                 record.status,
                 record.visibility,
@@ -952,6 +957,71 @@ class WorkspaceRuntimeStore:
             query += " WHERE " + " AND ".join(clauses)
         query += " ORDER BY created_at, idea_id"
         return [_row_to_research_idea(row) for row in self.connection.execute(query, params)]
+
+    def next_research_idea_display_key(self, topic_workspace_id: str) -> str:
+        keys: list[str] = []
+        if _table_exists(self.connection, "research_ideas"):
+            keys.extend(
+                str(row["display_key"])
+                for row in self.connection.execute(
+                    "SELECT display_key FROM research_ideas WHERE topic_workspace_id = ? AND display_key IS NOT NULL",
+                    (topic_workspace_id,),
+                )
+            )
+        if _table_exists(self.connection, "research_idea_display_keys"):
+            keys.extend(
+                str(row["display_key"])
+                for row in self.connection.execute(
+                    "SELECT display_key FROM research_idea_display_keys WHERE topic_workspace_id = ?",
+                    (topic_workspace_id,),
+                )
+            )
+        largest = 0
+        for key in keys:
+            match = re.fullmatch(r"I-?([1-9][0-9]*)", key)
+            if match:
+                largest = max(largest, int(match.group(1)))
+        return f"I-{largest + 1}"
+
+    def reserve_research_idea_display_key(self, record: ResearchIdea) -> None:
+        if record.display_key is None:
+            return
+        if not _table_exists(self.connection, "research_idea_display_keys"):
+            return
+        existing = self.connection.execute(
+            """
+            SELECT idea_id FROM research_idea_display_keys
+            WHERE topic_workspace_id = ? AND display_key = ?
+            LIMIT 1
+            """,
+            (record.topic_workspace_id, record.display_key),
+        ).fetchone()
+        if existing is not None and str(existing["idea_id"]) != record.idea_id:
+            raise ValueError(f"Display key already allocated in Topic Workspace: {record.display_key}")
+        allocation_id = f"idea-display-key-{_slug(record.topic_workspace_id)}-{_slug(record.display_key)}"
+        self.connection.execute(
+            """
+            INSERT INTO research_idea_display_keys
+                (id, research_topic_id, topic_workspace_id, idea_id, display_key, status, created_at, updated_at, provenance_refs_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(topic_workspace_id, display_key) DO UPDATE SET
+                idea_id = excluded.idea_id,
+                status = excluded.status,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                allocation_id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.idea_id,
+                record.display_key,
+                "active",
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
 
     def upsert_research_idea_realization(self, record: ResearchIdeaRealization, *, validate: bool = True) -> None:
         diagnostics = self.validate_research_idea_realization(record) if validate else []
@@ -1176,6 +1246,16 @@ class WorkspaceRuntimeStore:
             diagnostics.append(_lineage_diag("error", "idea_status_unsupported", f"Unsupported idea status: {record.status}", idea_id=record.idea_id))
         if record.visibility not in RESEARCH_IDEA_VISIBILITIES:
             diagnostics.append(_lineage_diag("error", "idea_visibility_unsupported", f"Unsupported idea visibility: {record.visibility}", idea_id=record.idea_id))
+        if not record.title.strip():
+            diagnostics.append(_lineage_diag("error", "idea_title_missing", f"Research Idea has no title: {record.idea_id}", idea_id=record.idea_id))
+        if not record.summary.strip():
+            diagnostics.append(_lineage_diag("error", "idea_summary_missing", f"Research Idea has no summary: {record.idea_id}", idea_id=record.idea_id))
+        if record.title.strip() and record.summary.strip() and record.title.strip() == record.summary.strip():
+            diagnostics.append(_lineage_diag("warning", "idea_display_fields_duplicate", f"Research Idea title and summary are identical: {record.idea_id}", idea_id=record.idea_id))
+        if record.display_key is None or not record.display_key.strip():
+            diagnostics.append(_lineage_diag("warning", "idea_display_key_missing", f"Research Idea has no GUI display key: {record.idea_id}", idea_id=record.idea_id))
+        elif re.fullmatch(r"I-[1-9][0-9]*", record.display_key) is None:
+            diagnostics.append(_lineage_diag("error", "idea_display_key_invalid", f"Invalid Research Idea display key: {record.display_key}", idea_id=record.idea_id, display_key=record.display_key))
         if record.source_record_id is not None:
             source = self.get_lifecycle_record(record.source_record_id)
             if source is None:
@@ -1188,6 +1268,19 @@ class WorkspaceRuntimeStore:
         ).fetchone() if _table_exists(self.connection, "research_ideas") else None
         if existing is not None:
             diagnostics.append(_lineage_diag("error", "idea_id_duplicate", f"Duplicate canonical idea id: {record.idea_id}", idea_id=record.idea_id))
+        if record.display_key:
+            duplicate_key = self.connection.execute(
+                "SELECT id, idea_id FROM research_ideas WHERE topic_workspace_id = ? AND display_key = ? AND id != ? LIMIT 1",
+                (record.topic_workspace_id, record.display_key, record.id),
+            ).fetchone() if _table_exists(self.connection, "research_ideas") else None
+            if duplicate_key is not None:
+                diagnostics.append(_lineage_diag("error", "idea_display_key_duplicate", f"Duplicate Research Idea display key: {record.display_key}", idea_id=record.idea_id, display_key=record.display_key))
+            reserved_key = self.connection.execute(
+                "SELECT idea_id FROM research_idea_display_keys WHERE topic_workspace_id = ? AND display_key = ? LIMIT 1",
+                (record.topic_workspace_id, record.display_key),
+            ).fetchone() if _table_exists(self.connection, "research_idea_display_keys") else None
+            if reserved_key is not None and str(reserved_key["idea_id"]) != record.idea_id:
+                diagnostics.append(_lineage_diag("error", "idea_display_key_reserved", f"Research Idea display key is already allocated: {record.display_key}", idea_id=record.idea_id, display_key=record.display_key))
         return diagnostics
 
     def validate_research_idea_realization(self, record: ResearchIdeaRealization) -> list[dict[str, object]]:

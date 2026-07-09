@@ -13,7 +13,7 @@ export type WorkbenchCommand =
 export const workbenchCommands$ = new Subject<WorkbenchCommand>();
 export const manualRefresh$ = new Subject<{ topicId: string }>();
 
-const TOPIC_GRAPH_SCOPES: GraphScope[] = ["idea-lineage", "artifact-overview", "experiment-records", "paper-revisions"];
+const TOPIC_GRAPH_SCOPES: GraphScope[] = ["idea-lineage", "idea-timeline"];
 
 export type TopicInvalidationDecision = {
   invalidate: boolean;

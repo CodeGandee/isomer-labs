@@ -126,6 +126,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             Use this fixture for validator tests.
 
+            Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
+
             {shared_worker_policy}
 
             ## Workflow
@@ -268,11 +270,13 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext research records validate --topic <topic> --format-profile <format-profile-ref> --payload-file <payload-file>`, then create the record with `--payload-file <payload-file>`.
 
+            Every structured payload file must include non-empty top-level `title` and `summary` strings. If the payload contains idea-bearing entries that can become canonical Research Ideas, each accepted idea object must include its own non-empty `title` and `summary`.
+
             Use `isomer-cli --print-json ext research records show <record-id> --topic <topic> --include-payload` to inspect stored payload data. Render Markdown on demand with `isomer-cli --print-json ext research records render <record-id> --topic <topic>`; add `--output-file <path>` only for an explicit Markdown export.
 
             | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
             | --- | --- | --- | --- | --- | --- | --- |
-            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1 --payload-file <payload-file>` |
+            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2 --payload-file <payload-file>` |
             """,
         )
 
@@ -291,11 +295,13 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext research records validate --topic <topic> --format-profile <format-profile-ref> --payload-file <payload-file>`, then create the record with `--payload-file <payload-file>`.
 
+            Every structured payload file must include non-empty top-level `title` and `summary` strings. If the payload contains idea-bearing entries that can become canonical Research Ideas, each accepted idea object must include its own non-empty `title` and `summary`.
+
             Use `isomer-cli --print-json ext research records show <record-id> --topic <topic> --include-payload` to inspect stored payload data. Render Markdown on demand with `isomer-cli --print-json ext research records render <record-id> --topic <topic>`; add `--output-file <path>` only for an explicit Markdown export.
 
             | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
             | --- | --- | --- | --- | --- | --- | --- |
-            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --profile evidence.scout-context-brief --body-file <body-file>` |
+            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --profile evidence.scout-context-brief --body-file <body-file>` |
             """,
         )
 
@@ -315,11 +321,13 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             For structured rows, draft a JSON payload file, run `isomer-cli --print-json ext research records validate --topic <topic> --format-profile <format-profile-ref> --payload-file <payload-file>`, then create the record with `--payload-file <payload-file>`.
 
+            Every structured payload file must include non-empty top-level `title` and `summary` strings. If the payload contains idea-bearing entries that can become canonical Research Ideas, each accepted idea object must include its own non-empty `title` and `summary`.
+
             Use `isomer-cli --print-json ext research records show <record-id> --topic <topic> --include-payload` to inspect stored payload data. Render Markdown on demand with `isomer-cli --print-json ext research records render <record-id> --topic <topic>`; add `--output-file <path>` only for an explicit Markdown export.
 
             | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
             | --- | --- | --- | --- | --- | --- | --- |
-            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v1 --payload-file <payload-file> --render markdown --content-name scout-context-brief.md` |
+            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2 --payload-file <payload-file> --render markdown --content-name scout-context-brief.md` |
             """,
         )
 

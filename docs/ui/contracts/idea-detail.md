@@ -60,7 +60,7 @@ Extra fields are allowed. Agent-authored idea metadata may appear in `idea`, `id
   "outgoing_edges": [],
   "idea_content": {
     "title": "Launch-overhead correction",
-    "one_liner": "Separate host launch time from kernel runtime."
+    "summary": "Separate host launch time from kernel runtime."
   },
   "source": {
     "source_kind": "latest_realization_source_path",

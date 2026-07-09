@@ -90,6 +90,13 @@ def _table_exists(connection: sqlite3.Connection, table_name: str) -> bool:
     return table_name in _table_names(connection)
 
 
+def _column_names(connection: sqlite3.Connection, table_name: str) -> set[str]:
+    return {
+        row["name"] if isinstance(row, sqlite3.Row) else row[1]
+        for row in connection.execute(f"PRAGMA table_info({table_name})")
+    }
+
+
 def run_runtime_transaction(
     store: Any,
     callback: Callable[[Any], None],
@@ -228,6 +235,7 @@ LINEAGE_RUNTIME_SCHEMA_TABLES = (
     "research_record_generation_groups",
     "research_record_lineage_edges",
     "research_ideas",
+    "research_idea_display_keys",
     "research_idea_realizations",
     "research_idea_generation_groups",
     "research_idea_lineage_edges",
@@ -491,8 +499,9 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             research_topic_id TEXT NOT NULL,
             topic_workspace_id TEXT NOT NULL,
             idea_id TEXT NOT NULL,
+            display_key TEXT,
             title TEXT NOT NULL,
-            one_liner TEXT,
+            summary TEXT NOT NULL,
             family TEXT,
             status TEXT NOT NULL,
             visibility TEXT NOT NULL,
@@ -510,6 +519,23 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             ON research_ideas (research_topic_id, topic_workspace_id);
         CREATE INDEX IF NOT EXISTS idx_research_ideas_visibility
             ON research_ideas (topic_workspace_id, visibility, status);
+        CREATE TABLE IF NOT EXISTS research_idea_display_keys (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            idea_id TEXT NOT NULL,
+            display_key TEXT NOT NULL,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, display_key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_idea_display_keys_topic
+            ON research_idea_display_keys (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_display_keys_idea
+            ON research_idea_display_keys (topic_workspace_id, idea_id);
 
         CREATE TABLE IF NOT EXISTS research_idea_realizations (
             id TEXT PRIMARY KEY,
@@ -615,8 +641,9 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             topic_workspace_id TEXT NOT NULL,
             record_id TEXT NOT NULL,
             idea_id TEXT,
+            title TEXT,
             family TEXT,
-            one_liner TEXT,
+            summary TEXT,
             status TEXT,
             selected INTEGER NOT NULL,
             source_json_path TEXT,
@@ -1011,6 +1038,172 @@ def _create_schema(connection: sqlite3.Connection) -> None:
     _ensure_agent_workspace_metadata_columns(connection)
     _ensure_structured_payload_file_columns(connection)
     _ensure_record_index_payload_file_columns(connection)
+    _ensure_research_idea_summary_schema(connection)
+    _ensure_research_record_ideas_summary_schema(connection)
+    _ensure_research_idea_display_key_schema(connection)
+
+
+def _ensure_research_idea_summary_schema(connection: sqlite3.Connection) -> None:
+    if not _table_exists(connection, "research_ideas"):
+        return
+    columns = _column_names(connection, "research_ideas")
+    if "summary" in columns and "one_liner" not in columns:
+        return
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS research_ideas_summary_migration (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            idea_id TEXT NOT NULL,
+            display_key TEXT,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            family TEXT,
+            status TEXT NOT NULL,
+            visibility TEXT NOT NULL,
+            aliases_json TEXT NOT NULL,
+            source_record_id TEXT,
+            source_json_path TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, idea_id)
+        );
+        """
+    )
+    if "summary" in columns:
+        summary_expr = "NULLIF(TRIM(summary), '')"
+    elif "one_liner" in columns:
+        summary_expr = "NULLIF(TRIM(one_liner), '')"
+    else:
+        summary_expr = "NULL"
+    connection.execute(
+        f"""
+        INSERT OR REPLACE INTO research_ideas_summary_migration
+            (
+                id, research_topic_id, topic_workspace_id, idea_id, display_key, title, summary,
+                family, status, visibility, aliases_json, source_record_id, source_json_path,
+                metadata_json, created_at, updated_at, provenance_refs_json
+            )
+        SELECT
+            id, research_topic_id, topic_workspace_id, idea_id,
+            {"display_key" if "display_key" in columns else "NULL"} AS display_key,
+            title,
+            COALESCE({summary_expr}, NULLIF(TRIM(title), ''), idea_id) AS summary,
+            family, status, visibility, aliases_json, source_record_id, source_json_path,
+            metadata_json, created_at, updated_at, provenance_refs_json
+        FROM research_ideas
+        """
+    )
+    connection.execute("DROP TABLE research_ideas")
+    connection.execute("ALTER TABLE research_ideas_summary_migration RENAME TO research_ideas")
+    connection.executescript(
+        """
+        CREATE INDEX IF NOT EXISTS idx_research_ideas_topic
+            ON research_ideas (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_ideas_visibility
+            ON research_ideas (topic_workspace_id, visibility, status);
+        """
+    )
+
+
+def _ensure_research_record_ideas_summary_schema(connection: sqlite3.Connection) -> None:
+    if not _table_exists(connection, "research_record_ideas"):
+        return
+    columns = _column_names(connection, "research_record_ideas")
+    if "title" in columns and "summary" in columns and "one_liner" not in columns:
+        return
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS research_record_ideas_summary_migration (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            idea_id TEXT,
+            title TEXT,
+            family TEXT,
+            summary TEXT,
+            status TEXT,
+            selected INTEGER NOT NULL,
+            source_json_path TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+        """
+    )
+    if "summary" in columns:
+        summary_expr = "NULLIF(TRIM(summary), '')"
+    elif "one_liner" in columns:
+        summary_expr = "NULLIF(TRIM(one_liner), '')"
+    else:
+        summary_expr = "NULL"
+    if "title" in columns:
+        title_expr = "NULLIF(TRIM(title), '')"
+    elif "summary" in columns:
+        title_expr = "NULLIF(TRIM(summary), '')"
+    elif "one_liner" in columns:
+        title_expr = "NULLIF(TRIM(one_liner), '')"
+    else:
+        title_expr = "NULL"
+    connection.execute(
+        f"""
+        INSERT OR REPLACE INTO research_record_ideas_summary_migration
+            (
+                id, research_topic_id, topic_workspace_id, record_id, idea_id, family,
+                title, summary, status, selected, source_json_path, metadata_json, created_at
+            )
+        SELECT
+            id, research_topic_id, topic_workspace_id, record_id, idea_id, family,
+            {title_expr} AS title, {summary_expr} AS summary, status, selected, source_json_path, metadata_json, created_at
+        FROM research_record_ideas
+        """
+    )
+    connection.execute("DROP TABLE research_record_ideas")
+    connection.execute("ALTER TABLE research_record_ideas_summary_migration RENAME TO research_record_ideas")
+    connection.executescript(
+        """
+        CREATE INDEX IF NOT EXISTS idx_research_record_ideas_record
+            ON research_record_ideas (record_id, selected);
+        """
+    )
+
+
+def _ensure_research_idea_display_key_schema(connection: sqlite3.Connection) -> None:
+    if _table_exists(connection, "research_ideas"):
+        columns = _column_names(connection, "research_ideas")
+        if "display_key" not in columns:
+            connection.execute("ALTER TABLE research_ideas ADD COLUMN display_key TEXT")
+        connection.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_research_ideas_display_key_unique
+                ON research_ideas (topic_workspace_id, display_key)
+                WHERE display_key IS NOT NULL
+            """
+        )
+    connection.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS research_idea_display_keys (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            idea_id TEXT NOT NULL,
+            display_key TEXT NOT NULL,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, display_key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_idea_display_keys_topic
+            ON research_idea_display_keys (research_topic_id, topic_workspace_id);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_display_keys_idea
+            ON research_idea_display_keys (topic_workspace_id, idea_id);
+        """
+    )
 
 
 def _ensure_path_plan_semantic_columns(connection: sqlite3.Connection) -> None:
@@ -1359,13 +1552,15 @@ def _row_to_research_record_lineage_edge(row: sqlite3.Row) -> ResearchRecordLine
 
 
 def _row_to_research_idea(row: sqlite3.Row) -> ResearchIdea:
+    columns = set(row.keys())
     return ResearchIdea(
         id=row["id"],
         research_topic_id=row["research_topic_id"],
         topic_workspace_id=row["topic_workspace_id"],
         idea_id=row["idea_id"],
+        display_key=row["display_key"] if "display_key" in columns else None,
         title=row["title"],
-        one_liner=row["one_liner"],
+        summary=row["summary"],
         family=row["family"],
         status=row["status"],
         visibility=row["visibility"],

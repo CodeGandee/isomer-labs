@@ -461,19 +461,21 @@ def _idea_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, p
     for fragment in fragments:
         item_map = dict(fragment.source_json)
         key = fragment.source_json_path.rsplit(".", 1)[-1].split("[", 1)[0]
-        one_liner = _first_string(item_map.get("one_liner"), item_map.get("summary"), item_map.get("title"), item_map.get("idea"), item_map.get("text"), item_map.get("hypothesis"))
-        if one_liner is None:
+        title = _first_string(item_map.get("title"))
+        summary = _first_string(item_map.get("summary"))
+        if title is None or summary is None:
             continue
         idea_id = _optional_string(item_map.get("idea_id") or item_map.get("canonical_idea_id") or item_map.get("id") or item_map.get("candidate_id"))
         rows.append(
             {
-                "id": _row_id("idea", record.id, idea_id or one_liner, fragment.source_json_path),
+                "id": _row_id("idea", record.id, idea_id or title, fragment.source_json_path),
                 "research_topic_id": context.research_topic.id,
                 "topic_workspace_id": context.topic_workspace_id,
                 "record_id": record.id,
                 "idea_id": idea_id,
+                "title": title,
                 "family": _optional_string(item_map.get("family")) or key,
-                "one_liner": one_liner,
+                "summary": summary,
                 "status": _optional_string(item_map.get("status")) or ("selected" if "selected" in fragment.source_json_path else None),
                 "selected": 1 if "selected" in fragment.source_json_path or bool(item_map.get("selected")) else 0,
                 "source_json_path": fragment.source_json_path,

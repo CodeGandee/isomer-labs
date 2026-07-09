@@ -12,7 +12,7 @@ export type JsonMarkdownPreview = {
   jsonText: string;
 };
 
-const HUMAN_KEYS = new Set(["title", "summary", "one_liner", "claim", "hypothesis", "rationale", "status", "family", "visibility"]);
+const HUMAN_KEYS = new Set(["title", "summary", "claim", "hypothesis", "rationale", "status", "family", "visibility"]);
 
 export function buildJsonMarkdownPreview(value: unknown, options: { title?: string; maxDepth?: number } = {}): JsonMarkdownPreview {
   const normalized = normalizeJson(value);

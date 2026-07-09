@@ -70,6 +70,7 @@ export function createIdeaLineageInteractionBoundary({
   const subscription = new Subscription();
   let disposed = false;
   let nextHoverSessionId = 1;
+  let hoverSuppressedNodeId: string | null = null;
 
   const nextSessionId = () => nextHoverSessionId++;
   const dispatch = (action: IdeaLineageAction) => store.dispatch(action);
@@ -160,6 +161,12 @@ export function createIdeaLineageInteractionBoundary({
   return {
     nodeEnter(event) {
       if (!disposed) {
+        if (hoverSuppressedNodeId === event.nodeId) {
+          return;
+        }
+        if (hoverSuppressedNodeId && hoverSuppressedNodeId !== event.nodeId) {
+          hoverSuppressedNodeId = null;
+        }
         nodeEnter$.next(event);
       }
     },
@@ -170,6 +177,9 @@ export function createIdeaLineageInteractionBoundary({
     },
     nodeLeave(event) {
       if (!disposed) {
+        if (hoverSuppressedNodeId === event.nodeId) {
+          hoverSuppressedNodeId = null;
+        }
         nodeLeave$.next(event);
       }
     },
@@ -181,6 +191,7 @@ export function createIdeaLineageInteractionBoundary({
     },
     nodeOpen(event) {
       if (!disposed) {
+        hoverSuppressedNodeId = event.nodeId;
         nodeOpen$.next(event);
         dispatch({ type: "nodeOpened", nodeId: event.nodeId });
       }
@@ -220,6 +231,7 @@ export function createIdeaLineageInteractionBoundary({
         return;
       }
       disposed = true;
+      hoverSuppressedNodeId = null;
       dispose$.next();
       dispatch({ type: "hoverClosed" });
       dispatch({ type: "touchLongPressCanceled" });

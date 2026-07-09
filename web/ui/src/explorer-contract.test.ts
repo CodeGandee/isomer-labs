@@ -47,7 +47,7 @@ describe("Project Explorer contract", () => {
       openable_item_id: "topic:alpha:graph:idea-lineage",
       tab_id: "topic-alpha-graph-idea-lineage",
       item_kind: "graph",
-      title: "Idea Lineage Graph",
+      title: "Idea Graph",
       preferred_tab_component: "ideaGraph",
       topic_id: "alpha",
       graph_scope: "idea-lineage",
@@ -58,10 +58,34 @@ describe("Project Explorer contract", () => {
     expect(panelOptionsFromDescriptor(descriptor)).toMatchObject({
       id: "topic-alpha-graph-idea-lineage",
       component: "ideaGraph",
-      title: "Idea Lineage Graph",
+      title: "Idea Graph",
       params: {
         topicId: "alpha",
         graphScope: "idea-lineage",
+        itemKind: "graph",
+      },
+    });
+
+    const timelineDescriptor = OpenableItemDescriptorSchema.parse({
+      ok: true,
+      mutated: false,
+      openable_item_id: "topic:alpha:graph:idea-timeline",
+      tab_id: "topic-alpha-graph-idea-timeline",
+      item_kind: "graph",
+      title: "Idea Timeline",
+      preferred_tab_component: "ideaTimeline",
+      topic_id: "alpha",
+      graph_scope: "idea-timeline",
+      exists: true,
+      diagnostics: [],
+    });
+    expect(panelOptionsFromDescriptor(timelineDescriptor)).toMatchObject({
+      id: "topic-alpha-graph-idea-timeline",
+      component: "ideaTimeline",
+      title: "Idea Timeline",
+      params: {
+        topicId: "alpha",
+        graphScope: "idea-timeline",
         itemKind: "graph",
       },
     });

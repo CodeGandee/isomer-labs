@@ -47,7 +47,7 @@ def register_research_idea_commands(
     @_topic_selection_options
     @click.option("--idea-id", required=True, help="Stable semantic topic-scoped idea id.")
     @click.option("--title", required=True, help="Human-readable idea title.")
-    @click.option("--one-liner", default=None, help="Short idea summary.")
+    @click.option("--summary", required=True, help="Short idea summary.")
     @click.option("--family", default=None, help="Optional idea family.")
     @click.option("--status", default="candidate", show_default=True, help="Idea status.")
     @click.option("--visibility", default="primary", show_default=True, help="primary, supporting, or hidden.")
@@ -72,7 +72,7 @@ def register_research_idea_commands(
                 env=os.environ,
                 idea_id=str(values["idea_id"]),
                 title=str(values["title"]),
-                one_liner=values.get("one_liner"),
+                summary=str(values["summary"]),
                 family=values.get("family"),
                 status=str(values.get("status") or "candidate"),
                 visibility=str(values.get("visibility") or "primary"),

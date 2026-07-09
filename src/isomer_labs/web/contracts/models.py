@@ -54,10 +54,10 @@ class TopicGraphNodeContract(GuiContractModel):
     material_kind: str
     density_class: str
     title: str
-    one_liner: str | None = None
     summary: str | None = None
     status: str | None = None
     idea_id: str | None = None
+    display_key: str | None = None
     source: dict[str, Any] | None = None
     detail_refs: dict[str, Any] | None = None
     renderer_hints: dict[str, Any] | None = None

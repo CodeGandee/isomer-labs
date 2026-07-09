@@ -3,6 +3,7 @@ import Graphology from "graphology";
 import Sigma from "sigma";
 import type { TopicGraphView } from "../../types";
 import { openRecordFromNode } from "./open-record";
+import { ideaNodeVisibleLabel } from "../../graph-utils";
 
 export function SigmaGraph({ graph }: { graph: TopicGraphView }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -13,7 +14,7 @@ export function SigmaGraph({ graph }: { graph: TopicGraphView }) {
     const graphology = new Graphology({ multi: true });
     for (const node of graph.nodes) {
       graphology.addNode(node.id, {
-        label: node.title,
+        label: ideaNodeVisibleLabel(node),
         x: Math.random(),
         y: Math.random(),
         size: Number(node.renderer_hints?.size || 8),

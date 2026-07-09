@@ -54,17 +54,17 @@ Query parameters:
 | `time_range` | Optional | `all`, `7d`, `30d`, `90d`, or an ISO interval. |
 | `search` | Optional | Case-insensitive label, summary, idea id, or record id search. |
 | `limit` | Optional | Maximum nodes returned, default chosen by graph scope. |
-| `cursor` | Optional | Opaque page cursor for dense graphs. |
-| `include_secondary` | Optional | Include evidence, claims, decisions, runs, or files as secondary nodes. |
+| `cursor` | Optional | Opaque page cursor. |
+| `include_secondary` | Optional | Include supporting Research Ideas in idea views. |
 
 Supported `graph_scope` values:
 
 | Scope | Default Renderer | Purpose |
 | --- | --- | --- |
-| `idea-lineage` | `react-flow` | Sparse idea, hypothesis, route decision, and selected reasoning path graph. |
-| `artifact-overview` | `sigma` | Dense overview across topic records and relationship clusters. |
-| `experiment-records` | `sigma` | Dense experiment, run, metric, claim, and result summary map. |
-| `paper-revisions` | `sigma` | Dense manuscript, draft, figure, PDF, and revision relationship map. |
+| `idea-lineage` | `react-flow` | Idea relationship graph. |
+| `idea-timeline` | table | Separate Graphs view that derives a sorted idea table from the idea graph payload. |
+
+`artifact-overview`, `experiment-records`, and `paper-revisions` are no longer supported graph scopes. Requests for those scopes should return `unsupported_graph_scope`.
 
 Response model:
 
@@ -74,7 +74,7 @@ type TopicGraphView = {
   mutated: false
   topic_id: string
   topic_workspace_id: string
-  graph_scope: "idea-lineage" | "artifact-overview" | "experiment-records" | "paper-revisions"
+  graph_scope: "idea-lineage"
   renderer_hint: "react-flow-detail" | "sigma-overview"
   index_revision: string | null
   generated_at: string
@@ -329,4 +329,3 @@ UI labels may say "branch" only for visual branching when unavoidable, but schem
 - What exact `index_revision` token should the backend expose: SQLite WAL revision, query-index max `indexed_at`, or a Workspace Runtime sequence?
 - Should Sigma.js dense graph clustering be computed on the backend, in a Web Worker, or inside the renderer adapter?
 - Which tmux control actions should be available in the first session-control slice: attach only, interrupt, stop, resume, or prompt injection?
-

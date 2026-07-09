@@ -6,7 +6,7 @@ describe("JSON Markdown document builder", () => {
     const preview = buildJsonMarkdownPreview(
       {
         title: "Precision-only throughput",
-        one_liner: "Model precision overhead separately.",
+        summary: "Model precision overhead separately.",
         sections: {
           claims: ["GPU timing is predictable", "Host launch overhead is separable"],
           measurements: [
@@ -21,7 +21,7 @@ describe("JSON Markdown document builder", () => {
     );
 
     expect(preview.markdown).toContain("# Idea Preview");
-    expect(preview.markdown).toContain("**One Liner**: Model precision overhead separately.");
+    expect(preview.markdown).toContain("**Summary**: Model precision overhead separately.");
     expect(preview.markdown).toContain("* GPU timing is predictable");
     expect(preview.markdown).toContain("| Name");
     expect(preview.markdown).toContain("Speedup |");

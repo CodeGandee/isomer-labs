@@ -424,6 +424,19 @@ describe("Idea graph panel interactions", () => {
     fireEvent.doubleClick(node);
     expect(screen.queryByRole("tooltip")).toBeNull();
     expect(events).toEqual([{ type: "open-idea", topicId: "alpha", ideaId: "idea-1" }]);
+
+    fireEvent.mouseEnter(node, { clientX: 122, clientY: 142 });
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(screen.queryByRole("tooltip")).toBeNull();
+
+    fireEvent.mouseLeave(node);
+    fireEvent.mouseEnter(node, { clientX: 130, clientY: 150 });
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(screen.getByRole("tooltip").textContent).toContain("Loading preview");
     subscription.unsubscribe();
   });
 
@@ -563,7 +576,7 @@ function ideaDetailPayload() {
     idea: {
       idea_id: "idea-1",
       title: "Precision Idea",
-      one_liner: "Separate launch overhead.",
+      summary: "Separate launch overhead.",
       status: "candidate",
     },
     idea_content: {
@@ -601,7 +614,6 @@ function graphPayload(): TopicGraphView {
         material_kind: "idea",
         density_class: "sparse",
         title: "NCU counter trend and bottleneck classifier side output",
-        one_liner: "Parent branch.",
         summary: "Parent summary.",
         status: "candidate",
         idea_id: "parent",
@@ -612,7 +624,6 @@ function graphPayload(): TopicGraphView {
         material_kind: "idea",
         density_class: "sparse",
         title: "Precision Idea",
-        one_liner: "Separate launch overhead.",
         summary: "Compare corrected runtime curves.",
         status: "candidate",
         idea_id: "idea-1",
@@ -623,7 +634,6 @@ function graphPayload(): TopicGraphView {
         material_kind: "idea",
         density_class: "sparse",
         title: "Launch-overhead and NCU calibration for short-kernel runtime",
-        one_liner: "Child branch.",
         summary: "Child summary.",
         status: "candidate",
         idea_id: "child",
@@ -634,7 +644,6 @@ function graphPayload(): TopicGraphView {
         material_kind: "idea",
         density_class: "sparse",
         title: "Unrelated Idea",
-        one_liner: "No relation to selected branch.",
         summary: "Unrelated summary.",
         status: "candidate",
         idea_id: "unrelated",

@@ -548,6 +548,22 @@ textarea {
   max-width: 180px;
 }
 
+.checkbox-setting {
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-content: start;
+}
+
+.settings-color-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-color-input {
+  width: 64px;
+  min-width: 64px;
+  padding: 2px;
+}
+
 .muted-section {
   background: var(--muted);
 }
@@ -616,6 +632,104 @@ th {
   top: 0;
   background: var(--muted);
   color: var(--muted-foreground);
+}
+
+.idea-timeline-panel {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.idea-timeline-toolbar,
+.idea-timeline-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.inline-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.rows-select {
+  width: 92px;
+}
+
+.idea-timeline-table-wrap {
+  min-width: 0;
+  max-width: 100%;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.idea-timeline-table {
+  min-width: 920px;
+}
+
+.idea-timeline-table th,
+.idea-timeline-table td {
+  white-space: nowrap;
+}
+
+.idea-timeline-table .table-sort-button {
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 0;
+  padding-inline: 4px;
+  color: var(--muted-foreground);
+}
+
+.idea-timeline-row {
+  cursor: default;
+}
+
+.idea-timeline-table.colored-rows .idea-timeline-row.primary td {
+  background: var(--idea-timeline-primary-row);
+}
+
+.idea-timeline-table.colored-rows .idea-timeline-row.supporting td {
+  background: var(--idea-timeline-supporting-row);
+}
+
+.idea-timeline-row:focus,
+.idea-timeline-row:hover td {
+  outline: none;
+  background: color-mix(in srgb, var(--accent) 72%, var(--card)) !important;
+}
+
+.idea-timeline-row.selected td {
+  box-shadow: inset 3px 0 0 var(--primary);
+  font-weight: 600;
+}
+
+.timeline-title-cell {
+  display: grid;
+  gap: 3px;
+  min-width: 260px;
+  max-width: 520px;
+  white-space: normal;
+}
+
+.timeline-title-cell span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.mono-cell,
+.key-cell {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.key-cell {
+  font-weight: 700;
 }
 
 tbody tr {

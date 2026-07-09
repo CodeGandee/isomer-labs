@@ -146,6 +146,13 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
             )
         )
 
+    @app.get("/api/topics/{topic_id}/recent-errors")
+    def recent_errors(
+        topic_id: str,
+        limit: int = Query(default=50, ge=1, le=200),
+    ) -> JSONResponse:
+        return _json(read_model.recent_errors(topic_id, limit=limit))
+
     @app.get("/api/events")
     def topic_events(
         topic_id: str,

@@ -19,10 +19,10 @@ const graph = TopicGraphViewSchema.parse({
       material_kind: "idea",
       density_class: "sparse",
       title: "One",
-      one_liner: "One line.",
       summary: "Summary for hover.",
       status: "candidate",
       idea_id: "one",
+      display_key: "I-1",
     },
   ],
   edges: [
@@ -42,13 +42,14 @@ const graph = TopicGraphViewSchema.parse({
 describe("graph utilities", () => {
   it("selects React Flow only for sparse detail graphs", () => {
     expect(selectRenderer("idea-lineage", "react-flow-detail", 12)).toBe("react-flow");
-    expect(selectRenderer("artifact-overview", "sigma-overview", 12)).toBe("sigma");
+    expect(selectRenderer("idea-timeline", "sigma-overview", 12)).toBe("sigma");
     expect(selectRenderer("idea-lineage", "react-flow-detail", 121)).toBe("sigma");
   });
 
   it("converts graph API payloads into React Flow objects", () => {
     const node = toFlowNodes(graph)[0];
     expect(node.id).toBe("idea:one");
+    expect(node.data.label).toBe("I-1 One\ncandidate");
     expect(node.data.summary).toBe("Summary for hover.");
     expect(node.data.record_id).toBe("record-one");
     const edge = toFlowEdges(graph)[0];
