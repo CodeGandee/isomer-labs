@@ -12,6 +12,7 @@ skills = [
   "operator/isomer-op-entrypoint",
   "operator/isomer-op-project-mgr",
   "operator/isomer-op-switch-identity",
+  "operator/isomer-op-toolbox-mgr",
   "operator/isomer-op-topic-creator",
   "operator/isomer-op-topic-mgr",
   "operator/isomer-op-topic-team-specialize",

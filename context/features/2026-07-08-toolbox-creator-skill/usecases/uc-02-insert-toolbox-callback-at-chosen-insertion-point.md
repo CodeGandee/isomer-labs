@@ -2,11 +2,11 @@
 
 ## Actor Goal
 
-As a Project Operator Session, I want to ask the Toolbox Creator Skill to insert callback guidance into one chosen callback insertion point, so that a valid Toolbox callback is authored, installed at the intended scope, and visible through effective callback inspection.
+As a Project Operator Session, I want to ask the Toolbox Manager Skill to insert callback guidance into one chosen callback insertion point, so that a valid Toolbox callback is authored, installed at the intended scope, and visible through effective callback inspection.
 
 ## Use Case
 
-The user has chosen a catalog-listed callback insertion point, such as `isomer-deepsci-experiment/begin`, and asks the Toolbox Creator Skill to insert Toolbox guidance there. The skill treats the user-facing insertion point as `<skill>/<point-inside-skill>`, decomposes it into `target_skill` and `stage` fields for the current Toolbox manifest, creates or updates the Toolbox source tree and `manifest.toml`, installs the Toolbox bundle through the high-level Toolbox install path when requested, and verifies that the callback resolves for the selected Project or Research Topic scope. The skill makes mutation explicit before writing files or installation records and keeps the callback supplemental to the owning system skill.
+The user has chosen a catalog-listed callback insertion point, such as `isomer-deepsci-experiment/begin`, and asks the Toolbox Manager Skill to insert Toolbox guidance there. The skill treats the user-facing insertion point as `<skill>/<point-inside-skill>`, decomposes it into `target_skill` and `stage` fields for the current Toolbox manifest, creates or updates the Toolbox source tree and `manifest.toml`, installs the Toolbox bundle through the high-level Toolbox install path when requested, and verifies that the callback resolves for the selected Project or Research Topic scope. The skill makes mutation explicit before writing files or installation records and keeps the callback supplemental to the owning system skill.
 
 ## Supported Actions
 
@@ -87,7 +87,7 @@ The user asks the skill to confirm that the inserted callback will be used.
 
 ## Main Flow
 
-1. The user invokes the Toolbox Creator Skill from a Project Operator Session.
+1. The user invokes the Toolbox Manager Skill from a Project Operator Session.
 2. The user names a chosen insertion point id, such as `isomer-deepsci-experiment/begin`, and asks the skill to insert Toolbox callback guidance there.
 3. The skill asks for or infers the `toolbox_id`, callback purpose, callback source style, intended scope, and target Research Topic when scope is `research_topic`.
 4. The skill decomposes the insertion point id into `<target-skill>` and `<point>`, then confirms that the chosen point is available in the relevant catalog view, including explicit extension discovery when the user is working with a catalog-known optional extension that is not Project-declared.
@@ -118,7 +118,7 @@ The user asks the skill to confirm that the inserted callback will be used.
 flowchart LR
   User[Project Operator Session]
 
-  subgraph Skill[Toolbox Creator Skill]
+  subgraph Skill[Toolbox Manager Skill]
     Confirm[Confirm chosen insertion point]
     Plan[Plan file and registry mutation]
     Source[Author callback source]
@@ -155,7 +155,7 @@ flowchart LR
 sequenceDiagram
   autonumber
   actor User as Project Operator Session
-  participant Skill as Toolbox Creator Skill
+  participant Skill as Toolbox Manager Skill
   participant Services as Project callback services
   participant Files as Toolbox source tree
   participant Registry as Callback registry
@@ -197,7 +197,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $toolbox-creator-skill to insert a callback into `isomer-deepsci-experiment/begin`. The Toolbox is `gpu-evidence-quality`, and for topic `cuda-kernel-study` it should remind experiment agents to classify evidence before they run benchmarks.
+> Use $isomer-op-toolbox-mgr to insert a callback into `isomer-deepsci-experiment/begin`. The Toolbox is `gpu-evidence-quality`, and for topic `cuda-kernel-study` it should remind experiment agents to classify evidence before they run benchmarks.
 
 AI (visible response):
 

@@ -2,11 +2,11 @@
 
 ## Actor Goal
 
-As a Project Operator Session, I want to give the Toolbox Creator Skill a freeform intent prompt or an intent file and have it scaffold a complete Toolbox source tree in one go, so that I receive a valid `toolbox_id`, manifest, callback structure, and optional runtime params without authoring each piece separately.
+As a Project Operator Session, I want to give the Toolbox Manager Skill a freeform intent prompt or an intent file and have it scaffold a complete Toolbox source tree in one go, so that I receive a valid `toolbox_id`, manifest, callback structure, and optional runtime params without authoring each piece separately.
 
 ## Use Case
 
-The user supplies intent as a concise prompt such as "create a Toolbox that makes review agents check for real-hardware evidence before approving claims" or as a file path pointing to a Markdown or plain-text intent description. The Toolbox Creator Skill interprets the intent, plans a Toolbox design, creates the directory structure under `skillset/toolboxes/<toolbox-id>/`, writes `manifest.toml`, callback skill source with `SKILL.md`, an optional runtime-param default bundle, and a short README, validates the generated Toolbox, and reports what was created and what still needs user confirmation before installation.
+The user supplies intent as a concise prompt such as "create a Toolbox that makes review agents check for real-hardware evidence before approving claims" or as a file path pointing to a Markdown or plain-text intent description. The Toolbox Manager Skill interprets the intent, plans a Toolbox design, creates the directory structure under `skillset/toolboxes/<toolbox-id>/`, writes `manifest.toml`, callback skill source with `SKILL.md`, an optional runtime-param default bundle, and a short README, validates the generated Toolbox, and reports what was created and what still needs user confirmation before installation.
 
 ## Supported Actions
 
@@ -87,7 +87,7 @@ The skill checks the generated Toolbox before reporting completion.
 
 ## Main Flow
 
-1. The user invokes the Toolbox Creator Skill from a Project Operator Session.
+1. The user invokes the Toolbox Manager Skill from a Project Operator Session.
 2. The user supplies intent as a freeform prompt or as a file path.
 3. The skill reads the intent, confirms the input source, and summarizes what it understood.
 4. The skill proposes a stable `toolbox_id` derived from the intent, checks that it does not collide with an existing Toolbox directory, and asks for confirmation only when ambiguity or collision exists.
@@ -118,7 +118,7 @@ The skill checks the generated Toolbox before reporting completion.
 flowchart LR
   User[Project Operator Session]
 
-  subgraph Skill[Toolbox Creator Skill]
+  subgraph Skill[Toolbox Manager Skill]
     Accept[Accept prompt or file intent]
     Plan[Plan toolbox_id, points, params, layout]
     Scaffold[Scaffold directory and files]
@@ -151,7 +151,7 @@ flowchart LR
 sequenceDiagram
   autonumber
   actor User as Project Operator Session
-  participant Skill as Toolbox Creator Skill
+  participant Skill as Toolbox Manager Skill
   participant Intent as Intent source
   participant Catalog as Insertion-point catalog
   participant Files as Toolbox source tree
@@ -192,7 +192,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $toolbox-creator-skill to initialize a Toolbox that makes DeepSci review agents reject any claim that lacks real-hardware evidence. I want it strict by default but let topics relax it to proxy-inference if they document the limitation.
+> Use $isomer-op-toolbox-mgr to initialize a Toolbox that makes DeepSci review agents reject any claim that lacks real-hardware evidence. I want it strict by default but let topics relax it to proxy-inference if they document the limitation.
 
 AI (visible response):
 
@@ -229,7 +229,7 @@ AI (visible response):
 
 User Prompt:
 
-> Use $toolbox-creator-skill to initialize a Toolbox from `context/toolbox-intents/gpu-experiment-checklist.md`.
+> Use $isomer-op-toolbox-mgr to initialize a Toolbox from `context/toolbox-intents/gpu-experiment-checklist.md`.
 
 AI (visible response):
 

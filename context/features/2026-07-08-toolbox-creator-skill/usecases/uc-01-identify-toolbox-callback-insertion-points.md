@@ -2,11 +2,11 @@
 
 ## Actor Goal
 
-As a Project Operator Session, I want to ask the Toolbox Creator Skill where a Toolbox can insert callback guidance, so that I can choose valid callback insertion point ids, source material, and scopes before writing or installing Toolbox manifest entries.
+As a Project Operator Session, I want to ask the Toolbox Manager Skill where a Toolbox can insert callback guidance, so that I can choose valid callback insertion point ids, source material, and scopes before writing or installing Toolbox manifest entries.
 
 ## Use Case
 
-The user invokes the Toolbox Creator Skill with a question such as "where are the callback insertion points?" The skill interprets "callback insertion points" as User Skill Callback attachment points declared by the packaged system-skill catalog. The user-facing shape is `<skill>/<point-inside-skill>`, such as `isomer-deepsci-experiment/begin`; the current manifest fields decompose that id into `target_skill` and `stage`. The skill answers by inspecting the Project-visible insertion-point catalog, explaining the insertion-point model, mapping the user's Toolbox purpose to listed insertion point ids, and warning when optional extension points are catalog-known but not Project-declared as installed.
+The user invokes the Toolbox Manager Skill with a question such as "where are the callback insertion points?" The skill interprets "callback insertion points" as User Skill Callback attachment points declared by the packaged system-skill catalog. The user-facing shape is `<skill>/<point-inside-skill>`, such as `isomer-deepsci-experiment/begin`; the current manifest fields decompose that id into `target_skill` and `stage`. The skill answers by inspecting the Project-visible insertion-point catalog, explaining the insertion-point model, mapping the user's Toolbox purpose to listed insertion point ids, and warning when optional extension points are catalog-known but not Project-declared as installed.
 
 ## Supported Actions
 
@@ -87,7 +87,7 @@ The user asks how chosen insertion points will behave after installation.
 
 ## Main Flow
 
-1. The user invokes the Toolbox Creator Skill from a Project Operator Session.
+1. The user invokes the Toolbox Manager Skill from a Project Operator Session.
 2. The user asks where callback insertion points are for a new or existing Toolbox.
 3. The skill maps the user's phrase "callback insertion points" to User Skill Callback attachment points shaped as `<skill>/<point-inside-skill>`, with installation scope handled by Project callback registration.
 4. The skill explains that the current point names are `begin` and `end`, and that callbacks installed from a Toolbox are supplemental instruction material for the owning skill.
@@ -117,7 +117,7 @@ The user asks how chosen insertion points will behave after installation.
 flowchart LR
   User[Project Operator Session]
 
-  subgraph Skill[Toolbox Creator Skill]
+  subgraph Skill[Toolbox Manager Skill]
     Interpret[Interpret insertion point question]
     Query[Run insertion-points query]
     Model[Explain skill/point model]
@@ -153,7 +153,7 @@ flowchart LR
 sequenceDiagram
   autonumber
   actor User as Project Operator Session
-  participant Skill as Toolbox Creator Skill
+  participant Skill as Toolbox Manager Skill
   participant Services as Project callback services
   participant Catalog as Insertion Point Catalog
   participant Manifest as Toolbox manifest draft
@@ -191,7 +191,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $toolbox-creator-skill to tell me where the callback insertion points are for a Toolbox that teaches GPU experiment agents to check evidence quality.
+> Use $isomer-op-toolbox-mgr to tell me where the callback insertion points are for a Toolbox that teaches GPU experiment agents to check evidence quality.
 
 AI (visible response):
 

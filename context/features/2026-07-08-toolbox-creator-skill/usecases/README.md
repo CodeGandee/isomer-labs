@@ -1,6 +1,6 @@
 # Use Cases
 
-This directory contains feature-specific use cases for Toolbox Creator Skill.
+This directory contains feature-specific use cases for Toolbox Manager Skill.
 
 ## Index
 
@@ -16,7 +16,7 @@ This directory contains feature-specific use cases for Toolbox Creator Skill.
 
 ## Notes
 
-- `UC-01` assumes the user invokes the Toolbox Creator Skill before authoring or installing callback entries and wants the skill to explain valid User Skill Callback targets, stages, and scope choices.
+- `UC-01` assumes the user invokes the Toolbox Manager Skill before authoring or installing callback entries and wants the skill to explain valid User Skill Callback targets, stages, and scope choices.
 - `UC-02` assumes the user has chosen or can confirm one listed insertion point and now wants the skill to author, install, and verify a Toolbox callback for that point.
 - `UC-03` assumes the user wants Toolbox callback skills to query configurable runtime params and needs the skill to design, set, import, and verify those params across Project and Topic Workspace manifest layers.
 - `UC-04` assumes the user already has a Toolbox directory and wants the skill to install it into the current Isomer Labs Project for all topics or into one selected Topic Workspace.

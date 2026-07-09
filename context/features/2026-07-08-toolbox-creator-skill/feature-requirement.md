@@ -1,4 +1,4 @@
-# Toolbox Creator Skill Feature Requirement
+# Toolbox Manager Skill Feature Requirement
 
 ## Goal
 
@@ -87,7 +87,7 @@ Primary management workflow:
 
 ## Open Questions
 
-- What should the skill be named and where should it live: `isomer-op-toolbox-mgr`, `isomer-dev-toolbox-creator`, or another package path?
+- Resolved name and location: use packaged operator skill `isomer-op-toolbox-mgr`; do not use `isomer-op-toolbox-creator` as an active alias.
 - Should the first version be operator-facing only, or should it also support developers maintaining Isomer's own Toolbox schema and CLI implementation?
 - Should the skill include a scaffold template for new Toolboxes, or should it only describe the expected files and let agents create them from scratch?
 - Should the skill ask clarifying questions before creating a Toolbox, or should it infer defaults from target skills and user intent when possible?

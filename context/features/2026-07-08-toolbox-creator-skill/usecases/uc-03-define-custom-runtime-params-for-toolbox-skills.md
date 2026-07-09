@@ -2,11 +2,11 @@
 
 ## Actor Goal
 
-As a Project Operator Session, I want to ask the Toolbox Creator Skill to define custom runtime params for a Toolbox's callback skills, so that those skills can query Project and Research Topic settings and adapt their guidance without hard-coding every behavior into the callback source.
+As a Project Operator Session, I want to ask the Toolbox Manager Skill to define custom runtime params for a Toolbox's callback skills, so that those skills can query Project and Research Topic settings and adapt their guidance without hard-coding every behavior into the callback source.
 
 ## Use Case
 
-The user has a Toolbox whose callback skills need user-configurable behavior, such as evidence strictness, benchmark retry count, preferred output style, or whether to require a checklist. The Toolbox Creator Skill helps the user choose stable runtime param ids, declare the Toolbox's `[[runtime_params]]` and `[[runtime_param_bundles]]` contract, write optional default runtime-param bundle TOML files, add Project or Research Topic imports, set explicit scoped overrides, and explain the effective value. The skill treats runtime params as user-authored configuration in Project Manifest or Topic Workspace Manifest layers, not as secret storage and not as a different callback insertion point.
+The user has a Toolbox whose callback skills need user-configurable behavior, such as evidence strictness, benchmark retry count, preferred output style, or whether to require a checklist. The Toolbox Manager Skill helps the user choose stable runtime param ids, declare the Toolbox's `[[runtime_params]]` and `[[runtime_param_bundles]]` contract, write optional default runtime-param bundle TOML files, add Project or Research Topic imports, set explicit scoped overrides, and explain the effective value. The skill treats runtime params as user-authored configuration in Project Manifest or Topic Workspace Manifest layers, not as secret storage and not as a different callback insertion point.
 
 ## Supported Actions
 
@@ -87,7 +87,7 @@ The user asks what value a Toolbox callback skill will actually see.
 
 ## Main Flow
 
-1. The user invokes the Toolbox Creator Skill from a Project Operator Session.
+1. The user invokes the Toolbox Manager Skill from a Project Operator Session.
 2. The user says a Toolbox callback skill needs configurable behavior and asks to define custom runtime params.
 3. The skill identifies the Toolbox id, consuming callback skill directory or prompt file, desired behavior knobs, default values, allowed value types, and any Research Topic, Topic Actor, or Topic Agent specialization.
 4. The skill proposes a runtime param contract using `<toolbox_id>:<key>` ids, where keys are path-like within the Toolbox such as `evidence/mode` or `benchmark/retry-count`.
@@ -119,7 +119,7 @@ The user asks what value a Toolbox callback skill will actually see.
 flowchart LR
   User[Project Operator Session]
 
-  subgraph Skill[Toolbox Creator Skill]
+  subgraph Skill[Toolbox Manager Skill]
     Contract[Design param contract]
     Bundle[Author default bundle]
     Import[Register import]
@@ -158,7 +158,7 @@ flowchart LR
 sequenceDiagram
   autonumber
   actor User as Project Operator Session
-  participant Skill as Toolbox Creator Skill
+  participant Skill as Toolbox Manager Skill
   participant Files as Toolbox source files
   participant Services as Project runtime-param services
   participant Manifest as Project or Topic Workspace Manifest
@@ -203,7 +203,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $toolbox-creator-skill to define runtime params for Toolbox `gpu-evidence-quality`. Its experiment callback should use `evidence/mode`, with allowed values `strict` and `relaxed`, defaulting to `strict`.
+> Use $isomer-op-toolbox-mgr to define runtime params for Toolbox `gpu-evidence-quality`. Its experiment callback should use `evidence/mode`, with allowed values `strict` and `relaxed`, defaulting to `strict`.
 
 AI (visible response):
 
@@ -287,5 +287,5 @@ AI (visible response):
 - Assumption: Runtime param ids use `<toolbox_id>:<key>`, Toolbox manifest definitions use bare `key`, and imports record a Toolbox id plus a manifest-relative path.
 - Assumption: Imported runtime param bundle paths are relative to the manifest file that declares the import.
 - Assumption: Project-scope runtime params are Project-wide, while Topic Actor and Topic Agent specialization belongs to Topic Workspace Manifest configuration.
-- Open question: Should the Toolbox Creator Skill always add callback-source query notes when it defines params, or only when the user names a consuming callback skill?
+- Open question: Should the Toolbox Manager Skill always add callback-source query notes when it defines params, or only when the user names a consuming callback skill?
 - Open question: Should default runtime-param bundles live under the Toolbox source directory by convention, or near the manifest layer that imports them?

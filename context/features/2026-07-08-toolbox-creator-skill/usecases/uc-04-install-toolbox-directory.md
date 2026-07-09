@@ -2,11 +2,11 @@
 
 ## Actor Goal
 
-As a Project Operator Session, I want to point the Toolbox Creator Skill at a directory that already contains Toolbox material, so that the skill can install it into the current Isomer Labs Project for all topics or into one selected Topic Workspace without making me handle the registry details.
+As a Project Operator Session, I want to point the Toolbox Manager Skill at a directory that already contains Toolbox material, so that the skill can install it into the current Isomer Labs Project for all topics or into one selected Topic Workspace without making me handle the registry details.
 
 ## Use Case
 
-The user has an existing Toolbox directory, usually containing `manifest.toml`, callback source material, optional runtime-param bundle files, and supporting docs. The user asks the Toolbox Creator Skill to install that Toolbox into the current Project. The skill inspects the Toolbox directory, validates the manifest and source paths, explains whether installation will affect all topics or one Topic Workspace, asks whether declared runtime-param defaults should be imported, asks for explicit mutation approval when needed, installs the Toolbox through the high-level Toolbox install path, and reports what will change and what the installed Toolbox will do.
+The user has an existing Toolbox directory, usually containing `manifest.toml`, callback source material, optional runtime-param bundle files, and supporting docs. The user asks the Toolbox Manager Skill to install that Toolbox into the current Project. The skill inspects the Toolbox directory, validates the manifest and source paths, explains whether installation will affect all topics or one Topic Workspace, asks whether declared runtime-param defaults should be imported, asks for explicit mutation approval when needed, installs the Toolbox through the high-level Toolbox install path, and reports what will change and what the installed Toolbox will do.
 
 ## Supported Actions
 
@@ -72,7 +72,7 @@ The user asks what the installed Toolbox will affect.
 
 ## Main Flow
 
-1. The user invokes the Toolbox Creator Skill from a Project Operator Session.
+1. The user invokes the Toolbox Manager Skill from a Project Operator Session.
 2. The user points to a Toolbox directory and asks to install it into the current Isomer Labs Project for all topics or into a given Topic Workspace.
 3. The skill normalizes the directory path and checks that it contains a Toolbox `manifest.toml`.
 4. The skill reads the manifest and summarizes `toolbox_id`, `kind`, declared callbacks, runtime-param definitions, runtime-param bundles, and source paths.
@@ -102,7 +102,7 @@ The user asks what the installed Toolbox will affect.
 flowchart LR
   User[Project Operator Session]
 
-  subgraph Skill[Toolbox Creator Skill]
+  subgraph Skill[Toolbox Manager Skill]
     Inspect[Inspect Toolbox directory]
     Validate[Validate manifest and sources]
     Scope[Choose installation scope]
@@ -139,7 +139,7 @@ flowchart LR
 sequenceDiagram
   autonumber
   actor User as Project Operator Session
-  participant Skill as Toolbox Creator Skill
+  participant Skill as Toolbox Manager Skill
   participant Files as Toolbox directory
   participant Services as Project Toolbox services
   participant Registry as Callback registry
@@ -183,7 +183,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $toolbox-creator-skill to install `skillset/toolboxes/gpu-evidence-quality` into the current Isomer Labs Project for all topics.
+> Use $isomer-op-toolbox-mgr to install `skillset/toolboxes/gpu-evidence-quality` into the current Isomer Labs Project for all topics.
 
 AI (visible response):
 

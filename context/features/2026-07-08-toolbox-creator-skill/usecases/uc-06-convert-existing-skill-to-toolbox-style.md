@@ -2,11 +2,11 @@
 
 ## Actor Goal
 
-As a Project Operator Session, I want to ask the Toolbox Creator Skill to convert an existing skill into Toolbox style, so that the skill becomes installable as Toolbox callback material, exposes its dynamic decisions as runtime params, and writes or references output artifacts through the Topic Workspace storage layer.
+As a Project Operator Session, I want to ask the Toolbox Manager Skill to convert an existing skill into Toolbox style, so that the skill becomes installable as Toolbox callback material, exposes its dynamic decisions as runtime params, and writes or references output artifacts through the Topic Workspace storage layer.
 
 ## Use Case
 
-The user has an existing skill, possibly already under `skillset/toolboxes/<toolbox-id>/` or possibly in another local skill directory. The Toolbox Creator Skill inspects the skill, copies it into a Toolbox directory when needed, identifies which behavior choices should become user-registered runtime params, rewrites the callback instructions to query those params through `isomer-cli` or the equivalent Project runtime-param service, identifies output artifacts the skill asks agents to create, maps those artifacts to semantic Topic Workspace storage labels, updates the Toolbox manifest, and installs or verifies the converted Toolbox when requested.
+The user has an existing skill, possibly already under `skillset/toolboxes/<toolbox-id>/` or possibly in another local skill directory. The Toolbox Manager Skill inspects the skill, copies it into a Toolbox directory when needed, identifies which behavior choices should become user-registered runtime params, rewrites the callback instructions to query those params through `isomer-cli` or the equivalent Project runtime-param service, identifies output artifacts the skill asks agents to create, maps those artifacts to semantic Topic Workspace storage labels, updates the Toolbox manifest, and installs or verifies the converted Toolbox when requested.
 
 ## Supported Actions
 
@@ -102,7 +102,7 @@ The user asks the skill to make the converted skill installable and effective.
 
 ## Main Flow
 
-1. The user invokes the Toolbox Creator Skill from a Project Operator Session.
+1. The user invokes the Toolbox Manager Skill from a Project Operator Session.
 2. The user points to an existing skill and asks to convert it into Toolbox style.
 3. The skill inspects the source path and determines whether it is already inside `skillset/toolboxes/<toolbox-id>/` or should be copied there before conversion.
 4. The skill proposes a Toolbox id, callback source directory name, insertion points, and copy plan. It does not edit the original skill unless the user explicitly asks for in-place conversion.
@@ -135,7 +135,7 @@ The user asks the skill to make the converted skill installable and effective.
 flowchart LR
   User[Project Operator Session]
 
-  subgraph Skill[Toolbox Creator Skill]
+  subgraph Skill[Toolbox Manager Skill]
     Inspect[Inspect existing skill]
     Copy[Copy or normalize source]
     Vars[Extract decision variables]
@@ -177,7 +177,7 @@ flowchart LR
 sequenceDiagram
   autonumber
   actor User as Project Operator Session
-  participant Skill as Toolbox Creator Skill
+  participant Skill as Toolbox Manager Skill
   participant Source as Existing skill source
   participant Files as Toolbox source tree
   participant CLI as Isomer CLI services
@@ -219,7 +219,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $toolbox-creator-skill to convert `extern/orphan/bench-evidence-skill` into a Toolbox. It currently tells experiment agents to save `evidence.md` and has a hard-coded strict mode. Make it configurable and use Isomer storage.
+> Use $isomer-op-toolbox-mgr to convert `extern/orphan/bench-evidence-skill` into a Toolbox. It currently tells experiment agents to save `evidence.md` and has a hard-coded strict mode. Make it configurable and use Isomer storage.
 
 AI (visible response):
 
@@ -273,4 +273,4 @@ AI (visible response):
 - Assumption: Output artifact placement should use Workspace Path Resolution and semantic labels, not hard-coded filesystem paths.
 - Assumption: Topic-level durable outputs belong under topic records or registered `custom.*` labels; agent-local drafts belong under agent labels until promoted.
 - Open question: Should the conversion report include a machine-readable diff table for every changed instruction, or is a human-readable map sufficient for the first version?
-- Open question: Should the Toolbox Creator Skill offer automatic `custom.*` label registration when an output artifact map needs a new surface, or should it stop and ask the Project Operator Session first?
+- Open question: Should the Toolbox Manager Skill offer automatic `custom.*` label registration when an output artifact map needs a new surface, or should it stop and ask the Project Operator Session first?

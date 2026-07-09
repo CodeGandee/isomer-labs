@@ -2,11 +2,11 @@
 
 ## Actor Goal
 
-As a Project Operator Session, I want to describe a task in ordinary language and have the Toolbox Creator Skill write a Toolbox callback skill that fits the Toolbox pattern, so that the resulting Toolbox uses valid insertion points, runtime params, manifest entries, installation scope, and effective-behavior verification.
+As a Project Operator Session, I want to describe a task in ordinary language and have the Toolbox Manager Skill write a Toolbox callback skill that fits the Toolbox pattern, so that the resulting Toolbox uses valid insertion points, runtime params, manifest entries, installation scope, and effective-behavior verification.
 
 ## Use Case
 
-The user describes a behavior they want agents to perform, such as "make experiment agents classify evidence quality before benchmarking" or "make review agents reject claims without real hardware measurements." The Toolbox Creator Skill translates that task into a project-local Toolbox design. It finds suitable callback insertion points, decides whether the behavior needs configurable runtime params, authors callback skill source that instructs the owning agent how to query effective runtime-param values through `isomer-cli`, writes or updates the Toolbox manifest and optional default param bundles, installs the Toolbox when requested, and verifies that the callback and params resolve in the selected Project or Research Topic context.
+The user describes a behavior they want agents to perform, such as "make experiment agents classify evidence quality before benchmarking" or "make review agents reject claims without real hardware measurements." The Toolbox Manager Skill translates that task into a project-local Toolbox design. It finds suitable callback insertion points, decides whether the behavior needs configurable runtime params, authors callback skill source that instructs the owning agent how to query effective runtime-param values through `isomer-cli`, writes or updates the Toolbox manifest and optional default param bundles, installs the Toolbox when requested, and verifies that the callback and params resolve in the selected Project or Research Topic context.
 
 ## Supported Actions
 
@@ -102,7 +102,7 @@ The user asks the skill to make the generated Toolbox effective.
 
 ## Main Flow
 
-1. The user invokes the Toolbox Creator Skill from a Project Operator Session.
+1. The user invokes the Toolbox Manager Skill from a Project Operator Session.
 2. The user describes a task or behavior without needing to know the Toolbox schema.
 3. The skill names the intended reusable behavior, proposes a stable `toolbox_id`, and explains whether the behavior belongs in one callback skill or several callback sources.
 4. The skill discovers Project-visible callback insertion points and maps the task to a short list of `<skill>/<point-inside-skill>` ids.
@@ -134,7 +134,7 @@ The user asks the skill to make the generated Toolbox effective.
 flowchart LR
   User[Project Operator Session]
 
-  subgraph Skill[Toolbox Creator Skill]
+  subgraph Skill[Toolbox Manager Skill]
     Intent[Translate task into Toolbox intent]
     Points[Find insertion points]
     Params[Design runtime params]
@@ -174,7 +174,7 @@ flowchart LR
 sequenceDiagram
   autonumber
   actor User as Project Operator Session
-  participant Skill as Toolbox Creator Skill
+  participant Skill as Toolbox Manager Skill
   participant Catalog as Insertion-point catalog
   participant Files as Toolbox source tree
   participant CLI as Isomer CLI services
@@ -214,7 +214,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $toolbox-creator-skill to create a Toolbox skill for this task: before DeepSci experiment agents run benchmarks, they should classify the evidence plan as real measurement, proxy measurement, inference, or assumption. I want this to be strict by default, but one topic should be able to relax it.
+> Use $isomer-op-toolbox-mgr to create a Toolbox skill for this task: before DeepSci experiment agents run benchmarks, they should classify the evidence plan as real measurement, proxy measurement, inference, or assumption. I want this to be strict by default, but one topic should be able to relax it.
 
 AI (visible response):
 

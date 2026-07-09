@@ -39,6 +39,8 @@ class SystemSkillAssetTests(unittest.TestCase):
         old_houmao_interop_path = "operator/" + "isomer-op-" + "houmao-interop"
         self.assertIn("operator/isomer-op-entrypoint", paths)
         self.assertIn("operator/isomer-op-project-mgr", paths)
+        self.assertIn("operator/isomer-op-toolbox-mgr", paths)
+        self.assertNotIn("operator/isomer-op-toolbox-creator", paths)
         self.assertIn("service/isomer-srv-houmao-interop", paths)
         self.assertNotIn(old_houmao_interop_path, paths)
         self.assertIn("research-paradigm/deepsci/isomer-deepsci-write", paths)
@@ -97,12 +99,44 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "agents" / "openai.yaml").is_file())
             self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "references" / "extension-skill-index.md").is_file())
             self.assertTrue((target / "operator" / "isomer-op-project-mgr" / "SKILL.md").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "SKILL.md").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "agents" / "openai.yaml").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "commands" / "help.md").is_file())
+            self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "commands" / "author-toolbox.md").is_file())
+            self.assertFalse((target / "operator" / "isomer-op-toolbox-creator").exists())
             old_houmao_interop_name = "isomer-op-" + "houmao-interop"
             self.assertFalse((target / "operator" / old_houmao_interop_name).exists())
             self.assertTrue((target / "service" / "isomer-srv-houmao-interop" / "SKILL.md").is_file())
             self.assertTrue((target / "service" / "isomer-srv-topic-env-setup" / "SKILL.md").is_file())
             self.assertFalse((target / "research-paradigm").exists())
             self.assertFalse((target / "dev").exists())
+
+    def test_toolbox_mgr_skill_identity_and_command_pages(self) -> None:
+        skill_path = "operator/isomer-op-toolbox-mgr"
+        skill = resolve_system_skill(skill_path)
+        skill_md = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("name: isomer-op-toolbox-mgr", skill_md)
+        self.assertNotIn("name: isomer-op-toolbox-creator", skill_md)
+        self.assertIn("description: Use when", skill_md)
+        self.assertIn("## Workflow", skill_md)
+        self.assertIn("### Procedural Subcommands", skill_md)
+        self.assertIn("### Helper Subcommands", skill_md)
+        for command_name in (
+            "author-toolbox",
+            "convert-skill",
+            "insert-callback",
+            "define-runtime-params",
+            "manage-toolbox",
+            "identify-insertion-points",
+            "author-toolbox-source",
+            "edit-callback-declarations",
+            "edit-runtime-params",
+            "inspect-effective-state",
+            "help",
+        ):
+            command = skill.joinpath("commands", f"{command_name}.md")
+            self.assertTrue(command.is_file(), command_name)
+            self.assertIn("## Workflow", command.read_text(encoding="utf-8"), command_name)
 
     def test_materialize_refuses_non_empty_target(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
