@@ -125,6 +125,36 @@ These project commands register extension metadata, manage topic reset checkpoin
 - `project topic-reset update-checkpoint`
 - `project web serve`
 
+### Project Houmao Integration Commands
+
+The `project integrations houmao` namespace manages Isomer-owned Houmao integration policy and Project-local projected Houmao support skills. These commands keep Houmao as an internal provider for Isomer service routing; ordinary users should install and use Isomer system skills, then let Isomer-provided skill context route the agent to Houmao-owned procedures when needed.
+
+- `project integrations houmao status`
+- `project integrations houmao enable`
+- `project integrations houmao disable`
+- `project integrations houmao prepare-skills`
+- `project integrations houmao skill-context`
+- `project integrations houmao topic-service-master names`
+- `project integrations houmao topic-service-master binding show`
+- `project integrations houmao topic-service-master binding record`
+
+**Side effects:** `status`, `skill-context`, `topic-service-master names`, and `topic-service-master binding show` are read-only. `enable` and `disable` record the Project Houmao integration policy in the Project Manifest. `prepare-skills` projects Isomer-managed Houmao support skills under the Project config directory. `topic-service-master binding record` writes the Topic Service Master binding to the selected Topic Workspace Manifest when Houmao integration is enabled; when integration is disabled it reports a skipped binding without mutating the workspace.
+
+```bash
+isomer-cli --print-json project integrations houmao status
+isomer-cli --print-json project integrations houmao enable
+isomer-cli --print-json project integrations houmao disable
+isomer-cli --print-json project integrations houmao prepare-skills
+isomer-cli --print-json project integrations houmao skill-context prepare-topic-service-master --topic my-topic
+isomer-cli --print-json project integrations houmao topic-service-master names --topic-workspace my-topic
+isomer-cli --print-json project integrations houmao topic-service-master binding show --topic my-topic
+isomer-cli --print-json project integrations houmao topic-service-master binding record --topic my-topic --status prepared --specialist-name isomer-topic-my-topic-service-master --launch-profile-name isomer-topic-my-topic-service-master-default --managed-agent-name isomer-topic-my-topic-service-master --updated-by isomer-srv-topic-service-agent-support
+```
+
+`skill-context` requires a lifecycle route such as `prepare-topic-service-master`, `launch-topic-service-master`, `inspect-topic-service-master`, `stop-topic-service-master`, or `repair-topic-service-master`. When integration is enabled, the JSON output returns the Project-local `houmao_skill_path` and `houmao_project_path` that the Isomer skill should pass to the agent. When integration is disabled, callers should skip Houmao-backed work and report the recorded skip reason.
+
+`topic-service-master names` accepts `--topic-workspace <topic-workspace-id>` and returns Isomer's suggested Houmao specialist, launch profile, and managed-agent names for that Topic Workspace. `topic-service-master binding show` resolves a selected topic through the normal Effective Topic Context selectors and reports suggested names plus the current binding. `topic-service-master binding record` accepts `--status prepared|launched|stopped|stale|archived|blocked|skipped`, `--specialist-name`, `--launch-profile-name`, `--managed-agent-name`, optional provider refs, and `--updated-by`.
+
 ### `project init`
 
 Initialize the smallest valid Project configuration and Project-level Houmao overlay.

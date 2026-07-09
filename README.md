@@ -1,6 +1,24 @@
 # isomer-labs
 
+Documentation: https://codegandee.github.io/isomer-labs/
+
 Isomer Labs is a research workbench for running multi-agent research topics from a project directory. It gives operators a CLI, packaged system skills, topic workspaces, durable records, and a local web GUI for inspecting how ideas, experiments, and artifacts evolve.
+
+**Note:** Isomer Labs is designed to be driven by a CLI agent. The recommended usage pattern is to install the Isomer system skills, then ask your CLI agent to operate Isomer through those skills and `isomer-cli`.
+
+## Prerequisites
+
+Isomer Labs depends on [Pixi](https://github.com/prefix-dev/pixi) for project and Topic Workspace environments. The recommended Pixi install method on Linux and macOS is:
+
+```bash
+curl -fsSL https://pixi.sh/install.sh | sh
+```
+
+[Houmao](https://github.com/igamenovoer/houmao) is optional. Install it when you want Houmao-backed agent-team construction, Topic Service Master setup, managed agents, gateways, mailboxes, and related adapter features:
+
+```bash
+uv tool install houmao
+```
 
 ## Install
 

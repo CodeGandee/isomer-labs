@@ -6,7 +6,15 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ## [Unreleased]
 
-No notable changes yet.
+## [0.2.1] - 2026-07-09
+
+This bugfix release updates published package metadata and README guidance so package indexes and new users can find the repository, documentation, and recommended CLI-agent setup path.
+
+### Changed
+
+- Added package project URLs so PyPI can display Repository, Documentation, Issues, and Changelog links.
+- Added the GitHub Pages documentation link directly under the README title.
+- Added README guidance for CLI-agent-driven usage, required Pixi setup, and optional Houmao installation.
 
 ## [0.2.0] - 2026-07-09
 
@@ -104,6 +112,7 @@ Initial tagged release of Isomer Labs.
 - Removed generated Isomer project state and vendored skill creator material.
 - Excluded local heavy folders from VS Code and updated local package lock metadata.
 
-[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/CodeGandee/isomer-labs/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/CodeGandee/isomer-labs/releases/tag/v0.1.0
