@@ -173,6 +173,8 @@ sequenceDiagram
 
 ## Example Prompt And Expected Visible AI Response
 
+> **Warning:** The user/AI chat content below is for example purposes only. Implementations should learn its style, intent, and semantics rather than hardcoding the example content.
+
 These examples show only the visible user prompt and the AI response content that should be returned to the user. Do not include hidden reasoning, chain-of-thought, scratchpad notes, private tool-selection deliberation, or thinking process in the AI response unless the user explicitly asks the skill to document that process.
 
 ### Event 001 - Install Toolbox for All Topics
