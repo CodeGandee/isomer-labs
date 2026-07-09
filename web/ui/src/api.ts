@@ -3,6 +3,8 @@ import {
   ProjectExplorerResponseSchema,
   IdeaDetailResponseSchema,
   OpenableItemDescriptorSchema,
+  RecordDetailResponseSchema,
+  RecordRenderResponseSchema,
   RecordsResponseSchema,
   RecentErrorsResponseSchema,
   TopicChangeEventSchema,
@@ -124,7 +126,9 @@ export async function getViewerDescriptor(topicId: string, recordId: string) {
 }
 
 export async function getRecordDetail(topicId: string, recordId: string, includePayload = false) {
-  return fetchJson(`/api/topics/${encodeURIComponent(topicId)}/records/${encodeURIComponent(recordId)}${params({ include_payload: includePayload })}`);
+  return RecordDetailResponseSchema.parse(
+    await fetchJson(`/api/topics/${encodeURIComponent(topicId)}/records/${encodeURIComponent(recordId)}${params({ include_payload: includePayload })}`),
+  );
 }
 
 export async function getIdeaDetail(topicId: string, ideaId: string, options: { includeSourceJson?: boolean } = {}) {
@@ -138,7 +142,7 @@ export async function getIdeaDetail(topicId: string, ideaId: string, options: { 
 }
 
 export async function getRecordRender(topicId: string, recordId: string) {
-  return fetchJson(`/api/topics/${encodeURIComponent(topicId)}/records/${encodeURIComponent(recordId)}/render`);
+  return RecordRenderResponseSchema.parse(await fetchJson(`/api/topics/${encodeURIComponent(topicId)}/records/${encodeURIComponent(recordId)}/render`));
 }
 
 export async function getRecordLineage(topicId: string, recordId: string) {

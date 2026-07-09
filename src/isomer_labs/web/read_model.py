@@ -25,6 +25,7 @@ from isomer_labs.records.index import (
     validate_query_index,
 )
 from isomer_labs.records.store import ResearchRecordError, render_record, show_record
+from isomer_labs.runtime.store import open_workspace_runtime
 from isomer_labs.runtime.validation import inspect_workspace_runtime
 from isomer_labs.workspace.actors import list_topic_actors
 from isomer_labs.workspace.manifest import resolve_semantic_binding
@@ -32,6 +33,8 @@ from isomer_labs.workspace.manifest import resolve_semantic_binding
 from .contracts import (
     IdeaDetailResponseContract,
     RecordFilesResponseContract,
+    RecordDetailResponseContract,
+    RecordRenderResponseContract,
     RecordViewerDescriptorContract,
     TopicGraphResponseContract,
     TopicOverviewResponseContract,
@@ -309,13 +312,10 @@ class ProjectWebReadModel:
     def record_detail(self, topic_id: str, record_id: str, *, include_payload: bool) -> dict[str, Any]:
         return self._with_context(
             topic_id,
-            lambda context: show_record(
+            lambda context: self._record_detail_payload(
                 context,
                 record_id,
-                env=self.selected_env,
                 include_payload=include_payload,
-                include_validation_diagnostics=True,
-                include_render_diagnostics=True,
             ),
         )
 
@@ -335,7 +335,7 @@ class ProjectWebReadModel:
         )
 
     def record_render(self, topic_id: str, record_id: str) -> dict[str, Any]:
-        return self._with_context(topic_id, lambda context: render_record(context, record_id, env=self.selected_env))
+        return self._with_context(topic_id, lambda context: self._record_render_payload(context, record_id))
 
     def record_lineage(self, topic_id: str, record_id: str, *, direction: str) -> dict[str, Any]:
         return self._with_context(
@@ -578,6 +578,51 @@ class ProjectWebReadModel:
         payload["topic_id"] = context.research_topic.id
         return ensure_gui_payload(payload, RecordFilesResponseContract, contract_name="record-files"), diagnostics
 
+    def _record_detail_payload(
+        self,
+        context: EffectiveTopicContext,
+        record_id: str,
+        *,
+        include_payload: bool,
+    ) -> tuple[dict[str, Any], list[Diagnostic]]:
+        payload, diagnostics = show_record(
+            context,
+            record_id,
+            env=self.selected_env,
+            include_payload=include_payload,
+            include_validation_diagnostics=True,
+            include_render_diagnostics=True,
+        )
+        files_payload, files_diagnostics = query_index_files(context, record_id, env=self.selected_env)
+        diagnostics.extend(files_diagnostics)
+        enriched, metadata_diagnostics = self._enrich_record_inspection_payload(context, record_id, payload, files_payload=files_payload)
+        diagnostics.extend(metadata_diagnostics)
+        return ensure_gui_payload(enriched, RecordDetailResponseContract, contract_name="record-detail"), diagnostics
+
+    def _record_render_payload(
+        self,
+        context: EffectiveTopicContext,
+        record_id: str,
+    ) -> tuple[dict[str, Any], list[Diagnostic]]:
+        payload, diagnostics = render_record(context, record_id, env=self.selected_env)
+        detail_payload, detail_diagnostics = show_record(
+            context,
+            record_id,
+            env=self.selected_env,
+            include_payload=False,
+            include_validation_diagnostics=False,
+            include_render_diagnostics=False,
+        )
+        files_payload, files_diagnostics = query_index_files(context, record_id, env=self.selected_env)
+        diagnostics.extend([*detail_diagnostics, *files_diagnostics])
+        enriched_source = {**detail_payload, "record": payload.get("record") or detail_payload.get("record")}
+        enriched_source, metadata_diagnostics = self._enrich_record_inspection_payload(context, record_id, enriched_source, files_payload=files_payload)
+        diagnostics.extend(metadata_diagnostics)
+        for key in ("topic_workspace_relative_path", "absolute_filepath", "direct_parent_idea", "record_inspection"):
+            if key in enriched_source:
+                payload[key] = enriched_source[key]
+        return ensure_gui_payload(payload, RecordRenderResponseContract, contract_name="record-render"), diagnostics
+
     def _record_viewer_descriptor_payload(
         self,
         context: EffectiveTopicContext,
@@ -621,6 +666,8 @@ class ProjectWebReadModel:
             *(list(detail_diagnostic_payload) if isinstance(detail_diagnostic_payload, list) else []),
             *(list(file_diagnostic_payload) if isinstance(file_diagnostic_payload, list) else []),
         ]
+        enriched_detail, metadata_diagnostics = self._enrich_record_inspection_payload(context, record_id, detail_payload, files_payload=files_payload)
+        descriptor_diagnostics.extend(diagnostic.to_json() for diagnostic in metadata_diagnostics)
         record_url = f"/api/topics/{context.research_topic.id}/records/{record_id}"
         render_url = f"{record_url}/render"
         primary_content_url = render_url if viewer_kind == "markdown" else None
@@ -633,6 +680,10 @@ class ProjectWebReadModel:
             "record_id": record_id,
             "title": title,
             "viewer_kind": viewer_kind,
+            "topic_workspace_relative_path": enriched_detail.get("topic_workspace_relative_path"),
+            "absolute_filepath": enriched_detail.get("absolute_filepath"),
+            "direct_parent_idea": enriched_detail.get("direct_parent_idea"),
+            "record_inspection": enriched_detail.get("record_inspection"),
             "primary_content_url": primary_content_url,
             "detail_url": record_url,
             "render_url": render_url,
@@ -642,6 +693,38 @@ class ProjectWebReadModel:
             "exists": True,
             "diagnostics": descriptor_diagnostics,
         }, RecordViewerDescriptorContract, contract_name="record-viewer-descriptor"), [*detail_diagnostics, *files_diagnostics]
+
+    def _enrich_record_inspection_payload(
+        self,
+        context: EffectiveTopicContext,
+        record_id: str,
+        payload: Mapping[str, Any],
+        *,
+        files_payload: Mapping[str, Any] | None = None,
+    ) -> tuple[dict[str, Any], list[Diagnostic]]:
+        enriched = dict(payload)
+        record_raw = enriched.get("record")
+        record: Mapping[str, Any] = record_raw if isinstance(record_raw, Mapping) else {}
+        structured_raw = enriched.get("structured_payload")
+        structured: Mapping[str, Any] = structured_raw if isinstance(structured_raw, Mapping) else {}
+        files_raw = files_payload.get("files") if files_payload is not None else None
+        files = [item for item in files_raw if isinstance(item, Mapping)] if isinstance(files_raw, list) else []
+        path_metadata = _record_path_metadata(context, record, structured, files)
+        parent_idea, diagnostics = _direct_parent_idea_metadata(context, self.selected_env, record_id)
+        inspection = {
+            "topic_workspace_relative_path": path_metadata.get("topic_workspace_relative_path"),
+            "absolute_filepath": path_metadata.get("absolute_filepath"),
+            "path_source": path_metadata.get("path_source"),
+            "direct_parent_idea": parent_idea,
+        }
+        if path_metadata.get("topic_workspace_relative_path") is not None:
+            enriched["topic_workspace_relative_path"] = path_metadata["topic_workspace_relative_path"]
+        if path_metadata.get("absolute_filepath") is not None:
+            enriched["absolute_filepath"] = path_metadata["absolute_filepath"]
+        if parent_idea is not None:
+            enriched["direct_parent_idea"] = parent_idea
+        enriched["record_inspection"] = {key: value for key, value in inspection.items() if value is not None}
+        return enriched, diagnostics
 
     def _topic_change_event_payload(self, context: EffectiveTopicContext) -> tuple[dict[str, Any], list[Diagnostic]]:
         export_payload, diagnostics = query_index_export(context, env=self.selected_env, view="graph")
@@ -702,14 +785,20 @@ def _viewer_kind(record: Mapping[str, Any], structured: Mapping[str, Any], files
 
 
 def _primary_openable_file(files: list[object]) -> str | None:
+    item = _primary_openable_file_item(files)
+    file_id = item.get("id") if item is not None else None
+    if isinstance(file_id, str) and file_id:
+        return file_id
+    return None
+
+
+def _primary_openable_file_item(files: list[object]) -> Mapping[str, Any] | None:
     for item in files:
         if not isinstance(item, Mapping) or not item.get("openable"):
             continue
         if item.get("file_role") in {"structured_payload", "structured_payload_manifest"}:
             continue
-        file_id = item.get("id")
-        if isinstance(file_id, str) and file_id:
-            return file_id
+        return item
     return None
 
 
@@ -724,3 +813,121 @@ def _descriptor_title(record: Mapping[str, Any], structured: Mapping[str, Any], 
             if isinstance(value, str) and value:
                 return value
     return record_id
+
+
+def _record_path_metadata(
+    context: EffectiveTopicContext,
+    record: Mapping[str, Any],
+    structured: Mapping[str, Any],
+    files: list[Mapping[str, Any]],
+) -> dict[str, str | None]:
+    primary_file = _primary_openable_file_item(list(files))
+    candidates: list[tuple[str, object]] = []
+    if primary_file is not None:
+        candidates.extend(
+            [
+                ("primary_file", primary_file.get("resolved_path")),
+                ("primary_file", primary_file.get("path")),
+            ]
+        )
+    candidates.extend(
+        [
+            ("structured_payload", structured.get("payload_file_path")),
+            ("rendered_markdown", structured.get("rendered_markdown_path")),
+            ("record_content", record.get("content_path")),
+        ]
+    )
+    metadata = record.get("transition_metadata")
+    if isinstance(metadata, Mapping):
+        candidates.extend(
+            [
+                ("metadata_payload", metadata.get("payload_file_path")),
+                ("metadata_rendered_markdown", metadata.get("rendered_markdown_path")),
+                ("metadata_content", metadata.get("content_path")),
+            ]
+        )
+    for source, value in candidates:
+        if not isinstance(value, str) or not value.strip():
+            continue
+        path = _resolve_record_path(context, value)
+        if path is None:
+            continue
+        absolute = path.resolve(strict=False)
+        relative = _topic_workspace_relative_path(context, absolute)
+        return {
+            "topic_workspace_relative_path": relative,
+            "absolute_filepath": str(absolute),
+            "path_source": source,
+        }
+    return {"topic_workspace_relative_path": None, "absolute_filepath": None, "path_source": None}
+
+
+def _resolve_record_path(context: EffectiveTopicContext, value: str) -> Path | None:
+    path = Path(value)
+    if path.is_absolute():
+        return path
+    topic_candidate = context.topic_workspace_path / path
+    if topic_candidate.exists():
+        return topic_candidate
+    project_candidate = context.project.root / path
+    if project_candidate.exists():
+        return project_candidate
+    if str(path).startswith(str(context.topic_workspace_id)):
+        return context.project.root / path
+    return topic_candidate
+
+
+def _topic_workspace_relative_path(context: EffectiveTopicContext, path: Path) -> str | None:
+    try:
+        return str(path.resolve(strict=False).relative_to(context.topic_workspace_path.resolve(strict=False)))
+    except ValueError:
+        return None
+
+
+def _direct_parent_idea_metadata(
+    context: EffectiveTopicContext,
+    env: Mapping[str, str],
+    record_id: str,
+) -> tuple[dict[str, object] | None, list[Diagnostic]]:
+    store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if store is not None:
+        try:
+            realizations = store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id, record_id=record_id)
+            if realizations:
+                realization = next((item for item in realizations if item.latest), realizations[0])
+                idea = store.get_research_idea(realization.idea_id, topic_workspace_id=context.topic_workspace_id)
+                payload: dict[str, object] = {
+                    "idea_id": realization.idea_id,
+                    "source": "canonical_realization",
+                    "realization_id": realization.id,
+                }
+                if idea is not None:
+                    payload.update(
+                        {
+                            "display_key": idea.display_key,
+                            "title": idea.title,
+                            "summary": idea.summary,
+                            "status": idea.status,
+                        }
+                    )
+                return {key: value for key, value in payload.items() if value is not None}, diagnostics
+        finally:
+            store.close()
+    facets_payload, facet_diagnostics = query_index_facets(context, record_id, env=env, facet="ideas")
+    diagnostics.extend(facet_diagnostics)
+    ideas = facets_payload.get("ideas")
+    if isinstance(ideas, list):
+        for item in ideas:
+            if not isinstance(item, Mapping):
+                continue
+            idea_id = item.get("idea_id")
+            title = item.get("title")
+            if isinstance(idea_id, str) and idea_id:
+                return {
+                    "idea_id": idea_id,
+                    "title": title if isinstance(title, str) else None,
+                    "summary": item.get("summary") if isinstance(item.get("summary"), str) else None,
+                    "status": item.get("status") if isinstance(item.get("status"), str) else None,
+                    "source": "query_index_ideas",
+                }, diagnostics
+    return None, diagnostics

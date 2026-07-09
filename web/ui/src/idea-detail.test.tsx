@@ -18,6 +18,7 @@ vi.mock("./api", async (importOriginal) => ({
 import { getIdeaDetail } from "./api";
 import { buildIdeaNodeHoverMarkdown, IdeaDetailPanel, openRecordFromNode } from "./App";
 import { workbenchCommands$ } from "./events";
+import { ToastNotificationsProvider } from "./toast-notifications";
 import type { IdeaDetailResponse, TopicGraphView } from "./types";
 
 const getIdeaDetailMock = vi.mocked(getIdeaDetail);
@@ -56,7 +57,8 @@ describe("Idea detail panel", () => {
     expect(document.querySelector(".json-modal-code")?.textContent).toContain("Separate launch overhead.");
     fireEvent.click(screen.getByRole("button", { name: "Copy JSON" }));
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('"summary": "Separate launch overhead."')));
-    expect(screen.getAllByText("JSON copied.").length).toBeGreaterThan(0);
+    expect(await screen.findByRole("status", { name: "JSON copied." })).toBeTruthy();
+    expect(document.querySelector(".copy-status")).toBeNull();
     fireEvent.keyDown(dialog, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
@@ -119,7 +121,11 @@ describe("Idea detail panel", () => {
 
 function renderWithQuery(element: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{element}</QueryClientProvider>);
+  return render(
+    <ToastNotificationsProvider>
+      <QueryClientProvider client={client}>{element}</QueryClientProvider>
+    </ToastNotificationsProvider>,
+  );
 }
 
 function ideaDetailPayload(): IdeaDetailResponse {

@@ -18,6 +18,7 @@ from isomer_labs.deepsci_ext.record_formats import canonical_record_format_ref
 from isomer_labs.web import create_app
 from isomer_labs.web.contracts import (
     IdeaDetailResponseContract,
+    RecordDetailResponseContract,
     RecordFilesResponseContract,
     RecordViewerDescriptorContract,
     TopicGraphResponseContract,
@@ -319,9 +320,12 @@ class ProjectWebGuiTests(unittest.TestCase):
         expanded_nodes = {node["id"]: node for node in expanded["nodes"]}
         self.assertTrue(expanded_nodes["topic:alpha"]["children_loaded"])
         self.assertIn("topic:alpha:overview", expanded_nodes)
+        self.assertIn("topic:alpha:graphs", expanded_nodes)
         self.assertIn("topic:alpha:graph:idea-lineage", expanded_nodes)
         self.assertIn("topic:alpha:records", expanded_nodes)
-        self.assertIn("topic:alpha:runtime", expanded_nodes)
+        self.assertNotIn("topic:alpha:runtime", expanded_nodes)
+        self.assertNotIn("topic:alpha:actors", expanded_nodes)
+        self.assertNotIn("topic:alpha:repositories", expanded_nodes)
         self.assertFalse(any(str(node["id"]).startswith("file:") for node in expanded["nodes"]))
 
         descriptor = read_model.openable_item_descriptor("topic:alpha:graph:idea-lineage")
@@ -337,6 +341,11 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("/api/topics/alpha/overview", overview["detail_urls"]["overview"])
         self.assertEqual("/api/topics/alpha", overview["detail_urls"]["topic"])
         self.assertEqual("/api/topics/alpha/runtime", overview["detail_urls"]["runtime"])
+
+        stale_runtime = read_model.openable_item_descriptor("topic:alpha:runtime")
+        self.assertTrue(stale_runtime["ok"], stale_runtime)
+        self.assertEqual("runtime", stale_runtime["preferred_tab_component"])
+        self.assertEqual("/api/topics/alpha/runtime", stale_runtime["detail_urls"]["runtime"])
 
         settings = read_model.openable_item_descriptor("project:settings")
         self.assertTrue(settings["ok"], settings)
@@ -640,6 +649,21 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("idea-parent", descriptor["record_id"])
         self.assertEqual("markdown", descriptor["viewer_kind"])
         self.assertNotIn("structured_payload", descriptor)
+        self.assertTrue(descriptor.get("topic_workspace_relative_path"), descriptor)
+        self.assertTrue(str(descriptor.get("absolute_filepath", "")).endswith(".json"), descriptor)
+        self.assertEqual("idea-parent", descriptor["direct_parent_idea"]["idea_id"])
+        self.assertIn(descriptor["direct_parent_idea"]["source"], {"canonical_realization", "query_index_ideas"})
+
+        detail = read_model.record_detail("alpha", "idea-parent", include_payload=True)
+        validate_gui_payload(detail, RecordDetailResponseContract)
+        self.assertFalse(detail["mutated"])
+        self.assertEqual(descriptor["absolute_filepath"], detail["absolute_filepath"])
+        self.assertEqual("idea-parent", detail["direct_parent_idea"]["idea_id"])
+
+        rendered = read_model.record_render("alpha", "idea-parent")
+        self.assertTrue(rendered["ok"], rendered)
+        self.assertFalse(rendered["mutated"])
+        self.assertEqual(descriptor["absolute_filepath"], rendered["absolute_filepath"])
 
         openable_record = read_model.openable_item_descriptor("record:alpha:idea-parent")
         self.assertTrue(openable_record["ok"], openable_record)
@@ -783,6 +807,8 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("json", descriptor["viewer_kind"])
         self.assertIn("/files/", descriptor["primary_content_url"])
         self.assertTrue(str(descriptor["primary_content_url"]).endswith("/content"))
+        self.assertEqual(str(metrics.resolve(strict=False)), descriptor["absolute_filepath"])
+        self.assertEqual("outputs/metrics.json", descriptor["topic_workspace_relative_path"])
 
         file_id = str(descriptor["primary_content_url"]).split("/files/", 1)[1].split("/content", 1)[0]
         files = read_model.record_files("alpha", "idea-with-file")

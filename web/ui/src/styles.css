@@ -816,18 +816,6 @@ tbody tr:hover {
   color: var(--primary);
 }
 
-.copy-status.success {
-  color: var(--success-foreground);
-  background: var(--success-background);
-  border-color: color-mix(in srgb, var(--success-foreground) 44%, var(--success-background));
-}
-
-.copy-status.error {
-  color: var(--danger-foreground);
-  background: var(--danger-background);
-  border-color: color-mix(in srgb, var(--danger-foreground) 44%, var(--danger-background));
-}
-
 .markdown-view {
   min-width: 0;
   min-height: 180px;
@@ -1238,10 +1226,6 @@ tbody tr:hover {
 
 .json-modal-heading [data-slot="dialog-header"] {
   min-width: 0;
-}
-
-.json-modal-status {
-  min-height: 18px;
 }
 
 .json-modal-tabs {

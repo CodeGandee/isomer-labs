@@ -242,7 +242,55 @@ export const ViewerDescriptorSchema = z
     files_url: z.string().nullable().optional(),
     facets_url: z.string().nullable().optional(),
     media_type: z.string().nullable().optional(),
+    topic_workspace_relative_path: z.string().nullable().optional(),
+    absolute_filepath: z.string().nullable().optional(),
+    direct_parent_idea: z.record(z.string(), z.unknown()).nullable().optional(),
+    record_inspection: z.record(z.string(), z.unknown()).nullable().optional(),
     exists: z.boolean(),
+    diagnostics: z.array(DiagnosticSchema).optional(),
+    error: z
+      .object({
+        code: z.string(),
+        message: z.string(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const RecordDetailResponseSchema = z
+  .object({
+    ok: z.boolean(),
+    mutated: z.boolean(),
+    operation: z.string(),
+    record: z.record(z.string(), z.unknown()),
+    structured_payload: z.record(z.string(), z.unknown()).nullable().optional(),
+    topic_workspace_relative_path: z.string().nullable().optional(),
+    absolute_filepath: z.string().nullable().optional(),
+    direct_parent_idea: z.record(z.string(), z.unknown()).nullable().optional(),
+    record_inspection: z.record(z.string(), z.unknown()).nullable().optional(),
+    diagnostics: z.array(DiagnosticSchema).optional(),
+    error: z
+      .object({
+        code: z.string(),
+        message: z.string(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const RecordRenderResponseSchema = z
+  .object({
+    ok: z.boolean(),
+    mutated: z.boolean(),
+    operation: z.string(),
+    record: z.record(z.string(), z.unknown()),
+    render: z.record(z.string(), z.unknown()),
+    topic_workspace_relative_path: z.string().nullable().optional(),
+    absolute_filepath: z.string().nullable().optional(),
+    direct_parent_idea: z.record(z.string(), z.unknown()).nullable().optional(),
+    record_inspection: z.record(z.string(), z.unknown()).nullable().optional(),
     diagnostics: z.array(DiagnosticSchema).optional(),
     error: z
       .object({
@@ -366,6 +414,8 @@ export type TopicOverviewResponse = z.infer<typeof TopicOverviewResponseSchema>;
 export type RecordSummary = z.infer<typeof RecordSummarySchema>;
 export type IdeaDetailResponse = z.infer<typeof IdeaDetailResponseSchema>;
 export type ViewerDescriptor = z.infer<typeof ViewerDescriptorSchema>;
+export type RecordDetailResponse = z.infer<typeof RecordDetailResponseSchema>;
+export type RecordRenderResponse = z.infer<typeof RecordRenderResponseSchema>;
 export type ExplorerNode = z.infer<typeof ExplorerNodeSchema>;
 export type ProjectExplorerResponse = z.infer<typeof ProjectExplorerResponseSchema>;
 export type OpenableItemDescriptor = z.infer<typeof OpenableItemDescriptorSchema>;

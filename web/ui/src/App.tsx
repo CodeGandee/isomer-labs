@@ -52,6 +52,7 @@ import { LinkButton, StatusBadge, ToolbarButton } from "@/components/workbench-c
 import type { Diagnostic, ExplorerNode, GraphScope, IdeaDetailResponse, OpenableItemDescriptor, RecordSummary } from "./types";
 import { ThemeProvider, useGuiTheme } from "./theme-provider";
 import type { ThemeMode } from "./theme-mode";
+import { ToastNotificationsProvider, useToastNotifications } from "./toast-notifications";
 import { GuiSettingsProvider, useGuiSettings } from "./ui-settings";
 import { filterRecords, openPanelFromDescriptor, viewerSurface, type DockviewApiLike, type OpenPanelResult } from "./view-model";
 import { GraphFiltersBar, GraphSummary } from "./features/graph/GraphPanels";
@@ -116,9 +117,11 @@ export function RootApp() {
     <ThemeProvider>
       <GuiSettingsProvider>
         <TooltipProvider>
-          <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-          </QueryClientProvider>
+          <ToastNotificationsProvider>
+            <QueryClientProvider client={queryClient}>
+              <RouterProvider router={router} />
+            </QueryClientProvider>
+          </ToastNotificationsProvider>
         </TooltipProvider>
       </GuiSettingsProvider>
     </ThemeProvider>
@@ -752,7 +755,7 @@ function ProjectOverviewPanel() {
 export function TopicOverviewPanel({ topicId }: { topicId: string }) {
   const viewJsonButtonRef = useRef<HTMLButtonElement | null>(null);
   const [jsonModalOpen, setJsonModalOpen] = useState(false);
-  const [copyState, setCopyState] = useState<CopyState>({ target: null, status: "idle" });
+  const { notify } = useToastNotifications();
   const overview = useQuery({
     queryKey: ["topic", topicId, "overview"],
     queryFn: () => getTopicOverview(topicId),
@@ -776,16 +779,16 @@ export function TopicOverviewPanel({ topicId }: { topicId: string }) {
 
   const copyText = useCallback(async (target: "json" | "markdown", textValue: string | null | undefined) => {
     if (!textValue) {
-      setCopyState({ target, status: "error", message: target === "markdown" ? "No Markdown available." : "Nothing to copy." });
+      notify({ title: target === "markdown" ? "No Markdown available." : "Nothing to copy.", tone: "error" });
       return;
     }
     try {
       await navigator.clipboard.writeText(textValue);
-      setCopyState({ target, status: "success", message: target === "json" ? "JSON copied." : "Markdown copied." });
+      notify({ title: target === "json" ? "JSON copied." : "Markdown copied.", tone: "success" });
     } catch {
-      setCopyState({ target, status: "error", message: "Clipboard write failed. Content remains selectable." });
+      notify({ title: "Clipboard write failed.", description: "Content remains selectable.", tone: "error" });
     }
-  }, []);
+  }, [notify]);
 
   const closeJsonModal = useCallback(() => {
     setJsonModalOpen(false);
@@ -831,7 +834,6 @@ export function TopicOverviewPanel({ topicId }: { topicId: string }) {
         </StatusBadge>
         {overviewPath ? <StatusBadge>{overviewPath}</StatusBadge> : null}
         {overview.data?.overview?.content_bytes !== undefined ? <StatusBadge>{overview.data.overview.content_bytes} bytes</StatusBadge> : null}
-        {copyState.status !== "idle" ? <StatusBadge className={`copy-status ${copyState.status}`} tone={copyState.status === "success" ? "success" : "danger"}>{copyState.message}</StatusBadge> : null}
       </div>
       {diagnostics.length > 0 ? <OverviewDiagnostics diagnostics={diagnostics} /> : null}
       <MarkdownView content={markdownContent} state={markdownState} />
@@ -841,7 +843,6 @@ export function TopicOverviewPanel({ topicId }: { topicId: string }) {
           description="JSON data for the topic overview."
           tabs={jsonTabs}
           defaultTabId="topic"
-          copyStatus={copyState.target === "json" ? copyState.message : undefined}
           onClose={closeJsonModal}
           onCopy={(jsonText) => void copyText("json", jsonText)}
         />
@@ -997,17 +998,11 @@ function RecordsPanel({ topicId }: { topicId: string }) {
   );
 }
 
-type CopyState = {
-  target: "json" | "markdown" | null;
-  status: "idle" | "success" | "error";
-  message?: string;
-};
-
 export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: string }) {
   const viewJsonButtonRef = useRef<HTMLButtonElement | null>(null);
   const previousDigestRef = useRef<string | undefined>(undefined);
   const [jsonModalOpen, setJsonModalOpen] = useState(false);
-  const [copyState, setCopyState] = useState<CopyState>({ target: null, status: "idle" });
+  const { notify } = useToastNotifications();
   const [digestNotice, setDigestNotice] = useState("");
   const detail = useQuery({
     queryKey: ["topic", topicId, "idea-lineage", "idea", ideaId, "detail", false],
@@ -1070,16 +1065,16 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
 
   const copyText = useCallback(async (target: "json" | "markdown", textValue: string | null | undefined) => {
     if (!textValue) {
-      setCopyState({ target, status: "error", message: "Nothing to copy." });
+      notify({ title: "Nothing to copy.", tone: "error" });
       return;
     }
     try {
       await navigator.clipboard.writeText(textValue);
-      setCopyState({ target, status: "success", message: target === "json" ? "JSON copied." : "Markdown copied." });
+      notify({ title: target === "json" ? "JSON copied." : "Markdown copied.", tone: "success" });
     } catch {
-      setCopyState({ target, status: "error", message: "Clipboard write failed. Content remains selectable." });
+      notify({ title: "Clipboard write failed.", description: "Content remains selectable.", tone: "error" });
     }
-  }, []);
+  }, [notify]);
 
   const closeJsonModal = useCallback(() => {
     setJsonModalOpen(false);
@@ -1126,7 +1121,6 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
         ) : null}
         {sourceTruncated ? <StatusBadge tone="warning">source JSON over default cap</StatusBadge> : null}
         {digestNotice ? <StatusBadge tone="info">{digestNotice}</StatusBadge> : null}
-        {copyState.status !== "idle" ? <StatusBadge className={`copy-status ${copyState.status}`} tone={copyState.status === "success" ? "success" : "danger"}>{copyState.message}</StatusBadge> : null}
         <LinkButton
           type="button"
           className="source-record-button"
@@ -1153,7 +1147,6 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
           description="JSON data for the selected idea."
           tabs={jsonTabs}
           defaultTabId="main-record"
-          copyStatus={copyState.target === "json" ? copyState.message : undefined}
           onClose={closeJsonModal}
           onCopy={(jsonText) => void copyText("json", jsonText)}
         />
@@ -1162,15 +1155,18 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
   );
 }
 
-function RecordDetailPanel({ topicId, recordId }: { topicId: string; recordId: string }) {
+export function RecordDetailPanel({ topicId, recordId }: { topicId: string; recordId: string }) {
+  const viewJsonButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [jsonModalOpen, setJsonModalOpen] = useState(false);
+  const { notify } = useToastNotifications();
   const descriptor = useQuery({
     queryKey: ["topic", topicId, "record", recordId, "descriptor"],
     queryFn: () => getViewerDescriptor(topicId, recordId),
     enabled: Boolean(topicId && recordId),
   });
   const detail = useQuery({
-    queryKey: ["topic", topicId, "record", recordId, "detail", descriptor.data?.viewer_kind === "json"],
-    queryFn: () => getRecordDetail(topicId, recordId, descriptor.data?.viewer_kind === "json"),
+    queryKey: ["topic", topicId, "record", recordId, "detail", Boolean(jsonModalOpen || descriptor.data?.viewer_kind === "json")],
+    queryFn: () => getRecordDetail(topicId, recordId, Boolean(jsonModalOpen || descriptor.data?.viewer_kind === "json")),
     enabled: Boolean(descriptor.data?.ok),
   });
   const rendered = useQuery({
@@ -1182,25 +1178,140 @@ function RecordDetailPanel({ topicId, recordId }: { topicId: string; recordId: s
   const siblings = useQuery({ queryKey: ["topic", topicId, "record", recordId, "siblings"], queryFn: () => getRecordSiblings(topicId, recordId), enabled: Boolean(descriptor.data?.ok) });
   const files = useQuery({ queryKey: ["topic", topicId, "record", recordId, "files"], queryFn: () => getRecordFiles(topicId, recordId), enabled: Boolean(descriptor.data?.ok) });
   const facets = useQuery({ queryKey: ["topic", topicId, "record", recordId, "facets"], queryFn: () => getRecordFacets(topicId, recordId), enabled: Boolean(descriptor.data?.ok) });
+  const title = descriptor.data?.title || String(detail.data?.record?.title || recordId);
+  const surface = descriptor.data ? viewerSurface(descriptor.data) : "unknown";
+  const markdownContent = String(rendered.data?.render?.content || "");
+  const relativePath = descriptor.data?.topic_workspace_relative_path || detail.data?.topic_workspace_relative_path || rendered.data?.topic_workspace_relative_path || "";
+  const absoluteFilepath = descriptor.data?.absolute_filepath || detail.data?.absolute_filepath || rendered.data?.absolute_filepath || "";
+  const parentIdea = descriptor.data?.direct_parent_idea || detail.data?.direct_parent_idea || rendered.data?.direct_parent_idea;
+  const diagnostics = useMemo(
+    () => [
+      ...(descriptor.data?.diagnostics || []),
+      ...(detail.data?.diagnostics || []),
+      ...(rendered.data?.diagnostics || []),
+      ...(((lineage.data as { diagnostics?: unknown[] } | undefined)?.diagnostics as []) || []),
+      ...(((siblings.data as { diagnostics?: unknown[] } | undefined)?.diagnostics as []) || []),
+      ...(((files.data as { diagnostics?: unknown[] } | undefined)?.diagnostics as []) || []),
+      ...(((facets.data as { diagnostics?: unknown[] } | undefined)?.diagnostics as []) || []),
+    ],
+    [descriptor.data?.diagnostics, detail.data?.diagnostics, facets.data, files.data, lineage.data, rendered.data?.diagnostics, siblings.data],
+  );
+  const jsonTabs = useMemo<JsonModalTab[]>(
+    () => [
+      { id: "descriptor", label: "Descriptor", jsonText: buildJsonMarkdownPreview(descriptor.data || {}).jsonText, loading: descriptor.isFetching },
+      { id: "detail", label: "Detail", jsonText: buildJsonMarkdownPreview(detail.data || {}).jsonText, loading: detail.isFetching },
+      { id: "render", label: "Render", jsonText: buildJsonMarkdownPreview(rendered.data || {}).jsonText, loading: rendered.isFetching },
+      { id: "lineage", label: "Lineage", jsonText: buildJsonMarkdownPreview(lineage.data || {}).jsonText, loading: lineage.isFetching },
+      { id: "siblings", label: "Siblings", jsonText: buildJsonMarkdownPreview(siblings.data || {}).jsonText, loading: siblings.isFetching },
+      { id: "files", label: "Files", jsonText: buildJsonMarkdownPreview(files.data || {}).jsonText, loading: files.isFetching },
+      { id: "facets", label: "Facets", jsonText: buildJsonMarkdownPreview(facets.data || {}).jsonText, loading: facets.isFetching },
+      { id: "diagnostics", label: "Diagnostics", jsonText: buildJsonMarkdownPreview(diagnostics).jsonText },
+    ],
+    [
+      descriptor.data,
+      descriptor.isFetching,
+      detail.data,
+      detail.isFetching,
+      diagnostics,
+      facets.data,
+      facets.isFetching,
+      files.data,
+      files.isFetching,
+      lineage.data,
+      lineage.isFetching,
+      rendered.data,
+      rendered.isFetching,
+      siblings.data,
+      siblings.isFetching,
+    ],
+  );
+  const copyText = useCallback(async (target: "json" | "markdown" | "filepath", textValue: string | null | undefined) => {
+    if (!textValue) {
+      notify({ title: target === "filepath" ? "No filepath available." : "Nothing to copy.", tone: "error" });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(textValue);
+      notify({ title: target === "json" ? "JSON copied." : target === "filepath" ? "Filepath copied." : "Markdown copied.", tone: "success" });
+    } catch {
+      notify({ title: "Clipboard write failed.", description: "Content remains selectable.", tone: "error" });
+    }
+  }, [notify]);
+  const refreshRecord = useCallback(() => {
+    void descriptor.refetch();
+    void detail.refetch();
+    void rendered.refetch();
+    void lineage.refetch();
+    void siblings.refetch();
+    void files.refetch();
+    void facets.refetch();
+  }, [descriptor, detail, facets, files, lineage, rendered, siblings]);
+  const closeJsonModal = useCallback(() => {
+    setJsonModalOpen(false);
+    window.requestAnimationFrame(() => viewJsonButtonRef.current?.focus());
+  }, []);
+  const parentIdeaLabel = formatParentIdea(parentIdea);
+  const showSpecialViewer = surface === "pdf" || surface === "image" || surface === "table";
   return (
-    <section className="panel-body detail-viewer">
+    <section className="panel-body detail-viewer idea-detail-panel">
       <div className="detail-heading">
-        <h3>{descriptor.data?.title || recordId}</h3>
-        <span>{descriptor.data?.viewer_kind || "loading"}</span>
+        <div>
+          <h3>{title}</h3>
+          <span>{relativePath || recordId}</span>
+        </div>
+        <div className="toolbar idea-toolbar">
+          <ToolbarButton ref={viewJsonButtonRef} type="button" disabled={!descriptor.data} onClick={() => setJsonModalOpen(true)}>
+            View JSON
+          </ToolbarButton>
+          <ToolbarButton type="button" disabled={!markdownContent} onClick={() => void copyText("markdown", markdownContent)}>
+            Copy Markdown
+          </ToolbarButton>
+          <ToolbarButton type="button" onClick={refreshRecord}>
+            <RefreshCw aria-hidden="true" />
+            Refresh
+          </ToolbarButton>
+          <ToolbarButton type="button" disabled={!absoluteFilepath} onClick={() => void copyText("filepath", absoluteFilepath)}>
+            Copy Filepath
+          </ToolbarButton>
+        </div>
       </div>
-      <ViewerContent
-        descriptor={descriptor.data}
-        rendered={rendered.data}
-        detail={detail.data}
-        renderIsPending={Boolean(descriptor.data?.viewer_kind === "markdown" && (rendered.isPending || rendered.isFetching))}
-      />
-      <div className="detail-columns">
-        <JsonBlock title="Idea Lineage" value={{ lineage: lineage.data, siblings: siblings.data }} />
-        <FilesBlock value={files.data} topicId={topicId} recordId={recordId} />
-        <JsonBlock title="Supporting Details" value={facets.data} />
+      <div className="idea-status-row">
+        <StatusBadge>{descriptor.data?.viewer_kind || "loading"}</StatusBadge>
+        {parentIdeaLabel ? <StatusBadge>parent idea: {parentIdeaLabel}</StatusBadge> : null}
       </div>
+      {showSpecialViewer ? (
+        <ViewerContent descriptor={descriptor.data} rendered={rendered.data} detail={detail.data} renderIsPending={Boolean(rendered.isPending || rendered.isFetching)} />
+      ) : rendered.isPending && !markdownContent && descriptor.data?.viewer_kind === "markdown" ? (
+        <MarkdownView content="Rendering Markdown." state="loading" />
+      ) : (
+        <MarkdownView content={markdownContent || "No rendered Markdown available for this record."} state={markdownContent ? "ready" : "empty"} />
+      )}
+      {jsonModalOpen ? (
+        <JsonModal
+          title={`${title} Data`}
+          description="JSON data for the selected record."
+          tabs={jsonTabs}
+          defaultTabId="detail"
+          onClose={closeJsonModal}
+          onCopy={(jsonText) => void copyText("json", jsonText)}
+        />
+      ) : null}
     </section>
   );
+}
+
+function formatParentIdea(parentIdea: unknown): string {
+  if (!parentIdea || typeof parentIdea !== "object") {
+    return "";
+  }
+  const value = parentIdea as Record<string, unknown>;
+  const displayKey = typeof value.display_key === "string" ? value.display_key : "";
+  const title = typeof value.title === "string" ? value.title : "";
+  const ideaId = typeof value.idea_id === "string" ? value.idea_id : "";
+  if (displayKey && title) {
+    return `${displayKey} ${title}`;
+  }
+  return displayKey || title || ideaId;
 }
 
 export function ViewerContent({
@@ -1250,7 +1361,6 @@ export function JsonModal({
   description,
   tabs,
   defaultTabId,
-  copyStatus,
   onClose,
   onCopy,
 }: {
@@ -1258,7 +1368,6 @@ export function JsonModal({
   description?: string;
   tabs: JsonModalTab[];
   defaultTabId: string;
-  copyStatus?: string;
   onClose: () => void;
   onCopy: (jsonText: string) => void;
 }) {
@@ -1280,9 +1389,6 @@ export function JsonModal({
               Close
             </ToolbarButton>
           </DialogFooter>
-        </div>
-        <div className="status-line json-modal-status" aria-live="polite">
-          {copyStatus || ""}
         </div>
         <Tabs value={activeTab?.id || defaultTabId} onValueChange={setActiveTabId} className="json-modal-tabs">
           <TabsList className="json-modal-tabs-list">

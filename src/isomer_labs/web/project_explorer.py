@@ -356,9 +356,6 @@ class _ProjectExplorerReadModel:
             )
         for target, label, item_kind, icon in (
             ("records", "Records", "record_collection", "records"),
-            ("runtime", "Workspace Runtime", "runtime", "runtime"),
-            ("actors", "Topic Actors", "topic_actors", "actors"),
-            ("repositories", "Repositories", "repositories", "repository"),
         ):
             self._append_node(
                 nodes,

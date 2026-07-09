@@ -154,6 +154,10 @@ class RecordViewerDescriptorContract(GuiContractModel):
     files_url: str | None = None
     facets_url: str | None = None
     media_type: str | None = None
+    topic_workspace_relative_path: str | None = None
+    absolute_filepath: str | None = None
+    direct_parent_idea: dict[str, Any] | None = None
+    record_inspection: dict[str, Any] | None = None
     error: ErrorContract | None = None
 
 
@@ -183,6 +187,10 @@ class RecordDetailResponseContract(GuiContractModel):
     mutated: bool
     operation: str
     record: dict[str, Any]
+    topic_workspace_relative_path: str | None = None
+    absolute_filepath: str | None = None
+    direct_parent_idea: dict[str, Any] | None = None
+    record_inspection: dict[str, Any] | None = None
     diagnostics: list[DiagnosticContract] = Field(default_factory=list)
 
 
@@ -192,6 +200,10 @@ class RecordRenderResponseContract(GuiContractModel):
     operation: str
     record: dict[str, Any]
     render: dict[str, Any]
+    topic_workspace_relative_path: str | None = None
+    absolute_filepath: str | None = None
+    direct_parent_idea: dict[str, Any] | None = None
+    record_inspection: dict[str, Any] | None = None
     diagnostics: list[DiagnosticContract] = Field(default_factory=list)
 
 

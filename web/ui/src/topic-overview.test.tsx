@@ -17,6 +17,7 @@ vi.mock("./api", async (importOriginal) => ({
 
 import { getTopicOverview } from "./api";
 import { TopicOverviewPanel } from "./App";
+import { ToastNotificationsProvider } from "./toast-notifications";
 import type { TopicOverviewResponse } from "./types";
 
 const getTopicOverviewMock = vi.mocked(getTopicOverview);
@@ -45,6 +46,8 @@ describe("Topic overview panel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Copy Markdown" }));
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("# Alpha Overview")));
+    expect(await screen.findByRole("status", { name: "Markdown copied." })).toBeTruthy();
+    expect(document.querySelector(".copy-status")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "View JSON" }));
     const dialog = await screen.findByRole("dialog", { name: "alpha Overview Data" });
@@ -56,6 +59,8 @@ describe("Topic overview panel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Copy JSON" }));
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("topic_json_only")));
+    expect(await screen.findByRole("status", { name: "JSON copied." })).toBeTruthy();
+    expect(document.querySelector(".copy-status")).toBeNull();
   });
 
   it("shows a warning and disables Markdown copy when the overview file is missing", async () => {
@@ -88,7 +93,11 @@ describe("Topic overview panel", () => {
 
 function renderWithQuery(element: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{element}</QueryClientProvider>);
+  return render(
+    <ToastNotificationsProvider>
+      <QueryClientProvider client={client}>{element}</QueryClientProvider>
+    </ToastNotificationsProvider>,
+  );
 }
 
 function topicOverviewPayload(): TopicOverviewResponse {
