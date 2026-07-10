@@ -9,6 +9,8 @@ description: Use when a Kaoju survey needs a source checkout, paper full text, d
 
 Acquire only the material needed for the accepted evidence purpose, pin its identity, and route governed state changes through existing owners. Availability never substitutes for identity, license, or access checks.
 
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:material-acquisition-manifest` and `kaoju:topic-dataset-manifest` exactly. Return a storage blocker instead of inventing persistence, and keep material bytes outside canonical JSON.
+
 ## Workflow
 
 1. **Accept requested identities**. Read the Survey Contract, Discovery Ledger, material purpose, destination posture, and resource boundary.

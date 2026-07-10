@@ -9,6 +9,8 @@ description: Use when a Kaoju survey needs full-text or source inspection, exact
 
 Inspect accepted materials at exact, repeatable locators and separate what the source states from what the agent infers. Source inspection raises evidence depth only to the level actually achieved.
 
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:source-digest`, `kaoju:source-access-blocker`, and `kaoju:claim-evidence-ledger` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
+
 ## Workflow
 
 1. **Accept pinned materials**. Require Source Identities, material refs, target questions or claims, and desired verification depth.

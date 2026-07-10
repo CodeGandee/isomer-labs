@@ -1,0 +1,16 @@
+# {{ payload.title }}
+
+{{ payload.summary }}
+
+- Artifact family: `{{ payload.artifact_family }}`
+- Semantic id: `{{ payload.semantic_id }}`
+- Artifact type: `{{ payload.artifact_type }}`
+
+{% for section_name, section in payload.sections | dictsort %}
+## {{ section_name | replace('_', ' ') | title }}
+
+{% if section is string %}{{ section }}{% else %}```json
+{{ section | tojson(indent=2) }}
+```{% endif %}
+
+{% endfor %}

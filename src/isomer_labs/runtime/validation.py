@@ -10,10 +10,9 @@ import re
 import subprocess
 from typing import Iterable, Mapping
 
-from isomer_labs.artifact_formats import digest_bytes, digest_json, validate_payload
+from isomer_labs.artifact_formats import digest_bytes, digest_json, register_builtin_artifact_format_providers, validate_payload
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.core.path_utils import canonicalize, is_within
-from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.records.index import query_index_diagnostics_for_store
 from isomer_labs.runtime.records import (
@@ -1142,7 +1141,7 @@ def _validate_structured_research_payloads(
     store: WorkspaceRuntimeStore,
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    register_deepsci_record_format_provider()
+    register_builtin_artifact_format_providers()
     lifecycle_records = {record.id: record for record in store.list_lifecycle_records()}
     for registration in store.list_artifact_format_registrations(topic_workspace_id=context.topic_workspace_id):
         if registration.research_topic_id != context.research_topic.id:

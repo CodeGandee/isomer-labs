@@ -793,13 +793,13 @@ isomer-cli ext deepsci call artifact.record \
   --input-json '{"title":"Draft note","body":"Compatibility note."}'
 ```
 
-### `ext research records create/show/list/update/delete`
+### `ext research records create/show/list/update/revise/delete`
 
-Create, inspect, query, update, or archive transitional topic-scoped research records for production DeepSci research skill placeholder bindings.
+Create, inspect, query, revise, or archive topic-scoped research records for family-neutral semantic ids and existing DeepSci placeholder bindings.
 
 **Side effects:** `create` and `update` write or update a Workspace Runtime lifecycle record and, when `--body` or `--body-file` is supplied, write a durable body under the resolved semantic label, defaulting to `topic.records.artifacts` except for runs, tasks, and views. `delete` archives the lifecycle record by setting its status to `archived`; it does not remove stored body files. `show` and `list` are read-only.
 
-**Use:** these commands are the current extension-backed bridge for `skillset/research-paradigm/deepsci/*/placeholder-bindings.md`. Prefer the exact placeholder token, profile, skill, producer, and consumer metadata from the binding page. Future native `project records ...` commands may replace this extension surface.
+**Use:** follow the producing skill's binding page. Kaoju uses exact `--semantic-id kaoju:<id>`, canonical `--payload-file` JSON, and `isomer:research/record-format/profile/kaoju/.../v1`. DeepSci continues to use exact `--placeholder` values and existing `isomer:deepsci/record-format/*` refs. Structured creation rejects direct `--body` or `--body-file` authoring.
 
 When a Topic Actor creates or updates an accepted research record, include `--topic-actor <topic-actor-name>` and known actor metadata such as `--actor-kind`, `--runtime-kind`, `--controller-kind`, and `--adapter-ref`. Include formal Agent Team Instance, Agent Instance, or Agent Workspace refs only when the record was actually produced inside that formal context; do not fabricate those refs for Topic Actor work.
 
@@ -836,6 +836,22 @@ isomer-cli --print-json ext research records delete <record-id> \
   --topic my-topic \
   --reason superseded
 ```
+
+Neutral list and query filters compose:
+
+```bash
+isomer-cli --print-json ext research records list \
+  --topic my-topic --semantic-id kaoju:survey-contract
+
+isomer-cli --print-json ext research records query list \
+  --topic my-topic \
+  --artifact-family kaoju \
+  --semantic-id kaoju:related-work-catalog \
+  --procedure landscape-pass \
+  --latest-only
+```
+
+`--latest-only` follows explicit revision and supersession links and reports competing current candidates. `show --include-payload` reads canonical JSON, `render` produces an on-demand readable view, and `render --output-file` creates an explicit export without changing latest state.
 
 ### UC-01 Manual Harness
 

@@ -261,6 +261,66 @@ class ProjectWebGuiTests(unittest.TestCase):
         status, output = self.run_main(realize_args, cwd=root)
         self.assertEqual(0, status, output)
 
+    def test_neutral_kaoju_record_uses_generic_web_read_contracts(self) -> None:
+        root = self.make_project()
+        payload_file = root / "kaoju-source-digest.json"
+        payload_file.write_text(
+            json.dumps(
+                {
+                    "title": "Source Digest",
+                    "summary": "Exact inspection of one work.",
+                    "artifact_family": "kaoju",
+                    "semantic_id": "kaoju:source-digest",
+                    "artifact_type": "source-digest",
+                    "procedure": "landscape-pass",
+                    "sections": {
+                        "source": {"source_class": "paper"},
+                        "findings": [{"claim": "Method uses retrieval.", "verdict": "source-supported"}],
+                    },
+                    "files": [{"path": "paper.pdf", "file_role": "source"}],
+                }
+            ),
+            encoding="utf-8",
+        )
+        status, output = self.run_main(
+            [
+                "--print-json",
+                "ext",
+                "research",
+                "records",
+                "create",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+                "--id",
+                "kaoju-source-digest",
+                "--record-kind",
+                "evidence_item",
+                "--semantic-id",
+                "kaoju:source-digest",
+                "--format-profile",
+                "isomer:research/record-format/profile/kaoju/evidence/source-digest/v1",
+                "--payload-file",
+                str(payload_file),
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+
+        read_model = self.read_model(root)
+        detail = read_model.record_detail("alpha", "kaoju-source-digest", include_payload=True)
+        validate_gui_payload(detail, RecordDetailResponseContract)
+        self.assertTrue(detail["ok"], detail)
+        self.assertEqual("Source Digest", detail["query_summary"]["title"])
+        self.assertEqual("kaoju:source-digest", detail["query_summary"]["semantic_id"])
+        self.assertEqual("kaoju", detail["query_summary"]["artifact_family"])
+        self.assertEqual("Method uses retrieval.", detail["facets"]["claims"][0]["claim"])
+        self.assertTrue(any(item["file_role"] == "structured_payload" for item in detail["files"]))
+        self.assertIn("payload", detail["structured_payload"])
+        self.assertIn("validation_status", detail["structured_payload"])
+        self.assertIn("edges", detail["lineage"])
+
     def test_project_topic_runtime_read_model_and_static_routes(self) -> None:
         root = self.make_project()
         app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})

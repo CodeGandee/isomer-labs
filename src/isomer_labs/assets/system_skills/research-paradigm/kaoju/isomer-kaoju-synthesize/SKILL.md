@@ -9,6 +9,8 @@ description: Use when an accepted Kaoju Audit Report and accepted survey evidenc
 
 Write the strongest survey conclusion supported by accepted evidence and no stronger. Preserve contradictions, failures, limitations, uncertainty, and unresolved questions as first-class outputs.
 
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:related-work-catalog`, `kaoju:claim-status-table`, `kaoju:field-summary`, and `kaoju:kaoju-dossier` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
+
 ## Workflow
 
 1. **Accept audited inputs**. Require an accepted Audit Report, Survey Contract, accepted Artifact and Evidence Item refs, and the requested output view.

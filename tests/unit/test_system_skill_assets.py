@@ -140,6 +140,10 @@ class SystemSkillAssetTests(unittest.TestCase):
             )
             self.assertTrue((kaoju / "isomer-kaoju-pipeline" / "commands" / "landscape-pass.md").is_file())
             self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "evidence-contract.md").is_file())
+            self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
+            self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "artifact-recording.md").is_file())
+            binding_pages = tuple(kaoju.glob("isomer-kaoju-*/artifact-bindings.md"))
+            self.assertEqual(10, len(binding_pages))
             self.assertFalse((target / "research-paradigm" / "deepsci").exists())
 
     def test_gui_mgr_skill_identity_commands_and_api_reference(self) -> None:

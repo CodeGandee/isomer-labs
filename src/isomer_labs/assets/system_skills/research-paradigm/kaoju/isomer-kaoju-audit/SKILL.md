@@ -9,6 +9,8 @@ description: Use when survey evidence, a Survey Delta, comparison, method trial,
 
 Audit diagnoses whether the requested survey conclusions are supported by accepted evidence. It never repairs or rewrites evidence silently.
 
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:audit-report` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
+
 ## Workflow
 
 1. **Freeze the audit target**. Record the Survey Contract, target Artifact refs, accepted evidence, intended claims, and audit boundary.

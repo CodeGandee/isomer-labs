@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 
 from sqlalchemy import Table, and_, create_engine, delete, or_, select, text
 from sqlalchemy.engine import Engine
@@ -29,6 +29,9 @@ from .lineage_index import (
     replace_all_canonical_lineage_rows,
     replace_canonical_lineage_rows_for_record,
 )
+from .semantic_index import index_diagnostic as _diag
+from .semantic_index import invalid_query_payload as _invalid_query_payload
+from .semantic_index import latest_record_candidates, records_by_id, valid_semantic_id
 from .index_schema import (
     EXPORT_VIEWS,
     QUERY_FACETS,
@@ -194,11 +197,17 @@ def query_index_list(
     record_kind: str | None = None,
     status: str | None = None,
     profile: str | None = None,
+    artifact_family: str | None = None,
+    semantic_id: str | None = None,
+    procedure: str | None = None,
+    latest_only: bool = False,
     facet: str | None = None,
     limit: int | None = None,
 ) -> tuple[dict[str, object], list[Any]]:
     if facet is not None and facet not in QUERY_FACETS:
         return _invalid_query_payload("query.list", f"Unsupported query facet: {facet}")
+    if semantic_id is not None and not valid_semantic_id(semantic_id):
+        return _invalid_query_payload("query.list", "Semantic id must use exact <family>:<semantic-id> lowercase slug syntax.")
     store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
     if store is None:
         return _runtime_missing_payload("query.list", diagnostics), diagnostics
@@ -210,9 +219,15 @@ def query_index_list(
             record_kind=record_kind,
             status=status,
             profile=profile,
+            artifact_family=artifact_family,
+            semantic_id=semantic_id,
+            procedure=procedure,
             facet=facet,
             limit=limit,
         )
+        latest_diagnostics: list[dict[str, object]] = []
+        if latest_only:
+            rows, latest_diagnostics = latest_record_candidates(rows)
         return {
             "ok": True,
             "mutated": False,
@@ -220,7 +235,8 @@ def query_index_list(
             **index_revision_payload(engine, context),
             "count": len(rows),
             "records": rows,
-            "diagnostics": [],
+            "latest_only": latest_only,
+            "diagnostics": latest_diagnostics,
         }, diagnostics
     finally:
         engine.dispose()
@@ -334,7 +350,7 @@ def query_index_lineage(
             ).mappings()
             edges = [_row_dict(row) for row in rows]
         node_ids = sorted({record_id, *(str(edge["source_record_id"]) for edge in edges), *(str(edge["target_record_id"]) for edge in edges)})
-        nodes = _records_by_id(engine, context, node_ids)
+        nodes = records_by_id(engine, context, node_ids)
         return {
             "ok": True,
             "mutated": False,
@@ -583,6 +599,9 @@ def _query_records(
     record_kind: str | None = None,
     status: str | None = None,
     profile: str | None = None,
+    artifact_family: str | None = None,
+    semantic_id: str | None = None,
+    procedure: str | None = None,
     facet: str | None = None,
     limit: int | None = None,
 ) -> list[dict[str, object]]:
@@ -593,6 +612,12 @@ def _query_records(
         conditions.append(record_index.c.status == status)
     if profile is not None:
         conditions.append(or_(record_index.c.profile == profile, record_index.c.format_profile_ref == profile))
+    if artifact_family is not None:
+        conditions.append(record_index.c.artifact_family == artifact_family)
+    if semantic_id is not None:
+        conditions.append(record_index.c.semantic_id == semantic_id)
+    if procedure is not None:
+        conditions.append(record_index.c.procedure == procedure)
     statement = select(record_index).where(and_(*conditions)).order_by(record_index.c.updated_at.desc(), record_index.c.record_id.asc())
     if limit is not None:
         statement = statement.limit(limit)
@@ -618,17 +643,6 @@ def _record_has_facet(engine: Engine, context: EffectiveTopicContext, record_id:
             select(table.c.id).where(table.c.topic_workspace_id == context.topic_workspace_id, table.c.record_id == record_id).limit(1)
         ).fetchone()
     return row is not None
-
-
-def _records_by_id(engine: Engine, context: EffectiveTopicContext, record_ids: Iterable[str]) -> list[dict[str, object]]:
-    ids = list(record_ids)
-    if not ids:
-        return []
-    with engine.connect() as connection:
-        rows = connection.execute(
-            select(record_index).where(record_index.c.topic_workspace_id == context.topic_workspace_id, record_index.c.record_id.in_(ids))
-        ).mappings()
-        return [_row_dict(row) for row in rows]
 
 
 def _select_table(engine: Engine, table: Table, context: EffectiveTopicContext) -> list[dict[str, object]]:
@@ -774,23 +788,6 @@ def _runtime_missing_payload(operation: str, diagnostics: list[Any]) -> dict[str
         },
         "diagnostics": [diagnostic.to_json() for diagnostic in diagnostics],
     }
-
-
-def _invalid_query_payload(operation: str, message: str) -> tuple[dict[str, object], list[Any]]:
-    return {
-        "ok": False,
-        "mutated": False,
-        "operation": operation,
-        "error": {"code": "invalid_query_index_request", "message": message},
-        "diagnostics": [],
-    }, []
-
-
-def _diag(severity: str, code: str, message: str, **details: object) -> dict[str, object]:
-    payload: dict[str, object] = {"severity": severity, "code": code, "message": message}
-    payload.update(details)
-    return payload
-
 
 
 def _belongs_to_context(record: RuntimeLifecycleRecord, context: EffectiveTopicContext) -> bool:

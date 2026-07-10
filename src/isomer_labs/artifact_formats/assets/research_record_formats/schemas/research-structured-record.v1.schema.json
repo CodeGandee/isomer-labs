@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "isomer:research/record-format/schema/research-structured-record/v1",
+  "title": "Family-neutral structured research record",
+  "type": "object",
+  "required": ["title", "summary", "artifact_family", "semantic_id", "artifact_type", "sections"],
+  "properties": {
+    "title": {"type": "string", "minLength": 1},
+    "summary": {"type": "string", "minLength": 1},
+    "artifact_family": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "semantic_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*$"},
+    "artifact_type": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "sections": {"type": "object", "minProperties": 1},
+    "actor": {"type": "object"},
+    "relationships": {"type": "array", "items": {"type": "object"}},
+    "files": {"type": "array", "items": {"type": "object"}},
+    "procedure": {"type": "string"},
+    "terminal_status": {"type": "string"}
+  },
+  "additionalProperties": true
+}

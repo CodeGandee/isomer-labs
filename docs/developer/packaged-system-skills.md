@@ -26,6 +26,8 @@ Core operator skills include `isomer-op-entrypoint` for informed routing and `is
 
 Select `deepsci` for hypothesis-driven research that develops or evaluates a new route. Select `kaoju` for evidence-led literature and codebase surveys, including source examination, first-hand paper-method trials, and controlled comparisons. Selecting one extension includes core skills and that family only; use the existing all-extensions selector or select both when an agent needs both families.
 
+Kaoju packages its storage-neutral semantic registry in `isomer-kaoju-shared/references/artifact-semantics.md` and concrete producer contracts in each producer's `artifact-bindings.md`. Installation must preserve both. The family-neutral research format schema, template, and Kaoju profile catalog ship as Python package assets independently of the skill projection. DeepSci placeholder binding pages and profile refs remain unchanged.
+
 `npx skills add` remains useful when testing a single source-checkout skill directory directly, but it is no longer the public recommended path for released Isomer packages. Repository-root discovery can still find repository-local OpenSpec development skills, so do not document repository-root `npx skills add CodeGandee/isomer-labs --skill isomer-op-entrypoint` as a packaged Isomer install path.
 
 Keep each skill in the supported skill format. Workflow-oriented skills should present their workflow as ordered steps that an agent follows from start to finish, not as detached callback reminders.

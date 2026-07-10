@@ -9,6 +9,8 @@ description: Use when a Kaoju request needs a bounded Survey Contract, clarifica
 
 Turn the user's survey question into an explicit contract before discovery or execution changes its scope. Ambiguity that changes cost, evidence strength, or comparability must become a user-visible decision.
 
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:survey-contract`, `kaoju:comparison-intent`, or `kaoju:proceed-decision` exactly. If a binding or required surface is unavailable, return a storage blocker; never invent a path, profile, canonical Markdown file, or untracked JSON state.
+
 ## Workflow
 
 1. **Resolve context**. Read the Research Topic, Research Inquiry, user request, prior survey refs, and Workspace Readiness Artifact.

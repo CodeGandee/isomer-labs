@@ -9,6 +9,8 @@ description: Use when a user wants first-hand numbers for one paper method throu
 
 Run one bounded paper-method trial while preserving faithful, adapted, repaired, failed, and generated-input evidence as different outcomes. A capability probe explains behavior under its generated inputs; it is not reproduction.
 
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:generated-dataset`, `kaoju:method-trial`, and `kaoju:method-trial-run` exactly. Return a storage blocker rather than inventing persistence; keep material and raw-output bytes behind recorded refs.
+
 ## Workflow
 
 1. **Accept the trial contract**. Require the paper and code Source Identities, route, target claim, inputs, evaluator, desired metrics, resources, and stop conditions.

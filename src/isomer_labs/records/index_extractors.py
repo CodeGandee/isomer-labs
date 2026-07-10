@@ -28,6 +28,7 @@ from .index_schema import (
     record_metrics,
     record_routes,
 )
+from .profile_index import profile_claim_rows, profile_fact_rows, profile_metric_rows, profile_parts, semantic_index_identity
 
 def _build_index_parts(
     context: EffectiveTopicContext,
@@ -40,7 +41,10 @@ def _build_index_parts(
     title = _first_string(payload_json.get("title"), record_metadata.get("title"), record.id)
     summary = _first_string(payload_json.get("summary"), record_metadata.get("summary"))
     format_profile_ref = payload.format_profile_ref if payload is not None else _optional_string(record_metadata.get("format_profile_ref"))
-    profile_family, profile_name = _profile_parts(format_profile_ref or _optional_string(record_metadata.get("profile")))
+    identity = semantic_index_identity(record_metadata, payload_json, format_profile_ref)
+    profile_metadata = identity["profile_metadata"]
+    assert isinstance(profile_metadata, Mapping)
+    profile_family, profile_name = profile_parts(format_profile_ref or _optional_string(record_metadata.get("profile")))
     source = SOURCE_PAYLOAD if payload is not None else SOURCE_AUTHORED
     index_row: dict[str, object] = {
         "record_id": record.id,
@@ -48,7 +52,15 @@ def _build_index_parts(
         "topic_workspace_id": record.topic_workspace_id,
         "record_kind": record.record_kind,
         "status": record.status,
-        "placeholder": _optional_string(record_metadata.get("placeholder")),
+        "placeholder": identity["placeholder"],
+        "artifact_family": identity["artifact_family"],
+        "semantic_id": identity["semantic_id"],
+        "semantic_id_source": identity["semantic_id_source"],
+        "artifact_type": identity["artifact_type"],
+        "procedure": _first_string(payload_json.get("procedure"), record_metadata.get("procedure")),
+        "terminal_status": _first_string(payload_json.get("terminal_status"), record_metadata.get("terminal_status")),
+        "revision_of_record_id": _first_string(record_metadata.get("revision_of_record_id"), payload.revision_of_record_id if payload is not None else None),
+        "supersedes_record_id": _first_string(record_metadata.get("supersedes_record_id"), payload.supersedes_record_id if payload is not None else None),
         "profile": _optional_string(record_metadata.get("profile")),
         "skill": _optional_string(record_metadata.get("skill")),
         "producer": _optional_string(record_metadata.get("producer")),
@@ -72,7 +84,7 @@ def _build_index_parts(
         "created_at": record.created_at,
         "updated_at": record.updated_at,
         "indexed_at": now,
-        "metadata_json": _dumps({"lifecycle_refs": record.lifecycle_refs, "transition_metadata": record_metadata}),
+        "metadata_json": _dumps({"lifecycle_refs": record.lifecycle_refs, "transition_metadata": record_metadata, "identity_diagnostics": identity["diagnostics"]}),
     }
     return IndexedRecordParts(
         index_row=index_row,
@@ -80,9 +92,9 @@ def _build_index_parts(
         file_rows=_file_rows(context, record, payload, payload_json, record_metadata, now),
         idea_rows=_idea_rows(context, record, payload_json, format_profile_ref, now),
         route_rows=_route_rows(context, record, payload_json, now),
-        metric_rows=_metric_rows(context, record, payload_json, now),
-        claim_rows=_claim_rows(context, record, payload_json, now),
-        fact_rows=_fact_rows(context, record, payload_json, now),
+        metric_rows=_metric_rows(context, record, payload_json, now, profile_metadata=profile_metadata, profile_ref=format_profile_ref),
+        claim_rows=_claim_rows(context, record, payload_json, now, profile_metadata=profile_metadata, profile_ref=format_profile_ref),
+        fact_rows=_fact_rows(context, record, payload_json, now, profile_metadata=profile_metadata, profile_ref=format_profile_ref),
     )
 
 
@@ -517,7 +529,15 @@ def _route_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, 
     return _dedupe_rows(rows)
 
 
-def _metric_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, payload_json: Mapping[str, object], created_at: str) -> list[dict[str, object]]:
+def _metric_rows(
+    context: EffectiveTopicContext,
+    record: RuntimeLifecycleRecord,
+    payload_json: Mapping[str, object],
+    created_at: str,
+    *,
+    profile_metadata: Mapping[str, object] | None = None,
+    profile_ref: str | None = None,
+) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for path, value in _walk_json(payload_json):
         key = path.rsplit(".", 1)[-1].replace("[]", "")
@@ -552,10 +572,19 @@ def _metric_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord,
                     "created_at": created_at,
                 }
             )
+    rows.extend(profile_metric_rows(context, record, payload_json, created_at, profile_metadata or {}, profile_ref))
     return _dedupe_rows(rows)
 
 
-def _claim_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, payload_json: Mapping[str, object], created_at: str) -> list[dict[str, object]]:
+def _claim_rows(
+    context: EffectiveTopicContext,
+    record: RuntimeLifecycleRecord,
+    payload_json: Mapping[str, object],
+    created_at: str,
+    *,
+    profile_metadata: Mapping[str, object] | None = None,
+    profile_ref: str | None = None,
+) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for path, value in _walk_json(payload_json):
         key = path.rsplit(".", 1)[-1].replace("[]", "")
@@ -585,10 +614,19 @@ def _claim_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, 
                     "created_at": created_at,
                 }
             )
+    rows.extend(profile_claim_rows(context, record, payload_json, created_at, profile_metadata or {}, profile_ref))
     return _dedupe_rows(rows)
 
 
-def _fact_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, payload_json: Mapping[str, object], created_at: str) -> list[dict[str, object]]:
+def _fact_rows(
+    context: EffectiveTopicContext,
+    record: RuntimeLifecycleRecord,
+    payload_json: Mapping[str, object],
+    created_at: str,
+    *,
+    profile_metadata: Mapping[str, object] | None = None,
+    profile_ref: str | None = None,
+) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     occurrence_by_path: dict[str, int] = {}
     for path, value in _walk_json(payload_json):
@@ -612,7 +650,8 @@ def _fact_rows(context: EffectiveTopicContext, record: RuntimeLifecycleRecord, p
                 "created_at": created_at,
             }
         )
-    return rows
+    rows.extend(profile_fact_rows(context, record, payload_json, created_at, profile_metadata or {}, profile_ref))
+    return _dedupe_rows(rows)
 
 
 def _parts_counts(parts: IndexedRecordParts) -> dict[str, int]:
@@ -638,19 +677,6 @@ def _sum_counts(counts: Iterable[dict[str, int]]) -> dict[str, int]:
 
 def _belongs_to_context(record: RuntimeLifecycleRecord, context: EffectiveTopicContext) -> bool:
     return record.research_topic_id == context.research_topic.id and record.topic_workspace_id == context.topic_workspace_id
-
-
-def _profile_parts(profile_ref: str | None) -> tuple[str | None, str | None]:
-    if not profile_ref:
-        return None, None
-    parts = [part for part in profile_ref.strip("/").split("/") if part]
-    if "profile" in parts:
-        index = parts.index("profile")
-        if len(parts) > index + 2:
-            return parts[index + 1], parts[index + 2]
-    if len(parts) >= 2:
-        return parts[-2], parts[-1]
-    return None, profile_ref
 
 
 def _relation_kind(value: object) -> str | None:

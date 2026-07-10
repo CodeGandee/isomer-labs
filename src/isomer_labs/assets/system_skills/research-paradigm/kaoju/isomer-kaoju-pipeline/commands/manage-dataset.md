@@ -3,10 +3,10 @@
 ## Workflow
 
 1. **Select an action**. Accept exactly one of `register`, `list`, `show`, `refresh`, or `remove` and resolve the Topic Workspace.
-2. **Inspect current manifest state**. Read the Topic Dataset Manifest and validate the selected entry or candidate source without mutating it.
-3. **Route mutations**. For `register`, `refresh`, or `remove`, send the managed-link and manifest operation to the Topic Workspace owner and retain its returned refs.
-4. **Validate the result**. Check dataset id, external and managed locators, observed metadata, fingerprint or staleness policy, access, license, and provenance.
-5. **Return results**. Report action status, manifest ref, affected entry, blockers, and what later empirical stages may reuse.
+2. **Inspect current manifest state**. Query `kaoju:topic-dataset-manifest` with exact family and semantic id plus `--latest-only`; report ambiguity rather than choosing by timestamp. Validate the selected entry or candidate source without mutation.
+3. **Route material mutations**. For `register`, `refresh`, or `remove`, send external inspection and managed-link mutation to the Topic Workspace owner. Never mutate the external target.
+4. **Revise the manifest**. Consume the owner's immutable locator, managed-link, file, actor, and provenance refs; validate a new canonical payload and run `records revise <manifest-record-id> --semantic-id kaoju:topic-dataset-manifest --payload-file <payload-file>`. Preserve the prior version.
+5. **Validate and return**. Check dataset id, locators, observed metadata, fingerprint or staleness policy, access, license, provenance, owner result, latest posture, and what later empirical stages may reuse.
 
 If the request does not map cleanly to these actions, use the native planning tool to build and execute a bounded dataset-management plan without modifying the external dataset.
 
@@ -14,11 +14,11 @@ If the request does not map cleanly to these actions, use the native planning to
 
 | Action | Behavior |
 | --- | --- |
-| `register` | Assign a stable dataset id, create an owner-governed managed link, and record name, description, external source, managed locator, access, license, observed metadata, fingerprint or staleness policy, and provenance. |
-| `list` | List registered datasets with id, name, summary, availability, fingerprint posture, and access state. |
-| `show` | Show one manifest entry, exact locators, compatibility metadata, lineage, and staleness state. |
-| `refresh` | Reinspect external identity and metadata through the owner; record drift as a new observation rather than overwriting old evidence silently. |
-| `remove` | Remove only the managed link and registration state through the owner; never alter or delete the external target. |
+| `register` | Assign a stable dataset id, ask the owner for the managed link, then revise the manifest with name, description, external source, managed locator, access, license, observed metadata, fingerprint or staleness policy, actor, and provenance. |
+| `list` | Query the latest canonical manifest and list entries with id, name, summary, availability, fingerprint posture, and access state. |
+| `show` | Show the canonical manifest payload and selected entry, then query lineage for exact locators, compatibility metadata, history, and staleness state. |
+| `refresh` | Ask the owner to reinspect identity and metadata, then revise the manifest while preserving the prior fingerprint and observation. |
+| `remove` | Ask the owner to remove only the managed link, then revise registration state as unavailable or removed; never alter or delete the external target. |
 
 ## Reuse Contract
 

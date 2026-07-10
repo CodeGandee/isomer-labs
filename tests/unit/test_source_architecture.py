@@ -96,6 +96,7 @@ CANONICAL_DOMAIN_PACKAGE_FILES = {
         "__init__.py",
         "models.py",
         "processing.py",
+        "research_record_formats.py",
         "registry.py",
         "workspace_provider.py",
     },

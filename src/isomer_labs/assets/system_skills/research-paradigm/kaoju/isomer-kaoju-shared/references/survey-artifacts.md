@@ -23,4 +23,4 @@ Curated intake and direction expansion produce Survey Deltas rather than rewriti
 
 ## Storage Rule
 
-These are semantic contracts, not a new runtime database. Record them through existing research-recording APIs or as file-backed Markdown or JSON Artifacts. Structured records require non-empty top-level `title` and `summary`.
+These names are semantic contracts. Resolve their exact ids through `artifact-semantics.md`, then use the producer's `artifact-bindings.md` for persistence. Accepted structured state is canonical managed JSON; Markdown, CSV, matrices, and dossiers are derived renders or explicit exports. Follow `artifact-recording.md` for payload, lineage, worker-output, and large-material rules.

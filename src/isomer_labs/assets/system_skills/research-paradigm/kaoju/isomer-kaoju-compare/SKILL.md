@@ -9,6 +9,8 @@ description: Use when named works need a theory comparison, an empirical Compari
 
 Compare only on dimensions or measurements whose definitions and evidence are explicit. Theory mode remains source-grounded; empirical mode requires an accepted Comparison Intent Document and Proceed Decision.
 
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:theory-comparison`, `kaoju:comparison-matrix`, and `kaoju:comparison-run` exactly. Return a storage blocker rather than inventing a path, profile, direct Markdown state, or untracked JSON.
+
 ## Workflow
 
 1. **Select comparison mode**. Require named candidate Source Identities, target question, accepted source evidence, and either theory intent or empirical intent.

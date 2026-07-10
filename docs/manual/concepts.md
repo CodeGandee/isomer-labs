@@ -102,6 +102,8 @@ This manual page summarizes the canonical Isomer Labs domain language. The full 
 
 **Artifact Format Profile**: an optional declarative profile for content-level Artifact expectations, such as Artifact kind applicability, media type expectations, schema refs, template refs, validation hints, renderer hints, and export hints.
 
+Built-in family-neutral structured research profiles use `isomer:research/record-format/profile/<family>/<class>/<semantic-id>/v1`; their semantic id names a durable family object independently of its producer. Existing DeepSci profiles retain `isomer:deepsci/record-format/*` identities and are not aliases of neutral profiles.
+
 **Research Claim**: a statement made inside a Research Topic or Research Inquiry that may need support, contradiction handling, or withdrawal. A Research Claim can be open, supported, refuted, or withdrawn.
 
 **Evidence Item**: a durable source of support, contradiction, or context for a Research Claim. An Evidence Item can reference an Artifact, result, measurement, analysis, source document, or external reference.

@@ -178,7 +178,15 @@ def validate_payload(
             profile_ref=profile_ref,
             schema_version=schema_version,
         )
-    if errors:
+    profile_diagnostics: list[Diagnostic] = []
+    if format_profile_ref is not None:
+        profile, _profile_resolution, resolve_diagnostics = ArtifactFormatResolver(registry).resolve_profile(
+            format_profile_ref
+        )
+        profile_diagnostics.extend(resolve_diagnostics)
+        if profile is not None:
+            profile_diagnostics.extend(_profile_payload_diagnostics(payload, profile))
+    if errors or profile_diagnostics:
         return ValidationResult(
             ok=False,
             status="invalid",
@@ -186,7 +194,8 @@ def validate_payload(
             schema_ref=schema_resolution.ref,
             schema_digest=schema_resolution.digest,
             schema_source_kind=schema_resolution.source_kind,
-            diagnostics=[_validation_error_diagnostic(error, schema_resolution) for error in errors],
+            diagnostics=[_validation_error_diagnostic(error, schema_resolution) for error in errors]
+            + profile_diagnostics,
             profile_ref=profile_ref,
             schema_version=schema_version,
         )
@@ -201,6 +210,59 @@ def validate_payload(
         profile_ref=profile_ref,
         schema_version=schema_version,
     )
+
+
+def _profile_payload_diagnostics(payload: object, profile: ArtifactFormatProfile) -> list[Diagnostic]:
+    """Apply provider-neutral declarative identity and required-path hints."""
+
+    if not isinstance(payload, dict):
+        return []
+    diagnostics: list[Diagnostic] = []
+    identity_fields = {
+        "artifact_family": profile.metadata.get("artifact_family"),
+        "semantic_id": profile.metadata.get("semantic_id"),
+        "artifact_type": profile.metadata.get("artifact_type"),
+    }
+    for field_name, expected in identity_fields.items():
+        if not isinstance(expected, str) or not expected:
+            continue
+        actual = payload.get(field_name)
+        if actual != expected:
+            diagnostics.append(
+                artifact_format_diagnostic(
+                    "ISO207",
+                    "error",
+                    "Artifact Format Profile Payload",
+                    f"Payload {field_name} must match profile {profile.ref}: expected {expected!r}, got {actual!r}.",
+                    field=field_name,
+                )
+            )
+    required_paths = profile.validation_hints.get("required_paths", [])
+    if isinstance(required_paths, list):
+        for raw_path in required_paths:
+            if not isinstance(raw_path, str) or not raw_path:
+                continue
+            present, value = _payload_path(payload, raw_path)
+            if not present or value is None or value == "" or value == [] or value == {}:
+                diagnostics.append(
+                    artifact_format_diagnostic(
+                        "ISO207",
+                        "error",
+                        "Artifact Format Profile Payload",
+                        f"Payload does not satisfy required path for {profile.ref}: $.{raw_path}.",
+                        field=raw_path,
+                    )
+                )
+    return diagnostics
+
+
+def _payload_path(payload: object, path: str) -> tuple[bool, object | None]:
+    current = payload
+    for segment in path.removeprefix("$.").split("."):
+        if not isinstance(current, dict) or segment not in current:
+            return False, None
+        current = current[segment]
+    return True, current
 
 
 def load_payload_file(path: Path) -> tuple[object | None, list[Diagnostic]]:

@@ -23,6 +23,14 @@ from isomer_labs.artifact_formats.workspace_provider import (
     WorkspaceRuntimeArtifactFormatProvider,
     register_custom_artifact_format,
 )
+from isomer_labs.artifact_formats.research_record_formats import (
+    ResearchProfileRef,
+    ResearchRecordFormatProvider,
+    parse_research_profile_ref,
+    register_builtin_artifact_format_providers,
+    register_research_record_format_provider,
+    research_profile_ref,
+)
 
 __all__ = [
     "ArtifactFormatProfile",
@@ -35,6 +43,12 @@ __all__ = [
     "StaticArtifactFormatProvider",
     "ValidationResult",
     "WorkspaceRuntimeArtifactFormatProvider",
+    "ResearchProfileRef",
+    "ResearchRecordFormatProvider",
+    "parse_research_profile_ref",
+    "register_builtin_artifact_format_providers",
+    "register_research_record_format_provider",
+    "research_profile_ref",
     "default_registry",
     "digest_bytes",
     "digest_json",

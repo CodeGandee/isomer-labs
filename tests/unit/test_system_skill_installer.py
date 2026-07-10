@@ -72,6 +72,8 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertEqual(11, len(kaoju_names))
         self.assertTrue((target.skill_root / "isomer-kaoju-pipeline" / "commands" / "comparative-pass.md").is_file())
         self.assertTrue((target.skill_root / "isomer-kaoju-shared" / "references" / "source-identity.md").is_file())
+        self.assertTrue((target.skill_root / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
+        self.assertTrue((target.skill_root / "isomer-kaoju-frame" / "artifact-bindings.md").is_file())
         self.assertFalse((target.skill_root / "isomer-deepsci-pipeline").exists())
 
         status = inspect_system_skills(target, selection)

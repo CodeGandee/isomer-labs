@@ -12,6 +12,7 @@ from isomer_labs.artifact_formats import (
     ArtifactFormatRegistry,
     WorkspaceRuntimeArtifactFormatProvider,
     register_custom_artifact_format,
+    register_builtin_artifact_format_providers,
     render_artifact,
     validate_payload,
 )
@@ -23,7 +24,6 @@ from isomer_labs.cli.options import (
     topic_selection_options as _topic_selection_options,
 )
 from isomer_labs.cli.output import emit_output, output_format
-from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.runtime.store import open_workspace_runtime
 
@@ -83,7 +83,7 @@ def _template_selector_options(command: Any) -> Any:
 def _run_validate(ctx: click.Context, values: dict[str, Any]) -> int:
     options, context, diagnostics = _resolve_context(ctx, values, read_only=True)
     registry = ArtifactFormatRegistry()
-    register_deepsci_record_format_provider(registry)
+    register_builtin_artifact_format_providers(registry)
     runtime_store = None
     if context is not None:
         runtime_store, runtime_diagnostics = open_workspace_runtime(context, env=os.environ, read_only=True)
@@ -119,7 +119,7 @@ def _run_validate(ctx: click.Context, values: dict[str, Any]) -> int:
 def _run_render(ctx: click.Context, values: dict[str, Any]) -> int:
     options, context, diagnostics = _resolve_context(ctx, values, read_only=True)
     registry = ArtifactFormatRegistry()
-    register_deepsci_record_format_provider(registry)
+    register_builtin_artifact_format_providers(registry)
     runtime_store = None
     if context is not None:
         runtime_store, runtime_diagnostics = open_workspace_runtime(context, env=os.environ, read_only=True)

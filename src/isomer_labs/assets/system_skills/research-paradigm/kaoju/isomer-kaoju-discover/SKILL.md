@@ -9,6 +9,8 @@ description: Use when a Kaoju survey needs broad field discovery, curated refere
 
 Find relevant work through recorded routes and preserve the difference between a conceptual work, its versions, and linked implementation materials. Search rank, date, and citation count inform discovery but never decide inclusion alone.
 
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:discovery-ledger`, `kaoju:related-work-delta`, and `kaoju:curated-intake-delta` exactly. Return a storage blocker instead of inventing a path, profile, direct Markdown state, or untracked JSON.
+
 ## Workflow
 
 1. **Accept the contract**. Require a Survey Contract, seeds or curated items, desired source classes, coverage bounds, and output purpose.

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import json
 import re
 import sys
 import tomllib
@@ -22,6 +23,12 @@ class FamilyConfig:
     expected_skills: frozenset[str]
     max_workflow_line: int
     required: bool
+    semantic_registry: str | None = None
+    semantic_id_pattern: re.Pattern[str] | None = None
+    binding_filename: str | None = None
+    profile_namespace: str | None = None
+    binding_owners: frozenset[str] = frozenset()
+    required_binding_fields: tuple[str, ...] = ()
 
 
 SKILL_NAME_RE = re.compile(r"^isomer-deepsci-[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -101,6 +108,37 @@ FAMILY_CONFIGS = (
         expected_skills=EXPECTED_KAOJU_SKILLS,
         max_workflow_line=40,
         required=False,
+        semantic_registry="isomer-kaoju-shared/references/artifact-semantics.md",
+        semantic_id_pattern=re.compile(r"^kaoju:[a-z0-9][a-z0-9-]*$"),
+        binding_filename="artifact-bindings.md",
+        profile_namespace="isomer:research/record-format/profile/kaoju/",
+        binding_owners=frozenset(
+            {
+                "isomer-kaoju-acquire",
+                "isomer-kaoju-audit",
+                "isomer-kaoju-compare",
+                "isomer-kaoju-discover",
+                "isomer-kaoju-examine",
+                "isomer-kaoju-frame",
+                "isomer-kaoju-pipeline",
+                "isomer-kaoju-reproduce",
+                "isomer-kaoju-synthesize",
+                "isomer-kaoju-workspace-mgr",
+            }
+        ),
+        required_binding_fields=(
+            "Semantic id",
+            "Storage item",
+            "Record kind",
+            "Semantic label",
+            "Neutral profile",
+            "Producer",
+            "Consumers",
+            "Payload role",
+            "Lineage policy",
+            "Revision policy",
+            "Query metadata",
+        ),
     ),
 )
 
@@ -146,6 +184,8 @@ FORBIDDEN_KAOJU_PROCEDURES = frozenset(
 EXPECTED_KAOJU_SHARED_REFERENCES = frozenset(
     {
         "evidence-contract.md",
+        "artifact-recording.md",
+        "artifact-semantics.md",
         "external-owner-routing.md",
         "interaction-and-gates.md",
         "lineage.md",
@@ -1678,6 +1718,199 @@ def validate_kaoju_active_guidance(
                 add(diagnostics, repo_root, document.path, line_number, "RPS020", f"active Kaoju guidance contains {label}")
 
 
+def _markdown_table(lines: tuple[str, ...], required_header: str) -> tuple[list[str], list[tuple[int, list[str]]]]:
+    for index, line in enumerate(lines):
+        if not line.startswith("|"):
+            continue
+        header = [cell.strip().strip("`") for cell in line.strip().strip("|").split("|")]
+        if required_header not in header or index + 1 >= len(lines):
+            continue
+        rows: list[tuple[int, list[str]]] = []
+        for row_index, row in enumerate(lines[index + 2 :], start=index + 3):
+            if not row.startswith("|"):
+                break
+            cells = [cell.strip().strip("`") for cell in row.strip().strip("|").split("|")]
+            if len(cells) == len(header):
+                rows.append((row_index, cells))
+        return header, rows
+    return [], []
+
+
+def _kaoju_catalog_profiles(repo_root: Path) -> dict[str, tuple[str, str]]:
+    relative = Path("src/isomer_labs/artifact_formats/assets/research_record_formats/profiles/kaoju.v1.json")
+    candidates = (repo_root / relative, Path(__file__).resolve().parents[1] / relative)
+    catalog_path = next((candidate for candidate in candidates if candidate.exists()), None)
+    if catalog_path is None:
+        return {}
+    raw = json.loads(catalog_path.read_text(encoding="utf-8"))
+    result: dict[str, tuple[str, str]] = {}
+    for entry in raw.get("profiles", []):
+        if not isinstance(entry, dict):
+            continue
+        semantic_id = f"{entry.get('family')}:{entry.get('semantic_id')}"
+        profile_ref = str(
+            entry.get("ref")
+            or "isomer:research/record-format/profile/"
+            f"{entry.get('family')}/{entry.get('artifact_class')}/{entry.get('semantic_id')}/{entry.get('version')}"
+        )
+        result[semantic_id] = (profile_ref, str(entry.get("compatible_record_kinds", [""])[0]))
+    return result
+
+
+def validate_kaoju_artifact_bindings(
+    kaoju_root: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    config: FamilyConfig,
+) -> None:
+    if config.semantic_registry is None or config.semantic_id_pattern is None or config.binding_filename is None:
+        return
+    registry_path = kaoju_root / config.semantic_registry
+    if not registry_path.exists():
+        add(diagnostics, repo_root, registry_path, 1, "RPS021", "Kaoju artifact semantic registry is missing")
+        return
+    registry_lines = read_lines(registry_path)
+    registry_header, registry_rows = _markdown_table(registry_lines, "Semantic id")
+    if not registry_header:
+        add(diagnostics, repo_root, registry_path, 1, "RPS021", "Kaoju semantic registry requires a Semantic id table")
+        return
+    registry_index = {name: index for index, name in enumerate(registry_header)}
+    registry: dict[str, tuple[int, str]] = {}
+    for line_number, cells in registry_rows:
+        semantic_id = cells[registry_index["Semantic id"]]
+        if config.semantic_id_pattern.fullmatch(semantic_id) is None:
+            add(diagnostics, repo_root, registry_path, line_number, "RPS021", f"invalid Kaoju semantic id '{semantic_id}'")
+            continue
+        if semantic_id in registry:
+            add(diagnostics, repo_root, registry_path, line_number, "RPS021", f"duplicate Kaoju semantic id '{semantic_id}'")
+            continue
+        producer = cells[registry_index.get("Producer", -1)] if "Producer" in registry_index else ""
+        registry[semantic_id] = (line_number, producer)
+
+    physical_patterns = (
+        r"topic\.records\.",
+        r"isomer:research/record-format/",
+        r"\brecord kind\b",
+        r"\bsemantic label\b",
+        r"\bisomer-cli\b",
+        r"--(?:record-kind|semantic-label|format-profile|payload-file)",
+    )
+    for line_number, line in enumerate(registry_lines, start=1):
+        if any(re.search(pattern, line, re.I) for pattern in physical_patterns):
+            add(diagnostics, repo_root, registry_path, line_number, "RPS023", "storage-neutral semantic registry contains premature physical binding")
+
+    bindings: dict[str, tuple[Path, int, dict[str, str]]] = {}
+    for owner in sorted(config.binding_owners):
+        binding_path = kaoju_root / owner / config.binding_filename
+        if not binding_path.exists():
+            add(diagnostics, repo_root, binding_path, 1, "RPS022", f"Kaoju binding owner '{owner}' is missing {config.binding_filename}")
+            continue
+        lines = read_lines(binding_path)
+        header, rows = _markdown_table(lines, "Semantic id")
+        missing_fields = [field for field in config.required_binding_fields if field not in header]
+        if missing_fields:
+            add(diagnostics, repo_root, binding_path, 1, "RPS022", f"binding table is missing required fields: {', '.join(missing_fields)}")
+            continue
+        indices = {name: index for index, name in enumerate(header)}
+        text = "\n".join(lines)
+        required_contract_terms = (
+            "--semantic-id",
+            "--record-kind",
+            "--format-profile",
+            "--skill",
+            "--producer",
+            "--consumer",
+            "--payload-file",
+            "actor_metadata",
+            "validate",
+            "create",
+            "list",
+            "show",
+            "update",
+            "revis",
+            "follow-up",
+            "render",
+            "export",
+            "archive",
+            "lineage",
+        )
+        for term in required_contract_terms:
+            if term.casefold() not in text.casefold():
+                add(diagnostics, repo_root, binding_path, 1, "RPS024", f"Kaoju binding lifecycle is missing '{term}' guidance")
+        if re.search(r"--body(?:-file)?\b", text) or re.search(r"records create[^\n]*--render\b", text):
+            add(diagnostics, repo_root, binding_path, 1, "RPS024", "Kaoju structured binding must use payload-first canonical JSON without durable Markdown authoring")
+        for line_number, cells in rows:
+            row = {name: cells[index] for name, index in indices.items()}
+            semantic_id = row["Semantic id"]
+            if config.semantic_id_pattern.fullmatch(semantic_id) is None:
+                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding has invalid or cross-family semantic id '{semantic_id}'")
+                continue
+            if semantic_id in bindings:
+                prior_path, prior_line, _prior = bindings[semantic_id]
+                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"duplicate binding for '{semantic_id}' also appears at {relpath(prior_path, repo_root)}:{prior_line}")
+                continue
+            if semantic_id not in registry:
+                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding id '{semantic_id}' is absent from the semantic registry")
+            if row["Producer"] != owner:
+                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding producer '{row['Producer']}' does not match owner '{owner}'")
+            if semantic_id in registry and registry[semantic_id][1] != owner:
+                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding owner conflicts with registry producer for '{semantic_id}'")
+            if config.profile_namespace is not None and not row["Neutral profile"].startswith(config.profile_namespace):
+                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding profile for '{semantic_id}' is outside the neutral Kaoju namespace")
+            if row["Semantic label"] not in {"topic.records.artifacts", "topic.records.views", "topic.records.runs", "topic.records.tasks", "topic.records.logs"}:
+                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding for '{semantic_id}' uses an unknown semantic label")
+            bindings[semantic_id] = (binding_path, line_number, row)
+
+    for semantic_id, (line_number, _producer) in sorted(registry.items()):
+        if semantic_id not in bindings:
+            add(diagnostics, repo_root, registry_path, line_number, "RPS022", f"semantic id '{semantic_id}' has no producer binding")
+
+    catalog = _kaoju_catalog_profiles(repo_root)
+    for semantic_id, (profile_ref, record_kind) in sorted(catalog.items()):
+        if semantic_id not in registry:
+            add(diagnostics, repo_root, registry_path, 1, "RPS022", f"profile catalog id '{semantic_id}' is absent from the semantic registry")
+            continue
+        binding = bindings.get(semantic_id)
+        if binding is None:
+            continue
+        binding_path, line_number, row = binding
+        if row["Neutral profile"] != profile_ref:
+            add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding profile for '{semantic_id}' does not resolve to the catalog entry")
+        if row["Record kind"] != record_kind:
+            add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding record kind for '{semantic_id}' conflicts with the catalog")
+    for semantic_id, (binding_path, line_number, _row) in sorted(bindings.items()):
+        if catalog and semantic_id not in catalog:
+            add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding id '{semantic_id}' has no neutral profile catalog entry")
+
+    active_refs: dict[str, tuple[Path, int]] = {}
+    for path in sorted(kaoju_root.rglob("*.md")):
+        if path.name == config.binding_filename or path == registry_path:
+            continue
+        if path.parts[-2:] == ("references", "artifact-recording.md"):
+            continue
+        for line_number, line in enumerate(read_lines(path), start=1):
+            for semantic_id in re.findall(r"kaoju:[a-z0-9][a-z0-9-]*", line):
+                active_refs.setdefault(semantic_id, (path, line_number))
+            if path.name == "SKILL.md" and (
+                (config.profile_namespace and config.profile_namespace in line)
+                or "--record-kind" in line
+                or "--semantic-label" in line
+            ):
+                add(diagnostics, repo_root, path, line_number, "RPS023", "active stage prose contains physical binding instead of routing to artifact-bindings.md")
+    for semantic_id, (path, line_number) in sorted(active_refs.items()):
+        if semantic_id not in registry:
+            add(diagnostics, repo_root, path, line_number, "RPS021", f"active Kaoju guidance references unregistered semantic id '{semantic_id}'")
+        elif semantic_id not in bindings:
+            add(diagnostics, repo_root, path, line_number, "RPS022", f"active Kaoju semantic id '{semantic_id}' has no binding")
+
+    shared_recording = kaoju_root / "isomer-kaoju-shared" / "references" / "artifact-recording.md"
+    if shared_recording.exists():
+        shared_text = shared_recording.read_text(encoding="utf-8")
+        for term in ("title", "summary", "artifact_family", "semantic_id", "artifact_type", "sections", "worker output policy", "latest", "revision", "lineage", "Markdown", "large-material"):
+            if term.casefold() not in shared_text.casefold():
+                add(diagnostics, repo_root, shared_recording, 1, "RPS024", f"shared Kaoju recording contract is missing '{term}' guidance")
+
+
 def validate_global_isomer_cli_invocation(target: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
     for path in sorted(candidate for candidate in target.rglob("*") if candidate.is_file() and candidate.suffix in ACTIVE_REF_SUFFIXES):
         for line_number, line in enumerate(read_lines(path), start=1):
@@ -1809,6 +2042,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
     if kaoju_root.exists():
         validate_kaoju_command_surface(kaoju_root, repo_root, diagnostics)
         validate_kaoju_shared_references(kaoju_root, repo_root, diagnostics)
+        validate_kaoju_artifact_bindings(kaoju_root, repo_root, diagnostics, family_by_key["kaoju"])
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     return sorted(set(diagnostics))
 

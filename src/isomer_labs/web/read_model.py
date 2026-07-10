@@ -24,6 +24,7 @@ from isomer_labs.records.index import (
     rebuild_query_index,
     validate_query_index,
 )
+from isomer_labs.records.semantic_index import query_index_record_summary
 from isomer_labs.records.store import ResearchRecordError, render_record, show_record
 from isomer_labs.runtime.store import open_workspace_runtime
 from isomer_labs.runtime.validation import inspect_workspace_runtime
@@ -617,9 +618,22 @@ class ProjectWebReadModel:
             include_render_diagnostics=True,
         )
         files_payload, files_diagnostics = query_index_files(context, record_id, env=self.selected_env)
-        diagnostics.extend(files_diagnostics)
+        summary_payload, summary_diagnostics = query_index_record_summary(context, record_id, env=self.selected_env)
+        facets_payload, facets_diagnostics = query_index_facets(context, record_id, env=self.selected_env)
+        lineage_payload, lineage_diagnostics = query_index_lineage(context, record_id, env=self.selected_env)
+        diagnostics.extend([*files_diagnostics, *summary_diagnostics, *facets_diagnostics, *lineage_diagnostics])
         enriched, metadata_diagnostics = self._enrich_record_inspection_payload(context, record_id, payload, files_payload=files_payload)
         diagnostics.extend(metadata_diagnostics)
+        enriched["query_summary"] = summary_payload.get("record")
+        enriched["files"] = files_payload.get("files", [])
+        enriched["facets"] = {
+            key: facets_payload.get(key, [])
+            for key in ("ideas", "routes", "metrics", "claims", "facts")
+        }
+        enriched["lineage"] = {
+            "nodes": lineage_payload.get("nodes", []),
+            "edges": lineage_payload.get("edges", []),
+        }
         return ensure_gui_payload(enriched, RecordDetailResponseContract, contract_name="record-detail"), diagnostics
 
     def _record_render_payload(

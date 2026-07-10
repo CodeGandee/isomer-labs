@@ -81,6 +81,8 @@ class KaojuSkillAssetTests(unittest.TestCase):
     def test_shared_contract_references_are_complete_and_linked(self) -> None:
         shared = KAOJU_ROOT / "isomer-kaoju-shared"
         expected = {
+            "artifact-recording.md",
+            "artifact-semantics.md",
             "evidence-contract.md",
             "external-owner-routing.md",
             "interaction-and-gates.md",

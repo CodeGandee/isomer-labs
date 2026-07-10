@@ -17,8 +17,8 @@ from isomer_labs.artifact_formats import (
     digest_json,
     render_artifact,
     validate_payload,
+    register_builtin_artifact_format_providers,
 )
-from isomer_labs.deepsci_ext.record_formats import register_deepsci_record_format_provider
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.core.path_utils import canonicalize, is_within
@@ -1349,7 +1349,7 @@ def _render_reset_markdown(
 
 def _artifact_format_registry(context: EffectiveTopicContext, store: WorkspaceRuntimeStore) -> ArtifactFormatRegistry:
     registry = ArtifactFormatRegistry()
-    register_deepsci_record_format_provider(registry)
+    register_builtin_artifact_format_providers(registry)
     registry.register_provider(WorkspaceRuntimeArtifactFormatProvider(store, topic_workspace_id=context.topic_workspace_id))
     return registry
 

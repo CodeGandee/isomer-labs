@@ -415,6 +415,8 @@ The following Topic Workspace material is durable by default:
 - Promoted Agent Artifacts, Evidence Items, Decision Records, and Provenance Records.
 - Adapter manifests and command payload refs under `runtime/adapters/` or `records/*`.
 
+Durable does not mean selected for reset preservation. Extension bootstrap records and user-selected research state survive a Topic Workspace reset only when `project topic-reset update-checkpoint` records their exact record ids, structured payload ids and files, export paths, semantic labels, actor refs, and provenance refs. Ordinary post-checkpoint records remain subject to the accepted reset plan.
+
 The following material is generated, local, or policy-dependent:
 
 - `.pixi/`.

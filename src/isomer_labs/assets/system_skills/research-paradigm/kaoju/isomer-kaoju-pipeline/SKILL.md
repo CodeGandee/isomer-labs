@@ -9,6 +9,8 @@ description: Use when a user requests a bounded Kaoju survey, curated intake, di
 
 Select and run one bounded survey procedure or grouped management action. Preserve stage handoffs, require audit before synthesis, and stop with explicit status instead of choosing the next macro procedure autonomously.
 
+Read the shared artifact semantics and recording rules before dispatch, each producer skill's `artifact-bindings.md` before an accepted write, and this skill's binding page before creating `kaoju:survey-terminal-report`. An unavailable binding or record surface is a storage blocker; do not fall back to invented paths, profiles, canonical Markdown, or untracked JSON.
+
 ## Workflow
 
 1. **Resolve context**. Identify the Research Topic, Research Inquiry, Topic Workspace, user request, clarification mode, accepted prior refs, and requested start stage.

@@ -11,11 +11,11 @@ Kaoju preserves what was inspected, what was executed, and how strongly each cla
 
 ## Workflow
 
-1. **Resolve context**. Identify the Research Topic, Research Inquiry, Topic Workspace, active procedure, accepted input refs, and intended evidence use.
+1. **Resolve current context**. Identify the Research Topic, Research Inquiry, Effective Topic Context, fresh Workspace Runtime state, active procedure, accepted input refs, intended evidence use, latest candidates, and duplicate or supersession posture.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-shared --stage begin`; follow returned instructions within this skill, the user request, evidence, Gate, and owner constraints, while empty callback results continue normally and conflicts must be reported.
-3. **Load the applicable contracts**. Read only the pages selected in **Reference Routing**.
+3. **Load the applicable contracts**. Read only the pages selected in **Reference Routing**. Before an accepted write, read `references/artifact-semantics.md`, `references/artifact-recording.md`, and the producer's `artifact-bindings.md`.
 4. **Preserve evidence meaning**. Record identity, locator, verification depth, evidence verdict, Run purpose, execution fidelity, input basis, and Provenance Record as separate applicable fields.
-5. **Route governed work**. Use the applicable owner for Topic Workspace mutation, environment work, provider access, execution, Gates, and durable recording.
+5. **Route governed work**. Apply the worker output policy, then use the applicable owner for Topic Workspace mutation, environment work, provider access, execution, Gates, and bound durable recording.
 6. **Apply end callbacks**. After tentative outputs exist, run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-shared --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
 7. **Return terminal state**. Report `complete`, `paused`, or `blocked` with durable refs and a resume point when applicable.
 
@@ -35,7 +35,7 @@ Evidence labels are part of the evidence. Violating their letter also violates t
 - Source-only inspection never receives empirical `compared` depth.
 - Generated-data results remain `capability-probe` evidence and never become paper reproduction or benchmark evidence.
 - Upstream-faithful, adapted, repaired, failed, and blocked attempts remain separate Findings or Runs.
-- Structured records use non-empty top-level `title` and `summary`; file-backed Artifacts retain durable refs and lineage.
+- Accepted structured records use canonical managed JSON with `title`, `summary`, `artifact_family`, `semantic_id`, `artifact_type`, and `sections`; readable views are derived.
 - An audit diagnoses evidence; it does not silently repair, delete, relabel, or invent it.
 
 ## Reference Routing
@@ -44,6 +44,8 @@ Evidence labels are part of the evidence. Violating their letter also violates t
 | --- | --- |
 | Evidence depth, verdict, Run purpose, fidelity, and input basis | `references/evidence-contract.md` |
 | Survey Artifact vocabulary and minimum contents | `references/survey-artifacts.md` |
+| Stable Kaoju artifact meanings and producer ownership | `references/artifact-semantics.md` |
+| Latest-context, canonical payload, lineage, view, worker-output, and material rules | `references/artifact-recording.md` |
 | Immutable work, repository, dataset, and model identity | `references/source-identity.md` |
 | Clarification-first, Proceed Decision, and Gate behavior | `references/interaction-and-gates.md` |
 | Topic Workspace, provider, environment, execution, and recording ownership | `references/external-owner-routing.md` |

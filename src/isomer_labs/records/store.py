@@ -11,16 +11,18 @@ from typing import Any, Mapping, TypedDict
 import uuid
 
 from isomer_labs.artifact_formats import (
+    ArtifactFormatResolver,
     ArtifactFormatRegistry,
     WorkspaceRuntimeArtifactFormatProvider,
     digest_bytes,
     digest_json,
     register_custom_artifact_format,
+    register_builtin_artifact_format_providers,
     render_artifact,
     validate_payload,
 )
 from isomer_labs.artifact_formats.processing import load_payload_file
-from isomer_labs.deepsci_ext.record_formats import is_unsupported_deepsci_v1_ref, register_deepsci_record_format_provider
+from isomer_labs.deepsci_ext.record_formats import is_unsupported_deepsci_v1_ref
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.workspace.path_resolution import resolve_semantic_path
@@ -87,6 +89,7 @@ class ResearchRecordRequest:
     record_id: str | None = None
     status: str = "ready"
     placeholder: str | None = None
+    semantic_id: str | None = None
     profile: str | None = None
     skill: str | None = None
     producer: str | None = None
@@ -172,6 +175,7 @@ def create_record(
 
     _validate_record_kind(request.record_kind)
     _validate_status(request.status)
+    _validate_semantic_id(request.semantic_id)
     runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
     if runtime_store is None:
         return _runtime_missing_payload("create", diagnostics), diagnostics
@@ -320,6 +324,7 @@ def list_records(
     record_kind: str | None = None,
     status: str | None = None,
     placeholder: str | None = None,
+    semantic_id: str | None = None,
     profile: str | None = None,
     skill: str | None = None,
     producer: str | None = None,
@@ -342,6 +347,7 @@ def list_records(
         _validate_record_kind(record_kind)
     if status is not None:
         _validate_status(status)
+    _validate_semantic_id(semantic_id)
     runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
     if runtime_store is None:
         return _runtime_missing_payload("list", diagnostics), diagnostics
@@ -369,6 +375,7 @@ def list_records(
             and _matches_filter(record, "record_kind", record_kind)
             and _matches_filter(record, "status", status)
             and _matches_metadata(record, "placeholder", placeholder)
+            and _matches_metadata(record, "semantic_id", semantic_id)
             and _matches_metadata(record, "profile", profile)
             and _matches_metadata(record, "skill", skill)
             and _matches_metadata(record, "producer", producer)
@@ -408,6 +415,7 @@ def update_record(
 
     _validate_record_kind(request.record_kind)
     _validate_status(request.status)
+    _validate_semantic_id(request.semantic_id)
     runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
     if runtime_store is None:
         return _runtime_missing_payload("update", diagnostics), diagnostics
@@ -419,6 +427,12 @@ def update_record(
             raise ResearchRecordError(
                 f"Record kind mismatch for {record_id}: existing {existing.record_kind}, requested {request.record_kind}.",
                 code="record_kind_mismatch",
+            )
+        existing_semantic_id = _optional_metadata_string(existing.transition_metadata.get("semantic_id"))
+        if request.semantic_id is not None and existing_semantic_id is not None and request.semantic_id != existing_semantic_id:
+            raise ResearchRecordError(
+                f"Semantic id mismatch for {record_id}: existing {existing_semantic_id}, requested {request.semantic_id}.",
+                code="semantic_id_mismatch",
             )
         request = replace(request, record_id=record_id)
         structured_payload = None
@@ -546,13 +560,36 @@ def revise_record(
         record_kind=request.record_kind or existing.record_kind,
         record_id=request.record_id or _revision_record_id(existing),
         placeholder=request.placeholder or _optional_metadata_string(existing_metadata.get("placeholder")),
+        semantic_id=request.semantic_id or _optional_metadata_string(existing_metadata.get("semantic_id")),
         profile=request.profile or _optional_metadata_string(existing_metadata.get("profile")),
         skill=request.skill or _optional_metadata_string(existing_metadata.get("skill")),
         producer=request.producer or _optional_metadata_string(existing_metadata.get("producer")),
         consumer=request.consumer or _optional_metadata_string(existing_metadata.get("consumer")),
         format_profile_ref=request.format_profile_ref or (existing_payload.format_profile_ref if existing_payload is not None else None),
-        schema_ref=request.schema_ref or (existing_payload.schema_ref if existing_payload is not None else None),
-        template_ref=request.template_ref or (existing_payload.template_ref if existing_payload is not None else None),
+        schema_ref=(
+            request.schema_ref
+            if request.format_profile_ref is None
+            else None
+        )
+        or (
+            existing_payload.schema_ref
+            if existing_payload is not None
+            and existing_payload.format_profile_ref is None
+            and request.format_profile_ref is None
+            else None
+        ),
+        template_ref=(
+            request.template_ref
+            if request.format_profile_ref is None
+            else None
+        )
+        or (
+            existing_payload.template_ref
+            if existing_payload is not None
+            and existing_payload.format_profile_ref is None
+            and request.format_profile_ref is None
+            else None
+        ),
         metadata=request_metadata,
         parents=[{"record_id": record_id, "role": "previous_revision"}],
         lineage_kind="revision_of",
@@ -1454,6 +1491,17 @@ def _validate_status(status: str) -> None:
         raise ResearchRecordError(f"Unsupported research record status: {status}", code="unsupported_record_status")
 
 
+SEMANTIC_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*$")
+
+
+def _validate_semantic_id(semantic_id: str | None) -> None:
+    if semantic_id is not None and SEMANTIC_ID_RE.fullmatch(semantic_id) is None:
+        raise ResearchRecordError(
+            "Semantic id must use exact <family>:<semantic-id> lowercase slug syntax.",
+            code="invalid_semantic_id",
+        )
+
+
 def _write_body(
     context: EffectiveTopicContext,
     request: ResearchRecordRequest,
@@ -1526,6 +1574,7 @@ def _prepare_structured_payload(
         )
         return None, None, diagnostics
     diagnostics.extend(_structured_display_diagnostics(payload, payload_file=request.payload_file))
+    diagnostics.extend(_structured_semantic_diagnostics(payload, request, payload_file=request.payload_file))
 
     selected_request = request
     if durable and request.schema_file is not None:
@@ -1545,6 +1594,24 @@ def _prepare_structured_payload(
         schema_file=selected_request.schema_file if not durable else None,
     )
     diagnostics.extend(validation.diagnostics)
+    if selected_request.format_profile_ref is not None:
+        profile, _resolution, profile_diagnostics = ArtifactFormatResolver(registry).resolve_profile(
+            selected_request.format_profile_ref
+        )
+        diagnostics.extend(profile_diagnostics)
+        if profile is not None:
+            compatible = profile.metadata.get("compatible_record_kinds")
+            if isinstance(compatible, list) and selected_request.record_kind not in compatible:
+                diagnostics.append(
+                    Diagnostic(
+                        code="record_kind_profile_mismatch",
+                        severity="error",
+                        concept="Structured Research Payload",
+                        path=request.payload_file,
+                        field="record_kind",
+                        message=f"Record kind {selected_request.record_kind!r} is incompatible with profile {profile.ref}; expected one of {compatible}.",
+                    )
+                )
     if not validation.ok:
         return None, None, diagnostics
 
@@ -1654,6 +1721,43 @@ def _structured_display_diagnostics(payload: Mapping[str, object], *, payload_fi
     return diagnostics
 
 
+def _structured_semantic_diagnostics(
+    payload: Mapping[str, object],
+    request: ResearchRecordRequest,
+    *,
+    payload_file: Path | None,
+) -> list[Diagnostic]:
+    if request.semantic_id is None:
+        return []
+    diagnostics: list[Diagnostic] = []
+    payload_semantic_id = _optional_metadata_string(payload.get("semantic_id"))
+    if payload_semantic_id is not None and payload_semantic_id != request.semantic_id:
+        diagnostics.append(
+            Diagnostic(
+                code="semantic_id_payload_mismatch",
+                severity="error",
+                concept="Structured Research Payload",
+                path=payload_file,
+                field="semantic_id",
+                message=f"Payload semantic_id {payload_semantic_id!r} does not match authored semantic id {request.semantic_id!r}.",
+            )
+        )
+    payload_family = _optional_metadata_string(payload.get("artifact_family"))
+    request_family = request.semantic_id.split(":", 1)[0]
+    if payload_family is not None and payload_family != request_family:
+        diagnostics.append(
+            Diagnostic(
+                code="artifact_family_payload_mismatch",
+                severity="error",
+                concept="Structured Research Payload",
+                path=payload_file,
+                field="artifact_family",
+                message=f"Payload artifact_family {payload_family!r} does not match semantic-id family {request_family!r}.",
+            )
+        )
+    return diagnostics
+
+
 def _unsupported_structured_format_diagnostics(request: ResearchRecordRequest) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     for field, value in (
@@ -1692,7 +1796,7 @@ def _snapshot_plain_format_inputs(
                 message="Markdown rendering from a plain schema file requires --template-file.",
             )
         ]
-    stem = request.record_id or request.placeholder or request.content_name or "structured-payload"
+    stem = request.record_id or request.semantic_id or request.placeholder or request.content_name or "structured-payload"
     topic_slug = _slug(context.topic_workspace_id)
     format_profile_ref = (
         request.format_profile_ref
@@ -1728,7 +1832,7 @@ def _artifact_format_registry(
     runtime_store: WorkspaceRuntimeStore,
 ) -> ArtifactFormatRegistry:
     registry = ArtifactFormatRegistry()
-    register_deepsci_record_format_provider(registry)
+    register_builtin_artifact_format_providers(registry)
     registry.register_provider(
         WorkspaceRuntimeArtifactFormatProvider(runtime_store, topic_workspace_id=context.topic_workspace_id)
     )
@@ -1768,6 +1872,7 @@ def _write_payload_snapshot(
         "payload_digest": validation_payload.get("payload_digest"),
         "payload_media_type": "application/json",
         "format_profile_ref": validation_payload.get("format_profile_ref"),
+        "semantic_id": request.semantic_id,
         "schema_ref": validation_payload.get("schema_ref"),
         "schema_version_ref": validation_payload.get("schema_version"),
         "validation_status": validation_payload.get("status"),
@@ -1802,6 +1907,7 @@ def _payload_revision_refs(request: ResearchRecordRequest) -> tuple[str | None, 
     latest_for = _optional_metadata_string(
         metadata.get("latest_for_semantic_id")
         or metadata.get("semantic_id")
+        or request.semantic_id
         or request.placeholder
         or request.profile
         or request.content_name
@@ -2605,6 +2711,7 @@ def _record_metadata(request: ResearchRecordRequest) -> dict[str, object]:
     metadata: dict[str, object] = dict(request.metadata or {})
     for key, value in (
         ("placeholder", request.placeholder),
+        ("semantic_id", request.semantic_id),
         ("profile", request.profile),
         ("format_profile_ref", request.format_profile_ref),
         ("schema_ref", request.schema_ref),

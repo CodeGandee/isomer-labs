@@ -207,6 +207,159 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         assert isinstance(archive_metadata, dict)
         self.assertEqual("superseded", archive_metadata["archive_reason"])
 
+    def test_semantic_id_lifecycle_neutral_profile_and_latest_queries(self) -> None:
+        root = self.make_project()
+        profile_ref = "isomer:research/record-format/profile/kaoju/contract/survey-contract/v1"
+
+        def payload(path: Path, summary: str) -> None:
+            path.write_text(
+                json.dumps(
+                    {
+                        "title": "Survey Contract",
+                        "summary": summary,
+                        "artifact_family": "kaoju",
+                        "semantic_id": "kaoju:survey-contract",
+                        "artifact_type": "survey-contract",
+                        "procedure": "survey-field",
+                        "sections": {"scope": {"question": "What methods exist?"}},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+        first_payload = root / "survey-contract.json"
+        payload(first_payload, "Initial bounded survey scope.")
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "survey-contract-1",
+                "--record-kind",
+                "artifact",
+                "--semantic-id",
+                "kaoju:survey-contract",
+                "--format-profile",
+                profile_ref,
+                "--skill",
+                "isomer-kaoju-frame",
+                "--payload-file",
+                str(first_payload),
+            ],
+        )
+        self.assertEqual(0, status, created)
+        metadata = created["record"]["transition_metadata"]
+        self.assertEqual("kaoju:survey-contract", metadata["semantic_id"])
+        self.assertEqual("kaoju:survey-contract", created["query_index"]["counts"] and metadata["semantic_id"])
+
+        status, shown = self.run_records(root, ["show", "survey-contract-1", "--include-payload"])
+        self.assertEqual(0, status, shown)
+        self.assertEqual("kaoju:survey-contract", shown["structured_payload"]["payload"]["semantic_id"])
+        status, listed = self.run_records(root, ["list", "--semantic-id", "kaoju:survey-contract"])
+        self.assertEqual(0, status, listed)
+        self.assertEqual(["survey-contract-1"], [record["id"] for record in listed["records"]])
+
+        status, updated = self.run_records(
+            root,
+            ["update", "survey-contract-1", "--record-kind", "artifact", "--semantic-id", "kaoju:survey-contract", "--status", "complete"],
+        )
+        self.assertEqual(0, status, updated)
+        self.assertEqual("kaoju:survey-contract", updated["record"]["transition_metadata"]["semantic_id"])
+
+        revised_payload = root / "survey-contract-revised.json"
+        payload(revised_payload, "Revised bounded survey scope.")
+        status, revised = self.run_records(
+            root,
+            ["revise", "survey-contract-1", "--id", "survey-contract-2", "--payload-file", str(revised_payload)],
+        )
+        self.assertEqual(0, status, revised)
+        self.assertEqual("kaoju:survey-contract", revised["record"]["transition_metadata"]["semantic_id"])
+        self.assertEqual("survey-contract-1", revised["revision_of_record_id"])
+
+        status, latest = self.run_records(
+            root,
+            ["query", "list", "--artifact-family", "kaoju", "--semantic-id", "kaoju:survey-contract", "--procedure", "survey-field", "--latest-only"],
+        )
+        self.assertEqual(0, status, latest)
+        self.assertEqual(["survey-contract-2"], [record["record_id"] for record in latest["records"]])
+        self.assertEqual([], latest["diagnostics"])
+
+        status, competing = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "survey-contract-competing",
+                "--record-kind",
+                "artifact",
+                "--semantic-id",
+                "kaoju:survey-contract",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(first_payload),
+            ],
+        )
+        self.assertEqual(0, status, competing)
+        status, ambiguous = self.run_records(
+            root,
+            ["query", "list", "--artifact-family", "kaoju", "--semantic-id", "kaoju:survey-contract", "--latest-only"],
+        )
+        self.assertEqual(0, status, ambiguous)
+        self.assertEqual({"survey-contract-2", "survey-contract-competing"}, {record["record_id"] for record in ambiguous["records"]})
+        self.assertEqual("query_index_latest_ambiguous", ambiguous["diagnostics"][0]["code"])
+
+        status, facets = self.run_records(root, ["query", "facets", "survey-contract-2", "--facet", "facts"])
+        self.assertEqual(0, status, facets)
+        self.assertTrue(
+            any(
+                fact["json_path"] == "$.procedure"
+                and fact["metadata"].get("profile_ref") == profile_ref
+                for fact in facets["facts"]
+            ),
+            facets,
+        )
+
+        status, archived = self.run_records(root, ["delete", "survey-contract-1", "--reason", "superseded"])
+        self.assertEqual(0, status, archived)
+        self.assertEqual("archived", archived["record"]["status"])
+        status, _ = self.run_records(root, ["delete", "survey-contract-competing", "--reason", "not selected"])
+        self.assertEqual(0, status)
+
+        mismatch_payload = root / "survey-contract-mismatch.json"
+        payload(mismatch_payload, "Mismatched request identity.")
+        status, mismatch = self.run_records(
+            root,
+            ["create", "--record-kind", "artifact", "--semantic-id", "kaoju:field-summary", "--format-profile", profile_ref, "--payload-file", str(mismatch_payload)],
+        )
+        self.assertEqual(1, status)
+        self.assertTrue(any(item["code"] == "semantic_id_payload_mismatch" for item in mismatch["diagnostics"]))
+
+        status, kind_mismatch = self.run_records(
+            root,
+            ["create", "--record-kind", "evidence_item", "--semantic-id", "kaoju:survey-contract", "--format-profile", profile_ref, "--payload-file", str(first_payload)],
+        )
+        self.assertEqual(1, status)
+        self.assertTrue(any(item["code"] == "record_kind_profile_mismatch" for item in kind_mismatch["diagnostics"]))
+
+        status, invalid = self.run_records(root, ["list", "--semantic-id", "not-valid"])
+        self.assertEqual(1, status)
+        self.assertEqual("invalid_semantic_id", invalid["error"]["code"])
+
+    def test_placeholder_index_identity_remains_compatible_and_derived(self) -> None:
+        root = self.make_project()
+        status, created = self.run_records(
+            root,
+            ["create", "--id", "legacy-placeholder", "--record-kind", "artifact", "--placeholder", "<MAIN_RUN_RECORD>", "--body", "legacy"],
+        )
+        self.assertEqual(0, status, created)
+        self.assertEqual("<MAIN_RUN_RECORD>", created["record"]["transition_metadata"]["placeholder"])
+        status, listed = self.run_records(root, ["query", "list", "--semantic-id", "deepsci:main-run-record"])
+        self.assertEqual(0, status, listed)
+        self.assertEqual(1, listed["count"])
+        self.assertEqual("derived_placeholder", listed["records"][0]["semantic_id_source"])
+        self.assertEqual("<MAIN_RUN_RECORD>", listed["records"][0]["placeholder"])
+
     def test_structured_record_v1_profile_is_rejected_for_new_writes(self) -> None:
         root = self.make_project()
         payload_file = root / "legacy-v1-payload.json"
