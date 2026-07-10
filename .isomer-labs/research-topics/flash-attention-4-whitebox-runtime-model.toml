@@ -2,3 +2,4 @@ schema_version = "isomer-research-topic-config.v1"
 research_topic_id = "flash-attention-4-whitebox-runtime-model"
 topic_statement = "Develop a white-box math model of Flash Attention 4 runtime that predicts kernel runtime in milliseconds from input configuration, and validate it against measured runs on NVIDIA B200 hardware. The model must follow the GPU's internal execution model rather than fitting a black-box function to measurements. All accuracy claims must be grounded in real-hardware timings, not emulator-only ground truth."
 measurable_objectives = []
+user_skill_callback_registry_refs = [".isomer-labs/user-skill-callbacks/topics/flash-attention-4-whitebox-runtime-model/registry.toml"]

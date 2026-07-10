@@ -1,0 +1,211 @@
+schema_version = "isomer-user-skill-callback-registry.v1"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:analysis/begin/hardware-grounded-interpretation"
+skill = "isomer-deepsci-analysis"
+stage = "begin"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "analysis/begin/hardware-grounded-interpretation"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/analysis-begin-hardware-grounded-interpretation.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:analysis/end/component-proof-check"
+skill = "isomer-deepsci-analysis"
+stage = "end"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "analysis/end/component-proof-check"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/analysis-end-component-proof-check.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:baseline/begin/evidence-baseline-contract"
+skill = "isomer-deepsci-baseline"
+stage = "begin"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "baseline/begin/evidence-baseline-contract"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/baseline-begin-evidence-baseline-contract.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:decision/begin/mismatch-route"
+skill = "isomer-deepsci-decision"
+stage = "begin"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "decision/begin/mismatch-route"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/decision-begin-mismatch-route.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:experiment/begin/evaluation-and-profiler-contract"
+skill = "isomer-deepsci-experiment"
+stage = "begin"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "experiment/begin/evaluation-and-profiler-contract"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/experiment-begin-evaluation-and-profiler-contract.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:experiment/end/result-evidence-check"
+skill = "isomer-deepsci-experiment"
+stage = "end"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "experiment/end/result-evidence-check"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/experiment-end-result-evidence-check.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:finalize/begin/closure-readiness"
+skill = "isomer-deepsci-finalize"
+stage = "begin"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "finalize/begin/closure-readiness"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/finalize-begin-closure-readiness.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:finalize/end/final-evidence-class"
+skill = "isomer-deepsci-finalize"
+stage = "end"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "finalize/end/final-evidence-class"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/finalize-end-final-evidence-class.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:idea/begin/hypothesis-model-contract"
+skill = "isomer-deepsci-idea"
+stage = "begin"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "idea/begin/hypothesis-model-contract"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/idea-begin-hypothesis-model-contract.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:pipeline/begin/evidence-route"
+skill = "isomer-deepsci-pipeline"
+stage = "begin"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "pipeline/begin/evidence-route"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/pipeline-begin-evidence-route.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:review/begin/source-and-evidence-review"
+skill = "isomer-deepsci-review"
+stage = "begin"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "review/begin/source-and-evidence-review"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/review-begin-source-and-evidence-review.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:review/end/claim-strength-review"
+skill = "isomer-deepsci-review"
+stage = "end"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "review/end/claim-strength-review"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/review-end-claim-strength-review.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:scout/begin/framing-prior"
+skill = "isomer-deepsci-scout"
+stage = "begin"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "scout/begin/framing-prior"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/scout-begin-framing-prior.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:scout/end/output-check"
+skill = "isomer-deepsci-scout"
+stage = "end"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "scout/end/output-check"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/scout-end-output-check.md"
+
+[[callbacks]]
+id = "gpu-analytical-modeling:write/end/claim-and-proxy-check"
+skill = "isomer-deepsci-write"
+stage = "end"
+scope = "research_topic"
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+toolbox_id = "gpu-analytical-modeling"
+toolbox_key = "write/end/claim-and-proxy-check"
+toolbox_source_path_input = "skillset/toolboxes/gpu-analytical-modeling"
+status = "active"
+priority = 100
+source_type = "prompt_file"
+prompt_file = "skillset/toolboxes/gpu-analytical-modeling/callbacks/write-end-claim-and-proxy-check.md"
