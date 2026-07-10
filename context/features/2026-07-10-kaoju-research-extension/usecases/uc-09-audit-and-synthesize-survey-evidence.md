@@ -1,12 +1,12 @@
-# Use Case 06: Audit and Synthesize a Kaoju Dossier
+# Use Case 09: Audit and Synthesize Survey Evidence
 
 ## Actor Goal
 
-As a researcher or reviewer, I want Kaoju to audit the evidence package and synthesize a claim-calibrated dossier, so that conclusions remain traceable to source inspection and first-hand Runs and missing evidence is visible rather than repaired in prose.
+As a researcher or reviewer, I want Kaoju to audit the survey evidence package and synthesize a claim-calibrated dossier, so that conclusions remain traceable to source inspection and first-hand Runs and missing evidence is visible rather than repaired in prose.
 
 ## Use Case
 
-The investigation has a source catalog, Claim-Evidence Ledger, examination records, optional reproduction Runs, and optional comparison results. An independent Kaoju audit checks coverage, identity, provenance, source drift, hidden adaptations, failed-run retention, claim status, and comparison fairness. The synthesis stage then answers the Research Inquiry only from accepted records, labels verification depth and evidence verdict separately, records contradictions and limitations, and produces an optional handoff to downstream DeepSci or writing work.
+The survey has a Related-Work Catalog, Claim-Evidence Ledger, examination records, optional method-trial Runs, and optional comparison results. An independent Kaoju audit checks coverage, identity, provenance, source drift, hidden adaptations, failed-run retention, claim status, and comparison fairness. The synthesis stage then answers the survey question only from accepted records, labels verification depth and evidence verdict separately, records contradictions and limitations, and produces an optional handoff to downstream DeepSci or writing work.
 
 ## Supported Actions
 

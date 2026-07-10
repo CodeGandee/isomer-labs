@@ -11,6 +11,16 @@ Design an optional built-in Isomer system-skill extension named `kaoju` (考据)
 - [Use Cases](usecases/README.md)
 - [Design](design/README.md)
 - [Kaoju Pipeline and Skill Family Design Overview](design/isomer-kaoju-pipeline/design-overview.md)
+- [ADR 0001: Use Literature-First Related-Work Catalogs](adrs/0001-use-literature-first-related-work-catalogs.md)
+- [ADR 0002: Survey Five Source Classes](adrs/0002-survey-five-source-classes.md)
+- [ADR 0003: Separate Capability Probes from Reproduction](adrs/0003-separate-capability-probes-from-reproduction.md)
+- [ADR 0004: Derive Theory-Comparison Dimensions from Domain Evidence](adrs/0004-derive-theory-comparison-dimensions-from-domain-evidence.md)
+- [ADR 0005: Expand Seed Directions Backward and Forward](adrs/0005-expand-seed-directions-backward-and-forward.md)
+- [ADR 0006: Honor Explicit Clarification-First Requests](adrs/0006-honor-explicit-clarification-first-requests.md)
+- [ADR 0007: Require a Comparison Intent Before Empirical Runs](adrs/0007-require-a-comparison-intent-before-empirical-runs.md)
+- [ADR 0008: Register External Local Datasets by Manifest and Link](adrs/0008-register-external-local-datasets-by-manifest-and-link.md)
+- [ADR 0009: Treat User-Supplied Sources as Priority Candidates](adrs/0009-treat-user-supplied-sources-as-priority-candidates.md)
+- [ADR 0010: Model Survey Intents, Not Generic Lifecycle Tasks](adrs/0010-model-survey-intents-not-generic-lifecycle-tasks.md)
 
 ## Current Stage
 
